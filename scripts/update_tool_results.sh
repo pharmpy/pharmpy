@@ -40,7 +40,7 @@ cp $TESTDATA/pheno.ext $TESTPATH
 cp $TESTDATA/pheno.phi $TESTPATH
 
 if [ "$TOOL" == 'allometry' ] || [ "$TOOL" == 'all' ]; then
-  tox -e integration -- pharmpy run allometry $TESTPATH/pheno.mod --allometric_variable=WGT --path $TESTPATH/allometry/
+  pharmpy run allometry $TESTPATH/pheno.mod --allometric_variable=WGT --path $TESTPATH/allometry/
   cp $TESTPATH/allometry/results.json $DEST/allometry_results.json
 fi
 
@@ -55,20 +55,21 @@ if [ "$TOOL" == 'modelsearch' ] || [ "$TOOL" == 'all' ]; then
   pharmpy run modelsearch $TESTPATH/mox2.mod 'PERIPHERALS(1);LAGTIME()' 'reduced_stepwise' --path $TESTPATH/modelsearch/
   cp $TESTPATH/modelsearch/results.json $DEST/modelsearch_results.json
   cp $TESTPATH/modelsearch/metadata.json $DEST/metadata.json
+  cp -r $TESTPATH/modelsearch $DEST/tool_databases
 fi
 
 if [ "$TOOL" == 'iivsearch' ] || [ "$TOOL" == 'all' ]; then
-  tox -e run -- pharmpy run iivsearch $TESTPATH/mox2.mod 'brute_force' --path $TESTPATH/iivsearch/
+  pharmpy run iivsearch $TESTPATH/mox2.mod 'brute_force' --path $TESTPATH/iivsearch/
   cp $TESTPATH/iivsearch/results.json $DEST/iivsearch_results.json
 fi
 
 if [ "$TOOL" == 'iovsearch' ] || [ "$TOOL" == 'all' ]; then
-  tox -e run -- pharmpy run iovsearch $TESTPATH/mox2.mod --column 'VISI' --path $TESTPATH/iovsearch/
+  pharmpy run iovsearch $TESTPATH/mox2.mod --column 'VISI' --path $TESTPATH/iovsearch/
   cp $TESTPATH/iovsearch/results.json $DEST/iovsearch_results.json
 fi
 
 if [ "$TOOL" == 'covsearch' ] || [ "$TOOL" == 'all' ]; then
-  tox -e run -- pharmpy run covsearch $TESTPATH/mox2.mod \
+  pharmpy run covsearch $TESTPATH/mox2.mod \
         --effects 'COVARIATE([CL, MAT, VC], [AGE, WT], EXP);COVARIATE([CL, MAT, VC], [SEX], CAT)' \
         --path $TESTPATH/covsearch/
   cp $TESTPATH/covsearch/results.json $DEST/covsearch_results.json
@@ -78,6 +79,6 @@ if [ "$TOOL" == 'resmod' ] || [ "$TOOL" == 'all' ]; then
   cp $TESTDATA/resmod/mox3.* $TESTPATH
   cp $TESTDATA/resmod/moxo_simulated_resmod.csv $TESTPATH
   cp $TESTDATA/resmod/mytab $TESTPATH
-  tox -e run -- pharmpy run resmod $TESTPATH/mox3.mod --path $TESTPATH/resmod/
+  pharmpy run resmod $TESTPATH/mox3.mod --path $TESTPATH/resmod/
   cp $TESTPATH/resmod/results.json $DEST/resmod_results.json
 fi
