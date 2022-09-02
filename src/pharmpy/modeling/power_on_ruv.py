@@ -5,10 +5,11 @@
 import sympy
 from sympy import Symbol as S
 
+from pharmpy.expressions import sympify
 from pharmpy.modeling import has_proportional_error_model
 from pharmpy.modeling.help_functions import _format_input_list
 from pharmpy.parameters import Parameter, Parameters
-from pharmpy.statements import Assignment, sympify
+from pharmpy.statements import Assignment
 
 from .expressions import create_symbol
 

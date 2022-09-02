@@ -1,5 +1,6 @@
+from pharmpy.expressions import sympify
 from pharmpy.parameters import Parameter, Parameters
-from pharmpy.statements import Assignment, sympify
+from pharmpy.statements import Assignment
 
 from . import find_clearance_parameters, find_volume_parameters
 from .expressions import create_symbol

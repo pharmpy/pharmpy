@@ -1,20 +1,19 @@
 import copy
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from functools import reduce
-from itertools import chain
-from operator import __and__
-from typing import Iterable, Set
 
 import networkx as nx
 import sympy
 
 import pharmpy.unicode as unicode
 
-
-def sympify(expr):
-    ns = {'Q': sympy.Symbol('Q')}
-    return sympy.sympify(expr, locals=ns)
+from .expressions import (
+    assume_all,
+    canonical_ode_rhs,
+    free_images,
+    free_images_and_symbols,
+    sympify,
+)
 
 
 class Statement(ABC):
@@ -422,7 +421,7 @@ class ExplicitODESystem(ODESystem):
             compartments[name] = comp
 
         for eq in self.odes:
-            for comp_func in concentrations.intersection(_free_images(eq.rhs)):
+            for comp_func in concentrations.intersection(free_images(eq.rhs)):
                 dep = eq.rhs.as_independent(comp_func, as_Add=True)[1]
                 terms = sympy.Add.make_args(dep)
                 for term in terms:
@@ -592,34 +591,8 @@ class CompartmentalSystemBuilder:
 
 def _is_positive(expr: sympy.Expr) -> bool:
     return sympy.ask(
-        sympy.Q.positive(expr), _assume_all(sympy.Q.positive, _free_images_and_symbols(expr))
+        sympy.Q.positive(expr), assume_all(sympy.Q.positive, free_images_and_symbols(expr))
     )
-
-
-def _free_images_and_symbols(expr: sympy.Expr) -> Set[sympy.Expr]:
-    return expr.free_symbols | _free_images(expr)
-
-
-def _free_images(expr: sympy.Expr) -> Set[sympy.Expr]:
-    return set(_free_images_iter(expr))
-
-
-def _free_images_iter(expr: sympy.Expr) -> Iterable[sympy.Expr]:
-    if isinstance(expr.func, sympy.core.function.UndefinedFunction):
-        yield expr
-        return
-
-    yield from chain.from_iterable(
-        map(
-            _free_images,
-            expr.args,
-        )
-    )
-
-
-def _assume_all(predicate: sympy.assumptions.Predicate, expressions: Iterable[sympy.Expr]):
-    tautology = sympy.Q.is_true(True)
-    return reduce(__and__, map(predicate, expressions), tautology)
 
 
 class CompartmentalSystem(ODESystem):
@@ -1249,7 +1222,7 @@ class CompartmentalSystem(ODESystem):
         derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
         inputs = self.zero_order_inputs
         a = self.compartmental_matrix @ amount_funcs + inputs
-        eqs = [sympy.Eq(lhs, simplify_ode_rhs(rhs)) for lhs, rhs in zip(derivatives, a)]
+        eqs = [sympy.Eq(lhs, canonical_ode_rhs(rhs)) for lhs, rhs in zip(derivatives, a)]
         ics = {}
         output = self.output_compartment
         for node in self._g.nodes:
@@ -1340,25 +1313,6 @@ class CompartmentalSystem(ODESystem):
         dose = self.dosing_compartment.dose
         s = str(dose) + '\n' + str(grid).rstrip()
         return s
-
-
-def simplify_ode_rhs(expr: sympy.Expr):
-    fi = _free_images(expr)
-    return sympy.collect(_expand_rates(expr, fi), sorted(fi, key=str))
-
-
-def _expand_rates(expr: sympy.Expr, free_images: Set[sympy.Expr]):
-    if isinstance(expr, sympy.Add):
-        return sympy.expand(
-            sympy.Add(*map(lambda x: _expand_rates(x, free_images), expr.args)), deep=False
-        )
-    if (
-        isinstance(expr, sympy.Mul)
-        and len(expr.args) == 2
-        and not free_images.isdisjoint(expr.args)
-    ):
-        return sympy.expand(expr, deep=False)
-    return expr
 
 
 class Compartment:

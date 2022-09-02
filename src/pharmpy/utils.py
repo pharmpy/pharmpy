@@ -11,7 +11,7 @@ import pandas as pd
 import sympy
 import sympy.physics.units as units
 
-from pharmpy.statements import sympify
+from pharmpy.expressions import sympify
 
 
 class TemporaryDirectoryChanger:

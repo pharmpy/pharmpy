@@ -4,6 +4,7 @@ import sympy
 from sympy import Derivative, Eq, Function, Piecewise
 from sympy import Symbol as symbol
 
+from pharmpy.expressions import canonical_ode_rhs
 from pharmpy.model import ModelSyntaxError
 from pharmpy.statements import (
     Assignment,
@@ -13,7 +14,6 @@ from pharmpy.statements import (
     CompartmentalSystemBuilder,
     ExplicitODESystem,
     Infusion,
-    simplify_ode_rhs,
 )
 
 
@@ -226,7 +226,7 @@ def compartmental_model(model, advan, trans, des=None):
             lhs_sum = dadt_dose.expression
             for eq in dadt_rest:
                 lhs_sum += eq.rhs
-            dadt_out = Eq(Derivative(a_out(t)), simplify_ode_rhs(-lhs_sum))
+            dadt_out = Eq(Derivative(a_out(t)), canonical_ode_rhs(-lhs_sum))
             dadt_rest.append(dadt_out)
         else:
             dadt_rest = [Eq(Derivative(a_out(t)), dadt_dose.expression * -1)]

@@ -4,8 +4,9 @@
 
 import sympy
 
+from pharmpy.expressions import sympify
 from pharmpy.random_variables import RandomVariable
-from pharmpy.statements import Assignment, sympify
+from pharmpy.statements import Assignment
 
 from .common import remove_unused_parameters_and_rvs
 from .data import get_observations
