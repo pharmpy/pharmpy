@@ -7,7 +7,7 @@ import pytest
 from pharmpy import Model
 from pharmpy.results import read_results
 from pharmpy.tools.qa.results import calculate_results, psn_qa_results
-from pharmpy.tools.resmod.results import psn_resmod_results
+from pharmpy.tools.ruvsearch.results import psn_resmod_results
 
 
 def test_add_etas(testdata):

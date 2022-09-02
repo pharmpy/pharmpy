@@ -1,4 +1,4 @@
-from pharmpy.tools.resmod.results import psn_resmod_results
+from pharmpy.tools.ruvsearch.results import psn_resmod_results
 
 
 def test_resmod_results(testdata):

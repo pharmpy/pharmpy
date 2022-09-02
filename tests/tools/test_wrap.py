@@ -52,7 +52,7 @@ def test_import_tools_import_run_modelsearch():
         ('run_allometry',),
         ('run_iivsearch',),
         ('run_modelsearch',),
-        ('run_resmod',),
+        ('run_ruvsearch',),
     ),
 )
 @pytest.mark.parametrize(
