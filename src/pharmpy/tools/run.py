@@ -10,6 +10,8 @@ from pharmpy.modeling.common import copy_model, read_model_from_database
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import execute_workflow, split_common_options
+from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
+from pharmpy.workflows.tool_database import ToolDatabase
 
 
 def fit(models, tool=None):
@@ -284,7 +286,7 @@ def _get_run_setup(common_options, toolname):
     return dispatcher, database
 
 
-def retrieve_models(path, names=None):
+def retrieve_models(source, names=None):
     """Retrieve models after a tool runs
 
     Any models created and run by the tool can be
@@ -292,8 +294,9 @@ def retrieve_models(path, names=None):
 
     Parameters
     ----------
-    path : str or Path
-        A path to the tool directory
+    source : str, Path, Results, ToolDatabase, ModelDatabase
+        Source where to find models. Can be a path (as str or Path), a results object, or a
+        ToolDatabase/ModelDatabase
     names : list
         List of names of the models to retrieve or None for all
 
@@ -302,14 +305,24 @@ def retrieve_models(path, names=None):
     list
         List of retrieved model objects
     """
-    path = Path(path)
-    # FIXME: Should be using metadata to know how to init databases
-    from pharmpy.workflows import LocalModelDirectoryDatabase
-
-    db = LocalModelDirectoryDatabase(path / 'models')
-    # FIXME: This is a hack. Add way of getting all model names from model database
+    if isinstance(source, Path) or isinstance(source, str):
+        path = Path(source)
+        # FIXME: Should be using metadata to know how to init databases
+        db = LocalModelDirectoryDatabase(path / 'models')
+    elif isinstance(source, pharmpy.results.Results):
+        if hasattr(source, 'tool_database'):
+            db = source.tool_database.model_database
+        else:
+            raise ValueError(
+                f'Results type \'{source.__class__.__name__}\' does not serialize tool database'
+            )
+    elif isinstance(source, ToolDatabase):
+        db = source.model_database
+    elif isinstance(source, ModelDatabase):
+        db = source
+    else:
+        raise NotImplementedError(f'Not implemented for type \'{type(source)}\'')
     if names is None:
-        names = [p.name for p in (path / 'models').glob('*') if not p.name.startswith('.')]
-
+        names = db.list_models()
     models = [db.retrieve_model(name) for name in names]
     return models

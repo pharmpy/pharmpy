@@ -5,7 +5,13 @@ from pathlib import Path
 import pytest
 
 import pharmpy
-from pharmpy.tools.run import _create_metadata_common, _create_metadata_tool, _get_run_setup
+from pharmpy.tools.run import (
+    _create_metadata_common,
+    _create_metadata_tool,
+    _get_run_setup,
+    read_results,
+    retrieve_models,
+)
 from pharmpy.utils import TemporaryDirectoryChanger
 from pharmpy.workflows import LocalDirectoryToolDatabase, local_dask
 
@@ -91,3 +97,42 @@ def test_create_metadata_common(tmp_path):
         path = Path(metadata['database']['path'])
         assert path.stem == 'tool_database_path'
         assert metadata['path'] == 'tool_database_path'
+
+
+def test_retrieve_models(testdata):
+    tool_database_path = testdata / 'results' / 'tool_databases' / 'modelsearch'
+
+    model_to_retrieve = ['modelsearch_candidate1']
+
+    models = retrieve_models(tool_database_path, names=model_to_retrieve)
+    assert len(models) == 1
+    assert models[0].name == model_to_retrieve[0]
+
+    model_names_all = [
+        'input_model',
+        'modelsearch_candidate1',
+        'modelsearch_candidate2',
+        'modelsearch_candidate3',
+        'modelsearch_candidate4',
+    ]
+
+    models = retrieve_models(tool_database_path)
+    assert [model.name for model in models] == model_names_all
+
+    res = read_results(tool_database_path / 'results.json')
+    models = retrieve_models(res, names=model_to_retrieve)
+    assert models[0].name == model_to_retrieve[0]
+
+    tool_db = LocalDirectoryToolDatabase('modelsearch', path=tool_database_path, exist_ok=True)
+    models = retrieve_models(tool_db, names=model_to_retrieve)
+    assert models[0].name == model_to_retrieve[0]
+
+    models = retrieve_models(tool_db.model_database, names=model_to_retrieve)
+    assert models[0].name == model_to_retrieve[0]
+
+    tool_without_db_in_results = testdata / 'results' / 'qa_results.json'
+    res = read_results(tool_without_db_in_results)
+    with pytest.raises(
+        ValueError, match='Results type \'QAResults\' does not serialize tool database'
+    ):
+        retrieve_models(res, names=model_to_retrieve)
