@@ -32,7 +32,7 @@ from .results import calculate_results
 
 
 def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
-    """Run the resmod tool. For more details, see :ref:`resmod`.
+    """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 
     Parameters
     ----------
@@ -47,20 +47,20 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
 
     Returns
     -------
-    ResmodResults
-        Resmod tool result object
+    RUVSearchResults
+        Ruvsearch tool result object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import run_resmod # doctest: +SKIP
-    >>> run_resmod(model=model)      # doctest: +SKIP
+    >>> from pharmpy.tools import run_ruvsearch # doctest: +SKIP
+    >>> run_ruvsearch(model=model)      # doctest: +SKIP
 
     """
     wf = Workflow()
-    wf.name = "resmod"
-    start_task = Task('start_resmod', start, model, groups, p_value, skip)
+    wf.name = "ruvsearch"
+    start_task = Task('start_ruvsearch', start, model, groups, p_value, skip)
     wf.add_task(start_task)
     task_results = Task('results', _results)
     wf.add_task(task_results, predecessors=[start_task])
@@ -133,7 +133,7 @@ def start(model, groups, p_value, skip):
         if current_iteration == 1:
             res = next_res
         else:
-            res.models = pd.concat([res.models, next_res.models])
+            res.cwres_models = pd.concat([res.cwres_models, next_res.cwres_models])
             res.best_model = next_res.best_model
         if not selected_model_name.startswith('base'):
             if res.best_model.description:
@@ -275,7 +275,9 @@ def _create_combined_model(input_model, current_iteration):
 
     prop_name = 'sigma_prop'
     add_population_parameter(model, prop_name, 1, lower=0)
-    model.dataset['IPRED'].replace(0, 2.225e-307, inplace=True)
+    df = model.dataset.copy()
+    df['IPRED'].replace(0, 2.225e-307, inplace=True)
+    model.dataset = df
     ipred_min = model.dataset['IPRED'].min()
     sigma_add_init = ipred_min / 2
     add_name = 'sigma_add'
@@ -324,12 +326,12 @@ def _time_after_dose(model):
 
 
 def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
-    if any(res.models['dofv'] > cutoff):
+    if any(res.cwres_models['dofv'] > cutoff):
         model = model.copy()
         update_initial_estimates(model)
-        model.name = f'best_resmod_{current_iteration}'
+        model.name = f'best_ruvsearch_{current_iteration}'
         selected_model_name = f'base_{current_iteration}'
-        idx = res.models['dofv'].idxmax()
+        idx = res.cwres_models['dofv'].idxmax()
         name = idx[0]
 
         if name.startswith('power'):
@@ -337,7 +339,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             set_initial_estimates(
                 model,
                 {
-                    'power1': res.models['parameters']
+                    'power1': res.cwres_models['parameters']
                     .loc['power', 1, current_iteration]
                     .get('theta')
                     + 1
@@ -348,7 +350,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             set_initial_estimates(
                 model,
                 {
-                    'IIV_RUV1': res.models['parameters']
+                    'IIV_RUV1': res.cwres_models['parameters']
                     .loc['IIV_on_RUV', 1, current_iteration]
                     .get('omega')
                 },
@@ -364,7 +366,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             set_initial_estimates(
                 model,
                 {
-                    'time_varying': res.models['parameters']
+                    'time_varying': res.cwres_models['parameters']
                     .loc[f"time_varying{i}", 1, current_iteration]
                     .get('theta')
                 },
@@ -374,10 +376,10 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             set_initial_estimates(
                 model,
                 {
-                    'sigma_prop': res.models['parameters']
+                    'sigma_prop': res.cwres_models['parameters']
                     .loc['combined', 1, current_iteration]
                     .get('sigma_prop'),
-                    'sigma_add': res.models['parameters']
+                    'sigma_add': res.cwres_models['parameters']
                     .loc['combined', 1, current_iteration]
                     .get('sigma_add'),
                 },

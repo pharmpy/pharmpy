@@ -8,6 +8,8 @@ from pharmpy.statements import (
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
+    ExplicitODESystem,
+    Infusion,
     Statements,
 )
 
@@ -85,6 +87,23 @@ def test_eq_modelstatements(testdata):
     assert model_pheno.statements == model_pheno.statements
     assert model_min.statements != model_pheno.statements
 
+    s1 = Assignment(S('KA'), S('X') + S('Y'))
+    s2 = Assignment(S('Z'), sympy.Integer(23) + S('M'))
+    s3 = Assignment(S('M'), sympy.Integer(2))
+    s4 = Assignment(S('G'), sympy.Integer(3))
+    s1 = Statements([s2, s1])
+    s2 = Statements([s3, s4])
+    assert s1 != s2
+
+
+def test_add():
+    s1 = Assignment(S('KA'), S('X') + S('Y'))
+    s2 = Assignment(S('Z'), sympy.Integer(23) + S('M'))
+    s3 = Assignment(S('M'), sympy.Integer(2))
+    s = Statements([s1, s2])
+    new = (s3,) + s
+    assert len(new) == 3
+
 
 def test_remove_symbol_definition():
     s1 = Assignment(S('KA'), S('X') + S('Y'))
@@ -120,6 +139,15 @@ def test_remove_symbol_definition():
     ns = s.remove_symbol_definitions([S('CL'), S('K')], s4)
     assert ns == Statements([s4])
 
+    s1 = Assignment(S('K'), sympy.Integer(16))
+    s2 = Assignment(S('CL'), sympy.Integer(23))
+    s3 = Assignment(S('CL'), S('CL') + S('K'))
+    s4 = Assignment(S('G'), S('X'))
+    s5 = Assignment(S('P'), S('K'))
+    s = Statements([s1, s2, s3, s4, s5])
+    ns = s.remove_symbol_definitions([S('CL'), S('K')], s4)
+    assert ns == Statements([s1, s4, s5])
+
 
 def test_reassign():
     s1 = Assignment(S('G'), sympy.Integer(3))
@@ -133,6 +161,8 @@ def test_reassign():
     s5 = Assignment(S('KA'), S('KA') + S('Q') + 1)
     s = Statements([s1, s2, s3, s4, s5])
     snew = s.reassign(S('KA'), S('F'))
+    assert snew == Statements([s1, s2, s3, Assignment(S('KA'), S('F'))])
+    snew = s.reassign('KA', 'F')
     assert snew == Statements([s1, s2, s3, Assignment(S('KA'), S('F'))])
 
 
@@ -209,6 +239,8 @@ def test_full_expression(pheno_path):
     assert expr == sympy.Symbol("THETA(1)") * sympy.Symbol("WGT") * sympy.exp(
         sympy.Symbol("ETA(1)")
     )
+    with pytest.raises(ValueError):
+        model.statements.full_expression("Y")
 
 
 def test_to_explicit_ode_system(pheno_path):
@@ -225,6 +257,13 @@ def test_to_explicit_ode_system(pheno_path):
 
     assert exodes.amounts == sympy.Matrix([sympy.Symbol('A_CENTRAL'), sympy.Symbol('A_OUTPUT')])
 
+    newstats = model.statements.to_explicit_system()
+    assert isinstance(newstats.ode_system, ExplicitODESystem)
+
+    back = model.statements.to_compartmental_system()
+    assert isinstance(back.ode_system, CompartmentalSystem)
+    assert len(newstats) == len(back)
+
 
 def test_repr_latex():
     s1 = Assignment(S('KA'), S('X') + S('Y'))
@@ -237,6 +276,17 @@ def test_repr_html():
     stats = Statements([s1])
     html = stats._repr_html_()
     assert 'X + Y' in html
+
+    cb = CompartmentalSystemBuilder()
+    dose = Bolus('AMT')
+    central = Compartment('CENTRAL', dose)
+    output = Compartment('OUTPUT')
+    cb.add_compartment(central)
+    cb.add_compartment(output)
+    cb.add_flow(central, output, S('K'))
+    cs = CompartmentalSystem(cb)
+    stats = Statements([cs])
+    assert type(stats._repr_html_()) == str
 
 
 def test_direct_dependencies(pheno_path):
@@ -277,6 +327,8 @@ def test_dependencies(pheno_path):
         S('WGT'),
         S('t'),
     }
+    with pytest.raises(KeyError):
+        model.statements.dependencies("NONEXISTING")
 
 
 def test_compartment_names(testdata):
@@ -302,3 +354,26 @@ def test_builder():
     cm = CompartmentalSystem(cb)
     assert cm.find_compartment('DEPOT').dose == dose
     assert cm.central_compartment.dose is None
+
+
+def test_infusion_repr():
+    inf = Infusion('AMT', rate='R1')
+    assert repr(inf) == 'Infusion(AMT, rate=R1)'
+    inf = Infusion('AMT', duration='D1')
+    assert repr(inf) == 'Infusion(AMT, duration=D1)'
+
+
+def test_infusion_create():
+    inf = Infusion.create('AMT', rate='R1')
+    assert inf.rate == S('R1')
+
+    with pytest.raises(ValueError):
+        Infusion.create('AMT', rate='R1', duration='D1')
+
+    with pytest.raises(ValueError):
+        Infusion.create('AMT')
+
+
+def test_compartment_repr():
+    comp = Compartment("CENTRAL", lag_time='LT')
+    assert repr(comp) == "Compartment(CENTRAL, lag_time=LT)"

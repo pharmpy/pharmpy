@@ -17,6 +17,6 @@ The `models` table contains a summary of all resmod models
     :hide-code:
 
     import pathlib
-    from pharmpy.tools.resmod.results import psn_resmod_results
+    from pharmpy.tools.ruvsearch.results import psn_resmod_results
     res = psn_resmod_results(pathlib.Path('tests/testdata/psn/resmod_dir1'))
-    res.models
+    res.cwres_models

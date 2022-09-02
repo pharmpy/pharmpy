@@ -479,7 +479,7 @@ def get_covariate_baselines(model):
     covariates = model.datainfo.typeix['covariate'].names
     idlab = model.datainfo.id_column.name
     df = model.dataset[covariates + [idlab]]
-    df.set_index(idlab, inplace=True)
+    df = df.set_index(idlab)
     return df.groupby(idlab).nth(0)
 
 
@@ -756,6 +756,61 @@ def get_mdv(model):
     return series.astype('int32').rename('MDV')
 
 
+def get_evid(model):
+    """Get the evid from model dataset
+
+    If an event column is present this will be extracted otherwise
+    an evid column will be created.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.Series
+        EVID
+    """
+    di = model.datainfo
+    try:
+        eventcols = di.typeix['event']
+    except IndexError:
+        pass
+    else:
+        return eventcols[0]
+    mdv = get_mdv(model)
+    return mdv.rename('EVID')
+
+
+def get_cmt(model):
+    """Get the cmt (compartment) column from the model dataset
+
+    If a cmt column is present this will be extracted otherwise
+    a cmt column will be created.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.Series
+        CMT
+    """
+    di = model.datainfo
+    try:
+        cmtcols = di.typeix['compartment']
+    except IndexError:
+        pass
+    else:
+        return cmtcols[0]
+    evid = get_evid(model)
+    # FIXME: Should find the number of the dosing compartment
+    return evid.rename('CMT')
+
+
 def add_time_after_dose(model):
     """Calculate and add a TAD column to the dataset"
 
@@ -788,7 +843,7 @@ def add_time_after_dose(model):
     translate_nmtran_time(temp)
     idv = temp.datainfo.idv_column.name
     idlab = temp.datainfo.id_column.name
-    df = model.dataset
+    df = model.dataset.copy()
     df['_NEWTIME'] = temp.dataset[idv]
 
     try:
@@ -890,7 +945,7 @@ def get_concentration_parameters_from_data(model):
     model = model.copy()
     add_time_after_dose(model)
     doseid = get_doseid(model)
-    df = model.dataset
+    df = model.dataset.copy()
     df['DOSEID'] = doseid
     idlab = model.datainfo.id_column.name
     dv = model.datainfo.dv_column.name
@@ -999,7 +1054,7 @@ def drop_columns(model, column_names, mark=False):
                 newcol = col.derive(drop=True)
                 newcols.append(newcol)
             else:
-                model.dataset.drop(col.name, axis=1, inplace=True)
+                model.dataset = model.dataset.drop(col.name, axis=1)
         else:
             newcols.append(col)
     model.datainfo = di.derive(columns=newcols)
@@ -1173,7 +1228,7 @@ def translate_nmtran_time(model):
         Reference to the same model object
     """
     timecol, datecol = _find_time_and_date_columns(model)
-    df = model.dataset
+    df = model.dataset.copy()
     idcol = model.datainfo.id_column.name
     if datecol is None:
         if timecol is not None:

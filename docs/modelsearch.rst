@@ -124,7 +124,7 @@ compartment at a given step. This is done in order to allow for better initial e
 Exhaustive search
 ~~~~~~~~~~~~~~~~~
 
-An exhaustive search will test all possible combinations of features in the search space. All candidate models will be
+An ``exhaustive`` search will test all possible combinations of features in the search space. All candidate models will be
 created simultaneously from the input model.
 
 .. code::
@@ -156,7 +156,7 @@ created simultaneously from the input model.
 
 Exhaustive stepwise search
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-The exhaustive stepwise search applies features in a stepwise manner such that only one feature is changed at a time.
+The ``exhaustive_stepwise`` search applies features in a stepwise manner such that only one feature is changed at a time.
 Between each step, the initial estimates from the new candidate model will be updated from the final estimates from the
 previous step.
 
@@ -199,7 +199,7 @@ previous step.
 
 Reduced stepwise search
 ~~~~~~~~~~~~~~~~~~~~~~~
-The reduced stepwise search is similar to the exhaustive stepwise search, but after each layer it compares models with
+The ``reduced_stepwise`` search is similar to the exhaustive stepwise search, but after each layer it compares models with
 the same features, where the compared models were obtained by adding the features in a different order. Next, the
 algorithm uses the best model from each comparison as the basis for the next layer, where the subsequent feature is
 added.
@@ -263,8 +263,11 @@ The different strategies can be seen here:
 +------------------------+----------------------------------------------------------------------------------+
 | ``'fullblock'``        | IIV is added to all structural parameters, and all IIVs will be in a full block  |
 +------------------------+----------------------------------------------------------------------------------+
-| ``'absorption_delay'`` | IIV is added to the absorption delay parameter (default)                         |
+| ``'absorption_delay'`` | IIV is added only to the absorption delay parameter (default)                    |
 +------------------------+----------------------------------------------------------------------------------+
+
+For more information regarding which parameters are counted as structural parameters, see
+:py:func:`pharmpy.modeling.add_pk_iiv`.
 
 .. _ranking_modelsearch:
 

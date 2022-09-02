@@ -5,12 +5,12 @@ import pandas as pd
 from pharmpy.results import Results
 
 
-class ResmodResults(Results):
-    """Resmod results class"""
+class RUVSearchResults(Results):
+    """RUVSearch results class"""
 
     def __init__(
         self,
-        models=None,
+        cwres_models=None,
         summary_individuals=None,
         summary_individuals_count=None,
         best_model=None,
@@ -18,7 +18,7 @@ class ResmodResults(Results):
         summary_tool=None,
         summary_errors=None,
     ):
-        self.models = models
+        self.cwres_models = cwres_models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
         self.best_model = best_model
@@ -40,7 +40,7 @@ def calculate_results(models):
             model
             for model in models
             if model.name.endswith(f'_{iteration}')
-            and not model.name.startswith('best_resmod')
+            and not model.name.startswith('best_ruvsearch')
             and not model.name.startswith('base')
         ]
 
@@ -87,13 +87,13 @@ def calculate_results(models):
     df_final.set_index(['model', 'dvid', 'iteration'], inplace=True)
     df_final.sort_index(inplace=True)
 
-    res = ResmodResults(models=df_final)
+    res = RUVSearchResults(cwres_models=df_final)
     return res
 
 
 def psn_resmod_results(path):
     path = Path(path)
-    res = ResmodResults()
+    res = RUVSearchResults()
     respath = path / 'resmod_results.csv'
     if respath.is_file():
         df = pd.read_csv(respath, names=range(40), skiprows=[0], engine='python')
@@ -114,5 +114,5 @@ def psn_resmod_results(path):
         parameters[rowind] = d
     parameters.index = df2.index
     df2['parameters'] = parameters
-    res.models = df2
+    res.cwres_models = df2
     return res

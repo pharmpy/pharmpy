@@ -208,7 +208,7 @@ def convert_model(model, to_format):
         new.parameters = model.parameters
         new.random_variables = model.random_variables.copy()
         new.statements = model.statements
-        new.dataset = model.dataset.copy()
+        new.dataset = model.dataset
         new.estimation_steps = model.estimation_steps
         new.datainfo = model.datainfo
         new.name = model.name

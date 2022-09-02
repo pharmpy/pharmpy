@@ -1005,7 +1005,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     df = model_4.dataset
     if logtransformed_covariates:
         for lncov in logtransformed_covariates:
-            df[f'LN{lncov}'] = np.log(df[lncov])
+            df = df.copy()[f'LN{lncov}'] = np.log(df[lncov])
         model_4.dataset = df
 
     nunique = get_baselines(model_4)[all_covariates].nunique()

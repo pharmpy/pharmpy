@@ -221,11 +221,11 @@ def run_covsearch(args):
     )
 
 
-def run_resmod(args):
+def run_ruvsearch(args):
     from pharmpy.tools import run_tool
 
     run_tool(
-        'resmod',
+        'ruvsearch',
         model=args.model,
         groups=args.groups,
         p_value=args.p_value,
@@ -300,7 +300,7 @@ def data_filter(args):
         df = args.model_or_dataset
     expression = ' '.join(args.expressions)
     try:
-        df.query(expression, inplace=True)
+        df = df.query(expression)
     except SyntaxError:
         error(SyntaxError(f'Invalid syntax of query: "{expression}"'))
     except BaseException as e:
@@ -315,7 +315,7 @@ def data_append(args):
     except plugin_utils.PluginError:
         df = args.model_or_dataset
     try:
-        df.eval(args.expression, inplace=True)
+        df = df.eval(args.expression)
     except SyntaxError:
         error(SyntaxError(f'Invalid syntax of expression: "{args.expression}"'))
     write_model_or_dataset(args.model_or_dataset, df, args.output_file, args.force)
@@ -323,7 +323,7 @@ def data_append(args):
 
 def write_model_or_dataset(model_or_dataset, new_df, path, force):
     """Write model or dataset to output_path or using default names"""
-    if hasattr(model_or_dataset, 'pharmpy'):
+    if isinstance(model_or_dataset, pd.DataFrame):
         # Is a dataset
         try:
             # If no output_file supplied will use name of df
@@ -750,7 +750,7 @@ def results_linearize(args):
 
 
 def results_resmod(args):
-    from pharmpy.tools.resmod.results import psn_resmod_results
+    from pharmpy.tools.ruvsearch.results import psn_resmod_results
 
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
@@ -1147,9 +1147,9 @@ parser_definition = [
                     }
                 },
                 {
-                    'resmod': {
+                    'ruvsearch': {
                         'help': 'Search for best residual error model',
-                        'func': run_resmod,
+                        'func': run_ruvsearch,
                         'parents': [args_model_input],
                         'args': [
                             {
@@ -1892,16 +1892,16 @@ parser_definition = [
                     }
                 },
                 {
-                    'resmod': {
-                        'help': 'Generate resmod results',
-                        'description': 'Generate results from a PsN resmod run',
+                    'ruvsearch': {
+                        'help': 'Generate ruvsearch results',
+                        'description': 'Generate results from a PsN ruvsearch run',
                         'func': results_resmod,
                         'args': [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
                                 'type': pathlib.Path,
-                                'help': 'Path to PsN resmod run directory',
+                                'help': 'Path to PsN ruvsearch run directory',
                             }
                         ],
                     }

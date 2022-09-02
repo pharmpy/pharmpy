@@ -1,9 +1,9 @@
-from pharmpy.tools.resmod.results import psn_resmod_results
+from pharmpy.tools.ruvsearch.results import psn_resmod_results
 
 
 def test_resmod_results(testdata):
     res = psn_resmod_results(testdata / 'psn' / 'resmod_dir1')
-    assert list(res.models['dOFV']) == [
+    assert list(res.cwres_models['dOFV']) == [
         -1.31,
         -3.34,
         -13.91,
@@ -26,6 +26,6 @@ def test_resmod_results(testdata):
 
 def test_resmod_results_dvid(testdata):
     res = psn_resmod_results(testdata / 'psn' / 'resmod_dir2')
-    df = res.models
+    df = res.cwres_models
     assert df['dOFV'].loc[1, '1', 'autocorrelation'] == -0.74
     assert df['dOFV'].loc[1, 'sum', 'tdist'] == -35.98
