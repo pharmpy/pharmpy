@@ -287,7 +287,8 @@ from pharmpy.tools.mfl.parse import parse
     ),
     ids=repr,
 )
-def test_all_funcs(pheno, source, expected):
+def test_all_funcs(load_model_for_test, pheno_path, source, expected):
+    pheno = load_model_for_test(pheno_path)
     statements = parse(source)
     funcs = all_funcs(pheno, statements)
     keys = funcs.keys()

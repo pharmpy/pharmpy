@@ -1,9 +1,9 @@
+import os.path
 from pathlib import Path
 
 import pytest
 import sympy
 
-from pharmpy import Model
 from pharmpy.modeling import (
     convert_model,
     copy_model,
@@ -20,14 +20,31 @@ from pharmpy.modeling import (
 )
 
 
-def test_read_model(testdata):
-    model = read_model(testdata / 'nonmem' / 'minimal.mod')
+def test_read_model_path(testdata):
+    path = testdata / 'nonmem' / 'minimal.mod'
+    model = read_model(path)
     assert model.parameters['THETA(1)'].init == 0.1
-    model2 = read_model(str(testdata / 'nonmem' / 'minimal.mod'))
-    assert model2.parameters['THETA(1)'].init == 0.1
 
 
-def test_read_model_from_string(testdata):
+def test_read_model_str(testdata):
+    path = str(testdata / 'nonmem' / 'minimal.mod')
+    model = read_model(path)
+    assert model.parameters['THETA(1)'].init == 0.1
+
+
+def test_read_model_expanduser(testdata):
+    model_path = testdata / "nonmem" / "minimal.mod"
+    model_path_relative_to_home = ''
+    try:
+        model_path_relative_to_home = model_path.relative_to(Path.home())
+    except ValueError:
+        pytest.skip(f'{model_path} is not a descendant of home directory ({Path.home()})')
+    path = os.path.join('~', model_path_relative_to_home)
+    model = read_model(path)
+    assert model.parameters['THETA(1)'].init == 0.1
+
+
+def test_read_model_from_string():
     model = read_model_from_string(
         """$PROBLEM base model
 $INPUT ID DV TIME
@@ -45,14 +62,14 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     assert model.parameters['THETA(1)'].init == 0.1
 
 
-def test_write_model(testdata, tmp_path):
-    model = read_model(testdata / 'nonmem' / 'minimal.mod')
+def test_write_model(testdata, load_model_for_test, tmp_path):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     write_model(model, tmp_path / 'run1.mod')
     assert Path(tmp_path / 'run1.mod').is_file()
 
 
-def test_generate_model_code(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
+def test_generate_model_code(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     fix_parameters(model, ['THETA(1)'])
     assert generate_model_code(model).split('\n')[7] == '$THETA 0.1 FIX'
 
@@ -66,9 +83,9 @@ def test_load_example_model():
         load_example_model("grekztalb23=")
 
 
-def test_get_model_covariates(pheno, testdata):
+def test_get_model_covariates(pheno, testdata, load_model_for_test):
     assert set(get_model_covariates(pheno)) == {sympy.Symbol('WGT'), sympy.Symbol('APGR')}
-    minimal = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
+    minimal = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert set(get_model_covariates(minimal)) == set()
 
 

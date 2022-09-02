@@ -3,7 +3,6 @@ import pandas as pd
 from pytest import approx
 
 import pharmpy.tools.cdd.results as cdd
-from pharmpy import Model
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
 
 
@@ -27,10 +26,10 @@ def test_psn_options():
     }
 
 
-def test_cdd_psn(testdata):
+def test_cdd_psn(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
-    base_model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
-    cdd_models = [Model.create_model(p) for p in model_paths(path, 'cdd_*.mod')]
+    base_model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    cdd_models = [load_model_for_test(p) for p in model_paths(path, 'cdd_*.mod')]
     skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
 
     cdd_bin_id = cdd.calculate_results(base_model, cdd_models, 'ID', skipped_individuals)
@@ -126,13 +125,13 @@ def test_cdd_psn(testdata):
     pd.testing.assert_frame_equal(cdd_bin_id.case_results, correct, rtol=1e-4)
 
 
-def test_cdd_calculate_results(testdata):
+def test_cdd_calculate_results(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
     skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
-    base_model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+    base_model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     cdd_model_paths = model_paths(path, 'cdd_*.mod')
 
-    cdd_models = [Model.create_model(p) for p in cdd_model_paths]
+    cdd_models = [load_model_for_test(p) for p in cdd_model_paths]
 
     # Results for plain PsN run
     delta_ofv = cdd.compute_delta_ofv(base_model, cdd_models, skipped_individuals)
@@ -236,9 +235,9 @@ def test_cdd_calculate_results(testdata):
 
     # Replace three estimated cdd_models with fake models without estimates
     # and recompute results to verify handling of missing output
-    cdd_models[0] = Model.create_model(path / 'm1' / 'rem_1.mod')
-    cdd_models[1] = Model.create_model(path / 'm1' / 'rem_2.mod')
-    cdd_models[3] = Model.create_model(path / 'm1' / 'rem_4.mod')
+    cdd_models[0] = load_model_for_test(path / 'm1' / 'rem_1.mod')
+    cdd_models[1] = load_model_for_test(path / 'm1' / 'rem_2.mod')
+    cdd_models[3] = load_model_for_test(path / 'm1' / 'rem_4.mod')
 
     res = cdd.calculate_results(base_model, cdd_models, 'ID', skipped_individuals)
 

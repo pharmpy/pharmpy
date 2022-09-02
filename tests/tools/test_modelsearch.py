@@ -1,9 +1,7 @@
 import functools
-from io import StringIO
 
 import pytest
 
-from pharmpy import Model
 from pharmpy.modeling import set_peripheral_compartments, set_zero_order_absorption
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.modelsearch.algorithms import (
@@ -109,7 +107,7 @@ def test_reduced_stepwise_algorithm(mfl, no_of_models):
     assert all(task.name == 'run0' for task in wf.output_tasks)
 
 
-def test_check_input(testdata):
+def test_check_input(create_model_for_test, testdata):
     model_code = '''$PROBLEM
 $INPUT ID VISI XAT2=DROP DGRP DOSE FLAG=DROP ONO=DROP
        XIME=DROP NEUY SCR AGE SEX NYH=DROP WT DROP ACE
@@ -131,7 +129,7 @@ $SIGMA 0.013241
 
 $ESTIMATION METHOD=1 INTERACTION
 '''
-    model = Model.create_model(StringIO(model_code))
+    model = create_model_for_test(model_code)
     model.datainfo = model.datainfo.derive(
         path=testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv'
     )

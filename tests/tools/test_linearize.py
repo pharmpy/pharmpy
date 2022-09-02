@@ -3,15 +3,14 @@ from io import StringIO
 import pandas as pd
 import pytest
 
-from pharmpy import Model
 from pharmpy.tools.linearize.results import calculate_results, psn_linearize_results
 from pharmpy.tools.linearize.tool import create_linearized_model
 from pharmpy.tools.psn_helpers import create_results
 
 
-def test_ofv(testdata):
-    base = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    lin = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+def test_ofv(load_model_for_test, testdata):
+    base = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    lin = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     res = calculate_results(base, lin)
     correct = """,ofv
 base,730.894727
@@ -22,9 +21,9 @@ lin_estimated,730.847272
     pd.testing.assert_frame_equal(res.ofv, correct, atol=1e-6)
 
 
-def test_iofv(testdata):
-    base = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    lin = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+def test_iofv(load_model_for_test, testdata):
+    base = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    lin = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     res = calculate_results(base, lin)
     correct = """,base,linear,delta
 1,7.742852,7.722670,-0.020182
@@ -106,8 +105,8 @@ def test_create_results(testdata):
     assert res.ofv['ofv']['base'] == pytest.approx(730.894727)
 
 
-def test_create_linearized_model(testdata):
+def test_create_linearized_model(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'pheno_real.mod'
-    model = Model.create_model(path)
+    model = load_model_for_test(path)
     linbase = create_linearized_model(model)
     assert len(linbase.statements) == 8
