@@ -5,9 +5,8 @@
 import re
 
 from pharmpy.deps import sympy
+from pharmpy.model import Assignment, Parameter, Parameters
 from pharmpy.modeling.help_functions import _format_input_list, _get_etas
-from pharmpy.parameters import Parameter, Parameters
-from pharmpy.statements import Assignment
 
 from .expressions import create_symbol
 

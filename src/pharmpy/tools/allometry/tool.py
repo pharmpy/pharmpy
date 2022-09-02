@@ -1,5 +1,6 @@
 from functools import partial
 
+from pharmpy.model import Results
 from pharmpy.modeling import (
     add_allometry,
     summarize_errors,
@@ -7,7 +8,6 @@ from pharmpy.modeling import (
     summarize_individuals_count_table,
     summarize_modelfit_results,
 )
-from pharmpy.results import Results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 

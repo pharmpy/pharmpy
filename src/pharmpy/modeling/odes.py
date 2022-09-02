@@ -3,20 +3,21 @@
 """
 
 from pharmpy.deps import sympy
-from pharmpy.estimation import EstimationSteps
-from pharmpy.model import ModelError
-from pharmpy.modeling.help_functions import _as_integer
-from pharmpy.objects import ExplicitODESystem
-from pharmpy.parameters import Parameter, Parameters
-from pharmpy.statements import (
+from pharmpy.model import (
     Assignment,
     Bolus,
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
+    EstimationSteps,
+    ExplicitODESystem,
     Infusion,
+    ModelError,
+    Parameter,
+    Parameters,
     Statements,
 )
+from pharmpy.modeling.help_functions import _as_integer
 
 from .common import remove_unused_parameters_and_rvs, rename_symbols
 from .data import get_observations

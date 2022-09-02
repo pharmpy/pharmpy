@@ -3,7 +3,12 @@ from .datainfo import ColumnInfo, DataInfo
 from .estimation import EstimationStep, EstimationSteps
 from .model import Model, ModelError, ModelfitResultsError, ModelSyntaxError
 from .parameters import Parameter, Parameters
-from .random_variables import RandomVariable, RandomVariables, VariabilityHierarchy
+from .random_variables import (
+    RandomVariable,
+    RandomVariables,
+    VariabilityHierarchy,
+    VariabilityLevel,
+)
 from .results import Results
 from .statements import (
     Assignment,
@@ -14,11 +19,11 @@ from .statements import (
     ExplicitODESystem,
     Infusion,
     ODESystem,
+    Statement,
     Statements,
-    sympify,
 )
 
-__all__ = [
+__all__ = (
     'Assignment',
     'Bolus',
     'ColumnInfo',
@@ -35,7 +40,6 @@ __all__ = [
     'Model',
     'ModelError',
     'ModelfitResultsError',
-    'Statements',
     'ModelSyntaxError',
     'ODESystem',
     'Parameter',
@@ -43,6 +47,8 @@ __all__ = [
     'RandomVariable',
     'RandomVariables',
     'Results',
+    'Statement',
+    'Statements',
     'VariabilityHierarchy',
-    'sympify',
-]
+    'VariabilityLevel',
+)

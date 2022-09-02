@@ -5,9 +5,8 @@ from pathlib import Path
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import linalg
-from pharmpy.model import Model
+from pharmpy.model import Model, Results
 from pharmpy.modeling import plot_individual_predictions
-from pharmpy.results import Results
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
 
 

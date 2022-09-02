@@ -6,21 +6,28 @@ import warnings
 from io import StringIO
 from pathlib import Path
 
-import pharmpy.data
 import pharmpy.model
 import pharmpy.plugins.nonmem
 import pharmpy.plugins.nonmem.dataset
-from pharmpy.data import DatasetError
-from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.deps import sympy
-from pharmpy.estimation import EstimationStep, EstimationSteps
-from pharmpy.model import ModelSyntaxError
+from pharmpy.model import (
+    Assignment,
+    ColumnInfo,
+    CompartmentalSystem,
+    DataInfo,
+    DatasetError,
+    EstimationStep,
+    EstimationSteps,
+    ModelSyntaxError,
+    ODESystem,
+    Parameter,
+    Parameters,
+    RandomVariable,
+    RandomVariables,
+)
 from pharmpy.modeling.write_csv import write_csv
-from pharmpy.parameters import Parameter, Parameters
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
-from pharmpy.random_variables import RandomVariable, RandomVariables
-from pharmpy.statements import Assignment, CompartmentalSystem, ODESystem
 from pharmpy.workflows import NullModelDatabase, default_model_database
 
 from .advan import compartmental_model

@@ -1,9 +1,8 @@
 from pharmpy.expressions import sympify
-from pharmpy.parameters import Parameter, Parameters
-from pharmpy.statements import Assignment
+from pharmpy.model import Assignment, Parameter, Parameters
 
-from . import find_clearance_parameters, find_volume_parameters
 from .expressions import create_symbol
+from .odes import find_clearance_parameters, find_volume_parameters
 
 
 def add_allometry(

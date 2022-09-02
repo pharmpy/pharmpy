@@ -2,15 +2,16 @@ from itertools import filterfalse
 from typing import Any, Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
-from pharmpy.model import Model
-from pharmpy.random_variables import RandomVariable, RandomVariables
-from pharmpy.statements import (
+from pharmpy.expressions import sympify
+from pharmpy.model import (
     Assignment,
     Compartment,
     CompartmentalSystem,
+    Model,
     ODESystem,
+    RandomVariable,
+    RandomVariables,
     Statements,
-    sympify,
 )
 
 from .parameters import get_thetas

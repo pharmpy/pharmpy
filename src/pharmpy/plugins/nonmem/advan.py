@@ -2,8 +2,7 @@ import re
 
 from pharmpy.deps import sympy
 from pharmpy.expressions import canonical_ode_rhs
-from pharmpy.model import ModelSyntaxError
-from pharmpy.statements import (
+from pharmpy.model import (
     Assignment,
     Bolus,
     Compartment,
@@ -11,6 +10,7 @@ from pharmpy.statements import (
     CompartmentalSystemBuilder,
     ExplicitODESystem,
     Infusion,
+    ModelSyntaxError,
 )
 
 

@@ -1,5 +1,5 @@
 from pharmpy.deps import pandas as pd
-from pharmpy.results import Results
+from pharmpy.model import Results
 
 
 class AggregatedModelfitResults(Results):

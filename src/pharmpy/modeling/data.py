@@ -2,14 +2,13 @@ import re
 from pathlib import Path
 from typing import Union
 
-from pharmpy.data import DatasetError
-from pharmpy.datainfo import DataInfo
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.deps.rich import box as rich_box
 from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import table as rich_table
+from pharmpy.model import DataInfo, DatasetError
 
 
 def get_ids(model):

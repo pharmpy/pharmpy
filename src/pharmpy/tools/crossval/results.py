@@ -1,8 +1,7 @@
 import re
 
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Model
-from pharmpy.results import Results
+from pharmpy.model import Model, Results
 
 
 class CrossvalResults(Results):

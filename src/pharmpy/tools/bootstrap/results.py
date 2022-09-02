@@ -5,8 +5,8 @@ import pharmpy.visualization
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import stats
-from pharmpy.model import Model
-from pharmpy.results import ModelfitResults, Results
+from pharmpy.model import Model, Results
+from pharmpy.results import ModelfitResults
 from pharmpy.tools.psn_helpers import cmd_line_model_path, model_paths
 
 

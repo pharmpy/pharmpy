@@ -94,7 +94,7 @@ class ColumnInfo:
 
         Examples
         --------
-        >>> from pharmpy.objects import ColumnInfo
+        >>> from pharmpy.model import ColumnInfo
         >>> ColumnInfo.convert_pd_dtype_to_datatype("float64")
         'float64'
         """
@@ -116,7 +116,7 @@ class ColumnInfo:
 
         Examples
         --------
-        >>> from pharmpy.objects import ColumnInfo
+        >>> from pharmpy.model import ColumnInfo
         >>> ColumnInfo.convert_datatype_to_pd_dtype("float64")
         'float64'
         >>> ColumnInfo.convert_datatype_to_pd_dtype("nmtran-date")
@@ -318,7 +318,7 @@ class ColumnInfo:
 
         Examples
         --------
-        >>> from pharmpy.datainfo import ColumnInfo
+        >>> from pharmpy.model import ColumnInfo
         >>> col1 = ColumnInfo("WGT", scale='ratio')
         >>> col1.is_categorical()
         False
@@ -343,7 +343,7 @@ class ColumnInfo:
 
         Examples
         --------
-        >>> from pharmpy.datainfo import ColumnInfo
+        >>> from pharmpy.model import ColumnInfo
         >>> col1 = ColumnInfo("WGT", scale='ratio')
         >>> col1.is_numerical()
         True

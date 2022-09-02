@@ -9,8 +9,7 @@ from operator import add, mul
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
-from pharmpy.parameters import Parameter, Parameters
-from pharmpy.statements import Assignment
+from pharmpy.model import Assignment, Parameter, Parameters
 
 from .data import get_baselines
 

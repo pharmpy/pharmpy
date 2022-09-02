@@ -8,8 +8,7 @@ from sympy import Symbol as symbol
 import pharmpy.math
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.model import ModelSyntaxError
-from pharmpy.parameters import Parameter
+from pharmpy.model import ModelSyntaxError, Parameter, RandomVariable, RandomVariables
 from pharmpy.parse_utils.generic import (
     AttrToken,
     AttrTree,
@@ -17,7 +16,6 @@ from pharmpy.parse_utils.generic import (
     insert_before_or_at_end,
     remove_token_and_space,
 )
-from pharmpy.random_variables import RandomVariable, RandomVariables
 
 from .parsers import OmegaRecordParser
 from .record import Record

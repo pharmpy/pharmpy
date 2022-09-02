@@ -3,7 +3,7 @@ from itertools import chain
 from operator import __and__
 from typing import Iterable, Set
 
-import sympy
+from pharmpy.deps import sympy
 
 
 def sympify(expr):

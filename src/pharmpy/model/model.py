@@ -17,11 +17,12 @@ import pathlib
 import warnings
 from pathlib import Path
 
+from pharmpy.deps import sympy
+from pharmpy.plugins.utils import detect_model
+
 from .datainfo import ColumnInfo, DataInfo
-from .deps import sympy
 from .estimation import EstimationSteps
 from .parameters import Parameters
-from .plugins.utils import detect_model
 from .random_variables import RandomVariables
 from .statements import Statements
 

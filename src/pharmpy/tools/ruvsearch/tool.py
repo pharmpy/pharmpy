@@ -5,7 +5,16 @@ import pharmpy.tools
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.deps.scipy import stats
-from pharmpy.estimation import EstimationStep, EstimationSteps
+from pharmpy.model import (
+    Assignment,
+    EstimationStep,
+    EstimationSteps,
+    Parameter,
+    Parameters,
+    RandomVariable,
+    RandomVariables,
+    Statements,
+)
 from pharmpy.modeling import (
     add_population_parameter,
     add_time_after_dose,
@@ -21,8 +30,6 @@ from pharmpy.modeling import (
     summarize_modelfit_results,
 )
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
-from pharmpy.objects import Parameter, Parameters, RandomVariable, RandomVariables
-from pharmpy.statements import Assignment, Statements
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow

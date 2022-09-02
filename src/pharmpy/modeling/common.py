@@ -9,8 +9,14 @@ from pathlib import Path
 
 import pharmpy.config as config
 from pharmpy.deps import sympy
-from pharmpy.objects import Model, Parameter, Parameters, RandomVariables
-from pharmpy.statements import Assignment, CompartmentalSystem
+from pharmpy.model import (
+    Assignment,
+    CompartmentalSystem,
+    Model,
+    Parameter,
+    Parameters,
+    RandomVariables,
+)
 from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import default_model_database
 

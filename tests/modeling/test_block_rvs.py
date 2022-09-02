@@ -1,9 +1,9 @@
 import pytest
 from sympy import Symbol as S
 
+from pharmpy.model import RandomVariable, RandomVariables
 from pharmpy.modeling import add_iiv, create_joint_distribution
 from pharmpy.modeling.block_rvs import _choose_param_init
-from pharmpy.random_variables import RandomVariable, RandomVariables
 from pharmpy.results import ModelfitResults
 
 

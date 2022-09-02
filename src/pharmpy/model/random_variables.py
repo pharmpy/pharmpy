@@ -37,7 +37,7 @@ class RandomVariable:
     --------
     >>> import sympy
     >>> import sympy.stats
-    >>> from pharmpy.objects import RandomVariable
+    >>> from pharmpy.model import RandomVariable
     >>> name = "ETA(1)"
     >>> sd = sympy.sqrt(sympy.Symbol('OMEGA(1,1)'))
     >>> rv = RandomVariable(name, "IIV", sympy.stats.Normal(name, 0, sd))
@@ -118,7 +118,7 @@ class RandomVariable:
 
         Example
         -------
-        >>> from pharmpy.objects import RandomVariable, Parameter
+        >>> from pharmpy.model import RandomVariable, Parameter
         >>> omega = Parameter('OMEGA_CL', 0.1)
         >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
         >>> rv
@@ -150,7 +150,7 @@ class RandomVariable:
 
         Example
         -------
-        >>> from pharmpy.objects import RandomVariable, Parameter
+        >>> from pharmpy.model import RandomVariable, Parameter
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> corr_cl_v = Parameter("OMEGA_CL_V", 0.01)
@@ -237,7 +237,7 @@ class RandomVariable:
         Examples
         --------
         >>> import sympy
-        >>> from pharmpy.objects import RandomVariable, Parameter
+        >>> from pharmpy.model import RandomVariable, Parameter
         >>> omega = Parameter("OMEGA_CL", 0.1)
         >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
         >>> rv.subs({omega.symbol: sympy.Symbol("OMEGA_NEW")})
@@ -532,7 +532,7 @@ class RandomVariables(MutableSequence):
 
     Examples
     --------
-    >>> from pharmpy.objects import RandomVariables, RandomVariable, Parameter
+    >>> from pharmpy.model import RandomVariables, RandomVariable, Parameter
     >>> omega = Parameter("OMEGA_CL", 0.1)
     >>> rv = RandomVariable.normal("IIV_CL", "iiv", 0, omega.symbol)
     >>> rvs = RandomVariables([rv])
@@ -801,7 +801,7 @@ class RandomVariables(MutableSequence):
         Examples
         --------
         >>> import sympy
-        >>> from pharmpy.objects import RandomVariables, Parameter
+        >>> from pharmpy.model import RandomVariables, Parameter
         >>> omega = Parameter("OMEGA_CL", 0.1)
         >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
         >>> rvs = RandomVariables([rv])
@@ -831,7 +831,7 @@ class RandomVariables(MutableSequence):
 
         Examples
         --------
-        >>> from pharmpy.objects import RandomVariables, RandomVariable, Parameter
+        >>> from pharmpy.model import RandomVariables, RandomVariable, Parameter
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> corr_cl_v = Parameter("OMEGA_CL_V", 0.01)
@@ -889,7 +889,7 @@ class RandomVariables(MutableSequence):
 
         Examples
         --------
-        >>> from pharmpy.objects import RandomVariables, RandomVariable, Parameter
+        >>> from pharmpy.model import RandomVariables, RandomVariable, Parameter
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> rv1 = RandomVariable.normal("IIV_CL", 'IIV', 0, omega_cl.symbol)
@@ -958,7 +958,7 @@ class RandomVariables(MutableSequence):
 
         Example
         -------
-        >>> from pharmpy.objects import RandomVariables, RandomVariable, Parameter
+        >>> from pharmpy.model import RandomVariables, RandomVariable, Parameter
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> omega_ka = Parameter("OMEGA_KA", 0.1)

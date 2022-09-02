@@ -6,9 +6,8 @@ import warnings
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
 from pharmpy.math import corr2cov, nearest_postive_semidefinite
+from pharmpy.model import Parameter, Parameters, RandomVariables
 from pharmpy.modeling.help_functions import _get_etas
-from pharmpy.parameters import Parameter, Parameters
-from pharmpy.random_variables import RandomVariables
 
 
 def create_joint_distribution(model, rvs=None):

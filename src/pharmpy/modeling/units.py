@@ -1,5 +1,5 @@
 from pharmpy.deps import sympy
-from pharmpy.statements import Assignment, ODESystem
+from pharmpy.model import Assignment, ODESystem
 
 
 def _extract_minus(expr):

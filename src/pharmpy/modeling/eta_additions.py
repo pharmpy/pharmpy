@@ -11,11 +11,10 @@ from typing import Union
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
-from pharmpy.modeling.expressions import create_symbol, get_pk_parameters, has_random_effect
-from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
-from pharmpy.parameters import Parameter, Parameters
-from pharmpy.random_variables import RandomVariable
-from pharmpy.statements import Assignment
+from pharmpy.model import Assignment, Parameter, Parameters, RandomVariable
+
+from .expressions import create_symbol, get_pk_parameters, has_random_effect
+from .help_functions import _format_input_list, _format_options, _get_etas
 
 
 def add_iiv(

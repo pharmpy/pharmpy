@@ -1,4 +1,4 @@
-from pharmpy.parameters import Parameter, Parameters
+from pharmpy.model import Parameter, Parameters
 
 
 def get_thetas(model):

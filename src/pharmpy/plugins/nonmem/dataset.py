@@ -5,10 +5,9 @@ from io import StringIO
 
 from lark import Lark
 
-import pharmpy.data
-from pharmpy.data import DatasetError, DatasetWarning
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.model import DatasetError, DatasetWarning, data
 
 
 class NMTRANDataIO(StringIO):
@@ -93,7 +92,7 @@ def _convert_data_item(x, null_value):
         converted = convert_fortran_number(x)
     except ValueError as e:
         raise DatasetError(str(e)) from e
-    if converted in pharmpy.data.conf.na_values:
+    if converted in data.conf.na_values:
         return np.nan
     return converted
 

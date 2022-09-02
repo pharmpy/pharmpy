@@ -5,8 +5,18 @@ import sympy
 from sympy import Symbol as symbol
 
 from pharmpy.config import ConfigurationContext
-from pharmpy.estimation import EstimationStep, EstimationSteps
-from pharmpy.model import Model, ModelSyntaxError
+from pharmpy.model import (
+    Assignment,
+    EstimationStep,
+    EstimationSteps,
+    Model,
+    ModelSyntaxError,
+    ODESystem,
+    Parameter,
+    Parameters,
+    RandomVariable,
+    Statements,
+)
 from pharmpy.modeling import (
     add_iiv,
     add_population_parameter,
@@ -16,11 +26,8 @@ from pharmpy.modeling import (
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
-from pharmpy.parameters import Parameter, Parameters
 from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
-from pharmpy.random_variables import RandomVariable
-from pharmpy.statements import Assignment, ODESystem, Statements
 
 
 def S(x):

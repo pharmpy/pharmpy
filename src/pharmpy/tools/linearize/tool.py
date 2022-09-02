@@ -1,7 +1,6 @@
 import pharmpy.model
 from pharmpy.deps import sympy
-from pharmpy.estimation import EstimationStep, EstimationSteps
-from pharmpy.objects import Assignment, Statements
+from pharmpy.model import Assignment, EstimationStep, EstimationSteps, Statements
 from pharmpy.workflows import Task, Workflow
 
 

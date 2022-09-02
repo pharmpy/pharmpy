@@ -1,7 +1,7 @@
 import pytest
 import sympy
 
-from pharmpy.statements import Assignment
+from pharmpy.model import Assignment
 
 
 def S(x):

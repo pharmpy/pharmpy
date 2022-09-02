@@ -4,10 +4,9 @@
 
 import warnings
 
-from pharmpy.model import Model
+from pharmpy.model import Model, RandomVariable
 from pharmpy.modeling import remove_unused_parameters_and_rvs
 from pharmpy.modeling.help_functions import _format_input_list
-from pharmpy.random_variables import RandomVariable
 
 
 def remove_iov(model, to_remove=None):

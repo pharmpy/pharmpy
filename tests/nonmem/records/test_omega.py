@@ -2,8 +2,7 @@ import pytest
 import sympy
 
 from pharmpy.config import ConfigurationContext
-from pharmpy.model import ModelSyntaxError
-from pharmpy.parameters import Parameters
+from pharmpy.model import ModelSyntaxError, Parameters
 from pharmpy.plugins.nonmem import conf
 
 

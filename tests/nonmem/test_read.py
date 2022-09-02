@@ -3,7 +3,7 @@ from io import StringIO
 import pandas as pd
 import pytest
 
-from pharmpy.data import DatasetError, DatasetWarning
+from pharmpy.model import DatasetError, DatasetWarning
 from pharmpy.plugins.nonmem.dataset import NMTRANDataIO, convert_fortran_number, read_nonmem_dataset
 
 

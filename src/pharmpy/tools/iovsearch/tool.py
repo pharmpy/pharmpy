@@ -2,10 +2,8 @@ from itertools import chain, combinations
 from typing import Callable, Iterable, List, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
-from pharmpy.model import Model
+from pharmpy.model import Assignment, Model, Results
 from pharmpy.modeling import add_iov, copy_model, rank_models, remove_iiv, remove_iov
-from pharmpy.results import Results
-from pharmpy.statements import Assignment
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow

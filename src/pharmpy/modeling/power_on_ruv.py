@@ -4,12 +4,11 @@
 
 from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
-from pharmpy.modeling import has_proportional_error_model
-from pharmpy.modeling.help_functions import _format_input_list
-from pharmpy.parameters import Parameter, Parameters
-from pharmpy.statements import Assignment
+from pharmpy.model import Assignment, Parameter, Parameters
 
+from .error import has_proportional_error_model
 from .expressions import create_symbol
+from .help_functions import _format_input_list
 
 
 def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero_protection=False):

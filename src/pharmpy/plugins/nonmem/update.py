@@ -3,21 +3,21 @@ import re
 import warnings
 from pathlib import Path
 
-import pharmpy.data as data
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.modeling import simplify_expression
-from pharmpy.plugins.nonmem.records import code_record
-from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import (
+from pharmpy.model import (
     Assignment,
     Bolus,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     ExplicitODESystem,
     Infusion,
+    RandomVariables,
     Statements,
+    data,
 )
+from pharmpy.modeling import simplify_expression
+from pharmpy.plugins.nonmem.records import code_record
 
 from .records.factory import create_record
 

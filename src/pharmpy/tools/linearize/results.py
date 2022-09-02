@@ -1,9 +1,8 @@
 from pathlib import Path
 
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Model
+from pharmpy.model import Model, Results
 from pharmpy.modeling import plot_iofv_vs_iofv
-from pharmpy.results import Results
 
 
 class LinearizeResults(Results):

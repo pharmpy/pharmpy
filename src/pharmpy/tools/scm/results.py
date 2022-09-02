@@ -4,8 +4,7 @@ from pathlib import Path
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Model
-from pharmpy.results import Results
+from pharmpy.model import Model, Results
 from pharmpy.tools.psn_helpers import (
     arguments_from_command,
     options_from_command,

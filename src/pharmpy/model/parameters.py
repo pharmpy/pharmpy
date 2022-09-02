@@ -11,7 +11,7 @@ class Parameter:
     Example
     -------
 
-    >>> from pharmpy.objects import Parameter
+    >>> from pharmpy.model import Parameter
     >>> param = Parameter("TVCL", 0.005, lower=0)
     >>> param.init
     0.005
@@ -133,7 +133,7 @@ class Parameters(Sequence):
     Example
     -------
 
-    >>> from pharmpy.objects import Parameters, Parameter
+    >>> from pharmpy.model import Parameters, Parameter
     >>> par1 = Parameter("x", 0)
     >>> par2 = Parameter("y", 1)
     >>> pset = Parameters([par1, par2])
@@ -214,7 +214,7 @@ class Parameters(Sequence):
 
         Example
         -------
-        >>> from pharmpy.objects import Parameters, Parameter
+        >>> from pharmpy.model import Parameters, Parameter
         >>> par1 = Parameter("CL", 1, lower=0, upper=10)
         >>> par2 = Parameter("V", 10, lower=0, upper=100)
         >>> pset = Parameters([par1, par2])
