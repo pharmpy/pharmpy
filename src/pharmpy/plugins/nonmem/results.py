@@ -47,6 +47,7 @@ class NONMEMModelfitResults(ModelfitResults):
         self._estimation_status = estimation_status
         self.minimization_successful = estimation_status['minimization_successful']
         self.function_evaluations = estimation_status['function_evaluations']
+        self.significant_digits = estimation_status['significant_digits']
         if estimation_status['maxevals_exceeded'] is True:
             self.termination_cause = 'maxevals_exceeded'
         elif estimation_status['rounding_errors'] is True:

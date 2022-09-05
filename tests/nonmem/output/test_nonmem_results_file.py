@@ -380,14 +380,14 @@ def test_ofv_table_gap(testdata):
             'MINIMIZATION TERMINATED\nDUE TO ROUNDING',
             2,
             0,
-            1,
+            2,
         ),
         (
             'zero_gradient_error.lst',
             'MINIMIZATION TERMINATED\nDUE TO ZERO',
             2,
             0,
-            1,
+            2,
         ),
     ],
 )

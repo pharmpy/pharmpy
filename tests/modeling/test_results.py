@@ -204,7 +204,7 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
         assert summary.loc['pheno_real']['warnings_found'] == 0
         assert summary.loc['pheno_no_header']['errors_found'] == 2
         assert summary.loc['pheno_no_header']['warnings_found'] == 1
-        assert summary.loc['pheno_rounding_error']['errors_found'] == 1
+        assert summary.loc['pheno_rounding_error']['errors_found'] == 2
         assert summary.loc['pheno_rounding_error']['warnings_found'] == 0
 
 
@@ -235,7 +235,7 @@ def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):
         assert 'pheno_real' not in summary.index.get_level_values('model')
         assert len(summary.loc[('pheno_no_header', 'WARNING')]) == 1
         assert len(summary.loc[('pheno_no_header', 'ERROR')]) == 2
-        assert len(summary.loc[('pheno_rounding_error', 'ERROR')]) == 1
+        assert len(summary.loc[('pheno_rounding_error', 'ERROR')]) == 2
 
 
 class DummyModel:
@@ -247,15 +247,25 @@ class DummyModel:
 
 
 class DummyResults:
-    def __init__(self, ofv, minimization_successful=True):
+    def __init__(
+        self, ofv, minimization_successful=True, termination_cause=None, significant_digits=5
+    ):
         self.ofv = ofv
         self.minimization_successful = minimization_successful
+        self.termination_cause = termination_cause
+        # 5 is an arbitrary number, this is relevant in test if sig. digits is unreportable (NaN)
+        self.significant_digits = significant_digits
 
 
 def test_rank_models():
     base = DummyModel('base', parent='base', parameter_names=['p1'], ofv=0)
     m1 = DummyModel(
-        'm1', parent='base', parameter_names=['p1', 'p2'], ofv=-5, minimization_successful=False
+        'm1',
+        parent='base',
+        parameter_names=['p1', 'p2'],
+        ofv=-5,
+        minimization_successful=False,
+        termination_cause='rounding_errors',
     )
     m2 = DummyModel('m2', parent='base', parameter_names=['p1', 'p2'], ofv=-4)
     m3 = DummyModel('m3', parent='base', parameter_names=['p1', 'p2', 'p3'], ofv=-4)
@@ -263,42 +273,57 @@ def test_rank_models():
 
     models = [m1, m2, m3, m4]
 
-    df, models_sorted = rank_models(base, models, rank_type='ofv')
+    df = rank_models(base, models, rank_type='ofv')
     assert len(df) == 5
     best_model = df.loc[df['rank'] == 1].index.values
-    assert list(best_model) == ['m1']
-    assert len(models_sorted) == 5
-    assert models_sorted[0].name == 'm1'
-
-    df, models_sorted = rank_models(
-        base, models, strictness=['minimization_successful'], rank_type='ofv'
-    )
-    best_model = df.loc[df['rank'] == 1].index.values
     assert list(best_model) == ['m2', 'm3']
-    ranked_models = df.dropna().index.values
-    assert len(ranked_models) == 4
-    assert len(models_sorted) == 4
-    assert models_sorted[0].name == 'm2'
 
-    df, models_sorted = rank_models(base, models, rank_type='ofv', cutoff=1)
+    # Test if rounding errors are allowed
+    df = rank_models(base, models, errors_allowed=['rounding_errors'], rank_type='ofv')
+    best_model = df.loc[df['rank'] == 1].index.values
+    assert list(best_model) == ['m1']
     ranked_models = df.dropna().index.values
-    assert len(ranked_models) == 3
-    assert len(models_sorted) == 3
-    assert models_sorted[0].name == 'm1'
+    assert len(ranked_models) == 5
 
-    df, models_sorted = rank_models(base, models, rank_type='lrt', cutoff=0.05)
-    ranked_models = list(df.dropna().index.values)
+    # Test with a cutoff of dOFV=1
+    df = rank_models(base, models, rank_type='ofv', cutoff=1)
+    ranked_models = df.dropna().index.values
     assert len(ranked_models) == 2
+
+    # Test with LRT
+    df = rank_models(base, models, rank_type='lrt', cutoff=0.05)
+    ranked_models = list(df.dropna().index.values)
+    assert len(ranked_models) == 1
     assert 'm2' in ranked_models
     assert 'm3' not in ranked_models
-    assert len(models_sorted) == 2
-    assert models_sorted[0].name == 'm1'
 
+    # Test if candidate model does not have an OFV
     m5 = DummyModel('m5', parent='base', parameter_names=['p1'], ofv=np.nan)
-    df, models_sorted = rank_models(base, models + [m5], rank_type='ofv')
+    df = rank_models(base, models + [m5], rank_type='ofv')
     ranked_models = list(df.dropna().index.values)
-    assert m5 not in ranked_models
+    assert 'm5' not in ranked_models
     assert np.isnan(df.loc['m5']['rank'])
+
+    # Test if model has minimized but has unreportable number of significant digits while still allowing rounding
+    # errors
+    m6 = DummyModel(
+        'm6',
+        parent='base',
+        parameter_names=['p1'],
+        ofv=-5,
+        minimization_successful=False,
+        termination_cause='rounding_errors',
+        significant_digits=np.nan,
+    )
+    df = rank_models(base, models + [m6], errors_allowed=['rounding_errors'], rank_type='ofv')
+    ranked_models = list(df.dropna().index.values)
+    assert 'm6' not in ranked_models
+    assert np.isnan(df.loc['m6']['rank'])
+
+    # Test if base model failed, fall back to rank value
+    base_nan = DummyModel('base_nan', parent='base_nan', parameter_names=['p1'], ofv=np.nan)
+    df = rank_models(base_nan, models, errors_allowed=['rounding_errors'], rank_type='ofv')
+    assert df.iloc[0].name == 'm1'
 
 
 def test_aic(load_model_for_test, testdata):
