@@ -29,6 +29,9 @@ def test_summarize_individuals_count_table():
     assert list(res['inf_outlier']) == [0, 1, 0]
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 10), reason="Skipping tests requiring tflite for Python 3.10"
+)
 def test_tflite_not_installed(pheno_path, monkeypatch):
     model = read_model(pheno_path)
 
