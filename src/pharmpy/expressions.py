@@ -45,7 +45,7 @@ def _free_images_iter(expr: sympy.Expr) -> Iterable[sympy.Expr]:
 
     yield from chain.from_iterable(
         map(
-            free_images,
+            _free_images_iter,
             expr.args,
         )
     )
