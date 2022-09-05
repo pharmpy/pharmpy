@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence

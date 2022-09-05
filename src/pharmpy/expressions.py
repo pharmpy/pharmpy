@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from functools import reduce
 from itertools import chain
 from operator import __and__
