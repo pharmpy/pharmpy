@@ -1,4 +1,4 @@
-from pharmpy.estimation import EstimationStep
+from pharmpy.model import EstimationStep
 from pharmpy.modeling.help_functions import _as_integer
 
 

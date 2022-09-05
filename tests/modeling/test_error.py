@@ -1,3 +1,4 @@
+from pharmpy.model import Assignment
 from pharmpy.modeling import (
     has_additive_error_model,
     has_combined_error_model,
@@ -13,7 +14,6 @@ from pharmpy.modeling import (
     use_thetas_for_error_stdev,
 )
 from pharmpy.modeling.error import _get_prop_init, set_time_varying_error_model
-from pharmpy.statements import Assignment
 from pharmpy.utils import TemporaryDirectoryChanger
 
 

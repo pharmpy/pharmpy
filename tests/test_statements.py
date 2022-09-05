@@ -1,7 +1,7 @@
 import pytest
 import sympy
 
-from pharmpy.statements import (
+from pharmpy.model import (
     Assignment,
     Bolus,
     Compartment,

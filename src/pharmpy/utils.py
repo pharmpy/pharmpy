@@ -7,10 +7,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 from typing import Union
 
-import pandas as pd
-import sympy
-import sympy.physics.units as units
-
+from pharmpy.deps import pandas as pd
 from pharmpy.expressions import sympify
 
 
@@ -103,16 +100,27 @@ if os.name != 'nt':
     from tempfile import TemporaryDirectory  # noqa
 
 
-unit_subs = {}
-for k, v in units.__dict__.items():
-    if isinstance(v, sympy.Expr) and v.has(units.Unit):
-        unit_subs[sympy.Symbol(k)] = v
+_unit_subs = None
+
+
+def unit_subs():
+    import sympy.physics.units as units
+    from sympy import Expr, Symbol
+
+    global _unit_subs
+    if _unit_subs is None:
+        subs = {}
+        for k, v in units.__dict__.items():
+            if isinstance(v, Expr) and v.has(units.Unit):
+                subs[Symbol(k)] = v
+
+        _unit_subs = subs
+
+    return _unit_subs
 
 
 def parse_units(s):
-    if not isinstance(s, str):
-        return s
-    return sympify(s).subs(unit_subs)
+    return sympify(s).subs(unit_subs()) if isinstance(s, str) else s
 
 
 def normalize_user_given_path(path: Union[str, Path]) -> Path:
@@ -121,6 +129,6 @@ def normalize_user_given_path(path: Union[str, Path]) -> Path:
     return path.expanduser()
 
 
-def hash_df(df: pd.DataFrame) -> int:
+def hash_df(df) -> int:
     values = pd.util.hash_pandas_object(df, index=True).values
     return hash(tuple(values))

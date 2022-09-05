@@ -2,13 +2,11 @@ import re
 from math import sqrt
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-from scipy.linalg import cho_factor, solve_triangular
-
-from pharmpy import Model
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps.scipy import linalg
+from pharmpy.model import Model, Results
 from pharmpy.modeling import plot_individual_predictions
-from pharmpy.results import Results
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
 
 
@@ -33,9 +31,9 @@ def compute_cook_scores(base_estimate, cdd_estimates, covariance_matrix):
         #   the 2-norm of x   where x is
         # solution to triangular system  delta_vector^T = chol * x
         # Below we solve for all delta-vectors in one line
-        chol, islow = cho_factor(covariance_matrix)
+        chol, islow = linalg.cho_factor(covariance_matrix)
         delta_matrix = cdd_estimates - base_estimate
-        x = solve_triangular(chol, delta_matrix.transpose(), lower=islow, trans=1)
+        x = linalg.solve_triangular(chol, delta_matrix.transpose(), lower=islow, trans=1)
         return [np.linalg.norm(v) for v in x.transpose()]
     except Exception:
         return None

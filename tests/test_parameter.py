@@ -3,7 +3,7 @@ import pytest
 import sympy
 from sympy import Symbol as symbol
 
-from pharmpy.parameters import Parameter, Parameters
+from pharmpy.model import Parameter, Parameters
 
 
 @pytest.mark.parametrize(

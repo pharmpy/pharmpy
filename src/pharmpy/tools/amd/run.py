@@ -1,34 +1,17 @@
 import warnings
 from functools import partial
 
-import pandas as pd
-from sympy import Symbol
-
 import pharmpy.plugins as plugins
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
 from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.data import remove_loq_data
 from pharmpy.modeling.eta_additions import get_occasion_levels
 from pharmpy.modeling.results import summarize_errors, write_results
-from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
 
-from .run import fit, run_tool
-
-
-class AMDResults(Results):
-    def __init__(
-        self,
-        final_model=None,
-        summary_tool=None,
-        summary_models=None,
-        summary_individuals_count=None,
-        summary_errors=None,
-    ):
-        self.final_model = final_model
-        self.summary_tool = summary_tool
-        self.summary_models = summary_models
-        self.summary_individuals_count = summary_individuals_count
-        self.summary_errors = summary_errors
+from ..run import fit, run_tool
+from .results import AMDResults
 
 
 def run_amd(
@@ -254,14 +237,14 @@ def _run_covariates(model, continuous, categorical, path):
         for col in model.datainfo:
             if col.type == 'covariate' and col.continuous is True:
                 continuous.append(col.name)
-    con_covariates = [Symbol(item) for item in continuous]
+    con_covariates = [sympy.Symbol(item) for item in continuous]
 
     if categorical is None:
         categorical = []
         for col in model.datainfo:
             if col.type == 'covariate' and col.continuous is False:
                 categorical.append(col.name)
-    cat_covariates = [Symbol(item) for item in categorical]
+    cat_covariates = [sympy.Symbol(item) for item in categorical]
 
     if not continuous and not categorical:
         warnings.warn(

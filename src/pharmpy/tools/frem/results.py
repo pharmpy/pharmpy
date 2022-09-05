@@ -2,15 +2,12 @@ import itertools
 import warnings
 from pathlib import Path
 
-import altair as alt
-import numpy as np
-import pandas as pd
-import symengine
-import sympy
-
-import pharmpy.visualization  # noqa
-from pharmpy import Model
+from pharmpy.deps import altair as alt
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import symengine, sympy
 from pharmpy.math import conditional_joint_normal, is_posdef
+from pharmpy.model import Model, Results
 from pharmpy.modeling import (
     calculate_individual_shrinkage,
     create_rng,
@@ -20,7 +17,6 @@ from pharmpy.modeling import (
     sample_parameters_from_covariance_matrix,
     set_covariates,
 )
-from pharmpy.results import Results
 
 
 class FREMResults(Results):

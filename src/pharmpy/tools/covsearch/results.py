@@ -1,8 +1,8 @@
-from typing import Union
-
-import pandas as pd
+from typing import Any, Union
 
 import pharmpy.results
+
+DataFrame = Any  # NOTE should be pd.DataFrame but we wan lazy loading
 
 
 class COVSearchResults(pharmpy.results.Results):
@@ -16,9 +16,9 @@ class COVSearchResults(pharmpy.results.Results):
         best_model=None,
         input_model=None,
         models=None,
-        steps: Union[None, pd.DataFrame] = None,
-        ofv_summary: Union[None, pd.DataFrame] = None,
-        candidate_summary: Union[None, pd.DataFrame] = None,
+        steps: Union[None, DataFrame] = None,
+        ofv_summary: Union[None, DataFrame] = None,
+        candidate_summary: Union[None, DataFrame] = None,
     ):
         self.summary_tool = summary_tool
         self.summary_models = summary_models

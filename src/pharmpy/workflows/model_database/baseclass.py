@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import ContextManager
 
-from pharmpy import Model, Results
+from pharmpy.model import Model, Results
 
 
 class ModelTransaction(ABC):

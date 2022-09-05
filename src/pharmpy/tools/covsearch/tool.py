@@ -1,11 +1,10 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass
 from itertools import count
-from typing import Callable, Iterable, List, Tuple, Union
+from typing import Any, Callable, Iterable, List, Tuple, Union
 
-import numpy as np
-import pandas as pd
-
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.modeling import add_covariate_effect, copy_model
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
@@ -20,6 +19,8 @@ from pharmpy.workflows import Task, Workflow, call_workflow
 from .results import COVSearchResults
 
 NAME_WF = 'covsearch'
+
+DataFrame = Any  # NOTE should be pd.DataFrame but we want lazy loading
 
 
 @dataclass(frozen=True)
@@ -387,7 +388,7 @@ def task_results(state: SearchState):
     return res
 
 
-def _make_df_steps(best_model: Model, candidates: List[Candidate]) -> pd.DataFrame:
+def _make_df_steps(best_model: Model, candidates: List[Candidate]) -> DataFrame:
     models_dict = {candidate.model.name: candidate.model for candidate in candidates}
     children_count = Counter(candidate.model.parent_model for candidate in candidates)
 

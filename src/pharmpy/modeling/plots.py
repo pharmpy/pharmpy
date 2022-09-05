@@ -1,7 +1,6 @@
-import altair as alt
-import pandas as pd
-
 import pharmpy.visualization
+from pharmpy.deps import altair as alt
+from pharmpy.deps import pandas as pd
 
 from .data import get_observations
 

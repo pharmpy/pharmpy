@@ -1,19 +1,18 @@
+from __future__ import annotations
+
 import math
 import warnings
 
-import numpy as np
-import pandas as pd
-import sympy
-from scipy.stats import chi2
-
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
+from pharmpy.deps.scipy import stats
 from pharmpy.expressions import sympify
 from pharmpy.math import round_to_n_sigdig
-from pharmpy.model import Model
-from pharmpy.modeling import create_rng, get_observations, sample_parameters_from_covariance_matrix
-from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import CompartmentalSystem, CompartmentalSystemBuilder
+from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model, RandomVariables
 
-from .data import get_ids
+from .data import get_ids, get_observations
+from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
 
 
 def calculate_eta_shrinkage(model, sd=False):
@@ -725,7 +724,7 @@ def _fulfills_lrt(parent, child, alpha):
     elif df == 0:
         cutoff = 0
     else:
-        cutoff = float(chi2.isf(q=alpha, df=df))
+        cutoff = float(stats.chi2.isf(q=alpha, df=df))
     return dofv >= cutoff
 
 

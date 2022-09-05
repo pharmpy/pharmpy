@@ -2,11 +2,9 @@
 :meta private:
 """
 
-import sympy
-
+from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
-from pharmpy.random_variables import RandomVariable
-from pharmpy.statements import Assignment
+from pharmpy.model import Assignment, RandomVariable
 
 from .common import remove_unused_parameters_and_rvs
 from .data import get_observations

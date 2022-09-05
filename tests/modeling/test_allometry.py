@@ -1,7 +1,7 @@
 import pytest
 
+from pharmpy.model import Assignment
 from pharmpy.modeling import add_allometry, add_peripheral_compartment
-from pharmpy.statements import Assignment
 
 
 def test_allometry(load_model_for_test, testdata):

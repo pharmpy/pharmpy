@@ -1,12 +1,8 @@
 import re
 
-import sympy
-from sympy import Derivative, Eq, Function, Piecewise
-from sympy import Symbol as symbol
-
+from pharmpy.deps import sympy
 from pharmpy.expressions import canonical_ode_rhs
-from pharmpy.model import ModelSyntaxError
-from pharmpy.statements import (
+from pharmpy.model import (
     Assignment,
     Bolus,
     Compartment,
@@ -14,6 +10,7 @@ from pharmpy.statements import (
     CompartmentalSystemBuilder,
     ExplicitODESystem,
     Infusion,
+    ModelSyntaxError,
 )
 
 
@@ -38,7 +35,7 @@ def compartmental_model(model, advan, trans, des=None):
         cb.add_compartment(central)
         cb.add_compartment(output)
         cb.add_flow(central, output, _advan1and2_trans(trans))
-        cb.add_flow(depot, central, symbol('KA'))
+        cb.add_flow(depot, central, sympy.Symbol('KA'))
         ass = _f_link_assignment(model, central)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN3':
@@ -146,9 +143,9 @@ def compartmental_model(model, advan, trans, des=None):
         output = Compartment('OUTPUT')
         cb.add_compartment(central)
         cb.add_compartment(output)
-        vm = symbol('VM')
-        km = symbol('KM')
-        t = symbol('t')
+        vm = sympy.Symbol('VM')
+        km = sympy.Symbol('KM')
+        t = sympy.Symbol('t')
         cb.add_flow(central, output, vm / (km + sympy.Function(central.amount.name)(t)))
         ass = _f_link_assignment(model, central)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
@@ -199,16 +196,16 @@ def compartmental_model(model, advan, trans, des=None):
         subs_dict, comp_names = dict(), dict()
         comps = [c for c, _ in rec_model.compartments()]
 
-        t = symbol('t')
+        t = sympy.Symbol('t')
         for i, c in enumerate(comps, 1):
-            a = Function(f'A_{c}')
-            subs_dict[f'DADT({i})'] = Derivative(a(t))
+            a = sympy.Function(f'A_{c}')
+            subs_dict[f'DADT({i})'] = sympy.Derivative(a(t))
             subs_dict[f'A({i})'] = a(t)
             comp_names[f'A({i})'] = a
 
         sset = des.statements.subs(subs_dict)
 
-        a_out = Function('A_OUTPUT')
+        a_out = sympy.Function('A_OUTPUT')
         dose = _dosing(model, 1)
 
         ics = {v(0): sympy.Integer(0) for v in comp_names.values()}
@@ -219,17 +216,17 @@ def compartmental_model(model, advan, trans, des=None):
 
         if len(comps) > 1:
             dadt_rest = [
-                Eq(s.symbol, s.expression)
+                sympy.Eq(s.symbol, s.expression)
                 for s in sset
                 if s != dadt_dose and not s.symbol.is_Symbol
             ]
             lhs_sum = dadt_dose.expression
             for eq in dadt_rest:
                 lhs_sum += eq.rhs
-            dadt_out = Eq(Derivative(a_out(t)), canonical_ode_rhs(-lhs_sum))
+            dadt_out = sympy.Eq(sympy.Derivative(a_out(t)), canonical_ode_rhs(-lhs_sum))
             dadt_rest.append(dadt_out)
         else:
-            dadt_rest = [Eq(Derivative(a_out(t)), dadt_dose.expression * -1)]
+            dadt_rest = [sympy.Eq(sympy.Derivative(a_out(t)), dadt_dose.expression * -1)]
 
         if isinstance(dose, Infusion):
             if dose.duration:
@@ -239,13 +236,13 @@ def compartmental_model(model, advan, trans, des=None):
                 rate = dose.rate
                 duration = dose.amount / dose.rate
 
-            dadt_dose.expression += Piecewise((rate, duration > t), (0, True))
+            dadt_dose.expression += sympy.Piecewise((rate, duration > t), (0, True))
             ics[comp_names['A(1)'](0)] = sympy.Integer(0)
 
-        eqs = [Eq(dadt_dose.symbol, dadt_dose.expression)] + dadt_rest
+        eqs = [sympy.Eq(dadt_dose.symbol, dadt_dose.expression)] + dadt_rest
 
         ode = ExplicitODESystem(eqs, ics)
-        ass = _f_link_assignment(model, symbol('A_CENTRAL'))
+        ass = _f_link_assignment(model, sympy.Symbol('A_CENTRAL'))
         return ode, ass
     else:
         return None
@@ -254,14 +251,14 @@ def compartmental_model(model, advan, trans, des=None):
 
 
 def _f_link_assignment(model, compartment):
-    f = symbol('F')
+    f = sympy.Symbol('F')
     try:
         fexpr = compartment.amount
     except AttributeError:
         fexpr = compartment
     pkrec = model.control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment('S1'):
-        fexpr = fexpr / symbol('S1')
+        fexpr = fexpr / sympy.Symbol('S1')
     ass = Assignment(f, fexpr)
     return ass
 
@@ -307,150 +304,170 @@ def _find_rates(model, ncomps):
                         to_n = int(n[2:])
                 if to_n == 0:
                     to_n = ncomps
-                yield from_n, to_n, symbol(name)
+                yield from_n, to_n, sympy.Symbol(name)
 
 
 def _advan1and2_trans(trans):
     if trans == 'TRANS2':
-        return symbol('CL') / symbol('V')
+        return sympy.Symbol('CL') / sympy.Symbol('V')
     else:  # TRANS1 which is also the default
-        return symbol('K')
+        return sympy.Symbol('K')
 
 
 def _advan3_trans(trans):
     if trans == 'TRANS3':
         return (
-            symbol('CL') / symbol('V'),
-            symbol('Q') / symbol('V'),
-            symbol('Q') / (symbol('VSS') - symbol('V')),
+            sympy.Symbol('CL') / sympy.Symbol('V'),
+            sympy.Symbol('Q') / sympy.Symbol('V'),
+            sympy.Symbol('Q') / (sympy.Symbol('VSS') - sympy.Symbol('V')),
         )
     elif trans == 'TRANS4':
-        return (symbol('CL') / symbol('V1'), symbol('Q') / symbol('V1'), symbol('Q') / symbol('V2'))
+        return (
+            sympy.Symbol('CL') / sympy.Symbol('V1'),
+            sympy.Symbol('Q') / sympy.Symbol('V1'),
+            sympy.Symbol('Q') / sympy.Symbol('V2'),
+        )
     elif trans == 'TRANS5':
         return (
-            symbol('ALPHA') * symbol('BETA') / symbol('K21'),
-            symbol('ALPHA') + symbol('BETA') - symbol('K21') - symbol('K'),
-            (symbol('AOB') * symbol('BETA') + symbol('ALPHA')) / (symbol('AOB') + 1),
+            sympy.Symbol('ALPHA') * sympy.Symbol('BETA') / sympy.Symbol('K21'),
+            sympy.Symbol('ALPHA') + sympy.Symbol('BETA') - sympy.Symbol('K21') - sympy.Symbol('K'),
+            (sympy.Symbol('AOB') * sympy.Symbol('BETA') + sympy.Symbol('ALPHA'))
+            / (sympy.Symbol('AOB') + 1),
         )
     elif trans == 'TRANS6':
         return (
-            symbol('ALPHA') * symbol('BETA') / symbol('K21'),
-            symbol('ALPHA') + symbol('BETA') - symbol('K21') - symbol('K'),
-            symbol('K21'),
+            sympy.Symbol('ALPHA') * sympy.Symbol('BETA') / sympy.Symbol('K21'),
+            sympy.Symbol('ALPHA') + sympy.Symbol('BETA') - sympy.Symbol('K21') - sympy.Symbol('K'),
+            sympy.Symbol('K21'),
         )
     else:
-        return (symbol('K'), symbol('K12'), symbol('K21'))
+        return (sympy.Symbol('K'), sympy.Symbol('K12'), sympy.Symbol('K21'))
 
 
 def _advan4_trans(trans):
     if trans == 'TRANS3':
         return (
-            symbol('CL') / symbol('V'),
-            symbol('Q') / symbol('V'),
-            symbol('Q') / (symbol('VSS') - symbol('V')),
-            symbol('KA'),
+            sympy.Symbol('CL') / sympy.Symbol('V'),
+            sympy.Symbol('Q') / sympy.Symbol('V'),
+            sympy.Symbol('Q') / (sympy.Symbol('VSS') - sympy.Symbol('V')),
+            sympy.Symbol('KA'),
         )
     elif trans == 'TRANS4':
         return (
-            symbol('CL') / symbol('V2'),
-            symbol('Q') / symbol('V2'),
-            symbol('Q') / symbol('V3'),
-            symbol('KA'),
+            sympy.Symbol('CL') / sympy.Symbol('V2'),
+            sympy.Symbol('Q') / sympy.Symbol('V2'),
+            sympy.Symbol('Q') / sympy.Symbol('V3'),
+            sympy.Symbol('KA'),
         )
     elif trans == 'TRANS5':
         return (
-            symbol('ALPHA') * symbol('BETA') / symbol('K32'),
-            symbol('ALPHA') + symbol('BETA') - symbol('K32') - symbol('K'),
-            (symbol('AOB') * symbol('BETA') + symbol('ALPHA')) / (symbol('AOB') + 1),
-            symbol('KA'),
+            sympy.Symbol('ALPHA') * sympy.Symbol('BETA') / sympy.Symbol('K32'),
+            sympy.Symbol('ALPHA') + sympy.Symbol('BETA') - sympy.Symbol('K32') - sympy.Symbol('K'),
+            (sympy.Symbol('AOB') * sympy.Symbol('BETA') + sympy.Symbol('ALPHA'))
+            / (sympy.Symbol('AOB') + 1),
+            sympy.Symbol('KA'),
         )
     elif trans == 'TRANS6':
         return (
-            symbol('ALPHA') * symbol('BETA') / symbol('K32'),
-            symbol('ALPHA') + symbol('BETA') - symbol('K32') - symbol('K'),
-            symbol('K32'),
-            symbol('KA'),
+            sympy.Symbol('ALPHA') * sympy.Symbol('BETA') / sympy.Symbol('K32'),
+            sympy.Symbol('ALPHA') + sympy.Symbol('BETA') - sympy.Symbol('K32') - sympy.Symbol('K'),
+            sympy.Symbol('K32'),
+            sympy.Symbol('KA'),
         )
     else:
-        return (symbol('K'), symbol('K23'), symbol('K32'), symbol('KA'))
+        return (sympy.Symbol('K'), sympy.Symbol('K23'), sympy.Symbol('K32'), sympy.Symbol('KA'))
 
 
 def _advan11_trans(trans):
     if trans == 'TRANS4':
         return (
-            symbol('CL') / symbol('V1'),
-            symbol('Q2') / symbol('V1'),
-            symbol('Q2') / symbol('V2'),
-            symbol('Q3') / symbol('V1'),
-            symbol('Q3') / symbol('V3'),
+            sympy.Symbol('CL') / sympy.Symbol('V1'),
+            sympy.Symbol('Q2') / sympy.Symbol('V1'),
+            sympy.Symbol('Q2') / sympy.Symbol('V2'),
+            sympy.Symbol('Q3') / sympy.Symbol('V1'),
+            sympy.Symbol('Q3') / sympy.Symbol('V3'),
         )
     elif trans == 'TRANS6':
         return (
-            symbol('ALPHA') * symbol('BETA') * symbol('GAMMA') / (symbol('K21') * symbol('K31')),
-            symbol('ALPHA')
-            + symbol('BETA')
-            + symbol('GAMMA')
-            - symbol('K')
-            - symbol('K13')
-            - symbol('K21')
-            - symbol('K31'),
-            symbol('K21'),
+            sympy.Symbol('ALPHA')
+            * sympy.Symbol('BETA')
+            * sympy.Symbol('GAMMA')
+            / (sympy.Symbol('K21') * sympy.Symbol('K31')),
+            sympy.Symbol('ALPHA')
+            + sympy.Symbol('BETA')
+            + sympy.Symbol('GAMMA')
+            - sympy.Symbol('K')
+            - sympy.Symbol('K13')
+            - sympy.Symbol('K21')
+            - sympy.Symbol('K31'),
+            sympy.Symbol('K21'),
             (
-                symbol('ALPHA') * symbol('BETA')
-                + symbol('ALPHA') * symbol('GAMMA')
-                + symbol('BETA') * symbol('GAMMA')
-                + symbol('K31') * symbol('K31')
-                - symbol('K31') * (symbol('ALPHA') + symbol('BETA') + symbol('GAMMA'))
-                - symbol('K') * symbol('K21')
+                sympy.Symbol('ALPHA') * sympy.Symbol('BETA')
+                + sympy.Symbol('ALPHA') * sympy.Symbol('GAMMA')
+                + sympy.Symbol('BETA') * sympy.Symbol('GAMMA')
+                + sympy.Symbol('K31') * sympy.Symbol('K31')
+                - sympy.Symbol('K31')
+                * (sympy.Symbol('ALPHA') + sympy.Symbol('BETA') + sympy.Symbol('GAMMA'))
+                - sympy.Symbol('K') * sympy.Symbol('K21')
             )
-            / (symbol('K21') - symbol('K31')),
-            symbol('K31'),
+            / (sympy.Symbol('K21') - sympy.Symbol('K31')),
+            sympy.Symbol('K31'),
         )
     else:
-        return (symbol('K'), symbol('K12'), symbol('K21'), symbol('K13'), symbol('K31'))
+        return (
+            sympy.Symbol('K'),
+            sympy.Symbol('K12'),
+            sympy.Symbol('K21'),
+            sympy.Symbol('K13'),
+            sympy.Symbol('K31'),
+        )
 
 
 def _advan12_trans(trans):
     if trans == 'TRANS4':
         return (
-            symbol('CL') / symbol('V2'),
-            symbol('Q3') / symbol('V2'),
-            symbol('Q3') / symbol('V3'),
-            symbol('Q4') / symbol('V2'),
-            symbol('Q4') / symbol('V4'),
-            symbol('KA'),
+            sympy.Symbol('CL') / sympy.Symbol('V2'),
+            sympy.Symbol('Q3') / sympy.Symbol('V2'),
+            sympy.Symbol('Q3') / sympy.Symbol('V3'),
+            sympy.Symbol('Q4') / sympy.Symbol('V2'),
+            sympy.Symbol('Q4') / sympy.Symbol('V4'),
+            sympy.Symbol('KA'),
         )
     elif trans == 'TRANS6':
         return (
-            symbol('ALPHA') * symbol('BETA') * symbol('GAMMA') / (symbol('K32') * symbol('K42')),
-            symbol('ALPHA')
-            + symbol('BETA')
-            + symbol('GAMMA')
-            - symbol('K')
-            - symbol('K24')
-            - symbol('K32')
-            - symbol('K42'),
-            symbol('K32'),
+            sympy.Symbol('ALPHA')
+            * sympy.Symbol('BETA')
+            * sympy.Symbol('GAMMA')
+            / (sympy.Symbol('K32') * sympy.Symbol('K42')),
+            sympy.Symbol('ALPHA')
+            + sympy.Symbol('BETA')
+            + sympy.Symbol('GAMMA')
+            - sympy.Symbol('K')
+            - sympy.Symbol('K24')
+            - sympy.Symbol('K32')
+            - sympy.Symbol('K42'),
+            sympy.Symbol('K32'),
             (
-                symbol('ALPHA') * symbol('BETA')
-                + symbol('ALPHA') * symbol('GAMMA')
-                + symbol('BETA') * symbol('GAMMA')
-                + symbol('K42') * symbol('K42')
-                - symbol('K42') * (symbol('ALPHA') + symbol('BETA') + symbol('GAMMA'))
-                - symbol('K') * symbol('K32')
+                sympy.Symbol('ALPHA') * sympy.Symbol('BETA')
+                + sympy.Symbol('ALPHA') * sympy.Symbol('GAMMA')
+                + sympy.Symbol('BETA') * sympy.Symbol('GAMMA')
+                + sympy.Symbol('K42') * sympy.Symbol('K42')
+                - sympy.Symbol('K42')
+                * (sympy.Symbol('ALPHA') + sympy.Symbol('BETA') + sympy.Symbol('GAMMA'))
+                - sympy.Symbol('K') * sympy.Symbol('K32')
             )
-            / (symbol('K32') - symbol('K42')),
-            symbol('K42'),
-            symbol('KA'),
+            / (sympy.Symbol('K32') - sympy.Symbol('K42')),
+            sympy.Symbol('K42'),
+            sympy.Symbol('KA'),
         )
     else:
         return (
-            symbol('K'),
-            symbol('K23'),
-            symbol('K32'),
-            symbol('K24'),
-            symbol('K42'),
-            symbol('KA'),
+            sympy.Symbol('K'),
+            sympy.Symbol('K23'),
+            sympy.Symbol('K32'),
+            sympy.Symbol('K24'),
+            sympy.Symbol('K42'),
+            sympy.Symbol('KA'),
         )
 
 

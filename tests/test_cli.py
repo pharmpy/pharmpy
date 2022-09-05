@@ -6,7 +6,7 @@ from contextlib import redirect_stdout
 
 import pytest
 
-from pharmpy import cli
+import pharmpy.cli as cli
 from pharmpy.utils import TemporaryDirectoryChanger
 
 

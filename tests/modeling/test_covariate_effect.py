@@ -1,8 +1,11 @@
 import pytest
-from sympy import Symbol as S
-from sympy import exp
 
+from pharmpy.deps import sympy
 from pharmpy.modeling.covariate_effect import CovariateEffect, _choose_param_inits
+
+
+def S(x: str):
+    return sympy.Symbol(x)
 
 
 @pytest.mark.parametrize(
@@ -11,7 +14,7 @@ from pharmpy.modeling.covariate_effect import CovariateEffect, _choose_param_ini
         (
             CovariateEffect.exponential(),
             S('CLWGT'),
-            exp(S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN'))),
+            sympy.exp(S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN'))),
         ),
         (CovariateEffect.power(), S('CLWGT'), (S('WGT') / S('WGT_MEDIAN')) ** S('COVEFF1')),
         (CovariateEffect.linear(), S('CLWGT'), 1 + S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN'))),

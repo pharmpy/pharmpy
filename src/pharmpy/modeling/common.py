@@ -7,13 +7,20 @@ import warnings
 from io import StringIO
 from pathlib import Path
 
-import sympy
-
-from pharmpy import Model, Parameter, Parameters, RandomVariables, config
-from pharmpy.modeling import split_joint_distribution
-from pharmpy.statements import Assignment, CompartmentalSystem
+import pharmpy.config as config
+from pharmpy.deps import sympy
+from pharmpy.model import (
+    Assignment,
+    CompartmentalSystem,
+    Model,
+    Parameter,
+    Parameters,
+    RandomVariables,
+)
 from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import default_model_database
+
+from .block_rvs import split_joint_distribution
 
 
 def read_model(path):

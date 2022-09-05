@@ -4,7 +4,7 @@ import pytest
 import sympy
 import sympy.physics.units
 
-from pharmpy.datainfo import ColumnInfo, DataInfo
+from pharmpy.model import ColumnInfo, DataInfo
 
 
 def test_columninfo_init():

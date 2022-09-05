@@ -1,7 +1,7 @@
 import pytest
 import sympy
 
-from pharmpy import (
+from pharmpy.model import (
     Assignment,
     Model,
     Parameter,

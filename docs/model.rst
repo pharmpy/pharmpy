@@ -79,7 +79,7 @@ Model parameters are scalar values that are used in the mathematical definition 
 
 .. pharmpy-execute::
 
-   from pharmpy import Parameter
+   from pharmpy.model import Parameter
 
    par = Parameter('THETA(1)', 0.1, upper=2, fix=False)
    par

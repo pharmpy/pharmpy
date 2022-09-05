@@ -1,7 +1,7 @@
 import copy
 import uuid
 
-import networkx as nx
+from pharmpy.deps import networkx as nx
 
 
 class Workflow:

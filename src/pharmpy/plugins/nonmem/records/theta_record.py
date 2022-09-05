@@ -1,7 +1,7 @@
 import re
 import warnings
 
-from pharmpy.parameters import Parameter
+from pharmpy.model import Parameter
 from pharmpy.parse_utils.generic import AttrToken, remove_token_and_space
 
 from .record import Record

@@ -1,4 +1,4 @@
-from pharmpy.results import Results
+from pharmpy.model import Results
 from pharmpy.workflows import Task, Workflow
 
 
