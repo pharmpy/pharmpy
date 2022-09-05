@@ -1,3 +1,4 @@
+import importlib.util
 import warnings
 from typing import Callable, Dict, List, Union
 
@@ -58,6 +59,10 @@ def summarize_individuals(models: List[Model]) -> Union[pd.DataFrame, None]:
 
     modelsDict = {model.name: model for model in models}
 
+    spec = importlib.util.find_spec('tflite_runtime')
+    if spec is None:
+        warnings.warn("tflite is not installed, using NaN for predictions")
+
     df = pd.concat(
         map(
             lambda model: groupedByIDAddColumnsOneModel(modelsDict, model),
@@ -105,11 +110,7 @@ def _predicted(
         predicted = predict(model)
     except ModelfitResultsError:
         return np.nan
-    except ModuleNotFoundError:
-        warnings.warn("tflite is not installed, returning nan")
-        return np.nan
     except ImportError:
-        warnings.warn("tflite cannot be imported, returning nan")
         return np.nan
     if predicted is None:
         return np.nan

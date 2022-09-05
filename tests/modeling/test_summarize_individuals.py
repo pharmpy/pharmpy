@@ -1,6 +1,9 @@
-import pandas as pd
+import sys
 
-from pharmpy.modeling import summarize_individuals_count_table
+import pandas as pd
+import pytest
+
+from pharmpy.modeling import read_model, summarize_individuals, summarize_individuals_count_table
 
 
 def test_summarize_individuals_count_table():
@@ -24,3 +27,15 @@ def test_summarize_individuals_count_table():
     assert list(res['out_obs']) == [0, 2, 1]
     assert list(res['out_ind']) == [0, 2, 0]
     assert list(res['inf_outlier']) == [0, 1, 0]
+
+
+def test_tflite_not_installed(pheno_path, monkeypatch):
+    model = read_model(pheno_path)
+
+    df = summarize_individuals([model])
+    assert not df['predicted_dofv'].isnull().any().any()
+
+    with pytest.warns(UserWarning, match='tflite is not installed'):
+        monkeypatch.setitem(sys.modules, 'tflite_runtime', None)
+        df = summarize_individuals([model])
+        assert df['predicted_dofv'].isnull().all().all()
