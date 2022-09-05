@@ -6,11 +6,12 @@ import pandas as pd
 import sympy
 from scipy.stats import chi2
 
+from pharmpy.expressions import sympify
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import Model
 from pharmpy.modeling import create_rng, get_observations, sample_parameters_from_covariance_matrix
 from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import CompartmentalSystem, CompartmentalSystemBuilder, sympify
+from pharmpy.statements import CompartmentalSystem, CompartmentalSystemBuilder
 
 from .data import get_ids
 

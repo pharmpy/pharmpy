@@ -14,7 +14,7 @@ from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
 import pharmpy.math
 import pharmpy.unicode as unicode
-from pharmpy.statements import sympify
+from pharmpy.expressions import sympify
 
 
 def _create_rng(seed=None):

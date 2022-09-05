@@ -4,7 +4,7 @@ import scipy.linalg
 import symengine
 import sympy
 
-from pharmpy.statements import sympify
+from pharmpy.expressions import sympify
 
 from .expressions import (
     calculate_epsilon_gradient_expression,

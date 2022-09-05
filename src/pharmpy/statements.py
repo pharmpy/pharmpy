@@ -7,10 +7,13 @@ import sympy
 
 import pharmpy.unicode as unicode
 
-
-def sympify(expr):
-    ns = {'Q': sympy.Symbol('Q')}
-    return sympy.sympify(expr, locals=ns)
+from .expressions import (
+    assume_all,
+    canonical_ode_rhs,
+    free_images,
+    free_images_and_symbols,
+    sympify,
+)
 
 
 class Statement(ABC):
@@ -401,38 +404,31 @@ class ExplicitODESystem(ODESystem):
         >>> statements.to_compartmental_system()    # doctest: +SKIP
         """
 
-        def convert_name(name):
-            if name.startswith('A_'):
-                return name[2:]
-            else:
-                return name
+        def convert_name(name: str):
+            return name[2:] if name[:2] == 'A_' else name
 
-        funcs = [eq.lhs.args[0] for eq in self.odes]
         cb = CompartmentalSystemBuilder()
-        dose = Bolus(sympy.Symbol("AMT"))  # FIXME: not true in general!
-        first = True
-        for f in funcs:
-            if first:
-                comp = Compartment(convert_name(f.name), dose)
-                first = False
-            else:
-                comp = Compartment(convert_name(f.name))
+        compartments = {}
+        concentrations = set()
+        for i, eq in enumerate(self.odes):
+            A = eq.lhs.args[0]
+            concentrations.add(A)
+            name = convert_name(A.name)
+            # FIXME The following is not true in general!
+            dose = Bolus(sympy.Symbol("AMT")) if i == 0 else None
+            comp = Compartment(convert_name(A.name), dose)
             cb.add_compartment(comp)
+            compartments[name] = comp
 
         for eq in self.odes:
-            for comp_func in funcs:
+            for comp_func in concentrations.intersection(free_images(eq.rhs)):
                 dep = eq.rhs.as_independent(comp_func, as_Add=True)[1]
-                if dep == 0:
-                    continue
                 terms = sympy.Add.make_args(dep)
                 for term in terms:
-                    expr = term / comp_func
-                    if term.args[0] != -1:
-                        # FIXME: unnecessary conversion
-                        cs = CompartmentalSystem(cb)
-                        from_comp = cs.find_compartment(convert_name(comp_func.name))
-                        to_comp = cs.find_compartment(convert_name(eq.lhs.args[0].name))
-                        cb.add_flow(from_comp, to_comp, expr)
+                    if _is_positive(term):
+                        from_comp = compartments[convert_name(comp_func.name)]
+                        to_comp = compartments[convert_name(eq.lhs.args[0].name)]
+                        cb.add_flow(from_comp, to_comp, term / comp_func)
 
         return CompartmentalSystem(cb)
 
@@ -591,6 +587,12 @@ class CompartmentalSystemBuilder:
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
+
+
+def _is_positive(expr: sympy.Expr) -> bool:
+    return sympy.ask(
+        sympy.Q.positive(expr), assume_all(sympy.Q.positive, free_images_and_symbols(expr))
+    )
 
 
 class CompartmentalSystem(ODESystem):
@@ -927,7 +929,10 @@ class CompartmentalSystem(ODESystem):
         Compartment(CENTRAL, dose=Bolus(AMT))
         """
         output = self.output_compartment
-        central = next(self._g.predecessors(output))
+        try:
+            central = next(self._g.predecessors(output))
+        except StopIteration:
+            raise ValueError('Cannot find central compartment')
         return central
 
     @property
@@ -1217,7 +1222,7 @@ class CompartmentalSystem(ODESystem):
         derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
         inputs = self.zero_order_inputs
         a = self.compartmental_matrix @ amount_funcs + inputs
-        eqs = [sympy.Eq(lhs, rhs) for lhs, rhs in zip(derivatives, a)]
+        eqs = [sympy.Eq(lhs, canonical_ode_rhs(rhs)) for lhs, rhs in zip(derivatives, a)]
         ics = {}
         output = self.output_compartment
         for node in self._g.nodes:

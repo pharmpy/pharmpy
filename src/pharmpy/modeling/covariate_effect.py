@@ -11,8 +11,9 @@ from sympy import Eq, Float, Gt, Le, Piecewise
 from sympy import Symbol as S
 from sympy import exp
 
+from pharmpy.expressions import sympify
 from pharmpy.parameters import Parameter, Parameters
-from pharmpy.statements import Assignment, sympify
+from pharmpy.statements import Assignment
 
 from .data import get_baselines
 
