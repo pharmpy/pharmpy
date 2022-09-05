@@ -3,22 +3,36 @@ from pathlib import Path
 
 import pytest
 
+from pharmpy.model import Model
 from pharmpy.tools import run_amd
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
+def _model_count(rundir: Path):
+    return sum(
+        map(
+            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
+            ((rundir / 'models').iterdir()),
+        )
+    )
+
+
+@pytest.mark.filterwarnings(
+    'ignore:.*Adjusting initial estimates to create '
+    'positive semidefinite omega/sigma matrices.*:UserWarning'
+)
 def test_amd(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.datainfo', tmp_path)
-        input = (tmp_path / 'mox_simulated_normal.csv').as_posix()
-        run_amd(
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', '.')
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.datainfo', '.')
+        input = 'mox_simulated_normal.csv'
+        res = run_amd(
             input,
             modeltype='pk_oral',
             search_space='PERIPHERALS(1)',
             occasion='VISI',
         )
+
         rundir = tmp_path / 'amd_dir1'
         assert rundir.is_dir()
         assert (rundir / 'results.json').exists()
@@ -36,11 +50,119 @@ def test_amd(tmp_path, testdata):
             dir = rundir / dir
             assert _model_count(dir) >= 1
 
+        assert len(res.summary_tool) == 58
+        assert len(res.summary_models) == 60
+        assert len(res.summary_individuals_count) == 60
+        assert res.final_model.name == 'scaled_model'
 
-def _model_count(rundir: Path):
-    return sum(
-        map(
-            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
-            ((rundir / 'models').iterdir()),
-        )
-    )
+
+def test_skip_most(tmp_path, testdata):
+    with TemporaryDirectoryChanger(tmp_path):
+        models = testdata / 'nonmem' / 'models'
+        shutil.copy2(models / 'mox_simulated_normal.csv', '.')
+        shutil.copy2(models / 'mox2.mod', '.')
+        shutil.copy2(models / 'mox2.ext', '.')
+        shutil.copy2(models / 'mox2.lst', '.')
+        shutil.copy2(models / 'mox2.phi', '.')
+        model = Model.create_model('mox2.mod')
+        with pytest.warns(Warning) as record:
+            res = run_amd(
+                model,
+                modeltype='pk_oral',
+                order=['iovsearch', 'allometry', 'covariates'],
+                continuous=[],
+                categorical=[],
+                occasion=None,
+            )
+
+        assert len(record) == 6
+
+        for warning, match in zip(
+            record,
+            [
+                'Skipping IOVsearch because occasion is None',
+                'Skipping Allometry',
+                'Skipping COVsearch',
+                'AMDResults.summary_tool is None',
+                'AMDResults.summary_models is None',
+                'AMDResults.summary_individuals_count is None',
+            ],
+        ):
+            assert match in str(warning.message)
+
+        assert res.summary_tool is None
+        assert res.summary_models is None
+        assert res.summary_individuals_count is None
+        assert res.final_model.name == 'start'
+
+
+def test_skip_iovsearch_one_occasion(tmp_path, testdata):
+    with TemporaryDirectoryChanger(tmp_path):
+        models = testdata / 'nonmem' / 'models'
+        shutil.copy2(models / 'mox_simulated_normal.csv', '.')
+        shutil.copy2(models / 'mox2.mod', '.')
+        shutil.copy2(models / 'mox2.ext', '.')
+        shutil.copy2(models / 'mox2.lst', '.')
+        shutil.copy2(models / 'mox2.phi', '.')
+        model = Model.create_model('mox2.mod')
+        with pytest.warns(Warning) as record:
+            res = run_amd(
+                model,
+                modeltype='pk_oral',
+                order=['iovsearch'],
+                occasion='XAT2',
+            )
+
+        assert len(record) == 4
+
+        for warning, match in zip(
+            record,
+            [
+                'Skipping IOVsearch because there are less than two occasion categories',
+                'AMDResults.summary_tool is None',
+                'AMDResults.summary_models is None',
+                'AMDResults.summary_individuals_count is None',
+            ],
+        ):
+            assert match in str(warning.message)
+
+        assert res.summary_tool is None
+        assert res.summary_models is None
+        assert res.summary_individuals_count is None
+        assert res.final_model.name == 'start'
+
+
+def test_skip_iovsearch_missing_occasion(tmp_path, testdata):
+    with TemporaryDirectoryChanger(tmp_path):
+        models = testdata / 'nonmem' / 'models'
+        shutil.copy2(models / 'mox_simulated_normal.csv', '.')
+        shutil.copy2(models / 'mox2.mod', '.')
+        shutil.copy2(models / 'mox2.ext', '.')
+        shutil.copy2(models / 'mox2.lst', '.')
+        shutil.copy2(models / 'mox2.phi', '.')
+        model = Model.create_model('mox2.mod')
+        with pytest.warns(Warning) as record:
+            res = run_amd(
+                model,
+                modeltype='pk_oral',
+                order=['iovsearch'],
+                occasion='XYZ',
+            )
+
+        assert len(record) == 4
+
+        for warning, match in zip(
+            record,
+            [
+                'Skipping IOVsearch because dataset is missing column "XYZ"',
+                'AMDResults.summary_tool is None',
+                'AMDResults.summary_models is None',
+                'AMDResults.summary_individuals_count is None',
+            ],
+        ):
+            assert match in str(warning.message)
+
+        assert res.summary_tool is None
+        assert res.summary_models is None
+        assert res.summary_individuals_count is None
+        assert res.final_model.name == 'start'

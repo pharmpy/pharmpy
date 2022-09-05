@@ -1,3 +1,4 @@
+import warnings
 from functools import partial
 
 import pandas as pd
@@ -6,6 +7,7 @@ from sympy import Symbol
 import pharmpy.plugins as plugins
 from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.data import remove_loq_data
+from pharmpy.modeling.eta_additions import get_occasion_levels
 from pharmpy.modeling.results import summarize_errors, write_results
 from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
@@ -103,7 +105,7 @@ def run_amd(
         model = input
         model.name = 'start'
     else:
-        raise TypeError('Only model and dataset are supported currently')
+        raise TypeError('Only NONMEM model or standalone dataset are supported currently')
 
     if lloq is not None:
         remove_loq_data(model, lloq=lloq)
@@ -158,18 +160,27 @@ def run_amd(
     sum_tools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
     for func in run_subfuncs.values():
         subresults = func(next_model)
-        next_model = subresults.best_model
-        if hasattr(subresults, 'summary_tool'):
-            sum_tools.append(subresults.summary_tool.reset_index()),
-        else:
+        if subresults is None:
             sum_tools.append(None)
-        sum_models.append(subresults.summary_models.reset_index()),
-        sum_inds_counts.append(subresults.summary_individuals_count.reset_index()),
+            sum_models.append(None)
+            sum_inds_counts.append(None)
+        else:
+            next_model = subresults.best_model
+            if hasattr(subresults, 'summary_tool'):
+                sum_tools.append(subresults.summary_tool.reset_index()),
+            else:
+                sum_tools.append(None)
+            sum_models.append(subresults.summary_models.reset_index()),
+            sum_inds_counts.append(subresults.summary_individuals_count.reset_index()),
 
     for sums in [sum_tools, sum_models, sum_inds_counts]:
         filtered_results = list(
             zip(*filter(lambda t: t[1] is not None, zip(list(run_subfuncs.keys()), sums)))
         )
+
+        if not filtered_results:
+            sum_amd.append(None)
+            continue
 
         sums = pd.concat(
             filtered_results[1], keys=list(filtered_results[0]), names=['tool', 'default index']
@@ -183,12 +194,30 @@ def run_amd(
         sums.drop('default index', axis=1, inplace=True)
         sum_amd.append(sums)
 
+    summary_tool, summary_models, summary_individuals_count = sum_amd
+
+    if summary_tool is None:
+        warnings.warn(
+            'AMDResults.summary_tool is None because none of the tools yielded a summary.'
+        )
+
+    if summary_models is None:
+        warnings.warn(
+            'AMDResults.summary_models is None because none of the tools yielded a summary.'
+        )
+
+    if summary_individuals_count is None:
+        warnings.warn(
+            'AMDResults.summary_individuals_count is None because none of the tools yielded '
+            'a summary.'
+        )
+
     summary_errors = summarize_errors(next_model)
     res = AMDResults(
         final_model=next_model,
-        summary_tool=sum_amd[0],
-        summary_models=sum_amd[1],
-        summary_individuals_count=sum_amd[2],
+        summary_tool=summary_tool,
+        summary_models=summary_models,
+        summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
     )
     write_results(results=res, path=db.path / 'results.json')
@@ -234,16 +263,21 @@ def _run_covariates(model, continuous, categorical, path):
                 categorical.append(col.name)
     cat_covariates = [Symbol(item) for item in categorical]
 
-    if continuous is not None or categorical is not None:
-        covariates_search_space = (
-            f'LET(CONTINUOUS, {con_covariates}); LET(CATEGORICAL, {cat_covariates})\n'
-            f'COVARIATE(@IIV, @CONTINUOUS, exp, *)\n'
-            f'COVARIATE(@IIV, @CATEGORICAL, cat, *)'
+    if not continuous and not categorical:
+        warnings.warn(
+            'Skipping COVsearch because continuous and/or categorical are None'
+            ' and could not be inferred through .datainfo via "covariate" type'
+            ' and "continuous" flag.'
         )
-        res_cov = run_tool(
-            'covsearch', covariates_search_space, model=model, path=path / 'covsearch'
-        )
-        return res_cov
+        return None
+
+    covariates_search_space = (
+        f'LET(CONTINUOUS, {con_covariates}); LET(CATEGORICAL, {cat_covariates})\n'
+        f'COVARIATE(@IIV, @CONTINUOUS, exp, *)\n'
+        f'COVARIATE(@IIV, @CATEGORICAL, cat, *)'
+    )
+    res_cov = run_tool('covsearch', covariates_search_space, model=model, path=path / 'covsearch')
+    return res_cov
 
 
 def _run_allometry(model, allometric_variable, path):
@@ -253,14 +287,36 @@ def _run_allometry(model, allometric_variable, path):
                 allometric_variable = col.name
                 break
 
-    if allometric_variable is not None:
-        res_allometry = run_tool(
-            'allometry', model, allometric_variable=allometric_variable, path=path / 'allometry'
+    if allometric_variable is None:
+        warnings.warn(
+            'Skipping Allometry because allometric_variable is None and could'
+            ' not be inferred through .datainfo via "body weight" descriptor.'
         )
-        return res_allometry
+        return None
+
+    res_allometry = run_tool(
+        'allometry', model, allometric_variable=allometric_variable, path=path / 'allometry'
+    )
+    return res_allometry
 
 
 def _run_iov(model, occasion, path):
-    if occasion is not None:
-        res_iov = run_tool('iovsearch', model=model, column=occasion, path=path / 'iovsearch')
-        return res_iov
+    if occasion is None:
+        warnings.warn('Skipping IOVsearch because occasion is None.')
+        return None
+
+    if occasion not in model.dataset:
+        # TODO Check this upstream and raise instead of warn
+        warnings.warn(f'Skipping IOVsearch because dataset is missing column "{occasion}".')
+        return None
+
+    categories = get_occasion_levels(model.dataset, occasion)
+    if len(categories) < 2:
+        warnings.warn(
+            f'Skipping IOVsearch because there are less than two '
+            f'occasion categories in column "{occasion}": {categories}.'
+        )
+        return None
+
+    res_iov = run_tool('iovsearch', model=model, column=occasion, path=path / 'iovsearch')
+    return res_iov

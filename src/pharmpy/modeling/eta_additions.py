@@ -6,7 +6,9 @@ from collections import Counter
 from functools import reduce
 from itertools import chain, combinations
 from operator import add, mul
+from typing import Union
 
+import numpy as np
 import sympy
 from sympy import Eq, Piecewise
 from sympy import Symbol as S
@@ -217,7 +219,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
         for dist, grp in zip(etas, list_of_parameters):
             assert len(dist) <= len(grp)
 
-    categories = _get_occ_levels(model.dataset, occ)
+    categories = get_occasion_levels(model.dataset, occ)
 
     if eta_names and len(eta_names) != sum(map(len, etas)) * len(categories):
         raise ValueError(
@@ -461,20 +463,29 @@ def _get_operation_func(operation):
         return add
 
 
-def _get_occ_levels(df, occ):
+def get_occasion_levels(df, occ):
     levels = df[occ].unique()
-    return _round_categories(levels)
+    return _canonicalize_categories(levels)
 
 
-def _round_categories(categories):
-    categories_rounded = []
-    for c in categories:
-        if not isinstance(c, int) or c.is_integer():
-            categories_rounded.append(int(c))
-        else:
-            categories_rounded.append(c)
-    categories_rounded.sort()
-    return categories_rounded
+def _canonicalize_categories(categories):
+    return sorted(map(_canonicalize_category, categories))
+
+
+def _canonicalize_category(c: Union[int, float, str]):
+    if isinstance(c, int):
+        return c
+
+    if isinstance(c, float):
+        return int(c)
+
+    if isinstance(c, (np.int32, np.int64)):
+        return int(c)
+
+    if isinstance(c, str):
+        return _canonicalize_category(float(c) if '.' in c else int(c))
+
+    raise ValueError(f'Cannot canonicalize category "{type(c)}({c})"')
 
 
 class EtaAddition:
