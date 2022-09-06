@@ -528,7 +528,7 @@ K23 = THETA(6)
 K30 = CL/V
 K34 = THETA(4)
 K43 = THETA(5)
-K12 = THETA(7)
+K12=THETA(7)
 S3 = V
 
 $ERROR
@@ -700,7 +700,7 @@ K65 = THETA(5)
 K12 = THETA(6)
 K23 = THETA(6)
 S5 = V
-K34 = THETA(6)
+K34=THETA(6)
 K45 = THETA(6)
 
 $ERROR
@@ -1378,7 +1378,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             ],
             '$PK\n'
             'CLCR_MEDIAN = 65.0000\n'
-            'CL = THETA(1)*EXP(ETA(1))\n'
+            'CL = THETA(1) * EXP(ETA(1))\n'
             'CLCLCR = EXP(THETA(4)*(CLCR - CLCR_MEDIAN))\n'
             'CL = CL*CLCLCR\n'
             'VC = THETA(2) * EXP(ETA(2))\n'
@@ -1396,7 +1396,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             ],
             '$PK\n'
             'CLCR_MEDIAN = 65.0000\n'
-            'CL = THETA(1)*EXP(ETA(1))\n'
+            'CL = THETA(1) * EXP(ETA(1))\n'
             'CLCLCR = EXP(THETA(5)*(CLCR - CLCR_MEDIAN))\n'
             'CL = CL*CLCLCR\n'
             'VC = THETA(2) * EXP(ETA(2))\n'
@@ -2344,7 +2344,7 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
             '0.0030963\t; IIV_CL_IIV_MAT\n'
             '0.0031045\t; IIV_V_IIV_MAT\n'
             '0.0309626\n'
-            '$OMEGA  0.1\n'
+            '$OMEGA 0.1\n'
             '$OMEGA  0.031128\n',
         ),
         (
@@ -2632,7 +2632,7 @@ def test_split_joint_distribution(load_model_for_test, testdata, etas, pk_ref, o
             False,
             None,
             'Y = F + EPS(1)*W*EXP(ETA(3))\n'
-            'IPRED = F + EPS(2)\n'
+            'IPRED=F+EPS(2)\n'
             'IRES = DV - IPRED + EPS(3)*EXP(ETA(4))\n',
             '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2',
         ),
@@ -2904,7 +2904,7 @@ $ESTIMATION METHOD=1 INTERACTION
         '''$OMEGA DIAGONAL(2)
 0.015
 0.02
-$OMEGA  0.1'''
+$OMEGA 0.1'''
         in model.model_code
     )
 
@@ -3148,7 +3148,7 @@ def test_update_inits_no_res(load_model_for_test, testdata, tmp_path):
             ['EPS(1)', 'EPS(3)'],
             'IF (F.EQ.0) F = 2.22500000000000E-307\n'
             'Y = F + EPS(1)*F**THETA(4)\n'
-            'IPRED = F + EPS(2)\n'  # FIXME: registers as different despite not being changed
+            'IPRED=F+EPS(2)\n'
             'IRES = DV - IPRED + EPS(3)*F**THETA(5)',
             '$THETA  (0.01,1) ; power1\n' '$THETA  (0.01,1) ; power2',
         ),

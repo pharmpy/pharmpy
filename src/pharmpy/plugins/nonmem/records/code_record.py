@@ -384,7 +384,7 @@ def lcsdiff(
     elif x[i] == y[j]:
         yield from lcsdiff(c, x, y, i - 1, j - 1)
         yield 0, x[i]
-    elif c[i][j - 1] >= c[i - 1][j]:
+    elif c[i + 1][j] >= c[i][j + 1]:
         yield from lcsdiff(c, x, y, i, j - 1)
         yield 1, y[j]
     else:
