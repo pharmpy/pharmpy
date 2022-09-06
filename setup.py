@@ -85,8 +85,10 @@ setup(
         'appdirs',
         'rich',
         'jupyter-sphinx',
-        'pyreadr',
     ],
+    extras_require={
+        'nlmixr': ["pyreadr"],
+    },
     entry_points={
         'console_scripts': [
             'pharmpy             = pharmpy.__main__:run',
