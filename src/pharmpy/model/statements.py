@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence
+from typing import Set, Tuple, Union
 
 import pharmpy.unicode as unicode
 from pharmpy.deps import networkx as nx
@@ -39,7 +40,7 @@ class Statement(ABC):
 
     @property
     @abstractmethod
-    def free_symbols(self):
+    def free_symbols(self) -> Set[sympy.Symbol]:
         pass
 
     @property
@@ -1678,7 +1679,7 @@ class Statements(Sequence):
         A list of Statement or another Statements to populate this object
     """
 
-    def __init__(self, statements=None):
+    def __init__(self, statements: Union[None, Statements, Tuple[Statement, ...]] = None):
         if isinstance(statements, Statements):
             self._statements = statements._statements
         elif statements is None:
@@ -1727,6 +1728,11 @@ class Statements(Sequence):
             symbols |= assignment.free_symbols
         return symbols
 
+    def _get_ode_system_index(self):
+        return next(
+            map(lambda t: t[0], filter(lambda t: isinstance(t[1], ODESystem), enumerate(self))), -1
+        )
+
     @property
     def ode_system(self):
         """Returns the ODE system of the model or None if the model doesn't have an ODE system
@@ -1741,10 +1747,8 @@ class Statements(Sequence):
         │CENTRAL│──CL/V→│OUTPUT│
         └───────┘       └──────┘
         """
-        for s in self:
-            if isinstance(s, ODESystem):
-                return s
-        return None
+        i = self._get_ode_system_index()
+        return None if i == -1 else self[i]
 
     @property
     def before_odes(self):
@@ -1770,12 +1774,8 @@ class Statements(Sequence):
         V = TVV⋅ℯ
         S₁ = V
         """
-        sset = []
-        for s in self:
-            if isinstance(s, ODESystem):
-                break
-            sset.append(s)
-        return Statements(sset)
+        i = self._get_ode_system_index()
+        return self if i == -1 else self[:i]
 
     @property
     def after_odes(self):
@@ -1797,16 +1797,8 @@ class Statements(Sequence):
                  ────
         IWRES =   W
         """
-        sset = []
-        found = False
-        if self.ode_system is None:
-            return Statements()
-        for s in self:
-            if isinstance(s, ODESystem):
-                found = True
-            elif found:
-                sset.append(s)
-        return Statements(sset)
+        i = self._get_ode_system_index()
+        return Statements() if i == -1 else self[i + 1 :]
 
     @property
     def error(self):
@@ -1828,17 +1820,8 @@ class Statements(Sequence):
                  ────
         IWRES =   W
         """
-
-        sset = []
-        found = False
-        if self.ode_system is None:
-            return self
-        for s in self:
-            if isinstance(s, ODESystem):
-                found = True
-            elif found:
-                sset.append(s)
-        return Statements(sset)
+        i = self._get_ode_system_index()
+        return self if i == -1 else self[i + 1 :]
 
     def subs(self, substitutions):
         """Substitute symbols in all statements.

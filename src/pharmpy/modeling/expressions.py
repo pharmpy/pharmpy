@@ -1160,7 +1160,7 @@ def _graph_inverse(g):
     return h
 
 
-def _reachable_from(start_nodes: Set[T], neighbors: Callable[[T], Iterable[T]]):
+def _reachable_from(start_nodes: Set[T], neighbors: Callable[[T], Iterable[T]]) -> Set[T]:
     queue = list(start_nodes)
     closure = set(start_nodes)
     while queue:
