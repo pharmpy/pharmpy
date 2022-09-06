@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 
 from pharmpy.deps import pandas as pd
@@ -48,29 +49,41 @@ def calculate_results(models):
         model_params = []
         for model in iteration_models:
             name = model.name
-            dofv = base_ofv - model.modelfit_results.ofv
-            if name.startswith('IIV_on_RUV'):
-                param = {'omega': round(model.modelfit_results.parameter_estimates["IIV_RUV1"], 6)}
-            elif name.startswith('power'):
-                param = {'theta': round(model.modelfit_results.parameter_estimates["power1"], 6)}
-            elif name.startswith('time_varying'):
-                param = {
-                    'theta': round(model.modelfit_results.parameter_estimates["time_varying"], 6)
-                }
+            if model.modelfit_results is not None and model.modelfit_results.ofv is not None:
+                dofv = base_ofv - model.modelfit_results.ofv
+                if name.startswith('IIV_on_RUV'):
+                    param = {
+                        'omega': round(model.modelfit_results.parameter_estimates["IIV_RUV1"], 6)
+                    }
+                elif name.startswith('power'):
+                    param = {
+                        'theta': round(model.modelfit_results.parameter_estimates["power1"], 6)
+                    }
+                elif name.startswith('time_varying'):
+                    param = {
+                        'theta': round(
+                            model.modelfit_results.parameter_estimates["time_varying"], 6
+                        )
+                    }
+                else:
+                    param = {
+                        'sigma_add': round(
+                            model.modelfit_results.parameter_estimates["sigma_add"], 6
+                        ),
+                        'sigma_prop': round(
+                            model.modelfit_results.parameter_estimates["sigma_prop"], 6
+                        ),
+                    }
+                a = name.split('_')
+                name = '_'.join(a[0:-1])
+
+                model_name.append(name)
+                model_dofv.append(dofv)
+                model_params.append(param)
             else:
-                param = {
-                    'sigma_add': round(model.modelfit_results.parameter_estimates["sigma_add"], 6),
-                    'sigma_prop': round(
-                        model.modelfit_results.parameter_estimates["sigma_prop"], 6
-                    ),
-                }
-            a = name.split('_')
-            name = '_'.join(a[0:-1])
-
-            model_name.append(name)
-            model_dofv.append(dofv)
-            model_params.append(param)
-
+                warnings.warn(
+                    f"{name} model has no ofv and will be skipped in {iteration} iteration."
+                )
         df = pd.DataFrame(
             {
                 'model': model_name,
@@ -80,7 +93,8 @@ def calculate_results(models):
                 'parameters': model_params,
             }
         )
-        iter_dfs.append(df)
+        if not df.empty:
+            iter_dfs.append(df)
 
     df_final = pd.concat(iter_dfs)
     df_final.set_index(['model', 'dvid', 'iteration'], inplace=True)
