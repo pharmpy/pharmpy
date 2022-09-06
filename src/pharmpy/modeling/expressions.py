@@ -954,8 +954,10 @@ def _neutral(expr: sympy.Expr) -> sympy.Integer:
         return sympy.Integer(0)
     if isinstance(expr, sympy.Mul):
         return sympy.Integer(1)
+    if isinstance(expr, sympy.Pow):
+        return sympy.Integer(1)
 
-    raise ValueError(repr(expr))
+    raise ValueError(f'{type(expr)}: {repr(expr)} ({expr.free_symbols})')
 
 
 def _is_theta(symbol: sympy.Symbol) -> bool:
@@ -1005,7 +1007,7 @@ def remove_covariate_effect_from_expression(
     # TODO Take THETA limits into account. Currently we assume any
     # offset/factor can be compensated but this is not true in general.
     can_be_scaled_or_offset = any(
-        map(lambda t: isinstance(t[1], sympy.Symbol) and _is_theta(t[1]), children)
+        map(lambda t: not t[0] and isinstance(t[1], sympy.Symbol) and _is_theta(t[1]), children)
     )
 
     changed = any(map(lambda t: t[0], children))
