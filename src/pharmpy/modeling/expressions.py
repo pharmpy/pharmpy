@@ -940,7 +940,8 @@ def remove_covariate_effect_from_statements(
             statement.expression, sympy.Symbol(covariate)
         )
         if changed:
-            yield Assignment(statement.symbol, new_expression)
+            if new_expression != statement.symbol:
+                yield Assignment(statement.symbol, new_expression)
         else:
             yield statement
 
@@ -976,6 +977,22 @@ def remove_covariate_effect_from_expression(
 
         return True, _neutral(parent)
 
+    if isinstance(expression, sympy.Piecewise):
+        if any(map(lambda t: covariate in t[1].free_symbols, expression.args)):
+            # NOTE At least on condition depends on the covariate
+            try:
+                # NOTE If expression is piecewise univariate and condition depends on
+                # covariate, return simplest expression from cases
+                expr = min(
+                    (p[0] for p in expression.as_expr_set_pairs()),
+                    key=sympy.count_ops,
+                )
+                return True, remove_covariate_effect_from_expression(expr, covariate, parent)[1]
+            except (ValueError, NotImplementedError) as e:
+                # NOTE These exceptions are raised by multivariate Piecewise
+                # statements which we do not handle at the moment.
+                raise NotImplementedError(e)
+
     children = list(
         map(
             lambda expr: remove_covariate_effect_from_expression(expr, covariate, expression),
@@ -987,22 +1004,21 @@ def remove_covariate_effect_from_expression(
     # in children symbol
     # TODO Take THETA limits into account. Currently we assume any
     # offset/factor can be compensated but this is not true in general.
-    can_be_compensated = any(
+    can_be_scaled_or_offset = any(
         map(lambda t: isinstance(t[1], sympy.Symbol) and _is_theta(t[1]), children)
     )
+
     changed = any(map(lambda t: t[0], children))
 
     if not changed:
         return False, expression
 
-    if not can_be_compensated:
+    if not can_be_scaled_or_offset:
         return True, expression.func(*map(lambda t: t[1], children))
 
     return True, expression.func(
         *map(
-            lambda t: _neutral(expression)
-            if can_be_compensated and t[0] and _is_constant(t[1])
-            else t[1],
+            lambda t: _neutral(expression) if t[0] and _is_constant(t[1]) else t[1],
             children,
         )
     )
