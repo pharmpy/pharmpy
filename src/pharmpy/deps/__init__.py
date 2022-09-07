@@ -6,6 +6,7 @@ numpy = LazyLoader('numpy', globals(), 'numpy')
 pandas = LazyLoader('pandas', globals(), 'pandas')
 symengine = LazyLoader('symengine', globals(), 'symengine')
 sympy = LazyLoader('sympy', globals(), 'sympy')
+sympy_stats = LazyLoader('sympy_stats', globals(), 'sympy.stats')
 
 __all__ = (
     'altair',
@@ -14,4 +15,5 @@ __all__ = (
     'pandas',
     'symengine',
     'sympy',
+    'sympy_stats',
 )

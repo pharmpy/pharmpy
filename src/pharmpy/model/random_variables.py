@@ -7,7 +7,7 @@ import pharmpy.math
 import pharmpy.unicode as unicode
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import symengine, sympy
+from pharmpy.deps import symengine, sympy, sympy_stats
 from pharmpy.expressions import sympify
 
 
@@ -55,12 +55,12 @@ class RandomVariable:
         self.symbol = sympy.Symbol(name)
         self._sympy_rv = sympy_rv
         if sympy_rv is not None:
-            if isinstance(sympy_rv.pspace.distribution, sympy.stats.crv_types.NormalDistribution):
+            if isinstance(sympy_rv.pspace.distribution, sympy_stats.crv_types.NormalDistribution):
                 self._mean = sympy.Matrix([sympy_rv.pspace.distribution.mean])
                 self._variance = sympy.Matrix([sympy_rv.pspace.distribution.std**2])
             elif isinstance(
                 sympy_rv.pspace.distribution,
-                sympy.stats.joint_rv_types.MultivariateNormalDistribution,
+                sympy_stats.joint_rv_types.MultivariateNormalDistribution,
             ):
                 raise ValueError(
                     "Cannot create multivariate random variables using constructor. "
@@ -202,9 +202,9 @@ class RandomVariable:
             if len(self._variance) == 1 and self._variance[0].is_zero:
                 return sympy.Integer(0)
             elif self._mean.rows > 1:
-                return sympy.stats.Normal('X', self._mean, self._variance)
+                return sympy_stats.Normal('X', self._mean, self._variance)
             else:
-                return sympy.stats.Normal(self.name, self._mean[0], sympy.sqrt(self._variance[0]))
+                return sympy_stats.Normal(self.name, self._mean[0], sympy.sqrt(self._variance[0]))
         else:
             return self._sympy_rv
 
@@ -353,7 +353,7 @@ class RandomVariable:
                 )
         else:
             if isinstance(
-                self.sympy_rv.pspace.distribution, sympy.stats.crv_types.ExponentialDistribution
+                self.sympy_rv.pspace.distribution, sympy_stats.crv_types.ExponentialDistribution
             ):
                 return (
                     f'{sympy.pretty(self.symbol, use_unicode=True)} ~ '
@@ -977,7 +977,7 @@ class RandomVariables(MutableSequence):
             symrv = rv.sympy_rv
             n = 1 if rv._joint_names is None else len(rv._joint_names)
             dist = symrv.pspace.distribution
-            if isinstance(dist, sympy.stats.crv_types.NormalDistribution):
+            if isinstance(dist, sympy_stats.crv_types.NormalDistribution):
                 i += 1
                 distributions.append(([rv], dist))
             else:  # Joint Normal
@@ -1049,7 +1049,7 @@ class RandomVariables(MutableSequence):
                 else:
                     mu = dist.mean.subs(parameters)
                     sigma = dist.std.subs(parameters)
-                new_rv = sympy.stats.Normal(new_name, mu, sigma)
+                new_rv = sympy_stats.Normal(new_name, mu, sigma)
                 sampling_rvs.append((names, new_rv))
         if sampling_rvs:
             # FIXME: Unnecessary to go via DataFrame
@@ -1059,10 +1059,10 @@ class RandomVariables(MutableSequence):
                     warnings.filterwarnings('ignore')
                     if sympy.__version__ == '1.8':
                         cursample = next(
-                            sympy.stats.sample(new_rv, library='numpy', size=samples, seed=rng)
+                            sympy_stats.sample(new_rv, library='numpy', size=samples, seed=rng)
                         )
                     else:
-                        cursample = sympy.stats.sample(
+                        cursample = sympy_stats.sample(
                             new_rv, library='numpy', size=samples, seed=rng
                         )
                     if len(names) > 1:
@@ -1084,10 +1084,10 @@ class RandomVariables(MutableSequence):
         names = []
         for rvs, dist in self.distributions():
             names.extend([rv.name for rv in rvs])
-            if isinstance(dist, sympy.stats.crv_types.NormalDistribution):
+            if isinstance(dist, sympy_stats.crv_types.NormalDistribution):
                 means.append(dist.mean)
                 blocks.append(sympy.Matrix([dist.std**2]))
-            elif isinstance(dist, sympy.stats.joint_rv_types.MultivariateNormalDistribution):
+            elif isinstance(dist, sympy_stats.joint_rv_types.MultivariateNormalDistribution):
                 means.extend(dist.mu)
                 blocks.append(dist.sigma)
             else:

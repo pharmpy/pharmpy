@@ -9,7 +9,7 @@ from operator import add, mul
 from typing import Union
 
 from pharmpy.deps import numpy as np
-from pharmpy.deps import sympy
+from pharmpy.deps import sympy, sympy_stats
 from pharmpy.expressions import sympify
 from pharmpy.model import Assignment, Parameter, Parameters, RandomVariable
 
@@ -239,9 +239,9 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
                 continue
 
             if len(variables) == 1:
-                assert isinstance(dist, sympy.stats.crv_types.NormalDistribution)
+                assert isinstance(dist, sympy_stats.crv_types.NormalDistribution)
             else:
-                assert isinstance(dist, sympy.stats.joint_rv_types.MultivariateNormalDistribution)
+                assert isinstance(dist, sympy_stats.joint_rv_types.MultivariateNormalDistribution)
 
             etas.append(intersection)
 
