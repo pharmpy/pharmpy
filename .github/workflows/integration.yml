@@ -133,7 +133,7 @@ jobs:
           TOX_SUITE: integration
           TOX_PYTEST_COVER: integration
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           flags: integration,ubuntu-latest,python-3.9
           files: ./.coverage.xml
@@ -191,7 +191,7 @@ jobs:
           TOX_SUITE: integration
           TOX_PYTEST_COVER: integration
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           flags: integration,macos-latest,python-3.9
           files: ./.coverage.xml
@@ -245,7 +245,7 @@ jobs:
           TOX_SUITE: integration
           TOX_PYTEST_COVER: integration
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           flags: integration,windows-2019,python-3.9
           files: ./.coverage.xml
