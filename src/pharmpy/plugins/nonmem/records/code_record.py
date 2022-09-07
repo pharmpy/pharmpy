@@ -7,12 +7,9 @@ import re
 from typing import Any, Iterable, Iterator, Sequence, Tuple
 
 import lark
-import sympy
-import sympy.printing.codeprinter
-import sympy.printing.fortran
-from sympy.printing.str import StrPrinter
 
 from pharmpy.data_structures import OrderedSet
+from pharmpy.deps import sympy
 from pharmpy.model import Assignment, Statement, Statements
 from pharmpy.parse_utils.generic import AttrToken, NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
@@ -20,7 +17,7 @@ from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 from .record import Record
 
 
-class MyPrinter(StrPrinter):
+class MyPrinter(sympy.printing.str.StrPrinter):
     def _print_Add(self, expr):
         args = expr.args
         new = []

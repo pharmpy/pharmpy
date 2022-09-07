@@ -2,9 +2,6 @@ import math
 import re
 import warnings
 
-import sympy.stats
-from sympy import Symbol as symbol
-
 import pharmpy.math
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
@@ -400,7 +397,7 @@ class OmegaRecord(Record):
             numetas = len(self.root.all('diag_item'))
             for node in self.root.all('diag_item'):
                 name = self._rv_name(i)
-                eta = RandomVariable.normal(name, 'iiv', 0, symbol(rev_map[(i, i)]))
+                eta = RandomVariable.normal(name, 'iiv', 0, sympy.Symbol(rev_map[(i, i)]))
                 rvs.append(eta)
                 etas.append(eta.name)
                 i += 1
@@ -433,7 +430,9 @@ class OmegaRecord(Record):
                     cov = sympy.zeros(numetas)
                     for row in range(numetas):
                         for col in range(row + 1):
-                            cov[row, col] = symbol(rev_map[(start_omega + row, start_omega + col)])
+                            cov[row, col] = sympy.Symbol(
+                                rev_map[(start_omega + row, start_omega + col)]
+                            )
                             if row != col:
                                 cov[col, row] = cov[row, col]
                     next_cov = cov
@@ -447,7 +446,7 @@ class OmegaRecord(Record):
                 if same:
                     sym = previous_cov
                 else:
-                    sym = symbol(rev_map[(start_omega, start_omega)])
+                    sym = sympy.Symbol(rev_map[(start_omega, start_omega)])
                 eta = RandomVariable.normal(name, 'iiv', 0, sym)
                 next_cov = sym
                 rvs.append(eta)
