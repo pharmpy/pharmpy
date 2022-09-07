@@ -64,6 +64,7 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
     >>> run_ruvsearch(model=model)      # doctest: +SKIP
 
     """
+    _check_input(model, groups, p_value, skip)
     wf = Workflow()
     wf.name = "ruvsearch"
     start_task = Task('start_ruvsearch', start, model, groups, p_value, skip)
@@ -71,6 +72,32 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
     task_results = Task('results', _results)
     wf.add_task(task_results, predecessors=[start_task])
     return wf
+
+
+def _check_input(model, groups, p_value, skip):
+    if model is None:
+        return
+    residuals = model.modelfit_results.residuals
+    predictions = model.modelfit_results.predictions
+    if residuals is None or 'CWRES' not in residuals:
+        raise ValueError(
+            f"Please check {model.name}.mod file to make sure ID, TIME, CWRES are in $TABLE."
+        )
+    if predictions is None or ('CIPREDI' not in predictions and 'IPRED' not in predictions):
+        raise ValueError(
+            f"Please check {model.name}.mod file to make sure ID, TIME, CIPREDI(or IPRED) are in $TABLE."
+        )
+    if not isinstance(groups, int):
+        raise TypeError(
+            f"{groups} is not an integer. Please input an integer for groups and try again."
+        )
+    if not (isinstance(p_value, float) and 0 < p_value < 1):
+        raise ValueError(
+            f"{p_value} is not a float number between (0, 1). Please input correct p-value and try again."
+        )
+    full_skip = {'IIV_on_RUV', 'power', 'combined', 'time_varying'}
+    if not (isinstance(skip, list) and set(skip).issubset(full_skip)):
+        raise ValueError(f"Please correct {skip} and try again.")
 
 
 def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
