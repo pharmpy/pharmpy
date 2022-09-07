@@ -117,7 +117,7 @@ def read_results(path):
     Examples
     --------
     >>> from pharmpy.tools import read_results
-    >>> res = read_resuts("results.json")     # doctest: +SKIP
+    >>> res = read_results("results.json")     # doctest: +SKIP
 
     See also
     --------
