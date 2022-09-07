@@ -47,3 +47,7 @@ def __getattr__(key):
             _tool_cache[key] = wrap(key[4:])
 
     return _tool_cache[key]
+
+
+def __dir__():
+    return __all__
