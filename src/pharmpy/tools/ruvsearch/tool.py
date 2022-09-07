@@ -359,7 +359,7 @@ def _time_after_dose(model):
 
 
 def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
-    if any(res.cwres_models['dofv'] > cutoff):
+    if not res.cwres_models.empty and any(res.cwres_models['dofv'] > cutoff):
         model = model.copy()
         update_initial_estimates(model)
         model.name = f'best_ruvsearch_{current_iteration}'
