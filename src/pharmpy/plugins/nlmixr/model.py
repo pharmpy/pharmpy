@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
+from pharmpy.deps import sympy, sympy_printing
 from pharmpy.model import Assignment
 from pharmpy.modeling import write_csv
 from pharmpy.results import ModelfitResults
@@ -50,7 +50,7 @@ def name_mangle(s):
     return s.replace('(', '').replace(')', '').replace(',', '_')
 
 
-class ExpressionPrinter(sympy.printing.str.StrPrinter):
+class ExpressionPrinter(sympy_printing.str.StrPrinter):
     def __init__(self, amounts):
         self.amounts = amounts
         super().__init__()
