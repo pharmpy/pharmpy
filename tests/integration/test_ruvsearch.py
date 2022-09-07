@@ -45,6 +45,9 @@ def test_ruvsearch_input(tmp_path, testdata):
         remove_covariance_step(model)
         model.datainfo = model.datainfo.derive(path=tmp_path / 'moxo_simulated_resmod.csv')
 
+        res = run_tool('ruvsearch', model)
+        assert res
+
         with pytest.raises(TypeError) as e:
             run_tool('ruvsearch', model, groups=4.5, p_value=0.05, skip=[])
         assert (

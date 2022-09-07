@@ -96,7 +96,7 @@ def _check_input(model, groups, p_value, skip):
             f"{p_value} is not a float number between (0, 1). Please input correct p-value and try again."
         )
     full_skip = {'IIV_on_RUV', 'power', 'combined', 'time_varying'}
-    if not (isinstance(skip, list) and set(skip).issubset(full_skip)):
+    if skip is not None and not (isinstance(skip, list) and set(skip).issubset(full_skip)):
         raise ValueError(f"Please correct {skip} and try again.")
 
 
