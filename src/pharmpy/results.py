@@ -38,12 +38,15 @@ class ResultsJSONDecoder(json.JSONDecoder):
             if cls == 'DataFrame':
                 return pd.read_json(json.dumps(obj), orient='table', precise_float=True)
             elif cls == 'Series':
-                name = obj['__name__']
-                del obj['__name__']
+                name = None
+                if '__name__' in obj:
+                    name = obj['__name__']
+                    del obj['__name__']
                 series = pd.read_json(
                     json.dumps(obj), typ='series', orient='table', precise_float=True
                 )
-                series.name = name
+                if name is not None:
+                    series.name = name
                 return series
 
         if module is None or module.startswith('altair.'):

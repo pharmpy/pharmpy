@@ -139,7 +139,8 @@ class ResultsJSONEncoder(json.JSONEncoder):
             return d
         elif isinstance(obj, pd.Series):
             d = json.loads(obj.to_json())
-            d['__name__'] = obj.name
+            if obj.name is not None:
+                d['__name__'] = obj.name
             d['__class__'] = 'Series'
             return d
         elif obj.__class__.__module__.startswith('altair.'):
