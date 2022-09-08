@@ -27,28 +27,19 @@ jobs:
         repository: pharmpy/pharmpy.github.io
         path: pharmpy.github.io
         token: ${{secrets.DOC_TOKEN}}
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    - uses: ./.github/actions/setup-tox
       with:
         python-version: "3.9"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install wheel tox tox-gh-actions
-        sudo apt install graphviz
+    - name: Install graphviz
+      run: sudo apt install graphviz
     - name: Test with tox
       run: |
         cd pharmpy
-        tox
-      env:
-        PLATFORM: ${{ matrix.platform }}
-        TOX_SUITE: unit
+        tox -e unit
     - name: Build documentation
       run: |
         cd pharmpy
-        tox
-      env:
-        TOX_SUITE: docs-build
+        tox -e docs-build
     - name: Build wheel
       run: |
         cd pharmpy

@@ -125,18 +125,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install tox tox-gh-actions
+          pip install tox
       - name: Run integration tests
-        run: tox
-        env:
-          PLATFORM: ubuntu-latest
-          TOX_SUITE: integration
-          TOX_PYTEST_COVER: integration
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          flags: integration,ubuntu-latest,python-3.9
-          files: ./.coverage.xml
+        run: tox -e integration
 
   integration-macos:
     needs: [get-nonmem]
@@ -183,18 +174,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install tox tox-gh-actions
+          pip install tox
       - name: Run integration tests
-        run: tox
-        env:
-          PLATFORM: macos-latest
-          TOX_SUITE: integration
-          TOX_PYTEST_COVER: integration
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          flags: integration,macos-latest,python-3.9
-          files: ./.coverage.xml
+        run: tox -e integration
 
   integration-windows:
     needs: [get-nonmem]
@@ -237,15 +219,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install tox tox-gh-actions
+          pip install tox
       - name: Run integration tests
-        run: tox
-        env:
-          PLATFORM: windows-2019
-          TOX_SUITE: integration
-          TOX_PYTEST_COVER: integration
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          flags: integration,windows-2019,python-3.9
-          files: ./.coverage.xml
+        run: tox -e integration
