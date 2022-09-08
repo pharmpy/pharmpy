@@ -24,7 +24,7 @@ jobs:
           path: pharmpy.github.io
           token: ${{secrets.DOC_TOKEN}}
 
-      - uses: ./.github/actions/setup-tox
+      - uses: ./pharmpy/.github/actions/setup-tox
         with:
           python-version: "3.9"
 
