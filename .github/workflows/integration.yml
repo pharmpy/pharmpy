@@ -3,6 +3,9 @@ name: Integration
 on:
   workflow_call:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   get-nonmem:
