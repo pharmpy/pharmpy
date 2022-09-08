@@ -12,27 +12,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
-    name: build-ci
 
+  unit:
     strategy:
       matrix:
-        suite: ['unit', 'doctest']
         platform: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.8', '3.9', '3.10']
-        include:
-          - suite: 'lint'
-            platform: ubuntu-latest
-            python-version: '3.8'
-          - suite: 'docs-build'
-            platform: ubuntu-latest
-            python-version: '3.9'
-          - suite: 'docs-test'
-            platform: ubuntu-latest
-            python-version: '3.9'
-          - suite: 'docs-lint'
-            platform: ubuntu-latest
-            python-version: '3.9'
         exclude:
           - platform: windows-latest
             python-version: '3.10'
@@ -43,57 +28,123 @@ jobs:
 
       - uses: actions/checkout@v3
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - uses: ./.github/actions/setup-tox
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install tox tox-gh-actions
-
-      - name: Lint MANIFEST and Python files
-        if: matrix.suite == 'lint'
-        run: tox
-        env:
-          PLATFORM: ${{ matrix.platform }}
-          TOX_SUITE: ${{ matrix.suite }}
-
-      - name: Run tests with tox
-        if: matrix.suite == 'unit' || matrix.suite == 'doctest'
+      - name: Run unit tests with tox (with coverage)
         shell: bash
         run: |
-            tox
-            echo "coverage=${{ matrix.suite }}" >> $GITHUB_ENV
-        env:
-          PLATFORM: ${{ matrix.platform }}
-          TOX_SUITE: ${{ matrix.suite }}
-          TOX_PYTEST_COVER: ${{ matrix.suite }}
+            tox -e unit-cover
 
-      - name: Upload coverage to Codecov
-        if: env.coverage != ''
-        uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v3
         with:
-          flags: ${{ env.coverage }},${{ matrix.platform }},python-${{ matrix.python-version }}
+          flags: unit,${{ matrix.platform }},python-${{ matrix.python-version }}
           files: ./.coverage.xml
 
+
+  doctest:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.8', '3.9', '3.10']
+        exclude:
+          - platform: windows-latest
+            python-version: '3.10'
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/setup-tox
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run doctest tests with tox
+        shell: bash
+        run: tox -e doctest
+
+
+  lint:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest]
+        python-version: ['3.8']
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/setup-tox
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Lint MANIFEST and Python files
+        run: tox -e lint
+
+
+  docs-build:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest]
+        python-version: ['3.9']
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/setup-tox
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install graphviz
+        run: sudo apt install graphviz
+
       - name: Build docs
-        if: matrix.suite == 'docs-build'
-        run: |
-            sudo apt install graphviz
-            tox
-        env:
-          TOX_SUITE: ${{ matrix.suite }}
+        run: tox -e docs-build
+
+
+  docs-test:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest]
+        python-version: ['3.9']
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/setup-tox
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Test docs
-        if: matrix.suite == 'docs-test'
-        run: tox
-        env:
-          TOX_SUITE: ${{ matrix.suite }}
+        run: tox -e docs-test
+
+
+  docs-lint:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest]
+        python-version: ['3.9']
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/setup-tox
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Lint docs
-        if: matrix.suite == 'docs-lint'
-        run: tox
-        env:
-          TOX_SUITE: ${{ matrix.suite }}
+        run: tox -e docs-lint
