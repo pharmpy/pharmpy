@@ -8,15 +8,18 @@ on:
       - 'v*'
 
 jobs:
+
   get-nonmem:
     runs-on: ubuntu-latest
     steps:
+
       - name: Cache NONMEM
         id: cache-nonmem
         uses: actions/cache@v3
         with:
             path: 744.zip
             key: nonmem-744
+
       - name: Download NONMEM
         if: steps.cache-nonmem.outputs.cache-hit != 'true'
         run: |
@@ -80,32 +83,40 @@ jobs:
           echo 'key Q' >>lynxcmds
           lynx -accept-all-cookies nonmem.iconplc.com -cmd_script=lynxcmds
 
+
   integration-ubuntu:
     needs: [get-nonmem]
     runs-on: ubuntu-latest
     steps:
+
       - name: Checkout Pharmpy
         uses: actions/checkout@v3
+
       - name: Cache NONMEM
         id: cache-nonmem
         uses: actions/cache@v3
         with:
             path: 744.zip
             key: nonmem-744
+
       - name: Unzip NONMEM
         run: unzip -P $ZIP_KEY 744.zip
         env:
           ZIP_KEY: ${{secrets.ZIP_KEY}}
+
       - name: Install gfortran
         run: sudo apt install gfortran
+
       - name: Install NONMEM
         run: |
           cd nm744CD
           /bin/bash SETUP74 $(realpath .) $(realpath ../nm744) gfortran y ar same rec q
+
       - name: NONMEM license
         run: echo $LICENSE_KEY >nm744/license/nonmem.lic
         env:
           LICENSE_KEY: ${{secrets.LICENSE_KEY}}
+
       - name: Create pharmpy.conf
         run: |
           export CONFDIR=/home/runner/.config/Pharmpy
@@ -123,37 +134,46 @@ jobs:
       - name: Run integration tests
         run: tox -e integration
 
+
   integration-macos:
     needs: [get-nonmem]
     runs-on: macos-latest
     steps:
+
       - name: Checkout Pharmpy
         uses: actions/checkout@v3
+
       - name: Setup gfortran
         run: |
           sudo ln -s /usr/local/bin/gfortran-9 /usr/local/bin/gfortran
           sudo mkdir /usr/local/gfortran
           sudo ln -s /usr/local/Cellar/gcc@9/9.3.0_1/lib/gcc/9 /usr/local/gfortran/lib
+
       - name: Install realpath
         run: brew install coreutils
+
       - name: Get NONMEM
         id: cache-nonmem
         uses: actions/cache@v3
         with:
             path: 744.zip
             key: nonmem-744
+
       - name: Unzip NONMEM
         run: unzip -P $ZIP_KEY 744.zip
         env:
           ZIP_KEY: ${{secrets.ZIP_KEY}}
+
       - name: Install NONMEM
         run: |
           cd nm744CD
           /bin/bash SETUP74 $(realpath .) $(realpath ../nm744) gfortran y ar same rec q
+
       - name: NONMEM license
         run: echo $LICENSE_KEY >nm744/license/nonmem.lic
         env:
           LICENSE_KEY: ${{secrets.LICENSE_KEY}}
+
       - name: Create pharmpy.conf
         run: |
           export CONFDIR=/Users/runner/Library/Application\ Support/Pharmpy
@@ -169,39 +189,47 @@ jobs:
       - name: Run integration tests
         run: tox -e integration
 
+
   integration-windows:
     needs: [get-nonmem]
     runs-on: windows-2019
     steps:
+
       - name: Checkout Pharmpy
         uses: actions/checkout@v3
+
       - name: 'Use GNU tar (see https://github.com/actions/cache/blob/main/workarounds.md#use-cache-across-feature-branches)'
         shell: cmd
         run: |
           echo "Adding GNU tar to PATH"
           echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
+
       - name: Cache NONMEM
         id: cache-nonmem
         uses: actions/cache@v3
         with:
             path: 744.zip
             key: nonmem-744
+
       - name: Unzip NONMEM
         run: 7z x 744.zip -p%ZIP_KEY%
         env:
           ZIP_KEY: ${{secrets.ZIP_KEY}}
         shell: cmd
+
       - name: NONMEM license
         run: echo $LICENSE_KEY >nm744CD/nonmem.lic
         env:
           LICENSE_KEY: ${{secrets.LICENSE_KEY}}
         shell: bash
+
       - name: Install NONMEM
         run: |
           set INSTALLDIR=%CD%\nm744
           cd nm744CD
           SETUP74.bat %CD% %INSTALLDIR% gfortran y ar same rec q
         shell: cmd
+
       - name: Create pharmpy.conf
         run: |
           export CONFDIR=/c/Users/runneradmin/AppData/Local/Pharmpy/Pharmpy
