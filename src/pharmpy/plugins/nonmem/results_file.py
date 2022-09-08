@@ -2,9 +2,9 @@ import re
 from datetime import datetime
 
 import dateutil.parser
-import numpy as np
-from numpy import nan
 from packaging import version
+
+from pharmpy.deps import numpy as np
 
 
 class NONMEMResultsFile:
@@ -60,7 +60,7 @@ class NONMEMResultsFile:
         if ofv is not None:
             ofv = float(ofv)
         else:
-            ofv = nan
+            ofv = np.nan
         return ofv
 
     @staticmethod
@@ -80,8 +80,8 @@ class NONMEMResultsFile:
             'estimate_near_boundary': None,
             'rounding_errors': None,
             'maxevals_exceeded': None,
-            'significant_digits': nan,
-            'function_evaluations': nan,
+            'significant_digits': np.nan,
+            'function_evaluations': np.nan,
             'warning': None,
         }
 
@@ -97,7 +97,7 @@ class NONMEMResultsFile:
     def parse_tere(rows):
         result = NONMEMResultsFile.unknown_covariance()
         result['covariance_step_ok'] = False
-        result['estimation_runtime'] = nan
+        result['estimation_runtime'] = np.nan
         if len(rows) < 1:
             return result
 

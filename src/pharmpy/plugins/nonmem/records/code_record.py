@@ -7,12 +7,9 @@ import re
 from typing import Any, Iterable, Iterator, Sequence, Tuple
 
 import lark
-import sympy
-import sympy.printing.codeprinter
-import sympy.printing.fortran
-from sympy.printing.str import StrPrinter
 
 from pharmpy.data_structures import OrderedSet
+from pharmpy.deps import sympy, sympy_printing
 from pharmpy.model import Assignment, Statement, Statements
 from pharmpy.parse_utils.generic import AttrToken, NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
@@ -20,7 +17,7 @@ from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 from .record import Record
 
 
-class MyPrinter(StrPrinter):
+class MyPrinter(sympy_printing.str.StrPrinter):
     def _print_Add(self, expr):
         args = expr.args
         new = []
@@ -29,7 +26,7 @@ class MyPrinter(StrPrinter):
         return super()._print_Add(sympy.Add(*args, evaluate=False), order='none')
 
 
-class NMTranPrinter(sympy.printing.fortran.FCodePrinter):
+class NMTranPrinter(sympy_printing.fortran.FCodePrinter):
     # Differences from FCodePrinter in sympy
     # 1. Upper case
     # 2. Use Fortran 77 names for relationals
@@ -56,7 +53,7 @@ class NMTranPrinter(sympy.printing.fortran.FCodePrinter):
         self._settings["standard"] = 95
 
     def _print_Float(self, expr):
-        printed = sympy.printing.codeprinter.CodePrinter._print_Float(self, expr)
+        printed = sympy_printing.codeprinter.CodePrinter._print_Float(self, expr)
         return printed
 
 

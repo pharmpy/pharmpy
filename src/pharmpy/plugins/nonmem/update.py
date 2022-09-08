@@ -4,7 +4,7 @@ import warnings
 from pathlib import Path
 
 from pharmpy.deps import numpy as np
-from pharmpy.deps import sympy
+from pharmpy.deps import sympy, sympy_printing
 from pharmpy.model import (
     Assignment,
     Bolus,
@@ -1209,10 +1209,10 @@ def update_ccontra(model, path=None, force=False):
 
     with open(ccontr_path, 'w') as fh:
         fh.write(ccontr1)
-        e1 = sympy.printing.fortran.fcode(h.subs(y, sympy.Symbol('y(1)')), assign_to='y(1)')
+        e1 = sympy_printing.fortran.fcode(h.subs(y, sympy.Symbol('y(1)')), assign_to='y(1)')
         fh.write(e1)
         fh.write(ccontr2)
-        e2 = sympy.printing.fortran.fcode(
+        e2 = sympy_printing.fortran.fcode(
             sympy.Symbol('c1') + ll.subs(y, sympy.Symbol('y(1)')), assign_to='c1'
         )
         fh.write(e2)
