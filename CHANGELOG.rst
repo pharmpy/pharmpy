@@ -1,3 +1,11 @@
+0.77.0 (2022-09-08)
+-------------------
+
+Changes
+========
+
+* Return input model in allometry tool when allometry model fails
+
 0.76.1 (2022-09-06)
 -------------------
 
