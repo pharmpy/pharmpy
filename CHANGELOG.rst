@@ -5,7 +5,7 @@ Bugfixes
 ========
 
 * Fix issue with adding allometry to models with MM elimination
-* Make pyreadr an optional dependecy. Making Pharmpy easier to install on Mac M1
+* Make pyreadr an optional dependency, making Pharmpy easier to install on Mac M1
 
 0.76.0 (2022-09-05)
 -------------------
