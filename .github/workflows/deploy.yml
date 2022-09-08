@@ -61,19 +61,11 @@ jobs:
           mkdir upload
           cp dist/*.whl dist/*.tar.gz upload
 
-      - name: Wait for main checks to pass
-        uses: lewagon/wait-on-check-action@v1.0.0
+      - name: Wait for all other workflows to complete
+        uses: lewagon/wait-on-check-action@v1
         with:
-          ref: ${{ github.ref }}
-          check-name: 'main'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
-
-      - name: Wait for integration tests to pass
-        uses: lewagon/wait-on-check-action@v1.0.0
-        with:
-          ref: ${{ github.ref }}
-          check-name: 'Integration'
+          ref: ${{ github.sha }}
+          check-regexp: '.*'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
 
