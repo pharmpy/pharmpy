@@ -13,12 +13,12 @@ jobs:
     steps:
 
       - name: Checkout pharmpy/pharmpy
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
             path: pharmpy
 
       - name: Checkout pharmpy/pharmpy.github.io
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: pharmpy/pharmpy.github.io
           path: pharmpy.github.io

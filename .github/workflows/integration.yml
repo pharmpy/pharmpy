@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Cache NONMEM
         id: cache-nonmem
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
             path: 744.zip
             key: nonmem-744
@@ -91,10 +91,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Pharmpy
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Cache NONMEM
         id: cache-nonmem
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
             path: 744.zip
             key: nonmem-744
@@ -137,7 +137,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout Pharmpy
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Setup gfortran
         run: |
           sudo ln -s /usr/local/bin/gfortran-9 /usr/local/bin/gfortran
@@ -147,7 +147,7 @@ jobs:
         run: brew install coreutils
       - name: Get NONMEM
         id: cache-nonmem
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
             path: 744.zip
             key: nonmem-744
@@ -186,7 +186,7 @@ jobs:
     runs-on: windows-2019
     steps:
       - name: Checkout Pharmpy
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Get NONMEM
         uses: actions/download-artifact@v2
         with:
