@@ -62,7 +62,7 @@ jobs:
           cp dist/*.whl dist/*.tar.gz upload
 
       - name: Wait for all other workflows to complete
-        uses: lewagon/wait-on-check-action@v1
+        uses: lewagon/wait-on-check-action@v1.1.2
         with:
           ref: ${{ github.sha }}
           check-regexp: '.*'
