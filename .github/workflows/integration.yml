@@ -79,12 +79,6 @@ jobs:
           echo 'key ^J' >>lynxcmds
           echo 'key Q' >>lynxcmds
           lynx -accept-all-cookies nonmem.iconplc.com -cmd_script=lynxcmds
-      - name: Upload cache workaround
-        uses: actions/upload-artifact@v2
-        with:
-          name: cache-workaround
-          path: 744.zip
-          retention-days: 1
 
   integration-ubuntu:
     needs: [get-nonmem]
@@ -187,10 +181,17 @@ jobs:
     steps:
       - name: Checkout Pharmpy
         uses: actions/checkout@v3
-      - name: Get NONMEM
-        uses: actions/download-artifact@v2
+      - name: 'Use GNU tar (see https://github.com/actions/cache/blob/main/workarounds.md#use-cache-across-feature-branches)'
+        shell: cmd
+        run: |
+          echo "Adding GNU tar to PATH"
+          echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
+      - name: Cache NONMEM
+        id: cache-nonmem
+        uses: actions/cache@v3
         with:
-            name: cache-workaround
+            path: 744.zip
+            key: nonmem-744
       - name: Unzip NONMEM
         run: 7z x 744.zip -p%ZIP_KEY%
         env:
