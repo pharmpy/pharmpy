@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     create_joint_distribution,
     fix_parameters,
     generate_model_code,
+    get_config_path,
     get_model_covariates,
     load_example_model,
     read_model,
@@ -18,6 +19,11 @@ from pharmpy.modeling import (
     set_name,
     write_model,
 )
+
+
+def test_get_config_path():
+    with pytest.warns(UserWarning):
+        assert get_config_path() is None
 
 
 def test_read_model_path(testdata):

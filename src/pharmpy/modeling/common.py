@@ -593,11 +593,15 @@ def get_config_path():
     >>> from pharmpy.modeling import get_config_path
     >>> get_config_path()  # doctest: +SKIP
     """
-    config_path = config.user_config_dir()
-    if config_path.exists():
-        return str(config_path)
+    if config.user_config_file_enabled():
+        config_path = config.user_config_dir()
+        if config_path.exists():
+            return str(config_path)
+        else:
+            warnings.warn(f'Cannot find config path {config_path}')
+            return None
     else:
-        warnings.warn(f'Cannot find config path {config_path}')
+        warnings.warn('User config file is disabled')
         return None
 
 
