@@ -287,7 +287,10 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
                 errors.append(e)
                 pass
         else:
-            raise FileNotFoundError(errors)
+            raise KeyError(
+                f'Could not find {self.name} in {self.db}.'
+                f' Looked up {", ".join(map(lambda e: f"`{e.filename}`", errors))}.'
+            )
 
         model.database = self.db
         model.read_modelfit_results(root)
