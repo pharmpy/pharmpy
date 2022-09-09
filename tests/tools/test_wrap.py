@@ -19,17 +19,33 @@ def _is_modelsearch(obj):
     return True
 
 
+def _dynamic_tool_import_1(tool: str):
+    mod = __import__('pharmpy.tools', globals(), locals(), [tool], 0)
+    return getattr(mod, tool)
+
+
+def _dynamic_tool_import_2(tool: str):
+    import pharmpy.tools as mod
+
+    return getattr(mod, tool)
+
+
 @pytest.mark.parametrize(
-    ('attr', 'identity'),
+    ('tool_import',),
+    (
+        (_dynamic_tool_import_1,),
+        (_dynamic_tool_import_2,),
+    ),
+)
+@pytest.mark.parametrize(
+    ('tool', 'identity'),
     (
         ('run_iivsearch', _is_iivsearch),
         ('run_modelsearch', _is_modelsearch),
     ),
 )
-def test_import_tools_getattr(attr, identity):
-    import pharmpy.tools as tools
-
-    obj = getattr(tools, attr, None)
+def test_import_tools_getattr(tool_import, tool, identity):
+    obj = tool_import(tool)
     assert identity(obj)
 
 
@@ -43,20 +59,3 @@ def test_import_tools_import_run_modelsearch():
     from pharmpy.tools import run_modelsearch
 
     assert _is_modelsearch(run_modelsearch)
-
-
-@pytest.mark.parametrize(
-    ('attr',),
-    (
-        ('run_allometry',),
-        ('run_iivsearch',),
-        ('run_modelsearch',),
-        ('run_ruvsearch',),
-    ),
-)
-def test_import_tools_attr(attr):
-    import pharmpy.tools as tools
-
-    _all = getattr(tools, '__all__', None)
-
-    assert attr in dir() if _all is None else attr in _all
