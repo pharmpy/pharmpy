@@ -27,7 +27,13 @@ def _df(parent: Model, child: Model) -> int:
 
 def cutoff(parent: Model, child: Model, alpha: float) -> float:
     df = _df(parent, child)
-    return float(stats.chi2.isf(q=alpha, df=df))
+    return (
+        0
+        if df == 0
+        else float(stats.chi2.isf(q=alpha, df=df))
+        if df > 0
+        else -float(stats.chi2.isf(q=alpha, df=-df))
+    )
 
 
 def p_value(parent: Model, child: Model) -> float:

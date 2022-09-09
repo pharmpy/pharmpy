@@ -6,12 +6,12 @@ import warnings
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.deps.scipy import stats
 from pharmpy.expressions import sympify
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model, RandomVariables
 
 from .data import get_ids, get_observations
+from .lrt import test as lrt_test
 from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
 
 
@@ -654,7 +654,7 @@ def rank_models(
 
         rank_value = _get_rankval(model, rank_type, bic_type)
         if rank_type == 'lrt':
-            if not _fulfills_lrt(model_dict[model.parent_model], model, cutoff):
+            if not lrt_test(model_dict[model.parent_model], model, cutoff):
                 continue
         if cutoff:
             if ref_value - rank_value <= cutoff:
@@ -711,20 +711,6 @@ def rank_models(
         return df.sort_values(by=[f'{rank_type_name}'])
     else:
         return df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
-
-
-def _fulfills_lrt(parent, child, alpha):
-    if parent.name == child.name:
-        return False
-    dofv = parent.modelfit_results.ofv - child.modelfit_results.ofv
-    df = len(child.parameters) - len(parent.parameters)
-    if df < 0:
-        raise NotImplementedError('LRT is currently only supported where degrees of freedom => 0')
-    elif df == 0:
-        cutoff = 0
-    else:
-        cutoff = float(stats.chi2.isf(q=alpha, df=df))
-    return dofv >= cutoff
 
 
 def _get_rankval(model, rank_type, bic_type):
