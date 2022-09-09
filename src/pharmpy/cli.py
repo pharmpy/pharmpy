@@ -60,9 +60,9 @@ import warnings
 from collections import OrderedDict, namedtuple
 from textwrap import dedent
 
-from .deps import pandas as pd
-
 import pharmpy
+
+from .deps import pandas as pd
 
 formatter = argparse.ArgumentDefaultsHelpFormatter
 
