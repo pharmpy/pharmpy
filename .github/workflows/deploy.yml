@@ -61,13 +61,17 @@ jobs:
           mkdir upload
           cp dist/*.whl dist/*.tar.gz upload
 
-      - name: Wait for all other workflows to complete
-        uses: lewagon/wait-on-check-action@v1.1.2
+      - name: Wait for main checks workflow to succeed
+        uses: ArcticLampyrid/action-wait-for-workflow@v1.0.1
         with:
-          ref: ${{ github.sha }}
-          check-regexp: '.*'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
+          workflow: main.yml
+          sha: ${{ github.sha }}
+
+      - name: Wait for integration tests workflow to succeed
+        uses: ArcticLampyrid/action-wait-for-workflow@v1.0.1
+        with:
+          workflow: integration.yml
+          sha: ${{ github.sha }}
 
       - name: Publish documentation
         run: |
