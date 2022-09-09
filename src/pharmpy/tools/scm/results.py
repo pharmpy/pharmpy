@@ -409,7 +409,7 @@ def log_steps(path, options, parcov_dictionary=None):
 
     pattern = {
         'runtable': re.compile(r'^MODEL\s+TEST\s+'),
-        'm1': re.compile(r'Model\s+directory\s+(?P<m1folder>\S+)'),
+        'm1': re.compile(r'Model\s+directory\s+(?P<m1folder>.*)'),
         'chosen': re.compile(r'Parameter-covariate relation chosen in this'),
     }
 
