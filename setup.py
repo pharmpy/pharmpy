@@ -27,7 +27,7 @@ def longdesc(text_str):
 
 setup(
     name='pharmpy-core',
-    version='0.75.0',
+    version='0.77.4',
     license='GNU Lesser General Public License v3 (LGPLv3)',
     description='Pharmacometric modeling',
     long_description='%s\n\n%s'
@@ -68,7 +68,7 @@ setup(
     install_requires=[
         'lark>=1.1.2',
         'sympy>=1.8',
-        'symengine>=0.7.2',
+        'symengine>=0.9.2',
         'pandas>=1.4',
         'numexpr',
         'altair>=4.2.0',
@@ -85,8 +85,10 @@ setup(
         'appdirs',
         'rich',
         'jupyter-sphinx',
-        'pyreadr',
     ],
+    extras_require={
+        'nlmixr': ["pyreadr"],
+    },
     entry_points={
         'console_scripts': [
             'pharmpy             = pharmpy.__main__:run',

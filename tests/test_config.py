@@ -1,8 +1,8 @@
 import pytest
 
 import pharmpy.config as config
-import pharmpy.data as data
 from pharmpy.config import ConfigurationContext
+from pharmpy.model import data
 from pharmpy.plugins.nonmem import conf
 
 
@@ -27,6 +27,10 @@ def test_read_config():
     assert len(conf.parameter_names) <= 3
 
 
-def test_str(pheno_path, datadir):
+def test_str():
+    assert str(conf) == ""
+
     with ConfigurationContext(conf, parameter_names=['abbr', 'basic']):
         assert str(conf) == "parameter_names:\t['abbr', 'basic']\n"
+
+    assert str(conf) == "parameter_names:\t['basic']\n"

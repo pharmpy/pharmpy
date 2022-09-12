@@ -53,54 +53,16 @@ Definitions
 """
 
 import argparse
-import importlib
 import pathlib
 import pydoc
 import sys
-import types
 import warnings
 from collections import OrderedDict, namedtuple
 from textwrap import dedent
 
+import pharmpy
 
-class LazyLoader(types.ModuleType):
-    """Class that masquerades as a module and lazily loads it when accessed the first time
-
-    The code for the class is taken from TensorFlow and is under the Apache 2.0 license
-
-    This is needed for the cli to be able to do things as version and help quicker than
-    if all modules were imported.
-    """
-
-    def __init__(self, local_name, parent_module_globals, name):
-        self._local_name = local_name
-        self._parent_module_globals = parent_module_globals
-
-        super(LazyLoader, self).__init__(name)
-
-    def _load(self):
-        # Import the target module and insert it into the parent's namespace
-        module = importlib.import_module(self.__name__)
-        self._parent_module_globals[self._local_name] = module
-
-        # Update this object's dict so that if someone keeps a reference to the
-        #   LazyLoader, lookups are efficient (__getattr__ is only called on lookups
-        #   that fail).
-        self.__dict__.update(module.__dict__)
-        return module
-
-    def __getattr__(self, item):
-        module = self._load()
-        return getattr(module, item)
-
-    def __dir__(self):
-        module = self._load()
-        return dir(module)
-
-
-pharmpy = LazyLoader('pharmpy', globals(), 'pharmpy')
-plugin_utils = LazyLoader('plugin_utils', globals(), 'pharmpy.plugins.utils')
-pd = LazyLoader('pd', globals(), 'pandas')
+from .deps import pandas as pd
 
 formatter = argparse.ArgumentDefaultsHelpFormatter
 
@@ -221,11 +183,11 @@ def run_covsearch(args):
     )
 
 
-def run_resmod(args):
+def run_ruvsearch(args):
     from pharmpy.tools import run_tool
 
     run_tool(
-        'resmod',
+        'ruvsearch',
         model=args.model,
         groups=args.groups,
         p_value=args.p_value,
@@ -294,13 +256,15 @@ def data_print(args):
 
 def data_filter(args):
     """Subcommand to filter a dataset"""
+    from pharmpy.plugins.utils import PluginError
+
     try:
         df = args.model_or_dataset.dataset
-    except plugin_utils.PluginError:
+    except PluginError:
         df = args.model_or_dataset
     expression = ' '.join(args.expressions)
     try:
-        df.query(expression, inplace=True)
+        df = df.query(expression)
     except SyntaxError:
         error(SyntaxError(f'Invalid syntax of query: "{expression}"'))
     except BaseException as e:
@@ -310,12 +274,14 @@ def data_filter(args):
 
 def data_append(args):
     """Subcommand to append a column to a dataset"""
+    from pharmpy.plugins.utils import PluginError
+
     try:
         df = args.model_or_dataset.dataset
-    except plugin_utils.PluginError:
+    except PluginError:
         df = args.model_or_dataset
     try:
-        df.eval(args.expression, inplace=True)
+        df = df.eval(args.expression)
     except SyntaxError:
         error(SyntaxError(f'Invalid syntax of expression: "{args.expression}"'))
     write_model_or_dataset(args.model_or_dataset, df, args.output_file, args.force)
@@ -323,7 +289,7 @@ def data_append(args):
 
 def write_model_or_dataset(model_or_dataset, new_df, path, force):
     """Write model or dataset to output_path or using default names"""
-    if hasattr(model_or_dataset, 'pharmpy'):
+    if isinstance(model_or_dataset, pd.DataFrame):
         # Is a dataset
         try:
             # If no output_file supplied will use name of df
@@ -406,6 +372,8 @@ def data_anonymize(args):
 
 def info(args):
     """Subcommand to print Pharmpy info (and brag a little bit)."""
+
+    import pharmpy
 
     Install = namedtuple('VersionInfo', ['version', 'authors', 'directory'])
     inst = Install(
@@ -750,7 +718,7 @@ def results_linearize(args):
 
 
 def results_resmod(args):
-    from pharmpy.tools.resmod.results import psn_resmod_results
+    from pharmpy.tools.ruvsearch.results import psn_resmod_results
 
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
@@ -866,15 +834,21 @@ def input_model(path):
     Raises if not found or is dir, without tracebacks (see :func:`error_exit`).
     """
     path = check_input_path(path)
-    return pharmpy.Model.create_model(path)
+    from pharmpy.model import Model
+
+    return Model.create_model(path)
 
 
 def input_model_or_dataset(path):
     """Returns :class:`~pharmpy.model.Model` or pd.DataFrame from *path*"""
     path = check_input_path(path)
+    from pharmpy.plugins.utils import PluginError
+
     try:
-        obj = pharmpy.Model.create_model(path)
-    except pharmpy.plugins.utils.PluginError:
+        from pharmpy.model import Model
+
+        obj = Model.create_model(path)
+    except PluginError:
         obj = pd.read_csv(path)
     return obj
 
@@ -1147,9 +1121,9 @@ parser_definition = [
                     }
                 },
                 {
-                    'resmod': {
+                    'ruvsearch': {
                         'help': 'Search for best residual error model',
-                        'func': run_resmod,
+                        'func': run_ruvsearch,
                         'parents': [args_model_input],
                         'args': [
                             {
@@ -1892,16 +1866,16 @@ parser_definition = [
                     }
                 },
                 {
-                    'resmod': {
-                        'help': 'Generate resmod results',
-                        'description': 'Generate results from a PsN resmod run',
+                    'ruvsearch': {
+                        'help': 'Generate ruvsearch results',
+                        'description': 'Generate results from a PsN ruvsearch run',
                         'func': results_resmod,
                         'args': [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
                                 'type': pathlib.Path,
-                                'help': 'Path to PsN resmod run directory',
+                                'help': 'Path to PsN ruvsearch run directory',
                             }
                         ],
                     }
@@ -2002,7 +1976,7 @@ parser = argparse.ArgumentParser(
     formatter_class=formatter,
     allow_abbrev=True,
 )
-parser.add_argument('--version', action='version', version='0.75.0')
+parser.add_argument('--version', action='version', version=pharmpy.__version__)
 
 # subcommand parsers
 subparsers = parser.add_subparsers(title='Pharmpy commands', metavar='COMMAND')

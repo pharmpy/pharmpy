@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from pharmpy import Model
+from pharmpy.model import Model
 from pharmpy.tools import fit
 from pharmpy.utils import TemporaryDirectoryChanger
 

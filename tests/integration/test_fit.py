@@ -3,8 +3,8 @@ import shutil
 import pytest
 
 import pharmpy.modeling as modeling
-from pharmpy import Model
 from pharmpy.config import site_config_dir, user_config_dir
+from pharmpy.model import Model
 from pharmpy.plugins.nonmem import conf
 from pharmpy.tools import fit
 from pharmpy.utils import TemporaryDirectoryChanger

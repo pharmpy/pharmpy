@@ -1,7 +1,7 @@
 import pytest
 import sympy
 
-from pharmpy.statements import Assignment
+from pharmpy.model import Assignment
 
 
 def S(x):
@@ -221,8 +221,8 @@ def test_single_assignments(parser, buf, sym, expression):
         (
             '$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nEND IF',
             [
-                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
-                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)))),
+                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)), (0, True))),
+                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)), (0, True))),
             ],
         ),
         (
@@ -240,26 +240,36 @@ def test_single_assignments(parser, buf, sym, expression):
         (
             '$PRED    IF (A>=0.5) THEN   \n  VAR=1+2 \nELSE IF (B.EQ.23) THEN ; C\nVAR=9.25\n'
             'END IF  \n',
-            [(S('VAR'), sympy.Piecewise((3, S('A') >= 0.5), (9.25, sympy.Eq(S('B'), 23))))],
+            [
+                (
+                    S('VAR'),
+                    sympy.Piecewise((3, S('A') >= 0.5), (9.25, sympy.Eq(S('B'), 23)), (0, True)),
+                )
+            ],
         ),
         (
             '$PRED    if (a>=0.5) then   \n  var=1+2 \nELSE if (b.eq.23) then ; C\nVAR=9.25\n'
             'END IF  \n',
-            [(S('VAR'), sympy.Piecewise((3, S('A') >= 0.5), (9.25, sympy.Eq(S('B'), 23))))],
+            [
+                (
+                    S('VAR'),
+                    sympy.Piecewise((3, S('A') >= 0.5), (9.25, sympy.Eq(S('B'), 23)), (0, True)),
+                )
+            ],
         ),
         (
             '$PRED   IF (A>=0.5) THEN   \n  VAR1=1+2 \nELSE IF  (B.EQ.23)  THEN \nVAR2=9.25\n'
             'END IF  \n',
             [
-                (S('VAR1'), sympy.Piecewise((3, S('A') >= 0.5))),
-                (S('VAR2'), sympy.Piecewise((9.25, sympy.Eq(S('B'), 23)))),
+                (S('VAR1'), sympy.Piecewise((3, S('A') >= 0.5), (0, True))),
+                (S('VAR2'), sympy.Piecewise((9.25, sympy.Eq(S('B'), 23)), (0, True))),
             ],
         ),
         (
             '$PRED\nIF (X.EQ.0) THEN    ;   anything  \n  Y = 23\nZ = 9\nEND IF;AFTER',
             [
-                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
-                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)))),
+                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)), (0, True))),
+                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)), (0, True))),
             ],
         ),
         (
@@ -268,7 +278,8 @@ def test_single_assignments(parser, buf, sym, expression):
                 (
                     S('TNXD'),
                     sympy.Piecewise(
-                        (S('TIME'), sympy.Or(sympy.Ne(S('NEWIND'), 2), sympy.Ge(S('EVID'), 3)))
+                        (S('TIME'), sympy.Or(sympy.Ne(S('NEWIND'), 2), sympy.Ge(S('EVID'), 3))),
+                        (0, True),
                     ),
                 )
             ],
@@ -292,36 +303,36 @@ def test_single_assignments(parser, buf, sym, expression):
         (
             '$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE\nEND IF',
             [
-                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
-                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)))),
+                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)), (0, True))),
+                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)), (0, True))),
             ],
         ),
         (
             '$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE IF (X.EQ.23) THEN\nELSE\nEND IF',
             [
-                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
-                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)))),
+                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)), (0, True))),
+                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)), (0, True))),
             ],
         ),
         (
             '$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE IF (X.EQ.44) THEN\nEND IF',
             [
-                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
-                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)))),
+                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)), (0, True))),
+                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)), (0, True))),
             ],
         ),
         (
             '$PRED\nIF (X.EQ.0) THEN\nELSE\nY = 23\nZ = 9\nEND IF',
             [
-                (S('Y'), sympy.Piecewise((23, sympy.Ne(S('X'), 0)))),
-                (S('Z'), sympy.Piecewise((9, sympy.Ne(S('X'), 0)))),
+                (S('Y'), sympy.Piecewise((23, sympy.Ne(S('X'), 0)), (0, True))),
+                (S('Z'), sympy.Piecewise((9, sympy.Ne(S('X'), 0)), (0, True))),
             ],
         ),
         (
             '$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE\n CALL RANDOM(1,R)\nEND IF',
             [
-                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
-                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)))),
+                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)), (0, True))),
+                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)), (0, True))),
             ],
         ),
     ],

@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from pharmpy import Model
 from pharmpy.modeling import (
     calculate_aic,
     calculate_bic,
@@ -22,8 +21,8 @@ from pharmpy.modeling import (
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-def test_calculate_eta_shrinkage(testdata):
-    pheno = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_calculate_eta_shrinkage(load_model_for_test, testdata):
+    pheno = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     shrinkage = calculate_eta_shrinkage(pheno)
     assert len(shrinkage) == 2
     assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 7.2048e01 / 100
@@ -34,15 +33,15 @@ def test_calculate_eta_shrinkage(testdata):
     assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 1.2839e01 / 100
 
 
-def test_calculate_individual_shrinkage(testdata):
-    pheno = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_calculate_individual_shrinkage(load_model_for_test, testdata):
+    pheno = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     ishr = calculate_individual_shrinkage(pheno)
     assert len(ishr) == 59
     assert pytest.approx(ishr['ETA(1)'][1], 1e-15) == 0.84778949807160287
 
 
-def test_calculate_individual_parameter_statistics(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'secondary_parameters' / 'pheno.mod')
+def test_calculate_individual_parameter_statistics(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'secondary_parameters' / 'pheno.mod')
     rng = np.random.default_rng(103)
     stats = calculate_individual_parameter_statistics(model, 'CL/V', rng=rng)
 
@@ -50,14 +49,14 @@ def test_calculate_individual_parameter_statistics(testdata):
     assert stats['variance'][0] == pytest.approx(8.086653508585209e-06)
     assert stats['stderr'][0] == pytest.approx(0.0035089729730046304, abs=1e-6)
 
-    model = Model.create_model(testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod')
     rng = np.random.default_rng(5678)
     stats = calculate_individual_parameter_statistics(model, 'CL/V', rng=rng)
     assert stats['mean'][0] == pytest.approx(0.0049100899539843)
     assert stats['variance'][0] == pytest.approx(7.391076132098555e-07)
     assert stats['stderr'][0] == pytest.approx(0.0009425952783595735, abs=1e-6)
 
-    covmodel = Model.create_model(testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod')
+    covmodel = load_model_for_test(testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod')
     rng = np.random.default_rng(8976)
     stats = calculate_individual_parameter_statistics(covmodel, 'K = CL/V', rng=rng)
     assert stats['mean']['K', 'median'] == pytest.approx(0.004525842355027405)
@@ -71,8 +70,8 @@ def test_calculate_individual_parameter_statistics(testdata):
     assert stats['stderr']['K', 'p95'] == pytest.approx(0.0069971678916412716, abs=1e-6)
 
 
-def test_calculate_pk_parameters_statistics(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+def test_calculate_pk_parameters_statistics(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
     rng = np.random.default_rng(103)
     df = calculate_pk_parameters_statistics(model, rng=rng)
     assert df['mean'].loc['t_max', 'median'] == pytest.approx(1.5999856886869577)
@@ -83,10 +82,10 @@ def test_calculate_pk_parameters_statistics(testdata):
     assert df['stderr'].loc['C_max_dose', 'median'] == pytest.approx(0.11328030491204867)
 
 
-def test_calc_pk_two_comp_bolus(testdata):
+def test_calc_pk_two_comp_bolus(load_model_for_test, testdata):
     # Warning: These results are based on a manually modified cov-matrix
     # Results are not verified
-    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox_2comp.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox_2comp.mod')
     rng = np.random.default_rng(103)
     df = calculate_pk_parameters_statistics(model, rng=rng)
     # FIXME: Why doesn't random state handle this difference in stderr?
@@ -105,8 +104,10 @@ k_e,median,13.319584,2.67527,2.633615
     # pd.testing.assert_frame_equal(df, correct, atol=1e-4)
 
 
-def test_summarize_modelfit_results(testdata, pheno_path):
-    pheno = Model.create_model(pheno_path)
+def test_summarize_modelfit_results(
+    load_model_for_test, create_model_for_test, testdata, pheno_path
+):
+    pheno = load_model_for_test(pheno_path)
 
     summary_single = summarize_modelfit_results(pheno)
 
@@ -115,7 +116,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
 
     assert len(summary_single.index) == 1
 
-    mox = Model.create_model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    mox = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
 
     summary_multiple = summarize_modelfit_results([pheno, mox])
 
@@ -126,7 +127,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert len(summary_multiple.index) == 2
     assert list(summary_multiple.index) == ['pheno_real', 'mox1']
 
-    pheno_no_res = Model.create_model(StringIO(pheno.model_code))
+    pheno_no_res = create_model_for_test(pheno.model_code)
     pheno_no_res.name = 'pheno_no_res'
 
     summary_no_res = summarize_modelfit_results([pheno, pheno_no_res])
@@ -135,7 +136,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert np.isnan(summary_no_res.loc['pheno_no_res']['ofv'])
     assert np.all(np.isnan(summary_no_res.filter(regex='estimate$').loc['pheno_no_res']))
 
-    pheno_multest = Model.create_model(
+    pheno_multest = load_model_for_test(
         testdata
         / 'nonmem'
         / 'modelfit_results'
@@ -162,7 +163,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
 
     assert not summary_multest_full.loc['pheno_multEST', 1]['minimization_successful']
 
-    pheno_multest_no_res = Model.create_model(StringIO(pheno_multest.model_code))
+    pheno_multest_no_res = create_model_for_test(pheno_multest.model_code)
     pheno_multest_no_res.name = 'pheno_multest_no_res'
 
     summary_multest_full_no_res = summarize_modelfit_results(
@@ -175,9 +176,9 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert estimates.isnull().all()
 
 
-def test_summarize_modelfit_results_errors(testdata, tmp_path, pheno_path):
+def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_path, pheno_path):
     with TemporaryDirectoryChanger(tmp_path):
-        model = Model.create_model(pheno_path)
+        model = load_model_for_test(pheno_path)
         shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
 
         error_path = testdata / 'nonmem' / 'errors'
@@ -185,13 +186,13 @@ def test_summarize_modelfit_results_errors(testdata, tmp_path, pheno_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_no_header.mod')
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
-        model_no_header = Model.create_model('pheno_no_header.mod')
+        model_no_header = load_model_for_test('pheno_no_header.mod')
         model_no_header.datainfo = model_no_header.datainfo.derive(path=tmp_path / 'pheno_data.csv')
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
-        model_rounding_error = Model.create_model('pheno_rounding_error.mod')
+        model_rounding_error = load_model_for_test('pheno_rounding_error.mod')
         model_rounding_error.datainfo = model_rounding_error.datainfo.derive(
             path=tmp_path / 'pheno_data.csv'
         )
@@ -203,13 +204,13 @@ def test_summarize_modelfit_results_errors(testdata, tmp_path, pheno_path):
         assert summary.loc['pheno_real']['warnings_found'] == 0
         assert summary.loc['pheno_no_header']['errors_found'] == 2
         assert summary.loc['pheno_no_header']['warnings_found'] == 1
-        assert summary.loc['pheno_rounding_error']['errors_found'] == 1
+        assert summary.loc['pheno_rounding_error']['errors_found'] == 2
         assert summary.loc['pheno_rounding_error']['warnings_found'] == 0
 
 
-def test_summarize_errors(testdata, tmp_path, pheno_path):
+def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):
     with TemporaryDirectoryChanger(tmp_path):
-        model = Model.create_model(pheno_path)
+        model = load_model_for_test(pheno_path)
         shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
 
         error_path = testdata / 'nonmem' / 'errors'
@@ -217,13 +218,13 @@ def test_summarize_errors(testdata, tmp_path, pheno_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_no_header.mod')
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
-        model_no_header = Model.create_model('pheno_no_header.mod')
+        model_no_header = load_model_for_test('pheno_no_header.mod')
         model_no_header.datainfo = model_no_header.datainfo.derive(path=tmp_path / 'pheno_data.csv')
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
-        model_rounding_error = Model.create_model('pheno_rounding_error.mod')
+        model_rounding_error = load_model_for_test('pheno_rounding_error.mod')
         model_rounding_error.datainfo = model_rounding_error.datainfo.derive(
             path=tmp_path / 'pheno_data.csv'
         )
@@ -234,7 +235,7 @@ def test_summarize_errors(testdata, tmp_path, pheno_path):
         assert 'pheno_real' not in summary.index.get_level_values('model')
         assert len(summary.loc[('pheno_no_header', 'WARNING')]) == 1
         assert len(summary.loc[('pheno_no_header', 'ERROR')]) == 2
-        assert len(summary.loc[('pheno_rounding_error', 'ERROR')]) == 1
+        assert len(summary.loc[('pheno_rounding_error', 'ERROR')]) == 2
 
 
 class DummyModel:
@@ -246,15 +247,25 @@ class DummyModel:
 
 
 class DummyResults:
-    def __init__(self, ofv, minimization_successful=True):
+    def __init__(
+        self, ofv, minimization_successful=True, termination_cause=None, significant_digits=5
+    ):
         self.ofv = ofv
         self.minimization_successful = minimization_successful
+        self.termination_cause = termination_cause
+        # 5 is an arbitrary number, this is relevant in test if sig. digits is unreportable (NaN)
+        self.significant_digits = significant_digits
 
 
 def test_rank_models():
     base = DummyModel('base', parent='base', parameter_names=['p1'], ofv=0)
     m1 = DummyModel(
-        'm1', parent='base', parameter_names=['p1', 'p2'], ofv=-5, minimization_successful=False
+        'm1',
+        parent='base',
+        parameter_names=['p1', 'p2'],
+        ofv=-5,
+        minimization_successful=False,
+        termination_cause='rounding_errors',
     )
     m2 = DummyModel('m2', parent='base', parameter_names=['p1', 'p2'], ofv=-4)
     m3 = DummyModel('m3', parent='base', parameter_names=['p1', 'p2', 'p3'], ofv=-4)
@@ -262,51 +273,66 @@ def test_rank_models():
 
     models = [m1, m2, m3, m4]
 
-    df, models_sorted = rank_models(base, models, rank_type='ofv')
+    df = rank_models(base, models, rank_type='ofv')
     assert len(df) == 5
     best_model = df.loc[df['rank'] == 1].index.values
-    assert list(best_model) == ['m1']
-    assert len(models_sorted) == 5
-    assert models_sorted[0].name == 'm1'
-
-    df, models_sorted = rank_models(
-        base, models, strictness=['minimization_successful'], rank_type='ofv'
-    )
-    best_model = df.loc[df['rank'] == 1].index.values
     assert list(best_model) == ['m2', 'm3']
-    ranked_models = df.dropna().index.values
-    assert len(ranked_models) == 4
-    assert len(models_sorted) == 4
-    assert models_sorted[0].name == 'm2'
 
-    df, models_sorted = rank_models(base, models, rank_type='ofv', cutoff=1)
+    # Test if rounding errors are allowed
+    df = rank_models(base, models, errors_allowed=['rounding_errors'], rank_type='ofv')
+    best_model = df.loc[df['rank'] == 1].index.values
+    assert list(best_model) == ['m1']
     ranked_models = df.dropna().index.values
-    assert len(ranked_models) == 3
-    assert len(models_sorted) == 3
-    assert models_sorted[0].name == 'm1'
+    assert len(ranked_models) == 5
 
-    df, models_sorted = rank_models(base, models, rank_type='lrt', cutoff=0.05)
-    ranked_models = list(df.dropna().index.values)
+    # Test with a cutoff of dOFV=1
+    df = rank_models(base, models, rank_type='ofv', cutoff=1)
+    ranked_models = df.dropna().index.values
     assert len(ranked_models) == 2
+
+    # Test with LRT
+    df = rank_models(base, models, rank_type='lrt', cutoff=0.05)
+    ranked_models = list(df.dropna().index.values)
+    assert len(ranked_models) == 1
     assert 'm2' in ranked_models
     assert 'm3' not in ranked_models
-    assert len(models_sorted) == 2
-    assert models_sorted[0].name == 'm1'
 
+    # Test if candidate model does not have an OFV
     m5 = DummyModel('m5', parent='base', parameter_names=['p1'], ofv=np.nan)
-    df, models_sorted = rank_models(base, models + [m5], rank_type='ofv')
+    df = rank_models(base, models + [m5], rank_type='ofv')
     ranked_models = list(df.dropna().index.values)
-    assert m5 not in ranked_models
+    assert 'm5' not in ranked_models
     assert np.isnan(df.loc['m5']['rank'])
 
+    # Test if model has minimized but has unreportable number of significant digits while still allowing rounding
+    # errors
+    m6 = DummyModel(
+        'm6',
+        parent='base',
+        parameter_names=['p1'],
+        ofv=-5,
+        minimization_successful=False,
+        termination_cause='rounding_errors',
+        significant_digits=np.nan,
+    )
+    df = rank_models(base, models + [m6], errors_allowed=['rounding_errors'], rank_type='ofv')
+    ranked_models = list(df.dropna().index.values)
+    assert 'm6' not in ranked_models
+    assert np.isnan(df.loc['m6']['rank'])
 
-def test_aic(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    # Test if base model failed, fall back to rank value
+    base_nan = DummyModel('base_nan', parent='base_nan', parameter_names=['p1'], ofv=np.nan)
+    df = rank_models(base_nan, models, errors_allowed=['rounding_errors'], rank_type='ofv')
+    assert df.iloc[0].name == 'm1'
+
+
+def test_aic(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert calculate_aic(model) == 740.8947268137307
 
 
-def test_bic(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+def test_bic(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert calculate_bic(model, type='iiv') == 739.0498017015422
     assert calculate_bic(model, type='fixed') == 756.111852398327
     assert calculate_bic(model, type='random') == 751.2824140332593
@@ -315,9 +341,9 @@ def test_bic(testdata):
     assert calculate_bic(model) == 755.359951477165
 
 
-def test_check_parameters_near_bounds(testdata):
+def test_check_parameters_near_bounds(load_model_for_test, testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
-    nearbound = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'near_bounds.mod')
+    nearbound = load_model_for_test(onePROB / 'oneEST' / 'noSIM' / 'near_bounds.mod')
     correct = pd.Series(
         [False, True, False, False, False, False, False, False, True, True, False],
         index=[

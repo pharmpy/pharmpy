@@ -1,14 +1,9 @@
 from itertools import chain, combinations
 from typing import Callable, Iterable, List, Tuple, TypeVar, Union
 
-from sympy.core.add import Add
-from sympy.core.symbol import Symbol
-from sympy.functions.elementary.piecewise import Piecewise
-
-import pharmpy.tools.modelsearch.tool
-from pharmpy import Model
+from pharmpy.deps import sympy
+from pharmpy.model import Assignment, Model, Results
 from pharmpy.modeling import add_iov, copy_model, rank_models, remove_iiv, remove_iov
-from pharmpy.statements import Assignment
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
@@ -223,10 +218,12 @@ def best_model(
     bic_type: Union[None, str],
 ):
     candidates = [base, *models]
-    _, srtd = rank_models(base, candidates, rank_type=rank_type, cutoff=cutoff, bic_type=bic_type)
-    if srtd:
-        return srtd[0]
-    else:
+    df = rank_models(base, candidates, rank_type=rank_type, cutoff=cutoff, bic_type=bic_type)
+    best_model_name = df['rank'].idxmin()
+
+    try:
+        return [model for model in candidates if model.name == best_model_name][0]
+    except IndexError:
         return base
 
 
@@ -273,7 +270,7 @@ def task_results(rank_type, cutoff, bic_type, models):
     return res
 
 
-class IOVSearchResults(pharmpy.results.Results):
+class IOVSearchResults(Results):
     def __init__(
         self,
         summary_tool=None,
@@ -298,7 +295,7 @@ class IOVSearchResults(pharmpy.results.Results):
 def _get_iov_piecewise_assignment_symbols(model: Model):
     iovs = set(rv.symbol for rv in model.random_variables.iov)
     for statement in model.statements:
-        if isinstance(statement, Assignment) and isinstance(statement.expression, Piecewise):
+        if isinstance(statement, Assignment) and isinstance(statement.expression, sympy.Piecewise):
             try:
                 expression_symbols = [p[0] for p in statement.expression.as_expr_set_pairs()]
             except (ValueError, NotImplementedError):
@@ -314,10 +311,10 @@ def _get_iiv_etas_with_corresponding_iov(model: Model):
     iiv = model.random_variables.iiv
 
     for statement in model.statements:
-        if isinstance(statement, Assignment) and isinstance(statement.expression, Add):
+        if isinstance(statement, Assignment) and isinstance(statement.expression, sympy.Add):
             for symbol in statement.expression.free_symbols:
                 if symbol in iovs:
                     rest = statement.expression - symbol
-                    if isinstance(rest, Symbol) and rest in iiv:
+                    if isinstance(rest, sympy.Symbol) and rest in iiv:
                         yield rest
                     break

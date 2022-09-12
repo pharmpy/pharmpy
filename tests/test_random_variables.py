@@ -6,12 +6,7 @@ import sympy
 import sympy.stats as stats
 from sympy import Symbol as symbol
 
-from pharmpy.random_variables import (
-    RandomVariable,
-    RandomVariables,
-    VariabilityHierarchy,
-    VariabilityLevel,
-)
+from pharmpy.model import RandomVariable, RandomVariables, VariabilityHierarchy, VariabilityLevel
 
 
 def test_general_rv():

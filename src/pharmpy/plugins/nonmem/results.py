@@ -1,9 +1,8 @@
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-
 import pharmpy.modeling as modeling
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.plugins.nonmem.results_file import NONMEMResultsFile
 from pharmpy.plugins.nonmem.table import NONMEMTableFile
 from pharmpy.results import ChainedModelfitResults, ModelfitResults
@@ -47,6 +46,7 @@ class NONMEMModelfitResults(ModelfitResults):
         self._estimation_status = estimation_status
         self.minimization_successful = estimation_status['minimization_successful']
         self.function_evaluations = estimation_status['function_evaluations']
+        self.significant_digits = estimation_status['significant_digits']
         if estimation_status['maxevals_exceeded'] is True:
             self.termination_cause = 'maxevals_exceeded'
         elif estimation_status['rounding_errors'] is True:

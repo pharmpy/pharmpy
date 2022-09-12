@@ -5,14 +5,12 @@ import uuid
 import warnings
 from pathlib import Path
 
-import pandas as pd
-import sympy
-from sympy.printing.str import StrPrinter
-
 import pharmpy.model
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy, sympy_printing
+from pharmpy.model import Assignment
 from pharmpy.modeling import write_csv
 from pharmpy.results import ModelfitResults
-from pharmpy.statements import Assignment
 
 
 class CodeGenerator:
@@ -52,7 +50,7 @@ def name_mangle(s):
     return s.replace('(', '').replace(')', '').replace(',', '_')
 
 
-class ExpressionPrinter(StrPrinter):
+class ExpressionPrinter(sympy_printing.str.StrPrinter):
     def __init__(self, amounts):
         self.amounts = amounts
         super().__init__()

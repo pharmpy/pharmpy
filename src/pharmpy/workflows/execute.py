@@ -57,7 +57,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume
 
     res = dispatcher.run(workflow)
 
-    from pharmpy.results import Results
+    from pharmpy.model import Results
 
     if isinstance(res, Results):
         if hasattr(res, 'tool_database'):

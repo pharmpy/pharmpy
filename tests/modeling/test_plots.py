@@ -1,14 +1,13 @@
-from pharmpy import Model
-from pharmpy.modeling import load_example_model, plot_individual_predictions, plot_iofv_vs_iofv
+from pharmpy.modeling import plot_individual_predictions, plot_iofv_vs_iofv
 
 
-def test_plot_iofv_vs_iofv():
-    model = load_example_model('pheno')
+def test_plot_iofv_vs_iofv(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     assert plot_iofv_vs_iofv(model, model)
 
 
-def test_plot_individual_predictions(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_plot_individual_predictions(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     plot = plot_individual_predictions(model)
     assert plot
     plot = plot_individual_predictions(model, predictions=['PRED'], individuals=[1, 2, 5])

@@ -3,18 +3,12 @@ import itertools
 import warnings
 from collections.abc import MutableSequence, Sequence
 
-import numpy as np
-import pandas as pd
-import symengine
-import sympy
-import sympy.stats as stats
-from sympy import Symbol as symbol
-from sympy.stats.crv_types import ExponentialDistribution, NormalDistribution
-from sympy.stats.joint_rv_types import MultivariateNormalDistribution
-
 import pharmpy.math
 import pharmpy.unicode as unicode
-from pharmpy.statements import sympify
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import symengine, sympy, sympy_stats
+from pharmpy.expressions import sympify
 
 
 def _create_rng(seed=None):
@@ -43,7 +37,7 @@ class RandomVariable:
     --------
     >>> import sympy
     >>> import sympy.stats
-    >>> from pharmpy import RandomVariable
+    >>> from pharmpy.model import RandomVariable
     >>> name = "ETA(1)"
     >>> sd = sympy.sqrt(sympy.Symbol('OMEGA(1,1)'))
     >>> rv = RandomVariable(name, "IIV", sympy.stats.Normal(name, 0, sd))
@@ -58,13 +52,16 @@ class RandomVariable:
     def __init__(self, name, level, sympy_rv=None):
         self._name = name
         self.level = level
-        self.symbol = symbol(name)
+        self.symbol = sympy.Symbol(name)
         self._sympy_rv = sympy_rv
         if sympy_rv is not None:
-            if isinstance(sympy_rv.pspace.distribution, NormalDistribution):
+            if isinstance(sympy_rv.pspace.distribution, sympy_stats.crv_types.NormalDistribution):
                 self._mean = sympy.Matrix([sympy_rv.pspace.distribution.mean])
                 self._variance = sympy.Matrix([sympy_rv.pspace.distribution.std**2])
-            elif isinstance(sympy_rv.pspace.distribution, MultivariateNormalDistribution):
+            elif isinstance(
+                sympy_rv.pspace.distribution,
+                sympy_stats.joint_rv_types.MultivariateNormalDistribution,
+            ):
                 raise ValueError(
                     "Cannot create multivariate random variables using constructor. "
                     "Use the joint_normal classmethod instead."
@@ -121,7 +118,7 @@ class RandomVariable:
 
         Example
         -------
-        >>> from pharmpy import RandomVariable, Parameter
+        >>> from pharmpy.model import RandomVariable, Parameter
         >>> omega = Parameter('OMEGA_CL', 0.1)
         >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
         >>> rv
@@ -153,7 +150,7 @@ class RandomVariable:
 
         Example
         -------
-        >>> from pharmpy import RandomVariable, Parameter
+        >>> from pharmpy.model import RandomVariable, Parameter
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> corr_cl_v = Parameter("OMEGA_CL_V", 0.01)
@@ -205,9 +202,9 @@ class RandomVariable:
             if len(self._variance) == 1 and self._variance[0].is_zero:
                 return sympy.Integer(0)
             elif self._mean.rows > 1:
-                return sympy.stats.Normal('X', self._mean, self._variance)
+                return sympy_stats.Normal('X', self._mean, self._variance)
             else:
-                return sympy.stats.Normal(self.name, self._mean[0], sympy.sqrt(self._variance[0]))
+                return sympy_stats.Normal(self.name, self._mean[0], sympy.sqrt(self._variance[0]))
         else:
             return self._sympy_rv
 
@@ -240,7 +237,7 @@ class RandomVariable:
         Examples
         --------
         >>> import sympy
-        >>> from pharmpy import RandomVariable, Parameter
+        >>> from pharmpy.model import RandomVariable, Parameter
         >>> omega = Parameter("OMEGA_CL", 0.1)
         >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
         >>> rv.subs({omega.symbol: sympy.Symbol("OMEGA_NEW")})
@@ -355,7 +352,9 @@ class RandomVariable:
                     f'{sympy.pretty(self._variance[0], wrap_line=False, use_unicode=True)})'
                 )
         else:
-            if isinstance(self.sympy_rv.pspace.distribution, ExponentialDistribution):
+            if isinstance(
+                self.sympy_rv.pspace.distribution, sympy_stats.crv_types.ExponentialDistribution
+            ):
                 return (
                     f'{sympy.pretty(self.symbol, use_unicode=True)} ~ '
                     f'Exp({self.sympy_rv.pspace.distribution.rate})'
@@ -533,7 +532,7 @@ class RandomVariables(MutableSequence):
 
     Examples
     --------
-    >>> from pharmpy import RandomVariables, RandomVariable, Parameter
+    >>> from pharmpy.model import RandomVariables, RandomVariable, Parameter
     >>> omega = Parameter("OMEGA_CL", 0.1)
     >>> rv = RandomVariable.normal("IIV_CL", "iiv", 0, omega.symbol)
     >>> rvs = RandomVariables([rv])
@@ -802,7 +801,7 @@ class RandomVariables(MutableSequence):
         Examples
         --------
         >>> import sympy
-        >>> from pharmpy import RandomVariables, Parameter
+        >>> from pharmpy.model import RandomVariables, Parameter
         >>> omega = Parameter("OMEGA_CL", 0.1)
         >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
         >>> rvs = RandomVariables([rv])
@@ -832,7 +831,7 @@ class RandomVariables(MutableSequence):
 
         Examples
         --------
-        >>> from pharmpy import RandomVariables, RandomVariable, Parameter
+        >>> from pharmpy.model import RandomVariables, RandomVariable, Parameter
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> corr_cl_v = Parameter("OMEGA_CL_V", 0.01)
@@ -890,7 +889,7 @@ class RandomVariables(MutableSequence):
 
         Examples
         --------
-        >>> from pharmpy import RandomVariables, RandomVariable, Parameter
+        >>> from pharmpy.model import RandomVariables, RandomVariable, Parameter
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> rv1 = RandomVariable.normal("IIV_CL", 'IIV', 0, omega_cl.symbol)
@@ -921,7 +920,7 @@ class RandomVariables(MutableSequence):
                     param_1, param_2 = M[row, row], M[col, col]
                     cov_name = name_template.format(param_names[col], param_names[row])
                     cov_to_params[cov_name] = (str(param_1), str(param_2))
-                    M[row, col], M[col, row] = symbol(cov_name), symbol(cov_name)
+                    M[row, col], M[col, row] = sympy.Symbol(cov_name), sympy.Symbol(cov_name)
 
         for i in inds:
             self._remove_joint_normal(self[i])
@@ -959,7 +958,7 @@ class RandomVariables(MutableSequence):
 
         Example
         -------
-        >>> from pharmpy import RandomVariables, RandomVariable, Parameter
+        >>> from pharmpy.model import RandomVariables, RandomVariable, Parameter
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> omega_ka = Parameter("OMEGA_KA", 0.1)
@@ -978,7 +977,7 @@ class RandomVariables(MutableSequence):
             symrv = rv.sympy_rv
             n = 1 if rv._joint_names is None else len(rv._joint_names)
             dist = symrv.pspace.distribution
-            if isinstance(dist, stats.crv_types.NormalDistribution):
+            if isinstance(dist, sympy_stats.crv_types.NormalDistribution):
                 i += 1
                 distributions.append(([rv], dist))
             else:  # Joint Normal
@@ -1050,7 +1049,7 @@ class RandomVariables(MutableSequence):
                 else:
                     mu = dist.mean.subs(parameters)
                     sigma = dist.std.subs(parameters)
-                new_rv = sympy.stats.Normal(new_name, mu, sigma)
+                new_rv = sympy_stats.Normal(new_name, mu, sigma)
                 sampling_rvs.append((names, new_rv))
         if sampling_rvs:
             # FIXME: Unnecessary to go via DataFrame
@@ -1060,10 +1059,10 @@ class RandomVariables(MutableSequence):
                     warnings.filterwarnings('ignore')
                     if sympy.__version__ == '1.8':
                         cursample = next(
-                            sympy.stats.sample(new_rv, library='numpy', size=samples, seed=rng)
+                            sympy_stats.sample(new_rv, library='numpy', size=samples, seed=rng)
                         )
                     else:
-                        cursample = sympy.stats.sample(
+                        cursample = sympy_stats.sample(
                             new_rv, library='numpy', size=samples, seed=rng
                         )
                     if len(names) > 1:
@@ -1085,10 +1084,10 @@ class RandomVariables(MutableSequence):
         names = []
         for rvs, dist in self.distributions():
             names.extend([rv.name for rv in rvs])
-            if isinstance(dist, stats.crv_types.NormalDistribution):
+            if isinstance(dist, sympy_stats.crv_types.NormalDistribution):
                 means.append(dist.mean)
                 blocks.append(sympy.Matrix([dist.std**2]))
-            elif isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
+            elif isinstance(dist, sympy_stats.joint_rv_types.MultivariateNormalDistribution):
                 means.extend(dist.mu)
                 blocks.append(dist.sigma)
             else:

@@ -58,21 +58,13 @@ import json
 import os
 import warnings
 
-import altair as alt
 import jinja2
-from altair.utils.execeval import eval_block
 from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst.directives import flag, unchanged
 from sphinx.locale import _
 
-# These default URLs can be changed in conf.py; see setup() below.
-VEGA_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega@{}".format(alt.VEGA_VERSION)
-VEGALITE_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega-lite@{}".format(alt.VEGALITE_VERSION)
-VEGAEMBED_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega-embed@{}".format(
-    alt.VEGAEMBED_VERSION
-)
-
+from pharmpy.deps import altair as alt
 
 VGL_TEMPLATE = jinja2.Template(
     """
@@ -200,6 +192,8 @@ class AltairPlotDirective(Directive):
 
 def html_visit_altair_plot(self, node):
     # Execute the code, saving output and namespace
+    from pharmpy.deps.altair import eval_block
+
     namespace = node["namespace"]
     try:
         f = io.StringIO()
@@ -297,6 +291,16 @@ def builder_inited(app):
 
 
 def setup(app):
+
+    # These default URLs can be changed in conf.py; see setup() below.
+    VEGA_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega@{}".format(alt.VEGA_VERSION)
+    VEGALITE_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega-lite@{}".format(
+        alt.VEGALITE_VERSION
+    )
+    VEGAEMBED_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega-embed@{}".format(
+        alt.VEGAEMBED_VERSION
+    )
+
     setup.app = app
     setup.config = app.config
     setup.confdir = app.confdir

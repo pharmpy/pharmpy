@@ -1,17 +1,12 @@
 import warnings
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-
-with warnings.catch_warnings():
-    # Warning in Python 3.10
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    import scipy.stats
-
 import pharmpy.visualization
-from pharmpy import Model
-from pharmpy.results import ModelfitResults, Results
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps.scipy import stats
+from pharmpy.model import Model, Results
+from pharmpy.results import ModelfitResults
 from pharmpy.tools.psn_helpers import cmd_line_model_path, model_paths
 
 
@@ -61,7 +56,7 @@ def plot_dofv_quantiles(res):
     dofvs_boot_base = ofvs['delta_origdata'].sort_values().reset_index(drop=True)
     quantiles = np.linspace(0.0, 1.0, num=len(dofvs))
     degrees = len(res.parameter_distribution)
-    chi2_dist = scipy.stats.chi2(df=degrees)
+    chi2_dist = stats.chi2(df=degrees)
     chi2 = chi2_dist.ppf(quantiles)
     degrees_dofvs = res.ofv_statistics['mean']['delta_bootdata']
     degrees_boot_base = res.ofv_statistics['mean']['delta_origdata']

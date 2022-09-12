@@ -4,9 +4,8 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
-import pandas as pd
-import sympy
-
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
 from pharmpy.utils import parse_units
 
 
@@ -41,6 +40,7 @@ class ColumnInfo:
         'idv',
         'unknown',
         'dose',
+        'rate',
         'additional',
         'ii',
         'ss',
@@ -94,7 +94,7 @@ class ColumnInfo:
 
         Examples
         --------
-        >>> from pharmpy import ColumnInfo
+        >>> from pharmpy.model import ColumnInfo
         >>> ColumnInfo.convert_pd_dtype_to_datatype("float64")
         'float64'
         """
@@ -116,7 +116,7 @@ class ColumnInfo:
 
         Examples
         --------
-        >>> from pharmpy import ColumnInfo
+        >>> from pharmpy.model import ColumnInfo
         >>> ColumnInfo.convert_datatype_to_pd_dtype("float64")
         'float64'
         >>> ColumnInfo.convert_datatype_to_pd_dtype("nmtran-date")
@@ -131,7 +131,7 @@ class ColumnInfo:
         self,
         name,
         type='unknown',
-        unit=sympy.Integer(1),
+        unit=None,
         scale='ratio',
         continuous=None,
         categories=None,
@@ -157,7 +157,7 @@ class ColumnInfo:
             raise TypeError(
                 f"Unknown scale of measurement {scale}. Only {ColumnInfo._all_scales} are possible."
             )
-        self._unit = parse_units(unit)
+        self._unit = sympy.Integer(1) if unit is None else parse_units(unit)
         self._scale = scale
         self._continuous = continuous
         self._categories = categories  # dict from value to descriptive string
@@ -207,6 +207,7 @@ class ColumnInfo:
         dv            Dependent variable
         covariate     Covariate
         dose          Dose amount
+        rate          Rate of infusion
         additional    Number of additional doses
         ii            Interdose interval
         ss            Steady state dosing
@@ -317,7 +318,7 @@ class ColumnInfo:
 
         Examples
         --------
-        >>> from pharmpy.datainfo import ColumnInfo
+        >>> from pharmpy.model import ColumnInfo
         >>> col1 = ColumnInfo("WGT", scale='ratio')
         >>> col1.is_categorical()
         False
@@ -342,7 +343,7 @@ class ColumnInfo:
 
         Examples
         --------
-        >>> from pharmpy.datainfo import ColumnInfo
+        >>> from pharmpy.model import ColumnInfo
         >>> col1 = ColumnInfo("WGT", scale='ratio')
         >>> col1.is_numerical()
         True
@@ -527,6 +528,18 @@ class DataInfo(Sequence):
         return DescriptorIndexer(self)
 
     def set_column(self, col):
+        """Set ColumnInfo of an existing column of the same name
+
+        Parameters
+        ----------
+        col : ColumnInfo
+            New ColumnInfo
+
+        Returns
+        -------
+        DataInfo
+            Updated DataInfo
+        """
         newcols = []
         for cur in self:
             if cur.name != col.name:
@@ -618,6 +631,18 @@ class DataInfo(Sequence):
         return [col.type for col in self._columns]
 
     def set_types(self, value):
+        """Set types for all columns
+
+        Parameters
+        ----------
+        value : list or str
+            Types to set. If only one this will be broadcast
+
+        Return
+        ------
+        DataInfo
+            Updated datainfo
+        """
         if isinstance(value, str):
             value = [value]
         if len(value) == 1:

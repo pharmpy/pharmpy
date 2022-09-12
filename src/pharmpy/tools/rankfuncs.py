@@ -1,7 +1,6 @@
 from typing import Union
 
-import numpy as np
-
+from pharmpy.deps import numpy as np
 from pharmpy.modeling import calculate_aic, calculate_bic
 
 # All functions used for comparing a set of candidate models and

@@ -1,19 +1,18 @@
+from __future__ import annotations
+
 import math
 import warnings
-from typing import List, Tuple
 
-import numpy as np
-import pandas as pd
-import sympy
-from scipy.stats import chi2
-
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
+from pharmpy.expressions import sympify
 from pharmpy.math import round_to_n_sigdig
-from pharmpy.model import Model
-from pharmpy.modeling import create_rng, get_observations, sample_parameters_from_covariance_matrix
-from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import CompartmentalSystem, CompartmentalSystemBuilder, sympify
+from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model, RandomVariables
 
-from .data import get_ids
+from .data import get_ids, get_observations
+from .lrt import test as lrt_test
+from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
 
 
 def calculate_eta_shrinkage(model, sd=False):
@@ -595,8 +594,8 @@ def summarize_errors(models):
 
 
 def rank_models(
-    base_model, models, strictness=None, rank_type='ofv', cutoff=None, bic_type='mixed'
-) -> Tuple[pd.DataFrame, List]:
+    base_model, models, errors_allowed=None, rank_type='ofv', cutoff=None, bic_type='mixed'
+) -> pd.DataFrame:
     """Ranks a list of models
 
     Ranks a list of models with a given ranking function
@@ -607,9 +606,9 @@ def rank_models(
         Base model to compare to
     models : list
         List of models
-    strictness : list or None
-        List of strictness criteria to be fulfilled, currently only minimization successful.
-        Default is None
+    errors_allowed : list or None
+        List of errors that are allowed for ranking. Currently available is: rounding_errors and
+        maxevals_exceeded. Default is None
     rank_type : str
         Name of ranking type. Available options are 'ofv', 'aic', 'bic', 'lrt' (OFV with LRT)
     cutoff : float or None
@@ -619,8 +618,8 @@ def rank_models(
 
     Return
     ------
-    (pd.DataFrame, list)
-        A tuple with a DataFrame of the ranked models and a list of ranked models sorted by rank
+    pd.DataFrame
+        DataFrame of the ranked models
 
     Examples
     --------
@@ -628,61 +627,75 @@ def rank_models(
     >>> model_1 = load_example_model("pheno")
     >>> model_2 = load_example_model("pheno_linear")
     >>> rank_models(model_1, [model_2],
-    ...             strictness=['minimization_successful'],
+    ...             errors_allowed=['rounding_errors'],
     ...             rank_type='lrt') # doctest: +SKIP
     """
     models_all = [base_model] + models
-    models_with_res = [
-        model
-        for model in models_all
-        if model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
-    ]
-    rankval_dict = {model.name: _get_rankval(model, rank_type, bic_type) for model in models_all}
-    delta_dict = {
-        model.name: rankval_dict[base_model.name] - rankval_dict[model.name] for model in models_all
-    }
 
-    # TODO: validate option
-    if not strictness:
-        models_to_rank = [model for model in models_with_res]
-    else:
-        models_to_rank = models_with_res
-        if 'minimization_successful' in strictness:
-            models_to_rank = [
-                model for model in models_to_rank if model.modelfit_results.minimization_successful
-            ]
+    rank_values, delta_values = {}, {}
+    models_to_rank = []
 
-    if cutoff is not None:
+    ref_value = _get_rankval(base_model, rank_type, bic_type)
+    model_dict = {model.name: model for model in models_all}
+
+    # Filter on strictness
+    for model in models_all:
+        # Exclude OFV etc. if model was not successful
+        if not model.modelfit_results or np.isnan(model.modelfit_results.ofv):
+            continue
+        if not model.modelfit_results.minimization_successful:
+            if errors_allowed:
+                if model.modelfit_results.termination_cause not in errors_allowed:
+                    continue
+                if np.isnan(model.modelfit_results.significant_digits):
+                    continue
+            else:
+                continue
+
+        rank_value = _get_rankval(model, rank_type, bic_type)
         if rank_type == 'lrt':
-            models_to_rank = [model for model in _test_with_lrt(models_all, cutoff)]
-        else:
-            models_to_rank = [model for model in models_to_rank if delta_dict[model.name] >= cutoff]
+            if not lrt_test(model_dict[model.parent_model], model, cutoff):
+                continue
+        if cutoff:
+            if ref_value - rank_value <= cutoff:
+                continue
 
-    # TODO: handle if base model have NaN
+        # Add ranking value and model
+        rank_values[model.name] = rank_value
+        delta_values[model.name] = ref_value - rank_value
+        models_to_rank.append(model)
+
+    # Sort
     def _get_delta(model):
-        return delta_dict[model.name]
+        if np.isnan(ref_value):
+            return -rank_values[model.name]
+        return delta_values[model.name]
 
     models_sorted = sorted(models_to_rank, key=_get_delta, reverse=True)
 
     # Create rank for models, if two have the same value they will have the same rank
-    rank_dict = dict()
+    ranking = dict()
     rank, count, prev = 0, 0, None
     for model in models_sorted:
         count += 1
-        value = delta_dict[model.name]
+        value = _get_delta(model)
         if value != prev:
             rank += count
             prev = value
             count = 0
-        rank_dict[model.name] = rank
+        ranking[model.name] = rank
 
     rows = dict()
     for model in models_all:
-        try:
-            rank = rank_dict[model.name]
-        except KeyError:
-            rank = np.nan
-        rows[model.name] = (delta_dict[model.name], rankval_dict[model.name], rank)
+        delta, rank_value, rank = np.nan, np.nan, np.nan
+        if model.name in ranking.keys():
+            rank = ranking[model.name]
+        if model.name in rank_values.keys():
+            rank_value = rank_values[model.name]
+        if model.name in delta_values.keys():
+            delta = delta_values[model.name]
+
+        rows[model.name] = (delta, rank_value, rank)
 
     if rank_type == 'lrt':
         rank_type_name = 'ofv'
@@ -694,31 +707,10 @@ def rank_models(
         rows.values(), index=index, columns=[f'd{rank_type_name}', f'{rank_type_name}', 'rank']
     )
 
-    df_sorted = df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
-
-    return df_sorted, models_sorted
-
-
-def _test_with_lrt(models, alpha):
-    model_dict = {model.name: model for model in models}
-    models_fulfilled_lrt = [
-        model for model in models if _test_model(model_dict[model.parent_model], model, alpha)
-    ]
-    return models_fulfilled_lrt
-
-
-def _test_model(parent, child, alpha):
-    if parent.name == child.name:
-        return False
-    dofv = parent.modelfit_results.ofv - child.modelfit_results.ofv
-    df = len(child.parameters) - len(parent.parameters)
-    if df < 0:
-        raise NotImplementedError('LRT is currently only supported where degrees of freedom => 0')
-    elif df == 0:
-        cutoff = 0
+    if np.isnan(ref_value):
+        return df.sort_values(by=[f'{rank_type_name}'])
     else:
-        cutoff = float(chi2.isf(q=alpha, df=df))
-    return dofv >= cutoff
+        return df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
 
 
 def _get_rankval(model, rank_type, bic_type):

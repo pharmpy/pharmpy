@@ -2,15 +2,13 @@
 :meta private:
 """
 
-import sympy
-from sympy import Symbol as S
+from pharmpy.deps import sympy
+from pharmpy.expressions import sympify
+from pharmpy.model import Assignment, Parameter, Parameters
 
-from pharmpy.modeling import has_proportional_error_model
-from pharmpy.modeling.help_functions import _format_input_list
-from pharmpy.parameters import Parameter, Parameters
-from pharmpy.statements import Assignment, sympify
-
+from .error import has_proportional_error_model
 from .expressions import create_symbol
+from .help_functions import _format_input_list
 
 
 def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero_protection=False):
@@ -96,7 +94,7 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
         sset = sset.subs({e.symbol * ipred: e.symbol})  # To avoid getting F*EPS*F**THETA
         if alternative:  # To avoid getting W*EPS*F**THETA
             sset = sset.subs({e.symbol * alternative: e.symbol})
-        sset = sset.subs({e.name: ipred ** S(theta.name) * e.symbol})
+        sset = sset.subs({e.name: ipred ** sympy.Symbol(theta.name) * e.symbol})
         model.statements = sset
 
     model.parameters = Parameters(pset)

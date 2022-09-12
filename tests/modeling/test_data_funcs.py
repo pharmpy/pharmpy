@@ -6,10 +6,12 @@ from pharmpy.modeling import (
     drop_columns,
     drop_dropped_columns,
     expand_additional_doses,
+    get_cmt,
     get_concentration_parameters_from_data,
     get_covariate_baselines,
     get_doseid,
     get_doses,
+    get_evid,
     get_ids,
     get_mdv,
     get_number_of_individuals,
@@ -17,47 +19,47 @@ from pharmpy.modeling import (
     get_number_of_observations_per_individual,
     get_observations,
     list_time_varying_covariates,
-    load_example_model,
-    read_model,
     remove_loq_data,
     translate_nmtran_time,
     undrop_columns,
 )
 
-model = load_example_model("pheno")
 
-
-def test_get_ids():
+def test_get_ids(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     assert get_ids(model) == list(range(1, 60))
 
 
-def test_get_doseid():
+def test_get_doseid(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     doseid = get_doseid(model)
     assert len(doseid) == 744
     assert doseid[0] == 1
     assert doseid[743] == 13
 
     # Same timepoint for dose and observation
-    newmod = model.copy()
-    newmod.dataset.loc[742, 'TIME'] = newmod.dataset.loc[743, 'TIME']
-    doseid = get_doseid(newmod)
+    model.dataset.loc[742, 'TIME'] = model.dataset.loc[743, 'TIME']
+    doseid = get_doseid(model)
     assert len(doseid) == 744
     assert doseid[743] == 12
     assert doseid[742] == 13
 
 
-def test_get_number_of_individuals():
+def test_get_number_of_individuals(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     assert get_number_of_individuals(model) == 59
 
 
-def test_get_observations():
+def test_get_observations(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     ser = get_observations(model)
     assert ser.loc[1, 2.0] == 17.3
     assert ser.loc[2, 63.5] == 24.6
     assert len(ser) == 155
 
 
-def test_number_of_observations():
+def test_number_of_observations(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     assert get_number_of_observations(model) == 155
     assert list(get_number_of_observations_per_individual(model)) == [
         2,
@@ -122,7 +124,8 @@ def test_number_of_observations():
     ]
 
 
-def test_covariate_baselines():
+def test_covariate_baselines(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     covs = model.datainfo[['WGT', 'APGR']].set_types('covariate')
     model.datainfo = model.datainfo[0:3] + covs + model.datainfo[5:]
     df = get_covariate_baselines(model)
@@ -133,18 +136,21 @@ def test_covariate_baselines():
     assert df['APGR'].loc[11] == 7.0
 
 
-def test_doses():
+def test_doses(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     ser = get_doses(model)
     assert len(ser) == 589
     assert ser.loc[1, 0.0] == 25.0
 
 
-def test_timevarying_covariates():
+def test_timevarying_covariates(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     a = list_time_varying_covariates(model)
     assert a == []
 
 
-def test_get_mdv():
+def test_get_mdv(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     mdv = get_mdv(model)
     label_test = model.datainfo.typeix['dose'][0].name
     data_test = model.dataset[label_test].astype('float64').squeeze()
@@ -153,16 +159,27 @@ def test_get_mdv():
     assert result is True
 
 
-def test_add_time_after_dose(testdata):
-    model = load_example_model("pheno")
-    m = model.copy()
+def test_get_evid(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    evid = get_evid(model)
+    assert evid.sum() == 589
+
+
+def test_get_cmt(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    cmt = get_cmt(model)
+    assert cmt.sum() == 589
+
+
+def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, testdata):
+    m = load_example_model_for_test("pheno")
     add_time_after_dose(m)
     tad = m.dataset['TAD']
     assert tad[0] == 0.0
     assert tad[1] == 2.0
     assert tad[743] == 2.0
 
-    m = read_model(testdata / 'nonmem' / 'models' / 'pef.mod')
+    m = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
     add_time_after_dose(m)
     tad = list(m.dataset['TAD'].iloc[0:21])
     assert tad == [
@@ -191,19 +208,20 @@ def test_add_time_after_dose(testdata):
     assert m.dataset.loc[103, 'TAD'] == 0.0
     assert m.dataset.loc[104, 'TAD'] == pytest.approx(1.17)
 
-    m = read_model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    m = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
     add_time_after_dose(m)
     tad = list(m.dataset['TAD'].iloc[0:16])
     assert tad == [0.0, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0, 0.0, 12.0, 0.5, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0]
 
 
-def test_get_concentration_parameters_from_data():
+def test_get_concentration_parameters_from_data(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     df = get_concentration_parameters_from_data(model)
     assert df['Cmax'].loc[1, 1] == 17.3
 
 
-def test_drop_columns():
-    m = model.copy()
+def test_drop_columns(load_example_model_for_test):
+    m = load_example_model_for_test('pheno')
     m = drop_columns(m, "APGR")
     correct = ['ID', 'TIME', 'AMT', 'WGT', 'DV', 'FA1', 'FA2']
     assert m.datainfo.names == correct
@@ -216,8 +234,8 @@ def test_drop_columns():
     assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2']
 
 
-def test_drop_dropped_columns():
-    m = model.copy()
+def test_drop_dropped_columns(load_example_model_for_test):
+    m = load_example_model_for_test('pheno')
     m = drop_dropped_columns(m)
     correct = ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
     assert list(m.dataset.columns) == correct
@@ -226,40 +244,42 @@ def test_drop_dropped_columns():
     assert list(m.dataset.columns) == ['WGT', 'APGR', 'DV', 'FA1', 'FA2']
 
 
-def test_undrop_columns():
-    m = model.copy()
+def test_undrop_columns(load_example_model_for_test):
+    m = load_example_model_for_test('pheno')
     drop_columns(m, ["APGR", "WGT"], mark=True)
     undrop_columns(m, "WGT")
     assert not m.datainfo["WGT"].drop
     assert m.datainfo["APGR"].drop
 
 
-def test_remove_loq_data():
-    m = model.copy()
+def test_remove_loq_data(load_example_model_for_test):
+    m = load_example_model_for_test('pheno')
     remove_loq_data(m, lloq=10, uloq=40)
     assert len(m.dataset) == 736
 
 
-def test_check_dataset():
-    m = model.copy()
+def test_check_dataset(load_example_model_for_test):
+    m = load_example_model_for_test('pheno')
     check_dataset(m)
 
     df = check_dataset(m, verbose=True, dataframe=True)
+    assert df is not None
     assert df[df['code'] == 'A1']['result'].iloc[0] == 'OK'
     assert df[df['code'] == 'A4']['result'].iloc[0] == 'SKIP'
 
     m.dataset.loc[743, 'WGT'] = -1
     df = check_dataset(m, verbose=True, dataframe=True)
+    assert df is not None
     assert df[df['code'] == 'A3']['result'].iloc[0] == 'FAIL'
 
 
-def test_nmtran_time():
-    m = load_example_model("pheno_linear")
+def test_nmtran_time(load_example_model_for_test):
+    m = load_example_model_for_test("pheno_linear")
     translate_nmtran_time(m)
 
 
-def test_expand_additional_doses(testdata):
-    model = read_model(testdata / 'nonmem' / 'models' / 'pef.mod')
+def test_expand_additional_doses(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
     expand_additional_doses(model)
     df = model.dataset
     assert len(df) == 1494
@@ -275,7 +295,7 @@ def test_expand_additional_doses(testdata):
     assert df.loc[3, 'TIME'] == 36.0
     assert df.loc[4, 'TIME'] == 48.0
 
-    model = read_model(testdata / 'nonmem' / 'models' / 'pef.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
     expand_additional_doses(model, flag=True)
     df = model.dataset
     assert len(df) == 1494

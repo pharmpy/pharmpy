@@ -1,9 +1,6 @@
-from io import StringIO
-
 import pytest
 import sympy
 
-from pharmpy import Model
 from pharmpy.plugins.nonmem.advan import compartmental_model
 
 
@@ -189,8 +186,8 @@ def test_pheno(pheno, advan, trans, compmat, amounts, strodes, corrics):
     assert ics == corrics
 
 
-def test_advan5(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'DDMODEL00000130')
+def test_advan5(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'DDMODEL00000130')
     cm, ass = compartmental_model(model, 'ADVAN5', 'TRANS1')
     assert ass.symbol == S('F')
     assert ass.expression == S('A_CMS1')
@@ -212,7 +209,7 @@ def test_advan5(testdata):
     # assert cm.compartmental_matrix == compmat
 
 
-def test_rate_constants():
+def test_rate_constants(create_model_for_test):
     code = """$PROBLEM
 $INPUT ID VISI DAT1 DGRP DOSE FLAG ONO XIME DVO NEUY SCR AGE SEX
        NYHA WT COMP IACE DIG DIU NUMB TAD TIME VID CRCL AMT SS II
@@ -254,6 +251,6 @@ $OMEGA  0.001  ;    IIV_MAT
 $OMEGA  0.001 ; IIV_MDT
 $SIGMA  0.273617  ;   RUV_PROP
 """
-    model = Model.create_model(StringIO(code))
+    model = create_model_for_test(code)
     odes = model.statements.ode_system
     assert odes.get_flow(odes.central_compartment, odes.output_compartment) == sympy.Symbol('K100')

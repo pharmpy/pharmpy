@@ -14,7 +14,7 @@ different transformations and manipulations, and the workflows-module is how dif
 .. toctree::
    :maxdepth: 1
 
-   api_pharmpy
+   api_model
    api_modeling
    api_tools
    api_workflows

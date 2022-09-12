@@ -3,13 +3,11 @@
 """
 import warnings
 
-import numpy as np
-import sympy
-
-from pharmpy import math
+from pharmpy.deps import numpy as np
+from pharmpy.deps import sympy
+from pharmpy.math import corr2cov, nearest_postive_semidefinite
+from pharmpy.model import Parameter, Parameters, RandomVariables
 from pharmpy.modeling.help_functions import _get_etas
-from pharmpy.parameters import Parameter, Parameters
-from pharmpy.random_variables import RandomVariables
 
 
 def create_joint_distribution(model, rvs=None):
@@ -171,9 +169,9 @@ def _choose_param_init(model, rvs, parent1, parent2):
                 f'{parent2.name} is NaN, returning default initial estimate'
             )
             return init_default
-        cov = math.corr2cov(eta_corr.to_numpy(), sd)
+        cov = corr2cov(eta_corr.to_numpy(), sd)
         cov[cov == 0] = 0.0001
-        cov = math.nearest_postive_semidefinite(cov)
+        cov = nearest_postive_semidefinite(cov)
         init_cov = cov[1][0]
         return round(init_cov, 7)
     else:

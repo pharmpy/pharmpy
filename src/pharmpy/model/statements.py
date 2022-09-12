@@ -1,16 +1,20 @@
-import copy
-from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from __future__ import annotations
 
-import networkx as nx
-import sympy
+import copy
+from abc import ABC, ABCMeta, abstractmethod
+from collections.abc import Sequence
+from typing import Set, Tuple, Union
 
 import pharmpy.unicode as unicode
-
-
-def sympify(expr):
-    ns = {'Q': sympy.Symbol('Q')}
-    return sympy.sympify(expr, locals=ns)
+from pharmpy.deps import networkx as nx
+from pharmpy.deps import sympy
+from pharmpy.expressions import (
+    assume_all,
+    canonical_ode_rhs,
+    free_images,
+    free_images_and_symbols,
+    sympify,
+)
 
 
 class Statement(ABC):
@@ -36,7 +40,7 @@ class Statement(ABC):
 
     @property
     @abstractmethod
-    def free_symbols(self):
+    def free_symbols(self) -> Set[sympy.Symbol]:
         pass
 
     @property
@@ -98,7 +102,7 @@ class Assignment(Statement):
 
         Examples
         --------
-        >>> from pharmpy import Assignment
+        >>> from pharmpy.model import Assignment
         >>> a = Assignment.create('CL', 'POP_CL + ETA_CL')
         >>> a
         CL = ETA_CL + POP_CL
@@ -119,7 +123,7 @@ class Assignment(Statement):
 
         Examples
         --------
-        >>> from pharmpy import Assignment
+        >>> from pharmpy.model import Assignment
         >>> a = Assignment.create('CL', 'POP_CL + ETA_CL')
         >>> a.free_symbols      # doctest: +SKIP
         {CL, ETA_CL, POP_CL}
@@ -135,7 +139,7 @@ class Assignment(Statement):
 
         Examples
         --------
-        >>> from pharmpy import Assignment
+        >>> from pharmpy.model import Assignment
         >>> a = Assignment.create('CL', 'POP_CL + ETA_CL')
         >>> a.rhs_symbols      # doctest: +SKIP
         {ETA_CL, POP_CL}
@@ -168,10 +172,21 @@ class Assignment(Statement):
         return f'${sym} = {expr}$'
 
 
-class ODESystem(Statement, ABC):
+class ODESystemMetaclass(ABCMeta):
+    def __getattr__(cls, key):
+        # NOTE see https://stackoverflow.com/a/3155493
+        if key == 't':
+            return sympy.Symbol('t')
+        raise AttributeError(key)
+
+
+class ODESystem(Statement, ABC, metaclass=ODESystemMetaclass):
     """Abstract base class for ODE systems of different forms"""
 
-    t = sympy.Symbol('t')
+    def __getattr__(self, key):
+        if key == 't':
+            return ODESystem.t
+        raise AttributeError(key)
 
 
 def _bracket(a):
@@ -206,7 +221,7 @@ class ExplicitODESystem(ODESystem):
 
     Examples
     --------
-    >>> from pharmpy import ExplicitODESystem
+    >>> from pharmpy.model import ExplicitODESystem
     >>> import sympy
     >>> A_DEPOT = sympy.Function('A_DEPOT')
     >>> A_CENTRAL = sympy.Function('A_CENTRAL')
@@ -401,38 +416,31 @@ class ExplicitODESystem(ODESystem):
         >>> statements.to_compartmental_system()    # doctest: +SKIP
         """
 
-        def convert_name(name):
-            if name.startswith('A_'):
-                return name[2:]
-            else:
-                return name
+        def convert_name(name: str):
+            return name[2:] if name[:2] == 'A_' else name
 
-        funcs = [eq.lhs.args[0] for eq in self.odes]
         cb = CompartmentalSystemBuilder()
-        dose = Bolus(sympy.Symbol("AMT"))  # FIXME: not true in general!
-        first = True
-        for f in funcs:
-            if first:
-                comp = Compartment(convert_name(f.name), dose)
-                first = False
-            else:
-                comp = Compartment(convert_name(f.name))
+        compartments = {}
+        concentrations = set()
+        for i, eq in enumerate(self.odes):
+            A = eq.lhs.args[0]
+            concentrations.add(A)
+            name = convert_name(A.name)
+            # FIXME The following is not true in general!
+            dose = Bolus(sympy.Symbol("AMT")) if i == 0 else None
+            comp = Compartment(convert_name(A.name), dose)
             cb.add_compartment(comp)
+            compartments[name] = comp
 
         for eq in self.odes:
-            for comp_func in funcs:
+            for comp_func in concentrations.intersection(free_images(eq.rhs)):
                 dep = eq.rhs.as_independent(comp_func, as_Add=True)[1]
-                if dep == 0:
-                    continue
                 terms = sympy.Add.make_args(dep)
                 for term in terms:
-                    expr = term / comp_func
-                    if term.args[0] != -1:
-                        # FIXME: unnecessary conversion
-                        cs = CompartmentalSystem(cb)
-                        from_comp = cs.find_compartment(convert_name(comp_func.name))
-                        to_comp = cs.find_compartment(convert_name(eq.lhs.args[0].name))
-                        cb.add_flow(from_comp, to_comp, expr)
+                    if _is_positive(term):
+                        from_comp = compartments[convert_name(comp_func.name)]
+                        to_comp = compartments[convert_name(eq.lhs.args[0].name)]
+                        cb.add_flow(from_comp, to_comp, term / comp_func)
 
         return CompartmentalSystem(cb)
 
@@ -459,7 +467,7 @@ class CompartmentalSystemBuilder:
 
         Examples
         --------
-        >>> from pharmpy import CompartmentalSystemBuilder
+        >>> from pharmpy.model import CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
         >>> central = cb.add_compartment("CENTRAL")
         """
@@ -475,7 +483,7 @@ class CompartmentalSystemBuilder:
 
         Examples
         --------
-        >>> from pharmpy import CompartmentalSystemBuilder
+        >>> from pharmpy.model import CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
         >>> central = Compartment("CENTRAL")
         >>> cb.add_compartment(central)
@@ -497,7 +505,7 @@ class CompartmentalSystemBuilder:
 
         Examples
         --------
-        >>> from pharmpy import CompartmentalSystemBuilder
+        >>> from pharmpy.model import CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
         >>> depot = Compartment("DEPOT")
         >>> cb.add_compartment(depot)
@@ -519,7 +527,7 @@ class CompartmentalSystemBuilder:
 
         Examples
         --------
-        >>> from pharmpy import CompartmentalSystemBuilder
+        >>> from pharmpy.model import CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
         >>> depot = Compartment("DEPOT")
         >>> cb.add_compartment(depot)
@@ -593,12 +601,18 @@ class CompartmentalSystemBuilder:
         return new_comp
 
 
+def _is_positive(expr: sympy.Expr) -> bool:
+    return sympy.ask(
+        sympy.Q.positive(expr), assume_all(sympy.Q.positive, free_images_and_symbols(expr))
+    )
+
+
 class CompartmentalSystem(ODESystem):
     """System of ODEs descibed as a compartmental system
 
     Examples
     --------
-    >>> from pharmpy import Bolus, CompartmentalSystem
+    >>> from pharmpy.model import Bolus, CompartmentalSystem
     >>> cb = CompartmentalSystemBuilder()
     >>> dose = Bolus.create("AMT")
     >>> central = Compartment("CENTRAL", dose)
@@ -733,7 +747,7 @@ class CompartmentalSystem(ODESystem):
 
         Examples
         --------
-        >>> from pharmpy import CompartmentalSystem, Compartment
+        >>> from pharmpy.model import CompartmentalSystem, Compartment
         >>> cb = CompartmentalSystemBuilder()
         >>> depot = Compartment("DEPOT")
         >>> cb.add_compartment(depot)
@@ -927,7 +941,10 @@ class CompartmentalSystem(ODESystem):
         Compartment(CENTRAL, dose=Bolus(AMT))
         """
         output = self.output_compartment
-        central = next(self._g.predecessors(output))
+        try:
+            central = next(self._g.predecessors(output))
+        except StopIteration:
+            raise ValueError('Cannot find central compartment')
         return central
 
     @property
@@ -1217,7 +1234,7 @@ class CompartmentalSystem(ODESystem):
         derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
         inputs = self.zero_order_inputs
         a = self.compartmental_matrix @ amount_funcs + inputs
-        eqs = [sympy.Eq(lhs, rhs) for lhs, rhs in zip(derivatives, a)]
+        eqs = [sympy.Eq(lhs, canonical_ode_rhs(rhs)) for lhs, rhs in zip(derivatives, a)]
         ics = {}
         output = self.output_compartment
         for node in self._g.nodes:
@@ -1326,7 +1343,7 @@ class Compartment:
 
     Examples
     --------
-    >>> from pharmpy import Bolus, Compartment
+    >>> from pharmpy.model import Bolus, Compartment
     >>> comp = Compartment("CENTRAL")
     >>> comp
     Compartment(CENTRAL)
@@ -1388,7 +1405,7 @@ class Compartment:
 
         Examples
         --------
-        >>> from pharmpy import Compartment
+        >>> from pharmpy.model import Compartment
         >>> comp = Compartment("CENTRAL")
         >>> comp.amount
         A_CENTRAL
@@ -1401,7 +1418,7 @@ class Compartment:
 
         Examples
         --------
-        >>> from pharmpy import Bolus, Compartment
+        >>> from pharmpy.model import Bolus, Compartment
         >>> dose = Bolus.create("AMT")
         >>> comp = Compartment("CENTRAL", dose=dose, lag_time="ALAG")
         >>> comp.free_symbols  # doctest: +SKIP
@@ -1418,7 +1435,7 @@ class Compartment:
 
         Examples
         --------
-        >>> from pharmpy import Bolus, Compartment
+        >>> from pharmpy.model import Bolus, Compartment
         >>> dose = Bolus.create("AMT")
         >>> comp = Compartment("CENTRAL", dose=dose)
         >>> comp.subs({"AMT": "DOSE"})
@@ -1457,12 +1474,12 @@ class Dose(ABC):
 
     @abstractmethod
     def subs(self, substitutions):
-        pass
+        ...
 
     @property
     @abstractmethod
     def free_symbols(self):
-        pass
+        ...
 
 
 class Bolus(Dose):
@@ -1475,7 +1492,7 @@ class Bolus(Dose):
 
     Examples
     --------
-    >>> from pharmpy import Bolus
+    >>> from pharmpy.model import Bolus
     >>> dose = Bolus.create("AMT")
     >>> dose
     Bolus(AMT)
@@ -1499,7 +1516,7 @@ class Bolus(Dose):
 
         Examples
         --------
-        >>> from pharmpy import Bolus
+        >>> from pharmpy.model import Bolus
         >>> dose = Bolus.create("AMT")
         >>> dose.free_symbols
         {AMT}
@@ -1516,7 +1533,7 @@ class Bolus(Dose):
 
         Examples
         --------
-        >>> from pharmpy import Bolus
+        >>> from pharmpy.model import Bolus
         >>> dose = Bolus.create("AMT")
         >>> dose.subs({'AMT': 'DOSE'})
         Bolus(DOSE)
@@ -1544,7 +1561,7 @@ class Infusion(Dose):
 
     Examples
     --------
-    >>> from pharmpy import Infusion
+    >>> from pharmpy.model import Infusion
     >>> dose = Infusion("AMT", duration="D1")
     >>> dose
     Infusion(AMT, duration=D1)
@@ -1597,7 +1614,7 @@ class Infusion(Dose):
 
         Examples
         --------
-        >>> from pharmpy import Infusion
+        >>> from pharmpy.model import Infusion
         >>> dose = Infusion.create("AMT", rate="RATE")
         >>> dose.free_symbols   # doctest: +SKIP
         {AMT, RATE}
@@ -1618,7 +1635,7 @@ class Infusion(Dose):
 
         Examples
         --------
-        >>> from pharmpy import Infusion
+        >>> from pharmpy.model import Infusion
         >>> dose = Infusion.create("AMT", duration="DUR")
         >>> dose.subs({'DUR': 'D1'})
         Infusion(AMT, duration=D1)
@@ -1662,7 +1679,7 @@ class Statements(Sequence):
         A list of Statement or another Statements to populate this object
     """
 
-    def __init__(self, statements=None):
+    def __init__(self, statements: Union[None, Statements, Tuple[Statement, ...]] = None):
         if isinstance(statements, Statements):
             self._statements = statements._statements
         elif statements is None:
@@ -1711,6 +1728,11 @@ class Statements(Sequence):
             symbols |= assignment.free_symbols
         return symbols
 
+    def _get_ode_system_index(self):
+        return next(
+            map(lambda t: t[0], filter(lambda t: isinstance(t[1], ODESystem), enumerate(self))), -1
+        )
+
     @property
     def ode_system(self):
         """Returns the ODE system of the model or None if the model doesn't have an ODE system
@@ -1725,10 +1747,8 @@ class Statements(Sequence):
         │CENTRAL│──CL/V→│OUTPUT│
         └───────┘       └──────┘
         """
-        for s in self:
-            if isinstance(s, ODESystem):
-                return s
-        return None
+        i = self._get_ode_system_index()
+        return None if i == -1 else self[i]
 
     @property
     def before_odes(self):
@@ -1754,12 +1774,8 @@ class Statements(Sequence):
         V = TVV⋅ℯ
         S₁ = V
         """
-        sset = []
-        for s in self:
-            if isinstance(s, ODESystem):
-                break
-            sset.append(s)
-        return Statements(sset)
+        i = self._get_ode_system_index()
+        return self if i == -1 else self[:i]
 
     @property
     def after_odes(self):
@@ -1781,16 +1797,8 @@ class Statements(Sequence):
                  ────
         IWRES =   W
         """
-        sset = []
-        found = False
-        if self.ode_system is None:
-            return Statements()
-        for s in self:
-            if isinstance(s, ODESystem):
-                found = True
-            elif found:
-                sset.append(s)
-        return Statements(sset)
+        i = self._get_ode_system_index()
+        return Statements() if i == -1 else self[i + 1 :]
 
     @property
     def error(self):
@@ -1812,17 +1820,8 @@ class Statements(Sequence):
                  ────
         IWRES =   W
         """
-
-        sset = []
-        found = False
-        if self.ode_system is None:
-            return self
-        for s in self:
-            if isinstance(s, ODESystem):
-                found = True
-            elif found:
-                sset.append(s)
-        return Statements(sset)
+        i = self._get_ode_system_index()
+        return self if i == -1 else self[i + 1 :]
 
     def subs(self, substitutions):
         """Substitute symbols in all statements.
@@ -2040,7 +2039,7 @@ class Statements(Sequence):
         for j, _ in nx.bfs_predecessors(g, i, sort_neighbors=lambda x: reversed(sorted(x))):
             if isinstance(self[j], Assignment):
                 symbs -= {self[j].symbol}
-            elif isinstance(self[j], ODESystem):
+            else:  # isinstance(self[j], ODESystem):
                 symbs -= set(self[j].amounts)
             symbs |= self[j].rhs_symbols
         return symbs

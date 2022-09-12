@@ -1,7 +1,6 @@
-import pandas as pd
-
 import pharmpy.results
 import pharmpy.tools.iivsearch.algorithms as algorithms
+from pharmpy.deps import pandas as pd
 from pharmpy.modeling import add_pk_iiv, copy_model, create_joint_distribution
 from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow

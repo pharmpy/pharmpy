@@ -1,11 +1,11 @@
 import pytest
 
-from pharmpy.modeling import add_allometry, add_peripheral_compartment, read_model
-from pharmpy.statements import Assignment
+from pharmpy.model import Assignment
+from pharmpy.modeling import add_allometry, add_peripheral_compartment
 
 
-def test_allometry(testdata):
-    model = read_model(testdata / 'nonmem' / 'pheno.mod')
+def test_allometry(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     ref_model = model.copy()
     add_allometry(
         model,
@@ -102,14 +102,14 @@ def test_allometry(testdata):
     assert model.parameters['ALLO_VP2'].init == 1.0
     assert model.parameters['ALLO_QP2'].init == 0.75
 
-    model = read_model(testdata / 'nonmem' / 'models' / 'pheno_trans1.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_trans1.mod')
     with pytest.raises(ValueError):
         add_allometry(model, allometric_variable='WGT', reference_value=70)
 
-    model = read_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan3.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan3.mod')
     add_allometry(model, allometric_variable='WGT', reference_value=70)
     assert model.parameters['ALLO_Q'].init == 0.75
-    model = read_model(testdata / 'nonmem' / 'models' / 'pheno_advan3_trans1.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_advan3_trans1.mod')
     with pytest.raises(ValueError):
         add_allometry(model, allometric_variable='WGT', reference_value=70)
 

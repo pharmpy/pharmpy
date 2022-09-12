@@ -6,18 +6,15 @@ from collections import Counter
 from functools import reduce
 from itertools import chain, combinations
 from operator import add, mul
+from typing import Union
 
-import sympy
-from sympy import Eq, Piecewise
-from sympy import Symbol as S
-from sympy.stats.crv_types import NormalDistribution
-from sympy.stats.joint_rv_types import MultivariateNormalDistribution
+from pharmpy.deps import numpy as np
+from pharmpy.deps import sympy, sympy_stats
+from pharmpy.expressions import sympify
+from pharmpy.model import Assignment, Parameter, Parameters, RandomVariable
 
-from pharmpy.modeling.expressions import create_symbol, get_pk_parameters, has_random_effect
-from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
-from pharmpy.parameters import Parameter, Parameters
-from pharmpy.random_variables import RandomVariable
-from pharmpy.statements import Assignment, sympify
+from .expressions import create_symbol, get_pk_parameters, has_random_effect
+from .help_functions import _format_input_list, _format_options, _get_etas
 
 
 def add_iiv(
@@ -94,7 +91,7 @@ def add_iiv(
         )
 
     for i in range(len(list_of_parameters)):
-        omega = S(f'IIV_{list_of_parameters[i]}')
+        omega = sympy.Symbol(f'IIV_{list_of_parameters[i]}')
         if not eta_names:
             eta_name = f'ETA_{list_of_parameters[i]}'
         else:
@@ -216,7 +213,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
         for dist, grp in zip(etas, list_of_parameters):
             assert len(dist) <= len(grp)
 
-    categories = _get_occ_levels(model.dataset, occ)
+    categories = get_occasion_levels(model.dataset, occ)
 
     if eta_names and len(eta_names) != sum(map(len, etas)) * len(categories):
         raise ValueError(
@@ -242,9 +239,9 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
                 continue
 
             if len(variables) == 1:
-                assert isinstance(dist, NormalDistribution)
+                assert isinstance(dist, sympy_stats.crv_types.NormalDistribution)
             else:
-                assert isinstance(dist, MultivariateNormalDistribution)
+                assert isinstance(dist, sympy_stats.joint_rv_types.MultivariateNormalDistribution)
 
             etas.append(intersection)
 
@@ -332,16 +329,19 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
         # NOTE This declares IOV-ETA case assignments and replaces the existing
         # ETA with its sum with the new IOV ETA
 
-        iov = S(iov_name(i))
+        iov = sympy.Symbol(iov_name(i))
 
-        expression = Piecewise(
-            *((S(eta_name(i, k)), Eq(cat, S(occ))) for k, cat in enumerate(categories, 1))
+        expression = sympy.Piecewise(
+            *(
+                (sympy.Symbol(eta_name(i, k)), sympy.Eq(cat, sympy.Symbol(occ)))
+                for k, cat in enumerate(categories, 1)
+            )
         )
 
         iovs.append(Assignment(iov, sympify(0)))
         iovs.append(Assignment(iov, expression))
 
-        etai = S(etai_name(i))
+        etai = sympy.Symbol(etai_name(i))
         etais.append(Assignment(etai, eta.symbol + iov))
         sset = sset.subs({eta.name: etai})
 
@@ -353,7 +353,7 @@ def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name,
     _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name)
 
     for i in indices:
-        omega_iov = S(omega_iov_name(i, i))
+        omega_iov = sympy.Symbol(omega_iov_name(i, i))
         for k in range(1, len(categories) + 1):
             yield RandomVariable.normal(eta_name(i, k), 'iov', 0, omega_iov)
 
@@ -364,14 +364,14 @@ def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, et
 
     # NOTE Declare off-diagonal OMEGAs
     for i, j in combinations(indices, r=2):
-        omega_iov = S(omega_iov_name(i, j))
+        omega_iov = sympy.Symbol(omega_iov_name(i, j))
         omega_iiv = rvs.get_covariance(etas[i - 1], etas[j - 1])
         paramset = Parameters(pset)  # FIXME!
         init = paramset[omega_iiv].init * 0.1 if omega_iiv != 0 and omega_iiv in paramset else 0.001
         pset.append(Parameter(str(omega_iov), init=init))
 
     mu = [0] * len(indices)
-    sigma = [[S(omega_iov_name(min(i, j), max(i, j))) for i in indices] for j in indices]
+    sigma = [[sympy.Symbol(omega_iov_name(min(i, j), max(i, j))) for i in indices] for j in indices]
 
     for k in range(1, len(categories) + 1):
         names = list(map(lambda i: eta_name(i, k), indices))
@@ -382,7 +382,7 @@ def _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name):
     for i in indices:
         eta = etas[i - 1]
         omega_iiv = rvs.get_variance(eta)
-        omega_iov = S(omega_iov_name(i, i))
+        omega_iov = sympy.Symbol(omega_iov_name(i, i))
         paramset = Parameters(pset)  # FIXME!
         init = paramset[omega_iiv].init * 0.1 if omega_iiv in paramset else 0.01
         pset.append(Parameter(str(omega_iov), init=init))
@@ -460,20 +460,29 @@ def _get_operation_func(operation):
         return add
 
 
-def _get_occ_levels(df, occ):
+def get_occasion_levels(df, occ):
     levels = df[occ].unique()
-    return _round_categories(levels)
+    return _canonicalize_categories(levels)
 
 
-def _round_categories(categories):
-    categories_rounded = []
-    for c in categories:
-        if not isinstance(c, int) or c.is_integer():
-            categories_rounded.append(int(c))
-        else:
-            categories_rounded.append(c)
-    categories_rounded.sort()
-    return categories_rounded
+def _canonicalize_categories(categories):
+    return sorted(map(_canonicalize_category, categories))
+
+
+def _canonicalize_category(c: Union[int, float, str]):
+    if isinstance(c, int):
+        return c
+
+    if isinstance(c, float):
+        return int(c)
+
+    if isinstance(c, (np.int32, np.int64)):
+        return int(c)
+
+    if isinstance(c, str):
+        return _canonicalize_category(float(c) if '.' in c else int(c))
+
+    raise ValueError(f'Cannot canonicalize category "{type(c)}({c})"')
 
 
 class EtaAddition:
@@ -497,24 +506,26 @@ class EtaAddition:
 
     @classmethod
     def additive(cls):
-        template = S('original') + S('eta_new')
+        template = sympy.Symbol('original') + sympy.Symbol('eta_new')
 
         return cls(template)
 
     @classmethod
     def proportional(cls):
-        template = S('original') * S('eta_new')
+        template = sympy.Symbol('original') * sympy.Symbol('eta_new')
 
         return cls(template)
 
     @classmethod
     def exponential(cls, operation):
-        template = operation(S('original'), sympy.exp(S('eta_new')))
+        template = operation(sympy.Symbol('original'), sympy.exp(sympy.Symbol('eta_new')))
 
         return cls(template)
 
     @classmethod
     def logit(cls):
-        template = S('original') * (sympy.exp(S('eta_new')) / (1 + sympy.exp(S('eta_new'))))
+        template = sympy.Symbol('original') * (
+            sympy.exp(sympy.Symbol('eta_new')) / (1 + sympy.exp(sympy.Symbol('eta_new')))
+        )
 
         return cls(template)

@@ -6,80 +6,94 @@ on:
       - 'v*'
 
 jobs:
-  main:
-    uses: ./.github/workflows/main.yml
-
-  integration:
-    uses: ./.github/workflows/integration.yml
-    secrets: inherit
 
   build:
-    needs: [main, integration]
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout pharmpy/pharmpy
-      uses: actions/checkout@v2
-      with:
-          path: pharmpy
-    - name: Checkout pharmpy/pharmpy.github.io
-      uses: actions/checkout@v2
-      with:
-        repository: pharmpy/pharmpy.github.io
-        path: pharmpy.github.io
-        token: ${{secrets.DOC_TOKEN}}
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.9"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install wheel tox tox-gh-actions
-        sudo apt install graphviz
-    - name: Test with tox
-      run: |
-        cd pharmpy
-        tox
-      env:
-        PLATFORM: ${{ matrix.platform }}
-        TOX_SUITE: unit
-    - name: Build documentation
-      run: |
-        cd pharmpy
-        tox
-      env:
-        TOX_SUITE: docs-build
-    - name: Build wheel
-      run: |
-        cd pharmpy
-        python setup.py bdist_wheel
-    - name: Build source package
-      run: |
-        cd pharmpy
-        python setup.py sdist --formats=gztar
-    - name: Prepare upload files
-      run: |
-        cd pharmpy
-        mkdir upload
-        cp dist/*.whl dist/*.tar.gz upload
-    - name: Publish documentation
-      run: |
-        cp -RT pharmpy/dist/docs/ pharmpy.github.io/latest/
-        cd pharmpy.github.io
-        git config --local user.name "github-actions[bot]"
-        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add -A
-        git commit -m "Documentation update"
-        git push https://$USERNAME:$REPO_KEY@github.com/pharmpy/pharmpy.github.io.git
-      env:
-        REPO_KEY: ${{secrets.DOC_TOKEN}}
-        USERNAME: github-actions[bot]
-    - name: Publish package to PyPI
-      uses: pypa/gh-action-pypi-publish@master
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
-        packages_dir: pharmpy/upload/
+
+      - name: Checkout pharmpy/pharmpy
+        uses: actions/checkout@v3
+        with:
+            path: pharmpy
+
+      - name: Checkout pharmpy/pharmpy.github.io
+        uses: actions/checkout@v3
+        with:
+          repository: pharmpy/pharmpy.github.io
+          path: pharmpy.github.io
+          token: ${{secrets.DOC_TOKEN}}
+
+      - uses: ./pharmpy/.github/actions/setup-tox
+        with:
+          python-version: "3.9"
+
+      - name: Install graphviz
+        run: sudo apt install graphviz
+
+      - name: Run unit tests with tox
+        run: |
+          cd pharmpy
+          tox -e unit
+
+      - name: Build documentation
+        run: |
+          cd pharmpy
+          tox -e docs-build
+
+      - name: Install wheel
+        run: |
+          pip install wheel
+
+      - name: Build wheel
+        run: |
+          cd pharmpy
+          python setup.py bdist_wheel
+
+      - name: Build source package
+        run: |
+          cd pharmpy
+          python setup.py sdist --formats=gztar
+
+      - name: Prepare upload files
+        run: |
+          cd pharmpy
+          mkdir upload
+          cp dist/*.whl dist/*.tar.gz upload
+
+      - name: Wait for main checks workflow to succeed
+        uses: ArcticLampyrid/action-wait-for-workflow@v1.0.1
+        with:
+          workflow: main.yml
+          sha: ${{ github.sha }}
+
+      - name: Wait for integration tests workflow to succeed
+        uses: ArcticLampyrid/action-wait-for-workflow@v1.0.1
+        with:
+          workflow: integration.yml
+          sha: ${{ github.sha }}
+
+      - name: Publish documentation
+        run: |
+          cp -RT pharmpy/dist/docs/ pharmpy.github.io/latest/
+          cd pharmpy.github.io
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Documentation update"
+          git push https://$USERNAME:$REPO_KEY@github.com/pharmpy/pharmpy.github.io.git
+        env:
+          REPO_KEY: ${{secrets.DOC_TOKEN}}
+          USERNAME: github-actions[bot]
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages_dir: pharmpy/upload/
+
+
   trigger-pharmr-release:
     needs: build
     runs-on: ubuntu-latest

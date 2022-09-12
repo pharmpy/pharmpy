@@ -1,31 +1,31 @@
-.. _resmod:
+.. _ruvsearch:
 
-======
-resmod
-======
+=========
+ruvsearch
+=========
 
-The resmod tool is a general tool to decide the best residual error model given a start model.
+The RUVsearch tool is a general tool to decide the best residual error model given a start model.
 
 ~~~~~~~
 Running
 ~~~~~~~
 
-The resmod tool is available both in Pharmpy/pharmr and from the command line.
+The RUVsearch tool is available both in Pharmpy/pharmr and from the command line.
 
-To initiate resmod in Python/R:
+To initiate RUVsearch in Python/R:
 
 .. pharmpy-code::
 
-    from pharmpy.tools import run_resmod
+    from pharmpy.tools import run_ruvsearch
 
     start_model = read_model('path/to/model')
-    res = run_resmod(model=start_model)
+    res = run_ruvsearch(model=start_model)
 
-To run resmod from the command line, the example code is redefined accordingly:
+To run RUVsearch from the command line, the example code is redefined accordingly:
 
 .. code::
 
-    pharmpy run resmod path/to/model
+    pharmpy run ruvsearch path/to/model
 
 ~~~~~~~~~
 Arguments
@@ -47,7 +47,7 @@ Arguments
 Models
 ~~~~~~
 
-The various residual error models tested by `resmod` can be found in the table below together with links to detailed documentation of the
+The various residual error models tested by `RUVsearch` can be found in the table below together with links to detailed documentation of the
 functions used to create them.
 
 +------------------+----------------------------------------------------------------------------------------+
@@ -67,7 +67,7 @@ functions used to create them.
 Procedure
 ~~~~~~~~~
 
-Resmod is doing modeling on the conditional weighted residual [Ibrahim]_ of the fit of the input model to quickly assess which residual
+RUVsearch is doing modeling on the conditional weighted residual [Ibrahim]_ of the fit of the input model to quickly assess which residual
 model to select. The input model is then updated with the new residual error model and fit to see if the selected residual error
 model was indeed better. This is done multiple times to see if additional features of the residual error model should be added.
 (Due to the similarity between the power error model and the combined error model, the combination of these two error models is not considered in the procedure.
@@ -80,7 +80,7 @@ E.g., if the power error model is selected in the current iteration, the combine
         label = "Input model";
         shape = rect;
       ];
-      resmod [
+      ruvsearch [
         label = "Run residual error models";
         shape = rect;
       ];
@@ -101,26 +101,26 @@ E.g., if the power error model is selected in the current iteration, the combine
           shape = rect;
       ]
 
-      draw -> resmod -> select -> update -> better;
+      draw -> ruvsearch -> select -> update -> better;
       better -> done [label = "No"];
-      better -> resmod [label = "Yes (max 3 times)"]
+      better -> ruvsearch [label = "Yes (max 3 times)"]
     }
 
 Selection is done using the likelihood ratio test and a default p-value of 0.05.
 
-~~~~~~~~~~~~~~~~~~
-The resmod results
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+The RUVsearch results
+~~~~~~~~~~~~~~~~~~~~~
 
 The results object contains the candidate models, the start model, and the selected best model (based on the input
 selection criteria). The tool also creates various summary tables which can be accessed in the results object,
 as well as files in .csv/.json format.
 
-Consider a standard resmod run:
+Consider a standard ruvsearch run:
 
 .. pharmpy-code::
 
-    res = run_resmod(model=start_model)
+    res = run_ruvsearch(model=start_model)
 
 The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
 start model, and final ranking:

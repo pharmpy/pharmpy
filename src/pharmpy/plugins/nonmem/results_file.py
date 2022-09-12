@@ -2,8 +2,9 @@ import re
 from datetime import datetime
 
 import dateutil.parser
-from numpy import nan
 from packaging import version
+
+from pharmpy.deps import numpy as np
 
 
 class NONMEMResultsFile:
@@ -59,7 +60,7 @@ class NONMEMResultsFile:
         if ofv is not None:
             ofv = float(ofv)
         else:
-            ofv = nan
+            ofv = np.nan
         return ofv
 
     @staticmethod
@@ -79,8 +80,8 @@ class NONMEMResultsFile:
             'estimate_near_boundary': None,
             'rounding_errors': None,
             'maxevals_exceeded': None,
-            'significant_digits': nan,
-            'function_evaluations': nan,
+            'significant_digits': np.nan,
+            'function_evaluations': np.nan,
             'warning': None,
         }
 
@@ -96,7 +97,7 @@ class NONMEMResultsFile:
     def parse_tere(rows):
         result = NONMEMResultsFile.unknown_covariance()
         result['covariance_step_ok'] = False
-        result['estimation_runtime'] = nan
+        result['estimation_runtime'] = np.nan
         if len(rows) < 1:
             return result
 
@@ -159,6 +160,9 @@ class NONMEMResultsFile:
             'warning': re.compile(r' HOWEVER, PROBLEMS OCCURRED WITH THE MINIMIZATION.'),
         }
         sig_digits = re.compile(r' NO. OF SIG. DIGITS IN FINAL EST.:\s*(\S+)')  # only classical est
+        sig_digits_unreport = re.compile(
+            r'\w*(NO. OF SIG. DIGITS UNREPORTABLE)\w*\n'
+        )  # only classical est
         feval = re.compile(r' NO. OF FUNCTION EVALUATIONS USED:\s*(\S+)')  # only classical est
         ofv_with_constant = re.compile(r' OBJECTIVE FUNCTION VALUE WITH CONSTANT:\s*(\S+)')
 
@@ -185,6 +189,9 @@ class NONMEMResultsFile:
             if m:
                 result['significant_digits'] = float(m.group(1))
                 continue
+            m = sig_digits_unreport.match(row)
+            if m:
+                result['significant_digits'] = np.nan
             m = ofv_with_constant.match(row)
             if m:
                 result['ofv_with_constant'] = float(m.group(1))
@@ -323,6 +330,7 @@ class NONMEMResultsFile:
                 r'0(MINIMIZATION TERMINATED\n(.*\n)+\s*SUM OF "SQUARED" WEIGHTED INDIVIDUAL '
                 r'RESIDUALS IS INFINITE)\n'
             ),
+            re.compile(r'\s*(NO. OF SIG. DIGITS UNREPORTABLE)\s*\n'),
         ]
 
         for pattern in error_patterns:

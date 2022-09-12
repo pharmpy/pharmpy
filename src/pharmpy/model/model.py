@@ -17,14 +17,14 @@ import pathlib
 import warnings
 from pathlib import Path
 
-import sympy
-
-from pharmpy.datainfo import ColumnInfo, DataInfo
-from pharmpy.estimation import EstimationSteps
-from pharmpy.parameters import Parameters
+from pharmpy.deps import sympy
 from pharmpy.plugins.utils import detect_model
-from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import Statements
+
+from .datainfo import ColumnInfo, DataInfo
+from .estimation import EstimationSteps
+from .parameters import Parameters
+from .random_variables import RandomVariables
+from .statements import Statements
 
 
 class ModelError(Exception):
@@ -75,7 +75,7 @@ class Model:
 
         Examples
         --------
-        >>> from pharmpy import Model
+        >>> from pharmpy.model import Model
         >>> from pharmpy.modeling import load_example_model
         >>> a = load_example_model("pheno")
         >>> a == a
@@ -394,7 +394,11 @@ class Model:
     def copy(self):
         """Create a deepcopy of the model object"""
         model_copy = copy.deepcopy(self)
-        model_copy.parent_model = self.name
+        try:
+            model_copy.parent_model = self.name
+        except AttributeError:
+            # NOTE Name could be absent.
+            pass
         return model_copy
 
     @staticmethod

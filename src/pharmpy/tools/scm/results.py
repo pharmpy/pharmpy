@@ -2,11 +2,9 @@ import re
 from io import StringIO
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-
-from pharmpy import Model
-from pharmpy.results import Results
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.model import Model, Results
 from pharmpy.tools.psn_helpers import (
     arguments_from_command,
     options_from_command,
@@ -411,7 +409,7 @@ def log_steps(path, options, parcov_dictionary=None):
 
     pattern = {
         'runtable': re.compile(r'^MODEL\s+TEST\s+'),
-        'm1': re.compile(r'Model\s+directory\s+(?P<m1folder>\S+)'),
+        'm1': re.compile(r'Model\s+directory\s+(?P<m1folder>.*)'),
         'chosen': re.compile(r'Parameter-covariate relation chosen in this'),
     }
 

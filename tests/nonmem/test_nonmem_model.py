@@ -4,10 +4,19 @@ import pytest
 import sympy
 from sympy import Symbol as symbol
 
-from pharmpy import Model
 from pharmpy.config import ConfigurationContext
-from pharmpy.estimation import EstimationStep, EstimationSteps
-from pharmpy.model import ModelSyntaxError
+from pharmpy.model import (
+    Assignment,
+    EstimationStep,
+    EstimationSteps,
+    Model,
+    ModelSyntaxError,
+    ODESystem,
+    Parameter,
+    Parameters,
+    RandomVariable,
+    Statements,
+)
 from pharmpy.modeling import (
     add_iiv,
     add_population_parameter,
@@ -17,11 +26,8 @@ from pharmpy.modeling import (
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
-from pharmpy.parameters import Parameter, Parameters
 from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
-from pharmpy.random_variables import RandomVariable
-from pharmpy.statements import Assignment, ODESystem, Statements
 
 
 def S(x):
@@ -32,21 +38,21 @@ def test_source(pheno):
     assert pheno.model_code.startswith('$PROBLEM PHENOBARB')
 
 
-def test_update_inits(pheno, pheno_path):
+def test_update_inits(load_model_for_test, pheno, pheno_path):
     from pharmpy.modeling import update_inits
 
     model = pheno.copy()
     update_inits(model)
 
     with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-        model = Model.create_model(pheno_path)
+        model = load_model_for_test(pheno_path)
         update_inits(model)
         model.update_source()
 
 
-def test_empty_ext_file(testdata):
+def test_empty_ext_file(load_model_for_test, testdata):
     # assert existing but empty ext-file does not give modelfit_results
-    model = Model.create_model(
+    model = load_model_for_test(
         testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'noESTwithSIM' / 'onlysim.mod'
     )
     with pytest.raises(FileNotFoundError):
@@ -123,8 +129,8 @@ def test_set_parameters(pheno):
         set_initial_estimates(model, {'OMEGA(2,2)': 0.000001})
 
 
-def test_adjust_iovs(testdata):
-    model = Model.create_model(
+def test_adjust_iovs(load_model_for_test, testdata):
+    model = load_model_for_test(
         testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'multEST' / 'noSIM' / 'withBayes.mod'
     )
     model.parameters
@@ -135,7 +141,7 @@ def test_adjust_iovs(testdata):
     assert rvs[4].level == 'IOV'
     assert rvs[6].level == 'IOV'
 
-    model = Model.create_model(testdata / 'nonmem' / 'qa' / 'iov.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'qa' / 'iov.mod')
     rvs = model.random_variables
     assert rvs[0].level == 'IIV'
     assert rvs[1].level == 'IIV'
@@ -341,18 +347,18 @@ def test_results(pheno):
     assert len(pheno.modelfit_results) == 1  # A chain of one estimation
 
 
-def test_minimal(datadir):
+def test_minimal(load_model_for_test, datadir):
     path = datadir / 'minimal.mod'
-    model = Model.create_model(path)
+    model = load_model_for_test(path)
     assert len(model.statements) == 1
     assert model.statements[0].expression == symbol('THETA(1)') + symbol('ETA(1)') + symbol(
         'EPS(1)'
     )
 
 
-def test_copy(datadir):
+def test_copy(load_model_for_test, datadir):
     path = datadir / 'minimal.mod'
-    model = Model.create_model(path)
+    model = load_model_for_test(path)
     copy = model.copy()
     assert id(model) != id(copy)
     assert model.statements[0].expression == symbol('THETA(1)') + symbol('ETA(1)') + symbol(
@@ -360,13 +366,13 @@ def test_copy(datadir):
     )
 
 
-def test_initial_individual_estimates(datadir):
+def test_initial_individual_estimates(load_model_for_test, datadir):
     path = datadir / 'minimal.mod'
-    model = Model.create_model(path)
+    model = load_model_for_test(path)
     assert model.initial_individual_estimates is None
 
     path = datadir / 'pheno_etas.mod'
-    model = Model.create_model(path)
+    model = load_model_for_test(path)
     inits = model.initial_individual_estimates
     assert len(inits) == 59
     assert len(inits.columns) == 2
@@ -424,9 +430,9 @@ def test_remove_eta(pheno):
     assert model.model_code.split('\n')[12] == 'V = TVV*EXP(ETA(1))'
 
 
-def test_symbol_names_in_comment(pheno_path):
+def test_symbol_names_in_comment(load_model_for_test, pheno_path):
     with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-        model = Model.create_model(pheno_path)
+        model = load_model_for_test(pheno_path)
         assert model.statements[2].expression == S('PTVCL') * S('WGT')
 
         code = """$PROBLEM base model
@@ -447,9 +453,9 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
             assert model.parameters.names == ['THETA(1)', 'OMEGA(1,1)', 'SIGMA(1,1)']
 
 
-def test_symbol_names_in_abbr(testdata):
+def test_symbol_names_in_abbr(load_model_for_test, testdata):
     with ConfigurationContext(conf, parameter_names=['abbr', 'basic']):
-        model = Model.create_model(testdata / 'nonmem' / 'pheno_abbr.mod')
+        model = load_model_for_test(testdata / 'nonmem' / 'pheno_abbr.mod')
         pset, rvs = model.parameters, model.random_variables
 
         assert 'THETA_CL' in pset.names
@@ -515,9 +521,11 @@ def test_symbol_names_in_abbr(testdata):
         ),
     ],
 )
-def test_symbol_names_priority(testdata, parameter_names, assignments, params, etas):
+def test_symbol_names_priority(
+    load_model_for_test, testdata, parameter_names, assignments, params, etas
+):
     with ConfigurationContext(conf, parameter_names=parameter_names):
-        model = Model.create_model(testdata / 'nonmem' / 'pheno_abbr_comments.mod')
+        model = load_model_for_test(testdata / 'nonmem' / 'pheno_abbr_comments.mod')
         sset, pset, rvs = model.statements, model.parameters, model.random_variables
 
         assert all(str(a) in [str(s) for s in sset] for a in assignments)
@@ -525,9 +533,9 @@ def test_symbol_names_priority(testdata, parameter_names, assignments, params, e
         assert all(eta in [rv.name for rv in rvs] for eta in etas)
 
 
-def test_clashing_parameter_names(datadir):
+def test_clashing_parameter_names(load_model_for_test, datadir):
     with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-        model = Model.create_model(datadir / 'pheno_clashing_symbols.mod')
+        model = load_model_for_test(datadir / 'pheno_clashing_symbols.mod')
         with pytest.warns(UserWarning):
             model.statements
         assert model.parameters.names == ['THETA(1)', 'TVV', 'IVCL', 'OMEGA(2,2)', 'SIGMA(1,1)']
@@ -564,15 +572,15 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
             assert model.parameters.names == ['TV', 'THETA(2)']
 
 
-def test_missing_parameter_names_settings(pheno_path):
+def test_missing_parameter_names_settings(load_model_for_test, pheno_path):
     with ConfigurationContext(conf, parameter_names=['comment']):
         with pytest.raises(ValueError):
-            Model.create_model(pheno_path)
+            load_model_for_test(pheno_path)
 
 
-def test_abbr_write(pheno_path):
+def test_abbr_write(load_model_for_test, pheno_path):
     with ConfigurationContext(conf, write_etas_in_abbr=True):
-        model = Model.create_model(pheno_path)
+        model = load_model_for_test(pheno_path)
         add_iiv(model, 'S1', 'add')
         model.update_source()
 
@@ -586,7 +594,7 @@ def test_abbr_write(pheno_path):
         assert 'ETA_S1' in [rv.name for rv in model.random_variables]
         assert S('ETA_S1') in model.statements.free_symbols
 
-        model = Model.create_model(pheno_path)
+        model = load_model_for_test(pheno_path)
         add_iiv(model, 'S1', 'add', eta_names='new_name')
 
         with pytest.warns(UserWarning, match='Not valid format of name new_name'):
@@ -594,11 +602,11 @@ def test_abbr_write(pheno_path):
             assert 'ETA(3)' in model.model_code
 
 
-def test_abbr_read_write(pheno_path):
+def test_abbr_read_write(load_model_for_test, pheno_path):
     with ConfigurationContext(
         conf, parameter_names=['abbr', 'comment', 'basic'], write_etas_in_abbr=True
     ):
-        model_write = Model.create_model(pheno_path)
+        model_write = load_model_for_test(pheno_path)
         add_iiv(model_write, 'S1', 'add')
         model_read = Model.create_model(StringIO(model_write.model_code))
         assert model_read.model_code == model_write.model_code
@@ -707,8 +715,8 @@ $ESTIMATION METHOD=1 MAXEVAL=9999 NONINFETA=1 MCETA=1
         ('nonmem/pheno.mod', set_zero_order_elimination),
     ],
 )
-def test_des(testdata, model_path, transformation):
-    model_ref = Model.create_model(testdata / model_path)
+def test_des(load_model_for_test, testdata, model_path, transformation):
+    model_ref = load_model_for_test(testdata / model_path)
     transformation(model_ref)
 
     model_des = Model.create_model(StringIO(model_ref.model_code))
@@ -716,8 +724,8 @@ def test_des(testdata, model_path, transformation):
     assert model_ref.statements.ode_system == model_des.statements.ode_system
 
 
-def test_cmt_warning(testdata):
-    model_original = Model.create_model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+def test_cmt_warning(load_model_for_test, testdata):
+    model_original = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
 
     model_str = model_original.model_code.replace('CMT=DROP', 'CMT')
     model = Model.create_model(StringIO(model_str))
@@ -1004,8 +1012,8 @@ $ESTIMATION METHOD=1 INTER
     assert model.model_code == correct
 
 
-def test_parse_derivatives(testdata):
-    model = Model.create_model(
+def test_parse_derivatives(load_model_for_test, testdata):
+    model = load_model_for_test(
         testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
     )
     assert model.estimation_steps[0].eta_derivatives == ['ETA(1)', 'ETA(2)']

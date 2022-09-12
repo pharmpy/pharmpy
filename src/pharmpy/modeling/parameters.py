@@ -1,4 +1,4 @@
-from pharmpy.parameters import Parameter, Parameters
+from pharmpy.model import Parameter, Parameters
 
 
 def get_thetas(model):
@@ -29,7 +29,8 @@ def get_thetas(model):
     get_omegas : Get omega parameters
     get_sigmas : Get sigma parameters
     """
-    thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
+    rvs_fs = model.random_variables.free_symbols
+    thetas = [p for p in model.parameters if p.symbol not in rvs_fs]
     return Parameters(thetas)
 
 

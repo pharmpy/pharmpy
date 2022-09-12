@@ -7,13 +7,20 @@ import warnings
 from io import StringIO
 from pathlib import Path
 
-import sympy
-
-from pharmpy import Model, Parameter, Parameters, RandomVariables, config
-from pharmpy.modeling import split_joint_distribution
-from pharmpy.statements import Assignment, CompartmentalSystem
+import pharmpy.config as config
+from pharmpy.deps import sympy
+from pharmpy.model import (
+    Assignment,
+    CompartmentalSystem,
+    Model,
+    Parameter,
+    Parameters,
+    RandomVariables,
+)
 from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import default_model_database
+
+from .block_rvs import split_joint_distribution
 
 
 def read_model(path):
@@ -208,7 +215,7 @@ def convert_model(model, to_format):
         new.parameters = model.parameters
         new.random_variables = model.random_variables.copy()
         new.statements = model.statements
-        new.dataset = model.dataset.copy()
+        new.dataset = model.dataset
         new.estimation_steps = model.estimation_steps
         new.datainfo = model.datainfo
         new.name = model.name
@@ -586,11 +593,15 @@ def get_config_path():
     >>> from pharmpy.modeling import get_config_path
     >>> get_config_path()  # doctest: +SKIP
     """
-    config_path = config.user_config_dir()
-    if config_path.exists():
-        return str(config_path)
+    if config.user_config_file_enabled():
+        config_path = config.user_config_dir()
+        if config_path.exists():
+            return str(config_path)
+        else:
+            warnings.warn(f'Cannot find config path {config_path}')
+            return None
     else:
-        warnings.warn(f'Cannot find config path {config_path}')
+        warnings.warn('User config file is disabled')
         return None
 
 

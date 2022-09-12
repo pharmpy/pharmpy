@@ -26,7 +26,7 @@ def write_csv(model, path=None, force=False):
     newdataset.csv
 
     """
-    import pharmpy.data
+    from pharmpy.model import data
 
     if path is None:
         path = Path("")
@@ -41,6 +41,6 @@ def write_csv(model, path=None, force=False):
     if not force and path.exists():
         raise FileExistsError(f'File at {path} already exists.')
 
-    model.dataset.to_csv(path, na_rep=pharmpy.data.conf.na_rep, index=False)
+    model.dataset.to_csv(path, na_rep=data.conf.na_rep, index=False)
     model.datainfo = model.datainfo.derive(path=path)
     return path

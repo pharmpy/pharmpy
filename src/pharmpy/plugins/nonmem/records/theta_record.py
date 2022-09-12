@@ -1,7 +1,8 @@
 import re
 import warnings
+from itertools import count
 
-from pharmpy.parameters import Parameter
+from pharmpy.model import Parameter
 from pharmpy.parse_utils.generic import AttrToken, remove_token_and_space
 
 from .record import Record
@@ -130,10 +131,10 @@ class ThetaRecord(Record):
                 self.name_map[value] = n
 
     def renumber(self, new_start):
-        old_start = min(self.name_map.values())
-        if new_start != old_start:
-            for name in self.name_map:
-                self.name_map[name] += new_start - old_start
+        for new_index, name in zip(
+            count(new_start), map(lambda t: t[0], sorted(self.name_map.items(), key=lambda t: t[1]))
+        ):
+            self.name_map[name] = new_index
 
     def remove(self, names):
         first_theta = min(self.name_map.values())

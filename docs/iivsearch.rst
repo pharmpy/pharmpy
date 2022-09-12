@@ -53,8 +53,15 @@ Arguments
 | :ref:`cutoff<ranking_iivsearch>`              | Cutoff for the ranking function, exclude models that are below     |
 |                                               | cutoff (default is none)                                           |
 +-----------------------------------------------+--------------------------------------------------------------------+
-| ``model``                                     | Start model                                                        |
+| ``model``                                     | Input model                                                        |
 +-----------------------------------------------+--------------------------------------------------------------------+
+
+.. note::
+
+    In this documentation, "base model" will be used to describe the model which all candidates are based on. Note
+    that if you have set ``iiv_strategy`` to anything other than 'no_add', `this model will be different to the
+    input model`. The term "base model" can thus be either the input model or a copy with added IIVs.
+
 
 .. _algorithms_iivsearch:
 
@@ -79,8 +86,10 @@ available algorithms can be seen in the table below.
 Brute force search for number of IIVs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This algorithm will create candidate models for all combinations of removed IIVs. It will also create a naive pooled
-model.
+The ``brute_force_no_of_etas`` algorithm will create candidate models for all combinations of removed IIVs. It will
+also create a naive pooled model meaning all the etas are fixed to 0. This can be useful in identifying local minima,
+since all other candidate models should have a lower OFV than the naive pooled model (which doesn't have any
+inter-individual variability).
 
 .. graphviz::
 
@@ -109,8 +118,8 @@ model.
 Brute force search for covariance structure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This will try to create available IIV variance structures, including models with no covariance (only diagonal), and
-covariance between all IIVs (full block).
+The ``brute_force_block_structure`` algorithm will create candidates with all possible IIV variance and covariance
+structures from the IIVs in the base model.
 
 .. graphviz::
 
@@ -133,7 +142,7 @@ covariance between all IIVs (full block).
 Full brute force search
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The full brute force search combines the brute force algorithm for choosing number of etas with the brute force
+The full ``brute_force`` search combines the brute force algorithm for choosing number of etas with the brute force
 algorithm for the block structure, by first choosing the number of etas then the block structure.
 
 .. graphviz::

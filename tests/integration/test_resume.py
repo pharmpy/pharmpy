@@ -2,14 +2,14 @@ import shutil
 
 import pytest
 
-from pharmpy import Model
 from pharmpy.config import ConfigurationContext
+from pharmpy.model import Model
 from pharmpy.plugins.nonmem import conf
 from pharmpy.tools import fit, run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-def test_run_tool_resmod_resume_flag(tmp_path, testdata):
+def test_run_tool_ruvsearch_resume_flag(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         for path in (testdata / 'nonmem').glob('pheno_real.*'):
             shutil.copy2(path, tmp_path)
@@ -23,7 +23,13 @@ def test_run_tool_resmod_resume_flag(tmp_path, testdata):
             for i, resume in enumerate([False, False, True]):
                 try:
                     res = run_tool(
-                        'resmod', model, groups=4, p_value=0.05, skip=[], path=path, resume=resume
+                        'ruvsearch',
+                        model,
+                        groups=4,
+                        p_value=0.05,
+                        skip=[],
+                        path=path,
+                        resume=resume,
                     )
                     if i != 0 and not resume:
                         assert False

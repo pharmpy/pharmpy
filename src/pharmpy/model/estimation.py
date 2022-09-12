@@ -1,7 +1,7 @@
 import copy
 from collections.abc import Sequence
 
-import pandas as pd
+from pharmpy.deps import pandas as pd
 
 
 class EstimationStep:

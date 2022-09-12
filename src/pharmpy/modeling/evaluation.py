@@ -1,10 +1,8 @@
-import numpy as np
-import pandas as pd
-import scipy.linalg
-import symengine
-import sympy
-
-from pharmpy.statements import sympify
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import symengine, sympy
+from pharmpy.deps.scipy import linalg
+from pharmpy.expressions import sympify
 
 from .expressions import (
     calculate_epsilon_gradient_expression,
@@ -495,7 +493,7 @@ def evaluate_weighted_residuals(model, parameters=None, dataset=None):
         Fi = F.loc[i:i]
         DVi = np.float64(df['DV'][df[model.datainfo.id_column.name] == i])
         Ci = Gi @ omega @ Gi.T + np.diag(np.diag(Hi @ sigma @ Hi.T))
-        WRESi = scipy.linalg.sqrtm(scipy.linalg.inv(Ci)) @ (DVi - Fi)
+        WRESi = linalg.sqrtm(linalg.inv(Ci)) @ (DVi - Fi)
         WRES = np.concatenate((WRES, WRESi))
     ser = pd.Series(WRES)
     ser.name = 'WRES'

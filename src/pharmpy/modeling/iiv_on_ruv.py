@@ -2,12 +2,9 @@
 :meta private:
 """
 
-import sympy
-from sympy import Symbol as S
-
+from pharmpy.deps import sympy
+from pharmpy.model import Parameter, Parameters, RandomVariable
 from pharmpy.modeling.help_functions import _format_input_list, _get_epsilons
-from pharmpy.parameters import Parameter, Parameters
-from pharmpy.random_variables import RandomVariable
 
 
 def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
@@ -70,7 +67,7 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
         eta_dict = {e: eta for e, eta in zip(eps, etas)}
 
     for e in eps:
-        sset = sset.subs({e.symbol: e.symbol * sympy.exp(S(eta_dict[e].name))})
+        sset = sset.subs({e.symbol: e.symbol * sympy.exp(sympy.Symbol(eta_dict[e].name))})
 
     model.random_variables = rvs
     model.parameters = Parameters(pset)
@@ -83,7 +80,7 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
 
 
 def _create_eta(pset, number, eta_names):
-    omega = S(f'IIV_RUV{number}')
+    omega = sympy.Symbol(f'IIV_RUV{number}')
     pset.append(Parameter(str(omega), 0.09))
 
     if eta_names:

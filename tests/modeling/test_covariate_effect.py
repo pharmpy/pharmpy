@@ -1,9 +1,11 @@
 import pytest
-from sympy import Symbol as S
-from sympy import exp
 
-from pharmpy import Model
+from pharmpy.deps import sympy
 from pharmpy.modeling.covariate_effect import CovariateEffect, _choose_param_inits
+
+
+def S(x: str):
+    return sympy.Symbol(x)
 
 
 @pytest.mark.parametrize(
@@ -12,7 +14,7 @@ from pharmpy.modeling.covariate_effect import CovariateEffect, _choose_param_ini
         (
             CovariateEffect.exponential(),
             S('CLWGT'),
-            exp(S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN'))),
+            sympy.exp(S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN'))),
         ),
         (CovariateEffect.power(), S('CLWGT'), (S('WGT') / S('WGT_MEDIAN')) ** S('COVEFF1')),
         (CovariateEffect.linear(), S('CLWGT'), 1 + S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN'))),
@@ -33,8 +35,8 @@ def test_apply(cov_eff, symbol, expression):
 @pytest.mark.parametrize(
     'cov_eff, init, lower, upper', [('exp', 0.001, -0.8696, 0.8696), ('pow', 0.001, -100, 100000)]
 )
-def test_choose_param_inits(pheno_path, cov_eff, init, lower, upper):
-    model = Model.create_model(pheno_path)
+def test_choose_param_inits(pheno_path, load_model_for_test, cov_eff, init, lower, upper):
+    model = load_model_for_test(pheno_path)
 
     inits = _choose_param_inits(cov_eff, model, 'WGT')
 

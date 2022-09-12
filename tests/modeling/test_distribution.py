@@ -1,23 +1,13 @@
-from io import StringIO
-
 import sympy
 
-from pharmpy import Model
 from pharmpy.modeling import (
     add_peripheral_compartment,
-    load_example_model,
     remove_peripheral_compartment,
     set_peripheral_compartments,
 )
 
 
-def create_model(s, testdata):
-    model = Model.create_model(StringIO(s))
-    model.dataset = load_example_model("pheno").dataset
-    return model
-
-
-def test_advan1(testdata):
+def test_advan1(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -35,7 +25,7 @@ $OMEGA 0.0309626  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -68,7 +58,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert rate == sympy.Symbol('Q') / sympy.Symbol('V1')
 
 
-def test_advan2(testdata):
+def test_advan2(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -89,7 +79,7 @@ $OMEGA 0.0309626  ; IVMAT
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -120,7 +110,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_advan2_trans1(testdata):
+def test_advan2_trans1(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -141,7 +131,7 @@ $OMEGA 0.0309626  ; IVMAT
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -172,7 +162,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_advan3(testdata):
+def test_advan3(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -196,7 +186,7 @@ $OMEGA 0.0309626  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -230,7 +220,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_advan4(testdata):
+def test_advan4(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -257,7 +247,7 @@ $OMEGA 0.0309626  ; IVMAT
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -294,7 +284,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_advan1_two_periphs(testdata):
+def test_advan1_two_periphs(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -312,7 +302,7 @@ $OMEGA 0.0309626  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     add_peripheral_compartment(model)
     model.model_code
@@ -348,7 +338,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_advan1_remove(testdata):
+def test_advan1_remove(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -366,12 +356,12 @@ $OMEGA 0.0309626  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code)
     remove_peripheral_compartment(model)
     assert model.model_code == code
 
 
-def test_advan3_remove(testdata):
+def test_advan3_remove(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -395,7 +385,7 @@ $OMEGA 0.0309626  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -417,7 +407,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_advan4_remove(testdata):
+def test_advan4_remove(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -445,7 +435,7 @@ $OMEGA 0.0309626  ; IVMAT
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -456,7 +446,7 @@ CL=THETA(1)*EXP(ETA(1))
 VC=THETA(2)*EXP(ETA(2))
 MAT=THETA(3)*EXP(ETA(3))
 V = VC
-KA = 1/MAT
+KA=1/MAT
 $ERROR
 Y=F+F*EPS(1)
 $THETA (0,0.00469307) ; POP_CL
@@ -471,7 +461,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_advan11_remove(testdata):
+def test_advan11_remove(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -501,7 +491,7 @@ $OMEGA 0.0309626  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -529,7 +519,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_advan12_remove(testdata):
+def test_advan12_remove(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -562,7 +552,7 @@ $OMEGA 0.0309626  ; IVMAT
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -593,7 +583,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_advan11_remove_two_periphs(testdata):
+def test_advan11_remove_two_periphs(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -623,7 +613,7 @@ $OMEGA 0.0309626  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     remove_peripheral_compartment(model)
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -646,7 +636,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_advan4_roundtrip(testdata):
+def test_advan4_roundtrip(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -674,7 +664,7 @@ $OMEGA 0.0309626  ; IVMAT
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -707,7 +697,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_set_peripheral_compartments(testdata):
+def test_set_peripheral_compartments(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -737,7 +727,7 @@ $OMEGA 0.0309626  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = create_model(code, testdata)
+    model = create_model_for_test(code, dataset='pheno')
     set_peripheral_compartments(model, 0)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@

@@ -1,8 +1,5 @@
-from io import StringIO
-
 import pytest
 
-from pharmpy import Model
 from pharmpy.modeling import (
     add_iiv,
     add_peripheral_compartment,
@@ -22,8 +19,10 @@ from pharmpy.tools.iivsearch.algorithms import (
     'list_of_parameters, block_structure, no_of_models',
     [([], [], 4), (['QP1'], [], 14), ([], ['ETA(1)', 'ETA(2)'], 4)],
 )
-def test_brute_force_block_structure(testdata, list_of_parameters, block_structure, no_of_models):
-    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+def test_brute_force_block_structure(
+    load_model_for_test, testdata, list_of_parameters, block_structure, no_of_models
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     add_peripheral_compartment(model)
     add_iiv(model, list_of_parameters, 'add')
     if block_structure:
@@ -35,8 +34,8 @@ def test_brute_force_block_structure(testdata, list_of_parameters, block_structu
     assert len(fit_tasks) == no_of_models
 
 
-def test_get_eta_combinations_4_etas(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_get_eta_combinations_4_etas(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
     add_iiv(model, ['TVCL', 'TVV'], 'exp')
 
     eta_combos = _get_eta_combinations(model.random_variables.iiv)
@@ -57,8 +56,8 @@ def test_get_eta_combinations_4_etas(pheno_path):
     assert len_of_combos.count([1, 1, 1, 1]) == 1
 
 
-def test_get_eta_combinations_5_etas(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_get_eta_combinations_5_etas(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
     add_iiv(model, ['TVCL', 'TVV', 'TAD'], 'exp')
 
     eta_combos = _get_eta_combinations(model.random_variables.iiv)
@@ -80,8 +79,8 @@ def test_get_eta_combinations_5_etas(pheno_path):
     assert len_of_combos.count([1, 1, 1, 1, 1]) == 1
 
 
-def test_is_current_block_structure(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_is_current_block_structure(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
     add_iiv(model, ['TVCL', 'TVV'], 'exp')
     etas = model.random_variables.iiv
 
@@ -100,15 +99,15 @@ def test_is_current_block_structure(pheno_path):
     assert _is_current_block_structure(etas, eta_combos)
 
 
-def test_create_joint_dist(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+def test_create_joint_dist(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     add_peripheral_compartment(model)
     add_pk_iiv(model)
     eta_combos = [['ETA(1)', 'ETA(2)'], ['ETA_QP1'], ['ETA_VP1']]
     create_eta_blocks(eta_combos, model)
     assert len(model.random_variables.iiv.distributions()) == 4
 
-    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     add_peripheral_compartment(model)
     add_pk_iiv(model)
     create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])
@@ -117,8 +116,8 @@ def test_create_joint_dist(testdata):
     assert len(model.random_variables.iiv.distributions()) == 3
 
 
-def test_get_param_names(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     param_dict = _iiv_param_dict(model)
     param_dict_ref = {'ETA(1)': 'CL', 'ETA(2)': 'VC', 'ETA(3)': 'MAT'}
@@ -128,7 +127,7 @@ def test_get_param_names(testdata):
     model_code = model.model_code.replace(
         'CL = THETA(1) * EXP(ETA(1))', 'ETA_1 = ETA(1)\nCL = THETA(1) * EXP(ETA_1)'
     )
-    model = Model.create_model(StringIO(model_code))
+    model = create_model_for_test(model_code)
 
     param_dict = _iiv_param_dict(model)
 

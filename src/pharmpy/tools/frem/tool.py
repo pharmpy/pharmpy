@@ -2,8 +2,8 @@ import itertools
 import warnings
 from pathlib import Path
 
-from pharmpy import Model
 from pharmpy.data_structures import OrderedSet
+from pharmpy.model import Model
 from pharmpy.modeling import (
     get_covariate_baselines,
     list_time_varying_covariates,

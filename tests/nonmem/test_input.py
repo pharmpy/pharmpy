@@ -1,8 +1,3 @@
-from io import StringIO
-
-import pharmpy
-
-
 def test_data_read(pheno):
     df = pheno.dataset
     # FIXME: should have numeric TIME
@@ -16,23 +11,19 @@ def test_read_raw_dataset(pheno):
     assert list(df.columns) == ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
 
 
-def test_ignore_with_synonym(pheno_data):
-    model = pharmpy.Model.create_model(
-        StringIO(
-            f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"
-            f"$DATA {pheno_data} IGNORE=@ IGNORE=(CONC.EQN.0)"
-        )
+def test_ignore_with_synonym(create_model_for_test, pheno_data):
+    model = create_model_for_test(
+        f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"
+        f"$DATA {pheno_data} IGNORE=@ IGNORE=(CONC.EQN.0)"
     )
     di = model.datainfo
     col = di['DV'].derive(name='CONC')
     model.datainfo = di[0:5] + col + di[6:]
     df = model.dataset
     assert len(df) == 155
-    model = pharmpy.Model.create_model(
-        StringIO(
-            f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"
-            f"$DATA {pheno_data} IGNORE=@ IGNORE=(DV.EQN.0)"
-        )
+    model = create_model_for_test(
+        f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"
+        f"$DATA {pheno_data} IGNORE=@ IGNORE=(DV.EQN.0)"
     )
     di = model.datainfo
     col = di['DV'].derive(name='CONC')
@@ -41,12 +32,9 @@ def test_ignore_with_synonym(pheno_data):
     assert len(df) == 155
 
 
-def test_idv_with_synonym(pheno_data):
-    model = pharmpy.Model.create_model(
-        StringIO(
-            f"$PROBLEM dfs\n$INPUT ID TIME=TAD AMT WT APGR DV FA1 FA2\n"
-            f"$DATA {pheno_data} IGNORE=@"
-        )
+def test_idv_with_synonym(create_model_for_test, pheno_data):
+    model = create_model_for_test(
+        f"$PROBLEM dfs\n$INPUT ID TIME=TAD AMT WT APGR DV FA1 FA2\n" f"$DATA {pheno_data} IGNORE=@"
     )
     di = model.datainfo
     col = di['TIME'].derive(name='TAD')

@@ -1,3 +1,46 @@
+0.77.0 (2022-09-08)
+-------------------
+
+Changes
+========
+
+* Return input model in allometry tool when allometry model fails
+
+0.76.1 (2022-09-06)
+-------------------
+
+Bugfixes
+========
+
+* Fix issue with adding allometry to models with MM elimination
+* Make pyreadr an optional dependency, making Pharmpy easier to install on Mac M1
+
+0.76.0 (2022-09-05)
+-------------------
+
+New features
+============
+
+* Add modeling.get_evid to get or create evid from a model
+* Add modeling.get_cmt to get or create a cmt column from a model
+* New column type: "rate"
+
+Changes
+=======
+
+* Rename "resmod" tool to "ruvsearch"
+* Return only DataFrame in modeling.rank_models
+* Fall back to rank value if model fails in modeling.rank_models (fix #916)
+* Rename "strictness" to "errors_allowed" in modeling.rank_models
+* Only allow "rounding errors" by amd, iivsearch, iovsearch, modelsearch and covsearch (fix #1055)
+* Add attibute significant_digits to ModelfitResults
+
+Bugfixes
+========
+
+* Serialize modelfit results #1092
+* Exlude "unreportable number of significant digits" in modeling.rank_models (fix #1076)
+
 0.75.0 (2022-08-10)
 -------------------
 

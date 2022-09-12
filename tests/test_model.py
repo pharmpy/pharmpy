@@ -2,9 +2,7 @@ from pathlib import Path
 
 import pytest
 
-import pharmpy.data
-import pharmpy.model
-from pharmpy import Model
+from pharmpy.model import Model
 from pharmpy.modeling import convert_model, create_symbol, load_example_model
 from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
@@ -19,16 +17,16 @@ lincorrect = read_nonmem_dataset(
 @pytest.mark.parametrize(
     'stem,force_numbering,symbol_name', [('DV', False, 'DV1'), ('X', False, 'X'), ('X', True, 'X1')]
 )
-def test_create_symbol(testdata, stem, force_numbering, symbol_name):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_create_symbol(load_model_for_test, testdata, stem, force_numbering, symbol_name):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     symbol = create_symbol(model, stem=stem, force_numbering=force_numbering)
 
     assert symbol.name == symbol_name
 
 
-def test_to_generic_model(testdata):
+def test_to_generic_model(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'pheno.mod'
-    nm_model = Model.create_model(path)
+    nm_model = load_model_for_test(path)
     model = convert_model(nm_model, 'generic')
 
     assert model.parameters == nm_model.parameters
@@ -36,10 +34,10 @@ def test_to_generic_model(testdata):
     assert model.random_variables == nm_model.random_variables
     assert model.name == nm_model.name
     assert model.statements == nm_model.statements
-    assert type(model) == pharmpy.model.Model
+    assert type(model) == Model
 
 
-def test_model_equality(testdata):
+def test_model_equality():
     pheno1 = load_example_model("pheno")
     assert pheno1 == pheno1
 

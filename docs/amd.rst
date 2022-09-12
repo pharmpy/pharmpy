@@ -6,7 +6,7 @@ Automatic Model Development (AMD)
 
 The AMD tool is a general tool for fully automatic model development to decide the best model given either a dataset
 or a starting model. The tool is a combination of the following tools: :ref:`modelsearch`, :ref:`iivsearch`,
-:ref:`iovsearch`, :ref:`resmod`, :ref:`allometry`, and :ref:`covsearch`.
+:ref:`iovsearch`, :ref:`ruvsearch`, :ref:`allometry`, and :ref:`covsearch`.
 
 ~~~~~~~
 Running
@@ -232,7 +232,7 @@ for each subtool, see the respective subheading.
 +------------------+-------------------------------------------------------------------------------------------------+
 | iovsearch        | Search for best IOV structure and remove IIVs explained by IOV                                  |
 +------------------+-------------------------------------------------------------------------------------------------+
-| resmod           | Search for best residual error model, test IIV on RUV, power on RUV, combined error model, and  |
+| ruvsearch        | Search for best residual error model, test IIV on RUV, power on RUV, combined error model, and  |
 |                  | time-varying                                                                                    |
 +------------------+-------------------------------------------------------------------------------------------------+
 | allometry        | Test allometric scaling                                                                         |
@@ -302,7 +302,7 @@ more details about the tool. The settings that the AMD tool uses for this subtoo
 Residual
 ~~~~~~~~
 
-This subtool selects the residual model, see :ref:`resmod` for more details about the tool. The settings
+This subtool selects the residual model, see :ref:`ruvsearch` for more details about the tool. The settings
 that the AMD tool uses for this subtool can be seen in the table below.
 
 

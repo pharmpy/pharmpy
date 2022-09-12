@@ -1,16 +1,17 @@
 from pathlib import Path
 
-import pandas as pd
-import sympy
-
-import pharmpy
-from pharmpy import (
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
+from pharmpy.model import (
     Assignment,
     ColumnInfo,
+    Compartment,
     CompartmentalSystem,
+    CompartmentalSystemBuilder,
     DataInfo,
     EstimationStep,
     EstimationSteps,
+    Model,
     Parameter,
     Parameters,
     RandomVariable,
@@ -26,7 +27,6 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.data import read_dataset_from_datainfo
 from pharmpy.plugins.nonmem.advan import dosing
-from pharmpy.statements import Compartment, CompartmentalSystemBuilder
 from pharmpy.workflows import default_model_database
 
 
@@ -72,7 +72,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     )
     eststeps = EstimationSteps([est])
 
-    model = pharmpy.Model()
+    model = Model()
     model.name = 'start'
     model.parameters = params
     model.random_variables = rvs

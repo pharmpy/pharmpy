@@ -1,7 +1,7 @@
 import pytest
 
 from pharmpy.config import ConfigurationContext
-from pharmpy.parameters import Parameter, Parameters
+from pharmpy.model import Parameter, Parameters
 from pharmpy.plugins.nonmem import conf
 
 

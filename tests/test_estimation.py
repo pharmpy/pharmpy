@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.estimation import EstimationStep, EstimationSteps
+from pharmpy.model import EstimationStep, EstimationSteps
 
 
 def test_init():

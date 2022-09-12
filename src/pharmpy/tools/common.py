@@ -1,8 +1,8 @@
 import warnings
+from typing import Any
 
-import numpy as np
-import pandas as pd
-
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.modeling import (
     rank_models,
     summarize_errors,
@@ -11,6 +11,8 @@ from pharmpy.modeling import (
     summarize_modelfit_results,
     update_inits,
 )
+
+DataFrame = Any  # NOTE should be pd.DataFrame but we want lazy loading
 
 
 def update_initial_estimates(model):
@@ -65,11 +67,16 @@ def summarize_tool(
     rank_type,
     cutoff,
     bic_type='mixed',
-) -> pd.DataFrame:
+) -> DataFrame:
     models_all = [start_model] + models
 
-    df_rank, _ = rank_models(
-        start_model, models, strictness=[], rank_type=rank_type, cutoff=cutoff, bic_type=bic_type
+    df_rank = rank_models(
+        start_model,
+        models,
+        errors_allowed=['rounding_errors'],
+        rank_type=rank_type,
+        cutoff=cutoff,
+        bic_type=bic_type,
     )
 
     rows = {model.name: [model.description, model.parent_model] for model in models_all}
@@ -80,12 +87,7 @@ def summarize_tool(
     df = pd.concat([df_descr, df_rank], axis=1)
     df['parent_model'] = df.pop('parent_model')
 
-    if rank_type == 'lrt':
-        rank_type_name = 'ofv'
-    else:
-        rank_type_name = rank_type
-
-    df_sorted = df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
+    df_sorted = df.reindex(df_rank.index)
 
     assert df_sorted is not None
     return df_sorted

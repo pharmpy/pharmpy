@@ -3,23 +3,21 @@ import re
 import warnings
 from pathlib import Path
 
-import numpy as np
-import sympy
-from sympy import Symbol as symbol
-
-from pharmpy import data
-from pharmpy.modeling import simplify_expression
-from pharmpy.plugins.nonmem.records import code_record
-from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import (
+from pharmpy.deps import numpy as np
+from pharmpy.deps import sympy, sympy_printing
+from pharmpy.model import (
     Assignment,
     Bolus,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     ExplicitODESystem,
     Infusion,
+    RandomVariables,
     Statements,
+    data,
 )
+from pharmpy.modeling import simplify_expression
+from pharmpy.plugins.nonmem.records import code_record
 
 from .records.factory import create_record
 
@@ -299,8 +297,7 @@ def update_ode_system(model, old, new):
         update_des(model, old, new)
     elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
         if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.datainfo.names:
-            df = model.dataset
-            df.drop(columns=['RATE'], inplace=True)
+            df = model.dataset.drop(columns=['RATE'])
             model.dataset = df
 
         advan, trans = new_advan_trans(model)
@@ -352,7 +349,7 @@ def update_infusion(model, old):
             + model.statements.ode_system
             + model.statements.after_odes
         )
-        df = model.dataset
+        df = model.dataset.copy()
         rate = np.where(df['AMT'] == 0, 0.0, -2.0)
         df['RATE'] = rate
         # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
@@ -370,7 +367,7 @@ def force_des(model, odes):
     if isinstance(odes, ExplicitODESystem):
         return
 
-    amounts = {sympy.Function(amt.name)(symbol('t')) for amt in odes.amounts}
+    amounts = {sympy.Function(amt.name)(sympy.Symbol('t')) for amt in odes.amounts}
     if odes.atoms(sympy.Function) & amounts:
         explicit_odes(model)
         new = model.statements.ode_system
@@ -567,13 +564,13 @@ def pk_param_conversion(model, advan, trans):
     remap = create_compartment_remap(oldmap, newmap)
     d = dict()
     for old, new in remap.items():
-        d[symbol(f'S{old}')] = symbol(f'S{new}')
-        d[symbol(f'F{old}')] = symbol(f'F{new}')
+        d[sympy.Symbol(f'S{old}')] = sympy.Symbol(f'S{new}')
+        d[sympy.Symbol(f'F{old}')] = sympy.Symbol(f'F{new}')
         # FIXME: R, D and ALAG should be moved with dose compartment
-        # d[symbol(f'R{old}')] = symbol(f'R{new}')
-        # d[symbol(f'D{old}')] = symbol(f'D{new}')
-        # d[symbol(f'ALAG{old}')] = symbol(f'ALAG{new}')
-        d[symbol(f'A({old})')] = symbol(f'A({new})')
+        # d[sympy.Symbol(f'R{old}')] = sympy.Symbol(f'R{new}')
+        # d[sympy.Symbol(f'D{old}')] = sympy.Symbol(f'D{new}')
+        # d[sympy.Symbol(f'ALAG{old}')] = sympy.Symbol(f'ALAG{new}')
+        d[sympy.Symbol(f'A({old})')] = sympy.Symbol(f'A({new})')
     if from_advan == 'ADVAN5' or from_advan == 'ADVAN7':
         reverse_map = {v: k for k, v in newmap.items()}
         for i, j in itertools.product(range(1, len(oldmap)), range(0, len(oldmap))):
@@ -590,116 +587,133 @@ def pk_param_conversion(model, advan, trans):
                 from_comp = cs.find_compartment(reverse_map[to_i])
                 to_comp = cs.find_compartment(reverse_map[outind])
                 if cs.get_flow(from_comp, to_comp) is not None:
-                    d[symbol(f'K{i}{j}')] = symbol(f'K{to_i}{to_j}')
-                    d[symbol(f'K{i}T{j}')] = symbol(f'K{to_i}T{to_j}')
+                    d[sympy.Symbol(f'K{i}{j}')] = sympy.Symbol(f'K{to_i}{to_j}')
+                    d[sympy.Symbol(f'K{i}T{j}')] = sympy.Symbol(f'K{to_i}T{to_j}')
         if advan == 'ADVAN3':
             n = len(oldmap)
             for i in range(1, n):
-                d[symbol(f'K{i}0')] = symbol('K')
-                d[symbol(f'K{i}T0')] = symbol('K')
-                d[symbol(f'K{i}{n}')] = symbol('K')
-                d[symbol(f'K{i}T{n}')] = symbol('K')
+                d[sympy.Symbol(f'K{i}0')] = sympy.Symbol('K')
+                d[sympy.Symbol(f'K{i}T0')] = sympy.Symbol('K')
+                d[sympy.Symbol(f'K{i}{n}')] = sympy.Symbol('K')
+                d[sympy.Symbol(f'K{i}T{n}')] = sympy.Symbol('K')
     elif from_advan == 'ADVAN1':
         if advan == 'ADVAN3' or advan == 'ADVAN11':
-            d[symbol('V')] = symbol('V1')
+            d[sympy.Symbol('V')] = sympy.Symbol('V1')
         elif advan == 'ADVAN4' or advan == 'ADVAN12':
-            d[symbol('V')] = symbol('V2')
+            d[sympy.Symbol('V')] = sympy.Symbol('V2')
     elif from_advan == 'ADVAN2':
         if advan == 'ADVAN3' and trans != 'TRANS1':
-            d[symbol('V')] = symbol('V1')
+            d[sympy.Symbol('V')] = sympy.Symbol('V1')
         elif advan == 'ADVAN4' and trans != 'TRANS1':
-            d[symbol('V')] = symbol('V2')
+            d[sympy.Symbol('V')] = sympy.Symbol('V2')
     elif from_advan == 'ADVAN3':
         if advan == 'ADVAN1':
             if trans == 'TRANS2':
-                d[symbol('V1')] = symbol('V')
+                d[sympy.Symbol('V1')] = sympy.Symbol('V')
         elif advan == 'ADVAN4':
             if trans == 'TRANS4':
-                d[symbol('V1')] = symbol('V2')
-                d[symbol('V2')] = symbol('V3')
+                d[sympy.Symbol('V1')] = sympy.Symbol('V2')
+                d[sympy.Symbol('V2')] = sympy.Symbol('V3')
             elif trans == 'TRANS6':
-                d[symbol('K21')] = symbol('K32')
+                d[sympy.Symbol('K21')] = sympy.Symbol('K32')
             else:  # TRANS1
-                d[symbol('K12')] = symbol('K23')
-                d[symbol('K21')] = symbol('K32')
+                d[sympy.Symbol('K12')] = sympy.Symbol('K23')
+                d[sympy.Symbol('K21')] = sympy.Symbol('K32')
         elif advan == 'ADVAN11':
             if trans == 'TRANS4':
-                d.update({symbol('Q'): symbol('Q2')})
+                d.update({sympy.Symbol('Q'): sympy.Symbol('Q2')})
     elif from_advan == 'ADVAN4':
         if advan == 'ADVAN2':
             if trans == 'TRANS2':
-                d[symbol('V2')] = symbol('V')
+                d[sympy.Symbol('V2')] = sympy.Symbol('V')
         if advan == 'ADVAN3':
             if trans == 'TRANS4':
-                d.update({symbol('V2'): symbol('V1'), symbol('V3'): symbol('V2')})
+                d.update(
+                    {sympy.Symbol('V2'): sympy.Symbol('V1'), sympy.Symbol('V3'): sympy.Symbol('V2')}
+                )
             elif trans == 'TRANS6':
-                d.update({symbol('K32'): symbol('K21')})
+                d.update({sympy.Symbol('K32'): sympy.Symbol('K21')})
             else:  # TRANS1
-                d.update({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K21')})
+                d.update(
+                    {
+                        sympy.Symbol('K23'): sympy.Symbol('K12'),
+                        sympy.Symbol('K32'): sympy.Symbol('K21'),
+                    }
+                )
         elif advan == 'ADVAN12':
             if trans == 'TRANS4':
-                d.update({symbol('Q'): symbol('Q3')})
+                d.update({sympy.Symbol('Q'): sympy.Symbol('Q3')})
     elif from_advan == 'ADVAN11':
         if advan == 'ADVAN1':
             if trans == 'TRANS2':
-                d[symbol('V1')] = symbol('V')
+                d[sympy.Symbol('V1')] = sympy.Symbol('V')
         elif advan == 'ADVAN3':
             if trans == 'TRANS4':
-                d[symbol('Q2')] = symbol('Q')
+                d[sympy.Symbol('Q2')] = sympy.Symbol('Q')
         elif advan == 'ADVAN12':
             if trans == 'TRANS4':
                 d.update(
                     {
-                        symbol('V1'): symbol('V2'),
-                        symbol('Q2'): symbol('Q3'),
-                        symbol('V2'): symbol('V3'),
-                        symbol('Q3'): symbol('Q4'),
-                        symbol('V3'): symbol('V4'),
+                        sympy.Symbol('V1'): sympy.Symbol('V2'),
+                        sympy.Symbol('Q2'): sympy.Symbol('Q3'),
+                        sympy.Symbol('V2'): sympy.Symbol('V3'),
+                        sympy.Symbol('Q3'): sympy.Symbol('Q4'),
+                        sympy.Symbol('V3'): sympy.Symbol('V4'),
                     }
                 )
             elif trans == 'TRANS6':
-                d.update({symbol('K31'): symbol('K42'), symbol('K21'): symbol('K32')})
+                d.update(
+                    {
+                        sympy.Symbol('K31'): sympy.Symbol('K42'),
+                        sympy.Symbol('K21'): sympy.Symbol('K32'),
+                    }
+                )
             else:  # TRANS1
                 d.update(
                     {
-                        symbol('K12'): symbol('K23'),
-                        symbol('K21'): symbol('K32'),
-                        symbol('K13'): symbol('K24'),
-                        symbol('K31'): symbol('K42'),
+                        sympy.Symbol('K12'): sympy.Symbol('K23'),
+                        sympy.Symbol('K21'): sympy.Symbol('K32'),
+                        sympy.Symbol('K13'): sympy.Symbol('K24'),
+                        sympy.Symbol('K31'): sympy.Symbol('K42'),
                     }
                 )
     elif from_advan == 'ADVAN12':
         if advan == 'ADVAN2':
             if trans == 'TRANS2':
-                d[symbol('V2')] = symbol('V')
+                d[sympy.Symbol('V2')] = sympy.Symbol('V')
         elif advan == 'ADVAN4':
             if trans == 'TRANS4':
-                d[symbol('Q3')] = symbol('Q')
+                d[sympy.Symbol('Q3')] = sympy.Symbol('Q')
         elif advan == 'ADVAN11':
             if trans == 'TRANS4':
                 d.update(
                     {
-                        symbol('V2'): symbol('V1'),
-                        symbol('Q3'): symbol('Q2'),
-                        symbol('V3'): symbol('V2'),
-                        symbol('Q4'): symbol('Q3'),
-                        symbol('V4'): symbol('V3'),
+                        sympy.Symbol('V2'): sympy.Symbol('V1'),
+                        sympy.Symbol('Q3'): sympy.Symbol('Q2'),
+                        sympy.Symbol('V3'): sympy.Symbol('V2'),
+                        sympy.Symbol('Q4'): sympy.Symbol('Q3'),
+                        sympy.Symbol('V4'): sympy.Symbol('V3'),
                     }
                 )
             elif trans == 'TRANS6':
-                d.update({symbol('K42'): symbol('K31'), symbol('K32'): symbol('K21')})
+                d.update(
+                    {
+                        sympy.Symbol('K42'): sympy.Symbol('K31'),
+                        sympy.Symbol('K32'): sympy.Symbol('K21'),
+                    }
+                )
             else:  # TRANS1
                 d.update(
                     {
-                        symbol('K23'): symbol('K12'),
-                        symbol('K32'): symbol('K21'),
-                        symbol('K24'): symbol('K13'),
-                        symbol('K42'): symbol('K31'),
+                        sympy.Symbol('K23'): sympy.Symbol('K12'),
+                        sympy.Symbol('K32'): sympy.Symbol('K21'),
+                        sympy.Symbol('K24'): sympy.Symbol('K13'),
+                        sympy.Symbol('K42'): sympy.Symbol('K31'),
                     }
                 )
     if advan == 'ADVAN5' or advan == 'ADVAN7' and from_advan not in ('ADVAN5', 'ADVAN7'):
         n = len(newmap)
-        d[symbol('K')] = symbol(f'K{n-1}0')
+        d[sympy.Symbol('K')] = sympy.Symbol(f'K{n-1}0')
     model.statements = statements.subs(d)
 
 
@@ -940,7 +954,7 @@ def define_parameter(model, name, value, synonyms=None):
     for syn in synonyms:
         ass = model.statements.find_assignment(syn)
         if ass:
-            if value != ass.expression and value != symbol(name):
+            if value != ass.expression and value != sympy.Symbol(name):
                 ass.expression = value
             return False
     new_ass = Assignment(sympy.Symbol(name), value)
@@ -957,7 +971,7 @@ def add_rate_assignment_if_missing(model, name, value, source, dest, synonyms=No
     added = define_parameter(model, name, value, synonyms=synonyms)
     if added:
         cb = CompartmentalSystemBuilder(model.statements.ode_system)
-        cb.add_flow(source, dest, symbol(name))
+        cb.add_flow(source, dest, sympy.Symbol(name))
         model.statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
@@ -981,13 +995,13 @@ def update_abbr_record(model, rv_trans):
         return trans
 
     for rv in model.random_variables:
-        rv_symb = symbol(rv.name)
+        rv_symb = sympy.Symbol(rv.name)
         abbr_pattern = re.match(r'ETA_(\w+)', rv.name)
         if abbr_pattern and '_' not in abbr_pattern.group(1):
             parameter = abbr_pattern.group(1)
             nonmem_name = rv_trans[rv_symb]
             abbr_name = f'ETA({parameter})'
-            trans[rv_symb] = symbol(abbr_name)
+            trans[rv_symb] = sympy.Symbol(abbr_name)
             abbr_record = f'$ABBR REPLACE {abbr_name}={nonmem_name}\n'
             model.control_stream.insert_record(abbr_record)
         elif not re.match(r'(ETA|EPS)\([0-9]\)', rv.name):
@@ -1195,10 +1209,10 @@ def update_ccontra(model, path=None, force=False):
 
     with open(ccontr_path, 'w') as fh:
         fh.write(ccontr1)
-        e1 = sympy.printing.fortran.fcode(h.subs(y, sympy.Symbol('y(1)')), assign_to='y(1)')
+        e1 = sympy_printing.fortran.fcode(h.subs(y, sympy.Symbol('y(1)')), assign_to='y(1)')
         fh.write(e1)
         fh.write(ccontr2)
-        e2 = sympy.printing.fortran.fcode(
+        e2 = sympy_printing.fortran.fcode(
             sympy.Symbol('c1') + ll.subs(y, sympy.Symbol('y(1)')), assign_to='c1'
         )
         fh.write(e2)

@@ -4,9 +4,8 @@ from contextlib import contextmanager
 from os import stat
 from pathlib import Path
 
-from pharmpy import Model
-from pharmpy.datainfo import DataInfo
 from pharmpy.lock import path_lock
+from pharmpy.model import DataInfo, Model
 from pharmpy.utils import hash_df
 
 from .baseclass import (
@@ -292,7 +291,10 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
                 errors.append(e)
                 pass
         else:
-            raise FileNotFoundError(errors)
+            raise KeyError(
+                f'Could not find {self.name} in {self.db}.'
+                f' Looked up {", ".join(map(lambda e: f"`{e.filename}`", errors))}.'
+            )
 
         model.database = self.db
         model.read_modelfit_results(root)

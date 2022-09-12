@@ -1,6 +1,5 @@
-from pharmpy import Model
+from pharmpy.model import Model, Results
 from pharmpy.plugins.nonmem.results import simfit_results
-from pharmpy.results import Results
 
 
 class SimfitResults(Results):
