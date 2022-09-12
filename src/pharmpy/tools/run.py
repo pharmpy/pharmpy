@@ -326,3 +326,7 @@ def retrieve_models(source, names=None):
         names = db.list_models()
     models = [db.retrieve_model(name) for name in names]
     return models
+
+
+def retrieve_final_model(res):
+    return retrieve_models(res, names=[res.final_model_name])[0]

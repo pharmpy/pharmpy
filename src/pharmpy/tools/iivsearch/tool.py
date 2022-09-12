@@ -103,14 +103,16 @@ def start(input_model, algorithm, iiv_strategy, rank_type, cutoff):
             prev_models = [model.name for model in res.models]
             new_models = [model for model in next_res.models if model.name not in prev_models]
             res.models = res.models + new_models
-            res.best_model = next_res.best_model
+            res.final_model_name = next_res.final_model_name
             res.input_model = input_model
         sum_tools.append(next_res.summary_tool)
         sum_models.append(next_res.summary_models)
         sum_inds.append(next_res.summary_individuals)
         sum_inds_count.append(next_res.summary_individuals_count)
         sum_errs.append(next_res.summary_errors)
-        base_model = res.best_model
+        final_model = [model for model in res.models if model.name == res.final_model_name]
+        assert len(final_model) == 1
+        base_model = final_model[0]
         iiv_strategy = 'no_add'
 
     if len(list_of_algorithms) > 1:
@@ -182,15 +184,15 @@ class IIVSearchResults(pharmpy.results.Results):
         summary_individuals=None,
         summary_individuals_count=None,
         summary_errors=None,
-        best_model=None,
-        input_model=None,
+        final_model_name=None,
         models=None,
+        tool_database=None,
     ):
         self.summary_tool = summary_tool
         self.summary_models = summary_models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
         self.summary_errors = summary_errors
-        self.best_model = best_model
-        self.input_model = input_model
+        self.final_model_name = final_model_name
         self.models = models
+        self.tool_database = tool_database
