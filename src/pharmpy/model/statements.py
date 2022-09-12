@@ -13,6 +13,7 @@ from pharmpy.expressions import (
     canonical_ode_rhs,
     free_images,
     free_images_and_symbols,
+    subs,
     sympify,
 )
 
@@ -111,8 +112,8 @@ class Assignment(Statement):
         CL = ETA_CL⋅WGT + POP_CL
 
         """
-        symbol = self.symbol.subs(substitutions, simultaneous=True)
-        expression = self.expression.subs(substitutions, simultaneous=True)
+        symbol = subs(self.symbol, substitutions, simultaneous=True)
+        expression = subs(self.expression, substitutions, simultaneous=True)
         return Assignment(symbol, expression)
 
     @property
@@ -696,7 +697,7 @@ class CompartmentalSystem(ODESystem):
         """
         cb = CompartmentalSystemBuilder(self)
         for (u, v, rate) in cb._g.edges.data('rate'):
-            rate_sub = rate.subs(substitutions, simultaneous=True)
+            rate_sub = subs(rate, substitutions, simultaneous=True)
             cb._g.edges[u, v]['rate'] = rate_sub
         mapping = {comp: comp.subs(substitutions) for comp in self._g.nodes}
         nx.relabel_nodes(cb._g, mapping, copy=False)
@@ -1538,7 +1539,7 @@ class Bolus(Dose):
         >>> dose.subs({'AMT': 'DOSE'})
         Bolus(DOSE)
         """
-        return Bolus(self.amount.subs(substitutions, simultaneous=True))
+        return Bolus(subs(self.amount, substitutions, simultaneous=True))
 
     def __eq__(self, other):
         return isinstance(other, Bolus) and self.amount == other.amount
@@ -1640,13 +1641,13 @@ class Infusion(Dose):
         >>> dose.subs({'DUR': 'D1'})
         Infusion(AMT, duration=D1)
         """
-        amount = self.amount.subs(substitutions, simultaneous=True)
+        amount = subs(self.amount, substitutions, simultaneous=True)
         if self.rate is not None:
-            rate = self.rate.subs(substitutions, simultaneous=True)
+            rate = subs(self.rate, substitutions, simultaneous=True)
             duration = None
         else:
             rate = None
-            duration = self.duration.subs(substitutions, simultaneous=True)
+            duration = subs(self.duration, substitutions, simultaneous=True)
         return Infusion(amount, rate, duration)
 
     def __eq__(self, other):

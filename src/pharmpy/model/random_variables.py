@@ -137,8 +137,8 @@ class NormalDistribution(Distribution):
         IIV_CL ~ N(0, OMEGA_NEW)
 
         """
-        mean = self._mean.subs(d)
-        variance = self._variance.subs(d)
+        mean = subs(self._mean, d)
+        variance = subs(self._variance, d)
         name = self._names[0]
         if name in d or sympy.Symbol(name) in d:
             name = d.get(name, d.get(sympy.Symbol(name)))
