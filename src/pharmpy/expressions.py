@@ -59,10 +59,10 @@ def assume_all(predicate: sympy.assumptions.Predicate, expressions: Iterable[sym
 
 
 def xreplace_dict(dictlike):
-    return {sympify_old(key): sympify_new(value) for key, value in dictlike.items()}
+    return {_sympify_old(key): _sympify_new(value) for key, value in dictlike.items()}
 
 
-def sympify_old(old):
+def _sympify_old(old):
     # NOTE This mimics sympy's input coercion in subs
     return (
         sympy.Symbol(old)
@@ -71,7 +71,7 @@ def sympify_old(old):
     )
 
 
-def sympify_new(new):
+def _sympify_new(new):
     # NOTE This mimics sympy's input coercion in subs
     return sympy.sympify(new, strict=not isinstance(new, (str, type)))
 
@@ -88,7 +88,7 @@ def subs(expr: sympy.Expr, mapping: Dict[sympy.Expr, sympy.Expr], simultaneous: 
         and all(map(_old_does_not_need_generic_subs, _mapping.keys()))
         and all(map(_new_does_not_need_generic_subs, _mapping.values()))
     ):
-        return subs_symbols(expr, _mapping)
+        return _subs_symbols_simultaneously(expr, _mapping)
     return expr.subs(_mapping, simultaneous=simultaneous)
 
 
@@ -100,7 +100,7 @@ def _new_does_not_need_generic_subs(expr: sympy.Expr):
     return isinstance(expr, (sympy.Symbol, sympy.Number))
 
 
-def subs_symbols(expr: sympy.Expr, mapping: Dict[sympy.Symbol, sympy.Expr]):
+def _subs_symbols_simultaneously(expr: sympy.Expr, mapping: Dict[sympy.Symbol, sympy.Expr]):
     stack = [expr]
     output = [[], []]
 
