@@ -507,6 +507,6 @@ def get_bioavailability(model, n):
     fn = f'F{n}'
     pkrec = model.control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment(fn):
-        return fn
+        return sympy.Symbol(fn)
     else:
         return sympy.Integer(1)
