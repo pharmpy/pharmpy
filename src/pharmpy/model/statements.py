@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence
-from typing import Set, Tuple, Union
+from typing import Iterable, Set, Union
 
 import pharmpy.unicode as unicode
 from pharmpy.deps import networkx as nx
@@ -1679,7 +1679,7 @@ class Statements(Sequence):
         A list of Statement or another Statements to populate this object
     """
 
-    def __init__(self, statements: Union[None, Statements, Tuple[Statement, ...]] = None):
+    def __init__(self, statements: Union[None, Statements, Iterable[Statement]] = None):
         if isinstance(statements, Statements):
             self._statements = statements._statements
         elif statements is None:
