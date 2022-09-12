@@ -6,6 +6,7 @@ from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import symengine, sympy
+from pharmpy.expressions import subs
 from pharmpy.math import conditional_joint_normal, is_posdef
 from pharmpy.model import Model, Results
 from pharmpy.modeling import (
@@ -863,7 +864,7 @@ def _calculate_covariate_baselines(model, covariates):
     exprs = new
 
     def fn(row):
-        return [np.float64(expr.subs(dict(row))) for expr in exprs]
+        return [np.float64(subs(expr, dict(row))) for expr in exprs]
 
     df = model.modelfit_results.individual_estimates.apply(fn, axis=1, result_type='expand')
     df.columns = covariates

@@ -1,8 +1,8 @@
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import symengine, sympy
+from pharmpy.deps import sympy
 from pharmpy.deps.scipy import linalg
-from pharmpy.expressions import sympify
+from pharmpy.expressions import subs, sympify
 
 from .expressions import (
     calculate_epsilon_gradient_expression,
@@ -55,13 +55,12 @@ def evaluate_expression(model, expression):
     full_expr = model.statements.before_odes.full_expression(expression)
     pe = model.modelfit_results.parameter_estimates
     inits = model.parameters.inits
-    expr = full_expr.subs(dict(pe)).subs(inits)
+    expr = subs(subs(full_expr, dict(pe)), inits)
     data = model.dataset
-    expr = symengine.sympify(expr)
 
     def func(row):
-        subs = expr.subs(dict(row))
-        return np.float64(subs.evalf())
+        value = subs(expr, dict(row))
+        return np.float64(value.evalf())
 
     df = data.apply(func, axis=1)
     return df
@@ -116,19 +115,19 @@ def evaluate_population_prediction(model, parameters=None, dataset=None):
     y = get_population_prediction_expression(model)
 
     if parameters is not None:
-        y = y.subs(parameters)
+        y = subs(y, parameters)
     else:
         if model.modelfit_results is not None:
-            y = y.subs(model.modelfit_results.parameter_estimates.to_dict())
+            y = subs(y, model.modelfit_results.parameter_estimates.to_dict())
         else:
-            y = y.subs(model.parameters.inits)
+            y = subs(y, model.parameters.inits)
 
     if dataset is not None:
         df = dataset
     else:
         df = model.dataset
 
-    pred = df.apply(lambda row: np.float64(y.subs(row.to_dict())), axis=1)
+    pred = df.apply(lambda row: np.float64(subs(y, row.to_dict())), axis=1)
     pred.name = 'PRED'
     return pred
 
@@ -186,9 +185,9 @@ def evaluate_individual_prediction(model, etas=None, parameters=None, dataset=No
 
     y = get_individual_prediction_expression(model)
     if parameters is not None:
-        y = y.subs(parameters)
+        y = subs(y, parameters)
     else:
-        y = y.subs(model.parameters.inits)
+        y = subs(y, model.parameters.inits)
 
     if dataset is not None:
         df = dataset
@@ -215,7 +214,7 @@ def evaluate_individual_prediction(model, etas=None, parameters=None, dataset=No
     def fn(row):
         row = row.to_dict()
         curetas = etas.loc[row[idcol]].to_dict()
-        a = np.float64(y.subs(row).subs(curetas))
+        a = np.float64(subs(subs(y, row), curetas))
         return a
 
     ipred = df.apply(fn, axis=1)
@@ -225,9 +224,9 @@ def evaluate_individual_prediction(model, etas=None, parameters=None, dataset=No
 
 def _replace_parameters(model, y, parameters):
     if parameters is not None:
-        y = [x.subs(parameters) for x in y]
+        y = [subs(x, parameters) for x in y]
     else:
-        y = [x.subs(model.parameters.inits) for x in y]
+        y = [subs(x, model.parameters.inits) for x in y]
     return y
 
 
@@ -311,7 +310,7 @@ def evaluate_eta_gradient(model, etas=None, parameters=None, dataset=None):
     def fn(row):
         row = row.to_dict()
         curetas = etas.loc[row[idcol]].to_dict()
-        a = [np.float64(x.subs(row).subs(curetas)) for x in y]
+        a = [np.float64(subs(subs(x, row), curetas)) for x in y]
         return a
 
     derivative_names = [f'dF/d{eta}' for eta in model.random_variables.etas.names]
@@ -378,7 +377,7 @@ def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
     y = _replace_parameters(model, y, parameters)
     eps_names = model.random_variables.epsilons.names
     repl = {sympy.Symbol(eps): 0 for eps in eps_names}
-    y = [x.subs(repl) for x in y]
+    y = [subs(x, repl) for x in y]
 
     if dataset is not None:
         df = dataset
@@ -405,7 +404,7 @@ def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
     def fn(row):
         row = row.to_dict()
         curetas = etas.loc[row[idcol]].to_dict()
-        a = [np.float64(x.subs(row).subs(curetas)) for x in y]
+        a = [np.float64(subs(subs(x, row), curetas)) for x in y]
         return a
 
     grad = df.apply(fn, axis=1, result_type='expand')
