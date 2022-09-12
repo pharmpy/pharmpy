@@ -78,14 +78,25 @@ def sympify_new(new):
 
 def subs(expr: sympy.Expr, mapping: Dict[sympy.Expr, sympy.Expr], simultaneous: bool = False):
     _mapping = xreplace_dict(mapping)
-    if simultaneous and all(
-        map(_does_not_need_generic_subs, chain(_mapping.keys(), _mapping.values()))
+    if (
+        (
+            simultaneous
+            or set(_mapping.keys()).isdisjoint(
+                set().union(*map(lambda e: e.free_symbols, _mapping.values()))
+            )
+        )
+        and all(map(_old_does_not_need_generic_subs, _mapping.keys()))
+        and all(map(_new_does_not_need_generic_subs, _mapping.values()))
     ):
         return subs_symbols(expr, _mapping)
     return expr.subs(_mapping, simultaneous=simultaneous)
 
 
-def _does_not_need_generic_subs(expr: sympy.Expr):
+def _old_does_not_need_generic_subs(expr: sympy.Expr):
+    return isinstance(expr, sympy.Symbol)
+
+
+def _new_does_not_need_generic_subs(expr: sympy.Expr):
     return isinstance(expr, (sympy.Symbol, sympy.Number))
 
 
