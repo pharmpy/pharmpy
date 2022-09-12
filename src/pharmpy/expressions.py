@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import reduce
 from itertools import chain
 from operator import __and__, is_
-from typing import Dict, Iterable, Set
+from typing import Dict, Iterable, List, Set
 
 from pharmpy.deps import sympy
 
@@ -90,15 +90,42 @@ def _does_not_need_generic_subs(expr: sympy.Expr):
 
 
 def subs_symbols(expr: sympy.Expr, mapping: Dict[sympy.Symbol, sympy.Expr]):
+    stack = [expr]
+    output = [[], []]
+
+    while stack:
+
+        e = stack[-1]
+        old_args = e.args
+
+        new_args = output[-1]
+
+        n = len(old_args)
+        i = len(new_args)
+
+        assert i <= n
+
+        if i == n:
+            stack.pop()
+            output.pop()
+            output[-1].append(_subs_new_args(mapping, e, new_args))
+        else:
+            # NOTE Push the next argument on the stack
+            stack.append(old_args[i])
+            output.append([])
+
+    return output[0][0]
+
+
+def _subs_new_args(
+    mapping: Dict[sympy.Symbol, sympy.Expr], expr: sympy.Expr, args: List[sympy.Expr]
+):
+    assert len(expr.args) == len(args)
+
     if isinstance(expr, sympy.Symbol):
         return mapping.get(expr, expr)
 
-    if not expr.args:
+    if all(map(is_, expr.args, args)):
         return expr
 
-    new_args = tuple(subs_symbols(arg, mapping) for arg in expr.args)
-
-    if all(map(is_, expr.args, new_args)):
-        return expr
-
-    return expr.func(*new_args)
+    return expr.func(*args)
