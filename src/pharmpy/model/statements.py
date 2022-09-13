@@ -1875,7 +1875,8 @@ class Statements(Sequence):
                    ETA(1)
         CL = TVCL⋅ℯ
         """
-        symbol = sympify(symbol)
+        if isinstance(symbol, str):
+            symbol = sympy.Symbol(symbol)
         assignment = None
         for statement in self:
             if isinstance(statement, Assignment):
@@ -1903,7 +1904,8 @@ class Statements(Sequence):
         >>> model.statements.find_assignment_index("CL")
         5
         """
-        symbol = sympify(symbol)
+        if isinstance(symbol, str):
+            symbol = sympy.Symbol(symbol)
         ind = None
         for i, statement in enumerate(self):
             if isinstance(statement, Assignment):
@@ -1935,7 +1937,7 @@ class Statements(Sequence):
         >>> model.statements.reassign("CL", "TVCL + eta")   # doctest: +SKIP
         """
         if isinstance(symbol, str):
-            symbol = sympify(symbol)
+            symbol = sympy.Symbol(symbol)
         if isinstance(expression, str):
             expression = sympify(expression)
 
@@ -1997,7 +1999,7 @@ class Statements(Sequence):
         stats._statements = [self[i] for i in succ]
         return stats
 
-    def dependencies(self, symbol):
+    def dependencies(self, symbol_or_statement):
         """Find all dependencies of a symbol or statement
 
         Parameters
@@ -2017,10 +2019,14 @@ class Statements(Sequence):
         >>> model.statements.dependencies("CL")   # doctest: +SKIP
         {ETA(1), THETA(1), WGT}
         """
-        if isinstance(symbol, Statement):
-            i = self.index(symbol)
+        if isinstance(symbol_or_statement, Statement):
+            i = self.index(symbol_or_statement)
         else:
-            symbol = sympify(symbol)
+            symbol = (
+                sympy.Symbol(symbol_or_statement)
+                if isinstance(symbol_or_statement, str)
+                else symbol_or_statement
+            )
             for i in range(len(self) - 1, -1, -1):
                 if (
                     isinstance(self[i], Assignment)
