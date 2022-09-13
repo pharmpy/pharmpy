@@ -107,15 +107,15 @@ jobs:
       - name: Install gfortran
         run: sudo apt install gfortran
 
+      - name: NONMEM license
+        run: echo $LICENSE_KEY > nm744CD/nonmem.lic
+        env:
+          LICENSE_KEY: ${{secrets.LICENSE_KEY}}
+
       - name: Install NONMEM
         run: |
           cd nm744CD
           /bin/bash SETUP74 $(realpath .) $(realpath ../nm744) gfortran y ar same rec q
-
-      - name: NONMEM license
-        run: echo $LICENSE_KEY >nm744/license/nonmem.lic
-        env:
-          LICENSE_KEY: ${{secrets.LICENSE_KEY}}
 
       - name: Create pharmpy.conf
         run: |
@@ -164,15 +164,15 @@ jobs:
         env:
           ZIP_KEY: ${{secrets.ZIP_KEY}}
 
+      - name: NONMEM license
+        run: echo $LICENSE_KEY > nm744CD/nonmem.lic
+        env:
+          LICENSE_KEY: ${{secrets.LICENSE_KEY}}
+
       - name: Install NONMEM
         run: |
           cd nm744CD
           /bin/bash SETUP74 $(realpath .) $(realpath ../nm744) gfortran y ar same rec q
-
-      - name: NONMEM license
-        run: echo $LICENSE_KEY >nm744/license/nonmem.lic
-        env:
-          LICENSE_KEY: ${{secrets.LICENSE_KEY}}
 
       - name: Create pharmpy.conf
         run: |
