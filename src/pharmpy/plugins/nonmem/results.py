@@ -279,7 +279,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 if obj.covariance_matrix is not None:
                     obj.correlation_matrix = modeling.calculate_corr_from_cov(obj.covariance_matrix)
                 elif obj.information_matrix is not None:
-                    obj.correlation_matrix = modeling.calculate_corr_from_coi(
+                    obj.correlation_matrix = modeling.calculate_corr_from_inf(
                         obj.information_matrix
                     )
             if obj.information_matrix is None:
