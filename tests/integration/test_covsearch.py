@@ -35,7 +35,7 @@ def test_default(tmp_path, start_model):
         )
 
         rundir = tmp_path / 'covsearch_dir1'
-        assert _model_count(rundir) == 54
+        assert _model_count(rundir) == 57
 
         assert res.best_model.name == 'mox2+2+7+10+5'
 
