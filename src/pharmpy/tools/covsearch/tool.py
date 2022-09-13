@@ -9,6 +9,7 @@ from pharmpy.model import Model
 from pharmpy.modeling import add_covariate_effect, copy_model
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
+from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import EffectLiteral, Spec, parse_spec, spec
 from pharmpy.tools.mfl.parse import parse
@@ -420,8 +421,8 @@ def _make_df_steps_row(
     p_value = lrt_p_value(parent_model, model)
     alpha = last_step.alpha
     selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
-    extended_significant = p_value <= alpha
-    assert not selected or extended_significant
+    extended_significant = lrt_test(parent_model, candidate.model, alpha)
+    assert not selected or (candidate.model is parent_model) or extended_significant
     return {
         'step': len(candidate.steps),
         'parameter': last_effect.parameter,
