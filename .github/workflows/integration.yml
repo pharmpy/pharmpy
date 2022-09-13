@@ -192,7 +192,7 @@ jobs:
 
   integration-windows:
     needs: [get-nonmem]
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
 
       - name: Checkout Pharmpy
@@ -203,6 +203,16 @@ jobs:
         run: |
           echo "Adding GNU tar to PATH"
           echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
+
+      # https://github.com/modflowpy/install-gfortran-action/blob/dfc32754e541304f2e7b7ca001e40dce094a5cd6/action.yml#L22-L30
+      - name: Setup gfortran
+        shell: bash
+        run: |
+          FCDIR=/c/ProgramData/Chocolatey/bin
+          LNDIR=/c/ProgramData/Chocolatey/lib/mingw/tools/install/mingw64/bin
+          if [ -d "$FCDIR" ] && [ -f "$LNDIR/libgfortran-5.dll" ] && [ ! -f "$FCDIR/libgfortran-5.dll" ]; then
+              ln -s "$LNDIR/libgfortran-5.dll" "$FCDIR/libgfortran-5.dll"
+          fi
 
       - name: Cache NONMEM
         id: cache-nonmem
@@ -217,18 +227,18 @@ jobs:
           ZIP_KEY: ${{secrets.ZIP_KEY}}
         shell: cmd
 
+      - name: NONMEM license
+        run: echo $LICENSE_KEY >nm744CD/nonmem.lic
+        env:
+          LICENSE_KEY: ${{secrets.LICENSE_KEY}}
+        shell: bash
+
       - name: Install NONMEM
         run: |
           set INSTALLDIR=%CD%\nm744
           cd nm744CD
           SETUP74.bat %CD% %INSTALLDIR% gfortran y ar same rec q
         shell: cmd
-
-      - name: NONMEM license
-        run: echo $LICENSE_KEY >nm744/license/nonmem.lic
-        env:
-          LICENSE_KEY: ${{secrets.LICENSE_KEY}}
-        shell: bash
 
       - name: Create pharmpy.conf
         run: |
