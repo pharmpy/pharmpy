@@ -212,7 +212,7 @@ def compartmental_model(model, advan, trans, des=None):
         ics[a_out(0)] = sympy.Integer(0)
         ics[comp_names['A(1)'](0)] = dose.amount
 
-        dadt_dose = sset.find_assignment(str(subs_dict['DADT(1)']))
+        dadt_dose = sset.find_assignment(subs_dict['DADT(1)'])
 
         if len(comps) > 1:
             dadt_rest = [
@@ -507,6 +507,6 @@ def get_bioavailability(model, n):
     fn = f'F{n}'
     pkrec = model.control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment(fn):
-        return fn
+        return sympy.Symbol(fn)
     else:
         return sympy.Integer(1)

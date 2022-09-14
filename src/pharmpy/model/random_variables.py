@@ -125,11 +125,13 @@ class RandomVariable:
         IIV_CL ~ N(0, OMEGA_CL)
 
         """
+        sympy_variance = sympify(variance)
+        if sympy.ask(sympy.Q.nonnegative(sympy_variance)) is False:
+            raise ValueError(f"Variance cannot be {variance}, must be nonnegative")
+
         rv = cls(name, level)
         rv._mean = sympy.Matrix([sympify(mean)])
-        rv._variance = sympy.Matrix([sympify(variance)])
-        if rv._variance.is_positive_semidefinite is False:
-            raise ValueError(f"Mean cannot be {mean} must be positive")
+        rv._variance = sympy.Matrix([sympy_variance])
         rv._symengine_variance = symengine.sympify(rv._variance)
         return rv
 
@@ -909,7 +911,7 @@ class RandomVariables(MutableSequence):
         cov_to_params = dict()
         selection = self[inds]
         selection._remove_joint_normal_not_in_self()
-        means, M, names, others = selection._calc_covariance_matrix()
+        means, M, names, _ = selection._calc_covariance_matrix()
         if fill != 0:
             for row, col in itertools.product(range(M.rows), range(M.cols)):
                 if M[row, col] == 0:
@@ -994,7 +996,7 @@ class RandomVariables(MutableSequence):
         returns a dict with the valid parameter values
         """
         nearest = parameter_values.copy()
-        for rvs, dist in self.distributions():
+        for rvs, _ in self.distributions():
             if len(rvs) > 1:
                 symb_sigma = rvs[0]._variance
                 sigma = symb_sigma.subs(dict(parameter_values))
@@ -1012,7 +1014,7 @@ class RandomVariables(MutableSequence):
         Currently checks that all covariance matrices are positive semidefinite
         use_cache for using symengine cached matrices
         """
-        for rvs, dist in self.distributions():
+        for rvs, _ in self.distributions():
             if len(rvs) > 1:
                 sigma = rvs[0]._symengine_variance
                 replacement = {}
@@ -1109,13 +1111,13 @@ class RandomVariables(MutableSequence):
 
     def __repr__(self):
         strings = []
-        for rvs, dist in self.distributions():
+        for rvs, _ in self.distributions():
             strings.append(repr(rvs[0]))
         return '\n'.join(strings)
 
     def _repr_latex_(self):
         lines = []
-        for rvs, dist in self.distributions():
+        for rvs, _ in self.distributions():
             rv = rvs[0]
             latex = rv._latex_string(aligned=True)
             lines.append(latex)
