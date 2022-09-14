@@ -5,11 +5,11 @@ from pathlib import Path
 import pytest
 
 import pharmpy
+from pharmpy.results import read_results
 from pharmpy.tools.run import (
     _create_metadata_common,
     _create_metadata_tool,
     _get_run_setup,
-    read_results,
     retrieve_models,
 )
 from pharmpy.utils import TemporaryDirectoryChanger
@@ -119,7 +119,13 @@ def test_retrieve_models(testdata):
     models = retrieve_models(tool_database_path)
     assert [model.name for model in models] == model_names_all
 
-    res = read_results(tool_database_path / 'results.json')
+    with open(tool_database_path / 'results.json') as f:
+        results_json = f.read()
+        results_json_subs = results_json.replace(
+            '/tmp/tool_results/modelsearch/', str(tool_database_path)
+        )
+
+    res = read_results(results_json_subs)
     models = retrieve_models(res, names=model_to_retrieve)
     assert models[0].name == model_to_retrieve[0]
 

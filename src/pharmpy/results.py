@@ -7,6 +7,7 @@ from pathlib import Path
 
 import altair as alt
 import pandas as pd
+
 from pharmpy.model import Results
 
 

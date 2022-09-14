@@ -123,7 +123,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
         # how to encode the given object, so it will not be called on int,
         # float, str, list, tuple, and dict. It could be called on set for
         # instance, or any custom class.
-        from pharmpy.workflows.log import Log
+        from pharmpy.workflows import LocalDirectoryToolDatabase, Log
 
         if isinstance(obj, Results):
             d = obj.to_dict()
@@ -152,6 +152,11 @@ class ResultsJSONEncoder(json.JSONEncoder):
             return None
         elif isinstance(obj, Log):
             d = obj.to_dict()
+            d['__class__'] = obj.__class__.__qualname__
+            return d
+        elif isinstance(obj, LocalDirectoryToolDatabase):
+            d = obj.to_dict()
+            d['__module__'] = obj.__class__.__module__
             d['__class__'] = obj.__class__.__qualname__
             return d
         elif isinstance(obj, Path):
