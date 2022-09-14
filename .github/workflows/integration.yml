@@ -242,11 +242,12 @@ jobs:
           set INSTALLDIR=%CD%\nm744
           cd nm744CD
           SETUP74.bat %CD% %INSTALLDIR% gfortran y ar same rec q
+          cd ..
         shell: cmd
 
       - name: Print finishmsgs-file from NONMEM installation
         run: |
-          cat %CD%\nm744\finishmsgs.txt
+          cat nm744\finishmsgs.txt
         shell: bash
 
       - name: Create pharmpy.conf
