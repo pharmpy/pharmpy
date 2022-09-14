@@ -114,8 +114,6 @@ def subs_symbols(expr: sympy.Expr, mapping: Dict[sympy.Symbol, sympy.Expr]):
         n = len(old_args)
         i = len(new_args)
 
-        assert i <= n
-
         if i == n:
             stack.pop()
             output.pop()
@@ -131,8 +129,6 @@ def subs_symbols(expr: sympy.Expr, mapping: Dict[sympy.Symbol, sympy.Expr]):
 def _subs_new_args(
     mapping: Dict[sympy.Symbol, sympy.Expr], expr: sympy.Expr, args: List[sympy.Expr]
 ):
-    assert len(expr.args) == len(args)
-
     if isinstance(expr, sympy.Symbol):
         return mapping.get(expr, expr)
 
