@@ -1221,7 +1221,7 @@ def _sample_from_distributions(distributions, expr, parameters, nsamples, rng):
     random_variable_symbols = expr.free_symbols.difference(parameters.keys())
     filtered_distributions = filter_distributions(distributions, random_variable_symbols)
     sampling_rvs = subs_distributions(filtered_distributions, parameters)
-    sampled_expr = expr.xreplace(parameters)
+    sampled_expr = subs(expr, parameters, simultaneous=True)
     return sample_expr_from_rvs(sampling_rvs, sampled_expr, nsamples, rng)
 
 
@@ -1329,8 +1329,10 @@ def _lambdify_canonical(expr: sympy.Expr):
     # NOTE Substitution allows to use cse. Otherwise weird things happen with
     # symbols that look like function eval (e.g. ETA(1), THETA(3), OMEGA(1,1)).
     ordered_substitutes = [sympy.Symbol(f'__tmp{i}') for i in range(len(ordered_symbols))]
-    substituted_expr = expr.xreplace(
-        {key: value for key, value in zip(ordered_symbols, ordered_substitutes)}
+    substituted_expr = subs(
+        expr,
+        {key: value for key, value in zip(ordered_symbols, ordered_substitutes)},
+        simultaneous=True,
     )
     fn = sympy.lambdify(ordered_substitutes, substituted_expr, modules='numpy', cse=True)
     return ordered_symbols, fn

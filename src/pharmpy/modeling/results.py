@@ -319,17 +319,17 @@ def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
 
     for name, full_expr in full_exprs:
         df = pd.DataFrame(index=list(cases.keys()), columns=['mean', 'variance', 'stderr'])
-        parameter_estimates_expr = full_expr.xreplace(parameter_estimates)
+        parameter_estimates_expr = subs(full_expr, parameter_estimates, simultaneous=True)
 
         for case, cov_values in cases.items():
-            expr = parameter_estimates_expr.xreplace(cov_values)
+            expr = subs(parameter_estimates_expr, cov_values, simultaneous=True)
             values = eval_expr(expr, nsamples, samples)
 
             mean = np.mean(values)
             variance = np.var(values)
 
             # NOTE This is NaN for empty inputs, dtype is required for those.
-            cov_expr = full_expr.xreplace(cov_values)
+            cov_expr = subs(full_expr, cov_values, simultaneous=True)
             stderr = pd.Series(
                 chain.from_iterable(eval_expr(cov_expr, batchsize, batch) for batch in batches),
                 dtype='float64',
