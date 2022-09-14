@@ -380,7 +380,7 @@ def calculate_pk_parameters_statistics(model, rng=None):
         A = m[A] / central.dose.amount
         B = m[B] / central.dose.amount
 
-        if (alpha - alpha).extract_multiplicatively(-1) is not None:
+        if (beta - alpha).extract_multiplicatively(-1) is not None:
             # alpha > beta  (sympy couldn't simplify this directly)
             alpha, beta = beta, alpha
             A, B = B, A
