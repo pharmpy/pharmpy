@@ -59,15 +59,15 @@ def test_calculate_individual_parameter_statistics(load_model_for_test, testdata
     covmodel = load_model_for_test(testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod')
     rng = np.random.default_rng(8976)
     stats = calculate_individual_parameter_statistics(covmodel, 'K = CL/V', rng=rng)
-    assert stats['mean']['K', 'median'] == pytest.approx(0.004525842355027405)
-    assert stats['variance']['K', 'median'] == pytest.approx(2.9540381716908423e-06)
-    assert stats['stderr']['K', 'median'] == pytest.approx(0.001804371451706786, abs=1e-6)
+    assert stats['mean']['K', 'median'] == pytest.approx(0.004526899290470633)
+    assert stats['variance']['K', 'median'] == pytest.approx(2.95125370813005e-06)
+    assert stats['stderr']['K', 'median'] == pytest.approx(0.0018170955599868073, abs=1e-6)
     assert stats['mean']['K', 'p5'] == pytest.approx(0.0033049497924269385)
     assert stats['variance']['K', 'p5'] == pytest.approx(1.5730213328583985e-06)
     assert stats['stderr']['K', 'p5'] == pytest.approx(0.0013102577338191103, abs=1e-6)
-    assert stats['mean']['K', 'p95'] == pytest.approx(0.014625434302866478)
-    assert stats['variance']['K', 'p95'] == pytest.approx(3.090546438695198e-05)
-    assert stats['stderr']['K', 'p95'] == pytest.approx(0.0069971678916412716, abs=1e-6)
+    assert stats['mean']['K', 'p95'] == pytest.approx(0.014616277746303079)
+    assert stats['variance']['K', 'p95'] == pytest.approx(3.0766525541426746e-05)
+    assert stats['stderr']['K', 'p95'] == pytest.approx(0.006735905156223314, abs=1e-6)
 
 
 def test_calculate_pk_parameters_statistics(load_model_for_test, testdata):
@@ -77,9 +77,9 @@ def test_calculate_pk_parameters_statistics(load_model_for_test, testdata):
     assert df['mean'].loc['t_max', 'median'] == pytest.approx(1.5999856886869577)
     assert df['variance'].loc['t_max', 'median'] == pytest.approx(0.29728565293669557)
     assert df['stderr'].loc['t_max', 'median'] == pytest.approx(0.589128711884761)
-    assert df['mean'].loc['C_max_dose', 'median'] == pytest.approx(0.6306393134647171)
-    assert df['variance'].loc['C_max_dose', 'median'] == pytest.approx(0.012194951111832641)
-    assert df['stderr'].loc['C_max_dose', 'median'] == pytest.approx(0.11328030491204867)
+    assert df['mean'].loc['C_max_dose', 'median'] == pytest.approx(0.6305869738624813)
+    assert df['variance'].loc['C_max_dose', 'median'] == pytest.approx(0.012200490462185057)
+    assert df['stderr'].loc['C_max_dose', 'median'] == pytest.approx(0.11128015565024524)
 
 
 def test_calc_pk_two_comp_bolus(load_model_for_test, testdata):

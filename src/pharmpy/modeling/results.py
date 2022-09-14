@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from itertools import chain
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -10,8 +11,9 @@ from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
 from pharmpy.model.distributions.numeric import ConstantDistribution
 from pharmpy.model.random_variables import (
+    eval_expr,
     filter_distributions,
-    sample_expr_from_rvs,
+    sample_rvs,
     subs_distributions,
 )
 
@@ -182,7 +184,7 @@ def calculate_individual_shrinkage(model):
     return ish
 
 
-def calculate_individual_parameter_statistics(model, exprs, rng=None):
+def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
     """Calculate statistics for individual parameters
 
     Calculate the mean (expected value of the distribution), variance
@@ -199,7 +201,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
     ----------
     model : Model
         A previously estimated model
-    exprs : str, sympy expression or iterable of str or sympy expressions
+    expr_or_exprs : str, sympy expression or iterable of str or sympy expressions
         Expressions or equations for parameters of interest. If equations are used
         the names of the left hand sides will be used as the names of the parameters.
     rng : Generator or int
@@ -220,15 +222,16 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
                               mean  variance    stderr
     parameter covariates
     K         p5          0.004234  0.000001  0.001138
-              median      0.004909  0.000001  0.001212
-              p95         0.004910  0.000001  0.001263
+              median      0.004907  0.000001  0.001247
+              p95         0.004907  0.000001  0.001247
     """
     rng = create_rng(rng)
 
-    split_exprs = (
-        [_split_equation(exprs)]
-        if isinstance(exprs, str) or isinstance(exprs, sympy.Basic)
-        else map(_split_equation, exprs)
+    split_exprs = map(
+        _split_equation,
+        [expr_or_exprs]
+        if isinstance(expr_or_exprs, str) or isinstance(expr_or_exprs, sympy.Basic)
+        else expr_or_exprs,
     )
 
     full_exprs = list(
@@ -238,92 +241,99 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
         )
     )
 
-    cols = set(model.datainfo.names)
     parameter_estimates = xreplace_dict(model.modelfit_results.parameter_estimates)
 
-    all_free_symbols = (
-        set()
-        .union(*map(lambda e: e[1].free_symbols, full_exprs))
-        .difference(parameter_estimates.keys(), map(sympy.Symbol, cols))
+    all_free_symbols = set().union(*map(lambda e: e[1].free_symbols, full_exprs))
+
+    all_covariate_free_symbols = all_free_symbols.intersection(
+        map(sympy.Symbol, model.datainfo.names)
+    )
+    all_parameter_free_symbols = set(parameter_estimates.keys())
+    all_random_free_symbols = all_free_symbols.difference(
+        all_parameter_free_symbols, all_covariate_free_symbols
     )
 
     sampling_rvs = list(
         subs_distributions(
             filter_distributions(
                 model.random_variables,
-                all_free_symbols,
+                all_random_free_symbols,
             ),
             parameter_estimates,
         )
     )
 
-    i = 0
+    batches = []
+
+    if not all_covariate_free_symbols:
+        cases = {'median': dict()}
+    else:
+        dataset = model.dataset
+        column_filter = ['ID'] + list(symbol.name for symbol in all_covariate_free_symbols)
+        q5 = dataset[column_filter].groupby('ID').median().quantile(0.05)
+        q95 = dataset[column_filter].groupby('ID').median().quantile(0.95)
+        median = dataset[column_filter].groupby('ID').median().median()
+        cases = {
+            'p5': xreplace_dict(q5),
+            'median': xreplace_dict(median),
+            'p95': xreplace_dict(q95),
+        }
+
+    filtered_sampling_rvs = list(
+        filter(
+            lambda r: any(map(all_random_free_symbols.__contains__, r[0])),
+            sampling_rvs,
+        )
+    )
+
+    nsamples = 1000000
+    nbatches = 100
+    batchsize = 10
+
+    samples = sample_rvs(filtered_sampling_rvs, nsamples, rng)
+
+    if model.modelfit_results.covariance_matrix is not None:
+        parameters_samples = sample_parameters_from_covariance_matrix(
+            model,
+            n=nbatches,
+            force_posdef_covmatrix=True,
+            rng=rng,
+        )
+
+        for _, row in parameters_samples.iterrows():
+            distributions = filter_distributions(
+                model.random_variables,
+                all_random_free_symbols,
+            )
+            parameters = xreplace_dict(row)
+            local_sampling_rvs = list(subs_distributions(distributions, parameters)) + [
+                ((key,), ConstantDistribution(value))
+                for key, value in parameters.items()
+                if key in all_parameter_free_symbols
+            ]
+            batch = sample_rvs(local_sampling_rvs, batchsize, rng)
+            batches.append(batch)
+
     table = pd.DataFrame(columns=['parameter', 'covariates', 'mean', 'variance', 'stderr'])
+    i = 0
+
     for name, full_expr in full_exprs:
-        covariates = {symb.name for symb in full_expr.free_symbols if symb.name in cols}
-        if not covariates:
-            cases = {'median': dict()}
-        else:
-            dataset = model.dataset
-            q5 = dataset[['ID'] + list(covariates)].groupby('ID').median().quantile(0.05)
-            q95 = dataset[['ID'] + list(covariates)].groupby('ID').median().quantile(0.95)
-            median = dataset[['ID'] + list(covariates)].groupby('ID').median().median()
-            cases = {
-                'p5': xreplace_dict(q5),
-                'median': xreplace_dict(median),
-                'p95': xreplace_dict(q95),
-            }
-
         df = pd.DataFrame(index=list(cases.keys()), columns=['mean', 'variance', 'stderr'])
+        parameter_estimates_expr = full_expr.xreplace(parameter_estimates)
+
         for case, cov_values in cases.items():
+            expr = parameter_estimates_expr.xreplace(cov_values)
+            values = eval_expr(expr, nsamples, samples)
+
+            mean = np.mean(values)
+            variance = np.var(values)
+
+            # NOTE This is NaN for empty inputs, dtype is required for those.
             cov_expr = full_expr.xreplace(cov_values)
-            cov_expr_free_symbols = cov_expr.free_symbols
-            filtered_expr_symbol = cov_expr_free_symbols.difference(parameter_estimates.keys())
-            is_filtered_expr_symbol = filtered_expr_symbol.__contains__
-            filtered_sampling_rvs = list(
-                filter(
-                    lambda r: any(map(is_filtered_expr_symbol, r[0])),
-                    sampling_rvs,
-                )
-            )
-
-            samples = sample_expr_from_rvs(
-                filtered_sampling_rvs,
-                cov_expr,
-                parameter_estimates,
-                1000000,
-                rng,
-            )
-
-            mean = np.mean(samples)
-            variance = np.var(samples)
-
-            if model.modelfit_results.covariance_matrix is None:
-                stderr = np.nan
-
-            else:
-                parameters = sample_parameters_from_covariance_matrix(
-                    model,
-                    n=100,
-                    force_posdef_covmatrix=True,
-                    rng=rng,
-                )
-                samples = []
-                for _, row in parameters.iterrows():
-                    parameters = xreplace_dict(row)
-                    random_variable_symbols = cov_expr_free_symbols.difference(parameters.keys())
-                    distributions = filter_distributions(
-                        model.random_variables,
-                        random_variable_symbols,
-                    )
-                    local_sampling_rvs = list(subs_distributions(distributions, parameters)) + [
-                        ((key,), ConstantDistribution(value))
-                        for key, value in parameters.items()
-                        if key in cov_expr_free_symbols
-                    ]
-                    batch = sample_expr_from_rvs(local_sampling_rvs, cov_expr, {}, 10, rng)
-                    samples.extend(list(batch))
-                stderr = pd.Series(samples).std()
+            stderr = pd.Series(
+                chain.from_iterable(eval_expr(cov_expr, batchsize, batch) for batch in batches),
+                dtype='float64',
+            ).std()
 
             df.loc[case] = [mean, variance, stderr]
             df.index.name = 'covariates'
@@ -334,8 +344,10 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
             i += 1
         df['parameter'] = name
         table = pd.concat([table, df])
+
     table.set_index(['parameter', 'covariates'], inplace=True)
     table = table.astype('float64')
+
     return table
 
 
@@ -364,12 +376,12 @@ def calculate_pk_parameters_statistics(model, rng=None):
     >>> from pharmpy.modeling import calculate_pk_parameters_statistics
     >>> model = load_example_model("pheno")
     >>> rng = create_rng(23)
-    >>> calculate_pk_parameters_statistics(model, rng=rng)  # doctest: +NORMALIZE_WHITESPACE
+    >>> calculate_pk_parameters_statistics(model, rng=rng)
                               mean  variance    stderr
     parameter covariates
     k_e       p5          0.004234  0.000001  0.001138
-              median      0.004909  0.000001  0.001212
-              p95         0.004910  0.000001  0.001263
+              median      0.004907  0.000001  0.001247
+              p95         0.004907  0.000001  0.001247
 
     See Also
     --------

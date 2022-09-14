@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections.abc import Collection, Sequence
 from functools import lru_cache
 from math import sqrt
-from typing import Dict, Iterable, Set, Tuple
+from typing import Dict, FrozenSet, Iterable, Set, Tuple
 
 import pharmpy.math
 import pharmpy.unicode as unicode
@@ -1221,7 +1221,8 @@ def _sample_from_distributions(distributions, expr, parameters, nsamples, rng):
     random_variable_symbols = expr.free_symbols.difference(parameters.keys())
     filtered_distributions = filter_distributions(distributions, random_variable_symbols)
     sampling_rvs = subs_distributions(filtered_distributions, parameters)
-    return sample_expr_from_rvs(sampling_rvs, expr, parameters, nsamples, rng)
+    sampled_expr = expr.xreplace(parameters)
+    return sample_expr_from_rvs(sampling_rvs, sampled_expr, nsamples, rng)
 
 
 def filter_distributions(
@@ -1274,29 +1275,27 @@ def subs_distributions(
 def sample_expr_from_rvs(
     sampling_rvs: Iterable[Tuple[Tuple[sympy.Symbol, ...], NumericDistribution]],
     expr: sympy.Expr,
-    parameters: Dict[sympy.Symbol, float],
     nsamples: int,
     rng,
 ):
-    expr = expr.xreplace(parameters)
-
-    rvs = list(sampling_rvs)
-
-    if not rvs:
-        return np.full(nsamples, float(expr.evalf()))
-
-    samples = sample_rvs(rvs, nsamples, rng)
-
-    return eval_expr(expr, samples)
+    samples = sample_rvs(sampling_rvs, nsamples, rng)
+    return eval_expr(expr, nsamples, samples)
 
 
 def eval_expr(
     expr: sympy.Expr,
+    nsamples: int,
     samples: Dict[sympy.Symbol, np.ndarray],
 ) -> np.ndarray:
-    ordered_symbols, fn = _lambdify_canonical(expr)
-    data = [samples[rv] for rv in ordered_symbols]
-    return fn(*data)
+    # NOTE We avoid querying for free_symbols if we know none are expected
+    fs = expr.free_symbols if samples else set()
+
+    if fs:
+        ordered_symbols, fn = _lambdify_canonical(expr, frozenset(fs))
+        data = [samples[rv] for rv in ordered_symbols]
+        return fn(*data)
+
+    return np.full(nsamples, float(expr.evalf()))
 
 
 def sample_rvs(
@@ -1319,8 +1318,8 @@ def sample_rvs(
 
 
 @lru_cache(maxsize=256)
-def _lambdify_canonical(expr):
-    ordered_symbols = sorted(expr.free_symbols, key=str)
+def _lambdify_canonical(expr: sympy.Expr, fs: FrozenSet[sympy.Symbol]):
+    ordered_symbols = sorted(fs, key=str)
     # NOTE Substitution allows to use cse. Otherwise weird things happen with
     # symbols that look like function eval (e.g. ETA(1), THETA(3), OMEGA(1,1)).
     ordered_substitutes = [sympy.Symbol(f'__tmp{i}') for i in range(len(ordered_symbols))]
