@@ -3,6 +3,7 @@
 """
 
 from pharmpy.deps import sympy
+from pharmpy.expressions import subs
 from pharmpy.model import (
     Assignment,
     Bolus,
@@ -196,7 +197,7 @@ def set_zero_order_elimination(model):
         central = odes.central_compartment
         output = odes.output_compartment
         rate = odes.get_flow(central, output)
-        rate = rate.subs('CL', 0)
+        rate = subs(rate, {'CL': 0})
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, rate)
@@ -400,7 +401,7 @@ def set_michaelis_menten_elimination(model):
         central = odes.central_compartment
         output = odes.output_compartment
         rate = odes.get_flow(central, output)
-        rate = rate.subs('CL', 0)
+        rate = subs(rate, {'CL': 0})
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, rate)

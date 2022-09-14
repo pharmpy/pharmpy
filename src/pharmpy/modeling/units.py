@@ -1,4 +1,5 @@
 from pharmpy.deps import sympy
+from pharmpy.expressions import subs
 from pharmpy.model import Assignment, ODESystem
 
 
@@ -57,7 +58,7 @@ def get_unit_of(model, variable):
 
     for s in model.statements:
         if isinstance(s, Assignment):
-            expr = sympy.expand(s.expression.subs(input_units))
+            expr = sympy.expand(subs(s.expression, input_units))
             if expr.is_Add:
                 for term in expr.args:
                     unit_eqs.append(s.symbol - _extract_minus(term))

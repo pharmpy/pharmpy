@@ -851,7 +851,11 @@ def _calculate_covariate_baselines(model, covariates):
         if sympy.Symbol('FREMTYPE') in ass.free_symbols and ass.symbol.name == 'IPRED'
     ]
     exprs = [
-        expr.subs(dict(model.modelfit_results.parameter_estimates)).subs(model.parameters.inits)
+        subs(
+            subs(expr, dict(model.modelfit_results.parameter_estimates), simultaneous=True),
+            model.parameters.inits,
+            simultaneous=True,
+        )
         for expr in exprs
     ]
     new = []
@@ -859,7 +863,7 @@ def _calculate_covariate_baselines(model, covariates):
         for symb in expr.free_symbols:
             stat = model.statements.find_assignment(symb.name)
             if stat is not None:
-                expr = expr.subs(symb, stat.expression)
+                expr = subs(expr, {symb: stat.expression}, simultaneous=True)
         new.append(expr)
     exprs = new
 

@@ -10,7 +10,7 @@ from typing import Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
+from pharmpy.expressions import subs, sympify
 from pharmpy.model import (
     Assignment,
     JointNormalDistribution,
@@ -502,7 +502,7 @@ class EtaAddition:
         self.template = template
 
     def apply(self, original, eta):
-        self.template = self.template.subs({'original': original, 'eta_new': eta})
+        self.template = subs(self.template, {'original': original, 'eta_new': eta})
 
     @classmethod
     def additive(cls):

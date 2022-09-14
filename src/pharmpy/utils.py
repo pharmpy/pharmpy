@@ -9,7 +9,7 @@ from typing import Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
+from pharmpy.expressions import subs, sympify
 
 
 class TemporaryDirectoryChanger:
@@ -121,7 +121,7 @@ def unit_subs():
 
 
 def parse_units(s):
-    return sympify(s).xreplace(unit_subs()) if isinstance(s, str) else s
+    return subs(sympify(s), unit_subs(), simultaneous=True) if isinstance(s, str) else s
 
 
 def normalize_user_given_path(path: Union[str, Path]) -> Path:

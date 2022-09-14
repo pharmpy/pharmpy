@@ -310,8 +310,8 @@ class ExplicitODESystem(ODESystem):
             for key, value in substitutions.items()
         }
         d.update(substitutions)
-        odes = [ode.subs(d) for ode in self.odes]
-        ics = {key.subs(d): value.subs(d) for key, value in self.ics.items()}
+        odes = [subs(ode, d) for ode in self.odes]
+        ics = {subs(key, d): subs(value, d) for key, value in self.ics.items()}
         return ExplicitODESystem(odes, ics)
 
     @property
@@ -1449,8 +1449,8 @@ class Compartment:
         return Compartment(
             self.name,
             dose,
-            self.lag_time.subs(substitutions),
-            self.bioavailability.subs(substitutions),
+            subs(self.lag_time, substitutions),
+            subs(self.bioavailability, substitutions),
         )
 
     def __eq__(self, other):
@@ -2121,7 +2121,9 @@ class Statements(Sequence):
                     "ODESystem not supported by full_expression. Use the properties before_odes "
                     "or after_odes."
                 )
-            expression = expression.xreplace({statement.symbol: statement.expression})
+            expression = subs(
+                expression, {statement.symbol: statement.expression}, simultaneous=True
+            )
         return expression
 
     def to_compartmental_system(self):

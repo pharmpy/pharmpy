@@ -3,7 +3,7 @@
 """
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
+from pharmpy.expressions import subs, sympify
 from pharmpy.model import Assignment, NormalDistribution
 
 from .common import remove_unused_parameters_and_rvs
@@ -15,9 +15,11 @@ from .parameters import add_population_parameter, fix_parameters, set_initial_es
 def _preparations(model):
     stats = model.statements
     y = model.dependent_variable
-    f = model.statements.find_assignment(y.name).expression
-    for eps in model.random_variables.epsilons.names:
-        f = f.subs({sympy.Symbol(eps): 0})
+    f = subs(
+        model.statements.find_assignment(y.name).expression,
+        {sympy.Symbol(eps): 0 for eps in model.random_variables.epsilons.names},
+        simultaneous=True,
+    )
     return stats, y, f
 
 
@@ -135,7 +137,11 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
     data_trans = _canonicalize_data_transformation(model, data_trans)
     expr = f + ruv
     if data_trans != model.dependent_variable:
-        expr = data_trans.subs(model.dependent_variable, expr).series(ruv, n=series_terms).removeO()
+        expr = (
+            subs(data_trans, {model.dependent_variable: expr}, simultaneous=True)
+            .series(ruv, n=series_terms)
+            .removeO()
+        )
 
     model.statements = stats.reassign(y, expr)
     remove_unused_parameters_and_rvs(model)
@@ -327,8 +333,8 @@ def set_combined_error_model(model, data_trans=None):
             expr_1 = expr.args[1][0]
             cond_0 = expr.args[0][1]
             for eps in model.random_variables.epsilons.names:
-                expr_0 = expr_0.subs({sympy.Symbol(eps): ruv_prop})
-                expr_1 = expr_1.subs({sympy.Symbol(eps): ruv_prop})
+                expr_0 = subs(expr_0, {sympy.Symbol(eps): ruv_prop}, simultaneous=True)
+                expr_1 = subs(expr_1, {sympy.Symbol(eps): ruv_prop}, simultaneous=True)
                 if (
                     eta_ruv in model.random_variables.free_symbols
                     and theta_time in model.parameters.symbols
@@ -680,7 +686,11 @@ def set_time_varying_error_model(model, cutoff, idv='TIME'):
     eps = model.random_variables.epsilons
     expr = sympy.Piecewise(
         (
-            y.expression.subs({sympy.Symbol(e): sympy.Symbol(e) * theta for e in eps.names}),
+            subs(
+                y.expression,
+                {sympy.Symbol(e): sympy.Symbol(e) * theta for e in eps.names},
+                simultaneous=True,
+            ),
             idv < cutoff,
         ),
         (y.expression, True),

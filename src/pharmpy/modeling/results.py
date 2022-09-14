@@ -6,7 +6,7 @@ import warnings
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
+from pharmpy.expressions import subs, sympify
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
 
@@ -341,7 +341,9 @@ def calculate_pk_parameters_statistics(model, rng=None):
         tmax_closed_form = sympy.solve(d, odes.t)[0]
         expressions.append(sympy.Eq(sympy.Symbol('t_max'), tmax_closed_form))
         e2 = sympy.simplify(expr / depot.dose.amount / sympy.denom(elimination_rate))
-        cmax_dose_closed_form = sympy.simplify(e2.subs({odes.t: tmax_closed_form}))
+        cmax_dose_closed_form = sympy.simplify(
+            subs(e2, {odes.t: tmax_closed_form}, simultaneous=True)
+        )
         expressions.append(sympy.Eq(sympy.Symbol('C_max_dose'), cmax_dose_closed_form))
 
     # Any abs + 1comp + FO elimination

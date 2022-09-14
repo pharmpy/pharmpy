@@ -2,6 +2,7 @@ from itertools import combinations
 from typing import Dict
 
 import pharmpy.tools.modelfit as modelfit
+from pharmpy.expressions import subs
 from pharmpy.model import Model
 from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
@@ -107,9 +108,11 @@ def _iiv_param_dict(model: Model) -> Dict[str, str]:
     return {
         eta: get_rv_parameters(model, eta)[0]
         for eta in iiv.names
-        if iiv[eta]
-        .get_variance(eta)
-        .subs({parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix})
+        if subs(
+            iiv[eta].get_variance(eta),
+            {parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix},
+            simultaneous=True,
+        )
         != 0
     }
 

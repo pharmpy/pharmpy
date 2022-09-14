@@ -7,7 +7,7 @@ import pharmpy.unicode as unicode
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import symengine, sympy, sympy_stats
-from pharmpy.expressions import sympify
+from pharmpy.expressions import subs, sympify
 
 
 def _create_rng(seed=None):
@@ -1157,5 +1157,7 @@ class RandomVariables(Sequence):
             else:
                 name = dist.variance.name
                 if name in newdict:
-                    newdict[name] = np.sqrt(np.array(dist.variance.subs(values)).astype(np.float64))
+                    newdict[name] = np.sqrt(
+                        np.array(subs(dist.variance, values)).astype(np.float64)
+                    )
         return newdict
