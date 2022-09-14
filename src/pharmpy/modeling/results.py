@@ -253,12 +253,16 @@ def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
         all_parameter_free_symbols, all_covariate_free_symbols
     )
 
+    distributions = list(
+        filter_distributions(
+            model.random_variables,
+            all_random_free_symbols,
+        )
+    )
+
     sampling_rvs = list(
         subs_distributions(
-            filter_distributions(
-                model.random_variables,
-                all_random_free_symbols,
-            ),
+            distributions,
             parameter_estimates,
         )
     )
@@ -301,10 +305,6 @@ def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
         )
 
         for _, row in parameters_samples.iterrows():
-            distributions = filter_distributions(
-                model.random_variables,
-                all_random_free_symbols,
-            )
             parameters = xreplace_dict(row)
             local_sampling_rvs = list(subs_distributions(distributions, parameters)) + [
                 ((key,), ConstantDistribution(value))
