@@ -100,7 +100,7 @@ jobs:
             key: nonmem-751
 
       - name: Unzip NONMEM
-        run: unzip -P $ZIP_751_KEY 751.zip
+        run: unzip -P $ZIP_KEY 751.zip
         env:
           ZIP_KEY: ${{secrets.ZIP_751_KEY}}
 
