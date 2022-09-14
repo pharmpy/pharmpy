@@ -105,11 +105,12 @@ _unit_subs = None
 
 
 def unit_subs():
-    import sympy.physics.units as units
 
     global _unit_subs
     if _unit_subs is None:
         subs = {}
+        import sympy.physics.units as units
+
         for k, v in units.__dict__.items():
             if isinstance(v, sympy.Expr) and v.has(units.Unit):
                 subs[sympy.Symbol(k)] = v
