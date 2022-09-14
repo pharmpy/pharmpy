@@ -336,8 +336,8 @@ def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
             ).std()
 
             df.loc[case] = [mean, variance, stderr]
-            df.index.name = 'covariates'
 
+        df.index.name = 'covariates'
         df.reset_index(inplace=True)
         if not name:
             name = f'unknown{i}'
