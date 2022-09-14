@@ -245,7 +245,9 @@ jobs:
         shell: cmd
 
       - name: Print finishmsgs-file from NONMEM installation
-        run: cat %INSTALLDIR%\finishmsgs.txt
+        run: |
+          set FINISHMSGS=%INSTALLDIR%\finishmsgs.txt
+          cat %FINISHMSGS%
         shell: bash
 
       - name: Create pharmpy.conf
