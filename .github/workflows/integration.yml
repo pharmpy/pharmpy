@@ -214,6 +214,10 @@ jobs:
               ln -s "$LNDIR/libgfortran-5.dll" "$FCDIR/libgfortran-5.dll"
           fi
 
+      - name: Print gfortran version
+        run: gfortran --version
+        shell: bash
+
       - name: Cache NONMEM
         id: cache-nonmem
         uses: actions/cache@v3
@@ -239,6 +243,10 @@ jobs:
           cd nm744CD
           SETUP74.bat %CD% %INSTALLDIR% gfortran y ar same rec q
         shell: cmd
+
+      - name: Print finishmsgs-file from NONMEM installation
+        run: cat %INSTALLDIR%\finishmsgs.txt
+        shell: bash
 
       - name: Create pharmpy.conf
         run: |
