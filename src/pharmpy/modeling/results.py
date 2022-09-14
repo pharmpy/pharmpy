@@ -6,7 +6,7 @@ import warnings
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs, sympify
+from pharmpy.expressions import subs, sympify, xreplace_dict
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
 from pharmpy.model.random_variables import _generate_sampling_rvs, _sample_expr_from_rvs
@@ -235,12 +235,12 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
     )
 
     cols = set(model.datainfo.names)
-    parameter_estimates = dict(model.modelfit_results.parameter_estimates)
+    parameter_estimates = xreplace_dict(model.modelfit_results.parameter_estimates)
 
     all_free_symbols = (
         set()
         .union(*map(lambda e: e[1].free_symbols, full_exprs))
-        .difference(map(sympy.Symbol, parameter_estimates.keys()), map(sympy.Symbol, cols))
+        .difference(parameter_estimates.keys(), map(sympy.Symbol, cols))
     )
 
     sampling_rvs = list(
@@ -262,12 +262,16 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
             q5 = dataset[['ID'] + list(covariates)].groupby('ID').median().quantile(0.05)
             q95 = dataset[['ID'] + list(covariates)].groupby('ID').median().quantile(0.95)
             median = dataset[['ID'] + list(covariates)].groupby('ID').median().median()
-            cases = {'p5': dict(q5), 'median': dict(median), 'p95': dict(q95)}
+            cases = {
+                'p5': xreplace_dict(q5),
+                'median': xreplace_dict(median),
+                'p95': xreplace_dict(q95),
+            }
 
         df = pd.DataFrame(index=list(cases.keys()), columns=['mean', 'variance', 'stderr'])
         for case, cov_values in cases.items():
-            cov_expr = full_expr.subs(cov_values)
-            filtered_expr = cov_expr.subs(parameter_estimates)
+            cov_expr = full_expr.xreplace(cov_values)
+            filtered_expr = cov_expr.xreplace(parameter_estimates)
             filtered_sampling_rvs = list(
                 filter(
                     lambda r: any(map(filtered_expr.free_symbols.__contains__, r[0])),
@@ -298,7 +302,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
                     for _, row in parameters.iterrows():
                         batch = model.random_variables.sample(
                             cov_expr,
-                            parameters=dict(row),
+                            parameters=xreplace_dict(row),
                             samples=10,
                             rng=rng,
                         )

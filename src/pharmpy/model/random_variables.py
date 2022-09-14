@@ -6,7 +6,7 @@ import pharmpy.math
 import pharmpy.unicode as unicode
 from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy, sympy_stats
-from pharmpy.expressions import subs, sympify
+from pharmpy.expressions import subs, sympify, xreplace_dict
 
 
 def _create_rng(seed=None):
@@ -1044,10 +1044,13 @@ class RandomVariables(Sequence):
         """Sample from the distribution of expr
 
         parameters in the distributions will first be replaced"""
+
+        xreplace_parameters = dict() if parameters is None else xreplace_dict(parameters)
+
         return _sample_from_distributions(
             [(dist.names, dist) for dist in self],
             expr,
-            parameters or dict(),
+            xreplace_parameters,
             samples,
             _create_rng(rng),
         )
@@ -1125,7 +1128,7 @@ class RandomVariables(Sequence):
 
 
 def _sample_from_distributions(distributions, expr, parameters, samples, rng):
-    expr = sympify(expr).subs(parameters)
+    expr = sympify(expr).xreplace(parameters)
 
     sampling_rvs = list(_generate_sampling_rvs(distributions, expr.free_symbols, parameters))
 
@@ -1140,8 +1143,8 @@ def _generate_sampling_rvs(distributions, symbols, parameters):
         if any(map(symbols.__contains__, rvs_symbols)):
             i += 1
             new_name = f'__J{i}'
-            mu = dist.mean.subs(parameters)
-            sigma = dist.variance.subs(parameters)
+            mu = dist.mean.xreplace(parameters)
+            sigma = dist.variance.xreplace(parameters)
 
             new_rv = sympy_stats.Normal(new_name, mu, sigma if len(rvs) >= 2 else sigma ** (1 / 2))
             yield (rvs_symbols, new_rv)
