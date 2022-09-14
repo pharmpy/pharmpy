@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections.abc import Collection, Sequence
 from functools import lru_cache
 from math import sqrt
-from typing import Dict, FrozenSet, Iterable, Set, Tuple
+from typing import Dict, Iterable, Set, Tuple
 
 import pharmpy.math
 import pharmpy.unicode as unicode
@@ -1288,10 +1288,10 @@ def eval_expr(
     samples: Dict[sympy.Symbol, np.ndarray],
 ) -> np.ndarray:
     # NOTE We avoid querying for free_symbols if we know none are expected
-    fs = expr.free_symbols if samples else set()
+    fs = _free_symbols(expr) if samples else set()
 
     if fs:
-        ordered_symbols, fn = _lambdify_canonical(expr, frozenset(fs))
+        ordered_symbols, fn = _lambdify_canonical(expr)
         data = [samples[rv] for rv in ordered_symbols]
         return fn(*data)
 
@@ -1318,7 +1318,13 @@ def sample_rvs(
 
 
 @lru_cache(maxsize=256)
-def _lambdify_canonical(expr: sympy.Expr, fs: FrozenSet[sympy.Symbol]):
+def _free_symbols(expr: sympy.Expr) -> Set[sympy.Symbol]:
+    return expr.free_symbols
+
+
+@lru_cache(maxsize=256)
+def _lambdify_canonical(expr: sympy.Expr):
+    fs = _free_symbols(expr)
     ordered_symbols = sorted(fs, key=str)
     # NOTE Substitution allows to use cse. Otherwise weird things happen with
     # symbols that look like function eval (e.g. ETA(1), THETA(3), OMEGA(1,1)).
