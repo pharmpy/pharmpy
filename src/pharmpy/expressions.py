@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from functools import reduce
+from functools import lru_cache, reduce
 from itertools import chain
 from operator import __and__, is_
 from typing import Dict, Iterable, List, Set
@@ -71,6 +71,7 @@ def _sympify_old(old):
     )
 
 
+@lru_cache(maxsize=256)
 def _sympify_new(new):
     # NOTE This mimics sympy's input coercion in subs
     return sympy.sympify(new, strict=not isinstance(new, (str, type)))
