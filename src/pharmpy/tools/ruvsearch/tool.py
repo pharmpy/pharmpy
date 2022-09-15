@@ -1,7 +1,6 @@
 from functools import partial
+from typing import Collection, Optional
 
-import pharmpy.model
-import pharmpy.tools
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.deps.scipy import stats
@@ -9,6 +8,7 @@ from pharmpy.model import (
     Assignment,
     EstimationStep,
     EstimationSteps,
+    Model,
     NormalDistribution,
     Parameter,
     Parameters,
@@ -37,7 +37,12 @@ from pharmpy.workflows import Task, Workflow, call_workflow
 from .results import calculate_results
 
 
-def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
+def create_workflow(
+    model: Optional[Model] = None,
+    groups: int = 4,
+    p_value: float = 0.05,
+    skip: Optional[Collection[str]] = None,
+):
     """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 
     Parameters
@@ -229,7 +234,7 @@ def post_process(start_model, *models, cutoff, current_iteration):
 
 
 def _create_base_model(input_model, current_iteration):
-    base_model = pharmpy.model.Model()
+    base_model = Model()
     theta = Parameter('theta', 0.1)
     omega = Parameter('omega', 0.01, lower=0)
     sigma = Parameter('sigma', 1, lower=0)
