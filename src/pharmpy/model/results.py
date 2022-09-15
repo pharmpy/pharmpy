@@ -134,7 +134,9 @@ class ResultsJSONEncoder(json.JSONEncoder):
             if str(obj.columns.dtype) == 'int64':
                 # Workaround for https://github.com/pandas-dev/pandas/issues/46392
                 obj.columns = obj.columns.map(str)
-            d = json.loads(obj.to_json(orient='table'))
+            # Set double precision to 15 to remove some round-trip errors, however 17 should be set when its possible
+            # See: https://github.com/pandas-dev/pandas/issues/38437
+            d = json.loads(obj.to_json(orient='table', double_precision=15))
             d['__class__'] = 'DataFrame'
             return d
         elif isinstance(obj, pd.Series):
