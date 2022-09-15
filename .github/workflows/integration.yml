@@ -232,7 +232,7 @@ jobs:
         shell: cmd
 
       - name: NONMEM license
-        run: echo $LICENSE_KEY >nm751CD/nonmem.lic
+        run: echo $LICENSE_KEY > nm751CD/nonmem.lic
         env:
           LICENSE_KEY: ${{secrets.LICENSE_KEY}}
         shell: bash
