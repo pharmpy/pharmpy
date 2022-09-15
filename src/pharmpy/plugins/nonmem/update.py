@@ -12,6 +12,9 @@ from pharmpy.model import (
     CompartmentalSystemBuilder,
     ExplicitODESystem,
     Infusion,
+    Model,
+    Parameter,
+    Parameters,
     RandomVariables,
     Statements,
     data,
@@ -22,7 +25,7 @@ from pharmpy.plugins.nonmem.records import code_record
 from .records.factory import create_record
 
 
-def update_parameters(model, old, new):
+def update_parameters(model: Model, old: Parameters, new: Parameters):
     new_names = {p.name for p in new}
     old_names = {p.name for p in old}
     removed = old_names - new_names
@@ -48,15 +51,25 @@ def update_parameters(model, old, new):
                 remove_records.append(sigma_record)
         model.control_stream.remove_records(remove_records)
 
+    renamed_params_list = []
+
     for p in new:
         name = p.name
+        p_renamed = p
         if name not in old and name not in model.random_variables.parameter_names:
             # This is a new theta
             theta_number = get_next_theta(model)
-            record = create_theta_record(model, p)
             if re.match(r'THETA\(\d+\)', name):
-                p.name = f'THETA({theta_number})'
-            record.add_nonmem_name(p.name, theta_number)
+                p_renamed = Parameter(f'THETA({theta_number})', p.init, p.lower, p.upper, p.fix)
+            record = create_theta_record(model, p_renamed)
+            record.add_nonmem_name(p_renamed.name, theta_number)
+
+        renamed_params_list.append(p_renamed)
+
+    renamed_params = Parameters(renamed_params_list)
+
+    if renamed_params != new:
+        model.parameters = renamed_params
 
     next_theta = 1
     for theta_record in model.control_stream.get_records('THETA'):
