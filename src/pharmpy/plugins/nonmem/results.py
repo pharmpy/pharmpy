@@ -34,6 +34,7 @@ class NONMEMModelfitResults(ModelfitResults):
             status = results_file.covariance_status(self.table_number)
             if status['covariance_step_ok'] is not None:
                 covariance_status['warnings'] = not status['covariance_step_ok']
+
         self._covariance_status = covariance_status
 
     def _set_estimation_status(self, results_file, requested):
@@ -70,10 +71,10 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_cov_table()
         self._read_cor_table()
         self._read_coi_table()
+        self._calculate_cov_cor_coi()
         self._read_phi_table()
         self._read_residuals()
         self._read_predictions()
-        self._calculate_cov_cor_coi()
 
     def __getattr__(self, item):
         # Avoid infinite recursion when deepcopying
@@ -151,6 +152,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 result_obj.parameter_estimates_sdcorr = sdcorr_ests
             try:
                 ses = table.standard_errors
+                result_obj._set_covariance_status(table)
+
             except Exception:
                 # If there are no standard errors in ext-file it means
                 # there can be no cov, cor or coi either
@@ -201,8 +204,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         for table_no, result_obj in enumerate(self, 1):
             result_obj._set_estimation_status(rfile, requested=True)
             # _covariance_status already set to None if ext table did not have standard errors
-            if hasattr(result_obj, '_covariance_status') is False:
-                result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
+            result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
             try:
                 result_obj.estimation_runtime = rfile.table[table_no]['estimation_runtime']
             except (KeyError, FileNotFoundError):
@@ -226,12 +228,15 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj.covariance_matrix = None
             return
         for result_obj in self:
-            df = cov_table.table_no(result_obj.table_number).data_frame
-            if df is not None:
-                if self.model:
-                    df = df.rename(index=self.model.parameter_translation())
-                    df.columns = df.index
-            result_obj.covariance_matrix = df
+            if _check_covariance_status(result_obj):
+                df = cov_table.table_no(result_obj.table_number).data_frame
+                if df is not None:
+                    if self.model:
+                        df = df.rename(index=self.model.parameter_translation())
+                        df.columns = df.index
+                result_obj.covariance_matrix = df
+            else:
+                result_obj.covariance_matrix = None
 
     def _read_coi_table(self):
         try:
@@ -242,12 +247,15 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj.information_matrix = None
             return
         for result_obj in self:
-            df = coi_table.table_no(result_obj.table_number).data_frame
-            if df is not None:
-                if self.model:
-                    df = df.rename(index=self.model.parameter_translation())
-                    df.columns = df.index
-            result_obj.information_matrix = df
+            if _check_covariance_status(result_obj):
+                df = coi_table.table_no(result_obj.table_number).data_frame
+                if df is not None:
+                    if self.model:
+                        df = df.rename(index=self.model.parameter_translation())
+                        df.columns = df.index
+                result_obj.information_matrix = df
+            else:
+                result_obj.information_matrix = None
 
     def _read_cor_table(self):
         try:
@@ -258,13 +266,16 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj.correlation_matrix = None
             return
         for result_obj in self:
-            cor = cor_table.table_no(result_obj.table_number).data_frame
-            if cor is not None:
-                if self.model:
-                    cor = cor.rename(index=self.model.parameter_translation())
-                    cor.columns = cor.index
-                np.fill_diagonal(cor.values, 1)
-            result_obj.correlation_matrix = cor
+            if _check_covariance_status(result_obj):
+                cor = cor_table.table_no(result_obj.table_number).data_frame
+                if cor is not None:
+                    if self.model:
+                        cor = cor.rename(index=self.model.parameter_translation())
+                        cor.columns = cor.index
+                    np.fill_diagonal(cor.values, 1)
+                result_obj.correlation_matrix = cor
+            else:
+                result_obj.correlation_matrix = None
 
     def _calculate_cov_cor_coi(self):
         for obj in self:
@@ -390,3 +401,9 @@ def simfit_results(model):
         res = NONMEMChainedModelfitResults(model_path, model=model, subproblem=i)
         results.append(res)
     return results
+
+
+def _check_covariance_status(result):
+    return (
+        isinstance(result, NONMEMModelfitResults) and result._covariance_status['warnings'] is False
+    )

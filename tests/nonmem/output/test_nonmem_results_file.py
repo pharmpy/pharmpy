@@ -5,6 +5,7 @@ from numpy import nan
 
 import pharmpy.plugins.nonmem.results_file as rf
 import pharmpy.plugins.nonmem.table as table
+from pharmpy.modeling import read_model
 from pharmpy.workflows.log import Log
 
 
@@ -425,3 +426,15 @@ def test_warnings(testdata, file_name, ref, idx):
     lst = rf.NONMEMResultsFile(testdata / 'nonmem' / 'errors' / file_name, log=Log())
     message = lst.log.to_dataframe()['message'].iloc[idx]
     assert message == ref
+
+
+def test_covariance_status(testdata):
+    model = read_model(
+        testdata / 'nonmem' / 'modelfit_results' / 'covariance' / 'pheno_nocovariance.mod'
+    )
+    for result in model.modelfit_results:
+        assert result._covariance_status['warnings'] is None
+    assert model.modelfit_results.standard_errors is None
+    assert model.modelfit_results.covariance_matrix is None
+    assert model.modelfit_results.correlation_matrix is None
+    assert model.modelfit_results.information_matrix is None
