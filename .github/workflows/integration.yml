@@ -198,11 +198,11 @@ jobs:
       - name: Checkout Pharmpy
         uses: actions/checkout@v3
 
-      - name: 'Use GNU tar (see https://github.com/actions/cache/blob/main/workarounds.md#use-cache-across-feature-branches)'
-        shell: cmd
-        run: |
-          echo "Adding GNU tar to PATH"
-          echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
+#      - name: 'Use GNU tar (see https://github.com/actions/cache/blob/main/workarounds.md#use-cache-across-feature-branches)'
+#        shell: cmd
+#        run: |
+#          echo "Adding GNU tar to PATH"
+#          echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
 
       # https://github.com/modflowpy/install-gfortran-action/blob/dfc32754e541304f2e7b7ca001e40dce094a5cd6/action.yml#L22-L30
       - name: Setup gfortran
