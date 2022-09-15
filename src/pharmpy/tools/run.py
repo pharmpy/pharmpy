@@ -325,11 +325,17 @@ def retrieve_models(source, names=None):
         db = source
     else:
         raise NotImplementedError(f'Not implemented for type \'{type(source)}\'')
+    names_all = db.list_models()
     if names is None:
-        names = db.list_models()
+        names = names_all
+    diff = set(names).difference(names_all)
+    if diff:
+        raise ValueError(f'Models {diff} not in database')
     models = [db.retrieve_model(name) for name in names]
     return models
 
 
 def retrieve_final_model(res):
+    if res.final_model_name is None:
+        raise ValueError('Attribute \'final_model_name\' is None')
     return retrieve_models(res, names=[res.final_model_name])[0]

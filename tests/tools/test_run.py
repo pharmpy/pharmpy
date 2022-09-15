@@ -10,6 +10,7 @@ from pharmpy.tools.run import (
     _create_metadata_common,
     _create_metadata_tool,
     _get_run_setup,
+    retrieve_final_model,
     retrieve_models,
 )
 from pharmpy.utils import TemporaryDirectoryChanger
@@ -121,11 +122,11 @@ def test_retrieve_models(testdata):
 
     with open(tool_database_path / 'results.json') as f:
         results_json = f.read()
-        results_json_subs = results_json.replace(
-            '/tmp/tool_results/modelsearch/', str(tool_database_path)
+        results_json_testpath = results_json.replace(
+            '/tmp/tool_results/modelsearch', str(tool_database_path)
         )
 
-    res = read_results(results_json_subs)
+    res = read_results(results_json_testpath)
     models = retrieve_models(res, names=model_to_retrieve)
     assert models[0].name == model_to_retrieve[0]
 
@@ -136,9 +137,33 @@ def test_retrieve_models(testdata):
     models = retrieve_models(tool_db.model_database, names=model_to_retrieve)
     assert models[0].name == model_to_retrieve[0]
 
+    with pytest.raises(ValueError, match='Models {\'x\'} not in database'):
+        retrieve_models(res, names=['x'])
+
     tool_without_db_in_results = testdata / 'results' / 'qa_results.json'
     res = read_results(tool_without_db_in_results)
     with pytest.raises(
         ValueError, match='Results type \'QAResults\' does not serialize tool database'
     ):
         retrieve_models(res, names=model_to_retrieve)
+
+
+def test_retrieve_final_model(testdata):
+    tool_database_path = testdata / 'results' / 'tool_databases' / 'modelsearch'
+
+    with open(tool_database_path / 'results.json') as f:
+        results_json = f.read()
+        results_json_testpath = results_json.replace(
+            '/tmp/tool_results/modelsearch', str(tool_database_path)
+        )
+
+    res = read_results(results_json_testpath)
+    final_model = retrieve_final_model(res)
+    assert final_model.name == 'modelsearch_candidate2'
+
+    results_json_none = results_json_testpath.replace(
+        '"final_model_name": "modelsearch_candidate2"', '"final_model_name": null'
+    )
+    res = read_results(results_json_none)
+    with pytest.raises(ValueError, match='Attribute \'final_model_name\' is None'):
+        retrieve_final_model(res)
