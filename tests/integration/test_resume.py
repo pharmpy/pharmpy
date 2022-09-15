@@ -41,7 +41,7 @@ def test_run_tool_ruvsearch_resume_flag(tmp_path, testdata):
                     assert res
 
 
-def test_run_tool_iivsearch_resume_flag(tmp_path, testdata):
+def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
@@ -79,7 +79,9 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata):
 
                     rundir = tmp_path / path
                     assert rundir.is_dir()
-                    assert len(list((rundir / 'models').iterdir())) == 9
+                    # Candidate model directories + input_model directory + results.json + results.csv
+                    assert len(list((rundir / 'models').iterdir())) == no_of_candidate_models + 3
+                    assert model_count(rundir) == no_of_candidate_models
                     assert (rundir / 'metadata.json').exists()
 
 
@@ -90,7 +92,7 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata):
     ],
 )
 def test_run_tool_modelsearch_resume_flag(
-    tmp_path, testdata, search_space, no_of_models, last_model_parent_name
+    tmp_path, testdata, model_count, search_space, no_of_models, last_model_parent_name
 ):
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
@@ -143,7 +145,9 @@ def test_run_tool_modelsearch_resume_flag(
 
                     rundir = tmp_path / path
                     assert rundir.is_dir()
-                    assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
+                    # Candidate model directories + input_model directory + results.json + results.csv
+                    assert len(list((rundir / 'models').iterdir())) == no_of_models + 3
+                    assert model_count(rundir) == no_of_models
                     assert (rundir / 'results.json').exists()
                     assert (rundir / 'results.csv').exists()
                     assert (rundir / 'metadata.json').exists()
