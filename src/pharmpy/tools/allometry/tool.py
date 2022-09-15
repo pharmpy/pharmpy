@@ -128,7 +128,7 @@ def results(start_model, allometry_model):
         summary_individuals=suminds,
         summary_individuals_count=sumcount,
         summary_errors=sumerrs,
-        best_model=best_model,
+        final_model_name=best_model.name,
     )
 
     return res
@@ -141,10 +141,12 @@ class AllometryResults(Results):
         summary_individuals=None,
         summary_individuals_count=None,
         summary_errors=None,
-        best_model=None,
+        final_model_name=None,
+        tool_database=None,
     ):
         self.summary_models = summary_models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
         self.summary_errors = summary_errors
-        self.best_model = best_model
+        self.final_model_name = final_model_name
+        self.tool_database = tool_database
