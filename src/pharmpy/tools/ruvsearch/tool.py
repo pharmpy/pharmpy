@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from functools import partial
 from typing import Collection, Optional
 
@@ -32,9 +33,12 @@ from pharmpy.modeling import (
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.utils import same_signature_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 from .results import calculate_results
+
+SKIP = frozenset(('IIV_on_RUV', 'power', 'combined', 'time_varying'))
 
 
 def create_workflow(
@@ -69,7 +73,7 @@ def create_workflow(
     >>> run_ruvsearch(model=model)      # doctest: +SKIP
 
     """
-    _check_input(model, groups, p_value, skip)
+    validate_input(model, groups, p_value, skip)
     wf = Workflow()
     wf.name = "ruvsearch"
     start_task = Task('start_ruvsearch', start, model, groups, p_value, skip)
@@ -77,32 +81,6 @@ def create_workflow(
     task_results = Task('results', _results)
     wf.add_task(task_results, predecessors=[start_task])
     return wf
-
-
-def _check_input(model, groups, p_value, skip):
-    if model is None:
-        return
-    residuals = model.modelfit_results.residuals
-    predictions = model.modelfit_results.predictions
-    if residuals is None or 'CWRES' not in residuals:
-        raise ValueError(
-            f"Please check {model.name}.mod file to make sure ID, TIME, CWRES are in $TABLE."
-        )
-    if predictions is None or ('CIPREDI' not in predictions and 'IPRED' not in predictions):
-        raise ValueError(
-            f"Please check {model.name}.mod file to make sure ID, TIME, CIPREDI(or IPRED) are in $TABLE."
-        )
-    if not isinstance(groups, int):
-        raise TypeError(
-            f"{groups} is not an integer. Please input an integer for groups and try again."
-        )
-    if not (isinstance(p_value, float) and 0 < p_value < 1):
-        raise ValueError(
-            f"{p_value} is not a float number between (0, 1). Please input correct p-value and try again."
-        )
-    full_skip = {'IIV_on_RUV', 'power', 'combined', 'time_varying'}
-    if skip is not None and not (isinstance(skip, list) and set(skip).issubset(full_skip)):
-        raise ValueError(f"Please correct {skip} and try again.")
 
 
 def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
@@ -419,3 +397,47 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
         model = None
         selected_model_name = None
     return model, selected_model_name
+
+
+@same_signature_as(create_workflow)
+def validate_input(model, groups, p_value, skip):
+    if not (isinstance(groups, int) and groups >= 1):
+        raise TypeError(
+            f'Invalid groups: got "{groups}" of type {type(groups)}, must be an int >= 1.'
+        )
+
+    if not (isinstance(p_value, float) and 0 < p_value <= 1):
+        raise ValueError(
+            f'Invalid p_value: got "{p_value}" of type {type(p_value)},'
+            f' must be a float in range (0, 1].'
+        )
+
+    if skip is not None and not (
+        isinstance(skip, Sequence) and not isinstance(skip, str) and set(skip).issubset(SKIP)
+    ):
+        raise ValueError(
+            f'Invalid skip: got "{skip}" of type {type(skip)},'
+            f' must be None/NULL or a subset of {SKIP}.'
+        )
+
+    if model is not None:
+
+        if not isinstance(model, Model):
+            raise TypeError(
+                f'Invalid model: got "{model}" of type {type(model)}, must be a {Model}.'
+            )
+
+        if model.modelfit_results is None:
+            raise ValueError(f"Model {model} is missing modelfit results.")
+
+        residuals = model.modelfit_results.residuals
+        if residuals is None or 'CWRES' not in residuals:
+            raise ValueError(
+                f"Please check {model.name}.mod file to make sure ID, TIME, CWRES are in $TABLE."
+            )
+
+        predictions = model.modelfit_results.predictions
+        if predictions is None or ('CIPREDI' not in predictions and 'IPRED' not in predictions):
+            raise ValueError(
+                f"Please check {model.name}.mod file to make sure ID, TIME, CIPREDI (or IPRED) are in $TABLE."
+            )
