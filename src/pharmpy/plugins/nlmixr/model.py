@@ -36,6 +36,9 @@ class CodeGenerator:
 
 def convert_model(model):
     """Convert any model into an nlmixr model"""
+    if isinstance(model, Model):
+        return model.copy()
+
     nlmixr_model = Model()
     from pharmpy.modeling import convert_model
 
