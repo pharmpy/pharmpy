@@ -3,9 +3,19 @@ from typing import Callable, Iterable, List, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment, Model, Results
-from pharmpy.modeling import add_iov, copy_model, rank_models, remove_iiv, remove_iov
+from pharmpy.modeling import (
+    add_iov,
+    copy_model,
+    get_pk_parameters,
+    rank_models,
+    remove_iiv,
+    remove_iov,
+)
+from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
+from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.utils import same_signature_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 NAME_WF = 'iovsearch'
@@ -27,7 +37,7 @@ def create_workflow(
     ----------
     column : str
         Name of column in dataset to use as occasion column (default is 'OCC')
-    list_of_parameters : list
+    list_of_parameters : None or list
         List of parameters to test IOV on, if none all parameters with IIV will be tested (default)
     rank_type : str
         Which ranking type should be used (OFV, AIC, BIC). Default is BIC
@@ -50,6 +60,13 @@ def create_workflow(
     >>> model = load_example_model("pheno")
     >>> run_iovsearch('OCC', model=model)      # doctest: +SKIP
     """
+    validate_input(
+        column,
+        list_of_parameters,
+        rank_type,
+        cutoff,
+        distribution,
+    )
     wf = Workflow()
     wf.name = NAME_WF
 
@@ -265,6 +282,69 @@ def task_results(rank_type, cutoff, bic_type, models):
     )
 
     return res
+
+
+@same_signature_as(create_workflow)
+def validate_input(
+    model,
+    column,
+    list_of_parameters,
+    rank_type,
+    cutoff,
+    distribution,
+):
+    if not isinstance(column, str):
+        raise TypeError(
+            f'Invalid column: got "{column}" of type {type(column)}'
+            f', must be None/NULL or a str.'
+        )
+
+    if not isinstance(list_of_parameters, (type(None), list)):
+        raise TypeError(
+            f'Invalid list_of_parameters: got "{list_of_parameters}"'
+            f' of type {type(list_of_parameters)}, must be None/NULL or a list.'
+        )
+
+    if rank_type not in RANK_TYPES:
+        raise ValueError(
+            f'Invalid rank_type: got "{rank_type}" of type {type(rank_type)},'
+            f' must be one of {sorted(RANK_TYPES)}.'
+        )
+
+    if not isinstance(cutoff, (type(None), int, float)):
+        raise TypeError(
+            f'Invalid cutoff: got "{cutoff}" of type {type(cutoff)},'
+            f' must be None/NULL or an int/float.'
+        )
+
+    if distribution not in ADD_IOV_DISTRIBUTION:
+        raise ValueError(
+            f'Invalid distribution: got "{distribution}" of type {type(distribution)},'
+            f' must be one of {sorted(ADD_IOV_DISTRIBUTION)}.'
+        )
+
+    if model is not None:
+
+        if not isinstance(model, Model):
+            raise TypeError(
+                f'Invalid model: got "{model}" of type {type(model)}, must be a {Model}.'
+            )
+
+        if column not in model.datainfo.names:
+            raise ValueError(
+                f'Invalid column: got "{column}",'
+                f' must be one of {sorted(model.datainfo.names)}.'
+            )
+
+        if list_of_parameters is not None:
+            allowed_parameters = set(get_pk_parameters(model)).union(
+                str(statement.symbol) for statement in model.statements.before_odes
+            )
+            if not set(list_of_parameters).issubset(allowed_parameters):
+                raise ValueError(
+                    f'Invalid list_of_parameters: got "{list_of_parameters}",'
+                    f' must be NULL/None or a subset of {sorted(allowed_parameters)}.'
+                )
 
 
 class IOVSearchResults(Results):
