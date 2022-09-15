@@ -228,20 +228,6 @@ def post_process(start_model, *models, cutoff, current_iteration):
     return res
 
 
-def _find_models(models, current_iteration):
-    base_model = None
-    tvar_models = []
-    other_models = []
-    for model in models:
-        if model.name == f'base_{current_iteration}':
-            base_model = model
-        elif model.name.startswith('time_varying') and model.name.endswith(f'_{current_iteration}'):
-            tvar_models.append(model)
-        else:
-            other_models.append(model)
-    return base_model, tvar_models, other_models
-
-
 def _create_base_model(input_model, current_iteration):
     base_model = pharmpy.model.Model()
     theta = Parameter('theta', 0.1)
