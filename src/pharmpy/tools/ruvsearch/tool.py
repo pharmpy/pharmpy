@@ -161,19 +161,20 @@ def start(model, groups, p_value, skip):
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
         next_res = call_workflow(wf, f'results{current_iteration}')
         selected_model_name = next_res._selected_model_name
+        best_model = next_res._best_model
         del next_res._selected_model_name
+        del next_res._best_model
 
         if current_iteration == 1:
             res = next_res
         else:
             res.cwres_models = pd.concat([res.cwres_models, next_res.cwres_models])
-            res.best_model = next_res.best_model
         if not selected_model_name.startswith('base'):
-            if res.best_model.description:
-                res.best_model.description += '+' + selected_model_name
+            if best_model.description:
+                best_model.description += '+' + selected_model_name
             else:
-                res.best_model.description = selected_model_name
-            selected_models.append(res.best_model)
+                best_model.description = selected_model_name
+            selected_models.append(best_model)
 
         if selected_model_name.startswith('base'):
             break
@@ -181,7 +182,7 @@ def start(model, groups, p_value, skip):
             skip.append('time_varying')
         else:
             skip.append(selected_model_name)
-        model = res.best_model
+        model = best_model
 
     sumind = summarize_individuals(selected_models)
     sumcount = summarize_individuals_count_table(df=sumind)
@@ -194,7 +195,7 @@ def start(model, groups, p_value, skip):
     res.summary_models = summf
     res.summary_tool = summary_tool
     res.summary_errors = summary_errors
-    res.final_model_name = res.best_model.name
+    res.final_model_name = best_model.name
     return res
 
 
@@ -216,13 +217,13 @@ def post_process(start_model, *models, cutoff, current_iteration):
         est_model = call_workflow(fit_wf, f'fit{current_iteration}')
         delta_ofv = start_model.modelfit_results.ofv - est_model.modelfit_results.ofv
         if delta_ofv > cutoff:
-            res.best_model = est_model
+            res._best_model = est_model
             res._selected_model_name = selected_model_name
         else:
-            res.best_model = start_model
+            res._best_model = start_model
             res._selected_model_name = f"base_{current_iteration}"
     else:
-        res.best_model = start_model
+        res._best_model = start_model
         res._selected_model_name = f"base_{current_iteration}"
     return res
 
