@@ -1,7 +1,11 @@
 import pharmpy.tools.modelsearch.algorithms as algorithms
-from pharmpy.model import Results
+from pharmpy.model import Model, Results
+from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools.common import create_results
+from pharmpy.utils import same_signature_as
 from pharmpy.workflows import Task, Workflow
+
+from ..mfl.parse import parse
 
 
 def create_workflow(
@@ -44,7 +48,7 @@ def create_workflow(
     >>> run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=model) # doctest: +SKIP
 
     """
-    check_input(model)
+    validate_input(search_space, algorithm, iiv_strategy, rank_type, cutoff, model)
     algorithm_func = getattr(algorithms, algorithm)
 
     wf = Workflow()
@@ -72,23 +76,8 @@ def create_workflow(
     return wf
 
 
-def check_input(model):
-    if model is None:
-        return
-    try:
-        cmt = model.datainfo.typeix['compartment']
-    except IndexError:
-        pass
-    else:
-        raise ValueError(
-            f"Found compartment column {cmt.names} in dataset. "
-            f"This is currently not supported by modelsearch. "
-            f"Please remove or drop this column and try again"
-        )
-
-
 def start(model):
-    check_input(model)
+    validate_model(model)
     return model
 
 
@@ -109,6 +98,66 @@ def post_process(rank_type, cutoff, *models):
     )
 
     return res
+
+
+@same_signature_as(create_workflow)
+def validate_input(
+    search_space,
+    algorithm,
+    iiv_strategy,
+    rank_type,
+    cutoff,
+    model,
+):
+
+    if not hasattr(algorithms, algorithm):
+        raise ValueError(
+            f'Invalid algorithm: got "{algorithm}" of type {type(algorithm)},'
+            f' must be one of {sorted(dir(algorithms))}.'
+        )
+
+    if rank_type not in RANK_TYPES:
+        raise ValueError(
+            f'Invalid rank_type: got "{rank_type}" of type {type(rank_type)},'
+            f' must be one of {sorted(RANK_TYPES)}.'
+        )
+
+    if iiv_strategy not in algorithms.IIV_STRATEGIES:
+        raise ValueError(
+            f'Invalid IIV strategy: got "{iiv_strategy}" of type {type(iiv_strategy)},'
+            f' must be one of {sorted(algorithms.IIV_STRATEGIES)}.'
+        )
+
+    if not isinstance(cutoff, (type(None), int, float)):
+        raise TypeError(
+            f'Invalid cutoff: got "{cutoff}" of type {type(cutoff)},'
+            f' must be None/NULL or an int/float.'
+        )
+
+    try:
+        parse(search_space)
+    except:  # noqa E722
+        raise ValueError(f'Invalid search_space, could not be parsed: "{search_space}"')
+
+    validate_model(model)
+
+
+def validate_model(model):
+    if model is None:
+        return
+
+    if not isinstance(model, Model):
+        raise TypeError(f'Invalid model: got "{model}" of type {type(model)}, must be a {Model}.')
+    try:
+        cmt = model.datainfo.typeix['compartment']
+    except IndexError:
+        pass
+    else:
+        raise ValueError(
+            f"Found compartment column {cmt.names} in dataset. "
+            f"This is currently not supported by modelsearch. "
+            f"Please remove or drop this column and try again"
+        )
 
 
 class ModelSearchResults(Results):

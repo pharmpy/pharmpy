@@ -17,7 +17,8 @@ from pharmpy.tools.modelsearch.algorithms import (
     exhaustive_stepwise,
     reduced_stepwise,
 )
-from pharmpy.tools.modelsearch.tool import check_input
+from pharmpy.tools.modelsearch.tool import create_workflow, validate_model
+from pharmpy.workflows import Workflow
 
 
 def test_exhaustive_algorithm():
@@ -125,7 +126,7 @@ def test_reduced_stepwise_algorithm(mfl, no_of_models):
     assert all(task.name == 'run0' for task in wf.output_tasks)
 
 
-def test_check_input(create_model_for_test, testdata):
+def test_validate_model(create_model_for_test, testdata):
     model_code = '''$PROBLEM
 $INPUT ID VISI XAT2=DROP DGRP DOSE FLAG=DROP ONO=DROP
        XIME=DROP NEUY SCR AGE SEX NYH=DROP WT DROP ACE
@@ -153,7 +154,7 @@ $ESTIMATION METHOD=1 INTERACTION
     )
 
     with pytest.raises(ValueError):
-        check_input(model)
+        validate_model(model)
 
 
 def test_is_allowed():
@@ -235,3 +236,76 @@ def test_add_iiv_to_func(load_model_for_test, testdata, transform_funcs, no_of_a
         model = func(model)
     model = _add_iiv_to_func('add_diagonal', model)
     assert len(model.random_variables) - no_of_etas_start == no_of_added_etas
+
+
+def test_create_workflow():
+    assert isinstance(create_workflow('LET(x, 0)', 'exhaustive'), Workflow)
+
+
+@pytest.mark.parametrize(
+    ('model_path', 'search_space', 'algorithm', 'iiv_strategy', 'rank_type', 'cutoff'),
+    [
+        (
+            None,
+            '',
+            'exhaustive',
+            'absorption_delay',
+            'bic',
+            None,
+        ),
+        (
+            None,
+            'LET(x, 0)',
+            'brute_force',
+            'absorption_delay',
+            'bic',
+            None,
+        ),
+        (
+            None,
+            'LET(x, 0)',
+            'exhaustive',
+            'delay',
+            'bic',
+            None,
+        ),
+        (
+            None,
+            'LET(x, 0)',
+            'exhaustive',
+            'absorption_delay',
+            'bi',
+            None,
+        ),
+        (
+            None,
+            'LET(x, 0)',
+            'exhaustive',
+            'absorption_delay',
+            'bic',
+            '1',
+        ),
+    ],
+)
+def test_create_workflow_raises(
+    load_model_for_test,
+    testdata,
+    model_path,
+    search_space,
+    algorithm,
+    iiv_strategy,
+    rank_type,
+    cutoff,
+):
+
+    model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
+
+    with pytest.raises((ValueError, TypeError)):
+        create_workflow(
+            search_space,
+            algorithm,
+            iiv_strategy=iiv_strategy,
+            rank_type=rank_type,
+            cutoff=cutoff,
+            model=model,
+        )
