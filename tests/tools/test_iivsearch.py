@@ -13,6 +13,8 @@ from pharmpy.tools.iivsearch.algorithms import (
     brute_force_block_structure,
     create_eta_blocks,
 )
+from pharmpy.tools.iivsearch.tool import create_workflow
+from pharmpy.workflows import Workflow
 
 
 @pytest.mark.parametrize(
@@ -133,3 +135,56 @@ def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
     param_dict = _iiv_param_dict(model)
 
     assert param_dict == param_dict_ref
+
+
+def test_create_workflow():
+    assert isinstance(create_workflow('brute_force'), Workflow)
+
+
+@pytest.mark.parametrize(
+    ('model_path', 'algorithm', 'iiv_strategy', 'rank_type', 'cutoff'),
+    [
+        (
+            None,
+            'brute_force_no_of_eta',
+            'no_add',
+            'bic',
+            None,
+        ),
+        (
+            None,
+            'brute_force',
+            'no_add',
+            'bi',
+            None,
+        ),
+        (
+            None,
+            'brute_force',
+            'diagonal',
+            'bic',
+            None,
+        ),
+        (
+            None,
+            'brute_force',
+            'no_add',
+            'bic',
+            '1',
+        ),
+    ],
+)
+def test_create_workflow_raises(
+    load_model_for_test, testdata, model_path, algorithm, iiv_strategy, rank_type, cutoff
+):
+
+    model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
+
+    with pytest.raises((ValueError, TypeError)):
+        create_workflow(
+            algorithm,
+            iiv_strategy=iiv_strategy,
+            rank_type=rank_type,
+            cutoff=cutoff,
+            model=model,
+        )

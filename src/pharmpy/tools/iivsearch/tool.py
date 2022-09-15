@@ -1,10 +1,15 @@
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Results
+from pharmpy.model import Model, Results
 from pharmpy.modeling import add_pk_iiv, copy_model, create_joint_distribution
+from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.utils import same_signature_as
 from pharmpy.workflows import Task, Workflow, call_workflow
+
+IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock'))
+IIV_ALGORITHMS = frozenset(('brute_force',) + tuple(dir(algorithms)))
 
 
 def create_workflow(
@@ -43,6 +48,13 @@ def create_workflow(
     >>> from pharmpy.tools import run_iivsearch     # doctest: +SKIP
     >>> run_iivsearch('brute_force', model=model)   # doctest: +SKIP
     """
+    validate_input(
+        algorithm,
+        iiv_strategy,
+        rank_type,
+        cutoff,
+        model,
+    )
     wf = Workflow()
     wf.name = 'iivsearch'
     start_task = Task('start_iiv', start, model, algorithm, iiv_strategy, rank_type, cutoff)
@@ -145,11 +157,7 @@ def _start_algorithm(model):
 
 
 def _add_iiv(iiv_strategy, model):
-    if iiv_strategy not in ['add_diagonal', 'fullblock']:
-        ValueError(
-            f'Invalid IIV strategy (must be "no_add", "add_diagonal", or "fullblock"): '
-            f'{iiv_strategy}'
-        )
+    assert iiv_strategy in ['add_diagonal', 'fullblock']
     add_pk_iiv(model)
     if iiv_strategy == 'fullblock':
         create_joint_distribution(model)
@@ -173,6 +181,42 @@ def post_process(rank_type, cutoff, input_model, base_model_name, *models):
     )
 
     return res
+
+
+@same_signature_as(create_workflow)
+def validate_input(
+    model,
+    algorithm,
+    iiv_strategy,
+    rank_type,
+    cutoff,
+):
+    if algorithm not in IIV_ALGORITHMS:
+        raise ValueError(
+            f'Invalid algorithm: got "{algorithm}" of type {type(algorithm)},'
+            f' must be one of {sorted(IIV_ALGORITHMS)}.'
+        )
+
+    if rank_type not in RANK_TYPES:
+        raise ValueError(
+            f'Invalid rank_type: got "{rank_type}" of type {type(rank_type)},'
+            f' must be one of {sorted(RANK_TYPES)}.'
+        )
+
+    if iiv_strategy not in IIV_STRATEGIES:
+        raise ValueError(
+            f'Invalid IIV strategy: got "{iiv_strategy}" of type {type(iiv_strategy)},'
+            f' must be one of {sorted(IIV_STRATEGIES)}.'
+        )
+
+    if not isinstance(cutoff, (type(None), int, float)):
+        raise TypeError(
+            f'Invalid cutoff: got "{cutoff}" of type {type(cutoff)},'
+            f' must be None/NULL or an int/float.'
+        )
+
+    if not isinstance(model, (type(None), Model)):
+        raise TypeError(f'Invalid model: got "{model}" of type {type(model)}, must be a {Model}.')
 
 
 class IIVSearchResults(Results):
