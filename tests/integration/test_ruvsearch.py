@@ -5,6 +5,7 @@ import pytest
 from pharmpy.model import Model
 from pharmpy.modeling import remove_covariance_step
 from pharmpy.tools import run_tool
+from pharmpy.tools.run import retrieve_final_model
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -20,18 +21,18 @@ def test_ruvsearch(tmp_path, testdata):
         model.datainfo = model.datainfo.derive(path=tmp_path / 'moxo_simulated_resmod.csv')
         res = run_tool('ruvsearch', model, groups=4, p_value=0.05, skip=[])
         iteration = [1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3]
+        best_model = retrieve_final_model(res)
         assert (res.cwres_models.index.get_level_values('iteration') == iteration).all()
-        assert res.best_model.model_code.split('\n')[11] == 'IF (TAD.LT.6.08) THEN'
+        assert best_model.model_code.split('\n')[11] == 'IF (TAD.LT.6.08) THEN'
         assert (
-            res.best_model.model_code.split('\n')[12]
+            best_model.model_code.split('\n')[12]
             == '    Y = A(2)*EPS(1)*THETA(4)*EXP(ETA(4))/VC + A(2)/VC'
         )
         assert (
-            res.best_model.model_code.split('\n')[14]
-            == '    Y = A(2)*EPS(1)*EXP(ETA(4))/VC + A(2)/VC'
+            best_model.model_code.split('\n')[14] == '    Y = A(2)*EPS(1)*EXP(ETA(4))/VC + A(2)/VC'
         )
-        assert res.best_model.model_code.split('\n')[19] == '$THETA  1.15573 ; time_varying'
-        assert res.best_model.model_code.split('\n')[25] == '$OMEGA  0.0396751 ; IIV_RUV1'
+        assert best_model.model_code.split('\n')[19] == '$THETA  1.15573 ; time_varying'
+        assert best_model.model_code.split('\n')[25] == '$OMEGA  0.0396751 ; IIV_RUV1'
 
 
 def test_ruvsearch_input(tmp_path, testdata):

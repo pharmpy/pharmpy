@@ -194,6 +194,7 @@ def start(model, groups, p_value, skip):
     res.summary_models = summf
     res.summary_tool = summary_tool
     res.summary_errors = summary_errors
+    res.final_model_name = res.best_model.name
     return res
 
 
