@@ -82,6 +82,12 @@ jobs:
           echo 'key ^J' >>lynxcmds
           echo 'key Q' >>lynxcmds
           lynx -accept-all-cookies nonmem.iconplc.com -cmd_script=lynxcmds
+      - name: Upload cache workaround
+        uses: actions/upload-artifact@v2
+        with:
+          name: cache-workaround
+          path: 751.zip
+          retention-days: 1
 
 
   integration-ubuntu:
@@ -198,12 +204,6 @@ jobs:
       - name: Checkout Pharmpy
         uses: actions/checkout@v3
 
-      - name: 'Use GNU tar (see https://github.com/actions/cache/blob/main/workarounds.md#use-cache-across-feature-branches)'
-        shell: cmd
-        run: |
-          echo "Adding GNU tar to PATH"
-          echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
-
       # https://github.com/modflowpy/install-gfortran-action/blob/dfc32754e541304f2e7b7ca001e40dce094a5cd6/action.yml#L22-L30
       - name: Setup gfortran
         shell: bash
@@ -217,6 +217,11 @@ jobs:
       - name: Print gfortran version
         run: gfortran --version
         shell: bash
+
+      - name: Get NONMEM
+        uses: actions/download-artifact@v2
+        with:
+          name: cache-workaround
 
       - name: Cache NONMEM
         id: cache-nonmem
