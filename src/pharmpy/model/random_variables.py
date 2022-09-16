@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Sequence
+from abc import abstractmethod
+from collections.abc import Collection, Sequence
 from functools import lru_cache
 from math import sqrt
 from typing import Dict, Iterable, Set, Tuple
@@ -44,6 +45,10 @@ class Distribution:
 
     def __len__(self):
         return len(self._names)
+
+    @abstractmethod
+    def __getitem__(self, index):
+        pass
 
 
 class NormalDistribution(Distribution):
@@ -154,6 +159,26 @@ class NormalDistribution(Distribution):
             if isinstance(name, sympy.Symbol):
                 name = name.name
         return NormalDistribution((name,), self._level, mean, variance)
+
+    def __getitem__(self, index):
+        if isinstance(index, int):
+            if index == 0:
+                return self
+            raise IndexError(index)
+
+        elif isinstance(index, str):
+            if index == self._names[0]:
+                return self
+
+        else:
+            if isinstance(index, slice):
+                index = range(index.start, index.stop, index.step)
+
+            if isinstance(index, Collection):
+                if len(index) == 1 and (self._names[0] in index or 0 in index):
+                    return self
+
+        raise KeyError(index)
 
     def get_variance(self, name):
         return self._variance
@@ -327,6 +352,60 @@ class JointNormalDistribution(Distribution):
             new_names.append(name)
 
         return JointNormalDistribution(new_names, self._level, mean, variance)
+
+    def __getitem__(self, index):
+        if isinstance(index, int):
+            if -len(self) <= index < len(self):
+                cls = NormalDistribution
+                names = (self._names[index],)
+            else:
+                raise IndexError(index)
+
+        elif isinstance(index, str):
+            cls = NormalDistribution
+            names = (index,)
+            try:
+                index = self._names.index(index)
+            except ValueError:
+                raise KeyError(names[0])
+
+        else:
+            if isinstance(index, slice):
+                index = range(index.start, index.stop, index.step)
+
+            if isinstance(index, Collection):
+                if len(index) == 0 or len(index) > len(self._names):
+                    raise KeyError(index)
+
+                collection = set(index)
+                if not collection.issubset(self._names):
+                    raise KeyError(index)
+
+                if len(collection) == len(self._names):
+                    return self
+
+                index = []
+                names = []
+
+                for i, name in enumerate(self._names):
+                    if name in collection:
+                        index.append(i)
+                        names.append(name)
+
+                if len(index) == 1:
+                    cls = NormalDistribution
+                    index = index[0]
+
+                else:
+                    cls = JointNormalDistribution
+
+            else:
+                raise KeyError(index)
+
+        level = self._level
+        mean = self._mean[index, [0]] if isinstance(index, int) else self._mean[index]
+        variance = self._variance[index][index]
+        return cls(names, level, mean, variance)
 
     def get_variance(self, name):
         i = self.names.index(name)
@@ -1151,10 +1230,10 @@ def filter_distributions(
     covered_symbols = set()
 
     for dist in distributions:
-        symbols_covered_by_dist = symbols.intersection(sympy.Symbol(rv) for rv in dist.names)
-        if symbols_covered_by_dist:
-            yield dist
-            covered_symbols |= symbols_covered_by_dist
+        rvs_covered_by_dist = tuple(rv for rv in dist.names if sympy.Symbol(rv) in symbols)
+        if rvs_covered_by_dist:
+            yield dist[rvs_covered_by_dist]
+            covered_symbols.update(sympy.Symbol(rv) for rv in rvs_covered_by_dist)
 
     if covered_symbols != symbols:
         raise ValueError('Could not cover all requested symbols with given distributions')
