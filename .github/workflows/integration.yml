@@ -121,7 +121,7 @@ jobs:
       - name: Install NONMEM
         run: |
           cd nm744CD
-          /bin/bash SETUP74 $(realpath .) $(realpath ../nm744) gfortran y ar same rec q
+          /bin/bash SETUP75 $(realpath .) $(realpath ../nm744) gfortran y ar same rec q
 
       - name: Create pharmpy.conf
         run: |
@@ -178,7 +178,7 @@ jobs:
       - name: Install NONMEM
         run: |
           cd nm744CD
-          /bin/bash SETUP74 $(realpath .) $(realpath ../nm744) gfortran y ar same rec q
+          /bin/bash SETUP75 $(realpath .) $(realpath ../nm744) gfortran y ar same rec q
 
       - name: Create pharmpy.conf
         run: |
@@ -246,7 +246,7 @@ jobs:
         run: |
           set INSTALLDIR=%CD%\nm744
           cd nm744CD
-          SETUP74.bat %CD% %INSTALLDIR% gfortran y ar same rec q
+          SETUP75.bat %CD% %INSTALLDIR% gfortran y ar same rec q
           cd ..
         shell: cmd
 
