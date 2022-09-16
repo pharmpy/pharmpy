@@ -63,7 +63,7 @@ On Mac:
 
     brew install graphviz
 
-For alternative installations or for Windows, please see Graphviz `guide <https://graphviz.org/download/>`_
+For alternative installations or for Windows, please see Graphviz `guide <https://www.graphviz.org/download/>`_
 
 Using the development environment
 #################################

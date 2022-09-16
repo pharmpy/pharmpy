@@ -131,9 +131,14 @@ def test_copy_model(pheno):
 
 def test_convert_model():
     model = load_example_model("pheno")
+
     run1 = convert_model(model, "nlmixr")
     assert model.name == run1.name
     assert model == run1
+
+    run2 = convert_model(run1, "nonmem")
+    assert model.name == run2.name == run1.name
+    assert model == run2 == run1
 
 
 def test_remove_unused_parameters_and_rvs(pheno):
