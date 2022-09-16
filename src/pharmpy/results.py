@@ -184,6 +184,9 @@ class ModelfitResults(Results):
 
     @classmethod
     def from_dict(cls, d):
+        # FIXME temp fix since ModelfitResults is getting rewritten
+        if '__version__' in d.keys():
+            del d['__version__']
         return ModelfitResults(**d)
 
     def to_dict(self):

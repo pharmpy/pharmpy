@@ -10,15 +10,12 @@ from .model import Model
 class Results:
     """Base class for all result classes"""
 
-    def __init__(self):
-        self._pharmpy_version = pharmpy.__version__
-
     @classmethod
     def from_dict(cls, d):
         """Create results object from dictionary"""
-        if '_pharmpy_version' in d.keys():
-            pharmpy_version = d['_pharmpy_version']
-            del d['_pharmpy_version']
+        if '__version__' in d.keys():
+            pharmpy_version = d['__version__']
+            del d['__version__']
         else:
             # Was removed in d5b3503 and 8578c8b
             if 'best_model' in d.keys():
@@ -145,6 +142,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
 
         if isinstance(obj, Results):
             d = obj.to_dict()
+            d['__version__'] = pharmpy.__version__
             d['__module__'] = obj.__class__.__module__
             d['__class__'] = obj.__class__.__qualname__
             return d
