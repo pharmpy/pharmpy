@@ -5,9 +5,8 @@ import lzma
 from collections.abc import MutableSequence
 from pathlib import Path
 
-import altair as alt
-import pandas as pd
-
+from pharmpy.deps import altair as alt
+from pharmpy.deps import pandas as pd
 from pharmpy.model import Results
 
 

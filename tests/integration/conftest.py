@@ -23,7 +23,7 @@ def start_model(testdata):
     return model_start
 
 
-@pytest.fixture()
+@pytest.fixture(scope='session')
 def model_count():
     def _model_count(rundir: Path):
         return sum(
