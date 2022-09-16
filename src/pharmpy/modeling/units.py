@@ -52,13 +52,14 @@ def get_unit_of(model, variable):
 
     y = model.dependent_variable
     input_units = {sympy.Symbol(col.name): col.unit for col in di}
-    input_units[sympy.exp] = 1
     unit_eqs = []
     unit_eqs.append(y - di[di.dv_column.name].unit)
 
     for s in model.statements:
         if isinstance(s, Assignment):
-            expr = sympy.expand(subs(s.expression, input_units))
+            expr = sympy.expand(
+                subs(s.expression, input_units, simultaneous=True).subs(sympy.exp, 1)
+            )
             if expr.is_Add:
                 for term in expr.args:
                     unit_eqs.append(s.symbol - _extract_minus(term))
