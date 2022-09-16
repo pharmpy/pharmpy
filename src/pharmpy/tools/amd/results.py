@@ -10,6 +10,7 @@ class AMDResults(Results):
         summary_individuals_count=None,
         summary_errors=None,
     ):
+        super().__init__()
         self.final_model = final_model
         self.summary_tool = summary_tool
         self.summary_models = summary_models

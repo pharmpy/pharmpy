@@ -144,6 +144,7 @@ class AllometryResults(Results):
         final_model_name=None,
         tool_database=None,
     ):
+        super().__init__()
         self.summary_models = summary_models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count

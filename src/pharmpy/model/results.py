@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import pharmpy
 from pharmpy.deps import pandas as pd
 
 from .model import Model
@@ -9,10 +10,27 @@ from .model import Model
 class Results:
     """Base class for all result classes"""
 
+    def __init__(self):
+        self._pharmpy_version = pharmpy.__version__
+
     @classmethod
     def from_dict(cls, d):
         """Create results object from dictionary"""
-        return cls(**d)
+        if '_pharmpy_version' in d.keys():
+            pharmpy_version = d['_pharmpy_version']
+            del d['_pharmpy_version']
+        else:
+            # Was removed in d5b3503 and 8578c8b
+            if 'best_model' in d.keys():
+                del d['best_model']
+            # Was removed in d5b3503 and 8578c8b
+            if 'input_model' in d.keys():
+                del d['input_model']
+            pharmpy_version = None
+        res_obj = cls(**d)
+        if pharmpy_version:
+            res_obj._pharmpy_version = pharmpy_version
+        return res_obj
 
     def to_json(self, path=None, lzma=False):
         """Serialize results object as json

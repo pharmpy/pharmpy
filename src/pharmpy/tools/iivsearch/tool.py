@@ -187,6 +187,7 @@ class IIVSearchResults(pharmpy.results.Results):
         models=None,
         tool_database=None,
     ):
+        super().__init__()
         self.summary_tool = summary_tool
         self.summary_models = summary_models
         self.summary_individuals = summary_individuals
