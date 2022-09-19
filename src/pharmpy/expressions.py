@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache, reduce
 from itertools import chain
 from operator import __and__, is_
-from typing import Dict, Iterable, List, Set
+from typing import Callable, Dict, Iterable, List, Set
 
 from pharmpy.deps import sympy
 
@@ -58,11 +58,11 @@ def assume_all(predicate: sympy.assumptions.Predicate, expressions: Iterable[sym
     return reduce(__and__, map(predicate, expressions), tautology)
 
 
-def xreplace_dict(dictlike):
+def xreplace_dict(dictlike) -> Dict[sympy.Expr, sympy.Expr]:
     return {_sympify_old(key): _sympify_new(value) for key, value in dictlike.items()}
 
 
-def _sympify_old(old):
+def _sympify_old(old) -> sympy.Expr:
     # NOTE This mimics sympy's input coercion in subs
     return (
         sympy.Symbol(old)
@@ -72,7 +72,7 @@ def _sympify_old(old):
 
 
 @lru_cache(maxsize=256)
-def _sympify_new(new):
+def _sympify_new(new) -> sympy.Expr:
     # NOTE This mimics sympy's input coercion in subs
     return sympy.sympify(new, strict=not isinstance(new, (str, type)))
 
@@ -82,21 +82,28 @@ def subs(expr: sympy.Expr, mapping: Dict[sympy.Expr, sympy.Expr], simultaneous: 
     if (simultaneous or _mapping_is_not_recursive(_mapping)) and all(
         map(_old_does_not_need_generic_subs, _mapping.keys())
     ):
-        return _subs_symbols_simultaneously(expr, _mapping)
+        if sympy.exp in _mapping:
+            new_base = _mapping[sympy.exp]
+            _mapping[sympy.exp] = lambda x: new_base**x
+            _mapping[sympy.Pow] = lambda a, x: new_base**x if a is sympy.S.Exp1 else a**x
+            return _subs_atoms_simultaneously(_subs_atom_or_func(_mapping), expr)
+        return _subs_atoms_simultaneously(_subs_atom(_mapping), expr)
     return expr.subs(_mapping, simultaneous=simultaneous)
 
 
-def _mapping_is_not_recursive(mapping):
+def _mapping_is_not_recursive(mapping: Dict[sympy.Expr, sympy.Expr]):
     return set(mapping.keys()).isdisjoint(
         set().union(*map(lambda e: e.free_symbols, mapping.values()))
     )
 
 
 def _old_does_not_need_generic_subs(expr: sympy.Expr):
-    return isinstance(expr, sympy.Symbol)
+    return isinstance(expr, sympy.Symbol) or expr is sympy.exp
 
 
-def _subs_symbols_simultaneously(expr: sympy.Expr, mapping: Dict[sympy.Symbol, sympy.Expr]):
+def _subs_atoms_simultaneously(
+    subs_new_args: Callable[[sympy.Expr, List[sympy.Expr]], sympy.Expr], expr: sympy.Expr
+):
     stack = [expr]
     output = [[], []]
 
@@ -113,7 +120,7 @@ def _subs_symbols_simultaneously(expr: sympy.Expr, mapping: Dict[sympy.Symbol, s
         if i == n:
             stack.pop()
             output.pop()
-            output[-1].append(_subs_new_args(mapping, e, new_args))
+            output[-1].append(subs_new_args(e, new_args))
         else:
             # NOTE Push the next argument on the stack
             stack.append(old_args[i])
@@ -122,13 +129,24 @@ def _subs_symbols_simultaneously(expr: sympy.Expr, mapping: Dict[sympy.Symbol, s
     return output[0][0]
 
 
-def _subs_new_args(
-    mapping: Dict[sympy.Symbol, sympy.Expr], expr: sympy.Expr, args: List[sympy.Expr]
-):
-    if isinstance(expr, sympy.Symbol):
-        return mapping.get(expr, expr)
+def _build(expr: sympy.Expr, args: List[sympy.Expr]):
+    return expr if all(map(is_, expr.args, args)) else expr.func(*args)
 
-    if all(map(is_, expr.args, args)):
-        return expr
 
-    return expr.func(*args)
+def _subs_atom(mapping: Dict[sympy.Expr, sympy.Expr]):
+    def _subs(expr: sympy.Expr, args: List[sympy.Expr]):
+        return _build(expr, args) if args else mapping.get(expr, expr)
+
+    return _subs
+
+
+def _subs_atom_or_func(mapping: Dict[sympy.Expr, sympy.Expr]):
+    def _subs(expr: sympy.Expr, args: List[sympy.Expr]):
+        if not args:
+            return mapping.get(expr, expr)
+
+        fn = expr.func
+        new_fn = mapping.get(fn, fn)
+        return _build(expr, args) if fn is new_fn else new_fn(*args)
+
+    return _subs
