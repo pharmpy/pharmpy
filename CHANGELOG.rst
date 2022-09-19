@@ -1,3 +1,27 @@
+Next release
+------------
+
+New features
+============
+
+
+Changes
+=======
+
+* fd417aaf Return copy of model on early branch-out in convert_model
+* d5458e36 Raise KeyError in LocalModelDirectory#retrieve_model (instead of FileNotFoundError)
+* 1193bd39 Remove unused pharmpy.symbols submodule
+
+Bugfixes
+========
+
+* bb96a13c Fix update_parameters on added parameters
+* 0ca786c5 Fix lrt assertion and extended_significant value in covsearch results
+* dd056da3 Fix crash for models with bioavailability parameters
+* 915bc9c7 Test get_config_path and correct output when config file is disabled
+* 82b32278 Do not print significant digits
+* 1131a610 Fix issue in PsN scm results parsing
+
 0.77.0 (2022-09-08)
 -------------------
 
