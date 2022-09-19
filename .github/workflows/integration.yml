@@ -113,6 +113,12 @@ jobs:
       - name: Install gfortran
         run: sudo apt install gfortran
 
+      - name: Print gfortran and gcc version
+        run: |
+          gfortran --version
+          gcc --version
+        shell: bash
+
       - name: NONMEM license
         run: echo $LICENSE_KEY > nm751CD/nonmem.lic
         env:
@@ -157,6 +163,12 @@ jobs:
 
       - name: Install realpath
         run: brew install coreutils
+
+      - name: Print gfortran and gcc version
+        run: |
+          gfortran --version
+          gcc --version
+        shell: bash
 
       - name: Get NONMEM
         id: cache-nonmem
@@ -214,8 +226,10 @@ jobs:
               ln -s "$LNDIR/libgfortran-5.dll" "$FCDIR/libgfortran-5.dll"
           fi
 
-      - name: Print gfortran version
-        run: gfortran --version
+      - name: Print gfortran and gcc version
+        run: |
+          gfortran --version
+          gcc --version
         shell: bash
 
       - name: Get NONMEM
@@ -247,13 +261,7 @@ jobs:
           set INSTALLDIR=%CD%\nm751
           cd nm751CD
           SETUP75.bat %CD% %INSTALLDIR% gfortran y ar same rec q
-          cd ..
         shell: cmd
-
-      - name: Print finishmsgs-file from NONMEM installation
-        run: |
-          cat nm751/finishmsgs.txt
-        shell: bash
 
       - name: Create pharmpy.conf
         run: |
