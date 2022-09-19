@@ -103,7 +103,7 @@ def test_create_metadata_common(tmp_path):
 
 def test_retrieve_models(testdata):
     tool_database_path = testdata / 'results' / 'tool_databases' / 'modelsearch'
-    print(tool_database_path)
+
     model_to_retrieve = ['modelsearch_candidate1']
 
     models = retrieve_models(tool_database_path, names=model_to_retrieve)
