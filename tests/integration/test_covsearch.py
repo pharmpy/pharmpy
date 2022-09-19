@@ -29,7 +29,7 @@ def test_default(tmp_path, start_model):
             ('KA', 'WT', 'exp', '*'),
             ('V', 'WT', 'exp', '*'),
         ]
-        res = run_tool(
+        run_tool(
             'covsearch',
             effects,
             model=start_model,
@@ -41,7 +41,7 @@ def test_default(tmp_path, start_model):
 
 def test_default_str(tmp_path, start_model):
     with TemporaryDirectoryChanger(tmp_path):
-        res = run_tool(
+        run_tool(
             'covsearch',
             'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
             'COVARIATE([CL, MAT, VC], @CONTINUOUS, exp, *)\n'
