@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Dict, Iterable, Set, Tuple, TypeVar
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs
+from pharmpy.expressions import prune, subs
 from pharmpy.model import Assignment, ODESystem
 
 from .expressions import _reachable_from
@@ -61,13 +61,19 @@ def get_unit_of(model, variable):
 
     y = model.dependent_variable
     input_units = {sympy.Symbol(col.name): col.unit for col in di}
-    input_units[sympy.exp] = 1
+    pruned_nodes = {sympy.exp}
+
+    def pruning_predicate(e: sympy.Expr) -> bool:
+        return e.func in pruned_nodes
+
     unit_eqs = []
     unit_eqs.append(y - di[di.dv_column.name].unit)
 
     for s in model.statements:
         if isinstance(s, Assignment):
-            expr = sympy.expand(subs(s.expression, input_units, simultaneous=True))
+            expr = sympy.expand(
+                subs(prune(pruning_predicate, s.expression), input_units, simultaneous=True)
+            )
             if expr.is_Add:
                 for term in expr.args:
                     unit_eqs.append(s.symbol - _extract_minus(term))
