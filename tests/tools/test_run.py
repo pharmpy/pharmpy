@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import os
 from pathlib import Path
 
 import pytest
@@ -102,7 +103,7 @@ def test_create_metadata_common(tmp_path):
 
 def test_retrieve_models(testdata):
     tool_database_path = testdata / 'results' / 'tool_databases' / 'modelsearch'
-
+    print(tool_database_path)
     model_to_retrieve = ['modelsearch_candidate1']
 
     models = retrieve_models(tool_database_path, names=model_to_retrieve)
@@ -122,9 +123,12 @@ def test_retrieve_models(testdata):
 
     with open(tool_database_path / 'results.json') as f:
         results_json = f.read()
-        results_json_testpath = results_json.replace(
-            '/tmp/tool_results/modelsearch', str(tool_database_path)
-        )
+        if os.name == 'nt':
+            new_path = str(tool_database_path).replace('\\', '\\\\')
+        else:
+            new_path = str(tool_database_path)
+
+        results_json_testpath = results_json.replace('/tmp/tool_results/modelsearch', new_path)
 
     res = read_results(results_json_testpath)
     models = retrieve_models(res, names=model_to_retrieve)
@@ -153,9 +157,12 @@ def test_retrieve_final_model(testdata):
 
     with open(tool_database_path / 'results.json') as f:
         results_json = f.read()
-        results_json_testpath = results_json.replace(
-            '/tmp/tool_results/modelsearch', str(tool_database_path)
-        )
+        if os.name == 'nt':
+            new_path = str(tool_database_path).replace('\\', '\\\\')
+        else:
+            new_path = str(tool_database_path)
+
+        results_json_testpath = results_json.replace('/tmp/tool_results/modelsearch', new_path)
 
     res = read_results(results_json_testpath)
     final_model = retrieve_final_model(res)
