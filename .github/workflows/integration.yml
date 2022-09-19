@@ -83,7 +83,7 @@ jobs:
           echo 'key Q' >>lynxcmds
           lynx -accept-all-cookies nonmem.iconplc.com -cmd_script=lynxcmds
       - name: Upload cache workaround
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: cache-workaround
           path: 751.zip
@@ -233,7 +233,7 @@ jobs:
         shell: bash
 
       - name: Get NONMEM
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cache-workaround
 
