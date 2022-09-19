@@ -3,6 +3,7 @@
 """
 
 import math
+import re
 import warnings
 from operator import add, mul
 from typing import Literal, Union
@@ -212,13 +213,17 @@ def add_covariate_effect(
     return model
 
 
-def _create_thetas(model, parameter, effect, covariate, template):
+def natural_order(string, _nsre=re.compile(r'([0-9]+)')):
+    # From https://stackoverflow.com/a/16090640
+    return [int(key) if key.isdigit() else (key.lower(), key) for key in _nsre.split(string)]
+
+
+def _create_thetas(model, parameter, effect, covariate, template, _ctre=re.compile(r'theta\d*')):
     """Creates theta parameters and adds to parameter set of model.
 
     Number of parameters depends on how many thetas have been declared."""
-    no_of_thetas = len(
-        {str(sym) for sym in template.expression.free_symbols if str(sym).startswith('theta')}
-    )
+    new_thetas = {sym for sym in map(str, template.expression.free_symbols) if _ctre.match(sym)}
+    no_of_thetas = len(new_thetas)
 
     pset = model.parameters
 
@@ -234,7 +239,7 @@ def _create_thetas(model, parameter, effect, covariate, template):
         )
         theta_names['theta'] = theta_name
     else:
-        for i in range(1, no_of_thetas + 1):
+        for i, new_theta in enumerate(sorted(new_thetas, key=natural_order), 1):
             inits = _choose_param_inits(effect, model, covariate, i)
 
             theta_name = f'POP_{parameter}{covariate}_{i}'
@@ -242,7 +247,7 @@ def _create_thetas(model, parameter, effect, covariate, template):
                 [p for p in pset]
                 + [Parameter(theta_name, inits['init'], inits['lower'], inits['upper'])]
             )
-            theta_names[f'theta{i}'] = theta_name
+            theta_names[new_theta] = theta_name
 
     model.parameters = pset
 
@@ -487,7 +492,7 @@ class CovariateEffect:
         values = [1]
         conditions = [sympy.Eq(sympy.Symbol('cov'), most_common)]
 
-        for i, cat in enumerate(categories):
+        for i, cat in enumerate(categories, 1):
             if cat != most_common:
                 if np.isnan(cat):
                     conditions += [sympy.Eq(sympy.Symbol('cov'), sympy.Symbol('NaN'))]

@@ -66,6 +66,34 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             False,
         ),
         (
+            ('nonmem', 'pheno.mod'),
+            [('CL', 'APGR', 'cat', '*')],
+            '@@ -2,0 +3,22 @@\n'
+            '+IF (APGR.EQ.7.0) THEN\n'
+            '+    CLAPGR = 1\n'
+            '+ELSE IF (APGR.EQ.1.0) THEN\n'
+            '+    CLAPGR = THETA(3) + 1\n'
+            '+ELSE IF (APGR.EQ.2.0) THEN\n'
+            '+    CLAPGR = THETA(4) + 1\n'
+            '+ELSE IF (APGR.EQ.3.0) THEN\n'
+            '+    CLAPGR = THETA(5) + 1\n'
+            '+ELSE IF (APGR.EQ.4.0) THEN\n'
+            '+    CLAPGR = THETA(6) + 1\n'
+            '+ELSE IF (APGR.EQ.5.0) THEN\n'
+            '+    CLAPGR = THETA(7) + 1\n'
+            '+ELSE IF (APGR.EQ.6.0) THEN\n'
+            '+    CLAPGR = THETA(8) + 1\n'
+            '+ELSE IF (APGR.EQ.8.0) THEN\n'
+            '+    CLAPGR = THETA(9) + 1\n'
+            '+ELSE IF (APGR.EQ.9.0) THEN\n'
+            '+    CLAPGR = THETA(10) + 1\n'
+            '+ELSE IF (APGR.EQ.10.0) THEN\n'
+            '+    CLAPGR = THETA(11) + 1\n'
+            '+END IF\n'
+            '+CL = CL*CLAPGR\n',
+            False,
+        ),
+        (
             ('nonmem', 'pheno_real.mod'),
             [('CL', 'WGT', 'exp', '*')],
             '@@ -1,0 +2 @@\n'
@@ -115,6 +143,34 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             '+    CLFA1 = THETA(4) + 1\n'
             '+END IF\n'
             '+CL = CL*CLFA1\n',
+            True,
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [('CL', 'APGR', 'cat', '*')],
+            '@@ -7,0 +8,22 @@\n'
+            '+IF (APGR.EQ.7.0) THEN\n'
+            '+    CLAPGR = 1\n'
+            '+ELSE IF (APGR.EQ.1.0) THEN\n'
+            '+    CLAPGR = THETA(4) + 1\n'
+            '+ELSE IF (APGR.EQ.2.0) THEN\n'
+            '+    CLAPGR = THETA(5) + 1\n'
+            '+ELSE IF (APGR.EQ.3.0) THEN\n'
+            '+    CLAPGR = THETA(6) + 1\n'
+            '+ELSE IF (APGR.EQ.4.0) THEN\n'
+            '+    CLAPGR = THETA(7) + 1\n'
+            '+ELSE IF (APGR.EQ.5.0) THEN\n'
+            '+    CLAPGR = THETA(8) + 1\n'
+            '+ELSE IF (APGR.EQ.6.0) THEN\n'
+            '+    CLAPGR = THETA(9) + 1\n'
+            '+ELSE IF (APGR.EQ.8.0) THEN\n'
+            '+    CLAPGR = THETA(10) + 1\n'
+            '+ELSE IF (APGR.EQ.9.0) THEN\n'
+            '+    CLAPGR = THETA(11) + 1\n'
+            '+ELSE IF (APGR.EQ.10.0) THEN\n'
+            '+    CLAPGR = THETA(12) + 1\n'
+            '+END IF\n'
+            '+CL = CL*CLAPGR\n',
             True,
         ),
         (
