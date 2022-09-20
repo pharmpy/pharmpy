@@ -88,4 +88,6 @@ def test_fit_nlmixr(tmp_path, testdata):
         model = modeling.convert_model(model, 'nlmixr')
         fit(model, tool='nlmixr')
         assert model.modelfit_results.ofv == pytest.approx(732.58737)
-        assert model.modelfit_results.parameter_estimates['TVCL'] == pytest.approx(0.0058606648)
+        assert model.modelfit_results.parameter_estimates['TVCL'] == pytest.approx(
+            0.005863, abs=1e-6
+        )

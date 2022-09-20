@@ -12,9 +12,9 @@ from pharmpy.model import (
     EstimationStep,
     EstimationSteps,
     Model,
+    NormalDistribution,
     Parameter,
     Parameters,
-    RandomVariable,
     RandomVariables,
     Statements,
 )
@@ -42,14 +42,16 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
 
     params = Parameters([pop_cl, pop_vc, iiv_cl, iiv_vc])
 
-    eta_cl = RandomVariable.normal('eta_cl', 'iiv', 0, iiv_cl.symbol)
-    eta_vc = RandomVariable.normal('eta_vc', 'iiv', 0, iiv_vc.symbol)
-    rvs = RandomVariables([eta_cl, eta_vc])
+    eta_cl_name = 'eta_cl'
+    eta_cl = NormalDistribution.create(eta_cl_name, 'iiv', 0, iiv_cl.symbol)
+    eta_vc_name = 'eta_vc'
+    eta_vc = NormalDistribution.create(eta_vc_name, 'iiv', 0, iiv_vc.symbol)
+    rvs = RandomVariables.create([eta_cl, eta_vc])
 
     CL = sympy.Symbol('CL')
     VC = sympy.Symbol('VC')
-    cl_ass = Assignment(CL, pop_cl.symbol * sympy.exp(eta_cl.symbol))
-    vc_ass = Assignment(VC, pop_vc.symbol * sympy.exp(eta_vc.symbol))
+    cl_ass = Assignment(CL, pop_cl.symbol * sympy.exp(sympy.Symbol(eta_cl_name)))
+    vc_ass = Assignment(VC, pop_vc.symbol * sympy.exp(sympy.Symbol(eta_vc_name)))
 
     cb = CompartmentalSystemBuilder()
     central = Compartment('CENTRAL', dosing(di, lambda: df, 1))
@@ -85,7 +87,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     model.filename_extension = '.mod'  # Should this really be needed?
 
     set_proportional_error_model(model, zero_protection=True)
-    create_joint_distribution(model, [eta_cl.name, eta_vc.name])
+    create_joint_distribution(model, [eta_cl_name, eta_vc_name])
     if modeltype == 'pk_oral':
         set_first_order_absorption(model)
         set_initial_estimates(model, {'POP_MAT': mat_init})

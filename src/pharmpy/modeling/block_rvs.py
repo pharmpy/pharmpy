@@ -6,7 +6,7 @@ import warnings
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
 from pharmpy.math import corr2cov, nearest_postive_semidefinite
-from pharmpy.model import Parameter, Parameters, RandomVariables
+from pharmpy.model import Parameter, Parameters
 from pharmpy.modeling.help_functions import _get_etas
 
 
@@ -52,15 +52,14 @@ def create_joint_distribution(model, rvs=None):
     """
     all_rvs = model.random_variables
     if rvs is None:
+        rvs = []
         iiv_rvs = model.random_variables.iiv
-        nonfix = RandomVariables()
         for rv in iiv_rvs:
             for name in iiv_rvs.parameter_names:
                 if model.parameters[name].fix:
                     break
             else:
-                nonfix.append(rv)
-        rvs = nonfix.names
+                rvs.extend(rv.names)
     else:
         for name in rvs:
             if name in all_rvs and all_rvs[name].level == 'IOV':
@@ -78,7 +77,9 @@ def create_joint_distribution(model, rvs=None):
         )
         paramnames.append(parameter_names)
 
-    cov_to_params = all_rvs.join(rvs, name_template='IIV_{}_IIV_{}', param_names=paramnames)
+    all_rvs, cov_to_params = all_rvs.join(
+        rvs, name_template='IIV_{}_IIV_{}', param_names=paramnames
+    )
     pset_new = model.parameters
     for cov_name, param_names in cov_to_params.items():
         parent1, parent2 = model.parameters[param_names[0]], model.parameters[param_names[1]]
@@ -86,6 +87,7 @@ def create_joint_distribution(model, rvs=None):
         param_new = Parameter(cov_name, covariance_init)
         pset_new += param_new
     model.parameters = Parameters(pset_new)
+    model.random_variables = all_rvs
 
     return model
 
@@ -128,13 +130,15 @@ def split_joint_distribution(model, rvs=None):
     create_joint_distribution : combine etas into a join distribution
     """
     all_rvs = model.random_variables
-    rvs = _get_etas(model, rvs)
+    names = _get_etas(model, rvs)
+
+    new_rvs = all_rvs.unjoin(names)
 
     parameters_before = all_rvs.parameter_names
-    all_rvs.unjoin(rvs)
-    parameters_after = all_rvs.parameter_names
+    parameters_after = new_rvs.parameter_names
 
     removed_parameters = set(parameters_before) - set(parameters_after)
+    model.random_variables = new_rvs
     model.parameters = Parameters([p for p in model.parameters if p.name not in removed_parameters])
     return model
 
@@ -143,9 +147,10 @@ def _choose_param_init(model, rvs, parent1, parent2):
     res = model.modelfit_results
 
     etas = []
-    for rv in rvs:
-        if rvs.get_variance(rv).name in (parent1.name, parent2.name):
-            etas.append(rv.name)
+
+    for name in rvs.names:
+        if rvs[name].get_variance(name).name in (parent1.name, parent2.name):
+            etas.append(name)
 
     sd = np.array([np.sqrt(parent1.init), np.sqrt(parent2.init)])
     init_default = round(0.1 * sd[0] * sd[1], 7)

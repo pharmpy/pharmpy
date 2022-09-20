@@ -149,4 +149,4 @@ def test_remove_unused_parameters_and_rvs(pheno):
     i = statements.index(statements.find_assignment('CL'))
     model.statements = model.statements[0:i] + model.statements[i + 1 :]
     remove_unused_parameters_and_rvs(model)
-    assert not model.random_variables['ETA(2)'].joint_names
+    assert len(model.random_variables['ETA(2)'].names) == 1

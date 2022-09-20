@@ -141,7 +141,8 @@ def test_exhaustive_stepwise_add_iivs(
         assert len(res.models) == no_of_models
         model_last = res.models[no_of_models - 1]
         assert (
-            len(model_last.random_variables.etas) - len(start_model.random_variables.etas)
+            len(model_last.random_variables.etas.names)
+            - len(start_model.random_variables.etas.names)
             == no_of_added_etas
         )
         assert model_last.modelfit_results

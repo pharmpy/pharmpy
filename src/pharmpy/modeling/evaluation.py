@@ -209,7 +209,7 @@ def evaluate_individual_prediction(model, etas=None, parameters=None, dataset=No
             etas = pd.DataFrame(
                 0,
                 index=df[idcol].unique(),
-                columns=[eta.name for eta in model.random_variables.etas],
+                columns=model.random_variables.etas.names,
             )
 
     def fn(row):
@@ -305,7 +305,7 @@ def evaluate_eta_gradient(model, etas=None, parameters=None, dataset=None):
             etas = pd.DataFrame(
                 0,
                 index=df[idcol].unique(),
-                columns=[eta.name for eta in model.random_variables.etas],
+                columns=model.random_variables.etas.names,
             )
 
     def fn(row):
@@ -314,7 +314,7 @@ def evaluate_eta_gradient(model, etas=None, parameters=None, dataset=None):
         a = [np.float64(x.subs(row).subs(curetas)) for x in y]
         return a
 
-    derivative_names = [f'dF/d{eta.name}' for eta in model.random_variables.etas]
+    derivative_names = [f'dF/d{eta}' for eta in model.random_variables.etas.names]
     grad = df.apply(fn, axis=1, result_type='expand')
     grad = pd.DataFrame(grad)
     grad.columns = derivative_names
@@ -376,7 +376,7 @@ def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
 
     y = calculate_epsilon_gradient_expression(model)
     y = _replace_parameters(model, y, parameters)
-    eps_names = [eps.name for eps in model.random_variables.epsilons]
+    eps_names = model.random_variables.epsilons.names
     repl = {sympy.Symbol(eps): 0 for eps in eps_names}
     y = [x.subs(repl) for x in y]
 
@@ -399,7 +399,7 @@ def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
             etas = pd.DataFrame(
                 0,
                 index=df[idcol].unique(),
-                columns=[eta.name for eta in model.random_variables.etas],
+                columns=model.random_variables.etas.names,
             )
 
     def fn(row):
@@ -477,7 +477,7 @@ def evaluate_weighted_residuals(model, parameters=None, dataset=None):
     etas = pd.DataFrame(
         0,
         index=df[model.datainfo.id_column.name].unique(),
-        columns=[eta.name for eta in model.random_variables.etas],
+        columns=model.random_variables.etas.names,
     )
     G = evaluate_eta_gradient(model, etas=etas, parameters=parameters, dataset=dataset)
     H = evaluate_epsilon_gradient(model, etas=etas, parameters=parameters, dataset=dataset)

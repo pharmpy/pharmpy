@@ -2249,7 +2249,7 @@ def test_add_iiv(
         eta_names=eta_name,
     )
 
-    etas = [eta.name for eta in model.random_variables.etas]
+    etas = model.random_variables.etas.names
 
     assert eta_name is None or set(eta_name).intersection(etas) or eta_name in etas
 
@@ -2415,7 +2415,7 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
 def test_create_joint_distribution(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
-    create_joint_distribution(model, etas)
+    model = create_joint_distribution(model, etas)
     model.update_source()
     assert str(model.get_pred_pk_record()) == pk_ref
 
@@ -2693,13 +2693,10 @@ def test_set_iiv_on_ruv(
     )
     model = create_model_for_test(model_sigma)
 
-    print("START")
-    print(model.parameters)
     set_iiv_on_ruv(model, epsilons, same_eta, eta_names)
-    print(model.parameters)
     model.update_source()
 
-    assert eta_names is None or eta_names[0] in [eta.name for eta in model.random_variables.etas]
+    assert eta_names is None or eta_names[0] in model.random_variables.etas.names
 
     err_rec = model.control_stream.get_records('ERROR')[0]
 
@@ -3036,10 +3033,9 @@ def test_remove_iov_with_options(
         model_with_some_iovs_removed = start_model.copy()
 
         remove_iov(model_with_some_iovs_removed, to_remove=to_remove)
+
         assert cases in model_with_some_iovs_removed.model_code
-        assert set(
-            map(lambda rv: rv.name, model_with_some_iovs_removed.random_variables.iov)
-        ) == set(rest)
+        assert set(model_with_some_iovs_removed.random_variables.iov.names) == set(rest)
 
 
 @pytest.mark.parametrize(
@@ -3593,7 +3589,7 @@ def test_add_iov(
     add_iov(model, occ, etas, eta_names, distribution=distribution)
     model.update_source()
 
-    model_etas = set(eta.name for eta in model.random_variables.etas)
+    model_etas = set(model.random_variables.etas.names)
     assert eta_names is None or model_etas.issuperset(eta_names)
 
     pk_rec = str(model.get_pred_pk_record())
@@ -3620,9 +3616,7 @@ def test_add_iov_compose(load_model_for_test, pheno_path):
     add_iov(model2, 'FA1', 'ETA(2)')
     model2.update_source()
 
-    assert set(eta.name for eta in model1.random_variables.etas) == set(
-        eta.name for eta in model2.random_variables.etas
-    )
+    assert set(model1.random_variables.etas.names) == set(model2.random_variables.etas.names)
     # FIXME find better way to assert models are equivalent
     assert sorted(str(model1.get_pred_pk_record()).split('\n')) == sorted(
         str(model2.get_pred_pk_record()).split('\n')
@@ -3651,7 +3645,7 @@ def test_add_iov_only_one_level(load_model_for_test, pheno_path):
             None,
             'disjoint',
             ValueError,
-            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+            'ETA(1) was given twice.',
         ),
         (
             'FA1',
@@ -3659,7 +3653,7 @@ def test_add_iov_only_one_level(load_model_for_test, pheno_path):
             None,
             'disjoint',
             ValueError,
-            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+            'ETA(1) was given twice.',
         ),
         (
             'FA1',
@@ -3667,7 +3661,7 @@ def test_add_iov_only_one_level(load_model_for_test, pheno_path):
             None,
             'explicit',
             ValueError,
-            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+            'ETA(1) was given twice.',
         ),
         (
             'FA1',
@@ -3675,7 +3669,7 @@ def test_add_iov_only_one_level(load_model_for_test, pheno_path):
             None,
             'explicit',
             ValueError,
-            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+            'ETA(1) was given twice.',
         ),
         (
             'FA1',
@@ -3731,6 +3725,7 @@ def test_add_iov_raises(
     load_model_for_test, pheno_path, occ, params, new_eta_names, distribution, error, message
 ):
     model = load_model_for_test(pheno_path)
+    print(message)
     with pytest.raises(error, match=re.escape(message)):
         add_iov(model, occ, params, eta_names=new_eta_names, distribution=distribution)
 

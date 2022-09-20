@@ -5,7 +5,13 @@ import warnings
 import pharmpy.math
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.model import ModelSyntaxError, Parameter, RandomVariable, RandomVariables
+from pharmpy.model import (
+    JointNormalDistribution,
+    ModelSyntaxError,
+    NormalDistribution,
+    Parameter,
+    RandomVariables,
+)
 from pharmpy.parse_utils.generic import (
     AttrToken,
     AttrTree,
@@ -369,13 +375,22 @@ class OmegaRecord(Record):
         return next_omega, size
 
     def random_variables(self, start_omega, previous_cov=None):
-        """Get a RandomVariableSet for this omega record
+        """Get RandomVariables for this omega record
 
         start_omega - the first omega in this record
         previous_cov - the matrix of the previous omega block
         """
         all_zero_fix = False
         same = bool(self.root.find('same'))
+
+        if self.name == 'OMEGA':
+            if same:
+                level = 'IOV'
+            else:
+                level = 'IIV'
+        else:
+            level = 'RUV'
+
         if not hasattr(self, 'name_map') and not same:
             if isinstance(previous_cov, sympy.Symbol):
                 prev_size = 1
@@ -392,14 +407,14 @@ class OmegaRecord(Record):
         zero_fix = []
         etas = []
         if not (block or bare_block):
-            rvs = RandomVariables()
+            rvs = RandomVariables.create([])
             i = start_omega
             numetas = len(self.root.all('diag_item'))
             for node in self.root.all('diag_item'):
                 name = self._rv_name(i)
-                eta = RandomVariable.normal(name, 'iiv', 0, sympy.Symbol(rev_map[(i, i)]))
-                rvs.append(eta)
-                etas.append(eta.name)
+                eta = NormalDistribution.create(name, level, 0, sympy.Symbol(rev_map[(i, i)]))
+                rvs += eta
+                etas.append(eta.names[0])
                 i += 1
         else:
             if bare_block:
@@ -423,8 +438,8 @@ class OmegaRecord(Record):
                     zero_fix = names
                 means = [0] * numetas
                 if same:
-                    rvs = RandomVariable.joint_normal(names, 'iiv', means, previous_cov)
-                    etas = [rv.name for rv in rvs]
+                    rvs = JointNormalDistribution.create(names, level, means, previous_cov)
+                    etas = rvs.names
                     next_cov = previous_cov
                 else:
                     cov = sympy.zeros(numetas)
@@ -436,10 +451,10 @@ class OmegaRecord(Record):
                             if row != col:
                                 cov[col, row] = cov[row, col]
                     next_cov = cov
-                    rvs = RandomVariable.joint_normal(names, 'iiv', means, cov)
-                    etas = [rv.name for rv in rvs]
+                    rvs = JointNormalDistribution.create(names, level, means, cov)
+                    etas = rvs.names
             else:
-                rvs = RandomVariables()
+                rvs = RandomVariables.create(())
                 name = self._rv_name(start_omega)
                 if all_zero_fix:
                     zero_fix = [name]
@@ -447,20 +462,11 @@ class OmegaRecord(Record):
                     sym = previous_cov
                 else:
                     sym = sympy.Symbol(rev_map[(start_omega, start_omega)])
-                eta = RandomVariable.normal(name, 'iiv', 0, sym)
+                eta = NormalDistribution.create(name, level, 0, sym)
                 next_cov = sym
-                rvs.append(eta)
-                etas.append(eta.name)
+                rvs += eta
+                etas.append(name)
 
-        if self.name == 'OMEGA':
-            if same:
-                level = 'IOV'
-            else:
-                level = 'IIV'
-        else:
-            level = 'RUV'
-        for rv in rvs:
-            rv.level = level
         self.eta_map = {eta: start_omega + i for i, eta in enumerate(etas)}
         if all_zero_fix:
             next_cov = 'ZERO'

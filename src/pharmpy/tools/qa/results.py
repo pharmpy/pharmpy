@@ -240,10 +240,9 @@ def calc_iov(original_model, iov_model):
     old_iiv_sds = [origres.parameter_estimates_sdcorr[param] for param in iiv_params]
 
     etas = []
-    for rvs, dist in original_model.random_variables.iiv.distributions():
+    for dist in original_model.random_variables.iiv:
         if not set(iiv_params).isdisjoint({s.name for s in dist.free_symbols}):
-            etas.extend(rvs)
-    etas = [eta.name for eta in etas]
+            etas.extend(dist.names)
 
     table = pd.DataFrame(
         {'new_iiv_sd': new_iiv_sds, 'orig_iiv_sd': old_iiv_sds, 'iov_sd': iov_sds}, index=etas
@@ -278,7 +277,7 @@ def calc_add_etas(original_model, add_etas_model, etas_added_to):
     if add_etas_res is None:
         return None, dofv_tab
     origres = original_model.modelfit_results
-    original_etas = [rv.name for rv in original_model.random_variables.etas]
+    original_etas = original_model.random_variables.etas.names
     all_etas = original_etas + etas_added_to
     added = [True] * len(original_etas) + [False] * len(etas_added_to)
     params = add_etas_model.random_variables.etas.variance_parameters
@@ -404,7 +403,7 @@ def calc_transformed_etas(original_model, new_model, transform_name, parameter_n
     boxcox_sds = [newres.parameter_estimates_sdcorr[p.name] for p in params]
     orig_sds = [origres.parameter_estimates_sdcorr[p.name] for p in params]
     thetas = newres.parameter_estimates_sdcorr[0 : len(params)]
-    eta_names = [rv.name for rv in new_model.random_variables.etas]
+    eta_names = new_model.random_variables.etas.names
 
     table = pd.DataFrame(
         {parameter_name: thetas.values, 'new_sd': boxcox_sds, 'old_sd': orig_sds}, index=eta_names
@@ -439,8 +438,8 @@ def calc_fullblock(original_model, fullblock_model):
     fullres = fullblock_model.modelfit_results
     if fullres is None:
         return None, dofv_tab
-    _, dist = fullblock_model.random_variables.iiv.distributions()[0]
-    fullblock_parameters = [str(symb) for symb in dist.free_symbols]
+    dist = fullblock_model.random_variables.iiv[0]
+    fullblock_parameters = [str(symb) for symb in dist.variance.free_symbols]
     new_params = (
         fullres.parameter_estimates_sdcorr[fullblock_parameters]
         .reindex(index=fullres.parameter_estimates_sdcorr.index)

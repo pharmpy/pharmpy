@@ -30,7 +30,6 @@ def test_to_generic_model(load_model_for_test, testdata):
     model = convert_model(nm_model, 'generic')
 
     assert model.parameters == nm_model.parameters
-    assert id(model.random_variables) != id(nm_model.random_variables)
     assert model.random_variables == nm_model.random_variables
     assert model.name == nm_model.name
     assert model.statements == nm_model.statements

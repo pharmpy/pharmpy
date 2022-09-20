@@ -75,10 +75,12 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
     for theta_record in model.control_stream.get_records('THETA'):
         theta_record.update(new, next_theta)
         next_theta += len(theta_record)
+
     next_omega = 1
     previous_size = None
     for omega_record in model.control_stream.get_records('OMEGA'):
         next_omega, previous_size = omega_record.update(new, next_omega, previous_size)
+
     next_sigma = 1
     previous_size = None
     for sigma_record in model.control_stream.get_records('SIGMA'):
@@ -102,8 +104,8 @@ def update_random_variables(model, old, new):
         for name in current_names:
             rec_dict[name] = omega_record
 
-    rvs_diff_eta = diff(old.etas.distributions(), new.etas.distributions())
-    rvs_diff_eps = diff(old.epsilons.distributions(), new.epsilons.distributions())
+    rvs_diff_eta = diff(old.etas, new.etas)
+    rvs_diff_eps = diff(old.epsilons, new.epsilons)
 
     update_random_variable_records(model, rvs_diff_eta, rec_dict, comment_dict)
     update_random_variable_records(model, rvs_diff_eps, rec_dict, comment_dict)
@@ -126,40 +128,40 @@ def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
 
     rvs_diff = list(rvs_diff)
 
-    rvs_removed = [RandomVariables(rvs).names for (op, (rvs, _)) in rvs_diff if op == -1]
+    rvs_removed = [RandomVariables.create(rvs).names for (op, rvs) in rvs_diff if op == -1]
     rvs_removed = [rv for sublist in rvs_removed for rv in sublist]
 
-    for i, (op, (rvs, _)) in enumerate(rvs_diff):
+    for i, (op, rvs) in enumerate(rvs_diff):
         if op == 1:
             if len(rvs) == 1:
-                create_omega_single(model, rvs[0], eta_number, number_of_records, comment_dict)
+                create_omega_single(model, rvs, eta_number, number_of_records, comment_dict)
             else:
                 create_omega_block(model, rvs, eta_number, number_of_records, comment_dict)
             eta_number += len(rvs)
             number_of_records += 1
         elif op == -1:
-            rvs_rec = list({rec_dict[rv.name] for rv in rvs})
+            rvs_rec = list({rec_dict[name] for name in rvs.names})
             recs_to_remove = [rec for rec in rvs_rec if rec not in removed]
             if recs_to_remove:
                 model.control_stream.remove_records(recs_to_remove)
                 removed += [rec for rec in recs_to_remove]
         else:
-            diag_rvs = get_diagonal(rvs[0], rec_dict)
+            diag_rvs = get_diagonal(rvs, rec_dict)
             # Account for etas in diagonal
             if diag_rvs:
                 # Create new diagonal record if any in record has been removed
                 if any(rv in rvs_removed for rv in diag_rvs):
-                    create_omega_single(model, rvs[0], eta_number, number_of_records, comment_dict)
+                    create_omega_single(model, rvs, eta_number, number_of_records, comment_dict)
                 # If none has been removed and this rv is not the first one,
                 #   the record index should not increase
-                elif len(diag_rvs) > 1 and rvs[0] != model.random_variables[diag_rvs[0]]:
+                elif len(diag_rvs) > 1 and rvs != model.random_variables[diag_rvs[0]]:
                     continue
             eta_number += len(rvs)
             number_of_records += 1
 
 
 def get_diagonal(rv, rec_dict):
-    rv_rec = rec_dict[rv.name]
+    rv_rec = rec_dict[rv.names[0]]
     etas_from_same_record = [eta for eta, rec in rec_dict.items() if rec == rv_rec]
     if len(etas_from_same_record) > 1:
         return etas_from_same_record
@@ -225,12 +227,12 @@ def create_omega_single(model, rv, eta_number, record_number, comment_dict):
     record = insert_omega_record(model, f'{param_str}\n', record_number, record_type)
 
     record.comment_map = comment_dict
-    record.eta_map = {rv.name: eta_number}
+    record.eta_map = {rv.names[0]: eta_number}
     record.name_map = {variance_param.name: (eta_number, eta_number)}
 
 
 def create_omega_block(model, rvs, eta_number, record_number, comment_dict):
-    rvs = RandomVariables(rvs)
+    rvs = RandomVariables.create([rvs])
     cm = rvs.covariance_matrix
     param_str = f'$OMEGA BLOCK({cm.shape[0]})'
 
@@ -261,14 +263,14 @@ def create_omega_block(model, rvs, eta_number, record_number, comment_dict):
 
     eta_map, name_variance = dict(), dict()
 
-    for rv in rvs:
-        variance_param = rvs.get_variance(rv)
-        eta_map[rv.name] = eta_number
+    for rv in rvs.names:
+        variance_param = rvs[rv].get_variance(rv)
+        eta_map[rv] = eta_number
         name_variance[variance_param.name] = (eta_number, eta_number)
         eta_number += 1
 
     rv_combinations = [
-        (rv1.name, rv2.name) for idx, rv1 in enumerate(rvs) for rv2 in rvs[idx + 1 :]
+        (rv1, rv2) for idx, rv1 in enumerate(rvs.names) for rv2 in rvs.names[idx + 1 :]
     ]
     name_covariance = {
         rvs.get_covariance(rv1, rv2).name: (eta_map[rv2], eta_map[rv1])
@@ -1007,9 +1009,9 @@ def update_abbr_record(model, rv_trans):
     if not rv_trans:
         return trans
 
-    for rv in model.random_variables:
-        rv_symb = sympy.Symbol(rv.name)
-        abbr_pattern = re.match(r'ETA_(\w+)', rv.name)
+    for rv in model.random_variables.names:
+        rv_symb = sympy.Symbol(rv)
+        abbr_pattern = re.match(r'ETA_(\w+)', rv)
         if abbr_pattern and '_' not in abbr_pattern.group(1):
             parameter = abbr_pattern.group(1)
             nonmem_name = rv_trans[rv_symb]
@@ -1017,9 +1019,9 @@ def update_abbr_record(model, rv_trans):
             trans[rv_symb] = sympy.Symbol(abbr_name)
             abbr_record = f'$ABBR REPLACE {abbr_name}={nonmem_name}\n'
             model.control_stream.insert_record(abbr_record)
-        elif not re.match(r'(ETA|EPS)\([0-9]\)', rv.name):
+        elif not re.match(r'(ETA|EPS)\([0-9]\)', rv):
             warnings.warn(
-                f'Not valid format of name {rv.name}, falling back to NONMEM name. If custom name, '
+                f'Not valid format of name {rv}, falling back to NONMEM name. If custom name, '
                 f'follow the format "ETA_X" to get "ETA(X)" in $ABBR.'
             )
     return trans

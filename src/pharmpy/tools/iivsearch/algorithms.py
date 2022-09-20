@@ -95,8 +95,8 @@ def _flatten(list_to_flatten):
 
 
 def _is_current_block_structure(etas, combos):
-    for rvs, dist in etas.distributions():
-        names = [rv.name for rv in rvs]
+    for dist in etas:
+        names = list(dist.names)
         if names not in combos:
             return False
     return True
@@ -105,11 +105,11 @@ def _is_current_block_structure(etas, combos):
 def _iiv_param_dict(model: Model) -> Dict[str, str]:
     iiv = model.random_variables.iiv
     return {
-        eta.name: get_rv_parameter(model, eta)
-        for eta in iiv
-        if iiv.get_variance(eta).subs(
-            {parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix}
-        )
+        eta: get_rv_parameter(model, eta)
+        for eta in iiv.names
+        if iiv[eta]
+        .get_variance(eta)
+        .subs({parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix})
         != 0
     }
 
@@ -121,8 +121,8 @@ def _create_description(model: Model) -> str:
         return '[]'
 
     blocks = []
-    for rvs, _ in model.random_variables.iiv.distributions():
-        rvs_names = [rv.name for rv in rvs]
+    for dist in model.random_variables.iiv:
+        rvs_names = dist.names
         param_names = [param_dict[name] for name in rvs_names]
         blocks.append(f'[{",".join(param_names)}]')
 

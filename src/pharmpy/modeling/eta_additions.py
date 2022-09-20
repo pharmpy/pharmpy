@@ -9,9 +9,15 @@ from operator import add, mul
 from typing import Union
 
 from pharmpy.deps import numpy as np
-from pharmpy.deps import sympy, sympy_stats
+from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
-from pharmpy.model import Assignment, Parameter, Parameters, RandomVariable
+from pharmpy.model import (
+    Assignment,
+    JointNormalDistribution,
+    NormalDistribution,
+    Parameter,
+    Parameters,
+)
 
 from .expressions import create_symbol, get_pk_parameters, has_random_effect
 from .help_functions import _format_input_list, _format_options, _get_etas
@@ -72,7 +78,7 @@ def add_iiv(
 
     """
     rvs, pset, sset = (
-        model.random_variables.copy(),
+        model.random_variables,
         [p for p in model.parameters],
         model.statements,
     )
@@ -97,9 +103,9 @@ def add_iiv(
         else:
             eta_name = eta_names[i]
 
-        eta = RandomVariable.normal(eta_name, 'iiv', 0, omega)
+        eta = NormalDistribution.create(eta_name, 'iiv', 0, omega)
 
-        rvs.append(eta)
+        rvs = rvs + eta
         pset.append(Parameter(str(omega), init=initial_estimate))
 
         index = sset.find_assignment_index(list_of_parameters[i])
@@ -109,7 +115,7 @@ def add_iiv(
         statement = sset[index]
 
         eta_addition = _create_template(expression[i], operation[i])
-        eta_addition.apply(statement.expression, eta.name)
+        eta_addition.apply(statement.expression, eta.names[0])
 
         sset = (
             sset[0:index] + Assignment(statement.symbol, eta_addition.template) + sset[index + 1 :]
@@ -231,17 +237,12 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
         assert len(etas) == 1
         etas_set = set(etas[0])
         etas = []
-        for variables, dist in model.random_variables.distributions():
+        for dist in model.random_variables:
 
-            intersection = list(filter(etas_set.__contains__, variables))
+            intersection = list(filter(etas_set.__contains__, dist.names))
 
             if not intersection:
                 continue
-
-            if len(variables) == 1:
-                assert isinstance(dist, sympy_stats.crv_types.NormalDistribution)
-            else:
-                assert isinstance(dist, sympy_stats.joint_rv_types.MultivariateNormalDistribution)
 
             etas.append(intersection)
 
@@ -287,7 +288,7 @@ def _add_iov_explicit(model, occ, etas, categories, iov_name, etai_name, eta_nam
     ]
 
     rvs, pset, sset = (
-        model.random_variables.copy(),
+        model.random_variables,
         [p for p in model.parameters],
         model.statements,
     )
@@ -306,17 +307,16 @@ def _add_iov_explicit(model, occ, etas, categories, iov_name, etai_name, eta_nam
     for dist in distributions:
         assert dist
         _add_iov_etas = _add_iov_etas_disjoint if len(dist) == 1 else _add_iov_etas_joint
-        rvs.extend(
-            _add_iov_etas(
-                rvs,
-                pset,
-                ordered_etas,
-                dist,
-                categories,
-                omega_iov_name,
-                eta_name,
-            )
+        to_add = _add_iov_etas(
+            rvs,
+            pset,
+            ordered_etas,
+            dist,
+            categories,
+            omega_iov_name,
+            eta_name,
         )
+        rvs = rvs + list(to_add)
 
     return rvs, pset, iovs + etais + sset
 
@@ -342,8 +342,8 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
         iovs.append(Assignment(iov, expression))
 
         etai = sympy.Symbol(etai_name(i))
-        etais.append(Assignment(etai, eta.symbol + iov))
-        sset = sset.subs({eta.name: etai})
+        etais.append(Assignment(etai, sympy.Symbol(eta) + iov))
+        sset = sset.subs({eta: etai})
 
     return iovs, etais, sset
 
@@ -355,7 +355,7 @@ def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name,
     for i in indices:
         omega_iov = sympy.Symbol(omega_iov_name(i, i))
         for k in range(1, len(categories) + 1):
-            yield RandomVariable.normal(eta_name(i, k), 'iov', 0, omega_iov)
+            yield NormalDistribution.create(eta_name(i, k), 'iov', 0, omega_iov)
 
 
 def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
@@ -375,13 +375,13 @@ def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, et
 
     for k in range(1, len(categories) + 1):
         names = list(map(lambda i: eta_name(i, k), indices))
-        yield from RandomVariable.joint_normal(names, 'iov', mu, sigma)
+        yield JointNormalDistribution.create(names, 'iov', mu, sigma)
 
 
 def _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name):
     for i in indices:
         eta = etas[i - 1]
-        omega_iiv = rvs.get_variance(eta)
+        omega_iiv = rvs[eta].get_variance(eta)
         omega_iov = sympy.Symbol(omega_iov_name(i, i))
         paramset = Parameters(pset)  # FIXME!
         init = paramset[omega_iiv].init * 0.1 if omega_iiv in paramset else 0.01

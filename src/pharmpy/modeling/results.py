@@ -8,7 +8,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
 from pharmpy.math import round_to_n_sigdig
-from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model, RandomVariables
+from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
 
 from .data import get_ids, get_observations
 from .lrt import test as lrt_test
@@ -754,10 +754,10 @@ def _random_etas(model):
     var = model.random_variables.etas.variance_parameters
     zerofix = [model.parameters[e].fix and model.parameters[e].init == 0 for e in var]
     keep = []
-    for eta, zf in zip(model.random_variables.etas, zerofix):
+    for eta, zf in zip(model.random_variables.etas.names, zerofix):
         if not zf:
             keep.append(eta)
-    return RandomVariables(keep)
+    return model.random_variables.etas[keep]
 
 
 def calculate_bic(model, type=None, modelfit_results=None):
@@ -821,19 +821,23 @@ def calculate_bic(model, type=None, modelfit_results=None):
             assignment = model.statements.find_assignment(param)
             if assignment:
                 expr = model.statements.before_odes.full_expression(assignment.symbol)
-                for eta in _random_etas(model):
-                    if eta.symbol in expr.free_symbols:
+                for eta in _random_etas(model).names:
+                    if sympy.Symbol(eta) in expr.free_symbols:
                         symbols = {p.symbol for p in parameters if p.symbol in expr.free_symbols}
                         random_thetas.update(symbols)
                         break
         yexpr = model.statements.after_odes.full_expression(model.dependent_variable)
-        for eta in _random_etas(model):
-            if eta.symbol in yexpr.free_symbols:
+        for eta in _random_etas(model).names:
+            if sympy.Symbol(eta) in yexpr.free_symbols:
                 symbols = {p.symbol for p in parameters if p.symbol in yexpr.free_symbols}
                 random_thetas.update(symbols)
-                for eps in model.random_variables.epsilons:
-                    if eps.symbol in yexpr.free_symbols:
-                        params = {p.symbol for p in parameters if p.name in eps.parameter_names}
+                for eps in model.random_variables.epsilons.names:
+                    if sympy.Symbol(eps) in yexpr.free_symbols:
+                        params = {
+                            p.symbol
+                            for p in parameters
+                            if p.name in model.random_variables[eps].parameter_names
+                        }
                         random_thetas.update(params)
                 break
         nomegas = len(

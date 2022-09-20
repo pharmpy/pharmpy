@@ -1,7 +1,7 @@
 import pytest
 from sympy import Symbol as S
 
-from pharmpy.model import RandomVariable, RandomVariables
+from pharmpy.model import NormalDistribution
 from pharmpy.modeling import add_iiv, create_joint_distribution
 from pharmpy.modeling.block_rvs import _choose_param_init
 from pharmpy.results import ModelfitResults
@@ -10,7 +10,7 @@ from pharmpy.results import ModelfitResults
 @pytest.mark.parametrize(
     'rvs, exception_msg',
     [
-        (['ETA(3)', 'NON_EXISTENT_RV'], r'.*NON_EXISTENT_RV.*'),
+        (['ETA(3)', 'NON_EXISTENT_RV'], r'.*non-existing.*'),
         (['ETA(3)', 'ETA(6)'], r'.*ETA\(6\).*'),
         (['ETA(1)'], 'At least two random variables are needed'),
     ],
@@ -27,7 +27,7 @@ def test_incorrect_params(load_model_for_test, testdata, rvs, exception_msg):
 def test_choose_param_init(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
-    rvs = RandomVariables(model.random_variables.etas)
+    rvs = model.random_variables.etas
     init = _choose_param_init(model, rvs, *params)
     assert init == 0.0118179
 
@@ -37,8 +37,8 @@ def test_choose_param_init(load_model_for_test, pheno_path):
     assert init == 0.0031045
 
     model = load_model_for_test(pheno_path)
-    rv_new = RandomVariable.normal('ETA(3)', 'IIV', 0, S('OMEGA(3,3)'))
-    rvs.append(rv_new)
+    rv_new = NormalDistribution.create('ETA(3)', 'IIV', 0, S('OMEGA(3,3)'))
+    rvs += rv_new
     res = model.modelfit_results
     ie = res.individual_estimates
     ie['ETA(3)'] = ie['ETA(1)']
@@ -52,7 +52,7 @@ def test_choose_param_init(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     add_iiv(model, 'S1', 'add')
     params = (model.parameters['OMEGA(1,1)'], model.parameters['IIV_S1'])
-    rvs = RandomVariables([model.random_variables['ETA(1)'], model.random_variables['ETA_S1']])
+    rvs = model.random_variables[('ETA(1)', 'ETA_S1')]
     init = _choose_param_init(model, rvs, *params)
     assert init == 0.0052789
 
@@ -65,7 +65,7 @@ def test_choose_param_init(load_model_for_test, pheno_path):
         parameter_estimates=res.parameter_estimates, individual_estimates=ie
     )
     params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
-    rvs = RandomVariables([model.random_variables['ETA(1)'], model.random_variables['ETA(2)']])
+    rvs = model.random_variables[('ETA(1)', 'ETA(2)')]
     with pytest.warns(UserWarning, match='Correlation of individual estimates'):
         init = _choose_param_init(model, rvs, *params)
         assert init == 0.0031045
@@ -96,7 +96,7 @@ $ESTIMATION METHOD=0
 '''
     )
     params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
-    rvs = RandomVariables(model.random_variables.etas)
+    rvs = model.random_variables.etas
     init = _choose_param_init(model, rvs, *params)
 
     assert init == 0.01

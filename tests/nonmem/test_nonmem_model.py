@@ -11,10 +11,10 @@ from pharmpy.model import (
     EstimationSteps,
     Model,
     ModelSyntaxError,
+    NormalDistribution,
     ODESystem,
     Parameter,
     Parameters,
-    RandomVariable,
     Statements,
 )
 from pharmpy.modeling import (
@@ -142,13 +142,10 @@ def test_adjust_iovs(load_model_for_test, testdata):
     assert rvs[6].level == 'IOV'
 
     model = load_model_for_test(testdata / 'nonmem' / 'qa' / 'iov.mod')
-    rvs = model.random_variables
-    assert rvs[0].level == 'IIV'
-    assert rvs[1].level == 'IIV'
-    assert rvs[2].level == 'IOV'
-    assert rvs[3].level == 'IOV'
-    assert rvs[4].level == 'IOV'
-    assert rvs[5].level == 'IOV'
+    dists = model.random_variables
+    assert dists[0].level == 'IIV'
+    assert dists[1].level == 'IOV'
+    assert dists[2].level == 'IOV'
 
 
 @pytest.mark.parametrize(
@@ -291,12 +288,10 @@ def test_add_random_variables(pheno, rv_new, buf_new):
     model = pheno.copy()
     rvs = model.random_variables
 
-    eta = RandomVariable.normal('eta_new', 'iiv', 0, S(rv_new.name))
+    eta = NormalDistribution.create('eta_new', 'iiv', 0, S(rv_new.name))
 
-    rvs.append(eta)
     add_population_parameter(model, rv_new.name, rv_new.init)
-
-    model.random_variables = rvs
+    model.random_variables = rvs + eta
 
     model.update_source()
 
@@ -315,8 +310,8 @@ def test_add_random_variables(pheno, rv_new, buf_new):
 
     rv = model.random_variables['eta_new']
 
-    assert rv.sympy_rv.pspace.distribution.mean == 0
-    assert (rv.sympy_rv.pspace.distribution.std**2).name == 'omega'
+    assert rv.mean == 0
+    assert rv.variance.name == 'omega'
 
 
 def test_add_random_variables_and_statements(pheno):
@@ -324,19 +319,19 @@ def test_add_random_variables_and_statements(pheno):
 
     rvs = model.random_variables
 
-    eta = RandomVariable.normal('ETA_NEW', 'iiv', 0, S('omega'))
-    rvs.append(eta)
+    eta = NormalDistribution.create('ETA_NEW', 'iiv', 0, S('omega'))
+    rvs = rvs + eta
     add_population_parameter(model, 'omega', 0.1)
 
-    eps = RandomVariable.normal('EPS_NEW', 'ruv', 0, S('sigma'))
-    rvs.append(eps)
+    eps = NormalDistribution.create('EPS_NEW', 'ruv', 0, S('sigma'))
+    rvs = rvs + eps
     add_population_parameter(model, 'sigma', 0.1)
 
     model.random_variables = rvs
 
     sset = model.statements
 
-    statement_new = Assignment(S('X'), 1 + S(eps.name) + S(eta.name))
+    statement_new = Assignment(S('X'), 1 + S(eps.names[0]) + S(eta.names[0]))
     model.statements = sset.before_odes + statement_new + sset.ode_system + sset.after_odes
 
     model.update_source()
@@ -423,10 +418,7 @@ def test_deterministic_theta_comments(pheno):
 
 def test_remove_eta(pheno):
     model = pheno.copy()
-    rvs = model.random_variables
-    eta1 = rvs['ETA(1)']
-
-    remove_iiv(model, eta1.name)
+    model = remove_iiv(model, 'ETA(1)')
     assert model.model_code.split('\n')[12] == 'V = TVV*EXP(ETA(1))'
 
 
@@ -459,7 +451,7 @@ def test_symbol_names_in_abbr(load_model_for_test, testdata):
         pset, rvs = model.parameters, model.random_variables
 
         assert 'THETA_CL' in pset.names
-        assert 'ETA_CL' in [eta.name for eta in rvs.etas]
+        assert 'ETA_CL' in rvs.etas.names
 
 
 @pytest.mark.parametrize(
@@ -530,7 +522,7 @@ def test_symbol_names_priority(
 
         assert all(str(a) in [str(s) for s in sset] for a in assignments)
         assert all(p in pset.names for p in params)
-        assert all(eta in [rv.name for rv in rvs] for eta in etas)
+        assert all(eta in rvs.names for eta in etas)
 
 
 def test_clashing_parameter_names(load_model_for_test, datadir):
@@ -585,13 +577,13 @@ def test_abbr_write(load_model_for_test, pheno_path):
         model.update_source()
 
         assert 'ETA(S1)' in model.model_code
-        assert 'ETA_S1' in [rv.name for rv in model.random_variables]
+        assert 'ETA_S1' in model.random_variables.names
         assert S('ETA_S1') in model.statements.free_symbols
 
         model.update_source()
 
         assert 'ETA(S1)' in model.model_code
-        assert 'ETA_S1' in [rv.name for rv in model.random_variables]
+        assert 'ETA_S1' in model.random_variables.names
         assert S('ETA_S1') in model.statements.free_symbols
 
         model = load_model_for_test(pheno_path)
@@ -612,7 +604,7 @@ def test_abbr_read_write(load_model_for_test, pheno_path):
         assert model_read.model_code == model_write.model_code
         assert model_read.statements == model_write.statements
         assert not (
-            model_read.random_variables - model_write.random_variables
+            set(model_read.random_variables.names) - set(model_write.random_variables.names)
         )  # Different order due to renaming in read
 
 
@@ -706,7 +698,7 @@ $ESTIMATION METHOD=1 MAXEVAL=9999 NONINFETA=1 MCETA=1
 """
     model = Model.create_model(StringIO(code))
     rvs = model.random_variables
-    assert len(rvs) == 11
+    assert len(rvs.names) == 11
 
 
 @pytest.mark.parametrize(

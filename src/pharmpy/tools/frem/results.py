@@ -524,8 +524,8 @@ def calculate_results_using_cov_sampling(
     else:
         uncertainty_results = frem_model.modelfit_results
 
-    _, dist = frem_model.random_variables.iiv.distributions()[-1]
-    sigma_symb = dist.sigma
+    dist = frem_model.random_variables.iiv[-1]
+    sigma_symb = dist.variance
 
     parameters = [
         s
@@ -550,8 +550,9 @@ def calculate_results_using_cov_sampling(
 def calculate_results_from_samples(frem_model, continuous, categorical, parvecs, rescale=True):
     """Calculate the FREM results given samples of parameter estimates"""
     n = len(parvecs)
-    rvs, dist = frem_model.random_variables.iiv.distributions()[-1]
-    sigma_symb = dist.sigma
+    dist = frem_model.random_variables.iiv[-1]
+    rvs = list(dist.names)
+    sigma_symb = dist.variance
     parameters = [
         s
         for s in frem_model.modelfit_results.parameter_estimates.index
@@ -814,7 +815,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
 
 
 def get_params(frem_model, rvs, npars):
-    param_names = [rv.name for rv in rvs][:npars]
+    param_names = rvs[:npars]
     sset = frem_model.statements.before_odes
     symbs = []
 
@@ -880,14 +881,14 @@ def calculate_results_using_bipp(
 
     """
     rng = create_rng(rng)
-    rvs, dist = frem_model.random_variables.iiv.distributions()[-1]
-    etas = [rv.name for rv in rvs]
+    dist = frem_model.random_variables.iiv[-1]
+    etas = list(dist.names)
     pool = sample_individual_estimates(frem_model, parameters=etas, rng=rng).droplevel('sample')
     ninds = len(pool.index.unique())
     ishr = calculate_individual_shrinkage(frem_model)
     ishr = ishr[pool.columns]
     lower_indices = np.tril_indices(len(etas))
-    pop_params = np.array(dist.sigma).astype(str)[lower_indices]
+    pop_params = np.array(dist.variance).astype(str)[lower_indices]
     parameter_samples = np.empty((samples, len(pop_params)))
     remaining_samples = samples
     k = 0
