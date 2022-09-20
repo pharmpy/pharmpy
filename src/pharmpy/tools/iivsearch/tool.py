@@ -1,6 +1,6 @@
-import pharmpy.results
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
+from pharmpy.model import Results
 from pharmpy.modeling import add_pk_iiv, copy_model, create_joint_distribution
 from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -175,7 +175,7 @@ def post_process(rank_type, cutoff, input_model, base_model_name, *models):
     return res
 
 
-class IIVSearchResults(pharmpy.results.Results):
+class IIVSearchResults(Results):
     def __init__(
         self,
         summary_tool=None,

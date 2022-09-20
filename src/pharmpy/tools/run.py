@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple, Union
 
 import pharmpy.results
 import pharmpy.tools.modelfit
-from pharmpy.model import Model
+from pharmpy.model import Model, Results
 from pharmpy.modeling.common import copy_model, read_model_from_database
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.utils import normalize_user_given_path
@@ -173,7 +173,7 @@ def run_tool(name, *args, **kwargs) -> Union[Model, List[Model], Tuple[Model], R
         _store_input_models(list(args) + list(kwargs.items()), database)
 
     res = execute_workflow(wf, dispatcher=dispatcher, database=database)
-    assert name == 'modelfit' or isinstance(res, pharmpy.results.Results)
+    assert name == 'modelfit' or isinstance(res, Results)
 
     tool_metadata['stats']['end_time'] = _now()
     database.store_metadata(tool_metadata)
@@ -324,7 +324,7 @@ def retrieve_models(source, names=None):
         path = Path(source)
         # FIXME: Should be using metadata to know how to init databases
         db = LocalModelDirectoryDatabase(path / 'models')
-    elif isinstance(source, pharmpy.results.Results):
+    elif isinstance(source, Results):
         if hasattr(source, 'tool_database'):
             db = source.tool_database.model_database
         else:

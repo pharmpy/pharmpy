@@ -1,5 +1,5 @@
-import pharmpy.results
 import pharmpy.tools.modelsearch.algorithms as algorithms
+from pharmpy.model import Results
 from pharmpy.tools.common import create_results
 from pharmpy.workflows import Task, Workflow
 
@@ -111,7 +111,7 @@ def post_process(rank_type, cutoff, *models):
     return res
 
 
-class ModelSearchResults(pharmpy.results.Results):
+class ModelSearchResults(Results):
     def __init__(
         self,
         summary_tool=None,

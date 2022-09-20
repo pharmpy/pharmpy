@@ -1,8 +1,8 @@
 from pathlib import Path
 
-import pharmpy.results
 import pharmpy.tools.estmethod.algorithms as algorithms
 from pharmpy.deps import pandas as pd
+from pharmpy.model import Results
 from pharmpy.modeling import summarize_modelfit_results
 from pharmpy.tools.common import summarize_tool
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -102,7 +102,7 @@ def post_process(input_model, *models):
     return res
 
 
-class EstMethodResults(pharmpy.results.Results):
+class EstMethodResults(Results):
     rst_path = Path(__file__).parent / 'report.rst'
 
     def __init__(
