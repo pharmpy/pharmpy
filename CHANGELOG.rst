@@ -1,10 +1,31 @@
+0.78.0 (2022-09-20)
+-------------------
+
+Changes
+=======
+
+* fd417aaf Always return a new model in convert_model
+* d5458e36 Raise KeyError in LocalModelDirectory#retrieve_model (instead of FileNotFoundError)
+* 1193bd39 Remove unused pharmpy.symbols submodule
+
+Bugfixes
+========
+
+* bb96a13c Fix update_parameters when parameters are added
+* 0ca786c5 Fix backward search of covsearch
+* dd056da3 Fix for models with bioavailability parameters
+* 915bc9c7 Fix get_config_path output when config file is disabled
+* 82b32278 Remove some unwanted debug printing
+* 1131a610 Fix issue in PsN SCM results parsing
+* ebfafb45 Assign ODE as compartmental system to variable (#1173)
+
 0.77.0 (2022-09-08)
 -------------------
 
 Changes
 ========
 
-* Return input model in allometry tool when allometry model fails
+* fb070ee1 Return input model if allometry model fails (#1049)
 
 0.76.1 (2022-09-06)
 -------------------
