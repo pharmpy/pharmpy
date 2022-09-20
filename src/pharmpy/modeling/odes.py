@@ -1280,13 +1280,14 @@ def set_peripheral_compartments(model, n):
     remove_peripheral_compartment
 
     """
-    model.statements.to_compartmental_system()
+    odes = model.statements.ode_system.to_compartmental_system()
+
     try:
         n = _as_integer(n)
     except TypeError:
         raise TypeError(f'Number of compartments must be integer: {n}')
 
-    per = len(model.statements.ode_system.peripheral_compartments)
+    per = len(odes.peripheral_compartments)
     if per < n:
         for _ in range(n - per):
             add_peripheral_compartment(model)

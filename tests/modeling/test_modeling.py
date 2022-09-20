@@ -1080,6 +1080,8 @@ def test_nested_transit_peripherals(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     set_transit_compartments(model, 1)
     model.model_code
+    set_michaelis_menten_elimination(model)
+    model.model_code
     set_peripheral_compartments(model, 1)
     model.model_code
     set_peripheral_compartments(model, 2)
