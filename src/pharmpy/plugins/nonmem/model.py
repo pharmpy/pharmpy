@@ -108,6 +108,31 @@ def convert_model(model):
     return nm_model
 
 
+def _parse_parameters(model):
+    next_theta = 1
+    params = []
+    for theta_record in model.control_stream.get_records('THETA'):
+        thetas = theta_record.parameters(next_theta, seen_labels={p.name for p in params})
+        params.extend(thetas)
+        next_theta += len(thetas)
+    next_omega = 1
+    previous_size = None
+    for omega_record in model.control_stream.get_records('OMEGA'):
+        omegas, next_omega, previous_size = omega_record.parameters(
+            next_omega, previous_size, seen_labels={p.name for p in params}
+        )
+        params.extend(omegas)
+    next_sigma = 1
+    previous_size = None
+    for sigma_record in model.control_stream.get_records('SIGMA'):
+        sigmas, next_sigma, previous_size = sigma_record.parameters(
+            next_sigma, previous_size, seen_labels={p.name for p in params}
+        )
+        params.extend(sigmas)
+    model._parameters = Parameters(params)
+    model._old_parameters = model._parameters
+
+
 class Model(pharmpy.model.Model):
     def __init__(self, code, path=None, **kwargs):
         self.modelfit_results = None
@@ -365,7 +390,7 @@ class Model(pharmpy.model.Model):
         except AttributeError:
             pass
 
-        self._read_parameters()
+        _parse_parameters(self)
         if (
             'comment' in pharmpy.plugins.nonmem.conf.parameter_names
             or 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names
@@ -386,30 +411,6 @@ class Model(pharmpy.model.Model):
             self._parameters = params
             self._old_parameters = params
         return self._parameters
-
-    def _read_parameters(self):
-        next_theta = 1
-        params = []
-        for theta_record in self.control_stream.get_records('THETA'):
-            thetas = theta_record.parameters(next_theta, seen_labels={p.name for p in params})
-            params.extend(thetas)
-            next_theta += len(thetas)
-        next_omega = 1
-        previous_size = None
-        for omega_record in self.control_stream.get_records('OMEGA'):
-            omegas, next_omega, previous_size = omega_record.parameters(
-                next_omega, previous_size, seen_labels={p.name for p in params}
-            )
-            params.extend(omegas)
-        next_sigma = 1
-        previous_size = None
-        for sigma_record in self.control_stream.get_records('SIGMA'):
-            sigmas, next_sigma, previous_size = sigma_record.parameters(
-                next_sigma, previous_size, seen_labels={p.name for p in params}
-            )
-            params.extend(sigmas)
-        self._parameters = Parameters(params)
-        self._old_parameters = self._parameters
 
     @parameters.setter
     def parameters(self, params):
@@ -505,7 +506,7 @@ class Model(pharmpy.model.Model):
                 statements = statements.subs(trans_amounts)
 
         if not hasattr(self, '_parameters'):
-            self._read_parameters()
+            _parse_parameters(self)
 
         trans_statements, trans_params = self._create_name_trans(statements)
         for theta in self.control_stream.get_records('THETA'):
