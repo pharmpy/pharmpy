@@ -36,11 +36,16 @@ from .records.factory import create_record
 from .update import (
     update_abbr_record,
     update_ccontra,
+    update_description,
     update_estimation,
     update_parameters,
     update_random_variables,
     update_statements,
 )
+
+
+class NONMEMModelInternals:
+    pass
 
 
 def detect_model(src, *args, **kwargs):
@@ -140,6 +145,7 @@ def _parse_parameters(model):
 
 class Model(pharmpy.model.Model):
     def __init__(self, code, path=None, **kwargs):
+        self.internals = NONMEMModelInternals()
         self.modelfit_results = None
         parser = NMTranParser()
         if path is None:
@@ -165,7 +171,7 @@ class Model(pharmpy.model.Model):
             self.read_modelfit_results(path.parent)
         description = _parse_description(self.control_stream)
         self.description = description
-        self._old_description = description
+        self.internals._old_description = description
 
     @property
     def name(self):
@@ -298,9 +304,7 @@ class Model(pharmpy.model.Model):
         if self.observation_transformation != self._old_observation_transformation:
             if not nofiles:
                 update_ccontra(self, path, force)
-        if self.description != self._old_description:
-            rec = self.control_stream.get_records('PROBLEM')[0]
-            rec.title = self.description
+        update_description(self)
 
     def _abbr_translation(self, rv_trans):
         abbr_pharmpy = self.control_stream.abbreviated.translate_to_pharmpy_names()
@@ -506,8 +510,8 @@ class Model(pharmpy.model.Model):
             if trans_amounts:
                 statements = statements.subs(trans_amounts)
 
-        if not hasattr(self, '_parameters'):
-            _parse_parameters(self)
+        #if not hasattr(self, '_parameters'):
+        #    _parse_parameters(self)
 
         trans_statements, trans_params = self._create_name_trans(statements)
         for theta in self.control_stream.get_records('THETA'):
