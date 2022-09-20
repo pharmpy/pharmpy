@@ -89,7 +89,10 @@ def run_amd(
         model = input
         model.name = 'start'
     else:
-        raise TypeError('Only NONMEM model or standalone dataset are supported currently')
+        raise TypeError(
+            f'Invalid input: got "{input}" of type {type(input)},'
+            f' only NONMEM model or standalone dataset are supported currently.'
+        )
 
     if lloq is not None:
         remove_loq_data(model, lloq=lloq)
