@@ -510,9 +510,6 @@ class Model(pharmpy.model.Model):
             if trans_amounts:
                 statements = statements.subs(trans_amounts)
 
-        #if not hasattr(self, '_parameters'):
-        #    _parse_parameters(self)
-
         trans_statements, trans_params = self._create_name_trans(statements)
         for theta in self.control_stream.get_records('THETA'):
             theta.update_name_map(trans_params)
