@@ -108,6 +108,11 @@ def convert_model(model):
     return nm_model
 
 
+def _parse_description(control_stream):
+    rec = control_stream.get_records('PROBLEM')[0]
+    return rec.title
+
+
 def _parse_parameters(model):
     next_theta = 1
     params = []
@@ -158,6 +163,9 @@ class Model(pharmpy.model.Model):
             self._modelfit_results = None
         else:
             self.read_modelfit_results(path.parent)
+        description = _parse_description(self.control_stream)
+        self.description = description
+        self._old_description = description
 
     @property
     def name(self):
@@ -177,16 +185,6 @@ class Model(pharmpy.model.Model):
                     new_table_name = f'{table_stem}{n}'
                     table.path = table_path.parent / new_table_name
         self._name = new_name
-
-    @property
-    def description(self):
-        rec = self.control_stream.get_records('PROBLEM')[0]
-        return rec.title
-
-    @description.setter
-    def description(self, value):
-        rec = self.control_stream.get_records('PROBLEM')[0]
-        rec.title = value
 
     @property
     def value_type(self):
@@ -300,6 +298,9 @@ class Model(pharmpy.model.Model):
         if self.observation_transformation != self._old_observation_transformation:
             if not nofiles:
                 update_ccontra(self, path, force)
+        if self.description != self._old_description:
+            rec = self.control_stream.get_records('PROBLEM')[0]
+            rec.title = self.description
 
     def _abbr_translation(self, rv_trans):
         abbr_pharmpy = self.control_stream.abbreviated.translate_to_pharmpy_names()

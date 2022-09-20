@@ -142,6 +142,11 @@ Joint distributions are also supported
    rvs = frem_model.random_variables
    rvs
 
+.. pharmpy-execute::
+
+   omega = rvs['ETA(1)'].variance
+   omega
+
 Substitution of numerical values can be done directly from initial values
 
 .. pharmpy-execute::
