@@ -290,7 +290,7 @@ def _get_run_setup(common_options, toolname):
 
 
 def retrieve_models(source, names=None):
-    """Retrieve models after a tool runs
+    """Retrieve models after a tool run
 
     Any models created and run by the tool can be
     retrieved.
@@ -307,6 +307,17 @@ def retrieve_models(source, names=None):
     ------
     list
         List of retrieved model objects
+
+    Examples
+    --------
+    >>> from pharmpy.tools import retrieve_models
+    >>> tooldir_path = 'path/to/tool/directory'
+    >>> models = retrieve_models(tooldir_path, names=['run1'])      # doctest: +SKIP
+
+    See also
+    --------
+    retrieve_final_model
+
     """
     if isinstance(source, Path) or isinstance(source, str):
         path = Path(source)
@@ -336,6 +347,29 @@ def retrieve_models(source, names=None):
 
 
 def retrieve_final_model(res):
+    """Retrieve final model from a result object
+
+    Parameters
+    ----------
+    res : Results
+        A results object
+
+    Return
+    ------
+    Model
+        Reference to final model
+
+    Examples
+    --------
+    >>> from pharmpy.tools import read_results, retrieve_final_model
+    >>> res = read_results("results.json")     # doctest: +SKIP
+    >>> model = retrieve_final_model(res)      # doctest: +SKIP
+
+    See also
+    --------
+    retrieve_models
+
+    """
     if res.final_model_name is None:
         raise ValueError('Attribute \'final_model_name\' is None')
     return retrieve_models(res, names=[res.final_model_name])[0]

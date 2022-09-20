@@ -4,6 +4,7 @@ __all__ = (
     'create_results',
     'fit',
     'read_results',
+    'retrieve_final_model',
     'retrieve_models',
     'run_allometry',
     'run_amd',
@@ -18,7 +19,14 @@ __all__ = (
 
 _allowed = set(__all__)
 
-_run_keys = {'create_results', 'fit', 'read_results', 'retrieve_models', 'run_tool'}
+_run_keys = {
+    'create_results',
+    'fit',
+    'read_results',
+    'retrieve_final_model',
+    'retrieve_models',
+    'run_tool',
+}
 
 _tool_cache = {}
 _tool_lock = Lock()

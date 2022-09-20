@@ -4,8 +4,7 @@ import pytest
 
 from pharmpy.model import Model
 from pharmpy.modeling import remove_covariance_step
-from pharmpy.tools import run_tool
-from pharmpy.tools.run import retrieve_final_model
+from pharmpy.tools import retrieve_final_model, run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 

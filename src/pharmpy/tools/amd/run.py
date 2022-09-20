@@ -8,7 +8,7 @@ from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.data import remove_loq_data
 from pharmpy.modeling.eta_additions import get_occasion_levels
 from pharmpy.modeling.results import summarize_errors, write_results
-from pharmpy.tools.run import retrieve_final_model
+from pharmpy.tools import retrieve_final_model
 from pharmpy.workflows import default_tool_database
 
 from ..run import fit, run_tool
