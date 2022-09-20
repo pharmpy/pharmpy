@@ -128,22 +128,10 @@ The random variables of a model are available through the ``random_variables`` p
    rvs = model.random_variables
    rvs
 
-Each random variable is represented by a :py:class:`pharmpy.RandomVariable` object and the whole set of random variables in a model by a :py:class:`pharmpy.RandomVariables` objet:
-
 .. pharmpy-execute::
    :hide-output:
 
    eta1 = rvs['ETA(1)']
-
-And the parameters of the random variable can be retrieved through the underlying SymPy object:
-
-.. pharmpy-execute::
-
-   eta1.sympy_rv.pspace.distribution.mean
-
-.. pharmpy-execute::
-
-   eta1.sympy_rv.pspace.distribution.std
 
 Joint distributions are also supported
 
@@ -153,11 +141,6 @@ Joint distributions are also supported
 
    rvs = frem_model.random_variables
    rvs
-
-.. pharmpy-execute::
-
-   omega = rvs['ETA(1)'].sympy_rv.pspace.distribution.sigma
-   omega
 
 Substitution of numerical values can be done directly from initial values
 
