@@ -1,9 +1,5 @@
-Next release
-------------
-
-New features
-============
-
+0.78.0 (2022-09-20)
+-------------------
 
 Changes
 =======
@@ -11,7 +7,6 @@ Changes
 * fd417aaf Always return a new model in convert_model
 * d5458e36 Raise KeyError in LocalModelDirectory#retrieve_model (instead of FileNotFoundError)
 * 1193bd39 Remove unused pharmpy.symbols submodule
-* fb070ee1 Return input model if allometry model fails (#1049)
 
 Bugfixes
 ========
@@ -30,7 +25,7 @@ Bugfixes
 Changes
 ========
 
-* Return input model in allometry tool when allometry model fails
+* fb070ee1 Return input model if allometry model fails (#1049)
 
 0.76.1 (2022-09-06)
 -------------------
