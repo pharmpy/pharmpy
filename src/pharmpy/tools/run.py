@@ -2,7 +2,7 @@ import importlib
 import inspect
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 import pharmpy.results
 import pharmpy.tools.modelfit
@@ -131,7 +131,7 @@ def read_results(path):
     return res
 
 
-def run_tool(name, *args, **kwargs):
+def run_tool(name, *args, **kwargs) -> Union[Model, List[Model], Tuple[Model], Results]:
     """Run tool workflow
 
     Parameters
@@ -173,6 +173,7 @@ def run_tool(name, *args, **kwargs):
         _store_input_models(list(args) + list(kwargs.items()), database)
 
     res = execute_workflow(wf, dispatcher=dispatcher, database=database)
+    assert name == 'modelfit' or isinstance(res, pharmpy.results.Results)
 
     tool_metadata['stats']['end_time'] = _now()
     database.store_metadata(tool_metadata)
