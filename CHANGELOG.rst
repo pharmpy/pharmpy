@@ -11,6 +11,7 @@ Changes
 * fd417aaf Always return a new model in convert_model
 * d5458e36 Raise KeyError in LocalModelDirectory#retrieve_model (instead of FileNotFoundError)
 * 1193bd39 Remove unused pharmpy.symbols submodule
+* fb070ee1 Return input model if allometry model fails (#1049)
 
 Bugfixes
 ========
@@ -21,6 +22,7 @@ Bugfixes
 * 915bc9c7 Fix get_config_path output when config file is disabled
 * 82b32278 Remove some unwanted debug printing
 * 1131a610 Fix issue in PsN SCM results parsing
+* ebfafb45 Assign ODE as compartmental system to variable (#1173)
 
 0.77.0 (2022-09-08)
 -------------------
