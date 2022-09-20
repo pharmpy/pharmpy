@@ -4,9 +4,9 @@ import sympy
 from pharmpy.model import (
     Assignment,
     Model,
+    NormalDistribution,
     Parameter,
     Parameters,
-    RandomVariable,
     RandomVariables,
     Statements,
 )
@@ -157,9 +157,9 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_mu_reference_model_generic(statements, correct):
     model = Model()
     model.statements = Statements(statements)
-    eta1 = RandomVariable.normal('ETA(1)', 'iiv', 0, s('omega1'))
-    eta2 = RandomVariable.normal('ETA(2)', 'iiv', 0, s('omega2'))
-    rvs = RandomVariables([eta1, eta2])
+    eta1 = NormalDistribution.create('ETA(1)', 'iiv', 0, s('omega1'))
+    eta2 = NormalDistribution.create('ETA(2)', 'iiv', 0, s('omega2'))
+    rvs = RandomVariables.create([eta1, eta2])
     model.random_variables = rvs
     th1 = Parameter('THETA(1)', 2, lower=1)
     th2 = Parameter('THETA(2)', 2, lower=1)

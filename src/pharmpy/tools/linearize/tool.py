@@ -24,14 +24,14 @@ def start_linearize(model):
 def create_linearized_model(model):
     linbase = pharmpy.model.Model()
     linbase.parameters = model.parameters
-    linbase.random_variables = model.random_variables.copy()
+    linbase.random_variables = model.random_variables
 
     ms = []
     base_terms_sum = 0
-    for i, eta in enumerate(model.random_variables.etas, start=1):
+    for i, eta in enumerate(model.random_variables.etas.names, start=1):
         deta = sympy.Symbol("D_ETA1")
         oeta = sympy.Symbol("OETA")
-        base = Assignment(sympy.Symbol(f'BASE{i}'), deta * (eta.symbol - oeta))
+        base = Assignment(sympy.Symbol(f'BASE{i}'), deta * (sympy.Symbol(eta) - oeta))
         ms.append(base)
         base_terms_sum += base.symbol
 
@@ -47,11 +47,11 @@ def create_linearized_model(model):
         err_terms_sum += err.symbol
         ms.append(err)
         i += 1
-        for etano, eta in enumerate(model.random_variables.etas, start=1):
+        for etano, eta in enumerate(model.random_variables.etas.names, start=1):
             inter = Assignment(
                 sympy.Symbol(f'ERR{i}'),
                 sympy.Symbol(f'D_EPSETA{epsno}_{etano}')
-                * (eta.symbol - sympy.Symbol(f'OETA{etano}')),
+                * (sympy.Symbol(eta) - sympy.Symbol(f'OETA{etano}')),
             )
             err_terms_sum += inter.symbol
             ms.append(inter)

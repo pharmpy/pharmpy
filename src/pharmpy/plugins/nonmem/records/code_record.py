@@ -159,7 +159,7 @@ def _order_terms(assignment, rvs, trans):
     if not isinstance(assignment.expression, sympy.Add) or rvs is None:
         return assignment.expression
 
-    rvs_names = [rv.name for rv in rvs]
+    rvs_names = rvs.names
 
     if trans:
         trans_rvs = {v.name: k.name for k, v in trans.items() if str(k) in rvs_names}

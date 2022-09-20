@@ -82,10 +82,10 @@ def test_get_eta_combinations_5_etas(load_model_for_test, pheno_path):
 def test_is_current_block_structure(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     add_iiv(model, ['TVCL', 'TVV'], 'exp')
-    etas = model.random_variables.iiv
 
     eta_combos = [['ETA(1)', 'ETA(2)'], ['ETA_TVCL'], ['ETA_TVV']]
     create_joint_distribution(model, eta_combos[0])
+    etas = model.random_variables.iiv
     assert _is_current_block_structure(etas, eta_combos)
 
     eta_combos = [['ETA(1)'], ['ETA(2)'], ['ETA_TVCL', 'ETA_TVV']]
@@ -96,6 +96,7 @@ def test_is_current_block_structure(load_model_for_test, pheno_path):
 
     create_joint_distribution(model)
     eta_combos = [['ETA(1)', 'ETA(2)', 'ETA_TVCL', 'ETA_TVV']]
+    etas = model.random_variables.iiv
     assert _is_current_block_structure(etas, eta_combos)
 
 
@@ -105,7 +106,7 @@ def test_create_joint_dist(load_model_for_test, testdata):
     add_pk_iiv(model)
     eta_combos = [['ETA(1)', 'ETA(2)'], ['ETA_QP1'], ['ETA_VP1']]
     create_eta_blocks(eta_combos, model)
-    assert len(model.random_variables.iiv.distributions()) == 4
+    assert len(model.random_variables.iiv) == 4
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     add_peripheral_compartment(model)
@@ -113,7 +114,7 @@ def test_create_joint_dist(load_model_for_test, testdata):
     create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])
     eta_combos = [['ETA(1)'], ['ETA(2)'], ['ETA(3)', 'ETA_VP1', 'ETA_QP1']]
     create_eta_blocks(eta_combos, model)
-    assert len(model.random_variables.iiv.distributions()) == 3
+    assert len(model.random_variables.iiv) == 3
 
 
 def test_get_param_names(create_model_for_test, load_model_for_test, testdata):

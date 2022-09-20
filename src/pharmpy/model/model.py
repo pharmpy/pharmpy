@@ -51,7 +51,7 @@ class Model:
 
     def __init__(self):
         self.parameters = Parameters([])
-        self.random_variables = RandomVariables([])
+        self.random_variables = RandomVariables.create([])
         self.statements = Statements()
         self.dependent_variable = sympy.Symbol('y')
         self.observation_transformation = self.dependent_variable

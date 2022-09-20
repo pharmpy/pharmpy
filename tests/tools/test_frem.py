@@ -425,7 +425,8 @@ V,all,0.1441532460182698,0.1294082747127788,0.16527164471815176
 
 def test_get_params(load_model_for_test, create_model_for_test, testdata):
     model_frem = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
-    rvs, _ = model_frem.random_variables.etas.distributions()[-1]
+    dist = model_frem.random_variables.etas[-1]
+    rvs = list(dist.names)
     npars = 2
 
     param_names = get_params(model_frem, rvs, npars)
@@ -437,7 +438,8 @@ def test_get_params(load_model_for_test, create_model_for_test, testdata):
 
     model = create_model_for_test(model_multiple_etas)
     model.dataset = model_frem.dataset
-    rvs, _ = model.random_variables.etas.distributions()[-1]
+    dist = model.random_variables.etas[-1]
+    rvs = list(dist.names)
     npars = 3
 
     param_names = get_params(model, rvs, npars)
@@ -451,7 +453,8 @@ def test_get_params(load_model_for_test, create_model_for_test, testdata):
 
     model = create_model_for_test(model_separate_declare)
     model.dataset = model_frem.dataset
-    rvs, _ = model.random_variables.etas.distributions()[-1]
+    dist = model.random_variables.etas[-1]
+    rvs = list(dist.names)
     npars = 2
 
     param_names = get_params(model, rvs, npars)

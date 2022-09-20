@@ -22,18 +22,18 @@ def _get_etas(model, list_of_etas, include_symbols=False, fixed_allowed=False, i
     all_valid_etas = False
 
     if list_of_etas is None:
-        list_of_etas = [eta.name for eta in rvs.etas]
+        list_of_etas = rvs.etas.names
         all_valid_etas = True
 
     etas = []
     for eta_str in list_of_etas:
         try:
-            eta = rvs[eta_str]  # FIXME: upper/lower case sensitive in pharmpy but not in nonmem
+            eta = eta_str  # FIXME: upper/lower case sensitive in pharmpy but not in nonmem
             if not fixed_allowed and _has_fixed_params(model, eta):
                 if not all_valid_etas:
                     raise ValueError(f'Random variable cannot be set to fixed: {eta}')
                 continue
-            if not iov_allowed and eta.level == 'IOV':
+            if not iov_allowed and rvs[eta].level == 'IOV':
                 if not all_valid_etas:
                     raise ValueError(f'Random variable cannot be IOV: {eta}')
                 continue
@@ -53,7 +53,7 @@ def _get_eta_symbs(eta_str, rvs, sset):
         exp_symbs = sset.find_assignment(eta_str).expression.free_symbols
     except AttributeError:
         raise KeyError(f'Symbol "{eta_str}" does not exist')
-    return [rvs[str(e)] for e in exp_symbs.intersection(rvs.free_symbols)]
+    return [str(e) for e in exp_symbs.intersection(rvs.free_symbols)]
 
 
 def _has_fixed_params(model, rv):

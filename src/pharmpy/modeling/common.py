@@ -12,15 +12,15 @@ from pharmpy.deps import sympy
 from pharmpy.model import (
     Assignment,
     CompartmentalSystem,
+    JointNormalDistribution,
     Model,
+    NormalDistribution,
     Parameter,
     Parameters,
     RandomVariables,
 )
 from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import default_model_database
-
-from .block_rvs import split_joint_distribution
 
 
 def read_model(path):
@@ -213,7 +213,7 @@ def convert_model(model, to_format):
     if to_format == 'generic':
         new = Model.create_model()
         new.parameters = model.parameters
-        new.random_variables = model.random_variables.copy()
+        new.random_variables = model.random_variables
         new.statements = model.statements
         new.dataset = model.dataset
         new.estimation_steps = model.estimation_steps
@@ -620,12 +620,28 @@ def remove_unused_parameters_and_rvs(model):
     """
     symbols = model.statements.free_symbols
 
-    new_rvs = RandomVariables()
-    for rv in model.random_variables:
-        if rv.symbol not in symbols and len(rv.joint_names) > 0:
-            split_joint_distribution(model, rv.name)
-        if rv.symbol in symbols or not symbols.isdisjoint(rv.sympy_rv.pspace.free_symbols):
-            new_rvs.append(rv)
+    # Find unused rvs needing unjoining
+    to_unjoin = []
+    for dist in model.random_variables:
+        if isinstance(dist, JointNormalDistribution):
+            names = dist.names
+            for i, name in enumerate(names):
+                params = dist.variance[i, :].free_symbols
+                symb = sympy.Symbol(name)
+                if symb not in symbols and symbols.isdisjoint(params):
+                    to_unjoin.append(name)
+
+    rvs = model.random_variables.unjoin(to_unjoin)
+
+    new_dists = []
+    for dist in rvs:
+        if isinstance(dist, NormalDistribution):
+            if sympy.Symbol(dist.names[0]) in symbols or not symbols.isdisjoint(dist.free_symbols):
+                new_dists.append(dist)
+        else:
+            new_dists.append(dist)
+
+    new_rvs = RandomVariables(tuple(new_dists), rvs._eta_levels, rvs._epsilon_levels)
     model.random_variables = new_rvs
 
     new_params = []

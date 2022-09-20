@@ -105,8 +105,7 @@ def task_brute_force_search(
     # NOTE Default is to try all IIV ETAs.
     if list_of_parameters is None:
         iiv = model.random_variables.iiv
-        all_iiv_parameters = list(map(lambda rv: rv.name, iiv))
-        list_of_parameters = all_iiv_parameters
+        list_of_parameters = list(iiv.names)
 
     # NOTE Check that model has at least one IIV.
     if not list_of_parameters:
@@ -129,9 +128,7 @@ def task_brute_force_search(
     iov = model_with_iov.random_variables.iov
     # NOTE We only need to remove the IOV ETA corresponding to the first
     # category in order to remove all IOV ETAs of the other categories
-    all_iov_parameters = list(
-        filter(lambda name: name.endswith('_1'), map(lambda rv: rv.name, iov))
-    )
+    all_iov_parameters = list(filter(lambda name: name.endswith('_1'), list(iov.names)))
     no_of_models = 1
     wf = wf_etas_removal(
         remove_iov, model_with_iov, non_empty_proper_subsets(all_iov_parameters), no_of_models + 1
@@ -293,7 +290,7 @@ class IOVSearchResults(Results):
 
 
 def _get_iov_piecewise_assignment_symbols(model: Model):
-    iovs = set(rv.symbol for rv in model.random_variables.iov)
+    iovs = set(sympy.Symbol(rv) for rv in model.random_variables.iov.names)
     for statement in model.statements:
         if isinstance(statement, Assignment) and isinstance(statement.expression, sympy.Piecewise):
             try:

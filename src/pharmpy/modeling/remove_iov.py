@@ -4,7 +4,8 @@
 
 import warnings
 
-from pharmpy.model import Model, RandomVariable
+from pharmpy.deps import sympy
+from pharmpy.model import Model
 from pharmpy.modeling import remove_unused_parameters_and_rvs
 from pharmpy.modeling.help_functions import _format_input_list
 
@@ -45,12 +46,11 @@ def remove_iov(model, to_remove=None):
         warnings.warn('No IOVs present')
         return model
 
-    for eta in etas:
-        sset = sset.subs({eta.symbol: 0})
-        del rvs[eta]
+    keep = [name for name in rvs.names if name not in etas]
+    model.random_variables = rvs[keep]
 
-    model.random_variables = rvs
-    model.statements = sset
+    d = {sympy.Symbol(name): 0 for name in etas}
+    model.statements = sset.subs(d)
 
     model.modelfit_results = None
     remove_unused_parameters_and_rvs(model)
@@ -62,14 +62,10 @@ def _get_iov_etas(model: Model, list_of_etas):
     list_of_etas = _format_input_list(list_of_etas)
     rvs = model.random_variables
     if list_of_etas is None:
-        return set(rvs.iov)
+        return set(rvs.iov.names)
 
     # NOTE Include all directly referenced ETAs
-    direct_etas = set()
-    for eta_str in list_of_etas:
-        eta = rvs[eta_str.upper()]
-        assert isinstance(eta, RandomVariable)
-        direct_etas.add(eta)
+    direct_etas = set(list_of_etas)
 
     # NOTE Include all IOV ETAs that are identically distributed to the ones
     # directly referenced
@@ -84,12 +80,13 @@ def _get_iov_etas(model: Model, list_of_etas):
 def _get_iov_groups(model: Model):
     iovs = model.random_variables.iov
     same = {}
-    for rvs, dist in iovs.distributions():
-        for i, rv in enumerate(rvs):
-            key = (dist, i)
+    for dist in iovs:
+        for i, name in enumerate(dist.names):
+            key = (i, dist.variance)
             if key in same:
-                same[key].add(rv)
+                same[key].add(name)
             else:
-                same[key] = {rv}
+                same[key] = {name}
 
+    print(same)
     return same.values()

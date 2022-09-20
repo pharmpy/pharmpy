@@ -2,7 +2,7 @@ import pytest
 import sympy
 
 from pharmpy.config import ConfigurationContext
-from pharmpy.model import ModelSyntaxError, Parameters
+from pharmpy.model import ModelSyntaxError, NormalDistribution, Parameters
 from pharmpy.plugins.nonmem import conf
 
 
@@ -336,9 +336,7 @@ def test_random_variables(parser):
     rvs, nxt, cov, zero_fix = rec.random_variables(1)
     assert nxt == 4
     assert len(rvs) == 3
-    assert rvs[0].name == 'ETA(1)'
-    assert rvs[1].name == 'ETA(2)'
-    assert rvs[2].name == 'ETA(3)'
+    assert rvs.names == ('ETA(1)', 'ETA(2)', 'ETA(3)')
     assert len(cov) == 9
     assert len(zero_fix) == 0
 
@@ -346,8 +344,8 @@ def test_random_variables(parser):
     rvs, nxt, cov, zero_fix = rec.random_variables(2)
     assert nxt == 3
     assert len(rvs) == 1
-    assert rvs[0].name == 'ETA(2)'
-    assert isinstance(rvs[0].sympy_rv.pspace.distribution, sympy.stats.crv_types.NormalDistribution)
+    assert rvs[0].names[0] == 'ETA(2)'
+    assert isinstance(rvs[0], NormalDistribution)
     assert cov == S('OMEGA(2,2)')
     assert len(zero_fix) == 0
 
@@ -357,20 +355,18 @@ def test_random_variables(parser):
     rvs, nxt, cov, zero_fix = rec0.random_variables(1)
     assert nxt == 3
     assert len(rvs) == 2
-    assert rvs[0].name == 'ETA(1)'
-    assert rvs[1].name == 'ETA(2)'
+    assert rvs.names == ('ETA(1)', 'ETA(2)')
     assert len(cov) == 4
     assert len(zero_fix) == 0
     A = sympy.Matrix([[S('OMEGA(1,1)'), S('OMEGA(2,1)')], [S('OMEGA(2,1)'), S('OMEGA(2,2)')]])
-    assert rvs[0].sympy_rv.pspace.distribution.sigma == A
+    assert rvs.variance == A
     rvs, nxt, cov, zero_fix = rec1.random_variables(nxt, cov)
     assert nxt == 5
     assert len(rvs) == 2
-    assert rvs[0].name == 'ETA(3)'
-    assert rvs[1].name == 'ETA(4)'
+    assert rvs.names == ('ETA(3)', 'ETA(4)')
     assert len(cov) == 4
     assert len(zero_fix) == 0
-    assert rvs[0].sympy_rv.pspace.distribution.sigma == A
+    assert rvs.variance == A
 
     rec = parser.parse("$OMEGA 0 FIX").records[0]
     rvs, _, _, zero_fix = rec.random_variables(1)
@@ -398,8 +394,8 @@ def test_random_variables(parser):
     A = sympy.Matrix([[1, 0.01], [0.01, 1]])
     rvs, _, _, _ = rec.random_variables(3, A)
     assert len(rvs) == 2
-    assert list(rvs)[0].name == 'ETA(3)'
-    assert list(rvs)[1].name == 'ETA(4)'
+    assert rvs.names[0] == 'ETA(3)'
+    assert rvs.names[1] == 'ETA(4)'
 
     with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
         p = parser.parse("$OMEGA BLOCK(2) 1 ;IV1\n 0.01 ;CORR\n 1 ;IV2\n$OMEGA BLOCK(2) SAME\n")
@@ -408,20 +404,18 @@ def test_random_variables(parser):
         rvs, nxt, cov, zero_fix = rec0.random_variables(1)
         assert nxt == 3
         assert len(rvs) == 2
-        assert rvs[0].name == 'ETA(1)'
-        assert rvs[1].name == 'ETA(2)'
+        assert rvs.names == ('ETA(1)', 'ETA(2)')
         assert len(cov) == 4
         assert len(zero_fix) == 0
         A = sympy.Matrix([[S('IV1'), S('CORR')], [S('CORR'), S('IV2')]])
-        assert rvs[0].sympy_rv.pspace.distribution.sigma == A
+        assert rvs.variance == A
         rvs, nxt, cov, zero_fix = rec1.random_variables(nxt, cov)
         assert nxt == 5
         assert len(rvs) == 2
-        assert rvs[0].name == 'ETA(3)'
-        assert rvs[1].name == 'ETA(4)'
+        assert rvs.names == ('ETA(3)', 'ETA(4)')
         assert len(cov) == 4
         assert len(zero_fix) == 0
-        assert rvs[0].sympy_rv.pspace.distribution.sigma == A
+        assert rvs.variance == A
 
 
 @pytest.mark.parametrize(
@@ -451,8 +445,7 @@ def test_remove(parser, buf, remove, result):
 def test_iov(parser):
     rec = parser.parse('$OMEGA BLOCK(2) SAME').records[0]
     rvs, _, _, _ = rec.random_variables(1, sympy.Matrix([[2, 0], [0, 1]]))
-    assert rvs[0].level == 'IOV'
-    assert rvs[1].level == 'IOV'
+    assert rvs.level == 'IOV'
 
     rec = parser.parse('$OMEGA 1').records[0]
     rvs, _, _, _ = rec.random_variables(1)

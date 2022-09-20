@@ -9,9 +9,9 @@ from pharmpy.model import (
     Assignment,
     EstimationStep,
     EstimationSteps,
+    NormalDistribution,
     Parameter,
     Parameters,
-    RandomVariable,
     RandomVariables,
     Statements,
 )
@@ -248,12 +248,16 @@ def _create_base_model(input_model, current_iteration):
     params = Parameters([theta, omega, sigma])
     base_model.parameters = params
 
-    eta = RandomVariable.normal('eta', 'iiv', 0, omega.symbol)
-    sigma = RandomVariable.normal('epsilon', 'ruv', 0, sigma.symbol)
-    rvs = RandomVariables([eta, sigma])
+    eta_name = 'eta'
+    eta = NormalDistribution.create(eta_name, 'iiv', 0, omega.symbol)
+    sigma_name = 'epsilon'
+    sigma = NormalDistribution.create(sigma_name, 'ruv', 0, sigma.symbol)
+    rvs = RandomVariables.create([eta, sigma])
     base_model.random_variables = rvs
 
-    y = Assignment(sympy.Symbol('Y'), theta.symbol + eta.symbol + sigma.symbol)
+    y = Assignment(
+        sympy.Symbol('Y'), theta.symbol + sympy.Symbol(eta_name) + sympy.Symbol(sigma_name)
+    )
     statements = Statements([y])
     base_model.statements = statements
 
@@ -316,10 +320,9 @@ def _create_combined_model(input_model, current_iteration):
     add_name = 'sigma_add'
     add_population_parameter(model, add_name, sigma_add_init, lower=0)
 
-    eps_prop = RandomVariable.normal(ruv_prop.name, 'ruv', 0, sympy.Symbol(prop_name))
-    model.random_variables.append(eps_prop)
-    eps_add = RandomVariable.normal(ruv_add.name, 'ruv', 0, sympy.Symbol(add_name))
-    model.random_variables.append(eps_add)
+    eps_prop = NormalDistribution.create(ruv_prop.name, 'ruv', 0, sympy.Symbol(prop_name))
+    eps_add = NormalDistribution.create(ruv_add.name, 'ruv', 0, sympy.Symbol(add_name))
+    model.random_variables = model.random_variables + [eps_prop, eps_add]
 
     model.name = f'combined_{current_iteration}'
     return model

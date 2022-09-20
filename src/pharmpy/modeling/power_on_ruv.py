@@ -84,17 +84,19 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
         else:
             alternative = None
 
-    for i, e in enumerate(eps):
+    for i, e in enumerate(eps.names):
         theta_name = str(create_symbol(model, stem='power', force_numbering=True))
         if lower_limit is None:
             theta = Parameter(theta_name, theta_init)
         else:
             theta = Parameter(theta_name, theta_init, lower=lower_limit)
         pset.append(theta)
-        sset = sset.subs({e.symbol * ipred: e.symbol})  # To avoid getting F*EPS*F**THETA
+        sset = sset.subs(
+            {sympy.Symbol(e) * ipred: sympy.Symbol(e)}
+        )  # To avoid getting F*EPS*F**THETA
         if alternative:  # To avoid getting W*EPS*F**THETA
-            sset = sset.subs({e.symbol * alternative: e.symbol})
-        sset = sset.subs({e.name: ipred ** sympy.Symbol(theta.name) * e.symbol})
+            sset = sset.subs({sympy.Symbol(e) * alternative: sympy.Symbol(e)})
+        sset = sset.subs({sympy.Symbol(e): ipred ** sympy.Symbol(theta.name) * sympy.Symbol(e)})
         model.statements = sset
 
     model.parameters = Parameters(pset)
@@ -105,8 +107,8 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
 
 def get_ipred(model):
     expr = model.statements.after_odes.full_expression(model.dependent_variable)
-    for rv in model.random_variables:
-        expr = expr.subs(rv.symbol, 0)
+    for rv in model.random_variables.names:
+        expr = expr.subs(sympy.Symbol(rv), 0)
     ipred = expr
     for s in model.statements:
         if isinstance(s, Assignment) and s.expression == ipred:

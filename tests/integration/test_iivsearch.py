@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from pharmpy.model import NormalDistribution
 from pharmpy.modeling import set_seq_zo_fo_absorption
 from pharmpy.tools import fit, run_iivsearch
 from pharmpy.utils import TemporaryDirectoryChanger
@@ -34,12 +35,12 @@ def test_block_structure(tmp_path, start_model):
         assert all(model.random_variables != start_model.random_variables for model in res.models)
 
         assert res.summary_tool.loc['mox2']['description'] == '[CL]+[VC]+[MAT]'
-        assert not res.input_model.random_variables['ETA(1)'].joint_names
+        assert isinstance(res.input_model.random_variables['ETA(1)'], NormalDistribution)
         assert (
             res.summary_tool.loc['iivsearch_block_structure_candidate1']['description']
             == '[CL,VC,MAT]'
         )
-        assert len(res.models[0].random_variables['ETA(1)'].joint_names) == 3
+        assert len(res.models[0].random_variables['ETA(1)'].names) == 3
 
         summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
         summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
@@ -66,6 +67,7 @@ def test_no_of_etas(tmp_path, start_model):
 
         assert res.summary_tool.loc['mox2']['description'] == '[CL]+[VC]+[MAT]'
         assert res.input_model.random_variables.iiv.names == ['ETA(1)', 'ETA(2)', 'ETA(3)']
+        print(res.summary_tool)
         assert res.summary_tool.iloc[-1]['description'] == '[]'
         assert res.models[0].random_variables.iiv.names == ['ETA(2)', 'ETA(3)']
 
@@ -153,7 +155,7 @@ def test_no_of_etas_iiv_strategies(tmp_path, start_model, iiv_strategy):
         if iiv_strategy == 'fullblock':
             base_model = [model for model in res.models if model.name == 'base_model'].pop()
             base_rvs = base_model.random_variables.iiv
-            assert len(base_rvs['ETA(1)'].joint_names) == len(base_rvs)
+            assert len(base_rvs['ETA(1)']) == base_rvs.nrvs
 
         no_of_candidate_models = 15
         assert len(res.summary_tool) == no_of_candidate_models + 1

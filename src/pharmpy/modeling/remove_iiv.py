@@ -1,6 +1,7 @@
 """
 :meta private:
 """
+from pharmpy.deps import sympy
 from pharmpy.modeling import remove_unused_parameters_and_rvs
 from pharmpy.modeling.help_functions import _format_input_list, _get_etas
 
@@ -50,13 +51,13 @@ def remove_iiv(model, to_remove=None):
     etas = _get_etas(model, to_remove, include_symbols=True)
 
     for eta in etas:
-        sset = sset.subs({eta.symbol: 0})
-        del rvs[eta]
+        sset = sset.subs({sympy.Symbol(eta): 0})
 
-    model.random_variables = rvs
+    keep = [name for name in model.random_variables.names if name not in etas]
+
+    model.random_variables = rvs[keep]
     model.statements = sset
 
     model.modelfit_results = None
     remove_unused_parameters_and_rvs(model)
-    model.update_source()
     return model

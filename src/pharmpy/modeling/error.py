@@ -4,7 +4,7 @@
 
 from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
-from pharmpy.model import Assignment, RandomVariable
+from pharmpy.model import Assignment, NormalDistribution
 
 from .common import remove_unused_parameters_and_rvs
 from .data import get_observations
@@ -16,8 +16,8 @@ def _preparations(model):
     stats = model.statements
     y = model.dependent_variable
     f = model.statements.find_assignment(y.name).expression
-    for eps in model.random_variables.epsilons:
-        f = f.subs({sympy.Symbol(eps.name): 0})
+    for eps in model.random_variables.epsilons.names:
+        f = f.subs({sympy.Symbol(eps): 0})
     return stats, y, f
 
 
@@ -143,8 +143,8 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
     sigma = create_symbol(model, 'sigma')
     add_population_parameter(model, sigma.name, _get_prop_init(model))
 
-    eps = RandomVariable.normal(ruv.name, 'RUV', 0, sigma)
-    model.random_variables.append(eps)
+    eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
+    model.random_variables = model.random_variables + eps
     return model
 
 
@@ -250,8 +250,8 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
     sigma = create_symbol(model, 'sigma')
     add_population_parameter(model, sigma.name, 0.09)
 
-    eps = RandomVariable.normal(ruv.name, 'RUV', 0, sigma)
-    model.random_variables.append(eps)
+    eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
+    model.random_variables = model.random_variables + eps
     return model
 
 
@@ -326,9 +326,9 @@ def set_combined_error_model(model, data_trans=None):
             expr_0 = expr.args[0][0]
             expr_1 = expr.args[1][0]
             cond_0 = expr.args[0][1]
-            for eps in model.random_variables.epsilons:
-                expr_0 = expr_0.subs({sympy.Symbol(eps.name): ruv_prop})
-                expr_1 = expr_1.subs({sympy.Symbol(eps.name): ruv_prop})
+            for eps in model.random_variables.epsilons.names:
+                expr_0 = expr_0.subs({sympy.Symbol(eps): ruv_prop})
+                expr_1 = expr_1.subs({sympy.Symbol(eps): ruv_prop})
                 if (
                     eta_ruv in model.random_variables.free_symbols
                     and theta_time in model.parameters.symbols
@@ -362,10 +362,9 @@ def set_combined_error_model(model, data_trans=None):
     sigma_add = create_symbol(model, 'sigma_add')
     add_population_parameter(model, sigma_add.name, _get_prop_init(model))
 
-    eps_prop = RandomVariable.normal(ruv_prop.name, 'RUV', 0, sigma_prop)
-    model.random_variables.append(eps_prop)
-    eps_add = RandomVariable.normal(ruv_add.name, 'RUV', 0, sigma_add)
-    model.random_variables.append(eps_add)
+    eps_prop = NormalDistribution.create(ruv_prop.name, 'RUV', 0, sigma_prop)
+    eps_add = NormalDistribution.create(ruv_add.name, 'RUV', 0, sigma_add)
+    model.random_variables = model.random_variables + [eps_prop, eps_add]
     return model
 
 
@@ -397,7 +396,7 @@ def has_additive_error_model(model):
     y = model.dependent_variable
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
-    rvs_in_y = {sympy.Symbol(rv.name) for rv in rvs if sympy.Symbol(rv.name) in expr.free_symbols}
+    rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
     if len(rvs_in_y) != 1:
         return False
     eps = rvs_in_y.pop()
@@ -432,7 +431,7 @@ def has_proportional_error_model(model):
     y = model.dependent_variable
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
-    rvs_in_y = {sympy.Symbol(rv.name) for rv in rvs if sympy.Symbol(rv.name) in expr.free_symbols}
+    rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
     if len(rvs_in_y) != 1:
         return False
     eps = rvs_in_y.pop()
@@ -467,7 +466,7 @@ def has_combined_error_model(model):
     y = model.dependent_variable
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
-    rvs_in_y = {sympy.Symbol(rv.name) for rv in rvs if sympy.Symbol(rv.name) in expr.free_symbols}
+    rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
     if len(rvs_in_y) != 2:
         return False
     eps1 = rvs_in_y.pop()
@@ -520,9 +519,9 @@ def use_thetas_for_error_stdev(model):
         fix_parameters(model, [sigma])
         set_initial_estimates(model, {sigma: 1})
 
-        sdsymb = create_symbol(model, f'SD_{eps.name}')
+        sdsymb = create_symbol(model, f'SD_{eps.names[0]}')
         add_population_parameter(model, sdsymb.name, theta_init, lower=0)
-        symb = sympy.Symbol(eps.name)
+        symb = sympy.Symbol(eps.names[0])
         model.statements = model.statements.subs({symb: sdsymb * symb})
     return model
 
@@ -573,7 +572,7 @@ def set_weighted_error_model(model):
 
     model.statements = stats[0:i] + Assignment(sympy.Symbol('W'), w) + stats[i:]
     model.statements = model.statements.reassign(
-        y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].name)
+        y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].names[0])
     )
     remove_unused_parameters_and_rvs(model)
     return model
@@ -680,7 +679,10 @@ def set_time_varying_error_model(model, cutoff, idv='TIME'):
     theta = create_symbol(model, 'time_varying')
     eps = model.random_variables.epsilons
     expr = sympy.Piecewise(
-        (y.expression.subs({e.symbol: e.symbol * theta for e in eps}), idv < cutoff),
+        (
+            y.expression.subs({sympy.Symbol(e): sympy.Symbol(e) * theta for e in eps.names}),
+            idv < cutoff,
+        ),
         (y.expression, True),
     )
     model.statements = model.statements.reassign(y.symbol, expr)

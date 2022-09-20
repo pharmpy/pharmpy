@@ -219,7 +219,7 @@ def has_michaelis_menten_elimination(model):
     """Check if the model describes Michaelis-Menten elimination
 
     This function relies on heuristics and will not be able to detect all
-    possible ways of coding the Michalis-Menten elimination.
+    possible ways of coding the Michaelis-Menten elimination.
 
     Parameters
     ----------
@@ -539,10 +539,10 @@ def _rename_parameter(model, old_name, new_name):
             model.statements = model.statements.subs({old_par: new_par})
             break
     for s in a.rhs_symbols:
-        if s in model.random_variables.iiv:
-            rv = model.random_variables[s]
-            cov = model.random_variables.iiv.covariance_matrix
-            ind = model.random_variables.iiv.index(rv)
+        iivs = model.random_variables.iiv
+        if s.name in iivs.names:
+            cov = iivs.covariance_matrix
+            ind = iivs.names.index(s.name)
             pars = [e for e in cov[ind, :] if e.is_Symbol]
             diag = cov[ind, ind]
             d[diag] = f'IIV_{new_name}'
@@ -556,7 +556,7 @@ def _rename_parameter(model, old_name, new_name):
                         except AttributeError:
                             symb = p
                         d[symb] = p.name.replace(f'IIV_{old_name}', f'IIV_{new_name}')
-            model.random_variables.subs(d)
+            model.random_variables = model.random_variables.subs(d)
             break
     new = []
     for p in model.parameters:

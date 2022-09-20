@@ -19,10 +19,10 @@ from pharmpy.model import (
     EstimationStep,
     EstimationSteps,
     ModelSyntaxError,
+    NormalDistribution,
     ODESystem,
     Parameter,
     Parameters,
-    RandomVariable,
     RandomVariables,
 )
 from pharmpy.modeling.write_csv import write_csv
@@ -210,13 +210,13 @@ class Model(pharmpy.model.Model):
             # FIXME: better solution would be to have system for handling dummy parameters etc.
             if not self.random_variables.etas:
                 omega = Parameter('DUMMYOMEGA', init=0, fix=True)
-                eta = RandomVariable.normal('eta_dummy', 'iiv', 0, omega.symbol)
-                statement = Assignment(sympy.Symbol('DUMMYETA'), sympy.Symbol(eta.name))
+                eta = NormalDistribution.create('eta_dummy', 'iiv', 0, omega.symbol)
+                statement = Assignment(sympy.Symbol('DUMMYETA'), sympy.Symbol(eta.names[0]))
                 self.statements = statement + self.statements
-                self.random_variables.append(eta)
+                self.random_variables = self.random_variables + eta
                 self.parameters = Parameters([p for p in self.parameters] + [omega])
             update_random_variables(self, self._old_random_variables, self._random_variables)
-            self._old_random_variables = self._random_variables.copy()
+            self._old_random_variables = self._random_variables
         if hasattr(self, '_parameters'):
             update_parameters(self, self._old_parameters, self._parameters)
             self._old_parameters = self._parameters
@@ -445,7 +445,7 @@ class Model(pharmpy.model.Model):
                 path = source_dir / path
                 path = path.resolve()
             phi_tables = NONMEMTableFile(path)
-            rv_names = [rv.name for rv in self.random_variables if rv.name.startswith('ETA')]
+            rv_names = [rv for rv in self.random_variables.names if rv.startswith('ETA')]
             etas = next(phi_tables).etas[rv_names]
             self._initial_individual_estimates = etas
         else:
@@ -454,7 +454,7 @@ class Model(pharmpy.model.Model):
 
     @initial_individual_estimates.setter
     def initial_individual_estimates(self, estimates):
-        rv_names = {rv.name for rv in self.random_variables if rv.name.startswith('ETA')}
+        rv_names = {rv for rv in self.random_variables.names if rv.startswith('ETA')}
         columns = set(estimates.columns)
         if columns < rv_names:
             raise ValueError(
@@ -522,7 +522,7 @@ class Model(pharmpy.model.Model):
                 d_par[key] = value
             else:
                 d_rv[sympy.Symbol(key)] = value
-        self.random_variables.subs(d_rv)
+        self.random_variables = self.random_variables.subs(d_rv)
         new = []
         for p in self.parameters:
             if p.name in d_par:
@@ -586,14 +586,14 @@ class Model(pharmpy.model.Model):
         abbr = self.control_stream.abbreviated.replace
         pset_current = {
             **self.parameter_translation(reverse=True),
-            **{rv: rv for rv in [rv.name for rv in rvs]},
+            **{rv: rv for rv in rvs.names},
         }
         sset_current = {
             **abbr,
             **{
-                rv.name: rv.name
-                for rv in rvs
-                if rv.name not in abbr.keys() and rv.symbol in statements.free_symbols
+                rv: rv
+                for rv in rvs.names
+                if rv not in abbr.keys() and sympy.Symbol(rv) in statements.free_symbols
             },
             **{
                 p: p
@@ -642,7 +642,7 @@ class Model(pharmpy.model.Model):
 
             if setting == 'basic':
                 params_left = [k for k in pset_current.keys() if k not in names_pset_translated]
-                params_left += [rv.name for rv in rvs if rv.name not in names_sset_translated]
+                params_left += [rv for rv in rvs.names if rv not in names_sset_translated]
                 names_basic = [name for name in params_left if name not in names_sset_translated]
                 break
 
@@ -653,9 +653,7 @@ class Model(pharmpy.model.Model):
                 f'names for these.'
             )
 
-        names_nonmem_all = [rv.name for rv in rvs] + [
-            key for key in self.parameter_translation().keys()
-        ]
+        names_nonmem_all = rvs.names + [key for key in self.parameter_translation().keys()]
 
         if set(names_nonmem_all) - set(names_sset_translated + names_pset_translated + names_basic):
             raise ValueError(
@@ -688,8 +686,7 @@ class Model(pharmpy.model.Model):
         trans_params = {
             name_nonmem: name_abbr
             for name_nonmem, name_abbr in pharmpy_names.items()
-            if name_nonmem in self.parameter_translation().keys()
-            or name_nonmem in [rv.name for rv in rvs]
+            if name_nonmem in self.parameter_translation().keys() or name_nonmem in rvs.names
         }
         for name_nonmem, name_abbr in params_current.items():
             if name_abbr in trans_params.keys():
@@ -749,21 +746,22 @@ class Model(pharmpy.model.Model):
             return self._random_variables
         except AttributeError:
             pass
-        rvs = RandomVariables()
+        dists = RandomVariables.create([])
         next_omega = 1
         prev_cov = None
 
         for omega_record in self.control_stream.get_records('OMEGA'):
             etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
-            rvs.extend(etas)
-        self.adjust_iovs(rvs)
+            dists += etas
+        dists = self.adjust_iovs(dists)
         next_sigma = 1
         prev_cov = None
         for sigma_record in self.control_stream.get_records('SIGMA'):
             epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
-            rvs.extend(epsilons)
+            dists += epsilons
+        rvs = RandomVariables.create(dists)
         self._random_variables = rvs
-        self._old_random_variables = rvs.copy()
+        self._old_random_variables = rvs
 
         if (
             'comment' in pharmpy.plugins.nonmem.conf.parameter_names
@@ -775,24 +773,25 @@ class Model(pharmpy.model.Model):
 
     @staticmethod
     def adjust_iovs(rvs):
-        for i, rv in enumerate(rvs):
+        updated = []
+        for i, dist in enumerate(rvs):
             try:
-                next_rv = rvs[i + 1]
+                next_dist = rvs[i + 1]
             except IndexError:
+                updated.append(dist)
                 break
 
-            if rv.level != 'IOV' and next_rv.level == 'IOV':
-                associated_rvs = rv.joint_names
-                if len(associated_rvs) > 1:
-                    for rv_con in associated_rvs:
-                        rvs[rv_con].level = 'IOV'
-                else:
-                    rv.level = 'IOV'
+            if dist.level != 'IOV' and next_dist.level == 'IOV':
+                new_dist = dist.derive(level='IOV')
+                updated.append(new_dist)
+            else:
+                updated.append(dist)
+        return RandomVariables.create(updated)
 
     @random_variables.setter
     def random_variables(self, new):
         self.random_variables  # Read in old random variables
-        self._random_variables = new.copy()
+        self._random_variables = new
 
     @property
     def estimation_steps(self):
@@ -1187,11 +1186,11 @@ def parse_estimation_steps(model):
         etaderivs = table.eta_derivatives
         if etaderivs:
             etas = model.random_variables.etas
-            etaderiv_names = [etas[i - 1].name for i in etaderivs]
+            etaderiv_names = [etas.names[i - 1] for i in etaderivs]
         epsderivs = table.epsilon_derivatives
         if epsderivs:
             epsilons = model.random_variables.epsilons
-            epsilonderivs_names = [epsilons[i - 1].name for i in epsderivs]
+            epsilonderivs_names = [epsilons.names[i - 1] for i in epsderivs]
 
     for record in records:
         value = record.get_option('METHOD')

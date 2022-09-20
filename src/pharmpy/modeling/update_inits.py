@@ -66,9 +66,10 @@ def _move_est_close_to_bounds(model):
     est = res.parameter_estimates.to_dict()
     sdcorr = rvs.parameters_sdcorr(est)
     newdict = est.copy()
-    for rvs, dist in rvs.distributions():
+    for dist in rvs:
+        rvs = dist.names
         if len(rvs) > 1:
-            sigma_sym = dist.sigma
+            sigma_sym = dist.variance
             for i in range(sigma_sym.rows):
                 for j in range(sigma_sym.cols):
                     param_name = sigma_sym[i, j].name
@@ -83,7 +84,7 @@ def _move_est_close_to_bounds(model):
                         if not _is_zero_fix(pset[param_name]) and est[param_name] < 0.001:
                             newdict[param_name] = 0.01
         else:
-            param_name = (dist.std**2).name
+            param_name = dist.variance.name
             if not _is_zero_fix(pset[param_name]) and est[param_name] < 0.001:
                 newdict[param_name] = 0.01
     return newdict

@@ -92,21 +92,22 @@ def create_ini(cg, model):
         theta_name = name_mangle(theta.name)
         cg.add(f'{theta_name} <- {theta.init}')
 
-    for rvs, dist in model.random_variables.etas.distributions():
-        if len(rvs) == 1:
-            omega = dist.std**2
+    for dist in model.random_variables.etas:
+        omega = dist.variance
+        if len(dist.names) == 1:
             init = model.parameters[omega.name].init
-            cg.add(f'{name_mangle(rvs[0].name)} ~ {init}')
+            cg.add(f'{name_mangle(dist.names[0])} ~ {init}')
         else:
-            omega = dist.sigma
             inits = []
             for row in range(omega.rows):
                 for col in range(row + 1):
                     inits.append(model.parameters[omega[row, col].name].init)
-            cg.add(f'{" + ".join([name_mangle(rv.name) for rv in rvs])} ~ c({", ".join(inits)})')
+            cg.add(
+                f'{" + ".join([name_mangle(name) for name in dist.names])} ~ c({", ".join(inits)})'
+            )
 
-    for rvs, dist in model.random_variables.epsilons.distributions():
-        sigma = dist.std**2
+    for dist in model.random_variables.epsilons:
+        sigma = dist.variance
         cg.add(f'{name_mangle(sigma.name)} <- {model.parameters[sigma.name].init}')
 
     cg.dedent()
@@ -124,8 +125,8 @@ def create_model(cg, model):
         if isinstance(s, Assignment):
             if s.symbol == model.dependent_variable:
 
-                for rvs, dist in model.random_variables.epsilons.distributions():
-                    sigma = dist.std**2
+                for dist in model.random_variables.epsilons:
+                    sigma = dist.variance
                 # FIXME: Needs to be generalized
                 cg.add('Y <- F')
                 cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')

@@ -155,9 +155,9 @@ def _create_new_etas(etas_original, transformation):
     else:
         eta_new = 'etan'
     for i, eta in enumerate(etas_original, 1):
-        etas_subs[eta.symbol] = sympy.Symbol(f'{eta_new.upper()}{i}')
+        etas_subs[sympy.Symbol(eta)] = sympy.Symbol(f'{eta_new.upper()}{i}')
         etas_assignment[sympy.Symbol(f'{eta_new}{i}')] = sympy.Symbol(f'{eta_new.upper()}{i}')
-        etas_assignment[sympy.Symbol(f'eta{i}')] = eta.symbol
+        etas_assignment[sympy.Symbol(f'eta{i}')] = sympy.Symbol(eta)
 
     return etas_assignment, etas_subs
 

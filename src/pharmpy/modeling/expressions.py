@@ -9,7 +9,6 @@ from pharmpy.model import (
     CompartmentalSystem,
     Model,
     ODESystem,
-    RandomVariable,
     RandomVariables,
     Statements,
 )
@@ -85,8 +84,8 @@ def get_individual_prediction_expression(model):
     get_population_prediction_expression : Get full symbolic epression for the population prediction
     """
     y = get_observation_expression(model)
-    for eps in model.random_variables.epsilons:
-        y = y.subs({eps.symbol: 0})
+    for eps in model.random_variables.epsilons.names:
+        y = y.subs({sympy.Symbol(eps): 0})
     return y
 
 
@@ -118,8 +117,8 @@ def get_population_prediction_expression(model):
     """
 
     y = get_individual_prediction_expression(model)
-    for eta in model.random_variables.etas:
-        y = y.subs({eta.symbol: 0})
+    for eta in model.random_variables.etas.names:
+        y = y.subs({sympy.Symbol(eta): 0})
     return y
 
 
@@ -151,9 +150,9 @@ def calculate_eta_gradient_expression(model):
     """
 
     y = get_observation_expression(model)
-    for eps in model.random_variables.epsilons:
-        y = y.subs({eps.symbol: 0})
-    d = [y.diff(x.symbol) for x in model.random_variables.etas]
+    for eps in model.random_variables.epsilons.names:
+        y = y.subs({sympy.Symbol(eps): 0})
+    d = [y.diff(sympy.Symbol(x)) for x in model.random_variables.etas.names]
     return d
 
 
@@ -185,7 +184,7 @@ def calculate_epsilon_gradient_expression(model):
     """
 
     y = get_observation_expression(model)
-    d = [y.diff(x.symbol) for x in model.random_variables.epsilons]
+    d = [y.diff(sympy.Symbol(x)) for x in model.random_variables.epsilons.names]
     return d
 
 
@@ -220,7 +219,7 @@ def create_symbol(model, stem, force_numbering=False):
     """
     symbols = [str(symbol) for symbol in model.statements.free_symbols]
     params = [param.name for param in model.parameters]
-    rvs = [rv.name for rv in model.random_variables]
+    rvs = model.random_variables.names
     dataset_col = model.datainfo.names
     misc = [model.dependent_variable]
 
@@ -240,7 +239,7 @@ def create_symbol(model, stem, force_numbering=False):
 def _find_eta_assignments(model):
     # Is this find individual parameters?
     statements = model.statements.before_odes
-    etas = {eta.symbol for eta in model.random_variables.etas}
+    etas = {sympy.Symbol(eta) for eta in model.random_variables.etas.names}
     found = set()
     leafs = []
     for s in reversed(statements):
@@ -295,15 +294,16 @@ def mu_reference_model(model):
     S₁ = V
     """
     assignments = _find_eta_assignments(model)
-    for i, eta in enumerate(model.random_variables.etas, start=1):
+    for i, eta in enumerate(model.random_variables.etas.names, start=1):
         for s in assignments:
-            if eta.symbol in s.expression.free_symbols:
+            symb = sympy.Symbol(eta)
+            if symb in s.expression.free_symbols:
                 assind = model.statements.find_assignment_index(s.symbol)
                 assignment = model.statements[assind]
                 expr = assignment.expression
-                indep, dep = expr.as_independent(eta.symbol)
+                indep, dep = expr.as_independent(symb)
                 mu = sympy.Symbol(f'mu_{i}')
-                newdep = dep.subs({eta.symbol: mu + eta.symbol})
+                newdep = dep.subs({symb: mu + symb})
                 mu_expr = sympy.solve(expr - newdep, mu)[0]
                 mu_ass = Assignment(mu, mu_expr)
                 model.statements = model.statements[0:assind] + mu_ass + model.statements[assind:]
@@ -698,7 +698,10 @@ def greekify_model(model, named_subscripts=False):
 
     def get_subscript(param, i, named_subscripts):
         if named_subscripts:
-            subscript = param.name
+            if isinstance(param, str):
+                subscript = param
+            else:
+                subscript = param.name
         else:
             subscript = i
         return subscript
@@ -734,12 +737,12 @@ def greekify_model(model, named_subscripts=False):
                 continue
             subscript = get_2d_subscript(elt, row + 1, col + 1, named_subscripts)
             subs[elt] = sympy.Symbol(f"sigma_{subscript}")
-    for i, eta in enumerate(model.random_variables.etas, start=1):
+    for i, eta in enumerate(model.random_variables.etas.names, start=1):
         subscript = get_subscript(eta, i, named_subscripts)
-        subs[eta.symbol] = sympy.Symbol(f"eta_{subscript}")
-    for i, epsilon in enumerate(model.random_variables.epsilons, start=1):
+        subs[sympy.Symbol(eta)] = sympy.Symbol(f"eta_{subscript}")
+    for i, epsilon in enumerate(model.random_variables.epsilons.names, start=1):
         subscript = get_subscript(epsilon, i, named_subscripts)
-        subs[epsilon.symbol] = sympy.Symbol(f"epsilon_{subscript}")
+        subs[sympy.Symbol(epsilon)] = sympy.Symbol(f"epsilon_{subscript}")
     model.statements = model.statements.subs(subs)
     return model
 
@@ -794,7 +797,9 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
         _filter_symbols(
             dependency_graph,
             free_symbols,
-            set().union(*(rv.free_symbols for rv in rvs if rvs.get_variance(rv) != 0)),
+            set().union(
+                *(rvs[rv].free_symbols for rv in rvs.names if rvs[rv].get_variance(rv) != 0)
+            ),
         )
     )
 
@@ -859,15 +864,15 @@ def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
     return _depends_on_any_of(model, parameter, rvs)
 
 
-def get_rv_parameter(model: Model, rv: RandomVariable) -> str:
+def get_rv_parameter(model: Model, rv: str) -> str:
     # NOTE This was just copied here and is used elsewhere but should be made
     # more general
     sset = model.statements
 
-    s = _find_assignment(sset, rv.symbol)
+    s = _find_assignment(sset, sympy.Symbol(rv))
 
     if s is None:
-        raise ValueError(f'Could not find an assignment to {rv.name}')
+        raise ValueError(f'Could not find an assignment to {rv}')
 
     if len(s.expression.free_symbols) > 1:
         return s.symbol.name
