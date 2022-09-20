@@ -143,6 +143,42 @@ def _parse_parameters(model):
     model._old_parameters = model._parameters
 
 
+def _parse_random_variables(model):
+    dists = RandomVariables.create([])
+    next_omega = 1
+    prev_cov = None
+
+    for omega_record in model.control_stream.get_records('OMEGA'):
+        etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
+        dists += etas
+    dists = _adjust_iovs(dists)
+    next_sigma = 1
+    prev_cov = None
+    for sigma_record in model.control_stream.get_records('SIGMA'):
+        epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
+        dists += epsilons
+    rvs = RandomVariables.create(dists)
+    model._random_variables = rvs
+    model._old_random_variables = rvs
+
+
+def _adjust_iovs(rvs):
+    updated = []
+    for i, dist in enumerate(rvs):
+        try:
+            next_dist = rvs[i + 1]
+        except IndexError:
+            updated.append(dist)
+            break
+
+        if dist.level != 'IOV' and next_dist.level == 'IOV':
+            new_dist = dist.derive(level='IOV')
+            updated.append(new_dist)
+        else:
+            updated.append(dist)
+    return RandomVariables.create(updated)
+
+
 class Model(pharmpy.model.Model):
     def __init__(self, code, path=None, **kwargs):
         self.internals = NONMEMModelInternals()
@@ -749,22 +785,7 @@ class Model(pharmpy.model.Model):
             return self._random_variables
         except AttributeError:
             pass
-        dists = RandomVariables.create([])
-        next_omega = 1
-        prev_cov = None
-
-        for omega_record in self.control_stream.get_records('OMEGA'):
-            etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
-            dists += etas
-        dists = self.adjust_iovs(dists)
-        next_sigma = 1
-        prev_cov = None
-        for sigma_record in self.control_stream.get_records('SIGMA'):
-            epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
-            dists += epsilons
-        rvs = RandomVariables.create(dists)
-        self._random_variables = rvs
-        self._old_random_variables = rvs
+        _parse_random_variables(self)
 
         if (
             'comment' in pharmpy.plugins.nonmem.conf.parameter_names
@@ -773,23 +794,6 @@ class Model(pharmpy.model.Model):
             self.statements
 
         return self._random_variables
-
-    @staticmethod
-    def adjust_iovs(rvs):
-        updated = []
-        for i, dist in enumerate(rvs):
-            try:
-                next_dist = rvs[i + 1]
-            except IndexError:
-                updated.append(dist)
-                break
-
-            if dist.level != 'IOV' and next_dist.level == 'IOV':
-                new_dist = dist.derive(level='IOV')
-                updated.append(new_dist)
-            else:
-                updated.append(dist)
-        return RandomVariables.create(updated)
 
     @random_variables.setter
     def random_variables(self, new):
