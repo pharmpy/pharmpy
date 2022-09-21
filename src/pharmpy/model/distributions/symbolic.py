@@ -139,23 +139,25 @@ class NormalDistribution(Distribution):
 
     def __getitem__(self, index):
         if isinstance(index, int):
-            if index == 0:
-                return self
-            raise IndexError(index)
+            if index != 0:
+                raise IndexError(index)
 
         elif isinstance(index, str):
-            if index == self._names[0]:
-                return self
+            if index != self._names[0]:
+                raise KeyError(index)
 
         else:
             if isinstance(index, slice):
                 index = range(index.start, index.stop, index.step)
 
             if isinstance(index, Collection):
-                if len(index) == 1 and (self._names[0] in index or 0 in index):
-                    return self
+                if len(index) != 1 or (self._names[0] not in index and 0 not in index):
+                    raise KeyError(index)
 
-        raise KeyError(index)
+            else:
+                raise KeyError(index)
+
+        return self
 
     def get_variance(self, name):
         return self._variance
