@@ -1,3 +1,4 @@
+from pharmpy.model import Model, Results
 from pharmpy.utils import normalize_user_given_path
 
 
@@ -22,6 +23,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume
     Results
         Results object created by workflow
     """
+    # FIXME Return type is not always Results
     if dispatcher is None:
         from pharmpy.workflows import default_dispatcher
 
@@ -39,7 +41,6 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume
     for task in workflow.tasks:
         if task.has_input():
             new_inp = []
-            from pharmpy.model import Model
 
             for inp in task.task_input:
                 if isinstance(inp, Model):
@@ -56,8 +57,6 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume
             task.task_input = new_inp
 
     res = dispatcher.run(workflow)
-
-    from pharmpy.model import Results
 
     if isinstance(res, Results):
         if hasattr(res, 'tool_database'):

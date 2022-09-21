@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
+import pharmpy
 import pharmpy.results
 import pharmpy.tools.modelfit
 from pharmpy.model import Model, Results

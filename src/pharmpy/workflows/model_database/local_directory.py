@@ -3,6 +3,7 @@ import shutil
 from contextlib import contextmanager
 from os import stat
 from pathlib import Path
+from typing import Union
 
 from pharmpy.lock import path_lock
 from pharmpy.model import DataInfo, Model
@@ -115,7 +116,7 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
         File extension to use for model files.
     """
 
-    def __init__(self, path='.', file_extension='.mod'):
+    def __init__(self, path: Union[str, Path] = '.', file_extension='.mod'):
         path = Path(path)
         if not path.exists():
             path.mkdir(parents=True)
