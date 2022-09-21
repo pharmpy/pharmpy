@@ -421,21 +421,6 @@ class JointNormalDistribution(Distribution):
         self.__dict__.update(state)
         self._symengine_variance = symengine.sympify(self._variance)
 
-    # FIXME: Readd later if needed
-    # @property
-    # def sympy_rv(self):
-    #    """Corresponding sympy random variable"""
-    #    if self._sympy_rv is None:
-    #        # Normal distribution that might have 0 variance
-    #        if len(self._variance) == 1 and self._variance[0].is_zero:
-    #            return sympy.Integer(0)
-    #        elif self._mean.rows > 1:
-    #            return sympy.stats.Normal('X', self._mean, self._variance)
-    #        else:
-    #            return sympy.stats.Normal(self.name, self._mean[0], sympy.sqrt(self._variance[0]))
-    #    else:
-    #        return self._sympy_rv
-
 
 class VariabilityLevel:
     """A variability level
