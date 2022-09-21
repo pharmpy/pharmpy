@@ -158,8 +158,7 @@ def _parse_random_variables(model):
         epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
         dists += epsilons
     rvs = RandomVariables.create(dists)
-    model._random_variables = rvs
-    model._old_random_variables = rvs
+    return rvs
 
 
 def _adjust_iovs(rvs):
@@ -205,6 +204,7 @@ class Model(pharmpy.model.Model):
             self._modelfit_results = None
         else:
             self.read_modelfit_results(path.parent)
+
         description = _parse_description(self.control_stream)
         self.description = description
         self.internals._old_description = description
@@ -284,8 +284,10 @@ class Model(pharmpy.model.Model):
                 self.statements = statement + self.statements
                 self.random_variables = self.random_variables + eta
                 self.parameters = Parameters([p for p in self.parameters] + [omega])
-            update_random_variables(self, self._old_random_variables, self._random_variables)
-            self._old_random_variables = self._random_variables
+            update_random_variables(
+                self, self.internals._old_random_variables, self._random_variables
+            )
+            self.internals._old_random_variables = self._random_variables
         if hasattr(self, '_parameters'):
             update_parameters(self, self._old_parameters, self._parameters)
             self._old_parameters = self._parameters
@@ -789,7 +791,9 @@ class Model(pharmpy.model.Model):
             return self._random_variables
         except AttributeError:
             pass
-        _parse_random_variables(self)
+        rvs = _parse_random_variables(self)
+        self._random_variables = rvs
+        self.internals._old_random_variables = rvs
 
         if (
             'comment' in pharmpy.plugins.nonmem.conf.parameter_names
