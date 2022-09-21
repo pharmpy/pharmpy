@@ -461,3 +461,9 @@ def test_get_rv_parameter(load_model_for_test, testdata, model_path, rv, expecte
     rv_params = get_rv_parameters(model, rv)
 
     assert rv_params == expected
+
+
+def test_get_rv_parameter_verify_input(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    with pytest.raises(ValueError, match='Could not find random variable: x'):
+        get_rv_parameters(model, 'x')
