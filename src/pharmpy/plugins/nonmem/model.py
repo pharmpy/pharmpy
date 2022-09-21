@@ -118,29 +118,28 @@ def _parse_description(control_stream):
     return rec.title
 
 
-def _parse_parameters(model):
+def _parse_parameters(control_stream):
     next_theta = 1
     params = []
-    for theta_record in model.control_stream.get_records('THETA'):
+    for theta_record in control_stream.get_records('THETA'):
         thetas = theta_record.parameters(next_theta, seen_labels={p.name for p in params})
         params.extend(thetas)
         next_theta += len(thetas)
     next_omega = 1
     previous_size = None
-    for omega_record in model.control_stream.get_records('OMEGA'):
+    for omega_record in control_stream.get_records('OMEGA'):
         omegas, next_omega, previous_size = omega_record.parameters(
             next_omega, previous_size, seen_labels={p.name for p in params}
         )
         params.extend(omegas)
     next_sigma = 1
     previous_size = None
-    for sigma_record in model.control_stream.get_records('SIGMA'):
+    for sigma_record in control_stream.get_records('SIGMA'):
         sigmas, next_sigma, previous_size = sigma_record.parameters(
             next_sigma, previous_size, seen_labels={p.name for p in params}
         )
         params.extend(sigmas)
-    model._parameters = Parameters(params)
-    model.internals._old_parameters = model._parameters
+    return Parameters(params)
 
 
 def _parse_random_variables(model):
@@ -465,7 +464,10 @@ class Model(pharmpy.model.Model):
         except AttributeError:
             pass
 
-        _parse_parameters(self)
+        parameters = _parse_parameters(self.control_stream)
+        self._parameters = parameters
+        self.internals._old_parameters = parameters
+
         if (
             'comment' in pharmpy.plugins.nonmem.conf.parameter_names
             or 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names
