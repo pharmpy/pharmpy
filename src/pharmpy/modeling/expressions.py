@@ -777,17 +777,14 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
     See also
     --------
     get_pk_parameters
+    get_rv_parameters
     has_random_effect
 
     """
 
     rvs = _rvs(model, level)
 
-    assignments = list(
-        _remove_synthetic_assignments(
-            list(_classify_assignments(list(_assignments(model.statements.before_odes))))
-        )
-    )
+    assignments = _get_natural_assignments(model.statements.before_odes)
 
     free_symbols = {assignment.symbol for assignment in assignments}
 
@@ -857,6 +854,7 @@ def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
     See also
     --------
     get_individual_parameters
+    get_rv_parameters
 
     """
 
@@ -890,6 +888,7 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     --------
     has_random_effect
     get_pk_parameters
+    get_individual_parameters
 
     """
     if rv not in model.random_variables.names:
@@ -900,7 +899,7 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     free_symbols = model.statements.free_symbols
     dependency_graph = _dependency_graph(natural_assignments)
     filtered = list(_filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)}))
-    return filtered
+    return sorted(filtered)
 
 
 def _find_assignment(sset, symb_target):
@@ -947,6 +946,7 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
     See also
     --------
     get_individual_parameters
+    get_rv_parameters
 
     """
     natural_assignments = _get_natural_assignments(model.statements.before_odes)
@@ -970,7 +970,7 @@ def _get_natural_assignments(before_odes):
 
 def _remap_compartmental_system(sset, natural_assignments):
     # Return compartmental system where rates that are synthetic assignments
-    # have been substituted with their full definition (e.g K -> CL/V
+    # have been substituted with their full definition (e.g K -> CL/V)
     cs = sset.ode_system.to_compartmental_system()
 
     assignments = list(_assignments(sset.before_odes))
