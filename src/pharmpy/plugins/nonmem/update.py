@@ -432,7 +432,7 @@ def to_des(model, new):
             new = new.to_explicit_system()
         subs.append_option(advan)
     else:
-        subs.append_option('ADVAN6')
+        subs.append_option('ADVAN13')
     if not subs.has_option('TOL'):
         subs.append_option('TOL', 9)
     des = model.control_stream.insert_record('$DES\nDUMMY=0')
@@ -1171,8 +1171,6 @@ def solver_to_advan(solver):
         advan = 'ADVAN6'
     elif solver == 'IDA':
         advan = 'ADVAN15'
-    elif solver == 'LSODA':
-        advan = 'ADVAN13'
     elif solver == 'LSODI':
         advan = 'ADVAN9'
     return advan

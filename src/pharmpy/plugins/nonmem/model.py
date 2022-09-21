@@ -209,6 +209,10 @@ class Model(pharmpy.model.Model):
         self.description = description
         self.internals._old_description = description
 
+        steps = parse_estimation_steps(self)
+        self._estimation_steps = steps
+        self._old_estimation_steps = steps
+
     @property
     def name(self):
         return self._name
@@ -799,23 +803,6 @@ class Model(pharmpy.model.Model):
     def random_variables(self, new):
         self.random_variables  # Read in old random variables
         self._random_variables = new
-
-    @property
-    def estimation_steps(self):
-        try:
-            return self._estimation_steps
-        except AttributeError:
-            pass
-
-        steps = parse_estimation_steps(self)
-        self._estimation_steps = steps
-        self._old_estimation_steps = steps
-        return steps
-
-    @estimation_steps.setter
-    def estimation_steps(self, value):
-        self.estimation_steps
-        self._estimation_steps = value
 
     @property
     def model_code(self):
