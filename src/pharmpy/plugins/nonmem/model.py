@@ -197,9 +197,12 @@ class Model(pharmpy.model.Model):
         self._updated_etas_file = None
         self._dataset_updated = False
         self._parent_model = None
-        self.dependent_variable = sympy.Symbol('Y')
-        self.observation_transformation = self.dependent_variable
-        self._old_observation_transformation = self.dependent_variable
+
+        dv = sympy.Symbol('Y')
+        self.dependent_variable = dv
+        self.observation_transformation = dv
+        self.internals._old_observation_transformation = dv
+
         if path is None:
             self._modelfit_results = None
         else:
@@ -343,7 +346,7 @@ class Model(pharmpy.model.Model):
         self._update_sizes()
         update_estimation(self)
 
-        if self.observation_transformation != self._old_observation_transformation:
+        if self.observation_transformation != self.internals._old_observation_transformation:
             if not nofiles:
                 update_ccontra(self, path, force)
         update_description(self)
