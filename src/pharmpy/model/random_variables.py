@@ -3,7 +3,6 @@ from __future__ import annotations
 import itertools
 from collections.abc import Sequence
 from functools import lru_cache
-from math import sqrt
 from typing import Dict, Iterable, Set, Tuple
 
 import pharmpy.math
@@ -11,10 +10,6 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
 from pharmpy.expressions import subs, sympify, xreplace_dict
 
-from .distributions.numeric import (
-    MultivariateNormalDistribution as NumericMultivariateNormalDistribution,
-)
-from .distributions.numeric import NormalDistribution as NumericNormalDistribution
 from .distributions.numeric import NumericDistribution
 from .distributions.symbolic import Distribution, JointNormalDistribution, NormalDistribution
 
@@ -764,30 +759,8 @@ def subs_distributions(
 
     for dist in distributions:
         rvs_symbols = tuple(map(sympy.Symbol, dist.names))
-        if len(rvs_symbols) > 1:
-            try:
-                mu = np.array(symengine.sympify(dist.mean).xreplace(parameters)).astype(np.float64)[
-                    :, 0
-                ]
-                sigma = np.array(dist._symengine_variance.xreplace(parameters)).astype(np.float64)
-                distribution = NumericMultivariateNormalDistribution(mu, sigma)
-            except RuntimeError as e:
-                # NOTE This handles missing parameter substitutions
-                raise ValueError(e)
-        else:
-            # mu = float(symengine.sympify(rv._mean[0]).xreplace(parameters))
-            # sigma = float(symengine.sympify(sympy.sqrt(rv._variance[0,0])).xreplace(parameters))
-            mean = dist.mean
-            variance = dist.variance
-            try:
-                mu = 0 if mean == 0 else float(parameters[mean])
-                sigma = 0 if variance == 0 else sqrt(float(parameters[variance]))
-                distribution = NumericNormalDistribution(mu, sigma)
-            except KeyError as e:
-                # NOTE This handles missing parameter substitutions
-                raise ValueError(e)
-
-        yield (rvs_symbols, distribution)
+        numeric_distribution = dist.evalf(parameters)
+        yield (rvs_symbols, numeric_distribution)
 
 
 def sample_expr_from_rvs(

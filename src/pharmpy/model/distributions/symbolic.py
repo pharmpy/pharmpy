@@ -1,9 +1,18 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from collections.abc import Collection
+from math import sqrt
+from typing import Dict
 
 import pharmpy.unicode as unicode
+from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
 from pharmpy.expressions import subs, sympify
+
+from .numeric import MultivariateNormalDistribution as NumericMultivariateNormalDistribution
+from .numeric import NormalDistribution as NumericNormalDistribution
+from .numeric import NumericDistribution
 
 
 class Distribution:
@@ -24,7 +33,11 @@ class Distribution:
         return len(self._names)
 
     @abstractmethod
-    def __getitem__(self, index):
+    def evalf(self, parameters: Dict[sympy.Symbol, float]) -> NumericDistribution:
+        pass
+
+    @abstractmethod
+    def __getitem__(self, index) -> Distribution:
         pass
 
 
@@ -136,6 +149,19 @@ class NormalDistribution(Distribution):
             if isinstance(name, sympy.Symbol):
                 name = name.name
         return NormalDistribution((name,), self._level, mean, variance)
+
+    def evalf(self, parameters: Dict[sympy.Symbol, float]):
+        # mu = float(symengine.sympify(rv._mean[0]).xreplace(parameters))
+        # sigma = float(symengine.sympify(sympy.sqrt(rv._variance[0,0])).xreplace(parameters))
+        mean = self.mean
+        variance = self.variance
+        try:
+            mu = 0 if mean == 0 else float(parameters[mean])
+            sigma = 0 if variance == 0 else sqrt(float(parameters[variance]))
+            return NumericNormalDistribution(mu, sigma)
+        except KeyError as e:
+            # NOTE This handles missing parameter substitutions
+            raise ValueError(e)
 
     def __getitem__(self, index):
         if isinstance(index, int):
@@ -331,6 +357,17 @@ class JointNormalDistribution(Distribution):
             new_names.append(name)
 
         return JointNormalDistribution(new_names, self._level, mean, variance)
+
+    def evalf(self, parameters: Dict[sympy.Symbol, float]):
+        try:
+            mu = np.array(symengine.sympify(self.mean).xreplace(parameters)).astype(np.float64)[
+                :, 0
+            ]
+            sigma = np.array(self._symengine_variance.xreplace(parameters)).astype(np.float64)
+            return NumericMultivariateNormalDistribution(mu, sigma)
+        except RuntimeError as e:
+            # NOTE This handles missing parameter substitutions
+            raise ValueError(e)
 
     def __getitem__(self, index):
         if isinstance(index, int):
