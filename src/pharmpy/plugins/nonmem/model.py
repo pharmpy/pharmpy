@@ -211,7 +211,7 @@ class Model(pharmpy.model.Model):
 
         steps = parse_estimation_steps(self)
         self._estimation_steps = steps
-        self._old_estimation_steps = steps
+        self.internals._old_estimation_steps = steps
 
     @property
     def name(self):

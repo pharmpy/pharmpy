@@ -472,7 +472,7 @@ def update_statements(model, old, new, trans):
             else:
                 new_solver = None
             if type(new_odes) == ExplicitODESystem or new_solver:
-                old_solver = model._old_estimation_steps[0].solver
+                old_solver = model.internals._old_estimation_steps[0].solver
                 if new_solver != old_solver:
                     advan = solver_to_advan(new_solver)
                     subs = model.control_stream.get_records('SUBROUTINES')[0]
@@ -1036,7 +1036,7 @@ def update_abbr_record(model, rv_trans):
 def update_estimation(model):
     new = model.estimation_steps
     try:
-        old = model._old_estimation_steps
+        old = model.internals._old_estimation_steps
     except AttributeError:
         old = []
         # Add SADDLE_RESET=1 if model did not have $EST before
@@ -1157,7 +1157,7 @@ def update_estimation(model):
         s += f'{model.datainfo.dv_column.name} '
         s += f'{" ".join(cols)} FILE=mytab NOAPPEND NOPRINT'
         model.control_stream.insert_record(s)
-    model._old_estimation_steps = new
+    model.internals._old_estimation_steps = new
 
 
 def solver_to_advan(solver):
