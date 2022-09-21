@@ -145,18 +145,18 @@ def _parse_parameters(control_stream):
     return Parameters(params)
 
 
-def _parse_random_variables(model):
+def _parse_random_variables(control_stream):
     dists = RandomVariables.create([])
     next_omega = 1
     prev_cov = None
 
-    for omega_record in model.control_stream.get_records('OMEGA'):
+    for omega_record in control_stream.get_records('OMEGA'):
         etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
         dists += etas
     dists = _adjust_iovs(dists)
     next_sigma = 1
     prev_cov = None
-    for sigma_record in model.control_stream.get_records('SIGMA'):
+    for sigma_record in control_stream.get_records('SIGMA'):
         epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
         dists += epsilons
     rvs = RandomVariables.create(dists)
@@ -775,7 +775,7 @@ class Model(pharmpy.model.Model):
             return self._random_variables
         except AttributeError:
             pass
-        rvs = _parse_random_variables(self)
+        rvs = _parse_random_variables(self.control_stream)
         self._random_variables = rvs
         self.internals._old_random_variables = rvs
 
@@ -1158,7 +1158,7 @@ def parse_estimation_steps(model):
     steps = []
     records = model.control_stream.get_records('ESTIMATION')
     covrec = model.control_stream.get_records('COVARIANCE')
-    solver, tol, atol = parse_solver(model)
+    solver, tol, atol = parse_solver(model.control_stream)
 
     # Read eta and epsilon derivatives
     etaderiv_names = None
@@ -1273,8 +1273,8 @@ def parse_estimation_steps(model):
     return steps
 
 
-def parse_solver(model):
-    subs_records = model.control_stream.get_records('SUBROUTINES')
+def parse_solver(control_stream):
+    subs_records = control_stream.get_records('SUBROUTINES')
     if not subs_records:
         return None, None, None
     record = subs_records[0]
