@@ -87,7 +87,7 @@ def convert_model(model):
     nm_model._datainfo = model.datainfo
     nm_model.random_variables = model.random_variables
     nm_model._parameters = model.parameters
-    nm_model._old_parameters = Parameters()
+    nm_model.internals._old_parameters = Parameters()
     nm_model.statements = model.statements
     if hasattr(model, 'name'):
         nm_model.name = model.name
@@ -140,7 +140,7 @@ def _parse_parameters(model):
         )
         params.extend(sigmas)
     model._parameters = Parameters(params)
-    model._old_parameters = model._parameters
+    model.internals._old_parameters = model._parameters
 
 
 def _parse_random_variables(model):
@@ -289,8 +289,8 @@ class Model(pharmpy.model.Model):
             )
             self.internals._old_random_variables = self._random_variables
         if hasattr(self, '_parameters'):
-            update_parameters(self, self._old_parameters, self._parameters)
-            self._old_parameters = self._parameters
+            update_parameters(self, self.internals._old_parameters, self._parameters)
+            self.internals._old_parameters = self._parameters
         trans = self.parameter_translation(reverse=True, remove_idempotent=True, as_symbols=True)
         rv_trans = self.rv_translation(reverse=True, remove_idempotent=True, as_symbols=True)
         trans.update(rv_trans)
@@ -444,7 +444,7 @@ class Model(pharmpy.model.Model):
         ):
             self.statements
             # reading statements might change parameters. Resetting _old_parameters
-            self._old_parameters = self._parameters
+            self.internals._old_parameters = self._parameters
 
         if not self.random_variables.validate_parameters(self._parameters.inits):
             nearest = self.random_variables.nearest_valid_parameters(self._parameters.inits)
@@ -456,7 +456,7 @@ class Model(pharmpy.model.Model):
             )
             params = self._parameters.set_initial_estimates(nearest)
             self._parameters = params
-            self._old_parameters = params
+            self.internals._old_parameters = params
         return self._parameters
 
     @parameters.setter
