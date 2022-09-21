@@ -1,6 +1,7 @@
 import itertools
 from collections.abc import Sequence
 from functools import lru_cache
+from math import sqrt
 
 import pharmpy.math
 import pharmpy.unicode as unicode
@@ -1144,15 +1145,27 @@ def _generate_sampling_rvs(distributions, symbols, parameters):
         symbols_covered_by_dist = symbols.intersection(rvs_symbols)
         if symbols_covered_by_dist:
             if len(rvs) > 1:
-                mu = sympy.matrices.dense.matrix2numpy(dist.mean.xreplace(parameters), dtype=float)[
-                    :, 0
-                ]
-                sigma = sympy.matrices.dense.matrix2numpy(
-                    dist.variance.xreplace(parameters), dtype=float
-                )
+                try:
+                    mu = np.array(symengine.sympify(dist.mean).xreplace(parameters)).astype(
+                        np.float64
+                    )[:, 0]
+                    sigma = np.array(dist._symengine_variance.xreplace(parameters)).astype(
+                        np.float64
+                    )
+                except RuntimeError as e:
+                    # NOTE This handles missing parameter substitutions
+                    raise ValueError(e)
             else:
-                mu = float(dist.mean.xreplace(parameters))
-                sigma = float(dist.variance.xreplace(parameters) ** (1 / 2))
+                # mu = float(symengine.sympify(dist.mean).xreplace(parameters))
+                # sigma = float(symengine.sympify(dist.variance).xreplace(parameters))
+                mean = dist.mean
+                variance = dist.variance
+                try:
+                    mu = 0 if mean == 0 else float(parameters[mean])
+                    sigma = 0 if variance == 0 else sqrt(float(parameters[variance]))
+                except KeyError as e:
+                    # NOTE This handles missing parameter substitutions
+                    raise ValueError(e)
 
             yield (rvs_symbols, (mu, sigma))
             covered_symbols |= symbols_covered_by_dist
