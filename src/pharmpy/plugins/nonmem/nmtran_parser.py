@@ -162,6 +162,35 @@ class NMTranControlStream:
             )
             etas, next_eta, prev_cov, _ = omega_record.random_variables(next_omega_cur, prev_cov)
 
+    def get_pred_pk_record(self):
+        pred = self.get_records('PRED')
+
+        if not pred:
+            pk = self.get_records('PK')
+            if not pk:
+                raise ModelSyntaxError('Model has no $PK or $PRED')
+            return pk[0]
+        else:
+            return pred[0]
+
+    def get_pk_record(self):
+        pk = self.get_records('PK')
+        if pk:
+            pk = pk[0]
+        return pk
+
+    def get_error_record(self):
+        error = self.get_records('ERROR')
+        if error:
+            error = error[0]
+        return error
+
+    def get_des_record(self):
+        des = self.get_records('DES')
+        if des:
+            des = des[0]
+        return des
+
     def validate(self):
         in_problem = False
         for record in self.records:

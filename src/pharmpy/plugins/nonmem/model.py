@@ -161,11 +161,11 @@ def _parse_random_variables(model):
 
 
 def _parse_statements(model):
-    rec = model.get_pred_pk_record()
+    rec = model.control_stream.get_pred_pk_record()
     statements = rec.statements
 
-    des = model._get_des_record()
-    error = model._get_error_record()
+    des = model.control_stream.get_des_record()
+    error = model.control_stream.get_error_record()
     if error:
         sub = model.control_stream.get_records('SUBROUTINES')[0]
         comp = compartmental_model(model, sub.advan, sub.trans, des)
@@ -600,35 +600,6 @@ class Model(pharmpy.model.Model):
         self.statements  # Read in old statements
         self._statements = statements_new
 
-    def get_pred_pk_record(self):
-        pred = self.control_stream.get_records('PRED')
-
-        if not pred:
-            pk = self.control_stream.get_records('PK')
-            if not pk:
-                raise ModelSyntaxError('Model has no $PK or $PRED')
-            return pk[0]
-        else:
-            return pred[0]
-
-    def _get_pk_record(self):
-        pk = self.control_stream.get_records('PK')
-        if pk:
-            pk = pk[0]
-        return pk
-
-    def _get_error_record(self):
-        error = self.control_stream.get_records('ERROR')
-        if error:
-            error = error[0]
-        return error
-
-    def _get_des_record(self):
-        des = self.control_stream.get_records('DES')
-        if des:
-            des = des[0]
-        return des
-
     def _create_name_trans(self, statements):
         rvs = self.random_variables
 
@@ -1026,7 +997,7 @@ class Model(pharmpy.model.Model):
                 return
 
         column_info = []
-        have_pk = self._get_pk_record()
+        have_pk = self.control_stream.get_pk_record()
         for colname, coldrop in zip(colnames, drop):
             if coldrop and colname not in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
                 info = ColumnInfo(colname, drop=coldrop, datatype='str')

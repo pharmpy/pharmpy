@@ -280,7 +280,7 @@ def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new)
         f'{buf_new}\n\n'
     )
 
-    assert str(model.get_pred_pk_record()) == rec
+    assert str(model.control_stream.get_pred_pk_record()) == rec
 
 
 @pytest.mark.parametrize('rv_new, buf_new', [(Parameter('omega', 0.1), '$OMEGA  0.1')])
@@ -335,7 +335,7 @@ def test_add_random_variables_and_statements(pheno):
     model.statements = sset.before_odes + statement_new + sset.ode_system + sset.after_odes
 
     model.update_source()
-    assert str(model.get_pred_pk_record()).endswith('X = 1 + ETA(3) + EPS(2)\n\n')
+    assert str(model.control_stream.get_pred_pk_record()).endswith('X = 1 + ETA(3) + EPS(2)\n\n')
 
 
 def test_results(pheno):

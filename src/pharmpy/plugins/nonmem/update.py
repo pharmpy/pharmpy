@@ -481,11 +481,11 @@ def update_statements(model, old, new, trans):
     main_statements = model.statements.before_odes
     error_statements = model.statements.after_odes
 
-    rec = model.get_pred_pk_record()
+    rec = model.control_stream.get_pred_pk_record()
     rec.rvs, rec.trans = model.random_variables, trans
     rec.statements = main_statements.subs(trans)
 
-    error = model._get_error_record()
+    error = model.control_stream.get_error_record()
     if not error and len(error_statements) > 0:
         model.control_stream.insert_record('$ERROR\n')
     if error:
