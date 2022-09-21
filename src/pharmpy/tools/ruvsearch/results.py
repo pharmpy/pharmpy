@@ -13,18 +13,20 @@ class RUVSearchResults(Results):
         cwres_models=None,
         summary_individuals=None,
         summary_individuals_count=None,
-        best_model=None,
+        final_model_name=None,
         summary_models=None,
         summary_tool=None,
         summary_errors=None,
+        tool_database=None,
     ):
         self.cwres_models = cwres_models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
-        self.best_model = best_model
+        self.final_model_name = final_model_name
         self.summary_models = summary_models
         self.summary_tool = summary_tool
         self.summary_errors = summary_errors
+        self.tool_database = tool_database
 
 
 def calculate_results(models):

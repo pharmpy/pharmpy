@@ -54,8 +54,7 @@ def create_results(
         summary_individuals=summary_individuals,
         summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
-        best_model=best_model,
-        input_model=input_model,
+        final_model_name=best_model.name,
         models=models,
     )
 

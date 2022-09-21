@@ -41,6 +41,13 @@ class LocalDirectoryToolDatabase(ToolDatabase):
 
         super().__init__(toolname)
 
+    def to_dict(self):
+        return {'toolname': self.toolname, 'path': str(self.path)}
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(**d, exist_ok=True)
+
     def store_local_file(self, source_path):
         if Path(source_path).is_file():
             shutil.copy2(source_path, self.path)

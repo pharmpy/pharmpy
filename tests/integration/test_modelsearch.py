@@ -1,5 +1,4 @@
 import shutil
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -10,16 +9,7 @@ from pharmpy.tools import fit, run_modelsearch
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-def _model_count(rundir: Path):
-    return sum(
-        map(
-            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
-            ((rundir / 'models').iterdir()),
-        )
-    )
-
-
-def test_exhaustive(tmp_path, start_model):
+def test_exhaustive(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=start_model)
 
@@ -32,7 +22,7 @@ def test_exhaustive(tmp_path, start_model):
         )
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == 3
+        assert model_count(rundir) == 3
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
@@ -77,6 +67,7 @@ def test_exhaustive(tmp_path, start_model):
 )
 def test_exhaustive_stepwise_basic(
     tmp_path,
+    model_count,
     start_model,
     search_space,
     no_of_models,
@@ -109,7 +100,7 @@ def test_exhaustive_stepwise_basic(
 
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == no_of_models
+        assert model_count(rundir) == no_of_models
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
@@ -130,6 +121,7 @@ def test_exhaustive_stepwise_basic(
 )
 def test_exhaustive_stepwise_add_iivs(
     tmp_path,
+    model_count,
     start_model,
     search_space,
     iiv_strategy,
@@ -157,13 +149,13 @@ def test_exhaustive_stepwise_add_iivs(
 
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == no_of_models
+        assert model_count(rundir) == no_of_models
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
 
 
-def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, start_model):
+def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         start_model = start_model.copy()
         start_model.name = 'start_model_copy'
@@ -179,7 +171,7 @@ def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, start_model):
         assert len(res.models) == 4
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == 4
+        assert model_count(rundir) == 4
 
 
 def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_model):

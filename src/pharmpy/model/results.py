@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import pharmpy
 from pharmpy.deps import pandas as pd
 
 from .model import Model
@@ -12,7 +13,21 @@ class Results:
     @classmethod
     def from_dict(cls, d):
         """Create results object from dictionary"""
-        return cls(**d)
+        if '__version__' in d.keys():
+            pharmpy_version = d['__version__']
+            del d['__version__']
+        else:
+            # Was removed in d5b3503 and 8578c8b
+            if 'best_model' in d.keys():
+                del d['best_model']
+            # Was removed in d5b3503 and 8578c8b
+            if 'input_model' in d.keys():
+                del d['input_model']
+            pharmpy_version = None
+        res_obj = cls(**d)
+        if pharmpy_version:
+            res_obj._pharmpy_version = pharmpy_version
+        return res_obj
 
     def to_json(self, path=None, lzma=False):
         """Serialize results object as json
@@ -123,10 +138,11 @@ class ResultsJSONEncoder(json.JSONEncoder):
         # how to encode the given object, so it will not be called on int,
         # float, str, list, tuple, and dict. It could be called on set for
         # instance, or any custom class.
-        from pharmpy.workflows.log import Log
+        from pharmpy.workflows import LocalDirectoryToolDatabase, Log
 
         if isinstance(obj, Results):
             d = obj.to_dict()
+            d['__version__'] = pharmpy.__version__
             d['__module__'] = obj.__class__.__module__
             d['__class__'] = obj.__class__.__qualname__
             return d
@@ -134,7 +150,9 @@ class ResultsJSONEncoder(json.JSONEncoder):
             if str(obj.columns.dtype) == 'int64':
                 # Workaround for https://github.com/pandas-dev/pandas/issues/46392
                 obj.columns = obj.columns.map(str)
-            d = json.loads(obj.to_json(orient='table'))
+            # Set double precision to 15 to remove some round-trip errors, however 17 should be set when its possible
+            # See: https://github.com/pandas-dev/pandas/issues/38437
+            d = json.loads(obj.to_json(orient='table', double_precision=15))
             d['__class__'] = 'DataFrame'
             return d
         elif isinstance(obj, pd.Series):
@@ -152,6 +170,11 @@ class ResultsJSONEncoder(json.JSONEncoder):
             return None
         elif isinstance(obj, Log):
             d = obj.to_dict()
+            d['__class__'] = obj.__class__.__qualname__
+            return d
+        elif isinstance(obj, LocalDirectoryToolDatabase):
+            d = obj.to_dict()
+            d['__module__'] = obj.__class__.__module__
             d['__class__'] = obj.__class__.__qualname__
             return d
         elif isinstance(obj, Path):

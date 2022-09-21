@@ -1,0 +1,12 @@
+{
+  "commands": [
+    {
+      "args": [
+        "/opt/nm744/run/nmfe74",
+        "modelsearch_candidate3.mod",
+        "results.lst"
+      ],
+      "returncode": 0
+    }
+  ]
+}

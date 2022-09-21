@@ -7,10 +7,12 @@ from typing import List, Optional, Union
 import pharmpy.results
 import pharmpy.tools.modelfit
 from pharmpy.model import Model
-from pharmpy.modeling.common import read_model_from_database
+from pharmpy.modeling.common import copy_model, read_model_from_database
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import execute_workflow, split_common_options
+from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
+from pharmpy.workflows.tool_database import ToolDatabase
 
 
 def fit(
@@ -167,12 +169,46 @@ def run_tool(name, *args, **kwargs):
     tool_metadata['common_options'] = setup_metadata
     database.store_metadata(tool_metadata)
 
+    if name != 'modelfit':
+        _store_input_models(list(args) + list(kwargs.items()), database)
+
     res = execute_workflow(wf, dispatcher=dispatcher, database=database)
 
     tool_metadata['stats']['end_time'] = _now()
     database.store_metadata(tool_metadata)
 
     return res
+
+
+def _store_input_models(args, database):
+    input_models = _get_input_models(args)
+
+    if len(input_models) == 1:
+        _create_input_model(input_models[0], database)
+    else:
+        for i, model in enumerate(input_models, 1):
+            _create_input_model(model, database, number=i)
+
+
+def _get_input_models(args):
+    input_models = []
+    for arg in args:
+        if isinstance(arg, Model):
+            input_models.append(arg)
+        else:
+            arg_as_list = [a for a in arg if isinstance(a, Model)]
+            input_models.extend(arg_as_list)
+    return input_models
+
+
+def _create_input_model(model, tool_db, number=None):
+    input_name = 'input_model'
+    if number is not None:
+        input_name += str(number)
+    model_copy = copy_model(model, input_name)
+    with tool_db.model_database.transaction(model_copy) as txn:
+        txn.store_model()
+        txn.store_modelfit_results()
 
 
 def _now():
@@ -253,16 +289,17 @@ def _get_run_setup(common_options, toolname):
     return dispatcher, database
 
 
-def retrieve_models(path, names=None):
-    """Retrieve models after a tool runs
+def retrieve_models(source, names=None):
+    """Retrieve models after a tool run
 
     Any models created and run by the tool can be
     retrieved.
 
     Parameters
     ----------
-    path : str or Path
-        A path to the tool directory
+    source : str, Path, Results, ToolDatabase, ModelDatabase
+        Source where to find models. Can be a path (as str or Path), a results object, or a
+        ToolDatabase/ModelDatabase
     names : list
         List of names of the models to retrieve or None for all
 
@@ -270,15 +307,69 @@ def retrieve_models(path, names=None):
     ------
     list
         List of retrieved model objects
+
+    Examples
+    --------
+    >>> from pharmpy.tools import retrieve_models
+    >>> tooldir_path = 'path/to/tool/directory'
+    >>> models = retrieve_models(tooldir_path, names=['run1'])      # doctest: +SKIP
+
+    See also
+    --------
+    retrieve_final_model
+
     """
-    path = Path(path)
-    # FIXME: Should be using metadata to know how to init databases
-    from pharmpy.workflows import LocalModelDirectoryDatabase
-
-    db = LocalModelDirectoryDatabase(path / 'models')
-    # FIXME: This is a hack. Add way of getting all model names from model database
+    if isinstance(source, Path) or isinstance(source, str):
+        path = Path(source)
+        # FIXME: Should be using metadata to know how to init databases
+        db = LocalModelDirectoryDatabase(path / 'models')
+    elif isinstance(source, pharmpy.results.Results):
+        if hasattr(source, 'tool_database'):
+            db = source.tool_database.model_database
+        else:
+            raise ValueError(
+                f'Results type \'{source.__class__.__name__}\' does not serialize tool database'
+            )
+    elif isinstance(source, ToolDatabase):
+        db = source.model_database
+    elif isinstance(source, ModelDatabase):
+        db = source
+    else:
+        raise NotImplementedError(f'Not implemented for type \'{type(source)}\'')
+    names_all = db.list_models()
     if names is None:
-        names = [p.name for p in (path / 'models').glob('*') if not p.name.startswith('.')]
-
+        names = names_all
+    diff = set(names).difference(names_all)
+    if diff:
+        raise ValueError(f'Models {diff} not in database')
     models = [db.retrieve_model(name) for name in names]
     return models
+
+
+def retrieve_final_model(res):
+    """Retrieve final model from a result object
+
+    Parameters
+    ----------
+    res : Results
+        A results object
+
+    Return
+    ------
+    Model
+        Reference to final model
+
+    Examples
+    --------
+    >>> from pharmpy.tools import read_results, retrieve_final_model
+    >>> res = read_results("results.json")     # doctest: +SKIP
+    >>> model = retrieve_final_model(res)      # doctest: +SKIP
+
+    See also
+    --------
+    retrieve_models
+
+    """
+    if res.final_model_name is None:
+        raise ValueError('Attribute \'final_model_name\' is None')
+    return retrieve_models(res, names=[res.final_model_name])[0]

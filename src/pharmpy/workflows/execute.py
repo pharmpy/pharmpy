@@ -60,6 +60,8 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume
     from pharmpy.model import Results
 
     if isinstance(res, Results):
+        if hasattr(res, 'tool_database'):
+            res.tool_database = database
         database.store_results(res)
         if hasattr(res, 'rst_path'):
             from pharmpy.modeling.reporting import create_report

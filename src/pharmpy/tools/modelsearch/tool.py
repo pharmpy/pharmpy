@@ -119,15 +119,15 @@ class ModelSearchResults(pharmpy.results.Results):
         summary_individuals=None,
         summary_individuals_count=None,
         summary_errors=None,
-        best_model=None,
-        input_model=None,
+        final_model_name=None,
         models=None,
+        tool_database=None,
     ):
         self.summary_tool = summary_tool
         self.summary_models = summary_models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
         self.summary_errors = summary_errors
-        self.best_model = best_model
-        self.input_model = input_model
+        self.final_model_name = final_model_name
         self.models = models
+        self.tool_database = tool_database

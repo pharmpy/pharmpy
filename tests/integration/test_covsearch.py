@@ -1,19 +1,8 @@
-from pathlib import Path
-
 from pharmpy.tools import run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-def _model_count(rundir: Path):
-    return sum(
-        map(
-            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
-            ((rundir / 'models').iterdir()),
-        )
-    )
-
-
-def test_default(tmp_path, start_model):
+def test_default(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         effects = [
             ('CL', 'AGE', 'exp', '*'),
@@ -36,10 +25,10 @@ def test_default(tmp_path, start_model):
         )
 
         rundir = tmp_path / 'covsearch_dir1'
-        assert _model_count(rundir) >= len(effects)
+        assert model_count(rundir) >= len(effects)
 
 
-def test_default_str(tmp_path, start_model):
+def test_default_str(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         run_tool(
             'covsearch',
@@ -50,4 +39,4 @@ def test_default_str(tmp_path, start_model):
         )
 
         rundir = tmp_path / 'covsearch_dir1'
-        assert _model_count(rundir) >= 9
+        assert model_count(rundir) >= 9

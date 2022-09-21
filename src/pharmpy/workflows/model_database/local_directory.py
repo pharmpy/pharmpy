@@ -167,6 +167,10 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
             # NOTE Commit transaction (only if no exception was raised)
             path.unlink()
 
+    def list_models(self):
+        model_dir_names = [p.name for p in self.path.glob('*') if not p.name.startswith('.')]
+        return sorted(model_dir_names)
+
     def __repr__(self):
         return f"LocalModelDirectoryDatabase({self.path})"
 

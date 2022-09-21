@@ -8,6 +8,7 @@ from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.data import remove_loq_data
 from pharmpy.modeling.eta_additions import get_occasion_levels
 from pharmpy.modeling.results import summarize_errors, write_results
+from pharmpy.tools import retrieve_final_model
 from pharmpy.workflows import default_tool_database
 
 from ..run import fit, run_tool
@@ -148,7 +149,8 @@ def run_amd(
             sum_models.append(None)
             sum_inds_counts.append(None)
         else:
-            next_model = subresults.best_model
+            if subresults.final_model_name != next_model.name:
+                next_model = retrieve_final_model(subresults)
             if hasattr(subresults, 'summary_tool'):
                 sum_tools.append(subresults.summary_tool.reset_index()),
             else:
