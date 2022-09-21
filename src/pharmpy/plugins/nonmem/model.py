@@ -161,6 +161,31 @@ def _parse_random_variables(model):
     return rvs
 
 
+def _parse_statements(model):
+    rec = model.get_pred_pk_record()
+    statements = rec.statements
+
+    des = model._get_des_record()
+    error = model._get_error_record()
+    if error:
+        sub = model.control_stream.get_records('SUBROUTINES')[0]
+        comp = compartmental_model(model, sub.advan, sub.trans, des)
+        trans_amounts = dict()
+        if comp is not None:
+            cm, link = comp
+            statements += [cm, link]
+            for i, amount in enumerate(cm.amounts, start=1):
+                trans_amounts[sympy.Symbol(f"A({i})")] = amount
+        else:
+            statements += ODESystem()  # FIXME: Placeholder for ODE-system
+            # FIXME: Dummy link statement
+            statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
+        statements += error.statements
+        if trans_amounts:
+            statements = statements.subs(trans_amounts)
+    return statements
+
+
 def _adjust_iovs(rvs):
     updated = []
     for i, dist in enumerate(rvs):
@@ -533,27 +558,7 @@ class Model(pharmpy.model.Model):
         except AttributeError:
             pass
 
-        rec = self.get_pred_pk_record()
-        statements = rec.statements
-
-        des = self._get_des_record()
-        error = self._get_error_record()
-        if error:
-            sub = self.control_stream.get_records('SUBROUTINES')[0]
-            comp = compartmental_model(self, sub.advan, sub.trans, des)
-            trans_amounts = dict()
-            if comp is not None:
-                cm, link = comp
-                statements += [cm, link]
-                for i, amount in enumerate(cm.amounts, start=1):
-                    trans_amounts[sympy.Symbol(f"A({i})")] = amount
-            else:
-                statements += ODESystem()  # FIXME: Placeholder for ODE-system
-                # FIXME: Dummy link statement
-                statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
-            statements += error.statements
-            if trans_amounts:
-                statements = statements.subs(trans_amounts)
+        statements = _parse_statements(self)
 
         trans_statements, trans_params = self._create_name_trans(statements)
         for theta in self.control_stream.get_records('THETA'):
