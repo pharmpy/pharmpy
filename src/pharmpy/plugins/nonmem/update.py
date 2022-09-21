@@ -27,8 +27,8 @@ from .records.factory import create_record
 
 def update_description(model):
     if model.description != model.internals._old_description:
-        model = model.control_stream.get_records('PROBLEM')[0]
-        model.title = model.description
+        probrec = model.control_stream.get_records('PROBLEM')[0]
+        probrec.title = model.description
 
 
 def update_parameters(model: Model, old: Parameters, new: Parameters):
