@@ -26,7 +26,7 @@ def test_block_structure(tmp_path, model_count, start_model):
         assert res.summary_tool.loc['mox2']['description'] == '[CL]+[VC]+[MAT]'
         input_model = retrieve_models(res, names=['input_model'])[0]
         assert isinstance(input_model.random_variables['ETA(1)'], NormalDistribution)
-        
+
         assert (
             res.summary_tool.loc['iivsearch_block_structure_candidate1']['description']
             == '[CL,VC,MAT]'
@@ -59,7 +59,7 @@ def test_no_of_etas(tmp_path, model_count, start_model):
         assert res.summary_tool.loc['mox2']['description'] == '[CL]+[VC]+[MAT]'
         input_model = retrieve_models(res, names=['input_model'])[0]
         assert input_model.random_variables.iiv.names == ['ETA(1)', 'ETA(2)', 'ETA(3)']
-        
+
         assert res.summary_tool.iloc[-1]['description'] == '[]'
         assert res.models[0].random_variables.iiv.names == ['ETA(2)', 'ETA(3)']
 
