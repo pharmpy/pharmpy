@@ -1,7 +1,6 @@
 import warnings
 from functools import partial
 
-import pharmpy.plugins as plugins
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.modeling.common import convert_model
@@ -78,6 +77,8 @@ def run_amd(
     run_tool
 
     """
+    from pharmpy.plugins import nonmem  # FIXME We should not depend on NONMEM
+
     if type(input) is str:
         from pharmpy.tools.amd.funcs import create_start_model
 
@@ -85,7 +86,7 @@ def run_amd(
             input, modeltype=modeltype, cl_init=cl_init, vc_init=vc_init, mat_init=mat_init
         )
         model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
-    elif type(input) is plugins.nonmem.model.Model:
+    elif type(input) is nonmem.model.Model:
         model = input
         model.name = 'start'
     else:
