@@ -975,6 +975,7 @@ def _remap_compartmental_system(sset, natural_assignments):
 
     assignments = list(_assignments(sset.before_odes))
     for assignment in reversed(assignments):
+        # FIXME can be made more general, doesn't cover cases with recursively defined symbols (e.g. V=V/2)
         if assignment not in natural_assignments:
             # NOTE Substitution must be made in this order
             cs = cs.subs({assignment.symbol: assignment.expression})
@@ -1112,7 +1113,7 @@ def _classify_assignments(assignments: Sequence[Assignment]):
 
     dependencies = _dependency_graph(assignments)
 
-    # Filter out all symbols that have dependencies (e.g. remove constants X=1)
+    # Keep all symbols that have dependencies (e.g. remove constants X=1)
     symbols = set(filter(dependencies.__getitem__, dependencies.keys()))
 
     for assignment in assignments:
