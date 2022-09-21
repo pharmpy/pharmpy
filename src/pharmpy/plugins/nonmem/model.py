@@ -303,8 +303,8 @@ class Model(pharmpy.model.Model):
         if trans:
             self.statements  # Read statements unless read
         if hasattr(self, '_statements'):
-            update_statements(self, self._old_statements, self._statements, trans)
-            self._old_statements = self._statements
+            update_statements(self, self.internals._old_statements, self._statements, trans)
+            self.internals._old_statements = self._statements
 
         if (
             self._dataset_updated
@@ -585,7 +585,7 @@ class Model(pharmpy.model.Model):
         statements = statements.subs(trans_statements)
 
         self._statements = statements
-        self._old_statements = statements
+        self.internals._old_statements = statements
         return statements
 
     @statements.setter
