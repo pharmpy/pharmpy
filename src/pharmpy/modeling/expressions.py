@@ -864,22 +864,43 @@ def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
     return _depends_on_any_of(model, parameter, rvs)
 
 
-def get_rv_parameter(model: Model, rv: str) -> str:
-    # NOTE This was just copied here and is used elsewhere but should be made
-    # more general
-    sset = model.statements
+def get_rv_parameters(model: Model, rv: str) -> List[str]:
+    """Retrieves parameters in :class:`pharmpy.model` given a random variable.
 
-    s = _find_assignment(sset, sympy.Symbol(rv))
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to retrieve parameters from
+    rv : str
+        Name of random variable to retrieve
 
-    if s is None:
-        raise ValueError(f'Could not find an assignment to {rv}')
+    Return
+    ------
+    Parameters
+        The parameters of the random variable for the given model
 
-    if len(s.expression.free_symbols) > 1:
-        return s.symbol.name
-    else:
-        s = _find_assignment(sset, s.symbol)
-        assert s is not None
-        return s.symbol.name
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> get_rv_parameters(model, 'ETA(1)')
+    ['CL']
+
+    See also
+    --------
+    has_random_effect
+    get_pk_parameters
+
+    """
+    if rv not in model.random_variables.names:
+        raise ValueError(f'Could not find random variable: {rv}')
+
+    natural_assignments = _get_natural_assignments(model.statements.before_odes)
+
+    free_symbols = model.statements.free_symbols
+    dependency_graph = _dependency_graph(natural_assignments)
+    filtered = list(_filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)}))
+    return filtered
 
 
 def _find_assignment(sset, symb_target):
@@ -928,25 +949,36 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
     get_individual_parameters
 
     """
+    natural_assignments = _get_natural_assignments(model.statements.before_odes)
+    cs_remapped = _remap_compartmental_system(model.statements, natural_assignments)
 
-    cs = model.statements.ode_system.to_compartmental_system()
+    free_symbols = set(_pk_free_symbols(cs_remapped, kind))
 
-    classified_assignments = list(
-        _classify_assignments(list(_assignments(model.statements.before_odes)))
-    )
-
-    for t, assignment in reversed(classified_assignments):
-        if t == 'synthetic':
-            # NOTE Substitution must be made in this order
-            cs = cs.subs({assignment.symbol: assignment.expression})
-
-    free_symbols = set(_pk_free_symbols(cs, kind))
-
-    assignments = list(_remove_synthetic_assignments(classified_assignments))
-
-    dependency_graph = _dependency_graph(assignments)
+    dependency_graph = _dependency_graph(natural_assignments)
 
     return sorted(_filter_symbols(dependency_graph, free_symbols))
+
+
+def _get_natural_assignments(before_odes):
+    # Return assignments where assignments that are constants (e.g. X=1),
+    # single length expressions (e.g. S1=V), and divisions between parameters
+    # (e.g. K=CL/V) have been filtered out
+    classified_assignments = list(_classify_assignments(list(_assignments(before_odes))))
+    natural_assignments = list(_remove_synthetic_assignments(classified_assignments))
+    return natural_assignments
+
+
+def _remap_compartmental_system(sset, natural_assignments):
+    # Return compartmental system where rates that are synthetic assignments
+    # have been substituted with their full definition (e.g K -> CL/V
+    cs = sset.ode_system.to_compartmental_system()
+
+    assignments = list(_assignments(sset.before_odes))
+    for assignment in reversed(assignments):
+        if assignment not in natural_assignments:
+            # NOTE Substitution must be made in this order
+            cs = cs.subs({assignment.symbol: assignment.expression})
+    return cs
 
 
 def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[Symbol]:
@@ -1080,6 +1112,7 @@ def _classify_assignments(assignments: Sequence[Assignment]):
 
     dependencies = _dependency_graph(assignments)
 
+    # Filter out all symbols that have dependencies (e.g. remove constants X=1)
     symbols = set(filter(dependencies.__getitem__, dependencies.keys()))
 
     for assignment in assignments:
@@ -1088,18 +1121,18 @@ def _classify_assignments(assignments: Sequence[Assignment]):
         expression = assignment.expression
         fs = expression.free_symbols
 
-        if symbol not in fs:  # NOTE We skip redefinitions
+        if symbol not in fs:  # NOTE We skip redefinitions (e.g. CL=CL+1)
             if len(fs) == 1:
                 a = next(iter(fs))
                 if a in symbols:
-                    yield 'synthetic', assignment
+                    yield 'synthetic', assignment  # E.g. S1=V
                     continue
             elif len(fs) == 2:
                 it = iter(fs)
                 a = next(it)
                 b = next(it)
                 if a in symbols and b in symbols and (expression == a / b or expression == b / a):
-                    yield 'synthetic', assignment
+                    yield 'synthetic', assignment  # E.g. K=CL/V
                     continue
 
         yield 'natural', assignment
