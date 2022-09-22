@@ -232,20 +232,23 @@ def create_symbol(model, stem, force_numbering=False):
 
 
 def _find_eta_assignments(model):
-    # Is this find individual parameters?
+    # NOTE This locates all assignment to ETAs of symbols that do not depend on
+    # any other ETA
     statements = model.statements.before_odes
     etas = {sympy.Symbol(eta) for eta in model.random_variables.etas.names}
     found = set()
     leafs = []
-    for s in reversed(statements):
+
+    for i, s in reversed(list(enumerate(statements))):
         if (
-            etas & s.free_symbols
-            and len(etas & statements.full_expression(s.symbol).free_symbols) == 1
-            and s.symbol not in found
+            s.symbol not in found
+            and not etas.isdisjoint(s.free_symbols)
+            and len(etas & statements[:i].full_expression(s.expression).free_symbols) == 1
         ):
-            leafs = [s] + leafs
+            leafs.append((i, s))
             found.update(s.free_symbols)
-    return leafs
+
+    return reversed(leafs)
 
 
 def mu_reference_model(model):
@@ -288,26 +291,28 @@ def mu_reference_model(model):
     V = ℯ
     S₁ = V
     """
-    assignments = _find_eta_assignments(model)
-    for i, eta in enumerate(model.random_variables.etas.names, start=1):
-        for s in assignments:
-            symb = sympy.Symbol(eta)
-            if symb in s.expression.free_symbols:
-                assind = model.statements.find_assignment_index(s.symbol)
-                assignment = model.statements[assind]
-                expr = assignment.expression
-                _, dep = expr.as_independent(symb)
-                mu = sympy.Symbol(f'mu_{i}')
-                newdep = subs(dep, {symb: mu + symb})
-                mu_expr = sympy.solve(expr - newdep, mu)[0]
-                mu_ass = Assignment(mu, mu_expr)
-                model.statements = model.statements[0:assind] + mu_ass + model.statements[assind:]
-                ind = model.statements.find_assignment_index(s.symbol)
-                model.statements = (
-                    model.statements[0:ind]
-                    + Assignment(s.symbol, newdep)
-                    + model.statements[ind + 1 :]
-                )
+    index = {sympy.Symbol(eta): i for i, eta in enumerate(model.random_variables.etas.names, 1)}
+    etas = set(index)
+
+    offset = 0
+
+    for old_ind, assignment in _find_eta_assignments(model):
+        # NOTE The sequence of old_ind must be increasing
+        eta = next(iter(etas.intersection(assignment.expression.free_symbols)))
+        old_def = assignment.expression
+        dep = old_def.as_independent(eta)[1]
+        mu = sympy.Symbol(f'mu_{index[eta]}')
+        new_def = subs(dep, {eta: mu + eta})
+        mu_expr = sympy.solve(old_def - new_def, mu)[0]
+        insertion_ind = offset + old_ind
+        model.statements = (
+            model.statements[0:insertion_ind]
+            + Assignment(mu, mu_expr)
+            + Assignment(assignment.symbol, new_def)
+            + model.statements[insertion_ind + 1 :]
+        )
+        offset += 1  # NOTE We need this offset because we replace one
+        # statement by two statements
     return model
 
 
