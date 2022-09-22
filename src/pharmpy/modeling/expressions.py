@@ -1,17 +1,11 @@
+from __future__ import annotations
+
 from itertools import filterfalse
 from typing import Any, Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify
-from pharmpy.model import (
-    Assignment,
-    Compartment,
-    CompartmentalSystem,
-    Model,
-    ODESystem,
-    RandomVariables,
-    Statements,
-)
+from pharmpy.model import Assignment, Compartment, CompartmentalSystem, Model, ODESystem, Statements
 
 from .parameters import get_thetas
 
@@ -811,14 +805,13 @@ def _rvs(model: Model, level: str):
     raise ValueError(f'Cannot handle level `{level}`')
 
 
-def _depends_on_any_of(model: Model, parameter: str, rvs: RandomVariables):
+def _depends_on_any_of(model: Model, parameter: sympy.Symbol, symbols: Iterable[sympy.Symbol]):
     sset = model.statements
     assignment = sset.find_assignment(parameter)
     if not assignment:
         raise ValueError(f'{model} has not parameter `{parameter}`')
     full_expression = sset.before_odes.full_expression(assignment.symbol)
-    symb_names = {symb.name for symb in full_expression.free_symbols}
-    return any(map(symb_names.__contains__, rvs.names))
+    return not full_expression.free_symbols.isdisjoint(symbols)
 
 
 def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
@@ -858,7 +851,8 @@ def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
     """
 
     rvs = _rvs(model, level)
-    return _depends_on_any_of(model, parameter, rvs)
+    symbol = sympy.Symbol(parameter)
+    return _depends_on_any_of(model, symbol, map(sympy.Symbol, rvs.names))
 
 
 def get_rv_parameters(model: Model, rv: str) -> List[str]:
