@@ -810,13 +810,15 @@ def _rvs(model: Model, level: str):
     raise ValueError(f'Cannot handle level `{level}`')
 
 
-def _depends_on_any_of(model: Model, parameter: sympy.Symbol, symbols: Iterable[sympy.Symbol]):
-    sset = model.statements
-    assignment = sset.find_assignment(parameter)
-    if not assignment:
-        raise ValueError(f'{model} has not parameter `{parameter}`')
-    full_expression = sset.before_odes.full_expression(assignment.symbol)
-    return not full_expression.free_symbols.isdisjoint(symbols)
+def _depends_on_any_of(
+    assignments: Statements, symbol: sympy.Symbol, symbols: Iterable[sympy.Symbol]
+):
+    dependency_graph = _dependency_graph(assignments)
+    if symbol not in dependency_graph:
+        raise KeyError(symbol)
+
+    # NOTE Could be faster by returning immediately once found
+    return not _reachable_from({symbol}, lambda x: dependency_graph.get(x, [])).isdisjoint(symbols)
 
 
 def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
@@ -857,7 +859,7 @@ def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
 
     rvs = _rvs(model, level)
     symbol = sympy.Symbol(parameter)
-    return _depends_on_any_of(model, symbol, map(sympy.Symbol, rvs.names))
+    return _depends_on_any_of(model.statements.before_odes, symbol, map(sympy.Symbol, rvs.names))
 
 
 def get_rv_parameters(model: Model, rv: str) -> List[str]:
