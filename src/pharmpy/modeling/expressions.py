@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from itertools import filterfalse
-from typing import Any, Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
+from typing import Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify
@@ -10,8 +10,7 @@ from pharmpy.model import Assignment, Compartment, CompartmentalSystem, Model, O
 from .parameters import get_thetas
 
 T = TypeVar('T')
-Symbol = Any  # NOTE should be sympy.Symbol but we want lazy loading
-Expr = Any  # NOTE same with sympy.Expr
+U = TypeVar('U')
 
 
 def get_observation_expression(model):
@@ -975,7 +974,7 @@ def _remap_compartmental_system(sset, natural_assignments):
     return cs
 
 
-def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[Symbol]:
+def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[sympy.Symbol]:
 
     if kind == 'all':
         return cs.free_symbols
@@ -998,7 +997,7 @@ def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[Symbol]:
 
 def _pk_free_symbols_from_compartment(
     cs: CompartmentalSystem, compartment: Compartment
-) -> Iterable[Symbol]:
+) -> Iterable[sympy.Symbol]:
     vertices = _get_component(cs, compartment)
     edges = _get_component_edges(cs, vertices)
     is_central = compartment == cs.central_compartment
@@ -1042,8 +1041,8 @@ def _get_component_edges(cs: CompartmentalSystem, vertices: Set[Compartment]):
 def _get_component_free_symbols(
     is_central: bool,
     vertices: Set[Compartment],
-    edges: Iterable[Tuple[Compartment, Compartment, Expr]],
-) -> Iterable[Symbol]:
+    edges: Iterable[Tuple[Compartment, Compartment, sympy.Expr]],
+) -> Iterable[sympy.Symbol]:
 
     for (u, v, rate) in edges:
         # NOTE These must not necessarily be outgoing edges
@@ -1073,10 +1072,10 @@ def _assignments(sset: Statements):
 
 
 def _filter_symbols(
-    dependency_graph: Dict[Symbol, Set[Symbol]],
-    roots: Set[Symbol],
-    leaves: Union[Set[Symbol], None] = None,
-) -> Iterable[str]:
+    dependency_graph: Dict[sympy.Symbol, Set[sympy.Symbol]],
+    roots: Set[sympy.Symbol],
+    leaves: Union[Set[sympy.Symbol], None] = None,
+) -> Set[sympy.Symbol]:
 
     dependents = _graph_inverse(dependency_graph)
 
@@ -1182,7 +1181,7 @@ def _dependency_graph(assignments: Sequence[Assignment]):
     return dependencies
 
 
-def _graph_inverse(g):
+def _graph_inverse(g: Dict[T, Set[U]]) -> Dict[U, Set[T]]:
 
     h = {}
 
