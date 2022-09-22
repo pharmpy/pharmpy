@@ -1,3 +1,4 @@
+import re
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass
 from itertools import count
@@ -322,13 +323,39 @@ def wf_effects_addition(model: Model, candidate_effects: List[EffectLiteral]):
 
 def task_add_covariate_effect(model: Model, effect: EffectLiteral, effect_index: int):
     model_with_added_effect = copy_model(model, name=f'{model.name}+{effect_index}')
-    model_with_added_effect.description = (
-        f'add_covariate_effect(<{model.description or model.name}>, {", ".join(map(str,effect))})'
-    )
+    model_with_added_effect.description = _create_description(model, effect)
     model_with_added_effect.parent_model = model.name
     update_initial_estimates(model_with_added_effect)
     add_covariate_effect(model_with_added_effect, *effect, allow_nested=True)
     return model_with_added_effect
+
+
+def _create_description(model, effect, forward=True):
+    # Will create this type of description: 'FORWARD[(CL_AGE,exp,*),(MAT_AGE,exp,*)];BACKWARD[(MAT_AGE,exp,*)]
+    parameter, covariate, fp, operation = effect
+    effect_str = f'({parameter}_{covariate},{fp},{operation})'
+    direction = 'FORWARD' if forward else 'BACKWARD'
+    description_prev = model.description
+
+    if description_prev:
+        if direction in description_prev:
+            description_split = description_prev.split(';')
+            section_to_change = description_split[-1]
+
+            m = re.compile(r'(\([\w,_*]+\),*)+')  # Matches on '(CL_WGT,exp,*)'
+            effects_prev = m.search(section_to_change).group(0)
+            assert effects_prev
+            effects_new = effects_prev + ',' + effect_str
+
+            description_effect_added = section_to_change.replace(effects_prev, effects_new)
+            description_new = description_prev.replace(section_to_change, description_effect_added)
+            return description_new
+        else:  # The algorithm is moving in a new direction
+            description_new = description_prev + f';{direction}[{effect_str}]'
+            return description_new
+    else:
+        description_new = f'{direction}[{effect_str}]'
+        return description_new
 
 
 def wf_effects_removal(
@@ -360,10 +387,7 @@ def task_remove_covariate_effect(
 ):
     model = candidate.model
     model_with_removed_effect = copy_model(base_model, name=f'{model.name}-{effect_index}')
-    model_with_removed_effect.description = (
-        'remove_covariate_effect'
-        f'(<{model.description or model.name}>, {", ".join(map(str,effect))})'
-    )
+    model_with_removed_effect.description = _create_description(model, effect, forward=False)
     model_with_removed_effect.parent_model = model.name
 
     for kept_effect in _added_effects((*candidate.steps, BackwardStep(-1, RemoveEffect(*effect)))):
