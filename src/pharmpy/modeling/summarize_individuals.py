@@ -129,7 +129,7 @@ def predicted_dofv(model: Model) -> Union[Series, float]:
 
 def ofv(model: Model) -> Union[Series, float]:
     res = model.modelfit_results
-    return np.nan if res is None else res.individual_ofv
+    return np.nan if res is None or res.individual_ofv is None else res.individual_ofv
 
 
 def dofv(parent_model: Union[Model, None], candidate_model: Model) -> Union[Series, float]:
