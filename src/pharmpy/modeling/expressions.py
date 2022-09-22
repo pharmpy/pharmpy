@@ -786,11 +786,14 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
     dependency_graph = _dependency_graph(assignments)
 
     return sorted(
-        _filter_symbols(
-            dependency_graph,
-            free_symbols,
-            set().union(
-                *(rvs[rv].free_symbols for rv in rvs.names if rvs[rv].get_variance(rv) != 0)
+        map(
+            str,
+            _filter_symbols(
+                dependency_graph,
+                free_symbols,
+                set().union(
+                    *(rvs[rv].free_symbols for rv in rvs.names if rvs[rv].get_variance(rv) != 0)
+                ),
             ),
         )
     )
@@ -893,8 +896,7 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
 
     free_symbols = model.statements.free_symbols
     dependency_graph = _dependency_graph(natural_assignments)
-    names_filtered = sorted(_filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)}))
-    return names_filtered
+    return sorted(map(str, _filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)})))
 
 
 def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
@@ -940,7 +942,7 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
 
     dependency_graph = _dependency_graph(natural_assignments)
 
-    return sorted(_filter_symbols(dependency_graph, free_symbols))
+    return sorted(map(str, _filter_symbols(dependency_graph, free_symbols)))
 
 
 def _get_natural_assignments(before_odes):
@@ -1080,17 +1082,11 @@ def _filter_symbols(
             _reachable_from(
                 leaves,
                 lambda x: dependents.get(x, []),
-            )
-            & free_symbols
+            ).intersection(free_symbols)
         )
     )
 
-    return (
-        symbol.name
-        for symbol in reachable
-        if symbol in dependency_graph
-        and (symbol not in dependents or dependents[symbol].isdisjoint(free_symbols))
-    )
+    return reachable.difference(dependents.keys()).intersection(dependency_graph.keys())
 
 
 def _classify_assignments(assignments: Sequence[Assignment]):
