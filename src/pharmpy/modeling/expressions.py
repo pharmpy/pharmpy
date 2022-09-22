@@ -1175,6 +1175,19 @@ def _remove_covariate_effect_from_statements_recursive(
     )
 
 
+def _dependencies(assignments: Statements, symbol: sympy.Symbol) -> Set[sympy.Symbol]:
+    dependency_graph = _dependency_graph(assignments)
+    return reachable_from({symbol}, lambda x: dependency_graph.get(x, []))
+
+
+def get_covariate_effects_covariates(model: Model, parameter: str) -> List[str]:
+    dependencies = _dependencies(model.statements.before_odes, sympy.Symbol(parameter))
+    dependencies_names = map(lambda s: s.name, dependencies)
+    covariates_names = model.datainfo.typeix['covariate'].names
+
+    return sorted(set(dependencies_names) & set(covariates_names))
+
+
 def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
     """Retrieves PK parameters in :class:`pharmpy.model`.
 
