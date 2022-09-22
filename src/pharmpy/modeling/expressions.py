@@ -39,10 +39,13 @@ def get_observation_expression(model):
      - OETA₂) + EPS(1)⋅(D_EPS1 + D_EPSETA1_1⋅(ETA(1) - OETA₁)) + OPRED
     """
     stats = model.statements
+    dv = model.dependent_variable
     for i, s in enumerate(stats):
-        if s.symbol == model.dependent_variable:
+        if s.symbol == dv:
             y = s.expression
             break
+    else:
+        raise ValueError('Could not locate dependent variable expression')
 
     for j in range(i, -1, -1):
         y = subs(y, {stats[j].symbol: stats[j].expression}, simultaneous=True)
