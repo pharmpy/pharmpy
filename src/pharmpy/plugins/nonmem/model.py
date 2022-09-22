@@ -243,6 +243,9 @@ class Model(pharmpy.model.Model):
         self._estimation_steps = steps
         self.internals._old_estimation_steps = steps
 
+        self.parameters
+        self.random_variables
+
     @property
     def name(self):
         return self._name

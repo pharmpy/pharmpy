@@ -442,8 +442,8 @@ $OMEGA 0.01
 $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-        model = Model.create_model(StringIO(code))
         with pytest.warns(UserWarning):
+            model = Model.create_model(StringIO(code))
             assert model.parameters.names == ['THETA(1)', 'OMEGA(1,1)', 'SIGMA(1,1)']
 
 
@@ -529,9 +529,8 @@ def test_symbol_names_priority(
 
 def test_clashing_parameter_names(load_model_for_test, datadir):
     with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-        model = load_model_for_test(datadir / 'pheno_clashing_symbols.mod')
         with pytest.warns(UserWarning):
-            model.statements
+            model = load_model_for_test(datadir / 'pheno_clashing_symbols.mod')
         assert model.parameters.names == ['THETA(1)', 'TVV', 'IVCL', 'OMEGA(2,2)', 'SIGMA(1,1)']
 
         code = """$PROBLEM base model
@@ -546,8 +545,8 @@ $OMEGA 0.01 ; TV
 $SIGMA 1 ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-        model = Model.create_model(StringIO(code))
         with pytest.warns(UserWarning):
+            model = Model.create_model(StringIO(code))
             assert model.parameters.names == ['TV', 'OMEGA(1,1)', 'SIGMA(1,1)']
 
         code = """$PROBLEM base model
@@ -561,8 +560,8 @@ $THETA 0.1  ; TV
 $THETA 0.1  ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-        model = Model.create_model(StringIO(code))
         with pytest.warns(UserWarning):
+            model = Model.create_model(StringIO(code))
             assert model.parameters.names == ['TV', 'THETA(2)']
 
 
