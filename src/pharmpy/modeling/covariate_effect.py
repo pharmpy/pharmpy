@@ -8,7 +8,7 @@ from operator import add, mul
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
+from pharmpy.expressions import subs, sympify
 from pharmpy.model import Assignment, Parameter, Parameters
 
 from .data import get_baselines
@@ -184,8 +184,10 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     ):
         statements[-1] = Assignment(
             effect_statement.symbol,
-            effect_statement.expression.subs(
-                {parameter: last_existing_parameter_assignment.expression}
+            subs(
+                effect_statement.expression,
+                {parameter: last_existing_parameter_assignment.expression},
+                simultaneous=True,
             ),
         )
         sset = sset[0 : insertion_index - 1] + sset[insertion_index:]
@@ -402,7 +404,14 @@ class CovariateEffect:
         effect_name = f'{parameter}{covariate}'
         self.template = Assignment(
             sympy.Symbol(effect_name),
-            self.template.expression.subs(thetas).subs({'cov': covariate}),
+            subs(
+                subs(
+                    self.template.expression,
+                    thetas,
+                ),
+                {'cov': covariate},
+                simultaneous=True,
+            ),
         )
 
         template_str = [str(symbol) for symbol in self.template.free_symbols]

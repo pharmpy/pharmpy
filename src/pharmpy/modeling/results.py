@@ -1,14 +1,21 @@
 from __future__ import annotations
 
 import math
-import warnings
+from itertools import chain
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
+from pharmpy.expressions import subs, sympify, xreplace_dict
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
+from pharmpy.model.distributions.numeric import ConstantDistribution
+from pharmpy.model.random_variables import (
+    eval_expr,
+    filter_distributions,
+    sample_rvs,
+    subs_distributions,
+)
 
 from .data import get_ids, get_observations
 from .lrt import test as lrt_test
@@ -177,7 +184,7 @@ def calculate_individual_shrinkage(model):
     return ish
 
 
-def calculate_individual_parameter_statistics(model, exprs, rng=None):
+def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
     """Calculate statistics for individual parameters
 
     Calculate the mean (expected value of the distribution), variance
@@ -194,7 +201,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
     ----------
     model : Model
         A previously estimated model
-    exprs : str, sympy expression or iterable of str or sympy expressions
+    expr_or_exprs : str, sympy expression or iterable of str or sympy expressions
         Expressions or equations for parameters of interest. If equations are used
         the names of the left hand sides will be used as the names of the parameters.
     rng : Generator or int
@@ -215,72 +222,132 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
                               mean  variance    stderr
     parameter covariates
     K         p5          0.004234  0.000001  0.001138
-              median      0.004909  0.000001  0.001212
-              p95         0.004910  0.000001  0.001263
+              median      0.004907  0.000001  0.001247
+              p95         0.004907  0.000001  0.001247
     """
     rng = create_rng(rng)
 
-    if isinstance(exprs, str) or isinstance(exprs, sympy.Basic):
-        exprs = [_split_equation(exprs)]
+    split_exprs = map(
+        _split_equation,
+        [expr_or_exprs]
+        if isinstance(expr_or_exprs, str) or isinstance(expr_or_exprs, sympy.Basic)
+        else expr_or_exprs,
+    )
+
+    full_exprs = list(
+        map(
+            lambda e: (e[0], model.statements.before_odes.full_expression(e[1])),
+            split_exprs,
+        )
+    )
+
+    parameter_estimates = xreplace_dict(model.modelfit_results.parameter_estimates)
+
+    all_free_symbols = set().union(*map(lambda e: e[1].free_symbols, full_exprs))
+
+    all_covariate_free_symbols = all_free_symbols.intersection(
+        map(sympy.Symbol, model.datainfo.names)
+    )
+    all_parameter_free_symbols = set(parameter_estimates.keys())
+    all_random_free_symbols = all_free_symbols.difference(
+        all_parameter_free_symbols, all_covariate_free_symbols
+    )
+
+    distributions = list(
+        filter_distributions(
+            model.random_variables,
+            all_random_free_symbols,
+        )
+    )
+
+    sampling_rvs = list(
+        subs_distributions(
+            distributions,
+            parameter_estimates,
+        )
+    )
+
+    batches = []
+
+    if not all_covariate_free_symbols:
+        cases = {'median': dict()}
     else:
-        exprs = [_split_equation(expr) for expr in exprs]
-    cols = set(model.datainfo.names)
-    i = 0
+        dataset = model.dataset
+        column_filter = ['ID'] + list(symbol.name for symbol in all_covariate_free_symbols)
+        q5 = dataset[column_filter].groupby('ID').median().quantile(0.05)
+        q95 = dataset[column_filter].groupby('ID').median().quantile(0.95)
+        median = dataset[column_filter].groupby('ID').median().median()
+        cases = {
+            'p5': xreplace_dict(q5),
+            'median': xreplace_dict(median),
+            'p95': xreplace_dict(q95),
+        }
+
+    filtered_sampling_rvs = list(
+        filter(
+            lambda r: any(map(all_random_free_symbols.__contains__, r[0])),
+            sampling_rvs,
+        )
+    )
+
+    nsamples = 1000000
+    nbatches = 100
+    batchsize = 10
+
+    samples = sample_rvs(filtered_sampling_rvs, nsamples, rng)
+
+    if model.modelfit_results.covariance_matrix is not None:
+        parameters_samples = sample_parameters_from_covariance_matrix(
+            model,
+            n=nbatches,
+            force_posdef_covmatrix=True,
+            rng=rng,
+        )
+
+        for _, row in parameters_samples.iterrows():
+            parameters = xreplace_dict(row)
+            local_sampling_rvs = list(subs_distributions(distributions, parameters)) + [
+                ((key,), ConstantDistribution(value))
+                for key, value in parameters.items()
+                if key in all_parameter_free_symbols
+            ]
+            batch = sample_rvs(local_sampling_rvs, batchsize, rng)
+            batches.append(batch)
+
     table = pd.DataFrame(columns=['parameter', 'covariates', 'mean', 'variance', 'stderr'])
-    for name, expr in exprs:
-        full_expr = model.statements.before_odes.full_expression(expr)
-        covariates = {symb.name for symb in full_expr.free_symbols if symb.name in cols}
-        if not covariates:
-            cases = {'median': dict()}
-        else:
-            dataset = model.dataset
-            q5 = dataset[['ID'] + list(covariates)].groupby('ID').median().quantile(0.05)
-            q95 = dataset[['ID'] + list(covariates)].groupby('ID').median().quantile(0.95)
-            median = dataset[['ID'] + list(covariates)].groupby('ID').median().median()
-            cases = {'p5': dict(q5), 'median': dict(median), 'p95': dict(q95)}
+    i = 0
 
+    for name, full_expr in full_exprs:
         df = pd.DataFrame(index=list(cases.keys()), columns=['mean', 'variance', 'stderr'])
+        parameter_estimates_expr = subs(full_expr, parameter_estimates, simultaneous=True)
+
         for case, cov_values in cases.items():
-            pe = dict(model.modelfit_results.parameter_estimates)
-            cov_expr = full_expr.subs(cov_values)
-            expr = cov_expr.subs(pe)
-            samples = model.random_variables.sample(expr, parameters=pe, samples=1000000, rng=rng)
+            expr = subs(parameter_estimates_expr, cov_values, simultaneous=True)
+            values = eval_expr(expr, nsamples, samples)
 
-            mean = np.mean(samples)
-            variance = np.var(samples)
+            mean = np.mean(values)
+            variance = np.var(values)
 
-            if model.modelfit_results.covariance_matrix is not None:
-                parameters = sample_parameters_from_covariance_matrix(
-                    model,
-                    n=100,
-                    force_posdef_covmatrix=True,
-                    rng=rng,
-                )
-                samples = []
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore')
-                    for _, row in parameters.iterrows():
-                        batch = model.random_variables.sample(
-                            cov_expr.subs(dict(row)),
-                            parameters=dict(row),
-                            samples=10,
-                            rng=rng,
-                        )
-                        samples.extend(list(batch))
-                stderr = pd.Series(samples).std()
-            else:
-                stderr = np.nan
+            # NOTE This is NaN for empty inputs, dtype is required for those.
+            cov_expr = subs(full_expr, cov_values, simultaneous=True)
+            stderr = pd.Series(
+                chain.from_iterable(eval_expr(cov_expr, batchsize, batch) for batch in batches),
+                dtype='float64',
+            ).std()
+
             df.loc[case] = [mean, variance, stderr]
-            df.index.name = 'covariates'
 
+        df.index.name = 'covariates'
         df.reset_index(inplace=True)
         if not name:
             name = f'unknown{i}'
             i += 1
         df['parameter'] = name
         table = pd.concat([table, df])
+
     table.set_index(['parameter', 'covariates'], inplace=True)
     table = table.astype('float64')
+
     return table
 
 
@@ -309,12 +376,12 @@ def calculate_pk_parameters_statistics(model, rng=None):
     >>> from pharmpy.modeling import calculate_pk_parameters_statistics
     >>> model = load_example_model("pheno")
     >>> rng = create_rng(23)
-    >>> calculate_pk_parameters_statistics(model, rng=rng)  # doctest: +NORMALIZE_WHITESPACE
+    >>> calculate_pk_parameters_statistics(model, rng=rng)
                               mean  variance    stderr
     parameter covariates
     k_e       p5          0.004234  0.000001  0.001138
-              median      0.004909  0.000001  0.001212
-              p95         0.004910  0.000001  0.001263
+              median      0.004907  0.000001  0.001247
+              p95         0.004907  0.000001  0.001247
 
     See Also
     --------
@@ -341,7 +408,9 @@ def calculate_pk_parameters_statistics(model, rng=None):
         tmax_closed_form = sympy.solve(d, odes.t)[0]
         expressions.append(sympy.Eq(sympy.Symbol('t_max'), tmax_closed_form))
         e2 = sympy.simplify(expr / depot.dose.amount / sympy.denom(elimination_rate))
-        cmax_dose_closed_form = sympy.simplify(e2.subs({odes.t: tmax_closed_form}))
+        cmax_dose_closed_form = sympy.simplify(
+            subs(e2, {odes.t: tmax_closed_form}, simultaneous=True)
+        )
         expressions.append(sympy.Eq(sympy.Symbol('C_max_dose'), cmax_dose_closed_form))
 
     # Any abs + 1comp + FO elimination
@@ -380,7 +449,7 @@ def calculate_pk_parameters_statistics(model, rng=None):
         A = m[A] / central.dose.amount
         B = m[B] / central.dose.amount
 
-        if (alpha - alpha).extract_multiplicatively(-1) is not None:
+        if (beta - alpha).extract_multiplicatively(-1) is not None:
             # alpha > beta  (sympy couldn't simplify this directly)
             alpha, beta = beta, alpha
             A, B = B, A

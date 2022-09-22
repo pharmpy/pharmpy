@@ -2,7 +2,7 @@ from itertools import filterfalse
 from typing import Any, Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
+from pharmpy.expressions import subs, sympify
 from pharmpy.model import (
     Assignment,
     Compartment,
@@ -52,7 +52,7 @@ def get_observation_expression(model):
             break
 
     for j in range(i, -1, -1):
-        y = y.subs({stats[j].symbol: stats[j].expression})
+        y = subs(y, {stats[j].symbol: stats[j].expression}, simultaneous=True)
 
     return y
 
@@ -83,10 +83,11 @@ def get_individual_prediction_expression(model):
     --------
     get_population_prediction_expression : Get full symbolic epression for the population prediction
     """
-    y = get_observation_expression(model)
-    for eps in model.random_variables.epsilons.names:
-        y = y.subs({sympy.Symbol(eps): 0})
-    return y
+    return subs(
+        get_observation_expression(model),
+        {sympy.Symbol(eps): 0 for eps in model.random_variables.epsilons.names},
+        simultaneous=True,
+    )
 
 
 def get_population_prediction_expression(model):
@@ -116,10 +117,11 @@ def get_population_prediction_expression(model):
     get_individual_prediction_expression : Get full symbolic epression for the individual prediction
     """
 
-    y = get_individual_prediction_expression(model)
-    for eta in model.random_variables.etas.names:
-        y = y.subs({sympy.Symbol(eta): 0})
-    return y
+    return subs(
+        get_individual_prediction_expression(model),
+        {sympy.Symbol(eta): 0 for eta in model.random_variables.etas.names},
+        simultaneous=True,
+    )
 
 
 def calculate_eta_gradient_expression(model):
@@ -148,10 +150,7 @@ def calculate_eta_gradient_expression(model):
     --------
     calculate_epsilon_gradient_expression : Epsilon gradient
     """
-
-    y = get_observation_expression(model)
-    for eps in model.random_variables.epsilons.names:
-        y = y.subs({sympy.Symbol(eps): 0})
+    y = get_individual_prediction_expression(model)
     d = [y.diff(sympy.Symbol(x)) for x in model.random_variables.etas.names]
     return d
 
@@ -303,7 +302,7 @@ def mu_reference_model(model):
                 expr = assignment.expression
                 indep, dep = expr.as_independent(symb)
                 mu = sympy.Symbol(f'mu_{i}')
-                newdep = dep.subs({symb: mu + symb})
+                newdep = subs(dep, {symb: mu + symb})
                 mu_expr = sympy.solve(expr - newdep, mu)[0]
                 mu_ass = Assignment(mu, mu_expr)
                 model.statements = model.statements[0:assind] + mu_ass + model.statements[assind:]
@@ -361,14 +360,14 @@ def simplify_expression(model, expr):
         else:
             s = sympy.Symbol(p.name, real=True)
             d[s] = p.symbol
-        expr = expr.subs(p.symbol, s)
+        expr = subs(expr, {p.symbol: s})
     # Remaining symbols should all be real
     for s in expr.free_symbols:
         if s.is_real is not True:
             new = sympy.Symbol(s.name, real=True)
-            expr = expr.subs(s, new)
+            expr = subs(expr, {s: new})
             d[new] = s
-    simp = sympy.simplify(expr).subs(d)  # Subs symbols back to non-constrained
+    simp = subs(sympy.simplify(expr), d)  # Subs symbols back to non-constrained
     return simp
 
 
@@ -500,13 +499,13 @@ def make_declarative(model):
             else:
                 duplicated_symbols[s.symbol] = duplicated_symbols[s.symbol][1:]
                 if duplicated_symbols[s.symbol]:
-                    current[s.symbol] = s.expression.subs(current)
+                    current[s.symbol] = subs(s.expression, current)
                 else:
-                    ass = Assignment(s.symbol, s.expression.subs(current))
+                    ass = Assignment(s.symbol, subs(s.expression, current))
                     newstats.append(ass)
                     del current[s.symbol]
         else:
-            ass = Assignment(s.symbol, s.expression.subs(current))
+            ass = Assignment(s.symbol, subs(s.expression, current))
             newstats.append(ass)
 
     model.statements = Statements(newstats)
@@ -1152,7 +1151,11 @@ def _remove_synthetic_assignments(classified_assignments: List[Tuple[str, Assign
                 if i < substitution_starts_at_index
                 else Assignment(
                     succeeding.symbol,
-                    succeeding.expression.subs({assignment.symbol: assignment.expression}),
+                    subs(
+                        succeeding.expression,
+                        {assignment.symbol: assignment.expression},
+                        simultaneous=True,
+                    ),
                 )
                 for i, succeeding in enumerate(assignments)
             ]

@@ -10,6 +10,7 @@ import pharmpy.model
 import pharmpy.plugins.nonmem
 import pharmpy.plugins.nonmem.dataset
 from pharmpy.deps import sympy
+from pharmpy.expressions import subs
 from pharmpy.model import (
     Assignment,
     ColumnInfo,
@@ -97,8 +98,10 @@ def convert_model(model):
     nm_model._data_frame = model.dataset
     nm_model._estimation_steps = model.estimation_steps
     nm_model._initial_individual_estimates = model.initial_individual_estimates
-    nm_model.observation_transformation = model.observation_transformation.subs(
-        model.dependent_variable, nm_model.dependent_variable
+    nm_model.observation_transformation = subs(
+        model.observation_transformation,
+        {model.dependent_variable: nm_model.dependent_variable},
+        simultaneous=True,
     )
     nm_model.description = model.description
     nm_model.update_source()

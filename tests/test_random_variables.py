@@ -358,21 +358,26 @@ def test_validate_parameters():
         rvs.validate_parameters({})
 
 
-# def test_sample():
-#    rv1, rv2 = RandomVariable.joint_normal(
-#        ['ETA(1)', 'ETA(2)'],
-#        'iiv',
-#        [0, 0],
-#        [[symbol('a'), symbol('b')], [symbol('b'), symbol('c')]],
-#    )
-#    rvs = RandomVariables([rv1, rv2])
-#    params = {'a': 1, 'b': 0.1, 'c': 2}
-#    samples = rvs.sample(rv1.symbol + rv2.symbol, parameters=params, samples=2, rng=9532)
-#    assert list(samples) == pytest.approx([1.7033555824617346, -1.4031809274765599])
-#    with pytest.raises(TypeError):
-#        rvs.sample(rv1.symbol + rv2.symbol, samples=1, rng=9532)
-#    samples = rvs.sample(1, samples=2)
-#    assert list(samples) == [1.0, 1.0]
+def test_sample():
+    dist = JointNormalDistribution.create(
+        ['ETA(1)', 'ETA(2)'],
+        'iiv',
+        [0, 0],
+        [[symbol('a'), symbol('b')], [symbol('b'), symbol('c')]],
+    )
+
+    rv1, rv2 = list(map(symbol, dist.names))
+    rvs = RandomVariables.create([dist])
+
+    params = {'a': 1, 'b': 0.1, 'c': 2}
+    samples = rvs.sample(rv1 + rv2, parameters=params, samples=2, rng=9532)
+    assert list(samples) == pytest.approx([1.7033555824617346, -1.4031809274765599])
+
+    with pytest.raises(ValueError):
+        rvs.sample(rv1 + rv2, samples=1, rng=9532)
+
+    samples = rvs.sample(1, samples=2)
+    assert list(samples) == [1.0, 1.0]
 
 
 def test_variance_parameters():

@@ -3,7 +3,7 @@
 """
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
+from pharmpy.expressions import subs, sympify
 from pharmpy.model import Assignment, Parameter, Parameters
 
 from .error import has_proportional_error_model
@@ -107,9 +107,9 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
 
 def get_ipred(model):
     expr = model.statements.after_odes.full_expression(model.dependent_variable)
-    for rv in model.random_variables.names:
-        expr = expr.subs(sympy.Symbol(rv), 0)
-    ipred = expr
+    ipred = subs(
+        expr, {sympy.Symbol(rv): 0 for rv in model.random_variables.names}, simultaneous=True
+    )
     for s in model.statements:
         if isinstance(s, Assignment) and s.expression == ipred:
             ipred = s.symbol

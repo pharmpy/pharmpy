@@ -13,6 +13,7 @@ from pharmpy.expressions import (
     canonical_ode_rhs,
     free_images,
     free_images_and_symbols,
+    subs,
     sympify,
 )
 
@@ -111,8 +112,8 @@ class Assignment(Statement):
         CL = ETA_CL⋅WGT + POP_CL
 
         """
-        symbol = self.symbol.subs(substitutions, simultaneous=True)
-        expression = self.expression.subs(substitutions, simultaneous=True)
+        symbol = subs(self.symbol, substitutions, simultaneous=True)
+        expression = subs(self.expression, substitutions, simultaneous=True)
         return Assignment(symbol, expression)
 
     @property
@@ -309,8 +310,8 @@ class ExplicitODESystem(ODESystem):
             for key, value in substitutions.items()
         }
         d.update(substitutions)
-        odes = [ode.subs(d) for ode in self.odes]
-        ics = {key.subs(d): value.subs(d) for key, value in self.ics.items()}
+        odes = [subs(ode, d) for ode in self.odes]
+        ics = {subs(key, d): subs(value, d) for key, value in self.ics.items()}
         return ExplicitODESystem(odes, ics)
 
     @property
@@ -696,7 +697,7 @@ class CompartmentalSystem(ODESystem):
         """
         cb = CompartmentalSystemBuilder(self)
         for (u, v, rate) in cb._g.edges.data('rate'):
-            rate_sub = rate.subs(substitutions, simultaneous=True)
+            rate_sub = subs(rate, substitutions, simultaneous=True)
             cb._g.edges[u, v]['rate'] = rate_sub
         mapping = {comp: comp.subs(substitutions) for comp in self._g.nodes}
         nx.relabel_nodes(cb._g, mapping, copy=False)
@@ -1448,8 +1449,8 @@ class Compartment:
         return Compartment(
             self.name,
             dose,
-            self.lag_time.subs(substitutions),
-            self.bioavailability.subs(substitutions),
+            subs(self.lag_time, substitutions),
+            subs(self.bioavailability, substitutions),
         )
 
     def __eq__(self, other):
@@ -1538,7 +1539,7 @@ class Bolus(Dose):
         >>> dose.subs({'AMT': 'DOSE'})
         Bolus(DOSE)
         """
-        return Bolus(self.amount.subs(substitutions, simultaneous=True))
+        return Bolus(subs(self.amount, substitutions, simultaneous=True))
 
     def __eq__(self, other):
         return isinstance(other, Bolus) and self.amount == other.amount
@@ -1640,13 +1641,13 @@ class Infusion(Dose):
         >>> dose.subs({'DUR': 'D1'})
         Infusion(AMT, duration=D1)
         """
-        amount = self.amount.subs(substitutions, simultaneous=True)
+        amount = subs(self.amount, substitutions, simultaneous=True)
         if self.rate is not None:
-            rate = self.rate.subs(substitutions, simultaneous=True)
+            rate = subs(self.rate, substitutions, simultaneous=True)
             duration = None
         else:
             rate = None
-            duration = self.duration.subs(substitutions, simultaneous=True)
+            duration = subs(self.duration, substitutions, simultaneous=True)
         return Infusion(amount, rate, duration)
 
     def __eq__(self, other):
@@ -2120,7 +2121,9 @@ class Statements(Sequence):
                     "ODESystem not supported by full_expression. Use the properties before_odes "
                     "or after_odes."
                 )
-            expression = expression.subs({statement.symbol: statement.expression})
+            expression = subs(
+                expression, {statement.symbol: statement.expression}, simultaneous=True
+            )
         return expression
 
     def to_compartmental_system(self):
