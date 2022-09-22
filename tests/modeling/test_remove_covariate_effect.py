@@ -1,6 +1,5 @@
 import pytest
 
-from pharmpy.model import Model
 from pharmpy.modeling import has_covariate_effect, remove_covariate_effect
 
 from ..lib import diff
@@ -342,8 +341,8 @@ from ..lib import diff
     ],
     ids=repr,
 )
-def test_remove_covariate_effect(testdata, model_path, effects, expected):
-    model = Model.create_model(testdata.joinpath(*model_path))
+def test_remove_covariate_effect(load_model_for_test, testdata, model_path, effects, expected):
+    model = load_model_for_test(testdata.joinpath(*model_path))
     error_record_before = ''.join(map(str, model.internals.control_stream.get_records('ERROR')))
 
     for effect in effects:
@@ -358,7 +357,7 @@ def test_remove_covariate_effect(testdata, model_path, effects, expected):
     model.update_source()
     error_record_after = ''.join(map(str, model.internals.control_stream.get_records('ERROR')))
 
-    original_model = Model.create_model(testdata.joinpath(*model_path))
+    original_model = load_model_for_test(testdata.joinpath(*model_path))
     assert (
         diff(
             original_model.internals.control_stream.get_pred_pk_record(),
