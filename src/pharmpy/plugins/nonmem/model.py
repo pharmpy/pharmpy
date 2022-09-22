@@ -639,7 +639,7 @@ class Model(pharmpy.model.Model):
             trans_sset_setting, trans_pset_setting = conf_functions[setting]
             if setting != 'basic':
                 clashing_symbols.update(
-                    self._clashing_symbols(statements, {**trans_sset_setting, **trans_pset_setting})
+                    _clashing_symbols(statements, {**trans_sset_setting, **trans_pset_setting})
                 )
             for name_current, name_new in trans_sset_setting.items():
                 name_nonmem = sset_current[name_current]
@@ -734,12 +734,6 @@ class Model(pharmpy.model.Model):
         }
         trans_statements = self.internals.control_stream.abbreviated.replace
         return trans_statements, trans_params
-
-    @staticmethod
-    def _clashing_symbols(statements, trans_statements):
-        parameter_symbols = {sympy.Symbol(symb) for _, symb in trans_statements.items()}
-        clashing_symbols = parameter_symbols & statements.free_symbols
-        return clashing_symbols
 
     def replace_abbr(self, replace):
         for key, value in replace.items():
@@ -1296,3 +1290,10 @@ def parse_solver(control_stream):
     else:
         solver = None
     return solver, record.tol, record.atol
+
+
+def _clashing_symbols(statements, trans_statements):
+    # Find symbols in the statements that are also in parameters
+    parameter_symbols = {sympy.Symbol(symb) for _, symb in trans_statements.items()}
+    clashing_symbols = parameter_symbols & statements.free_symbols
+    return clashing_symbols
