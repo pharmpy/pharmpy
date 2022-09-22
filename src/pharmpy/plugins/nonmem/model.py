@@ -230,7 +230,30 @@ class Model(pharmpy.model.Model):
         self.observation_transformation = dv
         self.internals._old_observation_transformation = dv
 
-        self.parameters
+        parameters = _parse_parameters(self.internals.control_stream)
+        self._parameters = parameters
+        self.internals._old_parameters = parameters
+
+        if (
+            'comment' in pharmpy.plugins.nonmem.conf.parameter_names
+            or 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names
+        ):
+            self.statements
+            # reading statements might change parameters. Resetting _old_parameters
+            self.internals._old_parameters = self._parameters
+
+        if not self.random_variables.validate_parameters(self._parameters.inits):
+            nearest = self.random_variables.nearest_valid_parameters(self._parameters.inits)
+            before, after = self._compare_before_after_params(self._parameters.inits, nearest)
+            warnings.warn(
+                f"Adjusting initial estimates to create positive semidefinite "
+                f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
+                f"After adjusting: {after}"
+            )
+            params = self._parameters.set_initial_estimates(nearest)
+            self._parameters = params
+            self.internals._old_parameters = params
+
         self.random_variables
 
         if path is None:
@@ -465,34 +488,6 @@ class Model(pharmpy.model.Model):
     @property
     def parameters(self):
         """Get the Parameters of all parameters"""
-        try:
-            return self._parameters
-        except AttributeError:
-            pass
-
-        parameters = _parse_parameters(self.internals.control_stream)
-        self._parameters = parameters
-        self.internals._old_parameters = parameters
-
-        if (
-            'comment' in pharmpy.plugins.nonmem.conf.parameter_names
-            or 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names
-        ):
-            self.statements
-            # reading statements might change parameters. Resetting _old_parameters
-            self.internals._old_parameters = self._parameters
-
-        if not self.random_variables.validate_parameters(self._parameters.inits):
-            nearest = self.random_variables.nearest_valid_parameters(self._parameters.inits)
-            before, after = self._compare_before_after_params(self._parameters.inits, nearest)
-            warnings.warn(
-                f"Adjusting initial estimates to create positive semidefinite "
-                f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
-                f"After adjusting: {after}"
-            )
-            params = self._parameters.set_initial_estimates(nearest)
-            self._parameters = params
-            self.internals._old_parameters = params
         return self._parameters
 
     @parameters.setter
