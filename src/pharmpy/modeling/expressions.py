@@ -898,8 +898,8 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
 
     free_symbols = model.statements.free_symbols
     dependency_graph = _dependency_graph(natural_assignments)
-    filtered = list(_filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)}))
-    return sorted(filtered)
+    names_filtered = sorted(_filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)}))
+    return names_filtered
 
 
 def _find_assignment(sset, symb_target):
