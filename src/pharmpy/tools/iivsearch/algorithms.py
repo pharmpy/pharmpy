@@ -5,7 +5,7 @@ import pharmpy.tools.modelfit as modelfit
 from pharmpy.model import Model
 from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
-from pharmpy.modeling.expressions import get_rv_parameter
+from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
@@ -105,7 +105,7 @@ def _is_current_block_structure(etas, combos):
 def _iiv_param_dict(model: Model) -> Dict[str, str]:
     iiv = model.random_variables.iiv
     return {
-        eta: get_rv_parameter(model, eta)
+        eta: get_rv_parameters(model, eta)[0]
         for eta in iiv.names
         if iiv[eta]
         .get_variance(eta)
