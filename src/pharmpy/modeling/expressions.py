@@ -897,17 +897,6 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     return names_filtered
 
 
-def _find_assignment(sset, symb_target):
-    return next(
-        filter(
-            lambda statement: isinstance(statement, Assignment)
-            and symb_target in statement.expression.free_symbols,
-            sset,
-        ),
-        None,
-    )
-
-
 def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
     """Retrieves PK parameters in :class:`pharmpy.model`.
 
