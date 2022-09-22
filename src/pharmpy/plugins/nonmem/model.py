@@ -230,6 +230,9 @@ class Model(pharmpy.model.Model):
         self.observation_transformation = dv
         self.internals._old_observation_transformation = dv
 
+        self.parameters
+        self.random_variables
+
         if path is None:
             self._modelfit_results = None
         else:
@@ -242,9 +245,6 @@ class Model(pharmpy.model.Model):
         steps = parse_estimation_steps(self)
         self._estimation_steps = steps
         self.internals._old_estimation_steps = steps
-
-        self.parameters
-        self.random_variables
 
     @property
     def name(self):
@@ -503,7 +503,6 @@ class Model(pharmpy.model.Model):
          * Parameters only supported for new initial estimates and fix
          * Only set the exact same parameters. No additions and no removing of parameters
         """
-        self.parameters
         super(Model, self.__class__).parameters.fset(self, params)
 
     @property
@@ -1119,7 +1118,6 @@ class Model(pharmpy.model.Model):
         """Get a dict of NONMEM name to Pharmpy parameter name
         i.e. {'THETA(1)': 'TVCL', 'OMEGA(1,1)': 'IVCL'}
         """
-        self.parameters
         d = dict()
         for theta_record in self.internals.control_stream.get_records('THETA'):
             for key, value in theta_record.name_map.items():
