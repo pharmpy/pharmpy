@@ -88,5 +88,4 @@ def _get_iov_groups(model: Model):
             else:
                 same[key] = {name}
 
-    print(same)
     return same.values()
