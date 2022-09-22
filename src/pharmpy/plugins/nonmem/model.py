@@ -486,21 +486,6 @@ class Model(pharmpy.model.Model):
         self.internals.control_stream.validate()
 
     @property
-    def parameters(self):
-        """Get the Parameters of all parameters"""
-        return self._parameters
-
-    @parameters.setter
-    def parameters(self, params):
-        """params can be a Parameters or a dict-like with name: value
-
-        Current restrictions:
-         * Parameters only supported for new initial estimates and fix
-         * Only set the exact same parameters. No additions and no removing of parameters
-        """
-        super(Model, self.__class__).parameters.fset(self, params)
-
-    @property
     def initial_individual_estimates(self):
         """Initial individual estimates
 
