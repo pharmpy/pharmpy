@@ -760,8 +760,8 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
 
     Return
     ------
-    list
-        A list of the parameters' names as strings
+    list[str]
+        A list of the parameter names as strings
 
     Example
     -------
@@ -874,8 +874,8 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
 
     Return
     ------
-    Parameters
-        The parameters of the random variable for the given model
+    list[str]
+        A list of parameter names for the given random variable
 
     Example
     -------
@@ -927,8 +927,8 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
 
     Return
     ------
-    Parameters
-        The PK parameters of the given model
+    list[str]
+        A list of the PK parameter names of the given model
 
     Example
     -------
