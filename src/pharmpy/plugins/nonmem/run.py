@@ -125,19 +125,21 @@ def evaluate_design(model):
     model.name = '_design_model'
 
     model.estimation_steps = EstimationSteps()
-    estrecs = model.control_stream.get_records('ESTIMATION')
-    model.control_stream.remove_records(estrecs)
+    stream = model.internals.control_stream
+    estrecs = stream.get_records('ESTIMATION')
+    stream.remove_records(estrecs)
 
     design_code = '$DESIGN APPROX=FOCEI MODE=1 NELDER FIMDIAG=0 DATASIM=1 GROUPSIZE=32 OFVTYPE=0'
-    model.control_stream.insert_record(design_code)
+    stream.insert_record(design_code)
 
     execute_model(model)
 
     from pharmpy.tools.evaldesign import EvalDesignResults
 
+    mfr = model.modelfit_results
     res = EvalDesignResults(
-        ofv=model.modelfit_results.ofv,
-        individual_ofv=model.modelfit_results.individual_ofv,
-        information_matrix=model.modelfit_results.information_matrix,
+        ofv=mfr.ofv,
+        individual_ofv=mfr.individual_ofv,
+        information_matrix=mfr.information_matrix,
     )
     return res
