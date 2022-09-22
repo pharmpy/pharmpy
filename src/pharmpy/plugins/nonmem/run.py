@@ -63,7 +63,7 @@ def execute_model(model):
         txn.store_local_file((path / basepath).with_suffix('.cor'))
         txn.store_local_file((path / basepath).with_suffix('.coi'))
 
-        for rec in model.control_stream.get_records('TABLE'):
+        for rec in model.internals.control_stream.get_records('TABLE'):
             txn.store_local_file(path / rec.path)
 
         txn.store_local_file(stdout)
