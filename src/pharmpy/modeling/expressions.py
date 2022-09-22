@@ -296,7 +296,7 @@ def mu_reference_model(model):
                 assind = model.statements.find_assignment_index(s.symbol)
                 assignment = model.statements[assind]
                 expr = assignment.expression
-                indep, dep = expr.as_independent(symb)
+                _, dep = expr.as_independent(symb)
                 mu = sympy.Symbol(f'mu_{i}')
                 newdep = subs(dep, {symb: mu + symb})
                 mu_expr = sympy.solve(expr - newdep, mu)[0]
