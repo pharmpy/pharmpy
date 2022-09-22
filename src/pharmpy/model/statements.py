@@ -1690,7 +1690,7 @@ class Statements(Sequence):
 
     def __getitem__(self, ind):
         if isinstance(ind, slice):
-            return Statements(self._statements[ind.start : ind.stop : ind.step])
+            return Statements(self._statements[ind])
         else:
             return self._statements[ind]
 
