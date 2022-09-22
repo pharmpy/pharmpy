@@ -1,7 +1,10 @@
+import pytest
+
 from pharmpy.tools import run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_default(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         effects = [
@@ -28,6 +31,7 @@ def test_default(tmp_path, model_count, start_model):
         assert model_count(rundir) >= len(effects)
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_default_str(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         run_tool(

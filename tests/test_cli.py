@@ -19,8 +19,9 @@ def test_model_print(datadir, capsys):
 
 @pytest.mark.parametrize('operation', ['*', '+'])
 def test_add_covariate_effect(datadir, operation, tmp_path):
-    shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
+    shutil.copy(datadir / 'pheno.datainfo', tmp_path / 'pheno.datainfo')
 
     with TemporaryDirectoryChanger(tmp_path):
         args = ['model', 'add_cov_effect', 'run1.mod', 'CL', 'WGT', 'exp', '--operation', operation]

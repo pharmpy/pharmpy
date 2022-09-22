@@ -17,7 +17,11 @@ from pharmpy.modeling.common import (
     set_name,
     write_model,
 )
-from pharmpy.modeling.covariate_effect import add_covariate_effect
+from pharmpy.modeling.covariate_effect import (
+    add_covariate_effect,
+    has_covariate_effect,
+    remove_covariate_effect,
+)
 from pharmpy.modeling.error import (
     has_additive_error_model,
     has_combined_error_model,
@@ -279,6 +283,7 @@ __all__ = [
     'greekify_model',
     'has_additive_error_model',
     'has_combined_error_model',
+    'has_covariate_effect',
     'has_first_order_elimination',
     'has_michaelis_menten_elimination',
     'has_mixed_mm_fo_elimination',
@@ -306,6 +311,7 @@ __all__ = [
     'read_model_from_string',
     'rename_symbols',
     'remove_covariance_step',
+    'remove_covariate_effect',
     'remove_error_model',
     'remove_estimation_step',
     'remove_iiv',

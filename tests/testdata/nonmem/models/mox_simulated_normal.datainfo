@@ -175,7 +175,7 @@
     },
     {
       "name": "CLCR",
-      "type": "unknown",
+      "type": "covariate",
       "unit": "1",
       "scale": "ratio",
       "datatype": "float64",

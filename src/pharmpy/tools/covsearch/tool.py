@@ -327,7 +327,7 @@ def task_add_covariate_effect(model: Model, effect: EffectLiteral, effect_index:
     )
     model_with_added_effect.parent_model = model.name
     update_initial_estimates(model_with_added_effect)
-    add_covariate_effect(model_with_added_effect, *effect)
+    add_covariate_effect(model_with_added_effect, *effect, allow_nested=True)
     return model_with_added_effect
 
 
@@ -367,7 +367,7 @@ def task_remove_covariate_effect(
     model_with_removed_effect.parent_model = model.name
 
     for kept_effect in _added_effects((*candidate.steps, BackwardStep(-1, RemoveEffect(*effect)))):
-        add_covariate_effect(model_with_removed_effect, *astuple(kept_effect))
+        add_covariate_effect(model_with_removed_effect, *astuple(kept_effect), allow_nested=True)
 
     update_initial_estimates(model_with_removed_effect)
     return model_with_removed_effect

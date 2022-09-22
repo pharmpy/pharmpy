@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
 from itertools import filterfalse
-from typing import Any, Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
+from typing import Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify
@@ -9,15 +12,14 @@ from pharmpy.model import (
     CompartmentalSystem,
     Model,
     ODESystem,
-    RandomVariables,
+    Statement,
     Statements,
 )
 
 from .parameters import get_thetas
 
 T = TypeVar('T')
-Symbol = Any  # NOTE should be sympy.Symbol but we want lazy loading
-Expr = Any  # NOTE same with sympy.Expr
+U = TypeVar('U')
 
 
 def get_observation_expression(model):
@@ -46,10 +48,13 @@ def get_observation_expression(model):
      - OETA₂) + EPS(1)⋅(D_EPS1 + D_EPSETA1_1⋅(ETA(1) - OETA₁)) + OPRED
     """
     stats = model.statements
+    dv = model.dependent_variable
     for i, s in enumerate(stats):
-        if s.symbol == model.dependent_variable:
+        if s.symbol == dv:
             y = s.expression
             break
+    else:
+        raise ValueError('Could not locate dependent variable expression')
 
     for j in range(i, -1, -1):
         y = subs(y, {stats[j].symbol: stats[j].expression}, simultaneous=True)
@@ -236,20 +241,23 @@ def create_symbol(model, stem, force_numbering=False):
 
 
 def _find_eta_assignments(model):
-    # Is this find individual parameters?
+    # NOTE This locates all assignment to ETAs of symbols that do not depend on
+    # any other ETA
     statements = model.statements.before_odes
     etas = {sympy.Symbol(eta) for eta in model.random_variables.etas.names}
     found = set()
     leafs = []
-    for s in reversed(statements):
+
+    for i, s in reversed(list(enumerate(statements))):
         if (
-            etas & s.free_symbols
-            and len(etas & statements.full_expression(s.symbol).free_symbols) == 1
-            and s.symbol not in found
+            s.symbol not in found
+            and not etas.isdisjoint(s.free_symbols)
+            and len(etas & statements[:i].full_expression(s.expression).free_symbols) == 1
         ):
-            leafs = [s] + leafs
+            leafs.append((i, s))
             found.update(s.free_symbols)
-    return leafs
+
+    return reversed(leafs)
 
 
 def mu_reference_model(model):
@@ -292,26 +300,28 @@ def mu_reference_model(model):
     V = ℯ
     S₁ = V
     """
-    assignments = _find_eta_assignments(model)
-    for i, eta in enumerate(model.random_variables.etas.names, start=1):
-        for s in assignments:
-            symb = sympy.Symbol(eta)
-            if symb in s.expression.free_symbols:
-                assind = model.statements.find_assignment_index(s.symbol)
-                assignment = model.statements[assind]
-                expr = assignment.expression
-                indep, dep = expr.as_independent(symb)
-                mu = sympy.Symbol(f'mu_{i}')
-                newdep = subs(dep, {symb: mu + symb})
-                mu_expr = sympy.solve(expr - newdep, mu)[0]
-                mu_ass = Assignment(mu, mu_expr)
-                model.statements = model.statements[0:assind] + mu_ass + model.statements[assind:]
-                ind = model.statements.find_assignment_index(s.symbol)
-                model.statements = (
-                    model.statements[0:ind]
-                    + Assignment(s.symbol, newdep)
-                    + model.statements[ind + 1 :]
-                )
+    index = {sympy.Symbol(eta): i for i, eta in enumerate(model.random_variables.etas.names, 1)}
+    etas = set(index)
+
+    offset = 0
+
+    for old_ind, assignment in _find_eta_assignments(model):
+        # NOTE The sequence of old_ind must be increasing
+        eta = next(iter(etas.intersection(assignment.expression.free_symbols)))
+        old_def = assignment.expression
+        dep = old_def.as_independent(eta)[1]
+        mu = sympy.Symbol(f'mu_{index[eta]}')
+        new_def = subs(dep, {eta: mu + eta})
+        mu_expr = sympy.solve(old_def - new_def, mu)[0]
+        insertion_ind = offset + old_ind
+        model.statements = (
+            model.statements[0:insertion_ind]
+            + Assignment(mu, mu_expr)
+            + Assignment(assignment.symbol, new_def)
+            + model.statements[insertion_ind + 1 :]
+        )
+        offset += 1  # NOTE We need this offset because we replace one
+        # statement by two statements
     return model
 
 
@@ -790,11 +800,14 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
     dependency_graph = _dependency_graph(assignments)
 
     return sorted(
-        _filter_symbols(
-            dependency_graph,
-            free_symbols,
-            set().union(
-                *(rvs[rv].free_symbols for rv in rvs.names if rvs[rv].get_variance(rv) != 0)
+        map(
+            str,
+            _filter_symbols(
+                dependency_graph,
+                free_symbols,
+                set().union(
+                    *(rvs[rv].free_symbols for rv in rvs.names if rvs[rv].get_variance(rv) != 0)
+                ),
             ),
         )
     )
@@ -811,14 +824,21 @@ def _rvs(model: Model, level: str):
     raise ValueError(f'Cannot handle level `{level}`')
 
 
-def _depends_on_any_of(model: Model, parameter: str, rvs: RandomVariables):
-    sset = model.statements
-    assignment = sset.find_assignment(parameter)
-    if not assignment:
-        raise ValueError(f'{model} has not parameter `{parameter}`')
-    full_expression = sset.before_odes.full_expression(assignment.symbol)
-    symb_names = {symb.name for symb in full_expression.free_symbols}
-    return any(map(symb_names.__contains__, rvs.names))
+def depends_on(model: Model, symbol: str, other: str):
+    return _depends_on_any_of(
+        model.statements.before_odes, sympy.Symbol(symbol), [sympy.Symbol(other)]
+    )
+
+
+def _depends_on_any_of(
+    assignments: Statements, symbol: sympy.Symbol, symbols: Iterable[sympy.Symbol]
+):
+    dependency_graph = _dependency_graph(assignments)
+    if symbol not in dependency_graph:
+        raise KeyError(symbol)
+
+    # NOTE Could be faster by returning immediately once found
+    return not _reachable_from({symbol}, lambda x: dependency_graph.get(x, [])).isdisjoint(symbols)
 
 
 def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
@@ -858,7 +878,8 @@ def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
     """
 
     rvs = _rvs(model, level)
-    return _depends_on_any_of(model, parameter, rvs)
+    symbol = sympy.Symbol(parameter)
+    return _depends_on_any_of(model.statements.before_odes, symbol, map(sympy.Symbol, rvs.names))
 
 
 def get_rv_parameters(model: Model, rv: str) -> List[str]:
@@ -897,18 +918,257 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
 
     free_symbols = model.statements.free_symbols
     dependency_graph = _dependency_graph(natural_assignments)
-    names_filtered = sorted(_filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)}))
-    return names_filtered
+    return sorted(map(str, _filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)})))
 
 
-def _find_assignment(sset, symb_target):
-    return next(
-        filter(
-            lambda statement: isinstance(statement, Assignment)
-            and symb_target in statement.expression.free_symbols,
-            sset,
-        ),
+@dataclass(frozen=True)
+class AssignmentGraphNode:
+    expression: sympy.Expr
+    index: int
+    previous: Dict[sympy.Symbol, AssignmentGraphNode]
+
+
+def _make_assignments_graph(statements: Statements) -> Dict[sympy.Symbol, AssignmentGraphNode]:
+
+    last_assignments: Dict[sympy.Symbol, AssignmentGraphNode] = {}
+
+    for i, statement in enumerate(statements):
+        if not isinstance(statement, Assignment):
+            continue
+
+        node = AssignmentGraphNode(
+            statement.expression,
+            i,
+            {
+                symbol: last_assignments[symbol]
+                for symbol in statement.expression.free_symbols
+                if symbol in last_assignments
+            },
+        )
+
+        last_assignments[statement.symbol] = node
+
+    return last_assignments
+
+
+def remove_covariate_effect_from_statements(
+    model: Model, before_odes: Statements, parameter: str, covariate: str
+) -> Iterable[Statement]:
+
+    assignments = _make_assignments_graph(before_odes)
+
+    thetas = _theta_symbols(model)
+
+    new_before_odes = list(before_odes)
+
+    symbol = sympy.Symbol(parameter)
+    graph_node = assignments[symbol]
+
+    tree_node = _remove_covariate_effect_from_statements_recursive(
+        thetas,
+        graph_node.previous,
+        new_before_odes,
+        symbol,
+        graph_node.expression,
+        sympy.Symbol(covariate),
         None,
+    )
+
+    assert tree_node.changed
+    assert tree_node.contains_theta
+
+    if tree_node.changed:
+        new_before_odes[graph_node.index] = Assignment(
+            sympy.Symbol(parameter), tree_node.expression
+        )
+
+    return new_before_odes
+
+
+def _neutral(expr: sympy.Expr) -> sympy.Integer:
+    if isinstance(expr, sympy.Add):
+        return sympy.Integer(0)
+    if isinstance(expr, sympy.Mul):
+        return sympy.Integer(1)
+    if isinstance(expr, sympy.Pow):
+        return sympy.Integer(1)
+
+    raise ValueError(f'{type(expr)}: {repr(expr)} ({expr.free_symbols})')
+
+
+def _theta_symbols(model: Model) -> Set[sympy.Symbol]:
+    rvs_fs = model.random_variables.free_symbols
+    return {p.symbol for p in model.parameters if p.symbol not in rvs_fs}
+
+
+def _depends_on_any(symbols: Set[sympy.Symbol], expr: sympy.Expr) -> bool:
+    return any(map(lambda s: s in symbols, expr.free_symbols))
+
+
+def _is_constant(thetas: Set[sympy.Symbol], expr: sympy.Expr) -> bool:
+    return all(map(lambda s: s in thetas, expr.free_symbols))
+
+
+def _is_univariate(thetas: Set[sympy.Symbol], expr: sympy.Expr, variable: sympy.Symbol) -> bool:
+    return all(map(lambda s: s in thetas, expr.free_symbols - {variable}))
+
+
+def simplify_model(
+    model: Model, old_statements: Iterable[Statement], statements: Iterable[Statement]
+):
+    odes = model.statements.ode_system
+    fs = odes.free_symbols.copy() if odes is not None else set()
+    old_fs = fs.copy()
+
+    kept_statements_reversed = []
+
+    for old_statement, statement in reversed(list(zip(old_statements, statements))):
+        if not isinstance(statement, Assignment):
+            kept_statements_reversed.append(statement)
+            continue
+
+        assert isinstance(old_statement, Assignment)
+
+        if (old_statement == statement and statement.symbol not in old_fs) or (
+            statement.symbol in fs and statement.symbol != statement.expression
+        ):
+            kept_statements_reversed.append(statement)
+            fs.discard(statement.symbol)
+            fs.update(statement.expression.free_symbols)
+
+        old_fs.discard(old_statement.symbol)
+        old_fs.update(old_statement.expression.free_symbols)
+
+    kept_thetas = fs.intersection(_theta_symbols(model))
+    kept_statements = list(reversed(kept_statements_reversed))
+
+    return kept_thetas, kept_statements
+
+
+@dataclass(frozen=True)
+class ExpressionTreeNode:
+    expression: sympy.Expr
+    changed: bool
+    constant: bool
+    contains_theta: bool
+
+
+def _full_expression(assignments: Dict[sympy.Symbol, AssignmentGraphNode], expr: sympy.Expr):
+    return expr.xreplace(
+        {
+            symbol: _full_expression(node.previous, node.expression)
+            for symbol, node in assignments.items()
+        }
+    )
+
+
+def _remove_covariate_effect_from_statements_recursive(
+    thetas: Set[sympy.Symbol],
+    assignments: Dict[sympy.Symbol, AssignmentGraphNode],
+    statements: List[Assignment],
+    symbol: sympy.Symbol,
+    expression: sympy.Expr,
+    covariate: sympy.Symbol,
+    parent: Union[None, sympy.Expr],
+) -> ExpressionTreeNode:
+    if not expression.args:
+        if expression in assignments:
+            # NOTE expression is a symbol and is defined in a previous assignment
+            graph_node = assignments[expression]
+            tree_node = _remove_covariate_effect_from_statements_recursive(
+                thetas,
+                graph_node.previous,
+                statements,
+                expression,
+                graph_node.expression,
+                covariate,
+                parent,
+            )
+            if tree_node.changed:
+                statements[graph_node.index] = Assignment(expression, tree_node.expression)
+
+            return ExpressionTreeNode(
+                expression, tree_node.changed, tree_node.constant, tree_node.contains_theta
+            )
+
+        if expression == covariate:
+            # NOTE expression is the covariate symbol for which we want to
+            # remove all effects
+            return ExpressionTreeNode(_neutral(parent), True, True, False)
+
+        # NOTE other atom
+        return ExpressionTreeNode(
+            expression, False, _is_constant(thetas, expression), _depends_on_any(thetas, expression)
+        )
+
+    if isinstance(expression, sympy.Piecewise):
+        if any(map(lambda t: covariate in t[1].free_symbols, expression.args)):
+            # NOTE At least on condition depends on the covariate
+            if all(
+                map(
+                    lambda t: _is_univariate(
+                        thetas, _full_expression(assignments, t[1]), covariate
+                    ),
+                    expression.args,
+                )
+            ):
+                # NOTE If expression is piecewise univariate and condition depends on
+                # covariate, return simplest expression from cases
+                expr = min(
+                    (t[0] for t in expression.args),
+                    key=sympy.count_ops,
+                )
+                tree_node = _remove_covariate_effect_from_statements_recursive(
+                    thetas, assignments, statements, symbol, expr, covariate, parent
+                )
+                return ExpressionTreeNode(
+                    tree_node.expression, True, tree_node.constant, tree_node.contains_theta
+                )
+            else:
+                raise NotImplementedError(
+                    'Cannot handle multivariate Piecewise where condition depends on covariate.'
+                )
+
+    children = list(
+        map(
+            lambda expr: _remove_covariate_effect_from_statements_recursive(
+                thetas, assignments, statements, symbol, expr, covariate, expression
+            ),
+            expression.args,
+        )
+    )
+
+    # TODO Take THETA limits into account. Currently we assume any
+    # offset/factor can be compensated but this is not true in general.
+    can_be_scaled_or_offset = any(map(lambda n: not n.changed and n.contains_theta, children))
+
+    changed = any(map(lambda n: n.changed, children))
+    is_constant = all(map(lambda n: n.constant, children))
+    contains_theta = any(map(lambda n: n.contains_theta, children))
+
+    if not changed:
+        return ExpressionTreeNode(expression, False, is_constant, contains_theta)
+
+    if not can_be_scaled_or_offset:
+        return ExpressionTreeNode(
+            expression.func(*map(lambda n: n.expression, children)),
+            True,
+            is_constant,
+            contains_theta,
+        )
+
+    return ExpressionTreeNode(
+        expression.func(
+            *map(
+                lambda n: _neutral(expression)
+                if n.changed and n.constant and n.expression != symbol
+                else n.expression,
+                children,
+            )
+        ),
+        True,
+        is_constant,
+        contains_theta,
     )
 
 
@@ -955,7 +1215,7 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
 
     dependency_graph = _dependency_graph(natural_assignments)
 
-    return sorted(_filter_symbols(dependency_graph, free_symbols))
+    return sorted(map(str, _filter_symbols(dependency_graph, free_symbols)))
 
 
 def _get_natural_assignments(before_odes):
@@ -981,7 +1241,7 @@ def _remap_compartmental_system(sset, natural_assignments):
     return cs
 
 
-def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[Symbol]:
+def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[sympy.Symbol]:
 
     if kind == 'all':
         return cs.free_symbols
@@ -1004,7 +1264,7 @@ def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[Symbol]:
 
 def _pk_free_symbols_from_compartment(
     cs: CompartmentalSystem, compartment: Compartment
-) -> Iterable[Symbol]:
+) -> Iterable[sympy.Symbol]:
     vertices = _get_component(cs, compartment)
     edges = _get_component_edges(cs, vertices)
     is_central = compartment == cs.central_compartment
@@ -1048,8 +1308,8 @@ def _get_component_edges(cs: CompartmentalSystem, vertices: Set[Compartment]):
 def _get_component_free_symbols(
     is_central: bool,
     vertices: Set[Compartment],
-    edges: Iterable[Tuple[Compartment, Compartment, Expr]],
-) -> Iterable[Symbol]:
+    edges: Iterable[Tuple[Compartment, Compartment, sympy.Expr]],
+) -> Iterable[sympy.Symbol]:
 
     for (u, v, rate) in edges:
         # NOTE These must not necessarily be outgoing edges
@@ -1079,10 +1339,10 @@ def _assignments(sset: Statements):
 
 
 def _filter_symbols(
-    dependency_graph: Dict[Symbol, Set[Symbol]],
-    roots: Set[Symbol],
-    leaves: Union[Set[Symbol], None] = None,
-) -> Iterable[str]:
+    dependency_graph: Dict[sympy.Symbol, Set[sympy.Symbol]],
+    roots: Set[sympy.Symbol],
+    leaves: Union[Set[sympy.Symbol], None] = None,
+) -> Set[sympy.Symbol]:
 
     dependents = _graph_inverse(dependency_graph)
 
@@ -1095,17 +1355,11 @@ def _filter_symbols(
             _reachable_from(
                 leaves,
                 lambda x: dependents.get(x, []),
-            )
-            & free_symbols
+            ).intersection(free_symbols)
         )
     )
 
-    return (
-        symbol.name
-        for symbol in reachable
-        if symbol in dependency_graph
-        and (symbol not in dependents or dependents[symbol].isdisjoint(free_symbols))
-    )
+    return reachable.difference(dependents.keys()).intersection(dependency_graph.keys())
 
 
 def _classify_assignments(assignments: Sequence[Assignment]):
@@ -1188,7 +1442,7 @@ def _dependency_graph(assignments: Sequence[Assignment]):
     return dependencies
 
 
-def _graph_inverse(g):
+def _graph_inverse(g: Dict[T, Set[U]]) -> Dict[U, Set[T]]:
 
     h = {}
 
