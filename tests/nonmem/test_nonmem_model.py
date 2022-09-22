@@ -109,13 +109,13 @@ def test_set_parameters(pheno):
     assert model.parameters['OMEGA(2,2)'] == Parameter('OMEGA(2,2)', 0.2, lower=0, upper=sympy.oo)
     assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 0.3, lower=0, upper=sympy.oo)
     model.update_source()
-    thetas = model.control_stream.get_records('THETA')
+    thetas = model.internals.control_stream.get_records('THETA')
     assert str(thetas[0]) == '$THETA (0,0.75) ; PTVCL\n'
     assert str(thetas[1]) == '$THETA (0,0.5) ; PTVV\n'
     assert str(thetas[2]) == '$THETA (-.99,0.25)\n'
-    omegas = model.control_stream.get_records('OMEGA')
+    omegas = model.internals.control_stream.get_records('OMEGA')
     assert str(omegas[0]) == '$OMEGA DIAGONAL(2)\n 0.1  ;       IVCL\n 0.2  ;        IVV\n\n'
-    sigmas = model.control_stream.get_records('SIGMA')
+    sigmas = model.internals.control_stream.get_records('SIGMA')
     assert str(sigmas[0]) == '$SIGMA 0.3\n'
 
     model = pheno.copy()
@@ -178,7 +178,7 @@ def test_add_parameters(pheno, param_new, init_expected, buf_new):
 
     model.update_source()
     rec_mod = ''
-    for rec in model.control_stream.get_records('THETA'):
+    for rec in model.internals.control_stream.get_records('THETA'):
         rec_mod += str(rec)
 
     assert rec_ref == rec_mod
@@ -224,7 +224,7 @@ def test_add_statements(pheno, statement_new, buf_new):
     parser = NMTranParser()
     stream = parser.parse(model.model_code)
 
-    assert str(model.control_stream) == str(stream)
+    assert str(model.internals.control_stream) == str(stream)
 
     rec_ref = (
         f'$PK\n'
@@ -239,7 +239,7 @@ def test_add_statements(pheno, statement_new, buf_new):
         f'{buf_new}\n\n'
     )
 
-    rec_mod = str(model.control_stream.get_records('PK')[0])
+    rec_mod = str(model.internals.control_stream.get_records('PK')[0])
 
     assert rec_ref == rec_mod
 
@@ -280,7 +280,7 @@ def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new)
         f'{buf_new}\n\n'
     )
 
-    assert str(model.control_stream.get_pred_pk_record()) == rec
+    assert str(model.internals.control_stream.get_pred_pk_record()) == rec
 
 
 @pytest.mark.parametrize('rv_new, buf_new', [(Parameter('omega', 0.1), '$OMEGA  0.1')])
@@ -303,7 +303,7 @@ def test_add_random_variables(pheno, rv_new, buf_new):
     )
 
     rec_mod = ''
-    for rec in model.control_stream.get_records('OMEGA'):
+    for rec in model.internals.control_stream.get_records('OMEGA'):
         rec_mod += str(rec)
 
     assert rec_mod == rec_ref
@@ -335,7 +335,9 @@ def test_add_random_variables_and_statements(pheno):
     model.statements = sset.before_odes + statement_new + sset.ode_system + sset.after_odes
 
     model.update_source()
-    assert str(model.control_stream.get_pred_pk_record()).endswith('X = 1 + ETA(3) + EPS(2)\n\n')
+    assert str(model.internals.control_stream.get_pred_pk_record()).endswith(
+        'X = 1 + ETA(3) + EPS(2)\n\n'
+    )
 
 
 def test_results(pheno):
@@ -410,7 +412,7 @@ def test_statements_setter(pheno, buf_new, len_expected):
 
 def test_deterministic_theta_comments(pheno):
     no_option = 0
-    for theta_record in pheno.control_stream.get_records('THETA'):
+    for theta_record in pheno.internals.control_stream.get_records('THETA'):
         no_option += len(theta_record.root.all('option'))
 
     assert no_option == 0
@@ -614,10 +616,10 @@ def test_dv_symbol(pheno):
 
 def test_insert_unknown_record(pheno):
     model = pheno.copy()
-    model.control_stream.insert_record('$TRIREME one')
+    model.internals.control_stream.insert_record('$TRIREME one')
     assert model.model_code.split('\n')[-1] == '$TRIREME one'
 
-    model.control_stream.insert_record('\n$OA two')
+    model.internals.control_stream.insert_record('\n$OA two')
     assert model.model_code.split('\n')[-1] == '$OA two'
 
 

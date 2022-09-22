@@ -1413,15 +1413,15 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
 )
 def test_add_covariate_effect(load_model_for_test, testdata, model_path, effects, expected):
     model = load_model_for_test(testdata.joinpath(*model_path))
-    error_record_before = ''.join(map(str, model.control_stream.get_records('ERROR')))
+    error_record_before = ''.join(map(str, model.internals.control_stream.get_records('ERROR')))
 
     for effect in effects:
         add_covariate_effect(model, *effect)
 
     model.update_source()
-    error_record_after = ''.join(map(str, model.control_stream.get_records('ERROR')))
+    error_record_after = ''.join(map(str, model.internals.control_stream.get_records('ERROR')))
 
-    assert str(model.control_stream.get_pred_pk_record()) == expected
+    assert str(model.internals.control_stream.get_pred_pk_record()) == expected
     assert error_record_after == error_record_before
 
     for effect in effects:
@@ -2118,7 +2118,7 @@ def test_transform_etas_boxcox(load_model_for_test, pheno_path, etas, etab, buf_
         f'S1=V\n\n'
     )
 
-    assert str(model.control_stream.get_pred_pk_record()) == rec_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == rec_ref
     assert model.parameters['lambda1'].init == 0.01
 
 
@@ -2159,7 +2159,7 @@ def test_transform_etas_tdist(load_model_for_test, pheno_path):
         f'S1=V\n\n'
     )
 
-    assert str(model.control_stream.get_pred_pk_record()) == rec_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == rec_ref
     assert model.parameters['df1'].init == 80
 
 
@@ -2196,7 +2196,7 @@ def test_transform_etas_john_draper(load_model_for_test, pheno_path, etas, etad,
         f'S1=V\n\n'
     )
 
-    assert str(model.control_stream.get_pred_pk_record()) == rec_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == rec_ref
 
 
 @pytest.mark.parametrize(
@@ -2266,9 +2266,9 @@ def test_add_iiv(
         f'{buf_new}\n\n'
     )
 
-    assert str(model.control_stream.get_pred_pk_record()) == rec_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == rec_ref
 
-    omega_rec = model.control_stream.get_records('OMEGA')
+    omega_rec = model.internals.control_stream.get_records('OMEGA')
 
     assert len(omega_rec) == no_of_omega_recs
     assert '$OMEGA  0.09 ; IIV_' in str(omega_rec[-1])
@@ -2417,9 +2417,9 @@ def test_create_joint_distribution(load_model_for_test, testdata, etas, pk_ref, 
 
     model = create_joint_distribution(model, etas)
     model.update_source()
-    assert str(model.control_stream.get_pred_pk_record()) == pk_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega == omega_ref
 
@@ -2496,9 +2496,9 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, p
     create_joint_distribution(model, etas[1])
     model.update_source()
 
-    assert str(model.control_stream.get_pred_pk_record()) == pk_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega == omega_ref
 
@@ -2603,9 +2603,9 @@ def test_split_joint_distribution(load_model_for_test, testdata, etas, pk_ref, o
     split_joint_distribution(model, etas)
     model.update_source()
 
-    assert str(model.control_stream.get_pred_pk_record()) == pk_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega == omega_ref
 
@@ -2698,11 +2698,11 @@ def test_set_iiv_on_ruv(
 
     assert eta_names is None or eta_names[0] in model.random_variables.etas.names
 
-    err_rec = model.control_stream.get_records('ERROR')[0]
+    err_rec = model.internals.control_stream.get_records('ERROR')[0]
 
     assert str(err_rec) == f'$ERROR\n' f'W=F\n' f'{err_ref}' f'IWRES=IRES/W\n\n'
 
-    omega_rec = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    omega_rec = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert omega_rec == (
         f'$OMEGA DIAGONAL(2)\n'
@@ -2805,9 +2805,9 @@ def test_remove_iiv(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     remove_iiv(model, etas)
     model.update_source()
 
-    assert str(model.control_stream.get_pred_pk_record()) == pk_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega == omega_ref
 
@@ -2827,14 +2827,14 @@ def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
     model.update_source()
 
     assert (
-        str(model.control_stream.get_pred_pk_record()) == '$PK\n'
+        str(model.internals.control_stream.get_pred_pk_record()) == '$PK\n'
         'CL = THETA(1)\n'
         'V = THETA(2)\n'
         'S1 = V + ETA(1)\n'
         'MAT = THETA(3)*EXP(ETA(2))\n'
         'Q = THETA(4)*EXP(ETA(3))\n\n'
     )
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega == '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n'
 
@@ -3186,11 +3186,11 @@ def test_set_power_on_ruv(
         set_power_on_ruv(model, epsilons, zero_protection=True)
         model.update_source()
 
-        rec_err = str(model.control_stream.get_records('ERROR')[0])
+        rec_err = str(model.internals.control_stream.get_records('ERROR')[0])
         correct = f'$ERROR\n' f'W=F\n' f'{err_ref}\n' f'IWRES=IRES/W\n\n'
         assert rec_err == correct
 
-        rec_theta = ''.join(str(rec) for rec in model.control_stream.get_records('THETA'))
+        rec_theta = ''.join(str(rec) for rec in model.internals.control_stream.get_records('THETA'))
 
         assert (
             rec_theta == f'$THETA (0,0.00469307) ; PTVCL\n'
@@ -3592,7 +3592,7 @@ def test_add_iov(
     model_etas = set(model.random_variables.etas.names)
     assert eta_names is None or model_etas.issuperset(eta_names)
 
-    pk_rec = str(model.control_stream.get_pred_pk_record())
+    pk_rec = str(model.internals.control_stream.get_pred_pk_record())
 
     expected_pk_rec_start = f'$PK\n{pk_start_ref}'
     expected_pk_rec_end = f'{pk_end_ref}\n'
@@ -3600,7 +3600,7 @@ def test_add_iov(
     assert pk_rec[: len(expected_pk_rec_start)] == expected_pk_rec_start
     assert pk_rec[-len(expected_pk_rec_end) :] == expected_pk_rec_end
 
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega[-len(omega_ref) :] == omega_ref
 
@@ -3618,12 +3618,12 @@ def test_add_iov_compose(load_model_for_test, pheno_path):
 
     assert set(model1.random_variables.etas.names) == set(model2.random_variables.etas.names)
     # FIXME find better way to assert models are equivalent
-    assert sorted(str(model1.control_stream.get_pred_pk_record()).split('\n')) == sorted(
-        str(model2.control_stream.get_pred_pk_record()).split('\n')
+    assert sorted(str(model1.internals.control_stream.get_pred_pk_record()).split('\n')) == sorted(
+        str(model2.internals.control_stream.get_pred_pk_record()).split('\n')
     )
 
-    rec_omega_1 = list(str(rec) for rec in model1.control_stream.get_records('OMEGA'))
-    rec_omega_2 = list(str(rec) for rec in model2.control_stream.get_records('OMEGA'))
+    rec_omega_1 = list(str(rec) for rec in model1.internals.control_stream.get_records('OMEGA'))
+    rec_omega_2 = list(str(rec) for rec in model2.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega_1 == rec_omega_2
 

@@ -164,13 +164,13 @@ def _parse_random_variables(control_stream):
 
 
 def _parse_statements(model):
-    rec = model.control_stream.get_pred_pk_record()
+    rec = model.internals.control_stream.get_pred_pk_record()
     statements = rec.statements
 
-    des = model.control_stream.get_des_record()
-    error = model.control_stream.get_error_record()
+    des = model.internals.control_stream.get_des_record()
+    error = model.internals.control_stream.get_error_record()
     if error:
-        sub = model.control_stream.get_records('SUBROUTINES')[0]
+        sub = model.internals.control_stream.get_records('SUBROUTINES')[0]
         comp = compartmental_model(model, sub.advan, sub.trans, des)
         trans_amounts = dict()
         if comp is not None:
@@ -218,7 +218,7 @@ class Model(pharmpy.model.Model):
             self._name = path.stem
             self.database = default_model_database(path=path.parent)
             self.filename_extension = path.suffix
-        self.control_stream = parser.parse(code)
+        self.internals.control_stream = parser.parse(code)
         self._create_datainfo()
         self._initial_individual_estimates_updated = False
         self._updated_etas_file = None
@@ -235,7 +235,7 @@ class Model(pharmpy.model.Model):
         else:
             self.read_modelfit_results(path.parent)
 
-        description = _parse_description(self.control_stream)
+        description = _parse_description(self.internals.control_stream)
         self.description = description
         self.internals._old_description = description
 
@@ -252,7 +252,7 @@ class Model(pharmpy.model.Model):
         m = re.search(r'.*?(\d+)$', new_name)
         if m:
             n = int(m.group(1))
-            for table in self.control_stream.get_records('TABLE'):
+            for table in self.internals.control_stream.get_records('TABLE'):
                 table_path = table.path
                 table_name = table_path.stem
                 m = re.search(r'(.*?)(\d+)$', table_name)
@@ -268,7 +268,7 @@ class Model(pharmpy.model.Model):
             return self._value_type
         except AttributeError:
             pass
-        ests = self.control_stream.get_records('ESTIMATION')
+        ests = self.internals.control_stream.get_records('ESTIMATION')
         # Assuming that a model cannot be fully likelihood or fully prediction
         # at the same time
         for est in ests:
@@ -349,7 +349,7 @@ class Model(pharmpy.model.Model):
                     self.datainfo = self.datainfo.derive(path=datapath.name)
                 else:
                     self.datainfo = self.datainfo.derive(path=Path(dir_path))
-            data_record = self.control_stream.get_records('DATA')[0]
+            data_record = self.internals.control_stream.get_records('DATA')[0]
 
             label = self.datainfo.names[0]
             data_record.ignore_character_from_header(label)
@@ -367,7 +367,7 @@ class Model(pharmpy.model.Model):
                 assert (
                     not path.exists() or path.is_file()
                 ), f'input path change, but no file exists at target {str(path)}'
-                data_record = self.control_stream.get_records('DATA')[0]
+                data_record = self.internals.control_stream.get_records('DATA')[0]
                 data_record.filename = str(path)
 
         self._update_sizes()
@@ -379,8 +379,8 @@ class Model(pharmpy.model.Model):
         update_description(self)
 
     def _abbr_translation(self, rv_trans):
-        abbr_pharmpy = self.control_stream.abbreviated.translate_to_pharmpy_names()
-        abbr_replace = self.control_stream.abbreviated.replace
+        abbr_pharmpy = self.internals.control_stream.abbreviated.translate_to_pharmpy_names()
+        abbr_replace = self.internals.control_stream.abbreviated.replace
         abbr_trans = update_abbr_record(self, rv_trans)
         abbr_recs = {
             sympy.Symbol(abbr_pharmpy[value]): sympy.Symbol(key)
@@ -392,7 +392,7 @@ class Model(pharmpy.model.Model):
 
     def _update_sizes(self):
         """Update $SIZES if needed"""
-        all_sizes = self.control_stream.get_records('SIZES')
+        all_sizes = self.internals.control_stream.get_records('SIZES')
         if len(all_sizes) == 0:
             sizes = create_record('$SIZES ')
         else:
@@ -406,7 +406,7 @@ class Model(pharmpy.model.Model):
         sizes.LTH = len(thetas)
 
         if len(all_sizes) == 0 and len(str(sizes)) > 7:
-            self.control_stream.insert_record(str(sizes))
+            self.internals.control_stream.insert_record(str(sizes))
 
     def _update_initial_individual_estimates(self, path, nofiles=False):
         """Update $ETAS
@@ -431,23 +431,23 @@ class Model(pharmpy.model.Model):
                 table_file = NONMEMTableFile(tables=[phi])
                 table_file.write(phi_path)
             # FIXME: This is a common operation
-            eta_records = self.control_stream.get_records('ETAS')
+            eta_records = self.internals.control_stream.get_records('ETAS')
             if eta_records:
                 record = eta_records[0]
             else:
-                record = self.control_stream.append_record('$ETAS ')
+                record = self.internals.control_stream.append_record('$ETAS ')
             record.path = phi_path
         elif self._updated_etas_file:
-            eta_records = self.control_stream.get_records('ETAS')
+            eta_records = self.internals.control_stream.get_records('ETAS')
             if eta_records:
                 record = eta_records[0]
             else:
-                record = self.control_stream.append_record('$ETAS')
+                record = self.internals.control_stream.append_record('$ETAS')
             shutil.copy(self._updated_etas_file, phi_path)
             record.path = phi_path
 
         if self._initial_individual_estimates_updated or self._updated_etas_file:
-            first_est_record = self.control_stream.get_records('ESTIMATION')[0]
+            first_est_record = self.internals.control_stream.get_records('ESTIMATION')[0]
             try:
                 first_est_record.option_pairs['MCETA']
             except KeyError:
@@ -457,7 +457,7 @@ class Model(pharmpy.model.Model):
 
     def validate(self):
         """Validates NONMEM model (records) syntactically."""
-        self.control_stream.validate()
+        self.internals.control_stream.validate()
 
     @property
     def parameters(self):
@@ -467,7 +467,7 @@ class Model(pharmpy.model.Model):
         except AttributeError:
             pass
 
-        parameters = _parse_parameters(self.control_stream)
+        parameters = _parse_parameters(self.internals.control_stream)
         self._parameters = parameters
         self.internals._old_parameters = parameters
 
@@ -516,7 +516,7 @@ class Model(pharmpy.model.Model):
             return self._initial_individual_estimates
         except AttributeError:
             pass
-        etas = self.control_stream.get_records('ETAS')
+        etas = self.internals.control_stream.get_records('ETAS')
         if etas:
             path = Path(etas[0].path)
             if not path.is_absolute():
@@ -566,11 +566,11 @@ class Model(pharmpy.model.Model):
         statements = _parse_statements(self)
 
         trans_statements, trans_params = self._create_name_trans(statements)
-        for theta in self.control_stream.get_records('THETA'):
+        for theta in self.internals.control_stream.get_records('THETA'):
             theta.update_name_map(trans_params)
-        for omega in self.control_stream.get_records('OMEGA'):
+        for omega in self.internals.control_stream.get_records('OMEGA'):
             omega.update_name_map(trans_params)
-        for sigma in self.control_stream.get_records('SIGMA'):
+        for sigma in self.internals.control_stream.get_records('SIGMA'):
             sigma.update_name_map(trans_params)
 
         d_par = dict()
@@ -612,7 +612,7 @@ class Model(pharmpy.model.Model):
             'basic': self._name_as_basic(),
         }
 
-        abbr = self.control_stream.abbreviated.replace
+        abbr = self.internals.control_stream.abbreviated.replace
         pset_current = {
             **self.parameter_translation(reverse=True),
             **{rv: rv for rv in rvs.names},
@@ -694,7 +694,7 @@ class Model(pharmpy.model.Model):
 
     def _name_as_comments(self, statements):
         params_current = self.parameter_translation(remove_idempotent=True)
-        for name_abbr, name_nonmem in self.control_stream.abbreviated.replace.items():
+        for name_abbr, name_nonmem in self.internals.control_stream.abbreviated.replace.items():
             if name_nonmem in params_current.keys():
                 params_current[name_abbr] = params_current.pop(name_nonmem)
         trans_params = {
@@ -710,7 +710,7 @@ class Model(pharmpy.model.Model):
         return trans_statements, trans_params
 
     def _name_as_abbr(self, rvs):
-        pharmpy_names = self.control_stream.abbreviated.translate_to_pharmpy_names()
+        pharmpy_names = self.internals.control_stream.abbreviated.translate_to_pharmpy_names()
         params_current = self.parameter_translation(remove_idempotent=True, reverse=True)
         trans_params = {
             name_nonmem: name_abbr
@@ -722,7 +722,7 @@ class Model(pharmpy.model.Model):
                 trans_params[name_nonmem] = trans_params.pop(name_abbr)
         trans_statements = {
             name_abbr: pharmpy_names[name_nonmem]
-            for name_abbr, name_nonmem in self.control_stream.abbreviated.replace.items()
+            for name_abbr, name_nonmem in self.internals.control_stream.abbreviated.replace.items()
         }
         return trans_statements, trans_params
 
@@ -732,7 +732,7 @@ class Model(pharmpy.model.Model):
             for name_current, name_nonmem in self.parameter_translation(reverse=True).items()
             if name_current != name_nonmem
         }
-        trans_statements = self.control_stream.abbreviated.replace
+        trans_statements = self.internals.control_stream.abbreviated.replace
         return trans_statements, trans_params
 
     @staticmethod
@@ -754,7 +754,7 @@ class Model(pharmpy.model.Model):
         if eta:
             prev_cov = None
             next_omega = 1
-            for omega_record in self.control_stream.get_records('OMEGA'):
+            for omega_record in self.internals.control_stream.get_records('OMEGA'):
                 _, next_omega, prev_cov, new_zero_fix = omega_record.random_variables(
                     next_omega, prev_cov
                 )
@@ -762,7 +762,7 @@ class Model(pharmpy.model.Model):
         else:
             prev_cov = None
             next_sigma = 1
-            for sigma_record in self.control_stream.get_records('SIGMA'):
+            for sigma_record in self.internals.control_stream.get_records('SIGMA'):
                 _, next_sigma, prev_cov, new_zero_fix = sigma_record.random_variables(
                     next_sigma, prev_cov
                 )
@@ -775,7 +775,7 @@ class Model(pharmpy.model.Model):
             return self._random_variables
         except AttributeError:
             pass
-        rvs = _parse_random_variables(self.control_stream)
+        rvs = _parse_random_variables(self.internals.control_stream)
         self._random_variables = rvs
         self.internals._old_random_variables = rvs
 
@@ -795,10 +795,10 @@ class Model(pharmpy.model.Model):
     @property
     def model_code(self):
         self.update_source(nofiles=True)
-        return str(self.control_stream)
+        return str(self.internals.control_stream)
 
     def _read_dataset_path(self):
-        record = next(iter(self.control_stream.get_records('DATA')), None)
+        record = next(iter(self.internals.control_stream.get_records('DATA')), None)
         if record is None:
             return None
         path = Path(record.filename)
@@ -878,7 +878,7 @@ class Model(pharmpy.model.Model):
         of replacements for reserved names (aka synonyms).
         Anonymous columns, i.e. DROP or SKIP alone, will be given unique names _DROP1, ...
         """
-        input_records = self.control_stream.get_records("INPUT")
+        input_records = self.internals.control_stream.get_records("INPUT")
         colnames = []
         drop = []
         synonym_replacement = {}
@@ -920,7 +920,7 @@ class Model(pharmpy.model.Model):
         currently supporting append columns at end and removing columns
         And add/remove DROP
         """
-        input_records = self.control_stream.get_records("INPUT")
+        input_records = self.internals.control_stream.get_records("INPUT")
         _, drop, _, colnames = self._column_info()
         keep = []
         i = 0
@@ -1000,7 +1000,7 @@ class Model(pharmpy.model.Model):
                 return
 
         column_info = []
-        have_pk = self.control_stream.get_pk_record()
+        have_pk = self.internals.control_stream.get_pk_record()
         for colname, coldrop in zip(colnames, drop):
             if coldrop and colname not in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
                 info = ColumnInfo(colname, drop=coldrop, datatype='str')
@@ -1050,7 +1050,7 @@ class Model(pharmpy.model.Model):
         self._old_datainfo = di
 
     def _read_dataset(self, raw=False, parse_columns=tuple()):
-        data_records = self.control_stream.get_records('DATA')
+        data_records = self.internals.control_stream.get_records('DATA')
         ignore_character = data_records[0].ignore_character
         null_value = data_records[0].null_value
         (colnames, drop, replacements, _) = self._column_info()
@@ -1102,11 +1102,11 @@ class Model(pharmpy.model.Model):
     def rv_translation(self, reverse=False, remove_idempotent=False, as_symbols=False):
         self.random_variables
         d = dict()
-        for record in self.control_stream.get_records('OMEGA'):
+        for record in self.internals.control_stream.get_records('OMEGA'):
             for key, value in record.eta_map.items():
                 nonmem_name = f'ETA({value})'
                 d[nonmem_name] = key
-        for record in self.control_stream.get_records('SIGMA'):
+        for record in self.internals.control_stream.get_records('SIGMA'):
             for key, value in record.eta_map.items():
                 nonmem_name = f'EPS({value})'
                 d[nonmem_name] = key
@@ -1124,15 +1124,15 @@ class Model(pharmpy.model.Model):
         """
         self.parameters
         d = dict()
-        for theta_record in self.control_stream.get_records('THETA'):
+        for theta_record in self.internals.control_stream.get_records('THETA'):
             for key, value in theta_record.name_map.items():
                 nonmem_name = f'THETA({value})'
                 d[nonmem_name] = key
-        for record in self.control_stream.get_records('OMEGA'):
+        for record in self.internals.control_stream.get_records('OMEGA'):
             for key, value in record.name_map.items():
                 nonmem_name = f'OMEGA({value[0]},{value[1]})'
                 d[nonmem_name] = key
-        for record in self.control_stream.get_records('SIGMA'):
+        for record in self.internals.control_stream.get_records('SIGMA'):
             for key, value in record.name_map.items():
                 nonmem_name = f'SIGMA({value[0]},{value[1]})'
                 d[nonmem_name] = key
@@ -1156,14 +1156,14 @@ class Model(pharmpy.model.Model):
 
 def parse_estimation_steps(model):
     steps = []
-    records = model.control_stream.get_records('ESTIMATION')
-    covrec = model.control_stream.get_records('COVARIANCE')
-    solver, tol, atol = parse_solver(model.control_stream)
+    records = model.internals.control_stream.get_records('ESTIMATION')
+    covrec = model.internals.control_stream.get_records('COVARIANCE')
+    solver, tol, atol = parse_solver(model.internals.control_stream)
 
     # Read eta and epsilon derivatives
     etaderiv_names = None
     epsilonderivs_names = None
-    table_records = model.control_stream.get_records('TABLE')
+    table_records = model.internals.control_stream.get_records('TABLE')
     for table in table_records:
         etaderivs = table.eta_derivatives
         if etaderivs:

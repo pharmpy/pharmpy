@@ -77,7 +77,7 @@ def compartmental_model(model, advan, trans, des=None):
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL': 3, 'OUTPUT': 4}
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         cb = CompartmentalSystemBuilder()
-        modrec = model.control_stream.get_records('MODEL')[0]
+        modrec = model.internals.control_stream.get_records('MODEL')[0]
         defobs = None
         defdose = None
         central = None
@@ -191,7 +191,7 @@ def compartmental_model(model, advan, trans, des=None):
         ass = _f_link_assignment(model, central)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
     elif des:
-        rec_model = model.control_stream.get_records('MODEL')[0]
+        rec_model = model.internals.control_stream.get_records('MODEL')[0]
 
         subs_dict, comp_names = dict(), dict()
         comps = [c for c, _ in rec_model.compartments()]
@@ -256,7 +256,7 @@ def _f_link_assignment(model, compartment):
         fexpr = compartment.amount
     except AttributeError:
         fexpr = compartment
-    pkrec = model.control_stream.get_records('PK')[0]
+    pkrec = model.internals.control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment('S1'):
         fexpr = fexpr / sympy.Symbol('S1')
     ass = Assignment(f, fexpr)
@@ -264,7 +264,7 @@ def _f_link_assignment(model, compartment):
 
 
 def _find_rates(model, ncomps):
-    pkrec = model.control_stream.get_records('PK')[0]
+    pkrec = model.internals.control_stream.get_records('PK')[0]
     for stat in pkrec.statements:
         if hasattr(stat, 'symbol'):
             name = stat.symbol.name
@@ -495,7 +495,7 @@ def dosing(di, dataset, dose_comp):
 def get_alag(model, n):
     """Check if ALAGn is defined in model and return it else return 0"""
     alag = f'ALAG{n}'
-    pkrec = model.control_stream.get_records('PK')[0]
+    pkrec = model.internals.control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment(alag):
         return sympy.Symbol(alag)
     else:
@@ -505,7 +505,7 @@ def get_alag(model, n):
 def get_bioavailability(model, n):
     """Check if Fn is defined in model and return it else return 0"""
     fn = f'F{n}'
-    pkrec = model.control_stream.get_records('PK')[0]
+    pkrec = model.internals.control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment(fn):
         return sympy.Symbol(fn)
     else:

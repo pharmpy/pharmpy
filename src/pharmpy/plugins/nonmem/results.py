@@ -196,7 +196,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             return
         table_with_cov = -99
         if self.model is not None:
-            if len(self.model.control_stream.get_records('COVARIANCE')) > 0:
+            if len(self.model.internals.control_stream.get_records('COVARIANCE')) > 0:
                 table_with_cov = self[-1].table_number  # correct unless interrupted
         for table_no, result_obj in enumerate(self, 1):
             result_obj._set_estimation_status(rfile, requested=True)
@@ -355,7 +355,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 obj.predictions = df
 
     def _read_from_tables(self, columns, result_obj):
-        table_recs = self.model.control_stream.get_records('TABLE')
+        table_recs = self.model.internals.control_stream.get_records('TABLE')
         found = []
         df = pd.DataFrame()
         for table_rec in table_recs:
@@ -383,7 +383,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
 
 def simfit_results(model):
     """Read in modelfit results from a simulation/estimation model"""
-    nsubs = model.control_stream.get_records('SIMULATION')[0].nsubs
+    nsubs = model.internals.control_stream.get_records('SIMULATION')[0].nsubs
     results = []
     for i in range(1, nsubs + 1):
         model_path = model.database.retrieve_file(model.name, model.name + model.filename_extension)
