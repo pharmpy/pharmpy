@@ -14,7 +14,8 @@ def test_read_raw_dataset(pheno):
 def test_ignore_with_synonym(create_model_for_test, pheno_data):
     model = create_model_for_test(
         f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"
-        f"$DATA {pheno_data} IGNORE=@ IGNORE=(CONC.EQN.0)"
+        f"$DATA {pheno_data} IGNORE=@ IGNORE=(CONC.EQN.0)\n"
+        f"$PRED\n"
     )
     di = model.datainfo
     col = di['DV'].derive(name='CONC')
@@ -23,7 +24,8 @@ def test_ignore_with_synonym(create_model_for_test, pheno_data):
     assert len(df) == 155
     model = create_model_for_test(
         f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"
-        f"$DATA {pheno_data} IGNORE=@ IGNORE=(DV.EQN.0)"
+        f"$DATA {pheno_data} IGNORE=@ IGNORE=(DV.EQN.0)\n"
+        f"$PRED\n"
     )
     di = model.datainfo
     col = di['DV'].derive(name='CONC')
@@ -34,7 +36,9 @@ def test_ignore_with_synonym(create_model_for_test, pheno_data):
 
 def test_idv_with_synonym(create_model_for_test, pheno_data):
     model = create_model_for_test(
-        f"$PROBLEM dfs\n$INPUT ID TIME=TAD AMT WT APGR DV FA1 FA2\n" f"$DATA {pheno_data} IGNORE=@"
+        f"$PROBLEM dfs\n$INPUT ID TIME=TAD AMT WT APGR DV FA1 FA2\n"
+        f"$DATA {pheno_data} IGNORE=@\n"
+        f"$PRED\n"
     )
     di = model.datainfo
     col = di['TIME'].derive(name='TAD')

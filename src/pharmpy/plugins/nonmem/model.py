@@ -234,13 +234,45 @@ class Model(pharmpy.model.Model):
         self._parameters = parameters
         self.internals._old_parameters = parameters
 
-        if (
-            'comment' in pharmpy.plugins.nonmem.conf.parameter_names
-            or 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names
-        ):
-            self.statements
-            # reading statements might change parameters. Resetting _old_parameters
-            self.internals._old_parameters = self._parameters
+        statements = _parse_statements(self)
+
+        rvs = _parse_random_variables(self.internals.control_stream)
+        self._random_variables = rvs
+        self.internals._old_random_variables = rvs
+
+        trans_statements, trans_params = self._create_name_trans(statements)
+        for theta in self.internals.control_stream.get_records('THETA'):
+            theta.update_name_map(trans_params)
+        for omega in self.internals.control_stream.get_records('OMEGA'):
+            omega.update_name_map(trans_params)
+        for sigma in self.internals.control_stream.get_records('SIGMA'):
+            sigma.update_name_map(trans_params)
+
+        d_par = dict()
+        d_rv = dict()
+        for key, value in trans_params.items():
+            if key in self.parameters:
+                d_par[key] = value
+            else:
+                d_rv[sympy.Symbol(key)] = value
+        self._random_variables = self._random_variables.subs(d_rv)
+        new = []
+        for p in self.parameters:
+            if p.name in d_par:
+                newparam = Parameter(
+                    name=d_par[p.name], init=p.init, lower=p.lower, upper=p.upper, fix=p.fix
+                )
+            else:
+                newparam = p
+            new.append(newparam)
+        self.parameters = Parameters(new)
+
+        statements = statements.subs(trans_statements)
+
+        self._statements = statements
+        self.internals._old_statements = statements
+
+        self.internals._old_parameters = self._parameters
 
         if not self.random_variables.validate_parameters(self._parameters.inits):
             nearest = self.random_variables.nearest_valid_parameters(self._parameters.inits)
@@ -253,8 +285,6 @@ class Model(pharmpy.model.Model):
             params = self._parameters.set_initial_estimates(nearest)
             self._parameters = params
             self.internals._old_parameters = params
-
-        self.random_variables
 
         if path is None:
             self._modelfit_results = None
@@ -353,8 +383,6 @@ class Model(pharmpy.model.Model):
         if pharmpy.plugins.nonmem.conf.write_etas_in_abbr:
             abbr_trans = self._abbr_translation(rv_trans)
             trans.update(abbr_trans)
-        if trans:
-            self.statements  # Read statements unless read
         if hasattr(self, '_statements'):
             update_statements(self, self.internals._old_statements, self._statements, trans)
             self.internals._old_statements = self._statements
@@ -538,53 +566,6 @@ class Model(pharmpy.model.Model):
     def _sort_eta_columns(self, df):
         return df.reindex(sorted(df.columns), axis=1)
 
-    @property
-    def statements(self):
-        try:
-            return self._statements
-        except AttributeError:
-            pass
-
-        statements = _parse_statements(self)
-
-        trans_statements, trans_params = self._create_name_trans(statements)
-        for theta in self.internals.control_stream.get_records('THETA'):
-            theta.update_name_map(trans_params)
-        for omega in self.internals.control_stream.get_records('OMEGA'):
-            omega.update_name_map(trans_params)
-        for sigma in self.internals.control_stream.get_records('SIGMA'):
-            sigma.update_name_map(trans_params)
-
-        d_par = dict()
-        d_rv = dict()
-        for key, value in trans_params.items():
-            if key in self.parameters:
-                d_par[key] = value
-            else:
-                d_rv[sympy.Symbol(key)] = value
-        self.random_variables = self.random_variables.subs(d_rv)
-        new = []
-        for p in self.parameters:
-            if p.name in d_par:
-                newparam = Parameter(
-                    name=d_par[p.name], init=p.init, lower=p.lower, upper=p.upper, fix=p.fix
-                )
-            else:
-                newparam = p
-            new.append(newparam)
-        self.parameters = Parameters(new)
-
-        statements = statements.subs(trans_statements)
-
-        self._statements = statements
-        self.internals._old_statements = statements
-        return statements
-
-    @statements.setter
-    def statements(self, statements_new):
-        self.statements  # Read in old statements
-        self._statements = statements_new
-
     def _create_name_trans(self, statements):
         rvs = self.random_variables
 
@@ -744,29 +725,6 @@ class Model(pharmpy.model.Model):
                 )
                 zero_fix += new_zero_fix
         return zero_fix
-
-    @property
-    def random_variables(self):
-        try:
-            return self._random_variables
-        except AttributeError:
-            pass
-        rvs = _parse_random_variables(self.internals.control_stream)
-        self._random_variables = rvs
-        self.internals._old_random_variables = rvs
-
-        if (
-            'comment' in pharmpy.plugins.nonmem.conf.parameter_names
-            or 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names
-        ):
-            self.statements
-
-        return self._random_variables
-
-    @random_variables.setter
-    def random_variables(self, new):
-        self.random_variables  # Read in old random variables
-        self._random_variables = new
 
     @property
     def model_code(self):
@@ -1076,7 +1034,6 @@ class Model(pharmpy.model.Model):
         return df
 
     def rv_translation(self, reverse=False, remove_idempotent=False, as_symbols=False):
-        self.random_variables
         d = dict()
         for record in self.internals.control_stream.get_records('OMEGA'):
             for key, value in record.eta_map.items():
