@@ -3,9 +3,11 @@ import shutil
 import time
 import warnings
 import weakref
+from functools import wraps
+from inspect import Signature, signature
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import Union
+from typing import Callable, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -133,3 +135,71 @@ def normalize_user_given_path(path: Union[str, Path]) -> Path:
 def hash_df(df) -> int:
     values = pd.util.hash_pandas_object(df, index=True).values
     return hash(tuple(values))
+
+
+def _signature_map(ref_signature: Signature):
+    ref_args = []
+    ref_defaults = {}
+    for param in ref_signature.parameters.values():
+        assert param.kind != param.VAR_POSITIONAL  # TODO handle varargs
+        assert param.kind != param.VAR_KEYWORD  # TODO handle kwargs
+        name = param.name
+        ref_args.append(name)
+        default = param.default
+        if default is not param.empty:
+            ref_defaults[name] = default
+
+    return ref_args, ref_defaults
+
+
+def same_signature_as(ref: Callable):
+    ref_signature = signature(ref)
+    ref_args, ref_defaults = _signature_map(ref_signature)
+    ref_args_set = set(ref_args)
+    ref_index = {arg: i for i, arg in enumerate(ref_args)}
+
+    def _lookup(args, kwargs, key):
+        i = ref_index[key]
+        if i < len(args):
+            return args[i]
+        try:
+            return kwargs[key]
+        except KeyError:
+            return ref_defaults[key]
+
+    def _with_same_signature(fn: Callable):
+
+        fn_args, fn_defaults = _signature_map(signature(fn))
+
+        assert set(fn_args) <= ref_args_set
+        assert not fn_defaults
+
+        @wraps(fn)
+        def _wrapped(*args, **kwargs):
+
+            if len(args) > len(ref_args):
+                raise TypeError(
+                    f'{fn.__name__}() takes {len(ref_args)} but {len(args)} where given'
+                )
+
+            for arg in kwargs:
+                if arg not in ref_args_set:
+                    raise TypeError(
+                        f'{fn.__name__}() got an unexpected keyword argument: \'{arg}\''
+                    )
+
+            try:
+                permuted = [_lookup(args, kwargs, arg) for arg in fn_args]
+            except KeyError as e:
+                arg = e.args[0]
+                raise TypeError(
+                    f'{fn.__name__}() missing 1 required positional argument: \'{arg}\''
+                )
+
+            return fn(*permuted)
+
+        _wrapped.__signature__ = ref_signature
+
+        return _wrapped
+
+    return _with_same_signature
