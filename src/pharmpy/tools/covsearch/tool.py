@@ -331,30 +331,19 @@ def task_add_covariate_effect(model: Model, effect: EffectLiteral, effect_index:
 
 
 def _create_description(model, effect, forward=True):
-    # Will create this type of description: 'FORWARD[(CL_AGE,exp,*),(MAT_AGE,exp,*)];BACKWARD[(MAT_AGE,exp,*)]
-    parameter, covariate, fp, operation = effect
-    effect_str = f'({parameter}_{covariate},{fp},{operation})'
-    direction = 'FORWARD' if forward else 'BACKWARD'
+    # Will create this type of description: '(CL-AGE-exp);(MAT-AGE-exp)'
+    parameter, covariate, fp, _ = effect
+    effect_str = f'{parameter}-{covariate}-{fp}'
     description_prev = model.description
 
-    if description_prev:
-        if direction in description_prev:
-            description_split = description_prev.split(';')
-            section_to_change = description_split[-1]
-
-            m = re.compile(r'(\([\w,_*]+\),*)+')  # Matches on '(CL_WGT,exp,*)'
-            effects_prev = m.search(section_to_change).group(0)
-            assert effects_prev
-            effects_new = effects_prev + ',' + effect_str
-
-            description_effect_added = section_to_change.replace(effects_prev, effects_new)
-            description_new = description_prev.replace(section_to_change, description_effect_added)
-            return description_new
-        else:  # The algorithm is moving in a new direction
-            description_new = description_prev + f';{direction}[{effect_str}]'
-            return description_new
+    if forward:
+        if description_prev:
+            return f'{description_prev};({effect_str})'
+        else:
+            return f'({effect_str})'
     else:
-        description_new = f'{direction}[{effect_str}]'
+        m = re.compile(rf'\({effect_str}\);*')
+        description_new = m.sub('', description_prev)
         return description_new
 
 
