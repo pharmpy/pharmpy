@@ -331,9 +331,11 @@ def task_add_covariate_effect(model: Model, effect: EffectLiteral, effect_index:
 
 
 def _create_description(model, effect, forward=True):
-    # Will create this type of description: '(CL-AGE-exp);(MAT-AGE-exp)'
-    parameter, covariate, fp, _ = effect
+    # Will create this type of description: '(CL-AGE-exp);(MAT-AGE-exp);(MAT-AGE-exp-+)'
+    parameter, covariate, fp, operation = effect
     effect_str = f'{parameter}-{covariate}-{fp}'
+    if operation == '*':
+        effect_str += f'-{operation}'
     description_prev = model.description
 
     if forward:
