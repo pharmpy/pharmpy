@@ -3,6 +3,7 @@ from pathlib import Path
 import pharmpy.modeling as modeling
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.plugins.nonmem.parsing import parameter_translation
 from pharmpy.plugins.nonmem.results_file import NONMEMResultsFile
 from pharmpy.plugins.nonmem.table import NONMEMTableFile
 from pharmpy.results import ChainedModelfitResults, ModelfitResults
@@ -137,7 +138,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     )
             ests = ests[~fix]
             if self.model:
-                ests = ests.rename(index=self.model.parameter_translation())
+                ests = ests.rename(index=parameter_translation(self.model.internals.control_stream))
             result_obj.parameter_estimates = ests
             try:
                 sdcorr = table.omega_sigma_stdcorr[~fix]
@@ -145,7 +146,9 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 pass
             else:
                 if self.model:
-                    sdcorr = sdcorr.rename(index=self.model.parameter_translation())
+                    sdcorr = sdcorr.rename(
+                        index=parameter_translation(self.model.internals.control_stream)
+                    )
                 sdcorr_ests = ests.copy()
                 sdcorr_ests.update(sdcorr)
                 result_obj.parameter_estimates_sdcorr = sdcorr_ests
@@ -163,13 +166,19 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 ses = ses[~fix]
                 sdcorr = table.omega_sigma_se_stdcorr[~fix]
                 if self.model:
-                    ses = ses.rename(index=self.model.parameter_translation())
-                    sdcorr = sdcorr.rename(index=self.model.parameter_translation())
+                    ses = ses.rename(
+                        index=parameter_translation(self.model.internals.control_stream)
+                    )
+                    sdcorr = sdcorr.rename(
+                        index=parameter_translation(self.model.internals.control_stream)
+                    )
                 result_obj.standard_errors = ses
                 sdcorr_ses = ses.copy()
                 sdcorr_ses.update(sdcorr)
                 if self.model:
-                    sdcorr_ses = sdcorr_ses.rename(index=self.model.parameter_translation())
+                    sdcorr_ses = sdcorr_ses.rename(
+                        index=parameter_translation(self.model.internals.control_stream)
+                    )
                 result_obj.standard_errors_sdcorr = sdcorr_ses
             self.append(result_obj)
 
@@ -229,7 +238,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             df = cov_table.table_no(result_obj.table_number).data_frame
             if df is not None:
                 if self.model:
-                    df = df.rename(index=self.model.parameter_translation())
+                    df = df.rename(index=parameter_translation(self.model.internals.control_stream))
                     df.columns = df.index
             result_obj.covariance_matrix = df
 
@@ -245,7 +254,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             df = coi_table.table_no(result_obj.table_number).data_frame
             if df is not None:
                 if self.model:
-                    df = df.rename(index=self.model.parameter_translation())
+                    df = df.rename(index=parameter_translation(self.model.internals.control_stream))
                     df.columns = df.index
             result_obj.information_matrix = df
 
@@ -261,7 +270,9 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             cor = cor_table.table_no(result_obj.table_number).data_frame
             if cor is not None:
                 if self.model:
-                    cor = cor.rename(index=self.model.parameter_translation())
+                    cor = cor.rename(
+                        index=parameter_translation(self.model.internals.control_stream)
+                    )
                     cor.columns = cor.index
                 np.fill_diagonal(cor.values, 1)
             result_obj.correlation_matrix = cor

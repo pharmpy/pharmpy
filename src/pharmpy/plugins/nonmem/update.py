@@ -22,6 +22,7 @@ from pharmpy.model import (
 from pharmpy.modeling import simplify_expression
 from pharmpy.plugins.nonmem.records import code_record
 
+from .parsing import parameter_translation
 from .records.factory import create_record
 
 
@@ -1191,7 +1192,9 @@ def update_ccontra(model, path=None, force=False):
     ll = simplify_expression(model, ll)
     ll = ll.subs(sympy.Symbol('y', real=True, positive=True), y)
 
-    tr = model.parameter_translation(reverse=True, remove_idempotent=True, as_symbols=True)
+    tr = parameter_translation(
+        model.internals.control_stream, reverse=True, remove_idempotent=True, as_symbols=True
+    )
     ll = ll.subs(tr)
     h = h.subs(tr)
 

@@ -33,6 +33,7 @@ from pharmpy.workflows import NullModelDatabase, default_model_database
 
 from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
+from .parsing import parameter_translation
 from .records.factory import create_record
 from .update import (
     update_abbr_record,
@@ -371,7 +372,9 @@ class Model(pharmpy.model.Model):
         if hasattr(self, '_parameters'):
             update_parameters(self, self.internals._old_parameters, self._parameters)
             self.internals._old_parameters = self._parameters
-        trans = self.parameter_translation(reverse=True, remove_idempotent=True, as_symbols=True)
+        trans = parameter_translation(
+            self.internals.control_stream, reverse=True, remove_idempotent=True, as_symbols=True
+        )
         rv_trans = self.rv_translation(reverse=True, remove_idempotent=True, as_symbols=True)
         trans.update(rv_trans)
         if pharmpy.plugins.nonmem.conf.write_etas_in_abbr:
@@ -571,7 +574,7 @@ class Model(pharmpy.model.Model):
 
         abbr = self.internals.control_stream.abbreviated.replace
         pset_current = {
-            **self.parameter_translation(reverse=True),
+            **parameter_translation(self.internals.control_stream, reverse=True),
             **{rv: rv for rv in rvs.names},
         }
         sset_current = {
@@ -639,7 +642,9 @@ class Model(pharmpy.model.Model):
                 f'names for these.'
             )
 
-        names_nonmem_all = rvs.names + [key for key in self.parameter_translation().keys()]
+        names_nonmem_all = rvs.names + [
+            key for key in parameter_translation(self.internals.control_stream).keys()
+        ]
 
         if set(names_nonmem_all) - set(names_sset_translated + names_pset_translated + names_basic):
             raise ValueError(
@@ -650,7 +655,9 @@ class Model(pharmpy.model.Model):
         return trans_sset, trans_pset
 
     def _name_as_comments(self, statements):
-        params_current = self.parameter_translation(remove_idempotent=True)
+        params_current = parameter_translation(
+            self.internals.control_stream, remove_idempotent=True
+        )
         for name_abbr, name_nonmem in self.internals.control_stream.abbreviated.replace.items():
             if name_nonmem in params_current.keys():
                 params_current[name_abbr] = params_current.pop(name_nonmem)
@@ -668,11 +675,14 @@ class Model(pharmpy.model.Model):
 
     def _name_as_abbr(self, rvs):
         pharmpy_names = self.internals.control_stream.abbreviated.translate_to_pharmpy_names()
-        params_current = self.parameter_translation(remove_idempotent=True, reverse=True)
+        params_current = parameter_translation(
+            self.internals.control_stream, remove_idempotent=True, reverse=True
+        )
         trans_params = {
             name_nonmem: name_abbr
             for name_nonmem, name_abbr in pharmpy_names.items()
-            if name_nonmem in self.parameter_translation().keys() or name_nonmem in rvs.names
+            if name_nonmem in parameter_translation(self.internals.control_stream).keys()
+            or name_nonmem in rvs.names
         }
         for name_nonmem, name_abbr in params_current.items():
             if name_abbr in trans_params.keys():
@@ -686,7 +696,9 @@ class Model(pharmpy.model.Model):
     def _name_as_basic(self):
         trans_params = {
             name_current: name_nonmem
-            for name_current, name_nonmem in self.parameter_translation(reverse=True).items()
+            for name_current, name_nonmem in parameter_translation(
+                self.internals.control_stream, reverse=True
+            ).items()
             if name_current != name_nonmem
         }
         trans_statements = self.internals.control_stream.abbreviated.replace
@@ -1036,31 +1048,6 @@ class Model(pharmpy.model.Model):
         for record in self.internals.control_stream.get_records('SIGMA'):
             for key, value in record.eta_map.items():
                 nonmem_name = f'EPS({value})'
-                d[nonmem_name] = key
-        if remove_idempotent:
-            d = {key: val for key, val in d.items() if key != val}
-        if reverse:
-            d = {val: key for key, val in d.items()}
-        if as_symbols:
-            d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in d.items()}
-        return d
-
-    def parameter_translation(self, reverse=False, remove_idempotent=False, as_symbols=False):
-        """Get a dict of NONMEM name to Pharmpy parameter name
-        i.e. {'THETA(1)': 'TVCL', 'OMEGA(1,1)': 'IVCL'}
-        """
-        d = dict()
-        for theta_record in self.internals.control_stream.get_records('THETA'):
-            for key, value in theta_record.name_map.items():
-                nonmem_name = f'THETA({value})'
-                d[nonmem_name] = key
-        for record in self.internals.control_stream.get_records('OMEGA'):
-            for key, value in record.name_map.items():
-                nonmem_name = f'OMEGA({value[0]},{value[1]})'
-                d[nonmem_name] = key
-        for record in self.internals.control_stream.get_records('SIGMA'):
-            for key, value in record.name_map.items():
-                nonmem_name = f'SIGMA({value[0]},{value[1]})'
                 d[nonmem_name] = key
         if remove_idempotent:
             d = {key: val for key, val in d.items() if key != val}
