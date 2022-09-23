@@ -139,8 +139,6 @@ def create_workflow(
 
     """
 
-    validate_input(effects, p_forward, p_backward, max_steps, algorithm)
-
     wf = Workflow()
     wf.name = NAME_WF
 

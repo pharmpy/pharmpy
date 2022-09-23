@@ -73,7 +73,7 @@ def create_workflow(
     >>> run_ruvsearch(model=model)      # doctest: +SKIP
 
     """
-    validate_input(model, groups, p_value, skip)
+
     wf = Workflow()
     wf.name = "ruvsearch"
     start_task = Task('start_ruvsearch', start, model, groups, p_value, skip)

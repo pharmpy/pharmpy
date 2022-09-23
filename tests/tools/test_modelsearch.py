@@ -17,7 +17,7 @@ from pharmpy.tools.modelsearch.algorithms import (
     exhaustive_stepwise,
     reduced_stepwise,
 )
-from pharmpy.tools.modelsearch.tool import create_workflow, validate_model
+from pharmpy.tools.modelsearch.tool import create_workflow, validate_input, validate_model
 from pharmpy.workflows import Workflow
 
 
@@ -287,7 +287,7 @@ def test_create_workflow():
         ),
     ],
 )
-def test_create_workflow_raises(
+def test_validate_input_raises(
     load_model_for_test,
     testdata,
     model_path,
@@ -301,7 +301,7 @@ def test_create_workflow_raises(
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
     with pytest.raises((ValueError, TypeError)):
-        create_workflow(
+        validate_input(
             search_space,
             algorithm,
             iiv_strategy=iiv_strategy,

@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.tools.allometry.tool import create_workflow
+from pharmpy.tools.allometry.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
 
 
@@ -92,7 +92,7 @@ def test_create_workflow():
         ),
     ],
 )
-def test_create_workflow_raises(
+def test_validate_input_raises(
     load_model_for_test,
     testdata,
     model_path,
@@ -108,7 +108,7 @@ def test_create_workflow_raises(
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
     with pytest.raises((ValueError, TypeError)):
-        create_workflow(
+        validate_input(
             allometric_variable=allometric_variable,
             reference_value=reference_value,
             parameters=parameters,

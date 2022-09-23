@@ -3,7 +3,7 @@ import pytest
 from pharmpy.modeling import remove_covariance_step
 from pharmpy.tools import run_tool
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
-from pharmpy.tools.ruvsearch.tool import create_workflow
+from pharmpy.tools.ruvsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
 
 
@@ -76,7 +76,7 @@ def test_create_workflow():
         ),
     ],
 )
-def test_create_workflow_raises(
+def test_validate_input_raises(
     load_model_for_test,
     testdata,
     model_path,
@@ -88,7 +88,7 @@ def test_create_workflow_raises(
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
     with pytest.raises((ValueError, TypeError)):
-        create_workflow(
+        validate_input(
             groups=groups,
             p_value=p_value,
             skip=skip,

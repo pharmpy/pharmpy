@@ -60,16 +60,6 @@ def create_workflow(
     >>> run_allometry(model=model, allometric_variable='WGT')      # doctest: +SKIP
 
     """
-    validate_input(
-        model,
-        allometric_variable,
-        reference_value,
-        parameters,
-        initials,
-        lower_bounds,
-        upper_bounds,
-        fixed,
-    )
 
     wf = Workflow()
     wf.name = "allometry"

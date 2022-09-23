@@ -13,7 +13,7 @@ from pharmpy.tools.iivsearch.algorithms import (
     brute_force_block_structure,
     create_eta_blocks,
 )
-from pharmpy.tools.iivsearch.tool import create_workflow
+from pharmpy.tools.iivsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
 
 
@@ -174,14 +174,14 @@ def test_create_workflow():
         ),
     ],
 )
-def test_create_workflow_raises(
+def test_validate_input_raises(
     load_model_for_test, testdata, model_path, algorithm, iiv_strategy, rank_type, cutoff
 ):
 
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
     with pytest.raises((ValueError, TypeError)):
-        create_workflow(
+        validate_input(
             algorithm,
             iiv_strategy=iiv_strategy,
             rank_type=rank_type,

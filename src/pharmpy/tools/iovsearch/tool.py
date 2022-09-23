@@ -60,13 +60,7 @@ def create_workflow(
     >>> model = load_example_model("pheno")
     >>> run_iovsearch('OCC', model=model)      # doctest: +SKIP
     """
-    validate_input(
-        column,
-        list_of_parameters,
-        rank_type,
-        cutoff,
-        distribution,
-    )
+
     wf = Workflow()
     wf.name = NAME_WF
 

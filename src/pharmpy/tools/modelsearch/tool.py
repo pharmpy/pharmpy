@@ -48,8 +48,6 @@ def create_workflow(
     >>> run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=model) # doctest: +SKIP
 
     """
-    validate_input(search_space, algorithm, iiv_strategy, rank_type, cutoff, model)
-    algorithm_func = getattr(algorithms, algorithm)
 
     wf = Workflow()
     wf.name = 'modelsearch'
@@ -61,6 +59,7 @@ def create_workflow(
 
     wf.add_task(start_task)
 
+    algorithm_func = getattr(algorithms, algorithm)
     wf_search, candidate_model_tasks = algorithm_func(search_space, iiv_strategy)
     wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
 

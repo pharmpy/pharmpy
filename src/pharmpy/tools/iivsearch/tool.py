@@ -48,13 +48,7 @@ def create_workflow(
     >>> from pharmpy.tools import run_iivsearch     # doctest: +SKIP
     >>> run_iivsearch('brute_force', model=model)   # doctest: +SKIP
     """
-    validate_input(
-        algorithm,
-        iiv_strategy,
-        rank_type,
-        cutoff,
-        model,
-    )
+
     wf = Workflow()
     wf.name = 'iivsearch'
     start_task = Task('start_iiv', start, model, algorithm, iiv_strategy, rank_type, cutoff)

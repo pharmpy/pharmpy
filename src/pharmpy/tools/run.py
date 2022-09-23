@@ -163,6 +163,9 @@ def run_tool(name, *args, **kwargs) -> Union[Model, List[Model], Tuple[Model], R
     tool_params = inspect.signature(tool.create_workflow).parameters
     tool_metadata = _create_metadata_tool(name, tool_params, tool_options, args)
 
+    if validate_input := getattr(tool, 'validate_input', None):
+        validate_input(*args, **tool_options)
+
     wf = tool.create_workflow(*args, **tool_options)
 
     dispatcher, database = _get_run_setup(common_options, wf.name)

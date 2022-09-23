@@ -2,7 +2,11 @@ import pytest
 from sympy import Symbol as S
 
 from pharmpy.modeling import add_iov, remove_iov
-from pharmpy.tools.iovsearch.tool import _get_iiv_etas_with_corresponding_iov, create_workflow
+from pharmpy.tools.iovsearch.tool import (
+    _get_iiv_etas_with_corresponding_iov,
+    create_workflow,
+    validate_input,
+)
 from pharmpy.workflows import Workflow
 
 
@@ -74,7 +78,7 @@ def test_create_workflow():
         ),
     ],
 )
-def test_create_workflow_raises(
+def test_validate_input_raises(
     load_model_for_test,
     testdata,
     model_path,
@@ -88,7 +92,7 @@ def test_create_workflow_raises(
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
     with pytest.raises((ValueError, TypeError)):
-        create_workflow(
+        validate_input(
             column=column,
             list_of_parameters=list_of_parameters,
             rank_type=rank_type,
