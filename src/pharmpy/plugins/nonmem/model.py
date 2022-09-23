@@ -188,6 +188,25 @@ def _parse_statements(model):
     return statements
 
 
+def parse_value_type(control_stream, statements):
+    ests = control_stream.get_records('ESTIMATION')
+    # Assuming that a model cannot be fully likelihood or fully prediction
+    # at the same time
+    for est in ests:
+        if est.likelihood:
+            tp = 'LIKELIHOOD'
+            break
+        elif est.loglikelihood:
+            tp = '-2LL'
+            break
+    else:
+        tp = 'PREDICTION'
+    f_flag = sympy.Symbol('F_FLAG')
+    if f_flag in statements.free_symbols:
+        tp = f_flag
+    return tp
+
+
 def _adjust_iovs(rvs):
     updated = []
     for i, dist in enumerate(rvs):
@@ -299,6 +318,9 @@ class Model(pharmpy.model.Model):
         self._estimation_steps = steps
         self.internals._old_estimation_steps = steps
 
+        vt = parse_value_type(self.internals.control_stream, self._statements)
+        self._value_type = vt
+
     @property
     def name(self):
         return self._name
@@ -317,34 +339,6 @@ class Model(pharmpy.model.Model):
                     new_table_name = f'{table_stem}{n}'
                     table.path = table_path.parent / new_table_name
         self._name = new_name
-
-    @property
-    def value_type(self):
-        try:
-            return self._value_type
-        except AttributeError:
-            pass
-        ests = self.internals.control_stream.get_records('ESTIMATION')
-        # Assuming that a model cannot be fully likelihood or fully prediction
-        # at the same time
-        for est in ests:
-            if est.likelihood:
-                tp = 'LIKELIHOOD'
-                break
-            elif est.loglikelihood:
-                tp = '-2LL'
-                break
-        else:
-            tp = 'PREDICTION'
-        f_flag = sympy.Symbol('F_FLAG')
-        if f_flag in self.statements.free_symbols:
-            tp = f_flag
-        self._value_type = tp
-        return tp
-
-    @value_type.setter
-    def value_type(self, value):
-        super(Model, self.__class__).value_type.fset(self, value)
 
     @property
     def modelfit_results(self):
