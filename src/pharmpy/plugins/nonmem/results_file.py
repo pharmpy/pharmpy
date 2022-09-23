@@ -341,8 +341,11 @@ class NONMEMResultsFile:
                 message_trimmed = '\n'.join([m.strip() for m in message_split])
                 errors.append(message_trimmed.strip())
 
-        [self.log.log_warning(message) for message in warnings]
-        [self.log.log_error(message) for message in errors]
+        if self.log is not None:
+            for message in warnings:
+                self.log.log_warning(message)
+            for message in errors:
+                self.log.log_error(message)
 
     def tag_items(self, path):
         nmversion = re.compile(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION\s+(\S+)')
