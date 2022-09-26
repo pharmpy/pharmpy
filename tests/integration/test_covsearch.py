@@ -43,7 +43,7 @@ def test_default(tmp_path, model_count, start_model):
             cov_effects_parent = parent_model.description.split(';')
             min_cov_effects = min([cov_effects_child, cov_effects_parent], key=len)
             max_cov_effects = max([cov_effects_child, cov_effects_parent], key=len)
-            assert all(cov_effect in max_cov_effects for cov_effect in min_cov_effects)
+            assert set(min_cov_effects).issubset(max_cov_effects)
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
