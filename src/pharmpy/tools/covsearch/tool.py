@@ -205,9 +205,11 @@ def task_greedy_forward_search(
     effect_spec = spec(candidate.model, parse(effects)) if isinstance(effects, str) else effects
     candidate_effects = sorted(set(parse_spec(effect_spec)))
 
-    def handle_effects(step: int, parent: Candidate, candidate_effects: List[EffectLiteral]):
+    def handle_effects(
+        step: int, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
+    ):
 
-        wf = wf_effects_addition(parent.model, candidate_effects)
+        wf = wf_effects_addition(parent.model, candidate_effects, index_offset)
         new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_addition-{step}')
 
         return [
@@ -229,9 +231,11 @@ def task_greedy_backward_search(
     max_steps: int,
     state: SearchState,
 ) -> SearchState:
-    def handle_effects(step: int, parent: Candidate, candidate_effects: List[EffectLiteral]):
+    def handle_effects(
+        step: int, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
+    ):
 
-        wf = wf_effects_removal(state.start_model, parent, candidate_effects)
+        wf = wf_effects_removal(state.start_model, parent, candidate_effects, index_offset)
         new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}')
 
         return [
@@ -261,7 +265,7 @@ def _greedy_search(
 ) -> SearchState:
 
     best_candidate_so_far = state.best_candidate_so_far
-    all_candidates_so_far = list(state.all_candidates_so_far)
+    all_candidates_so_far = list(state.all_candidates_so_far)  # NOTE this includes start model
 
     steps = range(1, max_steps + 1) if max_steps >= 0 else count(1)
 
@@ -269,7 +273,9 @@ def _greedy_search(
         if not candidate_effects:
             break
 
-        new_candidates = handle_effects(step, best_candidate_so_far, candidate_effects)
+        new_candidates = handle_effects(
+            step, best_candidate_so_far, candidate_effects, len(all_candidates_so_far) - 1
+        )
 
         all_candidates_so_far.extend(new_candidates)
         new_candidate_models = map(lambda candidate: candidate.model, new_candidates)
@@ -300,7 +306,7 @@ def _greedy_search(
     )
 
 
-def wf_effects_addition(model: Model, candidate_effects: List[EffectLiteral]):
+def wf_effects_addition(model: Model, candidate_effects: List[EffectLiteral], index_offset: int):
     wf = Workflow()
 
     for i, effect in enumerate(candidate_effects, 1):
@@ -309,7 +315,7 @@ def wf_effects_addition(model: Model, candidate_effects: List[EffectLiteral]):
             task_add_covariate_effect,
             model,
             effect,
-            i,
+            index_offset + i,
         )
         wf.add_task(task)
 
@@ -322,7 +328,7 @@ def wf_effects_addition(model: Model, candidate_effects: List[EffectLiteral]):
 
 
 def task_add_covariate_effect(model: Model, effect: EffectLiteral, effect_index: int):
-    model_with_added_effect = copy_model(model, name=f'{model.name}+{effect_index}')
+    model_with_added_effect = copy_model(model, name=f'covsearch_run{effect_index}')
     model_with_added_effect.description = _create_description(model, effect)
     model_with_added_effect.parent_model = model.name
     update_initial_estimates(model_with_added_effect)
@@ -350,7 +356,7 @@ def _create_description(model, effect, forward=True):
 
 
 def wf_effects_removal(
-    base_model: Model, parent: Candidate, candidate_effects: List[EffectLiteral]
+    base_model: Model, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
 ):
     wf = Workflow()
 
@@ -361,7 +367,7 @@ def wf_effects_removal(
             base_model,
             parent,
             effect,
-            i,
+            index_offset + i,
         )
         wf.add_task(task)
 
@@ -377,7 +383,7 @@ def task_remove_covariate_effect(
     base_model: Model, candidate: Candidate, effect: EffectLiteral, effect_index: int
 ):
     model = candidate.model
-    model_with_removed_effect = copy_model(base_model, name=f'{model.name}-{effect_index}')
+    model_with_removed_effect = copy_model(base_model, name=f'covsearch_run{effect_index}')
     model_with_removed_effect.description = _create_description(model, effect, forward=False)
     model_with_removed_effect.parent_model = model.name
 
