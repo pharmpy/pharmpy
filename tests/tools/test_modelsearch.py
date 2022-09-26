@@ -20,6 +20,9 @@ from pharmpy.tools.modelsearch.algorithms import (
 from pharmpy.tools.modelsearch.tool import create_workflow, validate_input, validate_model
 from pharmpy.workflows import Workflow
 
+MINIMAL_INVALID_MFL_STRING = ''
+MINIMAL_VALID_MFL_STRING = 'LET(x, 0)'
+
 
 def test_exhaustive_algorithm():
     mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
@@ -239,7 +242,23 @@ def test_add_iiv_to_func(load_model_for_test, testdata, transform_funcs, no_of_a
 
 
 def test_create_workflow():
-    assert isinstance(create_workflow('LET(x, 0)', 'exhaustive'), Workflow)
+    assert isinstance(create_workflow(MINIMAL_VALID_MFL_STRING, 'exhaustive'), Workflow)
+
+
+def test_create_workflow_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    assert isinstance(
+        create_workflow(MINIMAL_VALID_MFL_STRING, 'exhaustive', model=model), Workflow
+    )
+
+
+def test_validate_input():
+    validate_input(MINIMAL_VALID_MFL_STRING, 'exhaustive')
+
+
+def test_validate_input_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    validate_input(MINIMAL_VALID_MFL_STRING, 'exhaustive', model=model)
 
 
 @pytest.mark.parametrize(
@@ -247,7 +266,7 @@ def test_create_workflow():
     [
         (
             None,
-            '',
+            MINIMAL_INVALID_MFL_STRING,
             'exhaustive',
             'absorption_delay',
             'bic',
@@ -255,7 +274,7 @@ def test_create_workflow():
         ),
         (
             None,
-            'LET(x, 0)',
+            MINIMAL_VALID_MFL_STRING,
             'brute_force',
             'absorption_delay',
             'bic',
@@ -263,7 +282,7 @@ def test_create_workflow():
         ),
         (
             None,
-            'LET(x, 0)',
+            MINIMAL_VALID_MFL_STRING,
             'exhaustive',
             'delay',
             'bic',
@@ -271,7 +290,7 @@ def test_create_workflow():
         ),
         (
             None,
-            'LET(x, 0)',
+            MINIMAL_VALID_MFL_STRING,
             'exhaustive',
             'absorption_delay',
             'bi',
@@ -279,7 +298,7 @@ def test_create_workflow():
         ),
         (
             None,
-            'LET(x, 0)',
+            MINIMAL_VALID_MFL_STRING,
             'exhaustive',
             'absorption_delay',
             'bic',
@@ -309,3 +328,8 @@ def test_validate_input_raises(
             cutoff=cutoff,
             model=model,
         )
+
+
+def test_validate_input_raises_on_wrong_model_type():
+    with pytest.raises(TypeError, match='Invalid model'):
+        validate_input(MINIMAL_VALID_MFL_STRING, 'exhaustive', model=1)
