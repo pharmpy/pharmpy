@@ -37,31 +37,11 @@ def test_exhaustive(tmp_path, model_count, start_model):
             'modelsearch_candidate2',
             'modelsearch_candidate3',
         ),
-        # FIXME: Warning after setting TOL=9
-        # ('ABSORPTION(ZO);ELIMINATION(ZO)', 4, 'modelsearch_candidate1', 'modelsearch_candidate2'),
-        (
-            'ABSORPTION(ZO);TRANSITS(1)',
-            2,
-            'mox2',
-            '',
-        ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
             7,
             'modelsearch_candidate3',
             'modelsearch_candidate5',
-        ),
-        (
-            'LAGTIME();TRANSITS(1)',
-            2,
-            'mox2',
-            '',
-        ),
-        (
-            'ABSORPTION(ZO);TRANSITS(3, *)',
-            3,
-            'mox2',
-            '',
         ),
     ],
 )
@@ -106,20 +86,15 @@ def test_exhaustive_stepwise_basic(
         assert (rundir / 'metadata.json').exists()
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     'search_space, iiv_strategy, no_of_models, no_of_added_etas',
     [
         ('ABSORPTION(ZO);PERIPHERALS(1)', 'add_diagonal', 4, 2),
-        ('ABSORPTION(ZO);ELIMINATION(ZO)', 'add_diagonal', 4, 1),
-        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', 'add_diagonal', 4, 2),
-        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', 'add_diagonal', 8, 4),
-        ('LAGTIME();TRANSITS(1)', 'add_diagonal', 2, 1),
         ('ABSORPTION(ZO);PERIPHERALS(1)', 'fullblock', 4, 2),
         ('PERIPHERALS(1);LAGTIME()', 'absorption_delay', 4, 1),
     ],
 )
-def test_exhaustive_stepwise_add_iivs(
+def test_exhaustive_stepwise_iiv_strategies(
     tmp_path,
     model_count,
     start_model,
