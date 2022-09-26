@@ -8,6 +8,25 @@ def test_create_workflow():
     assert isinstance(create_workflow(), Workflow)
 
 
+def test_create_workflow_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    assert isinstance(create_workflow(model=model, allometric_variable='WGT'), Workflow)
+
+
+def test_validate_input():
+    validate_input()
+
+
+def test_validate_input_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    validate_input(model=model, allometric_variable='WGT')
+
+
+def test_validate_input_with_model_and_parameters(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    validate_input(model=model, allometric_variable='WGT', parameters=['CL', 'V'])
+
+
 @pytest.mark.parametrize(
     (
         'model_path',
@@ -90,6 +109,26 @@ def test_create_workflow():
             None,
             1,
         ),
+        (
+            ('nonmem', 'pheno.mod'),
+            'WT',
+            70,
+            None,
+            None,
+            None,
+            None,
+            True,
+        ),
+        (
+            ('nonmem', 'pheno.mod'),
+            'WGT',
+            70,
+            ['K'],
+            None,
+            None,
+            None,
+            True,
+        ),
     ],
 )
 def test_validate_input_raises(
@@ -118,3 +157,8 @@ def test_validate_input_raises(
             fixed=fixed,
             model=model,
         )
+
+
+def test_validate_input_raises_on_wrong_model_type():
+    with pytest.raises(TypeError, match='Invalid model'):
+        validate_input(model=1)
