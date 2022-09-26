@@ -291,9 +291,6 @@ class Model(pharmpy.model.Model):
 
         statements = statements.subs(trans_statements)
 
-        self._statements = statements
-        self.internals._old_statements = statements
-
         self.internals._old_parameters = self._parameters
 
         if not self.random_variables.validate_parameters(self._parameters.inits):
@@ -321,8 +318,12 @@ class Model(pharmpy.model.Model):
         self._estimation_steps = steps
         self.internals._old_estimation_steps = steps
 
-        vt = parse_value_type(self.internals.control_stream, self._statements)
+        vt = parse_value_type(self.internals.control_stream, statements)
         self._value_type = vt
+
+        self._statements = statements
+        self.internals._old_statements = statements
+
 
     @property
     def name(self):
