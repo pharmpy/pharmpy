@@ -1,7 +1,8 @@
 import pytest
 
+from pharmpy.model import EstimationStep
 from pharmpy.modeling import remove_covariance_step
-from pharmpy.tools import run_tool
+from pharmpy.results import ChainedModelfitResults
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
 from pharmpy.tools.ruvsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
@@ -41,12 +42,34 @@ def test_create_workflow():
     assert isinstance(create_workflow(), Workflow)
 
 
+def test_create_workflow_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    remove_covariance_step(model)
+    assert isinstance(create_workflow(model=model), Workflow)
+
+
+def test_validate_input():
+    validate_input()
+
+
+def test_validate_input_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    remove_covariance_step(model)
+    validate_input(model=model)
+
+
 @pytest.mark.parametrize(
     ('model_path', 'groups', 'p_value', 'skip'),
     [
         (
             None,
             3.1415,
+            0.05,
+            None,
+        ),
+        (
+            None,
+            0,
             0.05,
             None,
         ),
@@ -96,25 +119,78 @@ def test_validate_input_raises(
         )
 
 
-def test_run_tool_raises(load_model_for_test, testdata):
+def test_validate_input_raises_on_wrong_model_type():
+    with pytest.raises(TypeError, match='Invalid model'):
+        validate_input(model=1)
+
+
+def test_validate_input_raises_groups(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     remove_covariance_step(model)
 
     with pytest.raises(TypeError, match="Invalid groups"):
-        run_tool('ruvsearch', model, groups=4.5, p_value=0.05, skip=[])
+        validate_input(model=model, groups=4.5)
+
+
+def test_validate_input_raises_p_value(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    remove_covariance_step(model)
 
     with pytest.raises(ValueError, match="Invalid p_value"):
-        run_tool('ruvsearch', model, groups=4, p_value=1.2, skip=[])
+        validate_input(model=model, p_value=1.2)
+
+
+def test_validate_input_raises_skip(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    remove_covariance_step(model)
 
     with pytest.raises(ValueError, match="Invalid skip"):
-        run_tool(
-            'ruvsearch',
-            model,
-            groups=4,
-            p_value=0.05,
+        validate_input(
+            model=model,
             skip=['tume_varying', 'RUV_IIV', 'powder'],
         )
 
-    with pytest.raises(ValueError, match="Please check mox3.mod"):
-        del model.modelfit_results.residuals['CWRES']
-        run_tool('ruvsearch', model, groups=4, p_value=0.05, skip=[])
+
+def test_validate_input_raises_modelfit_results(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model.modelfit_results = None
+
+    with pytest.raises(ValueError, match="missing modelfit results"):
+        validate_input(model=model)
+
+
+def test_validate_input_raises_cwres(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    remove_covariance_step(model)
+    del model.modelfit_results.residuals['CWRES']
+
+    with pytest.raises(ValueError, match="CWRES"):
+        validate_input(model=model)
+
+
+def test_validate_input_raises_predictions(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    remove_covariance_step(model)
+    residuals = model.modelfit_results.residuals
+    model.modelfit_results = ChainedModelfitResults([EstimationStep('FOCE', residuals=residuals)])
+
+    with pytest.raises(ValueError, match="IPRED"):
+        validate_input(model=model)
+
+
+def test_validate_input_raises_cipredi(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    remove_covariance_step(model)
+    del model.modelfit_results.predictions['CIPREDI']
+
+    with pytest.raises(ValueError, match="IPRED"):
+        validate_input(model=model)
+
+
+def test_validate_input_raises_ipred(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    remove_covariance_step(model)
+    del model.modelfit_results.predictions['IPRED']
+
+    with pytest.raises(ValueError, match="IPRED"):
+        validate_input(model=model)
