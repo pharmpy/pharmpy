@@ -141,6 +141,20 @@ def test_create_workflow():
     assert isinstance(create_workflow('brute_force'), Workflow)
 
 
+def test_create_workflow_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    assert isinstance(create_workflow('brute_force', model=model), Workflow)
+
+
+def test_validate_input():
+    validate_input('brute_force')
+
+
+def test_validate_input_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    validate_input('brute_force', model=model)
+
+
 @pytest.mark.parametrize(
     ('model_path', 'algorithm', 'iiv_strategy', 'rank_type', 'cutoff'),
     [
@@ -188,3 +202,8 @@ def test_validate_input_raises(
             cutoff=cutoff,
             model=model,
         )
+
+
+def test_validate_input_raises_on_wrong_model_type():
+    with pytest.raises(TypeError, match='Invalid model'):
+        validate_input('brute_force', model=1)
