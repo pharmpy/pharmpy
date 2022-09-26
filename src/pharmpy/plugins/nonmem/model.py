@@ -317,7 +317,7 @@ class Model(pharmpy.model.Model):
         self.description = description
         self.internals._old_description = description
 
-        steps = parse_estimation_steps(self)
+        steps = parse_estimation_steps(self.internals.control_stream, self._random_variables)
         self._estimation_steps = steps
         self.internals._old_estimation_steps = steps
 
@@ -928,24 +928,24 @@ class Model(pharmpy.model.Model):
             return None
 
 
-def parse_estimation_steps(model):
+def parse_estimation_steps(control_stream, random_variables):
     steps = []
-    records = model.internals.control_stream.get_records('ESTIMATION')
-    covrec = model.internals.control_stream.get_records('COVARIANCE')
-    solver, tol, atol = parse_solver(model.internals.control_stream)
+    records = control_stream.get_records('ESTIMATION')
+    covrec = control_stream.get_records('COVARIANCE')
+    solver, tol, atol = parse_solver(control_stream)
 
     # Read eta and epsilon derivatives
     etaderiv_names = None
     epsilonderivs_names = None
-    table_records = model.internals.control_stream.get_records('TABLE')
+    table_records = control_stream.get_records('TABLE')
     for table in table_records:
         etaderivs = table.eta_derivatives
         if etaderivs:
-            etas = model.random_variables.etas
+            etas = random_variables.etas
             etaderiv_names = [etas.names[i - 1] for i in etaderivs]
         epsderivs = table.epsilon_derivatives
         if epsderivs:
-            epsilons = model.random_variables.epsilons
+            epsilons = random_variables.epsilons
             epsilonderivs_names = [epsilons.names[i - 1] for i in epsderivs]
 
     for record in records:
