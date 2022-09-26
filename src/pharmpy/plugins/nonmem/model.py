@@ -251,8 +251,6 @@ class Model(pharmpy.model.Model):
         self.internals._old_observation_transformation = dv
 
         parameters = _parse_parameters(self.internals.control_stream)
-        self._parameters = parameters
-        self.internals._old_parameters = parameters
 
         statements = _parse_statements(self)
 
@@ -269,6 +267,9 @@ class Model(pharmpy.model.Model):
             omega.update_name_map(trans_params)
         for sigma in self.internals.control_stream.get_records('SIGMA'):
             sigma.update_name_map(trans_params)
+
+        self._parameters = parameters
+        self.internals._old_parameters = parameters
 
         d_par = dict()
         d_rv = dict()
