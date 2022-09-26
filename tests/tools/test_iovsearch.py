@@ -33,6 +33,25 @@ def test_create_workflow():
     assert isinstance(create_workflow(), Workflow)
 
 
+def test_create_workflow_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    assert isinstance(create_workflow(model=model, column='APGR'), Workflow)
+
+
+def test_validate_input():
+    validate_input()
+
+
+def test_validate_input_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    validate_input(model=model, column='APGR')
+
+
+def test_validate_input_with_model_and_list_of_parameters(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    validate_input(model=model, column='APGR', list_of_parameters=['CL', 'V'])
+
+
 @pytest.mark.parametrize(
     ('model_path', 'column', 'list_of_parameters', 'rank_type', 'cutoff', 'distribution'),
     [
@@ -76,6 +95,22 @@ def test_create_workflow():
             None,
             'same',
         ),
+        (
+            ('nonmem', 'pheno.mod'),
+            'OCC',
+            None,
+            'bic',
+            None,
+            'same-as-iiv',
+        ),
+        (
+            ('nonmem', 'pheno.mod'),
+            'APGR',
+            ['K'],
+            'bic',
+            None,
+            'same-as-iiv',
+        ),
     ],
 )
 def test_validate_input_raises(
@@ -100,3 +135,8 @@ def test_validate_input_raises(
             distribution=distribution,
             model=model,
         )
+
+
+def test_validate_input_raises_on_wrong_model_type():
+    with pytest.raises(TypeError, match='Invalid model'):
+        validate_input(model=1)
