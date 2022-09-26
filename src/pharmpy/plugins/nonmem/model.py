@@ -268,19 +268,16 @@ class Model(pharmpy.model.Model):
         for sigma in self.internals.control_stream.get_records('SIGMA'):
             sigma.update_name_map(trans_params)
 
-        self._parameters = parameters
-        self.internals._old_parameters = parameters
-
         d_par = dict()
         d_rv = dict()
         for key, value in trans_params.items():
-            if key in self.parameters:
+            if key in parameters:
                 d_par[key] = value
             else:
                 d_rv[sympy.Symbol(key)] = value
         self._random_variables = self._random_variables.subs(d_rv)
         new = []
-        for p in self.parameters:
+        for p in parameters:
             if p.name in d_par:
                 newparam = Parameter(
                     name=d_par[p.name], init=p.init, lower=p.lower, upper=p.upper, fix=p.fix
@@ -288,11 +285,12 @@ class Model(pharmpy.model.Model):
             else:
                 newparam = p
             new.append(newparam)
-        self.parameters = Parameters(new)
+        parameters = Parameters(new)
+
+        self._parameters = parameters
+        self.internals._old_parameters = parameters
 
         statements = statements.subs(trans_statements)
-
-        self.internals._old_parameters = self._parameters
 
         if not self.random_variables.validate_parameters(self._parameters.inits):
             nearest = self.random_variables.nearest_valid_parameters(self._parameters.inits)
@@ -324,7 +322,6 @@ class Model(pharmpy.model.Model):
 
         self._statements = statements
         self.internals._old_statements = statements
-
 
     @property
     def name(self):
