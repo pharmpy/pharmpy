@@ -255,8 +255,6 @@ class Model(pharmpy.model.Model):
         statements = _parse_statements(self)
 
         rvs = _parse_random_variables(self.internals.control_stream)
-        self._random_variables = rvs
-        self.internals._old_random_variables = rvs
 
         trans_statements, trans_params = create_name_trans(
             self.internals.control_stream, rvs, statements
@@ -275,7 +273,10 @@ class Model(pharmpy.model.Model):
                 d_par[key] = value
             else:
                 d_rv[sympy.Symbol(key)] = value
-        self._random_variables = self._random_variables.subs(d_rv)
+
+        self.internals._old_random_variables = rvs  # FIXME: This has to stay here
+        rvs = rvs.subs(d_rv)
+
         new = []
         for p in parameters:
             if p.name in d_par:
@@ -287,22 +288,22 @@ class Model(pharmpy.model.Model):
             new.append(newparam)
         parameters = Parameters(new)
 
-        self._parameters = parameters
-        self.internals._old_parameters = parameters
-
         statements = statements.subs(trans_statements)
 
-        if not self.random_variables.validate_parameters(self._parameters.inits):
-            nearest = self.random_variables.nearest_valid_parameters(self._parameters.inits)
-            before, after = self._compare_before_after_params(self._parameters.inits, nearest)
+        if not rvs.validate_parameters(parameters.inits):
+            nearest = rvs.nearest_valid_parameters(parameters.inits)
+            before, after = self._compare_before_after_params(parameters.inits, nearest)
             warnings.warn(
                 f"Adjusting initial estimates to create positive semidefinite "
                 f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
                 f"After adjusting: {after}"
             )
-            params = self._parameters.set_initial_estimates(nearest)
-            self._parameters = params
-            self.internals._old_parameters = params
+            parameters = parameters.set_initial_estimates(nearest)
+
+        self._random_variables = rvs
+
+        self._parameters = parameters
+        self.internals._old_parameters = parameters
 
         if path is None:
             self._modelfit_results = None
