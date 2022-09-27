@@ -1245,3 +1245,17 @@ def update_ccontra(model, path=None, force=False):
         )
         fh.write(e2)
         fh.write(ccontr3)
+
+
+def update_name_of_tables(control_stream, new_name):
+    m = re.search(r'.*?(\d+)$', new_name)
+    if m:
+        n = int(m.group(1))
+        for table in control_stream.get_records('TABLE'):
+            table_path = table.path
+            table_name = table_path.stem
+            m = re.search(r'(.*?)(\d+)$', table_name)
+            if m:
+                table_stem = m.group(1)
+                new_table_name = f'{table_stem}{n}'
+                table.path = table_path.parent / new_table_name

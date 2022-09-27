@@ -40,6 +40,7 @@ from .update import (
     update_ccontra,
     update_description,
     update_estimation,
+    update_name_of_tables,
     update_parameters,
     update_random_variables,
     update_statements,
@@ -238,6 +239,7 @@ class Model(pharmpy.model.Model):
             self._name = path.stem
             self.database = default_model_database(path=path.parent)
             self.filename_extension = path.suffix
+        self.internals.old_name = self._name
         self.internals.control_stream = parser.parse(code)
         self._create_datainfo()
         self._initial_individual_estimates_updated = False
@@ -323,25 +325,6 @@ class Model(pharmpy.model.Model):
 
         self._statements = statements
         self.internals._old_statements = statements
-
-    @property
-    def name(self):
-        return self._name
-
-    @name.setter
-    def name(self, new_name):
-        m = re.search(r'.*?(\d+)$', new_name)
-        if m:
-            n = int(m.group(1))
-            for table in self.internals.control_stream.get_records('TABLE'):
-                table_path = table.path
-                table_name = table_path.stem
-                m = re.search(r'(.*?)(\d+)$', table_name)
-                if m:
-                    table_stem = m.group(1)
-                    new_table_name = f'{table_stem}{n}'
-                    table.path = table_path.parent / new_table_name
-        self._name = new_name
 
     @property
     def modelfit_results(self):
@@ -430,6 +413,9 @@ class Model(pharmpy.model.Model):
             if not nofiles:
                 update_ccontra(self, path, force)
         update_description(self)
+
+        if self._name != self.internals.old_name:
+            update_name_of_tables(self.internals.control_stream, self._name)
 
     def _abbr_translation(self, rv_trans):
         abbr_pharmpy = self.internals.control_stream.abbreviated.translate_to_pharmpy_names()
