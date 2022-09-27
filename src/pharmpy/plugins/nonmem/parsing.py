@@ -2,6 +2,93 @@ import warnings
 
 import pharmpy.plugins.nonmem
 from pharmpy.deps import sympy
+from pharmpy.model import Assignment, ODESystem, Parameters, RandomVariables
+
+from .advan import compartmental_model
+
+
+def parse_parameters(control_stream):
+    next_theta = 1
+    params = []
+    for theta_record in control_stream.get_records('THETA'):
+        thetas = theta_record.parameters(next_theta, seen_labels={p.name for p in params})
+        params.extend(thetas)
+        next_theta += len(thetas)
+    next_omega = 1
+    previous_size = None
+    for omega_record in control_stream.get_records('OMEGA'):
+        omegas, next_omega, previous_size = omega_record.parameters(
+            next_omega, previous_size, seen_labels={p.name for p in params}
+        )
+        params.extend(omegas)
+    next_sigma = 1
+    previous_size = None
+    for sigma_record in control_stream.get_records('SIGMA'):
+        sigmas, next_sigma, previous_size = sigma_record.parameters(
+            next_sigma, previous_size, seen_labels={p.name for p in params}
+        )
+        params.extend(sigmas)
+    return Parameters(params)
+
+
+def parse_random_variables(control_stream):
+    dists = RandomVariables.create([])
+    next_omega = 1
+    prev_cov = None
+
+    for omega_record in control_stream.get_records('OMEGA'):
+        etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
+        dists += etas
+    dists = _adjust_iovs(dists)
+    next_sigma = 1
+    prev_cov = None
+    for sigma_record in control_stream.get_records('SIGMA'):
+        epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
+        dists += epsilons
+    rvs = RandomVariables.create(dists)
+    return rvs
+
+
+def parse_statements(model):
+    rec = model.internals.control_stream.get_pred_pk_record()
+    statements = rec.statements
+
+    des = model.internals.control_stream.get_des_record()
+    error = model.internals.control_stream.get_error_record()
+    if error:
+        sub = model.internals.control_stream.get_records('SUBROUTINES')[0]
+        comp = compartmental_model(model, sub.advan, sub.trans, des)
+        trans_amounts = dict()
+        if comp is not None:
+            cm, link = comp
+            statements += [cm, link]
+            for i, amount in enumerate(cm.amounts, start=1):
+                trans_amounts[sympy.Symbol(f"A({i})")] = amount
+        else:
+            statements += ODESystem()  # FIXME: Placeholder for ODE-system
+            # FIXME: Dummy link statement
+            statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
+        statements += error.statements
+        if trans_amounts:
+            statements = statements.subs(trans_amounts)
+    return statements
+
+
+def _adjust_iovs(rvs):
+    updated = []
+    for i, dist in enumerate(rvs):
+        try:
+            next_dist = rvs[i + 1]
+        except IndexError:
+            updated.append(dist)
+            break
+
+        if dist.level != 'IOV' and next_dist.level == 'IOV':
+            new_dist = dist.derive(level='IOV')
+            updated.append(new_dist)
+        else:
+            updated.append(dist)
+    return RandomVariables.create(updated)
 
 
 def parameter_translation(control_stream, reverse=False, remove_idempotent=False, as_symbols=False):
@@ -163,3 +250,27 @@ def _clashing_symbols(statements, trans_statements):
     parameter_symbols = {sympy.Symbol(symb) for _, symb in trans_statements.items()}
     clashing_symbols = parameter_symbols & statements.free_symbols
     return clashing_symbols
+
+
+def parse_value_type(control_stream, statements):
+    ests = control_stream.get_records('ESTIMATION')
+    # Assuming that a model cannot be fully likelihood or fully prediction
+    # at the same time
+    for est in ests:
+        if est.likelihood:
+            tp = 'LIKELIHOOD'
+            break
+        elif est.loglikelihood:
+            tp = '-2LL'
+            break
+    else:
+        tp = 'PREDICTION'
+    f_flag = sympy.Symbol('F_FLAG')
+    if f_flag in statements.free_symbols:
+        tp = f_flag
+    return tp
+
+
+def parse_description(control_stream):
+    rec = control_stream.get_records('PROBLEM')[0]
+    return rec.title
