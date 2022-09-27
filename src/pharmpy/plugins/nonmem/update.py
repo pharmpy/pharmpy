@@ -1259,3 +1259,22 @@ def update_name_of_tables(control_stream, new_name):
                 table_stem = m.group(1)
                 new_table_name = f'{table_stem}{n}'
                 table.path = table_path.parent / new_table_name
+
+
+def update_sizes(model):
+    """Update $SIZES if needed"""
+    all_sizes = model.internals.control_stream.get_records('SIZES')
+    if len(all_sizes) == 0:
+        sizes = create_record('$SIZES ')
+    else:
+        sizes = all_sizes[0]
+    odes = model.statements.ode_system
+
+    if odes is not None and isinstance(odes, CompartmentalSystem):
+        n_compartments = len(odes)
+        sizes.PC = n_compartments
+    thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
+    sizes.LTH = len(thetas)
+
+    if len(all_sizes) == 0 and len(str(sizes)) > 7:
+        model.internals.control_stream.insert_record(str(sizes))

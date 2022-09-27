@@ -14,7 +14,6 @@ from pharmpy.expressions import subs
 from pharmpy.model import (
     Assignment,
     ColumnInfo,
-    CompartmentalSystem,
     DataInfo,
     DatasetError,
     EstimationStep,
@@ -34,7 +33,6 @@ from pharmpy.workflows import NullModelDatabase, default_model_database
 from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
 from .parsing import create_name_trans, parameter_translation
-from .records.factory import create_record
 from .update import (
     update_abbr_record,
     update_ccontra,
@@ -43,6 +41,7 @@ from .update import (
     update_name_of_tables,
     update_parameters,
     update_random_variables,
+    update_sizes,
     update_statements,
 )
 
@@ -406,7 +405,7 @@ class Model(pharmpy.model.Model):
                 data_record = self.internals.control_stream.get_records('DATA')[0]
                 data_record.filename = str(path)
 
-        self._update_sizes()
+        update_sizes(self)
         update_estimation(self)
 
         if self.observation_transformation != self.internals._old_observation_transformation:
@@ -428,24 +427,6 @@ class Model(pharmpy.model.Model):
         }
         abbr_trans.update(abbr_recs)
         return abbr_trans
-
-    def _update_sizes(self):
-        """Update $SIZES if needed"""
-        all_sizes = self.internals.control_stream.get_records('SIZES')
-        if len(all_sizes) == 0:
-            sizes = create_record('$SIZES ')
-        else:
-            sizes = all_sizes[0]
-        odes = self.statements.ode_system
-
-        if odes is not None and isinstance(odes, CompartmentalSystem):
-            n_compartments = len(odes)
-            sizes.PC = n_compartments
-        thetas = [p for p in self.parameters if p.symbol not in self.random_variables.free_symbols]
-        sizes.LTH = len(thetas)
-
-        if len(all_sizes) == 0 and len(str(sizes)) > 7:
-            self.internals.control_stream.insert_record(str(sizes))
 
     def _update_initial_individual_estimates(self, path, nofiles=False):
         """Update $ETAS
