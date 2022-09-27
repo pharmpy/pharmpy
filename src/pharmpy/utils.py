@@ -11,7 +11,7 @@ from tempfile import mkdtemp
 from typing import Any, Callable
 from typing import Container as TypingContainer  # NOTE needed for Python 3.8
 from typing import Iterable as TypingIterable  # NOTE needed for Python 3.8
-from typing import List, Optional, Tuple, Type, Union, get_args, get_origin
+from typing import List, Optional, Tuple, Type, Union, get_args, get_origin, get_type_hints
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -336,15 +336,26 @@ def _match(typing, value):
 def runtime_type_check(fn):
     sig = signature(fn)
     parameters = sig.parameters.values()
+    type_hints = None
 
     def _wrapped(*args, **kwargs):
+        # NOTE This delays loading annotations until first use
+        nonlocal type_hints
+        if type_hints is None:
+            type_hints = get_type_hints(fn)
+
         for i, parameter in enumerate(parameters):
+            if parameter.annotation is parameter.empty:
+                # NOTE Do not check anything if there is no annotation
+                continue
+
+            name = parameter.name
             value = _arg(parameter, i, args, kwargs)
-            expected_types = (
-                [Any]
-                if parameter.annotation is parameter.empty
-                else _annotation_to_types(parameter.annotation)
-            )
+
+            # NOTE We cannot use parameter.annotation as this does not work
+            # in combination with `from __future__ import annotations`.
+            # See https://peps.python.org/pep-0563/#introducing-a-new-dictionary-for-the-string-literal-form-instead
+            expected_types = _annotation_to_types(type_hints[name])
             if not any(map(lambda expected_type: _match(expected_type, value), expected_types)):
                 raise TypeError(
                     f'Invalid `{parameter.name}`: got `{value}` of type {_value_type(value)},'
