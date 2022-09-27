@@ -41,6 +41,7 @@ from .update import (
     update_ccontra,
     update_description,
     update_estimation,
+    update_input,
     update_name_of_tables,
     update_parameters,
     update_random_variables,
@@ -283,7 +284,7 @@ class Model(pharmpy.model.Model):
 
             label = self.datainfo.names[0]
             data_record.ignore_character_from_header(label)
-            self._update_input()
+            update_input(self)
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.
@@ -576,48 +577,6 @@ class Model(pharmpy.model.Model):
                         given_names.append(key)
                         drop.append(False)
         return colnames, drop, synonym_replacement, given_names
-
-    def _update_input(self):
-        """Update $INPUT
-
-        currently supporting append columns at end and removing columns
-        And add/remove DROP
-        """
-        input_records = self.internals.control_stream.get_records("INPUT")
-        _, drop, _, colnames = self._column_info()
-        keep = []
-        i = 0
-        for child in input_records[0].root.children:
-            if child.rule != 'option':
-                keep.append(child)
-                continue
-
-            if (colnames[i] is not None and (colnames[i] != self.datainfo[i].name)) or (
-                not drop[i]
-                and (self.datainfo[i].drop or self.datainfo[i].datatype == 'nmtran-date')
-            ):
-                dropped = self.datainfo[i].drop or self.datainfo[i].datatype == 'nmtran-date'
-                anonymous = colnames[i] is None
-                key = 'DROP' if anonymous and dropped else self.datainfo[i].name
-                value = 'DROP' if not anonymous and dropped else None
-                new = input_records[0]._create_option(key, value)
-                keep.append(new)
-            else:
-                keep.append(child)
-
-            i += 1
-
-            if i >= len(self.datainfo):
-                last_child = input_records[0].root.children[-1]
-                if last_child.rule == 'ws' and '\n' in str(last_child):
-                    keep.append(last_child)
-                break
-
-        input_records[0].root.children = keep
-
-        last_input_record = input_records[-1]
-        for ci in self.datainfo[len(colnames) :]:
-            last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
 
     def _replace_synonym_in_filters(filters, replacements):
         result = []

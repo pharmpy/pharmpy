@@ -1278,3 +1278,41 @@ def update_sizes(model):
 
     if len(all_sizes) == 0 and len(str(sizes)) > 7:
         model.internals.control_stream.insert_record(str(sizes))
+
+
+def update_input(model):
+    """Update $INPUT"""
+    input_records = model.internals.control_stream.get_records("INPUT")
+    _, drop, _, colnames = model._column_info()
+    keep = []
+    i = 0
+    for child in input_records[0].root.children:
+        if child.rule != 'option':
+            keep.append(child)
+            continue
+
+        if (colnames[i] is not None and (colnames[i] != model.datainfo[i].name)) or (
+            not drop[i] and (model.datainfo[i].drop or model.datainfo[i].datatype == 'nmtran-date')
+        ):
+            dropped = model.datainfo[i].drop or model.datainfo[i].datatype == 'nmtran-date'
+            anonymous = colnames[i] is None
+            key = 'DROP' if anonymous and dropped else model.datainfo[i].name
+            value = 'DROP' if not anonymous and dropped else None
+            new = input_records[0]._create_option(key, value)
+            keep.append(new)
+        else:
+            keep.append(child)
+
+        i += 1
+
+        if i >= len(model.datainfo):
+            last_child = input_records[0].root.children[-1]
+            if last_child.rule == 'ws' and '\n' in str(last_child):
+                keep.append(last_child)
+            break
+
+    input_records[0].root.children = keep
+
+    last_input_record = input_records[-1]
+    for ci in model.datainfo[len(colnames) :]:
+        last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
