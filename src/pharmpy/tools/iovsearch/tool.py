@@ -290,13 +290,12 @@ def validate_input(
 
     if rank_type not in RANK_TYPES:
         raise ValueError(
-            f'Invalid rank_type: got "{rank_type}" of type {type(rank_type)},'
-            f' must be one of {sorted(RANK_TYPES)}.'
+            f'Invalid `rank_type`: got `{rank_type}`, must be one of {sorted(RANK_TYPES)}.'
         )
 
     if distribution not in ADD_IOV_DISTRIBUTION:
         raise ValueError(
-            f'Invalid distribution: got "{distribution}" of type {type(distribution)},'
+            f'Invalid `distribution`: got `{distribution}`,'
             f' must be one of {sorted(ADD_IOV_DISTRIBUTION)}.'
         )
 
@@ -304,7 +303,7 @@ def validate_input(
 
         if column not in model.datainfo.names:
             raise ValueError(
-                f'Invalid column: got "{column}",'
+                f'Invalid `column`: got `{column}`,'
                 f' must be one of {sorted(model.datainfo.names)}.'
             )
 
@@ -314,7 +313,7 @@ def validate_input(
             )
             if not set(list_of_parameters).issubset(allowed_parameters):
                 raise ValueError(
-                    f'Invalid list_of_parameters: got "{list_of_parameters}",'
+                    f'Invalid `list_of_parameters`: got `{list_of_parameters}`,'
                     f' must be NULL/None or a subset of {sorted(allowed_parameters)}.'
                 )
 

@@ -136,7 +136,7 @@ def test_validate_input_raises_p_value(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     remove_covariance_step(model)
 
-    with pytest.raises(ValueError, match="Invalid p_value"):
+    with pytest.raises(ValueError, match="Invalid `p_value`"):
         validate_input(model=model, p_value=1.2)
 
 
@@ -144,7 +144,7 @@ def test_validate_input_raises_skip(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     remove_covariance_step(model)
 
-    with pytest.raises(ValueError, match="Invalid skip"):
+    with pytest.raises(ValueError, match="Invalid `skip`"):
         validate_input(
             model=model,
             skip=['tume_varying', 'RUV_IIV', 'powder'],

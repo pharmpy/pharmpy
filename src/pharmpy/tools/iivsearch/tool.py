@@ -188,19 +188,17 @@ def validate_input(
 ):
     if algorithm not in IIV_ALGORITHMS:
         raise ValueError(
-            f'Invalid algorithm: got "{algorithm}" of type {type(algorithm)},'
-            f' must be one of {sorted(IIV_ALGORITHMS)}.'
+            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(IIV_ALGORITHMS)}.'
         )
 
     if rank_type not in RANK_TYPES:
         raise ValueError(
-            f'Invalid rank_type: got "{rank_type}" of type {type(rank_type)},'
-            f' must be one of {sorted(RANK_TYPES)}.'
+            f'Invalid `rank_type`: got `{rank_type}`, must be one of {sorted(RANK_TYPES)}.'
         )
 
     if iiv_strategy not in IIV_STRATEGIES:
         raise ValueError(
-            f'Invalid IIV strategy: got "{iiv_strategy}" of type {type(iiv_strategy)},'
+            f'Invalid `iiv_strategy`: got `{iiv_strategy}`,'
             f' must be one of {sorted(IIV_STRATEGIES)}.'
         )
 

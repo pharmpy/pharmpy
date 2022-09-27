@@ -113,26 +113,24 @@ def validate_input(
 
     if not hasattr(algorithms, algorithm):
         raise ValueError(
-            f'Invalid algorithm: got "{algorithm}" of type {type(algorithm)},'
-            f' must be one of {sorted(dir(algorithms))}.'
+            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(dir(algorithms))}.'
         )
 
     if rank_type not in RANK_TYPES:
         raise ValueError(
-            f'Invalid rank_type: got "{rank_type}" of type {type(rank_type)},'
-            f' must be one of {sorted(RANK_TYPES)}.'
+            f'Invalid `rank_type`: got `{rank_type}`, must be one of {sorted(RANK_TYPES)}.'
         )
 
     if iiv_strategy not in algorithms.IIV_STRATEGIES:
         raise ValueError(
-            f'Invalid IIV strategy: got "{iiv_strategy}" of type {type(iiv_strategy)},'
+            f'Invalid `iiv_strategy`: got `{iiv_strategy}`,'
             f' must be one of {sorted(algorithms.IIV_STRATEGIES)}.'
         )
 
     try:
         parse(search_space)
     except:  # noqa E722
-        raise ValueError(f'Invalid search_space, could not be parsed: "{search_space}"')
+        raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
 
     validate_model(model)
 
@@ -147,7 +145,7 @@ def validate_model(model):
         pass
     else:
         raise ValueError(
-            f"Found compartment column {cmt.names} in dataset. "
+            f"Invalid `model`: found compartment column {cmt.names} in dataset. "
             f"This is currently not supported by modelsearch. "
             f"Please remove or drop this column and try again"
         )

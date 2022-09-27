@@ -92,7 +92,7 @@ def run_amd(
         model.name = 'start'
     else:
         raise TypeError(
-            f'Invalid input: got "{input}" of type {type(input)},'
+            f'Invalid input: got `{input}` of type {type(input)},'
             f' only NONMEM model or standalone dataset are supported currently.'
         )
 

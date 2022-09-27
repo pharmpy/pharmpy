@@ -132,7 +132,7 @@ def validate_input(
             model.datainfo.names
         ):
             raise ValueError(
-                f'Invalid allometric_variable: got "{allometric_variable}",'
+                f'Invalid `allometric_variable`: got `{allometric_variable}`,'
                 f' free symbols must be a subset of {sorted(model.datainfo.names)}.'
             )
 
@@ -142,7 +142,7 @@ def validate_input(
             )
             if not set(parameters).issubset(allowed_parameters):
                 raise ValueError(
-                    f'Invalid parameters: got "{parameters}",'
+                    f'Invalid `parameters`: got `{parameters}`,'
                     f' must be NULL/None or a subset of {sorted(allowed_parameters)}.'
                 )
 

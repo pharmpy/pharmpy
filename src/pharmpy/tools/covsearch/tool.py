@@ -446,20 +446,17 @@ def _make_df_steps_row(
 def validate_input(effects, p_forward, p_backward, algorithm, model):
     if algorithm not in ALGORITHMS:
         raise ValueError(
-            f'Invalid algorithm: got "{algorithm}" of type {type(algorithm)},'
-            f' must be one of {sorted(ALGORITHMS)}.'
+            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'
         )
 
     if not 0 < p_forward <= 1:
         raise ValueError(
-            f'Invalid p_forward: got "{p_forward}" of type {type(p_forward)},'
-            f' must be a float in range (0, 1].'
+            f'Invalid `p_forward`: got `{p_forward}`, must be a float in range (0, 1].'
         )
 
     if not 0 < p_backward <= 1:
         raise ValueError(
-            f'Invalid p_backward: got "{p_backward}" of type {type(p_backward)},'
-            f' must be a float in range (0, 1].'
+            f'Invalid `p_backward`: got `{p_backward}`, must be a float in range (0, 1].'
         )
 
     if model is not None:
@@ -467,7 +464,7 @@ def validate_input(effects, p_forward, p_backward, algorithm, model):
             try:
                 parsed = parse(effects)
             except:  # noqa E722
-                raise ValueError(f'Invalid effects, could not be parsed: "{effects}"')
+                raise ValueError(f'Invalid `effects`, could not be parsed: `{effects}`')
             effect_spec = spec(model, parsed)
         else:
             effect_spec = effects
@@ -494,21 +491,25 @@ def validate_input(effects, p_forward, p_backward, algorithm, model):
         for effect in candidate_effects:
             if effect.covariate not in allowed_covariates:
                 raise ValueError(
-                    f'Invalid covariate found in effects: got "{effect.covariate}",'
+                    f'Invalid `effects` because of invalid covariate found in'
+                    f' effects: got `{effect.covariate}`,'
                     f' must be in {sorted(allowed_covariates)}.'
                 )
             if effect.parameter not in allowed_parameters:
                 raise ValueError(
-                    f'Invalid parameter found in effects: got "{effect.parameter}",'
+                    f'Invalid `effects` because of invalid parameter found in'
+                    f' effects: got `{effect.parameter}`,'
                     f' must be in {sorted(allowed_parameters)}.'
                 )
             if effect.fp not in allowed_covariate_effects:
                 raise ValueError(
-                    f'Invalid effect found in effects: got "{effect.fp}",'
+                    f'Invalid `effects` because of invalid effect function found in'
+                    f' effects: got `{effect.fp}`,'
                     f' must be in {sorted(allowed_covariate_effects)}.'
                 )
             if effect.operation not in allowed_ops:
                 raise ValueError(
-                    f'Invalid effect found in effects: got "{effect.operation}",'
+                    f'Invalid `effects` because of invalid effect operation found in'
+                    f' effects: got `{effect.operation}`,'
                     f' must be in {sorted(allowed_ops)}.'
                 )

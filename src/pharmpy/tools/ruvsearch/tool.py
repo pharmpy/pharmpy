@@ -402,35 +402,29 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
 @same_arguments_as(create_workflow)
 def validate_input(model, groups, p_value, skip):
     if groups <= 0:
-        raise TypeError(
-            f'Invalid groups: got "{groups}" of type {type(groups)}, must be an int >= 1.'
-        )
+        raise TypeError(f'Invalid `groups`: got `{groups}`, must be >= 1.')
 
     if not 0 < p_value <= 1:
-        raise ValueError(
-            f'Invalid p_value: got "{p_value}" of type {type(p_value)},'
-            f' must be a float in range (0, 1].'
-        )
+        raise ValueError(f'Invalid `p_value`: got `{p_value}`, must be a float in range (0, 1].')
 
     if skip is not None and not set(skip).issubset(SKIP):
-        raise ValueError(
-            f'Invalid skip: got "{skip}" of type {type(skip)},'
-            f' must be None/NULL or a subset of {SKIP}.'
-        )
+        raise ValueError(f'Invalid `skip`: got `{skip}`, must be None/NULL or a subset of {SKIP}.')
 
     if model is not None:
 
         if model.modelfit_results is None:
-            raise ValueError(f"Model {model} is missing modelfit results.")
+            raise ValueError(f'Invalid `model`: {model} is missing modelfit results.')
 
         residuals = model.modelfit_results.residuals
         if residuals is None or 'CWRES' not in residuals:
             raise ValueError(
-                f"Please check {model.name}.mod file to make sure ID, TIME, CWRES are in $TABLE."
+                f'Invalid `model`: please check {model.name}.mod file to'
+                f' make sure ID, TIME, CWRES are in $TABLE.'
             )
 
         predictions = model.modelfit_results.predictions
         if predictions is None or ('CIPREDI' not in predictions and 'IPRED' not in predictions):
             raise ValueError(
-                f"Please check {model.name}.mod file to make sure ID, TIME, CIPREDI (or IPRED) are in $TABLE."
+                f'Invalid `model`: please check {model.name}.mod file to'
+                f' make sure ID, TIME, CIPREDI (or IPRED) are in $TABLE.'
             )
