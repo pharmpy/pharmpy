@@ -30,47 +30,35 @@ def test_validate_input_with_model_and_parameters(load_model_for_test, testdata)
 @pytest.mark.parametrize(
     (
         'model_path',
-        'allometric_variable',
-        'reference_value',
-        'parameters',
-        'initials',
-        'lower_bounds',
-        'upper_bounds',
-        'fixed',
+        'arguments',
         'exception',
         'match',
     ),
     [
-        (None, 1, 70, None, None, None, None, True, TypeError, 'Invalid `allometric_variable`'),
-        (None, 'WT', [], None, None, None, None, True, TypeError, 'Invalid `reference_value`'),
-        (None, 'WT', 70, 'CL', None, None, None, True, TypeError, 'Invalid `parameters`'),
-        (None, 'WT', 70, None, 0.1, None, None, True, TypeError, 'Invalid `initials`'),
-        (None, 'WT', 70, None, None, 0.0001, None, True, TypeError, 'Invalid `lower_bounds`'),
-        (None, 'WT', 70, None, None, None, 1000, True, TypeError, 'Invalid `upper_bounds`'),
-        (None, 'WT', 70, None, None, None, None, 1, TypeError, 'Invalid `fixed`'),
+        (None, dict(allometric_variable=1), TypeError, 'Invalid `allometric_variable`'),
+        (None, dict(reference_value=[]), TypeError, 'Invalid `reference_value`'),
+        (None, dict(parameters='CL'), TypeError, 'Invalid `parameters`'),
+        (None, dict(initials=0.1), TypeError, 'Invalid `initials`'),
+        (None, dict(lower_bounds=0.0001), TypeError, 'Invalid `lower_bounds`'),
+        (None, dict(upper_bounds=1000), TypeError, 'Invalid `upper_bounds`'),
+        (None, dict(fixed=1), TypeError, 'Invalid `fixed`'),
         (
             ('nonmem', 'pheno.mod'),
-            'WT',
-            70,
-            None,
-            None,
-            None,
-            None,
-            True,
+            dict(allometric_variable='WT'),
             ValueError,
             'Invalid `allometric_variable`',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            'WGT',
-            70,
-            ['K'],
-            None,
-            None,
-            None,
-            True,
+            dict(allometric_variable='WGT', parameters=['K']),
             ValueError,
             'Invalid `parameters`',
+        ),
+        (
+            None,
+            dict(model=1),
+            TypeError,
+            'Invalid `model`',
         ),
     ],
 )
@@ -78,32 +66,14 @@ def test_validate_input_raises(
     load_model_for_test,
     testdata,
     model_path,
-    allometric_variable,
-    reference_value,
-    parameters,
-    initials,
-    lower_bounds,
-    upper_bounds,
-    fixed,
+    arguments,
     exception,
     match,
 ):
 
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
+    kwargs = {'model': model, **arguments}
+
     with pytest.raises(exception, match=match):
-        validate_input(
-            allometric_variable=allometric_variable,
-            reference_value=reference_value,
-            parameters=parameters,
-            initials=initials,
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
-            fixed=fixed,
-            model=model,
-        )
-
-
-def test_validate_input_raises_on_wrong_model_type():
-    with pytest.raises(TypeError, match='Invalid `model`'):
-        validate_input(model=1)
+        validate_input(**kwargs)

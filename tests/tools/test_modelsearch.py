@@ -264,104 +264,70 @@ def test_validate_input_with_model(load_model_for_test, testdata):
 @pytest.mark.parametrize(
     (
         'model_path',
-        'search_space',
-        'algorithm',
-        'iiv_strategy',
-        'rank_type',
-        'cutoff',
+        'arguments',
         'exception',
         'match',
     ),
     [
         (
             None,
-            1,
-            'exhaustive',
-            'absorption_delay',
-            'bic',
-            None,
+            dict(search_space=1),
             TypeError,
             'Invalid `search_space`',
         ),
         (
             None,
-            MINIMAL_INVALID_MFL_STRING,
-            'exhaustive',
-            'absorption_delay',
-            'bic',
-            None,
+            dict(search_space=MINIMAL_INVALID_MFL_STRING),
             ValueError,
             'Invalid `search_space`',
         ),
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            1,
-            'absorption_delay',
-            'bic',
-            None,
+            dict(algorithm=1),
             TypeError,
             'Invalid `algorithm`',
         ),
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            'brute_force',
-            'absorption_delay',
-            'bic',
-            None,
+            dict(algorithm='brute_force'),
             ValueError,
             'Invalid `algorithm`',
         ),
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            'exhaustive',
-            1,
-            'bic',
-            None,
+            dict(iiv_strategy=1),
             TypeError,
             'Invalid `iiv_strategy`',
         ),
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            'exhaustive',
-            'delay',
-            'bic',
-            None,
+            dict(iiv_strategy='delay'),
             ValueError,
             'Invalid `iiv_strategy`',
         ),
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            'exhaustive',
-            'absorption_delay',
-            1,
-            None,
+            dict(rank_type=1),
             TypeError,
             'Invalid `rank_type`',
         ),
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            'exhaustive',
-            'absorption_delay',
-            'bi',
-            None,
+            dict(rank_type='bi'),
             ValueError,
             'Invalid `rank_type`',
         ),
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            'exhaustive',
-            'absorption_delay',
-            'bic',
-            '1',
+            dict(cutoff='1'),
             TypeError,
             'Invalid `cutoff`',
+        ),
+        (
+            None,
+            dict(model=1),
+            TypeError,
+            'Invalid `model`',
         ),
     ],
 )
@@ -369,28 +335,18 @@ def test_validate_input_raises(
     load_model_for_test,
     testdata,
     model_path,
-    search_space,
-    algorithm,
-    iiv_strategy,
-    rank_type,
-    cutoff,
+    arguments,
     exception,
     match,
 ):
-
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
+    harmless_arguments = dict(
+        search_space=MINIMAL_VALID_MFL_STRING,
+        algorithm='exhaustive',
+    )
+
+    kwargs = {**harmless_arguments, 'model': model, **arguments}
+
     with pytest.raises(exception, match=match):
-        validate_input(
-            search_space,
-            algorithm,
-            iiv_strategy=iiv_strategy,
-            rank_type=rank_type,
-            cutoff=cutoff,
-            model=model,
-        )
-
-
-def test_validate_input_raises_on_wrong_model_type():
-    with pytest.raises(TypeError, match='Invalid `model`'):
-        validate_input(MINIMAL_VALID_MFL_STRING, 'exhaustive', model=1)
+        validate_input(**kwargs)

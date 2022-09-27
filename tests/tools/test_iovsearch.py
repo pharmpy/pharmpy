@@ -55,41 +55,35 @@ def test_validate_input_with_model_and_list_of_parameters(load_model_for_test, t
 @pytest.mark.parametrize(
     (
         'model_path',
-        'column',
-        'list_of_parameters',
-        'rank_type',
-        'cutoff',
-        'distribution',
+        'arguments',
         'exception',
         'match',
     ),
     [
-        (None, 1, None, 'bic', None, 'same-as-iiv', TypeError, 'Invalid `column`'),
-        (None, 'OCC', 'CL', 'bic', None, 'same-as-iiv', TypeError, 'Invalid `list_of_parameters`'),
-        (None, 'OCC', None, 1, None, 'same-as-iiv', TypeError, 'Invalid `rank_type`'),
-        (None, 'OCC', None, 'bi', None, 'same-as-iiv', ValueError, 'Invalid `rank_type`'),
-        (None, 'OCC', None, 'bic', '1', 'same-as-iiv', TypeError, 'Invalid `cutoff`'),
-        (None, 'OCC', None, 'bic', None, ['same-as-iiv'], TypeError, 'Invalid `distribution`'),
-        (None, 'OCC', None, 'bic', None, 'same', ValueError, 'Invalid `distribution`'),
+        (None, dict(column=1), TypeError, 'Invalid `column`'),
+        (None, dict(list_of_parameters='CL'), TypeError, 'Invalid `list_of_parameters`'),
+        (None, dict(rank_type=1), TypeError, 'Invalid `rank_type`'),
+        (None, dict(rank_type='bi'), ValueError, 'Invalid `rank_type`'),
+        (None, dict(cutoff='1'), TypeError, 'Invalid `cutoff`'),
+        (None, dict(distribution=['same-as-iiv']), TypeError, 'Invalid `distribution`'),
+        (None, dict(distribution='same'), ValueError, 'Invalid `distribution`'),
         (
             ('nonmem', 'pheno.mod'),
-            'OCC',
-            None,
-            'bic',
-            None,
-            'same-as-iiv',
+            dict(column='OCC'),
             ValueError,
             'Invalid `column`',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            'APGR',
-            ['K'],
-            'bic',
-            None,
-            'same-as-iiv',
+            dict(column='APGR', list_of_parameters=['K']),
             ValueError,
             'Invalid `list_of_parameters`',
+        ),
+        (
+            None,
+            dict(model=1),
+            TypeError,
+            'Invalid `model`',
         ),
     ],
 )
@@ -97,28 +91,14 @@ def test_validate_input_raises(
     load_model_for_test,
     testdata,
     model_path,
-    column,
-    list_of_parameters,
-    rank_type,
-    distribution,
-    cutoff,
+    arguments,
     exception,
     match,
 ):
 
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
+    kwargs = {'model': model, **arguments}
+
     with pytest.raises(exception, match=match):
-        validate_input(
-            column=column,
-            list_of_parameters=list_of_parameters,
-            rank_type=rank_type,
-            cutoff=cutoff,
-            distribution=distribution,
-            model=model,
-        )
-
-
-def test_validate_input_raises_on_wrong_model_type():
-    with pytest.raises(TypeError, match='Invalid `model`'):
-        validate_input(model=1)
+        validate_input(**kwargs)

@@ -32,138 +32,104 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
 @pytest.mark.parametrize(
     (
         'model_path',
-        'effects',
-        'p_forward',
-        'p_backward',
-        'max_steps',
-        'algorithm',
+        'arguments',
         'exception',
         'match',
     ),
     [
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            'x',
-            0.01,
-            -1,
-            'scm-forward-then-backward',
+            dict(p_forward='x'),
             TypeError,
             'Invalid `p_forward`',
         ),
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            1.05,
-            0.01,
-            -1,
-            'scm-forward-then-backward',
+            dict(p_forward=1.05),
             ValueError,
             'Invalid `p_forward`',
         ),
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            0.05,
-            [],
-            -1,
-            'scm-forward-then-backward',
+            dict(p_backward=[]),
             TypeError,
             'Invalid `p_backward`',
         ),
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            0.05,
-            1.01,
-            -1,
-            'scm-forward-then-backward',
+            dict(p_backward=1.01),
             ValueError,
             'Invalid `p_backward`',
         ),
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            0.05,
-            0.01,
-            1.2,
-            'scm-forward-then-backward',
+            dict(max_steps=1.2),
             TypeError,
             'Invalid `max_steps`',
         ),
-        (None, MINIMAL_VALID_MFL_STRING, 0.05, 0.01, -1, (), TypeError, 'Invalid `algorithm`'),
+        (None, dict(algorithm=()), TypeError, 'Invalid `algorithm`'),
         (
             None,
-            MINIMAL_VALID_MFL_STRING,
-            0.05,
-            0.01,
-            -1,
-            'scm-backward',
+            dict(algorithm='scm-backward'),
             ValueError,
             'Invalid `algorithm`',
         ),
-        (('nonmem', 'pheno.mod'), 1, 0.05, 0.01, -1, 'scm-forward', TypeError, 'Invalid `effects`'),
+        (('nonmem', 'pheno.mod'), dict(effects=1), TypeError, 'Invalid `effects`'),
         (
             ('nonmem', 'pheno.mod'),
-            MINIMAL_INVALID_MFL_STRING,
-            0.05,
-            0.01,
-            -1,
-            'scm-forward',
+            dict(effects=MINIMAL_INVALID_MFL_STRING),
             ValueError,
             'Invalid `effects`',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            (
-                ('CL', 'WGT', 'exp', '*'),
-                ('VC', 'WGT', 'exp', '*'),
+            dict(
+                effects=(
+                    ('CL', 'WGT', 'exp', '*'),
+                    ('VC', 'WGT', 'exp', '*'),
+                )
             ),
-            0.05,
-            0.01,
-            -1,
-            'scm-forward',
             ValueError,
             'Invalid `effects` because of invalid parameter',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            (
-                ('CL', 'WGT', 'exp', '*'),
-                ('V', 'SEX', 'exp', '*'),
+            dict(
+                effects=(
+                    ('CL', 'WGT', 'exp', '*'),
+                    ('V', 'SEX', 'exp', '*'),
+                )
             ),
-            0.05,
-            0.01,
-            -1,
-            'scm-forward',
             ValueError,
             'Invalid `effects` because of invalid covariate',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            (
-                ('CL', 'WGT', 'exp', '*'),
-                ('V', 'WGT', 'abc', '*'),
+            dict(
+                effects=(
+                    ('CL', 'WGT', 'exp', '*'),
+                    ('V', 'WGT', 'abc', '*'),
+                )
             ),
-            0.05,
-            0.01,
-            -1,
-            'scm-forward',
             ValueError,
             'Invalid `effects` because of invalid effect function',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            (
-                ('CL', 'WGT', 'exp', '*'),
-                ('V', 'WGT', 'exp', '-'),
+            dict(
+                effects=(
+                    ('CL', 'WGT', 'exp', '*'),
+                    ('V', 'WGT', 'exp', '-'),
+                )
             ),
-            0.05,
-            0.01,
-            -1,
-            'scm-forward',
             ValueError,
             'Invalid `effects` because of invalid effect operation',
+        ),
+        (
+            None,
+            dict(model=1),
+            TypeError,
+            'Invalid `model`',
         ),
     ],
 )
@@ -171,28 +137,18 @@ def test_validate_input_raises(
     load_model_for_test,
     testdata,
     model_path,
-    effects,
-    p_forward,
-    p_backward,
-    max_steps,
-    algorithm,
+    arguments,
     exception,
     match,
 ):
 
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
+    harmless_arguments = dict(
+        effects=MINIMAL_VALID_MFL_STRING,
+    )
+
+    kwargs = {**harmless_arguments, 'model': model, **arguments}
+
     with pytest.raises(exception, match=match):
-        validate_input(
-            effects,
-            p_forward=p_forward,
-            p_backward=p_backward,
-            max_steps=max_steps,
-            algorithm=algorithm,
-            model=model,
-        )
-
-
-def test_validate_input_raises_on_wrong_model_type():
-    with pytest.raises(TypeError, match='Invalid `model`'):
-        validate_input(MINIMAL_VALID_MFL_STRING, model=1)
+        validate_input(**kwargs)

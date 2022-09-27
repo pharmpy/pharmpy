@@ -59,63 +59,61 @@ def test_validate_input_with_model(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    ('model_path', 'groups', 'p_value', 'skip', 'exception', 'match'),
+    ('model_path', 'arguments', 'exception', 'match'),
     [
         (
             None,
-            3.1415,
-            0.05,
-            None,
+            dict(groups=3.1415),
             TypeError,
             'Invalid `groups`',
         ),
         (
             None,
-            0,
-            0.05,
-            None,
+            dict(groups=0),
             ValueError,
             'Invalid `groups`',
         ),
         (
             None,
-            4,
-            'x',
-            None,
+            dict(p_value='x'),
             TypeError,
             'Invalid `p_value`',
         ),
         (
             None,
-            4,
-            1.01,
-            None,
+            dict(p_value=1.01),
             ValueError,
             'Invalid `p_value`',
         ),
         (
             None,
-            4,
-            0.05,
-            'ABC',
+            dict(skip='ABC'),
             TypeError,
             'Invalid `skip`',
         ),
         (
             None,
-            4,
-            0.05,
-            1,
+            dict(skip=1),
             TypeError,
             'Invalid `skip`',
         ),
         (
             None,
-            4,
-            0.05,
-            ['IIV_on_RUV', 'power', 'time'],
+            dict(skip=['IIV_on_RUV', 'power', 'time', 0]),
+            TypeError,
+            'Invalid `skip`',
+        ),
+        (
+            None,
+            dict(skip=['IIV_on_RUV', 'power', 'time']),
             ValueError,
             'Invalid `skip`',
+        ),
+        (
+            None,
+            dict(model=1),
+            TypeError,
+            'Invalid `model`',
         ),
     ],
 )
@@ -123,27 +121,17 @@ def test_validate_input_raises(
     load_model_for_test,
     testdata,
     model_path,
-    groups,
-    p_value,
-    skip,
+    arguments,
     exception,
     match,
 ):
 
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
+    kwargs = {'model': model, **arguments}
+
     with pytest.raises(exception, match=match):
-        validate_input(
-            groups=groups,
-            p_value=p_value,
-            skip=skip,
-            model=model,
-        )
-
-
-def test_validate_input_raises_on_wrong_model_type():
-    with pytest.raises(TypeError, match='Invalid `model`'):
-        validate_input(model=1)
+        validate_input(**kwargs)
 
 
 def test_validate_input_raises_groups(load_model_for_test, testdata):

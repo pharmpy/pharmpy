@@ -156,41 +156,39 @@ def test_validate_input_with_model(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    ('model_path', 'algorithm', 'iiv_strategy', 'rank_type', 'cutoff', 'exception', 'match'),
+    ('model_path', 'arguments', 'exception', 'match'),
     [
-        (None, 'brute_force_no_of_eta', 'no_add', 'bic', None, ValueError, 'Invalid `algorithm`'),
-        (None, 1, 'no_add', 'bic', None, TypeError, 'Invalid `algorithm`'),
-        (None, 'brute_force', 'no_add', 1, None, TypeError, 'Invalid `rank_type`'),
-        (None, 'brute_force', 'no_add', 'bi', None, ValueError, 'Invalid `rank_type`'),
-        (None, 'brute_force', ['no_add'], 'bic', None, TypeError, 'Invalid `iiv_strategy`'),
-        (None, 'brute_force', 'diagonal', 'bic', None, ValueError, 'Invalid `iiv_strategy`'),
-        (None, 'brute_force', 'no_add', 'bic', '1', TypeError, 'Invalid `cutoff`'),
+        (None, dict(algorithm=1), TypeError, 'Invalid `algorithm`'),
+        (None, dict(algorithm='brute_force_no_of_eta'), ValueError, 'Invalid `algorithm`'),
+        (None, dict(rank_type=1), TypeError, 'Invalid `rank_type`'),
+        (None, dict(rank_type='bi'), ValueError, 'Invalid `rank_type`'),
+        (None, dict(iiv_strategy=['no_add']), TypeError, 'Invalid `iiv_strategy`'),
+        (None, dict(iiv_strategy='diagonal'), ValueError, 'Invalid `iiv_strategy`'),
+        (None, dict(cutoff='1'), TypeError, 'Invalid `cutoff`'),
+        (
+            None,
+            dict(model=1),
+            TypeError,
+            'Invalid `model`',
+        ),
     ],
 )
 def test_validate_input_raises(
     load_model_for_test,
     testdata,
     model_path,
-    algorithm,
-    iiv_strategy,
-    rank_type,
-    cutoff,
+    arguments,
     exception,
     match,
 ):
 
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
+    harmless_arguments = dict(
+        algorithm='brute_force',
+    )
+
+    kwargs = {**harmless_arguments, 'model': model, **arguments}
+
     with pytest.raises(exception, match=match):
-        validate_input(
-            algorithm,
-            iiv_strategy=iiv_strategy,
-            rank_type=rank_type,
-            cutoff=cutoff,
-            model=model,
-        )
-
-
-def test_validate_input_raises_on_wrong_model_type():
-    with pytest.raises(TypeError, match='Invalid `model`'):
-        validate_input('brute_force', model=1)
+        validate_input(**kwargs)
