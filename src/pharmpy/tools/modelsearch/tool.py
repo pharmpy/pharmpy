@@ -1,3 +1,5 @@
+from typing import Optional, Union
+
 import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.model import Model, Results
 from pharmpy.modeling.results import RANK_TYPES
@@ -9,12 +11,12 @@ from ..mfl.parse import parse
 
 
 def create_workflow(
-    search_space,
-    algorithm,
-    iiv_strategy='absorption_delay',
-    rank_type='bic',
-    cutoff=None,
-    model=None,
+    search_space: str,
+    algorithm: str,
+    iiv_strategy: str = 'absorption_delay',
+    rank_type: str = 'bic',
+    cutoff: Optional[Union[float, int]] = None,
+    model: Optional[Model] = None,
 ):
     """Run Modelsearch tool. For more details, see :ref:`modelsearch`.
 

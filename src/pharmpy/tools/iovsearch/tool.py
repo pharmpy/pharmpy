@@ -1,5 +1,5 @@
 from itertools import chain, combinations
-from typing import Callable, Iterable, List, Tuple, TypeVar, Union
+from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment, Model, Results
@@ -24,12 +24,12 @@ T = TypeVar('T')
 
 
 def create_workflow(
-    column='OCC',
-    list_of_parameters=None,
-    rank_type='bic',
-    cutoff=None,
-    distribution='same-as-iiv',
-    model=None,
+    column: str = 'OCC',
+    list_of_parameters: Optional[List[str]] = None,
+    rank_type: str = 'bic',
+    cutoff: Optional[Union[float, int]] = None,
+    distribution: str = 'same-as-iiv',
+    model: Optional[Model] = None,
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
 

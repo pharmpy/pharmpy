@@ -1,3 +1,5 @@
+from typing import Optional, Union
+
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
@@ -13,11 +15,11 @@ IIV_ALGORITHMS = frozenset(('brute_force',) + tuple(dir(algorithms)))
 
 
 def create_workflow(
-    algorithm,
-    iiv_strategy='no_add',
-    rank_type='bic',
-    cutoff=None,
-    model=None,
+    algorithm: str,
+    iiv_strategy: str = 'no_add',
+    rank_type: str = 'bic',
+    cutoff: Optional[Union[float, int]] = None,
+    model: Optional[Model] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 

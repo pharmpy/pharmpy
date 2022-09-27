@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Optional
 
 from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
@@ -17,7 +18,7 @@ from pharmpy.workflows import Task, Workflow
 
 
 def create_workflow(
-    model=None,
+    model: Optional[Model] = None,
     allometric_variable='WT',
     reference_value=70,
     parameters=None,
