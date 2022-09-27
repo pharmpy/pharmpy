@@ -4,7 +4,7 @@ import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.model import Model, Results
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools.common import create_results
-from pharmpy.utils import same_signature_as
+from pharmpy.utils import same_arguments_as
 from pharmpy.workflows import Task, Workflow
 
 from ..mfl.parse import parse
@@ -101,7 +101,7 @@ def post_process(rank_type, cutoff, *models):
     return res
 
 
-@same_signature_as(create_workflow)
+@same_arguments_as(create_workflow)
 def validate_input(
     search_space,
     algorithm,

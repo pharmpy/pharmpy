@@ -21,7 +21,7 @@ from pharmpy.tools.mfl.feature.covariate import (
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
-from pharmpy.utils import same_signature_as
+from pharmpy.utils import same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 from .results import COVSearchResults
@@ -441,7 +441,7 @@ def _make_df_steps_row(
     }
 
 
-@same_signature_as(create_workflow)
+@same_arguments_as(create_workflow)
 def validate_input(effects, p_forward, p_backward, max_steps, algorithm, model):
     if algorithm not in ALGORITHMS:
         raise ValueError(

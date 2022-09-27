@@ -33,7 +33,7 @@ from pharmpy.modeling import (
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.utils import same_signature_as
+from pharmpy.utils import same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 from .results import calculate_results
@@ -399,7 +399,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
     return model, selected_model_name
 
 
-@same_signature_as(create_workflow)
+@same_arguments_as(create_workflow)
 def validate_input(model, groups, p_value, skip):
     if not (isinstance(groups, int) and groups >= 1):
         raise TypeError(
