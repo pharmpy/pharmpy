@@ -15,7 +15,7 @@ from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.utils import same_arguments_as
+from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 NAME_WF = 'iovsearch'
@@ -278,6 +278,7 @@ def task_results(rank_type, cutoff, bic_type, models):
     return res
 
 
+@runtime_type_check
 @same_arguments_as(create_workflow)
 def validate_input(
     model,

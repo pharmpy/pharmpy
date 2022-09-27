@@ -13,7 +13,7 @@ from pharmpy.modeling import (
     summarize_modelfit_results,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.utils import same_arguments_as
+from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow
 
 
@@ -118,6 +118,7 @@ def _add_allometry_on_model(
     return model
 
 
+@runtime_type_check
 @same_arguments_as(create_workflow)
 def validate_input(
     model,

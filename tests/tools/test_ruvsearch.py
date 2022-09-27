@@ -120,7 +120,7 @@ def test_validate_input_raises(
 
 
 def test_validate_input_raises_on_wrong_model_type():
-    with pytest.raises(TypeError, match='Invalid model'):
+    with pytest.raises(TypeError, match='Invalid `model`'):
         validate_input(model=1)
 
 
@@ -128,7 +128,7 @@ def test_validate_input_raises_groups(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     remove_covariance_step(model)
 
-    with pytest.raises(TypeError, match="Invalid groups"):
+    with pytest.raises(TypeError, match="Invalid `groups`"):
         validate_input(model=model, groups=4.5)
 
 

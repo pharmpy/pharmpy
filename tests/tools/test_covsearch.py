@@ -143,5 +143,5 @@ def test_validate_input_raises(
 
 
 def test_validate_input_raises_on_wrong_model_type():
-    with pytest.raises(TypeError, match='Invalid model'):
+    with pytest.raises(TypeError, match='Invalid `model`'):
         validate_input(MINIMAL_VALID_MFL_STRING, model=1)

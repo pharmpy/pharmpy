@@ -7,7 +7,7 @@ from pharmpy.modeling import add_pk_iiv, copy_model, create_joint_distribution
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.utils import same_arguments_as
+from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock'))
@@ -179,6 +179,7 @@ def post_process(rank_type, cutoff, input_model, base_model_name, *models):
     return res
 
 
+@runtime_type_check
 @same_arguments_as(create_workflow)
 def validate_input(
     model,
