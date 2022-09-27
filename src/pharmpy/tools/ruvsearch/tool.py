@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Collection, Optional
+from typing import List, Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -44,7 +44,7 @@ def create_workflow(
     model: Optional[Model] = None,
     groups: int = 4,
     p_value: float = 0.05,
-    skip: Optional[Collection[str]] = None,
+    skip: Optional[List[str]] = None,
 ):
     """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 
@@ -402,7 +402,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
 @same_arguments_as(create_workflow)
 def validate_input(model, groups, p_value, skip):
     if groups <= 0:
-        raise TypeError(f'Invalid `groups`: got `{groups}`, must be >= 1.')
+        raise ValueError(f'Invalid `groups`: got `{groups}`, must be >= 1.')
 
     if not 0 < p_value <= 1:
         raise ValueError(f'Invalid `p_value`: got `{p_value}`, must be a float in range (0, 1].')
