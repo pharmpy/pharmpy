@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from functools import partial
 from typing import Collection, Optional
 
@@ -402,31 +401,24 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
 @runtime_type_check
 @same_arguments_as(create_workflow)
 def validate_input(model, groups, p_value, skip):
-    if not (isinstance(groups, int) and groups >= 1):
+    if groups <= 0:
         raise TypeError(
             f'Invalid groups: got "{groups}" of type {type(groups)}, must be an int >= 1.'
         )
 
-    if not (isinstance(p_value, float) and 0 < p_value <= 1):
+    if not 0 < p_value <= 1:
         raise ValueError(
             f'Invalid p_value: got "{p_value}" of type {type(p_value)},'
             f' must be a float in range (0, 1].'
         )
 
-    if skip is not None and not (
-        isinstance(skip, Sequence) and not isinstance(skip, str) and set(skip).issubset(SKIP)
-    ):
+    if skip is not None and not set(skip).issubset(SKIP):
         raise ValueError(
             f'Invalid skip: got "{skip}" of type {type(skip)},'
             f' must be None/NULL or a subset of {SKIP}.'
         )
 
     if model is not None:
-
-        if not isinstance(model, Model):
-            raise TypeError(
-                f'Invalid model: got "{model}" of type {type(model)}, must be a {Model}.'
-            )
 
         if model.modelfit_results is None:
             raise ValueError(f"Model {model} is missing modelfit results.")

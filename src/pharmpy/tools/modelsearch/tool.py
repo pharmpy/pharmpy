@@ -108,7 +108,6 @@ def validate_input(
     algorithm,
     iiv_strategy,
     rank_type,
-    cutoff,
     model,
 ):
 
@@ -130,12 +129,6 @@ def validate_input(
             f' must be one of {sorted(algorithms.IIV_STRATEGIES)}.'
         )
 
-    if not isinstance(cutoff, (type(None), int, float)):
-        raise TypeError(
-            f'Invalid cutoff: got "{cutoff}" of type {type(cutoff)},'
-            f' must be None/NULL or an int/float.'
-        )
-
     try:
         parse(search_space)
     except:  # noqa E722
@@ -148,8 +141,6 @@ def validate_model(model):
     if model is None:
         return
 
-    if not isinstance(model, Model):
-        raise TypeError(f'Invalid model: got "{model}" of type {type(model)}, must be a {Model}.')
     try:
         cmt = model.datainfo.typeix['compartment']
     except IndexError:

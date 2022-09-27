@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass
 from itertools import count
-from typing import Any, Callable, Iterable, List, Tuple, Union
+from typing import Any, Callable, Iterable, List, Sequence, Tuple, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -94,7 +94,7 @@ ALGORITHMS = frozenset(['scm-forward', 'scm-forward-then-backward'])
 
 
 def create_workflow(
-    effects: Union[str, List[Spec]],
+    effects: Union[str, Sequence[Spec]],
     p_forward: float = 0.05,
     p_backward: float = 0.01,
     max_steps: int = -1,
@@ -192,7 +192,7 @@ def init(model: Union[Model, None]):
 
 
 def task_greedy_forward_search(
-    effects: Union[str, List[Spec]],
+    effects: Union[str, Sequence[Spec]],
     p_forward: float,
     max_steps: int,
     state: SearchState,
@@ -443,36 +443,26 @@ def _make_df_steps_row(
 
 @runtime_type_check
 @same_arguments_as(create_workflow)
-def validate_input(effects, p_forward, p_backward, max_steps, algorithm, model):
+def validate_input(effects, p_forward, p_backward, algorithm, model):
     if algorithm not in ALGORITHMS:
         raise ValueError(
             f'Invalid algorithm: got "{algorithm}" of type {type(algorithm)},'
             f' must be one of {sorted(ALGORITHMS)}.'
         )
 
-    if not isinstance(p_forward, (float, int)) or not 0 < p_forward <= 1:
+    if not 0 < p_forward <= 1:
         raise ValueError(
             f'Invalid p_forward: got "{p_forward}" of type {type(p_forward)},'
             f' must be a float in range (0, 1].'
         )
 
-    if not isinstance(p_backward, (float, int)) or not 0 < p_backward <= 1:
+    if not 0 < p_backward <= 1:
         raise ValueError(
             f'Invalid p_backward: got "{p_backward}" of type {type(p_backward)},'
             f' must be a float in range (0, 1].'
         )
 
-    if not isinstance(max_steps, int):
-        raise TypeError(
-            f'Invalid max_steps: got "{max_steps}" of type {type(max_steps)},' f' must be an int.'
-        )
-
     if model is not None:
-        if not isinstance(model, Model):
-            raise TypeError(
-                f'Invalid model: got "{model}" of type {type(model)}, must be a {Model}.'
-            )
-
         if isinstance(effects, str):
             try:
                 parsed = parse(effects)

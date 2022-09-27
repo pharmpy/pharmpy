@@ -285,31 +285,13 @@ def validate_input(
     column,
     list_of_parameters,
     rank_type,
-    cutoff,
     distribution,
 ):
-    if not isinstance(column, str):
-        raise TypeError(
-            f'Invalid column: got "{column}" of type {type(column)}'
-            f', must be None/NULL or a str.'
-        )
-
-    if not isinstance(list_of_parameters, (type(None), list)):
-        raise TypeError(
-            f'Invalid list_of_parameters: got "{list_of_parameters}"'
-            f' of type {type(list_of_parameters)}, must be None/NULL or a list.'
-        )
 
     if rank_type not in RANK_TYPES:
         raise ValueError(
             f'Invalid rank_type: got "{rank_type}" of type {type(rank_type)},'
             f' must be one of {sorted(RANK_TYPES)}.'
-        )
-
-    if not isinstance(cutoff, (type(None), int, float)):
-        raise TypeError(
-            f'Invalid cutoff: got "{cutoff}" of type {type(cutoff)},'
-            f' must be None/NULL or an int/float.'
         )
 
     if distribution not in ADD_IOV_DISTRIBUTION:
@@ -319,11 +301,6 @@ def validate_input(
         )
 
     if model is not None:
-
-        if not isinstance(model, Model):
-            raise TypeError(
-                f'Invalid model: got "{model}" of type {type(model)}, must be a {Model}.'
-            )
 
         if column not in model.datainfo.names:
             raise ValueError(

@@ -182,11 +182,9 @@ def post_process(rank_type, cutoff, input_model, base_model_name, *models):
 @runtime_type_check
 @same_arguments_as(create_workflow)
 def validate_input(
-    model,
     algorithm,
     iiv_strategy,
     rank_type,
-    cutoff,
 ):
     if algorithm not in IIV_ALGORITHMS:
         raise ValueError(
@@ -205,15 +203,6 @@ def validate_input(
             f'Invalid IIV strategy: got "{iiv_strategy}" of type {type(iiv_strategy)},'
             f' must be one of {sorted(IIV_STRATEGIES)}.'
         )
-
-    if not isinstance(cutoff, (type(None), int, float)):
-        raise TypeError(
-            f'Invalid cutoff: got "{cutoff}" of type {type(cutoff)},'
-            f' must be None/NULL or an int/float.'
-        )
-
-    if not isinstance(model, (type(None), Model)):
-        raise TypeError(f'Invalid model: got "{model}" of type {type(model)}, must be a {Model}.')
 
 
 class IIVSearchResults(Results):

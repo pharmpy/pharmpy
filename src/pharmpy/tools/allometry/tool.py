@@ -125,52 +125,9 @@ def _add_allometry_on_model(
 def validate_input(
     model,
     allometric_variable,
-    reference_value,
     parameters,
-    initials,
-    lower_bounds,
-    upper_bounds,
-    fixed,
 ):
-    if not isinstance(allometric_variable, (str, sympy.Expr)):
-        raise TypeError(
-            f'Invalid allometric_variable: got "{allometric_variable}"'
-            f' of type {type(allometric_variable)}, must be a str/sympy.Expr.'
-        )
-
-    if not isinstance(reference_value, (str, int, float, sympy.Expr)):
-        raise TypeError(
-            f'Invalid reference_value: got "{reference_value}"'
-            f' of type {type(reference_value)}, must be a str/int/float/sympy.Expr.'
-        )
-
-    if not isinstance(parameters, (type(None), list)):
-        raise TypeError(
-            f'Invalid parameters: got "{parameters}" of type {type(parameters)}, must be None/NULL or a list.'
-        )
-
-    if not isinstance(initials, (type(None), list)):
-        raise TypeError(
-            f'Invalid initials: got "{initials}" of type {type(initials)}, must be None/NULL or a list.'
-        )
-    if not isinstance(lower_bounds, (type(None), list)):
-        raise TypeError(
-            f'Invalid lower_bounds: got "{lower_bounds}" of type {type(lower_bounds)}, must be None/NULL or a list.'
-        )
-    if not isinstance(upper_bounds, (type(None), list)):
-        raise TypeError(
-            f'Invalid upper_bounds: got "{upper_bounds}" of type {type(upper_bounds)}, must be None/NULL or a list.'
-        )
-
-    if not isinstance(fixed, bool):
-        raise TypeError(f'Invalid fixed: got "{fixed}" of type {type(fixed)}, must be a bool.')
-
     if model is not None:
-        if not isinstance(model, Model):
-            raise TypeError(
-                f'Invalid model: got "{model}" of type {type(model)}, must be a {Model}.'
-            )
-
         if not set(map(str, sympify(allometric_variable).free_symbols)).issubset(
             model.datainfo.names
         ):
