@@ -202,6 +202,10 @@ def same_arguments_as(ref: Callable):
 
             return fn(*permuted)
 
+        # NOTE Lazy annotations can only be resolved properly if the
+        # declarations of `ref` and `fn` have the same locals() and
+        # globals().
+        _wrapped.__annotations__ = ref.__annotations__
         _wrapped.__signature__ = ref_signature
 
         return _wrapped
