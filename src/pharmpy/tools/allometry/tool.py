@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from functools import partial
-from typing import Optional
+from typing import List, Optional, Union
 
 from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
@@ -19,13 +21,13 @@ from pharmpy.workflows import Task, Workflow
 
 def create_workflow(
     model: Optional[Model] = None,
-    allometric_variable='WT',
-    reference_value=70,
-    parameters=None,
-    initials=None,
-    lower_bounds=None,
-    upper_bounds=None,
-    fixed=True,
+    allometric_variable: Union[str, sympy.Expr] = 'WT',
+    reference_value: Union[str, int, float, sympy.Expr] = 70,
+    parameters: Optional[List[Union[str, sympy.Expr]]] = None,
+    initials: Optional[List[Union[int, float]]] = None,
+    lower_bounds: Optional[List[Union[int, float]]] = None,
+    upper_bounds: Optional[List[Union[int, float]]] = None,
+    fixed: bool = True,
 ):
     """Run allometry tool. For more details, see :ref:`allometry`.
 
