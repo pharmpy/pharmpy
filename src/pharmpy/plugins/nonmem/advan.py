@@ -287,7 +287,7 @@ def _find_rates(model, ncomps):
                         q2 = f2 <= ncomps and t2 <= ncomps
                         if q1 and q2:
                             raise ModelSyntaxError(
-                                f'Rate parameter {n} is ambiguous. ' f'Use the KiTj notation.'
+                                f'Rate parameter {n} is ambiguous. Use the KiTj notation.'
                             )
                         if q1:
                             from_n = f1

@@ -304,9 +304,7 @@ def _add_iiv_to_func(iiv_strategy, model):
             add_pk_iiv(model, initial_estimate=0.01)
         except ValueError as e:
             if str(e) == 'New parameter inits are not valid':
-                raise ValueError(
-                    f'{model.name}: {e} ' f'(add_pk_iiv, ' f'parent: {model.parent_model})'
-                )
+                raise ValueError(f'{model.name}: {e} (add_pk_iiv, parent: {model.parent_model})')
         if iiv_strategy == 'fullblock':
             try:
                 create_joint_distribution(model)
