@@ -59,43 +59,63 @@ def test_validate_input_with_model(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    ('model_path', 'groups', 'p_value', 'skip'),
+    ('model_path', 'groups', 'p_value', 'skip', 'exception', 'match'),
     [
         (
             None,
             3.1415,
             0.05,
             None,
+            TypeError,
+            'Invalid `groups`',
         ),
         (
             None,
             0,
             0.05,
             None,
+            ValueError,
+            'Invalid `groups`',
+        ),
+        (
+            None,
+            4,
+            'x',
+            None,
+            TypeError,
+            'Invalid `p_value`',
         ),
         (
             None,
             4,
             1.01,
             None,
+            ValueError,
+            'Invalid `p_value`',
         ),
         (
             None,
             4,
             0.05,
             'ABC',
+            TypeError,
+            'Invalid `skip`',
         ),
         (
             None,
             4,
             0.05,
             1,
+            TypeError,
+            'Invalid `skip`',
         ),
         (
             None,
             4,
             0.05,
-            ('IIV_on_RUV', 'power', 'time'),
+            ['IIV_on_RUV', 'power', 'time'],
+            ValueError,
+            'Invalid `skip`',
         ),
     ],
 )
@@ -106,11 +126,13 @@ def test_validate_input_raises(
     groups,
     p_value,
     skip,
+    exception,
+    match,
 ):
 
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
-    with pytest.raises((ValueError, TypeError)):
+    with pytest.raises(exception, match=match):
         validate_input(
             groups=groups,
             p_value=p_value,

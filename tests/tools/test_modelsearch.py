@@ -262,8 +262,27 @@ def test_validate_input_with_model(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    ('model_path', 'search_space', 'algorithm', 'iiv_strategy', 'rank_type', 'cutoff'),
+    (
+        'model_path',
+        'search_space',
+        'algorithm',
+        'iiv_strategy',
+        'rank_type',
+        'cutoff',
+        'exception',
+        'match',
+    ),
     [
+        (
+            None,
+            1,
+            'exhaustive',
+            'absorption_delay',
+            'bic',
+            None,
+            TypeError,
+            'Invalid `search_space`',
+        ),
         (
             None,
             MINIMAL_INVALID_MFL_STRING,
@@ -271,6 +290,18 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             'absorption_delay',
             'bic',
             None,
+            ValueError,
+            'Invalid `search_space`',
+        ),
+        (
+            None,
+            MINIMAL_VALID_MFL_STRING,
+            1,
+            'absorption_delay',
+            'bic',
+            None,
+            TypeError,
+            'Invalid `algorithm`',
         ),
         (
             None,
@@ -279,6 +310,18 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             'absorption_delay',
             'bic',
             None,
+            ValueError,
+            'Invalid `algorithm`',
+        ),
+        (
+            None,
+            MINIMAL_VALID_MFL_STRING,
+            'exhaustive',
+            1,
+            'bic',
+            None,
+            TypeError,
+            'Invalid `iiv_strategy`',
         ),
         (
             None,
@@ -287,6 +330,18 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             'delay',
             'bic',
             None,
+            ValueError,
+            'Invalid `iiv_strategy`',
+        ),
+        (
+            None,
+            MINIMAL_VALID_MFL_STRING,
+            'exhaustive',
+            'absorption_delay',
+            1,
+            None,
+            TypeError,
+            'Invalid `rank_type`',
         ),
         (
             None,
@@ -295,6 +350,8 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             'absorption_delay',
             'bi',
             None,
+            ValueError,
+            'Invalid `rank_type`',
         ),
         (
             None,
@@ -303,6 +360,8 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             'absorption_delay',
             'bic',
             '1',
+            TypeError,
+            'Invalid `cutoff`',
         ),
     ],
 )
@@ -315,11 +374,13 @@ def test_validate_input_raises(
     iiv_strategy,
     rank_type,
     cutoff,
+    exception,
+    match,
 ):
 
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
-    with pytest.raises((ValueError, TypeError)):
+    with pytest.raises(exception, match=match):
         validate_input(
             search_space,
             algorithm,

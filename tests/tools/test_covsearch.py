@@ -30,8 +30,27 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
 
 
 @pytest.mark.parametrize(
-    ('model_path', 'effects', 'p_forward', 'p_backward', 'max_steps', 'algorithm'),
+    (
+        'model_path',
+        'effects',
+        'p_forward',
+        'p_backward',
+        'max_steps',
+        'algorithm',
+        'exception',
+        'match',
+    ),
     [
+        (
+            None,
+            MINIMAL_VALID_MFL_STRING,
+            'x',
+            0.01,
+            -1,
+            'scm-forward-then-backward',
+            TypeError,
+            'Invalid `p_forward`',
+        ),
         (
             None,
             MINIMAL_VALID_MFL_STRING,
@@ -39,6 +58,18 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
             0.01,
             -1,
             'scm-forward-then-backward',
+            ValueError,
+            'Invalid `p_forward`',
+        ),
+        (
+            None,
+            MINIMAL_VALID_MFL_STRING,
+            0.05,
+            [],
+            -1,
+            'scm-forward-then-backward',
+            TypeError,
+            'Invalid `p_backward`',
         ),
         (
             None,
@@ -47,6 +78,8 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
             1.01,
             -1,
             'scm-forward-then-backward',
+            ValueError,
+            'Invalid `p_backward`',
         ),
         (
             None,
@@ -55,7 +88,10 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
             0.01,
             1.2,
             'scm-forward-then-backward',
+            TypeError,
+            'Invalid `max_steps`',
         ),
+        (None, MINIMAL_VALID_MFL_STRING, 0.05, 0.01, -1, (), TypeError, 'Invalid `algorithm`'),
         (
             None,
             MINIMAL_VALID_MFL_STRING,
@@ -63,7 +99,10 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
             0.01,
             -1,
             'scm-backward',
+            ValueError,
+            'Invalid `algorithm`',
         ),
+        (('nonmem', 'pheno.mod'), 1, 0.05, 0.01, -1, 'scm-forward', TypeError, 'Invalid `effects`'),
         (
             ('nonmem', 'pheno.mod'),
             MINIMAL_INVALID_MFL_STRING,
@@ -71,6 +110,8 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
             0.01,
             -1,
             'scm-forward',
+            ValueError,
+            'Invalid `effects`',
         ),
         (
             ('nonmem', 'pheno.mod'),
@@ -82,6 +123,8 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
             0.01,
             -1,
             'scm-forward',
+            ValueError,
+            'Invalid `effects` because of invalid parameter',
         ),
         (
             ('nonmem', 'pheno.mod'),
@@ -93,6 +136,8 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
             0.01,
             -1,
             'scm-forward',
+            ValueError,
+            'Invalid `effects` because of invalid covariate',
         ),
         (
             ('nonmem', 'pheno.mod'),
@@ -104,6 +149,8 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
             0.01,
             -1,
             'scm-forward',
+            ValueError,
+            'Invalid `effects` because of invalid effect function',
         ),
         (
             ('nonmem', 'pheno.mod'),
@@ -115,6 +162,8 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
             0.01,
             -1,
             'scm-forward',
+            ValueError,
+            'Invalid `effects` because of invalid effect operation',
         ),
     ],
 )
@@ -127,11 +176,13 @@ def test_validate_input_raises(
     p_backward,
     max_steps,
     algorithm,
+    exception,
+    match,
 ):
 
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
-    with pytest.raises((ValueError, TypeError)):
+    with pytest.raises(exception, match=match):
         validate_input(
             effects,
             p_forward=p_forward,

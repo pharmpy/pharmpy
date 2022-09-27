@@ -156,45 +156,32 @@ def test_validate_input_with_model(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    ('model_path', 'algorithm', 'iiv_strategy', 'rank_type', 'cutoff'),
+    ('model_path', 'algorithm', 'iiv_strategy', 'rank_type', 'cutoff', 'exception', 'match'),
     [
-        (
-            None,
-            'brute_force_no_of_eta',
-            'no_add',
-            'bic',
-            None,
-        ),
-        (
-            None,
-            'brute_force',
-            'no_add',
-            'bi',
-            None,
-        ),
-        (
-            None,
-            'brute_force',
-            'diagonal',
-            'bic',
-            None,
-        ),
-        (
-            None,
-            'brute_force',
-            'no_add',
-            'bic',
-            '1',
-        ),
+        (None, 'brute_force_no_of_eta', 'no_add', 'bic', None, ValueError, 'Invalid `algorithm`'),
+        (None, 1, 'no_add', 'bic', None, TypeError, 'Invalid `algorithm`'),
+        (None, 'brute_force', 'no_add', 1, None, TypeError, 'Invalid `rank_type`'),
+        (None, 'brute_force', 'no_add', 'bi', None, ValueError, 'Invalid `rank_type`'),
+        (None, 'brute_force', ['no_add'], 'bic', None, TypeError, 'Invalid `iiv_strategy`'),
+        (None, 'brute_force', 'diagonal', 'bic', None, ValueError, 'Invalid `iiv_strategy`'),
+        (None, 'brute_force', 'no_add', 'bic', '1', TypeError, 'Invalid `cutoff`'),
     ],
 )
 def test_validate_input_raises(
-    load_model_for_test, testdata, model_path, algorithm, iiv_strategy, rank_type, cutoff
+    load_model_for_test,
+    testdata,
+    model_path,
+    algorithm,
+    iiv_strategy,
+    rank_type,
+    cutoff,
+    exception,
+    match,
 ):
 
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
-    with pytest.raises((ValueError, TypeError)):
+    with pytest.raises(exception, match=match):
         validate_input(
             algorithm,
             iiv_strategy=iiv_strategy,

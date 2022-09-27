@@ -53,48 +53,24 @@ def test_validate_input_with_model_and_list_of_parameters(load_model_for_test, t
 
 
 @pytest.mark.parametrize(
-    ('model_path', 'column', 'list_of_parameters', 'rank_type', 'cutoff', 'distribution'),
+    (
+        'model_path',
+        'column',
+        'list_of_parameters',
+        'rank_type',
+        'cutoff',
+        'distribution',
+        'exception',
+        'match',
+    ),
     [
-        (
-            None,
-            1,
-            None,
-            'bic',
-            None,
-            'same-as-iiv',
-        ),
-        (
-            None,
-            'OCC',
-            'CL',
-            'bic',
-            None,
-            'same-as-iiv',
-        ),
-        (
-            None,
-            'OCC',
-            None,
-            'bi',
-            None,
-            'same-as-iiv',
-        ),
-        (
-            None,
-            'OCC',
-            None,
-            'bic',
-            '1',
-            'same-as-iiv',
-        ),
-        (
-            None,
-            'OCC',
-            None,
-            'bic',
-            None,
-            'same',
-        ),
+        (None, 1, None, 'bic', None, 'same-as-iiv', TypeError, 'Invalid `column`'),
+        (None, 'OCC', 'CL', 'bic', None, 'same-as-iiv', TypeError, 'Invalid `list_of_parameters`'),
+        (None, 'OCC', None, 1, None, 'same-as-iiv', TypeError, 'Invalid `rank_type`'),
+        (None, 'OCC', None, 'bi', None, 'same-as-iiv', ValueError, 'Invalid `rank_type`'),
+        (None, 'OCC', None, 'bic', '1', 'same-as-iiv', TypeError, 'Invalid `cutoff`'),
+        (None, 'OCC', None, 'bic', None, ['same-as-iiv'], TypeError, 'Invalid `distribution`'),
+        (None, 'OCC', None, 'bic', None, 'same', ValueError, 'Invalid `distribution`'),
         (
             ('nonmem', 'pheno.mod'),
             'OCC',
@@ -102,6 +78,8 @@ def test_validate_input_with_model_and_list_of_parameters(load_model_for_test, t
             'bic',
             None,
             'same-as-iiv',
+            ValueError,
+            'Invalid `column`',
         ),
         (
             ('nonmem', 'pheno.mod'),
@@ -110,6 +88,8 @@ def test_validate_input_with_model_and_list_of_parameters(load_model_for_test, t
             'bic',
             None,
             'same-as-iiv',
+            ValueError,
+            'Invalid `list_of_parameters`',
         ),
     ],
 )
@@ -122,11 +102,13 @@ def test_validate_input_raises(
     rank_type,
     distribution,
     cutoff,
+    exception,
+    match,
 ):
 
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
-    with pytest.raises((ValueError, TypeError)):
+    with pytest.raises(exception, match=match):
         validate_input(
             column=column,
             list_of_parameters=list_of_parameters,
