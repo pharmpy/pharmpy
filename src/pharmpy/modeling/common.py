@@ -6,6 +6,7 @@ import re
 import warnings
 from io import StringIO
 from pathlib import Path
+from typing import Union
 
 import pharmpy.config as config
 from pharmpy.deps import sympy
@@ -131,7 +132,7 @@ def read_model_from_string(code, path=None):
     return model
 
 
-def write_model(model, path='', force=True):
+def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
     """Write model code to file
 
     Parameters
