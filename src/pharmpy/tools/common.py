@@ -79,8 +79,16 @@ def summarize_tool(
         bic_type=bic_type,
     )
 
-    rows = {model.name: [model.description, model.parent_model] for model in models_all}
-    colnames = ['description', 'parent_model']
+    model_dict = {model.name: model for model in models_all}
+    rows = dict()
+
+    for model in models_all:
+        description, parent_model = model.description, model.parent_model
+        n_params = len(model.parameters.nonfixed)
+        d_params = n_params - len(model_dict[parent_model].parameters.nonfixed)
+        rows[model.name] = (description, n_params, d_params, parent_model)
+
+    colnames = ['description', 'n_params', 'd_params', 'parent_model']
     index = pd.Index(rows.keys(), name='model')
     df_descr = pd.DataFrame(rows.values(), index=index, columns=colnames)
 
