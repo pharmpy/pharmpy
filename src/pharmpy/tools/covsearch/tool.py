@@ -414,9 +414,8 @@ def task_results(state: SearchState):
 
 def _modify_summary_tool(summary_tool, steps):
     steps.reset_index(inplace=True)
-    steps_df = steps[
-        ['step', 'pvalue', 'goal_pvalue', 'is_backward', 'selected', 'model']
-    ].set_index(['step', 'model'])
+    step_cols_to_keep = ['step', 'pvalue', 'goal_pvalue', 'is_backward', 'selected', 'model']
+    steps_df = steps[step_cols_to_keep].set_index(['step', 'model'])
 
     summary_tool_new = steps_df.join(summary_tool)
     column_to_move = summary_tool_new.pop('description')
@@ -425,14 +424,13 @@ def _modify_summary_tool(summary_tool, steps):
     return summary_tool_new.drop(['rank'], axis=1)
 
 
-def _make_df_steps(best_model: Model, candidates: List[Candidate]) -> DataFrame:
+def _make_df_steps(best_model: Model, candidates: List[Candidate]):
     models_dict = {candidate.model.name: candidate.model for candidate in candidates}
     children_count = Counter(candidate.model.parent_model for candidate in candidates)
 
     data = (
         _make_df_steps_row(models_dict, children_count, best_model, candidate)
         for candidate in candidates
-        if candidate.steps
     )
 
     return pd.DataFrame.from_records(
@@ -451,23 +449,32 @@ def _make_df_steps_row(
     )
     extended_ofv = np.nan if model.modelfit_results is None else model.modelfit_results.ofv
     ofv_drop = reduced_ofv - extended_ofv
-    last_step = candidate.steps[-1]
-    last_effect = last_step.effect
-    is_backward = isinstance(last_step, BackwardStep)
+    if candidate.steps:
+        last_step = candidate.steps[-1]
+        last_effect = last_step.effect
+        parameter, covariate = last_effect.parameter, last_effect.covariate
+        extended_state = f'{last_effect.operation} {last_effect.fp}'
+        is_backward = isinstance(last_step, BackwardStep)
+        alpha = last_step.alpha
+        extended_significant = lrt_test(parent_model, candidate.model, alpha)
+    else:
+        parameter, covariate, extended_state = '', '', ''
+        is_backward = False
+        alpha, extended_significant = np.nan, np.nan
+
     p_value = lrt_p_value(parent_model, model)
-    alpha = last_step.alpha
     selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
-    extended_significant = lrt_test(parent_model, candidate.model, alpha)
+
     assert not selected or (candidate.model is parent_model) or extended_significant
     return {
         'step': len(candidate.steps),
-        'parameter': last_effect.parameter,
-        'covariate': last_effect.covariate,
-        'extended_state': f'{last_effect.operation} {last_effect.fp}',
+        'parameter': parameter,
+        'covariate': covariate,
+        'extended_state': extended_state,
         'reduced_ofv': reduced_ofv,
         'extended_ofv': extended_ofv,
         'ofv_drop': ofv_drop,
-        'delta_df': len(model.parameters) - len(parent_model.parameters),
+        'delta_df': len(model.parameters.nonfixed) - len(parent_model.parameters.nonfixed),
         'pvalue': p_value,
         'goal_pvalue': alpha,
         'is_backward': is_backward,
