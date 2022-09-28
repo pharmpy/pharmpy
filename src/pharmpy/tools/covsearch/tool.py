@@ -401,13 +401,28 @@ def task_results(state: SearchState):
     assert base_model is state.start_model
     best_model = state.best_candidate_so_far.model
 
-    res = create_results(COVSearchResults, base_model, base_model, res_models, 'bic', None)
+    res = create_results(COVSearchResults, base_model, base_model, res_models, 'ofv', None)
 
     res.steps = _make_df_steps(best_model, candidates)
     res.candidate_summary = candidate_summary_dataframe(res.steps)
     res.ofv_summary = ofv_summary_dataframe(res.steps, final_included=True, iterations=True)
 
+    res.summary_tool = _modify_summary_tool(res.summary_tool, res.steps)
+
     return res
+
+
+def _modify_summary_tool(summary_tool, steps):
+    steps.reset_index(inplace=True)
+    steps_df = steps[
+        ['step', 'pvalue', 'goal_pvalue', 'is_backward', 'selected', 'model']
+    ].set_index(['step', 'model'])
+
+    summary_tool_new = steps_df.join(summary_tool)
+    column_to_move = summary_tool_new.pop('description')
+
+    summary_tool_new.insert(0, 'description', column_to_move)
+    return summary_tool_new.drop(['rank'], axis=1)
 
 
 def _make_df_steps(best_model: Model, candidates: List[Candidate]) -> DataFrame:
