@@ -112,7 +112,7 @@ def task_brute_force_search(
         return [model]
 
     # NOTE Add IOVs on given parameters or all parameters with IIVs.
-    model_with_iov = copy_model(model, name='iovsearch_candidate1')
+    model_with_iov = copy_model(model, name='iovsearch_run1')
     model_with_iov.parent_model = model.name
     names = [name for name in list_of_parameters]
     model_with_iov.description = f'add_iov({",".join(names)})'
@@ -171,7 +171,7 @@ def task_brute_force_search(
 def task_remove_etas_subset(
     remove: Callable[[Model, List[str]], None], model: Model, subset: List[str], n: int
 ):
-    model_with_some_etas_removed = copy_model(model, name=f'iovsearch_candidate{n}')
+    model_with_some_etas_removed = copy_model(model, name=f'iovsearch_run{n}')
     model_with_some_etas_removed.parent_model = model.name
     names = [name for name in subset]
     model_with_some_etas_removed.description = f'{remove.__name__}({",".join(names)})'

@@ -20,7 +20,7 @@ def brute_force_no_of_etas(base_model):
     eta_combos = _get_eta_combinations(iivs)
 
     for i, combo in enumerate(eta_combos, 1):
-        model_name = f'iivsearch_no_of_etas_candidate{i}'
+        model_name = f'iivsearch_no_of_etas_run{i}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
@@ -51,7 +51,7 @@ def brute_force_block_structure(base_model):
         if _is_current_block_structure(iivs, combo):
             continue
 
-        model_name = f'iivsearch_block_structure_candidate{model_no}'
+        model_name = f'iivsearch_block_structure_run{model_no}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
