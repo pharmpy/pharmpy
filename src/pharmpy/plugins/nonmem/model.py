@@ -1,6 +1,5 @@
 # The NONMEM Model class
 
-import re
 import shutil
 import warnings
 from io import StringIO
@@ -52,19 +51,6 @@ from .update import (
 
 class NONMEMModelInternals:
     pass
-
-
-def detect_model(src, *args, **kwargs):
-    """Check if src represents a NONMEM control stream
-    i.e. check if it is a file that contain $PRO
-    """
-    if not isinstance(src, str):
-        return None
-    is_control_stream = re.search(r'^\s*\$PRO', src, re.MULTILINE)
-    if is_control_stream:
-        return Model
-    else:
-        return None
 
 
 def convert_model(model):

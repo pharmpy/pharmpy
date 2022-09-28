@@ -433,8 +433,8 @@ class Model:
                 code = fp.read()
         else:
             code = obj.read()
-        model_class = detect_model(code)
-        model = model_class(code, path, **kwargs)
+        model_module = detect_model(code)
+        model = model_module.Model(code, path, **kwargs)
         # Setup model database here
         # Read in model results here?
         # Set filename extension?

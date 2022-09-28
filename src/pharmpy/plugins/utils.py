@@ -11,22 +11,23 @@ class PluginError(Exception):
 
 def detect_model(src):
     """Detects appropriate implementation from a source object
-    Return a model object
+    Return a plugin module
     """
 
     plugins = load_plugins()
-    detected_classes = []
+    detected_plugins = []
     for module in plugins:
         if hasattr(module, 'detect_model'):
-            cls = module.detect_model(src)
-            if cls:
-                detected_classes.append(cls)
+            is_plugin = module.detect_model(src)
+            if is_plugin:
+                detected_plugins.append(module)
 
-    if len(detected_classes) == 0:
+    if len(detected_plugins) == 0:
         raise PluginError(f"No support for model {src}")
-    if len(detected_classes) > 1:
+    elif len(detected_plugins) > 1:
         raise PluginError(f"More than one model plugin supports model {src}")
-    return detected_classes[0]
+    else:
+        return detected_plugins[0]
 
 
 def load_plugins():
