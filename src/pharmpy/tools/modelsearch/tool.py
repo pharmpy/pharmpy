@@ -78,7 +78,6 @@ def create_workflow(
 
 
 def start(model):
-    validate_model(model)
     return model
 
 
@@ -132,23 +131,17 @@ def validate_input(
     except:  # noqa E722
         raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
 
-    validate_model(model)
-
-
-def validate_model(model):
-    if model is None:
-        return
-
-    try:
-        cmt = model.datainfo.typeix['compartment']
-    except IndexError:
-        pass
-    else:
-        raise ValueError(
-            f"Invalid `model`: found compartment column {cmt.names} in dataset. "
-            f"This is currently not supported by modelsearch. "
-            f"Please remove or drop this column and try again"
-        )
+    if model is not None:
+        try:
+            cmt = model.datainfo.typeix['compartment']
+        except IndexError:
+            pass
+        else:
+            raise ValueError(
+                f"Invalid `model`: found compartment column {cmt.names} in dataset. "
+                f"This is currently not supported by modelsearch. "
+                f"Please remove or drop this column and try again"
+            )
 
 
 class ModelSearchResults(Results):

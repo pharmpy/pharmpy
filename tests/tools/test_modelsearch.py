@@ -17,7 +17,7 @@ from pharmpy.tools.modelsearch.algorithms import (
     exhaustive_stepwise,
     reduced_stepwise,
 )
-from pharmpy.tools.modelsearch.tool import create_workflow, validate_input, validate_model
+from pharmpy.tools.modelsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
@@ -129,7 +129,7 @@ def test_reduced_stepwise_algorithm(mfl, no_of_models):
     assert all(task.name == 'run0' for task in wf.output_tasks)
 
 
-def test_validate_model(create_model_for_test, testdata):
+def test_validate_input_model_validation(create_model_for_test, testdata):
     model_code = '''$PROBLEM
 $INPUT ID VISI XAT2=DROP DGRP DOSE FLAG=DROP ONO=DROP
        XIME=DROP NEUY SCR AGE SEX NYH=DROP WT DROP ACE
@@ -156,8 +156,8 @@ $ESTIMATION METHOD=1 INTERACTION
         path=testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv'
     )
 
-    with pytest.raises(ValueError):
-        validate_model(model)
+    with pytest.raises(ValueError, match='Invalid `model`'):
+        validate_input(MINIMAL_VALID_MFL_STRING, 'exhaustive', model=model)
 
 
 def test_is_allowed():
