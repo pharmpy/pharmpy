@@ -34,14 +34,14 @@ def test_exhaustive(tmp_path, model_count, start_model):
         (
             'ABSORPTION(ZO);PERIPHERALS(1)',
             4,
-            'modelsearch_candidate2',
-            'modelsearch_candidate3',
+            'modelsearch_run2',
+            'modelsearch_run3',
         ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
             7,
-            'modelsearch_candidate3',
-            'modelsearch_candidate5',
+            'modelsearch_run3',
+            'modelsearch_run5',
         ),
     ],
 )

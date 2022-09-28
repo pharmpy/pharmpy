@@ -96,7 +96,7 @@ def post_process(rank_type, cutoff, *models):
     res_models = []
     input_model = None
     for model in models:
-        if not model.name.startswith('modelsearch_candidate'):
+        if not model.name.startswith('modelsearch_run'):
             input_model = model
         else:
             res_models.append(model)
