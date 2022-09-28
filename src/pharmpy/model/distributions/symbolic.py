@@ -356,7 +356,7 @@ class JointNormalDistribution(Distribution):
                     name = name.name
             new_names.append(name)
 
-        return JointNormalDistribution(new_names, self._level, mean, variance)
+        return JointNormalDistribution(tuple(new_names), self._level, mean, variance)
 
     def evalf(self, parameters: Dict[sympy.Symbol, float]):
         try:

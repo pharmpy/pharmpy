@@ -3,7 +3,8 @@ import pathlib
 import pharmpy.config as config
 from pharmpy.utils import normalize_user_given_path
 
-from .model import Model, convert_model, detect_model
+from .detect import detect_model
+from .model import Model, convert_model
 
 r"""
 .. list-table:: Options for the nonmem plugin

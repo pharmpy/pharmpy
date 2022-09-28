@@ -1,6 +1,5 @@
 # The NONMEM Model class
 
-import re
 import shutil
 import warnings
 from io import StringIO
@@ -14,52 +13,44 @@ from pharmpy.expressions import subs
 from pharmpy.model import (
     Assignment,
     ColumnInfo,
-    CompartmentalSystem,
     DataInfo,
     DatasetError,
-    EstimationStep,
-    EstimationSteps,
-    ModelSyntaxError,
     NormalDistribution,
-    ODESystem,
     Parameter,
     Parameters,
-    RandomVariables,
 )
 from pharmpy.modeling.write_csv import write_csv
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.workflows import NullModelDatabase, default_model_database
 
-from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
-from .records.factory import create_record
+from .parsing import (
+    create_name_trans,
+    parameter_translation,
+    parse_description,
+    parse_estimation_steps,
+    parse_parameters,
+    parse_random_variables,
+    parse_statements,
+    parse_value_type,
+)
 from .update import (
     update_abbr_record,
     update_ccontra,
     update_description,
     update_estimation,
+    update_input,
+    update_name_of_tables,
     update_parameters,
     update_random_variables,
+    update_sizes,
     update_statements,
 )
 
 
 class NONMEMModelInternals:
     pass
-
-
-def detect_model(src, *args, **kwargs):
-    """Check if src represents a NONMEM control stream
-    i.e. check if it is a file that contain $PRO
-    """
-    if not isinstance(src, str):
-        return None
-    is_control_stream = re.search(r'^\s*\$PRO', src, re.MULTILINE)
-    if is_control_stream:
-        return Model
-    else:
-        return None
 
 
 def convert_model(model):
@@ -116,95 +107,6 @@ def convert_model(model):
     return nm_model
 
 
-def _parse_description(control_stream):
-    rec = control_stream.get_records('PROBLEM')[0]
-    return rec.title
-
-
-def _parse_parameters(control_stream):
-    next_theta = 1
-    params = []
-    for theta_record in control_stream.get_records('THETA'):
-        thetas = theta_record.parameters(next_theta, seen_labels={p.name for p in params})
-        params.extend(thetas)
-        next_theta += len(thetas)
-    next_omega = 1
-    previous_size = None
-    for omega_record in control_stream.get_records('OMEGA'):
-        omegas, next_omega, previous_size = omega_record.parameters(
-            next_omega, previous_size, seen_labels={p.name for p in params}
-        )
-        params.extend(omegas)
-    next_sigma = 1
-    previous_size = None
-    for sigma_record in control_stream.get_records('SIGMA'):
-        sigmas, next_sigma, previous_size = sigma_record.parameters(
-            next_sigma, previous_size, seen_labels={p.name for p in params}
-        )
-        params.extend(sigmas)
-    return Parameters(params)
-
-
-def _parse_random_variables(control_stream):
-    dists = RandomVariables.create([])
-    next_omega = 1
-    prev_cov = None
-
-    for omega_record in control_stream.get_records('OMEGA'):
-        etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
-        dists += etas
-    dists = _adjust_iovs(dists)
-    next_sigma = 1
-    prev_cov = None
-    for sigma_record in control_stream.get_records('SIGMA'):
-        epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
-        dists += epsilons
-    rvs = RandomVariables.create(dists)
-    return rvs
-
-
-def _parse_statements(model):
-    rec = model.internals.control_stream.get_pred_pk_record()
-    statements = rec.statements
-
-    des = model.internals.control_stream.get_des_record()
-    error = model.internals.control_stream.get_error_record()
-    if error:
-        sub = model.internals.control_stream.get_records('SUBROUTINES')[0]
-        comp = compartmental_model(model, sub.advan, sub.trans, des)
-        trans_amounts = dict()
-        if comp is not None:
-            cm, link = comp
-            statements += [cm, link]
-            for i, amount in enumerate(cm.amounts, start=1):
-                trans_amounts[sympy.Symbol(f"A({i})")] = amount
-        else:
-            statements += ODESystem()  # FIXME: Placeholder for ODE-system
-            # FIXME: Dummy link statement
-            statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
-        statements += error.statements
-        if trans_amounts:
-            statements = statements.subs(trans_amounts)
-    return statements
-
-
-def _adjust_iovs(rvs):
-    updated = []
-    for i, dist in enumerate(rvs):
-        try:
-            next_dist = rvs[i + 1]
-        except IndexError:
-            updated.append(dist)
-            break
-
-        if dist.level != 'IOV' and next_dist.level == 'IOV':
-            new_dist = dist.derive(level='IOV')
-            updated.append(new_dist)
-        else:
-            updated.append(dist)
-    return RandomVariables.create(updated)
-
-
 class Model(pharmpy.model.Model):
     def __init__(self, code, path=None, **kwargs):
         self.internals = NONMEMModelInternals()
@@ -218,6 +120,7 @@ class Model(pharmpy.model.Model):
             self._name = path.stem
             self.database = default_model_database(path=path.parent)
             self.filename_extension = path.suffix
+        self.internals.old_name = self._name
         self.internals.control_stream = parser.parse(code)
         self._create_datainfo()
         self._initial_individual_estimates_updated = False
@@ -230,68 +133,79 @@ class Model(pharmpy.model.Model):
         self.observation_transformation = dv
         self.internals._old_observation_transformation = dv
 
-        self.parameters
-        self.random_variables
+        parameters = parse_parameters(self.internals.control_stream)
+
+        statements = parse_statements(self)
+
+        rvs = parse_random_variables(self.internals.control_stream)
+
+        trans_statements, trans_params = create_name_trans(
+            self.internals.control_stream, rvs, statements
+        )
+        for theta in self.internals.control_stream.get_records('THETA'):
+            theta.update_name_map(trans_params)
+        for omega in self.internals.control_stream.get_records('OMEGA'):
+            omega.update_name_map(trans_params)
+        for sigma in self.internals.control_stream.get_records('SIGMA'):
+            sigma.update_name_map(trans_params)
+
+        d_par = dict()
+        d_rv = dict()
+        for key, value in trans_params.items():
+            if key in parameters:
+                d_par[key] = value
+            else:
+                d_rv[sympy.Symbol(key)] = value
+
+        self.internals._old_random_variables = rvs  # FIXME: This has to stay here
+        rvs = rvs.subs(d_rv)
+
+        new = []
+        for p in parameters:
+            if p.name in d_par:
+                newparam = Parameter(
+                    name=d_par[p.name], init=p.init, lower=p.lower, upper=p.upper, fix=p.fix
+                )
+            else:
+                newparam = p
+            new.append(newparam)
+        parameters = Parameters(new)
+
+        statements = statements.subs(trans_statements)
+
+        if not rvs.validate_parameters(parameters.inits):
+            nearest = rvs.nearest_valid_parameters(parameters.inits)
+            before, after = self._compare_before_after_params(parameters.inits, nearest)
+            warnings.warn(
+                f"Adjusting initial estimates to create positive semidefinite "
+                f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
+                f"After adjusting: {after}"
+            )
+            parameters = parameters.set_initial_estimates(nearest)
+
+        self._random_variables = rvs
+
+        self._parameters = parameters
+        self.internals._old_parameters = parameters
 
         if path is None:
             self._modelfit_results = None
         else:
             self.read_modelfit_results(path.parent)
 
-        description = _parse_description(self.internals.control_stream)
+        description = parse_description(self.internals.control_stream)
         self.description = description
         self.internals._old_description = description
 
-        steps = parse_estimation_steps(self)
+        steps = parse_estimation_steps(self.internals.control_stream, self._random_variables)
         self._estimation_steps = steps
         self.internals._old_estimation_steps = steps
 
-    @property
-    def name(self):
-        return self._name
+        vt = parse_value_type(self.internals.control_stream, statements)
+        self._value_type = vt
 
-    @name.setter
-    def name(self, new_name):
-        m = re.search(r'.*?(\d+)$', new_name)
-        if m:
-            n = int(m.group(1))
-            for table in self.internals.control_stream.get_records('TABLE'):
-                table_path = table.path
-                table_name = table_path.stem
-                m = re.search(r'(.*?)(\d+)$', table_name)
-                if m:
-                    table_stem = m.group(1)
-                    new_table_name = f'{table_stem}{n}'
-                    table.path = table_path.parent / new_table_name
-        self._name = new_name
-
-    @property
-    def value_type(self):
-        try:
-            return self._value_type
-        except AttributeError:
-            pass
-        ests = self.internals.control_stream.get_records('ESTIMATION')
-        # Assuming that a model cannot be fully likelihood or fully prediction
-        # at the same time
-        for est in ests:
-            if est.likelihood:
-                tp = 'LIKELIHOOD'
-                break
-            elif est.loglikelihood:
-                tp = '-2LL'
-                break
-        else:
-            tp = 'PREDICTION'
-        f_flag = sympy.Symbol('F_FLAG')
-        if f_flag in self.statements.free_symbols:
-            tp = f_flag
-        self._value_type = tp
-        return tp
-
-    @value_type.setter
-    def value_type(self, value):
-        super(Model, self.__class__).value_type.fset(self, value)
+        self._statements = statements
+        self.internals._old_statements = statements
 
     @property
     def modelfit_results(self):
@@ -324,14 +238,14 @@ class Model(pharmpy.model.Model):
         if hasattr(self, '_parameters'):
             update_parameters(self, self.internals._old_parameters, self._parameters)
             self.internals._old_parameters = self._parameters
-        trans = self.parameter_translation(reverse=True, remove_idempotent=True, as_symbols=True)
+        trans = parameter_translation(
+            self.internals.control_stream, reverse=True, remove_idempotent=True, as_symbols=True
+        )
         rv_trans = self.rv_translation(reverse=True, remove_idempotent=True, as_symbols=True)
         trans.update(rv_trans)
         if pharmpy.plugins.nonmem.conf.write_etas_in_abbr:
             abbr_trans = self._abbr_translation(rv_trans)
             trans.update(abbr_trans)
-        if trans:
-            self.statements  # Read statements unless read
         if hasattr(self, '_statements'):
             update_statements(self, self.internals._old_statements, self._statements, trans)
             self.internals._old_statements = self._statements
@@ -356,7 +270,7 @@ class Model(pharmpy.model.Model):
 
             label = self.datainfo.names[0]
             data_record.ignore_character_from_header(label)
-            self._update_input()
+            update_input(self)
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.
@@ -373,13 +287,16 @@ class Model(pharmpy.model.Model):
                 data_record = self.internals.control_stream.get_records('DATA')[0]
                 data_record.filename = str(path)
 
-        self._update_sizes()
+        update_sizes(self)
         update_estimation(self)
 
         if self.observation_transformation != self.internals._old_observation_transformation:
             if not nofiles:
                 update_ccontra(self, path, force)
         update_description(self)
+
+        if self._name != self.internals.old_name:
+            update_name_of_tables(self.internals.control_stream, self._name)
 
     def _abbr_translation(self, rv_trans):
         abbr_pharmpy = self.internals.control_stream.abbreviated.translate_to_pharmpy_names()
@@ -392,24 +309,6 @@ class Model(pharmpy.model.Model):
         }
         abbr_trans.update(abbr_recs)
         return abbr_trans
-
-    def _update_sizes(self):
-        """Update $SIZES if needed"""
-        all_sizes = self.internals.control_stream.get_records('SIZES')
-        if len(all_sizes) == 0:
-            sizes = create_record('$SIZES ')
-        else:
-            sizes = all_sizes[0]
-        odes = self.statements.ode_system
-
-        if odes is not None and isinstance(odes, CompartmentalSystem):
-            n_compartments = len(odes)
-            sizes.PC = n_compartments
-        thetas = [p for p in self.parameters if p.symbol not in self.random_variables.free_symbols]
-        sizes.LTH = len(thetas)
-
-        if len(all_sizes) == 0 and len(str(sizes)) > 7:
-            self.internals.control_stream.insert_record(str(sizes))
 
     def _update_initial_individual_estimates(self, path, nofiles=False):
         """Update $ETAS
@@ -461,49 +360,6 @@ class Model(pharmpy.model.Model):
     def validate(self):
         """Validates NONMEM model (records) syntactically."""
         self.internals.control_stream.validate()
-
-    @property
-    def parameters(self):
-        """Get the Parameters of all parameters"""
-        try:
-            return self._parameters
-        except AttributeError:
-            pass
-
-        parameters = _parse_parameters(self.internals.control_stream)
-        self._parameters = parameters
-        self.internals._old_parameters = parameters
-
-        if (
-            'comment' in pharmpy.plugins.nonmem.conf.parameter_names
-            or 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names
-        ):
-            self.statements
-            # reading statements might change parameters. Resetting _old_parameters
-            self.internals._old_parameters = self._parameters
-
-        if not self.random_variables.validate_parameters(self._parameters.inits):
-            nearest = self.random_variables.nearest_valid_parameters(self._parameters.inits)
-            before, after = self._compare_before_after_params(self._parameters.inits, nearest)
-            warnings.warn(
-                f"Adjusting initial estimates to create positive semidefinite "
-                f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
-                f"After adjusting: {after}"
-            )
-            params = self._parameters.set_initial_estimates(nearest)
-            self._parameters = params
-            self.internals._old_parameters = params
-        return self._parameters
-
-    @parameters.setter
-    def parameters(self, params):
-        """params can be a Parameters or a dict-like with name: value
-
-        Current restrictions:
-         * Parameters only supported for new initial estimates and fix
-         * Only set the exact same parameters. No additions and no removing of parameters
-        """
-        super(Model, self.__class__).parameters.fset(self, params)
 
     @property
     def initial_individual_estimates(self):
@@ -558,185 +414,6 @@ class Model(pharmpy.model.Model):
     def _sort_eta_columns(self, df):
         return df.reindex(sorted(df.columns), axis=1)
 
-    @property
-    def statements(self):
-        try:
-            return self._statements
-        except AttributeError:
-            pass
-
-        statements = _parse_statements(self)
-
-        trans_statements, trans_params = self._create_name_trans(statements)
-        for theta in self.internals.control_stream.get_records('THETA'):
-            theta.update_name_map(trans_params)
-        for omega in self.internals.control_stream.get_records('OMEGA'):
-            omega.update_name_map(trans_params)
-        for sigma in self.internals.control_stream.get_records('SIGMA'):
-            sigma.update_name_map(trans_params)
-
-        d_par = dict()
-        d_rv = dict()
-        for key, value in trans_params.items():
-            if key in self.parameters:
-                d_par[key] = value
-            else:
-                d_rv[sympy.Symbol(key)] = value
-        self.random_variables = self.random_variables.subs(d_rv)
-        new = []
-        for p in self.parameters:
-            if p.name in d_par:
-                newparam = Parameter(
-                    name=d_par[p.name], init=p.init, lower=p.lower, upper=p.upper, fix=p.fix
-                )
-            else:
-                newparam = p
-            new.append(newparam)
-        self.parameters = Parameters(new)
-
-        statements = statements.subs(trans_statements)
-
-        self._statements = statements
-        self.internals._old_statements = statements
-        return statements
-
-    @statements.setter
-    def statements(self, statements_new):
-        self.statements  # Read in old statements
-        self._statements = statements_new
-
-    def _create_name_trans(self, statements):
-        rvs = self.random_variables
-
-        conf_functions = {
-            'comment': self._name_as_comments(statements),
-            'abbr': self._name_as_abbr(rvs),
-            'basic': self._name_as_basic(),
-        }
-
-        abbr = self.internals.control_stream.abbreviated.replace
-        pset_current = {
-            **self.parameter_translation(reverse=True),
-            **{rv: rv for rv in rvs.names},
-        }
-        sset_current = {
-            **abbr,
-            **{
-                rv: rv
-                for rv in rvs.names
-                if rv not in abbr.keys() and sympy.Symbol(rv) in statements.free_symbols
-            },
-            **{
-                p: p
-                for p in pset_current.values()
-                if p not in abbr.keys() and sympy.Symbol(p) in statements.free_symbols
-            },
-        }
-
-        trans_sset, trans_pset = dict(), dict()
-        names_sset_translated, names_pset_translated, names_basic = [], [], []
-        clashing_symbols = set()
-
-        for setting in pharmpy.plugins.nonmem.conf.parameter_names:
-            trans_sset_setting, trans_pset_setting = conf_functions[setting]
-            if setting != 'basic':
-                clashing_symbols.update(
-                    _clashing_symbols(statements, {**trans_sset_setting, **trans_pset_setting})
-                )
-            for name_current, name_new in trans_sset_setting.items():
-                name_nonmem = sset_current[name_current]
-
-                if (
-                    sympy.Symbol(name_new) in clashing_symbols
-                    or name_nonmem in names_sset_translated
-                ):
-                    continue
-
-                name_in_sset_current = {v: k for k, v in sset_current.items()}[name_nonmem]
-                trans_sset[name_in_sset_current] = name_new
-                names_sset_translated.append(name_nonmem)
-
-                if name_nonmem in pset_current.values() and name_new in pset_current.keys():
-                    names_pset_translated.append(name_nonmem)
-
-            for name_current, name_new in trans_pset_setting.items():
-                name_nonmem = pset_current[name_current]
-
-                if (
-                    sympy.Symbol(name_new) in clashing_symbols
-                    or name_nonmem in names_pset_translated
-                ):
-                    continue
-
-                trans_pset[name_current] = name_new
-                names_pset_translated.append(name_nonmem)
-
-            if setting == 'basic':
-                params_left = [k for k in pset_current.keys() if k not in names_pset_translated]
-                params_left += [rv for rv in rvs.names if rv not in names_sset_translated]
-                names_basic = [name for name in params_left if name not in names_sset_translated]
-                break
-
-        if clashing_symbols:
-            warnings.warn(
-                f'The parameter names {clashing_symbols} are also names of variables '
-                f'in the model code. Falling back to the in naming scheme config '
-                f'names for these.'
-            )
-
-        names_nonmem_all = rvs.names + [key for key in self.parameter_translation().keys()]
-
-        if set(names_nonmem_all) - set(names_sset_translated + names_pset_translated + names_basic):
-            raise ValueError(
-                'Mismatch in number of parameter names, all have not been accounted for. If basic '
-                'NONMEM-names are desired as fallback, double-check that "basic" is included in '
-                'config-settings for parameter_names.'
-            )
-        return trans_sset, trans_pset
-
-    def _name_as_comments(self, statements):
-        params_current = self.parameter_translation(remove_idempotent=True)
-        for name_abbr, name_nonmem in self.internals.control_stream.abbreviated.replace.items():
-            if name_nonmem in params_current.keys():
-                params_current[name_abbr] = params_current.pop(name_nonmem)
-        trans_params = {
-            name_comment: name_comment
-            for name_current, name_comment in params_current.items()
-            if sympy.Symbol(name_current) not in statements.free_symbols
-        }
-        trans_statements = {
-            name_current: name_comment
-            for name_current, name_comment in params_current.items()
-            if sympy.Symbol(name_current) in statements.free_symbols
-        }
-        return trans_statements, trans_params
-
-    def _name_as_abbr(self, rvs):
-        pharmpy_names = self.internals.control_stream.abbreviated.translate_to_pharmpy_names()
-        params_current = self.parameter_translation(remove_idempotent=True, reverse=True)
-        trans_params = {
-            name_nonmem: name_abbr
-            for name_nonmem, name_abbr in pharmpy_names.items()
-            if name_nonmem in self.parameter_translation().keys() or name_nonmem in rvs.names
-        }
-        for name_nonmem, name_abbr in params_current.items():
-            if name_abbr in trans_params.keys():
-                trans_params[name_nonmem] = trans_params.pop(name_abbr)
-        trans_statements = {
-            name_abbr: pharmpy_names[name_nonmem]
-            for name_abbr, name_nonmem in self.internals.control_stream.abbreviated.replace.items()
-        }
-        return trans_statements, trans_params
-
-    def _name_as_basic(self):
-        trans_params = {
-            name_current: name_nonmem
-            for name_current, name_nonmem in self.parameter_translation(reverse=True).items()
-            if name_current != name_nonmem
-        }
-        trans_statements = self.internals.control_stream.abbreviated.replace
-        return trans_statements, trans_params
-
     def replace_abbr(self, replace):
         for key, value in replace.items():
             try:
@@ -764,29 +441,6 @@ class Model(pharmpy.model.Model):
                 )
                 zero_fix += new_zero_fix
         return zero_fix
-
-    @property
-    def random_variables(self):
-        try:
-            return self._random_variables
-        except AttributeError:
-            pass
-        rvs = _parse_random_variables(self.internals.control_stream)
-        self._random_variables = rvs
-        self.internals._old_random_variables = rvs
-
-        if (
-            'comment' in pharmpy.plugins.nonmem.conf.parameter_names
-            or 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names
-        ):
-            self.statements
-
-        return self._random_variables
-
-    @random_variables.setter
-    def random_variables(self, new):
-        self.random_variables  # Read in old random variables
-        self._random_variables = new
 
     @property
     def model_code(self):
@@ -909,48 +563,6 @@ class Model(pharmpy.model.Model):
                         given_names.append(key)
                         drop.append(False)
         return colnames, drop, synonym_replacement, given_names
-
-    def _update_input(self):
-        """Update $INPUT
-
-        currently supporting append columns at end and removing columns
-        And add/remove DROP
-        """
-        input_records = self.internals.control_stream.get_records("INPUT")
-        _, drop, _, colnames = self._column_info()
-        keep = []
-        i = 0
-        for child in input_records[0].root.children:
-            if child.rule != 'option':
-                keep.append(child)
-                continue
-
-            if (colnames[i] is not None and (colnames[i] != self.datainfo[i].name)) or (
-                not drop[i]
-                and (self.datainfo[i].drop or self.datainfo[i].datatype == 'nmtran-date')
-            ):
-                dropped = self.datainfo[i].drop or self.datainfo[i].datatype == 'nmtran-date'
-                anonymous = colnames[i] is None
-                key = 'DROP' if anonymous and dropped else self.datainfo[i].name
-                value = 'DROP' if not anonymous and dropped else None
-                new = input_records[0]._create_option(key, value)
-                keep.append(new)
-            else:
-                keep.append(child)
-
-            i += 1
-
-            if i >= len(self.datainfo):
-                last_child = input_records[0].root.children[-1]
-                if last_child.rule == 'ws' and '\n' in str(last_child):
-                    keep.append(last_child)
-                break
-
-        input_records[0].root.children = keep
-
-        last_input_record = input_records[-1]
-        for ci in self.datainfo[len(colnames) :]:
-            last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
 
     def _replace_synonym_in_filters(filters, replacements):
         result = []
@@ -1096,7 +708,6 @@ class Model(pharmpy.model.Model):
         return df
 
     def rv_translation(self, reverse=False, remove_idempotent=False, as_symbols=False):
-        self.random_variables
         d = dict()
         for record in self.internals.control_stream.get_records('OMEGA'):
             for key, value in record.eta_map.items():
@@ -1114,31 +725,6 @@ class Model(pharmpy.model.Model):
             d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in d.items()}
         return d
 
-    def parameter_translation(self, reverse=False, remove_idempotent=False, as_symbols=False):
-        """Get a dict of NONMEM name to Pharmpy parameter name
-        i.e. {'THETA(1)': 'TVCL', 'OMEGA(1,1)': 'IVCL'}
-        """
-        d = dict()
-        for theta_record in self.internals.control_stream.get_records('THETA'):
-            for key, value in theta_record.name_map.items():
-                nonmem_name = f'THETA({value})'
-                d[nonmem_name] = key
-        for record in self.internals.control_stream.get_records('OMEGA'):
-            for key, value in record.name_map.items():
-                nonmem_name = f'OMEGA({value[0]},{value[1]})'
-                d[nonmem_name] = key
-        for record in self.internals.control_stream.get_records('SIGMA'):
-            for key, value in record.name_map.items():
-                nonmem_name = f'SIGMA({value[0]},{value[1]})'
-                d[nonmem_name] = key
-        if remove_idempotent:
-            d = {key: val for key, val in d.items() if key != val}
-        if reverse:
-            d = {val: key for key, val in d.items()}
-        if as_symbols:
-            d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in d.items()}
-        return d
-
     def read_modelfit_results(self, path: Path):
         try:
             ext_path = path / (self.name + '.ext')
@@ -1147,154 +733,3 @@ class Model(pharmpy.model.Model):
         except (FileNotFoundError, OSError):
             self._modelfit_results = None
             return None
-
-
-def parse_estimation_steps(model):
-    steps = []
-    records = model.internals.control_stream.get_records('ESTIMATION')
-    covrec = model.internals.control_stream.get_records('COVARIANCE')
-    solver, tol, atol = parse_solver(model.internals.control_stream)
-
-    # Read eta and epsilon derivatives
-    etaderiv_names = None
-    epsilonderivs_names = None
-    table_records = model.internals.control_stream.get_records('TABLE')
-    for table in table_records:
-        etaderivs = table.eta_derivatives
-        if etaderivs:
-            etas = model.random_variables.etas
-            etaderiv_names = [etas.names[i - 1] for i in etaderivs]
-        epsderivs = table.epsilon_derivatives
-        if epsderivs:
-            epsilons = model.random_variables.epsilons
-            epsilonderivs_names = [epsilons.names[i - 1] for i in epsderivs]
-
-    for record in records:
-        value = record.get_option('METHOD')
-        if value is None or value == '0' or value == 'ZERO':
-            name = 'fo'
-        elif value == '1' or value == 'CONDITIONAL' or value == 'COND':
-            name = 'foce'
-        else:
-            name = value
-        interaction = False
-        evaluation = False
-        maximum_evaluations = None
-        cov = False
-        laplace = False
-        isample = None
-        niter = None
-        auto = None
-        keep_every_nth_iter = None
-
-        if record.has_option('INTERACTION') or record.has_option('INTER'):
-            interaction = True
-        maxeval_opt = record.get_option('MAXEVAL') if not None else record.get_option('MAXEVALS')
-        if maxeval_opt is not None:
-            if (name.upper() == 'FO' or name.upper() == 'FOCE') and int(maxeval_opt) == 0:
-                evaluation = True
-            else:
-                maximum_evaluations = int(maxeval_opt)
-        eval_opt = record.get_option('EONLY')
-        if eval_opt is not None and int(eval_opt) == 1:
-            evaluation = True
-        if covrec:
-            cov = True
-        if record.has_option('LAPLACIAN') or record.has_option('LAPLACE'):
-            laplace = True
-        if record.has_option('ISAMPLE'):
-            isample = int(record.get_option('ISAMPLE'))
-        if record.has_option('NITER'):
-            niter = int(record.get_option('NITER'))
-        if record.has_option('AUTO'):
-            auto_opt = record.get_option('AUTO')
-            if auto_opt is not None and int(auto_opt) in [0, 1]:
-                auto = bool(auto_opt)
-            else:
-                raise ValueError('Currently only AUTO=0 and AUTO=1 is supported')
-        if record.has_option('PRINT'):
-            keep_every_nth_iter = int(record.get_option('PRINT'))
-
-        protected_names = [
-            name.upper(),
-            'EONLY',
-            'INTERACTION',
-            'INTER',
-            'LAPLACE',
-            'LAPLACIAN',
-            'MAXEVAL',
-            'MAXEVALS',
-            'METHOD',
-            'METH',
-            'ISAMPLE',
-            'NITER',
-            'AUTO',
-            'PRINT',
-        ]
-
-        tool_options = {
-            option.key: option.value
-            for option in record.all_options
-            if option.key not in protected_names
-        }
-        if not tool_options:
-            tool_options = None
-
-        try:
-            meth = EstimationStep(
-                name,
-                interaction=interaction,
-                cov=cov,
-                evaluation=evaluation,
-                maximum_evaluations=maximum_evaluations,
-                laplace=laplace,
-                isample=isample,
-                niter=niter,
-                auto=auto,
-                keep_every_nth_iter=keep_every_nth_iter,
-                tool_options=tool_options,
-                solver=solver,
-                solver_rtol=tol,
-                solver_atol=atol,
-                eta_derivatives=etaderiv_names,
-                epsilon_derivatives=epsilonderivs_names,
-            )
-        except ValueError:
-            raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')
-        steps.append(meth)
-
-    steps = EstimationSteps(steps)
-
-    return steps
-
-
-def parse_solver(control_stream):
-    subs_records = control_stream.get_records('SUBROUTINES')
-    if not subs_records:
-        return None, None, None
-    record = subs_records[0]
-    advan = record.advan
-    # Currently only reading non-linear solvers
-    # These can then be used if the model needs to use a non-linear solver
-    if advan == 'ADVAN6':
-        solver = 'DVERK'
-    elif advan == 'ADVAN8':
-        solver = 'DGEAR'
-    elif advan == 'ADVAN9':
-        solver = 'LSODI'
-    elif advan == 'ADVAN13':
-        solver = 'LSODA'
-    elif advan == 'ADVAN14':
-        solver = 'CVODES'
-    elif advan == 'ADVAN15':
-        solver = 'IDA'
-    else:
-        solver = None
-    return solver, record.tol, record.atol
-
-
-def _clashing_symbols(statements, trans_statements):
-    # Find symbols in the statements that are also in parameters
-    parameter_symbols = {sympy.Symbol(symb) for _, symb in trans_statements.items()}
-    clashing_symbols = parameter_symbols & statements.free_symbols
-    return clashing_symbols

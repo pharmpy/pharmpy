@@ -61,15 +61,15 @@ def test_empty_ext_file(load_model_for_test, testdata):
 
 
 def test_detection():
-    Model.create_model(StringIO("$PROBLEM this"))
-    Model.create_model(StringIO("   \t$PROBLEM skld fjl"))
-    Model.create_model(StringIO(" $PRO l907"))
+    Model.create_model(StringIO("$PROBLEM this\n$PRED\n"))
+    Model.create_model(StringIO("   \t$PROBLEM skld fjl\n$PRED\n"))
+    Model.create_model(StringIO(" $PRO l907\n$PRED\n"))
 
 
 def test_validate(pheno):
     pheno.validate()
 
-    model = Model.create_model(StringIO("$PROBLEM this\n$SIZES LIM1=3000"))
+    model = Model.create_model(StringIO("$PROBLEM this\n$SIZES LIM1=3000\n$PRED\n"))
     with pytest.raises(ModelSyntaxError):
         model.validate()
 

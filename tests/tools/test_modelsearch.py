@@ -2,9 +2,16 @@ import functools
 
 import pytest
 
-from pharmpy.modeling import set_peripheral_compartments, set_zero_order_absorption
+from pharmpy.modeling import (
+    add_peripheral_compartment,
+    set_mixed_mm_fo_elimination,
+    set_peripheral_compartments,
+    set_zero_order_absorption,
+    set_zero_order_elimination,
+)
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.modelsearch.algorithms import (
+    _add_iiv_to_func,
     _is_allowed,
     exhaustive,
     exhaustive_stepwise,
@@ -25,7 +32,7 @@ def test_exhaustive_algorithm():
     'mfl, iiv_strategy, no_of_models',
     [
         (
-            'ABSORPTION(ZO)\nPERIPHERALS(1)',
+            'ABSORPTION(ZO);PERIPHERALS(1)',
             0,
             4,
         ),
@@ -64,6 +71,17 @@ def test_exhaustive_algorithm():
             'ABSORPTION([ZO,SEQ-ZO-FO]);ELIMINATION(MM)',
             0,
             7,
+        ),
+        ('ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)', 0, 7),
+        (
+            'LAGTIME();TRANSITS(1)',
+            0,
+            2,
+        ),
+        (
+            'ABSORPTION(ZO);TRANSITS(3, *)',
+            0,
+            3,
         ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME();TRANSITS([1,3,10],*);'
@@ -187,3 +205,33 @@ def test_is_allowed():
         set_peripheral_compartments, n=2
     )
     assert _is_allowed(feat_current, func_current, feat_previous, features)
+
+
+@pytest.mark.parametrize(
+    'transform_funcs, no_of_added_etas',
+    [
+        (
+            [set_zero_order_absorption, add_peripheral_compartment],
+            2,
+        ),
+        (
+            [set_zero_order_absorption, set_zero_order_elimination],
+            1,
+        ),
+        (
+            [set_zero_order_absorption, set_mixed_mm_fo_elimination],
+            2,
+        ),
+        (
+            [set_zero_order_absorption, functools.partial(set_peripheral_compartments, n=2)],
+            4,
+        ),
+    ],
+)
+def test_add_iiv_to_func(load_model_for_test, testdata, transform_funcs, no_of_added_etas):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    no_of_etas_start = len(model.random_variables)
+    for func in transform_funcs:
+        model = func(model)
+    model = _add_iiv_to_func('add_diagonal', model)
+    assert len(model.random_variables) - no_of_etas_start == no_of_added_etas

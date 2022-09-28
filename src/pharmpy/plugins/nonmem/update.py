@@ -22,6 +22,7 @@ from pharmpy.model import (
 from pharmpy.modeling import simplify_expression
 from pharmpy.plugins.nonmem.records import code_record
 
+from .parsing import parameter_translation
 from .records.factory import create_record
 
 
@@ -1191,7 +1192,9 @@ def update_ccontra(model, path=None, force=False):
     ll = simplify_expression(model, ll)
     ll = ll.subs(sympy.Symbol('y', real=True, positive=True), y)
 
-    tr = model.parameter_translation(reverse=True, remove_idempotent=True, as_symbols=True)
+    tr = parameter_translation(
+        model.internals.control_stream, reverse=True, remove_idempotent=True, as_symbols=True
+    )
     ll = ll.subs(tr)
     h = h.subs(tr)
 
@@ -1242,3 +1245,74 @@ def update_ccontra(model, path=None, force=False):
         )
         fh.write(e2)
         fh.write(ccontr3)
+
+
+def update_name_of_tables(control_stream, new_name):
+    m = re.search(r'.*?(\d+)$', new_name)
+    if m:
+        n = int(m.group(1))
+        for table in control_stream.get_records('TABLE'):
+            table_path = table.path
+            table_name = table_path.stem
+            m = re.search(r'(.*?)(\d+)$', table_name)
+            if m:
+                table_stem = m.group(1)
+                new_table_name = f'{table_stem}{n}'
+                table.path = table_path.parent / new_table_name
+
+
+def update_sizes(model):
+    """Update $SIZES if needed"""
+    all_sizes = model.internals.control_stream.get_records('SIZES')
+    if len(all_sizes) == 0:
+        sizes = create_record('$SIZES ')
+    else:
+        sizes = all_sizes[0]
+    odes = model.statements.ode_system
+
+    if odes is not None and isinstance(odes, CompartmentalSystem):
+        n_compartments = len(odes)
+        sizes.PC = n_compartments
+    thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
+    sizes.LTH = len(thetas)
+
+    if len(all_sizes) == 0 and len(str(sizes)) > 7:
+        model.internals.control_stream.insert_record(str(sizes))
+
+
+def update_input(model):
+    """Update $INPUT"""
+    input_records = model.internals.control_stream.get_records("INPUT")
+    _, drop, _, colnames = model._column_info()
+    keep = []
+    i = 0
+    for child in input_records[0].root.children:
+        if child.rule != 'option':
+            keep.append(child)
+            continue
+
+        if (colnames[i] is not None and (colnames[i] != model.datainfo[i].name)) or (
+            not drop[i] and (model.datainfo[i].drop or model.datainfo[i].datatype == 'nmtran-date')
+        ):
+            dropped = model.datainfo[i].drop or model.datainfo[i].datatype == 'nmtran-date'
+            anonymous = colnames[i] is None
+            key = 'DROP' if anonymous and dropped else model.datainfo[i].name
+            value = 'DROP' if not anonymous and dropped else None
+            new = input_records[0]._create_option(key, value)
+            keep.append(new)
+        else:
+            keep.append(child)
+
+        i += 1
+
+        if i >= len(model.datainfo):
+            last_child = input_records[0].root.children[-1]
+            if last_child.rule == 'ws' and '\n' in str(last_child):
+                keep.append(last_child)
+            break
+
+    input_records[0].root.children = keep
+
+    last_input_record = input_records[-1]
+    for ci in model.datainfo[len(colnames) :]:
+        last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
