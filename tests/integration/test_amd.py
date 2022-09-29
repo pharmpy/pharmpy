@@ -50,7 +50,7 @@ def test_amd(tmp_path, testdata):
             dir = rundir / dir
             assert _model_count(dir) >= 1
 
-        assert len(res.summary_tool) >= 1
+        assert len(res.summary_tool) == len(subrundir)
         assert len(res.summary_models) >= 1
         assert len(res.summary_individuals_count) >= 1
 

@@ -141,24 +141,21 @@ def run_amd(
 
     run_tool('modelfit', model, path=db.path / 'modelfit')
     next_model = model
-    sum_tools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
-    for func in run_subfuncs.values():
+    sum_subtools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
+    sum_subtools.append(_create_sum_subtool('start', model))
+    for tool_name, func in run_subfuncs.items():
         subresults = func(next_model)
         if subresults is None:
-            sum_tools.append(None)
             sum_models.append(None)
             sum_inds_counts.append(None)
         else:
             if subresults.final_model_name != next_model.name:
                 next_model = retrieve_final_model(subresults)
-            if hasattr(subresults, 'summary_tool'):
-                sum_tools.append(subresults.summary_tool.reset_index()),
-            else:
-                sum_tools.append(None)
+            sum_subtools.append(_create_sum_subtool(tool_name, next_model))
             sum_models.append(subresults.summary_models.reset_index()),
             sum_inds_counts.append(subresults.summary_individuals_count.reset_index()),
 
-    for sums in [sum_tools, sum_models, sum_inds_counts]:
+    for sums in [sum_models, sum_inds_counts]:
         filtered_results = list(
             zip(*filter(lambda t: t[1] is not None, zip(list(run_subfuncs.keys()), sums)))
         )
@@ -179,7 +176,8 @@ def run_amd(
         sums.drop('default index', axis=1, inplace=True)
         sum_amd.append(sums)
 
-    summary_tool, summary_models, summary_individuals_count = sum_amd
+    summary_models, summary_individuals_count = sum_amd
+    summary_tool = _create_tool_summary(sum_subtools)
 
     if summary_tool is None:
         warnings.warn(
@@ -208,6 +206,35 @@ def run_amd(
     write_results(results=res, path=db.path / 'results.json')
     write_results(results=res, path=db.path / 'results.csv', csv=True)
     return res
+
+
+def _create_sum_subtool(tool_name, selected_model):
+    return {
+        'tool': tool_name,
+        'selected_model': selected_model.name,
+        'description': selected_model.description,
+        'n_params': len(selected_model.parameters.nonfixed),
+        'ofv': selected_model.modelfit_results.ofv,
+    }
+
+
+def _create_tool_summary(rows):
+    summary_prev = None
+    rows_updated = []
+    for summary in rows:
+        summary_updated = summary
+        if not summary_prev:
+            summary_updated['d_params'] = 0
+            summary_updated['dofv'] = 0
+        else:
+            summary_updated['d_params'] = summary['n_params'] - summary_prev['n_params']
+            summary_updated['dofv'] = summary_prev['ofv'] - summary['ofv']
+        rows_updated.append(summary_updated)
+        summary_prev = summary
+
+    columns = ['tool', 'selected_model', 'description', 'ofv', 'dofv', 'n_params', 'd_params']
+    df = pd.DataFrame.from_records(rows_updated, columns=columns).set_index(['tool'])
+    return df
 
 
 def _run_modelsearch(model, search_space, path):
