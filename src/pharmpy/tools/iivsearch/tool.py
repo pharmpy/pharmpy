@@ -111,7 +111,6 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
             new_models = [model for model in next_res.models if model.name not in prev_models]
             res.models = res.models + new_models
             res.final_model_name = next_res.final_model_name
-            res.input_model = input_model
         sum_tools.append(next_res.summary_tool)
         sum_models.append(next_res.summary_models)
         sum_inds.append(next_res.summary_individuals)
