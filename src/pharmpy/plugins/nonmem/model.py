@@ -123,7 +123,7 @@ class Model(pharmpy.model.Model):
             self.filename_extension = path.suffix
         self.internals.old_name = self._name
         self.internals.control_stream = parser.parse(code)
-        self._create_datainfo()
+        self._create_datainfo(path)
         self._initial_individual_estimates_updated = False
         self._updated_etas_file = None
         self._dataset_updated = False
@@ -427,19 +427,14 @@ class Model(pharmpy.model.Model):
         self.update_source(nofiles=True)
         return str(self.internals.control_stream)
 
-    def _read_dataset_path(self):
+    def _read_dataset_path(self, basepath):
         record = next(iter(self.internals.control_stream.get_records('DATA')), None)
         if record is None:
             return None
         path = Path(record.filename)
         if not path.is_absolute():
-            try:
-                dbpath = self.database.retrieve_file(self.name, path)
-            except FileNotFoundError:
-                pass
-            else:
-                if dbpath is not None:
-                    path = dbpath
+            if basepath is not None:
+                path = basepath.parent / path
         try:
             return path.resolve()
         except FileNotFoundError:
@@ -560,8 +555,8 @@ class Model(pharmpy.model.Model):
             result.append(s)
         return result
 
-    def _create_datainfo(self):
-        dataset_path = self._read_dataset_path()
+    def _create_datainfo(self, path):
+        dataset_path = self._read_dataset_path(path)
         (colnames, drop, replacements, _) = self._column_info()
         try:
             path = dataset_path.with_suffix('.datainfo')
