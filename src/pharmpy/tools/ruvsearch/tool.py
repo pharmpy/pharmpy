@@ -133,7 +133,7 @@ def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
     return wf
 
 
-def start(model, groups, p_value, skip):
+def start(context, model, groups, p_value, skip):
     cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
@@ -141,7 +141,7 @@ def start(model, groups, p_value, skip):
     selected_models = [model]
     for current_iteration in range(1, 4):
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
-        next_res = call_workflow(wf, f'results{current_iteration}')
+        next_res = call_workflow(wf, f'results{current_iteration}', context)
         selected_model_name = next_res._selected_model_name
         best_model = next_res._best_model
         del next_res._selected_model_name
@@ -189,14 +189,14 @@ def _results(res):
     return res
 
 
-def post_process(start_model, *models, cutoff, current_iteration):
+def post_process(context, start_model, *models, cutoff, current_iteration):
     res = calculate_results(models)
     best_model, selected_model_name = _create_best_model(
         start_model, res, current_iteration, cutoff=cutoff
     )
     if best_model is not None:
         fit_wf = create_fit_workflow(models=[best_model])
-        est_model = call_workflow(fit_wf, f'fit{current_iteration}')
+        est_model = call_workflow(fit_wf, f'fit{current_iteration}', context)
         delta_ofv = start_model.modelfit_results.ofv - est_model.modelfit_results.ofv
         if delta_ofv > cutoff:
             res._best_model = est_model

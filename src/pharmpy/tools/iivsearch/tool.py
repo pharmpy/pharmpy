@@ -85,7 +85,7 @@ def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, 
     return wf
 
 
-def start(input_model, algorithm, iiv_strategy, rank_type, cutoff):
+def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
     if iiv_strategy != 'no_add':
         model_iiv = copy_model(input_model, 'base_model')
         _add_iiv(iiv_strategy, model_iiv)
@@ -103,7 +103,7 @@ def start(input_model, algorithm, iiv_strategy, rank_type, cutoff):
         wf = create_algorithm_workflow(
             input_model, base_model, algorithm_cur, iiv_strategy, rank_type, cutoff
         )
-        next_res = call_workflow(wf, f'results_{algorithm}')
+        next_res = call_workflow(wf, f'results_{algorithm}', context)
         if i == 0:
             res = next_res
         else:

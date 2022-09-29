@@ -228,8 +228,8 @@ def read_modelfit_results(model, rdata_path):
     model.modelfit_results = res
 
 
-def execute_model(model):
-    database = model.database
+def execute_model(model, db):
+    database = db.model_database
     model = convert_model(model)
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
     model._path = path

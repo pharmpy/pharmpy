@@ -1,3 +1,5 @@
+import inspect
+
 from pharmpy.model import Model, Results
 from pharmpy.utils import normalize_user_given_path
 
@@ -49,12 +51,13 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume
                     new_model = inp.copy()
                     new_model.parent_model = new_model.name
                     new_model.dataset
-                    new_model.database = database.model_database
                     new_inp.append(new_model)
                     input_models.append(new_model)
                 else:
                     new_inp.append(inp)
             task.task_input = new_inp
+
+    insert_context(workflow, database)
 
     res = dispatcher.run(workflow)
 
@@ -104,7 +107,17 @@ def split_common_options(d):
     return common_options, other_options
 
 
-def call_workflow(wf, unique_name):
+def insert_context(workflow, context):
+    """Insert tool context (database) for all tasks in a workflow needing it
+
+    having context as first argument of function
+    """
+    for task in workflow.tasks:
+        if tuple(inspect.signature(task.function).parameters)[0] == 'context':
+            task.task_input = [context] + list(task.task_input)
+
+
+def call_workflow(wf, unique_name, db):
     """Dynamically call a workflow from another workflow.
 
     Currently only supports dask distributed
@@ -115,6 +128,8 @@ def call_workflow(wf, unique_name):
         A workflow object
     unique_name : str
         A name of the results node that is unique between parent and dynamically created workflows
+    db : ToolDatabase
+        ToolDatabase to pass to new workflow
 
     Returns
     -------
@@ -124,6 +139,8 @@ def call_workflow(wf, unique_name):
     from dask.distributed import get_client, rejoin, secede
 
     from .optimize import optimize_task_graph_for_dask_distributed
+
+    insert_context(wf, db)
 
     client = get_client()
     dsk = wf.as_dask_dict()

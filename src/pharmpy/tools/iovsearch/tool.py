@@ -104,6 +104,7 @@ def init(model):
 
 
 def task_brute_force_search(
+    context,
     occ: str,
     list_of_parameters: Union[None, list],
     rank_type: str,
@@ -132,7 +133,7 @@ def task_brute_force_search(
     add_iov(model_with_iov, occ, list_of_parameters, distribution=distribution)
     # NOTE Fit the new model.
     wf = create_fit_workflow(models=[model_with_iov])
-    model_with_iov = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs')
+    model_with_iov = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs', context)
 
     # NOTE Remove IOVs. Test all subsets (~2^n).
     # TODO should we exclude already present IOVs?
@@ -144,7 +145,7 @@ def task_brute_force_search(
     wf = wf_etas_removal(
         remove_iov, model_with_iov, non_empty_proper_subsets(all_iov_parameters), no_of_models + 1
     )
-    iov_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs')
+    iov_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs', context)
 
     # NOTE Keep best candidate.
     best_model_so_far = best_model(
@@ -174,7 +175,7 @@ def task_brute_force_search(
         non_empty_subsets(iiv_parameters_with_associated_iov),
         no_of_models + 1,
     )
-    iiv_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs')
+    iiv_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs', context)
 
     return [model, model_with_iov, *iov_candidates, *iiv_candidates]
 

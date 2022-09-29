@@ -192,6 +192,7 @@ def init(model: Union[Model, None]):
 
 
 def task_greedy_forward_search(
+    context,
     effects: Union[str, Sequence[Spec]],
     p_forward: float,
     max_steps: int,
@@ -205,7 +206,7 @@ def task_greedy_forward_search(
     def handle_effects(step: int, parent: Candidate, candidate_effects: List[EffectLiteral]):
 
         wf = wf_effects_addition(parent.model, candidate_effects)
-        new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_addition-{step}')
+        new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_addition-{step}', context)
 
         return [
             Candidate(model, parent.steps + (ForwardStep(p_forward, AddEffect(*effect)),))
@@ -222,6 +223,7 @@ def task_greedy_forward_search(
 
 
 def task_greedy_backward_search(
+    context,
     p_backward: float,
     max_steps: int,
     state: SearchState,
@@ -229,7 +231,7 @@ def task_greedy_backward_search(
     def handle_effects(step: int, parent: Candidate, candidate_effects: List[EffectLiteral]):
 
         wf = wf_effects_removal(state.start_model, parent, candidate_effects)
-        new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}')
+        new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}', context)
 
         return [
             Candidate(model, parent.steps + (BackwardStep(p_backward, RemoveEffect(*effect)),))
