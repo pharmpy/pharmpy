@@ -17,7 +17,11 @@ from pharmpy.tools.modelsearch.algorithms import (
     exhaustive_stepwise,
     reduced_stepwise,
 )
-from pharmpy.tools.modelsearch.tool import check_input
+from pharmpy.tools.modelsearch.tool import create_workflow, validate_input
+from pharmpy.workflows import Workflow
+
+MINIMAL_INVALID_MFL_STRING = ''
+MINIMAL_VALID_MFL_STRING = 'LET(x, 0)'
 
 
 def test_exhaustive_algorithm():
@@ -125,7 +129,7 @@ def test_reduced_stepwise_algorithm(mfl, no_of_models):
     assert all(task.name == 'run0' for task in wf.output_tasks)
 
 
-def test_check_input(create_model_for_test, testdata):
+def test_validate_input_model_validation(create_model_for_test, testdata):
     model_code = '''$PROBLEM
 $INPUT ID VISI XAT2=DROP DGRP DOSE FLAG=DROP ONO=DROP
        XIME=DROP NEUY SCR AGE SEX NYH=DROP WT DROP ACE
@@ -152,8 +156,8 @@ $ESTIMATION METHOD=1 INTERACTION
         path=testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv'
     )
 
-    with pytest.raises(ValueError):
-        check_input(model)
+    with pytest.raises(ValueError, match='Invalid `model`'):
+        validate_input(MINIMAL_VALID_MFL_STRING, 'exhaustive', model=model)
 
 
 def test_is_allowed():
@@ -235,3 +239,114 @@ def test_add_iiv_to_func(load_model_for_test, testdata, transform_funcs, no_of_a
         model = func(model)
     model = _add_iiv_to_func('add_diagonal', model)
     assert len(model.random_variables) - no_of_etas_start == no_of_added_etas
+
+
+def test_create_workflow():
+    assert isinstance(create_workflow(MINIMAL_VALID_MFL_STRING, 'exhaustive'), Workflow)
+
+
+def test_create_workflow_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    assert isinstance(
+        create_workflow(MINIMAL_VALID_MFL_STRING, 'exhaustive', model=model), Workflow
+    )
+
+
+def test_validate_input():
+    validate_input(MINIMAL_VALID_MFL_STRING, 'exhaustive')
+
+
+def test_validate_input_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    validate_input(MINIMAL_VALID_MFL_STRING, 'exhaustive', model=model)
+
+
+@pytest.mark.parametrize(
+    (
+        'model_path',
+        'arguments',
+        'exception',
+        'match',
+    ),
+    [
+        (
+            None,
+            dict(search_space=1),
+            TypeError,
+            'Invalid `search_space`',
+        ),
+        (
+            None,
+            dict(search_space=MINIMAL_INVALID_MFL_STRING),
+            ValueError,
+            'Invalid `search_space`',
+        ),
+        (
+            None,
+            dict(algorithm=1),
+            TypeError,
+            'Invalid `algorithm`',
+        ),
+        (
+            None,
+            dict(algorithm='brute_force'),
+            ValueError,
+            'Invalid `algorithm`',
+        ),
+        (
+            None,
+            dict(iiv_strategy=1),
+            TypeError,
+            'Invalid `iiv_strategy`',
+        ),
+        (
+            None,
+            dict(iiv_strategy='delay'),
+            ValueError,
+            'Invalid `iiv_strategy`',
+        ),
+        (
+            None,
+            dict(rank_type=1),
+            TypeError,
+            'Invalid `rank_type`',
+        ),
+        (
+            None,
+            dict(rank_type='bi'),
+            ValueError,
+            'Invalid `rank_type`',
+        ),
+        (
+            None,
+            dict(cutoff='1'),
+            TypeError,
+            'Invalid `cutoff`',
+        ),
+        (
+            None,
+            dict(model=1),
+            TypeError,
+            'Invalid `model`',
+        ),
+    ],
+)
+def test_validate_input_raises(
+    load_model_for_test,
+    testdata,
+    model_path,
+    arguments,
+    exception,
+    match,
+):
+    model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
+
+    harmless_arguments = dict(
+        search_space=MINIMAL_VALID_MFL_STRING,
+        algorithm='exhaustive',
+    )
+
+    kwargs = {**harmless_arguments, 'model': model, **arguments}
+
+    with pytest.raises(exception, match=match):
+        validate_input(**kwargs)

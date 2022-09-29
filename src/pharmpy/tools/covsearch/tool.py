@@ -1,20 +1,27 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass
 from itertools import count
-from typing import Any, Callable, Iterable, List, Tuple, Union
+from typing import Any, Callable, Iterable, List, Sequence, Tuple, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
-from pharmpy.modeling import add_covariate_effect, copy_model
+from pharmpy.modeling import add_covariate_effect, copy_model, get_pk_parameters
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools.common import create_results, update_initial_estimates
-from pharmpy.tools.mfl.feature.covariate import EffectLiteral, Spec, parse_spec, spec
+from pharmpy.tools.mfl.feature.covariate import (
+    EffectLiteral,
+    Spec,
+    all_covariate_effects,
+    parse_spec,
+    spec,
+)
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
+from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 from .results import COVSearchResults
@@ -87,7 +94,7 @@ ALGORITHMS = frozenset(['scm-forward', 'scm-forward-then-backward'])
 
 
 def create_workflow(
-    effects: Union[str, List[Spec]],
+    effects: Union[str, Sequence[Spec]],
     p_forward: float = 0.05,
     p_backward: float = 0.01,
     max_steps: int = -1,
@@ -131,15 +138,6 @@ def create_workflow(
     ... ], model=model)      # doctest: +SKIP
 
     """
-
-    if algorithm not in ALGORITHMS:
-        raise ValueError(f'covsearch only supports algorithm in {sorted(ALGORITHMS)}')
-
-    if p_forward <= 0:
-        raise ValueError(f'p_forward must be positive (got {p_forward})')
-
-    if p_backward <= 0:
-        raise ValueError(f'p_backward must be positive (got {p_backward})')
 
     wf = Workflow()
     wf.name = NAME_WF
@@ -194,7 +192,7 @@ def init(model: Union[Model, None]):
 
 
 def task_greedy_forward_search(
-    effects: Union[str, List[Spec]],
+    effects: Union[str, Sequence[Spec]],
     p_forward: float,
     max_steps: int,
     state: SearchState,
@@ -441,3 +439,77 @@ def _make_df_steps_row(
         'model': candidate.model.name,
         'covariate_effects': np.nan,
     }
+
+
+@runtime_type_check
+@same_arguments_as(create_workflow)
+def validate_input(effects, p_forward, p_backward, algorithm, model):
+    if algorithm not in ALGORITHMS:
+        raise ValueError(
+            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'
+        )
+
+    if not 0 < p_forward <= 1:
+        raise ValueError(
+            f'Invalid `p_forward`: got `{p_forward}`, must be a float in range (0, 1].'
+        )
+
+    if not 0 < p_backward <= 1:
+        raise ValueError(
+            f'Invalid `p_backward`: got `{p_backward}`, must be a float in range (0, 1].'
+        )
+
+    if model is not None:
+        if isinstance(effects, str):
+            try:
+                parsed = parse(effects)
+            except:  # noqa E722
+                raise ValueError(f'Invalid `effects`, could not be parsed: `{effects}`')
+            effect_spec = spec(model, parsed)
+        else:
+            effect_spec = effects
+
+        candidate_effects = map(lambda x: Effect(*x), sorted(set(parse_spec(effect_spec))))
+
+        try:
+            di_covariate = model.datainfo.typeix['covariate'].names
+        except IndexError:
+            di_covariate = []
+
+        try:
+            di_unknown = model.datainfo.typeix['unknown'].names
+        except IndexError:
+            di_unknown = []
+
+        allowed_covariates = set(di_covariate).union(di_unknown)
+        allowed_parameters = set(get_pk_parameters(model)).union(
+            str(statement.symbol) for statement in model.statements.before_odes
+        )
+        allowed_covariate_effects = set(all_covariate_effects)
+        allowed_ops = set(['*', '+'])
+
+        for effect in candidate_effects:
+            if effect.covariate not in allowed_covariates:
+                raise ValueError(
+                    f'Invalid `effects` because of invalid covariate found in'
+                    f' effects: got `{effect.covariate}`,'
+                    f' must be in {sorted(allowed_covariates)}.'
+                )
+            if effect.parameter not in allowed_parameters:
+                raise ValueError(
+                    f'Invalid `effects` because of invalid parameter found in'
+                    f' effects: got `{effect.parameter}`,'
+                    f' must be in {sorted(allowed_parameters)}.'
+                )
+            if effect.fp not in allowed_covariate_effects:
+                raise ValueError(
+                    f'Invalid `effects` because of invalid effect function found in'
+                    f' effects: got `{effect.fp}`,'
+                    f' must be in {sorted(allowed_covariate_effects)}.'
+                )
+            if effect.operation not in allowed_ops:
+                raise ValueError(
+                    f'Invalid `effects` because of invalid effect operation found in'
+                    f' effects: got `{effect.operation}`,'
+                    f' must be in {sorted(allowed_ops)}.'
+                )

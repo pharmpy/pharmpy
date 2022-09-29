@@ -1801,7 +1801,7 @@ def test_transform_etas_tdist(load_model_for_test, pheno_path):
     denom_3 = f'384*{theta}**3'
 
     expression = (
-        f'ETA(1)*(1 + ({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ' f'({num_3})/({denom_3}))'
+        f'ETA(1)*(1 + ({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ({num_3})/({denom_3}))'
     )
 
     rec_ref = (

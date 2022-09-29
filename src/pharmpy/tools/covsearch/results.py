@@ -1,11 +1,11 @@
 from typing import Any, Union
 
-import pharmpy.results
+from pharmpy.model import Results
 
 DataFrame = Any  # NOTE should be pd.DataFrame but we wan lazy loading
 
 
-class COVSearchResults(pharmpy.results.Results):
+class COVSearchResults(Results):
     def __init__(
         self,
         summary_tool=None,

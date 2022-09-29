@@ -1,26 +1,33 @@
-from functools import partial
+from __future__ import annotations
 
-from pharmpy.model import Results
+from functools import partial
+from typing import List, Optional, Union
+
+from pharmpy.deps import sympy
+from pharmpy.expressions import sympify
+from pharmpy.model import Model, Results
 from pharmpy.modeling import (
     add_allometry,
+    get_pk_parameters,
     summarize_errors,
     summarize_individuals,
     summarize_individuals_count_table,
     summarize_modelfit_results,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow
 
 
 def create_workflow(
-    model=None,
-    allometric_variable='WT',
-    reference_value=70,
-    parameters=None,
-    initials=None,
-    lower_bounds=None,
-    upper_bounds=None,
-    fixed=True,
+    model: Optional[Model] = None,
+    allometric_variable: Union[str, sympy.Expr] = 'WT',
+    reference_value: Union[str, int, float, sympy.Expr] = 70,
+    parameters: Optional[List[Union[str, sympy.Expr]]] = None,
+    initials: Optional[List[Union[int, float]]] = None,
+    lower_bounds: Optional[List[Union[int, float]]] = None,
+    upper_bounds: Optional[List[Union[int, float]]] = None,
+    fixed: bool = True,
 ):
     """Run allometry tool. For more details, see :ref:`allometry`.
 
@@ -111,6 +118,33 @@ def _add_allometry_on_model(
     model.name = "scaled_model"
     model.description = "Allometry model"
     return model
+
+
+@runtime_type_check
+@same_arguments_as(create_workflow)
+def validate_input(
+    model,
+    allometric_variable,
+    parameters,
+):
+    if model is not None:
+        if not set(map(str, sympify(allometric_variable).free_symbols)).issubset(
+            model.datainfo.names
+        ):
+            raise ValueError(
+                f'Invalid `allometric_variable`: got `{allometric_variable}`,'
+                f' free symbols must be a subset of {sorted(model.datainfo.names)}.'
+            )
+
+        if parameters is not None:
+            allowed_parameters = set(get_pk_parameters(model)).union(
+                str(statement.symbol) for statement in model.statements.before_odes
+            )
+            if not set(parameters).issubset(allowed_parameters):
+                raise ValueError(
+                    f'Invalid `parameters`: got `{parameters}`,'
+                    f' must be NULL/None or a subset of {sorted(allowed_parameters)}.'
+                )
 
 
 def results(start_model, allometry_model):

@@ -1,16 +1,22 @@
-import pharmpy.results
+from typing import Optional, Union
+
 import pharmpy.tools.modelsearch.algorithms as algorithms
+from pharmpy.model import Model, Results
+from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools.common import create_results
+from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow
+
+from ..mfl.parse import parse
 
 
 def create_workflow(
-    search_space,
-    algorithm,
-    iiv_strategy='absorption_delay',
-    rank_type='bic',
-    cutoff=None,
-    model=None,
+    search_space: str,
+    algorithm: str,
+    iiv_strategy: str = 'absorption_delay',
+    rank_type: str = 'bic',
+    cutoff: Optional[Union[float, int]] = None,
+    model: Optional[Model] = None,
 ):
     """Run Modelsearch tool. For more details, see :ref:`modelsearch`.
 
@@ -44,8 +50,6 @@ def create_workflow(
     >>> run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=model) # doctest: +SKIP
 
     """
-    check_input(model)
-    algorithm_func = getattr(algorithms, algorithm)
 
     wf = Workflow()
     wf.name = 'modelsearch'
@@ -57,6 +61,7 @@ def create_workflow(
 
     wf.add_task(start_task)
 
+    algorithm_func = getattr(algorithms, algorithm)
     wf_search, candidate_model_tasks = algorithm_func(search_space, iiv_strategy)
     wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
 
@@ -72,23 +77,7 @@ def create_workflow(
     return wf
 
 
-def check_input(model):
-    if model is None:
-        return
-    try:
-        cmt = model.datainfo.typeix['compartment']
-    except IndexError:
-        pass
-    else:
-        raise ValueError(
-            f"Found compartment column {cmt.names} in dataset. "
-            f"This is currently not supported by modelsearch. "
-            f"Please remove or drop this column and try again"
-        )
-
-
 def start(model):
-    check_input(model)
     return model
 
 
@@ -111,7 +100,51 @@ def post_process(rank_type, cutoff, *models):
     return res
 
 
-class ModelSearchResults(pharmpy.results.Results):
+@runtime_type_check
+@same_arguments_as(create_workflow)
+def validate_input(
+    search_space,
+    algorithm,
+    iiv_strategy,
+    rank_type,
+    model,
+):
+
+    if not hasattr(algorithms, algorithm):
+        raise ValueError(
+            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(dir(algorithms))}.'
+        )
+
+    if rank_type not in RANK_TYPES:
+        raise ValueError(
+            f'Invalid `rank_type`: got `{rank_type}`, must be one of {sorted(RANK_TYPES)}.'
+        )
+
+    if iiv_strategy not in algorithms.IIV_STRATEGIES:
+        raise ValueError(
+            f'Invalid `iiv_strategy`: got `{iiv_strategy}`,'
+            f' must be one of {sorted(algorithms.IIV_STRATEGIES)}.'
+        )
+
+    try:
+        parse(search_space)
+    except:  # noqa E722
+        raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
+
+    if model is not None:
+        try:
+            cmt = model.datainfo.typeix['compartment']
+        except IndexError:
+            pass
+        else:
+            raise ValueError(
+                f"Invalid `model`: found compartment column {cmt.names} in dataset. "
+                f"This is currently not supported by modelsearch. "
+                f"Please remove or drop this column and try again"
+            )
+
+
+class ModelSearchResults(Results):
     def __init__(
         self,
         summary_tool=None,

@@ -15,6 +15,8 @@ from pharmpy.workflows import Task, Workflow
 from ..mfl.helpers import all_combinations, all_funcs, get_funcs_same_type, key_to_str
 from ..mfl.parse import parse
 
+IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock', 'absorption_delay'))
+
 
 def exhaustive(search_space, iiv_strategy):
     # TODO: rewrite using _create_model_workflow
@@ -85,8 +87,8 @@ def exhaustive_stepwise(search_space, iiv_strategy):
     return wf_search, model_tasks
 
 
-def reduced_stepwise(mfl, iiv_strategy):
-    mfl_statements = parse(mfl)
+def reduced_stepwise(search_space, iiv_strategy):
+    mfl_statements = parse(search_space)
     mfl_funcs = all_funcs(Model(), mfl_statements)
 
     wf_search = Workflow()
@@ -304,9 +306,7 @@ def _add_iiv_to_func(iiv_strategy, model):
             add_pk_iiv(model, initial_estimate=0.01)
         except ValueError as e:
             if str(e) == 'New parameter inits are not valid':
-                raise ValueError(
-                    f'{model.name}: {e} ' f'(add_pk_iiv, ' f'parent: {model.parent_model})'
-                )
+                raise ValueError(f'{model.name}: {e} (add_pk_iiv, parent: {model.parent_model})')
         if iiv_strategy == 'fullblock':
             try:
                 create_joint_distribution(model)
@@ -317,14 +317,10 @@ def _add_iiv_to_func(iiv_strategy, model):
                         f'(create_joint_distribution, '
                         f'parent: {model.parent_model})'
                     )
-    elif iiv_strategy == 'absorption_delay':
+    else:
+        assert iiv_strategy == 'absorption_delay'
         mdt = sset.find_assignment('MDT')
         if mdt and not mdt.expression.free_symbols.intersection(rvs.free_symbols):
             add_iiv(model, 'MDT', 'exp', initial_estimate=0.01)
-    else:
-        raise ValueError(
-            f'Invalid IIV strategy (must be "no_add", "add_diagonal", "fullblock", or '
-            f'"absorption_delay"): {iiv_strategy}'
-        )
 
     return model

@@ -1,17 +1,26 @@
 """
 :meta private:
 """
+from __future__ import annotations
+
+from typing import Optional, Union
 
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify
-from pharmpy.model import Assignment, Parameter, Parameters
+from pharmpy.model import Assignment, Model, Parameter, Parameters
 
 from .error import has_proportional_error_model
 from .expressions import create_symbol
 from .help_functions import _format_input_list
 
 
-def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero_protection=False):
+def set_power_on_ruv(
+    model: Model,
+    list_of_eps: Optional[Union[str, list]] = None,
+    lower_limit: Optional[float] = 0.01,
+    ipred: Optional[Union[str, sympy.Symbol]] = None,
+    zero_protection: bool = False,
+):
     """Applies a power effect to provided epsilons.
 
     Initial estimates for new thetas are 1 if the error
@@ -21,10 +30,10 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
     ----------
     model : Model
         Pharmpy model to create block effect on.
-    list_of_eps : str, list
+    list_of_eps : str or list or None
         Name/names of epsilons to apply power effect. If None, all epsilons will be used.
         None is default.
-    lower_limit : int or None
+    lower_limit : float or None
         Lower limit of power (theta). None for no limit.
     ipred : Symbol
         Symbol to use as IPRED. Default is to autodetect expression for IPRED.

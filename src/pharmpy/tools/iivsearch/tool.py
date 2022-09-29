@@ -1,18 +1,25 @@
-import pharmpy.results
+from typing import Optional, Union
+
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
+from pharmpy.model import Model, Results
 from pharmpy.modeling import add_pk_iiv, copy_model, create_joint_distribution
+from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
+
+IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock'))
+IIV_ALGORITHMS = frozenset(('brute_force',) + tuple(dir(algorithms)))
 
 
 def create_workflow(
-    algorithm,
-    iiv_strategy='no_add',
-    rank_type='bic',
-    cutoff=None,
-    model=None,
+    algorithm: str,
+    iiv_strategy: str = 'no_add',
+    rank_type: str = 'bic',
+    cutoff: Optional[Union[float, int]] = None,
+    model: Optional[Model] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -43,6 +50,7 @@ def create_workflow(
     >>> from pharmpy.tools import run_iivsearch     # doctest: +SKIP
     >>> run_iivsearch('brute_force', model=model)   # doctest: +SKIP
     """
+
     wf = Workflow()
     wf.name = 'iivsearch'
     start_task = Task('start_iiv', start, model, algorithm, iiv_strategy, rank_type, cutoff)
@@ -145,11 +153,7 @@ def _start_algorithm(model):
 
 
 def _add_iiv(iiv_strategy, model):
-    if iiv_strategy not in ['add_diagonal', 'fullblock']:
-        ValueError(
-            f'Invalid IIV strategy (must be "no_add", "add_diagonal", or "fullblock"): '
-            f'{iiv_strategy}'
-        )
+    assert iiv_strategy in ['add_diagonal', 'fullblock']
     add_pk_iiv(model)
     if iiv_strategy == 'fullblock':
         create_joint_distribution(model)
@@ -175,7 +179,31 @@ def post_process(rank_type, cutoff, input_model, base_model_name, *models):
     return res
 
 
-class IIVSearchResults(pharmpy.results.Results):
+@runtime_type_check
+@same_arguments_as(create_workflow)
+def validate_input(
+    algorithm,
+    iiv_strategy,
+    rank_type,
+):
+    if algorithm not in IIV_ALGORITHMS:
+        raise ValueError(
+            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(IIV_ALGORITHMS)}.'
+        )
+
+    if rank_type not in RANK_TYPES:
+        raise ValueError(
+            f'Invalid `rank_type`: got `{rank_type}`, must be one of {sorted(RANK_TYPES)}.'
+        )
+
+    if iiv_strategy not in IIV_STRATEGIES:
+        raise ValueError(
+            f'Invalid `iiv_strategy`: got `{iiv_strategy}`,'
+            f' must be one of {sorted(IIV_STRATEGIES)}.'
+        )
+
+
+class IIVSearchResults(Results):
     def __init__(
         self,
         summary_tool=None,

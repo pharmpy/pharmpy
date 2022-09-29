@@ -128,6 +128,9 @@ def add_iiv(
     return model
 
 
+ADD_IOV_DISTRIBUTION = frozenset(('disjoint', 'joint', 'explicit', 'same-as-iiv'))
+
+
 def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='disjoint'):
     """Adds IOVs to :class:`pharmpy.model`.
 
@@ -174,7 +177,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
 
     """
 
-    if distribution not in ['disjoint', 'joint', 'explicit', 'same-as-iiv']:
+    if distribution not in ADD_IOV_DISTRIBUTION:
         raise ValueError(f'"{distribution}" is not a valid value for distribution')
 
     list_of_parameters = _format_input_list(list_of_parameters)

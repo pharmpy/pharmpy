@@ -79,7 +79,7 @@ def test_skip_most(tmp_path, testdata):
         for warning, match in zip(
             record,
             [
-                'Skipping IOVsearch because occasion is None',
+                'IOVsearch will be skipped because occasion is None',
                 'Skipping Allometry',
                 'Skipping COVsearch',
                 'AMDResults.summary_tool is None',
