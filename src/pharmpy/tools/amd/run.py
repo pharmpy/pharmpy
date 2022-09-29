@@ -179,11 +179,6 @@ def run_amd(
     summary_models, summary_individuals_count = sum_amd
     summary_tool = _create_tool_summary(sum_subtools)
 
-    if summary_tool is None:
-        warnings.warn(
-            'AMDResults.summary_tool is None because none of the tools yielded a summary.'
-        )
-
     if summary_models is None:
         warnings.warn(
             'AMDResults.summary_models is None because none of the tools yielded a summary.'
