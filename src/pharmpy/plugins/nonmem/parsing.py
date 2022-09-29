@@ -1,4 +1,5 @@
 import warnings
+from pathlib import Path
 
 import pharmpy.plugins.nonmem
 from pharmpy.deps import sympy
@@ -11,6 +12,7 @@ from pharmpy.model import (
     Parameters,
     RandomVariables,
 )
+from pharmpy.plugins.nonmem.table import NONMEMTableFile
 
 from .advan import compartmental_model
 
@@ -426,3 +428,29 @@ def parse_solver(control_stream):
     else:
         solver = None
     return solver, record.tol, record.atol
+
+
+def parse_initial_individual_estimates(control_stream, rvs, basepath):
+    """Initial individual estimates
+
+    These are taken from the $ETAS FILE. 0 FIX ETAs are removed.
+    If no $ETAS is present None will be returned.
+
+    Setter assumes that all IDs are present
+    """
+    etas = control_stream.get_records('ETAS')
+    if etas:
+        path = Path(etas[0].path)
+        if not path.is_absolute():
+            if basepath is None:
+                raise ValueError("Cannot resolve path for $ETAS")
+            path = basepath / path
+            path = path.resolve()
+        phi_tables = NONMEMTableFile(path)
+        rv_names = [rv for rv in rvs.names if rv.startswith('ETA')]
+        phitab = next(phi_tables)
+        names = [name for name in rv_names if name in phitab.etas.columns]
+        etas = phitab.etas[names]
+    else:
+        etas = None
+    return etas
