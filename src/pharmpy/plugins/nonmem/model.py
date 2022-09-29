@@ -10,15 +10,7 @@ import pharmpy.plugins.nonmem
 import pharmpy.plugins.nonmem.dataset
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs
-from pharmpy.model import (
-    Assignment,
-    ColumnInfo,
-    DataInfo,
-    DatasetError,
-    NormalDistribution,
-    Parameter,
-    Parameters,
-)
+from pharmpy.model import Assignment, DatasetError, NormalDistribution, Parameter, Parameters
 from pharmpy.modeling.write_csv import write_csv
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
@@ -27,6 +19,8 @@ from .nmtran_parser import NMTranParser
 from .parsing import (
     create_name_trans,
     parameter_translation,
+    parse_column_info,
+    parse_datainfo,
     parse_description,
     parse_estimation_steps,
     parse_initial_individual_estimates,
@@ -116,7 +110,9 @@ class Model(pharmpy.model.Model):
             self.filename_extension = path.suffix
         self.internals.old_name = self._name
         self.internals.control_stream = parser.parse(code)
-        self._create_datainfo(path)
+        di = parse_datainfo(self.internals.control_stream, path)
+        self.datainfo = di
+        self._old_datainfo = di
         self._initial_individual_estimates_updated = False
         self._updated_etas_file = None
         self._dataset_updated = False
@@ -420,19 +416,6 @@ class Model(pharmpy.model.Model):
         self.update_source(nofiles=True)
         return str(self.internals.control_stream)
 
-    def _read_dataset_path(self, basepath):
-        record = next(iter(self.internals.control_stream.get_records('DATA')), None)
-        if record is None:
-            return None
-        path = Path(record.filename)
-        if not path.is_absolute():
-            if basepath is not None:
-                path = basepath.parent / path
-        try:
-            return path.resolve()
-        except FileNotFoundError:
-            return path
-
     @property
     def dataset(self):
         try:
@@ -451,87 +434,6 @@ class Model(pharmpy.model.Model):
     def read_raw_dataset(self, parse_columns=tuple()):
         return self._read_dataset(raw=True, parse_columns=parse_columns)
 
-    @staticmethod
-    def _synonym(key, value):
-        """Return a tuple reserved name and synonym"""
-        _reserved_column_names = [
-            'ID',
-            'L1',
-            'L2',
-            'DV',
-            'MDV',
-            'RAW_',
-            'MRG_',
-            'RPT_',
-            'TIME',
-            'DATE',
-            'DAT1',
-            'DAT2',
-            'DAT3',
-            'EVID',
-            'AMT',
-            'RATE',
-            'SS',
-            'II',
-            'ADDL',
-            'CMT',
-            'PCMT',
-            'CALL',
-            'CONT',
-        ]
-        if key in _reserved_column_names:
-            return (key, value)
-        elif value in _reserved_column_names:
-            return (value, key)
-        else:
-            raise DatasetError(
-                f'A column name "{key}" in $INPUT has a synonym to a non-reserved '
-                f'column name "{value}"'
-            )
-
-    def _column_info(self):
-        """List all column names in order.
-        Use the synonym when synonym exists.
-        return tuple of two lists, colnames, and drop together with a dictionary
-        of replacements for reserved names (aka synonyms).
-        Anonymous columns, i.e. DROP or SKIP alone, will be given unique names _DROP1, ...
-        """
-        input_records = self.internals.control_stream.get_records("INPUT")
-        colnames = []
-        drop = []
-        synonym_replacement = {}
-        given_names = []
-        next_anonymous = 1
-        for record in input_records:
-            for key, value in record.all_options:
-                if value:
-                    if key == 'DROP' or key == 'SKIP':
-                        colnames.append(value)
-                        given_names.append(value)
-                        drop.append(True)
-                    elif value == 'DROP' or value == 'SKIP':
-                        colnames.append(key)
-                        given_names.append(key)
-                        drop.append(True)
-                    else:
-                        (reserved_name, synonym) = Model._synonym(key, value)
-                        synonym_replacement[reserved_name] = synonym
-                        given_names.append(synonym)
-                        colnames.append(synonym)
-                        drop.append(False)
-                else:
-                    if key == 'DROP' or key == 'SKIP':
-                        name = f'_DROP{next_anonymous}'
-                        next_anonymous += 1
-                        colnames.append(name)
-                        given_names.append(None)
-                        drop.append(True)
-                    else:
-                        colnames.append(key)
-                        given_names.append(key)
-                        drop.append(False)
-        return colnames, drop, synonym_replacement, given_names
-
     def _replace_synonym_in_filters(filters, replacements):
         result = []
         for f in filters:
@@ -548,88 +450,11 @@ class Model(pharmpy.model.Model):
             result.append(s)
         return result
 
-    def _create_datainfo(self, path):
-        dataset_path = self._read_dataset_path(path)
-        (colnames, drop, replacements, _) = self._column_info()
-        try:
-            path = dataset_path.with_suffix('.datainfo')
-        except:  # noqa: E722
-            # FIXME: dataset_path could fail in so many ways!
-            pass
-        else:
-            if path.is_file():
-                di = DataInfo.read_json(path)
-                di = di.derive(path=dataset_path)
-                self.datainfo = di
-                self._old_datainfo = di
-                different_drop = []
-                for colinfo, coldrop in zip(di, drop):
-                    if colinfo.drop != coldrop:
-                        colinfo.drop = coldrop
-                        different_drop.append(colinfo.name)
-
-                if different_drop:
-                    warnings.warn(
-                        "NONMEM .mod and dataset .datainfo disagree on "
-                        f"DROP for columns {', '.join(different_drop)}."
-                    )
-                return
-
-        column_info = []
-        have_pk = self.internals.control_stream.get_pk_record()
-        for colname, coldrop in zip(colnames, drop):
-            if coldrop and colname not in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
-                info = ColumnInfo(colname, drop=coldrop, datatype='str')
-            elif colname == 'ID' or colname == 'L1':
-                info = ColumnInfo(
-                    colname, drop=coldrop, datatype='int32', type='id', scale='nominal'
-                )
-            elif colname == 'DV' or colname == replacements.get('DV', None):
-                info = ColumnInfo(colname, drop=coldrop, type='dv')
-            elif colname == 'TIME' or colname == replacements.get('TIME', None):
-                if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
-                    datatype = 'nmtran-time'
-                else:
-                    datatype = 'float64'
-                info = ColumnInfo(
-                    colname, drop=coldrop, type='idv', scale='ratio', datatype=datatype
-                )
-            elif colname in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
-                # Always DROP in mod-file, but actually always used
-                info = ColumnInfo(colname, drop=False, scale='interval', datatype='nmtran-date')
-            elif colname == 'EVID' and have_pk:
-                info = ColumnInfo(colname, drop=coldrop, type='event', scale='nominal')
-            elif colname == 'MDV' and have_pk:
-                if 'EVID' in colnames:
-                    tp = 'mdv'
-                else:
-                    tp = 'event'
-                info = ColumnInfo(colname, drop=coldrop, type=tp, scale='nominal', datatype='int32')
-            elif colname == 'II' and have_pk:
-                info = ColumnInfo(colname, drop=coldrop, type='ii', scale='ratio')
-            elif colname == 'SS' and have_pk:
-                info = ColumnInfo(colname, drop=coldrop, type='ss', scale='nominal')
-            elif colname == 'ADDL' and have_pk:
-                info = ColumnInfo(colname, drop=coldrop, type='additional', scale='ordinal')
-            elif (colname == 'AMT' or colname == replacements.get('AMT', None)) and have_pk:
-                info = ColumnInfo(colname, drop=coldrop, type='dose', scale='ratio')
-            elif colname == 'CMT' and have_pk:
-                info = ColumnInfo(colname, drop=coldrop, type='compartment', scale='nominal')
-            elif colname == 'RATE' and have_pk:
-                info = ColumnInfo(colname, drop=coldrop, type='rate')
-            else:
-                info = ColumnInfo(colname, drop=coldrop)
-            column_info.append(info)
-
-        di = DataInfo(column_info, path=dataset_path)
-        self.datainfo = di
-        self._old_datainfo = di
-
     def _read_dataset(self, raw=False, parse_columns=tuple()):
         data_records = self.internals.control_stream.get_records('DATA')
         ignore_character = data_records[0].ignore_character
         null_value = data_records[0].null_value
-        (colnames, drop, replacements, _) = self._column_info()
+        (colnames, drop, replacements, _) = parse_column_info(self.internals.control_stream)
 
         if raw:
             ignore = None

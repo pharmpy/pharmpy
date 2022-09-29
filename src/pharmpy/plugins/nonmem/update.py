@@ -22,7 +22,7 @@ from pharmpy.model import (
 from pharmpy.modeling import simplify_expression
 from pharmpy.plugins.nonmem.records import code_record
 
-from .parsing import parameter_translation
+from .parsing import parameter_translation, parse_column_info
 from .records.factory import create_record
 
 
@@ -460,7 +460,7 @@ def update_statements(model, old, new, trans):
     if new_odes is not None:
         old_odes = old.ode_system
         if new_odes != old_odes:
-            colnames, drop, _, _ = model._column_info()
+            colnames, drop, _, _ = parse_column_info(model.internals.control_stream)
             col_dropped = {key: value for key, value in zip(colnames, drop)}
             if 'CMT' in col_dropped.keys() and not col_dropped['CMT']:
                 warnings.warn(
@@ -1283,7 +1283,7 @@ def update_sizes(model):
 def update_input(model):
     """Update $INPUT"""
     input_records = model.internals.control_stream.get_records("INPUT")
-    _, drop, _, colnames = model._column_info()
+    _, drop, _, colnames = parse_column_info(model.internals.control_stream)
     keep = []
     i = 0
     for child in input_records[0].root.children:
