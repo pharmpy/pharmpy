@@ -727,7 +727,7 @@ def rank_models(
         if rank_type == 'lrt':
             if not lrt_test(model_dict[model.parent_model], model, cutoff):
                 continue
-        if cutoff:
+        elif cutoff is not None:
             if ref_value - rank_value <= cutoff:
                 continue
 

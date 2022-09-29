@@ -293,9 +293,7 @@ def test_rank_models():
     # Test with LRT
     df = rank_models(base, models, rank_type='lrt', cutoff=0.05)
     ranked_models = list(df.dropna().index.values)
-    assert len(ranked_models) == 1
-    assert 'm2' in ranked_models
-    assert 'm3' not in ranked_models
+    assert sorted(ranked_models) == ['base', 'm2']
 
     # Test if candidate model does not have an OFV
     m5 = DummyModel('m5', parent='base', parameter_names=['p1'], ofv=np.nan)
