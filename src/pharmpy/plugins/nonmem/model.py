@@ -207,6 +207,11 @@ class Model(pharmpy.model.Model):
         self._statements = statements
         self.internals._old_statements = statements
 
+        init_etas = parse_initial_individual_estimates(
+            self.internals.control_stream, rvs, None if path is None else path.parent
+        )
+        self._initial_individual_estimates = init_etas
+
     @property
     def modelfit_results(self):
         return self._modelfit_results
@@ -363,32 +368,6 @@ class Model(pharmpy.model.Model):
 
     @property
     def initial_individual_estimates(self):
-        """Initial individual estimates
-
-        These are taken from the $ETAS FILE. 0 FIX ETAs are removed.
-        If no $ETAS is present None will be returned.
-
-        Setter assumes that all IDs are present
-        """
-        try:
-            return self._initial_individual_estimates
-        except AttributeError:
-            pass
-        etas = self.internals.control_stream.get_records('ETAS')
-        if etas:
-            path = Path(etas[0].path)
-            if not path.is_absolute():
-                source_dir = self.database.retrieve_file(
-                    self.name, self.name + self.filename_extension
-                ).parent
-                path = source_dir / path
-                path = path.resolve()
-            phi_tables = NONMEMTableFile(path)
-            rv_names = [rv for rv in self.random_variables.names if rv.startswith('ETA')]
-            etas = next(phi_tables).etas[rv_names]
-            self._initial_individual_estimates = etas
-        else:
-            self._initial_individual_estimates = None
         return self._initial_individual_estimates
 
     @initial_individual_estimates.setter
@@ -733,3 +712,29 @@ class Model(pharmpy.model.Model):
         except (FileNotFoundError, OSError):
             self._modelfit_results = None
             return None
+
+
+def parse_initial_individual_estimates(control_stream, rvs, basepath):
+    """Initial individual estimates
+
+    These are taken from the $ETAS FILE. 0 FIX ETAs are removed.
+    If no $ETAS is present None will be returned.
+
+    Setter assumes that all IDs are present
+    """
+    etas = control_stream.get_records('ETAS')
+    if etas:
+        path = Path(etas[0].path)
+        if not path.is_absolute():
+            if basepath is None:
+                raise ValueError("Cannot resolve path for $ETAS")
+            path = basepath / path
+            path = path.resolve()
+        phi_tables = NONMEMTableFile(path)
+        rv_names = [rv for rv in rvs.names if rv.startswith('ETA')]
+        phitab = next(phi_tables)
+        names = [name for name in rv_names if name in phitab.etas.columns]
+        etas = phitab.etas[names]
+    else:
+        etas = None
+    return etas

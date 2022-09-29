@@ -37,5 +37,4 @@ $OMEGA  BLOCK(4)
 $SIGMA  0.0164177
 $SIGMA  0.0000001  FIX  ;     EPSCOV
 $ESTIMATION METHOD=1 INTERACTION NONINFETA=1 MCETA=1 MAXEVALS=0
-$ETAS       FILE=/home/rikard/testing/frem_dir1/m1/model_3b_input.phi
-
+$ETAS FILE=model_3b_input.phi
