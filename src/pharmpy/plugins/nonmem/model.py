@@ -22,7 +22,6 @@ from pharmpy.model import (
 from pharmpy.modeling.write_csv import write_csv
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
-from pharmpy.workflows import NullModelDatabase, default_model_database
 
 from .nmtran_parser import NMTranParser
 from .parsing import (
@@ -97,10 +96,6 @@ def convert_model(model):
     )
     nm_model.description = model.description
     nm_model.update_source()
-    try:
-        nm_model.database = model.database
-    except AttributeError:
-        pass
     if model.statements.ode_system:
         nm_model._compartment_map = {
             name: i for i, name in enumerate(model.statements.ode_system.compartment_names, start=1)
@@ -115,11 +110,9 @@ class Model(pharmpy.model.Model):
         parser = NMTranParser()
         if path is None:
             self._name = 'run1'
-            self.database = NullModelDatabase()
             self.filename_extension = '.ctl'
         else:
             self._name = path.stem
-            self.database = default_model_database(path=path.parent)
             self.filename_extension = path.suffix
         self.internals.old_name = self._name
         self.internals.control_stream = parser.parse(code)

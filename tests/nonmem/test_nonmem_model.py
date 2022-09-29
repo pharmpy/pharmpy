@@ -55,8 +55,6 @@ def test_empty_ext_file(load_model_for_test, testdata):
     model = load_model_for_test(
         testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'noESTwithSIM' / 'onlysim.mod'
     )
-    with pytest.raises(FileNotFoundError):
-        model.database.retrieve_file(model.name, model.name + '.ext')
     assert model.modelfit_results is None
 
 

@@ -392,12 +392,11 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         return df
 
 
-def simfit_results(model):
+def simfit_results(model, model_path):
     """Read in modelfit results from a simulation/estimation model"""
     nsubs = model.internals.control_stream.get_records('SIMULATION')[0].nsubs
     results = []
     for i in range(1, nsubs + 1):
-        model_path = model.database.retrieve_file(model.name, model.name + model.filename_extension)
         res = NONMEMChainedModelfitResults(model_path, model=model, subproblem=i)
         results.append(res)
     return results
