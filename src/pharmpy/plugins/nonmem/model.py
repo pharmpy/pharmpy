@@ -29,6 +29,7 @@ from .parsing import (
     parse_random_variables,
     parse_statements,
     parse_value_type,
+    replace_synonym_in_filters,
 )
 from .update import (
     update_abbr_record,
@@ -407,22 +408,6 @@ class Model(pharmpy.model.Model):
     def read_raw_dataset(self, parse_columns=tuple()):
         return self._read_dataset(raw=True, parse_columns=parse_columns)
 
-    def _replace_synonym_in_filters(filters, replacements):
-        result = []
-        for f in filters:
-            if f.COLUMN in replacements:
-                s = ''
-                for child in f.children:
-                    if child.rule == 'COLUMN':
-                        value = replacements[f.COLUMN]
-                    else:
-                        value = str(child)
-                    s += value
-            else:
-                s = str(f)
-            result.append(s)
-        return result
-
     def _read_dataset(self, raw=False, parse_columns=tuple()):
         data_records = self.internals.control_stream.get_records('DATA')
         ignore_character = data_records[0].ignore_character
@@ -439,9 +424,9 @@ class Model(pharmpy.model.Model):
             accept = data_records[0].accept
             # FIXME: This should really only be done if setting the dataset
             if ignore:
-                ignore = Model._replace_synonym_in_filters(ignore, replacements)
+                ignore = replace_synonym_in_filters(ignore, replacements)
             else:
-                accept = Model._replace_synonym_in_filters(accept, replacements)
+                accept = replace_synonym_in_filters(accept, replacements)
 
         df = pharmpy.plugins.nonmem.dataset.read_nonmem_dataset(
             self.datainfo.path,

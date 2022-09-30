@@ -654,3 +654,20 @@ def get_zero_fix_rvs(control_stream, eta=True):
             )
             zero_fix += new_zero_fix
     return zero_fix
+
+
+def replace_synonym_in_filters(filters, replacements):
+    result = []
+    for f in filters:
+        if f.COLUMN in replacements:
+            s = ''
+            for child in f.children:
+                if child.rule == 'COLUMN':
+                    value = replacements[f.COLUMN]
+                else:
+                    value = str(child)
+                s += value
+        else:
+            s = str(f)
+        result.append(s)
+    return result
