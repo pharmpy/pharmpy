@@ -342,7 +342,11 @@ def _create_description(model, effect, forward=True):
     effect_str = f'{parameter}-{covariate}-{fp}'
     if operation == '*':
         effect_str += f'-{operation}'
-    description_prev = model.description
+
+    if model.parent_model == model.name:
+        description_prev = ''
+    else:
+        description_prev = model.description
 
     if forward:
         if description_prev:
