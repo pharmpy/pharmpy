@@ -6,6 +6,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.plugins.nonmem.parsing import parameter_translation
 from pharmpy.plugins.nonmem.results_file import NONMEMResultsFile
 from pharmpy.plugins.nonmem.table import NONMEMTableFile
+from pharmpy.plugins.nonmem.update import rv_translation
 from pharmpy.results import ChainedModelfitResults, ModelfitResults
 from pharmpy.workflows.log import Log
 
@@ -312,7 +313,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj.individual_estimates = None
             result_obj.individual_estimates_covariance = None
 
-        trans = self.model.rv_translation(reverse=True)
+        trans = rv_translation(self.model.internals.control_stream, reverse=True)
         rv_names = [name for name in self.model.random_variables.etas.names if name in trans]
         try:
             phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
@@ -324,12 +325,13 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 try:
                     result_obj.individual_ofv = table.iofv
                     result_obj.individual_estimates = table.etas.rename(
-                        columns=self.model.rv_translation()
+                        columns=rv_translation(self.model.internals.control_stream)
                     )[rv_names]
                     covs = table.etcs
                     covs = covs.transform(
                         lambda cov: cov.rename(
-                            columns=self.model.rv_translation(), index=self.model.rv_translation()
+                            columns=rv_translation(self.model.internals.control_stream),
+                            index=rv_translation(self.model.internals.control_stream),
                         )
                     )
                     covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])

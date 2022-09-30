@@ -32,6 +32,7 @@ from .parsing import (
     replace_synonym_in_filters,
 )
 from .update import (
+    rv_translation,
     update_abbr_record,
     update_ccontra,
     update_description,
@@ -238,7 +239,9 @@ class Model(pharmpy.model.Model):
         trans = parameter_translation(
             self.internals.control_stream, reverse=True, remove_idempotent=True, as_symbols=True
         )
-        rv_trans = self.rv_translation(reverse=True, remove_idempotent=True, as_symbols=True)
+        rv_trans = rv_translation(
+            self.internals.control_stream, reverse=True, remove_idempotent=True, as_symbols=True
+        )
         trans.update(rv_trans)
         if pharmpy.plugins.nonmem.conf.write_etas_in_abbr:
             abbr_trans = self._abbr_translation(rv_trans)
@@ -457,24 +460,6 @@ class Model(pharmpy.model.Model):
             ids_to_remove = all_ids - have_obs
             df = df[~df['ID'].isin(ids_to_remove)]
         return df
-
-    def rv_translation(self, reverse=False, remove_idempotent=False, as_symbols=False):
-        d = dict()
-        for record in self.internals.control_stream.get_records('OMEGA'):
-            for key, value in record.eta_map.items():
-                nonmem_name = f'ETA({value})'
-                d[nonmem_name] = key
-        for record in self.internals.control_stream.get_records('SIGMA'):
-            for key, value in record.eta_map.items():
-                nonmem_name = f'EPS({value})'
-                d[nonmem_name] = key
-        if remove_idempotent:
-            d = {key: val for key, val in d.items() if key != val}
-        if reverse:
-            d = {val: key for key, val in d.items()}
-        if as_symbols:
-            d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in d.items()}
-        return d
 
     def read_modelfit_results(self, path: Path):
         try:
