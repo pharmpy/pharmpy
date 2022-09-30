@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence
-from typing import Iterable, Set, Union
+from typing import Dict, Iterable, List, Set, Union
 
 import pharmpy.unicode as unicode
 from pharmpy.deps import networkx as nx
@@ -243,7 +243,7 @@ class ExplicitODESystem(ODESystem):
     ⎩A_CENTRAL(0) = 0
     """
 
-    def __init__(self, odes, ics):
+    def __init__(self, odes: List[sympy.Eq], ics: Dict[sympy.Expr, sympy.Expr]):
         self._odes = odes
         self._ics = ics
 

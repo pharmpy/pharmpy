@@ -10,8 +10,8 @@ from pharmpy.model import (
     DatasetError,
     EstimationStep,
     EstimationSteps,
+    ExplicitODESystem,
     ModelSyntaxError,
-    ODESystem,
     Parameters,
     RandomVariables,
 )
@@ -78,7 +78,7 @@ def parse_statements(model):
             for i, amount in enumerate(cm.amounts, start=1):
                 trans_amounts[sympy.Symbol(f"A({i})")] = amount
         else:
-            statements += ODESystem()  # FIXME: Placeholder for ODE-system
+            statements += ExplicitODESystem([], {})  # FIXME: Placeholder for ODE-system
             # FIXME: Dummy link statement
             statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
         statements += error.statements
