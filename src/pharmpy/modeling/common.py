@@ -219,6 +219,7 @@ def convert_model(model, to_format):
         new.estimation_steps = model.estimation_steps
         new.datainfo = model.datainfo
         new.name = model.name
+        new.description = model.description
         new.dependent_variable = model.dependent_variable
         new.observation_transformation = model.observation_transformation
         new.parent_model = model.name

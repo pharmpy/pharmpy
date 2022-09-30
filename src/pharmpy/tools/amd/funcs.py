@@ -76,6 +76,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
 
     model = Model()
     model.name = 'start'
+    model.description = 'Start model'
     model.parameters = params
     model.random_variables = rvs
     model.statements = stats
