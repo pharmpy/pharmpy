@@ -18,6 +18,7 @@ from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from .nmtran_parser import NMTranParser
 from .parsing import (
     create_name_trans,
+    get_zero_fix_rvs,
     parameter_translation,
     parse_column_info,
     parse_datainfo,
@@ -318,7 +319,7 @@ class Model(pharmpy.model.Model):
 
         if self._initial_individual_estimates_updated:
             etas = self.initial_individual_estimates
-            zero_fix = self._zero_fix_rvs(eta=True)
+            zero_fix = get_zero_fix_rvs(self.internals.control_stream, eta=True)
             if zero_fix:
                 for eta in zero_fix:
                     etas[eta] = 0
@@ -390,28 +391,6 @@ class Model(pharmpy.model.Model):
             except KeyError:
                 pass
         self.random_variables.rename(replace)
-
-    def _zero_fix_rvs(self, eta=True):
-        zero_fix = []
-        if eta:
-            prev_cov = None
-            next_omega = 1
-            prev_start = 1
-            for omega_record in self.internals.control_stream.get_records('OMEGA'):
-                _, next_omega, prev_start, prev_cov, new_zero_fix = omega_record.random_variables(
-                    next_omega, prev_start, prev_cov
-                )
-                zero_fix += new_zero_fix
-        else:
-            prev_cov = None
-            next_sigma = 1
-            prev_start = 1
-            for sigma_record in self.internals.control_stream.get_records('SIGMA'):
-                _, next_sigma, prev_start, prev_cov, new_zero_fix = sigma_record.random_variables(
-                    next_sigma, prev_start, prev_cov
-                )
-                zero_fix += new_zero_fix
-        return zero_fix
 
     @property
     def model_code(self):

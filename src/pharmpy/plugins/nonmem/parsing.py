@@ -633,3 +633,24 @@ def parse_datainfo(control_stream, path):
 
     di = DataInfo(column_info, path=dataset_path)
     return di
+
+
+def get_zero_fix_rvs(control_stream, eta=True):
+    zero_fix = []
+    if eta:
+        prev_cov = None
+        next_omega = 1
+        for omega_record in control_stream.get_records('OMEGA'):
+            _, next_omega, prev_cov, new_zero_fix = omega_record.random_variables(
+                next_omega, prev_cov
+            )
+            zero_fix += new_zero_fix
+    else:
+        prev_cov = None
+        next_sigma = 1
+        for sigma_record in control_stream.get_records('SIGMA'):
+            _, next_sigma, prev_cov, new_zero_fix = sigma_record.random_variables(
+                next_sigma, prev_cov
+            )
+            zero_fix += new_zero_fix
+    return zero_fix
