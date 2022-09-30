@@ -11,7 +11,7 @@ from pharmpy.modeling.results import summarize_errors, write_results
 from pharmpy.tools import retrieve_final_model
 from pharmpy.workflows import default_tool_database
 
-from ..run import fit, run_tool
+from ..run import run_tool
 from .results import AMDResults
 
 
@@ -111,7 +111,6 @@ def run_amd(
             search_space = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
 
     db = default_tool_database(toolname='amd')
-    fit(model)
     run_subfuncs = dict()
     for section in order:
         if section == 'structural':
