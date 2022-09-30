@@ -170,10 +170,6 @@ def start(model, groups, p_value, skip):
         else:
             res.cwres_models = pd.concat([res.cwres_models, next_res.cwres_models])
         if not selected_model_name.startswith('base'):
-            if best_model.description:
-                best_model.description += '+' + selected_model_name
-            else:
-                best_model.description = selected_model_name
             selected_models.append(best_model)
 
         if selected_model_name.startswith('base'):
@@ -195,7 +191,7 @@ def start(model, groups, p_value, skip):
     res.summary_models = summf
     res.summary_tool = summary_tool
     res.summary_errors = summary_errors
-    res.final_model_name = best_model.name
+    res.final_model_name = model.name
     return res
 
 
@@ -372,6 +368,12 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
         idx = res.cwres_models['dofv'].idxmax()
         name = idx[0]
 
+        if current_iteration == 1:
+            base_description = ''
+        else:
+            base_description = model.description + '+'
+        model.description = base_description + name
+
         if name.startswith('power'):
             set_power_on_ruv(model)
             set_initial_estimates(
@@ -422,6 +424,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
                     .get('sigma_add'),
                 },
             )
+
         selected_model_name = name
         model.update_source()
     else:
