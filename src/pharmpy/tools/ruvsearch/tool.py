@@ -235,7 +235,6 @@ def _create_base_model(input_model, current_iteration):
     base_model.observation_transformation = y.symbol
     base_model.name = f'base_{current_iteration}'
     base_model.dataset = _create_dataset(input_model)
-    base_model.database = input_model.database
 
     est = EstimationStep('foce', interaction=True, maximum_evaluations=9999)
     base_model.estimation_steps = EstimationSteps([est])
