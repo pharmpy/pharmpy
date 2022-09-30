@@ -1,6 +1,5 @@
 # The NONMEM Model class
 
-import shutil
 import warnings
 from io import StringIO
 from pathlib import Path
@@ -117,7 +116,6 @@ class Model(pharmpy.model.Model):
         self.datainfo = di
         self._old_datainfo = di
         self._initial_individual_estimates_updated = False
-        self._updated_etas_file = None
         self._dataset_updated = False
         self._parent_model = None
 
@@ -339,22 +337,13 @@ class Model(pharmpy.model.Model):
             else:
                 record = self.internals.control_stream.append_record('$ETAS ')
             record.path = phi_path
-        elif self._updated_etas_file:
-            eta_records = self.internals.control_stream.get_records('ETAS')
-            if eta_records:
-                record = eta_records[0]
-            else:
-                record = self.internals.control_stream.append_record('$ETAS')
-            shutil.copy(self._updated_etas_file, phi_path)
-            record.path = phi_path
 
-        if self._initial_individual_estimates_updated or self._updated_etas_file:
+        if self._initial_individual_estimates_updated:
             first_est_record = self.internals.control_stream.get_records('ESTIMATION')[0]
             try:
                 first_est_record.option_pairs['MCETA']
             except KeyError:
                 first_est_record.set_option('MCETA', 1)
-            self._updated_etas_file = None
             self._initial_individual_estimates_updated = False
 
     def validate(self):
@@ -383,7 +372,6 @@ class Model(pharmpy.model.Model):
             estimates = self._sort_eta_columns(estimates)
         self._initial_individual_estimates = estimates
         self._initial_individual_estimates_updated = True
-        self._updated_etas_file = None
 
     def _sort_eta_columns(self, df):
         return df.reindex(sorted(df.columns), axis=1)
