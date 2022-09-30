@@ -384,14 +384,6 @@ class Model(pharmpy.model.Model):
     def _sort_eta_columns(self, df):
         return df.reindex(sorted(df.columns), axis=1)
 
-    def replace_abbr(self, replace):
-        for key, value in replace.items():
-            try:
-                self.parameters[key].name = value
-            except KeyError:
-                pass
-        self.random_variables.rename(replace)
-
     @property
     def model_code(self):
         self.update_source(nofiles=True)
