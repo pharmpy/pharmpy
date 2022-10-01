@@ -221,8 +221,18 @@ class OmegaRecord(Record):
                     cholesky = True
         return fix, sd, corr, cholesky
 
-    def _rv_name(self, num):
+    def _rv_name(self, num, numetas, var_name, first):
         if self.name == 'OMEGA':
+            if var_name is not None:
+                if var_name.startswith('IIV_'):
+                    return f'ETA_{var_name[4:]}'
+                if var_name.startswith('OMEGA_IOV_'):
+                    try:
+                        i = int(var_name[10:])
+                        j = 1 + (num - first) // numetas
+                        return f'ETA_IOV_{i}_{j}'
+                    except ValueError:
+                        pass
             rv_name = 'ETA'
         else:
             rv_name = 'EPS'
@@ -438,7 +448,7 @@ class OmegaRecord(Record):
             numetas = len(list(self.root.subtrees('diag_item')))
             for _ in range(numetas):
                 omega_name = rev_map[(i, i)]
-                name = self._rv_name(i)
+                name = self._rv_name(i, numetas, omega_name, start_omega)
                 dist = NormalDistribution.create(name, level, 0, sympy.Symbol(omega_name))
                 dists.append(dist)
                 etas.append(name)
@@ -459,7 +469,17 @@ class OmegaRecord(Record):
                 or (previous_cov == 'ZERO' and same)
             )
             if numetas >= 2:
-                names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
+                names = [
+                    self._rv_name(
+                        i,
+                        numetas,
+                        str(previous_cov[i - start_omega, i - start_omega])
+                        if same
+                        else rev_map.get((i, i)),
+                        previous_start_omega if same else start_omega,
+                    )
+                    for i in range(start_omega, start_omega + numetas)
+                ]
                 if all_zero_fix:
                     zero_fix = names
                 means = [0] * numetas
@@ -483,7 +503,9 @@ class OmegaRecord(Record):
                     rvs = RandomVariables.create((dist,))
             else:
                 sym = previous_cov if same else sympy.Symbol(rev_map[(start_omega, start_omega)])
-                name = self._rv_name(start_omega)
+                name = self._rv_name(
+                    start_omega, 1, str(sym), previous_start_omega if same else start_omega
+                )
                 if all_zero_fix:
                     zero_fix = [name]
                 dist = NormalDistribution.create(name, level, 0, sym)

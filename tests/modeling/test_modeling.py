@@ -9,6 +9,7 @@ import pandas as pd
 import pytest
 import sympy
 
+from pharmpy.config import ConfigurationContext
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import (
     add_iiv,
@@ -47,6 +48,7 @@ from pharmpy.modeling import (
     update_inits,
 )
 from pharmpy.modeling.odes import find_clearance_parameters, find_volume_parameters
+from pharmpy.plugins.nonmem import conf
 
 
 def test_set_first_order_elimination(load_model_for_test, testdata):
@@ -3434,6 +3436,22 @@ def test_add_pk_iiv_2(load_model_for_test, pheno_path):
     add_pk_iiv(model)
     iivs = set(model.random_variables.iiv.names)
     assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
+
+
+def test_add_pk_iiv_3(load_model_for_test, testdata):
+    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
+        model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+        iivs = set(model.random_variables.iiv.names)
+        assert iivs == {'ETA_CL', 'ETA_VC', 'ETA_MAT'}
+        add_pk_iiv(model)
+        iivs = set(model.random_variables.iiv.names)
+        assert iivs == {'ETA_CL', 'ETA_VC', 'ETA_MAT'}
+        set_seq_zo_fo_absorption(model)
+        iivs = set(model.random_variables.iiv.names)
+        assert iivs == {'ETA_CL', 'ETA_VC', 'ETA_MAT'}
+        add_pk_iiv(model)
+        iivs = set(model.random_variables.iiv.names)
+        assert iivs == {'ETA_CL', 'ETA_VC', 'ETA_MAT', 'ETA_MDT'}
 
 
 def test_add_pk_iiv_nested_params(load_model_for_test, pheno_path):

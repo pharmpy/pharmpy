@@ -138,16 +138,11 @@ def create_name_trans(control_stream, rvs, statements):
 
     abbr = control_stream.abbreviated.replace
     pset_current = {
-        **parameter_translation(control_stream, reverse=True),
         **{rv: rv for rv in rvs.names},
+        **parameter_translation(control_stream, reverse=True),
     }
     sset_current = {
         **abbr,
-        **{
-            rv: rv
-            for rv in rvs.names
-            if rv not in abbr.keys() and sympy.Symbol(rv) in statements.free_symbols
-        },
         **{
             p: p
             for p in pset_current.values()
@@ -171,8 +166,9 @@ def create_name_trans(control_stream, rvs, statements):
             if sympy.Symbol(name_new) in clashing_symbols or name_nonmem in names_sset_translated:
                 continue
 
-            name_in_sset_current = {v: k for k, v in sset_current.items()}[name_nonmem]
-            trans_sset[name_in_sset_current] = name_new
+            # name_in_sset_current = {v: k for k, v in sset_current.items()}[name_nonmem]
+            # trans_sset[name_in_sset_current] = name_new
+            trans_sset[name_current] = name_new
             names_sset_translated.append(name_nonmem)
 
             if name_nonmem in pset_current.values() and name_new in pset_current.keys():

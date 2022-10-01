@@ -20,6 +20,10 @@ def parameter_translation(
         for key, value in record.name_map.items():
             nonmem_name = f'OMEGA({value[0]},{value[1]})'
             d[nonmem_name] = key
+            if value[0] == value[1]:
+                if key.startswith('IIV_'):
+                    nonmem_name = f'ETA({value[0]})'
+                    d[nonmem_name] = f'ETA_{key[4:]}'
     for record in control_stream.get_records('SIGMA'):
         for key, value in record.name_map.items():
             nonmem_name = f'SIGMA({value[0]},{value[1]})'

@@ -107,6 +107,7 @@ class NormalDistribution(Distribution):
     """
 
     def __init__(self, name: str, level: str, mean: sympy.Expr, variance: sympy.Expr):
+        assert isinstance(name, str)
         self._name = name
         self._level = level
         self._mean = mean
@@ -302,6 +303,7 @@ class JointNormalDistribution(Distribution):
     def __init__(
         self, names: Tuple[str, ...], level: str, mean: sympy.Matrix, variance: sympy.Matrix
     ):
+        assert isinstance(names, tuple) and all(map(lambda x: isinstance(x, str), names))
         self._names = names
         self._level = level
         self._mean = mean
