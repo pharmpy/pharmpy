@@ -134,9 +134,7 @@ class OmegaRecord(Record):
         try:
             self.name_map
         except AttributeError:
-            self.name_map = {
-                name: c for i, (name, c) in enumerate(zip([p.name for p in parameters], coords))
-            }
+            self.name_map = dict(zip((p.name for p in parameters), coords))
         return parameters, next_omega, size
 
     def _find_label(self, node, seen_labels):
