@@ -400,7 +400,7 @@ class DataInfo(Sequence):
         Character or regexp separator for dataset
     """
 
-    def __init__(self, columns=None, path=None, separator=','):
+    def __init__(self, columns=None, path=None, separator=',', force_absolute_path=True):
         if columns is None:
             self._columns = ()
         elif len(columns) > 0 and isinstance(columns[0], str):
@@ -412,9 +412,9 @@ class DataInfo(Sequence):
         else:
             self._columns = tuple(columns)
         if path is not None:
-            self._path = Path(path)
-        else:
-            self._path = path
+            path = Path(path)
+        assert not force_absolute_path or path is None or path.is_absolute()
+        self._path = path
         self._separator = separator
 
     def derive(self, **kwargs):
@@ -735,7 +735,7 @@ class DataInfo(Sequence):
             with open(path, 'w') as fp:
                 json.dump(
                     self._to_dict(
-                        str(path_relative_to(Path(path), self.path))
+                        str(path_relative_to(Path(path).parent, self.path))
                         if self.path is not None
                         else None
                     ),
@@ -775,7 +775,7 @@ class DataInfo(Sequence):
         if path:
             path = Path(path)
         separator = d.get('separator', None)
-        di = DataInfo(columns, path=path, separator=separator)
+        di = DataInfo(columns, path=path, separator=separator, force_absolute_path=False)
         return di
 
     @staticmethod

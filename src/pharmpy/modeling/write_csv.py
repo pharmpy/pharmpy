@@ -49,6 +49,7 @@ def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool
     if not force and path.exists():
         raise FileExistsError(f'File at {path} already exists.')
 
+    path = path.resolve()
     model.dataset.to_csv(path, na_rep=data.conf.na_rep, index=False)
-    model.datainfo = model.datainfo.derive(path=path.resolve())
+    model.datainfo = model.datainfo.derive(path=path)
     return path

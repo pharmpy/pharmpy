@@ -23,7 +23,7 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
 )
-from pharmpy.modeling.write_csv import write_csv
+from pharmpy.modeling.write_csv import create_dataset_path, write_csv
 from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
 from .nmtran_parser import NMTranControlStream, NMTranParser
@@ -267,15 +267,15 @@ class Model(pharmpy.model.Model):
         ):
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
             if self.datainfo.path is None:  # or self.datainfo.path == self._old_datainfo.path:
-                if path is not None:
-                    dir_path = path.parent
+                dir_path = Path(self.name + ".csv").resolve() if path is None else path.parent
+
+                if nofiles:
+                    datapath = create_dataset_path(self, path=dir_path)
                 else:
-                    dir_path = self.name + ".csv"
-                if not nofiles:
                     datapath = write_csv(self, path=dir_path, force=force)
-                    self.datainfo = self.datainfo.derive(path=datapath.name)
-                else:
-                    self.datainfo = self.datainfo.derive(path=Path(dir_path))
+
+                self.datainfo = self.datainfo.derive(path=datapath)
+
             data_record = self.internals.control_stream.get_records('DATA')[0]
 
             label = self.datainfo.names[0]
@@ -295,10 +295,8 @@ class Model(pharmpy.model.Model):
                     not datapath.exists() or datapath.is_file()
                 ), f'input path change, but no file exists at target {str(datapath)}'
                 data_record = self.internals.control_stream.get_records('DATA')[0]
-                if path is None:
-                    data_record.filename = str(datapath)
-                else:
-                    data_record.filename = str(path_relative_to(Path(path), datapath))
+                parent_path = Path('.') if path is None else path.parent
+                data_record.filename = str(path_relative_to(parent_path, datapath))
 
         update_sizes(self)
         update_estimation(self)

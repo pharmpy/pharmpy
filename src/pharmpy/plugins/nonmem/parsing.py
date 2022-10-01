@@ -571,14 +571,15 @@ def parse_column_info(control_stream):
 
 
 def parse_datainfo(control_stream, path) -> DataInfo:
-    dataset_path = parse_dataset_path(control_stream, path)
+    resolved_dataset_path = parse_dataset_path(control_stream, path)
     (colnames, drop, replacements, _) = parse_column_info(control_stream)
 
-    if dataset_path is not None:
-        path = dataset_path.with_suffix('.datainfo')
-        if path.is_file():
-            di = DataInfo.read_json(path)
-            di = di.derive(path=dataset_path)
+    if resolved_dataset_path is not None:
+        dipath = resolved_dataset_path.with_suffix('.datainfo')
+
+        if dipath.is_file():
+            di = DataInfo.read_json(dipath)
+            di = di.derive(path=resolved_dataset_path)
             different_drop = []
             for colinfo, coldrop in zip(di, drop):
                 if colinfo.drop != coldrop:
@@ -634,7 +635,7 @@ def parse_datainfo(control_stream, path) -> DataInfo:
             info = ColumnInfo(colname, drop=coldrop)
         column_info.append(info)
 
-    di = DataInfo(column_info, path=dataset_path)
+    di = DataInfo(column_info, path=resolved_dataset_path)
     return di
 
 
