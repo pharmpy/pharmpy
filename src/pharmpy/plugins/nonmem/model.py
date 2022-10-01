@@ -174,13 +174,13 @@ class Model(BaseModel):
 
         if (
             self.internals._dataset_updated
-            or self.datainfo != self.internals._old_datainfo
+            or self.datainfo.names[0] != self.internals._old_datainfo.names[0]
             or self.datainfo.path != self.internals._old_datainfo.path
         ):
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
-            if (
-                self.datainfo.path is None
-            ):  # or self.datainfo.path == self.internals._old_datainfo.path:
+            datapath_updated = True
+            if self.datainfo.path is None:  # or self.datainfo.path == self._old_datainfo.path:
+                datapath_updated = True
                 dir_path = Path(self.name + ".csv") if path is None else path.parent
 
                 if nofiles:
@@ -204,7 +204,7 @@ class Model(BaseModel):
             self.internals._old_datainfo = self.datainfo
 
             datapath = self.datainfo.path
-            if datapath is not None:
+            if datapath is not None and datapath_updated:
                 assert (
                     not datapath.exists() or datapath.is_file()
                 ), f'input path change, but no file exists at target {str(datapath)}'
