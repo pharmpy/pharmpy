@@ -2485,7 +2485,11 @@ def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
 
     model = create_model_for_test(model_with_iov)
 
+    print('BEFORE REMOVE')
+    print(model.random_variables)
     remove_iov(model)
+    print('AFTER REMOVE')
+    print(model.random_variables)
     model.update_source()
 
     assert (

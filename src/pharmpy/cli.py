@@ -611,6 +611,9 @@ def add_iov(args):
 
     add_iov(model, args.occ, etas, eta_names)
 
+    print(model.statements)
+    print(model.random_variables)
+
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
 

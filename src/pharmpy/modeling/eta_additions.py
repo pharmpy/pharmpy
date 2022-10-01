@@ -178,6 +178,8 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
 
     """
 
+    print('add_iov', (model, occ, list_of_parameters, eta_names, distribution))
+
     if distribution not in ADD_IOV_DISTRIBUTION:
         raise ValueError(f'"{distribution}" is not a valid value for distribution')
 

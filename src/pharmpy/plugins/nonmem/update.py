@@ -116,6 +116,10 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
 
 
 def update_random_variables(model: Model, old: RandomVariables, new: RandomVariables):
+    print('update_random_variables', model)
+    print('old', old)
+    print('new', new)
+
     if not hasattr(model, '_parameters'):
         model.parameters
 
@@ -127,6 +131,8 @@ def update_random_variables(model: Model, old: RandomVariables, new: RandomVaria
     ) + model.internals.control_stream.get_records('SIGMA'):
         comment_dict.update(omega_record.comment_map)
         current_names = omega_record.eta_map.keys()
+        print('RECORD')
+        print(omega_record.eta_map)
         for name in current_names:
             rec_dict[name] = omega_record
 
@@ -148,6 +154,9 @@ def update_random_variables(model: Model, old: RandomVariables, new: RandomVaria
 
 
 def update_random_variable_records(model: Model, rvs_diff, rec_dict, comment_dict):
+    print('update_random_variable_records', (model, {'comment_dict': comment_dict}))
+    print('rec_dict')
+    print({rv: id(rec) for rv, rec in rec_dict.items()})
     removed = []
     eta_number = 1
     number_of_records = 0
@@ -156,8 +165,12 @@ def update_random_variable_records(model: Model, rvs_diff, rec_dict, comment_dic
 
     rvs_removed = [RandomVariables.create(rvs).names for (op, rvs) in rvs_diff if op == -1]
     rvs_removed = [rv for sublist in rvs_removed for rv in sublist]
+    print('rvs_removed')
+    print(rvs_removed)
 
     for op, rvs in rvs_diff:
+        print(op)
+        print(rvs)
         if op == 1:
             if len(rvs) == 1:
                 create_omega_single(model, rvs, eta_number, number_of_records, comment_dict)
@@ -173,6 +186,9 @@ def update_random_variable_records(model: Model, rvs_diff, rec_dict, comment_dic
                 removed += list(recs_to_remove)
         else:
             diag_rvs = get_diagonal(rvs, rec_dict)
+            print('diag')
+            print('rvs', rvs)
+            print('diag_rvs', diag_rvs)
             # Account for etas in diagonal
             if diag_rvs:
                 # Create new diagonal record if any in record has been removed

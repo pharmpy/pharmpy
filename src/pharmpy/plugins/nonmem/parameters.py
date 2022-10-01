@@ -33,6 +33,7 @@ def parameter_translation(
                     d[nonmem_name] = f'ETA_IOV_{i}_1'
 
     # NOTE This takes care of the SAME IOV ETAs
+    print('eta_indexes', eta_indexes)
     next_eta = min(eta_indexes, default=1)
     assert next_eta == 1
     prev_start = 1
@@ -69,4 +70,5 @@ def parameter_translation(
         d = {val: key for key, val in d.items()}
     if as_symbols:
         d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in d.items()}
+    print('PARAMETER_TRANSLATION', d)
     return d

@@ -413,6 +413,7 @@ class OmegaRecord(Record):
         previous_start_omega - the index of the first omega in the previous omega block
         previous_cov - the matrix of the previous omega block
         """
+        print('RANDOM_VARIABLES CALL')
         all_zero_fix = False
         same = bool(self.root.find('same'))
 
@@ -519,6 +520,9 @@ class OmegaRecord(Record):
         return rvs, start_omega + numetas, next_start, next_cov, zero_fix
 
     def renumber(self, new_start):
+        print('RENUMBER')
+        print(self.eta_map)
+        print(self.name_map)
         old_start = min(self.eta_map.values())
         if new_start != old_start:
             for name in self.eta_map:
@@ -529,6 +533,9 @@ class OmegaRecord(Record):
                     old_row + new_start - old_start,
                     old_col + new_start - old_start,
                 )
+        print('DONE')
+        print(self.eta_map)
+        print(self.name_map)
 
     def remove(self, names):
         """Remove some etas from block given eta names"""
