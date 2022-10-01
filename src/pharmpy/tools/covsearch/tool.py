@@ -171,6 +171,8 @@ def create_workflow(
     results_task = Task(
         'results',
         task_results,
+        p_forward,
+        p_backward,
     )
 
     wf.add_task(results_task, predecessors=search_output)
@@ -373,14 +375,16 @@ def task_remove_covariate_effect(
     return model_with_removed_effect
 
 
-def task_results(state: SearchState):
+def task_results(p_forward: float, p_backward: float, state: SearchState):
     candidates = state.all_candidates_so_far
     models = list(map(lambda candidate: candidate.model, candidates))
     base_model, *res_models = models
     assert base_model is state.start_model
     best_model = state.best_candidate_so_far.model
 
-    res = create_results(COVSearchResults, base_model, base_model, res_models, 'lrt', None)
+    res = create_results(
+        COVSearchResults, base_model, base_model, res_models, 'lrt', (p_forward, p_backward)
+    )
 
     res.steps = _make_df_steps(best_model, candidates)
     res.candidate_summary = candidate_summary_dataframe(res.steps)

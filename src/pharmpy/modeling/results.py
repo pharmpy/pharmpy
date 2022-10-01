@@ -727,8 +727,13 @@ def rank_models(
         rank_value = _get_rankval(model, rank_type, bic_type)
         if rank_type == 'lrt':
             parent = model_dict[model.parent_model]
-            # FIXME Handle passing forward and backward alphas
-            co = cutoff if cutoff is not None else 0.01 if lrt_df(parent, model) < 0 else 0.05
+            if cutoff is None:
+                co = 0.05 if lrt_df(parent, model) >= 0 else 0.01
+            elif isinstance(cutoff, tuple):
+                co = cutoff[0] if lrt_df(parent, model) >= 0 else cutoff[1]
+            else:
+                assert isinstance(cutoff, (float, int))
+                co = cutoff
             if not lrt_test(parent, model, co):
                 continue
         elif cutoff is not None:
