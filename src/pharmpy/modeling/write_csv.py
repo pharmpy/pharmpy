@@ -1,14 +1,31 @@
 from pathlib import Path
+from typing import Optional, Union
+
+from pharmpy.model import Model
 
 
-def write_csv(model, path=None, force=False):
-    """Write dataset to a csv file
+def create_dataset_path(model: Model, path: Optional[Union[str, Path]] = None) -> Path:
+    path = Path("" if path is None else path)
+
+    if path and not path.is_dir():
+        return path
+
+    if (di_path := model.datainfo.path) is None:
+        filename = f"{model.name}.csv"
+    else:
+        filename = di_path.with_suffix('.csv').name
+
+    return path / filename
+
+
+def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool = False) -> Path:
+    """Write dataset to a csv file and updates the datainfo path
 
     Parameters
     ----------
     model : Model
         Model whose dataset to write to file
-    path : Path
+    path : None or str or Path
         Destination path. Default is to use original path with .csv suffix.
     force : bool
         Overwrite file with same path. Default is False.
@@ -28,16 +45,7 @@ def write_csv(model, path=None, force=False):
     """
     from pharmpy.model import data
 
-    if path is None:
-        path = Path("")
-    else:
-        path = Path(path)
-    if not path or path.is_dir():
-        try:
-            filename = f"{model.datainfo.path.with_suffix('.csv').name}"
-        except AttributeError:
-            filename = f"{model.name + '.csv'}"
-        path /= filename
+    path = create_dataset_path(model, path)
     if not force and path.exists():
         raise FileExistsError(f'File at {path} already exists.')
 
