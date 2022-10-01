@@ -363,7 +363,7 @@ class RandomVariables(Sequence):
     def epsilons(self):
         """Get only the epsilons"""
         return RandomVariables(
-            tuple([dist for dist in self._dists if dist.level in self._epsilon_levels.names]),
+            tuple(dist for dist in self._dists if dist.level in self._epsilon_levels.names),
             self._eta_levels,
             self._epsilon_levels,
         )
@@ -372,7 +372,7 @@ class RandomVariables(Sequence):
     def etas(self):
         """Get only the etas"""
         return RandomVariables(
-            tuple([dist for dist in self._dists if dist.level in self._eta_levels.names]),
+            tuple(dist for dist in self._dists if dist.level in self._eta_levels.names),
             self._eta_levels,
             self._epsilon_levels,
         )
@@ -381,7 +381,7 @@ class RandomVariables(Sequence):
     def iiv(self):
         """Get only the iiv etas, i.e. etas with variability level 0"""
         return RandomVariables(
-            tuple([dist for dist in self._dists if dist.level == self._eta_levels[0].name]),
+            tuple(dist for dist in self._dists if dist.level == self._eta_levels[0].name),
             self._eta_levels,
             self._epsilon_levels,
         )
@@ -390,7 +390,7 @@ class RandomVariables(Sequence):
     def iov(self):
         """Get only the iov etas, i.e. etas with variability level 1"""
         return RandomVariables(
-            tuple([dist for dist in self._dists if dist.level == self._eta_levels[1].name]),
+            tuple(dist for dist in self._dists if dist.level == self._eta_levels[1].name),
             self._eta_levels,
             self._epsilon_levels,
         )

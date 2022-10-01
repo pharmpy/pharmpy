@@ -138,7 +138,7 @@ def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
     rvs_removed = [RandomVariables.create(rvs).names for (op, rvs) in rvs_diff if op == -1]
     rvs_removed = [rv for sublist in rvs_removed for rv in sublist]
 
-    for i, (op, rvs) in enumerate(rvs_diff):
+    for op, rvs in rvs_diff:
         if op == 1:
             if len(rvs) == 1:
                 create_omega_single(model, rvs, eta_number, number_of_records, comment_dict)

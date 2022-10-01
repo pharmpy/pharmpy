@@ -150,18 +150,6 @@ class NMTranControlStream:
                     first = False
         self.records = keep
 
-    def go_through_omega_rec(self):
-        next_omega = 1
-        previous_size = None
-        prev_cov = None
-
-        for omega_record in self.get_records('OMEGA'):
-            next_omega_cur = next_omega
-            omegas, next_omega, previous_size = omega_record.parameters(
-                next_omega_cur, previous_size
-            )
-            etas, next_eta, prev_cov, _ = omega_record.random_variables(next_omega_cur, prev_cov)
-
     def get_pred_pk_record(self):
         pred = self.get_records('PRED')
 

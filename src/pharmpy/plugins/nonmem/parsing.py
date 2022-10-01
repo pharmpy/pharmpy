@@ -47,16 +47,22 @@ def parse_parameters(control_stream):
 def parse_random_variables(control_stream):
     dists = RandomVariables.create([])
     next_omega = 1
+    prev_start = 1
     prev_cov = None
 
     for omega_record in control_stream.get_records('OMEGA'):
-        etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
+        etas, next_omega, prev_start, prev_cov, _ = omega_record.random_variables(
+            next_omega, prev_start, prev_cov
+        )
         dists += etas
     dists = _adjust_iovs(dists)
     next_sigma = 1
+    prev_start = 1
     prev_cov = None
     for sigma_record in control_stream.get_records('SIGMA'):
-        epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
+        epsilons, next_sigma, prev_start, prev_cov, _ = sigma_record.random_variables(
+            next_sigma, prev_start, prev_cov
+        )
         dists += epsilons
     rvs = RandomVariables.create(dists)
     return rvs
@@ -88,19 +94,22 @@ def parse_statements(model):
 
 
 def _adjust_iovs(rvs):
-    updated = []
-    for i, dist in enumerate(rvs):
-        try:
-            next_dist = rvs[i + 1]
-        except IndexError:
-            updated.append(dist)
-            break
+    n = len(rvs)
+    if n <= 1:
+        return rvs
 
+    updated = []
+    for i in range(n - 1):
+        dist, next_dist = rvs[i], rvs[i + 1]
         if dist.level != 'IOV' and next_dist.level == 'IOV':
+            # NOTE The first distribution for an IOV will have been parsed as
+            # IIV since we did not know what came after.
             new_dist = dist.derive(level='IOV')
             updated.append(new_dist)
         else:
             updated.append(dist)
+
+    updated.append(rvs[-1])  # NOTE The last distribution does not need update
     return RandomVariables.create(updated)
 
 

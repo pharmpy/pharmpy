@@ -636,7 +636,7 @@ def remove_unused_parameters_and_rvs(model):
     new_dists = []
     for dist in rvs:
         if isinstance(dist, NormalDistribution):
-            if sympy.Symbol(dist.names[0]) in symbols or not symbols.isdisjoint(dist.free_symbols):
+            if not symbols.isdisjoint(dist.free_symbols):
                 new_dists.append(dist)
         else:
             new_dists.append(dist)
