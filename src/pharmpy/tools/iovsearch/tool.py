@@ -140,7 +140,7 @@ def task_brute_force_search(
     iov = model_with_iov.random_variables.iov
     # NOTE We only need to remove the IOV ETA corresponding to the first
     # category in order to remove all IOV ETAs of the other categories
-    all_iov_parameters = list(filter(lambda name: name.endswith('_1'), list(iov.names)))
+    all_iov_parameters = list(filter(lambda name: name.endswith('_1'), iov.names))
     no_of_models = 1
     wf = wf_etas_removal(
         remove_iov, model_with_iov, non_empty_proper_subsets(all_iov_parameters), no_of_models + 1
@@ -196,22 +196,24 @@ def wf_etas_removal(
     remove: Callable[[Model, List[str]], None],
     model: Model,
     etas_subsets: Iterable[Tuple[str]],
-    n: float,
+    i: int,
 ):
     wf = Workflow()
-    for i, subset_of_iiv_parameters in enumerate(etas_subsets):
+    j = i
+    for subset_of_iiv_parameters in etas_subsets:
         task = Task(
             repr(subset_of_iiv_parameters),
             task_remove_etas_subset,
             remove,
             model,
             list(subset_of_iiv_parameters),
-            n,
+            j,
         )
         wf.add_task(task)
-        n += 1
+        j += 1
 
-    wf_fit = create_fit_workflow(n=i + 1)
+    n = j - i
+    wf_fit = create_fit_workflow(n=n)
     wf.insert_workflow(wf_fit)
 
     task_gather = Task('gather', lambda *models: models)
