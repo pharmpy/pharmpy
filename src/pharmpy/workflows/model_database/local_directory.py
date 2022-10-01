@@ -5,6 +5,7 @@ from os import stat
 from pathlib import Path
 from typing import Union
 
+from pharmpy.internals.fs import path_absolute
 from pharmpy.lock import path_lock
 from pharmpy.model import DataInfo, Model
 from pharmpy.utils import hash_df
@@ -64,7 +65,7 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
         path = Path(path)
         if not path.exists():
             path.mkdir(parents=True)
-        self.path = path.resolve()
+        self.path = path_absolute(path)
         self.file_extension = file_extension
         self.ignored_names = frozenset(('stdout', 'stderr', 'nonmem.json', 'nlmixr.json'))
 
@@ -137,7 +138,7 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
         path = Path(path)
         if not path.exists():
             path.mkdir(parents=True)
-        self.path = path.resolve()
+        self.path = path_absolute(path)
         self.file_extension = file_extension
 
     def _read_lock(self):
@@ -231,7 +232,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             index_path = h_dir / model_filename
             index_path.touch()
 
-            data_path = (datasets_path / model_filename).resolve()
+            data_path = path_absolute(datasets_path / model_filename)
             model.datainfo = model.datainfo.derive(path=data_path)
 
             write_csv(model, path=data_path, force=True)

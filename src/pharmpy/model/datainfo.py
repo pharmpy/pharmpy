@@ -9,7 +9,7 @@ from typing import Optional, Union, overload
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.fs import path_relative_to
+from pharmpy.internals.fs import path_absolute, path_relative_to
 from pharmpy.utils import parse_units
 
 
@@ -798,7 +798,7 @@ class DataInfo(Sequence):
         return (
             di
             if di.path is None or di.path.is_absolute()
-            else di.derive(path=(Path(path).parent / di.path).resolve(strict=False))
+            else di.derive(path=path_absolute(Path(path).parent / di.path))
         )
 
     def __repr__(self):

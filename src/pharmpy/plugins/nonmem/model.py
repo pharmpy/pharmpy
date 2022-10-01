@@ -267,7 +267,7 @@ class Model(pharmpy.model.Model):
         ):
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
             if self.datainfo.path is None:  # or self.datainfo.path == self._old_datainfo.path:
-                dir_path = Path(self.name + ".csv").resolve() if path is None else path.parent
+                dir_path = Path(self.name + ".csv") if path is None else path.parent
 
                 if nofiles:
                     datapath = create_dataset_path(self, path=dir_path)

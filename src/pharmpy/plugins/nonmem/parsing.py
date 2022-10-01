@@ -7,6 +7,7 @@ from typing import Optional
 import pharmpy.plugins.nonmem
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
+from pharmpy.internals.fs import path_absolute
 from pharmpy.model import (
     Assignment,
     ColumnInfo,
@@ -476,16 +477,15 @@ def parse_initial_individual_estimates(control_stream, rvs, basepath) -> Optiona
 
 def parse_dataset_path(control_stream, basepath) -> Optional[Path]:
     record = next(iter(control_stream.get_records('DATA')), None)
+
     if record is None:
         return None
+
     path = Path(record.filename)
-    if not path.is_absolute():
-        if basepath is not None:
-            path = basepath.parent / path
-    try:
-        return path.resolve()
-    except FileNotFoundError:
-        return path
+    if basepath is not None and not path.is_absolute():
+        path = basepath.parent / path
+
+    return path_absolute(path)
 
 
 def _synonym(key, value):
