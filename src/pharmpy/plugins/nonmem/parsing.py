@@ -47,16 +47,22 @@ def parse_parameters(control_stream):
 def parse_random_variables(control_stream):
     dists = RandomVariables.create([])
     next_omega = 1
+    prev_start = 1
     prev_cov = None
 
     for omega_record in control_stream.get_records('OMEGA'):
-        etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
+        etas, next_omega, prev_start, prev_cov, _ = omega_record.random_variables(
+            next_omega, prev_start, prev_cov
+        )
         dists += etas
     dists = _adjust_iovs(dists)
     next_sigma = 1
+    prev_start = 1
     prev_cov = None
     for sigma_record in control_stream.get_records('SIGMA'):
-        epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
+        epsilons, next_sigma, prev_start, prev_cov, _ = sigma_record.random_variables(
+            next_sigma, prev_start, prev_cov
+        )
         dists += epsilons
     rvs = RandomVariables.create(dists)
     return rvs

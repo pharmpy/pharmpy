@@ -1,6 +1,7 @@
 import math
 import re
 import warnings
+from typing import List, Literal, Optional, Tuple, Union
 
 import pharmpy.math
 from pharmpy.deps import numpy as np
@@ -365,10 +366,22 @@ class OmegaRecord(Record):
             next_omega = first_omega + size
         return next_omega, size
 
-    def random_variables(self, start_omega, previous_cov=None):
+    def random_variables(
+        self,
+        start_omega: int,
+        previous_start_omega: int,
+        previous_cov: Optional[Union[sympy.Symbol, sympy.Matrix]],
+    ) -> Tuple[
+        RandomVariables,
+        int,
+        int,
+        Union[str, Literal['ZERO'], sympy.Symbol, sympy.Matrix],
+        List[str],
+    ]:
         """Get RandomVariables for this omega record
 
-        start_omega - the first omega in this record
+        start_omega - the index of the first omega in this record
+        previous_start_omega - the index of the first omega in the previous omega block
         previous_cov - the matrix of the previous omega block
         """
         all_zero_fix = False
@@ -382,6 +395,7 @@ class OmegaRecord(Record):
         else:
             level = 'RUV'
 
+        name_map = {}
         if not hasattr(self, 'name_map') and not same:
             if isinstance(previous_cov, sympy.Symbol):
                 prev_size = 1
@@ -391,47 +405,47 @@ class OmegaRecord(Record):
                 prev_size = None
             self.parameters(start_omega, prev_size)
         if hasattr(self, 'name_map'):
-            rev_map = {value: key for key, value in self.name_map.items()}
+            name_map = self.name_map
+        rev_map = {value: key for key, value in name_map.items()}
         next_cov = None  # The cov matrix if a block
+        next_start = previous_start_omega if same else start_omega
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')
         zero_fix = []
-        etas = []
         if not (block or bare_block):
-            rvs = RandomVariables.create([])
+            dists = []
+            etas = []
             i = start_omega
             numetas = len(self.root.all('diag_item'))
-            for node in self.root.all('diag_item'):
+            for _ in self.root.all('diag_item'):
+                omega_name = rev_map[(i, i)]
                 name = self._rv_name(i)
-                eta = NormalDistribution.create(name, level, 0, sympy.Symbol(rev_map[(i, i)]))
-                rvs += eta
-                etas.append(eta.names[0])
+                dist = NormalDistribution.create(name, level, 0, sympy.Symbol(omega_name))
+                dists.append(dist)
+                etas.append(name)
                 i += 1
+            rvs = RandomVariables.create(dists)
         else:
             if bare_block:
                 numetas = previous_cov.rows
             else:
                 numetas = self.root.block.size.INT
-            params, _, _ = self.parameters(
-                start_omega, previous_cov.rows if hasattr(previous_cov, 'rows') else None
+            params, _, _ = self.parameters(start_omega, getattr(previous_cov, 'rows', None))
+            all_zero_fix = (
+                all(param.init == 0 and param.fix for param in params)
+                and len(params) > 0
+                or (previous_cov == 'ZERO' and same)
             )
-            all_zero_fix = True
-            for param in params:
-                if not (param.init == 0 and param.fix):
-                    all_zero_fix = False
-            if all_zero_fix and len(params) > 0 or (previous_cov == 'ZERO' and same):
-                all_zero_fix = True
-            else:
-                all_zero_fix = False
-            if numetas > 1:
+            if numetas >= 2:
                 names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
                 if all_zero_fix:
                     zero_fix = names
                 means = [0] * numetas
                 if same:
-                    rvs = JointNormalDistribution.create(names, level, means, previous_cov)
-                    etas = rvs.names
                     next_cov = previous_cov
+                    dist = JointNormalDistribution.create(names, level, means, previous_cov)
+                    etas = dist.names
+                    rvs = RandomVariables.create((dist,))
                 else:
                     cov = sympy.zeros(numetas)
                     for row in range(numetas):
@@ -442,26 +456,23 @@ class OmegaRecord(Record):
                             if row != col:
                                 cov[col, row] = cov[row, col]
                     next_cov = cov
-                    rvs = JointNormalDistribution.create(names, level, means, cov)
-                    etas = rvs.names
+                    dist = JointNormalDistribution.create(names, level, means, cov)
+                    etas = dist.names
+                    rvs = RandomVariables.create((dist,))
             else:
-                rvs = RandomVariables.create(())
+                sym = previous_cov if same else sympy.Symbol(rev_map[(start_omega, start_omega)])
                 name = self._rv_name(start_omega)
                 if all_zero_fix:
                     zero_fix = [name]
-                if same:
-                    sym = previous_cov
-                else:
-                    sym = sympy.Symbol(rev_map[(start_omega, start_omega)])
-                eta = NormalDistribution.create(name, level, 0, sym)
+                dist = NormalDistribution.create(name, level, 0, sym)
                 next_cov = sym
-                rvs += eta
-                etas.append(name)
+                etas = [name]
+                rvs = RandomVariables.create((dist,))
 
         self.eta_map = {eta: start_omega + i for i, eta in enumerate(etas)}
         if all_zero_fix:
             next_cov = 'ZERO'
-        return rvs, start_omega + numetas, next_cov, zero_fix
+        return rvs, start_omega + numetas, next_start, next_cov, zero_fix
 
     def renumber(self, new_start):
         old_start = min(self.eta_map.values())
