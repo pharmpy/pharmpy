@@ -88,19 +88,22 @@ def parse_statements(model):
 
 
 def _adjust_iovs(rvs):
-    updated = []
-    for i, dist in enumerate(rvs):
-        try:
-            next_dist = rvs[i + 1]
-        except IndexError:
-            updated.append(dist)
-            break
+    n = len(rvs)
+    if n <= 1:
+        return rvs
 
+    updated = []
+    for i in range(n - 1):
+        dist, next_dist = rvs[i], rvs[i + 1]
         if dist.level != 'IOV' and next_dist.level == 'IOV':
+            # NOTE The first distribution for an IOV will have been parsed as
+            # IIV since we did not know what came after.
             new_dist = dist.derive(level='IOV')
             updated.append(new_dist)
         else:
             updated.append(dist)
+
+    updated.append(rvs[-1])  # NOTE The last distribution does not need update
     return RandomVariables.create(updated)
 
 
