@@ -2496,6 +2496,8 @@ def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
 
     assert rec_omega == '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n'
 
+
+def test_remove_iov_no_iovs(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
     with pytest.warns(UserWarning):
