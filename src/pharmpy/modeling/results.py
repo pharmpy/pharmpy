@@ -18,6 +18,7 @@ from pharmpy.model.random_variables import (
 )
 
 from .data import get_ids, get_observations
+from .lrt import degrees_of_freedom as lrt_df
 from .lrt import test as lrt_test
 from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
 
@@ -725,7 +726,10 @@ def rank_models(
 
         rank_value = _get_rankval(model, rank_type, bic_type)
         if rank_type == 'lrt':
-            if not lrt_test(model_dict[model.parent_model], model, cutoff):
+            parent = model_dict[model.parent_model]
+            # FIXME Handle passing forward and backward alphas
+            co = cutoff if cutoff is not None else 0.01 if lrt_df(parent, model) < 0 else 0.05
+            if not lrt_test(parent, model, co):
                 continue
         elif cutoff is not None:
             if ref_value - rank_value <= cutoff:

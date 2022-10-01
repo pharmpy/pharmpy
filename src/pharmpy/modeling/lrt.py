@@ -21,12 +21,12 @@ def _best_by_ofv(models: Iterable[Model], default: Union[None, Model] = None) ->
         return min(models, key=_ofv, default=default)
 
 
-def _df(parent: Model, child: Model) -> int:
+def degrees_of_freedom(parent: Model, child: Model) -> int:
     return len(child.parameters) - len(parent.parameters)
 
 
 def cutoff(parent: Model, child: Model, alpha: float) -> float:
-    df = _df(parent, child)
+    df = degrees_of_freedom(parent, child)
     return (
         0
         if df == 0
@@ -38,7 +38,7 @@ def cutoff(parent: Model, child: Model, alpha: float) -> float:
 
 def p_value(parent: Model, child: Model) -> float:
     x = _dofv(parent, child)
-    df = _df(parent, child)
+    df = degrees_of_freedom(parent, child)
     return float(stats.chi2.sf(x=x, df=df))
 
 

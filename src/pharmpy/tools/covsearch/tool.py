@@ -380,7 +380,7 @@ def task_results(state: SearchState):
     assert base_model is state.start_model
     best_model = state.best_candidate_so_far.model
 
-    res = create_results(COVSearchResults, base_model, base_model, res_models, 'bic', None)
+    res = create_results(COVSearchResults, base_model, base_model, res_models, 'lrt', None)
 
     res.steps = _make_df_steps(best_model, candidates)
     res.candidate_summary = candidate_summary_dataframe(res.steps)
