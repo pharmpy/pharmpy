@@ -45,7 +45,7 @@ def parse_parameters(control_stream):
 
 
 def parse_random_variables(control_stream):
-    dists = RandomVariables.create([])
+    dists = RandomVariables.create(())
     next_omega = 1
     prev_start = 1
     prev_cov = None
