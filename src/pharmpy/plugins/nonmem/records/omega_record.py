@@ -226,13 +226,6 @@ class OmegaRecord(Record):
             rv_name = 'EPS'
         return f'{rv_name}({num})'
 
-    def _rv_vector_name(self, omega_numbers):
-        rv_strs = []
-        for om in omega_numbers:
-            name = self._rv_name(om)
-            rv_strs.append(name)
-        return '(' + ', '.join(rv_strs) + ')'
-
     def _get_param_name(self, row, col):
         """Get the name of the current OMEGA/SIGMA at (row, col)"""
         return next(key for key, value in self.name_map.items() if value == (row, col))
