@@ -638,7 +638,7 @@ def remove_unused_parameters_and_rvs(model):
                 symb = sympy.Symbol(name)
                 if symb not in symbols and symbols.isdisjoint(params):
                     to_unjoin.append(name)
-
+    print('to_unjoin', to_unjoin)
     rvs = model.random_variables.unjoin(to_unjoin)
 
     new_dists = []

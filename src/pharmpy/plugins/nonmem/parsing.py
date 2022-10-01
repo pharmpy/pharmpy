@@ -144,6 +144,11 @@ def create_name_trans(control_stream, rvs, statements):
     sset_current = {
         **abbr,
         **{
+            rv: rv
+            for rv in rvs.names
+            if rv not in abbr.keys() and sympy.Symbol(rv) in statements.free_symbols
+        },
+        **{
             p: p
             for p in pset_current.values()
             if p not in abbr.keys() and sympy.Symbol(p) in statements.free_symbols

@@ -2535,6 +2535,25 @@ def test_remove_iov_github_issues_538_and_561_2(load_model_for_test, testdata):
     }
 
 
+def test_remove_iov_with_names(load_model_for_test, testdata):
+
+    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
+        m = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6_with_iov_names.mod')
+
+        remove_iov(m, 'ETA_IOV_1_1')
+
+        assert set(m.random_variables.iov.names) == {
+            'ETA_IOV_2_1',
+            'ETA_IOV_2_2',
+            'ETA_IOV_2_3',
+            'ETA_IOV_2_4',
+            'ETA_IOV_2_5',
+            'ETA_IOV_2_6',
+            'ETA_IOV_2_7',
+            'ETA_IOV_2_8',
+        }
+
+
 def test_remove_iov_diagonal(create_model_for_test):
     model = create_model_for_test(
         '''$PROBLEM PHENOBARB SIMPLE MODEL

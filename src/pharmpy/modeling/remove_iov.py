@@ -41,8 +41,11 @@ def remove_iov(model, to_remove=None):
     add_pk_iiv
 
     """
+    print('remove_iov', model, to_remove)
+    print('=' * 80, model.description, model.random_variables, '=' * 80, sep='\n')
     rvs, sset = model.random_variables, model.statements
     etas = _get_iov_etas(model, to_remove)
+    print('etas', etas)
     if not etas:
         warnings.warn('No IOVs present')
         return model
@@ -51,6 +54,7 @@ def remove_iov(model, to_remove=None):
     model.random_variables = rvs[keep]
 
     d = {sympy.Symbol(name): 0 for name in etas}
+    print('d', d)
     model.statements = sset.subs(d)
 
     remove_unused_parameters_and_rvs(model)

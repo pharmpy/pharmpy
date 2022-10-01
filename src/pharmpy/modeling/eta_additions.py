@@ -258,8 +258,10 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
             eta_names[(i - 1) * len(categories) + k - 1] if eta_names else f'ETA_{iov_name(i)}_{k}'
         )
 
+    named = 'NAMED_' if eta_names else ''
+
     def omega_iov_name(i, j):
-        return f'OMEGA_{iov_name(i)}' if i == j else f'OMEGA_{iov_name(i)}_{j}'
+        return f'OMEGA_{named}{iov_name(i)}' if i == j else f'OMEGA_{named}{iov_name(i)}_{j}'
 
     def iov_name(i):
         return f'IOV_{first_iov_number + i - 1}'

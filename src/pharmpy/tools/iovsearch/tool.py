@@ -131,6 +131,7 @@ def task_brute_force_search(
 
     current_step = 0
     step_mapping = {current_step: [model.name]}
+    print('list_of_parameters', list_of_parameters)
 
     # NOTE Check that model has at least one IIV.
     if not list_of_parameters:
@@ -143,6 +144,15 @@ def task_brute_force_search(
     # TODO should we exclude already present IOVs?
     add_iov(model_with_iov, occ, list_of_parameters, distribution=distribution)
     model_with_iov.description = _create_description(model_with_iov)
+    print(
+        '=' * 80,
+        model_with_iov.description,
+        model_with_iov.random_variables,
+        '>' * 80,
+        model_with_iov.model_code,
+        '=' * 80,
+        sep='\n',
+    )
     # NOTE Fit the new model.
     wf = create_fit_workflow(models=[model_with_iov])
     model_with_iov = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs', context)
@@ -152,6 +162,7 @@ def task_brute_force_search(
     iov = model_with_iov.random_variables.iov
     # NOTE We only need to remove the IOV ETA corresponding to the first
     # category in order to remove all IOV ETAs of the other categories
+    print('iov.names', iov.names)
     all_iov_parameters = list(filter(lambda name: name.endswith('_1'), iov.names))
     no_of_models = 1
     wf = wf_etas_removal(
@@ -170,10 +181,13 @@ def task_brute_force_search(
 
     current_step += 1
     step_mapping[current_step] = [model_with_iov.name] + [model.name for model in iov_candidates]
+    print([model, model_with_iov, *iov_candidates])
 
     # NOTE If no improvement with respect to input model, STOP.
     if best_model_so_far is model:
         return step_mapping, [model, model_with_iov, *iov_candidates]
+
+    print('HAHA')
 
     # NOTE Remove IIV with corresponding IOVs. Test all subsets (~2^n).
     iiv_parameters_with_associated_iov = list(
@@ -211,6 +225,15 @@ def task_remove_etas_subset(
     update_initial_estimates(model_with_some_etas_removed)
     remove(model_with_some_etas_removed, subset)
     model_with_some_etas_removed.description = _create_description(model_with_some_etas_removed)
+    # print(
+    # '='*80,
+    # model_with_some_etas_removed.description,
+    # model_with_some_etas_removed.random_variables,
+    # '>'*80,
+    # model_with_some_etas_removed.model_code,
+    # '='*80,
+    # sep = '\n'
+    # )
     return model_with_some_etas_removed
 
 

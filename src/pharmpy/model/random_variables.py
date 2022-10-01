@@ -219,6 +219,15 @@ class RandomVariables(CollectionsSequence, Immutable):
         eta_levels: VariabilityHierarchy,
         epsilon_levels: VariabilityHierarchy,
     ):
+        names = set()
+        for dist in dists:
+            for name in dist.names:
+                if name in names:
+                    raise ValueError(
+                        f'Names of random variables must be unique. Random Variable "{name}" '
+                        'was added more than once to RandomVariables'
+                    )
+                names.add(name)
         self._dists = dists
         self._eta_levels = eta_levels
         self._epsilon_levels = epsilon_levels
@@ -231,17 +240,9 @@ class RandomVariables(CollectionsSequence, Immutable):
             dists = (dists,)
         else:
             dists = tuple(dists)
-            names = set()
             for dist in dists:
                 if not isinstance(dist, Distribution):
                     raise TypeError(f'Can not add variable of type {type(dist)} to RandomVariables')
-                for name in dist.names:
-                    if name in names:
-                        raise ValueError(
-                            f'Names of random variables must be unique. Random Variable "{name}" '
-                            'was added more than once to RandomVariables'
-                        )
-                    names.add(name)
 
         if eta_levels is None:
             iiv_level = VariabilityLevel('IIV', reference=True, group='ID')
