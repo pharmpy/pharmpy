@@ -338,7 +338,6 @@ class Model(pharmpy.model.Model):
                 record = self.internals.control_stream.append_record('$ETAS ')
             record.path = phi_path
 
-        if self._initial_individual_estimates_updated:
             first_est_record = self.internals.control_stream.get_records('ESTIMATION')[0]
             try:
                 first_est_record.option_pairs['MCETA']
