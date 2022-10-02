@@ -524,6 +524,7 @@ def get_model_covariates(model, strings=False):
         for s in model.statements:
             if isinstance(s, Assignment):
                 cov_dose_symbols |= dosesyms.intersection(s.rhs_symbols)
+        cov_dose_symbols = dosesyms - cov_dose_symbols
     covs = list(symbs.intersection(datasymbs) - cov_dose_symbols)
     covs = sorted(covs, key=lambda x: x.name)  # sort to make order deterministic
     if strings:
