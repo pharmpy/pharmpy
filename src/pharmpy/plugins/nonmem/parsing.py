@@ -640,17 +640,19 @@ def get_zero_fix_rvs(control_stream, eta=True):
     if eta:
         prev_cov = None
         next_omega = 1
+        prev_start = 1
         for omega_record in control_stream.get_records('OMEGA'):
-            _, next_omega, prev_cov, new_zero_fix = omega_record.random_variables(
-                next_omega, prev_cov
+            _, next_omega, prev_start, prev_cov, new_zero_fix = omega_record.random_variables(
+                next_omega, prev_start, prev_cov
             )
             zero_fix += new_zero_fix
     else:
         prev_cov = None
         next_sigma = 1
+        prev_start = 1
         for sigma_record in control_stream.get_records('SIGMA'):
-            _, next_sigma, prev_cov, new_zero_fix = sigma_record.random_variables(
-                next_sigma, prev_cov
+            _, next_sigma, prev_start, prev_cov, new_zero_fix = sigma_record.random_variables(
+                next_sigma, prev_start, prev_cov
             )
             zero_fix += new_zero_fix
     return zero_fix
