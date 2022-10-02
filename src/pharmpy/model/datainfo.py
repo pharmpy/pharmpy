@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Union, overload
+from typing import Optional, Union, overload
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
+from pharmpy.internals.fs import path_relative_to
 from pharmpy.utils import parse_units
 
 
@@ -704,7 +705,7 @@ class DataInfo(Sequence):
             for col in self
         }
 
-    def to_json(self, path=None):
+    def _to_dict(self, path: Optional[str]):
         a = []
         for col in self._columns:
             d = {
@@ -720,18 +721,26 @@ class DataInfo(Sequence):
             if col.descriptor is not None:
                 d["descriptor"] = col.descriptor
             a.append(d)
-        s = json.dumps(
-            {
-                "columns": a,
-                "path": str(self.path) if self.path is not None else None,
-                "separator": self._separator,
-            }
-        )
+
+        return {
+            "columns": a,
+            "path": path,
+            "separator": self._separator,
+        }
+
+    def to_json(self, path=None):
         if path is None:
-            return s
+            return json.dumps(self._to_dict(str(self.path) if self.path is not None else None))
         else:
             with open(path, 'w') as fp:
-                fp.write(s)
+                json.dump(
+                    self._to_dict(
+                        str(path_relative_to(Path(path), self.path))
+                        if self.path is not None
+                        else None
+                    ),
+                    fp,
+                )
 
     @staticmethod
     def from_json(s):
@@ -785,7 +794,12 @@ class DataInfo(Sequence):
         """
         with open(path, 'r') as fp:
             s = fp.read()
-        return DataInfo.from_json(s)
+        di = DataInfo.from_json(s)
+        return (
+            di
+            if di.path is None or di.path.is_absolute()
+            else di.derive(path=(Path(path).parent / di.path).resolve(strict=False))
+        )
 
     def __repr__(self):
         labels = [col.name for col in self._columns]

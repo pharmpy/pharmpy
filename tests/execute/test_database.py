@@ -66,7 +66,7 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
-            assert line.endswith(f'{sep}database{sep}.datasets{sep}pheno_real.csv IGNORE=@\n')
+            assert line == f'$DATA ..{sep}.datasets{sep}pheno_real.csv IGNORE=@\n'
 
         run1 = copy_model(model, name="run1")
         db.store_model(run1)
@@ -77,7 +77,7 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
-            assert line.endswith(f'{sep}database{sep}.datasets{sep}pheno_real.csv IGNORE=@\n')
+            assert line == f'$DATA ..{sep}.datasets{sep}pheno_real.csv IGNORE=@\n'
 
         run2 = copy_model(model, name="run2")
         add_time_after_dose(run2)
@@ -95,4 +95,4 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
-            assert line.endswith(f'{sep}database{sep}.datasets{sep}run2.csv IGNORE=@\n')
+            assert line == f'$DATA ..{sep}.datasets{sep}run2.csv IGNORE=@\n'

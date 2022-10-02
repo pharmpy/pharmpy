@@ -12,6 +12,7 @@ import pharmpy.plugins.nonmem
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs
+from pharmpy.internals.fs import path_relative_to
 from pharmpy.model import (
     Assignment,
     DatasetError,
@@ -288,13 +289,16 @@ class Model(pharmpy.model.Model):
             self._dataset_updated = False
             self._old_datainfo = self.datainfo
 
-            path = self.datainfo.path
-            if path is not None:
+            datapath = self.datainfo.path
+            if datapath is not None:
                 assert (
-                    not path.exists() or path.is_file()
-                ), f'input path change, but no file exists at target {str(path)}'
+                    not datapath.exists() or datapath.is_file()
+                ), f'input path change, but no file exists at target {str(datapath)}'
                 data_record = self.internals.control_stream.get_records('DATA')[0]
-                data_record.filename = str(path)
+                if path is None:
+                    data_record.filename = str(datapath)
+                else:
+                    data_record.filename = str(path_relative_to(Path(path), datapath))
 
         update_sizes(self)
         update_estimation(self)

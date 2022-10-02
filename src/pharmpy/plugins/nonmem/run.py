@@ -19,10 +19,6 @@ def execute_model(model, db):
     model = model.copy()
     model.parent_model = parent_model
     write_csv(model, path=path, force=True)
-    # Set local path
-    model.datainfo = model.datainfo.derive(
-        path=model.datainfo.path.relative_to(model.datainfo.path.parent)
-    )
     model._dataset_updated = True  # Hack to get update_source to update IGNORE
     write_model(model, path=path, force=True)
     basepath = Path(model.name)
