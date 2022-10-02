@@ -179,6 +179,10 @@ class Model(pharmpy.model.Model):
         self._parameters = parameters
         self.internals._old_parameters = parameters
 
+        steps = parse_estimation_steps(self.internals.control_stream, self._random_variables)
+        self._estimation_steps = steps
+        self.internals._old_estimation_steps = steps
+
         if path is None:
             self._modelfit_results = None
         else:
@@ -187,10 +191,6 @@ class Model(pharmpy.model.Model):
         description = parse_description(self.internals.control_stream)
         self.description = description
         self.internals._old_description = description
-
-        steps = parse_estimation_steps(self.internals.control_stream, self._random_variables)
-        self._estimation_steps = steps
-        self.internals._old_estimation_steps = steps
 
         vt = parse_value_type(self.internals.control_stream, statements)
         self._value_type = vt
