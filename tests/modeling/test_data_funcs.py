@@ -168,7 +168,7 @@ def test_get_evid(load_example_model_for_test):
 def test_get_cmt(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     cmt = get_cmt(model)
-    assert cmt.sum() == 0
+    assert cmt.sum() == 589
 
 
 def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, testdata):

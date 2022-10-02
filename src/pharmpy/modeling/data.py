@@ -801,8 +801,16 @@ def get_cmt(model):
         pass
     else:
         return model.dataset[cmtcols[0].name]
-    default_cmt = pd.Series(0, index=model.dataset.index, dtype='int32', name='CMT')
-    return default_cmt
+    odes = model.statements.ode_system
+    if odes:
+        dosing = odes.dosing_compartment
+        names = odes.compartment_names
+        dose_cmt = names.index(dosing.name) + 1
+    else:
+        dose_cmt = 1
+    cmt = get_evid(model)
+    cmt = cmt.replace({1: dose_cmt, 2: 0, 3: 0, 4: dose_cmt})  # Only consider dose/non-dose
+    return cmt
 
 
 def add_time_after_dose(model):
