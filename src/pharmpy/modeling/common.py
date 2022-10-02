@@ -509,9 +509,9 @@ def get_model_covariates(model, strings=False):
     >>> from pharmpy.modeling import load_example_model, get_model_covariates
     >>> model = load_example_model("pheno")
     >>> get_model_covariates(model)
-    [APGR, WGT]
+    [AMT, APGR, WGT]
     >>> get_model_covariates(model, strings=True)
-    ['APGR', 'WGT']
+    ['AMT', 'APGR', 'WGT']
 
     """
     symbs = model.statements.dependencies(model.dependent_variable)
