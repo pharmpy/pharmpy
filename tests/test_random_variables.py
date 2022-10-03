@@ -79,7 +79,7 @@ def test_repr_latex_rv():
 
 def test_parameters_rv():
     dist1 = NormalDistribution.create('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
-    assert dist1.parameter_names == ['OMEGA(2,2)']
+    assert dist1.parameter_names == ('OMEGA(2,2)',)
 
 
 def test_illegal_inits():
@@ -254,11 +254,11 @@ def test_parameter_names():
             [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')],
         ],
     )
-    assert dist1.parameter_names == ['OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)']
+    assert dist1.parameter_names == ('OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)')
     dist2 = NormalDistribution.create('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
-    assert dist2.parameter_names == ['OMEGA(3,3)']
+    assert dist2.parameter_names == ('OMEGA(3,3)',)
     rvs = RandomVariables.create([dist1, dist2])
-    assert rvs.parameter_names == ['OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)', 'OMEGA(3,3)']
+    assert rvs.parameter_names == ('OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)', 'OMEGA(3,3)')
 
 
 def test_subs_rv():

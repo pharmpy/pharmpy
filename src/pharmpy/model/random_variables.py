@@ -14,7 +14,7 @@ from .distributions.numeric import NumericDistribution
 from .distributions.symbolic import Distribution, JointNormalDistribution, NormalDistribution
 
 
-def _create_rng(seed=None):
+def _create_rng(seed=None) -> np.random.Generator:
     """Create a new random number generator"""
     if isinstance(seed, np.random.Generator):
         rng = seed
@@ -142,12 +142,10 @@ class VariabilityHierarchy:
         """Names of all variability levels"""
         return [varlev.name for varlev in self._levels]
 
-    def _find_reference(self):
+    def _find_reference(self) -> int:
         # Find numerical level of first level
         # No error checking since having a reference level is an invariant
-        for i, level in enumerate(self._levels):
-            if level.reference:
-                return -i
+        return next((-i for i, level in enumerate(self._levels) if level.reference))
 
     @property
     def levels(self):
@@ -191,7 +189,12 @@ class RandomVariables(Sequence):
     >>> rvs = RandomVariables.create([dist])
     """
 
-    def __init__(self, dists, eta_levels, epsilon_levels):
+    def __init__(
+        self,
+        dists: Tuple[Distribution, ...],
+        eta_levels: VariabilityHierarchy,
+        epsilon_levels: VariabilityHierarchy,
+    ):
         self._dists = dists
         self._eta_levels = eta_levels
         self._epsilon_levels = epsilon_levels
@@ -339,7 +342,7 @@ class RandomVariables(Sequence):
             for dist in split._dists:
                 if dist.names[0] in ind:
                     keep.append(dist)
-            return RandomVariables(keep, self._eta_levels, self._epsilon_levels)
+            return RandomVariables(tuple(keep), self._eta_levels, self._epsilon_levels)
         else:
             _, rv = self._lookup_rv(ind)
             return rv
@@ -404,12 +407,10 @@ class RandomVariables(Sequence):
         return symbs
 
     @property
-    def parameter_names(self):
+    def parameter_names(self) -> Tuple[str, ...]:
         """List of parameter names for all random variables"""
-        params = set()
-        for dist in self._dists:
-            params |= set(dist.parameter_names)
-        return sorted([str(p) for p in params])
+        params = set().union(*(dist.parameter_names for dist in self._dists))
+        return tuple(sorted(map(str, params)))
 
     @property
     def variance_parameters(self):
@@ -496,7 +497,7 @@ class RandomVariables(Sequence):
                 for i, name in enumerate(dist.names):
                     if name in inds:  # unjoin  this
                         new = NormalDistribution(
-                            (name,), dist.level, dist.mean[i], dist.variance[i, i]
+                            name, dist.level, dist.mean[i], dist.variance[i, i]
                         )
                         newdists.append(new)
                     elif first:  # first of the ones to keep
@@ -504,7 +505,7 @@ class RandomVariables(Sequence):
                         remove = [i for i, n in enumerate(dist.names) if n in inds]
                         if len(dist) - len(remove) == 1:
                             keep = NormalDistribution(
-                                (name,), dist.level, dist.mean[i], dist.variance[i, i]
+                                name, dist.level, dist.mean[i], dist.variance[i, i]
                             )
                         else:
                             names = list(dist.names)
@@ -570,6 +571,7 @@ class RandomVariables(Sequence):
         if any(item not in self.names for item in inds):
             raise KeyError("Cannot join non-existing random variable")
         joined_rvs = self[inds]
+        assert isinstance(joined_rvs, RandomVariables)
         means, M, names, _ = joined_rvs._calc_covariance_matrix()
         cov_to_params = dict()
         if fill != 0:
@@ -611,7 +613,7 @@ class RandomVariables(Sequence):
         nearest = parameter_values.copy()
         for dist in self._dists:
             if len(dist) > 1:
-                symb_sigma = dist._variance
+                symb_sigma = dist.variance
                 sigma = symb_sigma.subs(dict(parameter_values))
                 A = np.array(sigma).astype(np.float64)
                 B = pharmpy.math.nearest_postive_semidefinite(A)
@@ -628,7 +630,7 @@ class RandomVariables(Sequence):
         use_cache for using symengine cached matrices
         """
         for dist in self._dists:
-            if len(dist) > 1:
+            if isinstance(dist, JointNormalDistribution):
                 sigma = dist._symengine_variance
                 replacement = {}
                 for param in dict(parameter_values):
@@ -693,7 +695,7 @@ class RandomVariables(Sequence):
     def _repr_latex_(self):
         lines = []
         for dist in self._dists:
-            latex = dist._latex_string(aligned=True)
+            latex = dist.latex_string(aligned=True)
             lines.append(latex)
         return '\\begin{align*}\n' + r' \\ '.join(lines) + '\\end{align*}'
 
