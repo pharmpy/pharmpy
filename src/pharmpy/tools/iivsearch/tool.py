@@ -71,7 +71,9 @@ def create_algorithm_workflow(
     wf_method = algorithm_func(base_model, no_of_models_so_far)
     wf.insert_workflow(wf_method)
 
-    task_result = Task('results', post_process, rank_type, cutoff, input_model, base_model.name)
+    task_result = Task(
+        'results', post_process, algorithm, rank_type, cutoff, input_model, base_model.name
+    )
 
     post_process_tasks = [base_model_task] + wf.output_tasks
     wf.add_task(task_result, predecessors=post_process_tasks)
@@ -165,7 +167,7 @@ def _add_iiv(iiv_strategy, model):
     return model
 
 
-def post_process(rank_type, cutoff, input_model, base_model_name, *models):
+def post_process(algorithm, rank_type, cutoff, input_model, base_model_name, *models):
     res_models = []
     base_model = None
     for model in models:
@@ -180,6 +182,8 @@ def post_process(rank_type, cutoff, input_model, base_model_name, *models):
     res = create_results(
         IIVSearchResults, input_model, base_model, res_models, rank_type, cutoff, bic_type='iiv'
     )
+
+    res.summary_tool['algorithm'] = algorithm
 
     return res
 
