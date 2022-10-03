@@ -202,6 +202,7 @@ class Model(pharmpy.model.Model):
             self.internals.control_stream, rvs, None if path is None else path.parent
         )
         self._initial_individual_estimates = init_etas
+        self.internals._old_initial_individual_estimates = init_etas
 
     @property
     def modelfit_results(self):
@@ -319,8 +320,24 @@ class Model(pharmpy.model.Model):
             phi_path = path.parent
         phi_path /= f'{self.name}_input.phi'
 
-        if self._initial_individual_estimates_updated:
-            etas = self.initial_individual_estimates
+        estimates = self.initial_individual_estimates
+        if estimates is not self.internals._old_initial_individual_estimates:
+            rv_names = {rv for rv in self.random_variables.names if rv.startswith('ETA')}
+            columns = set(estimates.columns)
+            if columns < rv_names:
+                raise ValueError(
+                    f'Cannot set initial estimate for random variable not in the model:'
+                    f' {rv_names - columns}'
+                )
+            diff = columns - rv_names
+            # If not setting all etas automatically set remaining to 0 for all individuals
+            if len(diff) > 0:
+                for name in diff:
+                    estimates = estimates.copy(deep=True)
+                    estimates[name] = 0
+                estimates = self._sort_eta_columns(estimates)
+
+            etas = estimates
             zero_fix = get_zero_fix_rvs(self.internals.control_stream, eta=True)
             if zero_fix:
                 for eta in zero_fix:
@@ -343,34 +360,10 @@ class Model(pharmpy.model.Model):
                 first_est_record.option_pairs['MCETA']
             except KeyError:
                 first_est_record.set_option('MCETA', 1)
-            self._initial_individual_estimates_updated = False
 
     def validate(self):
         """Validates NONMEM model (records) syntactically."""
         self.internals.control_stream.validate()
-
-    @property
-    def initial_individual_estimates(self):
-        return self._initial_individual_estimates
-
-    @initial_individual_estimates.setter
-    def initial_individual_estimates(self, estimates):
-        rv_names = {rv for rv in self.random_variables.names if rv.startswith('ETA')}
-        columns = set(estimates.columns)
-        if columns < rv_names:
-            raise ValueError(
-                f'Cannot set initial estimate for random variable not in the model:'
-                f' {rv_names - columns}'
-            )
-        diff = columns - rv_names
-        # If not setting all etas automatically set remaining to 0 for all individuals
-        if len(diff) > 0:
-            for name in diff:
-                estimates = estimates.copy(deep=True)
-                estimates[name] = 0
-            estimates = self._sort_eta_columns(estimates)
-        self._initial_individual_estimates = estimates
-        self._initial_individual_estimates_updated = True
 
     def _sort_eta_columns(self, df):
         return df.reindex(sorted(df.columns), axis=1)
