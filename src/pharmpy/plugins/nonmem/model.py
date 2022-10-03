@@ -203,14 +203,6 @@ class Model(pharmpy.model.Model):
         self._initial_individual_estimates = init_etas
         self.internals._old_initial_individual_estimates = init_etas
 
-    @property
-    def modelfit_results(self):
-        return self._modelfit_results
-
-    @modelfit_results.setter
-    def modelfit_results(self, res):
-        self._modelfit_results = res
-
     def update_source(self, path=None, force=False, nofiles=False):
         """Update the source
 
