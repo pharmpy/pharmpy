@@ -23,11 +23,11 @@ def test_block_structure(tmp_path, model_count, start_model):
         )
         assert all(model.random_variables != start_model.random_variables for model in res.models)
 
-        assert res.summary_tool.loc['mox2']['description'] == '[CL]+[VC]+[MAT]'
+        assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
         input_model = retrieve_models(res, names=['input_model'])[0]
         assert isinstance(input_model.random_variables['ETA(1)'], NormalDistribution)
 
-        assert res.summary_tool.loc['iivsearch_run1']['description'] == '[CL,VC,MAT]'
+        assert res.summary_tool.loc[1, 'iivsearch_run1']['description'] == '[CL,VC,MAT]'
         assert len(res.models[0].random_variables['ETA(1)'].names) == 3
 
         summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
@@ -53,7 +53,7 @@ def test_no_of_etas(tmp_path, model_count, start_model):
 
         assert res.models[-1].modelfit_results
 
-        assert res.summary_tool.loc['mox2']['description'] == '[CL]+[VC]+[MAT]'
+        assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
         input_model = retrieve_models(res, names=['input_model'])[0]
         assert input_model.random_variables.iiv.names == ['ETA(1)', 'ETA(2)', 'ETA(3)']
 
@@ -76,9 +76,9 @@ def test_brute_force(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_iivsearch('brute_force', model=start_model)
 
-        no_of_candidate_models = 7
-        assert len(res.summary_tool) == no_of_candidate_models + 3
-        assert len(res.summary_models) == no_of_candidate_models + 3
+        no_of_candidate_models = 8
+        assert len(res.summary_tool) == no_of_candidate_models + 2
+        assert len(res.summary_models) == no_of_candidate_models + 1
         assert len(res.models) == no_of_candidate_models
 
         assert 'iivsearch_run3' in res.summary_errors.index.get_level_values('model')
@@ -146,7 +146,7 @@ def test_no_of_etas_iiv_strategies(tmp_path, model_count, start_model, iiv_strat
 
         no_of_candidate_models = 15
         assert len(res.summary_tool) == no_of_candidate_models + 1
-        assert len(res.summary_models) == no_of_candidate_models + 1
+        assert len(res.summary_models) == no_of_candidate_models + 2
         assert len(res.models) == no_of_candidate_models + 1
         assert res.models[-1].modelfit_results
 
