@@ -13,4 +13,5 @@ include_trailing_comma = true
 
 [tool.pyright]
 venvPath = ".tox"
-venv = "py38"
+venv = "py38-type-check"
+reportUnnecessaryTypeIgnoreComment = true
