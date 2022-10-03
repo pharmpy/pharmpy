@@ -21,7 +21,7 @@ jobs:
         include:
           - flags: ''
           - python-version: '3.8'
-            flags: '-cover'
+            flags: ${{ github.actor == 'dependabot[bot]' && '' || '-cover' }}
         exclude:
           - platform: windows-latest
             python-version: '3.10'
