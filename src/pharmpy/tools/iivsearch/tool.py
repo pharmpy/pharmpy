@@ -1,7 +1,7 @@
 import pharmpy.results
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
-from pharmpy.modeling import add_pk_iiv, copy_model, create_joint_distribution
+from pharmpy.modeling import add_pk_iiv, copy_model, create_joint_distribution, summarize_modelfit_results
 from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
@@ -111,10 +111,10 @@ def start(input_model, algorithm, iiv_strategy, rank_type, cutoff):
         else:
             prev_model_names = [model.name for model in res.models]
             new_models = [model for model in next_res.models if model.name not in prev_model_names]
-            no_of_models_so_far += len(new_models)
             res.models = res.models + new_models
             res.final_model_name = next_res.final_model_name
             res.input_model = input_model
+        no_of_models_so_far = len(res.models)
         sum_tools.append(next_res.summary_tool)
         sum_models.append(next_res.summary_models)
         sum_inds.append(next_res.summary_individuals)
