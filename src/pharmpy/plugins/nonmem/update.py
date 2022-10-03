@@ -1393,3 +1393,16 @@ def update_initial_individual_estimates(model, path, nofiles=False):
 
 def _sort_eta_columns(df):
     return df.reindex(sorted(df.columns), axis=1)
+
+
+def abbr_translation(model, rv_trans):
+    abbr_pharmpy = model.internals.control_stream.abbreviated.translate_to_pharmpy_names()
+    abbr_replace = model.internals.control_stream.abbreviated.replace
+    abbr_trans = update_abbr_record(model, rv_trans)
+    abbr_recs = {
+        sympy.Symbol(abbr_pharmpy[value]): sympy.Symbol(key)
+        for key, value in abbr_replace.items()
+        if value in abbr_pharmpy.keys()
+    }
+    abbr_trans.update(abbr_recs)
+    return abbr_trans

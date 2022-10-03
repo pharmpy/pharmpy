@@ -29,8 +29,8 @@ from .parsing import (
 )
 from .results import parse_modelfit_results
 from .update import (
+    abbr_translation,
     rv_translation,
-    update_abbr_record,
     update_ccontra,
     update_description,
     update_estimation,
@@ -242,8 +242,8 @@ class Model(pharmpy.model.Model):
         )
         trans.update(rv_trans)
         if pharmpy.plugins.nonmem.conf.write_etas_in_abbr:
-            abbr_trans = self._abbr_translation(rv_trans)
-            trans.update(abbr_trans)
+            abbr = abbr_translation(self, rv_trans)
+            trans.update(abbr)
         if hasattr(self, '_statements'):
             update_statements(self, self.internals._old_statements, self._statements, trans)
             self.internals._old_statements = self._statements
@@ -295,18 +295,6 @@ class Model(pharmpy.model.Model):
 
         if self._name != self.internals.old_name:
             update_name_of_tables(self.internals.control_stream, self._name)
-
-    def _abbr_translation(self, rv_trans):
-        abbr_pharmpy = self.internals.control_stream.abbreviated.translate_to_pharmpy_names()
-        abbr_replace = self.internals.control_stream.abbreviated.replace
-        abbr_trans = update_abbr_record(self, rv_trans)
-        abbr_recs = {
-            sympy.Symbol(abbr_pharmpy[value]): sympy.Symbol(key)
-            for key, value in abbr_replace.items()
-            if value in abbr_pharmpy.keys()
-        }
-        abbr_trans.update(abbr_recs)
-        return abbr_trans
 
     def validate(self):
         """Validates NONMEM model (records) syntactically."""
