@@ -186,8 +186,6 @@ class NMTranControlStream:
                 raise ModelSyntaxError('The SIZES record must come before the first PROBLEM record')
             elif record.name == 'PROBLEM':
                 in_problem = True
-            if hasattr(record, 'validate'):
-                record.validate()
 
     def __str__(self):
         return ''.join(str(x) for x in self.records)

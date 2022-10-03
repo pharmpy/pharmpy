@@ -114,7 +114,6 @@ class Model(pharmpy.model.Model):
         di = parse_datainfo(self.internals.control_stream, path)
         self.datainfo = di
         self._old_datainfo = di
-        self._initial_individual_estimates_updated = False
         self._dataset_updated = False
         self._parent_model = None
 
