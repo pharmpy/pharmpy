@@ -179,7 +179,7 @@ class Workflow:
         filename : str
             Path
         """
-        from dask import visualize
+        from dask import visualize  # pyright: ignore [reportPrivateImportUsage]
 
         visualize(self.as_dask_dict(), filename=filename, collapse_outputs=True)
 

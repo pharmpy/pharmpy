@@ -1,18 +1,19 @@
 import datetime
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from pharmpy.deps import pandas as pd
 
 
 @dataclass
 class LogEntry:
-    category: str = None
+    category: Optional[str] = None
     time: datetime.datetime = datetime.datetime.now()
     model: str = ""
     tool: str = ""
     task: str = ""
-    path: Path = None
+    path: Optional[Path] = None
     message: str = ""
 
     def to_dict(self):

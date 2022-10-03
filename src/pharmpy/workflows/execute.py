@@ -63,7 +63,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume
 
     if isinstance(res, Results):
         if hasattr(res, 'tool_database'):
-            res.tool_database = database
+            res.tool_database = database  # pyright: ignore [reportGeneralTypeIssues]
         database.store_results(res)
         if hasattr(res, 'rst_path'):
             from pharmpy.modeling.reporting import create_report
