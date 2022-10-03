@@ -25,6 +25,22 @@ FILE_PENDING = 'PENDING'
 FILE_LOCK = '.lock'
 
 
+def get_modelfit_results(model, path):
+    # FIXME: This is a workaround. The proper solution is to only read the results.json from
+    # the database. For this to work roundtrip of DataFrames in json is needed.
+    # This is currently broken because of rounding issue in pandas
+    # Also the modelfit_results attribute will soon be removed from model objects.
+    if hasattr(model, "internals"):
+        from pharmpy.plugins.nonmem import parse_modelfit_results
+
+        res = parse_modelfit_results(model, path)
+    else:
+        from pharmpy.plugins.nlmixr import parse_modelfit_results
+
+        res = parse_modelfit_results(model, path)
+    model._modelfit_results = res
+
+
 class LocalDirectoryDatabase(NonTransactionalModelDatabase):
     """ModelDatabase implementation for single local directory
 
@@ -84,8 +100,7 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
             model = Model.create_model(path)
         except FileNotFoundError:
             raise KeyError('Model cannot be found in database')
-        model.database = self
-        model.read_modelfit_results(self.path)
+        get_modelfit_results(model, self.path)
         return model
 
     def retrieve_modelfit_results(self, name):
@@ -297,8 +312,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
                 f' Looked up {", ".join(map(lambda e: f"`{e.filename}`", errors))}.'
             )
 
-        model.database = self.db
-        model.read_modelfit_results(root)
+        get_modelfit_results(model, root)
         return model
 
     def retrieve_modelfit_results(self):

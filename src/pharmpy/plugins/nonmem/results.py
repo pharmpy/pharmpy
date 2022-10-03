@@ -11,6 +11,18 @@ from pharmpy.results import ChainedModelfitResults, ModelfitResults
 from pharmpy.workflows.log import Log
 
 
+def parse_modelfit_results(model, path):
+    if path is None:
+        return None
+
+    try:
+        ext_path = path / (model.name + '.ext')
+        res = NONMEMChainedModelfitResults(ext_path, model=model)
+        return res
+    except (FileNotFoundError, OSError):
+        return None
+
+
 class NONMEMModelfitResults(ModelfitResults):
     def __init__(self, chain):
         self._chain = chain

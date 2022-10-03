@@ -6,7 +6,7 @@ from pathlib import Path
 
 from pharmpy.model import EstimationSteps
 from pharmpy.modeling import write_csv, write_model
-from pharmpy.plugins.nonmem import conf, convert_model
+from pharmpy.plugins.nonmem import conf, convert_model, parse_modelfit_results
 
 
 def execute_model(model, db):
@@ -80,8 +80,7 @@ def execute_model(model, db):
             txn.store_modelfit_results()
 
             # Read in results for the server side
-            # FIXME: this breaks through abstraction
-            model.read_modelfit_results(database.path / model.name)
+            model._modelfit_results = parse_modelfit_results(model, path)
 
     return model
 

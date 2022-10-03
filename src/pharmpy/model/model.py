@@ -364,10 +364,6 @@ class Model:
     def description(self, value):
         self._description = value
 
-    def read_modelfit_results(self, path: Path):
-        """Read in modelfit results"""
-        raise NotImplementedError("Read modelfit results not implemented for generic models")
-
     def update_datainfo(self):
         """Update model.datainfo for a new dataset"""
         colnames = self.dataset.columns

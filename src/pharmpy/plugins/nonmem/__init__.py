@@ -5,6 +5,7 @@ from pharmpy.utils import normalize_user_given_path
 
 from .detect import detect_model
 from .model import Model, convert_model
+from .results import parse_modelfit_results
 
 r"""
 .. list-table:: Options for the nonmem plugin
@@ -53,4 +54,4 @@ class NONMEMConfiguration(config.Configuration):
 conf = NONMEMConfiguration()
 
 
-__all__ = ['detect_model', 'convert_model', 'Model']
+__all__ = ['detect_model', 'convert_model', 'parse_modelfit_results', 'Model']

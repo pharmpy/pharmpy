@@ -11,7 +11,6 @@ from pharmpy.deps import sympy
 from pharmpy.expressions import subs
 from pharmpy.model import Assignment, DatasetError, NormalDistribution, Parameter, Parameters
 from pharmpy.modeling.write_csv import write_csv
-from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 
 from .nmtran_parser import NMTranParser
@@ -30,6 +29,7 @@ from .parsing import (
     parse_value_type,
     replace_synonym_in_filters,
 )
+from .results import parse_modelfit_results
 from .update import (
     rv_translation,
     update_abbr_record,
@@ -186,7 +186,7 @@ class Model(pharmpy.model.Model):
         if path is None:
             self._modelfit_results = None
         else:
-            self.read_modelfit_results(path.parent)
+            self._modelfit_results = parse_modelfit_results(self, path.parent)
 
         description = parse_description(self.internals.control_stream)
         self.description = description
@@ -447,12 +447,3 @@ class Model(pharmpy.model.Model):
             ids_to_remove = all_ids - have_obs
             df = df[~df['ID'].isin(ids_to_remove)]
         return df
-
-    def read_modelfit_results(self, path: Path):
-        try:
-            ext_path = path / (self.name + '.ext')
-            self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
-            return self._modelfit_results
-        except (FileNotFoundError, OSError):
-            self._modelfit_results = None
-            return None
