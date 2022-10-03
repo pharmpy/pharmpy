@@ -29,7 +29,7 @@ fsspec==2022.8.2
 HeapDict==1.0.1
 idna==3.4
 imagesize==1.4.1
-importlib-metadata==4.12.0
+importlib-metadata==5.0.0
 importlib-resources==5.9.0
 ipykernel==6.16.0
 ipython==8.5.0
