@@ -52,7 +52,9 @@ def create_workflow(
     return wf
 
 
-def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, rank_type, cutoff):
+def create_algorithm_workflow(
+    input_model, base_model, no_of_models_so_far, algorithm, iiv_strategy, rank_type, cutoff
+):
     wf = Workflow()
 
     start_task = Task(f'start_{algorithm}', _start_algorithm, base_model)
@@ -66,7 +68,7 @@ def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, 
         base_model_task = start_task
 
     algorithm_func = getattr(algorithms, algorithm)
-    wf_method = algorithm_func(base_model)
+    wf_method = algorithm_func(base_model, no_of_models_so_far)
     wf.insert_workflow(wf_method)
 
     task_result = Task('results', post_process, rank_type, cutoff, input_model, base_model.name)
@@ -89,18 +91,25 @@ def start(input_model, algorithm, iiv_strategy, rank_type, cutoff):
         list_of_algorithms = ['brute_force_no_of_etas', 'brute_force_block_structure']
     else:
         list_of_algorithms = [algorithm]
-
+    no_of_models_so_far = 0
     sum_tools, sum_models, sum_inds, sum_inds_count, sum_errs = [], [], [], [], []
     for i, algorithm_cur in enumerate(list_of_algorithms):
         wf = create_algorithm_workflow(
-            input_model, base_model, algorithm_cur, iiv_strategy, rank_type, cutoff
+            input_model,
+            base_model,
+            no_of_models_so_far,
+            algorithm_cur,
+            iiv_strategy,
+            rank_type,
+            cutoff,
         )
         next_res = call_workflow(wf, f'results_{algorithm}')
         if i == 0:
             res = next_res
         else:
-            prev_models = [model.name for model in res.models]
-            new_models = [model for model in next_res.models if model.name not in prev_models]
+            prev_model_names = [model.name for model in res.models]
+            new_models = [model for model in next_res.models if model.name not in prev_model_names]
+            no_of_models_so_far += len(new_models)
             res.models = res.models + new_models
             res.final_model_name = next_res.final_model_name
             res.input_model = input_model

@@ -11,7 +11,7 @@ from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
 
-def brute_force_no_of_etas(base_model):
+def brute_force_no_of_etas(base_model, index_offset=0):
     wf = Workflow()
 
     base_model.description = _create_description(base_model)
@@ -20,7 +20,7 @@ def brute_force_no_of_etas(base_model):
     eta_combos = _get_eta_combinations(iivs)
 
     for i, combo in enumerate(eta_combos, 1):
-        model_name = f'iivsearch_no_of_etas_run{i}'
+        model_name = f'iivsearch_run{i + index_offset}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
@@ -38,20 +38,20 @@ def brute_force_no_of_etas(base_model):
     return wf
 
 
-def brute_force_block_structure(base_model):
+def brute_force_block_structure(base_model, index_offset=0):
     wf = Workflow()
 
     base_model.description = _create_description(base_model)
 
     iivs = base_model.random_variables.iiv
     eta_combos = _get_eta_combinations(iivs, as_blocks=True)
-    model_no = 1
+    model_no = 1 + index_offset
 
     for combo in eta_combos:
         if _is_current_block_structure(iivs, combo):
             continue
 
-        model_name = f'iivsearch_block_structure_run{model_no}'
+        model_name = f'iivsearch_run{model_no}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 

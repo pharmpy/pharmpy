@@ -27,9 +27,7 @@ def test_block_structure(tmp_path, model_count, start_model):
         input_model = retrieve_models(res, names=['input_model'])[0]
         assert isinstance(input_model.random_variables['ETA(1)'], NormalDistribution)
 
-        assert (
-            res.summary_tool.loc['iivsearch_block_structure_run1']['description'] == '[CL,VC,MAT]'
-        )
+        assert res.summary_tool.loc['iivsearch_run1']['description'] == '[CL,VC,MAT]'
         assert len(res.models[0].random_variables['ETA(1)'].names) == 3
 
         summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
@@ -78,12 +76,12 @@ def test_brute_force(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_iivsearch('brute_force', model=start_model)
 
-        no_of_candidate_models = 8
-        assert len(res.summary_tool) == no_of_candidate_models + 2
-        assert len(res.summary_models) == no_of_candidate_models + 2
+        no_of_candidate_models = 7
+        assert len(res.summary_tool) == no_of_candidate_models + 3
+        assert len(res.summary_models) == no_of_candidate_models + 3
         assert len(res.models) == no_of_candidate_models
 
-        assert 'iivsearch_no_of_etas_run3' in res.summary_errors.index.get_level_values('model')
+        assert 'iivsearch_run3' in res.summary_errors.index.get_level_values('model')
 
         assert all(
             model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
