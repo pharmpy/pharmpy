@@ -110,9 +110,8 @@ def test_load_example_model():
 
 def test_get_model_covariates(pheno, testdata, load_model_for_test):
     assert set(get_model_covariates(pheno)) == {
-        sympy.Symbol('AMT'),
-        sympy.Symbol('WGT'),
         sympy.Symbol('APGR'),
+        sympy.Symbol('WGT'),
     }
     minimal = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert set(get_model_covariates(minimal)) == set()
