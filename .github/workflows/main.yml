@@ -18,6 +18,10 @@ jobs:
       matrix:
         platform: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.8', '3.9', '3.10']
+        include:
+          - flags: ''
+          - python-version: '3.8'
+            flags: '-cover'
         exclude:
           - platform: windows-latest
             python-version: '3.10'
@@ -35,9 +39,10 @@ jobs:
       - name: Run unit tests with tox (with coverage)
         shell: bash
         run: |
-            tox -e unit-cover
+            tox -e unit${{ matrix.flags }}
 
       - uses: codecov/codecov-action@v3
+        if: matrix.flags == '-cover'
         with:
           flags: unit,${{ matrix.platform }},python-${{ matrix.python-version }}
           files: ./.coverage.xml
