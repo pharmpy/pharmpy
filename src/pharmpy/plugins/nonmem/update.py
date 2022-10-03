@@ -22,8 +22,9 @@ from pharmpy.model import (
 from pharmpy.modeling import simplify_expression
 from pharmpy.plugins.nonmem.records import code_record
 
-from .parsing import parameter_translation, parse_column_info
+from .parsing import get_zero_fix_rvs, parameter_translation, parse_column_info
 from .records.factory import create_record
+from .table import NONMEMTableFile, PhiTable
 
 
 def update_description(model):
@@ -1335,3 +1336,60 @@ def rv_translation(control_stream, reverse=False, remove_idempotent=False, as_sy
     if as_symbols:
         d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in d.items()}
     return d
+
+
+def update_initial_individual_estimates(model, path, nofiles=False):
+    """Update $ETAS
+
+    Could have 0 FIX in model. Need to read these
+    """
+    if path is None:  # What to do here?
+        phi_path = Path('.')
+    else:
+        phi_path = path.parent
+    phi_path /= f'{model.name}_input.phi'
+
+    estimates = model.initial_individual_estimates
+    if estimates is not model.internals._old_initial_individual_estimates:
+        rv_names = {rv for rv in model.random_variables.names if rv.startswith('ETA')}
+        columns = set(estimates.columns)
+        if columns < rv_names:
+            raise ValueError(
+                f'Cannot set initial estimate for random variable not in the model:'
+                f' {rv_names - columns}'
+            )
+        diff = columns - rv_names
+        # If not setting all etas automatically set remaining to 0 for all individuals
+        if len(diff) > 0:
+            for name in diff:
+                estimates = estimates.copy(deep=True)
+                estimates[name] = 0
+            estimates = _sort_eta_columns(estimates)
+
+        etas = estimates
+        zero_fix = get_zero_fix_rvs(model.internals.control_stream, eta=True)
+        if zero_fix:
+            for eta in zero_fix:
+                etas[eta] = 0
+        etas = _sort_eta_columns(etas)
+        if not nofiles:
+            phi = PhiTable(df=etas)
+            table_file = NONMEMTableFile(tables=[phi])
+            table_file.write(phi_path)
+        # FIXME: This is a common operation
+        eta_records = model.internals.control_stream.get_records('ETAS')
+        if eta_records:
+            record = eta_records[0]
+        else:
+            record = model.internals.control_stream.append_record('$ETAS ')
+        record.path = phi_path
+
+        first_est_record = model.internals.control_stream.get_records('ESTIMATION')[0]
+        try:
+            first_est_record.option_pairs['MCETA']
+        except KeyError:
+            first_est_record.set_option('MCETA', 1)
+
+
+def _sort_eta_columns(df):
+    return df.reindex(sorted(df.columns), axis=1)

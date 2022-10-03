@@ -11,12 +11,10 @@ from pharmpy.deps import sympy
 from pharmpy.expressions import subs
 from pharmpy.model import Assignment, DatasetError, NormalDistribution, Parameter, Parameters
 from pharmpy.modeling.write_csv import write_csv
-from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 
 from .nmtran_parser import NMTranParser
 from .parsing import (
     create_name_trans,
-    get_zero_fix_rvs,
     parameter_translation,
     parse_column_info,
     parse_datainfo,
@@ -36,6 +34,7 @@ from .update import (
     update_ccontra,
     update_description,
     update_estimation,
+    update_initial_individual_estimates,
     update_input,
     update_name_of_tables,
     update_parameters,
@@ -218,7 +217,7 @@ class Model(pharmpy.model.Model):
         path - path to modelfile
         nofiles - Set to not write any files (i.e. dataset, phi input etc)
         """
-        self._update_initial_individual_estimates(path, nofiles)
+        update_initial_individual_estimates(self, path, nofiles)
         if hasattr(self, '_random_variables'):
             # FIXME: better solution would be to have system for handling dummy parameters etc.
             if not self.random_variables.etas:
@@ -309,64 +308,9 @@ class Model(pharmpy.model.Model):
         abbr_trans.update(abbr_recs)
         return abbr_trans
 
-    def _update_initial_individual_estimates(self, path, nofiles=False):
-        """Update $ETAS
-
-        Could have 0 FIX in model. Need to read these
-        """
-        if path is None:  # What to do here?
-            phi_path = Path('.')
-        else:
-            phi_path = path.parent
-        phi_path /= f'{self.name}_input.phi'
-
-        estimates = self.initial_individual_estimates
-        if estimates is not self.internals._old_initial_individual_estimates:
-            rv_names = {rv for rv in self.random_variables.names if rv.startswith('ETA')}
-            columns = set(estimates.columns)
-            if columns < rv_names:
-                raise ValueError(
-                    f'Cannot set initial estimate for random variable not in the model:'
-                    f' {rv_names - columns}'
-                )
-            diff = columns - rv_names
-            # If not setting all etas automatically set remaining to 0 for all individuals
-            if len(diff) > 0:
-                for name in diff:
-                    estimates = estimates.copy(deep=True)
-                    estimates[name] = 0
-                estimates = self._sort_eta_columns(estimates)
-
-            etas = estimates
-            zero_fix = get_zero_fix_rvs(self.internals.control_stream, eta=True)
-            if zero_fix:
-                for eta in zero_fix:
-                    etas[eta] = 0
-            etas = self._sort_eta_columns(etas)
-            if not nofiles:
-                phi = PhiTable(df=etas)
-                table_file = NONMEMTableFile(tables=[phi])
-                table_file.write(phi_path)
-            # FIXME: This is a common operation
-            eta_records = self.internals.control_stream.get_records('ETAS')
-            if eta_records:
-                record = eta_records[0]
-            else:
-                record = self.internals.control_stream.append_record('$ETAS ')
-            record.path = phi_path
-
-            first_est_record = self.internals.control_stream.get_records('ESTIMATION')[0]
-            try:
-                first_est_record.option_pairs['MCETA']
-            except KeyError:
-                first_est_record.set_option('MCETA', 1)
-
     def validate(self):
         """Validates NONMEM model (records) syntactically."""
         self.internals.control_stream.validate()
-
-    def _sort_eta_columns(self, df):
-        return df.reindex(sorted(df.columns), axis=1)
 
     @property
     def model_code(self):
