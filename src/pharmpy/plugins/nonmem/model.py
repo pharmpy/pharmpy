@@ -287,10 +287,6 @@ class Model(pharmpy.model.Model):
         if self._name != self.internals.old_name:
             update_name_of_tables(self.internals.control_stream, self._name)
 
-    def validate(self):
-        """Validates NONMEM model (records) syntactically."""
-        self.internals.control_stream.validate()
-
     @property
     def model_code(self):
         self.update_source(nofiles=True)

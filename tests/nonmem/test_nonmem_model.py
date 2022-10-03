@@ -65,11 +65,8 @@ def test_detection():
 
 
 def test_validate(pheno):
-    pheno.validate()
-
-    model = Model.create_model(StringIO("$PROBLEM this\n$SIZES LIM1=3000\n$PRED\n"))
     with pytest.raises(ModelSyntaxError):
-        model.validate()
+        Model.create_model(StringIO("$PROBLEM this\n$SIZES LIM1=3000\n$PRED\n"))
 
 
 def test_parameters(pheno):

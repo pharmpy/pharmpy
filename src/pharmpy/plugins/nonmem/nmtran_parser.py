@@ -42,6 +42,13 @@ class NMTranParser:
             record = create_record(separator + s)
             stream.records.append(record)
 
+        in_problem = False
+        for record in stream.records:
+            if in_problem and record.name == 'SIZES':
+                raise ModelSyntaxError('The SIZES record must come before the first PROBLEM record')
+            elif record.name == 'PROBLEM':
+                in_problem = True
+
         return stream
 
 
@@ -178,14 +185,6 @@ class NMTranControlStream:
         if des:
             des = des[0]
         return des
-
-    def validate(self):
-        in_problem = False
-        for record in self.records:
-            if in_problem and record.name == 'SIZES':
-                raise ModelSyntaxError('The SIZES record must come before the first PROBLEM record')
-            elif record.name == 'PROBLEM':
-                in_problem = True
 
     def __str__(self):
         return ''.join(str(x) for x in self.records)
