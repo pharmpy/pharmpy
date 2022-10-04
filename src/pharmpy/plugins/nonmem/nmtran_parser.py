@@ -1,4 +1,5 @@
 import re
+from itertools import chain
 
 from pharmpy.model import ModelSyntaxError
 
@@ -15,16 +16,19 @@ class Abbreviated:
     @property
     def replace(self):
         """Get all $ABBR REPLACE as a dictionary"""
-        d = dict()
-        for record in self.stream.get_records('ABBREVIATED'):
-            d.update(record.replace)
-        return d
+        return dict(
+            chain.from_iterable(
+                record.replace.items() for record in self.stream.get_records('ABBREVIATED')
+            )
+        )
 
     def translate_to_pharmpy_names(self):
-        d = dict()
-        for record in self.stream.get_records('ABBREVIATED'):
-            d.update(record.translate_to_pharmpy_names())
-        return d
+        return dict(
+            chain.from_iterable(
+                record.translate_to_pharmpy_names().items()
+                for record in self.stream.get_records('ABBREVIATED')
+            )
+        )
 
 
 class NMTranParser:
@@ -90,6 +94,9 @@ class NMTranControlStream:
             if current_problem == self._active_problem and record.name == name:
                 found.append(record)
         return found
+
+    def _get_first_record(self, name):
+        return next(iter(self.get_records(name)), None)
 
     def append_record(self, content):
         """Create and append record at the end"""
@@ -158,33 +165,24 @@ class NMTranControlStream:
         self.records = keep
 
     def get_pred_pk_record(self):
-        pred = self.get_records('PRED')
+        pred = self._get_first_record('PRED')
+        if pred is not None:
+            return pred
 
-        if not pred:
-            pk = self.get_records('PK')
-            if not pk:
-                raise ModelSyntaxError('Model has no $PK or $PRED')
-            return pk[0]
-        else:
-            return pred[0]
+        pk = self._get_first_record('PK')
+        if pk is not None:
+            return pk
+
+        raise ModelSyntaxError('Model has no $PK or $PRED')
 
     def get_pk_record(self):
-        pk = self.get_records('PK')
-        if pk:
-            pk = pk[0]
-        return pk
+        return self._get_first_record('PK')
 
     def get_error_record(self):
-        error = self.get_records('ERROR')
-        if error:
-            error = error[0]
-        return error
+        return self._get_first_record('ERROR')
 
     def get_des_record(self):
-        des = self.get_records('DES')
-        if des:
-            des = des[0]
-        return des
+        return self._get_first_record('DES')
 
     def __str__(self):
-        return ''.join(str(x) for x in self.records)
+        return ''.join(map(str, self.records))
