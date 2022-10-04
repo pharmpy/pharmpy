@@ -82,9 +82,6 @@ def execute_model(model, db):
             txn.store_modelfit_results()
 
             # Read in results for the server side
-            import os
-
-            os.system("ls -l " + str(path))
             model._modelfit_results = parse_modelfit_results(model, path)
 
     return model
