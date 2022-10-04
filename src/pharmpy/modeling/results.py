@@ -536,8 +536,8 @@ def _summarize_step(model, i):
         summary_dict['minimization_successful'] = False
 
     summary_dict['ofv'] = step.ofv
-    summary_dict['aic'] = calculate_aic(model, modelfit_results=res)
-    summary_dict['bic'] = calculate_bic(model, modelfit_results=res)
+    summary_dict['aic'] = calculate_aic(model, res.ofv)
+    summary_dict['bic'] = calculate_bic(model, res.ofv)
     summary_dict['runtime_total'] = step.runtime_total
     summary_dict['estimation_runtime'] = step.estimation_runtime
 
@@ -790,35 +790,32 @@ def _get_rankval(model, rank_type, bic_type):
     if rank_type in ['ofv', 'lrt']:
         return model.modelfit_results.ofv
     elif rank_type == 'aic':
-        return calculate_aic(model)
+        return calculate_aic(model, model.modelfit_results.ofv)
     elif rank_type == 'bic':
-        return calculate_bic(model, bic_type)
+        return calculate_bic(model, model.modelfit_results.ofv, bic_type)
     else:
         raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
 
 
-def calculate_aic(model, modelfit_results=None):
-    """Calculate final AIC for model assuming the OFV to be -2LL
+def calculate_aic(model, likelihood):
+    """Calculate AIC
 
-    AIC = OFV + 2*n_estimated_parameters
+    AIC = -2LL + 2*n_estimated_parameters
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
-    modelfit_results : ModelfitResults
-        Alternative results object. Default is to use the one in model
+    likelihood : float
+        -2LL
 
     Returns
     -------
     float
         AIC of model fit
     """
-    if modelfit_results is None:
-        modelfit_results = model.modelfit_results
-
     parameters = model.parameters.nonfixed
-    return modelfit_results.ofv + 2 * len(parameters)
+    return likelihood + 2 * len(parameters)
 
 
 def _random_etas(model):
@@ -831,29 +828,29 @@ def _random_etas(model):
     return model.random_variables.etas[keep]
 
 
-def calculate_bic(model, type=None, modelfit_results=None):
-    """Calculate final BIC value assuming the OFV to be -2LL
+def calculate_bic(model, likelihood, type=None):
+    """Calculate BIC
 
     Different variations of the BIC can be calculated:
 
     * | mixed (default)
-      | BIC = OFV + n_random_parameters * log(n_individuals) +
+      | BIC = -2LL + n_random_parameters * log(n_individuals) +
       |       n_fixed_parameters * log(n_observations)
     * | fixed
-      | BIC = OFV + n_estimated_parameters * log(n_observations)
+      | BIC = -2LL + n_estimated_parameters * log(n_observations)
     * | random
-      | BIC = OFV + n_estimated_parameters * log(n_individals)
+      | BIC = -2LL + n_estimated_parameters * log(n_individals)
     * | iiv
-      | BIC = OFV + n_estimated_iiv_omega_parameters * log(n_individals)
+      | BIC = -2LL + n_estimated_iiv_omega_parameters * log(n_individals)
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
+    likelihood : float
+        -2LL to use
     type : str
         Type of BIC to calculate. Default is the mixed effects.
-    modelfit_results : ModelfitResults
-        Alternative results object. Default is to use the one in model
 
     Returns
     -------
@@ -864,18 +861,16 @@ def calculate_bic(model, type=None, modelfit_results=None):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> calculate_bic(model)
+    >>> ofv = model.modelfit_results.ofv
+    >>> calculate_bic(model, ofv)
     611.7071686183284
-    >>> calculate_bic(model, type='fixed')
+    >>> calculate_bic(model, ofv, type='fixed')
     616.536606983396
-    >>> calculate_bic(model, type='random')
+    >>> calculate_bic(model, ofv, type='random')
     610.7412809453149
-    >>> calculate_bic(model, type='iiv')
+    >>> calculate_bic(model, ofv, type='iiv')
     594.431131169692
     """
-    if modelfit_results is None:
-        modelfit_results = model.modelfit_results
-
     parameters = model.parameters.nonfixed
     if type == 'fixed':
         penalty = len(parameters) * math.log(len(get_observations(model)))
@@ -919,8 +914,7 @@ def calculate_bic(model, type=None, modelfit_results=None):
         nsubs = len(get_ids(model))
         nobs = len(get_observations(model))
         penalty = dim_theta_r * math.log(nsubs) + dim_theta_f * math.log(nobs)
-    ofv = modelfit_results.ofv
-    return ofv + penalty
+    return likelihood + penalty
 
 
 def check_high_correlations(model, limit=0.9):

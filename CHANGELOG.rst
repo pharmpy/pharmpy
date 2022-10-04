@@ -16,6 +16,7 @@ Changes
 =======
 
 * Generalize detection of existing effects in add_covariate_effect (#1004)
+* calculate_bic and calculate_aic will need the -2LL as input instead of modelfit_results
 
 Bug fixes
 =========
