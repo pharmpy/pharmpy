@@ -254,12 +254,13 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 df = cov_table.table_no(result_obj.table_number).data_frame
                 if df is not None:
                     if self.model:
-                        df = df.rename(index=parameter_translation(self.model.internals.control_stream))
+                        df = df.rename(
+                            index=parameter_translation(self.model.internals.control_stream)
+                        )
                         df.columns = df.index
                 result_obj.covariance_matrix = df
             else:
                 result_obj.covariance_matrix = None
-
 
     def _read_coi_table(self):
         try:
@@ -274,12 +275,13 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 df = coi_table.table_no(result_obj.table_number).data_frame
                 if df is not None:
                     if self.model:
-                        df = df.rename(index=parameter_translation(self.model.internals.control_stream))
+                        df = df.rename(
+                            index=parameter_translation(self.model.internals.control_stream)
+                        )
                         df.columns = df.index
                 result_obj.information_matrix = df
             else:
                 result_obj.information_matrix = None
-
 
     def _read_cor_table(self):
         try:
@@ -302,7 +304,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 result_obj.correlation_matrix = cor
             else:
                 result_obj.correlation_matrix = None
-
 
     def _calculate_cov_cor_coi(self):
         for obj in self:
