@@ -217,7 +217,7 @@ def py_to_r_str(arg, example=False):
     py_to_r_dict = {**args, **types, **latex}
 
     if not example:
-        py_to_r_dict = {**py_to_r_dict, **{r'\[([0-9]+)\]_*': r'(\1)'}}
+        py_to_r_dict = {**py_to_r_dict, r'\[([0-9]+)\]_*': r'(\1)'}
 
     arg_sub = arg
     for key, value in py_to_r_dict.items():

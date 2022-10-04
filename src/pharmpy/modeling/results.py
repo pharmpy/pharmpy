@@ -503,7 +503,7 @@ def _get_model_result_summary(model, include_all_estimation_steps=False):
                 run_type = 'evaluation'
             else:
                 run_type = 'estimation'
-            summary_dict = {**{'run_type': run_type}, **summary_dict}
+            summary_dict = {'run_type': run_type, **summary_dict}
             summary_dicts.append(summary_dict)
             tuples.append((model.name, i + 1))
         index = pd.MultiIndex.from_tuples(tuples, names=['model', 'step'])
