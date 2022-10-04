@@ -37,10 +37,7 @@ def create_results(
     summary_errors = summarize_errors([base_model] + res_models)
 
     best_model_name = summary_tool['rank'].idxmin()
-    try:
-        best_model = [model for model in res_models if model.name == best_model_name][0]
-    except IndexError:
-        best_model = base_model
+    best_model = next(filter(lambda model: model.name == best_model_name, res_models), base_model)
 
     if base_model.name != input_model.name:
         models = [base_model] + res_models
