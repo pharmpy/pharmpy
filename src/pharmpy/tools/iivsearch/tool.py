@@ -100,10 +100,9 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
 
     sum_tools, sum_models, sum_inds, sum_inds_count, sum_errs = [], [], [], [], []
 
-    # NOTE This creates an empty results object
-    # TODO Somehow create results object only after all algorithms have been run
-    res = post_process(rank_type, cutoff, input_model, base_model.name, base_model)
-    prev_models = {model.name for model in res.models}
+    models = []
+    models_set = set()
+    last_res = None
 
     for algorithm_cur in list_of_algorithms:
 
@@ -111,37 +110,44 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
         wf = create_algorithm_workflow(
             input_model, base_model, algorithm_cur, iiv_strategy, rank_type, cutoff
         )
-        next_res = call_workflow(wf, f'results_{algorithm}', context)
+        res = call_workflow(wf, f'results_{algorithm}', context)
 
         # NOTE Append results
-        new_models = filter(lambda model: model.name not in prev_models, next_res.models)
-        res.models.extend(new_models)
-        prev_models.update(model.name for model in new_models)
-        res.final_model_name = next_res.final_model_name
-        sum_tools.append(next_res.summary_tool)
-        sum_models.append(next_res.summary_models)
-        sum_inds.append(next_res.summary_individuals)
-        sum_inds_count.append(next_res.summary_individuals_count)
-        sum_errs.append(next_res.summary_errors)
-        final_model = [model for model in res.models if model.name == res.final_model_name]
-        assert len(final_model) == 1
-        base_model = final_model[0]
+        new_models = list(filter(lambda model: model.name not in models_set, res.models))
+        models.extend(new_models)
+        models_set.update(model.name for model in new_models)
 
-        # NOTE Force no_add on all algorithms except the first one
+        sum_tools.append(res.summary_tool)
+        sum_models.append(res.summary_models)
+        sum_inds.append(res.summary_individuals)
+        sum_inds_count.append(res.summary_individuals_count)
+        sum_errs.append(res.summary_errors)
+
+        final_model = next(
+            filter(lambda model: model.name == res.final_model_name, res.models), base_model
+        )
+
+        base_model = final_model
         iiv_strategy = 'no_add'
+        last_res = res
 
-    if len(list_of_algorithms) > 1:
+    assert last_res is not None
+
+    if len(list_of_algorithms) >= 2:
         keys = list(range(1, len(list_of_algorithms) + 1))
     else:
         keys = None
 
-    res.summary_tool = _concat_summaries(sum_tools, keys)
-    res.summary_models = _concat_summaries(sum_models, keys)
-    res.summary_individuals = _concat_summaries(sum_inds, keys)
-    res.summary_individuals_count = _concat_summaries(sum_inds_count, keys)
-    res.summary_errors = _concat_summaries(sum_errs, keys)
-
-    return res
+    return IIVSearchResults(
+        summary_tool=_concat_summaries(sum_tools, keys),
+        summary_models=_concat_summaries(sum_models, keys),
+        summary_individuals=_concat_summaries(sum_inds, keys),
+        summary_individuals_count=_concat_summaries(sum_inds_count, keys),
+        summary_errors=_concat_summaries(sum_errs, keys),
+        final_model_name=last_res.final_model_name,
+        models=models,
+        tool_database=last_res.tool_database,
+    )
 
 
 def _concat_summaries(summaries, keys):
