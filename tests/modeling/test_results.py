@@ -37,7 +37,11 @@ def test_calculate_eta_shrinkage(load_model_for_test, testdata):
 
 def test_calculate_individual_shrinkage(load_model_for_test, testdata):
     pheno = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    ishr = calculate_individual_shrinkage(pheno)
+    ishr = calculate_individual_shrinkage(
+        pheno,
+        pheno.modelfit_results.parameter_estimates,
+        pheno.modelfit_results.individual_estimates_covariance,
+    )
     assert len(ishr) == 59
     assert pytest.approx(ishr['ETA(1)'][1], 1e-15) == 0.84778949807160287
 

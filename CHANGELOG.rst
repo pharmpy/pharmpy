@@ -18,6 +18,7 @@ Changes
 * Generalize detection of existing effects in add_covariate_effect (#1004)
 * calculate_bic and calculate_aic will need the -2LL as input instead of modelfit_results
 * calculate_eta_shrinkage now needs the explicit arguments parameter_estimates and individual_estimates
+* calculate_individual_shrinkage now needs the explicit arguments parameter_estimates and individual_estimates_covariance
 
 Bug fixes
 =========

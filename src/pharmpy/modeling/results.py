@@ -78,7 +78,7 @@ def calculate_eta_shrinkage(model, parameter_estimates, individual_estimates, sd
     return shrinkage
 
 
-def calculate_individual_shrinkage(model):
+def calculate_individual_shrinkage(model, parameter_estimates, individual_estimates_covariance):
     """Calculate the individual eta-shrinkage
 
     Definition: ieta_shr = (var(eta) / omega)
@@ -87,6 +87,10 @@ def calculate_individual_shrinkage(model):
     ----------
     model : Model
         Pharmpy model
+    parameter_estimates : pd.Series
+        Parameter estimates of model
+    individual_estimates_covariance : pd.DataFrame
+        Uncertainty covariance matrices of individual estimates
 
     Return
     ------
@@ -97,7 +101,9 @@ def calculate_individual_shrinkage(model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> calculate_individual_shrinkage(model)
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> covs = model.modelfit_results.individual_estimates_covariance
+    >>> calculate_individual_shrinkage(model, pe, covs)
           ETA(1)    ETA(2)
     ID
     1   0.847789  0.256473
@@ -165,9 +171,8 @@ def calculate_individual_shrinkage(model):
     calculate_eta_shrinkage
 
     """
-    res = model.modelfit_results
-    cov = res.individual_estimates_covariance
-    pe = res.parameter_estimates
+    cov = individual_estimates_covariance
+    pe = parameter_estimates
     # Want parameter estimates combined with fixed parameter values
     param_inits = model.parameters.to_dataframe()['value']
     pe = pe.combine_first(param_inits)
@@ -175,8 +180,6 @@ def calculate_individual_shrinkage(model):
     # Get all iiv and iov variance parameters
     diag = model.random_variables.etas.covariance_matrix.diagonal()
     param_names = [s.name for s in diag]
-    # param_names = model.random_variables.etas.variance_parameters
-    # param_names = list(OrderedSet(param_names))  # Only unique in order
 
     diag_ests = pe[param_names]
 
