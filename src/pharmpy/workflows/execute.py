@@ -1,10 +1,17 @@
 import inspect
+from typing import TypeVar
 
 from pharmpy.model import Model, Results
 from pharmpy.utils import normalize_user_given_path
 
+from .workflows import Workflow
 
-def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume=False):
+T = TypeVar('T')
+
+
+def execute_workflow(
+    workflow: Workflow[T], dispatcher=None, database=None, path=None, resume=False
+) -> T:
     """Execute workflow
 
     Parameters
@@ -59,7 +66,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume
 
     insert_context(workflow, database)
 
-    res = dispatcher.run(workflow)
+    res: T = dispatcher.run(workflow)
 
     if isinstance(res, Results):
         if hasattr(res, 'tool_database'):
@@ -117,7 +124,7 @@ def insert_context(workflow, context):
             task.task_input = [context] + list(task.task_input)
 
 
-def call_workflow(wf, unique_name, db):
+def call_workflow(wf: Workflow[T], unique_name, db) -> T:
     """Dynamically call a workflow from another workflow.
 
     Currently only supports dask distributed
@@ -148,6 +155,6 @@ def call_workflow(wf, unique_name, db):
     dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
     futures = client.get(dsk_optimized, unique_name, sync=False)
     secede()
-    res = client.gather(futures)
+    res: T = client.gather(futures)
     rejoin()
     return res
