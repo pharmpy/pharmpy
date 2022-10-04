@@ -99,18 +99,27 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
         list_of_algorithms = [algorithm]
 
     sum_tools, sum_models, sum_inds, sum_inds_count, sum_errs = [], [], [], [], []
-    for i, algorithm_cur in enumerate(list_of_algorithms):
+
+    # NOTE This creates an empty results object
+    # TODO Somehow create results object only after all algorithms have been run
+    res = post_process(rank_type, cutoff, input_model, base_model.name, [base_model])
+    prev_models = {model.name for model in res.models}
+
+    for algorithm_cur in list_of_algorithms:
+
+        # NOTE Execute algorithm
         wf = create_algorithm_workflow(
             input_model, base_model, algorithm_cur, iiv_strategy, rank_type, cutoff
         )
         next_res = call_workflow(wf, f'results_{algorithm}', context)
-        if i == 0:
-            res = next_res
-        else:
-            prev_models = [model.name for model in res.models]
-            new_models = [model for model in next_res.models if model.name not in prev_models]
-            res.models = res.models + new_models
-            res.final_model_name = next_res.final_model_name
+
+        assert isinstance(next_res, IIVSearchResults)
+
+        # NOTE Append results
+        new_models = filter(lambda model: model.name not in prev_models, next_res.models)
+        res.models.extend(new_models)
+        prev_models.update(model.name for model in new_models)
+        res.final_model_name = next_res.final_model_name
         sum_tools.append(next_res.summary_tool)
         sum_models.append(next_res.summary_models)
         sum_inds.append(next_res.summary_individuals)
@@ -119,6 +128,8 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
         final_model = [model for model in res.models if model.name == res.final_model_name]
         assert len(final_model) == 1
         base_model = final_model[0]
+
+        # NOTE Force no_add on all algorithms except the first one
         iiv_strategy = 'no_add'
 
     if len(list_of_algorithms) > 1:
