@@ -19,9 +19,9 @@ jobs:
         platform: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.8', '3.9', '3.10']
         include:
-          - flags: ''
+          - tox-env: 'unit'
           - python-version: '3.8'
-            flags: ${{ github.actor == 'dependabot[bot]' && '' || '-cover' }}
+            tox-env: ${{ github.actor != 'dependabot[bot]' && 'unit-cover' || 'unit' }}
         exclude:
           - platform: windows-latest
             python-version: '3.10'
@@ -36,13 +36,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Run unit tests with tox${{ matrix.flags == '-cover' && ' (with coverage)' || '' }}
+      - name: Run unit tests with tox${{ matrix.tox-env == 'unit-cover' && ' (with coverage).' || '.' }}
         shell: bash
         run: |
-            tox -e unit${{ matrix.flags }}
+            tox -e ${{ matrix.tox-env }}
 
       - uses: codecov/codecov-action@v3
-        if: matrix.flags == '-cover'
+        if: matrix.tox-env == 'unit-cover'
         with:
           flags: unit,${{ matrix.platform }},python-${{ matrix.python-version }}
           files: ./.coverage.xml
