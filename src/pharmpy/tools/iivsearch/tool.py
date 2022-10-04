@@ -102,7 +102,7 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
 
     # NOTE This creates an empty results object
     # TODO Somehow create results object only after all algorithms have been run
-    res = post_process(rank_type, cutoff, input_model, base_model.name, [base_model])
+    res = post_process(rank_type, cutoff, input_model, base_model.name, base_model)
     prev_models = {model.name for model in res.models}
 
     for algorithm_cur in list_of_algorithms:
