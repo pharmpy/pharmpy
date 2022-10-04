@@ -39,6 +39,8 @@ def execute_model(model, db):
             args, stdin=subprocess.DEVNULL, stderr=err, stdout=out, cwd=str(path)
         )
 
+    (path / 'results.lst').rename((path / basepath).with_suffix('.lst'))
+
     metadata = {
         'plugin': 'nonmem',
         'path': str(path),
@@ -56,7 +58,7 @@ def execute_model(model, db):
     with database.transaction(model) as txn:
 
         txn.store_model()
-        txn.store_local_file((path / 'results.lst'), new_filename=basepath.with_suffix('.lst'))
+        txn.store_local_file((path / basepath).with_suffix('.lst'))
         txn.store_local_file((path / basepath).with_suffix('.ext'))
         txn.store_local_file((path / basepath).with_suffix('.phi'))
         txn.store_local_file((path / basepath).with_suffix('.cov'))
@@ -80,6 +82,9 @@ def execute_model(model, db):
             txn.store_modelfit_results()
 
             # Read in results for the server side
+            import os
+
+            os.system("ls -l " + str(path))
             model._modelfit_results = parse_modelfit_results(model, path)
 
     return model
