@@ -24,13 +24,17 @@ from .parameter_sampling import create_rng, sample_parameters_from_covariance_ma
 RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic'))
 
 
-def calculate_eta_shrinkage(model, sd=False):
+def calculate_eta_shrinkage(model, parameter_estimates, individual_estimates, sd=False):
     """Calculate eta shrinkage for each eta
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    parameter_estimates : pd.Series
+        Parameter estimates
+    individual_estimates : pd.DataFrame
+        Table of individual (eta) estimates
     sd : bool
         Calculate shrinkage on the standard deviation scale (default is to calculate on the
         variance scale)
@@ -44,11 +48,13 @@ def calculate_eta_shrinkage(model, sd=False):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> calculate_eta_shrinkage(model)
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> ie = model.modelfit_results.individual_estimates
+    >>> calculate_eta_shrinkage(model, pe, ie)
     ETA(1)    0.720481
     ETA(2)    0.240295
     dtype: float64
-    >>> calculate_eta_shrinkage(model, sd=True)
+    >>> calculate_eta_shrinkage(model, pe, ie, sd=True)
     ETA(1)    0.471305
     ETA(2)    0.128389
     dtype: float64
@@ -58,20 +64,17 @@ def calculate_eta_shrinkage(model, sd=False):
     calculate_individual_shrinkage
 
     """
-    res = model.modelfit_results
-    pe = res.parameter_estimates
     # Want parameter estimates combined with fixed parameter values
     param_inits = model.parameters.to_dataframe()['value']
-    pe = pe.combine_first(param_inits)
+    pe = parameter_estimates.combine_first(param_inits)
 
-    ie = res.individual_estimates
     param_names = model.random_variables.iiv.variance_parameters
     diag_ests = pe[param_names]
-    diag_ests.index = ie.columns
+    diag_ests.index = individual_estimates.columns
     if not sd:
-        shrinkage = 1 - (ie.var() / diag_ests)
+        shrinkage = 1 - (individual_estimates.var() / diag_ests)
     else:
-        shrinkage = 1 - (ie.std() / (diag_ests**0.5))
+        shrinkage = 1 - (individual_estimates.std() / (diag_ests**0.5))
     return shrinkage
 
 

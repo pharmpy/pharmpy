@@ -23,11 +23,13 @@ from pharmpy.utils import TemporaryDirectoryChanger
 
 def test_calculate_eta_shrinkage(load_model_for_test, testdata):
     pheno = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    shrinkage = calculate_eta_shrinkage(pheno)
+    pe = pheno.modelfit_results.parameter_estimates
+    ie = pheno.modelfit_results.individual_estimates
+    shrinkage = calculate_eta_shrinkage(pheno, pe, ie)
     assert len(shrinkage) == 2
     assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 7.2048e01 / 100
     assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 2.4030e01 / 100
-    shrinkage = calculate_eta_shrinkage(pheno, sd=True)
+    shrinkage = calculate_eta_shrinkage(pheno, pe, ie, sd=True)
     assert len(shrinkage) == 2
     assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 4.7130e01 / 100
     assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 1.2839e01 / 100
