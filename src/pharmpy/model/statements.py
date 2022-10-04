@@ -2040,8 +2040,8 @@ class Statements(Sequence):
                 raise KeyError(f"Could not find symbol {symbol}")
         g = self._create_dependency_graph()
         symbs = self[i].rhs_symbols
-        if i == 0:
-            # Special case for models with only one statement
+        if i == 0 or not g:
+            # Special case for models with only one statement or no dependent statements
             return symbs
         for j, _ in nx.bfs_predecessors(g, i, sort_neighbors=lambda x: reversed(sorted(x))):
             if isinstance(self[j], Assignment):
