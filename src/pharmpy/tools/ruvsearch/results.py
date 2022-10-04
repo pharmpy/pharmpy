@@ -36,7 +36,12 @@ def calculate_results(models):
     for iteration in range(min(iterations), max(iterations) + 1):
         base_index = names.index(f'base_{iteration}')
         base_model = models[base_index]
-        base_ofv = base_model.modelfit_results.ofv
+        if base_model.modelfit_results is not None and base_model.modelfit_results.ofv is not None:
+            base_ofv = base_model.modelfit_results.ofv
+        else:
+            warnings.warn(f'base CWRES model of iteration {iteration} failed.')
+            res = RUVSearchResults()
+            return res
 
         iteration_models = [
             model
