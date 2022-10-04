@@ -61,7 +61,7 @@ def create_workflow(
 
 
 def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, rank_type, cutoff):
-    wf = Workflow()
+    wf: Workflow[IIVSearchResults] = Workflow()
 
     start_task = Task(f'start_{algorithm}', _start_algorithm, base_model)
     wf.add_task(start_task)
@@ -112,8 +112,6 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
             input_model, base_model, algorithm_cur, iiv_strategy, rank_type, cutoff
         )
         next_res = call_workflow(wf, f'results_{algorithm}', context)
-
-        assert isinstance(next_res, IIVSearchResults)
 
         # NOTE Append results
         new_models = filter(lambda model: model.name not in prev_models, next_res.models)
