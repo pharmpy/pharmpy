@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import itertools
-from collections.abc import Sequence
+from collections.abc import Container as CollectionsContainer
+from collections.abc import Sequence as CollectionsSequence
 from functools import lru_cache
-from typing import Dict, Iterable, Set, Tuple
+from itertools import chain, product
+from typing import Container, Dict, Iterable, Sequence, Set, Tuple, Union, overload
 
 import pharmpy.math
 from pharmpy.deps import numpy as np
@@ -17,10 +18,9 @@ from .distributions.symbolic import Distribution, JointNormalDistribution, Norma
 def _create_rng(seed=None) -> np.random.Generator:
     """Create a new random number generator"""
     if isinstance(seed, np.random.Generator):
-        rng = seed
+        return seed
     else:
-        rng = np.random.default_rng(seed)
-    return rng
+        return np.random.default_rng(seed)
 
 
 class VariabilityLevel:
@@ -103,7 +103,7 @@ class VariabilityHierarchy:
                     return False
             return True
 
-    def _lookup(self, ind):
+    def _lookup(self, ind: Union[int, str, VariabilityLevel]) -> VariabilityLevel:
         # Lookup one index
         if isinstance(ind, int):
             # Index on numeric level for ints
@@ -117,12 +117,21 @@ class VariabilityHierarchy:
             for varlev in self._levels:
                 if varlev.name == ind.name:
                     return varlev
+
         raise KeyError(f'Could not find level {ind} in VariabilityHierarchy')
+
+    @overload
+    def __getitem__(self, ind: Union[Sequence, VariabilityHierarchy]) -> VariabilityHierarchy:
+        ...
+
+    @overload
+    def __getitem__(self, ind: Union[int, str, VariabilityLevel]) -> VariabilityLevel:
+        ...
 
     def __getitem__(self, ind):
         if isinstance(ind, VariabilityHierarchy):
             levels = [level.name for level in ind._levels]
-        elif not isinstance(ind, str) and isinstance(ind, Sequence):
+        elif not isinstance(ind, str) and isinstance(ind, CollectionsSequence):
             levels = ind
         else:
             return self._lookup(ind)
@@ -164,7 +173,7 @@ class VariabilityHierarchy:
         return value in self.names
 
 
-class RandomVariables(Sequence):
+class RandomVariables(CollectionsSequence):
     """A collection of distributions of random variables
 
     This class provides a container for random variables that preserves their order
@@ -328,6 +337,14 @@ class RandomVariables(Sequence):
                     return i, dist
         raise KeyError(f'Could not find {ind} in RandomVariables')
 
+    @overload
+    def __getitem__(self, ind: Union[int, str, sympy.Symbol]) -> Distribution:
+        ...
+
+    @overload
+    def __getitem__(self, ind: Union[slice, Container[str]]) -> RandomVariables:
+        ...
+
     def __getitem__(self, ind):
         if isinstance(ind, int):
             return self._dists[ind]
@@ -335,32 +352,26 @@ class RandomVariables(Sequence):
             return RandomVariables(
                 self._dists[ind.start : ind.stop : ind.step], self._eta_levels, self._epsilon_levels
             )
-        elif isinstance(ind, list) or isinstance(ind, tuple):
+        elif not isinstance(ind, str) and isinstance(ind, CollectionsContainer):
             remove = [name for name in self.names if name not in ind]
             split = self.unjoin(remove)
-            keep = []
-            for dist in split._dists:
-                if dist.names[0] in ind:
-                    keep.append(dist)
-            return RandomVariables(tuple(keep), self._eta_levels, self._epsilon_levels)
+            keep = tuple(dist for dist in split._dists if dist.names[0] in ind)
+            return RandomVariables(keep, self._eta_levels, self._epsilon_levels)
         else:
             _, rv = self._lookup_rv(ind)
             return rv
 
     def __contains__(self, ind):
         try:
-            _, _ = self._lookup_rv(ind)
+            self._lookup_rv(ind)
+            return True
         except KeyError:
             return False
-        return True
 
     @property
     def names(self):
         """List of the names of all random variables"""
-        names = []
-        for dist in self._dists:
-            names.extend(dist.names)
-        return names
+        return list(chain.from_iterable(dist.names for dist in self._dists))
 
     @property
     def epsilons(self):
@@ -401,10 +412,7 @@ class RandomVariables(Sequence):
     @property
     def free_symbols(self):
         """Set of free symbols for all random variables"""
-        symbs = set()
-        for dist in self._dists:
-            symbs |= dist.free_symbols
-        return symbs
+        return set().union(*(dist.free_symbols for dist in self._dists))
 
     @property
     def parameter_names(self) -> Tuple[str, ...]:
@@ -455,8 +463,8 @@ class RandomVariables(Sequence):
         IIV_CL ~ N(0, OMEGA_NEW)
 
         """
-        new_dists = [dist.subs(d) for dist in self._dists]
-        return self.derive(dists=tuple(new_dists))
+        new_dists = tuple(dist.subs(d) for dist in self._dists)
+        return self.derive(dists=new_dists)
 
     def unjoin(self, inds):
         """Remove all covariances the random variables have with other random variables
@@ -575,13 +583,14 @@ class RandomVariables(Sequence):
         means, M, names, _ = joined_rvs._calc_covariance_matrix()
         cov_to_params = dict()
         if fill != 0:
-            for row, col in itertools.product(range(M.rows), range(M.cols)):
+            for row, col in product(range(M.rows), range(M.cols)):
                 if M[row, col] == 0:
                     M[row, col] = fill
         elif name_template:
-            for row, col in itertools.product(range(M.rows), range(M.cols)):
+            for row, col in product(range(M.rows), range(M.cols)):
                 if M[row, col] == 0 and row > col:
                     param_1, param_2 = M[row, row], M[col, col]
+                    assert isinstance(param_names, list)
                     cov_name = name_template.format(param_names[col], param_names[row])
                     cov_to_params[cov_name] = (str(param_1), str(param_2))
                     M[row, col], M[col, row] = sympy.Symbol(cov_name), sympy.Symbol(cov_name)
@@ -687,16 +696,10 @@ class RandomVariables(Sequence):
         return M
 
     def __repr__(self):
-        strings = []
-        for dist in self._dists:
-            strings.append(repr(dist))
-        return '\n'.join(strings)
+        return '\n'.join(map(repr, self._dists))
 
     def _repr_latex_(self):
-        lines = []
-        for dist in self._dists:
-            latex = dist.latex_string(aligned=True)
-            lines.append(latex)
+        lines = (dist.latex_string(aligned=True) for dist in self._dists)
         return '\\begin{align*}\n' + r' \\ '.join(lines) + '\\end{align*}'
 
     def parameters_sdcorr(self, values):
