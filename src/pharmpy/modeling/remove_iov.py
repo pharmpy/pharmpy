@@ -52,7 +52,6 @@ def remove_iov(model, to_remove=None):
     d = {sympy.Symbol(name): 0 for name in etas}
     model.statements = sset.subs(d)
 
-    model.modelfit_results = None
     remove_unused_parameters_and_rvs(model)
     model.update_source()
     return model
