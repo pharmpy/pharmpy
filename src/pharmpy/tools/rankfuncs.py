@@ -32,9 +32,9 @@ def rank_models(rank_type, base, candidates, cutoff=None, bic_type: Union[None, 
 
     def fn(model):
         if rank_type == 'aic':
-            return calculate_aic(model)
+            return calculate_aic(model, model.modelfit_results.ofv)
         elif rank_type == 'bic':
-            return calculate_bic(model, bic_type)
+            return calculate_bic(model, model.modelfit_results.ofv, bic_type)
         else:
             return model.modelfit_results.ofv
 
@@ -49,9 +49,13 @@ def _create_diff_dict(rank_type, base, candidates, bic_type):
         if base.modelfit_results is None or model.modelfit_results is None:
             diff = np.nan
         elif rank_type == 'aic':
-            diff = calculate_aic(base) - calculate_aic(model)
+            diff = calculate_aic(base, base.modelfit_results.ofv) - calculate_aic(
+                model, model.modelfit_results.ofv
+            )
         elif rank_type == 'bic':
-            diff = calculate_bic(base, bic_type) - calculate_bic(model, bic_type)
+            diff = calculate_bic(base, base.modelfit_results.ofv, bic_type) - calculate_bic(
+                model, model.modelfit_results.ofv, bic_type
+            )
         else:
             diff = base.modelfit_results.ofv - model.modelfit_results.ofv
         diff_dict[model.name] = diff

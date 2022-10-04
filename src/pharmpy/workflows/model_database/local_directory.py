@@ -3,6 +3,7 @@ import shutil
 from contextlib import contextmanager
 from os import stat
 from pathlib import Path
+from typing import Union
 
 from pharmpy.lock import path_lock
 from pharmpy.model import DataInfo, Model
@@ -22,6 +23,22 @@ FILE_METADATA = 'metadata.json'
 FILE_MODELFIT_RESULTS = 'results.json'
 FILE_PENDING = 'PENDING'
 FILE_LOCK = '.lock'
+
+
+def get_modelfit_results(model, path):
+    # FIXME: This is a workaround. The proper solution is to only read the results.json from
+    # the database. For this to work roundtrip of DataFrames in json is needed.
+    # This is currently broken because of rounding issue in pandas
+    # Also the modelfit_results attribute will soon be removed from model objects.
+    if hasattr(model, "internals"):
+        from pharmpy.plugins.nonmem import parse_modelfit_results
+
+        res = parse_modelfit_results(model, path)
+    else:
+        from pharmpy.plugins.nlmixr import parse_modelfit_results
+
+        res = parse_modelfit_results(model, path)
+    model._modelfit_results = res
 
 
 class LocalDirectoryDatabase(NonTransactionalModelDatabase):
@@ -83,8 +100,7 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
             model = Model.create_model(path)
         except FileNotFoundError:
             raise KeyError('Model cannot be found in database')
-        model.database = self
-        model.read_modelfit_results(self.path)
+        get_modelfit_results(model, self.path)
         return model
 
     def retrieve_modelfit_results(self, name):
@@ -115,7 +131,7 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
         File extension to use for model files.
     """
 
-    def __init__(self, path='.', file_extension='.mod'):
+    def __init__(self, path: Union[str, Path] = '.', file_extension='.mod'):
         path = Path(path)
         if not path.exists():
             path.mkdir(parents=True)
@@ -166,6 +182,10 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
 
             # NOTE Commit transaction (only if no exception was raised)
             path.unlink()
+
+    def list_models(self):
+        model_dir_names = [p.name for p in self.path.glob('*') if not p.name.startswith('.')]
+        return sorted(model_dir_names)
 
     def __repr__(self):
         return f"LocalModelDirectoryDatabase({self.path})"
@@ -287,10 +307,12 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
                 errors.append(e)
                 pass
         else:
-            raise FileNotFoundError(errors)
+            raise KeyError(
+                f'Could not find {self.name} in {self.db}.'
+                f' Looked up {", ".join(map(lambda e: f"`{e.filename}`", errors))}.'
+            )
 
-        model.database = self.db
-        model.read_modelfit_results(root)
+        get_modelfit_results(model, root)
         return model
 
     def retrieve_modelfit_results(self):

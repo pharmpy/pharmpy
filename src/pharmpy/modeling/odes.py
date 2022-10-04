@@ -3,6 +3,7 @@
 """
 
 from pharmpy.deps import sympy
+from pharmpy.expressions import subs
 from pharmpy.model import (
     Assignment,
     Bolus,
@@ -196,7 +197,7 @@ def set_zero_order_elimination(model):
         central = odes.central_compartment
         output = odes.output_compartment
         rate = odes.get_flow(central, output)
-        rate = rate.subs('CL', 0)
+        rate = subs(rate, {'CL': 0})
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, rate)
@@ -219,7 +220,7 @@ def has_michaelis_menten_elimination(model):
     """Check if the model describes Michaelis-Menten elimination
 
     This function relies on heuristics and will not be able to detect all
-    possible ways of coding the Michalis-Menten elimination.
+    possible ways of coding the Michaelis-Menten elimination.
 
     Parameters
     ----------
@@ -400,7 +401,7 @@ def set_michaelis_menten_elimination(model):
         central = odes.central_compartment
         output = odes.output_compartment
         rate = odes.get_flow(central, output)
-        rate = rate.subs('CL', 0)
+        rate = subs(rate, {'CL': 0})
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, rate)
@@ -539,10 +540,10 @@ def _rename_parameter(model, old_name, new_name):
             model.statements = model.statements.subs({old_par: new_par})
             break
     for s in a.rhs_symbols:
-        if s in model.random_variables.iiv:
-            rv = model.random_variables[s]
-            cov = model.random_variables.iiv.covariance_matrix
-            ind = model.random_variables.iiv.index(rv)
+        iivs = model.random_variables.iiv
+        if s.name in iivs.names:
+            cov = iivs.covariance_matrix
+            ind = iivs.names.index(s.name)
             pars = [e for e in cov[ind, :] if e.is_Symbol]
             diag = cov[ind, ind]
             d[diag] = f'IIV_{new_name}'
@@ -556,7 +557,7 @@ def _rename_parameter(model, old_name, new_name):
                         except AttributeError:
                             symb = p
                         d[symb] = p.name.replace(f'IIV_{old_name}', f'IIV_{new_name}')
-            model.random_variables.subs(d)
+            model.random_variables = model.random_variables.subs(d)
             break
     new = []
     for p in model.parameters:
@@ -1280,13 +1281,14 @@ def set_peripheral_compartments(model, n):
     remove_peripheral_compartment
 
     """
-    model.statements.to_compartmental_system()
+    odes = model.statements.ode_system.to_compartmental_system()
+
     try:
         n = _as_integer(n)
     except TypeError:
         raise TypeError(f'Number of compartments must be integer: {n}')
 
-    per = len(model.statements.ode_system.peripheral_compartments)
+    per = len(odes.peripheral_compartments)
     if per < n:
         for _ in range(n - per):
             add_peripheral_compartment(model)

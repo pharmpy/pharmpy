@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from itertools import chain, groupby
 from multiprocessing import get_context
@@ -17,6 +17,8 @@ from pharmpy.lock import (
     AcquiringThreadLevelLockWouldBlockError,
     RecursiveDeadlockError,
     path_lock,
+    process_level_path_lock,
+    thread_level_lock,
 )
 from pharmpy.utils import TemporaryDirectoryChanger
 
@@ -131,6 +133,46 @@ def test_non_blocking(tmp_path, parallelization, exception, shared):
                 task.result()
 
 
+def locked_threads(parameters, is_done):
+    n = len(parameters)
+    with threads(n) as (executor, _):
+        tasks = []
+        for params in parameters:
+            tasks.append(executor.submit(*params))
+        for task in as_completed(tasks):
+            try:
+                task.result()
+            except:  # noqa E722
+                is_done.wait()
+                raise
+
+
+@pytest.mark.parametrize('n_blocking', (0, 1, 2, 3, 4, 5))
+def test_non_blocking_processes_and_threads(tmp_path, n_blocking):
+    if os.name == 'nt':
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
+
+    with lock(tmp_path) as path:
+
+        with processes(2) as (executor, m):
+            is_locked = m.Barrier(2 + n_blocking)
+            is_done = m.Barrier(2)
+
+            t1 = executor.submit(lock_first, is_locked, is_done, path, False)
+
+            t2 = executor.submit(
+                locked_threads,
+                ([(lock_rest, is_locked, None, path, True, True)] * n_blocking)
+                + [(lock_rest, is_locked, None, path, True, False)],
+                is_done,
+            )
+
+            with pytest.raises(AcquiringProcessLevelLockWouldBlockError):
+                t2.result()
+
+            t1.result()
+
+
 def lock_shared(are_locked, q, path, i):
     with path_lock(path, shared=True):
         are_locked.wait()
@@ -178,12 +220,13 @@ def test_many_shared_one_exclusive_blocking(tmp_path, parallelization):
                 assert results[-1] == 0
 
 
+@pytest.mark.parametrize('acquire_lock', (path_lock, thread_level_lock, process_level_path_lock))
 @pytest.mark.parametrize('shared', (True, False))
-def test_non_reentrant_dead_lock(tmp_path, shared):
+def test_non_reentrant_dead_lock(tmp_path, acquire_lock, shared):
     with lock(tmp_path) as path:
-        with path_lock(path, shared=shared):
+        with acquire_lock(path, shared=shared):
             with pytest.raises(RecursiveDeadlockError):
-                with path_lock(path, shared=shared):
+                with acquire_lock(path, shared=shared):
                     pass
 
 

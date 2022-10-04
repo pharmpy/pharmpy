@@ -2,6 +2,7 @@ import math
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
+from pharmpy.expressions import subs
 
 # This module could probably be made private.
 
@@ -89,7 +90,7 @@ def se_delta_method(expr, values, cov):
     names = [y for x in cov.columns for y in names_unsorted if y == x]
     cov = cov[names].loc[names]
     symb_gradient = [sympy.diff(expr, sympy.Symbol(name)) for name in names]
-    num_gradient = np.array([float(x.subs(values)) for x in symb_gradient])
+    num_gradient = np.array([float(subs(x, values, simultaneous=True)) for x in symb_gradient])
     se = np.sqrt(num_gradient @ cov.values @ num_gradient.T)
     return se
 
@@ -173,9 +174,10 @@ def conditional_joint_normal(mu, sigma, a):
     M2 = mu[nfirst:]
 
     S22_inv = np.linalg.inv(S22)
+    S12_at_S22_inv = S12 @ S22_inv
 
-    mu_bar = M1 + S12 @ S22_inv @ (a - M2)
-    sigma_bar = S11 - S12 @ S22_inv @ S21
+    mu_bar = M1 + S12_at_S22_inv @ (a - M2)
+    sigma_bar = S11 - S12_at_S22_inv @ S21
 
     return mu_bar, sigma_bar
 

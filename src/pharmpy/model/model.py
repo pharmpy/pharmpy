@@ -51,7 +51,7 @@ class Model:
 
     def __init__(self):
         self.parameters = Parameters([])
-        self.random_variables = RandomVariables([])
+        self.random_variables = RandomVariables.create([])
         self.statements = Statements()
         self.dependent_variable = sympy.Symbol('y')
         self.observation_transformation = self.dependent_variable
@@ -364,10 +364,6 @@ class Model:
     def description(self, value):
         self._description = value
 
-    def read_modelfit_results(self, path: Path):
-        """Read in modelfit results"""
-        raise NotImplementedError("Read modelfit results not implemented for generic models")
-
     def update_datainfo(self):
         """Update model.datainfo for a new dataset"""
         colnames = self.dataset.columns
@@ -433,8 +429,8 @@ class Model:
                 code = fp.read()
         else:
             code = obj.read()
-        model_class = detect_model(code)
-        model = model_class(code, path, **kwargs)
+        model_module = detect_model(code)
+        model = model_module.Model(code, path, **kwargs)
         # Setup model database here
         # Read in model results here?
         # Set filename extension?

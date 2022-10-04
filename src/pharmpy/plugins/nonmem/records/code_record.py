@@ -10,6 +10,7 @@ import lark
 
 from pharmpy.data_structures import OrderedSet
 from pharmpy.deps import sympy, sympy_printing
+from pharmpy.expressions import subs
 from pharmpy.model import Assignment, Statement, Statements
 from pharmpy.parse_utils.generic import AttrToken, NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
@@ -159,7 +160,7 @@ def _order_terms(assignment, rvs, trans):
     if not isinstance(assignment.expression, sympy.Add) or rvs is None:
         return assignment.expression
 
-    rvs_names = [rv.name for rv in rvs]
+    rvs_names = rvs.names
 
     if trans:
         trans_rvs = {v.name: k.name for k, v in trans.items() if str(k) in rvs_names}
@@ -674,7 +675,7 @@ class CodeRecord(Record):
             # For now Piecewise signals zero-order infusions, which are handled with parameters
             ode = ode.replace(sympy.Piecewise, lambda a1, a2: 0)
             symbol = sympy.Symbol(f'DADT({i + 1})')
-            expression = ode.rhs.subs(function_map)
+            expression = subs(ode.rhs, function_map, simultaneous=True)
             statements.append(Assignment(symbol, expression))
         self.statements = statements
 

@@ -1,39 +1,29 @@
 import shutil
-from pathlib import Path
 
 from pharmpy.model import Model
 from pharmpy.tools import fit, run_iovsearch
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-def _model_count(rundir: Path):
-    return sum(
-        map(
-            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
-            ((rundir / 'models').iterdir()),
-        )
-    )
-
-
-def test_default_mox2(tmp_path, start_model):
+def test_default_mox2(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_iovsearch('VISI', model=start_model)
         rundir = tmp_path / 'iovsearch_dir1'
-        assert _model_count(rundir) == 8
+        assert model_count(rundir) == 8
 
-        assert res.best_model.name == 'iovsearch_candidate7'
+        assert res.final_model_name == 'iovsearch_candidate7'
 
 
-def test_rank_type_ofv_mox2(tmp_path, start_model):
+def test_rank_type_ofv_mox2(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_iovsearch('VISI', model=start_model, rank_type='ofv')
         rundir = tmp_path / 'iovsearch_dir1'
-        assert _model_count(rundir) == 8
+        assert model_count(rundir) == 8
 
-        assert res.best_model.name == 'iovsearch_candidate7'
+        assert res.final_model_name == 'iovsearch_candidate7'
 
 
-def test_default_mox1(tmp_path, testdata):
+def test_default_mox1(tmp_path, model_count, testdata):
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox1.mod', tmp_path)
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_log.csv', tmp_path)
     with TemporaryDirectoryChanger(tmp_path):
@@ -41,6 +31,6 @@ def test_default_mox1(tmp_path, testdata):
         fit(start_model)
         res = run_iovsearch('VISI', model=start_model)
         rundir = tmp_path / 'iovsearch_dir1'
-        assert _model_count(rundir) == 7
+        assert model_count(rundir) == 7
 
-        assert res.best_model == res.input_model
+        assert res.final_model_name == start_model.name

@@ -46,7 +46,7 @@ def summarize_individuals(models: List[Model]) -> Union[DataFrame, None]:
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import fit
-    >>> fit(model)
+    >>> fit(model)  # doctest: +SKIP
     <Pharmpy model object pheno>
     >>> from pharmpy.tools import run_tool # doctest: +SKIP
     >>> results = run_tool(
@@ -129,7 +129,7 @@ def predicted_dofv(model: Model) -> Union[Series, float]:
 
 def ofv(model: Model) -> Union[Series, float]:
     res = model.modelfit_results
-    return np.nan if res is None else res.individual_ofv
+    return np.nan if res is None or res.individual_ofv is None else res.individual_ofv
 
 
 def dofv(parent_model: Union[Model, None], candidate_model: Model) -> Union[Series, float]:

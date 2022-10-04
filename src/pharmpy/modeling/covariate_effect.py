@@ -3,18 +3,103 @@
 """
 
 import math
+import re
 import warnings
 from operator import add, mul
+from typing import List, Literal, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
-from pharmpy.model import Assignment, Parameter, Parameters
+from pharmpy.expressions import subs, sympify
+from pharmpy.model import Assignment, Model, Parameter, Parameters, Statement, Statements
 
 from .data import get_baselines
+from .expressions import depends_on, remove_covariate_effect_from_statements, simplify_model
+
+EffectType = Union[Literal['lin', 'cat', 'piece_lin', 'exp', 'pow'], str]
+OperationType = Literal['*', '+']
 
 
-def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
+def has_covariate_effect(model: Model, parameter: str, covariate: str):
+    """Tests if an instance of :class:`pharmpy.model` has a given covariate
+    effect.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to check for covariate effect.
+    parameter : str
+        Name of parameter.
+    covariate : str
+        Name of covariate.
+
+    Return
+    ------
+    bool
+        Whether input model has a covariate effect of the input covariate on
+        the input parameter.
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> has_covariate_effect(model, "CL", "APGR")
+    False
+
+    """
+    return depends_on(model, parameter, covariate)
+
+
+def remove_covariate_effect(model: Model, parameter: str, covariate: str):
+    """Remove a covariate effect from an instance of :class:`pharmpy.model`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model from which to remove the covariate effect.
+    parameter : str
+        Name of parameter.
+    covariate : str
+        Name of covariate.
+
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> has_covariate_effect(model, "CL", "WGT")
+    True
+    >>> remove_covariate_effect(model, "CL", "WGT")
+    >>> has_covariate_effect(model, "CL", "WGT")
+    False
+
+    """
+    kept_thetas, before_odes = simplify_model(
+        model,
+        model.statements.before_odes,
+        remove_covariate_effect_from_statements(
+            model, model.statements.before_odes, parameter, covariate
+        ),
+    )
+    ode_system: List[Statement] = (
+        [] if model.statements.ode_system is None else [model.statements.ode_system]
+    )
+    after_odes = list(model.statements.after_odes)
+    model.statements = Statements(before_odes + ode_system + after_odes)
+    kept_parameters = model.random_variables.free_symbols.union(
+        kept_thetas, model.statements.after_odes.free_symbols
+    )
+    model.parameters = Parameters((p for p in model.parameters if p.symbol in kept_parameters))
+
+
+def add_covariate_effect(
+    model: Model,
+    parameter: str,
+    covariate: str,
+    effect: EffectType,
+    operation: OperationType = '*',
+    allow_nested: bool = False,
+):
     """Adds covariate effect to :class:`pharmpy.model`.
 
     The following effects have templates:
@@ -125,6 +210,9 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
         Type of covariate effect. May be abbreviated covariate effect (see above) or custom.
     operation : str, optional
         Whether the covariate effect should be added or multiplied (default).
+    allow_nested: bool, optional
+        Whether to allow adding a covariate effect when one already exists for
+        the input parameter-covariate pair.
 
     Return
     ------
@@ -143,8 +231,8 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     """
     sset = model.statements
 
-    if sympy.Symbol(f'{parameter}{covariate}') in sset.free_symbols:
-        warnings.warn('Covariate effect already exists')
+    if not allow_nested and depends_on(model, parameter, covariate):
+        warnings.warn(f'Covariate effect of {covariate} on {parameter} already exists')
         return model
 
     statistics = dict()
@@ -184,8 +272,10 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     ):
         statements[-1] = Assignment(
             effect_statement.symbol,
-            effect_statement.expression.subs(
-                {parameter: last_existing_parameter_assignment.expression}
+            subs(
+                effect_statement.expression,
+                {parameter: last_existing_parameter_assignment.expression},
+                simultaneous=True,
             ),
         )
         sset = sset[0 : insertion_index - 1] + sset[insertion_index:]
@@ -195,13 +285,17 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     return model
 
 
-def _create_thetas(model, parameter, effect, covariate, template):
+def natural_order(string, _nsre=re.compile(r'([0-9]+)')):
+    # From https://stackoverflow.com/a/16090640
+    return [int(key) if key.isdigit() else (key.lower(), key) for key in _nsre.split(string)]
+
+
+def _create_thetas(model, parameter, effect, covariate, template, _ctre=re.compile(r'theta\d*')):
     """Creates theta parameters and adds to parameter set of model.
 
     Number of parameters depends on how many thetas have been declared."""
-    no_of_thetas = len(
-        {str(sym) for sym in template.expression.free_symbols if str(sym).startswith('theta')}
-    )
+    new_thetas = {sym for sym in map(str, template.expression.free_symbols) if _ctre.match(sym)}
+    no_of_thetas = len(new_thetas)
 
     pset = model.parameters
 
@@ -217,7 +311,7 @@ def _create_thetas(model, parameter, effect, covariate, template):
         )
         theta_names['theta'] = theta_name
     else:
-        for i in range(1, no_of_thetas + 1):
+        for i, new_theta in enumerate(sorted(new_thetas, key=natural_order), 1):
             inits = _choose_param_inits(effect, model, covariate, i)
 
             theta_name = f'POP_{parameter}{covariate}_{i}'
@@ -225,7 +319,7 @@ def _create_thetas(model, parameter, effect, covariate, template):
                 [p for p in pset]
                 + [Parameter(theta_name, inits['init'], inits['lower'], inits['upper'])]
             )
-            theta_names[f'theta{i}'] = theta_name
+            theta_names[new_theta] = theta_name
 
     model.parameters = pset
 
@@ -402,7 +496,14 @@ class CovariateEffect:
         effect_name = f'{parameter}{covariate}'
         self.template = Assignment(
             sympy.Symbol(effect_name),
-            self.template.expression.subs(thetas).subs({'cov': covariate}),
+            subs(
+                subs(
+                    self.template.expression,
+                    thetas,
+                ),
+                {'cov': covariate},
+                simultaneous=True,
+            ),
         )
 
         template_str = [str(symbol) for symbol in self.template.free_symbols]
@@ -463,7 +564,7 @@ class CovariateEffect:
         values = [1]
         conditions = [sympy.Eq(sympy.Symbol('cov'), most_common)]
 
-        for i, cat in enumerate(categories):
+        for i, cat in enumerate(categories, 1):
             if cat != most_common:
                 if np.isnan(cat):
                     conditions += [sympy.Eq(sympy.Symbol('cov'), sympy.Symbol('NaN'))]

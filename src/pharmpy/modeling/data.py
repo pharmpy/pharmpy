@@ -773,7 +773,7 @@ def get_evid(model):
     except IndexError:
         pass
     else:
-        return eventcols[0]
+        return model.dataset[eventcols[0].name]
     mdv = get_mdv(model)
     return mdv.rename('EVID')
 
@@ -800,10 +800,17 @@ def get_cmt(model):
     except IndexError:
         pass
     else:
-        return cmtcols[0]
-    evid = get_evid(model)
-    # FIXME: Should find the number of the dosing compartment
-    return evid.rename('CMT')
+        return model.dataset[cmtcols[0].name]
+    odes = model.statements.ode_system
+    if odes:
+        dosing = odes.dosing_compartment
+        names = odes.compartment_names
+        dose_cmt = names.index(dosing.name) + 1
+    else:
+        dose_cmt = 1
+    cmt = get_evid(model)
+    cmt = cmt.replace({1: dose_cmt, 2: 0, 3: 0, 4: dose_cmt})  # Only consider dose/non-dose
+    return cmt
 
 
 def add_time_after_dose(model):

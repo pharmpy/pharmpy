@@ -1,14 +1,10 @@
 from .data import DatasetError, DatasetWarning
 from .datainfo import ColumnInfo, DataInfo
+from .distributions.symbolic import Distribution, JointNormalDistribution, NormalDistribution
 from .estimation import EstimationStep, EstimationSteps
 from .model import Model, ModelError, ModelfitResultsError, ModelSyntaxError
 from .parameters import Parameter, Parameters
-from .random_variables import (
-    RandomVariable,
-    RandomVariables,
-    VariabilityHierarchy,
-    VariabilityLevel,
-)
+from .random_variables import RandomVariables, VariabilityHierarchy, VariabilityLevel
 from .results import Results
 from .statements import (
     Assignment,
@@ -33,18 +29,20 @@ __all__ = (
     'DataInfo',
     'DatasetError',
     'DatasetWarning',
+    'Distribution',
     'EstimationStep',
     'EstimationSteps',
     'ExplicitODESystem',
     'Infusion',
+    'JointNormalDistribution',
     'Model',
     'ModelError',
     'ModelfitResultsError',
     'ModelSyntaxError',
+    'NormalDistribution',
     'ODESystem',
     'Parameter',
     'Parameters',
-    'RandomVariable',
     'RandomVariables',
     'Results',
     'Statement',

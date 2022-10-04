@@ -10,17 +10,17 @@ from pathlib import Path
 import pharmpy.config as config
 from pharmpy.deps import sympy
 from pharmpy.model import (
-    Assignment,
     CompartmentalSystem,
+    CompartmentalSystemBuilder,
+    JointNormalDistribution,
     Model,
+    NormalDistribution,
     Parameter,
     Parameters,
     RandomVariables,
 )
 from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import default_model_database
-
-from .block_rvs import split_joint_distribution
 
 
 def read_model(path):
@@ -213,7 +213,7 @@ def convert_model(model, to_format):
     if to_format == 'generic':
         new = Model.create_model()
         new.parameters = model.parameters
-        new.random_variables = model.random_variables.copy()
+        new.random_variables = model.random_variables
         new.statements = model.statements
         new.dataset = model.dataset
         new.estimation_steps = model.estimation_steps
@@ -490,7 +490,8 @@ def get_model_covariates(model, strings=False):
     """List of covariates used in model
 
     A covariate in the model is here defined to be a data item
-    affecting the model prediction excluding dosing items.
+    affecting the model prediction excluding dosing items that
+    are not used in model code.
 
     Parameters
     ----------
@@ -514,17 +515,26 @@ def get_model_covariates(model, strings=False):
     ['APGR', 'WGT']
 
     """
-    symbs = model.statements.dependencies(model.dependent_variable)
-    # Remove dose symbol if not used as covariate
     datasymbs = {sympy.Symbol(s) for s in model.datainfo.names}
-    cov_dose_symbols = set()
-    if isinstance(model.statements.ode_system, CompartmentalSystem):
-        dosecmt = model.statements.ode_system.dosing_compartment
-        dosesyms = dosecmt.free_symbols
-        for s in model.statements:
-            if isinstance(s, Assignment):
-                cov_dose_symbols |= dosesyms.intersection(s.rhs_symbols)
-    covs = list(symbs.intersection(datasymbs) - cov_dose_symbols)
+
+    odes = model.statements.ode_system
+
+    # Consider statements that are dependencies of the ode system and y
+    if odes:
+        odes = odes.to_compartmental_system()
+        dose_comp = odes.dosing_compartment
+        cb = CompartmentalSystemBuilder(odes)
+        cb.set_dose(dose_comp, None)
+        cs = CompartmentalSystem(cb)
+        statements = model.statements.before_odes + cs + model.statements.after_odes
+        ode_deps = statements.dependencies(cs)
+    else:
+        ode_deps = set()
+
+    y = model.statements.find_assignment(model.dependent_variable)
+    y_deps = model.statements.error.dependencies(y)
+
+    covs = list(datasymbs.intersection(ode_deps | y_deps))
     covs = sorted(covs, key=lambda x: x.name)  # sort to make order deterministic
     if strings:
         covs = [str(x) for x in covs]
@@ -593,11 +603,15 @@ def get_config_path():
     >>> from pharmpy.modeling import get_config_path
     >>> get_config_path()  # doctest: +SKIP
     """
-    config_path = config.user_config_dir()
-    if config_path.exists():
-        return str(config_path)
+    if config.user_config_file_enabled():
+        config_path = config.user_config_dir()
+        if config_path.exists():
+            return str(config_path)
+        else:
+            warnings.warn(f'Cannot find config path {config_path}')
+            return None
     else:
-        warnings.warn(f'Cannot find config path {config_path}')
+        warnings.warn('User config file is disabled')
         return None
 
 
@@ -616,12 +630,28 @@ def remove_unused_parameters_and_rvs(model):
     """
     symbols = model.statements.free_symbols
 
-    new_rvs = RandomVariables()
-    for rv in model.random_variables:
-        if rv.symbol not in symbols and len(rv.joint_names) > 0:
-            split_joint_distribution(model, rv.name)
-        if rv.symbol in symbols or not symbols.isdisjoint(rv.sympy_rv.pspace.free_symbols):
-            new_rvs.append(rv)
+    # Find unused rvs needing unjoining
+    to_unjoin = []
+    for dist in model.random_variables:
+        if isinstance(dist, JointNormalDistribution):
+            names = dist.names
+            for i, name in enumerate(names):
+                params = dist.variance[i, :].free_symbols
+                symb = sympy.Symbol(name)
+                if symb not in symbols and symbols.isdisjoint(params):
+                    to_unjoin.append(name)
+
+    rvs = model.random_variables.unjoin(to_unjoin)
+
+    new_dists = []
+    for dist in rvs:
+        if isinstance(dist, NormalDistribution):
+            if not symbols.isdisjoint(dist.free_symbols):
+                new_dists.append(dist)
+        else:
+            new_dists.append(dist)
+
+    new_rvs = RandomVariables(tuple(new_dists), rvs._eta_levels, rvs._epsilon_levels)
     model.random_variables = new_rvs
 
     new_params = []

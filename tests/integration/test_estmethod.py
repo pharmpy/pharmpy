@@ -1,20 +1,10 @@
 import shutil
-from pathlib import Path
 
 import pytest
 
 from pharmpy.model import Model
 from pharmpy.tools import run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
-
-
-def _model_count(rundir: Path):
-    return sum(
-        map(
-            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
-            ((rundir / 'models').iterdir()),
-        )
-    )
 
 
 @pytest.mark.parametrize(
@@ -25,7 +15,9 @@ def _model_count(rundir: Path):
         ('reduced', ['foce', 'imp'], None, 2, 'ADVAN1'),
     ],
 )
-def test_estmethod(tmp_path, testdata, algorithm, methods, solvers, no_of_models, advan_ref):
+def test_estmethod(
+    tmp_path, model_count, testdata, algorithm, methods, solvers, no_of_models, advan_ref
+):
     with TemporaryDirectoryChanger(tmp_path):
         for path in (testdata / 'nonmem').glob('pheno_real.*'):
             shutil.copy2(path, tmp_path)
@@ -40,7 +32,7 @@ def test_estmethod(tmp_path, testdata, algorithm, methods, solvers, no_of_models
         assert advan_ref in res.models[-1].model_code
         rundir = tmp_path / 'estmethod_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == no_of_models
+        assert model_count(rundir) == no_of_models
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'results.html').exists()

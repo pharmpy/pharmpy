@@ -3,7 +3,7 @@
 """
 
 import importlib
-import inspect
+from functools import wraps
 from typing import Callable
 
 from .run import run_tool
@@ -31,19 +31,9 @@ def wrap(tool_name: str) -> Callable:
 
 
 def _create_wrap(tool_name: str, create_workflow: Callable) -> Callable:
-    tool_sig = inspect.signature(create_workflow)
-
-    func = _create_function(tool_name, tool_sig)
-
-    wrapper_name = f'run_{tool_name}'
-    func.__name__ = wrapper_name
-    func.__doc__ = create_workflow.__doc__
-    return func
-
-
-def _create_function(tool_name: str, sig) -> Callable:
-    def _func(*args, **kwargs):
+    @wraps(create_workflow)
+    def func(*args, **kwargs):
         return run_tool(tool_name, *args, **kwargs)
 
-    _func.__signature__ = sig
-    return _func
+    func.__name__ = f'run_{tool_name}'
+    return func

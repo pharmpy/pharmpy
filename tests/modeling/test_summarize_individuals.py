@@ -1,9 +1,12 @@
 import sys
 
+import numpy as np
 import pandas as pd
 import pytest
 
 from pharmpy.modeling import read_model, summarize_individuals, summarize_individuals_count_table
+from pharmpy.modeling.summarize_individuals import dofv
+from pharmpy.results import ModelfitResults
 
 
 def test_summarize_individuals_count_table():
@@ -42,3 +45,25 @@ def test_tflite_not_installed(pheno_path, monkeypatch):
         monkeypatch.setitem(sys.modules, 'tflite_runtime', None)
         df = summarize_individuals([model])
         assert df['predicted_dofv'].isnull().all().all()
+
+
+def test_dofv_parent_model_is_none(pheno_path):
+    candidate_model = read_model(pheno_path)
+    res = dofv(None, candidate_model)
+    assert np.isnan(res)
+
+
+def test_dofv_modelfit_results_is_none(pheno_path):
+    parent_model = read_model(pheno_path)
+    candidate_model = parent_model.copy()
+    candidate_model.modelfit_results = None
+    res = dofv(parent_model, candidate_model)
+    assert res.isna().all()
+
+
+def test_dofv_individual_ofv_is_none(pheno_path):
+    parent_model = read_model(pheno_path)
+    candidate_model = parent_model.copy()
+    candidate_model.modelfit_results = ModelfitResults()
+    res = dofv(parent_model, candidate_model)
+    assert res.isna().all()

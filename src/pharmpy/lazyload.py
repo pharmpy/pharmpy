@@ -1,8 +1,8 @@
-import importlib
-import types
+from importlib import import_module
+from types import ModuleType
 
 
-class LazyLoader(types.ModuleType):
+class LazyLoader(ModuleType):
     """Class that masquerades as a module and lazily loads it when accessed the first time
 
     The code for the class is taken from TensorFlow and is under the Apache 2.0 license
@@ -20,7 +20,7 @@ class LazyLoader(types.ModuleType):
 
     def _load(self):
         # Import the target module and insert it into the parent's namespace
-        module = importlib.import_module(self.__name__)
+        module = import_module(self.__name__)
         resolved = module if self._attr is None else getattr(module, self._attr)
         self._parent_module_globals[self._local_name] = resolved
 

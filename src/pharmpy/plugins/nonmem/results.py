@@ -3,10 +3,24 @@ from pathlib import Path
 import pharmpy.modeling as modeling
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.plugins.nonmem.parsing import parameter_translation
 from pharmpy.plugins.nonmem.results_file import NONMEMResultsFile
 from pharmpy.plugins.nonmem.table import NONMEMTableFile
+from pharmpy.plugins.nonmem.update import rv_translation
 from pharmpy.results import ChainedModelfitResults, ModelfitResults
 from pharmpy.workflows.log import Log
+
+
+def parse_modelfit_results(model, path):
+    if path is None:
+        return None
+
+    try:
+        ext_path = path / (model.name + '.ext')
+        res = NONMEMChainedModelfitResults(ext_path, model=model)
+        return res
+    except (FileNotFoundError, OSError):
+        return None
 
 
 class NONMEMModelfitResults(ModelfitResults):
@@ -138,7 +152,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     )
             ests = ests[~fix]
             if self.model:
-                ests = ests.rename(index=self.model.parameter_translation())
+                ests = ests.rename(index=parameter_translation(self.model.internals.control_stream))
             result_obj.parameter_estimates = ests
             try:
                 sdcorr = table.omega_sigma_stdcorr[~fix]
@@ -146,7 +160,9 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 pass
             else:
                 if self.model:
-                    sdcorr = sdcorr.rename(index=self.model.parameter_translation())
+                    sdcorr = sdcorr.rename(
+                        index=parameter_translation(self.model.internals.control_stream)
+                    )
                 sdcorr_ests = ests.copy()
                 sdcorr_ests.update(sdcorr)
                 result_obj.parameter_estimates_sdcorr = sdcorr_ests
@@ -166,13 +182,19 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 ses = ses[~fix]
                 sdcorr = table.omega_sigma_se_stdcorr[~fix]
                 if self.model:
-                    ses = ses.rename(index=self.model.parameter_translation())
-                    sdcorr = sdcorr.rename(index=self.model.parameter_translation())
+                    ses = ses.rename(
+                        index=parameter_translation(self.model.internals.control_stream)
+                    )
+                    sdcorr = sdcorr.rename(
+                        index=parameter_translation(self.model.internals.control_stream)
+                    )
                 result_obj.standard_errors = ses
                 sdcorr_ses = ses.copy()
                 sdcorr_ses.update(sdcorr)
                 if self.model:
-                    sdcorr_ses = sdcorr_ses.rename(index=self.model.parameter_translation())
+                    sdcorr_ses = sdcorr_ses.rename(
+                        index=parameter_translation(self.model.internals.control_stream)
+                    )
                 result_obj.standard_errors_sdcorr = sdcorr_ses
             self.append(result_obj)
 
@@ -199,7 +221,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             return
         table_with_cov = -99
         if self.model is not None:
-            if len(self.model.control_stream.get_records('COVARIANCE')) > 0:
+            if len(self.model.internals.control_stream.get_records('COVARIANCE')) > 0:
                 table_with_cov = self[-1].table_number  # correct unless interrupted
         for table_no, result_obj in enumerate(self, 1):
             result_obj._set_estimation_status(rfile, requested=True)
@@ -232,11 +254,12 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 df = cov_table.table_no(result_obj.table_number).data_frame
                 if df is not None:
                     if self.model:
-                        df = df.rename(index=self.model.parameter_translation())
+                        df = df.rename(index=parameter_translation(self.model.internals.control_stream))
                         df.columns = df.index
                 result_obj.covariance_matrix = df
             else:
                 result_obj.covariance_matrix = None
+
 
     def _read_coi_table(self):
         try:
@@ -251,11 +274,12 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 df = coi_table.table_no(result_obj.table_number).data_frame
                 if df is not None:
                     if self.model:
-                        df = df.rename(index=self.model.parameter_translation())
+                        df = df.rename(index=parameter_translation(self.model.internals.control_stream))
                         df.columns = df.index
                 result_obj.information_matrix = df
             else:
                 result_obj.information_matrix = None
+
 
     def _read_cor_table(self):
         try:
@@ -270,12 +294,15 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 cor = cor_table.table_no(result_obj.table_number).data_frame
                 if cor is not None:
                     if self.model:
-                        cor = cor.rename(index=self.model.parameter_translation())
+                        cor = cor.rename(
+                            index=parameter_translation(self.model.internals.control_stream)
+                        )
                         cor.columns = cor.index
                     np.fill_diagonal(cor.values, 1)
                 result_obj.correlation_matrix = cor
             else:
                 result_obj.correlation_matrix = None
+
 
     def _calculate_cov_cor_coi(self):
         for obj in self:
@@ -312,7 +339,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj.individual_estimates = None
             result_obj.individual_estimates_covariance = None
 
-        trans = self.model.rv_translation(reverse=True)
+        trans = rv_translation(self.model.internals.control_stream, reverse=True)
         rv_names = [name for name in self.model.random_variables.etas.names if name in trans]
         try:
             phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
@@ -324,12 +351,13 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 try:
                     result_obj.individual_ofv = table.iofv
                     result_obj.individual_estimates = table.etas.rename(
-                        columns=self.model.rv_translation()
+                        columns=rv_translation(self.model.internals.control_stream)
                     )[rv_names]
                     covs = table.etcs
                     covs = covs.transform(
                         lambda cov: cov.rename(
-                            columns=self.model.rv_translation(), index=self.model.rv_translation()
+                            columns=rv_translation(self.model.internals.control_stream),
+                            index=rv_translation(self.model.internals.control_stream),
                         )
                     )
                     covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
@@ -366,7 +394,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 obj.predictions = df
 
     def _read_from_tables(self, columns, result_obj):
-        table_recs = self.model.control_stream.get_records('TABLE')
+        table_recs = self.model.internals.control_stream.get_records('TABLE')
         found = []
         df = pd.DataFrame()
         for table_rec in table_recs:
@@ -392,12 +420,11 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         return df
 
 
-def simfit_results(model):
+def simfit_results(model, model_path):
     """Read in modelfit results from a simulation/estimation model"""
-    nsubs = model.control_stream.get_records('SIMULATION')[0].nsubs
+    nsubs = model.internals.control_stream.get_records('SIMULATION')[0].nsubs
     results = []
     for i in range(1, nsubs + 1):
-        model_path = model.database.retrieve_file(model.name, model.name + model.filename_extension)
         res = NONMEMChainedModelfitResults(model_path, model=model, subproblem=i)
         results.append(res)
     return results

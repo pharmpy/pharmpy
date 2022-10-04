@@ -36,6 +36,9 @@ class CodeGenerator:
 
 def convert_model(model):
     """Convert any model into an nlmixr model"""
+    if isinstance(model, Model):
+        return model.copy()
+
     nlmixr_model = Model()
     from pharmpy.modeling import convert_model
 
@@ -89,21 +92,22 @@ def create_ini(cg, model):
         theta_name = name_mangle(theta.name)
         cg.add(f'{theta_name} <- {theta.init}')
 
-    for rvs, dist in model.random_variables.etas.distributions():
-        if len(rvs) == 1:
-            omega = dist.std**2
+    for dist in model.random_variables.etas:
+        omega = dist.variance
+        if len(dist.names) == 1:
             init = model.parameters[omega.name].init
-            cg.add(f'{name_mangle(rvs[0].name)} ~ {init}')
+            cg.add(f'{name_mangle(dist.names[0])} ~ {init}')
         else:
-            omega = dist.sigma
             inits = []
             for row in range(omega.rows):
                 for col in range(row + 1):
                     inits.append(model.parameters[omega[row, col].name].init)
-            cg.add(f'{" + ".join([name_mangle(rv.name) for rv in rvs])} ~ c({", ".join(inits)})')
+            cg.add(
+                f'{" + ".join([name_mangle(name) for name in dist.names])} ~ c({", ".join(inits)})'
+            )
 
-    for rvs, dist in model.random_variables.epsilons.distributions():
-        sigma = dist.std**2
+    for dist in model.random_variables.epsilons:
+        sigma = dist.variance
         cg.add(f'{name_mangle(sigma.name)} <- {model.parameters[sigma.name].init}')
 
     cg.dedent()
@@ -121,8 +125,8 @@ def create_model(cg, model):
         if isinstance(s, Assignment):
             if s.symbol == model.dependent_variable:
 
-                for rvs, dist in model.random_variables.epsilons.distributions():
-                    sigma = dist.std**2
+                for dist in model.random_variables.epsilons:
+                    sigma = dist.variance
                 # FIXME: Needs to be generalized
                 cg.add('Y <- F')
                 cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')
@@ -182,22 +186,17 @@ class Model(pharmpy.model.Model):
         self.update_source(path=self._path)
         return self._src
 
-    def read_modelfit_results(self, path: Path):
-        try:
-            rdata_path = path / (self.name + '.RDATA')
-            read_modelfit_results(self, rdata_path)
-            return self.modelfit_results
-        except (FileNotFoundError, OSError):
-            self.modelfit_results = None
-            return None
 
-
-def read_modelfit_results(model, rdata_path):
+def parse_modelfit_results(model, path):
+    rdata_path = path / (model.name + '.RDATA')
     with warnings.catch_warnings():
         # Supress a numpy deprecation warning
         warnings.simplefilter("ignore")
         import pyreadr
-    rdata = pyreadr.read_r(rdata_path)
+    try:
+        rdata = pyreadr.read_r(rdata_path)
+    except (FileNotFoundError, OSError):
+        return None
     ofv = rdata['ofv']['ofv'][0]
     omegas_sigmas = dict()
     omega = model.random_variables.etas.covariance_matrix
@@ -221,11 +220,11 @@ def read_modelfit_results(model, rdata_path):
             thetas_index += 1
     pe = pd.Series(pe)
     res = ModelfitResults(ofv=ofv, parameter_estimates=pe)
-    model.modelfit_results = res
+    return res
 
 
-def execute_model(model):
-    database = model.database
+def execute_model(model, db):
+    database = db.model_database
     model = convert_model(model)
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
     model._path = path
@@ -295,5 +294,6 @@ def execute_model(model):
         txn.store_metadata(metadata)
         txn.store_modelfit_results()
 
-    read_modelfit_results(model, rdata_path)
+    res = parse_modelfit_results(model, path)
+    model._modelfit_results = res
     return model

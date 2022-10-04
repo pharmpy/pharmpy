@@ -11,13 +11,13 @@ def calculate_parcov_inits(model, ncovs):
     model already has a FREM block
     Initial estimates for the parcov block is calculated given correlations of individual etas
     """
-    rvs, dist = model.random_variables.iiv.distributions()[-1]
-    rvs = [rv.name for rv in rvs]
+    dist = model.random_variables.iiv[-1]
+    rvs = list(dist.names)
     ie = model.modelfit_results.individual_estimates
     eta_corr = ie[rvs].corr()
     eta_corr.fillna(value=1.0, inplace=True)  # Identical etas will get NaN as both diag and corr
 
-    sigma = dist.sigma
+    sigma = dist.variance
     inits = sigma.subs(model.parameters.inits)
     inits = np.array(inits).astype(np.float64)
     sd = np.sqrt(inits.diagonal())

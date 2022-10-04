@@ -42,6 +42,13 @@ class NMTranParser:
             record = create_record(separator + s)
             stream.records.append(record)
 
+        in_problem = False
+        for record in stream.records:
+            if in_problem and record.name == 'SIZES':
+                raise ModelSyntaxError('The SIZES record must come before the first PROBLEM record')
+            elif record.name == 'PROBLEM':
+                in_problem = True
+
         return stream
 
 
@@ -150,27 +157,34 @@ class NMTranControlStream:
                     first = False
         self.records = keep
 
-    def go_through_omega_rec(self):
-        next_omega = 1
-        previous_size = None
-        prev_cov = None
+    def get_pred_pk_record(self):
+        pred = self.get_records('PRED')
 
-        for omega_record in self.get_records('OMEGA'):
-            next_omega_cur = next_omega
-            omegas, next_omega, previous_size = omega_record.parameters(
-                next_omega_cur, previous_size
-            )
-            etas, next_eta, prev_cov, _ = omega_record.random_variables(next_omega_cur, prev_cov)
+        if not pred:
+            pk = self.get_records('PK')
+            if not pk:
+                raise ModelSyntaxError('Model has no $PK or $PRED')
+            return pk[0]
+        else:
+            return pred[0]
 
-    def validate(self):
-        in_problem = False
-        for record in self.records:
-            if in_problem and record.name == 'SIZES':
-                raise ModelSyntaxError('The SIZES record must come before the first PROBLEM record')
-            elif record.name == 'PROBLEM':
-                in_problem = True
-            if hasattr(record, 'validate'):
-                record.validate()
+    def get_pk_record(self):
+        pk = self.get_records('PK')
+        if pk:
+            pk = pk[0]
+        return pk
+
+    def get_error_record(self):
+        error = self.get_records('ERROR')
+        if error:
+            error = error[0]
+        return error
+
+    def get_des_record(self):
+        des = self.get_records('DES')
+        if des:
+            des = des[0]
+        return des
 
     def __str__(self):
         return ''.join(str(x) for x in self.records)

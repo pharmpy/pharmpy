@@ -34,12 +34,20 @@ class LocalDirectoryToolDatabase(ToolDatabase):
             path = Path(path)
             path.mkdir(parents=True, exist_ok=exist_ok)
 
+        assert path is not None
         self.path = path.resolve()
 
         modeldb = LocalModelDirectoryDatabase(self.path / 'models')
         self.model_database = modeldb
 
         super().__init__(toolname)
+
+    def to_dict(self):
+        return {'toolname': self.toolname, 'path': str(self.path)}
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(**d, exist_ok=True)
 
     def store_local_file(self, source_path):
         if Path(source_path).is_file():

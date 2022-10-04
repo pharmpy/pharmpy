@@ -11,6 +11,10 @@ appname = 'Pharmpy'
 configuration_filename = 'pharmpy.conf'
 
 
+def user_config_file_enabled():
+    return not int(os.getenv('PHARMPYNOCONFIGFILE', 0))
+
+
 def user_config_dir():
     user_path = Path(appdirs.user_config_dir(appname)) / configuration_filename
     return user_path
@@ -80,10 +84,7 @@ class ConfigItem:
 
 class Configuration:
     def __init__(self):
-        noconfigfile = bool(int(os.getenv('PHARMPYNOCONFIGFILE', 0)))
-        if noconfigfile:
-            return
-        if self.module in config_file.keys():
+        if user_config_file_enabled() and self.module in config_file.keys():
             for key, value in config_file[self.module].items():
                 setattr(self, key, value)
 

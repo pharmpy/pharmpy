@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence
-from typing import Set, Tuple, Union
+from typing import Dict, Iterable, List, Set, Union
 
 import pharmpy.unicode as unicode
 from pharmpy.deps import networkx as nx
@@ -13,6 +13,7 @@ from pharmpy.expressions import (
     canonical_ode_rhs,
     free_images,
     free_images_and_symbols,
+    subs,
     sympify,
 )
 
@@ -111,8 +112,8 @@ class Assignment(Statement):
         CL = ETA_CL⋅WGT + POP_CL
 
         """
-        symbol = self.symbol.subs(substitutions, simultaneous=True)
-        expression = self.expression.subs(substitutions, simultaneous=True)
+        symbol = subs(self.symbol, substitutions, simultaneous=True)
+        expression = subs(self.expression, substitutions, simultaneous=True)
         return Assignment(symbol, expression)
 
     @property
@@ -242,7 +243,7 @@ class ExplicitODESystem(ODESystem):
     ⎩A_CENTRAL(0) = 0
     """
 
-    def __init__(self, odes, ics):
+    def __init__(self, odes: List[sympy.Eq], ics: Dict[sympy.Expr, sympy.Expr]):
         self._odes = odes
         self._ics = ics
 
@@ -309,8 +310,8 @@ class ExplicitODESystem(ODESystem):
             for key, value in substitutions.items()
         }
         d.update(substitutions)
-        odes = [ode.subs(d) for ode in self.odes]
-        ics = {key.subs(d): value.subs(d) for key, value in self.ics.items()}
+        odes = [subs(ode, d) for ode in self.odes]
+        ics = {subs(key, d): subs(value, d) for key, value in self.ics.items()}
         return ExplicitODESystem(odes, ics)
 
     @property
@@ -696,7 +697,7 @@ class CompartmentalSystem(ODESystem):
         """
         cb = CompartmentalSystemBuilder(self)
         for (u, v, rate) in cb._g.edges.data('rate'):
-            rate_sub = rate.subs(substitutions, simultaneous=True)
+            rate_sub = subs(rate, substitutions, simultaneous=True)
             cb._g.edges[u, v]['rate'] = rate_sub
         mapping = {comp: comp.subs(substitutions) for comp in self._g.nodes}
         nx.relabel_nodes(cb._g, mapping, copy=False)
@@ -1448,8 +1449,8 @@ class Compartment:
         return Compartment(
             self.name,
             dose,
-            self.lag_time.subs(substitutions),
-            self.bioavailability.subs(substitutions),
+            subs(self.lag_time, substitutions),
+            subs(self.bioavailability, substitutions),
         )
 
     def __eq__(self, other):
@@ -1538,7 +1539,7 @@ class Bolus(Dose):
         >>> dose.subs({'AMT': 'DOSE'})
         Bolus(DOSE)
         """
-        return Bolus(self.amount.subs(substitutions, simultaneous=True))
+        return Bolus(subs(self.amount, substitutions, simultaneous=True))
 
     def __eq__(self, other):
         return isinstance(other, Bolus) and self.amount == other.amount
@@ -1640,13 +1641,13 @@ class Infusion(Dose):
         >>> dose.subs({'DUR': 'D1'})
         Infusion(AMT, duration=D1)
         """
-        amount = self.amount.subs(substitutions, simultaneous=True)
+        amount = subs(self.amount, substitutions, simultaneous=True)
         if self.rate is not None:
-            rate = self.rate.subs(substitutions, simultaneous=True)
+            rate = subs(self.rate, substitutions, simultaneous=True)
             duration = None
         else:
             rate = None
-            duration = self.duration.subs(substitutions, simultaneous=True)
+            duration = subs(self.duration, substitutions, simultaneous=True)
         return Infusion(amount, rate, duration)
 
     def __eq__(self, other):
@@ -1679,7 +1680,7 @@ class Statements(Sequence):
         A list of Statement or another Statements to populate this object
     """
 
-    def __init__(self, statements: Union[None, Statements, Tuple[Statement, ...]] = None):
+    def __init__(self, statements: Union[None, Statements, Iterable[Statement]] = None):
         if isinstance(statements, Statements):
             self._statements = statements._statements
         elif statements is None:
@@ -1689,7 +1690,7 @@ class Statements(Sequence):
 
     def __getitem__(self, ind):
         if isinstance(ind, slice):
-            return Statements(self._statements[ind.start : ind.stop : ind.step])
+            return Statements(self._statements[ind])
         else:
             return self._statements[ind]
 
@@ -1875,7 +1876,8 @@ class Statements(Sequence):
                    ETA(1)
         CL = TVCL⋅ℯ
         """
-        symbol = sympify(symbol)
+        if isinstance(symbol, str):
+            symbol = sympy.Symbol(symbol)
         assignment = None
         for statement in self:
             if isinstance(statement, Assignment):
@@ -1903,7 +1905,8 @@ class Statements(Sequence):
         >>> model.statements.find_assignment_index("CL")
         5
         """
-        symbol = sympify(symbol)
+        if isinstance(symbol, str):
+            symbol = sympy.Symbol(symbol)
         ind = None
         for i, statement in enumerate(self):
             if isinstance(statement, Assignment):
@@ -1935,7 +1938,7 @@ class Statements(Sequence):
         >>> model.statements.reassign("CL", "TVCL + eta")   # doctest: +SKIP
         """
         if isinstance(symbol, str):
-            symbol = sympify(symbol)
+            symbol = sympy.Symbol(symbol)
         if isinstance(expression, str):
             expression = sympify(expression)
 
@@ -1997,7 +2000,7 @@ class Statements(Sequence):
         stats._statements = [self[i] for i in succ]
         return stats
 
-    def dependencies(self, symbol):
+    def dependencies(self, symbol_or_statement):
         """Find all dependencies of a symbol or statement
 
         Parameters
@@ -2017,10 +2020,14 @@ class Statements(Sequence):
         >>> model.statements.dependencies("CL")   # doctest: +SKIP
         {ETA(1), THETA(1), WGT}
         """
-        if isinstance(symbol, Statement):
-            i = self.index(symbol)
+        if isinstance(symbol_or_statement, Statement):
+            i = self.index(symbol_or_statement)
         else:
-            symbol = sympify(symbol)
+            symbol = (
+                sympy.Symbol(symbol_or_statement)
+                if isinstance(symbol_or_statement, str)
+                else symbol_or_statement
+            )
             for i in range(len(self) - 1, -1, -1):
                 if (
                     isinstance(self[i], Assignment)
@@ -2033,8 +2040,8 @@ class Statements(Sequence):
                 raise KeyError(f"Could not find symbol {symbol}")
         g = self._create_dependency_graph()
         symbs = self[i].rhs_symbols
-        if i == 0:
-            # Special case for models with only one statement
+        if i == 0 or not g:
+            # Special case for models with only one statement or no dependent statements
             return symbs
         for j, _ in nx.bfs_predecessors(g, i, sort_neighbors=lambda x: reversed(sorted(x))):
             if isinstance(self[j], Assignment):
@@ -2114,7 +2121,9 @@ class Statements(Sequence):
                     "ODESystem not supported by full_expression. Use the properties before_odes "
                     "or after_odes."
                 )
-            expression = expression.subs({statement.symbol: statement.expression})
+            expression = subs(
+                expression, {statement.symbol: statement.expression}, simultaneous=True
+            )
         return expression
 
     def to_compartmental_system(self):

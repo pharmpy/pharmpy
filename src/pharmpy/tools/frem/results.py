@@ -6,6 +6,7 @@ from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import symengine, sympy
+from pharmpy.expressions import subs
 from pharmpy.math import conditional_joint_normal, is_posdef
 from pharmpy.model import Model, Results
 from pharmpy.modeling import (
@@ -524,8 +525,8 @@ def calculate_results_using_cov_sampling(
     else:
         uncertainty_results = frem_model.modelfit_results
 
-    _, dist = frem_model.random_variables.iiv.distributions()[-1]
-    sigma_symb = dist.sigma
+    dist = frem_model.random_variables.iiv[-1]
+    sigma_symb = dist.variance
 
     parameters = [
         s
@@ -550,8 +551,9 @@ def calculate_results_using_cov_sampling(
 def calculate_results_from_samples(frem_model, continuous, categorical, parvecs, rescale=True):
     """Calculate the FREM results given samples of parameter estimates"""
     n = len(parvecs)
-    rvs, dist = frem_model.random_variables.iiv.distributions()[-1]
-    sigma_symb = dist.sigma
+    dist = frem_model.random_variables.iiv[-1]
+    rvs = list(dist.names)
+    sigma_symb = dist.variance
     parameters = [
         s
         for s in frem_model.modelfit_results.parameter_estimates.index
@@ -814,7 +816,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
 
 
 def get_params(frem_model, rvs, npars):
-    param_names = [rv.name for rv in rvs][:npars]
+    param_names = rvs[:npars]
     sset = frem_model.statements.before_odes
     symbs = []
 
@@ -849,7 +851,11 @@ def _calculate_covariate_baselines(model, covariates):
         if sympy.Symbol('FREMTYPE') in ass.free_symbols and ass.symbol.name == 'IPRED'
     ]
     exprs = [
-        expr.subs(dict(model.modelfit_results.parameter_estimates)).subs(model.parameters.inits)
+        subs(
+            subs(expr, dict(model.modelfit_results.parameter_estimates), simultaneous=True),
+            model.parameters.inits,
+            simultaneous=True,
+        )
         for expr in exprs
     ]
     new = []
@@ -857,12 +863,12 @@ def _calculate_covariate_baselines(model, covariates):
         for symb in expr.free_symbols:
             stat = model.statements.find_assignment(symb.name)
             if stat is not None:
-                expr = expr.subs(symb, stat.expression)
+                expr = subs(expr, {symb: stat.expression}, simultaneous=True)
         new.append(expr)
     exprs = new
 
     def fn(row):
-        return [np.float64(expr.subs(dict(row))) for expr in exprs]
+        return [np.float64(subs(expr, dict(row))) for expr in exprs]
 
     df = model.modelfit_results.individual_estimates.apply(fn, axis=1, result_type='expand')
     df.columns = covariates
@@ -880,14 +886,18 @@ def calculate_results_using_bipp(
 
     """
     rng = create_rng(rng)
-    rvs, dist = frem_model.random_variables.iiv.distributions()[-1]
-    etas = [rv.name for rv in rvs]
+    dist = frem_model.random_variables.iiv[-1]
+    etas = list(dist.names)
     pool = sample_individual_estimates(frem_model, parameters=etas, rng=rng).droplevel('sample')
     ninds = len(pool.index.unique())
-    ishr = calculate_individual_shrinkage(frem_model)
+    ishr = calculate_individual_shrinkage(
+        frem_model,
+        frem_model.modelfit_results.parameter_estimates,
+        frem_model.modelfit_results.individual_estimates_covariance,
+    )
     ishr = ishr[pool.columns]
     lower_indices = np.tril_indices(len(etas))
-    pop_params = np.array(dist.sigma).astype(str)[lower_indices]
+    pop_params = np.array(dist.variance).astype(str)[lower_indices]
     parameter_samples = np.empty((samples, len(pop_params)))
     remaining_samples = samples
     k = 0

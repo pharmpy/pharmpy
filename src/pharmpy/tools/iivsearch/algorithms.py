@@ -2,10 +2,11 @@ from itertools import combinations
 from typing import Dict
 
 import pharmpy.tools.modelfit as modelfit
+from pharmpy.expressions import subs
 from pharmpy.model import Model
 from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
-from pharmpy.modeling.expressions import get_rv_parameter
+from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
@@ -95,8 +96,8 @@ def _flatten(list_to_flatten):
 
 
 def _is_current_block_structure(etas, combos):
-    for rvs, dist in etas.distributions():
-        names = [rv.name for rv in rvs]
+    for dist in etas:
+        names = list(dist.names)
         if names not in combos:
             return False
     return True
@@ -105,10 +106,12 @@ def _is_current_block_structure(etas, combos):
 def _iiv_param_dict(model: Model) -> Dict[str, str]:
     iiv = model.random_variables.iiv
     return {
-        eta.name: get_rv_parameter(model, eta)
-        for eta in iiv
-        if iiv.get_variance(eta).subs(
-            {parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix}
+        eta: get_rv_parameters(model, eta)[0]
+        for eta in iiv.names
+        if subs(
+            iiv[eta].get_variance(eta),
+            {parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix},
+            simultaneous=True,
         )
         != 0
     }
@@ -121,8 +124,8 @@ def _create_description(model: Model) -> str:
         return '[]'
 
     blocks = []
-    for rvs, _ in model.random_variables.iiv.distributions():
-        rvs_names = [rv.name for rv in rvs]
+    for dist in model.random_variables.iiv:
+        rvs_names = dist.names
         param_names = [param_dict[name] for name in rvs_names]
         blocks.append(f'[{",".join(param_names)}]')
 

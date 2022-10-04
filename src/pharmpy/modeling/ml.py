@@ -40,14 +40,17 @@ def _create_dataset(model):
 
     # Max ratio of abs(ETAi) and omegai
     variance_omegas = [
-        model.random_variables.get_variance(rv.name).name for rv in model.random_variables.etas
+        model.random_variables[rv].get_variance(rv).name for rv in model.random_variables.etas.names
     ]
     all_paramvals = _all_parameters(model)
     omega_estimates = np.sqrt(all_paramvals[variance_omegas])
     abs_ebes = res.individual_estimates.abs()
-    ebe_ratio = abs_ebes / list(omega_estimates)
-    max_ebe_ratio = ebe_ratio.max(axis=1).fillna(1.0)
-    # Set to 1 if division by zero, e.g. from omega fix to 0
+    if omega_estimates.empty:  # No etas in model
+        max_ebe_ratio = 1.0
+    else:
+        ebe_ratio = abs_ebes / list(omega_estimates)
+        max_ebe_ratio = ebe_ratio.max(axis=1).fillna(1.0)
+        # Set to 1 if division by zero, e.g. from omega fix to 0
 
     # exp(OFVi / nobsi) / exp(OFV / nobs)
     iofv = res.individual_ofv
@@ -56,9 +59,12 @@ def _create_dataset(model):
     # mean(ETA / OMEGA)
     cov = res.individual_estimates_covariance
     etc_diag = np.sqrt(pd.DataFrame([np.diag(y) for y in cov], columns=cov.iloc[0].columns))
-    etc_ratio = etc_diag / list(omega_estimates)
-    mean_etc_ratio = etc_ratio.mean(axis=1).fillna(1.0)
-    mean_etc_ratio.index = ofv_ratio.index
+    if omega_estimates.empty:
+        mean_etc_ratio = 1.0
+    else:
+        etc_ratio = etc_diag / list(omega_estimates)
+        mean_etc_ratio = etc_ratio.mean(axis=1).fillna(1.0)
+        mean_etc_ratio.index = ofv_ratio.index
 
     # max((abs(indcov - mean(cov))) / sd(cov))
     cov_names = get_model_covariates(model, strings=True)

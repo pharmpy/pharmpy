@@ -3,7 +3,7 @@
 """
 
 from pharmpy.deps import sympy
-from pharmpy.model import Parameter, Parameters, RandomVariable
+from pharmpy.model import NormalDistribution, Parameter, Parameters
 from pharmpy.modeling.help_functions import _format_input_list, _get_epsilons
 
 
@@ -58,23 +58,24 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
 
     if same_eta:
         eta = _create_eta(pset, 1, eta_names)
-        rvs.append(eta)
+        rvs = rvs + eta
         eta_dict = {e: eta for e in eps}
     else:
         etas = [_create_eta(pset, i + 1, eta_names) for i in range(len(eps))]
-        for eta in etas:
-            rvs.append(eta)
+        rvs = rvs + etas
         eta_dict = {e: eta for e, eta in zip(eps, etas)}
 
     for e in eps:
-        sset = sset.subs({e.symbol: e.symbol * sympy.exp(sympy.Symbol(eta_dict[e].name))})
+        sset = sset.subs(
+            {
+                sympy.Symbol(e.names[0]): sympy.Symbol(e.names[0])
+                * sympy.exp(sympy.Symbol(eta_dict[e].names[0]))
+            }
+        )
 
     model.random_variables = rvs
     model.parameters = Parameters(pset)
     model.statements = sset
-
-    # FIXME This should probably not be commented out
-    # model.modelfit_results = None
 
     return model
 
@@ -88,5 +89,5 @@ def _create_eta(pset, number, eta_names):
     else:
         eta_name = f'ETA_RV{number}'
 
-    eta = RandomVariable.normal(eta_name, 'iiv', 0, omega)
+    eta = NormalDistribution.create(eta_name, 'iiv', 0, omega)
     return eta

@@ -4,9 +4,9 @@ import sympy
 from pharmpy.model import (
     Assignment,
     Model,
+    NormalDistribution,
     Parameter,
     Parameters,
-    RandomVariable,
     RandomVariables,
     Statements,
 )
@@ -19,6 +19,7 @@ from pharmpy.modeling import (
     get_observation_expression,
     get_pk_parameters,
     get_population_prediction_expression,
+    get_rv_parameters,
     greekify_model,
     has_random_effect,
     make_declarative,
@@ -157,9 +158,9 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_mu_reference_model_generic(statements, correct):
     model = Model()
     model.statements = Statements(statements)
-    eta1 = RandomVariable.normal('ETA(1)', 'iiv', 0, s('omega1'))
-    eta2 = RandomVariable.normal('ETA(2)', 'iiv', 0, s('omega2'))
-    rvs = RandomVariables([eta1, eta2])
+    eta1 = NormalDistribution.create('ETA(1)', 'iiv', 0, s('omega1'))
+    eta2 = NormalDistribution.create('ETA(2)', 'iiv', 0, s('omega2'))
+    rvs = RandomVariables.create([eta1, eta2])
     model.random_variables = rvs
     th1 = Parameter('THETA(1)', 2, lower=1)
     th2 = Parameter('THETA(2)', 2, lower=1)
@@ -440,3 +441,29 @@ def test_has_random_effect(load_model_for_test, testdata, model_path, level, exp
             assert has_random_effect(model, param, level)
         else:
             assert not has_random_effect(model, param, level)
+
+
+@pytest.mark.parametrize(
+    ('model_path', 'rv', 'expected'),
+    (
+        ('nonmem/pheno.mod', 'ETA(1)', ['CL']),
+        ('nonmem/pheno_real.mod', 'ETA(1)', ['CL']),
+        ('nonmem/pheno_block.mod', 'ETA(4)', ['MAT']),
+        ('nonmem/qa/iov.mod', 'ETA(1)', ['CL']),
+        ('nonmem/qa/iov.mod', 'ETA(2)', ['V']),
+        ('nonmem/qa/iov.mod', 'ETA(3)', ['CL']),
+        ('nonmem/qa/iov.mod', 'ETA(5)', ['CL']),
+    ),
+    ids=repr,
+)
+def test_get_rv_parameter(load_model_for_test, testdata, model_path, rv, expected):
+    model = load_model_for_test(testdata / model_path)
+    rv_params = get_rv_parameters(model, rv)
+
+    assert rv_params == expected
+
+
+def test_get_rv_parameter_verify_input(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    with pytest.raises(ValueError, match='Could not find random variable: x'):
+        get_rv_parameters(model, 'x')

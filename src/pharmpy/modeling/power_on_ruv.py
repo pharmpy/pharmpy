@@ -1,17 +1,26 @@
 """
 :meta private:
 """
+from __future__ import annotations
+
+from typing import Optional, Union
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
-from pharmpy.model import Assignment, Parameter, Parameters
+from pharmpy.expressions import subs, sympify
+from pharmpy.model import Assignment, Model, Parameter, Parameters
 
 from .error import has_proportional_error_model
 from .expressions import create_symbol
 from .help_functions import _format_input_list
 
 
-def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero_protection=False):
+def set_power_on_ruv(
+    model: Model,
+    list_of_eps: Optional[Union[str, list]] = None,
+    lower_limit: Optional[float] = 0.01,
+    ipred: Optional[Union[str, sympy.Symbol]] = None,
+    zero_protection: bool = False,
+):
     """Applies a power effect to provided epsilons.
 
     Initial estimates for new thetas are 1 if the error
@@ -21,10 +30,10 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
     ----------
     model : Model
         Pharmpy model to create block effect on.
-    list_of_eps : str, list
+    list_of_eps : str or list or None
         Name/names of epsilons to apply power effect. If None, all epsilons will be used.
         None is default.
-    lower_limit : int or None
+    lower_limit : float or None
         Lower limit of power (theta). None for no limit.
     ipred : Symbol
         Symbol to use as IPRED. Default is to autodetect expression for IPRED.
@@ -84,17 +93,19 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
         else:
             alternative = None
 
-    for i, e in enumerate(eps):
+    for i, e in enumerate(eps.names):
         theta_name = str(create_symbol(model, stem='power', force_numbering=True))
         if lower_limit is None:
             theta = Parameter(theta_name, theta_init)
         else:
             theta = Parameter(theta_name, theta_init, lower=lower_limit)
         pset.append(theta)
-        sset = sset.subs({e.symbol * ipred: e.symbol})  # To avoid getting F*EPS*F**THETA
+        sset = sset.subs(
+            {sympy.Symbol(e) * ipred: sympy.Symbol(e)}
+        )  # To avoid getting F*EPS*F**THETA
         if alternative:  # To avoid getting W*EPS*F**THETA
-            sset = sset.subs({e.symbol * alternative: e.symbol})
-        sset = sset.subs({e.name: ipred ** sympy.Symbol(theta.name) * e.symbol})
+            sset = sset.subs({sympy.Symbol(e) * alternative: sympy.Symbol(e)})
+        sset = sset.subs({sympy.Symbol(e): ipred ** sympy.Symbol(theta.name) * sympy.Symbol(e)})
         model.statements = sset
 
     model.parameters = Parameters(pset)
@@ -105,9 +116,9 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
 
 def get_ipred(model):
     expr = model.statements.after_odes.full_expression(model.dependent_variable)
-    for rv in model.random_variables:
-        expr = expr.subs(rv.symbol, 0)
-    ipred = expr
+    ipred = subs(
+        expr, {sympy.Symbol(rv): 0 for rv in model.random_variables.names}, simultaneous=True
+    )
     for s in model.statements:
         if isinstance(s, Assignment) and s.expression == ipred:
             ipred = s.symbol

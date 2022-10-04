@@ -32,15 +32,14 @@ def create_results(
         summary_tool.index
     )
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
-        [base_model] + res_models, summary_tool['description'], summary_tool[f'd{rank_type}']
+        [base_model] + res_models,
+        summary_tool['description'],
+        summary_tool[f'd{"ofv" if rank_type == "lrt" else rank_type}'],
     )
     summary_errors = summarize_errors([base_model] + res_models)
 
     best_model_name = summary_tool['rank'].idxmin()
-    try:
-        best_model = [model for model in res_models if model.name == best_model_name][0]
-    except IndexError:
-        best_model = base_model
+    best_model = next(filter(lambda model: model.name == best_model_name, res_models), base_model)
 
     if base_model.name != input_model.name:
         models = [base_model] + res_models
@@ -54,8 +53,7 @@ def create_results(
         summary_individuals=summary_individuals,
         summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
-        best_model=best_model,
-        input_model=input_model,
+        final_model_name=best_model.name,
         models=models,
     )
 

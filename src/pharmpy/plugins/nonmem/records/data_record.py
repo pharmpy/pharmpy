@@ -71,10 +71,16 @@ class DataRecord(OptionRecord):
     def ignore_character(self):
         """The comment character from ex IGNORE=C or None if not available."""
         if hasattr(self.root, 'ignchar') and self.root.ignchar.find('char'):
-            char = str(self.root.ignchar.char)
-            if len(char) == 3:  # It must be quoted
-                char = char[1:-1]
-            return char
+            chars = set()
+            for option in self.root.all('ignchar'):
+                char = str(option.char)
+                if len(char) == 3:  # It must be quoted
+                    char = char[1:-1]
+                chars.add(char)
+            if len(chars) > 1:
+                raise ModelSyntaxError("Redefinition of ignore character in $DATA")
+            else:
+                return chars.pop()
         else:
             return None
 
@@ -134,10 +140,3 @@ class DataRecord(OptionRecord):
     @accept.deleter
     def accept(self):
         self.root.remove('accept')
-
-    def validate(self):
-        """Syntax validation of this data record
-        Assumes only on $DATA exists in this $PROBLEM.
-        """
-        if len(self.root.all('ignchar')) > 1:
-            raise ModelSyntaxError('More than one IGNORE=c')

@@ -224,26 +224,24 @@ def parse_mixed_block(block):
     }
 
     for row in block:
-        if pattern['stashed'].match(row):
+        if match := pattern['stashed'].match(row):
             if stashed:
                 raise NotImplementedError('Two scope reduction lines in the same logfile block')
             stashed = [
-                tuple(relation.split('-'))
-                for relation in pattern['stashed'].match(row).group('relations').split(',')
+                tuple(relation.split('-')) for relation in match.group('relations').split(',')
             ]
-        elif pattern['readded'].match(row):
+        elif match := pattern['readded'].match(row):
             if readded:
                 raise NotImplementedError('Two re-testing lines in the same logfile block')
             readded = [
-                tuple(relation.split('-'))
-                for relation in pattern['readded'].match(row).group('relations').split(',')
+                tuple(relation.split('-')) for relation in match.group('relations').split(',')
             ]
-        elif pattern['m1'].match(row):
+        elif match := pattern['m1'].match(row):
             if m1:
                 raise NotImplementedError('Two model directory lines in the same logfile block')
-            m1 = pattern['m1'].match(row).group('m1folder')
-        elif pattern['included'].match(row):
-            for relation in pattern['included'].match(row).group('relations').split(','):
+            m1 = match.group('m1folder')
+        elif match := pattern['included'].match(row):
+            for relation in match.group('relations').split(','):
                 par, cov, state = relation.split('-')
                 if par not in included_relations.keys():
                     included_relations[par] = dict()
@@ -279,7 +277,9 @@ def parse_chosen_relation_block(block):
     if pattern['gof_ofv'].match(block[1]):
         criterion = {'gof': 'OFV', 'pvalue': None}
     else:
-        criterion = pattern['gof_pvalue'].match(block[1]).groupdict()
+        match = pattern['gof_pvalue'].match(block[1])
+        assert match is not None
+        criterion = match.groupdict()
     criterion['is_backward'] = is_backward
 
     included_relations = dict()
@@ -287,7 +287,9 @@ def parse_chosen_relation_block(block):
     if len(block) > 4 and pattern['included'].match(block[4]):
         for row in block[5:]:
             row = row.strip()
-            par = pattern['parameter'].match(row).group('parameter')
+            match = pattern['parameter'].match(row)
+            assert match is not None
+            par = match.group('parameter')
             if re.search(r'-\d+$', par):
                 raise NotImplementedError('Missing whitespace between param and included covs')
             included_relations[par] = {p: c for p, c in pattern['covstate'].findall(row)}
@@ -431,11 +433,11 @@ def log_steps(path, options, parcov_dictionary=None):
             step['chosen'], step['criterion'], included = parse_chosen_relation_block(block)
             if included:
                 included_relations = included
-        elif pattern['m1'].match(block[0]):
+        elif match := pattern['m1'].match(block[0]):
             if have(step['runtable']):
                 yield step_data_frame(step, included_relations)
                 step = empty_step(step['number'], step['criterion'])
-            step['m1'] = Path(pattern['m1'].match(block[0]).group('m1folder')).relative_to(basepath)
+            step['m1'] = Path(match.group('m1folder')).relative_to(basepath)
         else:
             # complex block, either gof ofv or scmplus. May contain m1
             m1, readded, stashed, included = parse_mixed_block(block)
@@ -520,25 +522,24 @@ def relations_from_config_file(path, files):
     start_config_section = re.compile(r'\s*\[(?P<section>[a-z_]+)\]\s*$')
     empty_line = re.compile(r'^[-\s]*$')
     comment_line = re.compile(r'\s*;')
-    included_lines = None
-    test_lines = None
-    included_relations = None
-    test_relations = None
+    included_lines = []
+    test_lines = []
     scanning_included = False
     scanning_test = False
     for file in files:
         with open(path / file) as fn:
             for row in fn:
-                m = start_config_section.match(row)
-                if m:
-                    if m.group('section') == 'included_relations':
+                match = start_config_section.match(row)
+                if match:
+                    section = match.group('section')
+                    if section == 'included_relations':
                         scanning_included = True
                         scanning_test = False
-                        included_lines = list()
-                    elif m.group('section') == 'test_relations':
+                        included_lines = []  # NOTE This potentially resets?
+                    elif section == 'test_relations':
                         scanning_included = False
                         scanning_test = True
-                        test_lines = list()
+                        test_lines = []  # NOTE This potentially resets?
                     else:
                         scanning_included = False
                         scanning_test = False
@@ -550,21 +551,29 @@ def relations_from_config_file(path, files):
                         test_lines.append(row.strip())
         if test_lines is not None and len(test_lines) > 0:
             break  # do not check any other file, if more than one
-    if included_lines is not None and len(included_lines) > 0:
+
+    if included_lines:
         included_relations = dict()
         p = re.compile(r'\s*([^-]+)-(\d+)\s*')
         for row in included_lines:
             par, covstates = row.split(r'=')
             par = str.strip(par)
             included_relations[par] = {
-                p.match(val).group(1): p.match(val).group(2) for val in covstates.split(r',')
+                match.group(1): match.group(2)
+                for val in covstates.split(r',')
+                if (match := p.match(val)) is not None
             }
-    if test_lines is not None and len(test_lines) > 0:
+    else:
+        included_relations = None
+
+    if test_lines:
         test_relations = dict()
         for row in test_lines:
             par, covs = row.split(r'=')
             par = str.strip(par)
             test_relations[par] = [str.strip(val) for val in covs.split(r',')]
+    else:
+        test_relations = None
 
     return included_relations, test_relations
 

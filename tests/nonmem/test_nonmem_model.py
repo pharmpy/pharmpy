@@ -11,10 +11,10 @@ from pharmpy.model import (
     EstimationSteps,
     Model,
     ModelSyntaxError,
+    NormalDistribution,
     ODESystem,
     Parameter,
     Parameters,
-    RandomVariable,
     Statements,
 )
 from pharmpy.modeling import (
@@ -55,23 +55,18 @@ def test_empty_ext_file(load_model_for_test, testdata):
     model = load_model_for_test(
         testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'noESTwithSIM' / 'onlysim.mod'
     )
-    with pytest.raises(FileNotFoundError):
-        model.database.retrieve_file(model.name, model.name + '.ext')
     assert model.modelfit_results is None
 
 
 def test_detection():
-    Model.create_model(StringIO("$PROBLEM this"))
-    Model.create_model(StringIO("   \t$PROBLEM skld fjl"))
-    Model.create_model(StringIO(" $PRO l907"))
+    Model.create_model(StringIO("$PROBLEM this\n$PRED\n"))
+    Model.create_model(StringIO("   \t$PROBLEM skld fjl\n$PRED\n"))
+    Model.create_model(StringIO(" $PRO l907\n$PRED\n"))
 
 
 def test_validate(pheno):
-    pheno.validate()
-
-    model = Model.create_model(StringIO("$PROBLEM this\n$SIZES LIM1=3000"))
     with pytest.raises(ModelSyntaxError):
-        model.validate()
+        Model.create_model(StringIO("$PROBLEM this\n$SIZES LIM1=3000\n$PRED\n"))
 
 
 def test_parameters(pheno):
@@ -109,13 +104,13 @@ def test_set_parameters(pheno):
     assert model.parameters['OMEGA(2,2)'] == Parameter('OMEGA(2,2)', 0.2, lower=0, upper=sympy.oo)
     assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 0.3, lower=0, upper=sympy.oo)
     model.update_source()
-    thetas = model.control_stream.get_records('THETA')
+    thetas = model.internals.control_stream.get_records('THETA')
     assert str(thetas[0]) == '$THETA (0,0.75) ; PTVCL\n'
     assert str(thetas[1]) == '$THETA (0,0.5) ; PTVV\n'
     assert str(thetas[2]) == '$THETA (-.99,0.25)\n'
-    omegas = model.control_stream.get_records('OMEGA')
+    omegas = model.internals.control_stream.get_records('OMEGA')
     assert str(omegas[0]) == '$OMEGA DIAGONAL(2)\n 0.1  ;       IVCL\n 0.2  ;        IVV\n\n'
-    sigmas = model.control_stream.get_records('SIGMA')
+    sigmas = model.internals.control_stream.get_records('SIGMA')
     assert str(sigmas[0]) == '$SIGMA 0.3\n'
 
     model = pheno.copy()
@@ -142,13 +137,10 @@ def test_adjust_iovs(load_model_for_test, testdata):
     assert rvs[6].level == 'IOV'
 
     model = load_model_for_test(testdata / 'nonmem' / 'qa' / 'iov.mod')
-    rvs = model.random_variables
-    assert rvs[0].level == 'IIV'
-    assert rvs[1].level == 'IIV'
-    assert rvs[2].level == 'IOV'
-    assert rvs[3].level == 'IOV'
-    assert rvs[4].level == 'IOV'
-    assert rvs[5].level == 'IOV'
+    dists = model.random_variables
+    assert dists[0].level == 'IIV'
+    assert dists[1].level == 'IOV'
+    assert dists[2].level == 'IOV'
 
 
 @pytest.mark.parametrize(
@@ -181,7 +173,7 @@ def test_add_parameters(pheno, param_new, init_expected, buf_new):
 
     model.update_source()
     rec_mod = ''
-    for rec in model.control_stream.get_records('THETA'):
+    for rec in model.internals.control_stream.get_records('THETA'):
         rec_mod += str(rec)
 
     assert rec_ref == rec_mod
@@ -227,7 +219,7 @@ def test_add_statements(pheno, statement_new, buf_new):
     parser = NMTranParser()
     stream = parser.parse(model.model_code)
 
-    assert str(model.control_stream) == str(stream)
+    assert str(model.internals.control_stream) == str(stream)
 
     rec_ref = (
         f'$PK\n'
@@ -242,7 +234,7 @@ def test_add_statements(pheno, statement_new, buf_new):
         f'{buf_new}\n\n'
     )
 
-    rec_mod = str(model.control_stream.get_records('PK')[0])
+    rec_mod = str(model.internals.control_stream.get_records('PK')[0])
 
     assert rec_ref == rec_mod
 
@@ -283,7 +275,7 @@ def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new)
         f'{buf_new}\n\n'
     )
 
-    assert str(model.get_pred_pk_record()) == rec
+    assert str(model.internals.control_stream.get_pred_pk_record()) == rec
 
 
 @pytest.mark.parametrize('rv_new, buf_new', [(Parameter('omega', 0.1), '$OMEGA  0.1')])
@@ -291,12 +283,10 @@ def test_add_random_variables(pheno, rv_new, buf_new):
     model = pheno.copy()
     rvs = model.random_variables
 
-    eta = RandomVariable.normal('eta_new', 'iiv', 0, S(rv_new.name))
+    eta = NormalDistribution.create('eta_new', 'iiv', 0, S(rv_new.name))
 
-    rvs.append(eta)
     add_population_parameter(model, rv_new.name, rv_new.init)
-
-    model.random_variables = rvs
+    model.random_variables = rvs + eta
 
     model.update_source()
 
@@ -308,15 +298,15 @@ def test_add_random_variables(pheno, rv_new, buf_new):
     )
 
     rec_mod = ''
-    for rec in model.control_stream.get_records('OMEGA'):
+    for rec in model.internals.control_stream.get_records('OMEGA'):
         rec_mod += str(rec)
 
     assert rec_mod == rec_ref
 
     rv = model.random_variables['eta_new']
 
-    assert rv.sympy_rv.pspace.distribution.mean == 0
-    assert (rv.sympy_rv.pspace.distribution.std**2).name == 'omega'
+    assert rv.mean == 0
+    assert rv.variance.name == 'omega'
 
 
 def test_add_random_variables_and_statements(pheno):
@@ -324,23 +314,25 @@ def test_add_random_variables_and_statements(pheno):
 
     rvs = model.random_variables
 
-    eta = RandomVariable.normal('ETA_NEW', 'iiv', 0, S('omega'))
-    rvs.append(eta)
+    eta = NormalDistribution.create('ETA_NEW', 'iiv', 0, S('omega'))
+    rvs = rvs + eta
     add_population_parameter(model, 'omega', 0.1)
 
-    eps = RandomVariable.normal('EPS_NEW', 'ruv', 0, S('sigma'))
-    rvs.append(eps)
+    eps = NormalDistribution.create('EPS_NEW', 'ruv', 0, S('sigma'))
+    rvs = rvs + eps
     add_population_parameter(model, 'sigma', 0.1)
 
     model.random_variables = rvs
 
     sset = model.statements
 
-    statement_new = Assignment(S('X'), 1 + S(eps.name) + S(eta.name))
+    statement_new = Assignment(S('X'), 1 + S(eps.names[0]) + S(eta.names[0]))
     model.statements = sset.before_odes + statement_new + sset.ode_system + sset.after_odes
 
     model.update_source()
-    assert str(model.get_pred_pk_record()).endswith('X = 1 + ETA(3) + EPS(2)\n\n')
+    assert str(model.internals.control_stream.get_pred_pk_record()).endswith(
+        'X = 1 + ETA(3) + EPS(2)\n\n'
+    )
 
 
 def test_results(pheno):
@@ -415,7 +407,7 @@ def test_statements_setter(pheno, buf_new, len_expected):
 
 def test_deterministic_theta_comments(pheno):
     no_option = 0
-    for theta_record in pheno.control_stream.get_records('THETA'):
+    for theta_record in pheno.internals.control_stream.get_records('THETA'):
         no_option += len(theta_record.root.all('option'))
 
     assert no_option == 0
@@ -423,10 +415,7 @@ def test_deterministic_theta_comments(pheno):
 
 def test_remove_eta(pheno):
     model = pheno.copy()
-    rvs = model.random_variables
-    eta1 = rvs['ETA(1)']
-
-    remove_iiv(model, eta1.name)
+    model = remove_iiv(model, 'ETA(1)')
     assert model.model_code.split('\n')[12] == 'V = TVV*EXP(ETA(1))'
 
 
@@ -448,8 +437,8 @@ $OMEGA 0.01
 $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-        model = Model.create_model(StringIO(code))
         with pytest.warns(UserWarning):
+            model = Model.create_model(StringIO(code))
             assert model.parameters.names == ['THETA(1)', 'OMEGA(1,1)', 'SIGMA(1,1)']
 
 
@@ -459,7 +448,7 @@ def test_symbol_names_in_abbr(load_model_for_test, testdata):
         pset, rvs = model.parameters, model.random_variables
 
         assert 'THETA_CL' in pset.names
-        assert 'ETA_CL' in [eta.name for eta in rvs.etas]
+        assert 'ETA_CL' in rvs.etas.names
 
 
 @pytest.mark.parametrize(
@@ -530,14 +519,13 @@ def test_symbol_names_priority(
 
         assert all(str(a) in [str(s) for s in sset] for a in assignments)
         assert all(p in pset.names for p in params)
-        assert all(eta in [rv.name for rv in rvs] for eta in etas)
+        assert all(eta in rvs.names for eta in etas)
 
 
 def test_clashing_parameter_names(load_model_for_test, datadir):
     with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-        model = load_model_for_test(datadir / 'pheno_clashing_symbols.mod')
         with pytest.warns(UserWarning):
-            model.statements
+            model = load_model_for_test(datadir / 'pheno_clashing_symbols.mod')
         assert model.parameters.names == ['THETA(1)', 'TVV', 'IVCL', 'OMEGA(2,2)', 'SIGMA(1,1)']
 
         code = """$PROBLEM base model
@@ -552,8 +540,8 @@ $OMEGA 0.01 ; TV
 $SIGMA 1 ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-        model = Model.create_model(StringIO(code))
         with pytest.warns(UserWarning):
+            model = Model.create_model(StringIO(code))
             assert model.parameters.names == ['TV', 'OMEGA(1,1)', 'SIGMA(1,1)']
 
         code = """$PROBLEM base model
@@ -567,8 +555,8 @@ $THETA 0.1  ; TV
 $THETA 0.1  ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-        model = Model.create_model(StringIO(code))
         with pytest.warns(UserWarning):
+            model = Model.create_model(StringIO(code))
             assert model.parameters.names == ['TV', 'THETA(2)']
 
 
@@ -585,13 +573,13 @@ def test_abbr_write(load_model_for_test, pheno_path):
         model.update_source()
 
         assert 'ETA(S1)' in model.model_code
-        assert 'ETA_S1' in [rv.name for rv in model.random_variables]
+        assert 'ETA_S1' in model.random_variables.names
         assert S('ETA_S1') in model.statements.free_symbols
 
         model.update_source()
 
         assert 'ETA(S1)' in model.model_code
-        assert 'ETA_S1' in [rv.name for rv in model.random_variables]
+        assert 'ETA_S1' in model.random_variables.names
         assert S('ETA_S1') in model.statements.free_symbols
 
         model = load_model_for_test(pheno_path)
@@ -612,7 +600,7 @@ def test_abbr_read_write(load_model_for_test, pheno_path):
         assert model_read.model_code == model_write.model_code
         assert model_read.statements == model_write.statements
         assert not (
-            model_read.random_variables - model_write.random_variables
+            set(model_read.random_variables.names) - set(model_write.random_variables.names)
         )  # Different order due to renaming in read
 
 
@@ -622,10 +610,10 @@ def test_dv_symbol(pheno):
 
 def test_insert_unknown_record(pheno):
     model = pheno.copy()
-    model.control_stream.insert_record('$TRIREME one')
+    model.internals.control_stream.insert_record('$TRIREME one')
     assert model.model_code.split('\n')[-1] == '$TRIREME one'
 
-    model.control_stream.insert_record('\n$OA two')
+    model.internals.control_stream.insert_record('\n$OA two')
     assert model.model_code.split('\n')[-1] == '$OA two'
 
 
@@ -706,7 +694,7 @@ $ESTIMATION METHOD=1 MAXEVAL=9999 NONINFETA=1 MCETA=1
 """
     model = Model.create_model(StringIO(code))
     rvs = model.random_variables
-    assert len(rvs) == 11
+    assert len(rvs.names) == 11
 
 
 @pytest.mark.parametrize(

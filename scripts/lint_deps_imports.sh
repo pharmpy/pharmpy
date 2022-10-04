@@ -2,14 +2,14 @@
 
 matches () {
     grep -E \
-        -e '^import altair($|\.)' -e '^from altair( |\.)' \
-        -e '^import networkx($|\.)' -e '^from networkx( |\.)' \
-        -e '^import numpy($|\.)' -e '^from numpy( |\.)' \
-        -e '^import pandas($|\.)' -e '^from pandas( |\.)' \
-        -e '^import rich($|\.)' -e '^from rich( |\.)' \
-        -e '^import scipy($|\.)' -e '^from scipy( |\.)' \
-        -e '^import symengine($|\.)' -e '^from symengine( |\.)' \
-        -e '^import sympy($|\.)' -e '^from sympy( |\.)' \
+        -e '^import altair($|\.| )' -e '^from altair( |\.)' \
+        -e '^import networkx($|\.| )' -e '^from networkx( |\.)' \
+        -e '^import numpy($|\.| )' -e '^from numpy( |\.)' \
+        -e '^import pandas($|\.| )' -e '^from pandas( |\.)' \
+        -e '^import rich($|\.| )' -e '^from rich( |\.)' \
+        -e '^import scipy($|\.| )' -e '^from scipy( |\.)' \
+        -e '^import symengine($|\.| )' -e '^from symengine( |\.)' \
+        -e '^import sympy($|\.| )' -e '^from sympy( |\.)' \
         -r src/pharmpy \
         --exclude-dir deps \
         "$@"

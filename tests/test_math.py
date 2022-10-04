@@ -34,6 +34,9 @@ def test_round_to_n_sigdig():
     assert pharmpy.math.round_to_n_sigdig(12345, 3) == 12300
     assert pharmpy.math.round_to_n_sigdig(23.45, 1) == 20
     assert pharmpy.math.round_to_n_sigdig(-0.012645, 2) == -0.013
+    assert pharmpy.math.round_to_n_sigdig(0, 0) == 0
+    assert pharmpy.math.round_to_n_sigdig(0, 1) == 0
+    assert pharmpy.math.round_to_n_sigdig(0, 2) == 0
 
 
 def test_round_and_keep_sum():

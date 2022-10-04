@@ -21,13 +21,18 @@ def run(workflow):
                 res = get(dsk, 'results')
             else:
                 import dask
-                from dask.distributed import Client, LocalCluster
+                from dask.distributed import (
+                    LocalCluster,  # pyright: ignore [reportPrivateImportUsage]
+                )
+                from dask.distributed import Client
 
                 from ..optimize import optimize_task_graph_for_dask_distributed
 
                 # Set to let the dask-worker-space scratch directory
                 # be stored in our tempdirectory.
-                dask.config.set({'temporary_directory': tempdirname})
+                dask.config.set(  # pyright: ignore [reportPrivateImportUsage]
+                    {'temporary_directory': tempdirname}
+                )
 
                 with warnings.catch_warnings():
                     # Catch deprecation warning from python 3.10 via tornado.

@@ -6,11 +6,11 @@ from pathlib import Path
 
 from pharmpy.model import EstimationSteps
 from pharmpy.modeling import write_csv, write_model
-from pharmpy.plugins.nonmem import conf, convert_model
+from pharmpy.plugins.nonmem import conf, convert_model, parse_modelfit_results
 
 
-def execute_model(model):
-    database = model.database
+def execute_model(model, db):
+    database = db.model_database
     parent_model = model.parent_model
     model = convert_model(model)
     path = Path.cwd() / f'NONMEM_run_{model.name}-{uuid.uuid1()}'
@@ -39,6 +39,8 @@ def execute_model(model):
             args, stdin=subprocess.DEVNULL, stderr=err, stdout=out, cwd=str(path)
         )
 
+    (path / 'results.lst').rename((path / basepath).with_suffix('.lst'))
+
     metadata = {
         'plugin': 'nonmem',
         'path': str(path),
@@ -56,14 +58,14 @@ def execute_model(model):
     with database.transaction(model) as txn:
 
         txn.store_model()
-        txn.store_local_file((path / 'results.lst'), new_filename=basepath.with_suffix('.lst'))
+        txn.store_local_file((path / basepath).with_suffix('.lst'))
         txn.store_local_file((path / basepath).with_suffix('.ext'))
         txn.store_local_file((path / basepath).with_suffix('.phi'))
         txn.store_local_file((path / basepath).with_suffix('.cov'))
         txn.store_local_file((path / basepath).with_suffix('.cor'))
         txn.store_local_file((path / basepath).with_suffix('.coi'))
 
-        for rec in model.control_stream.get_records('TABLE'):
+        for rec in model.internals.control_stream.get_records('TABLE'):
             txn.store_local_file(path / rec.path)
 
         txn.store_local_file(stdout)
@@ -80,11 +82,7 @@ def execute_model(model):
             txn.store_modelfit_results()
 
             # Read in results for the server side
-            # FIXME: this breaks through abstraction
-            model.read_modelfit_results(database.path / model.name)
-
-    # FIXME: the database path is changed in write
-    model.database = database
+            model._modelfit_results = parse_modelfit_results(model, path)
 
     return model
 
@@ -119,25 +117,27 @@ def nmfe(*args):
     ]
 
 
-def evaluate_design(model):
+def evaluate_design(context, model):
     # Prepare and run model for design evaluation
     model = model.copy()
     model.name = '_design_model'
 
     model.estimation_steps = EstimationSteps()
-    estrecs = model.control_stream.get_records('ESTIMATION')
-    model.control_stream.remove_records(estrecs)
+    stream = model.internals.control_stream
+    estrecs = stream.get_records('ESTIMATION')
+    stream.remove_records(estrecs)
 
     design_code = '$DESIGN APPROX=FOCEI MODE=1 NELDER FIMDIAG=0 DATASIM=1 GROUPSIZE=32 OFVTYPE=0'
-    model.control_stream.insert_record(design_code)
+    stream.insert_record(design_code)
 
-    execute_model(model)
+    execute_model(model, context)
 
     from pharmpy.tools.evaldesign import EvalDesignResults
 
+    mfr = model.modelfit_results
     res = EvalDesignResults(
-        ofv=model.modelfit_results.ofv,
-        individual_ofv=model.modelfit_results.individual_ofv,
-        information_matrix=model.modelfit_results.information_matrix,
+        ofv=mfr.ofv,
+        individual_ofv=mfr.individual_ofv,
+        information_matrix=mfr.information_matrix,
     )
     return res

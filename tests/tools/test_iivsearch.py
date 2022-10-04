@@ -13,6 +13,8 @@ from pharmpy.tools.iivsearch.algorithms import (
     brute_force_block_structure,
     create_eta_blocks,
 )
+from pharmpy.tools.iivsearch.tool import create_workflow, validate_input
+from pharmpy.workflows import Workflow
 
 
 @pytest.mark.parametrize(
@@ -82,10 +84,10 @@ def test_get_eta_combinations_5_etas(load_model_for_test, pheno_path):
 def test_is_current_block_structure(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     add_iiv(model, ['TVCL', 'TVV'], 'exp')
-    etas = model.random_variables.iiv
 
     eta_combos = [['ETA(1)', 'ETA(2)'], ['ETA_TVCL'], ['ETA_TVV']]
     create_joint_distribution(model, eta_combos[0])
+    etas = model.random_variables.iiv
     assert _is_current_block_structure(etas, eta_combos)
 
     eta_combos = [['ETA(1)'], ['ETA(2)'], ['ETA_TVCL', 'ETA_TVV']]
@@ -96,6 +98,7 @@ def test_is_current_block_structure(load_model_for_test, pheno_path):
 
     create_joint_distribution(model)
     eta_combos = [['ETA(1)', 'ETA(2)', 'ETA_TVCL', 'ETA_TVV']]
+    etas = model.random_variables.iiv
     assert _is_current_block_structure(etas, eta_combos)
 
 
@@ -105,7 +108,7 @@ def test_create_joint_dist(load_model_for_test, testdata):
     add_pk_iiv(model)
     eta_combos = [['ETA(1)', 'ETA(2)'], ['ETA_QP1'], ['ETA_VP1']]
     create_eta_blocks(eta_combos, model)
-    assert len(model.random_variables.iiv.distributions()) == 4
+    assert len(model.random_variables.iiv) == 4
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     add_peripheral_compartment(model)
@@ -113,7 +116,7 @@ def test_create_joint_dist(load_model_for_test, testdata):
     create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])
     eta_combos = [['ETA(1)'], ['ETA(2)'], ['ETA(3)', 'ETA_VP1', 'ETA_QP1']]
     create_eta_blocks(eta_combos, model)
-    assert len(model.random_variables.iiv.distributions()) == 3
+    assert len(model.random_variables.iiv) == 3
 
 
 def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
@@ -132,3 +135,60 @@ def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
     param_dict = _iiv_param_dict(model)
 
     assert param_dict == param_dict_ref
+
+
+def test_create_workflow():
+    assert isinstance(create_workflow('brute_force'), Workflow)
+
+
+def test_create_workflow_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    assert isinstance(create_workflow('brute_force', model=model), Workflow)
+
+
+def test_validate_input():
+    validate_input('brute_force')
+
+
+def test_validate_input_with_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    validate_input('brute_force', model=model)
+
+
+@pytest.mark.parametrize(
+    ('model_path', 'arguments', 'exception', 'match'),
+    [
+        (None, dict(algorithm=1), TypeError, 'Invalid `algorithm`'),
+        (None, dict(algorithm='brute_force_no_of_eta'), ValueError, 'Invalid `algorithm`'),
+        (None, dict(rank_type=1), TypeError, 'Invalid `rank_type`'),
+        (None, dict(rank_type='bi'), ValueError, 'Invalid `rank_type`'),
+        (None, dict(iiv_strategy=['no_add']), TypeError, 'Invalid `iiv_strategy`'),
+        (None, dict(iiv_strategy='diagonal'), ValueError, 'Invalid `iiv_strategy`'),
+        (None, dict(cutoff='1'), TypeError, 'Invalid `cutoff`'),
+        (
+            None,
+            dict(model=1),
+            TypeError,
+            'Invalid `model`',
+        ),
+    ],
+)
+def test_validate_input_raises(
+    load_model_for_test,
+    testdata,
+    model_path,
+    arguments,
+    exception,
+    match,
+):
+
+    model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
+
+    harmless_arguments = dict(
+        algorithm='brute_force',
+    )
+
+    kwargs = {**harmless_arguments, 'model': model, **arguments}
+
+    with pytest.raises(exception, match=match):
+        validate_input(**kwargs)

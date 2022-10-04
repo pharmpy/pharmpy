@@ -66,12 +66,14 @@ class ResultsJSONDecoder(json.JSONDecoder):
 
             return results_class.from_dict(obj)
 
+        from pharmpy.workflows import LocalDirectoryToolDatabase, Log
+
+        if cls is not None and cls == 'LocalDirectoryToolDatabase':
+            return LocalDirectoryToolDatabase.from_dict(obj)
+
         if cls == 'PosixPath':
             return Path(obj)
-
         if cls == 'Log':
-            from pharmpy.workflows.log import Log
-
             return Log.from_dict(obj)
 
         return obj
@@ -181,6 +183,9 @@ class ModelfitResults(Results):
 
     @classmethod
     def from_dict(cls, d):
+        # FIXME temp fix since ModelfitResults is getting rewritten
+        if '__version__' in d.keys():
+            del d['__version__']
         return ModelfitResults(**d)
 
     def to_dict(self):

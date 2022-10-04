@@ -9,7 +9,6 @@ import pytest
 import sympy
 
 from pharmpy.modeling import (
-    add_covariate_effect,
     add_iiv,
     add_iov,
     add_lag_time,
@@ -1080,350 +1079,11 @@ def test_nested_transit_peripherals(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     set_transit_compartments(model, 1)
     model.model_code
+    set_michaelis_menten_elimination(model)
+    model.model_code
     set_peripheral_compartments(model, 1)
     model.model_code
     set_peripheral_compartments(model, 2)
-
-
-def test_nan_add_covariate_effect(load_model_for_test, pheno_path):
-    model = load_model_for_test(pheno_path)
-    data = model.dataset
-
-    new_col = [np.nan] * 10 + ([1.0] * (len(data.index) - 10))
-
-    data['new_col'] = new_col
-    model.dataset = data
-
-    add_covariate_effect(model, 'CL', 'new_col', 'cat')
-    model.update_source(nofiles=True)
-
-    assert not re.search('NaN', model.model_code)
-    assert re.search(r'NEW_COL\.EQ\.-99', model.model_code)
-
-
-def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
-    model = load_model_for_test(pheno_path)
-
-    add_covariate_effect(model, 'CL', 'WGT', 'exp')
-
-    with pytest.warns(UserWarning):
-        add_covariate_effect(model, 'CL', 'WGT', 'exp')
-
-    model = load_model_for_test(pheno_path)
-
-    add_covariate_effect(model, 'CL', 'WGT', 'exp')
-    add_covariate_effect(model, 'CL', 'APGR', 'exp')
-
-    assert 'CL = CL*CLAPGR*CLWGT' in model.model_code
-    assert 'CL = CL*CLWGT' not in model.model_code
-
-
-@pytest.mark.parametrize(
-    'model_path, effects, expected',
-    [
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [('CL', 'WGT', 'exp', '*')],
-            '$PK\n'
-            'WGT_MEDIAN = 1.30000\n'
-            'IF(AMT.GT.0) BTIME=TIME\n'
-            'TAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\n'
-            'TVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-            'CL=TVCL*EXP(ETA(1))\n'
-            'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
-            'CL = CL*CLWGT\n'
-            'V=TVV*EXP(ETA(2))\n'
-            'S1=V\n\n',
-        ),
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [('CL', 'WGT', 'exp', '+')],
-            '$PK\n'
-            'WGT_MEDIAN = 1.30000\n'
-            'IF(AMT.GT.0) BTIME=TIME\n'
-            'TAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\n'
-            'TVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-            'CL=TVCL*EXP(ETA(1))\n'
-            'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
-            'CL = CL + CLWGT\n'
-            'V=TVV*EXP(ETA(2))\n'
-            'S1=V\n\n',
-        ),
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [('CL', 'WGT', 'pow', '*')],
-            '$PK\n'
-            'WGT_MEDIAN = 1.30000\n'
-            'IF(AMT.GT.0) BTIME=TIME\n'
-            'TAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\n'
-            'TVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-            'CL=TVCL*EXP(ETA(1))\n'
-            'CLWGT = (WGT/WGT_MEDIAN)**THETA(4)\n'
-            'CL = CL*CLWGT\n'
-            'V=TVV*EXP(ETA(2))\n'
-            'S1=V\n\n',
-        ),
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [('CL', 'WGT', 'lin', '*')],
-            '$PK\n'
-            'WGT_MEDIAN = 1.30000\n'
-            'IF(AMT.GT.0) BTIME=TIME\n'
-            'TAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\n'
-            'TVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-            'CL=TVCL*EXP(ETA(1))\n'
-            'CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
-            'CL = CL*CLWGT\n'
-            'V=TVV*EXP(ETA(2))\n'
-            'S1=V\n\n',
-        ),
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [('CL', 'FA1', 'cat', '*')],
-            '$PK\n'
-            'IF(AMT.GT.0) BTIME=TIME\n'
-            'TAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\n'
-            'TVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-            'CL=TVCL*EXP(ETA(1))\n'
-            'IF (FA1.EQ.0) THEN\n'
-            '    CLFA1 = 1\n'
-            'ELSE IF (FA1.EQ.1.0) THEN\n'
-            '    CLFA1 = THETA(4) + 1\n'
-            'END IF\n'
-            'CL = CL*CLFA1\n'
-            'V=TVV*EXP(ETA(2))\n'
-            'S1=V\n\n',
-        ),
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [('CL', 'WGT', 'piece_lin', '*')],
-            '$PK\n'
-            'WGT_MEDIAN = 1.30000\n'
-            'IF(AMT.GT.0) BTIME=TIME\n'
-            'TAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\n'
-            'TVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-            'CL=TVCL*EXP(ETA(1))\n'
-            'IF (WGT.LE.WGT_MEDIAN) THEN\n'
-            '    CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
-            'ELSE\n'
-            '    CLWGT = THETA(5)*(WGT - WGT_MEDIAN) + 1\n'
-            'END IF\n'
-            'CL = CL*CLWGT\n'
-            'V=TVV*EXP(ETA(2))\n'
-            'S1=V\n\n',
-        ),
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [('CL', 'WGT', 'theta - cov + median', '*')],
-            '$PK\n'
-            'WGT_MEDIAN = 1.30000\n'
-            'IF(AMT.GT.0) BTIME=TIME\n'
-            'TAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\n'
-            'TVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-            'CL=TVCL*EXP(ETA(1))\n'
-            'CLWGT = THETA(4) - WGT + WGT_MEDIAN\n'
-            'CL = CL*CLWGT\n'
-            'V=TVV*EXP(ETA(2))\n'
-            'S1=V\n\n',
-        ),
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [('CL', 'WGT', 'theta - cov + std', '*')],
-            '$PK\n'
-            'WGT_STD = 0.704565\n'
-            'IF(AMT.GT.0) BTIME=TIME\n'
-            'TAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\n'
-            'TVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-            'CL=TVCL*EXP(ETA(1))\n'
-            'CLWGT = THETA(4) - WGT + WGT_STD\n'
-            'CL = CL*CLWGT\n'
-            'V=TVV*EXP(ETA(2))\n'
-            'S1=V\n\n',
-        ),
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [('CL', 'WGT', 'theta1 * (cov/median)**theta2', '*')],
-            '$PK\n'
-            'WGT_MEDIAN = 1.30000\n'
-            'IF(AMT.GT.0) BTIME=TIME\n'
-            'TAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\n'
-            'TVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-            'CL=TVCL*EXP(ETA(1))\n'
-            'CLWGT = THETA(4)*(WGT/WGT_MEDIAN)**THETA(5)\n'
-            'CL = CL*CLWGT\n'
-            'V=TVV*EXP(ETA(2))\n'
-            'S1=V\n\n',
-        ),
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [('CL', 'WGT', '((cov/std) - median) * theta', '*')],
-            '$PK\n'
-            'WGT_MEDIAN = 1.30000\n'
-            'WGT_STD = 0.704565\n'
-            'IF(AMT.GT.0) BTIME=TIME\n'
-            'TAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\n'
-            'TVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-            'CL=TVCL*EXP(ETA(1))\n'
-            'CLWGT = THETA(4)*(WGT/WGT_STD - WGT_MEDIAN)\n'
-            'CL = CL*CLWGT\n'
-            'V=TVV*EXP(ETA(2))\n'
-            'S1=V\n\n',
-        ),
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [
-                ('CL', 'WGT', 'exp', '+'),
-                ('V', 'WGT', 'exp', '+'),
-            ],
-            '$PK\n'
-            'WGT_MEDIAN = 1.30000\n'
-            'IF(AMT.GT.0) BTIME=TIME\n'
-            'TAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\n'
-            'TVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-            'CL=TVCL*EXP(ETA(1))\n'
-            'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
-            'CL = CL + CLWGT\n'
-            'V=TVV*EXP(ETA(2))\n'
-            'VWGT = EXP(THETA(5)*(WGT - WGT_MEDIAN))\n'
-            'V = V + VWGT\n'
-            'S1=V\n\n',
-        ),
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [
-                ('CL', 'WGT', 'exp', '*'),
-                ('V', 'WGT', 'exp', '*'),
-            ],
-            '$PK\n'
-            'WGT_MEDIAN = 1.30000\n'
-            'IF(AMT.GT.0) BTIME=TIME\n'
-            'TAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\n'
-            'TVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-            'CL=TVCL*EXP(ETA(1))\n'
-            'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
-            'CL = CL*CLWGT\n'
-            'V=TVV*EXP(ETA(2))\n'
-            'VWGT = EXP(THETA(5)*(WGT - WGT_MEDIAN))\n'
-            'V = V*VWGT\n'
-            'S1=V\n\n',
-        ),
-        (
-            ('nonmem', 'models', 'mox2.mod'),
-            [
-                ('V', 'WT', 'exp', '*'),
-                ('V', 'AGE', 'exp', '*'),
-            ],
-            '$PK\n'
-            'AGE_MEDIAN = 66.0000\n'
-            'WT_MEDIAN = 78.0000\n'
-            'CL = THETA(1) * EXP(ETA(1))\n'
-            'VC = THETA(2) * EXP(ETA(2))\n'
-            'MAT = THETA(3) * EXP(ETA(3))\n'
-            'KA = 1/MAT\n'
-            'V = VC\n'
-            'VWT = EXP(THETA(4)*(WT - WT_MEDIAN))\n'
-            'VAGE = EXP(THETA(5)*(AGE - AGE_MEDIAN))\n'
-            'V = V*VAGE*VWT\n',
-        ),
-        (
-            ('nonmem', 'models', 'mox2.mod'),
-            [
-                ('V', 'WT', 'exp', '*'),
-                ('V', 'AGE', 'exp', '*'),
-                ('V', 'CLCR', 'exp', '*'),
-            ],
-            '$PK\n'
-            'CLCR_MEDIAN = 65.0000\n'
-            'AGE_MEDIAN = 66.0000\n'
-            'WT_MEDIAN = 78.0000\n'
-            'CL = THETA(1) * EXP(ETA(1))\n'
-            'VC = THETA(2) * EXP(ETA(2))\n'
-            'MAT = THETA(3) * EXP(ETA(3))\n'
-            'KA = 1/MAT\n'
-            'V = VC\n'
-            'VWT = EXP(THETA(4)*(WT - WT_MEDIAN))\n'
-            'VAGE = EXP(THETA(5)*(AGE - AGE_MEDIAN))\n'
-            'VCLCR = EXP(THETA(6)*(CLCR - CLCR_MEDIAN))\n'
-            'V = V*VAGE*VCLCR*VWT\n',
-        ),
-        (
-            ('nonmem', 'models', 'mox2.mod'),
-            [
-                ('CL', 'CLCR', 'exp', '*'),
-                ('V', 'CLCR', 'exp', '*'),
-            ],
-            '$PK\n'
-            'CLCR_MEDIAN = 65.0000\n'
-            'CL = THETA(1) * EXP(ETA(1))\n'
-            'CLCLCR = EXP(THETA(4)*(CLCR - CLCR_MEDIAN))\n'
-            'CL = CL*CLCLCR\n'
-            'VC = THETA(2) * EXP(ETA(2))\n'
-            'MAT = THETA(3) * EXP(ETA(3))\n'
-            'KA = 1/MAT\n'
-            'V = VC\n'
-            'VCLCR = EXP(THETA(5)*(CLCR - CLCR_MEDIAN))\n'
-            'V = V*VCLCR\n',
-        ),
-        (
-            ('nonmem', 'models', 'mox2.mod'),
-            [
-                ('V', 'CLCR', 'exp', '*'),
-                ('CL', 'CLCR', 'exp', '*'),
-            ],
-            '$PK\n'
-            'CLCR_MEDIAN = 65.0000\n'
-            'CL = THETA(1) * EXP(ETA(1))\n'
-            'CLCLCR = EXP(THETA(5)*(CLCR - CLCR_MEDIAN))\n'
-            'CL = CL*CLCLCR\n'
-            'VC = THETA(2) * EXP(ETA(2))\n'
-            'MAT = THETA(3) * EXP(ETA(3))\n'
-            'KA = 1/MAT\n'
-            'V = VC\n'
-            'VCLCR = EXP(THETA(4)*(CLCR - CLCR_MEDIAN))\n'
-            'V = V*VCLCR\n',
-        ),
-    ],
-    ids=repr,
-)
-def test_add_covariate_effect(load_model_for_test, testdata, model_path, effects, expected):
-    model = load_model_for_test(testdata.joinpath(*model_path))
-    error_record_before = ''.join(map(str, model.control_stream.get_records('ERROR')))
-
-    for effect in effects:
-        add_covariate_effect(model, *effect)
-
-    model.update_source()
-    error_record_after = ''.join(map(str, model.control_stream.get_records('ERROR')))
-
-    assert str(model.get_pred_pk_record()) == expected
-    assert error_record_after == error_record_before
-
-    for effect in effects:
-        assert f'POP_{effect[0]}{effect[1]}' in model.model_code
 
 
 def test_add_depot(create_model_for_test):
@@ -2116,7 +1776,7 @@ def test_transform_etas_boxcox(load_model_for_test, pheno_path, etas, etab, buf_
         f'S1=V\n\n'
     )
 
-    assert str(model.get_pred_pk_record()) == rec_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == rec_ref
     assert model.parameters['lambda1'].init == 0.01
 
 
@@ -2141,7 +1801,7 @@ def test_transform_etas_tdist(load_model_for_test, pheno_path):
     denom_3 = f'384*{theta}**3'
 
     expression = (
-        f'ETA(1)*(1 + ({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ' f'({num_3})/({denom_3}))'
+        f'ETA(1)*(1 + ({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ({num_3})/({denom_3}))'
     )
 
     rec_ref = (
@@ -2157,7 +1817,7 @@ def test_transform_etas_tdist(load_model_for_test, pheno_path):
         f'S1=V\n\n'
     )
 
-    assert str(model.get_pred_pk_record()) == rec_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == rec_ref
     assert model.parameters['df1'].init == 80
 
 
@@ -2194,7 +1854,7 @@ def test_transform_etas_john_draper(load_model_for_test, pheno_path, etas, etad,
         f'S1=V\n\n'
     )
 
-    assert str(model.get_pred_pk_record()) == rec_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == rec_ref
 
 
 @pytest.mark.parametrize(
@@ -2247,7 +1907,7 @@ def test_add_iiv(
         eta_names=eta_name,
     )
 
-    etas = [eta.name for eta in model.random_variables.etas]
+    etas = model.random_variables.etas.names
 
     assert eta_name is None or set(eta_name).intersection(etas) or eta_name in etas
 
@@ -2264,9 +1924,9 @@ def test_add_iiv(
         f'{buf_new}\n\n'
     )
 
-    assert str(model.get_pred_pk_record()) == rec_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == rec_ref
 
-    omega_rec = model.control_stream.get_records('OMEGA')
+    omega_rec = model.internals.control_stream.get_records('OMEGA')
 
     assert len(omega_rec) == no_of_omega_recs
     assert '$OMEGA  0.09 ; IIV_' in str(omega_rec[-1])
@@ -2413,11 +2073,11 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
 def test_create_joint_distribution(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
-    create_joint_distribution(model, etas)
+    model = create_joint_distribution(model, etas)
     model.update_source()
-    assert str(model.get_pred_pk_record()) == pk_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega == omega_ref
 
@@ -2494,9 +2154,9 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, p
     create_joint_distribution(model, etas[1])
     model.update_source()
 
-    assert str(model.get_pred_pk_record()) == pk_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega == omega_ref
 
@@ -2601,9 +2261,9 @@ def test_split_joint_distribution(load_model_for_test, testdata, etas, pk_ref, o
     split_joint_distribution(model, etas)
     model.update_source()
 
-    assert str(model.get_pred_pk_record()) == pk_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega == omega_ref
 
@@ -2691,19 +2351,16 @@ def test_set_iiv_on_ruv(
     )
     model = create_model_for_test(model_sigma)
 
-    print("START")
-    print(model.parameters)
     set_iiv_on_ruv(model, epsilons, same_eta, eta_names)
-    print(model.parameters)
     model.update_source()
 
-    assert eta_names is None or eta_names[0] in [eta.name for eta in model.random_variables.etas]
+    assert eta_names is None or eta_names[0] in model.random_variables.etas.names
 
-    err_rec = model.control_stream.get_records('ERROR')[0]
+    err_rec = model.internals.control_stream.get_records('ERROR')[0]
 
     assert str(err_rec) == f'$ERROR\n' f'W=F\n' f'{err_ref}' f'IWRES=IRES/W\n\n'
 
-    omega_rec = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    omega_rec = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert omega_rec == (
         f'$OMEGA DIAGONAL(2)\n'
@@ -2806,9 +2463,9 @@ def test_remove_iiv(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     remove_iiv(model, etas)
     model.update_source()
 
-    assert str(model.get_pred_pk_record()) == pk_ref
+    assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega == omega_ref
 
@@ -2828,17 +2485,19 @@ def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
     model.update_source()
 
     assert (
-        str(model.get_pred_pk_record()) == '$PK\n'
+        str(model.internals.control_stream.get_pred_pk_record()) == '$PK\n'
         'CL = THETA(1)\n'
         'V = THETA(2)\n'
         'S1 = V + ETA(1)\n'
         'MAT = THETA(3)*EXP(ETA(2))\n'
         'Q = THETA(4)*EXP(ETA(3))\n\n'
     )
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega == '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n'
 
+
+def test_remove_iov_no_iovs(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
     with pytest.warns(UserWarning):
@@ -3034,10 +2693,9 @@ def test_remove_iov_with_options(
         model_with_some_iovs_removed = start_model.copy()
 
         remove_iov(model_with_some_iovs_removed, to_remove=to_remove)
+
         assert cases in model_with_some_iovs_removed.model_code
-        assert set(
-            map(lambda rv: rv.name, model_with_some_iovs_removed.random_variables.iov)
-        ) == set(rest)
+        assert set(model_with_some_iovs_removed.random_variables.iov.names) == set(rest)
 
 
 @pytest.mark.parametrize(
@@ -3188,11 +2846,11 @@ def test_set_power_on_ruv(
         set_power_on_ruv(model, epsilons, zero_protection=True)
         model.update_source()
 
-        rec_err = str(model.control_stream.get_records('ERROR')[0])
+        rec_err = str(model.internals.control_stream.get_records('ERROR')[0])
         correct = f'$ERROR\n' f'W=F\n' f'{err_ref}\n' f'IWRES=IRES/W\n\n'
         assert rec_err == correct
 
-        rec_theta = ''.join(str(rec) for rec in model.control_stream.get_records('THETA'))
+        rec_theta = ''.join(str(rec) for rec in model.internals.control_stream.get_records('THETA'))
 
         assert (
             rec_theta == f'$THETA (0,0.00469307) ; PTVCL\n'
@@ -3591,10 +3249,10 @@ def test_add_iov(
     add_iov(model, occ, etas, eta_names, distribution=distribution)
     model.update_source()
 
-    model_etas = set(eta.name for eta in model.random_variables.etas)
+    model_etas = set(model.random_variables.etas.names)
     assert eta_names is None or model_etas.issuperset(eta_names)
 
-    pk_rec = str(model.get_pred_pk_record())
+    pk_rec = str(model.internals.control_stream.get_pred_pk_record())
 
     expected_pk_rec_start = f'$PK\n{pk_start_ref}'
     expected_pk_rec_end = f'{pk_end_ref}\n'
@@ -3602,7 +3260,7 @@ def test_add_iov(
     assert pk_rec[: len(expected_pk_rec_start)] == expected_pk_rec_start
     assert pk_rec[-len(expected_pk_rec_end) :] == expected_pk_rec_end
 
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega[-len(omega_ref) :] == omega_ref
 
@@ -3618,16 +3276,14 @@ def test_add_iov_compose(load_model_for_test, pheno_path):
     add_iov(model2, 'FA1', 'ETA(2)')
     model2.update_source()
 
-    assert set(eta.name for eta in model1.random_variables.etas) == set(
-        eta.name for eta in model2.random_variables.etas
-    )
+    assert set(model1.random_variables.etas.names) == set(model2.random_variables.etas.names)
     # FIXME find better way to assert models are equivalent
-    assert sorted(str(model1.get_pred_pk_record()).split('\n')) == sorted(
-        str(model2.get_pred_pk_record()).split('\n')
+    assert sorted(str(model1.internals.control_stream.get_pred_pk_record()).split('\n')) == sorted(
+        str(model2.internals.control_stream.get_pred_pk_record()).split('\n')
     )
 
-    rec_omega_1 = list(str(rec) for rec in model1.control_stream.get_records('OMEGA'))
-    rec_omega_2 = list(str(rec) for rec in model2.control_stream.get_records('OMEGA'))
+    rec_omega_1 = list(str(rec) for rec in model1.internals.control_stream.get_records('OMEGA'))
+    rec_omega_2 = list(str(rec) for rec in model2.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega_1 == rec_omega_2
 
@@ -3649,7 +3305,7 @@ def test_add_iov_only_one_level(load_model_for_test, pheno_path):
             None,
             'disjoint',
             ValueError,
-            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+            'ETA(1) was given twice.',
         ),
         (
             'FA1',
@@ -3657,7 +3313,7 @@ def test_add_iov_only_one_level(load_model_for_test, pheno_path):
             None,
             'disjoint',
             ValueError,
-            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+            'ETA(1) was given twice.',
         ),
         (
             'FA1',
@@ -3665,7 +3321,7 @@ def test_add_iov_only_one_level(load_model_for_test, pheno_path):
             None,
             'explicit',
             ValueError,
-            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+            'ETA(1) was given twice.',
         ),
         (
             'FA1',
@@ -3673,7 +3329,7 @@ def test_add_iov_only_one_level(load_model_for_test, pheno_path):
             None,
             'explicit',
             ValueError,
-            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+            'ETA(1) was given twice.',
         ),
         (
             'FA1',
@@ -3729,6 +3385,7 @@ def test_add_iov_raises(
     load_model_for_test, pheno_path, occ, params, new_eta_names, distribution, error, message
 ):
     model = load_model_for_test(pheno_path)
+    print(message)
     with pytest.raises(error, match=re.escape(message)):
         add_iov(model, occ, params, eta_names=new_eta_names, distribution=distribution)
 
@@ -3756,7 +3413,7 @@ def test_set_ode_solver(load_model_for_test, pheno_path):
     assert 'ADVAN6' in model.model_code
 
 
-def test_add_pk_iiv(load_model_for_test, pheno_path):
+def test_add_pk_iiv_1(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     set_zero_order_elimination(model)
     add_pk_iiv(model)
@@ -3767,6 +3424,8 @@ def test_add_pk_iiv(load_model_for_test, pheno_path):
     iivs = set(model.random_variables.iiv.names)
     assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
 
+
+def test_add_pk_iiv_2(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     set_zero_order_elimination(model)
     add_peripheral_compartment(model)

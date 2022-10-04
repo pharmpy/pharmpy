@@ -1,19 +1,27 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass
 from itertools import count
-from typing import Any, Callable, Iterable, List, Tuple, Union
+from typing import Any, Callable, Iterable, List, Sequence, Tuple, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
-from pharmpy.modeling import add_covariate_effect, copy_model
+from pharmpy.modeling import add_covariate_effect, copy_model, get_pk_parameters
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
+from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools.common import create_results, update_initial_estimates
-from pharmpy.tools.mfl.feature.covariate import EffectLiteral, Spec, parse_spec, spec
+from pharmpy.tools.mfl.feature.covariate import (
+    EffectLiteral,
+    Spec,
+    all_covariate_effects,
+    parse_spec,
+    spec,
+)
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
+from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 from .results import COVSearchResults
@@ -86,7 +94,7 @@ ALGORITHMS = frozenset(['scm-forward', 'scm-forward-then-backward'])
 
 
 def create_workflow(
-    effects: Union[str, List[Spec]],
+    effects: Union[str, Sequence[Spec]],
     p_forward: float = 0.05,
     p_backward: float = 0.01,
     max_steps: int = -1,
@@ -131,15 +139,6 @@ def create_workflow(
 
     """
 
-    if algorithm not in ALGORITHMS:
-        raise ValueError(f'covsearch only supports algorithm in {sorted(ALGORITHMS)}')
-
-    if p_forward <= 0:
-        raise ValueError(f'p_forward must be positive (got {p_forward})')
-
-    if p_backward <= 0:
-        raise ValueError(f'p_backward must be positive (got {p_backward})')
-
     wf = Workflow()
     wf.name = NAME_WF
 
@@ -172,6 +171,8 @@ def create_workflow(
     results_task = Task(
         'results',
         task_results,
+        p_forward,
+        p_backward,
     )
 
     wf.add_task(results_task, predecessors=search_output)
@@ -193,7 +194,8 @@ def init(model: Union[Model, None]):
 
 
 def task_greedy_forward_search(
-    effects: Union[str, List[Spec]],
+    context,
+    effects: Union[str, Sequence[Spec]],
     p_forward: float,
     max_steps: int,
     state: SearchState,
@@ -206,7 +208,7 @@ def task_greedy_forward_search(
     def handle_effects(step: int, parent: Candidate, candidate_effects: List[EffectLiteral]):
 
         wf = wf_effects_addition(parent.model, candidate_effects)
-        new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_addition-{step}')
+        new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_addition-{step}', context)
 
         return [
             Candidate(model, parent.steps + (ForwardStep(p_forward, AddEffect(*effect)),))
@@ -223,6 +225,7 @@ def task_greedy_forward_search(
 
 
 def task_greedy_backward_search(
+    context,
     p_backward: float,
     max_steps: int,
     state: SearchState,
@@ -230,7 +233,7 @@ def task_greedy_backward_search(
     def handle_effects(step: int, parent: Candidate, candidate_effects: List[EffectLiteral]):
 
         wf = wf_effects_removal(state.start_model, parent, candidate_effects)
-        new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}')
+        new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}', context)
 
         return [
             Candidate(model, parent.steps + (BackwardStep(p_backward, RemoveEffect(*effect)),))
@@ -326,7 +329,7 @@ def task_add_covariate_effect(model: Model, effect: EffectLiteral, effect_index:
     )
     model_with_added_effect.parent_model = model.name
     update_initial_estimates(model_with_added_effect)
-    add_covariate_effect(model_with_added_effect, *effect)
+    add_covariate_effect(model_with_added_effect, *effect, allow_nested=True)
     return model_with_added_effect
 
 
@@ -366,20 +369,22 @@ def task_remove_covariate_effect(
     model_with_removed_effect.parent_model = model.name
 
     for kept_effect in _added_effects((*candidate.steps, BackwardStep(-1, RemoveEffect(*effect)))):
-        add_covariate_effect(model_with_removed_effect, *astuple(kept_effect))
+        add_covariate_effect(model_with_removed_effect, *astuple(kept_effect), allow_nested=True)
 
     update_initial_estimates(model_with_removed_effect)
     return model_with_removed_effect
 
 
-def task_results(state: SearchState):
+def task_results(p_forward: float, p_backward: float, state: SearchState):
     candidates = state.all_candidates_so_far
     models = list(map(lambda candidate: candidate.model, candidates))
     base_model, *res_models = models
     assert base_model is state.start_model
     best_model = state.best_candidate_so_far.model
 
-    res = create_results(COVSearchResults, base_model, base_model, res_models, 'bic', None)
+    res = create_results(
+        COVSearchResults, base_model, base_model, res_models, 'lrt', (p_forward, p_backward)
+    )
 
     res.steps = _make_df_steps(best_model, candidates)
     res.candidate_summary = candidate_summary_dataframe(res.steps)
@@ -420,8 +425,8 @@ def _make_df_steps_row(
     p_value = lrt_p_value(parent_model, model)
     alpha = last_step.alpha
     selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
-    extended_significant = p_value <= alpha
-    assert not selected or extended_significant
+    extended_significant = lrt_test(parent_model, candidate.model, alpha)
+    assert not selected or (candidate.model is parent_model) or extended_significant
     return {
         'step': len(candidate.steps),
         'parameter': last_effect.parameter,
@@ -440,3 +445,77 @@ def _make_df_steps_row(
         'model': candidate.model.name,
         'covariate_effects': np.nan,
     }
+
+
+@runtime_type_check
+@same_arguments_as(create_workflow)
+def validate_input(effects, p_forward, p_backward, algorithm, model):
+    if algorithm not in ALGORITHMS:
+        raise ValueError(
+            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'
+        )
+
+    if not 0 < p_forward <= 1:
+        raise ValueError(
+            f'Invalid `p_forward`: got `{p_forward}`, must be a float in range (0, 1].'
+        )
+
+    if not 0 < p_backward <= 1:
+        raise ValueError(
+            f'Invalid `p_backward`: got `{p_backward}`, must be a float in range (0, 1].'
+        )
+
+    if model is not None:
+        if isinstance(effects, str):
+            try:
+                parsed = parse(effects)
+            except:  # noqa E722
+                raise ValueError(f'Invalid `effects`, could not be parsed: `{effects}`')
+            effect_spec = spec(model, parsed)
+        else:
+            effect_spec = effects
+
+        candidate_effects = map(lambda x: Effect(*x), sorted(set(parse_spec(effect_spec))))
+
+        try:
+            di_covariate = model.datainfo.typeix['covariate'].names
+        except IndexError:
+            di_covariate = []
+
+        try:
+            di_unknown = model.datainfo.typeix['unknown'].names
+        except IndexError:
+            di_unknown = []
+
+        allowed_covariates = set(di_covariate).union(di_unknown)
+        allowed_parameters = set(get_pk_parameters(model)).union(
+            str(statement.symbol) for statement in model.statements.before_odes
+        )
+        allowed_covariate_effects = set(all_covariate_effects)
+        allowed_ops = set(['*', '+'])
+
+        for effect in candidate_effects:
+            if effect.covariate not in allowed_covariates:
+                raise ValueError(
+                    f'Invalid `effects` because of invalid covariate found in'
+                    f' effects: got `{effect.covariate}`,'
+                    f' must be in {sorted(allowed_covariates)}.'
+                )
+            if effect.parameter not in allowed_parameters:
+                raise ValueError(
+                    f'Invalid `effects` because of invalid parameter found in'
+                    f' effects: got `{effect.parameter}`,'
+                    f' must be in {sorted(allowed_parameters)}.'
+                )
+            if effect.fp not in allowed_covariate_effects:
+                raise ValueError(
+                    f'Invalid `effects` because of invalid effect function found in'
+                    f' effects: got `{effect.fp}`,'
+                    f' must be in {sorted(allowed_covariate_effects)}.'
+                )
+            if effect.operation not in allowed_ops:
+                raise ValueError(
+                    f'Invalid `effects` because of invalid effect operation found in'
+                    f' effects: got `{effect.operation}`,'
+                    f' must be in {sorted(allowed_ops)}.'
+                )

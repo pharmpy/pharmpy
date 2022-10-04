@@ -197,8 +197,9 @@ def test_parameter_estimates(load_model_for_test, pheno_path):
 
 
 def test_simfit(testdata, load_model_for_test):
-    model = load_model_for_test(testdata / 'nonmem' / 'modelfit_results' / 'simfit' / 'sim-1.mod')
-    results = simfit_results(model)
+    path = testdata / 'nonmem' / 'modelfit_results' / 'simfit' / 'sim-1.mod'
+    model = load_model_for_test(path)
+    results = simfit_results(model, path)
     assert len(results) == 3
     assert results[1].ofv == 565.84904364342981
     assert results[2].ofv == 570.73440114145342

@@ -19,7 +19,7 @@ $OMEGA  DIAGONAL(2)
  0.0279067  ;        IVV
 $SIGMA  0.0132416
 ;$SIGMA  0.0130865
-;$ETAS       FILE=/home/rikard/testing/pheno_real.phi
+$ETAS FILE=pheno_real.phi
 $ESTIMATION MAXEVALS=9999999 PRINT=1
 
 $TABLE ID G11 G21 H11 CIPREDI FILE=mytab

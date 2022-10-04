@@ -1,27 +1,41 @@
 from __future__ import annotations
 
 import math
-import warnings
+from itertools import chain
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.deps.scipy import stats
-from pharmpy.expressions import sympify
+from pharmpy.expressions import subs, sympify, xreplace_dict
 from pharmpy.math import round_to_n_sigdig
-from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model, RandomVariables
+from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
+from pharmpy.model.distributions.numeric import ConstantDistribution
+from pharmpy.model.random_variables import (
+    eval_expr,
+    filter_distributions,
+    sample_rvs,
+    subs_distributions,
+)
 
 from .data import get_ids, get_observations
+from .lrt import degrees_of_freedom as lrt_df
+from .lrt import test as lrt_test
 from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
 
+RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic'))
 
-def calculate_eta_shrinkage(model, sd=False):
+
+def calculate_eta_shrinkage(model, parameter_estimates, individual_estimates, sd=False):
     """Calculate eta shrinkage for each eta
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    parameter_estimates : pd.Series
+        Parameter estimates
+    individual_estimates : pd.DataFrame
+        Table of individual (eta) estimates
     sd : bool
         Calculate shrinkage on the standard deviation scale (default is to calculate on the
         variance scale)
@@ -35,11 +49,13 @@ def calculate_eta_shrinkage(model, sd=False):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> calculate_eta_shrinkage(model)
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> ie = model.modelfit_results.individual_estimates
+    >>> calculate_eta_shrinkage(model, pe, ie)
     ETA(1)    0.720481
     ETA(2)    0.240295
     dtype: float64
-    >>> calculate_eta_shrinkage(model, sd=True)
+    >>> calculate_eta_shrinkage(model, pe, ie, sd=True)
     ETA(1)    0.471305
     ETA(2)    0.128389
     dtype: float64
@@ -49,24 +65,21 @@ def calculate_eta_shrinkage(model, sd=False):
     calculate_individual_shrinkage
 
     """
-    res = model.modelfit_results
-    pe = res.parameter_estimates
     # Want parameter estimates combined with fixed parameter values
     param_inits = model.parameters.to_dataframe()['value']
-    pe = pe.combine_first(param_inits)
+    pe = parameter_estimates.combine_first(param_inits)
 
-    ie = res.individual_estimates
     param_names = model.random_variables.iiv.variance_parameters
     diag_ests = pe[param_names]
-    diag_ests.index = ie.columns
+    diag_ests.index = individual_estimates.columns
     if not sd:
-        shrinkage = 1 - (ie.var() / diag_ests)
+        shrinkage = 1 - (individual_estimates.var() / diag_ests)
     else:
-        shrinkage = 1 - (ie.std() / (diag_ests**0.5))
+        shrinkage = 1 - (individual_estimates.std() / (diag_ests**0.5))
     return shrinkage
 
 
-def calculate_individual_shrinkage(model):
+def calculate_individual_shrinkage(model, parameter_estimates, individual_estimates_covariance):
     """Calculate the individual eta-shrinkage
 
     Definition: ieta_shr = (var(eta) / omega)
@@ -75,6 +88,10 @@ def calculate_individual_shrinkage(model):
     ----------
     model : Model
         Pharmpy model
+    parameter_estimates : pd.Series
+        Parameter estimates of model
+    individual_estimates_covariance : pd.DataFrame
+        Uncertainty covariance matrices of individual estimates
 
     Return
     ------
@@ -85,7 +102,9 @@ def calculate_individual_shrinkage(model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> calculate_individual_shrinkage(model)
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> covs = model.modelfit_results.individual_estimates_covariance
+    >>> calculate_individual_shrinkage(model, pe, covs)
           ETA(1)    ETA(2)
     ID
     1   0.847789  0.256473
@@ -153,9 +172,8 @@ def calculate_individual_shrinkage(model):
     calculate_eta_shrinkage
 
     """
-    res = model.modelfit_results
-    cov = res.individual_estimates_covariance
-    pe = res.parameter_estimates
+    cov = individual_estimates_covariance
+    pe = parameter_estimates
     # Want parameter estimates combined with fixed parameter values
     param_inits = model.parameters.to_dataframe()['value']
     pe = pe.combine_first(param_inits)
@@ -163,8 +181,6 @@ def calculate_individual_shrinkage(model):
     # Get all iiv and iov variance parameters
     diag = model.random_variables.etas.covariance_matrix.diagonal()
     param_names = [s.name for s in diag]
-    # param_names = model.random_variables.etas.variance_parameters
-    # param_names = list(OrderedSet(param_names))  # Only unique in order
 
     diag_ests = pe[param_names]
 
@@ -177,7 +193,7 @@ def calculate_individual_shrinkage(model):
     return ish
 
 
-def calculate_individual_parameter_statistics(model, exprs, rng=None):
+def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
     """Calculate statistics for individual parameters
 
     Calculate the mean (expected value of the distribution), variance
@@ -194,7 +210,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
     ----------
     model : Model
         A previously estimated model
-    exprs : str, sympy expression or iterable of str or sympy expressions
+    expr_or_exprs : str, sympy expression or iterable of str or sympy expressions
         Expressions or equations for parameters of interest. If equations are used
         the names of the left hand sides will be used as the names of the parameters.
     rng : Generator or int
@@ -215,72 +231,132 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
                               mean  variance    stderr
     parameter covariates
     K         p5          0.004234  0.000001  0.001138
-              median      0.004909  0.000001  0.001212
-              p95         0.004910  0.000001  0.001263
+              median      0.004907  0.000001  0.001247
+              p95         0.004907  0.000001  0.001247
     """
     rng = create_rng(rng)
 
-    if isinstance(exprs, str) or isinstance(exprs, sympy.Basic):
-        exprs = [_split_equation(exprs)]
+    split_exprs = map(
+        _split_equation,
+        [expr_or_exprs]
+        if isinstance(expr_or_exprs, str) or isinstance(expr_or_exprs, sympy.Basic)
+        else expr_or_exprs,
+    )
+
+    full_exprs = list(
+        map(
+            lambda e: (e[0], model.statements.before_odes.full_expression(e[1])),
+            split_exprs,
+        )
+    )
+
+    parameter_estimates = xreplace_dict(model.modelfit_results.parameter_estimates)
+
+    all_free_symbols = set().union(*map(lambda e: e[1].free_symbols, full_exprs))
+
+    all_covariate_free_symbols = all_free_symbols.intersection(
+        map(sympy.Symbol, model.datainfo.names)
+    )
+    all_parameter_free_symbols = set(parameter_estimates.keys())
+    all_random_free_symbols = all_free_symbols.difference(
+        all_parameter_free_symbols, all_covariate_free_symbols
+    )
+
+    distributions = list(
+        filter_distributions(
+            model.random_variables,
+            all_random_free_symbols,
+        )
+    )
+
+    sampling_rvs = list(
+        subs_distributions(
+            distributions,
+            parameter_estimates,
+        )
+    )
+
+    batches = []
+
+    if not all_covariate_free_symbols:
+        cases = {'median': dict()}
     else:
-        exprs = [_split_equation(expr) for expr in exprs]
-    cols = set(model.datainfo.names)
-    i = 0
+        dataset = model.dataset
+        column_filter = ['ID'] + list(symbol.name for symbol in all_covariate_free_symbols)
+        q5 = dataset[column_filter].groupby('ID').median().quantile(0.05)
+        q95 = dataset[column_filter].groupby('ID').median().quantile(0.95)
+        median = dataset[column_filter].groupby('ID').median().median()
+        cases = {
+            'p5': xreplace_dict(q5),
+            'median': xreplace_dict(median),
+            'p95': xreplace_dict(q95),
+        }
+
+    filtered_sampling_rvs = list(
+        filter(
+            lambda r: any(map(all_random_free_symbols.__contains__, r[0])),
+            sampling_rvs,
+        )
+    )
+
+    nsamples = 1000000
+    nbatches = 100
+    batchsize = 10
+
+    samples = sample_rvs(filtered_sampling_rvs, nsamples, rng)
+
+    if model.modelfit_results.covariance_matrix is not None:
+        parameters_samples = sample_parameters_from_covariance_matrix(
+            model,
+            n=nbatches,
+            force_posdef_covmatrix=True,
+            rng=rng,
+        )
+
+        for _, row in parameters_samples.iterrows():
+            parameters = xreplace_dict(row)
+            local_sampling_rvs = list(subs_distributions(distributions, parameters)) + [
+                ((key,), ConstantDistribution(value))
+                for key, value in parameters.items()
+                if key in all_parameter_free_symbols
+            ]
+            batch = sample_rvs(local_sampling_rvs, batchsize, rng)
+            batches.append(batch)
+
     table = pd.DataFrame(columns=['parameter', 'covariates', 'mean', 'variance', 'stderr'])
-    for name, expr in exprs:
-        full_expr = model.statements.before_odes.full_expression(expr)
-        covariates = {symb.name for symb in full_expr.free_symbols if symb.name in cols}
-        if not covariates:
-            cases = {'median': dict()}
-        else:
-            dataset = model.dataset
-            q5 = dataset[['ID'] + list(covariates)].groupby('ID').median().quantile(0.05)
-            q95 = dataset[['ID'] + list(covariates)].groupby('ID').median().quantile(0.95)
-            median = dataset[['ID'] + list(covariates)].groupby('ID').median().median()
-            cases = {'p5': dict(q5), 'median': dict(median), 'p95': dict(q95)}
+    i = 0
 
+    for name, full_expr in full_exprs:
         df = pd.DataFrame(index=list(cases.keys()), columns=['mean', 'variance', 'stderr'])
+        parameter_estimates_expr = subs(full_expr, parameter_estimates, simultaneous=True)
+
         for case, cov_values in cases.items():
-            pe = dict(model.modelfit_results.parameter_estimates)
-            cov_expr = full_expr.subs(cov_values)
-            expr = cov_expr.subs(pe)
-            samples = model.random_variables.sample(expr, parameters=pe, samples=1000000, rng=rng)
+            expr = subs(parameter_estimates_expr, cov_values, simultaneous=True)
+            values = eval_expr(expr, nsamples, samples)
 
-            mean = np.mean(samples)
-            variance = np.var(samples)
+            mean = np.mean(values)
+            variance = np.var(values)
 
-            if model.modelfit_results.covariance_matrix is not None:
-                parameters = sample_parameters_from_covariance_matrix(
-                    model,
-                    n=100,
-                    force_posdef_covmatrix=True,
-                    rng=rng,
-                )
-                samples = []
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore')
-                    for _, row in parameters.iterrows():
-                        batch = model.random_variables.sample(
-                            cov_expr.subs(dict(row)),
-                            parameters=dict(row),
-                            samples=10,
-                            rng=rng,
-                        )
-                        samples.extend(list(batch))
-                stderr = pd.Series(samples).std()
-            else:
-                stderr = np.nan
+            # NOTE This is NaN for empty inputs, dtype is required for those.
+            cov_expr = subs(full_expr, cov_values, simultaneous=True)
+            stderr = pd.Series(
+                chain.from_iterable(eval_expr(cov_expr, batchsize, batch) for batch in batches),
+                dtype='float64',
+            ).std()
+
             df.loc[case] = [mean, variance, stderr]
-            df.index.name = 'covariates'
 
+        df.index.name = 'covariates'
         df.reset_index(inplace=True)
         if not name:
             name = f'unknown{i}'
             i += 1
         df['parameter'] = name
         table = pd.concat([table, df])
+
     table.set_index(['parameter', 'covariates'], inplace=True)
     table = table.astype('float64')
+
     return table
 
 
@@ -309,12 +385,12 @@ def calculate_pk_parameters_statistics(model, rng=None):
     >>> from pharmpy.modeling import calculate_pk_parameters_statistics
     >>> model = load_example_model("pheno")
     >>> rng = create_rng(23)
-    >>> calculate_pk_parameters_statistics(model, rng=rng)  # doctest: +NORMALIZE_WHITESPACE
+    >>> calculate_pk_parameters_statistics(model, rng=rng)
                               mean  variance    stderr
     parameter covariates
     k_e       p5          0.004234  0.000001  0.001138
-              median      0.004909  0.000001  0.001212
-              p95         0.004910  0.000001  0.001263
+              median      0.004907  0.000001  0.001247
+              p95         0.004907  0.000001  0.001247
 
     See Also
     --------
@@ -341,7 +417,9 @@ def calculate_pk_parameters_statistics(model, rng=None):
         tmax_closed_form = sympy.solve(d, odes.t)[0]
         expressions.append(sympy.Eq(sympy.Symbol('t_max'), tmax_closed_form))
         e2 = sympy.simplify(expr / depot.dose.amount / sympy.denom(elimination_rate))
-        cmax_dose_closed_form = sympy.simplify(e2.subs({odes.t: tmax_closed_form}))
+        cmax_dose_closed_form = sympy.simplify(
+            subs(e2, {odes.t: tmax_closed_form}, simultaneous=True)
+        )
         expressions.append(sympy.Eq(sympy.Symbol('C_max_dose'), cmax_dose_closed_form))
 
     # Any abs + 1comp + FO elimination
@@ -380,7 +458,7 @@ def calculate_pk_parameters_statistics(model, rng=None):
         A = m[A] / central.dose.amount
         B = m[B] / central.dose.amount
 
-        if (alpha - alpha).extract_multiplicatively(-1) is not None:
+        if (beta - alpha).extract_multiplicatively(-1) is not None:
             # alpha > beta  (sympy couldn't simplify this directly)
             alpha, beta = beta, alpha
             A, B = B, A
@@ -432,7 +510,7 @@ def _get_model_result_summary(model, include_all_estimation_steps=False):
                 run_type = 'evaluation'
             else:
                 run_type = 'estimation'
-            summary_dict = {**{'run_type': run_type}, **summary_dict}
+            summary_dict = {'run_type': run_type, **summary_dict}
             summary_dicts.append(summary_dict)
             tuples.append((model.name, i + 1))
         index = pd.MultiIndex.from_tuples(tuples, names=['model', 'step'])
@@ -465,8 +543,8 @@ def _summarize_step(model, i):
         summary_dict['minimization_successful'] = False
 
     summary_dict['ofv'] = step.ofv
-    summary_dict['aic'] = calculate_aic(model, modelfit_results=res)
-    summary_dict['bic'] = calculate_bic(model, modelfit_results=res)
+    summary_dict['aic'] = calculate_aic(model, res.ofv)
+    summary_dict['bic'] = calculate_bic(model, res.ofv)
     summary_dict['runtime_total'] = step.runtime_total
     summary_dict['estimation_runtime'] = step.estimation_runtime
 
@@ -647,7 +725,6 @@ def rank_models(
             if errors_allowed:
                 if model.modelfit_results.termination_cause not in errors_allowed:
                     continue
-                print(model.modelfit_results.significant_digits)
                 if np.isnan(model.modelfit_results.significant_digits):
                     continue
             else:
@@ -655,9 +732,17 @@ def rank_models(
 
         rank_value = _get_rankval(model, rank_type, bic_type)
         if rank_type == 'lrt':
-            if not _fulfills_lrt(model_dict[model.parent_model], model, cutoff):
+            parent = model_dict[model.parent_model]
+            if cutoff is None:
+                co = 0.05 if lrt_df(parent, model) >= 0 else 0.01
+            elif isinstance(cutoff, tuple):
+                co = cutoff[0] if lrt_df(parent, model) >= 0 else cutoff[1]
+            else:
+                assert isinstance(cutoff, (float, int))
+                co = cutoff
+            if not lrt_test(parent, model, co):
                 continue
-        if cutoff:
+        elif cutoff is not None:
             if ref_value - rank_value <= cutoff:
                 continue
 
@@ -714,90 +799,73 @@ def rank_models(
         return df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
 
 
-def _fulfills_lrt(parent, child, alpha):
-    if parent.name == child.name:
-        return False
-    dofv = parent.modelfit_results.ofv - child.modelfit_results.ofv
-    df = len(child.parameters) - len(parent.parameters)
-    if df < 0:
-        raise NotImplementedError('LRT is currently only supported where degrees of freedom => 0')
-    elif df == 0:
-        cutoff = 0
-    else:
-        cutoff = float(stats.chi2.isf(q=alpha, df=df))
-    return dofv >= cutoff
-
-
 def _get_rankval(model, rank_type, bic_type):
     if not model.modelfit_results:
         return np.nan
     if rank_type in ['ofv', 'lrt']:
         return model.modelfit_results.ofv
     elif rank_type == 'aic':
-        return calculate_aic(model)
+        return calculate_aic(model, model.modelfit_results.ofv)
     elif rank_type == 'bic':
-        return calculate_bic(model, bic_type)
+        return calculate_bic(model, model.modelfit_results.ofv, bic_type)
     else:
         raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
 
 
-def calculate_aic(model, modelfit_results=None):
-    """Calculate final AIC for model assuming the OFV to be -2LL
+def calculate_aic(model, likelihood):
+    """Calculate AIC
 
-    AIC = OFV + 2*n_estimated_parameters
+    AIC = -2LL + 2*n_estimated_parameters
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
-    modelfit_results : ModelfitResults
-        Alternative results object. Default is to use the one in model
+    likelihood : float
+        -2LL
 
     Returns
     -------
     float
         AIC of model fit
     """
-    if modelfit_results is None:
-        modelfit_results = model.modelfit_results
-
     parameters = model.parameters.nonfixed
-    return modelfit_results.ofv + 2 * len(parameters)
+    return likelihood + 2 * len(parameters)
 
 
 def _random_etas(model):
     var = model.random_variables.etas.variance_parameters
     zerofix = [model.parameters[e].fix and model.parameters[e].init == 0 for e in var]
     keep = []
-    for eta, zf in zip(model.random_variables.etas, zerofix):
+    for eta, zf in zip(model.random_variables.etas.names, zerofix):
         if not zf:
             keep.append(eta)
-    return RandomVariables(keep)
+    return model.random_variables.etas[keep]
 
 
-def calculate_bic(model, type=None, modelfit_results=None):
-    """Calculate final BIC value assuming the OFV to be -2LL
+def calculate_bic(model, likelihood, type=None):
+    """Calculate BIC
 
     Different variations of the BIC can be calculated:
 
     * | mixed (default)
-      | BIC = OFV + n_random_parameters * log(n_individuals) +
+      | BIC = -2LL + n_random_parameters * log(n_individuals) +
       |       n_fixed_parameters * log(n_observations)
     * | fixed
-      | BIC = OFV + n_estimated_parameters * log(n_observations)
+      | BIC = -2LL + n_estimated_parameters * log(n_observations)
     * | random
-      | BIC = OFV + n_estimated_parameters * log(n_individals)
+      | BIC = -2LL + n_estimated_parameters * log(n_individals)
     * | iiv
-      | BIC = OFV + n_estimated_iiv_omega_parameters * log(n_individals)
+      | BIC = -2LL + n_estimated_iiv_omega_parameters * log(n_individals)
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
+    likelihood : float
+        -2LL to use
     type : str
         Type of BIC to calculate. Default is the mixed effects.
-    modelfit_results : ModelfitResults
-        Alternative results object. Default is to use the one in model
 
     Returns
     -------
@@ -808,18 +876,16 @@ def calculate_bic(model, type=None, modelfit_results=None):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> calculate_bic(model)
+    >>> ofv = model.modelfit_results.ofv
+    >>> calculate_bic(model, ofv)
     611.7071686183284
-    >>> calculate_bic(model, type='fixed')
+    >>> calculate_bic(model, ofv, type='fixed')
     616.536606983396
-    >>> calculate_bic(model, type='random')
+    >>> calculate_bic(model, ofv, type='random')
     610.7412809453149
-    >>> calculate_bic(model, type='iiv')
+    >>> calculate_bic(model, ofv, type='iiv')
     594.431131169692
     """
-    if modelfit_results is None:
-        modelfit_results = model.modelfit_results
-
     parameters = model.parameters.nonfixed
     if type == 'fixed':
         penalty = len(parameters) * math.log(len(get_observations(model)))
@@ -836,19 +902,23 @@ def calculate_bic(model, type=None, modelfit_results=None):
             assignment = model.statements.find_assignment(param)
             if assignment:
                 expr = model.statements.before_odes.full_expression(assignment.symbol)
-                for eta in _random_etas(model):
-                    if eta.symbol in expr.free_symbols:
+                for eta in _random_etas(model).names:
+                    if sympy.Symbol(eta) in expr.free_symbols:
                         symbols = {p.symbol for p in parameters if p.symbol in expr.free_symbols}
                         random_thetas.update(symbols)
                         break
         yexpr = model.statements.after_odes.full_expression(model.dependent_variable)
-        for eta in _random_etas(model):
-            if eta.symbol in yexpr.free_symbols:
+        for eta in _random_etas(model).names:
+            if sympy.Symbol(eta) in yexpr.free_symbols:
                 symbols = {p.symbol for p in parameters if p.symbol in yexpr.free_symbols}
                 random_thetas.update(symbols)
-                for eps in model.random_variables.epsilons:
-                    if eps.symbol in yexpr.free_symbols:
-                        params = {p.symbol for p in parameters if p.name in eps.parameter_names}
+                for eps in model.random_variables.epsilons.names:
+                    if sympy.Symbol(eps) in yexpr.free_symbols:
+                        params = {
+                            p.symbol
+                            for p in parameters
+                            if p.name in model.random_variables[eps].parameter_names
+                        }
                         random_thetas.update(params)
                 break
         nomegas = len(
@@ -859,8 +929,7 @@ def calculate_bic(model, type=None, modelfit_results=None):
         nsubs = len(get_ids(model))
         nobs = len(get_observations(model))
         penalty = dim_theta_r * math.log(nsubs) + dim_theta_f * math.log(nobs)
-    ofv = modelfit_results.ofv
-    return ofv + penalty
+    return likelihood + penalty
 
 
 def check_high_correlations(model, limit=0.9):

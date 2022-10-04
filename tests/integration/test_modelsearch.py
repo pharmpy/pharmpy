@@ -1,5 +1,4 @@
 import shutil
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -10,16 +9,7 @@ from pharmpy.tools import fit, run_modelsearch
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-def _model_count(rundir: Path):
-    return sum(
-        map(
-            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
-            ((rundir / 'models').iterdir()),
-        )
-    )
-
-
-def test_exhaustive(tmp_path, start_model):
+def test_exhaustive(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=start_model)
 
@@ -32,7 +22,7 @@ def test_exhaustive(tmp_path, start_model):
         )
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == 3
+        assert model_count(rundir) == 3
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
@@ -47,36 +37,17 @@ def test_exhaustive(tmp_path, start_model):
             'modelsearch_candidate2',
             'modelsearch_candidate3',
         ),
-        # FIXME: Warning after setting TOL=9
-        # ('ABSORPTION(ZO);ELIMINATION(ZO)', 4, 'modelsearch_candidate1', 'modelsearch_candidate2'),
-        (
-            'ABSORPTION(ZO);TRANSITS(1)',
-            2,
-            'mox2',
-            '',
-        ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
             7,
             'modelsearch_candidate3',
             'modelsearch_candidate5',
         ),
-        (
-            'LAGTIME();TRANSITS(1)',
-            2,
-            'mox2',
-            '',
-        ),
-        (
-            'ABSORPTION(ZO);TRANSITS(3, *)',
-            3,
-            'mox2',
-            '',
-        ),
     ],
 )
 def test_exhaustive_stepwise_basic(
     tmp_path,
+    model_count,
     start_model,
     search_space,
     no_of_models,
@@ -109,27 +80,23 @@ def test_exhaustive_stepwise_basic(
 
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == no_of_models
+        assert model_count(rundir) == no_of_models
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     'search_space, iiv_strategy, no_of_models, no_of_added_etas',
     [
         ('ABSORPTION(ZO);PERIPHERALS(1)', 'add_diagonal', 4, 2),
-        ('ABSORPTION(ZO);ELIMINATION(ZO)', 'add_diagonal', 4, 1),
-        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', 'add_diagonal', 4, 2),
-        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', 'add_diagonal', 8, 4),
-        ('LAGTIME();TRANSITS(1)', 'add_diagonal', 2, 1),
         ('ABSORPTION(ZO);PERIPHERALS(1)', 'fullblock', 4, 2),
         ('PERIPHERALS(1);LAGTIME()', 'absorption_delay', 4, 1),
     ],
 )
-def test_exhaustive_stepwise_add_iivs(
+def test_exhaustive_stepwise_iiv_strategies(
     tmp_path,
+    model_count,
     start_model,
     search_space,
     iiv_strategy,
@@ -149,20 +116,21 @@ def test_exhaustive_stepwise_add_iivs(
         assert len(res.models) == no_of_models
         model_last = res.models[no_of_models - 1]
         assert (
-            len(model_last.random_variables.etas) - len(start_model.random_variables.etas)
+            len(model_last.random_variables.etas.names)
+            - len(start_model.random_variables.etas.names)
             == no_of_added_etas
         )
         assert model_last.modelfit_results
 
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == no_of_models
+        assert model_count(rundir) == no_of_models
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
 
 
-def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, start_model):
+def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         start_model = start_model.copy()
         start_model.name = 'start_model_copy'
@@ -178,7 +146,7 @@ def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, start_model):
         assert len(res.models) == 4
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == 4
+        assert model_count(rundir) == 4
 
 
 def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_model):

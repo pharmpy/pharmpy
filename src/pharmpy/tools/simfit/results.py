@@ -20,6 +20,6 @@ def psn_simfit_results(paths):
     modelfit_results = []
     for path in paths:
         model = Model.create_model(path)
-        modelfit_results.extend(simfit_results(model))
+        modelfit_results.extend(simfit_results(model, path))
     res = calculate_results(modelfit_results)
     return res
