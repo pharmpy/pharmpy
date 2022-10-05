@@ -2073,7 +2073,7 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
 def test_create_joint_distribution(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
-    model = create_joint_distribution(model, etas)
+    model = create_joint_distribution(model, etas, individual_estimates=None)
     model.update_source()
     assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
@@ -2149,9 +2149,9 @@ def test_create_joint_distribution(load_model_for_test, testdata, etas, pk_ref, 
 def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
-    create_joint_distribution(model, etas[0])
+    create_joint_distribution(model, etas[0], individual_estimates=None)
     model.update_source()
-    create_joint_distribution(model, etas[1])
+    create_joint_distribution(model, etas[1], individual_estimates=None)
     model.update_source()
 
     assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
@@ -2724,7 +2724,9 @@ def test_update_inits_move_est(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     res = model.modelfit_results
 
-    create_joint_distribution(model)
+    create_joint_distribution(
+        model, individual_estimates=model.modelfit_results.individual_estimates
+    )
     add_iiv(model, 'S1', 'add')
 
     param_est = res.parameter_estimates
@@ -2863,7 +2865,9 @@ def test_set_power_on_ruv(
 def test_nested_update_source(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
 
-    create_joint_distribution(model)
+    create_joint_distribution(
+        model, individual_estimates=model.modelfit_results.individual_estimates
+    )
     model.update_source()
     model.update_source()
 

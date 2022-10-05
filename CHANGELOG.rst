@@ -23,6 +23,7 @@ Changes
 * check_high_correlations needs the correlation matrix as an explicit argument 
 * plot_iofv_vs_iofv takes two iofv series instead of two models as input
 * plot_individual_predictions takes the predictions dataframe as input
+* create_joint_distribution takes an option individual_estimates argument and does not use modelfit_results directly
 
 Bug fixes
 =========

@@ -21,19 +21,21 @@ def test_incorrect_params(load_model_for_test, testdata, rvs, exception_msg):
     )
 
     with pytest.raises(Exception, match=exception_msg):
-        create_joint_distribution(model, rvs)
+        create_joint_distribution(
+            model, rvs, individual_estimates=model.modelfit_results.individual_estimates
+        )
 
 
 def test_choose_param_init(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
     rvs = model.random_variables.etas
-    init = _choose_param_init(model, rvs, *params)
+    init = _choose_param_init(model, model.modelfit_results.individual_estimates, rvs, *params)
     assert init == 0.0118179
 
     model = load_model_for_test(pheno_path)
     model.modelfit_results = None
-    init = _choose_param_init(model, rvs, *params)
+    init = _choose_param_init(model, None, rvs, *params)
     assert init == 0.0031045
 
     model = load_model_for_test(pheno_path)
@@ -45,7 +47,7 @@ def test_choose_param_init(load_model_for_test, pheno_path):
     model.modelfit_results = ModelfitResults(
         parameter_estimates=res.parameter_estimates, individual_estimates=ie
     )
-    init = _choose_param_init(model, rvs, *params)
+    init = _choose_param_init(model, res.individual_estimates, rvs, *params)
     assert init == 0.0118179
 
     # If one eta doesn't have individual estimates
@@ -53,7 +55,7 @@ def test_choose_param_init(load_model_for_test, pheno_path):
     add_iiv(model, 'S1', 'add')
     params = (model.parameters['OMEGA(1,1)'], model.parameters['IIV_S1'])
     rvs = model.random_variables[('ETA(1)', 'ETA_S1')]
-    init = _choose_param_init(model, rvs, *params)
+    init = _choose_param_init(model, model.modelfit_results.individual_estimates, rvs, *params)
     assert init == 0.0052789
 
     # If the standard deviation in individual estimates of one eta is 0
@@ -67,7 +69,7 @@ def test_choose_param_init(load_model_for_test, pheno_path):
     params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
     rvs = model.random_variables[('ETA(1)', 'ETA(2)')]
     with pytest.warns(UserWarning, match='Correlation of individual estimates'):
-        init = _choose_param_init(model, rvs, *params)
+        init = _choose_param_init(model, model.modelfit_results.individual_estimates, rvs, *params)
         assert init == 0.0031045
 
 
@@ -97,7 +99,7 @@ $ESTIMATION METHOD=0
     )
     params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
     rvs = model.random_variables.etas
-    init = _choose_param_init(model, rvs, *params)
+    init = _choose_param_init(model, None, rvs, *params)
 
     assert init == 0.01
 
@@ -126,5 +128,11 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 '''
     )
-    create_joint_distribution(model, model.random_variables.names)
+    create_joint_distribution(
+        model,
+        model.random_variables.names,
+        individual_estimates=model.modelfit_results.individual_estimates
+        if model.modelfit_results is not None
+        else None,
+    )
     assert 'IIV_CL_V_IIV_S1' in model.parameters.names

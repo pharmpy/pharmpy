@@ -170,7 +170,9 @@ def _add_iiv(iiv_strategy, model):
     assert iiv_strategy in ['add_diagonal', 'fullblock']
     add_pk_iiv(model)
     if iiv_strategy == 'fullblock':
-        create_joint_distribution(model)
+        create_joint_distribution(
+            model, individual_estimates=model.modelfit_results.individual_estimates
+        )
     return model
 
 

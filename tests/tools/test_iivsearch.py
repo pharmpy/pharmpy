@@ -28,7 +28,9 @@ def test_brute_force_block_structure(
     add_peripheral_compartment(model)
     add_iiv(model, list_of_parameters, 'add')
     if block_structure:
-        create_joint_distribution(model, block_structure)
+        create_joint_distribution(
+            model, block_structure, individual_estimates=model.modelfit_results.individual_estimates
+        )
 
     wf = brute_force_block_structure(model)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
@@ -86,7 +88,9 @@ def test_is_current_block_structure(load_model_for_test, pheno_path):
     add_iiv(model, ['TVCL', 'TVV'], 'exp')
 
     eta_combos = [['ETA(1)', 'ETA(2)'], ['ETA_TVCL'], ['ETA_TVV']]
-    create_joint_distribution(model, eta_combos[0])
+    create_joint_distribution(
+        model, eta_combos[0], individual_estimates=model.modelfit_results.individual_estimates
+    )
     etas = model.random_variables.iiv
     assert _is_current_block_structure(etas, eta_combos)
 
@@ -96,7 +100,9 @@ def test_is_current_block_structure(load_model_for_test, pheno_path):
     eta_combos = [['ETA(1)'], ['ETA(2)', 'ETA_TVCL'], ['ETA_TVV']]
     assert not _is_current_block_structure(etas, eta_combos)
 
-    create_joint_distribution(model)
+    create_joint_distribution(
+        model, individual_estimates=model.modelfit_results.individual_estimates
+    )
     eta_combos = [['ETA(1)', 'ETA(2)', 'ETA_TVCL', 'ETA_TVV']]
     etas = model.random_variables.iiv
     assert _is_current_block_structure(etas, eta_combos)
@@ -113,7 +119,11 @@ def test_create_joint_dist(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     add_peripheral_compartment(model)
     add_pk_iiv(model)
-    create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])
+    create_joint_distribution(
+        model,
+        ['ETA(1)', 'ETA(2)'],
+        individual_estimates=model.modelfit_results.individual_estimates,
+    )
     eta_combos = [['ETA(1)'], ['ETA(2)'], ['ETA(3)', 'ETA_VP1', 'ETA_QP1']]
     create_eta_blocks(eta_combos, model)
     assert len(model.random_variables.iiv) == 3
