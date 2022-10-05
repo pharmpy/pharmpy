@@ -164,7 +164,8 @@ def evaluate_individual_prediction(model, etas=None, parameters=None, dataset=No
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_individual_prediction
     >>> model = load_example_model("pheno_linear")
-    >>> evaluate_individual_prediction(model)
+    >>> etas = model.modelfit_results.individual_estimates
+    >>> evaluate_individual_prediction(model, etas=etas)
     0      17.771084
     1      28.881859
     2      11.441728
@@ -197,19 +198,11 @@ def evaluate_individual_prediction(model, etas=None, parameters=None, dataset=No
     idcol = model.datainfo.id_column.name
 
     if etas is None:
-        if (
-            model.modelfit_results is not None
-            and model.modelfit_results.individual_estimates is not None
-        ):
-            etas = model.modelfit_results.individual_estimates
-        elif model.initial_individual_estimates is not None:
-            etas = model.initial_individual_estimates
-        else:
-            etas = pd.DataFrame(
-                0,
-                index=df[idcol].unique(),
-                columns=model.random_variables.etas.names,
-            )
+        etas = pd.DataFrame(
+            0,
+            index=df[idcol].unique(),
+            columns=model.random_variables.etas.names,
+        )
 
     def fn(row):
         row = row.to_dict()
