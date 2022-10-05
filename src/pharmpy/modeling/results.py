@@ -963,7 +963,7 @@ def check_high_correlations(model, limit=0.9):
     return df.where(high_and_below_diagonal).stack()
 
 
-def check_parameters_near_bounds(model, values=None, zero_limit=0.001, significant_digits=2):
+def check_parameters_near_bounds(model, values, zero_limit=0.001, significant_digits=2):
     """Check if any estimated parameter value is close to its bounds
 
     Parameters
@@ -972,7 +972,6 @@ def check_parameters_near_bounds(model, values=None, zero_limit=0.001, significa
         Pharmpy model object
     values : pd.Series
         Series of values with index a subset of parameter names.
-        Default is to use all parameter estimates
     zero_limit : number
         maximum distance to 0 bounds
     significant_digits : int
@@ -987,7 +986,7 @@ def check_parameters_near_bounds(model, values=None, zero_limit=0.001, significa
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> check_parameters_near_bounds(model)
+    >>> check_parameters_near_bounds(model, model.modelfit_results.parameter_estimates)
     THETA(1)      False
     THETA(2)      False
     THETA(3)      False
@@ -997,8 +996,6 @@ def check_parameters_near_bounds(model, values=None, zero_limit=0.001, significa
     dtype: bool
 
     """
-    if values is None:
-        values = model.modelfit_results.parameter_estimates
     ser = pd.Series(
         [
             _is_close_to_bound(model.parameters[p], values.loc[p], zero_limit, significant_digits)

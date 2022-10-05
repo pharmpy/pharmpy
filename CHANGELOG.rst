@@ -19,6 +19,7 @@ Changes
 * calculate_bic and calculate_aic will need the -2LL as input instead of modelfit_results
 * calculate_eta_shrinkage now needs the explicit arguments parameter_estimates and individual_estimates
 * calculate_individual_shrinkage now needs the explicit arguments parameter_estimates and individual_estimates_covariance
+* check_parameters_near_bounds now needs the parameter estimates given in the arguments
 
 Bug fixes
 =========

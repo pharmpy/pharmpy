@@ -365,4 +365,7 @@ def test_check_parameters_near_bounds(load_model_for_test, testdata):
             'SIGMA(1,1)',
         ],
     )
-    pd.testing.assert_series_equal(check_parameters_near_bounds(nearbound), correct)
+    pd.testing.assert_series_equal(
+        check_parameters_near_bounds(nearbound, nearbound.modelfit_results.parameter_estimates),
+        correct,
+    )
