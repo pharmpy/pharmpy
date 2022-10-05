@@ -41,15 +41,15 @@ def plot_iofv_vs_iofv(iofv1, iofv2, name1, name2):
     return plot
 
 
-def plot_individual_predictions(model, predictions=None, individuals=None):
+def plot_individual_predictions(model, predictions, individuals=None):
     """Plot DV and predictions grouped on individuals
 
     Parameters
     ----------
     model : Model
         Previously run Pharmpy model.
-    predictions : list
-        A list of names of predictions to plot. None for all available
+    predictions : pd.DataFrame
+        One column for each type of prediction
     individuals : list
         A list of individuals to include. None for all individuals
 
@@ -59,23 +59,16 @@ def plot_individual_predictions(model, predictions=None, individuals=None):
         Plot
 
     """
-    res = model.modelfit_results
-    pred = res.predictions
-    if pred is None:
-        raise ValueError("No predictions available in modelfit_results")
     obs = get_observations(model)
-    indexcols = pred.index.names
+    indexcols = predictions.index.names
     idcol = indexcols[0]
     idvcol = indexcols[1]
 
-    data = pred.join(obs).reset_index()
+    data = predictions.join(obs).reset_index()
     data = data.melt(id_vars=indexcols)
 
     if individuals is not None:
         data = data[data[idcol].isin(individuals)]
-    if predictions is not None:
-        dvcol = obs.name
-        data = data[data['variable'].isin(predictions + [dvcol])]
 
     plot = (
         alt.Chart(data)

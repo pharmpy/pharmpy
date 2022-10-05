@@ -22,6 +22,7 @@ Changes
 * check_parameters_near_bounds needs the parameter estimates given in the arguments
 * check_high_correlations needs the correlation matrix as an explicit argument 
 * plot_iofv_vs_iofv takes two iofv series instead of two models as input
+* plot_individual_predictions takes the predictions dataframe as input
 
 Bug fixes
 =========
