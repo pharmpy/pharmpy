@@ -21,6 +21,7 @@ Changes
 * calculate_individual_shrinkage needs the explicit arguments parameter_estimates and individual_estimates_covariance
 * check_parameters_near_bounds needs the parameter estimates given in the arguments
 * check_high_correlations needs the correlation matrix as an explicit argument 
+* plot_iofv_vs_iofv takes two iofv series instead of two models as input
 
 Bug fixes
 =========
