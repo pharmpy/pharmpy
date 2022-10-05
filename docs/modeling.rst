@@ -1030,12 +1030,14 @@ Eta shrinkage can be calculated either on the standard deviation scale or on the
 
     from pharmpy.modeling import calculate_eta_shrinkage
 
-    calculate_eta_shrinkage(model)
+    pe = model.modelfit_results.parameter_estimates
+    ie = model.modelfit_results.individual_estimates
+    calculate_eta_shrinkage(model, pe, ie)
 
 
 .. pharmpy-execute::
 
-    calculate_eta_shrinkage(model, sd=True)
+    calculate_eta_shrinkage(model, pe, ie, sd=True)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Individual parameter calculations

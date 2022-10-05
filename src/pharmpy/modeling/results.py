@@ -18,17 +18,24 @@ from pharmpy.model.random_variables import (
 )
 
 from .data import get_ids, get_observations
+from .lrt import degrees_of_freedom as lrt_df
 from .lrt import test as lrt_test
 from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
 
+RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic'))
 
-def calculate_eta_shrinkage(model, sd=False):
+
+def calculate_eta_shrinkage(model, parameter_estimates, individual_estimates, sd=False):
     """Calculate eta shrinkage for each eta
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    parameter_estimates : pd.Series
+        Parameter estimates
+    individual_estimates : pd.DataFrame
+        Table of individual (eta) estimates
     sd : bool
         Calculate shrinkage on the standard deviation scale (default is to calculate on the
         variance scale)
@@ -42,11 +49,13 @@ def calculate_eta_shrinkage(model, sd=False):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> calculate_eta_shrinkage(model)
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> ie = model.modelfit_results.individual_estimates
+    >>> calculate_eta_shrinkage(model, pe, ie)
     ETA(1)    0.720481
     ETA(2)    0.240295
     dtype: float64
-    >>> calculate_eta_shrinkage(model, sd=True)
+    >>> calculate_eta_shrinkage(model, pe, ie, sd=True)
     ETA(1)    0.471305
     ETA(2)    0.128389
     dtype: float64
@@ -56,24 +65,21 @@ def calculate_eta_shrinkage(model, sd=False):
     calculate_individual_shrinkage
 
     """
-    res = model.modelfit_results
-    pe = res.parameter_estimates
     # Want parameter estimates combined with fixed parameter values
     param_inits = model.parameters.to_dataframe()['value']
-    pe = pe.combine_first(param_inits)
+    pe = parameter_estimates.combine_first(param_inits)
 
-    ie = res.individual_estimates
     param_names = model.random_variables.iiv.variance_parameters
     diag_ests = pe[param_names]
-    diag_ests.index = ie.columns
+    diag_ests.index = individual_estimates.columns
     if not sd:
-        shrinkage = 1 - (ie.var() / diag_ests)
+        shrinkage = 1 - (individual_estimates.var() / diag_ests)
     else:
-        shrinkage = 1 - (ie.std() / (diag_ests**0.5))
+        shrinkage = 1 - (individual_estimates.std() / (diag_ests**0.5))
     return shrinkage
 
 
-def calculate_individual_shrinkage(model):
+def calculate_individual_shrinkage(model, parameter_estimates, individual_estimates_covariance):
     """Calculate the individual eta-shrinkage
 
     Definition: ieta_shr = (var(eta) / omega)
@@ -82,6 +88,10 @@ def calculate_individual_shrinkage(model):
     ----------
     model : Model
         Pharmpy model
+    parameter_estimates : pd.Series
+        Parameter estimates of model
+    individual_estimates_covariance : pd.DataFrame
+        Uncertainty covariance matrices of individual estimates
 
     Return
     ------
@@ -92,7 +102,9 @@ def calculate_individual_shrinkage(model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> calculate_individual_shrinkage(model)
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> covs = model.modelfit_results.individual_estimates_covariance
+    >>> calculate_individual_shrinkage(model, pe, covs)
           ETA(1)    ETA(2)
     ID
     1   0.847789  0.256473
@@ -160,9 +172,8 @@ def calculate_individual_shrinkage(model):
     calculate_eta_shrinkage
 
     """
-    res = model.modelfit_results
-    cov = res.individual_estimates_covariance
-    pe = res.parameter_estimates
+    cov = individual_estimates_covariance
+    pe = parameter_estimates
     # Want parameter estimates combined with fixed parameter values
     param_inits = model.parameters.to_dataframe()['value']
     pe = pe.combine_first(param_inits)
@@ -170,8 +181,6 @@ def calculate_individual_shrinkage(model):
     # Get all iiv and iov variance parameters
     diag = model.random_variables.etas.covariance_matrix.diagonal()
     param_names = [s.name for s in diag]
-    # param_names = model.random_variables.etas.variance_parameters
-    # param_names = list(OrderedSet(param_names))  # Only unique in order
 
     diag_ests = pe[param_names]
 
@@ -501,7 +510,7 @@ def _get_model_result_summary(model, include_all_estimation_steps=False):
                 run_type = 'evaluation'
             else:
                 run_type = 'estimation'
-            summary_dict = {**{'run_type': run_type}, **summary_dict}
+            summary_dict = {'run_type': run_type, **summary_dict}
             summary_dicts.append(summary_dict)
             tuples.append((model.name, i + 1))
         index = pd.MultiIndex.from_tuples(tuples, names=['model', 'step'])
@@ -534,8 +543,8 @@ def _summarize_step(model, i):
         summary_dict['minimization_successful'] = False
 
     summary_dict['ofv'] = step.ofv
-    summary_dict['aic'] = calculate_aic(model, modelfit_results=res)
-    summary_dict['bic'] = calculate_bic(model, modelfit_results=res)
+    summary_dict['aic'] = calculate_aic(model, res.ofv)
+    summary_dict['bic'] = calculate_bic(model, res.ofv)
     summary_dict['runtime_total'] = step.runtime_total
     summary_dict['estimation_runtime'] = step.estimation_runtime
 
@@ -723,9 +732,17 @@ def rank_models(
 
         rank_value = _get_rankval(model, rank_type, bic_type)
         if rank_type == 'lrt':
-            if not lrt_test(model_dict[model.parent_model], model, cutoff):
+            parent = model_dict[model.parent_model]
+            if cutoff is None:
+                co = 0.05 if lrt_df(parent, model) >= 0 else 0.01
+            elif isinstance(cutoff, tuple):
+                co = cutoff[0] if lrt_df(parent, model) >= 0 else cutoff[1]
+            else:
+                assert isinstance(cutoff, (float, int))
+                co = cutoff
+            if not lrt_test(parent, model, co):
                 continue
-        if cutoff:
+        elif cutoff is not None:
             if ref_value - rank_value <= cutoff:
                 continue
 
@@ -788,35 +805,32 @@ def _get_rankval(model, rank_type, bic_type):
     if rank_type in ['ofv', 'lrt']:
         return model.modelfit_results.ofv
     elif rank_type == 'aic':
-        return calculate_aic(model)
+        return calculate_aic(model, model.modelfit_results.ofv)
     elif rank_type == 'bic':
-        return calculate_bic(model, bic_type)
+        return calculate_bic(model, model.modelfit_results.ofv, bic_type)
     else:
         raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
 
 
-def calculate_aic(model, modelfit_results=None):
-    """Calculate final AIC for model assuming the OFV to be -2LL
+def calculate_aic(model, likelihood):
+    """Calculate AIC
 
-    AIC = OFV + 2*n_estimated_parameters
+    AIC = -2LL + 2*n_estimated_parameters
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
-    modelfit_results : ModelfitResults
-        Alternative results object. Default is to use the one in model
+    likelihood : float
+        -2LL
 
     Returns
     -------
     float
         AIC of model fit
     """
-    if modelfit_results is None:
-        modelfit_results = model.modelfit_results
-
     parameters = model.parameters.nonfixed
-    return modelfit_results.ofv + 2 * len(parameters)
+    return likelihood + 2 * len(parameters)
 
 
 def _random_etas(model):
@@ -829,29 +843,29 @@ def _random_etas(model):
     return model.random_variables.etas[keep]
 
 
-def calculate_bic(model, type=None, modelfit_results=None):
-    """Calculate final BIC value assuming the OFV to be -2LL
+def calculate_bic(model, likelihood, type=None):
+    """Calculate BIC
 
     Different variations of the BIC can be calculated:
 
     * | mixed (default)
-      | BIC = OFV + n_random_parameters * log(n_individuals) +
+      | BIC = -2LL + n_random_parameters * log(n_individuals) +
       |       n_fixed_parameters * log(n_observations)
     * | fixed
-      | BIC = OFV + n_estimated_parameters * log(n_observations)
+      | BIC = -2LL + n_estimated_parameters * log(n_observations)
     * | random
-      | BIC = OFV + n_estimated_parameters * log(n_individals)
+      | BIC = -2LL + n_estimated_parameters * log(n_individals)
     * | iiv
-      | BIC = OFV + n_estimated_iiv_omega_parameters * log(n_individals)
+      | BIC = -2LL + n_estimated_iiv_omega_parameters * log(n_individals)
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
+    likelihood : float
+        -2LL to use
     type : str
         Type of BIC to calculate. Default is the mixed effects.
-    modelfit_results : ModelfitResults
-        Alternative results object. Default is to use the one in model
 
     Returns
     -------
@@ -862,18 +876,16 @@ def calculate_bic(model, type=None, modelfit_results=None):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> calculate_bic(model)
+    >>> ofv = model.modelfit_results.ofv
+    >>> calculate_bic(model, ofv)
     611.7071686183284
-    >>> calculate_bic(model, type='fixed')
+    >>> calculate_bic(model, ofv, type='fixed')
     616.536606983396
-    >>> calculate_bic(model, type='random')
+    >>> calculate_bic(model, ofv, type='random')
     610.7412809453149
-    >>> calculate_bic(model, type='iiv')
+    >>> calculate_bic(model, ofv, type='iiv')
     594.431131169692
     """
-    if modelfit_results is None:
-        modelfit_results = model.modelfit_results
-
     parameters = model.parameters.nonfixed
     if type == 'fixed':
         penalty = len(parameters) * math.log(len(get_observations(model)))
@@ -917,17 +929,18 @@ def calculate_bic(model, type=None, modelfit_results=None):
         nsubs = len(get_ids(model))
         nobs = len(get_observations(model))
         penalty = dim_theta_r * math.log(nsubs) + dim_theta_f * math.log(nobs)
-    ofv = modelfit_results.ofv
-    return ofv + penalty
+    return likelihood + penalty
 
 
-def check_high_correlations(model, limit=0.9):
+def check_high_correlations(model, cor, limit=0.9):
     """Check for highly correlated parameter estimates
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
+    cor : pd.DataFrame
+        Estimated correlation matrix
     limit : float
         Lower limit for a high correlation
 
@@ -940,19 +953,21 @@ def check_high_correlations(model, limit=0.9):
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> check_high_correlations(model, limit=0.3)
+    >>> cor = model.modelfit_results.correlation_matrix
+    >>> check_high_correlations(model, cor, limit=0.3)
     THETA(1)  OMEGA(1,1)   -0.388059
     THETA(2)  THETA(3)     -0.356899
               OMEGA(2,2)    0.356662
     dtype: float64
     """
-    df = model.modelfit_results.correlation_matrix
-    if df is not None:
-        high_and_below_diagonal = df.abs().ge(limit) & np.triu(np.ones(df.shape), k=1).astype(bool)
-    return df.where(high_and_below_diagonal).stack()
+    if cor is not None:
+        high_and_below_diagonal = cor.abs().ge(limit) & np.triu(np.ones(cor.shape), k=1).astype(
+            bool
+        )
+    return cor.where(high_and_below_diagonal).stack()
 
 
-def check_parameters_near_bounds(model, values=None, zero_limit=0.001, significant_digits=2):
+def check_parameters_near_bounds(model, values, zero_limit=0.001, significant_digits=2):
     """Check if any estimated parameter value is close to its bounds
 
     Parameters
@@ -961,7 +976,6 @@ def check_parameters_near_bounds(model, values=None, zero_limit=0.001, significa
         Pharmpy model object
     values : pd.Series
         Series of values with index a subset of parameter names.
-        Default is to use all parameter estimates
     zero_limit : number
         maximum distance to 0 bounds
     significant_digits : int
@@ -976,7 +990,7 @@ def check_parameters_near_bounds(model, values=None, zero_limit=0.001, significa
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> check_parameters_near_bounds(model)
+    >>> check_parameters_near_bounds(model, model.modelfit_results.parameter_estimates)
     THETA(1)      False
     THETA(2)      False
     THETA(3)      False
@@ -986,8 +1000,6 @@ def check_parameters_near_bounds(model, values=None, zero_limit=0.001, significa
     dtype: bool
 
     """
-    if values is None:
-        values = model.modelfit_results.parameter_estimates
     ser = pd.Series(
         [
             _is_close_to_bound(model.parameters[p], values.loc[p], zero_limit, significant_digits)
@@ -1081,7 +1093,8 @@ def print_fit_summary(model):
         condno = round(np.linalg.cond(res.correlation_matrix), 1)
         print_fmt("Condition number", condno)
         print_fmt("Condition number < 1000", bool_ok_error(condno < 1000))
-        hicorr = check_high_correlations(model)
+        cor = model.modelfit_results.correlation_matrix
+        hicorr = check_high_correlations(model, cor)
         print_fmt("No correlations arger than 0.9", bool_ok_error(hicorr.empty))
 
     print_header("Parameter estimates")

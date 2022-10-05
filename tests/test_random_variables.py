@@ -79,7 +79,7 @@ def test_repr_latex_rv():
 
 def test_parameters_rv():
     dist1 = NormalDistribution.create('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
-    assert dist1.parameter_names == ['OMEGA(2,2)']
+    assert dist1.parameter_names == ('OMEGA(2,2)',)
 
 
 def test_illegal_inits():
@@ -254,11 +254,11 @@ def test_parameter_names():
             [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')],
         ],
     )
-    assert dist1.parameter_names == ['OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)']
+    assert dist1.parameter_names == ('OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)')
     dist2 = NormalDistribution.create('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
-    assert dist2.parameter_names == ['OMEGA(3,3)']
+    assert dist2.parameter_names == ('OMEGA(3,3)',)
     rvs = RandomVariables.create([dist1, dist2])
-    assert rvs.parameter_names == ['OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)', 'OMEGA(3,3)']
+    assert rvs.parameter_names == ('OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)', 'OMEGA(3,3)')
 
 
 def test_subs_rv():
@@ -575,3 +575,27 @@ def test_covariance_matrix():
             [0, 0, 0, symbol('OMEGA(2,2)')],
         ]
     )
+
+
+def test_get_rvs_with_same_dist():
+    var1 = symbol('OMEGA(1,1)')
+
+    dist1 = NormalDistribution.create('ETA1', 'iov', 0, var1)
+    dist2 = NormalDistribution.create('ETA2', 'iov', 0, var1)
+    dist3 = NormalDistribution.create('ETA3', 'iov', 0, 1)
+
+    rvs = RandomVariables.create([dist1, dist2, dist3])
+    same_dist = rvs.get_rvs_with_same_dist('ETA1')
+    assert same_dist == RandomVariables.create([dist1, dist2])
+
+    var2 = symbol('OMEGA(2,2)')
+    cov = symbol('OMEGA(1,2)')
+    cov_matrix = [[var1, cov], [cov, var2]]
+
+    dist1 = JointNormalDistribution.create(['ETA1', 'ETA2'], 'iov', [0, 0], cov_matrix)
+    dist2 = JointNormalDistribution.create(['ETA3', 'ETA4'], 'iov', [0, 0], cov_matrix)
+    dist3 = NormalDistribution.create('ETA5', 'iov', 0, var1)
+
+    rvs = RandomVariables.create([dist1, dist2, dist3])
+    same_dist = rvs.get_rvs_with_same_dist('ETA1')
+    assert same_dist == RandomVariables.create([dist1, dist2])

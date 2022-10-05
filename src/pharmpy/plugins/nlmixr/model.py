@@ -186,22 +186,17 @@ class Model(pharmpy.model.Model):
         self.update_source(path=self._path)
         return self._src
 
-    def read_modelfit_results(self, path: Path):
-        try:
-            rdata_path = path / (self.name + '.RDATA')
-            read_modelfit_results(self, rdata_path)
-            return self.modelfit_results
-        except (FileNotFoundError, OSError):
-            self.modelfit_results = None
-            return None
 
-
-def read_modelfit_results(model, rdata_path):
+def parse_modelfit_results(model, path):
+    rdata_path = path / (model.name + '.RDATA')
     with warnings.catch_warnings():
         # Supress a numpy deprecation warning
         warnings.simplefilter("ignore")
         import pyreadr
-    rdata = pyreadr.read_r(rdata_path)
+    try:
+        rdata = pyreadr.read_r(rdata_path)
+    except (FileNotFoundError, OSError):
+        return None
     ofv = rdata['ofv']['ofv'][0]
     omegas_sigmas = dict()
     omega = model.random_variables.etas.covariance_matrix
@@ -225,11 +220,11 @@ def read_modelfit_results(model, rdata_path):
             thetas_index += 1
     pe = pd.Series(pe)
     res = ModelfitResults(ofv=ofv, parameter_estimates=pe)
-    model.modelfit_results = res
+    return res
 
 
-def execute_model(model):
-    database = model.database
+def execute_model(model, db):
+    database = db.model_database
     model = convert_model(model)
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
     model._path = path
@@ -299,5 +294,6 @@ def execute_model(model):
         txn.store_metadata(metadata)
         txn.store_modelfit_results()
 
-    read_modelfit_results(model, rdata_path)
+    res = parse_modelfit_results(model, path)
+    model._modelfit_results = res
     return model

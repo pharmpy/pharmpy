@@ -34,6 +34,7 @@ class LocalDirectoryToolDatabase(ToolDatabase):
             path = Path(path)
             path.mkdir(parents=True, exist_ok=exist_ok)
 
+        assert path is not None
         self.path = path.resolve()
 
         modeldb = LocalModelDirectoryDatabase(self.path / 'models')

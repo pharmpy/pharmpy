@@ -58,6 +58,5 @@ def remove_iiv(model, to_remove=None):
     model.random_variables = rvs[keep]
     model.statements = sset
 
-    model.modelfit_results = None
     remove_unused_parameters_and_rvs(model)
     return model

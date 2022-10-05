@@ -19,16 +19,12 @@ class AbbreviatedRecord(Record):
     def replace(self):
         """Give a dict of all REPLACE in record"""
         d = dict()
-        for replace in self.root.all("replace"):
-            strings = [str(node) for node in replace.all("ANY")]
-            first = strip_quote(strings[0])
-            second = strip_quote(strings[1])
+        for replace in self.root.all('replace'):
+            strings = replace.all('ANY')
+            first = strip_quote(str(strings[0]))
+            second = strip_quote(str(strings[1]))
             d[first] = second
         return d
 
     def translate_to_pharmpy_names(self):
-        parameter_names = dict()
-        for key, value in self.replace.items():
-            key_new = re.sub(r'\((\w+)\)', r'_\1', key)
-            parameter_names[value] = key_new
-        return parameter_names
+        return {value: re.sub(r'\((\w+)\)', r'_\1', key) for key, value in self.replace.items()}

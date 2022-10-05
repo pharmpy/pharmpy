@@ -38,7 +38,7 @@ def create_fit_workflow(models=None, n=None, tool=None):
     return wf
 
 
-def post_process_results(*models):
+def post_process_results(context, *models):
     if len(models) > 1:
         return models
     else:
@@ -46,9 +46,9 @@ def post_process_results(*models):
 
 
 def retrieve_from_database_or_execute_model_with_tool(tool):
-    def task(model):
+    def task(context, model):
         try:
-            db_results = model.database.retrieve_modelfit_results(model.name)
+            db_results = context.model_database.retrieve_modelfit_results(model.name)
         except (KeyError, AttributeError, FileNotFoundError):
             db_results = None
 
@@ -71,7 +71,7 @@ def retrieve_from_database_or_execute_model_with_tool(tool):
 
         # NOTE Fallback to executing the model
         execute_model = get_execute_model(tool)
-        return execute_model(model)
+        return execute_model(model, context)
 
     return task
 

@@ -28,6 +28,10 @@ all_continuous_covariate_effects = (
     'pow',
 )
 
+all_categorical_covariate_effects = ('cat',)
+
+all_covariate_effects = all_continuous_covariate_effects + all_categorical_covariate_effects
+
 
 def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]:
     for args in parse_spec(spec(model, statements)):

@@ -1,11 +1,21 @@
 from itertools import chain, combinations
-from typing import Callable, Iterable, List, Tuple, TypeVar, Union
+from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment, Model, Results
-from pharmpy.modeling import add_iov, copy_model, rank_models, remove_iiv, remove_iov
+from pharmpy.modeling import (
+    add_iov,
+    copy_model,
+    get_pk_parameters,
+    rank_models,
+    remove_iiv,
+    remove_iov,
+)
+from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
+from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 NAME_WF = 'iovsearch'
@@ -14,12 +24,12 @@ T = TypeVar('T')
 
 
 def create_workflow(
-    column='OCC',
-    list_of_parameters=None,
-    rank_type='bic',
-    cutoff=None,
-    distribution='same-as-iiv',
-    model=None,
+    column: str = 'OCC',
+    list_of_parameters: Optional[List[str]] = None,
+    rank_type: str = 'bic',
+    cutoff: Optional[Union[float, int]] = None,
+    distribution: str = 'same-as-iiv',
+    model: Optional[Model] = None,
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
 
@@ -27,7 +37,7 @@ def create_workflow(
     ----------
     column : str
         Name of column in dataset to use as occasion column (default is 'OCC')
-    list_of_parameters : list
+    list_of_parameters : None or list
         List of parameters to test IOV on, if none all parameters with IIV will be tested (default)
     rank_type : str
         Which ranking type should be used (OFV, AIC, BIC). Default is BIC
@@ -50,6 +60,7 @@ def create_workflow(
     >>> model = load_example_model("pheno")
     >>> run_iovsearch('OCC', model=model)      # doctest: +SKIP
     """
+
     wf = Workflow()
     wf.name = NAME_WF
 
@@ -93,6 +104,7 @@ def init(model):
 
 
 def task_brute_force_search(
+    context,
     occ: str,
     list_of_parameters: Union[None, list],
     rank_type: str,
@@ -121,19 +133,19 @@ def task_brute_force_search(
     add_iov(model_with_iov, occ, list_of_parameters, distribution=distribution)
     # NOTE Fit the new model.
     wf = create_fit_workflow(models=[model_with_iov])
-    model_with_iov = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs')
+    model_with_iov = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs', context)
 
     # NOTE Remove IOVs. Test all subsets (~2^n).
     # TODO should we exclude already present IOVs?
     iov = model_with_iov.random_variables.iov
     # NOTE We only need to remove the IOV ETA corresponding to the first
     # category in order to remove all IOV ETAs of the other categories
-    all_iov_parameters = list(filter(lambda name: name.endswith('_1'), list(iov.names)))
+    all_iov_parameters = list(filter(lambda name: name.endswith('_1'), iov.names))
     no_of_models = 1
     wf = wf_etas_removal(
         remove_iov, model_with_iov, non_empty_proper_subsets(all_iov_parameters), no_of_models + 1
     )
-    iov_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs')
+    iov_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs', context)
 
     # NOTE Keep best candidate.
     best_model_so_far = best_model(
@@ -163,7 +175,7 @@ def task_brute_force_search(
         non_empty_subsets(iiv_parameters_with_associated_iov),
         no_of_models + 1,
     )
-    iiv_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs')
+    iiv_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs', context)
 
     return [model, model_with_iov, *iov_candidates, *iiv_candidates]
 
@@ -184,22 +196,24 @@ def wf_etas_removal(
     remove: Callable[[Model, List[str]], None],
     model: Model,
     etas_subsets: Iterable[Tuple[str]],
-    n: float,
+    i: int,
 ):
     wf = Workflow()
-    for i, subset_of_iiv_parameters in enumerate(etas_subsets):
+    j = i
+    for subset_of_iiv_parameters in etas_subsets:
         task = Task(
             repr(subset_of_iiv_parameters),
             task_remove_etas_subset,
             remove,
             model,
             list(subset_of_iiv_parameters),
-            n,
+            j,
         )
         wf.add_task(task)
-        n += 1
+        j += 1
 
-    wf_fit = create_fit_workflow(n=i + 1)
+    n = j - i
+    wf_fit = create_fit_workflow(n=n)
     wf.insert_workflow(wf_fit)
 
     task_gather = Task('gather', lambda *models: models)
@@ -265,6 +279,46 @@ def task_results(rank_type, cutoff, bic_type, models):
     )
 
     return res
+
+
+@runtime_type_check
+@same_arguments_as(create_workflow)
+def validate_input(
+    model,
+    column,
+    list_of_parameters,
+    rank_type,
+    distribution,
+):
+
+    if rank_type not in RANK_TYPES:
+        raise ValueError(
+            f'Invalid `rank_type`: got `{rank_type}`, must be one of {sorted(RANK_TYPES)}.'
+        )
+
+    if distribution not in ADD_IOV_DISTRIBUTION:
+        raise ValueError(
+            f'Invalid `distribution`: got `{distribution}`,'
+            f' must be one of {sorted(ADD_IOV_DISTRIBUTION)}.'
+        )
+
+    if model is not None:
+
+        if column not in model.datainfo.names:
+            raise ValueError(
+                f'Invalid `column`: got `{column}`,'
+                f' must be one of {sorted(model.datainfo.names)}.'
+            )
+
+        if list_of_parameters is not None:
+            allowed_parameters = set(get_pk_parameters(model)).union(
+                str(statement.symbol) for statement in model.statements.before_odes
+            )
+            if not set(list_of_parameters).issubset(allowed_parameters):
+                raise ValueError(
+                    f'Invalid `list_of_parameters`: got `{list_of_parameters}`,'
+                    f' must be NULL/None or a subset of {sorted(allowed_parameters)}.'
+                )
 
 
 class IOVSearchResults(Results):

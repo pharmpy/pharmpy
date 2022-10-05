@@ -1,7 +1,6 @@
 from functools import partial
+from typing import List, Optional
 
-import pharmpy.model
-import pharmpy.tools
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.deps.scipy import stats
@@ -9,6 +8,7 @@ from pharmpy.model import (
     Assignment,
     EstimationStep,
     EstimationSteps,
+    Model,
     NormalDistribution,
     Parameter,
     Parameters,
@@ -32,12 +32,20 @@ from pharmpy.modeling import (
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 from .results import calculate_results
 
+SKIP = frozenset(('IIV_on_RUV', 'power', 'combined', 'time_varying'))
 
-def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
+
+def create_workflow(
+    model: Optional[Model] = None,
+    groups: int = 4,
+    p_value: float = 0.05,
+    skip: Optional[List[str]] = None,
+):
     """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 
     Parameters
@@ -64,7 +72,7 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
     >>> run_ruvsearch(model=model)      # doctest: +SKIP
 
     """
-    _check_input(model, groups, p_value, skip)
+
     wf = Workflow()
     wf.name = "ruvsearch"
     start_task = Task('start_ruvsearch', start, model, groups, p_value, skip)
@@ -72,32 +80,6 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
     task_results = Task('results', _results)
     wf.add_task(task_results, predecessors=[start_task])
     return wf
-
-
-def _check_input(model, groups, p_value, skip):
-    if model is None:
-        return
-    residuals = model.modelfit_results.residuals
-    predictions = model.modelfit_results.predictions
-    if residuals is None or 'CWRES' not in residuals:
-        raise ValueError(
-            f"Please check {model.name}.mod file to make sure ID, TIME, CWRES are in $TABLE."
-        )
-    if predictions is None or ('CIPREDI' not in predictions and 'IPRED' not in predictions):
-        raise ValueError(
-            f"Please check {model.name}.mod file to make sure ID, TIME, CIPREDI(or IPRED) are in $TABLE."
-        )
-    if not isinstance(groups, int):
-        raise TypeError(
-            f"{groups} is not an integer. Please input an integer for groups and try again."
-        )
-    if not (isinstance(p_value, float) and 0 < p_value < 1):
-        raise ValueError(
-            f"{p_value} is not a float number between (0, 1). Please input correct p-value and try again."
-        )
-    full_skip = {'IIV_on_RUV', 'power', 'combined', 'time_varying'}
-    if skip is not None and not (isinstance(skip, list) and set(skip).issubset(full_skip)):
-        raise ValueError(f"Please correct {skip} and try again.")
 
 
 def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
@@ -151,7 +133,7 @@ def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
     return wf
 
 
-def start(model, groups, p_value, skip):
+def start(context, model, groups, p_value, skip):
     cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
@@ -159,7 +141,7 @@ def start(model, groups, p_value, skip):
     selected_models = [model]
     for current_iteration in range(1, 4):
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
-        next_res = call_workflow(wf, f'results{current_iteration}')
+        next_res = call_workflow(wf, f'results{current_iteration}', context)
         selected_model_name = next_res._selected_model_name
         best_model = next_res._best_model
         del next_res._selected_model_name
@@ -203,14 +185,14 @@ def _results(res):
     return res
 
 
-def post_process(start_model, *models, cutoff, current_iteration):
+def post_process(context, start_model, *models, cutoff, current_iteration):
     res = calculate_results(models)
     best_model, selected_model_name = _create_best_model(
         start_model, res, current_iteration, cutoff=cutoff
     )
     if best_model is not None:
         fit_wf = create_fit_workflow(models=[best_model])
-        est_model = call_workflow(fit_wf, f'fit{current_iteration}')
+        est_model = call_workflow(fit_wf, f'fit{current_iteration}', context)
         delta_ofv = start_model.modelfit_results.ofv - est_model.modelfit_results.ofv
         if delta_ofv > cutoff:
             res._best_model = est_model
@@ -224,22 +206,8 @@ def post_process(start_model, *models, cutoff, current_iteration):
     return res
 
 
-def _find_models(models, current_iteration):
-    base_model = None
-    tvar_models = []
-    other_models = []
-    for model in models:
-        if model.name == f'base_{current_iteration}':
-            base_model = model
-        elif model.name.startswith('time_varying') and model.name.endswith(f'_{current_iteration}'):
-            tvar_models.append(model)
-        else:
-            other_models.append(model)
-    return base_model, tvar_models, other_models
-
-
 def _create_base_model(input_model, current_iteration):
-    base_model = pharmpy.model.Model()
+    base_model = Model()
     theta = Parameter('theta', 0.1)
     omega = Parameter('omega', 0.01, lower=0)
     sigma = Parameter('sigma', 1, lower=0)
@@ -263,7 +231,6 @@ def _create_base_model(input_model, current_iteration):
     base_model.observation_transformation = y.symbol
     base_model.name = f'base_{current_iteration}'
     base_model.dataset = _create_dataset(input_model)
-    base_model.database = input_model.database
 
     est = EstimationStep('foce', interaction=True, maximum_evaluations=9999)
     base_model.estimation_steps = EstimationSteps([est])
@@ -431,3 +398,35 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
         model = None
         selected_model_name = None
     return model, selected_model_name
+
+
+@runtime_type_check
+@same_arguments_as(create_workflow)
+def validate_input(model, groups, p_value, skip):
+    if groups <= 0:
+        raise ValueError(f'Invalid `groups`: got `{groups}`, must be >= 1.')
+
+    if not 0 < p_value <= 1:
+        raise ValueError(f'Invalid `p_value`: got `{p_value}`, must be a float in range (0, 1].')
+
+    if skip is not None and not set(skip).issubset(SKIP):
+        raise ValueError(f'Invalid `skip`: got `{skip}`, must be None/NULL or a subset of {SKIP}.')
+
+    if model is not None:
+
+        if model.modelfit_results is None:
+            raise ValueError(f'Invalid `model`: {model} is missing modelfit results.')
+
+        residuals = model.modelfit_results.residuals
+        if residuals is None or 'CWRES' not in residuals:
+            raise ValueError(
+                f'Invalid `model`: please check {model.name}.mod file to'
+                f' make sure ID, TIME, CWRES are in $TABLE.'
+            )
+
+        predictions = model.modelfit_results.predictions
+        if predictions is None or ('CIPREDI' not in predictions and 'IPRED' not in predictions):
+            raise ValueError(
+                f'Invalid `model`: please check {model.name}.mod file to'
+                f' make sure ID, TIME, CIPREDI (or IPRED) are in $TABLE.'
+            )

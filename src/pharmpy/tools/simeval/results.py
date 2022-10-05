@@ -44,7 +44,9 @@ def calculate_results(original_model, simfit_results):
     if ids:
         try:
             id_plot = plot_individual_predictions(
-                original_model, predictions=['CIPREDI', 'PRED'], individuals=ids
+                original_model,
+                original_model.modelfit_results.predictions[['CIPREDI', 'PRED']],
+                individuals=ids,
             )
         except Exception:
             pass

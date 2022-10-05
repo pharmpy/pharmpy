@@ -136,7 +136,9 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals, 
     if infl_list:
         try:
             iplot = plot_individual_predictions(
-                base_model, individuals=infl_list, predictions=['PRED', 'CIPREDI']
+                base_model,
+                base_model.modelfit_results.predictions[['PRED', 'CIPREDI']],
+                individuals=infl_list,
             )
         except ValueError:
             iplot = None

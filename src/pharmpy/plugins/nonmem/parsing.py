@@ -1,16 +1,21 @@
 import warnings
+from pathlib import Path
 
 import pharmpy.plugins.nonmem
 from pharmpy.deps import sympy
 from pharmpy.model import (
     Assignment,
+    ColumnInfo,
+    DataInfo,
+    DatasetError,
     EstimationStep,
     EstimationSteps,
+    ExplicitODESystem,
     ModelSyntaxError,
-    ODESystem,
     Parameters,
     RandomVariables,
 )
+from pharmpy.plugins.nonmem.table import NONMEMTableFile
 
 from .advan import compartmental_model
 
@@ -42,16 +47,22 @@ def parse_parameters(control_stream):
 def parse_random_variables(control_stream):
     dists = RandomVariables.create([])
     next_omega = 1
+    prev_start = 1
     prev_cov = None
 
     for omega_record in control_stream.get_records('OMEGA'):
-        etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
+        etas, next_omega, prev_start, prev_cov, _ = omega_record.random_variables(
+            next_omega, prev_start, prev_cov
+        )
         dists += etas
     dists = _adjust_iovs(dists)
     next_sigma = 1
+    prev_start = 1
     prev_cov = None
     for sigma_record in control_stream.get_records('SIGMA'):
-        epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
+        epsilons, next_sigma, prev_start, prev_cov, _ = sigma_record.random_variables(
+            next_sigma, prev_start, prev_cov
+        )
         dists += epsilons
     rvs = RandomVariables.create(dists)
     return rvs
@@ -73,7 +84,7 @@ def parse_statements(model):
             for i, amount in enumerate(cm.amounts, start=1):
                 trans_amounts[sympy.Symbol(f"A({i})")] = amount
         else:
-            statements += ODESystem()  # FIXME: Placeholder for ODE-system
+            statements += ExplicitODESystem([], {})  # FIXME: Placeholder for ODE-system
             # FIXME: Dummy link statement
             statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
         statements += error.statements
@@ -83,19 +94,22 @@ def parse_statements(model):
 
 
 def _adjust_iovs(rvs):
-    updated = []
-    for i, dist in enumerate(rvs):
-        try:
-            next_dist = rvs[i + 1]
-        except IndexError:
-            updated.append(dist)
-            break
+    n = len(rvs)
+    if n <= 1:
+        return rvs
 
+    updated = []
+    for i in range(n - 1):
+        dist, next_dist = rvs[i], rvs[i + 1]
         if dist.level != 'IOV' and next_dist.level == 'IOV':
+            # NOTE The first distribution for an IOV will have been parsed as
+            # IIV since we did not know what came after.
             new_dist = dist.derive(level='IOV')
             updated.append(new_dist)
         else:
             updated.append(dist)
+
+    updated.append(rvs[-1])  # NOTE The last distribution does not need update
     return RandomVariables.create(updated)
 
 
@@ -426,3 +440,236 @@ def parse_solver(control_stream):
     else:
         solver = None
     return solver, record.tol, record.atol
+
+
+def parse_initial_individual_estimates(control_stream, rvs, basepath):
+    """Initial individual estimates
+
+    These are taken from the $ETAS FILE. 0 FIX ETAs are removed.
+    If no $ETAS is present None will be returned.
+
+    Setter assumes that all IDs are present
+    """
+    etas = control_stream.get_records('ETAS')
+    if etas:
+        path = Path(etas[0].path)
+        if not path.is_absolute():
+            if basepath is None:
+                raise ValueError("Cannot resolve path for $ETAS")
+            path = basepath / path
+            path = path.resolve()
+        phi_tables = NONMEMTableFile(path)
+        rv_names = [rv for rv in rvs.names if rv.startswith('ETA')]
+        phitab = next(phi_tables)
+        names = [name for name in rv_names if name in phitab.etas.columns]
+        etas = phitab.etas[names]
+    else:
+        etas = None
+    return etas
+
+
+def parse_dataset_path(control_stream, basepath):
+    record = next(iter(control_stream.get_records('DATA')), None)
+    if record is None:
+        return None
+    path = Path(record.filename)
+    if not path.is_absolute():
+        if basepath is not None:
+            path = basepath.parent / path
+    try:
+        return path.resolve()
+    except FileNotFoundError:
+        return path
+
+
+def _synonym(key, value):
+    """Return a tuple reserved name and synonym"""
+    _reserved_column_names = [
+        'ID',
+        'L1',
+        'L2',
+        'DV',
+        'MDV',
+        'RAW_',
+        'MRG_',
+        'RPT_',
+        'TIME',
+        'DATE',
+        'DAT1',
+        'DAT2',
+        'DAT3',
+        'EVID',
+        'AMT',
+        'RATE',
+        'SS',
+        'II',
+        'ADDL',
+        'CMT',
+        'PCMT',
+        'CALL',
+        'CONT',
+    ]
+    if key in _reserved_column_names:
+        return (key, value)
+    elif value in _reserved_column_names:
+        return (value, key)
+    else:
+        raise DatasetError(
+            f'A column name "{key}" in $INPUT has a synonym to a non-reserved '
+            f'column name "{value}"'
+        )
+
+
+def parse_column_info(control_stream):
+    """List all column names in order.
+    Use the synonym when synonym exists.
+    return tuple of two lists, colnames, and drop together with a dictionary
+    of replacements for reserved names (aka synonyms).
+    Anonymous columns, i.e. DROP or SKIP alone, will be given unique names _DROP1, ...
+    """
+    input_records = control_stream.get_records("INPUT")
+    colnames = []
+    drop = []
+    synonym_replacement = {}
+    given_names = []
+    next_anonymous = 1
+    for record in input_records:
+        for key, value in record.all_options:
+            if value:
+                if key == 'DROP' or key == 'SKIP':
+                    colnames.append(value)
+                    given_names.append(value)
+                    drop.append(True)
+                elif value == 'DROP' or value == 'SKIP':
+                    colnames.append(key)
+                    given_names.append(key)
+                    drop.append(True)
+                else:
+                    (reserved_name, synonym) = _synonym(key, value)
+                    synonym_replacement[reserved_name] = synonym
+                    given_names.append(synonym)
+                    colnames.append(synonym)
+                    drop.append(False)
+            else:
+                if key == 'DROP' or key == 'SKIP':
+                    name = f'_DROP{next_anonymous}'
+                    next_anonymous += 1
+                    colnames.append(name)
+                    given_names.append(None)
+                    drop.append(True)
+                else:
+                    colnames.append(key)
+                    given_names.append(key)
+                    drop.append(False)
+    return colnames, drop, synonym_replacement, given_names
+
+
+def parse_datainfo(control_stream, path):
+    dataset_path = parse_dataset_path(control_stream, path)
+    (colnames, drop, replacements, _) = parse_column_info(control_stream)
+    try:
+        path = dataset_path.with_suffix('.datainfo')
+    except:  # noqa: E722
+        # FIXME: dataset_path could fail in so many ways!
+        pass
+    else:
+        if path.is_file():
+            di = DataInfo.read_json(path)
+            di = di.derive(path=dataset_path)
+            different_drop = []
+            for colinfo, coldrop in zip(di, drop):
+                if colinfo.drop != coldrop:
+                    colinfo.drop = coldrop
+                    different_drop.append(colinfo.name)
+
+            if different_drop:
+                warnings.warn(
+                    "NONMEM .mod and dataset .datainfo disagree on "
+                    f"DROP for columns {', '.join(different_drop)}."
+                )
+            return di
+
+    column_info = []
+    have_pk = control_stream.get_pk_record()
+    for colname, coldrop in zip(colnames, drop):
+        if coldrop and colname not in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
+            info = ColumnInfo(colname, drop=coldrop, datatype='str')
+        elif colname == 'ID' or colname == 'L1':
+            info = ColumnInfo(colname, drop=coldrop, datatype='int32', type='id', scale='nominal')
+        elif colname == 'DV' or colname == replacements.get('DV', None):
+            info = ColumnInfo(colname, drop=coldrop, type='dv')
+        elif colname == 'TIME' or colname == replacements.get('TIME', None):
+            if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
+                datatype = 'nmtran-time'
+            else:
+                datatype = 'float64'
+            info = ColumnInfo(colname, drop=coldrop, type='idv', scale='ratio', datatype=datatype)
+        elif colname in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
+            # Always DROP in mod-file, but actually always used
+            info = ColumnInfo(colname, drop=False, scale='interval', datatype='nmtran-date')
+        elif colname == 'EVID' and have_pk:
+            info = ColumnInfo(colname, drop=coldrop, type='event', scale='nominal')
+        elif colname == 'MDV' and have_pk:
+            if 'EVID' in colnames:
+                tp = 'mdv'
+            else:
+                tp = 'event'
+            info = ColumnInfo(colname, drop=coldrop, type=tp, scale='nominal', datatype='int32')
+        elif colname == 'II' and have_pk:
+            info = ColumnInfo(colname, drop=coldrop, type='ii', scale='ratio')
+        elif colname == 'SS' and have_pk:
+            info = ColumnInfo(colname, drop=coldrop, type='ss', scale='nominal')
+        elif colname == 'ADDL' and have_pk:
+            info = ColumnInfo(colname, drop=coldrop, type='additional', scale='ordinal')
+        elif (colname == 'AMT' or colname == replacements.get('AMT', None)) and have_pk:
+            info = ColumnInfo(colname, drop=coldrop, type='dose', scale='ratio')
+        elif colname == 'CMT' and have_pk:
+            info = ColumnInfo(colname, drop=coldrop, type='compartment', scale='nominal')
+        elif colname == 'RATE' and have_pk:
+            info = ColumnInfo(colname, drop=coldrop, type='rate')
+        else:
+            info = ColumnInfo(colname, drop=coldrop)
+        column_info.append(info)
+
+    di = DataInfo(column_info, path=dataset_path)
+    return di
+
+
+def get_zero_fix_rvs(control_stream, eta=True):
+    zero_fix = []
+    if eta:
+        prev_cov = None
+        next_omega = 1
+        prev_start = 1
+        for omega_record in control_stream.get_records('OMEGA'):
+            _, next_omega, prev_start, prev_cov, new_zero_fix = omega_record.random_variables(
+                next_omega, prev_start, prev_cov
+            )
+            zero_fix += new_zero_fix
+    else:
+        prev_cov = None
+        next_sigma = 1
+        prev_start = 1
+        for sigma_record in control_stream.get_records('SIGMA'):
+            _, next_sigma, prev_start, prev_cov, new_zero_fix = sigma_record.random_variables(
+                next_sigma, prev_start, prev_cov
+            )
+            zero_fix += new_zero_fix
+    return zero_fix
+
+
+def replace_synonym_in_filters(filters, replacements):
+    result = []
+    for f in filters:
+        if f.COLUMN in replacements:
+            s = ''
+            for child in f.children:
+                if child.rule == 'COLUMN':
+                    value = replacements[f.COLUMN]
+                else:
+                    value = str(child)
+                s += value
+        else:
+            s = str(f)
+        result.append(s)
+    return result

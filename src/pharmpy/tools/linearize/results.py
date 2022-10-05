@@ -27,7 +27,9 @@ def calculate_results(base_model, linear_model):
         {'ofv': [baseres.ofv, linearres.evaluation_ofv, linearres.ofv]},
         index=['base', 'lin_evaluated', 'lin_estimated'],
     )
-    iofv_plot = plot_iofv_vs_iofv(base_model, linear_model)
+    iofv1 = base_model.modelfit_results.individual_ofv
+    iofv2 = linear_model.modelfit_results.individual_ofv
+    iofv_plot = plot_iofv_vs_iofv(iofv1, iofv2, base_model.name, linear_model.name)
     res = LinearizeResults(ofv=ofv, iofv=iofv, iofv_plot=iofv_plot)
     return res
 

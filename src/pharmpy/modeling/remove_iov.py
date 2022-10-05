@@ -18,7 +18,7 @@ def remove_iov(model, to_remove=None):
     model : Model
         Pharmpy model to remove IOV from.
     to_remove : str, list
-        Name/names of IOV etas to remove, e.g. 'ETA_IOV_11'.
+        Name/names of IOV etas to remove, e.g. 'ETA_IOV_1_1'.
         If None, all etas that are IOVs will be removed. None is default.
     Return
     ------
@@ -52,7 +52,6 @@ def remove_iov(model, to_remove=None):
     d = {sympy.Symbol(name): 0 for name in etas}
     model.statements = sset.subs(d)
 
-    model.modelfit_results = None
     remove_unused_parameters_and_rvs(model)
     model.update_source()
     return model

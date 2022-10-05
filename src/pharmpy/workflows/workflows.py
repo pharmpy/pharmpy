@@ -1,10 +1,13 @@
 import copy
 import uuid
+from typing import Generic, TypeVar
 
 from pharmpy.deps import networkx as nx
 
+T = TypeVar('T')
 
-class Workflow:
+
+class Workflow(Generic[T]):
     """Workflow class
 
     Representation of a directed acyclic graph with Tasks as nodes and
@@ -179,7 +182,7 @@ class Workflow:
         filename : str
             Path
         """
-        from dask import visualize
+        from dask import visualize  # pyright: ignore [reportPrivateImportUsage]
 
         visualize(self.as_dask_dict(), filename=filename, collapse_outputs=True)
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence
-from typing import Iterable, Set, Union
+from typing import Dict, Iterable, List, Optional, Set, Union, overload
 
 import pharmpy.unicode as unicode
 from pharmpy.deps import networkx as nx
@@ -46,7 +46,7 @@ class Statement(ABC):
 
     @property
     @abstractmethod
-    def rhs_symbols(self):
+    def rhs_symbols(self) -> Set[sympy.Symbol]:
         pass
 
 
@@ -243,7 +243,7 @@ class ExplicitODESystem(ODESystem):
     ⎩A_CENTRAL(0) = 0
     """
 
-    def __init__(self, odes, ics):
+    def __init__(self, odes: List[sympy.Eq], ics: Dict[sympy.Expr, sympy.Expr]):
         self._odes = odes
         self._ics = ics
 
@@ -1623,6 +1623,7 @@ class Infusion(Dose):
         if self.rate is not None:
             symbs = self.rate.free_symbols
         else:
+            assert self.duration is not None
             symbs = self.duration.free_symbols
         return symbs | self.amount.free_symbols
 
@@ -1688,6 +1689,14 @@ class Statements(Sequence):
         else:
             self._statements = tuple(statements)
 
+    @overload
+    def __getitem__(self, ind: slice) -> Statements:
+        ...
+
+    @overload
+    def __getitem__(self, ind: int) -> Statement:
+        ...
+
     def __getitem__(self, ind):
         if isinstance(ind, slice):
             return Statements(self._statements[ind])
@@ -1735,7 +1744,7 @@ class Statements(Sequence):
         )
 
     @property
-    def ode_system(self):
+    def ode_system(self) -> Optional[ODESystem]:
         """Returns the ODE system of the model or None if the model doesn't have an ODE system
 
         Examples
@@ -1749,7 +1758,9 @@ class Statements(Sequence):
         └───────┘       └──────┘
         """
         i = self._get_ode_system_index()
-        return None if i == -1 else self[i]
+        ret = None if i == -1 else self[i]
+        assert ret is None or isinstance(ret, ODESystem)
+        return ret
 
     @property
     def before_odes(self):
@@ -1960,11 +1971,12 @@ class Statements(Sequence):
             rhs = self[i].rhs_symbols
             for s in rhs:
                 for j in range(i - 1, -1, -1):
+                    statement = self[j]
                     if (
-                        isinstance(self[j], Assignment)
-                        and self[j].symbol == s
-                        or isinstance(self[j], ODESystem)
-                        and s in self[j].amounts
+                        isinstance(statement, Assignment)
+                        and statement.symbol == s
+                        or isinstance(statement, ODESystem)
+                        and s in statement.amounts
                     ):
                         graph.add_edge(i, j)
         return graph
@@ -2029,26 +2041,29 @@ class Statements(Sequence):
                 else symbol_or_statement
             )
             for i in range(len(self) - 1, -1, -1):
+                statement = self[i]
                 if (
-                    isinstance(self[i], Assignment)
-                    and self[i].symbol == symbol
-                    or isinstance(self[i], ODESystem)
-                    and symbol in self[i].amounts
+                    isinstance(statement, Assignment)
+                    and statement.symbol == symbol
+                    or isinstance(statement, ODESystem)
+                    and symbol in statement.amounts
                 ):
                     break
             else:
                 raise KeyError(f"Could not find symbol {symbol}")
         g = self._create_dependency_graph()
         symbs = self[i].rhs_symbols
-        if i == 0:
-            # Special case for models with only one statement
+        if i == 0 or not g:
+            # Special case for models with only one statement or no dependent statements
             return symbs
         for j, _ in nx.bfs_predecessors(g, i, sort_neighbors=lambda x: reversed(sorted(x))):
-            if isinstance(self[j], Assignment):
-                symbs -= {self[j].symbol}
-            else:  # isinstance(self[j], ODESystem):
-                symbs -= set(self[j].amounts)
-            symbs |= self[j].rhs_symbols
+            statement = self[j]
+            if isinstance(statement, Assignment):
+                symbs -= {statement.symbol}
+            else:
+                assert isinstance(statement, ODESystem)
+                symbs -= set(statement.amounts)
+            symbs |= statement.rhs_symbols
         return symbs
 
     def remove_symbol_definitions(self, symbols, statement):
@@ -2134,7 +2149,17 @@ class Statements(Sequence):
         >>> model = load_example_model("pheno")
         >>> statements = model.statements.to_compartmental_system()
         """
-        return self.before_odes + self.ode_system.to_compartmental_system() + self.after_odes
+        i = self._get_ode_system_index()
+        if i == -1:
+            return self
+
+        odes = self[i]
+        assert isinstance(odes, ODESystem)
+
+        if isinstance(odes, CompartmentalSystem):
+            return self
+
+        return self[:i] + odes.to_compartmental_system() + self[i + 1 :]
 
     def to_explicit_system(self):
         """Convert ODE system to an explicit ODE system
@@ -2158,7 +2183,17 @@ class Statements(Sequence):
         ⎪A_CENTRAL(0) = AMT
         ⎩A_OUTPUT(0) = 0
         """
-        return self.before_odes + self.ode_system.to_explicit_system() + self.after_odes
+        i = self._get_ode_system_index()
+        if i == -1:
+            return self
+
+        odes = self[i]
+        assert isinstance(odes, ODESystem)
+
+        if isinstance(odes, ExplicitODESystem):
+            return self
+
+        return self[:i] + odes.to_explicit_system() + self[i + 1 :]
 
     def __eq__(self, other):
         if len(self) != len(other):

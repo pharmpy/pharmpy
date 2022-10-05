@@ -1,3 +1,35 @@
+Next release
+------------
+
+New features
+============
+
+* Validate tool inputs (#1162, fixes #1032)
+* Add allow_nested flag to add_covariate_effect (#1004)
+* Add has_covariate_effect and remove_covariate_effect (#1004)
+* Generalize get_rv_parameters (#1181)
+* 9fd701521 Store input models in tool database
+* Replace best_model with final_model_name and retrieve_final_model
+* a7fbcbfe2 Handle results and databases as input to retrieve_models
+
+Changes
+=======
+
+* Generalize detection of existing effects in add_covariate_effect (#1004)
+* calculate_bic and calculate_aic will need the -2LL as input instead of modelfit_results
+* calculate_eta_shrinkage needs the explicit arguments parameter_estimates and individual_estimates
+* calculate_individual_shrinkage needs the explicit arguments parameter_estimates and individual_estimates_covariance
+* check_parameters_near_bounds needs the parameter estimates given in the arguments
+* check_high_correlations needs the correlation matrix as an explicit argument 
+* plot_iofv_vs_iofv takes two iofv series instead of two models as input
+* plot_individual_predictions takes the predictions dataframe as input
+
+Bug fixes
+=========
+
+* 297a64041 Handle individual_ofv is None in dofv (fixes #1101)
+* 57fc4fee8 Fix adding categorical covariate effects (#1004)
+
 0.78.0 (2022-09-20)
 -------------------
 

@@ -99,14 +99,13 @@ def test_ignore_character(parser):
     record.ignore_character = '"'
     assert record.ignore_character == '"'
     assert str(record) == '$DATA pheno.dta IGNORE="'
-    record.validate()
 
     with pytest.raises(UnexpectedCharacters):
         record = parser.parse('$DATA pheno.dta IGNORE=""').records[0]
 
     record = parser.parse('$DATA pheno.dta IGNORE=c IGNORE=@').records[0]
     with pytest.raises(ModelSyntaxError):
-        record.validate()
+        record.ignore_character
 
 
 def test_ignore_character_from_header(parser):

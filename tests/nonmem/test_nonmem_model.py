@@ -55,8 +55,6 @@ def test_empty_ext_file(load_model_for_test, testdata):
     model = load_model_for_test(
         testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'noESTwithSIM' / 'onlysim.mod'
     )
-    with pytest.raises(FileNotFoundError):
-        model.database.retrieve_file(model.name, model.name + '.ext')
     assert model.modelfit_results is None
 
 
@@ -67,11 +65,8 @@ def test_detection():
 
 
 def test_validate(pheno):
-    pheno.validate()
-
-    model = Model.create_model(StringIO("$PROBLEM this\n$SIZES LIM1=3000\n$PRED\n"))
     with pytest.raises(ModelSyntaxError):
-        model.validate()
+        Model.create_model(StringIO("$PROBLEM this\n$SIZES LIM1=3000\n$PRED\n"))
 
 
 def test_parameters(pheno):

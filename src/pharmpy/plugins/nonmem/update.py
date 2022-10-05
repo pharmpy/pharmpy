@@ -22,8 +22,9 @@ from pharmpy.model import (
 from pharmpy.modeling import simplify_expression
 from pharmpy.plugins.nonmem.records import code_record
 
-from .parsing import parameter_translation
+from .parsing import get_zero_fix_rvs, parameter_translation, parse_column_info
 from .records.factory import create_record
+from .table import NONMEMTableFile, PhiTable
 
 
 def update_description(model):
@@ -138,7 +139,7 @@ def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
     rvs_removed = [RandomVariables.create(rvs).names for (op, rvs) in rvs_diff if op == -1]
     rvs_removed = [rv for sublist in rvs_removed for rv in sublist]
 
-    for i, (op, rvs) in enumerate(rvs_diff):
+    for op, rvs in rvs_diff:
         if op == 1:
             if len(rvs) == 1:
                 create_omega_single(model, rvs, eta_number, number_of_records, comment_dict)
@@ -460,7 +461,7 @@ def update_statements(model, old, new, trans):
     if new_odes is not None:
         old_odes = old.ode_system
         if new_odes != old_odes:
-            colnames, drop, _, _ = model._column_info()
+            colnames, drop, _, _ = parse_column_info(model.internals.control_stream)
             col_dropped = {key: value for key, value in zip(colnames, drop)}
             if 'CMT' in col_dropped.keys() and not col_dropped['CMT']:
                 warnings.warn(
@@ -1283,7 +1284,7 @@ def update_sizes(model):
 def update_input(model):
     """Update $INPUT"""
     input_records = model.internals.control_stream.get_records("INPUT")
-    _, drop, _, colnames = model._column_info()
+    _, drop, _, colnames = parse_column_info(model.internals.control_stream)
     keep = []
     i = 0
     for child in input_records[0].root.children:
@@ -1316,3 +1317,92 @@ def update_input(model):
     last_input_record = input_records[-1]
     for ci in model.datainfo[len(colnames) :]:
         last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
+
+
+def rv_translation(control_stream, reverse=False, remove_idempotent=False, as_symbols=False):
+    d = dict()
+    for record in control_stream.get_records('OMEGA'):
+        for key, value in record.eta_map.items():
+            nonmem_name = f'ETA({value})'
+            d[nonmem_name] = key
+    for record in control_stream.get_records('SIGMA'):
+        for key, value in record.eta_map.items():
+            nonmem_name = f'EPS({value})'
+            d[nonmem_name] = key
+    if remove_idempotent:
+        d = {key: val for key, val in d.items() if key != val}
+    if reverse:
+        d = {val: key for key, val in d.items()}
+    if as_symbols:
+        d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in d.items()}
+    return d
+
+
+def update_initial_individual_estimates(model, path, nofiles=False):
+    """Update $ETAS
+
+    Could have 0 FIX in model. Need to read these
+    """
+    if path is None:  # What to do here?
+        phi_path = Path('.')
+    else:
+        phi_path = path.parent
+    phi_path /= f'{model.name}_input.phi'
+
+    estimates = model.initial_individual_estimates
+    if estimates is not model.internals._old_initial_individual_estimates:
+        rv_names = {rv for rv in model.random_variables.names if rv.startswith('ETA')}
+        columns = set(estimates.columns)
+        if columns < rv_names:
+            raise ValueError(
+                f'Cannot set initial estimate for random variable not in the model:'
+                f' {rv_names - columns}'
+            )
+        diff = columns - rv_names
+        # If not setting all etas automatically set remaining to 0 for all individuals
+        if len(diff) > 0:
+            for name in diff:
+                estimates = estimates.copy(deep=True)
+                estimates[name] = 0
+            estimates = _sort_eta_columns(estimates)
+
+        etas = estimates
+        zero_fix = get_zero_fix_rvs(model.internals.control_stream, eta=True)
+        if zero_fix:
+            for eta in zero_fix:
+                etas[eta] = 0
+        etas = _sort_eta_columns(etas)
+        if not nofiles:
+            phi = PhiTable(df=etas)
+            table_file = NONMEMTableFile(tables=[phi])
+            table_file.write(phi_path)
+        # FIXME: This is a common operation
+        eta_records = model.internals.control_stream.get_records('ETAS')
+        if eta_records:
+            record = eta_records[0]
+        else:
+            record = model.internals.control_stream.append_record('$ETAS ')
+        record.path = phi_path
+
+        first_est_record = model.internals.control_stream.get_records('ESTIMATION')[0]
+        try:
+            first_est_record.option_pairs['MCETA']
+        except KeyError:
+            first_est_record.set_option('MCETA', 1)
+
+
+def _sort_eta_columns(df):
+    return df.reindex(sorted(df.columns), axis=1)
+
+
+def abbr_translation(model, rv_trans):
+    abbr_pharmpy = model.internals.control_stream.abbreviated.translate_to_pharmpy_names()
+    abbr_replace = model.internals.control_stream.abbreviated.replace
+    abbr_trans = update_abbr_record(model, rv_trans)
+    abbr_recs = {
+        sympy.Symbol(abbr_pharmpy[value]): sympy.Symbol(key)
+        for key, value in abbr_replace.items()
+        if value in abbr_pharmpy.keys()
+    }
+    abbr_trans.update(abbr_recs)
+    return abbr_trans

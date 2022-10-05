@@ -23,11 +23,13 @@ from pharmpy.utils import TemporaryDirectoryChanger
 
 def test_calculate_eta_shrinkage(load_model_for_test, testdata):
     pheno = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    shrinkage = calculate_eta_shrinkage(pheno)
+    pe = pheno.modelfit_results.parameter_estimates
+    ie = pheno.modelfit_results.individual_estimates
+    shrinkage = calculate_eta_shrinkage(pheno, pe, ie)
     assert len(shrinkage) == 2
     assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 7.2048e01 / 100
     assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 2.4030e01 / 100
-    shrinkage = calculate_eta_shrinkage(pheno, sd=True)
+    shrinkage = calculate_eta_shrinkage(pheno, pe, ie, sd=True)
     assert len(shrinkage) == 2
     assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 4.7130e01 / 100
     assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 1.2839e01 / 100
@@ -35,7 +37,11 @@ def test_calculate_eta_shrinkage(load_model_for_test, testdata):
 
 def test_calculate_individual_shrinkage(load_model_for_test, testdata):
     pheno = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    ishr = calculate_individual_shrinkage(pheno)
+    ishr = calculate_individual_shrinkage(
+        pheno,
+        pheno.modelfit_results.parameter_estimates,
+        pheno.modelfit_results.individual_estimates_covariance,
+    )
     assert len(ishr) == 59
     assert pytest.approx(ishr['ETA(1)'][1], 1e-15) == 0.84778949807160287
 
@@ -293,9 +299,7 @@ def test_rank_models():
     # Test with LRT
     df = rank_models(base, models, rank_type='lrt', cutoff=0.05)
     ranked_models = list(df.dropna().index.values)
-    assert len(ranked_models) == 1
-    assert 'm2' in ranked_models
-    assert 'm3' not in ranked_models
+    assert sorted(ranked_models) == ['base', 'm2']
 
     # Test if candidate model does not have an OFV
     m5 = DummyModel('m5', parent='base', parameter_names=['p1'], ofv=np.nan)
@@ -328,17 +332,18 @@ def test_rank_models():
 
 def test_aic(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert calculate_aic(model) == 740.8947268137307
+    assert calculate_aic(model, model.modelfit_results.ofv) == 740.8947268137307
 
 
 def test_bic(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert calculate_bic(model, type='iiv') == 739.0498017015422
-    assert calculate_bic(model, type='fixed') == 756.111852398327
-    assert calculate_bic(model, type='random') == 751.2824140332593
-    assert calculate_bic(model) == 752.2483017062729
+    ofv = model.modelfit_results.ofv
+    assert calculate_bic(model, ofv, type='iiv') == 739.0498017015422
+    assert calculate_bic(model, ofv, type='fixed') == 756.111852398327
+    assert calculate_bic(model, ofv, type='random') == 751.2824140332593
+    assert calculate_bic(model, ofv) == 752.2483017062729
     set_iiv_on_ruv(model)
-    assert calculate_bic(model) == 755.359951477165
+    assert calculate_bic(model, ofv) == 755.359951477165
 
 
 def test_check_parameters_near_bounds(load_model_for_test, testdata):
@@ -360,4 +365,7 @@ def test_check_parameters_near_bounds(load_model_for_test, testdata):
             'SIGMA(1,1)',
         ],
     )
-    pd.testing.assert_series_equal(check_parameters_near_bounds(nearbound), correct)
+    pd.testing.assert_series_equal(
+        check_parameters_near_bounds(nearbound, nearbound.modelfit_results.parameter_estimates),
+        correct,
+    )

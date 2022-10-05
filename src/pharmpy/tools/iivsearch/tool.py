@@ -1,33 +1,38 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional, Set, Union
 
-import pharmpy.results
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
+from pharmpy.model import Model, Results
 from pharmpy.modeling import (
     add_pk_iiv,
     copy_model,
     create_joint_distribution,
     summarize_modelfit_results,
 )
+from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
+
+IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock'))
+IIV_ALGORITHMS = frozenset(('brute_force',) + tuple(dir(algorithms)))
 
 
 @dataclass
 class State:
     algorithm: str
-    model_names_so_far: list
+    model_names_so_far: Set[str]
     input_model_name: List[str]
 
 
 def create_workflow(
-    algorithm,
-    iiv_strategy='no_add',
-    rank_type='bic',
-    cutoff=None,
-    model=None,
+    algorithm: str,
+    iiv_strategy: str = 'no_add',
+    rank_type: str = 'bic',
+    cutoff: Optional[Union[float, int]] = None,
+    model: Optional[Model] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -58,6 +63,7 @@ def create_workflow(
     >>> from pharmpy.tools import run_iivsearch     # doctest: +SKIP
     >>> run_iivsearch('brute_force', model=model)   # doctest: +SKIP
     """
+
     wf = Workflow()
     wf.name = 'iivsearch'
     start_task = Task('start_iiv', start, model, algorithm, iiv_strategy, rank_type, cutoff)
@@ -68,7 +74,7 @@ def create_workflow(
 
 
 def create_algorithm_workflow(input_model, base_model, state, iiv_strategy, rank_type, cutoff):
-    wf = Workflow()
+    wf: Workflow[IIVSearchResults] = Workflow()
 
     start_task = Task(f'start_{state.algorithm}', _start_algorithm, base_model)
     wf.add_task(start_task)
@@ -94,7 +100,7 @@ def create_algorithm_workflow(input_model, base_model, state, iiv_strategy, rank
     return wf
 
 
-def start(input_model, algorithm, iiv_strategy, rank_type, cutoff):
+def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
     if iiv_strategy != 'no_add':
         model_iiv = copy_model(input_model, 'base_model')
         _add_iiv(iiv_strategy, model_iiv)
@@ -106,49 +112,55 @@ def start(input_model, algorithm, iiv_strategy, rank_type, cutoff):
         list_of_algorithms = ['brute_force_no_of_etas', 'brute_force_block_structure']
     else:
         list_of_algorithms = [algorithm]
-    model_names_so_far = []
     sum_tools, sum_models, sum_inds, sum_inds_count, sum_errs = [], [], [], [], []
+
+    models = []
+    models_set = set()
+    last_res = None
+
     for i, algorithm_cur in enumerate(list_of_algorithms):
-        state = State(algorithm_cur, model_names_so_far, input_model.name)
+        state = State(algorithm_cur, models_set, input_model.name)
+        # NOTE Execute algorithm
         wf = create_algorithm_workflow(
-            input_model,
-            base_model,
-            state,
-            iiv_strategy,
-            rank_type,
-            cutoff,
+            input_model, base_model, state, iiv_strategy, rank_type, cutoff
         )
-        next_res = call_workflow(wf, f'results_{algorithm}')
+        res = call_workflow(wf, f'results_{algorithm}', context)
         if i == 0:
-            res = next_res
             # Have input model as first row in summary of models as step 0
             sum_models.append(summarize_modelfit_results(input_model))
-        else:
-            prev_model_names = [model.name for model in res.models]
-            new_models = [model for model in next_res.models if model.name not in prev_model_names]
-            res.models = res.models + new_models
-            res.final_model_name = next_res.final_model_name
-            res.input_model = input_model
-        model_names_so_far = [model.name for model in res.models]
-        sum_tools.append(next_res.summary_tool)
-        sum_models.append(next_res.summary_models)
-        sum_inds.append(next_res.summary_individuals)
-        sum_inds_count.append(next_res.summary_individuals_count)
-        sum_errs.append(next_res.summary_errors)
-        final_model = [model for model in res.models if model.name == res.final_model_name]
-        assert len(final_model) == 1
-        base_model = final_model[0]
+        # NOTE Append results
+        new_models = list(filter(lambda model: model.name not in models_set, res.models))
+        models.extend(new_models)
+        models_set.update(model.name for model in new_models)
+
+        sum_tools.append(res.summary_tool)
+        sum_models.append(res.summary_models)
+        sum_inds.append(res.summary_individuals)
+        sum_inds_count.append(res.summary_individuals_count)
+        sum_errs.append(res.summary_errors)
+
+        final_model = next(
+            filter(lambda model: model.name == res.final_model_name, res.models), base_model
+        )
+
+        base_model = final_model
         iiv_strategy = 'no_add'
+        last_res = res
+
+    assert last_res is not None
 
     keys = list(range(1, len(list_of_algorithms) + 1))
 
-    res.summary_tool = _concat_summaries(sum_tools, keys)
-    res.summary_models = _concat_summaries(sum_models, [0] + keys)
-    res.summary_individuals = _concat_summaries(sum_inds, keys)
-    res.summary_individuals_count = _concat_summaries(sum_inds_count, keys)
-    res.summary_errors = _concat_summaries(sum_errs, keys)
-
-    return res
+    return IIVSearchResults(
+        summary_tool=_concat_summaries(sum_tools, keys),
+        summary_models=_concat_summaries(sum_models, [0] + keys),  # To include input model
+        summary_individuals=_concat_summaries(sum_inds, keys),
+        summary_individuals_count=_concat_summaries(sum_inds_count, keys),
+        summary_errors=_concat_summaries(sum_errs, keys),
+        final_model_name=last_res.final_model_name,
+        models=models,
+        tool_database=last_res.tool_database,
+    )
 
 
 def _concat_summaries(summaries, keys):
@@ -165,11 +177,7 @@ def _start_algorithm(model):
 
 
 def _add_iiv(iiv_strategy, model):
-    if iiv_strategy not in ['add_diagonal', 'fullblock']:
-        ValueError(
-            f'Invalid IIV strategy (must be "no_add", "add_diagonal", or "fullblock"): '
-            f'{iiv_strategy}'
-        )
+    assert iiv_strategy in ['add_diagonal', 'fullblock']
     add_pk_iiv(model)
     if iiv_strategy == 'fullblock':
         create_joint_distribution(model)
@@ -203,7 +211,31 @@ def post_process(state, rank_type, cutoff, input_model, base_model_name, *models
     return res
 
 
-class IIVSearchResults(pharmpy.results.Results):
+@runtime_type_check
+@same_arguments_as(create_workflow)
+def validate_input(
+    algorithm,
+    iiv_strategy,
+    rank_type,
+):
+    if algorithm not in IIV_ALGORITHMS:
+        raise ValueError(
+            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(IIV_ALGORITHMS)}.'
+        )
+
+    if rank_type not in RANK_TYPES:
+        raise ValueError(
+            f'Invalid `rank_type`: got `{rank_type}`, must be one of {sorted(RANK_TYPES)}.'
+        )
+
+    if iiv_strategy not in IIV_STRATEGIES:
+        raise ValueError(
+            f'Invalid `iiv_strategy`: got `{iiv_strategy}`,'
+            f' must be one of {sorted(IIV_STRATEGIES)}.'
+        )
+
+
+class IIVSearchResults(Results):
     def __init__(
         self,
         summary_tool=None,

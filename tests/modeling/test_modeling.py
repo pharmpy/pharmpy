@@ -1801,7 +1801,7 @@ def test_transform_etas_tdist(load_model_for_test, pheno_path):
     denom_3 = f'384*{theta}**3'
 
     expression = (
-        f'ETA(1)*(1 + ({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ' f'({num_3})/({denom_3}))'
+        f'ETA(1)*(1 + ({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ({num_3})/({denom_3}))'
     )
 
     rec_ref = (
@@ -2496,6 +2496,8 @@ def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
 
     assert rec_omega == '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n'
 
+
+def test_remove_iov_no_iovs(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
     with pytest.warns(UserWarning):
@@ -3411,7 +3413,7 @@ def test_set_ode_solver(load_model_for_test, pheno_path):
     assert 'ADVAN6' in model.model_code
 
 
-def test_add_pk_iiv(load_model_for_test, pheno_path):
+def test_add_pk_iiv_1(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     set_zero_order_elimination(model)
     add_pk_iiv(model)
@@ -3422,6 +3424,8 @@ def test_add_pk_iiv(load_model_for_test, pheno_path):
     iivs = set(model.random_variables.iiv.names)
     assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
 
+
+def test_add_pk_iiv_2(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     set_zero_order_elimination(model)
     add_peripheral_compartment(model)

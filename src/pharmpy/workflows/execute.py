@@ -1,7 +1,17 @@
+import inspect
+from typing import TypeVar
+
+from pharmpy.model import Model, Results
 from pharmpy.utils import normalize_user_given_path
 
+from .workflows import Workflow
 
-def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume=False):
+T = TypeVar('T')
+
+
+def execute_workflow(
+    workflow: Workflow[T], dispatcher=None, database=None, path=None, resume=False
+) -> T:
     """Execute workflow
 
     Parameters
@@ -22,6 +32,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume
     Results
         Results object created by workflow
     """
+    # FIXME Return type is not always Results
     if dispatcher is None:
         from pharmpy.workflows import default_dispatcher
 
@@ -39,7 +50,6 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume
     for task in workflow.tasks:
         if task.has_input():
             new_inp = []
-            from pharmpy.model import Model
 
             for inp in task.task_input:
                 if isinstance(inp, Model):
@@ -48,20 +58,19 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume
                     new_model = inp.copy()
                     new_model.parent_model = new_model.name
                     new_model.dataset
-                    new_model.database = database.model_database
                     new_inp.append(new_model)
                     input_models.append(new_model)
                 else:
                     new_inp.append(inp)
             task.task_input = new_inp
 
-    res = dispatcher.run(workflow)
+    insert_context(workflow, database)
 
-    from pharmpy.model import Results
+    res: T = dispatcher.run(workflow)
 
     if isinstance(res, Results):
         if hasattr(res, 'tool_database'):
-            res.tool_database = database
+            res.tool_database = database  # pyright: ignore [reportGeneralTypeIssues]
         database.store_results(res)
         if hasattr(res, 'rst_path'):
             from pharmpy.modeling.reporting import create_report
@@ -105,7 +114,17 @@ def split_common_options(d):
     return common_options, other_options
 
 
-def call_workflow(wf, unique_name):
+def insert_context(workflow, context):
+    """Insert tool context (database) for all tasks in a workflow needing it
+
+    having context as first argument of function
+    """
+    for task in workflow.tasks:
+        if tuple(inspect.signature(task.function).parameters)[0] == 'context':
+            task.task_input = [context] + list(task.task_input)
+
+
+def call_workflow(wf: Workflow[T], unique_name, db) -> T:
     """Dynamically call a workflow from another workflow.
 
     Currently only supports dask distributed
@@ -116,6 +135,8 @@ def call_workflow(wf, unique_name):
         A workflow object
     unique_name : str
         A name of the results node that is unique between parent and dynamically created workflows
+    db : ToolDatabase
+        ToolDatabase to pass to new workflow
 
     Returns
     -------
@@ -126,12 +147,14 @@ def call_workflow(wf, unique_name):
 
     from .optimize import optimize_task_graph_for_dask_distributed
 
+    insert_context(wf, db)
+
     client = get_client()
     dsk = wf.as_dask_dict()
     dsk[unique_name] = dsk.pop('results')
     dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
     futures = client.get(dsk_optimized, unique_name, sync=False)
     secede()
-    res = client.gather(futures)
+    res: T = client.gather(futures)
     rejoin()
     return res

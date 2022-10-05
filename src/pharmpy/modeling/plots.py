@@ -5,15 +5,19 @@ from pharmpy.deps import pandas as pd
 from .data import get_observations
 
 
-def plot_iofv_vs_iofv(model, other):
+def plot_iofv_vs_iofv(iofv1, iofv2, name1, name2):
     """Plot individual OFV of two models against each other
 
     Parameters
     ----------
-    model : Model
-        The first model
-    other : Model
-        The second model
+    iofv1 : pd.Series
+        Estimated iOFV of the first model
+    iofv2 : pd.Series
+        Estimated iOFV of the second model
+    name1 : str
+        Name of first model
+    name2 : str
+        Name of second model
 
     Results
     -------
@@ -21,12 +25,12 @@ def plot_iofv_vs_iofv(model, other):
         Scatterplot
 
     """
-    x_label = f'{model.name} iOFV'
-    y_label = f'{other.name} iOFV'
+    x_label = f'{name1} iOFV'
+    y_label = f'{name2} iOFV'
     df = pd.DataFrame(
         {
-            x_label: model.modelfit_results.individual_ofv,
-            y_label: other.modelfit_results.individual_ofv,
+            x_label: iofv1,
+            y_label: iofv2,
         }
     )
     id_name = df.index.name
@@ -37,15 +41,15 @@ def plot_iofv_vs_iofv(model, other):
     return plot
 
 
-def plot_individual_predictions(model, predictions=None, individuals=None):
+def plot_individual_predictions(model, predictions, individuals=None):
     """Plot DV and predictions grouped on individuals
 
     Parameters
     ----------
     model : Model
         Previously run Pharmpy model.
-    predictions : list
-        A list of names of predictions to plot. None for all available
+    predictions : pd.DataFrame
+        One column for each type of prediction
     individuals : list
         A list of individuals to include. None for all individuals
 
@@ -55,23 +59,16 @@ def plot_individual_predictions(model, predictions=None, individuals=None):
         Plot
 
     """
-    res = model.modelfit_results
-    pred = res.predictions
-    if pred is None:
-        raise ValueError("No predictions available in modelfit_results")
     obs = get_observations(model)
-    indexcols = pred.index.names
+    indexcols = predictions.index.names
     idcol = indexcols[0]
     idvcol = indexcols[1]
 
-    data = pred.join(obs).reset_index()
+    data = predictions.join(obs).reset_index()
     data = data.melt(id_vars=indexcols)
 
     if individuals is not None:
         data = data[data[idcol].isin(individuals)]
-    if predictions is not None:
-        dvcol = obs.name
-        data = data[data['variable'].isin(predictions + [dvcol])]
 
     plot = (
         alt.Chart(data)

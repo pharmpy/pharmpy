@@ -1,4 +1,5 @@
 import re
+from itertools import chain
 
 from pharmpy.model import ModelSyntaxError
 
@@ -15,16 +16,19 @@ class Abbreviated:
     @property
     def replace(self):
         """Get all $ABBR REPLACE as a dictionary"""
-        d = dict()
-        for record in self.stream.get_records('ABBREVIATED'):
-            d.update(record.replace)
-        return d
+        return dict(
+            chain.from_iterable(
+                record.replace.items() for record in self.stream.get_records('ABBREVIATED')
+            )
+        )
 
     def translate_to_pharmpy_names(self):
-        d = dict()
-        for record in self.stream.get_records('ABBREVIATED'):
-            d.update(record.translate_to_pharmpy_names())
-        return d
+        return dict(
+            chain.from_iterable(
+                record.translate_to_pharmpy_names().items()
+                for record in self.stream.get_records('ABBREVIATED')
+            )
+        )
 
 
 class NMTranParser:
@@ -41,6 +45,13 @@ class NMTranParser:
         for separator, s in zip(record_strings[0::2], record_strings[1::2]):
             record = create_record(separator + s)
             stream.records.append(record)
+
+        in_problem = False
+        for record in stream.records:
+            if in_problem and record.name == 'SIZES':
+                raise ModelSyntaxError('The SIZES record must come before the first PROBLEM record')
+            elif record.name == 'PROBLEM':
+                in_problem = True
 
         return stream
 
@@ -83,6 +94,9 @@ class NMTranControlStream:
             if current_problem == self._active_problem and record.name == name:
                 found.append(record)
         return found
+
+    def _get_first_record(self, name):
+        return next(iter(self.get_records(name)), None)
 
     def append_record(self, content):
         """Create and append record at the end"""
@@ -150,56 +164,25 @@ class NMTranControlStream:
                     first = False
         self.records = keep
 
-    def go_through_omega_rec(self):
-        next_omega = 1
-        previous_size = None
-        prev_cov = None
-
-        for omega_record in self.get_records('OMEGA'):
-            next_omega_cur = next_omega
-            omegas, next_omega, previous_size = omega_record.parameters(
-                next_omega_cur, previous_size
-            )
-            etas, next_eta, prev_cov, _ = omega_record.random_variables(next_omega_cur, prev_cov)
-
     def get_pred_pk_record(self):
-        pred = self.get_records('PRED')
+        pred = self._get_first_record('PRED')
+        if pred is not None:
+            return pred
 
-        if not pred:
-            pk = self.get_records('PK')
-            if not pk:
-                raise ModelSyntaxError('Model has no $PK or $PRED')
-            return pk[0]
-        else:
-            return pred[0]
+        pk = self._get_first_record('PK')
+        if pk is not None:
+            return pk
+
+        raise ModelSyntaxError('Model has no $PK or $PRED')
 
     def get_pk_record(self):
-        pk = self.get_records('PK')
-        if pk:
-            pk = pk[0]
-        return pk
+        return self._get_first_record('PK')
 
     def get_error_record(self):
-        error = self.get_records('ERROR')
-        if error:
-            error = error[0]
-        return error
+        return self._get_first_record('ERROR')
 
     def get_des_record(self):
-        des = self.get_records('DES')
-        if des:
-            des = des[0]
-        return des
-
-    def validate(self):
-        in_problem = False
-        for record in self.records:
-            if in_problem and record.name == 'SIZES':
-                raise ModelSyntaxError('The SIZES record must come before the first PROBLEM record')
-            elif record.name == 'PROBLEM':
-                in_problem = True
-            if hasattr(record, 'validate'):
-                record.validate()
+        return self._get_first_record('DES')
 
     def __str__(self):
-        return ''.join(str(x) for x in self.records)
+        return ''.join(map(str, self.records))
