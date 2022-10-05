@@ -24,7 +24,7 @@ lincorrect = read_nonmem_dataset(
 
 def test_evaluate_expression(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_noifs.mod')
-    ser = evaluate_expression(model, 'TVV')
+    ser = evaluate_expression(model, 'TVV', model.modelfit_results.parameter_estimates)
     assert ser[0] == pytest.approx(1.413062)
     assert ser[743] == pytest.approx(1.110262)
 

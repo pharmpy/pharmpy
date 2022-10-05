@@ -12,7 +12,7 @@ from .expressions import (
 )
 
 
-def evaluate_expression(model, expression):
+def evaluate_expression(model, expression, parameter_estimates=None):
     """Evaluate expression using model
 
     Calculate the value of expression for each data record.
@@ -26,6 +26,8 @@ def evaluate_expression(model, expression):
         Pharmpy model
     expression : str or sympy expression
         Expression to evaluate
+    parameter_estimates : pd.Series
+        Parameter estimates to use instead of initial estimates
 
     Returns
     -------
@@ -36,7 +38,8 @@ def evaluate_expression(model, expression):
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_expression
     >>> model = load_example_model("pheno")
-    >>> evaluate_expression(model, "TVCL*1000")
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> evaluate_expression(model, "TVCL*1000", parameter_estimates=pe)
     0      6.573770
     1      6.573770
     2      6.573770
@@ -53,9 +56,8 @@ def evaluate_expression(model, expression):
     """
     expression = sympify(expression)
     full_expr = model.statements.before_odes.full_expression(expression)
-    pe = model.modelfit_results.parameter_estimates
     inits = model.parameters.inits
-    expr = subs(subs(full_expr, dict(pe)), inits)
+    expr = subs(subs(full_expr, dict(parameter_estimates)), inits)
     data = model.dataset
 
     def func(row):
@@ -117,10 +119,7 @@ def evaluate_population_prediction(model, parameters=None, dataset=None):
     if parameters is not None:
         y = subs(y, parameters)
     else:
-        if model.modelfit_results is not None:
-            y = subs(y, model.modelfit_results.parameter_estimates.to_dict())
-        else:
-            y = subs(y, model.parameters.inits)
+        y = subs(y, model.parameters.inits)
 
     if dataset is not None:
         df = dataset
