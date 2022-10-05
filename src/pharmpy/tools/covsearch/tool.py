@@ -1,4 +1,3 @@
-import re
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass
 from itertools import count
@@ -7,7 +6,7 @@ from typing import Any, Callable, Iterable, List, Tuple, Union
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
-from pharmpy.modeling import add_covariate_effect, copy_model
+from pharmpy.modeling import add_covariate_effect, copy_model, summarize_modelfit_results
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
@@ -209,7 +208,7 @@ def task_greedy_forward_search(
         step: int, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
     ):
 
-        wf = wf_effects_addition(parent.model, candidate_effects, index_offset)
+        wf = wf_effects_addition(parent.model, parent, candidate_effects, index_offset)
         new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_addition-{step}')
 
         return [
@@ -306,7 +305,9 @@ def _greedy_search(
     )
 
 
-def wf_effects_addition(model: Model, candidate_effects: List[EffectLiteral], index_offset: int):
+def wf_effects_addition(
+    model: Model, candidate: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
+):
     wf = Workflow()
 
     for i, effect in enumerate(candidate_effects, 1):
@@ -314,6 +315,7 @@ def wf_effects_addition(model: Model, candidate_effects: List[EffectLiteral], in
             repr(effect),
             task_add_covariate_effect,
             model,
+            candidate,
             effect,
             index_offset + i,
         )
@@ -327,36 +329,43 @@ def wf_effects_addition(model: Model, candidate_effects: List[EffectLiteral], in
     return wf
 
 
-def task_add_covariate_effect(model: Model, effect: EffectLiteral, effect_index: int):
+def task_add_covariate_effect(
+    model: Model, candidate: Candidate, effect: EffectLiteral, effect_index: int
+):
     model_with_added_effect = copy_model(model, name=f'covsearch_run{effect_index}')
-    model_with_added_effect.description = _create_description(model, effect)
+    model_with_added_effect.description = _create_description(effect, candidate.steps)
     model_with_added_effect.parent_model = model.name
     update_initial_estimates(model_with_added_effect)
     add_covariate_effect(model_with_added_effect, *effect, allow_nested=True)
     return model_with_added_effect
 
 
-def _create_description(model, effect, forward=True):
+def _create_description(
+    effect_new: Union[Tuple, Effect], steps_prev: Tuple[Step, ...], forward: bool = True
+):
     # Will create this type of description: '(CL-AGE-exp);(MAT-AGE-exp);(MAT-AGE-exp-+)'
-    parameter, covariate, fp, operation = effect
-    effect_str = f'{parameter}-{covariate}-{fp}'
-    if operation == '*':
-        effect_str += f'-{operation}'
-
-    if model.parent_model == model.name:
-        description_prev = ''
-    else:
-        description_prev = model.description
-
-    if forward:
-        if description_prev:
-            return f'{description_prev};({effect_str})'
+    def _create_effect_str(effect):
+        if isinstance(effect, Tuple):
+            param, cov, fp, op = effect
+        elif isinstance(effect, Effect):
+            param, cov, fp, op = effect.parameter, effect.covariate, effect.fp, effect.operation
         else:
-            return f'({effect_str})'
-    else:
-        m = re.compile(rf'\({effect_str}\);*')
-        description_new = m.sub('', description_prev)
-        return description_new
+            raise ValueError('Effect must be a tuple or Effect dataclass')
+        effect_base = f'{param}-{cov}-{fp}'
+        if op == '+':
+            effect_base += f'-{op}'
+        return f'({effect_base})'
+
+    effect_new_str = _create_effect_str(effect_new)
+    effects = []
+    for effect_prev in _added_effects(steps_prev):
+        effect_prev_str = _create_effect_str(effect_prev)
+        if not forward and effect_prev_str == effect_new_str:
+            continue
+        effects.append(effect_prev_str)
+    if forward:
+        effects.append(effect_new_str)
+    return ';'.join(effects)
 
 
 def wf_effects_removal(
@@ -388,7 +397,9 @@ def task_remove_covariate_effect(
 ):
     model = candidate.model
     model_with_removed_effect = copy_model(base_model, name=f'covsearch_run{effect_index}')
-    model_with_removed_effect.description = _create_description(model, effect, forward=False)
+    model_with_removed_effect.description = _create_description(
+        effect, candidate.steps, forward=False
+    )
     model_with_removed_effect.parent_model = model.name
 
     for kept_effect in _added_effects((*candidate.steps, BackwardStep(-1, RemoveEffect(*effect)))):
@@ -412,20 +423,27 @@ def task_results(state: SearchState):
     res.ofv_summary = ofv_summary_dataframe(res.steps, final_included=True, iterations=True)
 
     res.summary_tool = _modify_summary_tool(res.summary_tool, res.steps)
+    res.summary_models = _summarize_models(models, res.steps)
 
     return res
 
 
 def _modify_summary_tool(summary_tool, steps):
-    steps.reset_index(inplace=True)
     step_cols_to_keep = ['step', 'pvalue', 'goal_pvalue', 'is_backward', 'selected', 'model']
-    steps_df = steps[step_cols_to_keep].set_index(['step', 'model'])
+    steps_df = steps.reset_index()[step_cols_to_keep].set_index(['step', 'model'])
 
     summary_tool_new = steps_df.join(summary_tool)
     column_to_move = summary_tool_new.pop('description')
 
     summary_tool_new.insert(0, 'description', column_to_move)
     return summary_tool_new.drop(['rank'], axis=1)
+
+
+def _summarize_models(models, steps):
+    summary_models = summarize_modelfit_results(models)
+    summary_models['step'] = steps.reset_index().set_index(['model'])['step']
+
+    return summary_models.reset_index().set_index(['step', 'model'])
 
 
 def _make_df_steps(best_model: Model, candidates: List[Candidate]):
