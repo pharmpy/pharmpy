@@ -1,6 +1,7 @@
 from itertools import chain, combinations
 from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
 
+import pharmpy.tools.iivsearch.algorithms
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment, Model, Results
 from pharmpy.modeling import (
@@ -126,11 +127,10 @@ def task_brute_force_search(
     # NOTE Add IOVs on given parameters or all parameters with IIVs.
     model_with_iov = copy_model(model, name='iovsearch_run1')
     model_with_iov.parent_model = model.name
-    names = [name for name in list_of_parameters]
-    model_with_iov.description = f'add_iov({",".join(names)})'
     update_initial_estimates(model_with_iov)
     # TODO should we exclude already present IOVs?
     add_iov(model_with_iov, occ, list_of_parameters, distribution=distribution)
+    model_with_iov.description = _create_description(model_with_iov)
     # NOTE Fit the new model.
     wf = create_fit_workflow(models=[model_with_iov])
     model_with_iov = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs', context)
@@ -180,15 +180,20 @@ def task_brute_force_search(
     return [model, model_with_iov, *iov_candidates, *iiv_candidates]
 
 
+def _create_description(model):
+    iiv_desc = pharmpy.tools.iivsearch.algorithms.create_description(model)
+    iov_desc = pharmpy.tools.iivsearch.algorithms.create_description(model, iov=True)
+    return f'IIV({iiv_desc});IOV({iov_desc})'
+
+
 def task_remove_etas_subset(
     remove: Callable[[Model, List[str]], None], model: Model, subset: List[str], n: int
 ):
     model_with_some_etas_removed = copy_model(model, name=f'iovsearch_run{n}')
     model_with_some_etas_removed.parent_model = model.name
-    names = [name for name in subset]
-    model_with_some_etas_removed.description = f'{remove.__name__}({",".join(names)})'
     update_initial_estimates(model_with_some_etas_removed)
     remove(model_with_some_etas_removed, subset)
+    model_with_some_etas_removed.description = _create_description(model_with_some_etas_removed)
     return model_with_some_etas_removed
 
 
