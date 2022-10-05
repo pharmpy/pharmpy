@@ -932,13 +932,15 @@ def calculate_bic(model, likelihood, type=None):
     return likelihood + penalty
 
 
-def check_high_correlations(model, limit=0.9):
+def check_high_correlations(model, cor, limit=0.9):
     """Check for highly correlated parameter estimates
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
+    cor : pd.DataFrame
+        Estimated correlation matrix
     limit : float
         Lower limit for a high correlation
 
@@ -951,16 +953,18 @@ def check_high_correlations(model, limit=0.9):
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> check_high_correlations(model, limit=0.3)
+    >>> cor = model.modelfit_results.correlation_matrix
+    >>> check_high_correlations(model, cor, limit=0.3)
     THETA(1)  OMEGA(1,1)   -0.388059
     THETA(2)  THETA(3)     -0.356899
               OMEGA(2,2)    0.356662
     dtype: float64
     """
-    df = model.modelfit_results.correlation_matrix
-    if df is not None:
-        high_and_below_diagonal = df.abs().ge(limit) & np.triu(np.ones(df.shape), k=1).astype(bool)
-    return df.where(high_and_below_diagonal).stack()
+    if cor is not None:
+        high_and_below_diagonal = cor.abs().ge(limit) & np.triu(np.ones(cor.shape), k=1).astype(
+            bool
+        )
+    return cor.where(high_and_below_diagonal).stack()
 
 
 def check_parameters_near_bounds(model, values, zero_limit=0.001, significant_digits=2):
@@ -1089,7 +1093,8 @@ def print_fit_summary(model):
         condno = round(np.linalg.cond(res.correlation_matrix), 1)
         print_fmt("Condition number", condno)
         print_fmt("Condition number < 1000", bool_ok_error(condno < 1000))
-        hicorr = check_high_correlations(model)
+        cor = model.modelfit_results.correlation_matrix
+        hicorr = check_high_correlations(model, cor)
         print_fmt("No correlations arger than 0.9", bool_ok_error(hicorr.empty))
 
     print_header("Parameter estimates")
