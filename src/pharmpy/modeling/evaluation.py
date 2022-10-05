@@ -96,7 +96,8 @@ def evaluate_population_prediction(model, parameters=None, dataset=None):
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_population_prediction
     >>> model = load_example_model("pheno_linear")
-    >>> evaluate_population_prediction(model)
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> evaluate_population_prediction(model, parameters=dict(pe))
     0      17.529739
     1      28.179910
     2       9.688648

@@ -25,6 +25,7 @@ Changes
 * plot_individual_predictions takes the predictions dataframe as input
 * create_joint_distribution takes an option individual_estimates argument and does not use modelfit_results directly
 * evaluate_expression to get parameter estimates from optional argument instead of from modelfit_results
+* evaluate_population_prediction will not take parameter estimates from modelfit_results
 
 Bug fixes
 =========
