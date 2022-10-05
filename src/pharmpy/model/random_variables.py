@@ -734,6 +734,27 @@ class RandomVariables(CollectionsSequence):
                     )
         return newdict
 
+    def get_rvs_with_same_dist(self, rv):
+        """Gets random variables with the same distribution as input random variable
+
+        The resulting RandomVariables objects includes the input random variable.
+
+        Parameters
+        ----------
+        rv : str
+            Name of random variable
+
+        Returns
+        -------
+        RandomVariables
+            RandomVariables object with all distributions as input random variable (including input)
+        """
+        _, dist_input = self._lookup_rv(rv)
+
+        rvs = [dist for dist in self if dist.variance == dist_input.variance]
+
+        return RandomVariables.create(rvs)
+
 
 def _sample_from_distributions(distributions, expr, parameters, nsamples, rng):
     random_variable_symbols = expr.free_symbols.difference(parameters.keys())
