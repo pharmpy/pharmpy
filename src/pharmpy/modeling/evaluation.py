@@ -255,7 +255,8 @@ def evaluate_eta_gradient(model, etas=None, parameters=None, dataset=None):
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_eta_gradient
     >>> model = load_example_model("pheno_linear")
-    >>> evaluate_eta_gradient(model)
+    >>> etas = model.modelfit_results.individual_estimates
+    >>> evaluate_eta_gradient(model, etas=etas)
          dF/dETA(1)  dF/dETA(2)
     0     -0.159537  -17.609116
     1     -9.325893  -19.562289
@@ -286,12 +287,7 @@ def evaluate_eta_gradient(model, etas=None, parameters=None, dataset=None):
     idcol = model.datainfo.id_column.name
 
     if etas is None:
-        if (
-            model.modelfit_results is not None
-            and model.modelfit_results.individual_estimates is not None
-        ):
-            etas = model.modelfit_results.individual_estimates
-        elif model.initial_individual_estimates is not None:
+        if model.initial_individual_estimates is not None:
             etas = model.initial_individual_estimates
         else:
             etas = pd.DataFrame(
@@ -345,7 +341,8 @@ def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_epsilon_gradient
     >>> model = load_example_model("pheno_linear")
-    >>> evaluate_epsilon_gradient(model)
+    >>> etas = model.modelfit_results.individual_estimates
+    >>> evaluate_epsilon_gradient(model, etas=etas)
          dY/dEPS(1)
     0     17.771084
     1     28.881859
@@ -380,12 +377,7 @@ def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
     idcol = model.datainfo.id_column.name
 
     if etas is None:
-        if (
-            model.modelfit_results is not None
-            and model.modelfit_results.individual_estimates is not None
-        ):
-            etas = model.modelfit_results.individual_estimates
-        elif model.initial_individual_estimates is not None:
+        if model.initial_individual_estimates is not None:
             etas = model.initial_individual_estimates
         else:
             etas = pd.DataFrame(
@@ -435,7 +427,8 @@ def evaluate_weighted_residuals(model, parameters=None, dataset=None):
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_weighted_residuals
     >>> model = load_example_model("pheno_linear")
-    >>> evaluate_weighted_residuals(model)
+    >>> parameters = model.modelfit_results.parameter_estimates
+    >>> evaluate_weighted_residuals(model, parameters=dict(parameters))
     0     -0.313859
     1      0.675721
     2     -1.544240
@@ -453,10 +446,7 @@ def evaluate_weighted_residuals(model, parameters=None, dataset=None):
     omega = model.random_variables.etas.covariance_matrix
     sigma = model.random_variables.epsilons.covariance_matrix
     if parameters is None:
-        if model.modelfit_results is not None:
-            parameters = model.modelfit_results.parameter_estimates.to_dict()
-        else:
-            parameters = model.parameters.inits
+        parameters = model.parameters.inits
     omega = omega.subs(parameters)
     sigma = sigma.subs(parameters)
     omega = np.float64(omega)

@@ -27,6 +27,9 @@ Changes
 * evaluate_expression to get parameter estimates from optional argument instead of from modelfit_results
 * evaluate_population_prediction will not take parameter estimates from modelfit_results
 * evaluate_individual_prediction will not take parameter estimates from modelfit_results
+* evaluate_eta_gradient will not take parameter estimates from modelfit_results
+* evaluate_epsilon_gradient will not take parameter estimates from modelfit_results
+* evaluate_weighted_residuals will not take parameter estimates from modelfit_results
 
 Bug fixes
 =========
