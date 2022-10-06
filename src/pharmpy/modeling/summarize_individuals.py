@@ -75,6 +75,7 @@ def summarize_individuals(models: List[Model]) -> pd.DataFrame:
         verify_integrity=True,
     )
 
+    assert df is not None
     return df
 
 
