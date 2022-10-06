@@ -138,6 +138,7 @@ def start(context, model, groups, p_value, skip):
     if skip is None:
         skip = []
 
+    sum_models = []
     selected_models = [model]
     for current_iteration in range(1, 4):
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
@@ -149,8 +150,11 @@ def start(context, model, groups, p_value, skip):
 
         if current_iteration == 1:
             res = next_res
+            sum_models.append(summarize_modelfit_results(model))
         else:
             res.cwres_models = pd.concat([res.cwres_models, next_res.cwres_models])
+        sum_models.append(summarize_modelfit_results(best_model))
+
         if not selected_model_name.startswith('base'):
             selected_models.append(best_model)
 
@@ -164,8 +168,8 @@ def start(context, model, groups, p_value, skip):
 
     sumind = summarize_individuals(selected_models)
     sumcount = summarize_individuals_count_table(df=sumind)
-    summf = summarize_modelfit_results(selected_models)
-    summary_tool = summarize_tool(selected_models[1:], selected_models[0], 'ofv', cutoff)
+    summf = pd.concat(sum_models, keys=list(range(0, current_iteration)), names=['step'])
+    summary_tool = _create_summary_tool(selected_models, cutoff)
     summary_errors = summarize_errors(selected_models)
 
     res.summary_individuals = sumind
@@ -175,6 +179,24 @@ def start(context, model, groups, p_value, skip):
     res.summary_errors = summary_errors
     res.final_model_name = model.name
     return res
+
+
+def _create_summary_tool(selected_models, cutoff):
+    model_names = [model.name for model in selected_models]
+    iteration_map = {model.name: model_names.index(model.name) for model in selected_models}
+
+    base_model = selected_models[0]
+    ruvsearch_models = selected_models[1:]
+
+    sum_tool = summarize_tool(ruvsearch_models, base_model, 'ofv', cutoff).reset_index()
+    sum_tool['step'] = sum_tool['model'].map(iteration_map)
+    sum_tool_by_iter = sum_tool.set_index(['step', 'model']).sort_index()
+
+    # FIXME workaround since rank_models will exclude ranking of base model since dofv will be 0
+    sum_tool_by_iter.loc[(0, base_model.name), 'ofv'] = base_model.modelfit_results.ofv
+    sum_tool_by_iter.loc[(0, base_model.name), 'dofv'] = 0
+
+    return sum_tool_by_iter.drop(columns=['rank'])
 
 
 def _start_iteration(model):
