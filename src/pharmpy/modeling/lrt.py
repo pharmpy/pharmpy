@@ -5,14 +5,6 @@ from pharmpy.deps.scipy import stats
 from pharmpy.model import Model
 
 
-def _ofv(model: Model) -> float:
-    return np.nan if model.modelfit_results is None else model.modelfit_results.ofv
-
-
-def _dofv(parent: Model, model: Model) -> float:
-    return _ofv(parent) - _ofv(model)
-
-
 def degrees_of_freedom(parent: Model, child: Model) -> int:
     return len(child.parameters) - len(parent.parameters)
 
