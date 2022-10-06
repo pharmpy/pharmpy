@@ -213,7 +213,9 @@ def summarize_individuals_count_table(models=None, df=None):
         if name == df.loc[name]['parent_model'].iloc[0]:
             start_name = name
             break
-    # FIXME: Doesn't have to have a start model
+    else:
+        # FIXME: Handle missing start model
+        raise ValueError('Missing start model')
 
     ofv_sums = df['ofv'].groupby('model').sum()
     parent_sums = parent_ofvs.groupby('model').sum()
