@@ -292,7 +292,7 @@ def _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements):
 def _copy(name, features, model):
     model_copy = copy_model(model, name)
     features_str = ';'.join(map(key_to_str, features))
-    if not model.description:
+    if not model.description or model.parent_model == model.name:
         model_copy.description = features_str
     else:
         model_copy.description = f'{model.description};{features_str}'
