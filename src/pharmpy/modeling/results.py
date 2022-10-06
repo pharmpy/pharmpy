@@ -402,7 +402,9 @@ def calculate_pk_parameters_statistics(
     >>> from pharmpy.modeling import calculate_pk_parameters_statistics
     >>> model = load_example_model("pheno")
     >>> rng = create_rng(23)
-    >>> calculate_pk_parameters_statistics(model, rng=rng)
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> cov = model.modelfit_results.covariance_matrix
+    >>> calculate_pk_parameters_statistics(model, pe, cov, rng=rng)
                               mean  variance    stderr
     parameter covariates
     k_e       p5          0.004234  0.000001  0.001138
