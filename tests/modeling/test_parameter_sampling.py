@@ -22,14 +22,22 @@ def test_create_rng():
 def test_sample_parameters_uniformly():
     model = load_example_model("pheno")
     rng = create_rng(23)
-    df = sample_parameters_uniformly(model, n=3, rng=rng)
+    df = sample_parameters_uniformly(
+        model, model.modelfit_results.parameter_estimates, n=3, rng=rng
+    )
     assert df['THETA(1)'][0] == 0.004877674495376137
 
 
 def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     rng = np.random.default_rng(318)
-    samples = sample_parameters_from_covariance_matrix(model, n=3, rng=rng)
+    samples = sample_parameters_from_covariance_matrix(
+        model,
+        model.modelfit_results.parameter_estimates,
+        model.modelfit_results.covariance_matrix,
+        n=3,
+        rng=rng,
+    )
     correct = pd.DataFrame(
         {
             'THETA(1)': [0.004489330033579095, 0.004866193232279955, 0.004619661658761273],
@@ -44,7 +52,13 @@ def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
     # Make cov matrix non-posdef
     model.modelfit_results.covariance_matrix['THETA(1)']['THETA(1)'] = -1
     with pytest.warns(UserWarning):
-        sample_parameters_from_covariance_matrix(model, n=1, force_posdef_covmatrix=True)
+        sample_parameters_from_covariance_matrix(
+            model,
+            model.modelfit_results.parameter_estimates,
+            model.modelfit_results.covariance_matrix,
+            n=1,
+            force_posdef_covmatrix=True,
+        )
 
 
 def test_sample_individual_estimates(load_model_for_test, testdata):

@@ -535,10 +535,10 @@ def calculate_results_using_cov_sampling(
     ]
     parvecs = sample_parameters_from_covariance_matrix(
         frem_model,
-        modelfit_results=uncertainty_results,
+        uncertainty_results.parameter_estimates[parameters],
+        uncertainty_results.covariance_matrix,
         force_posdef_samples=force_posdef_samples,
         force_posdef_covmatrix=force_posdef_covmatrix,
-        parameters=parameters,
         n=samples,
         rng=rng,
     )

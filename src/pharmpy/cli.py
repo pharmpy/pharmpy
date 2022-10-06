@@ -414,7 +414,12 @@ def model_sample(args):
     model = args.model
     from pharmpy.modeling import sample_parameters_from_covariance_matrix
 
-    samples = sample_parameters_from_covariance_matrix(model, n=args.samples)
+    samples = sample_parameters_from_covariance_matrix(
+        model,
+        model.modelfit_results.parameter_estimates,
+        model.modelfit_results.covariance_matrix,
+        n=args.samples,
+    )
     for row, params in samples.iterrows():
         from pharmpy.modeling import set_initial_estimates, write_model
 

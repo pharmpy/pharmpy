@@ -308,6 +308,8 @@ def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
     if model.modelfit_results.covariance_matrix is not None:
         parameters_samples = sample_parameters_from_covariance_matrix(
             model,
+            model.modelfit_results.parameter_estimates,
+            model.modelfit_results.covariance_matrix,
             n=nbatches,
             force_posdef_covmatrix=True,
             rng=rng,

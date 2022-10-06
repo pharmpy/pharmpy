@@ -30,6 +30,8 @@ Changes
 * evaluate_eta_gradient will not take parameter estimates from modelfit_results
 * evaluate_epsilon_gradient will not take parameter estimates from modelfit_results
 * evaluate_weighted_residuals will not take parameter estimates from modelfit_results
+* sample_parameters_from_covariance_matrix will need parameter_estimates and covariance_matrix as explicit arguments
+* sample_parameters_uniformly will need parameter_esimtates as explicit arguments
 
 Bug fixes
 =========
