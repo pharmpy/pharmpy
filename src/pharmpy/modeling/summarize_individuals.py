@@ -1,17 +1,16 @@
+from __future__ import annotations
+
 import importlib.util
 import warnings
-from typing import Any, Callable, Dict, List, Union
+from typing import Callable, Dict, List, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, ModelfitResultsError
 from pharmpy.modeling.ml import predict_influential_individuals, predict_outliers
 
-DataFrame = Any  # NOTE should be pd.DataFrame but we want lazy loading
-Series = Any  # NOTE same with pd.Series
 
-
-def summarize_individuals(models: List[Model]) -> Union[DataFrame, None]:
+def summarize_individuals(models: List[Model]) -> pd.DataFrame:
     """Creates a summary dataframe keyed by model-individual pairs for an input
     list of models.
 
@@ -87,13 +86,13 @@ def model_name(model: Model) -> str:
     return model.name
 
 
-def outlier_count_func(df: DataFrame) -> float:
+def outlier_count_func(df: pd.DataFrame) -> float:
     # NOTE this returns a float because we will potentially concat this
     # with NaNs
     return float((abs(df) > 5).sum())
 
 
-def outlier_count(model: Model) -> Union[Series, float]:
+def outlier_count(model: Model) -> Union[pd.Series, float]:
     res = model.modelfit_results
     if res is None:
         return np.nan
@@ -106,8 +105,8 @@ def outlier_count(model: Model) -> Union[Series, float]:
 
 
 def _predicted(
-    predict: Callable[[Model], DataFrame], model: Model, column: str
-) -> Union[Series, float]:
+    predict: Callable[[Model], pd.DataFrame], model: Model, column: str
+) -> Union[pd.Series, float]:
     try:
         predicted = predict(model)
     except ModelfitResultsError:
@@ -119,24 +118,24 @@ def _predicted(
     return predicted[column]
 
 
-def predicted_residual(model: Model) -> Union[Series, float]:
+def predicted_residual(model: Model) -> Union[pd.Series, float]:
     return _predicted(predict_outliers, model, 'residual')
 
 
-def predicted_dofv(model: Model) -> Union[Series, float]:
+def predicted_dofv(model: Model) -> Union[pd.Series, float]:
     return _predicted(predict_influential_individuals, model, 'dofv')
 
 
-def ofv(model: Model) -> Union[Series, float]:
+def ofv(model: Model) -> Union[pd.Series, float]:
     res = model.modelfit_results
     return np.nan if res is None or res.individual_ofv is None else res.individual_ofv
 
 
-def dofv(parent_model: Union[Model, None], candidate_model: Model) -> Union[Series, float]:
+def dofv(parent_model: Union[Model, None], candidate_model: Model) -> Union[pd.Series, float]:
     return np.nan if parent_model is None else ofv(parent_model) - ofv(candidate_model)
 
 
-def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) -> DataFrame:
+def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) -> pd.DataFrame:
     id_column_name = model.datainfo.id_column.name
     index = pd.Index(data=model.dataset[id_column_name].unique(), name=id_column_name)
     df = pd.DataFrame(
