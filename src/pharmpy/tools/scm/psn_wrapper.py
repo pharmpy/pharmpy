@@ -54,7 +54,7 @@ def run_scm(model, relations, continuous=None, categorical=None, path=None):
     final_model_path = path / 'scmdir' / 'final_models' / 'final_forward.mod'
     if final_model_path.is_file():
         final_model = read_model(final_model_path)
-    res.final_model = final_model
+        res.final_model = final_model
     return res
 
 
