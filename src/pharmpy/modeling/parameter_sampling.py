@@ -192,10 +192,10 @@ def sample_parameters_from_covariance_matrix(
     ----------
     model : Model
         Input model
+    parameter_estimates : pd.Series
+        Parameter estimates to use as means in sampling
     covariance_matrix : pd.DataFrame
         Parameter uncertainty covariance matrix
-    parameters : list
-        Use to only sample a subset of the parameters. None means all
     force_posdef_samples : int
         Set to how many iterations to do before forcing all samples to be positive definite. None is
         default and means never and 0 means always
@@ -252,13 +252,24 @@ def sample_parameters_from_covariance_matrix(
     return samples
 
 
-def sample_individual_estimates(model, parameters=None, samples_per_id=100, rng=None):
+def sample_individual_estimates(
+    model,
+    individual_estimates,
+    individual_estimates_covariance,
+    parameters=None,
+    samples_per_id=100,
+    rng=None,
+):
     """Sample individual estimates given their covariance.
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    individual_estimates : pd.DataFrame
+        Individual estimates to use
+    individual_estimates_covariance : pd.DataFrame
+        Uncertainty covariance of the individual estimates
     parameters : list
         A list of a subset of individual parameters to sample. Default is None, which means all.
     samples_per_id : int
@@ -276,7 +287,9 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100, rng=
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> rng = create_rng(23)
-    >>> sample_individual_estimates(model, samples_per_id=2, rng=rng)
+    >>> ie = model.modelfit_results.individual_estimates
+    >>> iec = model.modelfit_results.individual_estimates_covariance
+    >>> sample_individual_estimates(model, ie, iec, samples_per_id=2, rng=rng)
                  ETA(1)    ETA(2)
     ID sample
     1  0      -0.127941  0.037273
@@ -301,8 +314,8 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100, rng=
 
     """
     rng = create_rng(rng)
-    ests = model.modelfit_results.individual_estimates
-    covs = model.modelfit_results.individual_estimates_covariance
+    ests = individual_estimates
+    covs = individual_estimates_covariance
     if parameters is None:
         parameters = ests.columns
     ests = ests[parameters]

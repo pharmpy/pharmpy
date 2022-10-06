@@ -64,14 +64,16 @@ def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
 def test_sample_individual_estimates(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     rng = np.random.default_rng(86)
-    samples = sample_individual_estimates(model, rng=rng)
+    ie = model.modelfit_results.individual_estimates
+    iec = model.modelfit_results.individual_estimates_covariance
+    samples = sample_individual_estimates(model, ie, iec, rng=rng)
     assert len(samples) == 59 * 100
     assert list(samples.columns) == ['ETA(1)', 'ETA(2)']
     assert pytest.approx(samples.iloc[0]['ETA(1)'], 1e-5) == 0.21179186940672637
     assert pytest.approx(samples.iloc[0]['ETA(2)'], 1e-5) == -0.05771736555248238
 
     restricted = sample_individual_estimates(
-        model, parameters=['ETA(2)'], samples_per_id=1, rng=rng
+        model, ie, iec, parameters=['ETA(2)'], samples_per_id=1, rng=rng
     )
     assert len(restricted) == 59
     assert restricted.columns == ['ETA(2)']

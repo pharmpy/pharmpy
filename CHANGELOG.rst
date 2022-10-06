@@ -32,6 +32,7 @@ Changes
 * evaluate_weighted_residuals will not take parameter estimates from modelfit_results
 * sample_parameters_from_covariance_matrix will need parameter_estimates and covariance_matrix as explicit arguments
 * sample_parameters_uniformly will need parameter_esimtates as explicit arguments
+* sample_individual_estimates will need individual_estimates and individual_estimates_covariance as explicit arguments
 
 Bug fixes
 =========
