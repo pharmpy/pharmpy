@@ -193,7 +193,9 @@ def calculate_individual_shrinkage(model, parameter_estimates, individual_estima
     return ish
 
 
-def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
+def calculate_individual_parameter_statistics(
+    model, expr_or_exprs, parameter_estimates, covariance_matrix=None, rng=None
+):
     """Calculate statistics for individual parameters
 
     Calculate the mean (expected value of the distribution), variance
@@ -210,6 +212,10 @@ def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
     ----------
     model : Model
         A previously estimated model
+    parameter_estimates : pd.Series
+        Parameter estimates
+    covariance_matrix : pd.DataFrame
+        Parameter uncertainty covariance matrix
     expr_or_exprs : str, sympy expression or iterable of str or sympy expressions
         Expressions or equations for parameters of interest. If equations are used
         the names of the left hand sides will be used as the names of the parameters.
@@ -227,7 +233,9 @@ def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
     >>> from pharmpy.modeling import calculate_individual_parameter_statistics
     >>> model = load_example_model("pheno")
     >>> rng = create_rng(23)
-    >>> calculate_individual_parameter_statistics(model, "K=CL/V", rng=rng)
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> cov = model.modelfit_results.covariance_matrix
+    >>> calculate_individual_parameter_statistics(model, "K=CL/V", pe, cov, rng=rng)
                               mean  variance    stderr
     parameter covariates
     K         p5          0.004234  0.000001  0.001138
@@ -250,7 +258,8 @@ def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
         )
     )
 
-    parameter_estimates = xreplace_dict(model.modelfit_results.parameter_estimates)
+    input_parameter_estimates = parameter_estimates
+    parameter_estimates = xreplace_dict(parameter_estimates)
 
     all_free_symbols = set().union(*map(lambda e: e[1].free_symbols, full_exprs))
 
@@ -305,11 +314,11 @@ def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
 
     samples = sample_rvs(filtered_sampling_rvs, nsamples, rng)
 
-    if model.modelfit_results.covariance_matrix is not None:
+    if covariance_matrix is not None:
         parameters_samples = sample_parameters_from_covariance_matrix(
             model,
-            model.modelfit_results.parameter_estimates,
-            model.modelfit_results.covariance_matrix,
+            input_parameter_estimates,
+            covariance_matrix,
             n=nbatches,
             force_posdef_covmatrix=True,
             rng=rng,
@@ -362,7 +371,9 @@ def calculate_individual_parameter_statistics(model, expr_or_exprs, rng=None):
     return table
 
 
-def calculate_pk_parameters_statistics(model, rng=None):
+def calculate_pk_parameters_statistics(
+    model, parameter_estimates, covariance_matrix=None, rng=None
+):
     """Calculate statistics for common pharmacokinetic parameters
 
     Calculate the mean (expected value of the distribution), variance
@@ -373,6 +384,10 @@ def calculate_pk_parameters_statistics(model, rng=None):
     ----------
     model : Model
         A previously estimated model
+    parameter_estimates : pd.Series
+        Parameter estimates
+    covariance_matrix : pd.Dataframe
+        Parameter uncertainty covariance matrix
     rng : Generator or int
         Random number generator or seed
 
@@ -473,7 +488,9 @@ def calculate_pk_parameters_statistics(model, rng=None):
     if odes.t not in elimination_rate.free_symbols:
         expressions.append(sympy.Eq(sympy.Symbol('k_e'), elimination_rate))
 
-    df = calculate_individual_parameter_statistics(model, expressions, rng=rng)
+    df = calculate_individual_parameter_statistics(
+        model, expressions, parameter_estimates, covariance_matrix, rng=rng
+    )
     return df
 
 
