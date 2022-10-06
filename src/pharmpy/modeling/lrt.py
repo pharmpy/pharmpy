@@ -31,12 +31,12 @@ def test(parent: Model, child: Model, parent_ofv, child_ofv, alpha: float) -> bo
     return dofv >= cutoff(parent, child, alpha)
 
 
-def best_of_two(parent: Model, child: Model, alpha: float) -> Model:
-    return child if test(parent, child, alpha) else parent
+def best_of_two(parent: Model, child: Model, parent_ofv, child_ofv, alpha: float) -> Model:
+    return child if test(parent, child, parent_ofv, child_ofv, alpha) else parent
 
 
 def best_of_many(
     parent: Model, models: Iterable[Model], parent_ofv, model_ofvs, alpha: float
 ) -> Model:
     best_index = np.argmax(model_ofvs)
-    return best_of_two(parent, models[best_index], alpha)
+    return best_of_two(parent, list(models)[best_index], parent_ofv, model_ofvs[best_index], alpha)

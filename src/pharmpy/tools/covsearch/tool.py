@@ -273,7 +273,7 @@ def _greedy_search(
         new_candidates = handle_effects(step, best_candidate_so_far, candidate_effects)
 
         all_candidates_so_far.extend(new_candidates)
-        new_candidate_models = map(lambda candidate: candidate.model, new_candidates)
+        new_candidate_models = list(map(lambda candidate: candidate.model, new_candidates))
 
         parent = best_candidate_so_far.model
         ofvs = [
@@ -433,7 +433,13 @@ def _make_df_steps_row(
     )
     alpha = last_step.alpha
     selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
-    extended_significant = lrt_test(parent_model, candidate.model, alpha)
+    extended_significant = lrt_test(
+        parent_model,
+        candidate.model,
+        parent_model.modelfit_results.ofv,
+        candidate.model.modelfit_results.ofv,
+        alpha,
+    )
     assert not selected or (candidate.model is parent_model) or extended_significant
     return {
         'step': len(candidate.steps),
