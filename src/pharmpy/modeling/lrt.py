@@ -1,5 +1,4 @@
-from itertools import chain
-from typing import Iterable, List, Union
+from typing import Iterable
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps.scipy import stats
@@ -12,13 +11,6 @@ def _ofv(model: Model) -> float:
 
 def _dofv(parent: Model, model: Model) -> float:
     return _ofv(parent) - _ofv(model)
-
-
-def _best_by_ofv(models: Iterable[Model], default: Union[None, Model] = None) -> Model:
-    if default is None:
-        return min(models, key=_ofv)
-    else:
-        return min(models, key=_ofv, default=default)
 
 
 def degrees_of_freedom(parent: Model, child: Model) -> int:
@@ -36,32 +28,23 @@ def cutoff(parent: Model, child: Model, alpha: float) -> float:
     )
 
 
-def p_value(parent: Model, child: Model) -> float:
-    x = _dofv(parent, child)
+def p_value(parent: Model, child: Model, parent_ofv, child_ofv) -> float:
+    dofv = parent_ofv - child_ofv
     df = degrees_of_freedom(parent, child)
-    return float(stats.chi2.sf(x=x, df=df))
+    return float(stats.chi2.sf(x=dofv, df=df))
 
 
-def test(parent: Model, child: Model, alpha: float) -> bool:
-    return _dofv(parent, child) >= cutoff(parent, child, alpha)
+def test(parent: Model, child: Model, parent_ofv, child_ofv, alpha: float) -> bool:
+    dofv = parent_ofv - child_ofv
+    return dofv >= cutoff(parent, child, alpha)
 
 
 def best_of_two(parent: Model, child: Model, alpha: float) -> Model:
     return child if test(parent, child, alpha) else parent
 
 
-def best_of_many(parent: Model, models: Iterable[Model], alpha: float) -> Model:
-    best_candidate = _best_by_ofv(models)
-    return best_of_two(parent, best_candidate, alpha)
-
-
-def best_of_subtree(root: Model, nodes: List[Model], alpha: float) -> Model:
-    models_dict = {model.name: model for model in chain((root,), nodes)}
-
-    def parent(model: Model):
-        return models_dict[model.parent_model]
-
-    return _best_by_ofv(
-        filter(lambda model: test(parent(model), model, alpha), nodes),
-        default=root,
-    )
+def best_of_many(
+    parent: Model, models: Iterable[Model], parent_ofv, model_ofvs, alpha: float
+) -> Model:
+    best_index = np.argmax(model_ofvs)
+    return best_of_two(parent, models[best_index], alpha)

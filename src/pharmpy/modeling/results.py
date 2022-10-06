@@ -742,7 +742,9 @@ def rank_models(
             else:
                 assert isinstance(cutoff, (float, int))
                 co = cutoff
-            if not lrt_test(parent, model, co):
+            if not lrt_test(
+                parent, model, parent.modelfit_results.ofv, model.modelfit_results.ofv, co
+            ):
                 continue
         elif cutoff is not None:
             if ref_value - rank_value <= cutoff:

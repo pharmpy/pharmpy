@@ -276,7 +276,13 @@ def _greedy_search(
         new_candidate_models = map(lambda candidate: candidate.model, new_candidates)
 
         parent = best_candidate_so_far.model
-        best_model_so_far = lrt_best_of_many(parent, new_candidate_models, alpha)
+        ofvs = [
+            model.modelfit_results.ofv if model.modelfit_results is not None else np.nan
+            for model in new_candidate_models
+        ]
+        best_model_so_far = lrt_best_of_many(
+            parent, new_candidate_models, parent.modelfit_results.ofv, ofvs, alpha
+        )
 
         if best_model_so_far is parent:
             break
@@ -422,7 +428,9 @@ def _make_df_steps_row(
     last_step = candidate.steps[-1]
     last_effect = last_step.effect
     is_backward = isinstance(last_step, BackwardStep)
-    p_value = lrt_p_value(parent_model, model)
+    p_value = lrt_p_value(
+        parent_model, model, parent_model.modelfit_results.ofv, model.modelfit_results.ofv
+    )
     alpha = last_step.alpha
     selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
     extended_significant = lrt_test(parent_model, candidate.model, alpha)
