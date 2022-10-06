@@ -155,6 +155,6 @@ def call_workflow(wf: Workflow[T], unique_name, db) -> T:
     dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
     futures = client.get(dsk_optimized, unique_name, sync=False)
     secede()
-    res: T = client.gather(futures)
+    res: T = client.gather(futures)  # pyright: ignore [reportGeneralTypeIssues]
     rejoin()
     return res
