@@ -1,8 +1,11 @@
 """DataInfo is a companion to the dataset. It contains metadata of the dataset
 """
+from __future__ import annotations
+
 import json
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Union, overload
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -464,6 +467,14 @@ class DataInfo(Sequence):
             return i
         else:
             raise TypeError(f"Cannot index DataInfo by {type(i)}")
+
+    @overload
+    def __getitem__(self, i: Union[list, slice]) -> DataInfo:
+        ...
+
+    @overload
+    def __getitem__(self, i: Union[int, str]) -> ColumnInfo:
+        ...
 
     def __getitem__(self, i):
         if isinstance(i, list):
