@@ -12,9 +12,8 @@ Definitions
 """
 
 import copy
-import io
-import pathlib
 import warnings
+from io import IOBase
 from pathlib import Path
 
 from pharmpy.deps import sympy
@@ -414,21 +413,18 @@ class Model:
             Generic :class:`~pharmpy.generic.Model` if obj is None, otherwise appropriate
             implementation is invoked (e.g. NONMEM7 :class:`~pharmpy.plugins.nonmem.Model`).
         """
-        if isinstance(obj, str):
-            path = Path(obj)
-        elif isinstance(obj, pathlib.Path):
-            path = obj
-        elif isinstance(obj, io.IOBase):
-            path = None
-        elif obj is None:
+        if obj is None:
             return Model()
-        else:
-            raise ValueError("Unknown input type to Model constructor")
-        if path is not None:
+        elif isinstance(obj, IOBase):
+            path = None
+            code = obj.read()
+        elif isinstance(obj, (str, Path)):
+            path = Path(obj)
             with open(path, 'r', encoding='latin-1') as fp:
                 code = fp.read()
         else:
-            code = obj.read()
+            raise ValueError("Unknown input type to Model constructor")
+
         model_module = detect_model(code)
         model = model_module.Model(code, path, **kwargs)
         # Setup model database here
