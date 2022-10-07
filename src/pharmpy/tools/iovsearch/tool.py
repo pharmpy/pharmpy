@@ -2,6 +2,7 @@ from itertools import chain, combinations
 from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import pharmpy.tools.iivsearch.algorithms
+from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment, Model, Results
 from pharmpy.modeling import (
@@ -11,10 +12,11 @@ from pharmpy.modeling import (
     rank_models,
     remove_iiv,
     remove_iov,
+    summarize_modelfit_results,
 )
 from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
 from pharmpy.modeling.results import RANK_TYPES
-from pharmpy.tools.common import create_results, update_initial_estimates
+from pharmpy.tools.common import create_results, summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
@@ -120,9 +122,12 @@ def task_brute_force_search(
         iiv = model.random_variables.iiv
         list_of_parameters = list(iiv.names)
 
+    current_step = 0
+    step_mapping = {current_step: model.name}
+
     # NOTE Check that model has at least one IIV.
     if not list_of_parameters:
-        return [model]
+        return step_mapping, [model]
 
     # NOTE Add IOVs on given parameters or all parameters with IIVs.
     model_with_iov = copy_model(model, name='iovsearch_run1')
@@ -156,9 +161,12 @@ def task_brute_force_search(
         bic_type=bic_type,
     )
 
+    current_step += 1
+    step_mapping[current_step] = [model_with_iov.name] + [model.name for model in iov_candidates]
+
     # NOTE If no improvement with respect to input model, STOP.
     if best_model_so_far is model:
-        return [model, model_with_iov, *iov_candidates]
+        return step_mapping, [model, model_with_iov, *iov_candidates]
 
     # NOTE Remove IIV with corresponding IOVs. Test all subsets (~2^n).
     iiv_parameters_with_associated_iov = list(
@@ -176,8 +184,10 @@ def task_brute_force_search(
         no_of_models + 1,
     )
     iiv_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs', context)
+    current_step += 1
+    step_mapping[current_step] = [model.name for model in iiv_candidates]
 
-    return [model, model_with_iov, *iov_candidates, *iiv_candidates]
+    return step_mapping, [model, model_with_iov, *iov_candidates, *iiv_candidates]
 
 
 def _create_description(model):
@@ -277,11 +287,27 @@ def non_empty_subsets(iterable: Iterable[T]) -> Iterable[Tuple[T]]:
 
 
 def task_results(rank_type, cutoff, bic_type, models):
-    base_model, *res_models = models
+    step_mapping, (base_model, *res_models) = models
 
     res = create_results(
         IOVSearchResults, base_model, base_model, res_models, rank_type, cutoff, bic_type=bic_type
     )
+
+    model_dict = {model.name: model for model in [base_model] + res_models}
+    sum_mod, sum_tool = [], []
+    for step, model_names in step_mapping.items():
+        candidates = [model for model in [base_model] + res_models if model.name in model_names]
+        sum_mod_step = summarize_modelfit_results(candidates)
+        sum_mod.append(sum_mod_step)
+        if step >= 1:
+            ref_model = model_dict[candidates[0].parent_model]
+            sum_tool_step = summarize_tool(candidates, ref_model, rank_type, cutoff, bic_type)
+            sum_tool.append(sum_tool_step)
+
+    keys = list(range(1, len(step_mapping)))
+
+    res.summary_models = pd.concat(sum_mod, keys=[0] + keys, names=['step'])
+    res.summary_tool = pd.concat(sum_tool, keys=keys, names=['step'])
 
     return res
 
