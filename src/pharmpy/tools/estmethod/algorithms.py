@@ -55,7 +55,7 @@ def start(model):
 
 
 def _create_estmethod_task(candidate_no, method, solver, update):
-    model_name = f'estmethod_candidate{candidate_no}'
+    model_name = f'estmethod_run{candidate_no}'
     model_description = _create_description(method, solver, update)
 
     wf = Workflow()

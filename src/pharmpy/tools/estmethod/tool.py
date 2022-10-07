@@ -67,16 +67,12 @@ def start(model):
 
 def post_process(input_model, *models):
     res_models = []
-    base_model = None
+    base_model = input_model
     for model in models:
         if model.name == 'base_model':
             base_model = model
         else:
             res_models.append(model)
-
-    # FIXME: a way to handle dbic (or similar) when there is no base model
-    if not base_model:
-        base_model = res_models.pop(0)
 
     # FIXME: support other rank_type, allow None as cutoff
     rank_type = 'ofv'
@@ -86,17 +82,20 @@ def post_process(input_model, *models):
         rank_type,
         -1000,
     )
-    summary_models = summarize_modelfit_results([base_model] + res_models).sort_values(
-        by=[rank_type]
-    )
+    summary_models = summarize_modelfit_results([base_model] + res_models)
     summary_settings = summarize_estimation_steps([base_model] + res_models)
+
+    if base_model.name == input_model.name:
+        models = res_models
+    else:
+        models = [base_model] + res_models
 
     res = EstMethodResults(
         summary_tool=summary_tool,
         summary_models=summary_models,
         summary_settings=summary_settings,
         input_model=input_model,
-        models=[base_model] + res_models,
+        models=models,
     )
 
     return res

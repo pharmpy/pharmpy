@@ -8,7 +8,7 @@ from pharmpy.utils import TemporaryDirectoryChanger
 
 
 @pytest.mark.parametrize(
-    'algorithm, methods, solvers, no_of_models, advan_ref',
+    'algorithm, methods, solvers, no_of_candidates, advan_ref',
     [
         ('exhaustive', 'imp', None, 3, 'ADVAN1'),
         ('exhaustive', 'imp', ['lsoda'], 5, 'ADVAN13'),
@@ -16,7 +16,7 @@ from pharmpy.utils import TemporaryDirectoryChanger
     ],
 )
 def test_estmethod(
-    tmp_path, model_count, testdata, algorithm, methods, solvers, no_of_models, advan_ref
+    tmp_path, model_count, testdata, algorithm, methods, solvers, no_of_candidates, advan_ref
 ):
     with TemporaryDirectoryChanger(tmp_path):
         for path in (testdata / 'nonmem').glob('pheno_real.*'):
@@ -27,12 +27,17 @@ def test_estmethod(
 
         res = run_tool('estmethod', algorithm, methods=methods, solvers=solvers, model=model_start)
 
+        if algorithm == 'reduced':
+            no_of_models = no_of_candidates + 1
+        else:
+            no_of_models = no_of_candidates
+
         assert len(res.summary_tool) == no_of_models
-        assert len(res.models) == no_of_models
+        assert len(res.models) == no_of_candidates
         assert advan_ref in res.models[-1].model_code
         rundir = tmp_path / 'estmethod_dir1'
         assert rundir.is_dir()
-        assert model_count(rundir) == no_of_models
+        assert model_count(rundir) == no_of_candidates
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'results.html').exists()
