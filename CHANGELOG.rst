@@ -39,6 +39,7 @@ Changes
 * update_inits does not update initial individual estimates
 * Move predict_* functions from modeling to pharmpy.tools
 * Move summarize_individuals and summarize_individuals_count_table to pharmpy.tools
+* Move print_fit_summary to pharmpy.tools
 
 Bug fixes
 =========

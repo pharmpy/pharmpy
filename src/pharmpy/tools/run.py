@@ -7,8 +7,10 @@ from typing import List, Optional, Tuple, Union
 import pharmpy
 import pharmpy.results
 import pharmpy.tools.modelfit
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
-from pharmpy.modeling.common import copy_model, read_model_from_database
+from pharmpy.modeling import check_high_correlations, copy_model, read_model_from_database
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import execute_workflow, split_common_options
@@ -378,3 +380,58 @@ def retrieve_final_model(res):
     if res.final_model_name is None:
         raise ValueError('Attribute \'final_model_name\' is None')
     return retrieve_models(res, names=[res.final_model_name])[0]
+
+
+def print_fit_summary(model):
+    """Print a summary of the model fit
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    """
+
+    def bool_ok_error(x):
+        return "OK" if x else "ERROR"
+
+    def bool_yes_no(x):
+        return "YES" if x else "NO"
+
+    def print_header(text, first=False):
+        if not first:
+            print()
+        print(text)
+        print("-" * len(text))
+
+    def print_fmt(text, result):
+        print(f"{text:33} {result}")
+
+    res = model.modelfit_results
+
+    print_header("Parameter estimation status", first=True)
+    print_fmt("Minimization successful", bool_ok_error(res.minimization_successful))
+    print_fmt("No rounding errors", bool_ok_error(res.termination_cause != 'rounding_errors'))
+    print_fmt("Objective function value", round(res.ofv, 1))
+
+    print_header("Parameter uncertainty status")
+    cov_run = model.estimation_steps[-1].cov
+    print_fmt("Covariance step run", bool_yes_no(cov_run))
+
+    if cov_run:
+        condno = round(np.linalg.cond(res.correlation_matrix), 1)
+        print_fmt("Condition number", condno)
+        print_fmt("Condition number < 1000", bool_ok_error(condno < 1000))
+        cor = model.modelfit_results.correlation_matrix
+        hicorr = check_high_correlations(model, cor)
+        print_fmt("No correlations arger than 0.9", bool_ok_error(hicorr.empty))
+
+    print_header("Parameter estimates")
+    pe = res.parameter_estimates
+    if cov_run:
+        se = res.standard_errors
+        rse = se / pe
+        rse.name = 'RSE'
+        df = pd.concat([pe, se, rse], axis=1)
+    else:
+        df = pd.concat([pe], axis=1)
+    print(df)
