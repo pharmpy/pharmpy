@@ -77,13 +77,13 @@ if [ "$TOOL" == 'covsearch' ] || [ "$TOOL" == 'all' ]; then
   pharmpy run covsearch $TESTPATH/mox2.mod \
         --effects 'COVARIATE([CL, MAT, VC], [AGE, WT], EXP);COVARIATE([CL, MAT, VC], [SEX], CAT)' \
         --path $TESTPATH/covsearch/
-  cp_results $TESTPATH/covsearch/results.json > $DEST/covsearch_results.json
+  cp_results $TESTPATH/covsearch/results.json $DEST/covsearch_results.json
 fi
 
-if [ "$TOOL" == 'resmod' ] || [ "$TOOL" == 'all' ]; then
-  cp $TESTDATA/resmod/mox3.* $TESTPATH
-  cp $TESTDATA/resmod/moxo_simulated_resmod.csv $TESTPATH
-  cp $TESTDATA/resmod/mytab $TESTPATH
-  pharmpy run resmod $TESTPATH/mox3.mod --path $TESTPATH/resmod/
-  cp_results $TESTPATH/resmod/results.json $DEST/resmod_results.json
+if [ "$TOOL" == 'ruvsearch' ] || [ "$TOOL" == 'all' ]; then
+  cp $TESTDATA/ruvsearch/mox3.* $TESTPATH
+  cp $TESTDATA/ruvsearch/moxo_simulated_resmod.csv $TESTPATH
+  cp $TESTDATA/ruvsearch/mytab $TESTPATH
+  pharmpy run ruvsearch $TESTPATH/mox3.mod --path $TESTPATH/ruvsearch/
+  cp_results $TESTPATH/ruvsearch/results.json $DEST/ruvsearch_results.json
 fi
