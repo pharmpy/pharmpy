@@ -100,7 +100,6 @@ from pharmpy.modeling.parameter_sampling import (
 from pharmpy.modeling.power_on_ruv import set_power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
-from pharmpy.modeling.update_inits import update_inits
 from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
@@ -193,6 +192,7 @@ from .results import (
 )
 from .summarize_individuals import summarize_individuals, summarize_individuals_count_table
 from .units import get_unit_of
+from .update_inits import update_initial_individual_estimates, update_inits
 
 # Must be set directly, otherwise errors about unused imports
 __all__ = [
@@ -363,6 +363,7 @@ __all__ = [
     'translate_nmtran_time',
     'unfix_parameters',
     'unfix_parameters_to',
+    'update_initial_individual_estimates',
     'update_inits',
     'use_thetas_for_error_stdev',
     'write_csv',

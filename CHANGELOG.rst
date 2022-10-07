@@ -11,6 +11,7 @@ New features
 * 9fd701521 Store input models in tool database
 * Replace best_model with final_model_name and retrieve_final_model
 * a7fbcbfe2 Handle results and databases as input to retrieve_models
+* Add modeling.update_initial_individual_estimates function
 
 Changes
 =======
@@ -34,6 +35,8 @@ Changes
 * sample_parameters_uniformly will need parameter_esimtates as explicit arguments
 * sample_individual_estimates will need individual_estimates and individual_estimates_covariance as explicit arguments
 * calculate_individual_parameter_statistics and calculate_pk_parameters_statistics will need parameter estimates and covariance matrix
+* update_inits need explicit estimates as argument and does not use modelfit_results
+* update_inits does not update initial individual estimates
 
 Bug fixes
 =========

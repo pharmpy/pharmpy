@@ -992,7 +992,7 @@ pharmpy model. See :py:func:`pharmpy.modeling.update_inits`.
 
    model = read_model(path / "pheno.mod")
 
-   update_inits(model, force_individual_estimates=True)
+   update_inits(model, model.modelfit_results.parameter_estimates)
 
 
 ~~~~~~~~~~~~~~~

@@ -42,11 +42,11 @@ def test_update_inits(load_model_for_test, pheno, pheno_path):
     from pharmpy.modeling import update_inits
 
     model = pheno.copy()
-    update_inits(model)
+    update_inits(model, model.modelfit_results.parameter_estimates)
 
     with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
         model = load_model_for_test(pheno_path)
-        update_inits(model)
+        update_inits(model, model.modelfit_results.parameter_estimates)
         model.update_source()
 
 

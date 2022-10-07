@@ -41,6 +41,7 @@ from pharmpy.modeling import (
     transform_etas_boxcox,
     transform_etas_john_draper,
     transform_etas_tdist,
+    update_initial_individual_estimates,
     update_inits,
 )
 from pharmpy.modeling.odes import find_clearance_parameters, find_volume_parameters
@@ -2713,7 +2714,9 @@ def test_update_inits(load_model_for_test, testdata, etas_file, force, file_exis
             f.write(etas_file)
 
         model = load_model_for_test('run1.mod')
-        update_inits(model, force)
+        update_initial_individual_estimates(
+            model, model.modelfit_results.individual_estimates, force=force
+        )
         model.update_source()
 
         assert ('$ETAS FILE=run1_input.phi' in model.model_code) is file_exists
@@ -2734,7 +2737,7 @@ def test_update_inits_move_est(load_model_for_test, pheno_path):
     param_est['IIV_S1'] = 0.0005
     res.parameter_estimates = param_est
 
-    update_inits(model, move_est_close_to_bounds=True)
+    update_inits(model, model.modelfit_results.parameter_estimates, move_est_close_to_bounds=True)
 
     assert model.parameters['OMEGA(1,1)'].init == res.parameter_estimates['OMEGA(1,1)']
     assert model.parameters['IIV_S1'].init == 0.01
@@ -2748,7 +2751,7 @@ def test_update_inits_zero_fix(load_model_for_test, pheno_path):
     res = model.modelfit_results
     param_est = res.parameter_estimates
     del param_est['OMEGA(1,1)']
-    update_inits(model)
+    update_inits(model, model.modelfit_results.parameter_estimates)
     assert model.parameters['OMEGA(1,1)'].init == 0
     assert model.parameters['OMEGA(1,1)'].fix
 
@@ -2758,7 +2761,7 @@ def test_update_inits_zero_fix(load_model_for_test, pheno_path):
     res = model.modelfit_results
     param_est = res.parameter_estimates
     del param_est['OMEGA(1,1)']
-    update_inits(model, move_est_close_to_bounds=True)
+    update_inits(model, model.modelfit_results.parameter_estimates, move_est_close_to_bounds=True)
     assert model.parameters['OMEGA(1,1)'].init == 0
     assert model.parameters['OMEGA(1,1)'].fix
 
@@ -2768,10 +2771,6 @@ def test_update_inits_no_res(load_model_for_test, testdata, tmp_path):
     shutil.copy(testdata / 'nonmem/pheno.dta', tmp_path / 'pheno.dta')
 
     with TemporaryDirectoryChanger(tmp_path):
-        model = load_model_for_test('run1.mod')
-        with pytest.raises(ValueError):
-            update_inits(model)
-
         shutil.copy(testdata / 'nonmem/pheno.ext', tmp_path / 'run1.ext')
         shutil.copy(testdata / 'nonmem/pheno.lst', tmp_path / 'run1.lst')
 
@@ -2782,7 +2781,7 @@ def test_update_inits_no_res(load_model_for_test, testdata, tmp_path):
         )
 
         with pytest.raises(ValueError):
-            update_inits(model)
+            update_inits(model, model.modelfit_results.parameter_estimates)
 
 
 @pytest.mark.parametrize(

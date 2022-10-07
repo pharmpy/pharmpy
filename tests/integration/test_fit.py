@@ -65,7 +65,7 @@ def test_fit_copy(tmp_path, model_count, testdata):
         assert model_count(rundir_1) == 1
 
         model_2 = modeling.copy_model(model_1, 'pheno_copy')
-        modeling.update_inits(model_2)
+        modeling.update_inits(model_2, model_2.modelfit_results.parameter_estimates)
         fit(model_2)
 
         rundir_2 = tmp_path / 'modelfit_dir1'

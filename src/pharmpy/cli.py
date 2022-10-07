@@ -669,7 +669,7 @@ def update_inits(args):
     from pharmpy.modeling import update_inits
 
     model = args.model
-    update_inits(model, args.force_update)
+    update_inits(model, model.modelfit_results.parameter_estimates)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -1721,17 +1721,9 @@ parser_definition = [
                 {
                     'update_inits': {
                         'help': 'Update inits using modelfit results.',
-                        'description': 'Update inits using modelfit results, can be forced.',
+                        'description': 'Update inits using modelfit results.',
                         'func': update_inits,
                         'parents': [args_model_input, args_output],
-                        'args': [
-                            {
-                                'name': '--force_update',
-                                'type': bool,
-                                'default': False,
-                                'help': 'Force update.',
-                            },
-                        ],
                     }
                 },
             ],
