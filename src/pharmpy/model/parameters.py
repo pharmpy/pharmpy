@@ -1,4 +1,7 @@
-from collections.abc import Sequence
+from __future__ import annotations
+
+from collections.abc import Sequence as CollectionsSequence
+from typing import Sequence, Union, overload
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -121,6 +124,9 @@ class Parameter:
         )
 
 
+ParameterQuery = Union[int, str, sympy.Symbol, Parameter]
+
+
 class Parameters(Sequence):
     """An immutable collection of parameters
 
@@ -166,9 +172,9 @@ class Parameters(Sequence):
     def __len__(self):
         return len(self._params)
 
-    def _lookup_param(self, ind):
+    def _lookup_param(self, ind: ParameterQuery):
         if isinstance(ind, sympy.Symbol):
-            ind = ind.name
+            ind = ind.name  # pyright: ignore [reportGeneralTypeIssues]
         if isinstance(ind, str):
             for i, param in enumerate(self._params):
                 if ind == param.name:
@@ -182,15 +188,19 @@ class Parameters(Sequence):
             return i, ind
         return ind, self._params[ind]
 
+    @overload
+    def __getitem__(self, ind: Union[slice, Sequence[ParameterQuery]]) -> Parameters:
+        ...
+
+    @overload
+    def __getitem__(self, ind: ParameterQuery) -> Parameter:
+        ...
+
     def __getitem__(self, ind):
         if isinstance(ind, slice):
-            return Parameters(self._params[ind.start : ind.stop : ind.step])
-        elif not isinstance(ind, str) and isinstance(ind, Sequence):
-            params = []
-            for i in ind:
-                index, param = self._lookup_param(i)
-                params.append(self[index])
-            return Parameters(params)
+            return Parameters(self._params[ind])
+        elif not isinstance(ind, str) and isinstance(ind, CollectionsSequence):
+            return Parameters((self._lookup_param(i)[1] for i in ind))
         else:
             _, param = self._lookup_param(ind)
             return param
