@@ -207,10 +207,10 @@ class Parameters(Sequence):
 
     def __contains__(self, ind):
         try:
-            _, _ = self._lookup_param(ind)
+            self._lookup_param(ind)
+            return True
         except KeyError:
             return False
-        return True
 
     def to_dataframe(self):
         """Create a dataframe with a summary of all Parameters
