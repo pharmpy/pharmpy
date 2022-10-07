@@ -769,7 +769,12 @@ def _summarize_step(model, i):
     else:
         summary_dict['minimization_successful'] = False
 
-    summary_dict['ofv'] = step.ofv
+    if i == -1:
+        i = max(res.ofv_iterations.index.get_level_values(0)) - 1
+    ofv = res.ofv_iterations[
+        i + 1,
+    ].iloc[-1]
+    summary_dict['ofv'] = ofv
     summary_dict['aic'] = calculate_aic(model, res.ofv)
     summary_dict['bic'] = calculate_bic(model, res.ofv)
     summary_dict['runtime_total'] = step.runtime_total

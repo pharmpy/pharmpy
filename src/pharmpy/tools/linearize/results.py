@@ -15,7 +15,6 @@ class LinearizeResults(Results):
 def calculate_results(base_model, linear_model):
     baseres = base_model.modelfit_results
     linearres = linear_model.modelfit_results
-    linearres.evaluation_ofv
     iofv = pd.DataFrame(
         {
             'base': baseres.individual_ofv,
@@ -24,7 +23,7 @@ def calculate_results(base_model, linear_model):
         }
     )
     ofv = pd.DataFrame(
-        {'ofv': [baseres.ofv, linearres.evaluation_ofv, linearres.ofv]},
+        {'ofv': [baseres.ofv, linearres.ofv_iterations.iloc[0], linearres.ofv]},
         index=['base', 'lin_evaluated', 'lin_estimated'],
     )
     iofv1 = base_model.modelfit_results.individual_ofv
