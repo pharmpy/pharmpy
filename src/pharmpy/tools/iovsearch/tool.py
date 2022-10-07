@@ -3,16 +3,10 @@ from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment, Model, Results
-from pharmpy.modeling import (
-    add_iov,
-    copy_model,
-    get_pk_parameters,
-    rank_models,
-    remove_iiv,
-    remove_iov,
-)
+from pharmpy.modeling import add_iov, copy_model, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
 from pharmpy.modeling.results import RANK_TYPES
+from pharmpy.tools import rank_models
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.utils import runtime_type_check, same_arguments_as

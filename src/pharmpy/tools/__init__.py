@@ -7,6 +7,7 @@ __all__ = (
     'predict_influential_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
     'predict_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
     'print_fit_summary',  # pyright: ignore [reportUnsupportedDunderAll]
+    'rank_models',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_final_model',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_models',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -31,6 +32,7 @@ _run_keys = {
     'create_results',
     'fit',
     'print_fit_summary',
+    'rank_models',
     'read_results',
     'retrieve_final_model',
     'retrieve_models',

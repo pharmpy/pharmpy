@@ -42,6 +42,7 @@ Changes
 * Move print_fit_summary to pharmpy.tools
 * Move write_results to pharmpy.tools
 * Move summarize_errors to pharmpy.tools
+* Move rank_models to pharmpy.tools
 
 Bug fixes
 =========

@@ -179,7 +179,6 @@ from .results import (
     calculate_pk_parameters_statistics,
     check_high_correlations,
     check_parameters_near_bounds,
-    rank_models,
     summarize_modelfit_results,
 )
 from .units import get_unit_of
@@ -291,7 +290,6 @@ __all__ = [
     'plot_iofv_vs_iofv',
     'print_model_code',
     'print_model_symbols',
-    'rank_models',
     'read_dataset_from_datainfo',
     'read_model',
     'read_model_from_database',
