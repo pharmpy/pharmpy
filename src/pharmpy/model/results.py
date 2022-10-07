@@ -1,4 +1,5 @@
 import json
+from lzma import open as lzma_open
 from pathlib import Path
 
 import pharmpy
@@ -51,7 +52,7 @@ class Results:
                     fh.write(s)
             else:
                 xz_path = path.parent / (path.name + '.xz')
-                with lzma.open(xz_path, 'w') as fh:
+                with lzma_open(xz_path, 'w') as fh:
                     fh.write(bytes(s, 'utf-8'))
         else:
             return s
