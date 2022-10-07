@@ -4,7 +4,9 @@ from pathlib import Path
 
 
 def path_relative_to(root: Path, path: Path) -> Path:
-    return Path(normpath(relpath(str(path), start=str(root))))
+    # NOTE A ValueError will be raised on Windows if path and root are on
+    # different drives.
+    return Path(normpath(relpath(str(path_absolute(path)), start=str(path_absolute(root)))))
 
 
 def path_absolute(path: Path) -> Path:
