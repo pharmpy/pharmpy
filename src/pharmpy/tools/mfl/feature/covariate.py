@@ -1,8 +1,8 @@
 from itertools import product
-from typing import Iterable, List, Tuple, Union
+from typing import Iterable, List, Tuple, TypeVar, Union
 
 from pharmpy.model import Model
-from pharmpy.modeling.covariate_effect import add_covariate_effect
+from pharmpy.modeling.covariate_effect import EffectType, OperationType, add_covariate_effect
 from pharmpy.modeling.expressions import get_individual_parameters, get_pk_parameters
 
 from ..statement.definition import Definition
@@ -17,9 +17,16 @@ from ..statement.feature.symbols import Symbol, Wildcard
 from ..statement.statement import Statement
 from .feature import Feature
 
-EffectLiteral = Tuple[str, str, str, str]
-EffectSpecFeature = Union[str, Tuple[str, ...]]
-Spec = Tuple[EffectSpecFeature, EffectSpecFeature, EffectSpecFeature, EffectSpecFeature]
+T = TypeVar('T')
+
+EffectLiteral = Tuple[str, str, EffectType, OperationType]
+EffectSpecFeature = Union[T, Tuple[T, ...]]
+Spec = Tuple[
+    EffectSpecFeature[str],
+    EffectSpecFeature[str],
+    EffectSpecFeature[EffectType],
+    EffectSpecFeature[OperationType],
+]
 
 all_continuous_covariate_effects = (
     'lin',
@@ -35,7 +42,11 @@ all_covariate_effects = all_continuous_covariate_effects + all_categorical_covar
 
 def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]:
     for args in parse_spec(spec(model, statements)):
-        yield ('COVARIATE', *args), lambda model: add_covariate_effect(model, *args)
+
+        def fn(model):
+            add_covariate_effect(model, *args)
+
+        yield ('COVARIATE', *args), fn
 
 
 def spec(model: Model, statements: Iterable[Statement]) -> Iterable[Spec]:
