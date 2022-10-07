@@ -128,7 +128,7 @@ The ``cwres_models`` table contains information on the residual error models, su
     :hide-code:
 
     from pharmpy.results import read_results
-    res = read_results('tests/testdata/results/resmod_results.json')
+    res = read_results('tests/testdata/results/ruvsearch_results.json')
     res.cwres_models
 
 The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
