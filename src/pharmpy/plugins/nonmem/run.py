@@ -39,8 +39,6 @@ def execute_model(model, db):
             args, stdin=subprocess.DEVNULL, stderr=err, stdout=out, cwd=str(path)
         )
 
-    (path / 'results.lst').rename((path / basepath).with_suffix('.lst'))
-
     metadata = {
         'plugin': 'nonmem',
         'path': str(path),
@@ -56,20 +54,23 @@ def execute_model(model, db):
     }
 
     with database.transaction(model) as txn:
-
         txn.store_model()
-        txn.store_local_file((path / basepath).with_suffix('.lst'))
-        txn.store_local_file((path / basepath).with_suffix('.ext'))
-        txn.store_local_file((path / basepath).with_suffix('.phi'))
-        txn.store_local_file((path / basepath).with_suffix('.cov'))
-        txn.store_local_file((path / basepath).with_suffix('.cor'))
-        txn.store_local_file((path / basepath).with_suffix('.coi'))
+        if Path(path / 'results.lst').is_file() or Path(path / f'{model.name}.ext').is_file():
+            (path / 'results.lst').rename((path / basepath).with_suffix('.lst'))
+            txn.store_local_file((path / basepath).with_suffix('.lst'))
+            txn.store_local_file((path / basepath).with_suffix('.ext'))
+            txn.store_local_file((path / basepath).with_suffix('.phi'))
+            txn.store_local_file((path / basepath).with_suffix('.cov'))
+            txn.store_local_file((path / basepath).with_suffix('.cor'))
+            txn.store_local_file((path / basepath).with_suffix('.coi'))
 
-        for rec in model.internals.control_stream.get_records('TABLE'):
-            txn.store_local_file(path / rec.path)
-
-        txn.store_local_file(stdout)
-        txn.store_local_file(stderr)
+            for rec in model.internals.control_stream.get_records('TABLE'):
+                txn.store_local_file(path / rec.path)
+            txn.store_local_file(stdout)
+            txn.store_local_file(stderr)
+        else:
+            for file in path.glob('*'):
+                txn.store_local_file(file)
 
         plugin_path = path / 'nonmem.json'
         with open(plugin_path, 'w') as f:
