@@ -162,7 +162,7 @@ def _get_prop_init(model):
         return (dv_min / 2) ** 2
 
 
-def set_proportional_error_model(model, data_trans=None, zero_protection=False):
+def set_proportional_error_model(model, data_trans=None, zero_protection=True):
     r"""Set a proportional error model. Initial estimate for new sigma is 0.09.
 
     The error function being applied depends on the data transformation.
@@ -196,14 +196,26 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
     >>> model = remove_error_model(load_example_model("pheno"))
     >>> set_proportional_error_model(model)    # doctest: +ELLIPSIS
     <...>
-    >>> model.statements.find_assignment("Y")
-    Y = F⋅εₚ + F
+    >>> model.statements.after_odes
+        A_CENTRAL
+        ─────────
+    F =     S₁
+    W = F
+               ⎧2.225e-16  for F = 0
+               ⎨
+    IPREDADJ = ⎩    F      otherwise
+    Y = F + IPREDADJ⋅εₚ
+    IPRED = F
+    IRES = DV - IPRED
+            IRES
+            ────
+    IWRES =  W
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
     >>> set_proportional_error_model(
     ...     model,
-    ...     data_trans="log(Y)", zero_protection=True
+    ...     data_trans="log(Y)"
     ... )    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.after_odes
