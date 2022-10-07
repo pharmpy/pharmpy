@@ -38,7 +38,8 @@ def get_modelfit_results(model, path):
         from pharmpy.plugins.nlmixr import parse_modelfit_results
 
         res = parse_modelfit_results(model, path)
-    model._modelfit_results = res
+
+    model.modelfit_results = res
 
 
 class LocalDirectoryDatabase(NonTransactionalModelDatabase):
