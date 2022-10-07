@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import importlib.util
 import warnings
-from typing import Callable, Dict, List, Union
+from typing import Dict, List, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, ModelfitResultsError
-from pharmpy.modeling.ml import predict_influential_individuals, predict_outliers
+
+from .ml import predict_influential_individuals, predict_outliers
 
 
 def summarize_individuals(models: List[Model]) -> pd.DataFrame:
@@ -44,7 +45,7 @@ def summarize_individuals(models: List[Model]) -> pd.DataFrame:
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import fit
+    >>> from pharmpy.tools import fit, summarize_individuals
     >>> fit(model)  # doctest: +SKIP
     <Pharmpy model object pheno>
     >>> from pharmpy.tools import run_tool # doctest: +SKIP
@@ -105,11 +106,9 @@ def outlier_count(model: Model) -> Union[pd.Series, float]:
         return groupedByID['CWRES'].agg(outlier_count_func)
 
 
-def _predicted(
-    predict: Callable[[Model], pd.DataFrame], model: Model, column: str
-) -> Union[pd.Series, float]:
+def _predicted(predict, model: Model, column: str) -> Union[pd.Series, float]:
     try:
-        predicted = predict(model)
+        predicted = predict(model, model.modelfit_results)
     except ModelfitResultsError:
         return np.nan
     except ImportError:

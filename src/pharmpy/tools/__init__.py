@@ -3,6 +3,9 @@ from threading import Lock
 __all__ = (
     'create_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'fit',  # pyright: ignore [reportUnsupportedDunderAll]
+    'predict_influential_individuals',  # pyright: ignore [reportUnsupportedDunderAll]
+    'predict_influential_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
+    'predict_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_final_model',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_models',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -14,6 +17,8 @@ __all__ = (
     'run_modelsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_ruvsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_tool',  # pyright: ignore [reportUnsupportedDunderAll]
+    'summarize_individuals',  # pyright: ignore [reportUnsupportedDunderAll]
+    'summarize_individuals_count_table',  # pyright: ignore [reportUnsupportedDunderAll]
 )
 
 
@@ -26,6 +31,14 @@ _run_keys = {
     'retrieve_final_model',
     'retrieve_models',
     'run_tool',
+}
+
+_func_keys = {
+    'predict_outliers',
+    'predict_influential_individuals',
+    'predict_influential_outliers',
+    'summarize_individuals',
+    'summarize_individuals_count_table',
 }
 
 _tool_cache = {}
@@ -44,6 +57,10 @@ def __getattr__(key):
 
     if key in _run_keys:
         module = importlib.import_module('.run', __name__)
+        return getattr(module, key)
+
+    if key in _func_keys:
+        module = importlib.import_module('.funcs', __name__)
         return getattr(module, key)
 
     assert key[:4] == 'run_'

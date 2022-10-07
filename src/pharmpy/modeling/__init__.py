@@ -61,11 +61,6 @@ from pharmpy.modeling.math import (
     calculate_se_from_cov,
     calculate_se_from_inf,
 )
-from pharmpy.modeling.ml import (
-    predict_influential_individuals,
-    predict_influential_outliers,
-    predict_outliers,
-)
 from pharmpy.modeling.odes import (
     add_individual_parameter,
     add_lag_time,
@@ -190,7 +185,6 @@ from .results import (
     summarize_modelfit_results,
     write_results,
 )
-from .summarize_individuals import summarize_individuals, summarize_individuals_count_table
 from .units import get_unit_of
 from .update_inits import update_initial_individual_estimates, update_inits
 
@@ -298,9 +292,6 @@ __all__ = [
     'omit_data',
     'plot_individual_predictions',
     'plot_iofv_vs_iofv',
-    'predict_influential_individuals',
-    'predict_influential_outliers',
-    'predict_outliers',
     'print_fit_summary',
     'print_model_code',
     'print_model_symbols',
@@ -355,8 +346,6 @@ __all__ = [
     'split_joint_distribution',
     'summarize_errors',
     'summarize_modelfit_results',
-    'summarize_individuals',
-    'summarize_individuals_count_table',
     'transform_etas_boxcox',
     'transform_etas_john_draper',
     'transform_etas_tdist',

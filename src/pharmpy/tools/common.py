@@ -3,14 +3,9 @@ from typing import Any
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.modeling import (
-    rank_models,
-    summarize_errors,
-    summarize_individuals,
-    summarize_individuals_count_table,
-    summarize_modelfit_results,
-    update_inits,
-)
+from pharmpy.modeling import rank_models, summarize_errors, summarize_modelfit_results, update_inits
+
+from .funcs import summarize_individuals, summarize_individuals_count_table
 
 DataFrame = Any  # NOTE should be pd.DataFrame but we want lazy loading
 

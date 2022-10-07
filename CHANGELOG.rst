@@ -37,6 +37,8 @@ Changes
 * calculate_individual_parameter_statistics and calculate_pk_parameters_statistics will need parameter estimates and covariance matrix
 * update_inits need explicit estimates as argument and does not use modelfit_results
 * update_inits does not update initial individual estimates
+* Move predict_* functions from modeling to pharmpy.tools
+* Move summarize_individuals and summarize_individuals_count_table to pharmpy.tools
 
 Bug fixes
 =========

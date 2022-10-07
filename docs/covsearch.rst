@@ -290,7 +290,7 @@ estimation time, and parameter estimates, you can look at the
 
 A summary table of predicted influential individuals and outliers can be seen
 in ``summary_individuals_count``. See
-:py:func:`pharmpy.modeling.summarize_individuals_count_table` for information
+:py:func:`pharmpy.tools.summarize_individuals_count_table` for information
 on the content of this table.
 
 .. pharmpy-execute::
@@ -298,7 +298,7 @@ on the content of this table.
     res.summary_individuals_count
 
 You can see different individual statistics in ``summary_individuals``.  See
-:py:func:`pharmpy.modeling.summarize_individuals` for information on the
+:py:func:`pharmpy.tools.summarize_individuals` for information on the
 content of this table.
 
 .. pharmpy-execute::

@@ -25,11 +25,10 @@ from pharmpy.modeling import (
     set_initial_estimates,
     set_power_on_ruv,
     summarize_errors,
-    summarize_individuals,
-    summarize_individuals_count_table,
     summarize_modelfit_results,
 )
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
+from pharmpy.tools import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.utils import runtime_type_check, same_arguments_as
