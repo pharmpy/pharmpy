@@ -104,7 +104,7 @@ def test_create_metadata_common(tmp_path):
 def test_retrieve_models(testdata):
     tool_database_path = testdata / 'results' / 'tool_databases' / 'modelsearch'
 
-    model_to_retrieve = ['modelsearch_candidate1']
+    model_to_retrieve = ['modelsearch_run1']
 
     models = retrieve_models(tool_database_path, names=model_to_retrieve)
     assert len(models) == 1
@@ -112,10 +112,10 @@ def test_retrieve_models(testdata):
 
     model_names_all = [
         'input_model',
-        'modelsearch_candidate1',
-        'modelsearch_candidate2',
-        'modelsearch_candidate3',
-        'modelsearch_candidate4',
+        'modelsearch_run1',
+        'modelsearch_run2',
+        'modelsearch_run3',
+        'modelsearch_run4',
     ]
 
     models = retrieve_models(tool_database_path)
@@ -166,10 +166,10 @@ def test_retrieve_final_model(testdata):
 
     res = read_results(results_json_testpath)
     final_model = retrieve_final_model(res)
-    assert final_model.name == 'modelsearch_candidate2'
+    assert final_model.name == 'modelsearch_run2'
 
     results_json_none = results_json_testpath.replace(
-        '"final_model_name": "modelsearch_candidate2"', '"final_model_name": null'
+        '"final_model_name": "modelsearch_run2"', '"final_model_name": null'
     )
     res = read_results(results_json_none)
     with pytest.raises(ValueError, match='Attribute \'final_model_name\' is None'):

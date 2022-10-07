@@ -3,7 +3,7 @@
     {
       "args": [
         "/opt/nm744/run/nmfe74",
-        "modelsearch_candidate2.mod",
+        "modelsearch_run2.mod",
         "results.lst"
       ],
       "returncode": 0
