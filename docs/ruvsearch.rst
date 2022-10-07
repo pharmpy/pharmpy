@@ -142,7 +142,7 @@ start model, and final ranking:
 
 To see information about the actual model runs, such as minimization status, estimation time, and parameter estimates,
 you can look at the ``summary_models`` table. The table is generated with
-:py:func:`pharmpy.modeling.summarize_modelfit_results`.
+:py:func:`pharmpy.tools.summarize_modelfit_results`.
 
 .. pharmpy-execute::
     :hide-code:

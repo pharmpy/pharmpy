@@ -179,7 +179,6 @@ from .results import (
     calculate_pk_parameters_statistics,
     check_high_correlations,
     check_parameters_near_bounds,
-    summarize_modelfit_results,
 )
 from .units import get_unit_of
 from .update_inits import update_initial_individual_estimates, update_inits
@@ -338,7 +337,6 @@ __all__ = [
     'simplify_expression',
     'solve_ode_system',
     'split_joint_distribution',
-    'summarize_modelfit_results',
     'transform_etas_boxcox',
     'transform_etas_john_draper',
     'transform_etas_tdist',

@@ -3,8 +3,8 @@ from typing import Any
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.modeling import summarize_modelfit_results, update_inits
-from pharmpy.tools import rank_models, summarize_errors
+from pharmpy.modeling import update_inits
+from pharmpy.tools import rank_models, summarize_errors, summarize_modelfit_results
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 

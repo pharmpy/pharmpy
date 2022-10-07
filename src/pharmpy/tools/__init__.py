@@ -22,6 +22,7 @@ __all__ = (
     'summarize_errors',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_individuals',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_individuals_count_table',  # pyright: ignore [reportUnsupportedDunderAll]
+    'summarize_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'write_results',  # pyright: ignore [reportUnsupportedDunderAll]
 )
 
@@ -38,6 +39,7 @@ _run_keys = {
     'retrieve_models',
     'run_tool',
     'summarize_errors',
+    'summarize_modelfit_results',
     'write_results',
 }
 

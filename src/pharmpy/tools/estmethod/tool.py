@@ -3,7 +3,7 @@ from pathlib import Path
 import pharmpy.tools.estmethod.algorithms as algorithms
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Results
-from pharmpy.modeling import summarize_modelfit_results
+from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import summarize_tool
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow

@@ -6,8 +6,13 @@ from typing import List, Optional, Union
 from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
 from pharmpy.model import Model, Results
-from pharmpy.modeling import add_allometry, get_pk_parameters, summarize_modelfit_results
-from pharmpy.tools import summarize_errors, summarize_individuals, summarize_individuals_count_table
+from pharmpy.modeling import add_allometry, get_pk_parameters
+from pharmpy.tools import (
+    summarize_errors,
+    summarize_individuals,
+    summarize_individuals_count_table,
+    summarize_modelfit_results,
+)
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow

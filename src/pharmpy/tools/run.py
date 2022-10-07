@@ -485,7 +485,8 @@ def summarize_errors(models):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
+    >>> from pharmpy.modeling import load_example_model
+    >>> from pharmpy.tools import summarize_errors
     >>> model = load_example_model("pheno")
     >>> summarize_errors(model)      # doctest: +SKIP
     """
@@ -544,7 +545,7 @@ def rank_models(
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
+    >>> from pharmpy.modeling import load_example_model
     >>> from pharmpy.tools import rank_models
     >>> model_1 = load_example_model("pheno")
     >>> model_2 = load_example_model("pheno_linear")
@@ -656,3 +657,133 @@ def _get_rankval(model, rank_type, bic_type):
         return calculate_bic(model, model.modelfit_results.ofv, bic_type)
     else:
         raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
+
+
+def summarize_modelfit_results(models, include_all_estimation_steps=False):
+    """Summarize results of model runs
+
+    Summarize different results after fitting a model, includes runtime, ofv,
+    and parameter estimates (with errors). If include_all_estimation_steps is False,
+    only the last estimation step will be included (note that in that case, the
+    minimization_successful value will be referring to the last estimation step, if
+    last step is evaluation it will go backwards until it finds an estimation step
+    that wasn't an evaluation).
+
+    Parameters
+    ----------
+    models : list, Model
+        List of models or single model
+    include_all_estimation_steps : bool
+        Whether to include all estimation steps, default is False
+
+    Return
+    ------
+    pd.DataFrame
+        A DataFrame of modelfit results with model name and estmation step as index.
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model
+    >>> from pharmpy.tools import summarize_modelfit_results
+    >>> model = load_example_model("pheno")
+    >>> summarize_modelfit_results(model) # doctest: +ELLIPSIS
+                     description  minimization_successful ...        ofv  ... runtime_total  ...
+    pheno PHENOBARB SIMPLE MODEL                     True ... 586.276056  ...           4.0  ...
+    """
+    # FIXME: add option for bic type?
+    if isinstance(models, Model):
+        models = [models]
+
+    summaries = []
+
+    for model in models:
+        if model.modelfit_results:
+            summary = _get_model_result_summary(model, include_all_estimation_steps)
+            summary.insert(0, 'description', model.description)
+            summaries.append(summary)
+        else:
+            if include_all_estimation_steps:
+                for i, est in enumerate(model.estimation_steps):
+                    index = pd.MultiIndex.from_tuples(
+                        [(model.name, i + 1)], names=['model', 'step']
+                    )
+                    if est.evaluation:
+                        run_type = 'evaluation'
+                    else:
+                        run_type = 'estimation'
+                    empty_df = pd.DataFrame({'run_type': run_type}, index=index)
+                    summaries.append(empty_df)
+            else:
+                empty_df = pd.DataFrame(index=[model.name])
+                summaries.append(empty_df)
+
+    df = pd.concat(summaries)
+
+    return df
+
+
+def _get_model_result_summary(model, include_all_estimation_steps=False):
+    if not include_all_estimation_steps:
+        summary_dict = _summarize_step(model, -1)
+        index = pd.Index([model.name], name='model')
+        summary_df = pd.DataFrame(summary_dict, index=index)
+    else:
+        summary_dicts = []
+        tuples = []
+        for i in range(len(model.estimation_steps)):
+            summary_dict = _summarize_step(model, i)
+            is_evaluation = model.estimation_steps[i].evaluation
+            if is_evaluation:
+                run_type = 'evaluation'
+            else:
+                run_type = 'estimation'
+            summary_dict = {'run_type': run_type, **summary_dict}
+            summary_dicts.append(summary_dict)
+            tuples.append((model.name, i + 1))
+        index = pd.MultiIndex.from_tuples(tuples, names=['model', 'step'])
+        summary_df = pd.DataFrame(summary_dicts, index=index)
+
+    log_df = model.modelfit_results.log.to_dataframe()
+
+    no_of_errors = len(log_df[log_df['category'] == 'ERROR'])
+    no_of_warnings = len(log_df[log_df['category'] == 'WARNING'])
+
+    minimization_idx = summary_df.columns.get_loc('minimization_successful')
+    summary_df.insert(loc=minimization_idx + 1, column='errors_found', value=no_of_errors)
+    summary_df.insert(loc=minimization_idx + 2, column='warnings_found', value=no_of_warnings)
+
+    return summary_df
+
+
+def _summarize_step(model, i):
+    res = model.modelfit_results
+    summary_dict = dict()
+
+    if i >= 0:
+        step = res[i]
+    else:
+        step = res
+
+    if step.minimization_successful is not None:
+        summary_dict['minimization_successful'] = step.minimization_successful
+    else:
+        summary_dict['minimization_successful'] = False
+
+    summary_dict['ofv'] = step.ofv
+    summary_dict['aic'] = calculate_aic(model, res.ofv)
+    summary_dict['bic'] = calculate_bic(model, res.ofv)
+    summary_dict['runtime_total'] = step.runtime_total
+    summary_dict['estimation_runtime'] = step.estimation_runtime
+
+    pe = step.parameter_estimates
+    ses = step.standard_errors
+    rses = step.relative_standard_errors
+
+    for param in pe.index:
+        summary_dict[f'{param}_estimate'] = pe[param]
+        if ses is not None:
+            summary_dict[f'{param}_SE'] = ses[param]
+        if rses is not None:
+            summary_dict[f'{param}_RSE'] = rses[param]
+
+    return summary_dict
