@@ -180,7 +180,6 @@ from .results import (
     check_high_correlations,
     check_parameters_near_bounds,
     rank_models,
-    summarize_errors,
     summarize_modelfit_results,
 )
 from .units import get_unit_of
@@ -341,7 +340,6 @@ __all__ = [
     'simplify_expression',
     'solve_ode_system',
     'split_joint_distribution',
-    'summarize_errors',
     'summarize_modelfit_results',
     'transform_etas_boxcox',
     'transform_etas_john_draper',

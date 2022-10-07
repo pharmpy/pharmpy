@@ -41,6 +41,7 @@ Changes
 * Move summarize_individuals and summarize_individuals_count_table to pharmpy.tools
 * Move print_fit_summary to pharmpy.tools
 * Move write_results to pharmpy.tools
+* Move summarize_errors to pharmpy.tools
 
 Bug fixes
 =========

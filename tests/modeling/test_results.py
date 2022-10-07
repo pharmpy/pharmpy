@@ -15,7 +15,6 @@ from pharmpy.modeling import (
     check_parameters_near_bounds,
     rank_models,
     set_iiv_on_ruv,
-    summarize_errors,
     summarize_modelfit_results,
 )
 from pharmpy.utils import TemporaryDirectoryChanger
@@ -240,36 +239,6 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
         assert summary.loc['pheno_no_header']['warnings_found'] == 1
         assert summary.loc['pheno_rounding_error']['errors_found'] == 2
         assert summary.loc['pheno_rounding_error']['warnings_found'] == 0
-
-
-def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):
-    with TemporaryDirectoryChanger(tmp_path):
-        model = load_model_for_test(pheno_path)
-        shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
-
-        error_path = testdata / 'nonmem' / 'errors'
-
-        shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_no_header.mod')
-        shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
-        shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
-        model_no_header = load_model_for_test('pheno_no_header.mod')
-        model_no_header.datainfo = model_no_header.datainfo.derive(path=tmp_path / 'pheno_data.csv')
-
-        shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
-        shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
-        shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
-        model_rounding_error = load_model_for_test('pheno_rounding_error.mod')
-        model_rounding_error.datainfo = model_rounding_error.datainfo.derive(
-            path=tmp_path / 'pheno_data.csv'
-        )
-
-        models = [model, model_no_header, model_rounding_error]
-        summary = summarize_errors(models)
-
-        assert 'pheno_real' not in summary.index.get_level_values('model')
-        assert len(summary.loc[('pheno_no_header', 'WARNING')]) == 1
-        assert len(summary.loc[('pheno_no_header', 'ERROR')]) == 2
-        assert len(summary.loc[('pheno_rounding_error', 'ERROR')]) == 2
 
 
 class DummyModel:

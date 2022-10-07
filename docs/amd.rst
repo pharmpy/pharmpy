@@ -397,7 +397,7 @@ See :py:func:`pharmpy.tools.summarize_individuals_count_table` for information o
     res.summary_individuals_count
 
 Finally, you can see a summary of any errors and warnings of the final selected model in ``summary_errors``.
-See :py:func:`pharmpy.modeling.summarize_errors` for information on the content of this table.
+See :py:func:`pharmpy.tools.summarize_errors` for information on the content of this table.
 
 .. pharmpy-execute::
     :hide-code:

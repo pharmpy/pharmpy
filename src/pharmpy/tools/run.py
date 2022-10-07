@@ -457,3 +457,50 @@ def write_results(results, path, lzma=False, csv=False):
         results.to_csv(path)
     else:
         results.to_json(path, lzma=lzma)
+
+
+def summarize_errors(models):
+    """Summarize errors and warnings from one or multiple model runs.
+
+    Summarize the errors and warnings found after running the model/models.
+
+    Parameters
+    ----------
+    models : list, Model
+        List of models or single model
+
+    Return
+    ------
+    pd.DataFrame
+        A DataFrame of errors with model name, category (error or warning), and an int as index,
+        an empty DataFrame if there were no errors or warnings found.
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
+    >>> model = load_example_model("pheno")
+    >>> summarize_errors(model)      # doctest: +SKIP
+    """
+    # FIXME: have example with errors
+    if isinstance(models, Model):
+        models = [models]
+
+    idcs, rows = [], []
+
+    for model in models:
+        res = model.modelfit_results
+        if res and len(res.log.log) > 0:
+            for i, entry in enumerate(res.log.log):
+                idcs.append((model.name, entry.category, i))
+                rows.append([entry.time, entry.message])
+
+    index_names = ['model', 'category', 'error_no']
+    col_names = ['time', 'message']
+    index = pd.MultiIndex.from_tuples(idcs, names=index_names)
+
+    if rows:
+        df = pd.DataFrame(rows, columns=col_names, index=index)
+    else:
+        df = pd.DataFrame(columns=col_names, index=index)
+
+    return df.sort_index()

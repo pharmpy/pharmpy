@@ -306,7 +306,7 @@ content of this table.
     res.summary_individuals
 
 You can see a summary of different errors and warnings in ``summary_errors``.
-See :py:func:`pharmpy.modeling.summarize_errors` for information on the content
+See :py:func:`pharmpy.tools.summarize_errors` for information on the content
 of this table.
 
 .. pharmpy-execute::
