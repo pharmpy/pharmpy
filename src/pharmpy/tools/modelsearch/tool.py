@@ -1,7 +1,9 @@
 from typing import Optional, Union
 
 import pharmpy.tools.modelsearch.algorithms as algorithms
+from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
+from pharmpy.modeling import summarize_modelfit_results
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools.common import create_results
 from pharmpy.utils import runtime_type_check, same_arguments_as
@@ -96,6 +98,11 @@ def post_process(rank_type, cutoff, *models):
     res = create_results(
         ModelSearchResults, input_model, input_model, res_models, rank_type, cutoff
     )
+
+    summary_input = summarize_modelfit_results(input_model)
+    summary_candidates = summarize_modelfit_results(res_models)
+
+    res.summary_models = pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step'])
 
     return res
 
