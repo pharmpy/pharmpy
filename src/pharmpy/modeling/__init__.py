@@ -182,7 +182,6 @@ from .results import (
     rank_models,
     summarize_errors,
     summarize_modelfit_results,
-    write_results,
 )
 from .units import get_unit_of
 from .update_inits import update_initial_individual_estimates, update_inits
@@ -355,7 +354,6 @@ __all__ = [
     'use_thetas_for_error_stdev',
     'write_csv',
     'write_model',
-    'write_results',
     'unconstrain_parameters',
     'undrop_columns',
 ]

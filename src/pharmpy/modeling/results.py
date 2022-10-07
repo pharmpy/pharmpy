@@ -1053,25 +1053,3 @@ def _is_near_target(x, target, zero_limit, significant_digits):
         return round_to_n_sigdig(x, n=significant_digits) == round_to_n_sigdig(
             target, n=significant_digits
         )
-
-
-def write_results(results, path, lzma=False, csv=False):
-    """Write results object to json (or csv) file
-
-    Note that the csv-file cannot be read into a results object again.
-
-    Parameters
-    ----------
-    results : Results
-        Pharmpy results object
-    path : Path
-        Path to results file
-    lzma : bool
-        True for lzma compression. Not applicable to csv file
-    csv : bool
-        Save as csv file
-    """
-    if csv:
-        results.to_csv(path)
-    else:
-        results.to_json(path, lzma=lzma)

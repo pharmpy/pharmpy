@@ -435,3 +435,25 @@ def print_fit_summary(model):
     else:
         df = pd.concat([pe], axis=1)
     print(df)
+
+
+def write_results(results, path, lzma=False, csv=False):
+    """Write results object to json (or csv) file
+
+    Note that the csv-file cannot be read into a results object again.
+
+    Parameters
+    ----------
+    results : Results
+        Pharmpy results object
+    path : Path
+        Path to results file
+    lzma : bool
+        True for lzma compression. Not applicable to csv file
+    csv : bool
+        Save as csv file
+    """
+    if csv:
+        results.to_csv(path)
+    else:
+        results.to_json(path, lzma=lzma)
