@@ -268,11 +268,13 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     def _get_last_est(self, attr):
         est_steps = self.model.estimation_steps
         # Find last estimation
-        for i in reversed(range(len(self))):
-            if not est_steps[i].evaluation and getattr(self[i], attr) is not None:
-                return getattr(self[i], attr)
+        for step, result in zip(reversed(est_steps), reversed(self)):
+            if not step.evaluation:
+                value = getattr(result, attr, None)
+                if value is not None:
+                    return value
         # If all steps were evaluation the last evaluation step is relevant
-        return getattr(self[-1], attr)
+        return getattr(self[-1], attr, None)
 
     @property
     def parameter_estimates(self):
