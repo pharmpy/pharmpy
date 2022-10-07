@@ -295,7 +295,7 @@ class Model(pharmpy.model.Model):
                     not datapath.exists() or datapath.is_file()
                 ), f'input path change, but no file exists at target {str(datapath)}'
                 data_record = self.internals.control_stream.get_records('DATA')[0]
-                parent_path = Path('.') if path is None else path.parent
+                parent_path = Path.cwd() if path is None else path.parent
                 data_record.filename = str(path_relative_to(parent_path, datapath))
 
         update_sizes(self)
