@@ -83,7 +83,7 @@ Check code formatting
 
 Pharmpy use the ``black`` code formatter, the ``flake8`` linter and ``isort`` for formatting of imports. Formatting and linting can be run separately with::
 
-    tox -e check
+    tox -e format
 
 Developers can format the code any way they want while writing code and the formatter will automatically reformat.
 
@@ -96,11 +96,11 @@ To run all unit tests for one python version::
 
 To run a particular unit test file::
 
-    tox -e py39 -- pytest test_parameters.py
+    tox -e py39 -- tests/modeling/test_parameters.py
 
 To run a particular test function in a particular test file::
 
-    tox -e py39 -- pytest test_parameters.py::test_myfunc
+    tox -e py39 -- tests/modeling/test_parameters.py::test_get_thetas
 
 Build and test the documentation
 ********************************
@@ -130,7 +130,7 @@ To run all integration tests::
 
 To run a particular test function in a particular integration test file::
 
-    tox -e integration -- pytest tests/integration/test_modelsearch.py -k test_summary_individuals
+    tox -e integration -- tests/integration/test_modelsearch.py -k test_summary_individuals
 
 Build a usable virtual environment
 **********************************
@@ -150,7 +150,7 @@ Contributors should employ the standard pull request workflow. The steps in shor
 
 1. Create a local branch for the feature you will be working on
 2. Write the code and unit tests
-3. Run ``tox -e check``
+3. Run ``tox -e format``
 4. Commit changes
 5. Push the branch to the fork: ``git push origin <name_of_branch>``
 6. Create a pull request in the Pharmpy github page
@@ -160,7 +160,7 @@ Releasing Pharmpy and documentation
 ###################################
 
 .. note::
-    This information is for maintaners.
+    This information is for maintainers.
 
 A deployment workflow is setup on github actions to automatically release Pharmpy to PyPI and the documentation to pharmpy.github.io. The workflow also triggers an automatic update of pharmr. This workflow will be triggered when pushing a version tag, i.e. a tag starting with 'v'.
 
