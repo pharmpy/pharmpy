@@ -810,6 +810,7 @@ def get_cmt(model):
         dose_cmt = 1
     cmt = get_evid(model)
     cmt = cmt.replace({1: dose_cmt, 2: 0, 3: 0, 4: dose_cmt})  # Only consider dose/non-dose
+    cmt.name = "CMT"
     return cmt
 
 
