@@ -535,7 +535,12 @@ def get_model_covariates(model, strings=False):
     y = model.statements.find_assignment(model.dependent_variable)
     y_deps = model.statements.error.dependencies(y)
 
-    covs = list(datasymbs.intersection(ode_deps | y_deps))
+    covs = datasymbs.intersection(ode_deps | y_deps)
+
+    # Disallow ID from being a covariate
+    covs = covs - {sympy.Symbol(model.datainfo.id_column.name)}
+
+    covs = list(covs)
     covs = sorted(covs, key=lambda x: x.name)  # sort to make order deterministic
     if strings:
         covs = [str(x) for x in covs]
