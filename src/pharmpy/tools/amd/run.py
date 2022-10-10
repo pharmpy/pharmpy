@@ -28,6 +28,7 @@ def run_amd(
     continuous=None,
     allometric_variable=None,
     occasion=None,
+    path=None,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -35,7 +36,7 @@ def run_amd(
 
     Parameters
     ----------
-    input : Model
+    input : Model or Path
         Read model object/Path to a dataset
     modeltype : str
         Type of model to build. Either 'pk_oral' or 'pk_iv'
@@ -57,8 +58,10 @@ def run_amd(
         List of continuous covariates
     allometric_variable: str or Symbol
         Variable to use for allometry
-    occasion: str
+    occasion : str
         Name of occasion column
+    path : str or Path
+        Path to run AMD in
 
     Returns
     -------
@@ -115,7 +118,7 @@ def run_amd(
         else:
             search_space = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
 
-    db = default_tool_database(toolname='amd')
+    db = default_tool_database(toolname='amd', path=path)
     run_subfuncs = dict()
     for section in order:
         if section == 'structural':

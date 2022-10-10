@@ -228,6 +228,26 @@ def run_estmethod(args):
     run_tool('estmethod', methods=methods, solvers=solvers, model=args.model)
 
 
+def run_amd(args):
+    from pharmpy.tools import run_amd
+
+    run_amd(
+        args.input_path,
+        modeltype=args.modeltype,
+        cl_init=args.cl_init,
+        vc_init=args.vc_init,
+        mat_init=args.mat_init,
+        search_space=args.search_space,
+        lloq=args.lloq,
+        order=args.order,
+        categorical=args.categorical,
+        continuous=args.continuous,
+        allometric_variable=args.allometric_variable,
+        occasion=args.occasion,
+        path=args.path,
+    )
+
+
 def data_write(args):
     """Subcommand to write a dataset."""
     try:
@@ -1231,6 +1251,91 @@ parser_definition = [
                                 '(ADVAN15), LSODA (ADVAN13) and LSODI (ADVAN9), '
                                 '. To test all write "all". '
                                 'Default is to use the solver of input model.',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'amd': {
+                        'help': 'Use Automatic Model Development tool to select PK model',
+                        'func': run_amd,
+                        'args': [
+                            {
+                                'name': 'input_path',
+                                'type': str,
+                                'help': 'Path to output directory',
+                            },
+                            {
+                                'name': '--modeltype',
+                                'type': str,
+                                'default': 'pk_oral',
+                                'help': 'Type of model to build. Either "pk_oral" or "pk_iv"',
+                            },
+                            {
+                                'name': '--cl_init',
+                                'type': float,
+                                'default': 0.01,
+                                'help': 'Initial estimate for the population clearance',
+                            },
+                            {
+                                'name': '--vc_init',
+                                'type': float,
+                                'default': 0.1,
+                                'help': 'Initial estimate for the central compartment population volume',
+                            },
+                            {
+                                'name': '--mat_init',
+                                'type': float,
+                                'default': 0.01,
+                                'help': 'Initial estimate for the mean absorption time (not for iv models)',
+                            },
+                            {
+                                'name': '--search_space',
+                                'type': str,
+                                'default': None,
+                                'help': 'MFL for search space for structural model',
+                            },
+                            {
+                                'name': '--lloq',
+                                'type': float,
+                                'default': None,
+                                'help': 'Lower limit of quantification. LOQ data will be removed.',
+                            },
+                            {
+                                'name': '--order',
+                                'type': comma_list,
+                                'default': None,
+                                'help': 'Runorder of components',
+                            },
+                            {
+                                'name': '--categorical',
+                                'type': comma_list,
+                                'default': None,
+                                'help': 'List of categorical covariates',
+                            },
+                            {
+                                'name': '--continuous',
+                                'type': comma_list,
+                                'default': None,
+                                'help': 'List of continuous covariates',
+                            },
+                            {
+                                'name': '--allometric_variable',
+                                'type': str,
+                                'default': None,
+                                'help': 'Variable to use for allometry',
+                            },
+                            {
+                                'name': '--occasion',
+                                'type': str,
+                                'default': None,
+                                'help': 'Name of occasion column',
+                            },
+                            {
+                                'name': '--path',
+                                'type': str,
+                                'default': None,
+                                'help': 'Path to run AMD in',
                             },
                         ],
                     }

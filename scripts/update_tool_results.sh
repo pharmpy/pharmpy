@@ -54,7 +54,7 @@ cp $TESTDATA/models/mox2.lst $TESTPATH
 cp $TESTDATA/models/mox2.ext $TESTPATH
 cp $TESTDATA/models/mox2.phi $TESTPATH
 cp $TESTDATA/models/mox_simulated_normal.csv $TESTPATH
-
+cp $TESTDATA/models/mox_simulated_normal.datainfo $TESTPATH
 
 if [ "$TOOL" == 'modelsearch' ] || [ "$TOOL" == 'all' ]; then
   pharmpy run modelsearch $TESTPATH/mox2.mod 'PERIPHERALS(1);LAGTIME()' 'reduced_stepwise' --path $TESTPATH/modelsearch/
@@ -86,4 +86,9 @@ if [ "$TOOL" == 'ruvsearch' ] || [ "$TOOL" == 'all' ]; then
   cp $TESTDATA/ruvsearch/mytab $TESTPATH
   pharmpy run ruvsearch $TESTPATH/mox3.mod --path $TESTPATH/ruvsearch/
   cp_results $TESTPATH/ruvsearch/results.json $DEST/ruvsearch_results.json
+fi
+
+if [ "$TOOL" == 'amd' ] || [ "$TOOL" == 'all' ]; then
+  pharmpy run amd $TESTPATH/mox_simulated_normal.csv --modeltype 'pk_oral' --search_space 'PERIPHERALS(1)' --occasion 'VISI' --path $TESTPATH/amd/
+  cp_results $TESTPATH/amd/results.json $DEST/amd_results.json
 fi
