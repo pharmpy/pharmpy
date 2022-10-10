@@ -221,33 +221,39 @@ def noop_subfunc(_: Model):
 
 def _subfunc_modelsearch(search_space, path) -> SubFunc:
     def _run_modelsearch(model):
-        return run_tool(
+        res = run_tool(
             'modelsearch',
             search_space=search_space,
             algorithm='reduced_stepwise',
             model=model,
             path=path / 'modelsearch',
         )
+        assert isinstance(res, Results)
+        return res
 
     return _run_modelsearch
 
 
 def _subfunc_iiv(path) -> SubFunc:
     def _run_iiv(model):
-        return run_tool(
+        res = run_tool(
             'iivsearch',
             'brute_force',
             iiv_strategy='fullblock',
             model=model,
             path=path / 'iivsearch',
         )
+        assert isinstance(res, Results)
+        return res
 
     return _run_iiv
 
 
 def _subfunc_ruvsearch(path) -> SubFunc:
     def _run_ruvsearch(model):
-        return run_tool('ruvsearch', model, path=path / 'ruvsearch')
+        res = run_tool('ruvsearch', model, path=path / 'ruvsearch')
+        assert isinstance(res, Results)
+        return res
 
     return _run_ruvsearch
 
@@ -282,7 +288,9 @@ def _subfunc_covariates(continuous, categorical, path) -> SubFunc:
             f'COVARIATE(@IIV, @CONTINUOUS, exp, *)\n'
             f'COVARIATE(@IIV, @CATEGORICAL, cat, *)'
         )
-        return run_tool('covsearch', covariates_search_space, model=model, path=path / 'covsearch')
+        res = run_tool('covsearch', covariates_search_space, model=model, path=path / 'covsearch')
+        assert isinstance(res, Results)
+        return res
 
     return _run_covariates
 
@@ -303,9 +311,11 @@ def _subfunc_allometry(allometric_variable, path) -> SubFunc:
             )
             return None
 
-        return run_tool(
+        res = run_tool(
             'allometry', model, allometric_variable=allometric_variable, path=path / 'allometry'
         )
+        assert isinstance(res, Results)
+        return res
 
     return _run_allometry
 
@@ -330,7 +340,8 @@ def _subfunc_iov(occasion, path) -> SubFunc:
             )
             return None
 
-        res_iov = run_tool('iovsearch', model=model, column=occasion, path=path / 'iovsearch')
-        return res_iov
+        res = run_tool('iovsearch', model=model, column=occasion, path=path / 'iovsearch')
+        assert isinstance(res, Results)
+        return res
 
     return _run_iov
