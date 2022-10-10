@@ -87,7 +87,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_coi_table()
         self._calculate_cov_cor_coi()
         self._read_phi_table()
-        self._read_residuals()
+        table_df = parse_tables(model, self._path)
+        self.residuals = parse_residuals(table_df)
         self._read_predictions()
 
     def __getattr__(self, item):
@@ -369,18 +370,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj.inividual_estimates = None
                     result_obj.individual_estimates_covariance = None
 
-    def _read_residuals(self):
-        for obj in self:
-            try:
-                df = self._read_from_tables(['ID', 'TIME', 'RES', 'WRES', 'CWRES'], obj)
-                df['ID'] = df['ID'].convert_dtypes()
-                df.set_index(['ID', 'TIME'], inplace=True)
-            except (KeyError, OSError):
-                obj.residuals = None
-            else:
-                df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
-                obj.residuals = df
-
     def _read_predictions(self):
         for obj in self:
             try:
@@ -420,6 +409,76 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 table = table_file.tables[0]
                 df[columns_in_table] = table.data_frame[columns_in_table]
         return df
+
+
+def parse_tables(model, path):
+    """Parse $TABLE and table files into one large dataframe of useful columns"""
+    interesting_columns = {
+        'ID',
+        'TIME',
+        'PRED',
+        'CIPREDI',
+        'CPRED',
+        'IPRED',
+        'RES',
+        'WRES',
+        'CWRES',
+        'MDV',
+    }
+
+    table_recs = model.internals.control_stream.get_records('TABLE')
+    found = set()
+    df = pd.DataFrame()
+    for table_rec in table_recs:
+        columns_in_table = []
+        for key, value in table_rec.all_options:
+            if key in interesting_columns and key not in found and value is None:
+                # FIXME: Cannot handle synonyms here
+                colname = key
+            elif value in interesting_columns and value not in found:
+                colname = value
+            else:
+                continue
+
+            found.add(colname)
+            columns_in_table.append(colname)
+
+            noheader = table_rec.has_option("NOHEADER")
+            notitle = table_rec.has_option("NOTITLE") or noheader
+            nolabel = table_rec.has_option("NOLABEL") or noheader
+            path = path.parent / table_rec.path
+            try:
+                table_file = NONMEMTableFile(path, notitle=notitle, nolabel=nolabel)
+            except IOError:
+                continue
+            table = table_file.tables[0]
+            df[columns_in_table] = table.data_frame[columns_in_table]
+
+    if 'ID' in df.columns:
+        df['ID'] = df['ID'].convert_dtypes()
+    return df
+
+
+def _extract_from_df(df, mandatory, optional):
+    # Extract all mandatory and at least one optional column from df
+    columns = set(df.columns)
+    if not (set(mandatory) <= columns):
+        return None
+
+    found_optionals = [col for col in optional if col in columns]
+    if not found_optionals:
+        return None
+    return df[mandatory + found_optionals]
+
+
+def parse_residuals(df):
+    index_cols = ['ID', 'TIME']
+    cols = ['RES', 'WRES', 'CWRES']
+    df = _extract_from_df(df, index_cols, cols)
+    if df is not None:
+        df.set_index(['ID', 'TIME'], inplace=True)
+        df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
+    return df
 
 
 def parse_ext(path, subproblem):

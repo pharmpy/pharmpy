@@ -156,6 +156,7 @@ def test_validate_input_raises_predictions(load_model_for_test, testdata):
     remove_covariance_step(model)
     residuals = model.modelfit_results.residuals
     model.modelfit_results = ChainedModelfitResults([EstimationStep('FOCE', residuals=residuals)])
+    model.modelfit_results.residuals = residuals
 
     with pytest.raises(ValueError, match="IPRED"):
         validate_input(model=model)

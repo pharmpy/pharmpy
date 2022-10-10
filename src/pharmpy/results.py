@@ -315,10 +315,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
         return self[-1].individual_estimates_covariance
 
     @property
-    def residuals(self):
-        return self[-1].residuals
-
-    @property
     def predictions(self):
         return self[-1].predictions
 
