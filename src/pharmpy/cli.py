@@ -61,6 +61,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import pharmpy
+from pharmpy.internals.fs import path_absolute
 
 from .deps import pandas as pd
 
@@ -850,7 +851,7 @@ def check_input_path(path):
     """
     try:
         path = Path(path)
-        path = path.resolve()
+        path = path_absolute(path)
     except FileNotFoundError:
         pass
 
