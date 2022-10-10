@@ -52,7 +52,7 @@ class ThetaRecord(Record):
                 n = multiple.INT
             else:
                 n = 1
-            for i in range(0, n):
+            for _ in range(0, n):
                 name = None
                 import pharmpy.plugins.nonmem as nonmem
 
@@ -89,7 +89,7 @@ class ThetaRecord(Record):
             self.name_map = {name: first_theta + i for i, name in enumerate([p.name for p in pset])}
         return pset
 
-    def _multiple(self, theta):
+    def _multiple(self, theta) -> int:
         """Return the multiple (xn) of a theta or 1 if no multiple"""
         multiple = theta.find('n')
         if multiple:
@@ -103,9 +103,11 @@ class ThetaRecord(Record):
 
         Currently only updating initial estimates
         """
+        assert self.name_map is not None
         i = first_theta
+        index = {v: k for k, v in self.name_map.items()}
         for theta in self.root.all('theta'):
-            name = {v: k for k, v in self.name_map.items()}[i]
+            name = index[i]
             param = parameters[name]
             new_init = param.init
             if float(str(theta.init)) != new_init:
@@ -119,11 +121,11 @@ class ThetaRecord(Record):
                 else:
                     remove_token_and_space(theta, 'FIX')
 
-            n = self._multiple(theta)
-            i += n
+            i += self._multiple(theta)
 
     def update_name_map(self, trans):
         """Update name_map given dict from -> to"""
+        assert self.name_map is not None
         for key, value in trans.items():
             if key in self.name_map:
                 n = self.name_map[key]
@@ -131,16 +133,21 @@ class ThetaRecord(Record):
                 self.name_map[value] = n
 
     def renumber(self, new_start):
+        assert self.name_map is not None
         for new_index, name in zip(
             count(new_start), map(lambda t: t[0], sorted(self.name_map.items(), key=lambda t: t[1]))
         ):
             self.name_map[name] = new_index
 
     def remove(self, names):
+        assert self.name_map is not None
+
         first_theta = min(self.name_map.values())
         indices = {self.name_map[name] - first_theta for name in names}
+
         for name in names:
             del self.name_map[name]
+
         keep = []
         i = 0
         for node in self.root.children:
@@ -150,6 +157,7 @@ class ThetaRecord(Record):
                 i += 1
             else:
                 keep.append(node)
+
         self.root.children = keep
 
     def __len__(self):
