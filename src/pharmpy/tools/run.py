@@ -714,7 +714,8 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
                     empty_df = pd.DataFrame({'run_type': run_type}, index=index)
                     summaries.append(empty_df)
             else:
-                empty_df = pd.DataFrame(index=[model.name])
+                index = pd.Index([model.name], name='model')
+                empty_df = pd.DataFrame(index=index)
                 summaries.append(empty_df)
 
     df = pd.concat(summaries)
