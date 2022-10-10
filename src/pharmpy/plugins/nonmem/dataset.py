@@ -3,7 +3,7 @@ import re
 import warnings
 from io import StringIO
 
-from lark import Lark
+from lark import Lark  # pyright: ignore [reportPrivateImportUsage]
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -120,13 +120,12 @@ def _make_ids_unique(df, columns):
 def _filter_ignore_accept(df, ignore, accept, null_value):
     if ignore and accept:
         raise ValueError("Cannot have both IGNORE and ACCEPT")
+
     if not ignore and not accept:
         return df
 
-    if ignore:
-        statements = ignore
-    else:
-        statements = accept
+    statements = ignore if ignore else accept
+
     grammar = r'''
         start: column [space] operator [space] value | column [space] value
         column: COLNAME
@@ -150,6 +149,8 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
     parser = Lark(grammar)
     for s in statements:
         tree = parser.parse(s)
+        column = ''
+        value = ''
         operator = '=='
         operator_type = str
         for st in tree.iter_subtrees():
@@ -159,7 +160,7 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
                 value = str(st.children[0])
             elif st.data == 'operator':
                 operator_token = st.children[0]
-                tp = operator_token.type
+                tp = operator_token.type  # pyright: ignore [reportGeneralTypeIssues]
                 if tp == 'OP_EQ':
                     operator = '=='
                     operator_type = float
