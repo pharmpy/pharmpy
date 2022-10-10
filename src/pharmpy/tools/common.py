@@ -3,23 +3,28 @@ from typing import Any
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.modeling import (
-    rank_models,
-    summarize_errors,
-    summarize_individuals,
-    summarize_individuals_count_table,
-    update_inits,
-)
+from pharmpy.modeling import update_inits
+from pharmpy.tools import rank_models, summarize_errors
+
+from .funcs import summarize_individuals, summarize_individuals_count_table
 
 DataFrame = Any  # NOTE should be pd.DataFrame but we want lazy loading
 
 
 def update_initial_estimates(model):
-    try:
-        update_inits(model, move_est_close_to_bounds=True)
-    except (ValueError, np.linalg.LinAlgError):
+    def warn():
         warnings.warn(f'{model.name}: Could not update initial estimates, using original estimates')
-        pass
+
+    if model.modelfit_results is None:
+        warn()
+        return model
+
+    try:
+        update_inits(
+            model, model.modelfit_results.parameter_estimates, move_est_close_to_bounds=True
+        )
+    except (ValueError, np.linalg.LinAlgError):
+        warn()
     return model
 
 

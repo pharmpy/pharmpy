@@ -1,5 +1,7 @@
 import json
+from lzma import open as lzma_open
 from pathlib import Path
+from typing import Any, Dict
 
 import pharmpy
 from pharmpy.deps import pandas as pd
@@ -51,7 +53,7 @@ class Results:
                     fh.write(s)
             else:
                 xz_path = path.parent / (path.name + '.xz')
-                with lzma.open(xz_path, 'w') as fh:
+                with lzma_open(xz_path, 'w') as fh:
                     fh.write(bytes(s, 'utf-8'))
         else:
             return s
@@ -118,9 +120,13 @@ class Results:
                     use_index = False
                 else:
                     use_index = True
-                s += value.to_csv(index=use_index)
+                csv = value.to_csv(index=use_index)  # pyright: ignore [reportGeneralTypeIssues]
+                assert isinstance(csv, str)
+                s += csv
             elif isinstance(value, pd.Series):
-                s += value.to_csv()
+                csv = value.to_csv()  # pyright: ignore [reportGeneralTypeIssues]
+                assert isinstance(csv, str)
+                s += csv
             elif isinstance(value, list):  # Print list of lists as table
                 if len(value) > 0 and isinstance(value[0], list):
                     for row in value:
@@ -169,7 +175,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
             # TODO consider using other representation, e.g. path
             return None
         elif isinstance(obj, Log):
-            d = obj.to_dict()
+            d: Dict[Any, Any] = obj.to_dict()
             d['__class__'] = obj.__class__.__qualname__
             return d
         elif isinstance(obj, LocalDirectoryToolDatabase):

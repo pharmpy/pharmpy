@@ -11,7 +11,7 @@ from tempfile import mkdtemp
 from typing import Any, Callable
 from typing import Container as TypingContainer  # NOTE needed for Python 3.8
 from typing import Iterable as TypingIterable  # NOTE needed for Python 3.8
-from typing import List, Optional, Tuple, Type, Union, get_args, get_origin, get_type_hints
+from typing import List, Literal, Optional, Tuple, Type, Union, get_args, get_origin, get_type_hints
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -268,6 +268,10 @@ def _match(typing, value):
         if typing is Any or typing is Optional:
             return True
         return isinstance(value, typing)
+
+    if origin is Literal:
+        # NOTE Empty literals return False
+        return any(map(lambda t: value == t, get_args(typing)))
 
     if origin is list or origin is List:
         return isinstance(value, list) and _match_sequence_items(get_args(typing), value)

@@ -82,7 +82,7 @@ The allometry results
 
 To see information about the actual model runs, such as minimization status, estimation time, and parameter estimates,
 you can look at the ``summary_models`` table. The table is generated with
-:py:func:`pharmpy.modeling.summarize_modelfit_results`.
+:py:func:`pharmpy.tools.summarize_modelfit_results`.
 
 .. pharmpy-execute::
     :hide-code:
@@ -92,7 +92,7 @@ you can look at the ``summary_models`` table. The table is generated with
     res.summary_models
 
 A summary table of predicted influential individuals and outliers can be seen in ``summary_individuals_count``.
-See :py:func:`pharmpy.modeling.summarize_individuals_count_table` for information on the content of this table.
+See :py:func:`pharmpy.tools.summarize_individuals_count_table` for information on the content of this table.
 
 .. pharmpy-execute::
     :hide-code:
@@ -100,7 +100,7 @@ See :py:func:`pharmpy.modeling.summarize_individuals_count_table` for informatio
     res.summary_individuals_count
 
 You can see different individual statistics in ``summary_individuals``.
-See :py:func:`pharmpy.modeling.summarize_individuals` for information on the content of this table.
+See :py:func:`pharmpy.tools.summarize_individuals` for information on the content of this table.
 
 .. pharmpy-execute::
     :hide-code:

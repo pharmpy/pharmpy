@@ -61,11 +61,6 @@ from pharmpy.modeling.math import (
     calculate_se_from_cov,
     calculate_se_from_inf,
 )
-from pharmpy.modeling.ml import (
-    predict_influential_individuals,
-    predict_influential_outliers,
-    predict_outliers,
-)
 from pharmpy.modeling.odes import (
     add_individual_parameter,
     add_lag_time,
@@ -100,7 +95,6 @@ from pharmpy.modeling.parameter_sampling import (
 from pharmpy.modeling.power_on_ruv import set_power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
-from pharmpy.modeling.update_inits import update_inits
 from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
@@ -185,14 +179,9 @@ from .results import (
     calculate_pk_parameters_statistics,
     check_high_correlations,
     check_parameters_near_bounds,
-    print_fit_summary,
-    rank_models,
-    summarize_errors,
-    summarize_modelfit_results,
-    write_results,
 )
-from .summarize_individuals import summarize_individuals, summarize_individuals_count_table
 from .units import get_unit_of
+from .update_inits import update_initial_individual_estimates, update_inits
 
 # Must be set directly, otherwise errors about unused imports
 __all__ = [
@@ -298,13 +287,8 @@ __all__ = [
     'omit_data',
     'plot_individual_predictions',
     'plot_iofv_vs_iofv',
-    'predict_influential_individuals',
-    'predict_influential_outliers',
-    'predict_outliers',
-    'print_fit_summary',
     'print_model_code',
     'print_model_symbols',
-    'rank_models',
     'read_dataset_from_datainfo',
     'read_model',
     'read_model_from_database',
@@ -353,21 +337,17 @@ __all__ = [
     'simplify_expression',
     'solve_ode_system',
     'split_joint_distribution',
-    'summarize_errors',
-    'summarize_modelfit_results',
-    'summarize_individuals',
-    'summarize_individuals_count_table',
     'transform_etas_boxcox',
     'transform_etas_john_draper',
     'transform_etas_tdist',
     'translate_nmtran_time',
     'unfix_parameters',
     'unfix_parameters_to',
+    'update_initial_individual_estimates',
     'update_inits',
     'use_thetas_for_error_stdev',
     'write_csv',
     'write_model',
-    'write_results',
     'unconstrain_parameters',
     'undrop_columns',
 ]

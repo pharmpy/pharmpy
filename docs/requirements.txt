@@ -1,5 +1,5 @@
 ipykernel
-pydata-sphinx-theme==0.10.1
+pydata-sphinx-theme==0.11.0
 sphinxcontrib-autoprogram==0.1.7
 sphinx-automodapi==0.14.1
 jupyter-sphinx==0.4.0

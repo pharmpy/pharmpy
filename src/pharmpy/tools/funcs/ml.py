@@ -2,11 +2,10 @@ from pathlib import Path
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-
-from ..model import ModelfitResultsError
-from .common import get_model_covariates
-from .data import (
+from pharmpy.model import ModelfitResultsError
+from pharmpy.modeling import (
     get_ids,
+    get_model_covariates,
     get_number_of_individuals,
     get_number_of_observations,
     get_number_of_observations_per_individual,
@@ -21,8 +20,7 @@ def _all_parameters(model):
     return pd.Series(d)
 
 
-def _create_dataset(model):
-    res = model.modelfit_results
+def _create_dataset(model, res):
     if res is None:
         raise ModelfitResultsError("Need ModelfitResults for model")
     if res.residuals is None:
@@ -54,7 +52,7 @@ def _create_dataset(model):
 
     # exp(OFVi / nobsi) / exp(OFV / nobs)
     iofv = res.individual_ofv
-    ofv_ratio = np.exp(iofv / nobsi) / np.exp(model.modelfit_results.ofv / nobs)
+    ofv_ratio = np.exp(iofv / nobsi) / np.exp(res.ofv / nobs)
 
     # mean(ETA / OMEGA)
     cov = res.individual_estimates_covariance
@@ -96,7 +94,7 @@ def _create_dataset(model):
     return df
 
 
-def predict_outliers(model, cutoff=3.0):
+def predict_outliers(model, results, cutoff=3.0):
     """Predict outliers for a model using a machine learning model.
 
     See the :ref:`simeval <Individual OFV summary>` documentation for a definition of the `residual`
@@ -105,6 +103,8 @@ def predict_outliers(model, cutoff=3.0):
     ----------
     model : Model
         Pharmpy model
+    results : ModelfitResults
+        ModelfitResults for the model
     cutoff : float
         Cutoff threshold for a residual singalling an outlier
 
@@ -119,7 +119,8 @@ def predict_outliers(model, cutoff=3.0):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> predict_outliers(model)     # doctest: +SKIP
+    >>> results = model.modelfit_results
+    >>> predict_outliers(model, results)     # doctest: +SKIP
         residual  outlier
     ID
     1  -0.281443    False
@@ -189,20 +190,22 @@ def predict_outliers(model, cutoff=3.0):
 
     """
     model_path = Path(__file__).parent.resolve() / 'ml_models' / 'outliers.tflite'
-    data = _create_dataset(model)
+    data = _create_dataset(model, results)
     output = _predict_with_tflite(model_path, data)
     df = pd.DataFrame({'residual': output, 'outlier': output > cutoff}, index=get_ids(model))
     df.index.name = model.datainfo.id_column.name
     return df
 
 
-def predict_influential_individuals(model, cutoff=3.84):
+def predict_influential_individuals(model, results, cutoff=3.84):
     """Predict influential individuals for a model using a machine learning model.
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    results : ModelfitResults
+        Results for model
     cutoff : float
         Cutoff threshold for a dofv signalling an influential individual
 
@@ -221,20 +224,22 @@ def predict_influential_individuals(model, cutoff=3.84):
     """
 
     model_path = Path(__file__).parent.resolve() / 'ml_models' / 'infinds.tflite'
-    data = _create_dataset(model)
+    data = _create_dataset(model, results)
     output = _predict_with_tflite(model_path, data)
     df = pd.DataFrame({'dofv': output, 'influential': output > cutoff}, index=get_ids(model))
     df.index.name = model.datainfo.id_column.name
     return df
 
 
-def predict_influential_outliers(model, outlier_cutoff=3, influential_cutoff=3.84):
+def predict_influential_outliers(model, results, outlier_cutoff=3, influential_cutoff=3.84):
     """Predict influential outliers for a model using a machine learning model.
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    results : ModelfitResults
+        Results for model
     outlier_cutoff : float
         Cutoff threshold for a residual singalling an outlier
     influential_cutoff : float
@@ -253,8 +258,8 @@ def predict_influential_outliers(model, outlier_cutoff=3, influential_cutoff=3.8
 
     """
 
-    outliers = predict_outliers(model, cutoff=outlier_cutoff)
-    infinds = predict_influential_individuals(model, cutoff=influential_cutoff)
+    outliers = predict_outliers(model, results, cutoff=outlier_cutoff)
+    infinds = predict_influential_individuals(model, results, cutoff=influential_cutoff)
     df = pd.concat([outliers, infinds], axis=1)
     df['influential_outlier'] = df['outlier'] & df['influential']
     return df

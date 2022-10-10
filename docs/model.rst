@@ -245,6 +245,6 @@ Updating all initial estimates of a model from its own results can be done by:
 .. pharmpy-execute::
 
     from pharmpy.modeling import update_inits
-    update_inits(model)
+    update_inits(model, model.modelfit_results.parameter_estimates)
 
 

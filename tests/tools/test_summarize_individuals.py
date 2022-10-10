@@ -4,9 +4,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from pharmpy.modeling import read_model, summarize_individuals, summarize_individuals_count_table
-from pharmpy.modeling.summarize_individuals import dofv
+from pharmpy.modeling import read_model
 from pharmpy.results import ModelfitResults
+from pharmpy.tools import summarize_individuals, summarize_individuals_count_table
+from pharmpy.tools.funcs.summarize_individuals import dofv
 
 
 def test_summarize_individuals_count_table():

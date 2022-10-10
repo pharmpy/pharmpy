@@ -1,17 +1,17 @@
+from __future__ import annotations
+
 import importlib.util
 import warnings
-from typing import Any, Callable, Dict, List, Union
+from typing import Dict, List, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, ModelfitResultsError
-from pharmpy.modeling.ml import predict_influential_individuals, predict_outliers
 
-DataFrame = Any  # NOTE should be pd.DataFrame but we want lazy loading
-Series = Any  # NOTE same with pd.Series
+from .ml import predict_influential_individuals, predict_outliers
 
 
-def summarize_individuals(models: List[Model]) -> Union[DataFrame, None]:
+def summarize_individuals(models: List[Model]) -> pd.DataFrame:
     """Creates a summary dataframe keyed by model-individual pairs for an input
     list of models.
 
@@ -45,7 +45,7 @@ def summarize_individuals(models: List[Model]) -> Union[DataFrame, None]:
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import fit
+    >>> from pharmpy.tools import fit, summarize_individuals
     >>> fit(model)  # doctest: +SKIP
     <Pharmpy model object pheno>
     >>> from pharmpy.tools import run_tool # doctest: +SKIP
@@ -76,6 +76,7 @@ def summarize_individuals(models: List[Model]) -> Union[DataFrame, None]:
         verify_integrity=True,
     )
 
+    assert df is not None
     return df
 
 
@@ -87,13 +88,13 @@ def model_name(model: Model) -> str:
     return model.name
 
 
-def outlier_count_func(df: DataFrame) -> float:
+def outlier_count_func(df: pd.DataFrame) -> float:
     # NOTE this returns a float because we will potentially concat this
     # with NaNs
     return float((abs(df) > 5).sum())
 
 
-def outlier_count(model: Model) -> Union[Series, float]:
+def outlier_count(model: Model) -> Union[pd.Series, float]:
     res = model.modelfit_results
     if res is None:
         return np.nan
@@ -105,11 +106,9 @@ def outlier_count(model: Model) -> Union[Series, float]:
         return groupedByID['CWRES'].agg(outlier_count_func)
 
 
-def _predicted(
-    predict: Callable[[Model], DataFrame], model: Model, column: str
-) -> Union[Series, float]:
+def _predicted(predict, model: Model, column: str) -> Union[pd.Series, float]:
     try:
-        predicted = predict(model)
+        predicted = predict(model, model.modelfit_results)
     except ModelfitResultsError:
         return np.nan
     except ImportError:
@@ -119,24 +118,24 @@ def _predicted(
     return predicted[column]
 
 
-def predicted_residual(model: Model) -> Union[Series, float]:
+def predicted_residual(model: Model) -> Union[pd.Series, float]:
     return _predicted(predict_outliers, model, 'residual')
 
 
-def predicted_dofv(model: Model) -> Union[Series, float]:
+def predicted_dofv(model: Model) -> Union[pd.Series, float]:
     return _predicted(predict_influential_individuals, model, 'dofv')
 
 
-def ofv(model: Model) -> Union[Series, float]:
+def ofv(model: Model) -> Union[pd.Series, float]:
     res = model.modelfit_results
     return np.nan if res is None or res.individual_ofv is None else res.individual_ofv
 
 
-def dofv(parent_model: Union[Model, None], candidate_model: Model) -> Union[Series, float]:
+def dofv(parent_model: Union[Model, None], candidate_model: Model) -> Union[pd.Series, float]:
     return np.nan if parent_model is None else ofv(parent_model) - ofv(candidate_model)
 
 
-def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) -> DataFrame:
+def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) -> pd.DataFrame:
     id_column_name = model.datainfo.id_column.name
     index = pd.Index(data=model.dataset[id_column_name].unique(), name=id_column_name)
     df = pd.DataFrame(
@@ -213,7 +212,9 @@ def summarize_individuals_count_table(models=None, df=None):
         if name == df.loc[name]['parent_model'].iloc[0]:
             start_name = name
             break
-    # FIXME: Doesn't have to have a start model
+    else:
+        # FIXME: Handle missing start model
+        raise ValueError('Missing start model')
 
     ofv_sums = df['ofv'].groupby('model').sum()
     parent_sums = parent_ofvs.groupby('model').sum()

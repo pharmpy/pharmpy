@@ -38,7 +38,8 @@ def get_modelfit_results(model, path):
         from pharmpy.plugins.nlmixr import parse_modelfit_results
 
         res = parse_modelfit_results(model, path)
-    model._modelfit_results = res
+
+    model.modelfit_results = res
 
 
 class LocalDirectoryDatabase(NonTransactionalModelDatabase):
@@ -291,7 +292,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
             raise FileNotFoundError(f"Cannot retrieve {filename} for {self.name}")
 
     def retrieve_model(self):
-        extensions = ['.ctl', '.mod']
+        extensions = ['.mod', '.ctl']
         from pharmpy.model import Model
 
         errors = []

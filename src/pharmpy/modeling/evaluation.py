@@ -12,7 +12,7 @@ from .expressions import (
 )
 
 
-def evaluate_expression(model, expression):
+def evaluate_expression(model, expression, parameter_estimates=None):
     """Evaluate expression using model
 
     Calculate the value of expression for each data record.
@@ -26,6 +26,8 @@ def evaluate_expression(model, expression):
         Pharmpy model
     expression : str or sympy expression
         Expression to evaluate
+    parameter_estimates : pd.Series
+        Parameter estimates to use instead of initial estimates
 
     Returns
     -------
@@ -36,7 +38,8 @@ def evaluate_expression(model, expression):
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_expression
     >>> model = load_example_model("pheno")
-    >>> evaluate_expression(model, "TVCL*1000")
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> evaluate_expression(model, "TVCL*1000", parameter_estimates=pe)
     0      6.573770
     1      6.573770
     2      6.573770
@@ -53,9 +56,8 @@ def evaluate_expression(model, expression):
     """
     expression = sympify(expression)
     full_expr = model.statements.before_odes.full_expression(expression)
-    pe = model.modelfit_results.parameter_estimates
     inits = model.parameters.inits
-    expr = subs(subs(full_expr, dict(pe)), inits)
+    expr = subs(subs(full_expr, dict(parameter_estimates)), inits)
     data = model.dataset
 
     def func(row):
@@ -94,7 +96,8 @@ def evaluate_population_prediction(model, parameters=None, dataset=None):
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_population_prediction
     >>> model = load_example_model("pheno_linear")
-    >>> evaluate_population_prediction(model)
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> evaluate_population_prediction(model, parameters=dict(pe))
     0      17.529739
     1      28.179910
     2       9.688648
@@ -117,10 +120,7 @@ def evaluate_population_prediction(model, parameters=None, dataset=None):
     if parameters is not None:
         y = subs(y, parameters)
     else:
-        if model.modelfit_results is not None:
-            y = subs(y, model.modelfit_results.parameter_estimates.to_dict())
-        else:
-            y = subs(y, model.parameters.inits)
+        y = subs(y, model.parameters.inits)
 
     if dataset is not None:
         df = dataset
@@ -164,7 +164,8 @@ def evaluate_individual_prediction(model, etas=None, parameters=None, dataset=No
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_individual_prediction
     >>> model = load_example_model("pheno_linear")
-    >>> evaluate_individual_prediction(model)
+    >>> etas = model.modelfit_results.individual_estimates
+    >>> evaluate_individual_prediction(model, etas=etas)
     0      17.771084
     1      28.881859
     2      11.441728
@@ -197,19 +198,11 @@ def evaluate_individual_prediction(model, etas=None, parameters=None, dataset=No
     idcol = model.datainfo.id_column.name
 
     if etas is None:
-        if (
-            model.modelfit_results is not None
-            and model.modelfit_results.individual_estimates is not None
-        ):
-            etas = model.modelfit_results.individual_estimates
-        elif model.initial_individual_estimates is not None:
-            etas = model.initial_individual_estimates
-        else:
-            etas = pd.DataFrame(
-                0,
-                index=df[idcol].unique(),
-                columns=model.random_variables.etas.names,
-            )
+        etas = pd.DataFrame(
+            0,
+            index=df[idcol].unique(),
+            columns=model.random_variables.etas.names,
+        )
 
     def fn(row):
         row = row.to_dict()
@@ -262,7 +255,8 @@ def evaluate_eta_gradient(model, etas=None, parameters=None, dataset=None):
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_eta_gradient
     >>> model = load_example_model("pheno_linear")
-    >>> evaluate_eta_gradient(model)
+    >>> etas = model.modelfit_results.individual_estimates
+    >>> evaluate_eta_gradient(model, etas=etas)
          dF/dETA(1)  dF/dETA(2)
     0     -0.159537  -17.609116
     1     -9.325893  -19.562289
@@ -293,12 +287,7 @@ def evaluate_eta_gradient(model, etas=None, parameters=None, dataset=None):
     idcol = model.datainfo.id_column.name
 
     if etas is None:
-        if (
-            model.modelfit_results is not None
-            and model.modelfit_results.individual_estimates is not None
-        ):
-            etas = model.modelfit_results.individual_estimates
-        elif model.initial_individual_estimates is not None:
+        if model.initial_individual_estimates is not None:
             etas = model.initial_individual_estimates
         else:
             etas = pd.DataFrame(
@@ -352,7 +341,8 @@ def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_epsilon_gradient
     >>> model = load_example_model("pheno_linear")
-    >>> evaluate_epsilon_gradient(model)
+    >>> etas = model.modelfit_results.individual_estimates
+    >>> evaluate_epsilon_gradient(model, etas=etas)
          dY/dEPS(1)
     0     17.771084
     1     28.881859
@@ -387,12 +377,7 @@ def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
     idcol = model.datainfo.id_column.name
 
     if etas is None:
-        if (
-            model.modelfit_results is not None
-            and model.modelfit_results.individual_estimates is not None
-        ):
-            etas = model.modelfit_results.individual_estimates
-        elif model.initial_individual_estimates is not None:
+        if model.initial_individual_estimates is not None:
             etas = model.initial_individual_estimates
         else:
             etas = pd.DataFrame(
@@ -442,7 +427,8 @@ def evaluate_weighted_residuals(model, parameters=None, dataset=None):
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_weighted_residuals
     >>> model = load_example_model("pheno_linear")
-    >>> evaluate_weighted_residuals(model)
+    >>> parameters = model.modelfit_results.parameter_estimates
+    >>> evaluate_weighted_residuals(model, parameters=dict(parameters))
     0     -0.313859
     1      0.675721
     2     -1.544240
@@ -460,10 +446,7 @@ def evaluate_weighted_residuals(model, parameters=None, dataset=None):
     omega = model.random_variables.etas.covariance_matrix
     sigma = model.random_variables.epsilons.covariance_matrix
     if parameters is None:
-        if model.modelfit_results is not None:
-            parameters = model.modelfit_results.parameter_estimates.to_dict()
-        else:
-            parameters = model.parameters.inits
+        parameters = model.parameters.inits
     omega = omega.subs(parameters)
     sigma = sigma.subs(parameters)
     omega = np.float64(omega)

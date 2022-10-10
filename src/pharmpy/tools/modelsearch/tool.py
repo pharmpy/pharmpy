@@ -3,8 +3,8 @@ from typing import Optional, Union
 import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
-from pharmpy.modeling import summarize_modelfit_results
 from pharmpy.modeling.results import RANK_TYPES
+from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results
 from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow

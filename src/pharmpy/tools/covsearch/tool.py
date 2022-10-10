@@ -6,15 +6,11 @@ from typing import Any, Callable, Iterable, List, Sequence, Tuple, Union
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
-from pharmpy.modeling import (
-    add_covariate_effect,
-    copy_model,
-    get_pk_parameters,
-    summarize_modelfit_results,
-)
+from pharmpy.modeling import add_covariate_effect, copy_model, get_pk_parameters
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
+from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import (
     EffectLiteral,
@@ -284,10 +280,16 @@ def _greedy_search(
         )
 
         all_candidates_so_far.extend(new_candidates)
-        new_candidate_models = map(lambda candidate: candidate.model, new_candidates)
+        new_candidate_models = list(map(lambda candidate: candidate.model, new_candidates))
 
         parent = best_candidate_so_far.model
-        best_model_so_far = lrt_best_of_many(parent, new_candidate_models, alpha)
+        ofvs = [
+            model.modelfit_results.ofv if model.modelfit_results is not None else np.nan
+            for model in new_candidate_models
+        ]
+        best_model_so_far = lrt_best_of_many(
+            parent, new_candidate_models, parent.modelfit_results.ofv, ofvs, alpha
+        )
 
         if best_model_so_far is parent:
             break
@@ -487,13 +489,21 @@ def _make_df_steps_row(
         extended_state = f'{last_effect.operation} {last_effect.fp}'
         is_backward = isinstance(last_step, BackwardStep)
         alpha = last_step.alpha
-        extended_significant = lrt_test(parent_model, candidate.model, alpha)
+        extended_significant = lrt_test(
+            parent_model,
+            candidate.model,
+            parent_model.modelfit_results.ofv,
+            candidate.model.modelfit_results.ofv,
+            alpha,
+        )
     else:
         parameter, covariate, extended_state = '', '', ''
         is_backward = False
         alpha, extended_significant = np.nan, np.nan
 
-    p_value = lrt_p_value(parent_model, model)
+    p_value = lrt_p_value(
+        parent_model, model, parent_model.modelfit_results.ofv, model.modelfit_results.ofv
+    )
     selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
 
     assert not selected or (candidate.model is parent_model) or extended_significant

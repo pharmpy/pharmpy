@@ -147,7 +147,9 @@ def test_convert_model():
 def test_remove_unused_parameters_and_rvs(pheno):
     model = pheno.copy()
     remove_unused_parameters_and_rvs(model)
-    create_joint_distribution(model)
+    create_joint_distribution(
+        model, individual_estimates=model.modelfit_results.individual_estimates
+    )
     statements = model.statements
     i = statements.index(statements.find_assignment('CL'))
     model.statements = model.statements[0:i] + model.statements[i + 1 :]

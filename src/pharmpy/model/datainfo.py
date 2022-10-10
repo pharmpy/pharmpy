@@ -1,8 +1,11 @@
 """DataInfo is a companion to the dataset. It contains metadata of the dataset
 """
+from __future__ import annotations
+
 import json
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Union, overload
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -465,6 +468,14 @@ class DataInfo(Sequence):
         else:
             raise TypeError(f"Cannot index DataInfo by {type(i)}")
 
+    @overload
+    def __getitem__(self, i: Union[list, slice]) -> DataInfo:
+        ...
+
+    @overload
+    def __getitem__(self, i: Union[int, str]) -> ColumnInfo:
+        ...
+
     def __getitem__(self, i):
         if isinstance(i, list):
             cols = []
@@ -562,17 +573,20 @@ class DataInfo(Sequence):
         return self.typeix['id'][0]
 
     def _set_column_type(self, name, type):
-        mycol = None
+        for i, col in enumerate(self):
+            if col.name != name and col.type == type:
+                raise ValueError(
+                    f"Cannot set new {type} column: column {col.name} already has type {type}"
+                )
+
         for i, col in enumerate(self):
             if col.name == name:
                 mycol = col
                 ind = i
-            elif col.type == type:
-                raise ValueError(
-                    f"Cannot set new {type} column: column {col.name} already has type {type}"
-                )
-        if mycol is None:
+                break
+        else:
             raise IndexError(f"No column {name} in DataInfo")
+
         newcol = mycol.derive(type=type)
         cols = self._columns[0:ind] + (newcol,) + self._columns[ind + 1 :]
         return DataInfo(cols, path=self._path, separator=self._separator)

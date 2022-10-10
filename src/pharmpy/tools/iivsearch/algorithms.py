@@ -150,7 +150,9 @@ def create_eta_blocks(combos, model):
         if len(combo) == 1:
             split_joint_distribution(model, combo)
         else:
-            create_joint_distribution(model, combo)
+            create_joint_distribution(
+                model, combo, individual_estimates=model.modelfit_results.individual_estimates
+            )
     return model
 
 

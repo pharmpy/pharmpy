@@ -434,7 +434,12 @@ def model_sample(args):
     model = args.model
     from pharmpy.modeling import sample_parameters_from_covariance_matrix
 
-    samples = sample_parameters_from_covariance_matrix(model, n=args.samples)
+    samples = sample_parameters_from_covariance_matrix(
+        model,
+        model.modelfit_results.parameter_estimates,
+        model.modelfit_results.covariance_matrix,
+        n=args.samples,
+    )
     for row, params in samples.iterrows():
         from pharmpy.modeling import set_initial_estimates, write_model
 
@@ -605,7 +610,13 @@ def create_joint_distribution(args):
     except AttributeError:
         etas = args.etas
 
-    create_joint_distribution(model, etas)
+    create_joint_distribution(
+        model,
+        etas,
+        individual_estimates=model.modelfit_results.individual_estimates
+        if model.modelfit_results is not None
+        else None,
+    )
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -678,7 +689,7 @@ def update_inits(args):
     from pharmpy.modeling import update_inits
 
     model = args.model
-    update_inits(model, args.force_update)
+    update_inits(model, model.modelfit_results.parameter_estimates)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -1815,17 +1826,9 @@ parser_definition = [
                 {
                     'update_inits': {
                         'help': 'Update inits using modelfit results.',
-                        'description': 'Update inits using modelfit results, can be forced.',
+                        'description': 'Update inits using modelfit results.',
                         'func': update_inits,
                         'parents': [args_model_input, args_output],
-                        'args': [
-                            {
-                                'name': '--force_update',
-                                'type': bool,
-                                'default': False,
-                                'help': 'Force update.',
-                            },
-                        ],
                     }
                 },
             ],

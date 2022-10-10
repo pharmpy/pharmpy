@@ -295,5 +295,5 @@ def execute_model(model, db):
         txn.store_modelfit_results()
 
     res = parse_modelfit_results(model, path)
-    model._modelfit_results = res
+    model.modelfit_results = res
     return model

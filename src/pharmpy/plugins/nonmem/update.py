@@ -107,8 +107,8 @@ def update_random_variables(model, old, new):
     for omega_record in model.internals.control_stream.get_records(
         'OMEGA'
     ) + model.internals.control_stream.get_records('SIGMA'):
-        comment_dict = {**comment_dict, **omega_record.comment_map}
-        current_names = list(omega_record.eta_map.keys())
+        comment_dict.update(omega_record.comment_map)
+        current_names = omega_record.eta_map.keys()
         for name in current_names:
             rec_dict[name] = omega_record
 

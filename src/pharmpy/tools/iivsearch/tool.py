@@ -4,13 +4,9 @@ from typing import List, Optional, Set, Union
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
-from pharmpy.modeling import (
-    add_pk_iiv,
-    copy_model,
-    create_joint_distribution,
-    summarize_modelfit_results,
-)
+from pharmpy.modeling import add_pk_iiv, copy_model, create_joint_distribution
 from pharmpy.modeling.results import RANK_TYPES
+from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.utils import runtime_type_check, same_arguments_as
@@ -180,7 +176,9 @@ def _add_iiv(iiv_strategy, model):
     assert iiv_strategy in ['add_diagonal', 'fullblock']
     add_pk_iiv(model)
     if iiv_strategy == 'fullblock':
-        create_joint_distribution(model)
+        create_joint_distribution(
+            model, individual_estimates=model.modelfit_results.individual_estimates
+        )
     return model
 
 

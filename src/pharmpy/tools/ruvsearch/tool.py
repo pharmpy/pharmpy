@@ -24,18 +24,20 @@ from pharmpy.modeling import (
     set_iiv_on_ruv,
     set_initial_estimates,
     set_power_on_ruv,
+)
+from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
+from pharmpy.tools import (
     summarize_errors,
     summarize_individuals,
     summarize_individuals_count_table,
     summarize_modelfit_results,
 )
-from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
-from .results import calculate_results
+from .results import RUVSearchResults, calculate_results
 
 SKIP = frozenset(('IIV_on_RUV', 'power', 'combined', 'time_varying'))
 
@@ -140,23 +142,24 @@ def start(context, model, groups, p_value, skip):
 
     sum_models = []
     selected_models = [model]
+    cwres_models = []
+    tool_database = None
     for current_iteration in range(1, 4):
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
-        next_res = call_workflow(wf, f'results{current_iteration}', context)
-        selected_model_name = next_res._selected_model_name
-        best_model = next_res._best_model
-        del next_res._selected_model_name
-        del next_res._best_model
-
+        res, best_model, selected_model_name = call_workflow(
+            wf, f'results{current_iteration}', context
+        )
         if current_iteration == 1:
-            res = next_res
             sum_models.append(summarize_modelfit_results(model))
-        else:
-            res.cwres_models = pd.concat([res.cwres_models, next_res.cwres_models])
         sum_models.append(summarize_modelfit_results(best_model))
+
+        cwres_models.append(res.cwres_models)
+        tool_database = res.tool_database
 
         if not selected_model_name.startswith('base'):
             selected_models.append(best_model)
+
+        model = best_model
 
         if selected_model_name.startswith('base'):
             break
@@ -164,7 +167,6 @@ def start(context, model, groups, p_value, skip):
             skip.append('time_varying')
         else:
             skip.append(selected_model_name)
-        model = best_model
 
     sumind = summarize_individuals(selected_models)
     sumcount = summarize_individuals_count_table(df=sumind)
@@ -172,12 +174,16 @@ def start(context, model, groups, p_value, skip):
     summary_tool = _create_summary_tool(selected_models, cutoff)
     summary_errors = summarize_errors(selected_models)
 
-    res.summary_individuals = sumind
-    res.summary_individuals_count = sumcount
-    res.summary_models = summf
-    res.summary_tool = summary_tool
-    res.summary_errors = summary_errors
-    res.final_model_name = model.name
+    res = RUVSearchResults(
+        cwres_models=pd.concat(cwres_models),
+        summary_individuals=sumind,
+        summary_individuals_count=sumcount,
+        final_model_name=model.name,
+        summary_models=summf,
+        summary_tool=summary_tool,
+        summary_errors=summary_errors,
+        tool_database=tool_database,
+    )
     return res
 
 
@@ -209,23 +215,17 @@ def _results(res):
 
 def post_process(context, start_model, *models, cutoff, current_iteration):
     res = calculate_results(models)
-    best_model, selected_model_name = _create_best_model(
+    best_model_unfitted, selected_model_name = _create_best_model(
         start_model, res, current_iteration, cutoff=cutoff
     )
-    if best_model is not None:
-        fit_wf = create_fit_workflow(models=[best_model])
-        est_model = call_workflow(fit_wf, f'fit{current_iteration}', context)
-        delta_ofv = start_model.modelfit_results.ofv - est_model.modelfit_results.ofv
+    if best_model_unfitted is not None:
+        fit_wf = create_fit_workflow(models=[best_model_unfitted])
+        best_model = call_workflow(fit_wf, f'fit{current_iteration}', context)
+        delta_ofv = start_model.modelfit_results.ofv - best_model.modelfit_results.ofv
         if delta_ofv > cutoff:
-            res._best_model = est_model
-            res._selected_model_name = selected_model_name
-        else:
-            res._best_model = start_model
-            res._selected_model_name = f"base_{current_iteration}"
-    else:
-        res._best_model = start_model
-        res._selected_model_name = f"base_{current_iteration}"
-    return res
+            return (res, best_model, selected_model_name)
+
+    return (res, start_model, f"base_{current_iteration}")
 
 
 def _create_base_model(input_model, current_iteration):

@@ -42,11 +42,11 @@ def test_update_inits(load_model_for_test, pheno, pheno_path):
     from pharmpy.modeling import update_inits
 
     model = pheno.copy()
-    update_inits(model)
+    update_inits(model, model.modelfit_results.parameter_estimates)
 
     with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
         model = load_model_for_test(pheno_path)
-        update_inits(model)
+        update_inits(model, model.modelfit_results.parameter_estimates)
         model.update_source()
 
 
@@ -119,7 +119,9 @@ def test_set_parameters(pheno):
     assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
 
     model = pheno.copy()
-    create_joint_distribution(model)
+    create_joint_distribution(
+        model, individual_estimates=model.modelfit_results.individual_estimates
+    )
     with pytest.raises(UserWarning, match='Adjusting initial'):
         set_initial_estimates(model, {'OMEGA(2,2)': 0.000001})
 

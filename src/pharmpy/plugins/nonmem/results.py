@@ -118,6 +118,9 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj.table_number = 1
             self.append(result_obj)
             return
+        final_ofv, ofv_iterations = parse_ext(self._path, self._subproblem)
+        self.ofv = final_ofv
+        self.ofv_iterations = ofv_iterations
         for table in ext_tables:
             if self._subproblem and table.subproblem != self._subproblem:
                 continue
@@ -138,8 +141,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 self.append(result_obj)
                 continue
 
-            result_obj.ofv = table.final_ofv
-            result_obj.evaluation_ofv = table.initial_ofv
             ests = table.final_parameter_estimates
             try:
                 fix = table.fixed
@@ -419,6 +420,25 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 table = table_file.tables[0]
                 df[columns_in_table] = table.data_frame[columns_in_table]
         return df
+
+
+def parse_ext(path, subproblem):
+    ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
+    step = []
+    iteration = []
+    ofv = []
+    for i, table in enumerate(ext_tables, start=1):
+        if subproblem and table.subproblem != subproblem:
+            continue
+        df = table.data_frame
+        df = df[df['ITERATION'] >= 0]
+        n = len(df)
+        step += [i] * n
+        iteration += list(df['ITERATION'])
+        ofv += list(df['OBJ'])
+        final_ofv = table.final_ofv
+    ofv_iterations = pd.Series(ofv, name='OFV', dtype='float64', index=[step, iteration])
+    return final_ofv, ofv_iterations
 
 
 def simfit_results(model, model_path):

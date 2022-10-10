@@ -24,7 +24,7 @@ lincorrect = read_nonmem_dataset(
 
 def test_evaluate_expression(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_noifs.mod')
-    ser = evaluate_expression(model, 'TVV')
+    ser = evaluate_expression(model, 'TVV', model.modelfit_results.parameter_estimates)
     assert ser[0] == pytest.approx(1.413062)
     assert ser[743] == pytest.approx(1.110262)
 
@@ -95,5 +95,7 @@ def test_evaluate_epsilon_gradient(load_model_for_test, testdata):
 def test_evaluate_weighted_residuals(load_model_for_test, testdata):
     linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
     linmod = load_model_for_test(linpath)
-    wres = evaluate_weighted_residuals(linmod)
+    wres = evaluate_weighted_residuals(
+        linmod, parameters=dict(linmod.modelfit_results.parameter_estimates)
+    )
     pd.testing.assert_series_equal(lincorrect['WRES'], wres, rtol=1e-4, check_names=False)

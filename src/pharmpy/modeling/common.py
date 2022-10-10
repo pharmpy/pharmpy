@@ -6,6 +6,7 @@ import re
 import warnings
 from io import StringIO
 from pathlib import Path
+from typing import Union
 
 import pharmpy.config as config
 from pharmpy.deps import sympy
@@ -131,7 +132,7 @@ def read_model_from_string(code, path=None):
     return model
 
 
-def write_model(model, path='', force=True):
+def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
     """Write model code to file
 
     Parameters
@@ -535,7 +536,12 @@ def get_model_covariates(model, strings=False):
     y = model.statements.find_assignment(model.dependent_variable)
     y_deps = model.statements.error.dependencies(y)
 
-    covs = list(datasymbs.intersection(ode_deps | y_deps))
+    covs = datasymbs.intersection(ode_deps | y_deps)
+
+    # Disallow ID from being a covariate
+    covs = covs - {sympy.Symbol(model.datainfo.id_column.name)}
+
+    covs = list(covs)
     covs = sorted(covs, key=lambda x: x.name)  # sort to make order deterministic
     if strings:
         covs = [str(x) for x in covs]

@@ -222,10 +222,7 @@ def test_power_on_ruv(datadir, epsilons_args, tmp_path):
         assert re.search(r'\*\*', mod_cov)
 
 
-@pytest.mark.parametrize(
-    'force_args, file_exists', [(['--force_update', 'True'], True), ([], False)]
-)
-def test_update_inits(datadir, force_args, file_exists, tmp_path):
+def test_update_inits(datadir, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno_real.ext', tmp_path / 'run1.ext')
     shutil.copy(datadir / 'pheno_real.phi', tmp_path / 'run1.phi')
@@ -233,18 +230,8 @@ def test_update_inits(datadir, force_args, file_exists, tmp_path):
 
     with TemporaryDirectoryChanger(tmp_path):
 
-        args = ['model', 'update_inits', 'run1.mod'] + force_args
+        args = ['model', 'update_inits', 'run1.mod']
         cli.main(args)
-
-        with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
-            mod_ori = f_ori.read()
-            mod_cov = f_cov.read()
-
-        assert mod_ori != mod_cov
-
-        assert not re.search(r'\$ETAS FILE=run2_input.phi', mod_ori)
-        assert bool(re.search(r'\$ETAS FILE=run2_input.phi', mod_cov)) is file_exists
-        assert (os.path.isfile('run2_input.phi')) is file_exists
 
 
 def test_model_sample(datadir, tmp_path):

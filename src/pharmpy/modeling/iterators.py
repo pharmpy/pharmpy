@@ -9,8 +9,8 @@ Currenly contains:
 2. Resample - Can be used by bootstrap
 """
 
-import collections
 import warnings
+from collections.abc import Mapping
 
 import pharmpy.math
 from pharmpy.deps import numpy as np
@@ -60,7 +60,7 @@ class DatasetIterator:
         else simply pass the dataset through
         """
         try:
-            model = self._model.copy()
+            model = self._model.copy()  # pyright: ignore [reportOptionalMemberAccess]
         except AttributeError:
             return df
         else:
@@ -169,7 +169,7 @@ class Resample(DatasetIterator):
         if stratify:
             # Default is to use proportions in dataset
             stratas = df.groupby(stratify)[group].unique()
-            have_mult_sample_sizes = isinstance(sample_size, collections.abc.Mapping)
+            have_mult_sample_sizes = isinstance(sample_size, Mapping)
             if not have_mult_sample_sizes:
                 non_rounded_sample_sizes = stratas.apply(
                     lambda x: (len(x) / numgroups) * sample_size

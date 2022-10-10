@@ -182,9 +182,9 @@ class Model(pharmpy.model.Model):
         self.internals._old_estimation_steps = steps
 
         if path is None:
-            self._modelfit_results = None
+            self.modelfit_results = None
         else:
-            self._modelfit_results = parse_modelfit_results(self, path.parent)
+            self.modelfit_results = parse_modelfit_results(self, path.parent)
 
         description = parse_description(self.internals.control_stream)
         self.description = description

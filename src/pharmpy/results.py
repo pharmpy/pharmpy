@@ -145,6 +145,7 @@ class ModelfitResults(Results):
     def __init__(
         self,
         ofv=None,
+        ofv_iterations=None,
         parameter_estimates=None,
         parameter_estimates_sdcorr=None,
         covariance_matrix=None,
@@ -162,6 +163,7 @@ class ModelfitResults(Results):
         log=None,
     ):
         self.ofv = ofv
+        self.ofv_iterations = ofv_iterations
         self.parameter_estimates = parameter_estimates
         self.parameter_estimates_sdcorr = parameter_estimates_sdcorr
         self.covariance_matrix = covariance_matrix
@@ -246,16 +248,8 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
         self._results.insert(ind, value)
 
     @property
-    def ofv(self):
-        return self[-1].ofv
-
-    @property
     def log_likelihood(self):
         return self[-1].log_likelihood
-
-    @property
-    def evaluation_ofv(self):
-        return self[0].evaluation_ofv
 
     @property
     def minimization_successful(self):
@@ -268,11 +262,13 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     def _get_last_est(self, attr):
         est_steps = self.model.estimation_steps
         # Find last estimation
-        for i in reversed(range(len(self))):
-            if not est_steps[i].evaluation and getattr(self[i], attr) is not None:
-                return getattr(self[i], attr)
+        for step, result in zip(reversed(est_steps), reversed(self)):
+            if not step.evaluation:
+                value = getattr(result, attr, None)
+                if value is not None:
+                    return value
         # If all steps were evaluation the last evaluation step is relevant
-        return getattr(self[-1], attr)
+        return getattr(self[-1], attr, None)
 
     @property
     def parameter_estimates(self):

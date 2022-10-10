@@ -188,7 +188,7 @@ class RandomVariables(CollectionsSequence):
     Parameters
     ----------
     rvs : list
-        A list of RandomVariable to add. Default is to create an empty RandomVariabels.
+        A list of RandomVariable to add. Default is to create an empty RandomVariables.
 
     Examples
     --------

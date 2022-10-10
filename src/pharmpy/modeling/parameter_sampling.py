@@ -61,9 +61,8 @@ def _sample_truncated_joint_normal(sigma, mu, a, b, n, rng):
 
 def _sample_from_function(
     model,
+    parameter_estimates,
     samplingfn,
-    modelfit_results=None,
-    parameters=None,
     force_posdef_samples=None,
     n=1,
     rng=None,
@@ -79,15 +78,9 @@ def _sample_from_function(
     """
     rng = create_rng(rng)
 
-    if modelfit_results is None:
-        modelfit_results = model.modelfit_results
+    pe = parameter_estimates.to_numpy()
 
-    if parameters is None:
-        parameters = list(modelfit_results.parameter_estimates.index)
-
-    pe = modelfit_results.parameter_estimates[parameters].to_numpy()
-
-    parameter_summary = model.parameters.to_dataframe().loc[parameters]
+    parameter_summary = model.parameters.to_dataframe().loc[parameter_estimates.index]
     parameter_summary = parameter_summary[~parameter_summary['fix']]
     lower = parameter_summary.lower.astype('float64').to_numpy()
     upper = parameter_summary.upper.astype('float64').to_numpy()
@@ -104,7 +97,7 @@ def _sample_from_function(
     i = 0
     while remaining > 0:
         samples = samplingfn(pe, lower, upper, n=remaining, rng=rng)
-        df = pd.DataFrame(samples, columns=parameters)
+        df = pd.DataFrame(samples, columns=parameter_estimates.index)
         if not force_posdef:
             selected = df[df.apply(model.random_variables.validate_parameters, axis=1)]
         else:
@@ -120,7 +113,7 @@ def _sample_from_function(
 
 
 def sample_parameters_uniformly(
-    model, fraction=0.1, parameters=None, force_posdef_samples=None, n=1, rng=None
+    model, parameter_estimates, fraction=0.1, force_posdef_samples=None, n=1, rng=None
 ):
     """Sample parameter vectors using uniform sampling
 
@@ -131,10 +124,10 @@ def sample_parameters_uniformly(
     ----------
     model : Model
         Pharmpy model
+    parameter_estimates : pd.Series
+        Parameter estimates for parameters to use
     fraction : float
         Fraction of estimate value to use for distribution bounds
-    parameters : pd.Series
-        Names of parameters to use. Default is to use all parameters in the model.
     force_posdef_samples : int
         Number of samples to reject before forcing variability parameters to give
         positive definite covariance matrices.
@@ -153,7 +146,8 @@ def sample_parameters_uniformly(
     >>> from pharmpy.modeling import create_rng, sample_parameters_uniformly, load_example_model
     >>> model = load_example_model("pheno")
     >>> rng = create_rng(23)
-    >>> sample_parameters_uniformly(model, n=3, rng=rng)
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> sample_parameters_uniformly(model, pe, n=3, rng=rng)
        THETA(1)  THETA(2)  THETA(3)  OMEGA(1,1)  OMEGA(2,2)  SIGMA(1,1)
     0  0.004878  0.908216  0.149441    0.029179    0.025472    0.012947
     1  0.004828  1.014444  0.149958    0.028853    0.027653    0.013348
@@ -176,15 +170,15 @@ def sample_parameters_uniformly(
         return samples
 
     samples = _sample_from_function(
-        model, fn, parameters=parameters, force_posdef_samples=force_posdef_samples, n=n, rng=rng
+        model, parameter_estimates, fn, force_posdef_samples=force_posdef_samples, n=n, rng=rng
     )
     return samples
 
 
 def sample_parameters_from_covariance_matrix(
     model,
-    modelfit_results=None,
-    parameters=None,
+    parameter_estimates,
+    covariance_matrix,
     force_posdef_samples=None,
     force_posdef_covmatrix=False,
     n=1,
@@ -192,16 +186,16 @@ def sample_parameters_from_covariance_matrix(
 ):
     """Sample parameter vectors using the covariance matrix
 
-    If modelfit_results is not provided the results from the model will be used
+    If parameters is not provided all estimated parameters will be used
 
     Parameters
     ----------
     model : Model
         Input model
-    modelfit_results : ModelfitResults
-        Alternative results object. Default is to use the one in model
-    parameters : list
-        Use to only sample a subset of the parameters. None means all
+    parameter_estimates : pd.Series
+        Parameter estimates to use as means in sampling
+    covariance_matrix : pd.DataFrame
+        Parameter uncertainty covariance matrix
     force_posdef_samples : int
         Set to how many iterations to do before forcing all samples to be positive definite. None is
         default and means never and 0 means always
@@ -222,7 +216,9 @@ def sample_parameters_from_covariance_matrix(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> rng = create_rng(23)
-    >>> sample_parameters_from_covariance_matrix(model, n=3, rng=rng)
+    >>> cov = model.modelfit_results.covariance_matrix
+    >>> pe = model.modelfit_results.parameter_estimates
+    >>> sample_parameters_from_covariance_matrix(model, pe, cov, n=3, rng=rng)
        THETA(1)  THETA(2)  THETA(3)  OMEGA(1,1)  OMEGA(2,2)  SIGMA(1,1)
     0  0.005069  0.974989  0.204629    0.024756    0.012088    0.012943
     1  0.004690  0.958431  0.233231    0.038866    0.029000    0.012516
@@ -234,13 +230,7 @@ def sample_parameters_from_covariance_matrix(
     sample_individual_estimates : Sample individual estiates given their covariance
 
     """
-    if modelfit_results is None:
-        modelfit_results = model.modelfit_results
-
-    if parameters is None:
-        parameters = list(modelfit_results.parameter_estimates.index)
-
-    sigma = modelfit_results.covariance_matrix[parameters].loc[parameters].to_numpy()
+    sigma = covariance_matrix[parameter_estimates.index].loc[parameter_estimates.index].to_numpy()
     if not is_posdef(sigma):
         if force_posdef_covmatrix:
             old_sigma = sigma
@@ -257,18 +247,29 @@ def sample_parameters_from_covariance_matrix(
 
     fn = partial(_sample_truncated_joint_normal, sigma)
     samples = _sample_from_function(
-        model, fn, parameters=parameters, force_posdef_samples=force_posdef_samples, n=n, rng=rng
+        model, parameter_estimates, fn, force_posdef_samples=force_posdef_samples, n=n, rng=rng
     )
     return samples
 
 
-def sample_individual_estimates(model, parameters=None, samples_per_id=100, rng=None):
+def sample_individual_estimates(
+    model,
+    individual_estimates,
+    individual_estimates_covariance,
+    parameters=None,
+    samples_per_id=100,
+    rng=None,
+):
     """Sample individual estimates given their covariance.
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    individual_estimates : pd.DataFrame
+        Individual estimates to use
+    individual_estimates_covariance : pd.DataFrame
+        Uncertainty covariance of the individual estimates
     parameters : list
         A list of a subset of individual parameters to sample. Default is None, which means all.
     samples_per_id : int
@@ -286,7 +287,9 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100, rng=
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> rng = create_rng(23)
-    >>> sample_individual_estimates(model, samples_per_id=2, rng=rng)
+    >>> ie = model.modelfit_results.individual_estimates
+    >>> iec = model.modelfit_results.individual_estimates_covariance
+    >>> sample_individual_estimates(model, ie, iec, samples_per_id=2, rng=rng)
                  ETA(1)    ETA(2)
     ID sample
     1  0      -0.127941  0.037273
@@ -311,8 +314,8 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100, rng=
 
     """
     rng = create_rng(rng)
-    ests = model.modelfit_results.individual_estimates
-    covs = model.modelfit_results.individual_estimates_covariance
+    ests = individual_estimates
+    covs = individual_estimates_covariance
     if parameters is None:
         parameters = ests.columns
     ests = ests[parameters]

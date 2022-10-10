@@ -11,6 +11,7 @@ New features
 * 9fd701521 Store input models in tool database
 * Replace best_model with final_model_name and retrieve_final_model
 * a7fbcbfe2 Handle results and databases as input to retrieve_models
+* Add modeling.update_initial_individual_estimates function
 
 Changes
 =======
@@ -23,6 +24,26 @@ Changes
 * check_high_correlations needs the correlation matrix as an explicit argument 
 * plot_iofv_vs_iofv takes two iofv series instead of two models as input
 * plot_individual_predictions takes the predictions dataframe as input
+* create_joint_distribution takes an option individual_estimates argument and does not use modelfit_results directly
+* evaluate_expression to get parameter estimates from optional argument instead of from modelfit_results
+* evaluate_population_prediction will not take parameter estimates from modelfit_results
+* evaluate_individual_prediction will not take parameter estimates from modelfit_results
+* evaluate_eta_gradient will not take parameter estimates from modelfit_results
+* evaluate_epsilon_gradient will not take parameter estimates from modelfit_results
+* evaluate_weighted_residuals will not take parameter estimates from modelfit_results
+* sample_parameters_from_covariance_matrix will need parameter_estimates and covariance_matrix as explicit arguments
+* sample_parameters_uniformly will need parameter_esimtates as explicit arguments
+* sample_individual_estimates will need individual_estimates and individual_estimates_covariance as explicit arguments
+* calculate_individual_parameter_statistics and calculate_pk_parameters_statistics will need parameter estimates and covariance matrix
+* update_inits need explicit estimates as argument and does not use modelfit_results
+* update_inits does not update initial individual estimates
+* Move predict_* functions from modeling to pharmpy.tools
+* Move summarize_individuals and summarize_individuals_count_table to pharmpy.tools
+* Move print_fit_summary to pharmpy.tools
+* Move write_results to pharmpy.tools
+* Move summarize_errors to pharmpy.tools
+* Move rank_models to pharmpy.tools
+* Move summarize_modelfit_results to pharmpy.tools
 
 Bug fixes
 =========

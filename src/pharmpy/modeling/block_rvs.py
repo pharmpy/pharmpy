@@ -10,13 +10,13 @@ from pharmpy.model import Parameter, Parameters
 from pharmpy.modeling.help_functions import _get_etas
 
 
-def create_joint_distribution(model, rvs=None):
+def create_joint_distribution(model, rvs=None, individual_estimates=None):
     """
     Combines some or all etas into a joint distribution.
 
     The etas must be IIVs and cannot
     be fixed. Initial estimates for covariance between the etas is dependent on whether
-    the model has results from a previous results. In that case, the correlation will
+    the model has results from a previous run. In that case, the correlation will
     be calculated from individual estimates, otherwise correlation will be set to 10%.
 
     Parameters
@@ -26,6 +26,8 @@ def create_joint_distribution(model, rvs=None):
     rvs : list
         Sequence of etas or names of etas to combine. If None, all etas that are IIVs and
         non-fixed will be used (full block). None is default.
+    individual_estimates : pd.DataFrame
+        Optional individual estimates to use for calculation of initial estimates
 
     Return
     ------
@@ -83,7 +85,7 @@ def create_joint_distribution(model, rvs=None):
     pset_new = model.parameters
     for cov_name, param_names in cov_to_params.items():
         parent1, parent2 = model.parameters[param_names[0]], model.parameters[param_names[1]]
-        covariance_init = _choose_param_init(model, all_rvs, parent1, parent2)
+        covariance_init = _choose_param_init(model, individual_estimates, all_rvs, parent1, parent2)
         param_new = Parameter(cov_name, covariance_init)
         pset_new += param_new
     model.parameters = Parameters(pset_new)
@@ -143,9 +145,7 @@ def split_joint_distribution(model, rvs=None):
     return model
 
 
-def _choose_param_init(model, rvs, parent1, parent2):
-    res = model.modelfit_results
-
+def _choose_param_init(model, individual_estimates, rvs, parent1, parent2):
     etas = []
 
     for name in rvs.names:
@@ -158,9 +158,9 @@ def _choose_param_init(model, rvs, parent1, parent2):
     last_estimation_step = [est for est in model.estimation_steps if not est.evaluation][-1]
     if last_estimation_step.method == 'FO':
         return init_default
-    elif res is not None:
+    elif individual_estimates is not None:
         try:
-            ie = res.individual_estimates
+            ie = individual_estimates
             if not all(eta in ie.columns for eta in etas):
                 return init_default
         except KeyError:

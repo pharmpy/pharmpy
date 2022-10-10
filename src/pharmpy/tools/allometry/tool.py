@@ -7,9 +7,8 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
 from pharmpy.model import Model, Results
-from pharmpy.modeling import (
-    add_allometry,
-    get_pk_parameters,
+from pharmpy.modeling import add_allometry, get_pk_parameters
+from pharmpy.tools import (
     summarize_errors,
     summarize_individuals,
     summarize_individuals_count_table,
