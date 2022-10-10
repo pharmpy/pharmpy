@@ -464,8 +464,7 @@ def parse_initial_individual_estimates(control_stream, rvs, basepath) -> Optiona
         if not path.is_absolute():
             if basepath is None:
                 raise ValueError("Cannot resolve path for $ETAS")
-            path = basepath / path
-            path = path.resolve()
+            path = path_absolute(basepath / path)
         phi_tables = NONMEMTableFile(path)
         rv_names = [rv for rv in rvs.names if rv.startswith('ETA')]
         phitab = next(phi_tables)
