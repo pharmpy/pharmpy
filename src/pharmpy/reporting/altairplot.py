@@ -91,7 +91,7 @@ class altair_plot(nodes.General, nodes.Element):
     pass
 
 
-def purge_altair_namespaces(app, env, docname):
+def purge_altair_namespaces(_, env, docname):
     if not hasattr(env, "_altair_namespaces"):
         return
     env._altair_namespaces.pop(docname, {})
@@ -145,6 +145,7 @@ class AltairPlotDirective(Directive):
 
         code = "\n".join(self.content)
 
+        source_literal = None
         if show_code:
             source_literal = nodes.literal_block(code, code)
             source_literal["language"] = "python"
@@ -182,7 +183,7 @@ class AltairPlotDirective(Directive):
 
         if code_below:
             result += [plot_node]
-        if show_code:
+        if source_literal is not None:
             result += [source_literal]
         if not code_below:
             result += [plot_node]
@@ -234,6 +235,9 @@ def html_visit_altair_plot(self, node):
             node.extend([repr_literal])
     elif output == "plot":
         if isinstance(chart, alt.TopLevelMixin):
+            assert chart is not None  # NOTE This is needed because of lazy
+            # loading of alt
+
             # Last line should be a chart; convert to spec dict
             try:
                 spec = chart.to_dict()
