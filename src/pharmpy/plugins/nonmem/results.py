@@ -27,10 +27,11 @@ def parse_modelfit_results(model, path, subproblem=None):
     residuals = parse_residuals(table_df)
     predictions = parse_predictions(table_df)
     iofv, ie, iec = parse_phi(model, path)
-    final_ofv, ofv_iterations = parse_ext(model, path, subproblem)
+    final_ofv, ofv_iterations, pe_iterations = parse_ext(model, path, subproblem)
 
     res.ofv = final_ofv
     res.ofv_iterations = ofv_iterations
+    res.parameter_estimates_iterations = pe_iterations
     res.individual_ofv = iofv
     res.individual_estimates = ie
     res.individual_estimates_covariance = iec
@@ -467,10 +468,16 @@ def parse_ext(model, path, subproblem):
         ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
     except ValueError:
         return np.nan, create_failed_ofv_iterations(model)
+    final_ofv, ofv_iterations = parse_ofv(model, ext_tables, subproblem)
+    pe_iterations = parse_parameter_estimates(model, ext_tables, subproblem)
+    return final_ofv, ofv_iterations, pe_iterations
+
+
+def parse_ofv(model, ext_tables, subproblem):
     step = []
     iteration = []
     ofv = []
-    for i, table in enumerate(ext_tables, start=1):
+    for i, table in enumerate(ext_tables.tables, start=1):
         if subproblem and table.subproblem != subproblem:
             continue
         df = table.data_frame
@@ -479,9 +486,42 @@ def parse_ext(model, path, subproblem):
         step += [i] * n
         iteration += list(df['ITERATION'])
         ofv += list(df['OBJ'])
-        final_ofv = table.final_ofv
+        final_table = table
+    final_ofv = final_table.final_ofv
     ofv_iterations = create_ofv_iterations_series(ofv, step, iteration)
     return final_ofv, ofv_iterations
+
+
+def parse_parameter_estimates(model, ext_tables, subproblem):
+    pe = pd.DataFrame()
+    for i, table in enumerate(ext_tables.tables, start=1):
+        if subproblem and table.subproblem != subproblem:
+            continue
+        df = table.data_frame
+        df = df[df['ITERATION'] >= 0]
+
+        fix = get_fixed_parameters(table, model)
+        fixed_param_names = [name for name, f in zip(list(df.columns)[1:-1], fix) if f]
+        df = df.drop(fixed_param_names, axis=1)
+        df['step'] = i
+        if model:
+            df = df.rename(columns=parameter_translation(model.internals.control_stream))
+        pe = pd.concat([pe, df])
+        final_table = table
+    pe = pe.rename(columns={'ITERATION': 'iteration'}).set_index(['step', 'iteration'])
+    return pe
+
+
+def get_fixed_parameters(table, model):
+    try:
+        fix = table.fixed
+    except KeyError:
+        # NM 7.2 does not have row -1000000006 indicating FIXED status
+        ests = table.final_parameter_estimates
+        if model:
+            fixed = pd.Series(model.parameters.fix)
+            fix = pd.concat([fixed, pd.Series(True, index=ests.index.difference(fixed.index))])
+    return fix
 
 
 def simfit_results(model, model_path):
