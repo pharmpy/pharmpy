@@ -11,16 +11,29 @@ from pharmpy.results import ChainedModelfitResults, ModelfitResults
 from pharmpy.workflows.log import Log
 
 
-def parse_modelfit_results(model, path):
+def parse_modelfit_results(model, path, subproblem=None):
+    # Path to model file or results file
     if path is None:
         return None
+    else:
+        path = Path(path)
 
     try:
-        ext_path = path / (model.name + '.ext')
-        res = NONMEMChainedModelfitResults(ext_path, model=model)
-        return res
+        res = NONMEMChainedModelfitResults(path, model=model, subproblem=subproblem)
     except (FileNotFoundError, OSError):
         return None
+
+    table_df = parse_tables(model, path)
+    residuals = parse_residuals(table_df)
+    predictions = parse_predictions(table_df)
+    iofv, ie, iec = parse_phi(model, path)
+
+    res.individual_ofv = iofv
+    res.individual_estimates = ie
+    res.individual_estimates_covariance = iec
+    res.predictions = predictions
+    res.residuals = residuals
+    return res
 
 
 class NONMEMModelfitResults(ModelfitResults):
@@ -79,14 +92,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_cor_table()
         self._read_coi_table()
         self._calculate_cov_cor_coi()
-        (
-            self.individual_ofv,
-            self.individual_estimates,
-            self.individual_estimates_covariance,
-        ) = parse_phi(model, path)
-        table_df = parse_tables(model, path)
-        self.residuals = parse_residuals(table_df)
-        self.predictions = parse_predictions(table_df)
 
     def __getattr__(self, item):
         # Avoid infinite recursion when deepcopying
@@ -464,7 +469,7 @@ def simfit_results(model, model_path):
     nsubs = model.internals.control_stream.get_records('SIMULATION')[0].nsubs
     results = []
     for i in range(1, nsubs + 1):
-        res = NONMEMChainedModelfitResults(model_path, model=model, subproblem=i)
+        res = parse_modelfit_results(model, model_path, subproblem=i)
         results.append(res)
     return results
 
