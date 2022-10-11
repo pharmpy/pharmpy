@@ -313,7 +313,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
                 f' Looked up {", ".join(map(lambda e: f"`{e.filename}`", errors))}.'
             )
 
-        get_modelfit_results(model, root)
+        get_modelfit_results(model, path)
         return model
 
     def retrieve_modelfit_results(self):
