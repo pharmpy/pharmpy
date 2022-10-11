@@ -122,6 +122,8 @@ class ModelfitResults(Results):
         Estimated covariance between etas
     parameter_estimates : pd.Series
         Population parameter estimates
+    parameter_estimates_iterations : pd.DataFrame
+        All recorded iterations for parameter estimates
     parameter_estimates_sdcorr : pd.Series
         Population parameter estimates with variability parameters as standard deviations and
         correlations
@@ -150,6 +152,7 @@ class ModelfitResults(Results):
         ofv_iterations=None,
         parameter_estimates=None,
         parameter_estimates_sdcorr=None,
+        parameter_estimates_iterations=None,
         covariance_matrix=None,
         correlation_matrix=None,
         standard_errors=None,
@@ -169,6 +172,7 @@ class ModelfitResults(Results):
         self.ofv_iterations = ofv_iterations
         self.parameter_estimates = parameter_estimates
         self.parameter_estimates_sdcorr = parameter_estimates_sdcorr
+        self.parameter_estimates_iterations = parameter_estimates_iterations
         self.covariance_matrix = covariance_matrix
         self.correlation_matrix = correlation_matrix
         self.standard_errors = standard_errors
@@ -199,6 +203,7 @@ class ModelfitResults(Results):
             'ofv': self.ofv,
             'parameter_estimates': self.parameter_estimates,
             'parameter_estimates_sdcorr': self.parameter_estimates_sdcorr,
+            'parameter_estimates_iterations': self.parameter_estimates_iterations,
             'covariance_matrix': self.covariance_matrix,
             'correlation_matrix': self.correlation_matrix,
             'standard_errors': self.standard_errors,
@@ -273,14 +278,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
                     return value
         # If all steps were evaluation the last evaluation step is relevant
         return getattr(self[-1], attr, None)
-
-    @property
-    def parameter_estimates(self):
-        return self[-1].parameter_estimates
-
-    @parameter_estimates.setter
-    def parameter_estimates(self, value):
-        self[-1].parameter_estimates = value
 
     @property
     def parameter_estimates_sdcorr(self):

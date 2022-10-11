@@ -27,10 +27,11 @@ def parse_modelfit_results(model, path, subproblem=None):
     residuals = parse_residuals(table_df)
     predictions = parse_predictions(table_df)
     iofv, ie, iec = parse_phi(model, path)
-    final_ofv, ofv_iterations, pe_iterations = parse_ext(model, path, subproblem)
+    final_ofv, ofv_iterations, final_pe, pe_iterations = parse_ext(model, path, subproblem)
 
     res.ofv = final_ofv
     res.ofv_iterations = ofv_iterations
+    res.parameter_estimates = final_pe
     res.parameter_estimates_iterations = pe_iterations
     res.individual_ofv = iofv
     res.individual_estimates = ie
@@ -469,8 +470,8 @@ def parse_ext(model, path, subproblem):
     except ValueError:
         return np.nan, create_failed_ofv_iterations(model)
     final_ofv, ofv_iterations = parse_ofv(model, ext_tables, subproblem)
-    pe_iterations = parse_parameter_estimates(model, ext_tables, subproblem)
-    return final_ofv, ofv_iterations, pe_iterations
+    final_pe, pe_iterations = parse_parameter_estimates(model, ext_tables, subproblem)
+    return final_ofv, ofv_iterations, final_pe, pe_iterations
 
 
 def parse_ofv(model, ext_tables, subproblem):
@@ -501,15 +502,18 @@ def parse_parameter_estimates(model, ext_tables, subproblem):
         df = df[df['ITERATION'] >= 0]
 
         fix = get_fixed_parameters(table, model)
-        fixed_param_names = [name for name, f in zip(list(df.columns)[1:-1], fix) if f]
+        fixed_param_names = [name for name in list(df.columns)[1:-1] if fix[name]]
         df = df.drop(fixed_param_names, axis=1)
         df['step'] = i
         if model:
             df = df.rename(columns=parameter_translation(model.internals.control_stream))
         pe = pd.concat([pe, df])
-        final_table = table
+    final = table.final_parameter_estimates
+    final = final.drop(fixed_param_names)
+    if model:
+        final = final.rename(index=parameter_translation(model.internals.control_stream))
     pe = pe.rename(columns={'ITERATION': 'iteration'}).set_index(['step', 'iteration'])
-    return pe
+    return final, pe
 
 
 def get_fixed_parameters(table, model):
