@@ -1,7 +1,9 @@
 import warnings
 from pathlib import Path
+from typing import Optional
 
 import pharmpy.plugins.nonmem
+from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import (
     Assignment,
@@ -14,13 +16,14 @@ from pharmpy.model import (
     ModelSyntaxError,
     Parameters,
     RandomVariables,
+    Statements,
 )
 from pharmpy.plugins.nonmem.table import NONMEMTableFile
 
-from .advan import compartmental_model
+from .advan import _compartmental_model
 
 
-def parse_parameters(control_stream):
+def parse_parameters(control_stream) -> Parameters:
     next_theta = 1
     params = []
     for theta_record in control_stream.get_records('THETA'):
@@ -44,7 +47,7 @@ def parse_parameters(control_stream):
     return Parameters(params)
 
 
-def parse_random_variables(control_stream):
+def parse_random_variables(control_stream) -> RandomVariables:
     dists = RandomVariables.create(())
     next_omega = 1
     prev_start = 1
@@ -68,32 +71,34 @@ def parse_random_variables(control_stream):
     return rvs
 
 
-def parse_statements(model):
-    rec = model.internals.control_stream.get_pred_pk_record()
+def parse_statements(model, control_stream) -> Statements:
+    rec = control_stream.get_pred_pk_record()
     statements = rec.statements
 
-    des = model.internals.control_stream.get_des_record()
-    error = model.internals.control_stream.get_error_record()
+    des = control_stream.get_des_record()
+    error = control_stream.get_error_record()
+
     if error:
-        sub = model.internals.control_stream.get_records('SUBROUTINES')[0]
-        comp = compartmental_model(model, sub.advan, sub.trans, des)
+        sub = control_stream.get_records('SUBROUTINES')[0]
+        comp = _compartmental_model(model, control_stream, sub.advan, sub.trans, des)
         trans_amounts = dict()
-        if comp is not None:
+        if comp is None:
+            statements += ExplicitODESystem([], {})  # FIXME: Placeholder for ODE-system
+            # FIXME: Dummy link statement
+            statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
+        else:
             cm, link = comp
             statements += [cm, link]
             for i, amount in enumerate(cm.amounts, start=1):
                 trans_amounts[sympy.Symbol(f"A({i})")] = amount
-        else:
-            statements += ExplicitODESystem([], {})  # FIXME: Placeholder for ODE-system
-            # FIXME: Dummy link statement
-            statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
         statements += error.statements
         if trans_amounts:
             statements = statements.subs(trans_amounts)
+
     return statements
 
 
-def _adjust_iovs(rvs):
+def _adjust_iovs(rvs: RandomVariables) -> RandomVariables:
     n = len(rvs)
     if n <= 1:
         return rvs
@@ -293,12 +298,12 @@ def parse_value_type(control_stream, statements):
     return tp
 
 
-def parse_description(control_stream):
+def parse_description(control_stream) -> str:
     rec = control_stream.get_records('PROBLEM')[0]
     return rec.title
 
 
-def parse_estimation_steps(control_stream, random_variables):
+def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
     steps = []
     records = control_stream.get_records('ESTIMATION')
     covrec = control_stream.get_records('COVARIANCE')
@@ -442,7 +447,7 @@ def parse_solver(control_stream):
     return solver, record.tol, record.atol
 
 
-def parse_initial_individual_estimates(control_stream, rvs, basepath):
+def parse_initial_individual_estimates(control_stream, rvs, basepath) -> Optional[pd.DataFrame]:
     """Initial individual estimates
 
     These are taken from the $ETAS FILE. 0 FIX ETAs are removed.
@@ -462,13 +467,12 @@ def parse_initial_individual_estimates(control_stream, rvs, basepath):
         rv_names = [rv for rv in rvs.names if rv.startswith('ETA')]
         phitab = next(phi_tables)
         names = [name for name in rv_names if name in phitab.etas.columns]
-        etas = phitab.etas[names]
+        return phitab.etas[names]
     else:
-        etas = None
-    return etas
+        return None
 
 
-def parse_dataset_path(control_stream, basepath):
+def parse_dataset_path(control_stream, basepath) -> Optional[Path]:
     record = next(iter(control_stream.get_records('DATA')), None)
     if record is None:
         return None
@@ -564,15 +568,12 @@ def parse_column_info(control_stream):
     return colnames, drop, synonym_replacement, given_names
 
 
-def parse_datainfo(control_stream, path):
+def parse_datainfo(control_stream, path) -> DataInfo:
     dataset_path = parse_dataset_path(control_stream, path)
     (colnames, drop, replacements, _) = parse_column_info(control_stream)
-    try:
+
+    if dataset_path is not None:
         path = dataset_path.with_suffix('.datainfo')
-    except:  # noqa: E722
-        # FIXME: dataset_path could fail in so many ways!
-        pass
-    else:
         if path.is_file():
             di = DataInfo.read_json(path)
             di = di.derive(path=dataset_path)
