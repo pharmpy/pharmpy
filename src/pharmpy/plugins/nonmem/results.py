@@ -115,6 +115,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj = self._fill_empty_results(result_obj, is_covariance_step)
             result_obj.table_number = 1
             self.append(result_obj)
+            self.ofv = None
+            self.ofv_iterations = None
             return
         final_ofv, ofv_iterations = parse_ext(self._path, self._subproblem)
         self.ofv = final_ofv
