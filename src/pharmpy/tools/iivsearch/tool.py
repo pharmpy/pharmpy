@@ -1,10 +1,11 @@
+import warnings
 from dataclasses import dataclass
 from typing import List, Optional, Set, Union
 
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
-from pharmpy.modeling import add_pk_iiv, copy_model, create_joint_distribution
+from pharmpy.modeling import add_pk_iiv, calculate_bic, copy_model, create_joint_distribution
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results
@@ -145,9 +146,22 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
 
     assert last_res is not None
 
+    res_modelfit_input = input_model.modelfit_results
+    res_modelfit_final = final_model.modelfit_results
+    if res_modelfit_input and res_modelfit_final:
+        bic_input = calculate_bic(input_model, res_modelfit_input.ofv, type='iiv')
+        bic_final = calculate_bic(final_model, res_modelfit_final.ofv, type='iiv')
+        if bic_final > bic_input:
+            warnings.warn(
+                f'Worse {rank_type} in final model {final_model.name} '
+                f'({bic_final}) than {input_model.name} ({bic_input}), selecting '
+                f'input model'
+            )
+            last_res.final_model_name = input_model.name
+
     keys = list(range(1, len(list_of_algorithms) + 1))
 
-    return IIVSearchResults(
+    res = IIVSearchResults(
         summary_tool=_concat_summaries(sum_tools, keys),
         summary_models=_concat_summaries(sum_models, [0] + keys),  # To include input model
         summary_individuals=_concat_summaries(sum_inds, keys),
@@ -157,6 +171,8 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
         models=models,
         tool_database=last_res.tool_database,
     )
+
+    return res
 
 
 def _concat_summaries(summaries, keys):

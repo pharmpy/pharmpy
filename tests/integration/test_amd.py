@@ -18,8 +18,8 @@ def _model_count(rundir: Path):
 
 
 @pytest.mark.filterwarnings(
-    'ignore:.*Adjusting initial estimates to create '
-    'positive semidefinite omega/sigma matrices.*:UserWarning'
+    'ignore:.*Adjusting initial estimates to create positive semidefinite omega/sigma matrices.',
+    'ignore::UserWarning',
 )
 def test_amd(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
