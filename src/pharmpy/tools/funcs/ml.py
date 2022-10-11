@@ -110,7 +110,7 @@ def predict_outliers(model, results, cutoff=3.0):
 
     Returns
     -------
-    pd.Dataframe
+    pd.DataFrame
         Dataframe over the individuals with a `residual` column containing the raw predicted
         residuals and a `outlier` column with a boolean to tell whether the individual is
         an outlier or not.
@@ -211,7 +211,7 @@ def predict_influential_individuals(model, results, cutoff=3.84):
 
     Returns
     -------
-    pd.Dataframe
+    pd.DataFrame
         Dataframe over the individuals with a `dofv` column containing the raw predicted
         delta-OFV and an `influential` column with a boolean to tell whether the individual is
         influential or not.
@@ -247,7 +247,7 @@ def predict_influential_outliers(model, results, outlier_cutoff=3, influential_c
 
     Returns
     -------
-    pd.Dataframe
+    pd.DataFrame
         Dataframe over the individuals with a `outliers` and `dofv` columns containing the raw
         predictions and `influential`, `outlier` and `influential_outlier` boolean columns.
 
