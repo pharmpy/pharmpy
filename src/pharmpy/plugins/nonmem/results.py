@@ -28,14 +28,6 @@ class NONMEMModelfitResults(ModelfitResults):
         self._chain = chain
         super().__init__()
 
-    def predictions_for_observations(self):
-        """predictions only for observation data records"""
-        df = self._chain._read_from_tables(['ID', 'TIME', 'MDV', 'PRED', 'CIPREDI', 'CPRED'], self)
-        df.set_index(['ID', 'TIME'], inplace=True)
-        df = df[df['MDV'] == 0]
-        df = df.drop(columns=['MDV'])
-        return df
-
     def _set_covariance_status(self, results_file, table_with_cov=None):
         covariance_status = {
             'requested': True
@@ -239,10 +231,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 result_obj.log_likelihood = np.nan
             result_obj.runtime_total = rfile.runtime_total
 
-    @property
-    def predictions_for_observations(self):
-        return self[-1].predictions_for_observations
-
     def _read_cov_table(self):
         try:
             cov_table = NONMEMTableFile(self._path.with_suffix('.cov'))
@@ -369,32 +357,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj.individual_ofv = None
                     result_obj.inividual_estimates = None
                     result_obj.individual_estimates_covariance = None
-
-    def _read_from_tables(self, columns, result_obj):
-        table_recs = self.model.internals.control_stream.get_records('TABLE')
-        found = []
-        df = pd.DataFrame()
-        for table_rec in table_recs:
-            columns_in_table = []
-            for key, value in table_rec.all_options:
-                if key in columns and key not in found and value is None:
-                    # FIXME: Cannot handle synonyms here
-                    colname = key
-                elif value in columns and value not in found:
-                    colname = value
-                else:
-                    continue
-                found.append(colname)
-                columns_in_table.append(colname)
-            if columns_in_table:
-                noheader = table_rec.has_option("NOHEADER")
-                notitle = table_rec.has_option("NOTITLE") or noheader
-                nolabel = table_rec.has_option("NOLABEL") or noheader
-                path = self._path.parent / table_rec.path
-                table_file = NONMEMTableFile(path, notitle=notitle, nolabel=nolabel)
-                table = table_file.tables[0]
-                df[columns_in_table] = table.data_frame[columns_in_table]
-        return df
 
 
 def parse_tables(model, path):
