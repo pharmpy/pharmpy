@@ -28,14 +28,6 @@ class NONMEMModelfitResults(ModelfitResults):
         self._chain = chain
         super().__init__()
 
-    def predictions_for_observations(self):
-        """predictions only for observation data records"""
-        df = self._chain._read_from_tables(['ID', 'TIME', 'MDV', 'PRED', 'CIPREDI', 'CPRED'], self)
-        df.set_index(['ID', 'TIME'], inplace=True)
-        df = df[df['MDV'] == 0]
-        df = df.drop(columns=['MDV'])
-        return df
-
     def _set_covariance_status(self, results_file, table_with_cov=None):
         covariance_status = {
             'requested': True
@@ -74,7 +66,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def __init__(self, path, model=None, subproblem=None):
         # Path is path to any result file
         self.log = Log()
-        self._path = Path(path)
+        path = Path(path)
+        self._path = path
         self._subproblem = subproblem
         self.model = model
         extensions = ['.lst', '.ext', '.cov', '.cor', '.coi', '.phi']
@@ -86,9 +79,14 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_cor_table()
         self._read_coi_table()
         self._calculate_cov_cor_coi()
-        self._read_phi_table()
-        self._read_residuals()
-        self._read_predictions()
+        (
+            self.individual_ofv,
+            self.individual_estimates,
+            self.individual_estimates_covariance,
+        ) = parse_phi(model, path)
+        table_df = parse_tables(model, path)
+        self.residuals = parse_residuals(table_df)
+        self.predictions = parse_predictions(table_df)
 
     def __getattr__(self, item):
         # Avoid infinite recursion when deepcopying
@@ -117,6 +115,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj = self._fill_empty_results(result_obj, is_covariance_step)
             result_obj.table_number = 1
             self.append(result_obj)
+            self.ofv = None
+            self.ofv_iterations = None
             return
         final_ofv, ofv_iterations = parse_ext(self._path, self._subproblem)
         self.ofv = final_ofv
@@ -238,10 +238,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 result_obj.log_likelihood = np.nan
             result_obj.runtime_total = rfile.runtime_total
 
-    @property
-    def predictions_for_observations(self):
-        return self[-1].predictions_for_observations
-
     def _read_cov_table(self):
         try:
             cov_table = NONMEMTableFile(self._path.with_suffix('.cov'))
@@ -335,91 +331,113 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 elif obj.information_matrix is not None:
                     obj.standard_errors = modeling.calculate_se_from_inf(obj.information_matrix)
 
-    def _read_phi_table(self):
-        for result_obj in self:
-            result_obj.individual_ofv = None
-            result_obj.individual_estimates = None
-            result_obj.individual_estimates_covariance = None
 
-        trans = rv_translation(self.model.internals.control_stream, reverse=True)
-        rv_names = [name for name in self.model.random_variables.etas.names if name in trans]
+def parse_phi(model, path):
+    try:
+        phi_tables = NONMEMTableFile(path.with_suffix('.phi'))
+    except FileNotFoundError:
+        return None, None, None
+    table = phi_tables.tables[-1]
+
+    if table is not None:
+        trans = rv_translation(model.internals.control_stream, reverse=True)
+        rv_names = [name for name in model.random_variables.etas.names if name in trans]
         try:
-            phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
-        except FileNotFoundError:
-            return
-        for result_obj in self:
-            table = phi_tables.table_no(result_obj.table_number)
-            if table is not None:
-                try:
-                    result_obj.individual_ofv = table.iofv
-                    result_obj.individual_estimates = table.etas.rename(
-                        columns=rv_translation(self.model.internals.control_stream)
-                    )[rv_names]
-                    covs = table.etcs
-                    covs = covs.transform(
-                        lambda cov: cov.rename(
-                            columns=rv_translation(self.model.internals.control_stream),
-                            index=rv_translation(self.model.internals.control_stream),
-                        )
-                    )
-                    covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
-                    result_obj.individual_estimates_covariance = covs
-                except KeyError:
-                    result_obj.individual_ofv = None
-                    result_obj.inividual_estimates = None
-                    result_obj.individual_estimates_covariance = None
-
-    def _read_residuals(self):
-        for obj in self:
-            try:
-                df = self._read_from_tables(['ID', 'TIME', 'RES', 'WRES', 'CWRES'], obj)
-                df['ID'] = df['ID'].convert_dtypes()
-                df.set_index(['ID', 'TIME'], inplace=True)
-            except (KeyError, OSError):
-                obj.residuals = None
-            else:
-                df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
-                obj.residuals = df
-
-    def _read_predictions(self):
-        for obj in self:
-            try:
-
-                df = self._read_from_tables(
-                    ['ID', 'TIME', 'PRED', 'CIPREDI', 'CPRED', 'IPRED'], obj
+            individual_ofv = table.iofv
+            individual_estimates = table.etas.rename(
+                columns=rv_translation(model.internals.control_stream)
+            )[rv_names]
+            covs = table.etcs
+            covs = covs.transform(
+                lambda cov: cov.rename(
+                    columns=rv_translation(model.internals.control_stream),
+                    index=rv_translation(model.internals.control_stream),
                 )
-                df['ID'] = df['ID'].convert_dtypes()
-                df.set_index(['ID', 'TIME'], inplace=True)
-            except (KeyError, OSError):
-                obj.predictions = None
-            else:
-                obj.predictions = df
+            )
+            covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
+            return individual_ofv, individual_estimates, covs
+        except KeyError:
+            pass
+    return None, None, None
 
-    def _read_from_tables(self, columns, result_obj):
-        table_recs = self.model.internals.control_stream.get_records('TABLE')
-        found = []
-        df = pd.DataFrame()
-        for table_rec in table_recs:
-            columns_in_table = []
-            for key, value in table_rec.all_options:
-                if key in columns and key not in found and value is None:
-                    # FIXME: Cannot handle synonyms here
-                    colname = key
-                elif value in columns and value not in found:
-                    colname = value
-                else:
-                    continue
-                found.append(colname)
-                columns_in_table.append(colname)
-            if columns_in_table:
-                noheader = table_rec.has_option("NOHEADER")
-                notitle = table_rec.has_option("NOTITLE") or noheader
-                nolabel = table_rec.has_option("NOLABEL") or noheader
-                path = self._path.parent / table_rec.path
+
+def parse_tables(model, path):
+    """Parse $TABLE and table files into one large dataframe of useful columns"""
+    interesting_columns = {
+        'ID',
+        'TIME',
+        'PRED',
+        'CIPREDI',
+        'CPRED',
+        'IPRED',
+        'RES',
+        'WRES',
+        'CWRES',
+        'MDV',
+    }
+
+    table_recs = model.internals.control_stream.get_records('TABLE')
+    found = set()
+    df = pd.DataFrame()
+    for table_rec in table_recs:
+        columns_in_table = []
+        for key, value in table_rec.all_options:
+            if key in interesting_columns and key not in found and value is None:
+                # FIXME: Cannot handle synonyms here
+                colname = key
+            elif value in interesting_columns and value not in found:
+                colname = value
+            else:
+                continue
+
+            found.add(colname)
+            columns_in_table.append(colname)
+
+            noheader = table_rec.has_option("NOHEADER")
+            notitle = table_rec.has_option("NOTITLE") or noheader
+            nolabel = table_rec.has_option("NOLABEL") or noheader
+            path = path.parent / table_rec.path
+            try:
                 table_file = NONMEMTableFile(path, notitle=notitle, nolabel=nolabel)
-                table = table_file.tables[0]
-                df[columns_in_table] = table.data_frame[columns_in_table]
-        return df
+            except IOError:
+                continue
+            table = table_file.tables[0]
+            df[columns_in_table] = table.data_frame[columns_in_table]
+
+    if 'ID' in df.columns:
+        df['ID'] = df['ID'].convert_dtypes()
+    return df
+
+
+def _extract_from_df(df, mandatory, optional):
+    # Extract all mandatory and at least one optional column from df
+    columns = set(df.columns)
+    if not (set(mandatory) <= columns):
+        return None
+
+    found_optionals = [col for col in optional if col in columns]
+    if not found_optionals:
+        return None
+    return df[mandatory + found_optionals]
+
+
+def parse_residuals(df):
+    index_cols = ['ID', 'TIME']
+    cols = ['RES', 'WRES', 'CWRES']
+    df = _extract_from_df(df, index_cols, cols)
+    if df is not None:
+        df.set_index(['ID', 'TIME'], inplace=True)
+        df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
+    return df
+
+
+def parse_predictions(df):
+    index_cols = ['ID', 'TIME']
+    cols = ['PRED', 'CIPREDI', 'CPRED', 'IPRED']
+    df = _extract_from_df(df, index_cols, cols)
+    if df is not None:
+        df.set_index(['ID', 'TIME'], inplace=True)
+    return df
 
 
 def parse_ext(path, subproblem):

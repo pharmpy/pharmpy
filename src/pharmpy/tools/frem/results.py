@@ -603,8 +603,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     param_names = get_params(frem_model, rvs, npars)
     nids = len(covariate_baselines)
     param_indices = list(range(npars))
-    if rescale:
-        scaling = np.diag(np.concatenate((np.ones(npars), cov_stdevs.values)))
+    scaling = np.diag(np.concatenate((np.ones(npars), cov_stdevs.values))) if rescale else None
 
     mu_bars_given_5th = np.empty((n, ncovs, npars))
     mu_bars_given_95th = np.empty((n, ncovs, npars))
@@ -626,10 +625,12 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     estimated_covbase = _calculate_covariate_baselines(frem_model, covariates)
     covbase = estimated_covbase.to_numpy()
 
+    parameter_variability_all = None
+
     for sample_no, params in parvecs.iterrows():
         sigma = sigma_symb.subs(dict(params))
         sigma = np.array(sigma).astype(np.float64)
-        if rescale:
+        if scaling is not None:
             sigma = scaling @ sigma @ scaling
         if sample_no != 'estimates':
             variability[sample_no, 0, :] = np.diag(sigma)[:npars]
@@ -804,9 +805,10 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
         [['all'] + covariates, param_names], names=['condition', 'parameter']
     )
     df = pd.DataFrame(index=index)
-    for i in range(len(param_names)):
-        for j in range(len(param_names)):
-            df.loc[('all', param_names[i]), param_names[j]] = parameter_variability_all[i][j]
+    if parameter_variability_all is not None:
+        for i in range(len(param_names)):
+            for j in range(len(param_names)):
+                df.loc[('all', param_names[i]), param_names[j]] = parameter_variability_all[i][j]
     for k, name in enumerate(covariates):
         for i in range(len(param_names)):
             for j in range(len(param_names)):
@@ -886,6 +888,7 @@ def calculate_results_using_bipp(
 
     """
     rng = create_rng(rng)
+    assert rng is not None
     dist = frem_model.random_variables.iiv[-1]
     etas = list(dist.names)
     pool = sample_individual_estimates(
@@ -1001,6 +1004,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     # FIXME: Not introducing yaml parser in pharmpy just yet. Options should be collected
     # differently. Perhaps using json
     logtransformed_covariates = []
+    rescale = True
     with open(path / 'meta.yaml') as meta:
         for row in meta:
             row = row.strip()

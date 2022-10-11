@@ -1,6 +1,7 @@
 import re
 from math import sqrt
 from pathlib import Path
+from typing import Any, Dict, List, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -34,15 +35,15 @@ def compute_cook_scores(base_estimate, cdd_estimates, covariance_matrix):
         chol, islow = linalg.cho_factor(covariance_matrix)
         delta_matrix = cdd_estimates - base_estimate
         x = linalg.solve_triangular(chol, delta_matrix.transpose(), lower=islow, trans=1)
-        return [np.linalg.norm(v) for v in x.transpose()]
+        return list(map(np.linalg.norm, x.transpose()))
     except Exception:
         return None
 
 
-def compute_delta_ofv(base_model, cdd_models, skipped_individuals):
+def compute_delta_ofv(base_model: Model, cdd_models: List[Model], skipped_individuals):
     iofv = base_model.modelfit_results.individual_ofv
     if iofv is None:
-        return [np.nan for m in cdd_models]
+        return [np.nan] * len(cdd_models)
 
     cdd_ofvs = [m.modelfit_results.ofv if m.modelfit_results else np.nan for m in cdd_models]
 
@@ -76,7 +77,9 @@ def compute_covariance_ratios(cdd_models, covariance_matrix):
         return None
 
 
-def calculate_results(base_model, cdd_models, case_column, skipped_individuals, **kwargs):
+def calculate_results(
+    base_model: Model, cdd_models: List[Model], case_column, skipped_individuals, **_
+):
     """Calculate CDD results"""
 
     if base_model.modelfit_results is None:
@@ -170,9 +173,9 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals, 
     return res
 
 
-def psn_cdd_options(path):
+def psn_cdd_options(path: Union[str, Path]):
     path = Path(path)
-    options = dict(model_path=None, outside_n_sd_check=None, case_column='ID')
+    options: Dict[str, Any] = dict(model_path=None, outside_n_sd_check=None, case_column='ID')
     with open(path / 'meta.yaml') as meta:
         cmd = None
         for row in meta:
@@ -197,7 +200,7 @@ def psn_cdd_options(path):
     return options
 
 
-def psn_cdd_skipped_individuals(path):
+def psn_cdd_skipped_individuals(path: Union[str, Path]):
     path = Path(path) / 'skipped_individuals1.csv'
 
     with open(path) as skipped:
@@ -208,7 +211,7 @@ def psn_cdd_skipped_individuals(path):
     return a
 
 
-def psn_cdd_results(path, base_model_path=None):
+def psn_cdd_results(path: Union[str, Path], base_model_path=None):
     """Create cdd results from a PsN CDD run
 
     :param path: Path to PsN cdd run directory
@@ -225,7 +228,7 @@ def psn_cdd_results(path, base_model_path=None):
         base_model_path = Path(options['model_path'])
     base_model = Model.create_model(base_model_path)
 
-    cdd_models = [Model.create_model(p) for p in model_paths(path, 'cdd_*.mod')]
+    cdd_models = list(map(Model.create_model, model_paths(path, 'cdd_*.mod')))
     skipped_individuals = psn_cdd_skipped_individuals(path)
 
     res = calculate_results(base_model, cdd_models, options['case_column'], skipped_individuals)

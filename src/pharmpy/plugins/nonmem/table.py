@@ -1,6 +1,7 @@
 import re
 from io import StringIO
 from pathlib import Path
+from typing import Optional
 
 import pharmpy.math
 from pharmpy.deps import numpy as np
@@ -31,15 +32,17 @@ class NONMEMTableFile:
                             current.append(line)
                     self._add_table(current, suffix)
             self._count = 0
-        else:
+        elif tables is not None:
             self.tables = tables
+        else:
+            raise ValueError('NONMEMTableFile: path and tables cannot be both None')
 
     def __iter__(self):
         return self
 
     def _add_table(self, content, suffix=None, notitle=False, nolabel=False):
-        if not notitle:
-            table_line = content.pop(0)
+        table_line = None if notitle else content.pop(0)
+
         if suffix == '.ext':
             table = ExtTable(''.join(content))
         elif suffix == '.phi':
@@ -50,7 +53,8 @@ class NONMEMTableFile:
             # Remove repeated header lines, but not the first
             content[1:] = [line for line in content[1:] if not re.match(r'\s[A-Za-z_]', line)]
             table = NONMEMTable(''.join(content))  # Fallback to non-specific table type
-        if not notitle:
+
+        if table_line is not None:
             m = re.match(r'TABLE NO.\s+(\d+)', table_line)
             if not m:
                 raise ValueError(f"Illegal {suffix}-file: missing TABLE NO.")
@@ -116,11 +120,24 @@ class NONMEMTableFile:
 class NONMEMTable:
     """A NONMEM output table."""
 
+    number: Optional[int] = None
+    is_evaluation: Optional[bool] = None
+    method: Optional[str] = None
+    goal_function: Optional[str] = None
+    problem: Optional[int] = None
+    subproblem: Optional[int] = None
+    superproblem1: Optional[int] = None
+    iteration1: Optional[int] = None
+    superproblem2: Optional[int] = None
+    iteration2: Optional[int] = None
+
     def __init__(self, content=None, df=None):
         if content is not None:
             self._df = pd.read_table(StringIO(content), sep=r'\s+', engine='python')
-        else:
+        elif df is not None:
             self._df = df
+        else:
+            raise ValueError('NONMEMTable: content and df cannot be both None')
 
     @property
     def data_frame(self):

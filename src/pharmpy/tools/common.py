@@ -110,8 +110,13 @@ def summarize_tool_individuals(models, description_col, rank_type_col):
     summary_individuals.insert(0, 'description', col_to_move)
 
     suminds_count = summarize_individuals_count_table(df=summary_individuals)
-    suminds_count.insert(0, description_col.name, description_col)
-    suminds_count.insert(1, rank_type_col.name, rank_type_col)
-    suminds_count['parent_model'] = suminds_count.pop('parent_model')
-    summary_individuals_count = suminds_count.sort_values(by=[rank_type_col.name], ascending=False)
+    if suminds_count is None:
+        summary_individuals_count = None
+    else:
+        suminds_count.insert(0, description_col.name, description_col)
+        suminds_count.insert(1, rank_type_col.name, rank_type_col)
+        suminds_count['parent_model'] = suminds_count.pop('parent_model')
+        summary_individuals_count = suminds_count.sort_values(
+            by=[rank_type_col.name], ascending=False
+        )
     return summary_individuals, summary_individuals_count

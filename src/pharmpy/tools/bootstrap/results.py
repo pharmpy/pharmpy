@@ -1,5 +1,6 @@
 import warnings
 from pathlib import Path
+from typing import Any, Dict, Union
 
 import pharmpy.visualization
 from pharmpy.deps import numpy as np
@@ -60,7 +61,10 @@ def plot_dofv_quantiles(res):
     chi2 = chi2_dist.ppf(quantiles)
     degrees_dofvs = res.ofv_statistics['mean']['delta_bootdata']
     degrees_boot_base = res.ofv_statistics['mean']['delta_origdata']
-    df_dict = {'quantiles': quantiles, f'Reference χ²({degrees})': chi2}
+    df_dict: Dict[Union[str, tuple], Any] = {
+        'quantiles': quantiles,
+        f'Reference χ²({degrees})': chi2,
+    }
     if not np.isnan(degrees_dofvs):
         df_dict[
             (
@@ -147,8 +151,7 @@ def calculate_results(
         base_iofv = original_results.individual_ofv
         if included_individuals and base_iofv is not None:
             for i, included in enumerate(included_individuals):
-                base_ofv = base_iofv[included].sum()
-                ofvs.at[i, 'original_bootdata_ofv'] = base_ofv
+                ofvs.at[i, 'original_bootdata_ofv'] = base_iofv[included].sum()
 
     if dofv_results is not None:
         for i, res in enumerate(dofv_results):
@@ -156,13 +159,12 @@ def calculate_results(
                 ofvs.at[i, 'bootstrap_origdata_ofv'] = res.ofv
 
     if original_results is not None:
-        base_ofv = original_results.ofv
-        ofvs['original_origdata_ofv'] = base_ofv
+        ofvs['original_origdata_ofv'] = original_results.ofv
 
     ofvs['delta_bootdata'] = ofvs['original_bootdata_ofv'] - ofvs['bootstrap_bootdata_ofv']
 
     if original_results is not None:
-        ofvs['delta_origdata'] = ofvs['bootstrap_origdata_ofv'] - base_ofv
+        ofvs['delta_origdata'] = ofvs['bootstrap_origdata_ofv'] - ofvs['original_origdata_ofv']
     else:
         ofvs['delta_origdata'] = np.nan
 

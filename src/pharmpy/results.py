@@ -127,6 +127,8 @@ class ModelfitResults(Results):
         correlations
     residuals: pd.DataFrame
         Table of various residuals
+    predictions: pd.DataFrame
+        Table of various predictions
     estimation_runtime : float
         Runtime for one estimation step
     runtime_total : float
@@ -155,6 +157,7 @@ class ModelfitResults(Results):
         individual_ofv=None,
         individual_estimates=None,
         residuals=None,
+        predictions=None,
         runtime_total=None,
         termination_cause=None,
         function_evaluations=None,
@@ -173,6 +176,7 @@ class ModelfitResults(Results):
         self.individual_estimates = individual_estimates
         self.individual_ofv = individual_ofv
         self.residuals = residuals
+        self.predictions = predictions
         self.runtime_total = runtime_total
         self.termination_cause = termination_cause
         self.function_evaluations = function_evaluations
@@ -301,26 +305,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     @property
     def standard_errors_sdcorr(self):
         return self[-1].standard_errors_sdcorr
-
-    @property
-    def individual_ofv(self):
-        return self[-1].individual_ofv
-
-    @property
-    def individual_estimates(self):
-        return self[-1].individual_estimates
-
-    @property
-    def individual_estimates_covariance(self):
-        return self[-1].individual_estimates_covariance
-
-    @property
-    def residuals(self):
-        return self[-1].residuals
-
-    @property
-    def predictions(self):
-        return self[-1].predictions
 
     @property
     def model_name(self):

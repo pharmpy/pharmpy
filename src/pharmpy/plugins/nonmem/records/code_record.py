@@ -108,14 +108,14 @@ def _translate_sympy_single(symbol, expression):
 
 
 def _translate_sympy_block(symbol, expression):
+    statement_str = ''
     for i, e in enumerate(expression):
-        value = e[0]
-        condition = e[1]
+        value, condition = e
 
         condition_translated = _translate_condition(condition)
 
         if i == 0:
-            statement_str = f'IF ({condition_translated}) THEN\n'
+            statement_str += f'IF ({condition_translated}) THEN\n'
         elif condition_translated == '.true.':
             statement_str += 'ELSE\n'
         else:
@@ -160,19 +160,18 @@ def _order_terms(assignment, rvs, trans):
     if not isinstance(assignment.expression, sympy.Add) or rvs is None:
         return assignment.expression
 
-    rvs_names = rvs.names
+    rvs_names = set(rvs.names)
 
-    if trans:
-        trans_rvs = {v.name: k.name for k, v in trans.items() if str(k) in rvs_names}
+    trans_rvs = {str(v): str(k) for k, v in trans.items() if str(k) in rvs_names} if trans else None
 
     expr_args = assignment.expression.args
     terms_iiv_iov, terms_ruv, terms = [], [], []
 
     for arg in expr_args:
         arg_symbs = [s.name for s in arg.free_symbols]
-        rvs_intersect = set(rvs_names).intersection(arg_symbs)
+        rvs_intersect = rvs_names.intersection(arg_symbs)
 
-        if trans:
+        if trans_rvs is not None:
             trans_intersect = set(trans_rvs.keys()).intersection(arg_symbs)
             rvs_intersect.update({trans_rvs[rv] for rv in trans_intersect})
 
@@ -205,7 +204,11 @@ def _order_terms(assignment, rvs, trans):
 class ExpressionInterpreter(lark.visitors.Interpreter):
     def visit_children(self, tree):
         """Does not visit tokens"""
-        return [self.visit(child) for child in tree.children if isinstance(child, lark.Tree)]
+        return [
+            self.visit(child)
+            for child in tree.children
+            if isinstance(child, lark.Tree)  # pyright: ignore [reportPrivateImportUsage]
+        ]
 
     def expression(self, node):
         t = self.visit_children(node)
@@ -396,16 +399,13 @@ def diff(old: Sequence, new: Sequence):
     Optimizes by first handling equal elements from the head and tail
     Each entry is a pair of operation (+1, -1 or 0) and the element
     """
-    for i, (a, b) in enumerate(zip(old, new)):
+    i = 0
+    for a, b in zip(old, new):
         if a == b:
             yield (0, b)
+            i += 1
         else:
             break
-    else:
-        if len(old) == 0 or len(new) == 0:
-            i = 0
-        else:
-            i += 1
 
     rold = old[i:]
     rnew = new[i:]
@@ -526,7 +526,8 @@ class CodeRecord(Record):
                     new_index.append((insert_pos, insert_pos + len(statement_nodes), si, si + 1))
                     si += 1
                     new_children.extend(statement_nodes)
-                    defined_symbols.add(s.symbol)
+                    if isinstance(s, Assignment):
+                        defined_symbols.add(s.symbol)
             elif op == 0:
                 # NOTE We keep the nodes but insert them at an updated position
                 insert_pos = len(new_children)
@@ -534,7 +535,9 @@ class CodeRecord(Record):
                 new_index.append((insert_pos, insert_pos + insert_len, si, si + len(statements)))
                 si += len(statements)
                 new_children.extend(self.root.children[ni:nj])
-                defined_symbols.update(s.symbol for s in statements)
+                for s in statements:
+                    if isinstance(s, Assignment):
+                        defined_symbols.add(s.symbol)
             last_node_index = nj
         # NOTE We copy any non-statement nodes that are remaining
         new_children.extend(self.root.children[last_node_index:])
@@ -545,6 +548,7 @@ class CodeRecord(Record):
     def _statement_to_nodes(self, defined_symbols, node_index, s):
         statement_str = nmtran_assignment_string(s, defined_symbols, self.rvs, self.trans)
         node_tree = CodeRecordParser(statement_str).root
+        assert node_tree is not None
         statement_nodes = []
         for node in node_tree.all('statement'):
             if node_index == 0:
@@ -691,5 +695,6 @@ class CodeRecord(Record):
                 if len(parts) == 2:
                     modline += ';' + parts[1]
                 newlines.append(modline)
+            assert self.raw_name is not None
             return self.raw_name + '\n'.join(newlines)
         return super(CodeRecord, self).__str__()
