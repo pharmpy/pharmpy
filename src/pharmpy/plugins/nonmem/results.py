@@ -27,7 +27,10 @@ def parse_modelfit_results(model, path, subproblem=None):
     residuals = parse_residuals(table_df)
     predictions = parse_predictions(table_df)
     iofv, ie, iec = parse_phi(model, path)
+    final_ofv, ofv_iterations = parse_ext(model, path, subproblem)
 
+    res.ofv = final_ofv
+    res.ofv_iterations = ofv_iterations
     res.individual_ofv = iofv
     res.individual_estimates = ie
     res.individual_estimates_covariance = iec
@@ -120,12 +123,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj = self._fill_empty_results(result_obj, is_covariance_step)
             result_obj.table_number = 1
             self.append(result_obj)
-            self.ofv = np.nan
-            self.ofv_iterations = create_failed_ofv_iterations(self.model)
             return
-        final_ofv, ofv_iterations = parse_ext(self._path, self._subproblem)
-        self.ofv = final_ofv
-        self.ofv_iterations = ofv_iterations
         for table in ext_tables:
             if self._subproblem and table.subproblem != self._subproblem:
                 continue
@@ -462,8 +460,11 @@ def create_ofv_iterations_series(ofv, steps, iterations):
     return ofv_iterations
 
 
-def parse_ext(path, subproblem):
-    ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
+def parse_ext(model, path, subproblem):
+    try:
+        ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
+    except ValueError:
+        return np.nan, create_failed_ofv_iterations(model)
     step = []
     iteration = []
     ofv = []
