@@ -6,22 +6,12 @@ to point to your grammar file) to define a powerful parser.
 """
 import copy
 import re
+from typing import Optional
 
-from lark import Tree
+from lark import Tree  # pyright: ignore [reportPrivateImportUsage]
 from lark.lexer import Token
 
 from . import prettyprint
-
-
-class NoSuchRuleException(AttributeError):
-    """Rule not found (raised by :class:`AttrTree` for unknown children)."""
-
-    def __init__(self, rule, tree=None):
-        try:
-            post = ' (%s)' % (repr(tree.rule),)
-        except AttributeError:
-            post = ''
-        super().__init__('no %s child in tree%s' % (repr(rule), post))
 
 
 def rule_of(item):
@@ -370,9 +360,7 @@ class AttrTree(Tree):
         self.children.append(self._newline_node())
 
     def get_last_node(self):
-        for node in self.children:
-            last_node = node
-        return last_node
+        return self.children[-1]
 
     @property
     def tokens(self):
@@ -426,6 +414,14 @@ class AttrTree(Tree):
 
     def __eq__(self, other):
         return hash(self) == hash(other)
+
+
+class NoSuchRuleException(AttributeError):
+    """Rule not found (raised by :class:`AttrTree` for unknown children)."""
+
+    def __init__(self, rule, tree: Optional[AttrTree] = None):
+        post = '' if tree is None else f' ({repr(tree.rule)})'
+        super().__init__(f'no {repr(rule)} child in tree{post}')
 
 
 class GenericParser:
