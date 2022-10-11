@@ -184,7 +184,7 @@ class Model(pharmpy.model.Model):
         if path is None:
             self.modelfit_results = None
         else:
-            self.modelfit_results = parse_modelfit_results(self, path.parent)
+            self.modelfit_results = parse_modelfit_results(self, path)
 
         description = parse_description(self.internals.control_stream)
         self.description = description

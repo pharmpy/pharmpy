@@ -6,7 +6,7 @@ import pytest
 
 import pharmpy.plugins.nonmem as nonmem
 from pharmpy.config import ConfigurationContext
-from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults, simfit_results
+from pharmpy.plugins.nonmem.results import simfit_results
 from pharmpy.results import read_results
 from pharmpy.utils import TemporaryDirectoryChanger
 
@@ -143,7 +143,7 @@ def test_individual_ofv(pheno):
 
 
 def test_individual_estimates(pheno, pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, model=pheno)
+    res = nonmem.parse_modelfit_results(pheno, pheno_lst)
     ie = res.individual_estimates
     assert len(ie) == 59
     assert pytest.approx(ie['ETA(1)'][1], 1e-15) == -0.0438608
@@ -153,7 +153,7 @@ def test_individual_estimates(pheno, pheno_lst):
 
 
 def test_individual_estimates_covariance(pheno, pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, model=pheno)
+    res = nonmem.parse_modelfit_results(pheno, pheno_lst)
     cov = res.individual_estimates_covariance
     assert len(cov) == 59
     names = ['ETA(1)', 'ETA(2)']

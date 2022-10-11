@@ -11,16 +11,32 @@ from pharmpy.results import ChainedModelfitResults, ModelfitResults
 from pharmpy.workflows.log import Log
 
 
-def parse_modelfit_results(model, path):
+def parse_modelfit_results(model, path, subproblem=None):
+    # Path to model file or results file
     if path is None:
         return None
+    else:
+        path = Path(path)
 
     try:
-        ext_path = path / (model.name + '.ext')
-        res = NONMEMChainedModelfitResults(ext_path, model=model)
-        return res
+        res = NONMEMChainedModelfitResults(path, model=model, subproblem=subproblem)
     except (FileNotFoundError, OSError):
         return None
+
+    table_df = parse_tables(model, path)
+    residuals = parse_residuals(table_df)
+    predictions = parse_predictions(table_df)
+    iofv, ie, iec = parse_phi(model, path)
+    final_ofv, ofv_iterations = parse_ext(model, path, subproblem)
+
+    res.ofv = final_ofv
+    res.ofv_iterations = ofv_iterations
+    res.individual_ofv = iofv
+    res.individual_estimates = ie
+    res.individual_estimates_covariance = iec
+    res.predictions = predictions
+    res.residuals = residuals
+    return res
 
 
 class NONMEMModelfitResults(ModelfitResults):
@@ -79,14 +95,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_cor_table()
         self._read_coi_table()
         self._calculate_cov_cor_coi()
-        (
-            self.individual_ofv,
-            self.individual_estimates,
-            self.individual_estimates_covariance,
-        ) = parse_phi(model, path)
-        table_df = parse_tables(model, path)
-        self.residuals = parse_residuals(table_df)
-        self.predictions = parse_predictions(table_df)
 
     def __getattr__(self, item):
         # Avoid infinite recursion when deepcopying
@@ -115,12 +123,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj = self._fill_empty_results(result_obj, is_covariance_step)
             result_obj.table_number = 1
             self.append(result_obj)
-            self.ofv = None
-            self.ofv_iterations = None
             return
-        final_ofv, ofv_iterations = parse_ext(self._path, self._subproblem)
-        self.ofv = final_ofv
-        self.ofv_iterations = ofv_iterations
+
         for table in ext_tables:
             if self._subproblem and table.subproblem != self._subproblem:
                 continue
@@ -440,8 +444,28 @@ def parse_predictions(df):
     return df
 
 
-def parse_ext(path, subproblem):
-    ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
+def create_failed_ofv_iterations(model):
+    steps = list(range(len(model.estimation_steps)))
+    iterations = [0] * len(steps)
+    ofvs = [np.nan] * len(steps)
+    ofv_iterations = create_ofv_iterations_series(ofvs, steps, iterations)
+    return ofv_iterations
+
+
+def create_ofv_iterations_series(ofv, steps, iterations):
+    step_series = pd.Series(steps, dtype='int32', name='steps')
+    iteration_series = pd.Series(iterations, dtype='int32', name='iteration')
+    ofv_iterations = pd.Series(
+        ofv, name='OFV', dtype='float64', index=[step_series, iteration_series]
+    )
+    return ofv_iterations
+
+
+def parse_ext(model, path, subproblem):
+    try:
+        ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
+    except ValueError:
+        return np.nan, create_failed_ofv_iterations(model)
     step = []
     iteration = []
     ofv = []
@@ -455,7 +479,7 @@ def parse_ext(path, subproblem):
         iteration += list(df['ITERATION'])
         ofv += list(df['OBJ'])
         final_ofv = table.final_ofv
-    ofv_iterations = pd.Series(ofv, name='OFV', dtype='float64', index=[step, iteration])
+    ofv_iterations = create_ofv_iterations_series(ofv, step, iteration)
     return final_ofv, ofv_iterations
 
 
@@ -464,7 +488,7 @@ def simfit_results(model, model_path):
     nsubs = model.internals.control_stream.get_records('SIMULATION')[0].nsubs
     results = []
     for i in range(1, nsubs + 1):
-        res = NONMEMChainedModelfitResults(model_path, model=model, subproblem=i)
+        res = parse_modelfit_results(model, model_path, subproblem=i)
         results.append(res)
     return results
 
