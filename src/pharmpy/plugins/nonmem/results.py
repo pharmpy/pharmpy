@@ -159,6 +159,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             if self.model:
                 ests = ests.rename(index=parameter_translation(self.model.internals.control_stream))
             result_obj.parameter_estimates = ests
+
             try:
                 sdcorr = table.omega_sigma_stdcorr[~fix]
             except KeyError:
