@@ -66,7 +66,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def __init__(self, path, model=None, subproblem=None):
         # Path is path to any result file
         self.log = Log()
-        self._path = Path(path)
+        path = Path(path)
+        self._path = path
         self._subproblem = subproblem
         self.model = model
         extensions = ['.lst', '.ext', '.cov', '.cor', '.coi', '.phi']
@@ -78,8 +79,12 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_cor_table()
         self._read_coi_table()
         self._calculate_cov_cor_coi()
-        self._read_phi_table()
-        table_df = parse_tables(model, self._path)
+        (
+            self.individual_ofv,
+            self.individual_estimates,
+            self.individual_estimates_covariance,
+        ) = parse_phi(model, path)
+        table_df = parse_tables(model, path)
         self.residuals = parse_residuals(table_df)
         self.predictions = parse_predictions(table_df)
 
@@ -324,39 +329,34 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 elif obj.information_matrix is not None:
                     obj.standard_errors = modeling.calculate_se_from_inf(obj.information_matrix)
 
-    def _read_phi_table(self):
-        for result_obj in self:
-            result_obj.individual_ofv = None
-            result_obj.individual_estimates = None
-            result_obj.individual_estimates_covariance = None
 
-        trans = rv_translation(self.model.internals.control_stream, reverse=True)
-        rv_names = [name for name in self.model.random_variables.etas.names if name in trans]
+def parse_phi(model, path):
+    try:
+        phi_tables = NONMEMTableFile(path.with_suffix('.phi'))
+    except FileNotFoundError:
+        return None, None, None
+    table = phi_tables.tables[-1]
+
+    if table is not None:
+        trans = rv_translation(model.internals.control_stream, reverse=True)
+        rv_names = [name for name in model.random_variables.etas.names if name in trans]
         try:
-            phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
-        except FileNotFoundError:
-            return
-        for result_obj in self:
-            table = phi_tables.table_no(result_obj.table_number)
-            if table is not None:
-                try:
-                    result_obj.individual_ofv = table.iofv
-                    result_obj.individual_estimates = table.etas.rename(
-                        columns=rv_translation(self.model.internals.control_stream)
-                    )[rv_names]
-                    covs = table.etcs
-                    covs = covs.transform(
-                        lambda cov: cov.rename(
-                            columns=rv_translation(self.model.internals.control_stream),
-                            index=rv_translation(self.model.internals.control_stream),
-                        )
-                    )
-                    covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
-                    result_obj.individual_estimates_covariance = covs
-                except KeyError:
-                    result_obj.individual_ofv = None
-                    result_obj.inividual_estimates = None
-                    result_obj.individual_estimates_covariance = None
+            individual_ofv = table.iofv
+            individual_estimates = table.etas.rename(
+                columns=rv_translation(model.internals.control_stream)
+            )[rv_names]
+            covs = table.etcs
+            covs = covs.transform(
+                lambda cov: cov.rename(
+                    columns=rv_translation(model.internals.control_stream),
+                    index=rv_translation(model.internals.control_stream),
+                )
+            )
+            covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
+            return individual_ofv, individual_estimates, covs
+        except KeyError:
+            pass
+    return None, None, None
 
 
 def parse_tables(model, path):

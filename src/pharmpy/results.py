@@ -307,18 +307,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
         return self[-1].standard_errors_sdcorr
 
     @property
-    def individual_ofv(self):
-        return self[-1].individual_ofv
-
-    @property
-    def individual_estimates(self):
-        return self[-1].individual_estimates
-
-    @property
-    def individual_estimates_covariance(self):
-        return self[-1].individual_estimates_covariance
-
-    @property
     def model_name(self):
         return self[-1].model_name
 
