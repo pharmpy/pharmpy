@@ -89,7 +89,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_phi_table()
         table_df = parse_tables(model, self._path)
         self.residuals = parse_residuals(table_df)
-        self._read_predictions()
+        self.predictions = parse_predictions(table_df)
 
     def __getattr__(self, item):
         # Avoid infinite recursion when deepcopying
@@ -370,20 +370,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj.inividual_estimates = None
                     result_obj.individual_estimates_covariance = None
 
-    def _read_predictions(self):
-        for obj in self:
-            try:
-
-                df = self._read_from_tables(
-                    ['ID', 'TIME', 'PRED', 'CIPREDI', 'CPRED', 'IPRED'], obj
-                )
-                df['ID'] = df['ID'].convert_dtypes()
-                df.set_index(['ID', 'TIME'], inplace=True)
-            except (KeyError, OSError):
-                obj.predictions = None
-            else:
-                obj.predictions = df
-
     def _read_from_tables(self, columns, result_obj):
         table_recs = self.model.internals.control_stream.get_records('TABLE')
         found = []
@@ -478,6 +464,15 @@ def parse_residuals(df):
     if df is not None:
         df.set_index(['ID', 'TIME'], inplace=True)
         df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
+    return df
+
+
+def parse_predictions(df):
+    index_cols = ['ID', 'TIME']
+    cols = ['PRED', 'CIPREDI', 'CPRED', 'IPRED']
+    df = _extract_from_df(df, index_cols, cols)
+    if df is not None:
+        df.set_index(['ID', 'TIME'], inplace=True)
     return df
 
 

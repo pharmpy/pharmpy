@@ -1,8 +1,6 @@
 import pytest
 
-from pharmpy.model import EstimationStep
 from pharmpy.modeling import remove_covariance_step
-from pharmpy.results import ChainedModelfitResults
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
 from pharmpy.tools.ruvsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
@@ -148,17 +146,6 @@ def test_validate_input_raises_cwres(load_model_for_test, testdata):
     del model.modelfit_results.residuals['CWRES']
 
     with pytest.raises(ValueError, match="CWRES"):
-        validate_input(model=model)
-
-
-def test_validate_input_raises_predictions(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    remove_covariance_step(model)
-    residuals = model.modelfit_results.residuals
-    model.modelfit_results = ChainedModelfitResults([EstimationStep('FOCE', residuals=residuals)])
-    model.modelfit_results.residuals = residuals
-
-    with pytest.raises(ValueError, match="IPRED"):
         validate_input(model=model)
 
 
