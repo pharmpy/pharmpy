@@ -124,6 +124,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj.table_number = 1
             self.append(result_obj)
             return
+
         for table in ext_tables:
             if self._subproblem and table.subproblem != self._subproblem:
                 continue
