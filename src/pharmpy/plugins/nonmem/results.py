@@ -121,7 +121,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj.table_number = 1
             self.append(result_obj)
             self.ofv = None
-            self.ofv_iterations = None
+            self.ofv_iterations = create_failed_ofv_iterations(self.model)
             return
         final_ofv, ofv_iterations = parse_ext(self._path, self._subproblem)
         self.ofv = final_ofv
@@ -445,6 +445,23 @@ def parse_predictions(df):
     return df
 
 
+def create_failed_ofv_iterations(model):
+    steps = list(range(len(model.estimation_steps)))
+    iterations = [0] * len(steps)
+    ofvs = [np.nan] * len(steps)
+    ofv_iterations = create_ofv_iterations_series(ofvs, steps, iterations)
+    return ofv_iterations
+
+
+def create_ofv_iterations_series(ofv, steps, iterations):
+    step_series = pd.Series(steps, dtype='int32', name='steps')
+    iteration_series = pd.Series(iterations, dtype='int32', name='iteration')
+    ofv_iterations = pd.Series(
+        ofv, name='OFV', dtype='float64', index=[step_series, iteration_series]
+    )
+    return ofv_iterations
+
+
 def parse_ext(path, subproblem):
     ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
     step = []
@@ -460,7 +477,7 @@ def parse_ext(path, subproblem):
         iteration += list(df['ITERATION'])
         ofv += list(df['OBJ'])
         final_ofv = table.final_ofv
-    ofv_iterations = pd.Series(ofv, name='OFV', dtype='float64', index=[step, iteration])
+    ofv_iterations = create_ofv_iterations_series(ofv, step, iteration)
     return final_ofv, ofv_iterations
 
 
