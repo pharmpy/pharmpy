@@ -138,9 +138,6 @@ class Parameter:
         )
 
 
-ParameterQuery = Union[int, str, sympy.Symbol, Parameter]
-
-
 class Parameters(Sequence):
     """An immutable collection of parameters
 
@@ -186,7 +183,7 @@ class Parameters(Sequence):
     def __len__(self):
         return len(self._params)
 
-    def _lookup_param(self, ind: ParameterQuery):
+    def _lookup_param(self, ind: Union[int, str, sympy.Symbol, Parameter]):
         if isinstance(ind, sympy.Symbol):
             ind = ind.name  # pyright: ignore [reportGeneralTypeIssues]
         if isinstance(ind, str):
@@ -203,11 +200,13 @@ class Parameters(Sequence):
         return ind, self._params[ind]
 
     @overload
-    def __getitem__(self, ind: ParameterQuery) -> Parameter:
+    def __getitem__(self, ind: Union[int, str, sympy.Symbol, Parameter]) -> Parameter:
         ...
 
     @overload
-    def __getitem__(self, ind: Union[slice, Sequence[ParameterQuery]]) -> Parameters:
+    def __getitem__(
+        self, ind: Union[slice, Sequence[Union[int, str, sympy.Symbol, Parameter]]]
+    ) -> Parameters:
         ...
 
     def __getitem__(self, ind):
