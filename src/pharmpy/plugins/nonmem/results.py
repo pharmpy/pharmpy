@@ -23,6 +23,11 @@ def parse_modelfit_results(model, path, subproblem=None):
     except (FileNotFoundError, OSError):
         return None
 
+    cov = res[-1].covariance_matrix
+    cor = res[-1].correlation_matrix
+    coi = res[-1].information_matrix
+    ses = res[-1].standard_errors
+
     table_df = parse_tables(model, path)
     residuals = parse_residuals(table_df)
     predictions = parse_predictions(table_df)
@@ -30,8 +35,10 @@ def parse_modelfit_results(model, path, subproblem=None):
     table_numbers, final_ofv, ofv_iterations, final_pe, sdcorr, pe_iterations = parse_ext(
         model, path, subproblem
     )
-    rse = calculate_relative_standard_errors(final_pe, res[-1].standard_errors)
+    rse = calculate_relative_standard_errors(final_pe, ses)
     runtime_total, log_likelihood = parse_lst(path, table_numbers)
+
+    cov, cor, coi, ses = calculate_cov_cor_coi_ses(cov, cor, coi, ses)
 
     res.ofv = final_ofv
     res.ofv_iterations = ofv_iterations
@@ -46,6 +53,10 @@ def parse_modelfit_results(model, path, subproblem=None):
     res.residuals = residuals
     res.runtime_total = runtime_total
     res.log_likelihood = log_likelihood
+    res.covariance_matrix = cov
+    res.correlation_matrix = cor
+    res.information_matrix = coi
+    res.standard_errors = ses
     return res
 
 
@@ -102,7 +113,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_cov_table()
         self._read_cor_table()
         self._read_coi_table()
-        self._calculate_cov_cor_coi()
 
     def __getattr__(self, item):
         # Avoid infinite recursion when deepcopying
@@ -289,34 +299,29 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             else:
                 result_obj.correlation_matrix = None
 
-    def _calculate_cov_cor_coi(self):
-        for obj in self:
-            if obj.covariance_matrix is None:
-                if obj.correlation_matrix is not None:
-                    obj.covariance_matrix = modeling.calculate_cov_from_corrse(
-                        obj.correlation_matrix, obj.standard_errors
-                    )
-                elif obj.information_matrix is not None:
-                    obj.covariance_matrix = modeling.calculate_cov_from_inf(obj.information_matrix)
-            if obj.correlation_matrix is None:
-                if obj.covariance_matrix is not None:
-                    obj.correlation_matrix = modeling.calculate_corr_from_cov(obj.covariance_matrix)
-                elif obj.information_matrix is not None:
-                    obj.correlation_matrix = modeling.calculate_corr_from_inf(
-                        obj.information_matrix
-                    )
-            if obj.information_matrix is None:
-                if obj.covariance_matrix is not None:
-                    obj.information_matrix = modeling.calculate_inf_from_cov(obj.covariance_matrix)
-                elif obj.correlation_matrix is not None:
-                    obj.information_matrix = modeling.calculate_inf_from_corrse(
-                        obj.correlation_matrix, obj.standard_errors
-                    )
-            if obj.standard_errors is None:
-                if obj.covariance_matrix is not None:
-                    obj.standard_errors = modeling.calculate_se_from_cov(obj.covariance_matrix)
-                elif obj.information_matrix is not None:
-                    obj.standard_errors = modeling.calculate_se_from_inf(obj.information_matrix)
+
+def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
+    if cov is None:
+        if cor is not None:
+            cov = modeling.calculate_cov_from_corrse(cor, ses)
+        elif coi is not None:
+            cov = modeling.calculate_cov_from_inf(coi)
+    if cor is None:
+        if cov is not None:
+            cor = modeling.calculate_corr_from_cov(cov)
+        elif coi is not None:
+            cor = modeling.calculate_corr_from_inf(coi)
+    if coi is None:
+        if cov is not None:
+            coi = modeling.calculate_inf_from_cov(cov)
+        elif cor is not None:
+            coi = modeling.calculate_inf_from_corrse(cor, ses)
+    if ses is None:
+        if cov is not None:
+            ses = modeling.calculate_se_from_cov(cov)
+        elif coi is not None:
+            ses = modeling.calculate_se_from_inf(coi)
+    return cov, cor, coi, ses
 
 
 def parse_lst(path, table_numbers):

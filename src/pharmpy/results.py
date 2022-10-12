@@ -272,22 +272,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
         return getattr(self[-1], attr, None)
 
     @property
-    def covariance_matrix(self):
-        return self[-1].covariance_matrix
-
-    @property
-    def information_matrix(self):
-        return self[-1].information_matrix
-
-    @property
-    def correlation_matrix(self):
-        return self[-1].correlation_matrix
-
-    @property
-    def standard_errors(self):
-        return self[-1].standard_errors
-
-    @property
     def standard_errors_sdcorr(self):
         return self[-1].standard_errors_sdcorr
 
