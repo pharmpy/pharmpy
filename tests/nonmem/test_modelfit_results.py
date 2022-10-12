@@ -284,7 +284,7 @@ def test_estimation_runtime_steps(pheno_path, testdata, load_model_for_test):
     model = load_model_for_test(pheno_path)
 
     res = model.modelfit_results
-    assert res[0].estimation_runtime == 0.32
+    assert res.estimation_runtime_iterations.iloc[0] == 0.32
     assert res.runtime_total == 4
 
     model = load_model_for_test(
@@ -297,8 +297,8 @@ def test_estimation_runtime_steps(pheno_path, testdata, load_model_for_test):
         / 'pheno_multEST.mod'
     )
     res = model.modelfit_results
-    assert res[0].estimation_runtime == 0.33
-    assert res[1].estimation_runtime == 2.75
+    assert res.estimation_runtime_iterations.iloc[0] == 0.33
+    assert res.estimation_runtime_iterations.iloc[1] == 2.75
     assert res.runtime_total == 7
     assert res.estimation_runtime == 0.33
 

@@ -159,6 +159,8 @@ class ModelfitResults(Results):
         relative_standard_errors=None,
         minimization_successful=None,
         minimization_successful_iterations=None,
+        estimation_runtime=None,
+        estimation_runtime_iterations=None,
         individual_ofv=None,
         individual_estimates=None,
         residuals=None,
@@ -181,6 +183,8 @@ class ModelfitResults(Results):
         self.relative_standard_errors = relative_standard_errors
         self.minimization_successful = minimization_successful
         self.minimization_successful_iterations = minimization_successful_iterations
+        self.estimation_runtime = estimation_runtime
+        self.estimation_runtime_iterations = estimation_runtime_iterations
         self.individual_estimates = individual_estimates
         self.individual_ofv = individual_ofv
         self.residuals = residuals
@@ -212,6 +216,8 @@ class ModelfitResults(Results):
             'standard_errors': self.standard_errors,
             'minimization_successful': self.minimization_successful,
             'minimization_successful_iterations': self.minimization_successful_iterations,
+            'estimation_runtime': self.estimation_runtime,
+            'estimation_runtime_iterations': self.estimation_runtime_iterations,
             'individual_estimates': self.individual_estimates,
             'individual_ofv': self.individual_ofv,
             'residuals': self.residuals,
@@ -252,10 +258,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
 
     def insert(self, ind, value):
         self._results.insert(ind, value)
-
-    @property
-    def estimation_runtime(self):
-        return self._get_last_est('estimation_runtime')
 
     def _get_last_est(self, attr):
         est_steps = self.model.estimation_steps

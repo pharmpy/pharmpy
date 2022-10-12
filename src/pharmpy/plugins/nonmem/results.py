@@ -53,6 +53,7 @@ def parse_modelfit_results(model, path, subproblem=None):
     minsucc_iters = pd.Series(
         minimization_successful, index=table_numbers, name='minimization_successful'
     )
+    esttime_iters = pd.Series(estimation_runtime, index=table_numbers, name='estimation_runtime')
 
     if covstatus and ses is not None:
         cov = parse_matrix(path.with_suffix(".cov"), model, table_numbers)
@@ -67,6 +68,8 @@ def parse_modelfit_results(model, path, subproblem=None):
 
     res.minimization_successful = minimization_successful[last_est_ind]
     res.minimization_successful_iterations = minsucc_iters
+    res.estimation_runtime = estimation_runtime[last_est_ind]
+    res.estimation_runtime_iterations = esttime_iters
     res.ofv = final_ofv
     res.ofv_iterations = ofv_iterations
     res.parameter_estimates = final_pe
@@ -217,10 +220,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj._set_estimation_status(rfile, requested=True)
             # _covariance_status already set to None if ext table did not have standard errors
             result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
-            try:
-                result_obj.estimation_runtime = rfile.table[table_no]['estimation_runtime']
-            except (KeyError, FileNotFoundError):
-                result_obj.estimation_runtime = np.nan
 
 
 def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
