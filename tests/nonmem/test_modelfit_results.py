@@ -22,8 +22,10 @@ def test_special_models(testdata, load_model_for_test):
     assert (
         pytest.approx(withBayes.modelfit_results.standard_errors['THETA(1)'], 1e-13) == 2.51942e00
     )
-    assert withBayes.modelfit_results[0].minimization_successful is False
-    assert withBayes.modelfit_results[1].minimization_successful is False
+    succ1 = withBayes.modelfit_results.minimization_successful_iterations.iloc[0]
+    succ2 = withBayes.modelfit_results.minimization_successful_iterations.iloc[1]
+    assert succ1 is not None and not succ1
+    assert succ2 is not None and not succ2
 
     maxeval0 = load_model_for_test(onePROB / 'oneEST' / 'noSIM' / 'maxeval0.mod')
     assert maxeval0.modelfit_results.minimization_successful is None
@@ -314,7 +316,7 @@ def test_evaluation(testdata, load_model_for_test):
     res = model.modelfit_results
 
     assert round(res.ofv, 3) == 729.955
-    assert res[-1].minimization_successful
+    assert res.minimization_successful_iterations.iloc[-1]
     assert not res.minimization_successful
 
 

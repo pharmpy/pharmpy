@@ -158,6 +158,7 @@ class ModelfitResults(Results):
         standard_errors=None,
         relative_standard_errors=None,
         minimization_successful=None,
+        minimization_successful_iterations=None,
         individual_ofv=None,
         individual_estimates=None,
         residuals=None,
@@ -179,6 +180,7 @@ class ModelfitResults(Results):
         self.standard_errors = standard_errors
         self.relative_standard_errors = relative_standard_errors
         self.minimization_successful = minimization_successful
+        self.minimization_successful_iterations = minimization_successful_iterations
         self.individual_estimates = individual_estimates
         self.individual_ofv = individual_ofv
         self.residuals = residuals
@@ -209,6 +211,7 @@ class ModelfitResults(Results):
             'correlation_matrix': self.correlation_matrix,
             'standard_errors': self.standard_errors,
             'minimization_successful': self.minimization_successful,
+            'minimization_successful_iterations': self.minimization_successful_iterations,
             'individual_estimates': self.individual_estimates,
             'individual_ofv': self.individual_ofv,
             'residuals': self.residuals,
@@ -249,10 +252,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
 
     def insert(self, ind, value):
         self._results.insert(ind, value)
-
-    @property
-    def minimization_successful(self):
-        return self._get_last_est('minimization_successful')
 
     @property
     def estimation_runtime(self):

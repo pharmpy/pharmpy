@@ -45,9 +45,14 @@ def parse_modelfit_results(model, path, subproblem=None):
         minimization_successful,
         function_evaluations,
         significant_digits,
-        estimation_status,
+        termination_cause,
         estimation_runtime,
     ) = parse_lst(path, table_numbers)
+
+    last_est_ind = get_last_est(model)
+    minsucc_iters = pd.Series(
+        minimization_successful, index=table_numbers, name='minimization_successful'
+    )
 
     if covstatus and ses is not None:
         cov = parse_matrix(path.with_suffix(".cov"), model, table_numbers)
@@ -60,6 +65,8 @@ def parse_modelfit_results(model, path, subproblem=None):
 
     cov, cor, coi, ses = calculate_cov_cor_coi_ses(cov, cor, coi, ses)
 
+    res.minimization_successful = minimization_successful[last_est_ind]
+    res.minimization_successful_iterations = minsucc_iters
     res.ofv = final_ofv
     res.ofv_iterations = ofv_iterations
     res.parameter_estimates = final_pe
@@ -109,7 +116,6 @@ class NONMEMModelfitResults(ModelfitResults):
         for k, v in status.items():
             estimation_status[k] = v
         self._estimation_status = estimation_status
-        self.minimization_successful = estimation_status['minimization_successful']
         self.function_evaluations = estimation_status['function_evaluations']
         self.significant_digits = estimation_status['significant_digits']
         if estimation_status['maxevals_exceeded'] is True:
@@ -259,7 +265,11 @@ def parse_lst(path, table_numbers):
     try:
         rfile = NONMEMResultsFile(path.with_suffix('.lst'), log=None)
     except OSError:
-        return None, np.nan, False
+        n = len(table_numbers)
+        false_vec = [False] * n
+        nan_vec = [np.nan] * n
+        none_vec = [None] * n
+        return None, np.nan, False, false_vec, nan_vec, nan_vec, none_vec, nan_vec
 
     runtime_total = rfile.runtime_total
 
@@ -275,7 +285,7 @@ def parse_lst(path, table_numbers):
         minimization_successful,
         function_evaluations,
         significant_digits,
-        estimation_status,
+        termination_cause,
         estimation_runtime,
     ) = parse_estimation_status(rfile, table_numbers)
 
@@ -286,7 +296,7 @@ def parse_lst(path, table_numbers):
         minimization_successful,
         function_evaluations,
         significant_digits,
-        estimation_status,
+        termination_cause,
         estimation_runtime,
     )
 
@@ -322,9 +332,20 @@ def parse_estimation_status(results_file, table_numbers):
         minimization_successful,
         function_evaluations,
         significant_digits,
-        estimation_status,
+        termination_cause,
         estimation_runtime,
     )
+
+
+def get_last_est(model):
+    est_steps = model.estimation_steps
+    # Find last estimation
+    for i in range(len(est_steps) - 1, -1, -1):
+        step = est_steps[i]
+        if not step.evaluation:
+            return i
+    # If all steps were evaluation the last evaluation step is relevant
+    return len(est_steps) - 1
 
 
 def parse_phi(model, path):
