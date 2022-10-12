@@ -1874,7 +1874,7 @@ class Statements(Sequence):
         """
         return Statements(s.subs(substitutions) for s in self)
 
-    def _lookup_assignment(
+    def _lookup_last_assignment(
         self, symbol: Union[str, sympy.Symbol]
     ) -> Tuple[Optional[int], Optional[Assignment]]:
         if isinstance(symbol, str):
@@ -1909,7 +1909,7 @@ class Statements(Sequence):
                    ETA(1)
         CL = TVCL⋅ℯ
         """
-        return self._lookup_assignment(symbol)[1]
+        return self._lookup_last_assignment(symbol)[1]
 
     def find_assignment_index(self, symbol: Union[str, sympy.Symbol]) -> Optional[int]:
         """Returns index of last assignment of symbol
@@ -1931,7 +1931,7 @@ class Statements(Sequence):
         >>> model.statements.find_assignment_index("CL")
         5
         """
-        return self._lookup_assignment(symbol)[0]
+        return self._lookup_last_assignment(symbol)[0]
 
     def reassign(self, symbol, expression):
         """Reassign symbol to expression
