@@ -83,8 +83,11 @@ def create_algorithm_workflow(input_model, base_model, state, iiv_strategy, rank
     else:
         base_model_task = start_task
 
+    index_offset = len(
+        [model_name for model_name in state.model_names_so_far if 'base' not in model_name]
+    )
     algorithm_func = getattr(algorithms, state.algorithm)
-    wf_method = algorithm_func(base_model, len(state.model_names_so_far))
+    wf_method = algorithm_func(base_model, index_offset)
     wf.insert_workflow(wf_method)
 
     task_result = Task(
@@ -122,13 +125,14 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
             input_model, base_model, state, iiv_strategy, rank_type, cutoff
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
-        if i == 0:
-            # Have input model as first row in summary of models as step 0
-            sum_models.append(summarize_modelfit_results(input_model))
         # NOTE Append results
         new_models = list(filter(lambda model: model.name not in models_set, res.models))
         models.extend(new_models)
         models_set.update(model.name for model in new_models)
+
+        if i == 0:
+            # Have input model as first row in summary of models as step 0
+            sum_models.append(summarize_modelfit_results(input_model))
 
         sum_tools.append(res.summary_tool)
         sum_models.append(res.summary_models)
