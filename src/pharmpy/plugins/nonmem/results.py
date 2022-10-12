@@ -54,6 +54,9 @@ def parse_modelfit_results(model, path, subproblem=None):
         minimization_successful, index=table_numbers, name='minimization_successful'
     )
     esttime_iters = pd.Series(estimation_runtime, index=table_numbers, name='estimation_runtime')
+    funcevals_iters = pd.Series(
+        function_evaluations, index=table_numbers, name='function_evaluations'
+    )
 
     if covstatus and ses is not None:
         cov = parse_matrix(path.with_suffix(".cov"), model, table_numbers)
@@ -70,6 +73,8 @@ def parse_modelfit_results(model, path, subproblem=None):
     res.minimization_successful_iterations = minsucc_iters
     res.estimation_runtime = estimation_runtime[last_est_ind]
     res.estimation_runtime_iterations = esttime_iters
+    res.function_evaluations = function_evaluations[last_est_ind]
+    res.function_evaluations_iterations = funcevals_iters
     res.ofv = final_ofv
     res.ofv_iterations = ofv_iterations
     res.parameter_estimates = final_pe
@@ -119,7 +124,6 @@ class NONMEMModelfitResults(ModelfitResults):
         for k, v in status.items():
             estimation_status[k] = v
         self._estimation_status = estimation_status
-        self.function_evaluations = estimation_status['function_evaluations']
         self.significant_digits = estimation_status['significant_digits']
         if estimation_status['maxevals_exceeded'] is True:
             self.termination_cause = 'maxevals_exceeded'

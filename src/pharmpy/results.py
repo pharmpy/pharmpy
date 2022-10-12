@@ -168,6 +168,7 @@ class ModelfitResults(Results):
         runtime_total=None,
         termination_cause=None,
         function_evaluations=None,
+        function_evaluations_iterations=None,
         significant_digits=None,
         log_likelihood=None,
         log=None,
@@ -185,6 +186,8 @@ class ModelfitResults(Results):
         self.minimization_successful_iterations = minimization_successful_iterations
         self.estimation_runtime = estimation_runtime
         self.estimation_runtime_iterations = estimation_runtime_iterations
+        self.function_evaluations = function_evaluations
+        self.function_evaluations_iterations = function_evaluations_iterations
         self.individual_estimates = individual_estimates
         self.individual_ofv = individual_ofv
         self.residuals = residuals
@@ -224,6 +227,7 @@ class ModelfitResults(Results):
             'runtime_total': self.runtime_total,
             'termination_cause': self.termination_cause,
             'function_evaluations': self.function_evaluations,
+            'function_evaluations_iterations': self.function_evaluations_iterations,
             'log_likelihood': self.log_likelihood,
             'log': self.log,
             'relative_standard_errors': self.relative_standard_errors,
@@ -269,10 +273,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
                     return value
         # If all steps were evaluation the last evaluation step is relevant
         return getattr(self[-1], attr, None)
-
-    @property
-    def function_evaluations(self):
-        return self._get_last_est('function_evaluations')
 
     @property
     def termination_cause(self):
