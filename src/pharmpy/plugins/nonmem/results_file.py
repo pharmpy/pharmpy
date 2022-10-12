@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from typing import Dict, Optional, Union
 
 import dateutil.parser
 from packaging import version
@@ -70,11 +71,11 @@ class NONMEMResultsFile:
         )
 
     @staticmethod
-    def unknown_covariance():
+    def unknown_covariance() -> Dict[str, Optional[Union[bool, float]]]:
         return {'covariance_step_ok': None}
 
     @staticmethod
-    def unknown_termination():
+    def unknown_termination() -> Dict[str, Optional[Union[bool, float]]]:
         return {
             'minimization_successful': None,
             'estimate_near_boundary': None,
@@ -242,13 +243,20 @@ class NONMEMResultsFile:
         }
         month_trans = {'MAJ': 'MAY', 'OKT': 'OCT'}
 
-        date_time = None
-        if weekday_month_en.match(row) or weekday_month_sv.match(row):
-            if weekday_month_en.match(row):
-                _, month, day, year = weekday_month_en.match(row).groups()
-            else:
-                _, day, month, year = weekday_month_sv.match(row).groups()
+        def _dmy(row):
+            if match_en := weekday_month_en.match(row):
+                _, month, day, year = match_en.groups()
+                return day, month, year
 
+            elif match_sv := weekday_month_sv.match(row):
+                _, day, month, year = match_sv.groups()
+                return day, month, year
+
+            return None
+
+        dmy = _dmy(row)
+        if dmy is not None:
+            day, month, year = dmy
             try:
                 month = month_no[month.upper()]
             except KeyError:
@@ -257,24 +265,22 @@ class NONMEMResultsFile:
 
             date = datetime(int(year), int(month), int(day))
 
-            time_str = timestamp.search(row).groups()[0]
+            match = timestamp.search(row)
+            if match is None:
+                return date
+
+            time_str = match.groups()[0]
             time = dateutil.parser.parse(time_str).time()
+            return datetime.combine(date, time)
 
-            date_time = datetime.combine(date, time)
-        elif day_month_year.match(row) or year_month_day.match(row):
-            if day_month_year.match(row):
-                dayfirst = True
-            else:
-                dayfirst = False
+        elif (match_day_first := day_month_year.match(row)) or year_month_day.match(row):
+            date = dateutil.parser.parse(row, dayfirst=bool(match_day_first))
 
-            time_str = row_next
+            if row_next is None:
+                return date
 
-            date = dateutil.parser.parse(row, dayfirst=dayfirst).date()
-            time = dateutil.parser.parse(time_str).time()
-
-            date_time = datetime.combine(date, time)
-
-        return date_time
+            time = dateutil.parser.parse(row_next).time()
+            return datetime.combine(date, time)
 
     def log_items(self, lines):
         fulltext = '\n'.join(lines)
@@ -352,11 +358,11 @@ class NONMEMResultsFile:
         tag = re.compile(r'\s*#([A-Z]{4}):\s*(.*)')
         end_TERE = re.compile(r'(0|1)')  # The part we need after #TERE: will preceed next ^1 or ^0
         cleanup = re.compile(r'\*+\s*')
-        TERM = list()
-        TERE = list()
+        TERM = []
+        TERE = []
         found_TERM = False
         found_TERE = False
-        found_runtime = False
+        runtime = None
         endtime_index = None
 
         with open(path, 'rb') as fp:
@@ -404,14 +410,14 @@ class NONMEMResultsFile:
                         if found_TERM:
                             raise NotImplementedError('Two TERM tags without TERE in between')
                         found_TERM = True
-                        TERM = list()
+                        TERM = []
                     elif m.group(1) == 'TERE':
                         if not found_TERM:
                             raise NotImplementedError('TERE tag without TERM tag')
                         found_TERE = True
                         yield ('TERM', NONMEMResultsFile.parse_termination(TERM))
                         found_TERM = False
-                        TERM = list()
+                        TERM = []
                     elif found_TERE:
                         found_TERE = False
                         # raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
@@ -422,7 +428,7 @@ class NONMEMResultsFile:
                     if end_TERE.match(row):
                         yield ('TERE', NONMEMResultsFile.parse_tere(TERE))
                         found_TERE = False
-                        TERE = list()
+                        TERE = []
                     else:
                         TERE.append(row)
                 elif found_TERM:
@@ -431,20 +437,16 @@ class NONMEMResultsFile:
                     endtime_index = i + 1
 
             if endtime_index is not None:
-                if endtime_index + 1 < len(lines):
-                    second_line = lines[endtime_index + 1]
-                else:
-                    second_line = None
+                second_line = lines[i] if (i := endtime_index + 1) < len(lines) else None
                 endtime = NONMEMResultsFile.parse_runtime(lines[endtime_index], second_line)
                 if starttime and endtime:
                     runtime = (endtime - starttime).total_seconds()
-                    found_runtime = True
 
             if found_TERM:
                 yield ('TERM', NONMEMResultsFile.parse_termination(TERM))
             if found_TERE:
-                yield ('TERE', NONMEMResultsFile.parse_covariance(TERE))
-            if found_runtime:
+                yield ('TERE', NONMEMResultsFile.parse_tere(TERE))
+            if runtime is not None:
                 yield ('runtime', runtime)
 
     def table_blocks(self, path):
