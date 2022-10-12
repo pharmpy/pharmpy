@@ -1933,16 +1933,16 @@ class Statements(Sequence):
         """
         return self._lookup_last_assignment(symbol)[0]
 
-    def reassign(self, symbol, expression):
+    def reassign(self, symbol: Union[str, sympy.Symbol], expression: Union[str, sympy.Expr]):
         """Reassign symbol to expression
 
         Set symbol to be expression and remove all previous assignments of symbol
 
         Parameters
         ----------
-        symbol : Symbol or str
+        symbol : sypmpy.Symbol or str
             Symbol to reassign
-        expression : Expression or str
+        expression : sympy.Expr or str
             The new expression to assign to symbol
 
         Return
