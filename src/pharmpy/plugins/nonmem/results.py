@@ -38,7 +38,16 @@ def parse_modelfit_results(model, path, subproblem=None):
         ses_sdcorr,
     ) = parse_ext(model, path, subproblem)
     rse = calculate_relative_standard_errors(final_pe, ses)
-    runtime_total, log_likelihood, covstatus = parse_lst(path, table_numbers)
+    (
+        runtime_total,
+        log_likelihood,
+        covstatus,
+        minimization_successful,
+        function_evaluations,
+        significant_digits,
+        estimation_status,
+        estimation_runtime,
+    ) = parse_lst(path, table_numbers)
 
     if covstatus and ses is not None:
         cov = parse_matrix(path.with_suffix(".cov"), model, table_numbers)
@@ -262,7 +271,60 @@ def parse_lst(path, table_numbers):
     status = rfile.covariance_status(table_numbers[-1])
     covstatus = status['covariance_step_ok']
 
-    return runtime_total, log_likelihood, covstatus
+    (
+        minimization_successful,
+        function_evaluations,
+        significant_digits,
+        estimation_status,
+        estimation_runtime,
+    ) = parse_estimation_status(rfile, table_numbers)
+
+    return (
+        runtime_total,
+        log_likelihood,
+        covstatus,
+        minimization_successful,
+        function_evaluations,
+        significant_digits,
+        estimation_status,
+        estimation_runtime,
+    )
+
+
+def parse_estimation_status(results_file, table_numbers):
+    minimization_successful = []
+    function_evaluations = []
+    significant_digits = []
+    termination_cause = []
+    estimation_runtime = []
+    for tabno in table_numbers:
+        if results_file is not None:
+            estimation_status = results_file.estimation_status(tabno)
+        else:
+            estimation_status = NONMEMResultsFile.unknown_termination()
+        minimization_successful.append(estimation_status['minimization_successful'])
+        function_evaluations.append(estimation_status['function_evaluations'])
+        significant_digits.append(estimation_status['significant_digits'])
+        if estimation_status['maxevals_exceeded'] is True:
+            tc = 'maxevals_exceeded'
+        elif estimation_status['rounding_errors'] is True:
+            tc = 'rounding_errors'
+        else:
+            tc = None
+        termination_cause.append(tc)
+        try:
+            er = results_file.table[tabno]['estimation_runtime']
+        except (KeyError, FileNotFoundError):
+            er = np.nan
+        estimation_runtime.append(er)
+
+    return (
+        minimization_successful,
+        function_evaluations,
+        significant_digits,
+        estimation_status,
+        estimation_runtime,
+    )
 
 
 def parse_phi(model, path):
