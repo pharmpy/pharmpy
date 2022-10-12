@@ -128,14 +128,20 @@ if is_windows:
         if blocking:
             while True:
                 try:
-                    msvcrt.locking(fd, msvcrt.LK_LOCK, _lock_length)
+                    msvcrt.locking(  # pyright: ignore [reportGeneralTypeIssues]
+                        fd,
+                        msvcrt.LK_LOCK,  # pyright: ignore [reportGeneralTypeIssues]
+                        _lock_length,
+                    )
                     break
                 except OSError as error:
                     if not _is_process_level_lock_timeout_error(error):
                         raise error
         else:
             try:
-                msvcrt.locking(fd, msvcrt.LK_NBLCK, _lock_length)
+                msvcrt.locking(  # pyright: ignore [reportGeneralTypeIssues]
+                    fd, msvcrt.LK_NBLCK, _lock_length  # pyright: ignore [reportGeneralTypeIssues]
+                )
             except PermissionError as error:
                 if _is_process_level_lock_blocking_error(error):
                     raise AcquiringProcessLevelLockWouldBlockError()
@@ -146,7 +152,9 @@ if is_windows:
         # NOTE This implementation (Windows) will raise an error if attempting
         # to unlock an already unlocked fd. This does not matter as we make
         # sure we do not do that.
-        msvcrt.locking(fd, msvcrt.LK_UNLCK, _lock_length)
+        msvcrt.locking(  # pyright: ignore [reportGeneralTypeIssues]
+            fd, msvcrt.LK_UNLCK, _lock_length  # pyright: ignore [reportGeneralTypeIssues]
+        )
 
 else:
     # UNIX based file locking
