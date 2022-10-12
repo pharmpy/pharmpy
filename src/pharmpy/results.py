@@ -311,10 +311,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
         return self._get_last_est('termination_cause')
 
     @property
-    def runtime_total(self):
-        return self[-1].runtime_total
-
-    @property
     def significant_digits(self):
         return self[-1].significant_digits
 

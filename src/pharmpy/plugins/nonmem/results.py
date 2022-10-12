@@ -29,6 +29,7 @@ def parse_modelfit_results(model, path, subproblem=None):
     iofv, ie, iec = parse_phi(model, path)
     final_ofv, ofv_iterations, final_pe, sdcorr, pe_iterations = parse_ext(model, path, subproblem)
     rse = calculate_relative_standard_errors(final_pe, res[-1].standard_errors)
+    runtime_total = parse_lst(path)
 
     res.ofv = final_ofv
     res.ofv_iterations = ofv_iterations
@@ -41,6 +42,7 @@ def parse_modelfit_results(model, path, subproblem=None):
     res.individual_estimates_covariance = iec
     res.predictions = predictions
     res.residuals = residuals
+    res.runtime_total = runtime_total
     return res
 
 
@@ -229,7 +231,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 result_obj.log_likelihood = rfile.table[table_no]['ofv_with_constant']
             except (KeyError, FileNotFoundError):
                 result_obj.log_likelihood = np.nan
-            result_obj.runtime_total = rfile.runtime_total
 
     def _read_cov_table(self):
         try:
@@ -323,6 +324,17 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     obj.standard_errors = modeling.calculate_se_from_cov(obj.covariance_matrix)
                 elif obj.information_matrix is not None:
                     obj.standard_errors = modeling.calculate_se_from_inf(obj.information_matrix)
+
+
+def parse_lst(path):
+    try:
+        rfile = NONMEMResultsFile(path.with_suffix('.lst'), log=None)
+    except OSError:
+        return None
+
+    runtime_total = rfile.runtime_total
+
+    return runtime_total
 
 
 def parse_phi(model, path):
