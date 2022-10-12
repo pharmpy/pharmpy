@@ -16,19 +16,6 @@ def test_ofv(pheno):
     assert res.ofv == 586.27605628188053
 
 
-def test_tool_files(pheno):
-    res = pheno.modelfit_results
-    names = [str(p.name) for p in res.tool_files]
-    assert names == [
-        'pheno_real.lst',
-        'pheno_real.ext',
-        'pheno_real.cov',
-        'pheno_real.cor',
-        'pheno_real.coi',
-        'pheno_real.phi',
-    ]
-
-
 def test_special_models(testdata, load_model_for_test):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
     withBayes = load_model_for_test(onePROB / 'multEST' / 'noSIM' / 'withBayes.mod')

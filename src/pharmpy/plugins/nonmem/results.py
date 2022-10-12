@@ -27,9 +27,11 @@ def parse_modelfit_results(model, path, subproblem=None):
     residuals = parse_residuals(table_df)
     predictions = parse_predictions(table_df)
     iofv, ie, iec = parse_phi(model, path)
-    final_ofv, ofv_iterations, final_pe, sdcorr, pe_iterations = parse_ext(model, path, subproblem)
+    table_numbers, final_ofv, ofv_iterations, final_pe, sdcorr, pe_iterations = parse_ext(
+        model, path, subproblem
+    )
     rse = calculate_relative_standard_errors(final_pe, res[-1].standard_errors)
-    runtime_total = parse_lst(path)
+    runtime_total, log_likelihood = parse_lst(path, table_numbers)
 
     res.ofv = final_ofv
     res.ofv_iterations = ofv_iterations
@@ -43,6 +45,7 @@ def parse_modelfit_results(model, path, subproblem=None):
     res.predictions = predictions
     res.residuals = residuals
     res.runtime_total = runtime_total
+    res.log_likelihood = log_likelihood
     return res
 
 
@@ -93,8 +96,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._path = path
         self._subproblem = subproblem
         self.model = model
-        extensions = ['.lst', '.ext', '.cov', '.cor', '.coi', '.phi']
-        self.tool_files = [self._path.with_suffix(ext) for ext in extensions]
         super().__init__()
         self._read_ext_table()
         self._read_lst_file()
@@ -223,10 +224,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 result_obj.estimation_runtime = rfile.table[table_no]['estimation_runtime']
             except (KeyError, FileNotFoundError):
                 result_obj.estimation_runtime = np.nan
-            try:
-                result_obj.log_likelihood = rfile.table[table_no]['ofv_with_constant']
-            except (KeyError, FileNotFoundError):
-                result_obj.log_likelihood = np.nan
 
     def _read_cov_table(self):
         try:
@@ -322,15 +319,20 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     obj.standard_errors = modeling.calculate_se_from_inf(obj.information_matrix)
 
 
-def parse_lst(path):
+def parse_lst(path, table_numbers):
     try:
         rfile = NONMEMResultsFile(path.with_suffix('.lst'), log=None)
     except OSError:
-        return None
+        return None, np.nan
 
     runtime_total = rfile.runtime_total
 
-    return runtime_total
+    try:
+        log_likelihood = rfile.table[table_numbers[-1]]['ofv_with_constant']
+    except (KeyError, FileNotFoundError):
+        log_likelihood = np.nan
+
+    return runtime_total, log_likelihood
 
 
 def parse_phi(model, path):
@@ -469,9 +471,21 @@ def parse_ext(model, path, subproblem):
     except ValueError:
         failed_pe = create_failed_parameter_estimates(model)
         return np.nan, create_failed_ofv_iterations(model), failed_pe, failed_pe, None
+
+    table_numbers = parse_table_numbers(ext_tables, subproblem)
+
     final_ofv, ofv_iterations = parse_ofv(model, ext_tables, subproblem)
     final_pe, sdcorr, pe_iterations = parse_parameter_estimates(model, ext_tables, subproblem)
-    return final_ofv, ofv_iterations, final_pe, sdcorr, pe_iterations
+    return table_numbers, final_ofv, ofv_iterations, final_pe, sdcorr, pe_iterations
+
+
+def parse_table_numbers(ext_tables, subproblem):
+    table_numbers = []
+    for table in ext_tables.tables:
+        if subproblem and table.subproblem != subproblem:
+            continue
+        table_numbers.append(table.number)
+    return table_numbers
 
 
 def parse_ofv(model, ext_tables, subproblem):

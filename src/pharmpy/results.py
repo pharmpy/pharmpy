@@ -253,10 +253,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
         self._results.insert(ind, value)
 
     @property
-    def log_likelihood(self):
-        return self[-1].log_likelihood
-
-    @property
     def minimization_successful(self):
         return self._get_last_est('minimization_successful')
 
