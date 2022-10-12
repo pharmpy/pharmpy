@@ -42,11 +42,7 @@ all_covariate_effects = all_continuous_covariate_effects + all_categorical_covar
 
 def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]:
     for args in parse_spec(spec(model, statements)):
-
-        def fn(model):
-            add_covariate_effect(model, *args)
-
-        yield ('COVARIATE', *args), fn
+        yield ('COVARIATE', *args), lambda model: add_covariate_effect(model, *args)
 
 
 def spec(model: Model, statements: Iterable[Statement]) -> Iterable[Spec]:
