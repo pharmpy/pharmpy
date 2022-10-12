@@ -122,15 +122,6 @@ class NONMEMModelfitResults(ModelfitResults):
 
         self._covariance_status = covariance_status
 
-    def _set_estimation_status(self, results_file, requested):
-        estimation_status = {'requested': requested}
-        status = NONMEMResultsFile.unknown_termination()
-        if results_file is not None:
-            status = results_file.estimation_status(self.table_number)
-        for k, v in status.items():
-            estimation_status[k] = v
-        self._estimation_status = estimation_status
-
 
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def __init__(self, path, model=None, subproblem=None):
@@ -220,7 +211,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             if len(self.model.internals.control_stream.get_records('COVARIANCE')) > 0:
                 table_with_cov = self[-1].table_number  # correct unless interrupted
         for table_no, result_obj in enumerate(self, 1):
-            result_obj._set_estimation_status(rfile, requested=True)
             # _covariance_status already set to None if ext table did not have standard errors
             result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
 
