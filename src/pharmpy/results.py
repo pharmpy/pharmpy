@@ -171,6 +171,7 @@ class ModelfitResults(Results):
         function_evaluations=None,
         function_evaluations_iterations=None,
         significant_digits=None,
+        significant_digits_iterations=None,
         log_likelihood=None,
         log=None,
     ):
@@ -198,6 +199,7 @@ class ModelfitResults(Results):
         self.termination_cause_iterations = termination_cause_iterations
         self.function_evaluations = function_evaluations
         self.significant_digits = significant_digits
+        self.significant_digits_iterations = significant_digits_iterations
         self.log_likelihood = log_likelihood
         self.log = log
 
@@ -234,6 +236,8 @@ class ModelfitResults(Results):
             'log_likelihood': self.log_likelihood,
             'log': self.log,
             'relative_standard_errors': self.relative_standard_errors,
+            'significant_digits_iterations': self.significant_digits_iterations,
+            'significant_digits': self.significant_digits,
         }
 
 
@@ -276,7 +280,3 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
                     return value
         # If all steps were evaluation the last evaluation step is relevant
         return getattr(self[-1], attr, None)
-
-    @property
-    def significant_digits(self):
-        return self[-1].significant_digits

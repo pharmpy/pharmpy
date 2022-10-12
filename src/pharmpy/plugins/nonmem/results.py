@@ -58,6 +58,7 @@ def parse_modelfit_results(model, path, subproblem=None):
         function_evaluations, index=table_numbers, name='function_evaluations'
     )
     termcause_iters = pd.Series(termination_cause, index=table_numbers, name='termination_cause')
+    sigdigs_iters = pd.Series(significant_digits, index=table_numbers, name='significant_digits')
 
     if covstatus and ses is not None:
         cov = parse_matrix(path.with_suffix(".cov"), model, table_numbers)
@@ -78,6 +79,8 @@ def parse_modelfit_results(model, path, subproblem=None):
     res.function_evaluations_iterations = funcevals_iters
     res.termination_cause = termination_cause[last_est_ind]
     res.termination_cause_iterations = termcause_iters
+    res.significant_digits = significant_digits[-1]
+    res.significant_digits_iterations = sigdigs_iters
     res.ofv = final_ofv
     res.ofv_iterations = ofv_iterations
     res.parameter_estimates = final_pe
@@ -127,7 +130,6 @@ class NONMEMModelfitResults(ModelfitResults):
         for k, v in status.items():
             estimation_status[k] = v
         self._estimation_status = estimation_status
-        self.significant_digits = estimation_status['significant_digits']
 
 
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
