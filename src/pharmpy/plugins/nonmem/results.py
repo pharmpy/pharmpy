@@ -131,7 +131,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             # The ext-file is illegal
             self.log.log_error(f"Broken ext-file {self._path.with_suffix('.ext')}")
             result_obj = NONMEMModelfitResults(self)
-            result_obj.model_name = self._path.stem
             result_obj.model = self.model
             is_covariance_step = self.model.estimation_steps[0].cov
             result_obj = self._fill_empty_results(result_obj, is_covariance_step)
@@ -143,7 +142,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             if self._subproblem and table.subproblem != self._subproblem:
                 continue
             result_obj = NONMEMModelfitResults(self)
-            result_obj.model_name = self._path.stem
             result_obj.model = self.model
             result_obj.table_number = table.number
 

@@ -100,8 +100,6 @@ def read_results(path_or_buf):
 class ModelfitResults(Results):
     """Base class for results from a modelfit operation
 
-    model_name - name of model that generated the results model
-
     Attributes
     ----------
     correlation_matrix : pd.DataFrame
@@ -274,10 +272,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     @property
     def standard_errors_sdcorr(self):
         return self[-1].standard_errors_sdcorr
-
-    @property
-    def model_name(self):
-        return self[-1].model_name
 
     @property
     def function_evaluations(self):
