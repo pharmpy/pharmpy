@@ -170,12 +170,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 table.standard_errors
                 result_obj._set_covariance_status(table)
             except Exception:
-                # If there are no standard errors in ext-file it means
-                # there can be no cov, cor or coi either
-                result_obj.standard_errors = None
-                result_obj.covariance_matrix = None
-                result_obj.correlation_matrix = None
-                result_obj.information_matrix = None
                 result_obj._set_covariance_status(None)
             self.append(result_obj)
 

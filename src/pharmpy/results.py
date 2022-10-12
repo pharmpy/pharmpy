@@ -280,6 +280,3 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     @property
     def significant_digits(self):
         return self[-1].significant_digits
-
-    def __repr__(self):
-        return repr(self._results[-1])
