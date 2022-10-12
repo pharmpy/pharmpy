@@ -876,7 +876,8 @@ def input_model(path):
     path = check_input_path(path)
     from pharmpy.model import Model
 
-    return Model.create_model(path)
+    model = Model.create_model(path)
+    return model
 
 
 def input_model_or_dataset(path):

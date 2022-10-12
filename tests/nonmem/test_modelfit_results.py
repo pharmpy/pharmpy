@@ -22,10 +22,6 @@ def test_special_models(testdata, load_model_for_test):
     assert (
         pytest.approx(withBayes.modelfit_results.standard_errors['THETA(1)'], 1e-13) == 2.51942e00
     )
-    assert (
-        pytest.approx(withBayes.modelfit_results[0].standard_errors['THETA(1)'], 1e-13)
-        == 3.76048e-01
-    )
     assert withBayes.modelfit_results[0].minimization_successful is False
     assert withBayes.modelfit_results[1].minimization_successful is False
 

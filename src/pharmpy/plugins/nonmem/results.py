@@ -23,20 +23,31 @@ def parse_modelfit_results(model, path, subproblem=None):
     except (FileNotFoundError, OSError):
         return None
 
-    cov = res[-1].covariance_matrix
-    cor = res[-1].correlation_matrix
-    coi = res[-1].information_matrix
-    ses = res[-1].standard_errors
-
     table_df = parse_tables(model, path)
     residuals = parse_residuals(table_df)
     predictions = parse_predictions(table_df)
     iofv, ie, iec = parse_phi(model, path)
-    table_numbers, final_ofv, ofv_iterations, final_pe, sdcorr, pe_iterations = parse_ext(
-        model, path, subproblem
-    )
+    (
+        table_numbers,
+        final_ofv,
+        ofv_iterations,
+        final_pe,
+        sdcorr,
+        pe_iterations,
+        ses,
+        ses_sdcorr,
+    ) = parse_ext(model, path, subproblem)
     rse = calculate_relative_standard_errors(final_pe, ses)
-    runtime_total, log_likelihood = parse_lst(path, table_numbers)
+    runtime_total, log_likelihood, covstatus = parse_lst(path, table_numbers)
+
+    if covstatus and ses is not None:
+        cov = parse_matrix(path.with_suffix(".cov"), model, table_numbers)
+        cor = parse_matrix(path.with_suffix(".cor"), model, table_numbers)
+        if cor is not None:
+            np.fill_diagonal(cor.values, 1)
+        coi = parse_matrix(path.with_suffix(".coi"), model, table_numbers)
+    else:
+        cov, cor, coi = None, None, None
 
     cov, cor, coi, ses = calculate_cov_cor_coi_ses(cov, cor, coi, ses)
 
@@ -57,6 +68,7 @@ def parse_modelfit_results(model, path, subproblem=None):
     res.correlation_matrix = cor
     res.information_matrix = coi
     res.standard_errors = ses
+    res.standard_errors_sdcorr = ses_sdcorr
     return res
 
 
@@ -110,9 +122,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         super().__init__()
         self._read_ext_table()
         self._read_lst_file()
-        self._read_cov_table()
-        self._read_cor_table()
-        self._read_coi_table()
 
     def __getattr__(self, item):
         # Avoid infinite recursion when deepcopying
@@ -157,19 +166,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 self.append(result_obj)
                 continue
 
-            ests = table.final_parameter_estimates
             try:
-                fix = table.fixed
-            except KeyError:
-                # NM 7.2 does not have row -1000000006 indicating FIXED status
-                if self.model:
-                    fixed = pd.Series(self.model.parameters.fix)
-                    fix = pd.concat(
-                        [fixed, pd.Series(True, index=ests.index.difference(fixed.index))]
-                    )
-
-            try:
-                ses = table.standard_errors
+                table.standard_errors
                 result_obj._set_covariance_status(table)
             except Exception:
                 # If there are no standard errors in ext-file it means
@@ -179,24 +177,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 result_obj.correlation_matrix = None
                 result_obj.information_matrix = None
                 result_obj._set_covariance_status(None)
-            else:
-                ses = ses[~fix]
-                sdcorr = table.omega_sigma_se_stdcorr[~fix]
-                if self.model:
-                    ses = ses.rename(
-                        index=parameter_translation(self.model.internals.control_stream)
-                    )
-                    sdcorr = sdcorr.rename(
-                        index=parameter_translation(self.model.internals.control_stream)
-                    )
-                result_obj.standard_errors = ses
-                sdcorr_ses = ses.copy()
-                sdcorr_ses.update(sdcorr)
-                if self.model:
-                    sdcorr_ses = sdcorr_ses.rename(
-                        index=parameter_translation(self.model.internals.control_stream)
-                    )
-                result_obj.standard_errors_sdcorr = sdcorr_ses
             self.append(result_obj)
 
     def _fill_empty_results(self, result_obj, is_covariance_step):
@@ -233,70 +213,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             except (KeyError, FileNotFoundError):
                 result_obj.estimation_runtime = np.nan
 
-    def _read_cov_table(self):
-        try:
-            cov_table = NONMEMTableFile(self._path.with_suffix('.cov'))
-        except OSError:
-            for result_obj in self:
-                if not hasattr(result_obj, 'covariance_matrix'):
-                    result_obj.covariance_matrix = None
-            return
-        for result_obj in self:
-            if _check_covariance_status(result_obj):
-                df = cov_table.table_no(result_obj.table_number).data_frame
-                if df is not None:
-                    if self.model:
-                        df = df.rename(
-                            index=parameter_translation(self.model.internals.control_stream)
-                        )
-                        df.columns = df.index
-                result_obj.covariance_matrix = df
-            else:
-                result_obj.covariance_matrix = None
-
-    def _read_coi_table(self):
-        try:
-            coi_table = NONMEMTableFile(self._path.with_suffix('.coi'))
-        except OSError:
-            for result_obj in self:
-                if not hasattr(result_obj, 'information_matrix'):
-                    result_obj.information_matrix = None
-            return
-        for result_obj in self:
-            if _check_covariance_status(result_obj):
-                df = coi_table.table_no(result_obj.table_number).data_frame
-                if df is not None:
-                    if self.model:
-                        df = df.rename(
-                            index=parameter_translation(self.model.internals.control_stream)
-                        )
-                        df.columns = df.index
-                result_obj.information_matrix = df
-            else:
-                result_obj.information_matrix = None
-
-    def _read_cor_table(self):
-        try:
-            cor_table = NONMEMTableFile(self._path.with_suffix('.cor'))
-        except OSError:
-            for result_obj in self:
-                if not hasattr(result_obj, 'correlation_matrix'):
-                    result_obj.correlation_matrix = None
-            return
-        for result_obj in self:
-            if _check_covariance_status(result_obj):
-                cor = cor_table.table_no(result_obj.table_number).data_frame
-                if cor is not None:
-                    if self.model:
-                        cor = cor.rename(
-                            index=parameter_translation(self.model.internals.control_stream)
-                        )
-                        cor.columns = cor.index
-                    np.fill_diagonal(cor.values, 1)
-                result_obj.correlation_matrix = cor
-            else:
-                result_obj.correlation_matrix = None
-
 
 def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
     if cov is None:
@@ -322,11 +238,25 @@ def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
     return cov, cor, coi, ses
 
 
+def parse_matrix(path, model, table_numbers):
+    try:
+        table = NONMEMTableFile(path)
+    except OSError:
+        return None
+
+    df = table.table_no(table_numbers[-1]).data_frame
+    if df is not None:
+        if model:
+            df = df.rename(index=parameter_translation(model.internals.control_stream))
+            df.columns = df.index
+    return df
+
+
 def parse_lst(path, table_numbers):
     try:
         rfile = NONMEMResultsFile(path.with_suffix('.lst'), log=None)
     except OSError:
-        return None, np.nan
+        return None, np.nan, False
 
     runtime_total = rfile.runtime_total
 
@@ -335,7 +265,10 @@ def parse_lst(path, table_numbers):
     except (KeyError, FileNotFoundError):
         log_likelihood = np.nan
 
-    return runtime_total, log_likelihood
+    status = rfile.covariance_status(table_numbers[-1])
+    covstatus = status['covariance_step_ok']
+
+    return runtime_total, log_likelihood, covstatus
 
 
 def parse_phi(model, path):
@@ -479,7 +412,17 @@ def parse_ext(model, path, subproblem):
 
     final_ofv, ofv_iterations = parse_ofv(model, ext_tables, subproblem)
     final_pe, sdcorr, pe_iterations = parse_parameter_estimates(model, ext_tables, subproblem)
-    return table_numbers, final_ofv, ofv_iterations, final_pe, sdcorr, pe_iterations
+    ses, ses_sdcorr = parse_standard_errors(model, ext_tables)
+    return (
+        table_numbers,
+        final_ofv,
+        ofv_iterations,
+        final_pe,
+        sdcorr,
+        pe_iterations,
+        ses,
+        ses_sdcorr,
+    )
 
 
 def parse_table_numbers(ext_tables, subproblem):
@@ -551,6 +494,26 @@ def parse_parameter_estimates(model, ext_tables, subproblem):
         sdcorr_ests = final.copy()
         sdcorr_ests.update(sdcorr)
     return final, sdcorr_ests, pe
+
+
+def parse_standard_errors(model, ext_tables):
+    table = ext_tables.tables[-1]
+    try:
+        ses = table.standard_errors
+    except Exception:
+        return None, None
+
+    fix = get_fixed_parameters(table, model)
+    ses = ses[~fix]
+    sdcorr = table.omega_sigma_se_stdcorr[~fix]
+    if model:
+        ses = ses.rename(index=parameter_translation(model.internals.control_stream))
+        sdcorr = sdcorr.rename(index=parameter_translation(model.internals.control_stream))
+    sdcorr_ses = ses.copy()
+    sdcorr_ses.update(sdcorr)
+    if model:
+        sdcorr_ses = sdcorr_ses.rename(index=parameter_translation(model.internals.control_stream))
+    return ses, sdcorr_ses
 
 
 def get_fixed_parameters(table, model):

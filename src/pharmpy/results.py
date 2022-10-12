@@ -270,10 +270,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
         return getattr(self[-1], attr, None)
 
     @property
-    def standard_errors_sdcorr(self):
-        return self[-1].standard_errors_sdcorr
-
-    @property
     def function_evaluations(self):
         return self._get_last_est('function_evaluations')
 
