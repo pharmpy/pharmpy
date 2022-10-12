@@ -107,21 +107,6 @@ class NONMEMModelfitResults(ModelfitResults):
         self._chain = chain
         super().__init__()
 
-    def _set_covariance_status(self, results_file, table_with_cov=None):
-        covariance_status = {
-            'requested': True
-            if self.standard_errors is not None
-            else (table_with_cov == self.table_number),
-            'completed': (self.standard_errors is not None),
-            'warnings': None,
-        }
-        if self.standard_errors is not None and results_file is not None:
-            status = results_file.covariance_status(self.table_number)
-            if status['covariance_step_ok'] is not None:
-                covariance_status['warnings'] = not status['covariance_step_ok']
-
-        self._covariance_status = covariance_status
-
 
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def __init__(self, path, model=None, subproblem=None):
@@ -178,11 +163,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 self.append(result_obj)
                 continue
 
-            try:
-                table.standard_errors
-                result_obj._set_covariance_status(table)
-            except Exception:
-                result_obj._set_covariance_status(None)
             self.append(result_obj)
 
     def _fill_empty_results(self, result_obj, is_covariance_step):
@@ -203,16 +183,12 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
 
     def _read_lst_file(self):
         try:
-            rfile = NONMEMResultsFile(self._path.with_suffix('.lst'), self.log)
+            NONMEMResultsFile(self._path.with_suffix('.lst'), self.log)
         except OSError:
             return
-        table_with_cov = -99
         if self.model is not None:
             if len(self.model.internals.control_stream.get_records('COVARIANCE')) > 0:
-                table_with_cov = self[-1].table_number  # correct unless interrupted
-        for table_no, result_obj in enumerate(self, 1):
-            # _covariance_status already set to None if ext table did not have standard errors
-            result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
+                self[-1].table_number  # correct unless interrupted
 
 
 def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
