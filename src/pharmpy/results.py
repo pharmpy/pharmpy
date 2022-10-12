@@ -140,6 +140,8 @@ class ModelfitResults(Results):
     standard_errors_sdcorr : pd.Series
         Standard errors of the population parameter estimates on standard deviation and correlation
         scale
+    relative_standard_errors : pd.Series
+        Relative standard errors of the population parameter estimates
     termination_cause : str
         The cause of premature termination. One of 'maxevals_exceeded' and 'rounding_errors'
     function_evaluations : int
@@ -156,6 +158,7 @@ class ModelfitResults(Results):
         covariance_matrix=None,
         correlation_matrix=None,
         standard_errors=None,
+        relative_standard_errors=None,
         minimization_successful=None,
         individual_ofv=None,
         individual_estimates=None,
@@ -176,6 +179,7 @@ class ModelfitResults(Results):
         self.covariance_matrix = covariance_matrix
         self.correlation_matrix = correlation_matrix
         self.standard_errors = standard_errors
+        self.relative_standard_errors = relative_standard_errors
         self.minimization_successful = minimization_successful
         self.individual_estimates = individual_estimates
         self.individual_ofv = individual_ofv
@@ -199,6 +203,8 @@ class ModelfitResults(Results):
         return ModelfitResults(**d)
 
     def to_dict(self):
+        # FIXME: This is not going to be needed as soon as ModelfitResults
+        #       becomes a standard Results class
         return {
             'ofv': self.ofv,
             'parameter_estimates': self.parameter_estimates,
@@ -216,15 +222,8 @@ class ModelfitResults(Results):
             'function_evaluations': self.function_evaluations,
             'log_likelihood': self.log_likelihood,
             'log': self.log,
+            'relative_standard_errors': self.relative_standard_errors,
         }
-
-    @property
-    def relative_standard_errors(self):
-        """Relative standard errors of population parameter estimates"""
-        if self.standard_errors is not None:
-            ser = self.standard_errors / self.parameter_estimates
-            ser.name = 'RSE'
-            return ser
 
 
 class ChainedModelfitResults(MutableSequence, ModelfitResults):
@@ -278,10 +277,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
                     return value
         # If all steps were evaluation the last evaluation step is relevant
         return getattr(self[-1], attr, None)
-
-    @property
-    def parameter_estimates_sdcorr(self):
-        return self[-1].parameter_estimates_sdcorr
 
     @property
     def covariance_matrix(self):

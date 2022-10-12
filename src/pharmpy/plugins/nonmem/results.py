@@ -27,12 +27,15 @@ def parse_modelfit_results(model, path, subproblem=None):
     residuals = parse_residuals(table_df)
     predictions = parse_predictions(table_df)
     iofv, ie, iec = parse_phi(model, path)
-    final_ofv, ofv_iterations, final_pe, pe_iterations = parse_ext(model, path, subproblem)
+    final_ofv, ofv_iterations, final_pe, sdcorr, pe_iterations = parse_ext(model, path, subproblem)
+    rse = calculate_relative_standard_errors(final_pe, res[-1].standard_errors)
 
     res.ofv = final_ofv
     res.ofv_iterations = ofv_iterations
     res.parameter_estimates = final_pe
+    res.parameter_estimates_sdcorr = sdcorr
     res.parameter_estimates_iterations = pe_iterations
+    res.relative_standard_errors = rse
     res.individual_ofv = iofv
     res.individual_estimates = ie
     res.individual_estimates_covariance = iec
@@ -157,27 +160,10 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     fix = pd.concat(
                         [fixed, pd.Series(True, index=ests.index.difference(fixed.index))]
                     )
-            ests = ests[~fix]
-            if self.model:
-                ests = ests.rename(index=parameter_translation(self.model.internals.control_stream))
-            result_obj.parameter_estimates = ests
 
-            try:
-                sdcorr = table.omega_sigma_stdcorr[~fix]
-            except KeyError:
-                pass
-            else:
-                if self.model:
-                    sdcorr = sdcorr.rename(
-                        index=parameter_translation(self.model.internals.control_stream)
-                    )
-                sdcorr_ests = ests.copy()
-                sdcorr_ests.update(sdcorr)
-                result_obj.parameter_estimates_sdcorr = sdcorr_ests
             try:
                 ses = table.standard_errors
                 result_obj._set_covariance_status(table)
-
             except Exception:
                 # If there are no standard errors in ext-file it means
                 # there can be no cov, cor or coi either
@@ -464,14 +450,20 @@ def create_ofv_iterations_series(ofv, steps, iterations):
     return ofv_iterations
 
 
+def create_failed_parameter_estimates(model):
+    pe = pd.Series(np.nan, name='estimates', index=list(model.parameters.nonfixed.inits.keys()))
+    return pe
+
+
 def parse_ext(model, path, subproblem):
     try:
         ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
     except ValueError:
-        return np.nan, create_failed_ofv_iterations(model)
+        failed_pe = create_failed_parameter_estimates(model)
+        return np.nan, create_failed_ofv_iterations(model), failed_pe, failed_pe, None
     final_ofv, ofv_iterations = parse_ofv(model, ext_tables, subproblem)
-    final_pe, pe_iterations = parse_parameter_estimates(model, ext_tables, subproblem)
-    return final_ofv, ofv_iterations, final_pe, pe_iterations
+    final_pe, sdcorr, pe_iterations = parse_parameter_estimates(model, ext_tables, subproblem)
+    return final_ofv, ofv_iterations, final_pe, sdcorr, pe_iterations
 
 
 def parse_ofv(model, ext_tables, subproblem):
@@ -493,6 +485,15 @@ def parse_ofv(model, ext_tables, subproblem):
     return final_ofv, ofv_iterations
 
 
+def calculate_relative_standard_errors(pe, se):
+    if pe is None or se is None:
+        ser = None
+    else:
+        ser = se / pe
+        ser.name = 'RSE'
+    return ser
+
+
 def parse_parameter_estimates(model, ext_tables, subproblem):
     pe = pd.DataFrame()
     for i, table in enumerate(ext_tables.tables, start=1):
@@ -503,17 +504,28 @@ def parse_parameter_estimates(model, ext_tables, subproblem):
 
         fix = get_fixed_parameters(table, model)
         fixed_param_names = [name for name in list(df.columns)[1:-1] if fix[name]]
-        df = df.drop(fixed_param_names, axis=1)
+        df = df.drop(fixed_param_names + ['OBJ'], axis=1)
         df['step'] = i
         if model:
             df = df.rename(columns=parameter_translation(model.internals.control_stream))
         pe = pd.concat([pe, df])
+
     final = table.final_parameter_estimates
     final = final.drop(fixed_param_names)
     if model:
         final = final.rename(index=parameter_translation(model.internals.control_stream))
     pe = pe.rename(columns={'ITERATION': 'iteration'}).set_index(['step', 'iteration'])
-    return final, pe
+
+    try:
+        sdcorr = table.omega_sigma_stdcorr[~fix]
+    except KeyError:
+        sdcorr_ests = pd.Series(np.nan, index=pe.index)
+    else:
+        if model:
+            sdcorr = sdcorr.rename(index=parameter_translation(model.internals.control_stream))
+        sdcorr_ests = final.copy()
+        sdcorr_ests.update(sdcorr)
+    return final, sdcorr_ests, pe
 
 
 def get_fixed_parameters(table, model):

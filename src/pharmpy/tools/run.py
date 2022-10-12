@@ -783,7 +783,9 @@ def _summarize_step(model, i):
     summary_dict['runtime_total'] = step.runtime_total
     summary_dict['estimation_runtime'] = step.estimation_runtime
 
-    pe = step.parameter_estimates
+    pe = res.parameter_estimates_iterations.loc[
+        i + 1,
+    ].iloc[-1]
     ses = step.standard_errors
     rses = step.relative_standard_errors
 

@@ -344,7 +344,6 @@ def test_summarize_modelfit_results(
     assert len(summary_multest.index) == 2
 
     assert not summary_multest.loc['pheno_multEST']['minimization_successful']
-
     summary_multest_full = summarize_modelfit_results(
         [pheno_multest, mox], include_all_estimation_steps=True
     )
