@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence
-from typing import Dict, Iterable, List, Optional, Set, Union, overload
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, overload
 
 import pharmpy.unicode as unicode
 from pharmpy.deps import networkx as nx
@@ -188,6 +188,14 @@ class ODESystem(Statement, ABC, metaclass=ODESystemMetaclass):
         if key == 't':
             return ODESystem.t
         raise AttributeError(key)
+
+    @abstractmethod
+    def to_compartmental_system(self) -> CompartmentalSystem:
+        pass
+
+    @abstractmethod
+    def to_explicit_system(self) -> ExplicitODESystem:
+        pass
 
 
 def _bracket(a):
@@ -977,7 +985,7 @@ class CompartmentalSystem(ODESystem):
         peripherals = sorted(peripherals, key=lambda comp: comp.name)
         return peripherals
 
-    def find_transit_compartments(self, statements):
+    def find_transit_compartments(self, statements: Statements) -> List[Compartment]:
         """Find all transit compartments
 
         Transit compartments are a chain of compartments with the same out rate starting from
@@ -1866,17 +1874,31 @@ class Statements(Sequence):
         """
         return Statements(s.subs(substitutions) for s in self)
 
-    def find_assignment(self, symbol):
+    def _lookup_assignment(
+        self, symbol: Union[str, sympy.Symbol]
+    ) -> Tuple[Optional[int], Optional[Assignment]]:
+        if isinstance(symbol, str):
+            symbol = sympy.Symbol(symbol)
+        ind = None
+        assignment = None
+        for i, statement in enumerate(self):
+            if isinstance(statement, Assignment):
+                if statement.symbol == symbol:
+                    ind = i
+                    assignment = statement
+        return ind, assignment
+
+    def find_assignment(self, symbol: Union[str, sympy.Symbol]) -> Optional[Assignment]:
         """Returns last assignment of symbol
 
         Parameters
         ----------
-        symbol : Symbol or str
+        symbol : sympy.Symbol or str
             Symbol to look for
 
         Returns
         -------
-        Assignment
+        Assignment or None
             An Assignment or None if no assignment to symbol exists
 
         Examples
@@ -1887,26 +1909,19 @@ class Statements(Sequence):
                    ETA(1)
         CL = TVCL⋅ℯ
         """
-        if isinstance(symbol, str):
-            symbol = sympy.Symbol(symbol)
-        assignment = None
-        for statement in self:
-            if isinstance(statement, Assignment):
-                if statement.symbol == symbol:
-                    assignment = statement
-        return assignment
+        return self._lookup_assignment(symbol)[1]
 
-    def find_assignment_index(self, symbol):
+    def find_assignment_index(self, symbol: Union[str, sympy.Symbol]) -> Optional[int]:
         """Returns index of last assignment of symbol
 
         Parameters
         ----------
-        symbol : Symbol or str
+        symbol : sympy.Symbol or str
             Symbol to look for
 
         Returns
         -------
-        int
+        int or None
             Index of Assignment or None if no assignment to symbol exists
 
         Examples
@@ -1916,14 +1931,7 @@ class Statements(Sequence):
         >>> model.statements.find_assignment_index("CL")
         5
         """
-        if isinstance(symbol, str):
-            symbol = sympy.Symbol(symbol)
-        ind = None
-        for i, statement in enumerate(self):
-            if isinstance(statement, Assignment):
-                if statement.symbol == symbol:
-                    ind = i
-        return ind
+        return self._lookup_assignment(symbol)[0]
 
     def reassign(self, symbol, expression):
         """Reassign symbol to expression
