@@ -113,10 +113,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def __getitem__(self, key):
         return super().__getitem__(key)
 
-    def __bool__(self):
-        # without this, an existing but 'unloaded' object will evaluate to False
-        return len(self) > 0
-
     def _read_ext_table(self):
         try:
             ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))

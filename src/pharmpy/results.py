@@ -192,9 +192,6 @@ class ModelfitResults(Results):
         self.log_likelihood = log_likelihood
         self.log = log
 
-    def __bool__(self):
-        return bool(self.ofv) and bool(self.parameter_estimates)
-
     @classmethod
     def from_dict(cls, d):
         # FIXME temp fix since ModelfitResults is getting rewritten
