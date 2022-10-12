@@ -50,14 +50,15 @@ class OmegaRecord(Record):
                 var = bool(node.find('VAR'))
                 n = node.n.INT if node.find('n') else 1
                 if sd and var:
+                    name = '(anonymous)' if self.name is None else self.name.upper()
                     raise ModelSyntaxError(
-                        f'Initial estimate for {self.name.upper()} cannot be both'
+                        f'Initial estimate for {name} cannot be both'
                         f' on SD and VAR scale\n{self.root}'
                     )
                 if init == 0 and not fixed:
+                    name = '(anonymous)' if self.name is None else self.name.upper()
                     raise ModelSyntaxError(
-                        f'If initial estimate for {self.name.upper()} is 0 it'
-                        f' must be set to FIX'
+                        f'If initial estimate for {name} is 0 it must be set to FIX'
                     )
                 if sd:
                     init = init**2
@@ -427,6 +428,7 @@ class OmegaRecord(Record):
             rvs = RandomVariables.create(dists)
         else:
             if bare_block:
+                assert previous_cov is not None
                 numetas = previous_cov.rows
             else:
                 numetas = self.root.block.size.INT

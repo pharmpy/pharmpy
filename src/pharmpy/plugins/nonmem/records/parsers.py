@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from lark import Lark
+from lark import Lark  # pyright: ignore [reportPrivateImportUsage]
 
 from pharmpy.parse_utils import GenericParser
 
