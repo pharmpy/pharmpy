@@ -140,7 +140,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj.model = self.model
             is_covariance_step = self.model.estimation_steps[0].cov
             result_obj = self._fill_empty_results(result_obj, is_covariance_step)
-            result_obj.table_number = 1
             self.append(result_obj)
             return
 
@@ -149,7 +148,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 continue
             result_obj = NONMEMModelfitResults(self)
             result_obj.model = self.model
-            result_obj.table_number = table.number
 
             try:
                 table.data_frame
@@ -186,9 +184,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             NONMEMResultsFile(self._path.with_suffix('.lst'), self.log)
         except OSError:
             return
-        if self.model is not None:
-            if len(self.model.internals.control_stream.get_records('COVARIANCE')) > 0:
-                self[-1].table_number  # correct unless interrupted
 
 
 def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
