@@ -140,7 +140,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj.model = self.model
             is_covariance_step = self.model.estimation_steps[0].cov
             result_obj = self._fill_empty_results(result_obj, is_covariance_step)
-            self.append(result_obj)
             return
 
         for table in ext_tables:

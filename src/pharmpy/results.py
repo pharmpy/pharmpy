@@ -241,11 +241,6 @@ class ModelfitResults(Results):
 
 
 class ChainedModelfitResults(ModelfitResults):
-    """A sequence of modelfit results given in order from first to final
-    inherits from both list and ModelfitResults. Each method from ModelfitResults
-    will be performed on the final modelfit object
-    """
-
     def __init__(self, results=None):
         if isinstance(results, ChainedModelfitResults):
             self._results = copy.deepcopy(results._results)
@@ -253,18 +248,3 @@ class ChainedModelfitResults(ModelfitResults):
             self._results = []
         else:
             self._results = list(results)
-
-    def __getitem__(self, ind):
-        return self._results[ind]
-
-    def __setitem__(self, ind, value):
-        self._results[ind] = value
-
-    def __delitem__(self, ind):
-        del self._results[ind]
-
-    def __len__(self):
-        return len(self._results)
-
-    def insert(self, ind, value):
-        self._results.insert(ind, value)
