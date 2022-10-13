@@ -8,9 +8,9 @@ from pathlib import Path
 def options_from_command(command):
     p = re.compile('^-+([^=]+)=?(.*)')
     return {
-        p.match(val).group(1): p.match(val).group(2)
+        match.group(1): match.group(2)
         for val in command.split()
-        if val.startswith('-')
+        if val.startswith('-') and (match := p.match(val))
     }
 
 
@@ -32,7 +32,7 @@ def tool_from_command(command):
     return Path(tool_with_path).name
 
 
-def psn_directory_list(path, drop_tools=list()):
+def psn_directory_list(path, drop_tools=[]):
     path = Path(path)
     folder_list = [{'name': p.name, 'tool': tool_name(p)} for p in path.iterdir() if p.is_dir()]
     return [d for d in folder_list if d['tool'] is not None and not d['tool'] in drop_tools]
@@ -81,7 +81,7 @@ def cmd_line_model_path(path):
                 return Path(re.sub(r'^-\s*', '', row))
 
 
-def template_model_string(datafile=None, ignore=list(), drop=list(), label='TEMPLATE'):
+def template_model_string(datafile=None, ignore=[], drop=[], label='TEMPLATE'):
     variables = ''
     indent = r'      '
     ignores = indent + 'IGNORE=@'
@@ -140,9 +140,7 @@ def template_model_string(datafile=None, ignore=list(), drop=list(), label='TEMP
 
 def pharmpy_wrapper():
     """Command line wrapper for PsN to call pharmpy"""
-    args = sys.argv[1:]
-    locs = dict()
-    exec(args[0], globals(), locs)
+    exec(sys.argv[1], globals(), {})
 
 
 def create_results(path, **kwargs):
