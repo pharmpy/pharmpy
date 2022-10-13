@@ -1,8 +1,9 @@
 import warnings
-from typing import Any
+from typing import Any, Type, TypeVar
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.model import Results
 from pharmpy.modeling import update_inits
 from pharmpy.tools import rank_models, summarize_errors, summarize_modelfit_results
 
@@ -28,9 +29,12 @@ def update_initial_estimates(model):
     return model
 
 
+T = TypeVar('T', bound=Results)
+
+
 def create_results(
-    res_class, input_model, base_model, res_models, rank_type, cutoff, bic_type='mixed'
-):
+    res_class: Type[T], input_model, base_model, res_models, rank_type, cutoff, bic_type='mixed'
+) -> T:
     summary_tool = summarize_tool(res_models, base_model, rank_type, cutoff, bic_type)
     summary_models = summarize_modelfit_results([base_model] + res_models).reindex(
         summary_tool.index
