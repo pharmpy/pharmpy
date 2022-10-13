@@ -1,0 +1,152 @@
+{
+  "columns": [
+    {
+      "name": "ID",
+      "type": "id",
+      "unit": "1",
+      "scale": "nominal",
+      "datatype": "int32",
+      "continuous": false
+    },
+    {
+      "name": "VISI",
+      "type": "unknown",
+      "unit": "1",
+      "scale": "nominal",
+      "datatype": "int32",
+      "continuous": false
+    },
+    {
+      "name": "AGE",
+      "type": "covariate",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    },
+    {
+      "name": "SEX",
+      "type": "covariate",
+      "unit": "1",
+      "scale": "nominal",
+      "datatype": "int32",
+      "continuous": false
+    },
+    {
+      "name": "WT",
+      "type": "covariate",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64",
+      "descriptor": "body weight"
+    },
+    {
+      "name": "COMP",
+      "type": "unknown",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    },
+    {
+      "name": "IACE",
+      "type": "unknown",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    },
+    {
+      "name": "DIG",
+      "type": "unknown",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    },
+    {
+      "name": "DIU",
+      "type": "unknown",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    },
+    {
+      "name": "TAD",
+      "type": "unknown",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    },
+    {
+      "name": "TIME",
+      "type": "idv",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    },
+    {
+      "name": "CRCL",
+      "type": "unknown",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    },
+    {
+      "name": "AMT",
+      "type": "dose",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    },
+    {
+      "name": "SS",
+      "type": "ss",
+      "unit": "1",
+      "scale": "nominal",
+      "datatype": "int32",
+      "continuous": false
+    },
+    {
+      "name": "II",
+      "type": "ii",
+      "unit": "1",
+      "scale": "nominal",
+      "datatype": "int32",
+      "continuous": false
+    },
+    {
+      "name": "VID1",
+      "type": "unknown",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    },
+    {
+      "name": "DV",
+      "type": "dv",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    },
+    {
+      "name": "EVID",
+      "type": "event",
+      "unit": "1",
+      "scale": "nominal",
+      "datatype": "int32",
+      "continuous": false
+    },
+    {
+      "name": "SHR",
+      "type": "unknown",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    },
+    {
+      "name": "SHR2",
+      "type": "unknown",
+      "unit": "1",
+      "scale": "ratio",
+      "datatype": "float64"
+    }
+  ],
+"separator": ","
+}
