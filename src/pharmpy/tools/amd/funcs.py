@@ -27,7 +27,6 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.data import read_dataset_from_datainfo
 from pharmpy.plugins.nonmem.advan import dosing
-from pharmpy.workflows import default_model_database
 
 
 def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=1.0, mat_init=0.1):
@@ -81,7 +80,6 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     model.random_variables = rvs
     model.statements = stats
     model.dependent_variable = y_ass.symbol
-    model.database = default_model_database()
     model.dataset = df
     model.datainfo = di
     model.estimation_steps = eststeps

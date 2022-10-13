@@ -55,7 +55,7 @@ def retrieve_from_database_or_execute_model_with_tool(tool):
         if db_results is not None:
             # NOTE We have the results
             try:
-                db_model = model.database.retrieve_model(model.name)
+                db_model = context.model_database.retrieve_model(model.name)
             except (KeyError, AttributeError, FileNotFoundError):
                 db_model = None
 

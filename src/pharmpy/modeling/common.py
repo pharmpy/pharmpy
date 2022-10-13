@@ -21,7 +21,6 @@ from pharmpy.model import (
     RandomVariables,
 )
 from pharmpy.utils import normalize_user_given_path
-from pharmpy.workflows import default_model_database
 
 
 def read_model(path):
@@ -128,6 +127,7 @@ def read_model_from_string(code, path=None):
         path = normalize_user_given_path(path)
         import pharmpy.workflows
 
+        # FIXME model.database should be removed
         model.database = pharmpy.workflows.default_model_database(path)
     return model
 
@@ -179,7 +179,6 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
         raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
     with open(path, 'w', encoding='latin-1') as fp:
         fp.write(model.model_code)
-    model.database = default_model_database(path=path.parent)
     return model
 
 
