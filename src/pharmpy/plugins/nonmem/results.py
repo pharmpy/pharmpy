@@ -120,16 +120,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_ext_table()
         self._read_lst_file()
 
-    def __getattr__(self, item):
-        # Avoid infinite recursion when deepcopying
-        # See https://stackoverflow.com/questions/47299243/recursionerror-when-python-copy-deepcopy
-        if item.startswith('__'):
-            raise AttributeError('')
-        return super().__getattribute__(item)
-
-    def __getitem__(self, key):
-        return super().__getitem__(key)
-
     def _read_ext_table(self):
         try:
             ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
