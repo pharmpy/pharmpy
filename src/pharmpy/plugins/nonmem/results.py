@@ -158,10 +158,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 )
                 is_covariance_step = self.model.estimation_steps[table.number - 1].cov
                 result_obj = self._fill_empty_results(result_obj, is_covariance_step)
-                self.append(result_obj)
-                continue
-
-            self.append(result_obj)
 
     def _fill_empty_results(self, result_obj, is_covariance_step):
         # Parameter estimates NaN for all parameters that should be estimated

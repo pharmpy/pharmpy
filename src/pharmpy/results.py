@@ -2,7 +2,6 @@ import copy
 import importlib
 import json
 import lzma
-from collections.abc import MutableSequence
 from pathlib import Path
 
 from pharmpy.deps import altair as alt
@@ -241,7 +240,7 @@ class ModelfitResults(Results):
         }
 
 
-class ChainedModelfitResults(MutableSequence, ModelfitResults):
+class ChainedModelfitResults(ModelfitResults):
     """A sequence of modelfit results given in order from first to final
     inherits from both list and ModelfitResults. Each method from ModelfitResults
     will be performed on the final modelfit object

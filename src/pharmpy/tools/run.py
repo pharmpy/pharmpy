@@ -500,7 +500,7 @@ def summarize_errors(models):
 
     for model in models:
         res = model.modelfit_results
-        if res and len(res.log.log) > 0:
+        if res is not None and len(res.log.log) > 0:
             for i, entry in enumerate(res.log.log):
                 idcs.append((model.name, entry.category, i))
                 rows.append([entry.time, entry.message])
@@ -699,7 +699,7 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
     summaries = []
 
     for model in models:
-        if model.modelfit_results:
+        if model.modelfit_results is not None:
             summary = _get_model_result_summary(model, include_all_estimation_steps)
             summary.insert(0, 'description', model.description)
             summaries.append(summary)
@@ -763,12 +763,12 @@ def _summarize_step(model, i):
     summary_dict = dict()
 
     if i >= 0:
-        step = res[i]
+        minsucc = res.minimization_successful_iterations.iloc[i]
     else:
-        step = res
+        minsucc = res.minimization_successful
 
-    if step.minimization_successful is not None:
-        summary_dict['minimization_successful'] = step.minimization_successful
+    if minsucc is not None:
+        summary_dict['minimization_successful'] = minsucc
     else:
         summary_dict['minimization_successful'] = False
 
@@ -780,14 +780,14 @@ def _summarize_step(model, i):
     summary_dict['ofv'] = ofv
     summary_dict['aic'] = calculate_aic(model, res.ofv)
     summary_dict['bic'] = calculate_bic(model, res.ofv)
-    summary_dict['runtime_total'] = step.runtime_total
-    summary_dict['estimation_runtime'] = step.estimation_runtime
+    summary_dict['runtime_total'] = res.runtime_total
+    summary_dict['estimation_runtime'] = res.estimation_runtime_iterations.iloc[i]
 
     pe = res.parameter_estimates_iterations.loc[
         i + 1,
     ].iloc[-1]
-    ses = step.standard_errors
-    rses = step.relative_standard_errors
+    ses = res.standard_errors
+    rses = res.relative_standard_errors
 
     for param in pe.index:
         summary_dict[f'{param}_estimate'] = pe[param]

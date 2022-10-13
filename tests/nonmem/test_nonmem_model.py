@@ -337,10 +337,6 @@ def test_add_random_variables_and_statements(pheno):
     )
 
 
-def test_results(pheno):
-    assert len(pheno.modelfit_results) == 1  # A chain of one estimation
-
-
 def test_minimal(load_model_for_test, datadir):
     path = datadir / 'minimal.mod'
     model = load_model_for_test(path)

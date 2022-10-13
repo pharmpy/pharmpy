@@ -145,7 +145,7 @@ def test_cdd_calculate_results(load_model_for_test, testdata):
         data=[
             pd.Series(m.modelfit_results.parameter_estimates, name=m.name)
             for m in cdd_models
-            if m.modelfit_results
+            if m.modelfit_results is not None
         ]
     )
 
