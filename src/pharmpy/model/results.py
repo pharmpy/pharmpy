@@ -12,23 +12,21 @@ from .model import Model
 class Results:
     """Base class for all result classes"""
 
+    def __init__(self, **_):
+        self.__version__ = pharmpy.__version__  # NOTE Default version if not overridden
+
     @classmethod
     def from_dict(cls, d):
         """Create results object from dictionary"""
-        if '__version__' in d.keys():
-            pharmpy_version = d['__version__']
-            del d['__version__']
-        else:
-            # Was removed in d5b3503 and 8578c8b
-            if 'best_model' in d.keys():
-                del d['best_model']
-            # Was removed in d5b3503 and 8578c8b
-            if 'input_model' in d.keys():
-                del d['input_model']
-            pharmpy_version = None
-        res_obj = cls(**d)
-        if pharmpy_version:
-            res_obj._pharmpy_version = pharmpy_version
+        removed_keys = {
+            '__version__',
+            'best_model',  # NOTE Was removed in d5b3503 and 8578c8b
+            'input_model',  # NOTE Was removed in d5b3503 and 8578c8b
+        }
+        res_obj = cls(
+            **{k: v for k, v in d.items() if k not in removed_keys},
+        )
+        res_obj.__version__ = d.get('__version__', 'unknown')  # NOTE Override default version
         return res_obj
 
     def to_json(self, path=None, lzma=False):
@@ -148,7 +146,6 @@ class ResultsJSONEncoder(json.JSONEncoder):
 
         if isinstance(obj, Results):
             d = obj.to_dict()
-            d['__version__'] = pharmpy.__version__
             d['__module__'] = obj.__class__.__module__
             d['__class__'] = obj.__class__.__qualname__
             return d
