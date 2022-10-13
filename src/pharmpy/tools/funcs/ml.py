@@ -189,7 +189,7 @@ def predict_outliers(model, results, cutoff=3.0):
     predict_influential_outliers
 
     """
-    model_path = Path(__file__).parent.resolve() / 'ml_models' / 'outliers.tflite'
+    model_path = Path(__file__).resolve().parent / 'ml_models' / 'outliers.tflite'
     data = _create_dataset(model, results)
     output = _predict_with_tflite(model_path, data)
     df = pd.DataFrame({'residual': output, 'outlier': output > cutoff}, index=get_ids(model))
@@ -223,7 +223,7 @@ def predict_influential_individuals(model, results, cutoff=3.84):
 
     """
 
-    model_path = Path(__file__).parent.resolve() / 'ml_models' / 'infinds.tflite'
+    model_path = Path(__file__).resolve().parent / 'ml_models' / 'infinds.tflite'
     data = _create_dataset(model, results)
     output = _predict_with_tflite(model_path, data)
     df = pd.DataFrame({'dofv': output, 'influential': output > cutoff}, index=get_ids(model))

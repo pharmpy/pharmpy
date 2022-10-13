@@ -1,7 +1,7 @@
 import io
 import re
 from glob import glob
-from os.path import basename, dirname, join, splitext
+from os.path import abspath, basename, dirname, join, splitext
 from textwrap import dedent
 
 from setuptools import find_packages, setup
@@ -9,7 +9,9 @@ from setuptools import find_packages, setup
 
 def read(*names, **kwargs):
     """Read file path relative to setup.py (in encoding; default: utf8)"""
-    return io.open(join(dirname(__file__), *names), encoding=kwargs.get('encoding', 'utf8')).read()
+    return io.open(
+        join(dirname(abspath(__file__)), *names), encoding=kwargs.get('encoding', 'utf8')
+    ).read()
 
 
 def strip_refs(text_str):

@@ -401,7 +401,7 @@ def info(args):
     inst = Install(
         pharmpy.__version__,
         'A list of authors can be found in the AUTHORS.rst',
-        str(Path(pharmpy.__file__).parent),
+        str(Path(pharmpy.__file__).resolve().parent),
     )
 
     lines = format_keyval_pairs(inst._asdict(), right_just=True)

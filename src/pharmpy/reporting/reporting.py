@@ -22,7 +22,7 @@ def generate_report(rst_path, results_path):
         shutil.copy(rst_path, source_path / 'results.rst')
         shutil.copy(results_path / 'results.json', source_path)
 
-        conf_path = Path(__file__).parent
+        conf_path = Path(__file__).resolve().parent
 
         # Change directory for results.json to be found
         with TemporaryDirectoryChanger(source_path):
