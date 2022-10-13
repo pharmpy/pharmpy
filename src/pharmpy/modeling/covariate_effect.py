@@ -248,6 +248,7 @@ def add_covariate_effect(
     sset = [s for s in covariate_effect.statistic_statements if s not in sset] + sset
 
     last_existing_parameter_assignment = sset.find_assignment(parameter)
+    assert last_existing_parameter_assignment is not None
     insertion_index = sset.index(last_existing_parameter_assignment) + 1
 
     # NOTE We can use any assignment to the parameter since we currently only
@@ -544,6 +545,8 @@ class CovariateEffect:
             return mul
         elif operation_str == '+':
             return add
+
+        raise NotImplementedError(f'Can only handle + or *, got {operation_str}.')
 
     @classmethod
     def linear(cls):
