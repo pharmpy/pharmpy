@@ -403,7 +403,7 @@ def parse_ext(model, path, subproblem):
         ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
     except ValueError:
         failed_pe = create_failed_parameter_estimates(model)
-        return np.nan, create_failed_ofv_iterations(model), failed_pe, failed_pe, None
+        return [], np.nan, create_failed_ofv_iterations(model), failed_pe, failed_pe, None, None, None
 
     table_numbers = parse_table_numbers(ext_tables, subproblem)
 
