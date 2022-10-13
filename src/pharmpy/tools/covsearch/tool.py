@@ -519,7 +519,6 @@ def _make_df_steps_row(
         'is_backward': is_backward,
         'extended_significant': extended_significant,
         'selected': selected,
-        'directory': str(model.database.path),
         'model': model.name,
         'covariate_effects': np.nan,
     }
