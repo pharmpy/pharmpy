@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence as CollectionsSequence
-from typing import Sequence, Union, overload
+from typing import Any, Optional, Sequence, Union, overload
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -35,7 +35,14 @@ class Parameter:
         The upper bound of the parameter. Default no bound. Must be greater than the init.
     """
 
-    def __init__(self, name, init, lower=None, upper=None, fix=False):
+    def __init__(
+        self,
+        name: str,
+        init: Union[float, sympy.Float],
+        lower: Optional[Union[float, sympy.Float]] = None,
+        upper: Optional[Union[float, sympy.Float]] = None,
+        fix: bool = False,
+    ):
         self._name = name
         self._init = init
         if lower is None:
@@ -49,15 +56,22 @@ class Parameter:
         self._fix = bool(fix)
 
     @classmethod
-    def create(cls, name, init, lower=None, upper=None, fix=False):
+    def create(
+        cls,
+        name: str,
+        init: Union[float, sympy.Float],
+        lower: Optional[Union[float, sympy.Float]] = None,
+        upper: Optional[Union[float, sympy.Float]] = None,
+        fix: Any = False,
+    ):
         """Alternative constructor for Parameter with error checking"""
         if init is sympy.nan or np.isnan(init):
             raise ValueError('Initial estimate cannot be NaN')
         if not isinstance(name, str):
             raise ValueError("Name of parameter must be of type string")
-        if lower > init:
+        if lower is not None and init < lower:
             raise ValueError(f'Lower bound {lower} cannot be greater than init {init}')
-        if upper < init:
+        if upper is not None and init > upper:
             raise ValueError(f'Upper bound {upper} cannot be less than init {init}')
         return cls(name, init, lower, upper, bool(fix))
 
@@ -124,9 +138,6 @@ class Parameter:
         )
 
 
-ParameterQuery = Union[int, str, sympy.Symbol, Parameter]
-
-
 class Parameters(Sequence):
     """An immutable collection of parameters
 
@@ -172,7 +183,7 @@ class Parameters(Sequence):
     def __len__(self):
         return len(self._params)
 
-    def _lookup_param(self, ind: ParameterQuery):
+    def _lookup_param(self, ind: Union[int, str, sympy.Symbol, Parameter]):
         if isinstance(ind, sympy.Symbol):
             ind = ind.name  # pyright: ignore [reportGeneralTypeIssues]
         if isinstance(ind, str):
@@ -189,11 +200,13 @@ class Parameters(Sequence):
         return ind, self._params[ind]
 
     @overload
-    def __getitem__(self, ind: Union[slice, Sequence[ParameterQuery]]) -> Parameters:
+    def __getitem__(self, ind: Union[int, str, sympy.Symbol, Parameter]) -> Parameter:
         ...
 
     @overload
-    def __getitem__(self, ind: ParameterQuery) -> Parameter:
+    def __getitem__(
+        self, ind: Union[slice, Sequence[Union[int, str, sympy.Symbol, Parameter]]]
+    ) -> Parameters:
         ...
 
     def __getitem__(self, ind):

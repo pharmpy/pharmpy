@@ -1,18 +1,31 @@
 # The NONMEM Model class
+from __future__ import annotations
 
 import warnings
+from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
+from typing import Optional, Tuple
 
 import pharmpy.model
 import pharmpy.plugins.nonmem
-import pharmpy.plugins.nonmem.dataset
+from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs
-from pharmpy.model import Assignment, DatasetError, NormalDistribution, Parameter, Parameters
+from pharmpy.model import (
+    Assignment,
+    DatasetError,
+    EstimationSteps,
+    NormalDistribution,
+    Parameter,
+    Parameters,
+    RandomVariables,
+    Statements,
+)
 from pharmpy.modeling.write_csv import write_csv
+from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
-from .nmtran_parser import NMTranParser
+from .nmtran_parser import NMTranControlStream, NMTranParser
 from .parsing import (
     create_name_trans,
     parameter_translation,
@@ -44,8 +57,17 @@ from .update import (
 )
 
 
+@dataclass
 class NONMEMModelInternals:
-    pass
+    control_stream: NMTranControlStream
+    old_name: str
+    _old_description: str
+    _old_estimation_steps: EstimationSteps
+    _old_observation_transformation: sympy.Symbol
+    _old_parameters: Parameters
+    _old_random_variables: RandomVariables
+    _old_statements: Statements
+    _old_initial_individual_estimates: Optional[pd.DataFrame]
 
 
 def convert_model(model):
@@ -100,7 +122,6 @@ def convert_model(model):
 
 class Model(pharmpy.model.Model):
     def __init__(self, code, path=None, **kwargs):
-        self.internals = NONMEMModelInternals()
         self.modelfit_results = None
         parser = NMTranParser()
         if path is None:
@@ -109,9 +130,8 @@ class Model(pharmpy.model.Model):
         else:
             self._name = path.stem
             self.filename_extension = path.suffix
-        self.internals.old_name = self._name
-        self.internals.control_stream = parser.parse(code)
-        di = parse_datainfo(self.internals.control_stream, path)
+        control_stream = parser.parse(code)
+        di = parse_datainfo(control_stream, path)
         self.datainfo = di
         self._old_datainfo = di
         self._dataset_updated = False
@@ -120,33 +140,28 @@ class Model(pharmpy.model.Model):
         dv = sympy.Symbol('Y')
         self.dependent_variable = dv
         self.observation_transformation = dv
-        self.internals._old_observation_transformation = dv
 
-        parameters = parse_parameters(self.internals.control_stream)
+        parameters = parse_parameters(control_stream)
 
-        statements = parse_statements(self)
+        statements = parse_statements(self, control_stream)
 
-        rvs = parse_random_variables(self.internals.control_stream)
+        rvs = parse_random_variables(control_stream)
 
-        trans_statements, trans_params = create_name_trans(
-            self.internals.control_stream, rvs, statements
-        )
-        for theta in self.internals.control_stream.get_records('THETA'):
+        trans_statements, trans_params = create_name_trans(control_stream, rvs, statements)
+        for theta in control_stream.get_records('THETA'):
             theta.update_name_map(trans_params)
-        for omega in self.internals.control_stream.get_records('OMEGA'):
+        for omega in control_stream.get_records('OMEGA'):
             omega.update_name_map(trans_params)
-        for sigma in self.internals.control_stream.get_records('SIGMA'):
+        for sigma in control_stream.get_records('SIGMA'):
             sigma.update_name_map(trans_params)
 
-        d_par = dict()
-        d_rv = dict()
-        for key, value in trans_params.items():
-            if key in parameters:
-                d_par[key] = value
-            else:
-                d_rv[sympy.Symbol(key)] = value
+        d_par = {key: value for key, value in trans_params.items() if key in parameters}
 
-        self.internals._old_random_variables = rvs  # FIXME: This has to stay here
+        d_rv = {
+            sympy.Symbol(key): value for key, value in trans_params.items() if key not in parameters
+        }
+
+        _old_random_variables = rvs  # FIXME: This has to stay here
         rvs = rvs.subs(d_rv)
 
         new = []
@@ -175,32 +190,37 @@ class Model(pharmpy.model.Model):
         self._random_variables = rvs
 
         self._parameters = parameters
-        self.internals._old_parameters = parameters
 
-        steps = parse_estimation_steps(self.internals.control_stream, self._random_variables)
+        steps = parse_estimation_steps(control_stream, self._random_variables)
         self._estimation_steps = steps
-        self.internals._old_estimation_steps = steps
 
-        if path is None:
-            self.modelfit_results = None
-        else:
-            self.modelfit_results = parse_modelfit_results(self, path)
-
-        description = parse_description(self.internals.control_stream)
+        description = parse_description(control_stream)
         self.description = description
-        self.internals._old_description = description
 
-        vt = parse_value_type(self.internals.control_stream, statements)
+        init_etas = parse_initial_individual_estimates(
+            control_stream, rvs, None if path is None else path.parent
+        )
+        self._initial_individual_estimates = init_etas
+
+        self.internals = NONMEMModelInternals(
+            control_stream=control_stream,
+            old_name=self._name,
+            _old_description=description,
+            _old_estimation_steps=steps,
+            _old_observation_transformation=dv,
+            _old_parameters=parameters,
+            _old_random_variables=_old_random_variables,
+            _old_statements=statements,
+            _old_initial_individual_estimates=init_etas,
+        )
+
+        # NOTE This requires self.internals to be defined
+        self.modelfit_results = None if path is None else parse_modelfit_results(self, path)
+
+        vt = parse_value_type(control_stream, statements)
         self._value_type = vt
 
         self._statements = statements
-        self.internals._old_statements = statements
-
-        init_etas = parse_initial_individual_estimates(
-            self.internals.control_stream, rvs, None if path is None else path.parent
-        )
-        self._initial_individual_estimates = init_etas
-        self.internals._old_initial_individual_estimates = init_etas
 
     def update_source(self, path=None, force=False, nofiles=False):
         """Update the source
@@ -294,10 +314,8 @@ class Model(pharmpy.model.Model):
 
     @property
     def dataset(self):
-        try:
-            return self._data_frame
-        except AttributeError:
-            self._data_frame = self._read_dataset(raw=False)
+        if not hasattr(self, '_data_frame'):
+            self._data_frame = self._read_dataset(self.internals.control_stream, raw=False)
         return self._data_frame
 
     @dataset.setter
@@ -307,14 +325,21 @@ class Model(pharmpy.model.Model):
         self.datainfo = self.datainfo.derive(path=None)
         self.update_datainfo()
 
-    def read_raw_dataset(self, parse_columns=tuple()):
-        return self._read_dataset(raw=True, parse_columns=parse_columns)
+    def read_raw_dataset(self, parse_columns: Tuple[str, ...] = ()):
+        return self._read_dataset(
+            self.internals.control_stream, raw=True, parse_columns=parse_columns
+        )
 
-    def _read_dataset(self, raw=False, parse_columns=tuple()):
-        data_records = self.internals.control_stream.get_records('DATA')
+    def _read_dataset(
+        self,
+        control_stream: NMTranControlStream,
+        raw: bool = False,
+        parse_columns: Tuple[str, ...] = (),
+    ):
+        data_records = control_stream.get_records('DATA')
         ignore_character = data_records[0].ignore_character
         null_value = data_records[0].null_value
-        (colnames, drop, replacements, _) = parse_column_info(self.internals.control_stream)
+        (colnames, drop, replacements, _) = parse_column_info(control_stream)
 
         if raw:
             ignore = None
@@ -330,7 +355,7 @@ class Model(pharmpy.model.Model):
             else:
                 accept = replace_synonym_in_filters(accept, replacements)
 
-        df = pharmpy.plugins.nonmem.dataset.read_nonmem_dataset(
+        df = read_nonmem_dataset(
             self.datainfo.path,
             raw,
             ignore_character,

@@ -384,7 +384,7 @@ def calculate_pk_parameters_statistics(
         A previously estimated model
     parameter_estimates : pd.Series
         Parameter estimates
-    covariance_matrix : pd.Dataframe
+    covariance_matrix : pd.DataFrame
         Parameter uncertainty covariance matrix
     rng : Generator or int
         Random number generator or seed

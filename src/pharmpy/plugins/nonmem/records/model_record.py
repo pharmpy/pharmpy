@@ -37,10 +37,12 @@ class ModelRecord(OptionRecord):
 
     def remove_compartment(self, name):
         n = self.get_compartment_number(name)
+        assert n is not None
         self.remove_nth_option('COMPARTMENT', n - 1)
 
     def set_dosing(self, name):
         n = self.get_compartment_number(name)
+        assert n is not None
         self.add_suboption_for_nth('COMPARTMENT', n - 1, 'DEFDOSE')
 
     def move_dosing_first(self):

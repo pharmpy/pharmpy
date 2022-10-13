@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import warnings
 from dataclasses import dataclass
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Sequence, Set, Union
 
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
@@ -11,7 +13,7 @@ from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.utils import runtime_type_check, same_arguments_as
-from pharmpy.workflows import Task, Workflow, call_workflow
+from pharmpy.workflows import Task, ToolDatabase, Workflow, call_workflow
 
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock'))
 IIV_ALGORITHMS = frozenset(('brute_force',) + tuple(dir(algorithms)))
@@ -253,23 +255,13 @@ def validate_input(
         )
 
 
+@dataclass
 class IIVSearchResults(Results):
-    def __init__(
-        self,
-        summary_tool=None,
-        summary_models=None,
-        summary_individuals=None,
-        summary_individuals_count=None,
-        summary_errors=None,
-        final_model_name=None,
-        models=None,
-        tool_database=None,
-    ):
-        self.summary_tool = summary_tool
-        self.summary_models = summary_models
-        self.summary_individuals = summary_individuals
-        self.summary_individuals_count = summary_individuals_count
-        self.summary_errors = summary_errors
-        self.final_model_name = final_model_name
-        self.models = models
-        self.tool_database = tool_database
+    summary_tool: Optional[pd.DataFrame] = None
+    summary_models: Optional[pd.DataFrame] = None
+    summary_individuals: Optional[pd.DataFrame] = None
+    summary_individuals_count: Optional[pd.DataFrame] = None
+    summary_errors: Optional[pd.DataFrame] = None
+    final_model_name: Optional[str] = None
+    models: Sequence[Model] = ()
+    tool_database: Optional[ToolDatabase] = None

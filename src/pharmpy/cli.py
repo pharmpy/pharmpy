@@ -113,9 +113,10 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 
 
 def run_bootstrap(args):
-    import pharmpy.tools.bootstrap as bootstrap
+    # FIXME Bootstrap does not exist
+    from pharmpy.tools.bootstrap import Bootstrap
 
-    method = bootstrap.Bootstrap(args.model, resamples=args.samples)
+    method = Bootstrap(args.model, resamples=args.samples)
     method.run()
 
 
@@ -474,17 +475,23 @@ def model_absorption_rate(args):
 
 
 def model_elimination_rate(args):
-    import pharmpy.modeling as modeling
-
     model = args.model
     if args.order == 'ZO':
-        modeling.set_zero_order_elimination(model)
+        from pharmpy.modeling import set_zero_order_elimination
+
+        set_zero_order_elimination(model)
     elif args.order == 'FO':
-        modeling.set_first_order_elimination(model)
+        from pharmpy.modeling import set_first_order_elimination
+
+        set_first_order_elimination(model)
     elif args.order == 'MM':
-        modeling.set_michaelis_menten_elimination(model)
+        from pharmpy.modeling import set_michaelis_menten_elimination
+
+        set_michaelis_menten_elimination(model)
     elif args.order == 'comb-FO-MM':
-        modeling.combined_mm_fo_elimination(model)
+        from pharmpy.modeling import set_mixed_mm_fo_elimination
+
+        set_mixed_mm_fo_elimination(model)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
@@ -514,6 +521,7 @@ def model_peripheral_compartments(args):
 
 
 def model_error(args):
+    # FIXME error_model does not exist
     from pharmpy.modeling import error_model
 
     model = args.model

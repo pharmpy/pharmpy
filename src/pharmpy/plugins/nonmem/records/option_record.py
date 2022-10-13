@@ -233,7 +233,7 @@ class OptionRecord(Record):
                             for subopt in s[1:-1].split()
                             if suboption[: len(subopt)] != subopt
                         ]
-                    node.VALUE = '(' + ' '.join(subopts) + ')'
+                        node.VALUE = '(' + ' '.join(subopts) + ')'
 
     def remove_option_startswith(self, start):
         """Remove all options that startswith"""

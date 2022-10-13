@@ -31,79 +31,81 @@ class TemporaryDirectoryChanger:
         os.chdir(self.old_path)
 
 
-# This is copied and modified from the python 3.9 implementation
-# The aim is to be able to handle Permission issues in Windows
-class TemporaryDirectory:
-    """Create and return a temporary directory.  This has the same
-    behavior as mkdtemp but can be used as a context manager.  For
-    example:
+if os.name == 'nt':
+    # This is copied and modified from the python 3.9 implementation
+    # The aim is to be able to handle Permission issues in Windows
+    class TemporaryDirectory:
+        """Create and return a temporary directory.  This has the same
+        behavior as mkdtemp but can be used as a context manager.  For
+        example:
 
-        with TemporaryDirectory() as tmpdir:
-            ...
+            with TemporaryDirectory() as tmpdir:
+                ...
 
-    Upon exiting the context, the directory and everything contained
-    in it are removed.
-    """
+        Upon exiting the context, the directory and everything contained
+        in it are removed.
+        """
 
-    def __init__(self, suffix=None, prefix=None, dir=None):
-        self.name = mkdtemp(suffix, prefix, dir)
-        self._finalizer = weakref.finalize(
-            self, self._cleanup, self.name, warn_message="Implicitly cleaning up {!r}".format(self)
-        )
+        def __init__(self, suffix=None, prefix=None, dir=None):
+            self.name = mkdtemp(suffix, prefix, dir)
+            self._finalizer = weakref.finalize(
+                self,
+                self._cleanup,
+                self.name,
+                warn_message="Implicitly cleaning up {!r}".format(self),
+            )
 
-    @classmethod
-    def _rmtree(cls, name):
-        def onerror(func, path, exc_info):
-            if issubclass(exc_info[0], PermissionError):
+        @classmethod
+        def _rmtree(cls, name):
+            def onerror(func, path, exc_info):
+                if issubclass(exc_info[0], PermissionError):
 
-                def resetperms(path):
+                    def resetperms(path):
+                        try:
+                            os.chflags(path, 0)
+                        except AttributeError:
+                            pass
+                        os.chmod(path, 0o700)
+
                     try:
-                        os.chflags(path, 0)
-                    except AttributeError:
+                        if path != name:
+                            resetperms(os.path.dirname(path))
+                        resetperms(path)
+
+                        try:
+                            os.unlink(path)
+                        # PermissionError is raised on FreeBSD for directories
+                        except (IsADirectoryError, PermissionError):
+                            time.sleep(0.1)
+                            cls._rmtree(path)
+                    except FileNotFoundError:
                         pass
-                    os.chmod(path, 0o700)
-
-                try:
-                    if path != name:
-                        resetperms(os.path.dirname(path))
-                    resetperms(path)
-
-                    try:
-                        os.unlink(path)
-                    # PermissionError is raised on FreeBSD for directories
-                    except (IsADirectoryError, PermissionError):
-                        time.sleep(0.1)
-                        cls._rmtree(path)
-                except FileNotFoundError:
+                elif issubclass(exc_info[0], FileNotFoundError):
                     pass
-            elif issubclass(exc_info[0], FileNotFoundError):
-                pass
-            else:
-                raise
+                else:
+                    raise
 
-        shutil.rmtree(name, onerror=onerror)
+            shutil.rmtree(name, onerror=onerror)
 
-    @classmethod
-    def _cleanup(cls, name, warn_message):
-        cls._rmtree(name)
-        warnings.warn(warn_message, ResourceWarning)
+        @classmethod
+        def _cleanup(cls, name, warn_message):
+            cls._rmtree(name)
+            warnings.warn(warn_message, ResourceWarning)
 
-    def __repr__(self):
-        return "<{} {!r}>".format(self.__class__.__name__, self.name)
+        def __repr__(self):
+            return "<{} {!r}>".format(self.__class__.__name__, self.name)
 
-    def __enter__(self):
-        return self.name
+        def __enter__(self):
+            return self.name
 
-    def __exit__(self, exc, value, tb):
-        self.cleanup()
+        def __exit__(self, exc, value, tb):
+            self.cleanup()
 
-    def cleanup(self):
-        if self._finalizer.detach():
-            self._rmtree(self.name)
+        def cleanup(self):
+            if self._finalizer.detach():
+                self._rmtree(self.name)
 
-
-if os.name != 'nt':
-    # Only use the custom implementation for Windows.
+else:
     from tempfile import TemporaryDirectory  # noqa
 
 
@@ -223,7 +225,11 @@ def _annotation_to_types(annotation):
 
 
 def _value_type(value):
-    return Type[value] if isinstance(value, type) else type(value)
+    return (
+        Type[value]  # pyright: ignore [reportGeneralTypeIssues]
+        if isinstance(value, type)
+        else type(value)
+    )
 
 
 def _kwargs(parameter, kwargs):
@@ -330,8 +336,14 @@ def _match(typing, value):
         t = get_args(typing)
         return (
             _match(Sized, value)
-            and _match(TypingContainer[t] if t else Container, value)
-            and _match(TypingIterable[t] if t else Iterable, value)
+            and _match(
+                TypingContainer[t] if t else Container,  # pyright: ignore [reportGeneralTypeIssues]
+                value,
+            )
+            and _match(
+                TypingIterable[t] if t else Iterable,  # pyright: ignore [reportGeneralTypeIssues]
+                value,
+            )
         )
 
     raise NotImplementedError(origin)

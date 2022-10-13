@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Collection, Hashable, Sized
 from math import sqrt
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import pharmpy.unicode as unicode
 from pharmpy.deps import numpy as np
@@ -16,6 +16,10 @@ from .numeric import NumericDistribution
 
 
 class Distribution(Sized, Hashable):
+    @abstractmethod
+    def derive(self, level: Optional[str] = None, **kwargs):
+        pass
+
     @property
     @abstractmethod
     def names(self) -> Tuple[str, ...]:

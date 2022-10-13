@@ -1,10 +1,11 @@
 """
 :meta private:
 """
+from __future__ import annotations
 
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify
-from pharmpy.model import Assignment, NormalDistribution
+from pharmpy.model import Assignment, NormalDistribution, Statements
 
 from .common import remove_unused_parameters_and_rvs
 from .data import get_observations
@@ -229,16 +230,12 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
     """
     if has_proportional_error_model(model):
         return model
+
     stats, y, f = _preparations(model)
     ruv = create_symbol(model, 'epsilon_p')
 
     data_trans = _canonicalize_data_transformation(model, data_trans)
-    if zero_protection:
-        ipred = create_symbol(model, 'IPREDADJ')
-        guard_expr = sympy.Piecewise((2.225e-16, sympy.Eq(f, 0)), (f, True))
-        guard_assignment = Assignment(ipred, guard_expr)
-    else:
-        ipred = f
+    ipred = create_symbol(model, 'IPREDADJ') if zero_protection else f
 
     if data_trans == sympy.log(model.dependent_variable):
         expr = sympy.log(ipred) + ruv
@@ -247,10 +244,14 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
 
+    statements = model.statements
     if zero_protection:
+        guard_expr = sympy.Piecewise((2.225e-16, sympy.Eq(f, 0)), (f, True))
+        guard_assignment = Assignment(ipred, guard_expr)
         ind = stats.find_assignment_index(y)
-        model.statements = model.statements[0:ind] + guard_assignment + model.statements[ind:]
-    model.statements = model.statements.reassign(y, expr)
+        statements = statements[0:ind] + guard_assignment + statements[ind:]
+
+    model.statements = statements.reassign(y, expr)
     remove_unused_parameters_and_rvs(model)
 
     sigma = create_symbol(model, 'sigma')
@@ -332,6 +333,7 @@ def set_combined_error_model(model, data_trans=None):
             expr_0 = expr.args[0][0]
             expr_1 = expr.args[1][0]
             cond_0 = expr.args[0][1]
+            expr_combined = None
             for eps in model.random_variables.epsilons.names:
                 expr_0 = subs(expr_0, {sympy.Symbol(eps): ruv_prop}, simultaneous=True)
                 expr_1 = subs(expr_1, {sympy.Symbol(eps): ruv_prop}, simultaneous=True)
@@ -350,6 +352,7 @@ def set_combined_error_model(model, data_trans=None):
                     expr_combined = sympy.Piecewise(
                         (expr_0 + ruv_add * theta_time, cond_0), (expr_1 + ruv_add, True)
                     )
+            assert expr_combined is not None
         elif (
             eta_ruv in model.random_variables.free_symbols
             and theta_time not in model.parameters.symbols
@@ -572,9 +575,7 @@ def set_weighted_error_model(model):
     w = sympy.sqrt(ssum)
     w = sympy.refine(w, q)
 
-    for i, s in enumerate(stats):
-        if isinstance(s, Assignment) and s.symbol == y:
-            break
+    i = _index_of_first_assignment(stats, y)
 
     model.statements = stats[0:i] + Assignment(sympy.Symbol('W'), w) + stats[i:]
     model.statements = model.statements.reassign(
@@ -582,6 +583,12 @@ def set_weighted_error_model(model):
     )
     remove_unused_parameters_and_rvs(model)
     return model
+
+
+def _index_of_first_assignment(statements: Statements, symbol: sympy.Symbol) -> int:
+    return next(
+        (i for i, s in enumerate(statements) if isinstance(s, Assignment) and s.symbol == symbol)
+    )
 
 
 def set_dtbs_error_model(model, fix_to_log=False):
@@ -619,9 +626,7 @@ def set_dtbs_error_model(model, fix_to_log=False):
         add_population_parameter(model, lam.name, 1)
         add_population_parameter(model, zeta.name, 0.001)
 
-    for i, s in enumerate(stats):
-        if isinstance(s, Assignment) and s.symbol == sympy.Symbol('W'):
-            break
+    i = _index_of_first_assignment(stats, sympy.Symbol('W'))
 
     wass = Assignment(sympy.Symbol('W'), (f**zeta) * sympy.Symbol('W'))
     ipred = sympy.Piecewise(
