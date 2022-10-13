@@ -4,7 +4,6 @@ from pharmpy.tools import run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_default(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         effects = [
@@ -21,7 +20,7 @@ def test_default(tmp_path, model_count, start_model):
             ('KA', 'WT', 'exp', '*'),
             ('V', 'WT', 'exp', '*'),
         ]
-        run_tool(
+        res = run_tool(
             'covsearch',
             effects,
             model=start_model,
@@ -29,6 +28,21 @@ def test_default(tmp_path, model_count, start_model):
 
         rundir = tmp_path / 'covsearch_dir1'
         assert model_count(rundir) >= len(effects)
+
+        # Checks that description have been added correctly, can maybe be removed
+        model_dict = {model.name: model for model in res.models}
+        for model in res.models:
+            try:
+                parent_model = model_dict[model.parent_model]
+            except KeyError:
+                continue
+            if not parent_model.description:
+                continue
+            cov_effects_child = model.description.split(';')
+            cov_effects_parent = parent_model.description.split(';')
+            min_cov_effects = min([cov_effects_child, cov_effects_parent], key=len)
+            max_cov_effects = max([cov_effects_child, cov_effects_parent], key=len)
+            assert set(min_cov_effects).issubset(max_cov_effects)
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")

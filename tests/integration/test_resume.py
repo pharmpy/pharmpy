@@ -88,7 +88,7 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
 @pytest.mark.parametrize(
     'search_space, no_of_models, last_model_parent_name',
     [
-        ('ABSORPTION(ZO);PERIPHERALS(1)', 4, 'modelsearch_candidate2'),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', 4, 'modelsearch_run2'),
     ],
 )
 def test_run_tool_modelsearch_resume_flag(

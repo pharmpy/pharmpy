@@ -18,8 +18,8 @@ def _model_count(rundir: Path):
 
 
 @pytest.mark.filterwarnings(
-    'ignore:.*Adjusting initial estimates to create '
-    'positive semidefinite omega/sigma matrices.*:UserWarning'
+    'ignore:.*Adjusting initial estimates to create positive semidefinite omega/sigma matrices.',
+    'ignore::UserWarning',
 )
 def test_amd(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
@@ -50,7 +50,7 @@ def test_amd(tmp_path, testdata):
             dir = rundir / dir
             assert _model_count(dir) >= 1
 
-        assert len(res.summary_tool) >= 1
+        assert len(res.summary_tool) == len(subrundir)
         assert len(res.summary_models) >= 1
         assert len(res.summary_individuals_count) >= 1
 
@@ -74,7 +74,7 @@ def test_skip_most(tmp_path, testdata):
                 occasion=None,
             )
 
-        assert len(record) == 6
+        assert len(record) == 5
 
         for warning, match in zip(
             record,
@@ -82,14 +82,13 @@ def test_skip_most(tmp_path, testdata):
                 'IOVsearch will be skipped because occasion is None',
                 'Skipping Allometry',
                 'Skipping COVsearch',
-                'AMDResults.summary_tool is None',
                 'AMDResults.summary_models is None',
                 'AMDResults.summary_individuals_count is None',
             ],
         ):
             assert match in str(warning.message)
 
-        assert res.summary_tool is None
+        assert len(res.summary_tool) == 1
         assert res.summary_models is None
         assert res.summary_individuals_count is None
         assert res.final_model.name == 'start'
@@ -112,20 +111,19 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
                 occasion='XAT2',
             )
 
-        assert len(record) == 4
+        assert len(record) == 3
 
         for warning, match in zip(
             record,
             [
                 'Skipping IOVsearch because there are less than two occasion categories',
-                'AMDResults.summary_tool is None',
                 'AMDResults.summary_models is None',
                 'AMDResults.summary_individuals_count is None',
             ],
         ):
             assert match in str(warning.message)
 
-        assert res.summary_tool is None
+        assert len(res.summary_tool) == 1
         assert res.summary_models is None
         assert res.summary_individuals_count is None
         assert res.final_model.name == 'start'
@@ -148,20 +146,19 @@ def test_skip_iovsearch_missing_occasion(tmp_path, testdata):
                 occasion='XYZ',
             )
 
-        assert len(record) == 4
+        assert len(record) == 3
 
         for warning, match in zip(
             record,
             [
                 'Skipping IOVsearch because dataset is missing column "XYZ"',
-                'AMDResults.summary_tool is None',
                 'AMDResults.summary_models is None',
                 'AMDResults.summary_individuals_count is None',
             ],
         ):
             assert match in str(warning.message)
 
-        assert res.summary_tool is None
+        assert len(res.summary_tool) == 1
         assert res.summary_models is None
         assert res.summary_individuals_count is None
         assert res.final_model.name == 'start'

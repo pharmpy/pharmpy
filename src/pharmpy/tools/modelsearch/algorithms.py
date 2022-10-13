@@ -29,7 +29,7 @@ def exhaustive(search_space, iiv_strategy):
     funcs = all_funcs(Model(), mfl_statements)
 
     for i, combo in enumerate(combinations, 1):
-        model_name = f'modelsearch_candidate{i}'
+        model_name = f'modelsearch_run{i}'
 
         task_copy = Task('copy', _copy, model_name, combo)
         wf_search.add_task(task_copy)
@@ -67,7 +67,7 @@ def exhaustive_stepwise(search_space, iiv_strategy):
         for task_parent, feat_new in actions.items():
             for feat in feat_new:
                 model_no = len(model_tasks) + 1
-                model_name = f'modelsearch_candidate{model_no}'
+                model_name = f'modelsearch_run{model_no}'
 
                 wf_create_model, task_function = _create_model_workflow(
                     model_name, feat, mfl_funcs[feat], iiv_strategy
@@ -110,7 +110,7 @@ def reduced_stepwise(search_space, iiv_strategy):
         for task_parent, feat_new in actions.items():
             for feat in feat_new:
                 model_no = len(model_tasks) + 1
-                model_name = f'modelsearch_candidate{model_no}'
+                model_name = f'modelsearch_run{model_no}'
 
                 wf_create_model, task_transformed = _create_model_workflow(
                     model_name, feat, mfl_funcs[feat], iiv_strategy
@@ -292,7 +292,7 @@ def _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements):
 def _copy(name, features, model):
     model_copy = copy_model(model, name)
     features_str = ';'.join(map(key_to_str, features))
-    if not model.description:
+    if not model.description or model.parent_model == model.name:
         model_copy.description = features_str
     else:
         model_copy.description = f'{model.description};{features_str}'

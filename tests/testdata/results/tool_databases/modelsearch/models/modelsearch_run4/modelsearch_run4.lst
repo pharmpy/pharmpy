@@ -1,10 +1,10 @@
-fre  2 sep 2022 14:08:02 CEST
+fre  7 okt 2022 11:22:23 CEST
 $PROBLEM LAGTIME();PERIPHERALS(1)
 $INPUT ID VISI XAT2=DROP DGRP DOSE FLAG=DROP ONO=DROP
        XIME=DROP NEUY SCR AGE SEX NYHA=DROP WT DROP ACE
        DIG DIU NUMB=DROP TAD TIME VIDD=DROP CLCR AMT SS II DROP
        CMT=DROP CONO=DROP DV EVID=DROP OVID=DROP
-$DATA modelsearch_candidate4.csv IGNORE=@
+$DATA modelsearch_run4.csv IGNORE=@
 $SUBROUTINES ADVAN4  TRANS4
 $PK
 VP1 = THETA(6)
@@ -47,8 +47,8 @@ NM-TRAN MESSAGES
 
 License Registered to: Uppsala University Dept of Pharmacy
 Expiration Date:    14 MAR 2023
-Current Date:        2 SEP 2022
-Days until program expires : 197
+Current Date:        7 OCT 2022
+Days until program expires : 162
 1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.4.4
  ORIGINALLY DEVELOPED BY STUART BEAL, LEWIS SHEINER, AND ALISON BOECKMANN
  CURRENT DEVELOPERS ARE ROBERT BAUER, ICON DEVELOPMENT SOLUTIONS,
@@ -186,7 +186,7 @@ Days until program expires : 197
  EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS
        IN SHRINKAGE (ETASTYPE):             NO
  NON-INFL. ETA CORRECTION (NONINFETA):      OFF
- RAW OUTPUT FILE (FILE): modelsearch_candidate4.ext
+ RAW OUTPUT FILE (FILE): modelsearch_run4.ext
  EXCLUDE TITLE (NOTITLE):                   NO
  EXCLUDE COLUMN LABELS (NOLABEL):           NO
  FORMAT FOR ADDITIONAL FILES (FORMAT):      S1PE12.5
@@ -246,7 +246,7 @@ Days until program expires : 197
   
  #TERE:
  Elapsed estimation  time in seconds:     0.52
- Elapsed postprocess time in seconds:     0.03
+ Elapsed postprocess time in seconds:     0.02
 1
  
  
@@ -4014,6 +4014,6 @@ Days until program expires : 197
 +        1.41E+03  4.80E+01  7.23E-01  3.30E+00  1.79E-01
  
  Elapsed finaloutput time in seconds:     0.03
- #CPUT: Total CPU Time in Seconds,        0.595
+ #CPUT: Total CPU Time in Seconds,        0.588
 Stop Time:
-fre  2 sep 2022 14:08:09 CEST
+fre  7 okt 2022 11:22:30 CEST

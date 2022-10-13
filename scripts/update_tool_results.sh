@@ -54,7 +54,7 @@ cp $TESTDATA/models/mox2.lst $TESTPATH
 cp $TESTDATA/models/mox2.ext $TESTPATH
 cp $TESTDATA/models/mox2.phi $TESTPATH
 cp $TESTDATA/models/mox_simulated_normal.csv $TESTPATH
-
+cp $TESTDATA/models/mox_simulated_normal.datainfo $TESTPATH
 
 if [ "$TOOL" == 'modelsearch' ] || [ "$TOOL" == 'all' ]; then
   pharmpy run modelsearch $TESTPATH/mox2.mod 'PERIPHERALS(1);LAGTIME()' 'reduced_stepwise' --path $TESTPATH/modelsearch/
@@ -77,13 +77,18 @@ if [ "$TOOL" == 'covsearch' ] || [ "$TOOL" == 'all' ]; then
   pharmpy run covsearch $TESTPATH/mox2.mod \
         --effects 'COVARIATE([CL, MAT, VC], [AGE, WT], EXP);COVARIATE([CL, MAT, VC], [SEX], CAT)' \
         --path $TESTPATH/covsearch/
-  cp_results $TESTPATH/covsearch/results.json > $DEST/covsearch_results.json
+  cp_results $TESTPATH/covsearch/results.json $DEST/covsearch_results.json
 fi
 
-if [ "$TOOL" == 'resmod' ] || [ "$TOOL" == 'all' ]; then
-  cp $TESTDATA/resmod/mox3.* $TESTPATH
-  cp $TESTDATA/resmod/moxo_simulated_resmod.csv $TESTPATH
-  cp $TESTDATA/resmod/mytab $TESTPATH
-  pharmpy run resmod $TESTPATH/mox3.mod --path $TESTPATH/resmod/
-  cp_results $TESTPATH/resmod/results.json $DEST/resmod_results.json
+if [ "$TOOL" == 'ruvsearch' ] || [ "$TOOL" == 'all' ]; then
+  cp $TESTDATA/ruvsearch/mox3.* $TESTPATH
+  cp $TESTDATA/ruvsearch/moxo_simulated_resmod.csv $TESTPATH
+  cp $TESTDATA/ruvsearch/mytab $TESTPATH
+  pharmpy run ruvsearch $TESTPATH/mox3.mod --path $TESTPATH/ruvsearch/
+  cp_results $TESTPATH/ruvsearch/results.json $DEST/ruvsearch_results.json
+fi
+
+if [ "$TOOL" == 'amd' ] || [ "$TOOL" == 'all' ]; then
+  pharmpy run amd $TESTPATH/mox_simulated_normal.csv --modeltype 'pk_oral' --search_space 'PERIPHERALS(1)' --occasion 'VISI' --path $TESTPATH/amd/
+  cp_results $TESTPATH/amd/results.json $DEST/amd_results.json
 fi

@@ -12,8 +12,8 @@ Building NONMEM Executable
 Starting nonmem execution ...
 License Registered to: Uppsala University Dept of Pharmacy
 Expiration Date:    14 MAR 2023
-Current Date:        2 SEP 2022
-Days until program expires : 197
+Current Date:        7 OCT 2022
+Days until program expires : 162
 
 
  First Order
@@ -37,7 +37,7 @@ Days until program expires : 197
              1.3601E-01
  GRADIENT:  -4.8454E-03  1.5877E-03  1.4335E-03  1.2056E-03 -7.8566E-04 -1.9579E-04  5.7249E-04  7.2304E-04 -2.7282E-04  3.1535E-05
              1.9923E-03
- Elapsed estimation  time in seconds:     0.53
+ Elapsed estimation  time in seconds:     0.49
  Elapsed postprocess time in seconds:     0.03
- Elapsed finaloutput time in seconds:     0.04
+ Elapsed finaloutput time in seconds:     0.03
 Done with nonmem execution

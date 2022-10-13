@@ -10,6 +10,7 @@ from pharmpy.modeling import add_covariate_effect, copy_model, get_pk_parameters
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
+from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import (
     EffectLiteral,
@@ -205,9 +206,11 @@ def task_greedy_forward_search(
     effect_spec = spec(candidate.model, parse(effects)) if isinstance(effects, str) else effects
     candidate_effects = sorted(set(parse_spec(effect_spec)))
 
-    def handle_effects(step: int, parent: Candidate, candidate_effects: List[EffectLiteral]):
+    def handle_effects(
+        step: int, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
+    ):
 
-        wf = wf_effects_addition(parent.model, candidate_effects)
+        wf = wf_effects_addition(parent.model, parent, candidate_effects, index_offset)
         new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_addition-{step}', context)
 
         return [
@@ -230,9 +233,11 @@ def task_greedy_backward_search(
     max_steps: int,
     state: SearchState,
 ) -> SearchState:
-    def handle_effects(step: int, parent: Candidate, candidate_effects: List[EffectLiteral]):
+    def handle_effects(
+        step: int, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
+    ):
 
-        wf = wf_effects_removal(state.start_model, parent, candidate_effects)
+        wf = wf_effects_removal(state.start_model, parent, candidate_effects, index_offset)
         new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}', context)
 
         return [
@@ -262,7 +267,7 @@ def _greedy_search(
 ) -> SearchState:
 
     best_candidate_so_far = state.best_candidate_so_far
-    all_candidates_so_far = list(state.all_candidates_so_far)
+    all_candidates_so_far = list(state.all_candidates_so_far)  # NOTE this includes start model
 
     steps = range(1, max_steps + 1) if max_steps >= 0 else count(1)
 
@@ -270,7 +275,9 @@ def _greedy_search(
         if not candidate_effects:
             break
 
-        new_candidates = handle_effects(step, best_candidate_so_far, candidate_effects)
+        new_candidates = handle_effects(
+            step, best_candidate_so_far, candidate_effects, len(all_candidates_so_far) - 1
+        )
 
         all_candidates_so_far.extend(new_candidates)
         new_candidate_models = list(map(lambda candidate: candidate.model, new_candidates))
@@ -309,7 +316,9 @@ def _greedy_search(
     )
 
 
-def wf_effects_addition(model: Model, candidate_effects: List[EffectLiteral]):
+def wf_effects_addition(
+    model: Model, candidate: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
+):
     wf = Workflow()
 
     for i, effect in enumerate(candidate_effects, 1):
@@ -317,8 +326,9 @@ def wf_effects_addition(model: Model, candidate_effects: List[EffectLiteral]):
             repr(effect),
             task_add_covariate_effect,
             model,
+            candidate,
             effect,
-            i,
+            index_offset + i,
         )
         wf.add_task(task)
 
@@ -330,19 +340,47 @@ def wf_effects_addition(model: Model, candidate_effects: List[EffectLiteral]):
     return wf
 
 
-def task_add_covariate_effect(model: Model, effect: EffectLiteral, effect_index: int):
-    model_with_added_effect = copy_model(model, name=f'{model.name}+{effect_index}')
-    model_with_added_effect.description = (
-        f'add_covariate_effect(<{model.description or model.name}>, {", ".join(map(str,effect))})'
-    )
+def task_add_covariate_effect(
+    model: Model, candidate: Candidate, effect: EffectLiteral, effect_index: int
+):
+    model_with_added_effect = copy_model(model, name=f'covsearch_run{effect_index}')
+    model_with_added_effect.description = _create_description(effect, candidate.steps)
     model_with_added_effect.parent_model = model.name
     update_initial_estimates(model_with_added_effect)
     add_covariate_effect(model_with_added_effect, *effect, allow_nested=True)
     return model_with_added_effect
 
 
+def _create_description(
+    effect_new: Union[Tuple, Effect], steps_prev: Tuple[Step, ...], forward: bool = True
+):
+    # Will create this type of description: '(CL-AGE-exp);(MAT-AGE-exp);(MAT-AGE-exp-+)'
+    def _create_effect_str(effect):
+        if isinstance(effect, Tuple):
+            param, cov, fp, op = effect
+        elif isinstance(effect, Effect):
+            param, cov, fp, op = effect.parameter, effect.covariate, effect.fp, effect.operation
+        else:
+            raise ValueError('Effect must be a tuple or Effect dataclass')
+        effect_base = f'{param}-{cov}-{fp}'
+        if op == '+':
+            effect_base += f'-{op}'
+        return f'({effect_base})'
+
+    effect_new_str = _create_effect_str(effect_new)
+    effects = []
+    for effect_prev in _added_effects(steps_prev):
+        effect_prev_str = _create_effect_str(effect_prev)
+        if not forward and effect_prev_str == effect_new_str:
+            continue
+        effects.append(effect_prev_str)
+    if forward:
+        effects.append(effect_new_str)
+    return ';'.join(effects)
+
+
 def wf_effects_removal(
-    base_model: Model, parent: Candidate, candidate_effects: List[EffectLiteral]
+    base_model: Model, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
 ):
     wf = Workflow()
 
@@ -353,7 +391,7 @@ def wf_effects_removal(
             base_model,
             parent,
             effect,
-            i,
+            index_offset + i,
         )
         wf.add_task(task)
 
@@ -369,10 +407,9 @@ def task_remove_covariate_effect(
     base_model: Model, candidate: Candidate, effect: EffectLiteral, effect_index: int
 ):
     model = candidate.model
-    model_with_removed_effect = copy_model(base_model, name=f'{model.name}-{effect_index}')
-    model_with_removed_effect.description = (
-        'remove_covariate_effect'
-        f'(<{model.description or model.name}>, {", ".join(map(str,effect))})'
+    model_with_removed_effect = copy_model(base_model, name=f'covsearch_run{effect_index}')
+    model_with_removed_effect.description = _create_description(
+        effect, candidate.steps, forward=False
     )
     model_with_removed_effect.parent_model = model.name
 
@@ -398,17 +435,37 @@ def task_results(p_forward: float, p_backward: float, state: SearchState):
     res.candidate_summary = candidate_summary_dataframe(res.steps)
     res.ofv_summary = ofv_summary_dataframe(res.steps, final_included=True, iterations=True)
 
+    res.summary_tool = _modify_summary_tool(res.summary_tool, res.steps)
+    res.summary_models = _summarize_models(models, res.steps)
+
     return res
 
 
-def _make_df_steps(best_model: Model, candidates: List[Candidate]) -> DataFrame:
+def _modify_summary_tool(summary_tool, steps):
+    step_cols_to_keep = ['step', 'pvalue', 'goal_pvalue', 'is_backward', 'selected', 'model']
+    steps_df = steps.reset_index()[step_cols_to_keep].set_index(['step', 'model'])
+
+    summary_tool_new = steps_df.join(summary_tool)
+    column_to_move = summary_tool_new.pop('description')
+
+    summary_tool_new.insert(0, 'description', column_to_move)
+    return summary_tool_new.drop(['rank'], axis=1)
+
+
+def _summarize_models(models, steps):
+    summary_models = summarize_modelfit_results(models)
+    summary_models['step'] = steps.reset_index().set_index(['model'])['step']
+
+    return summary_models.reset_index().set_index(['step', 'model'])
+
+
+def _make_df_steps(best_model: Model, candidates: List[Candidate]):
     models_dict = {candidate.model.name: candidate.model for candidate in candidates}
     children_count = Counter(candidate.model.parent_model for candidate in candidates)
 
     data = (
         _make_df_steps_row(models_dict, children_count, best_model, candidate)
         for candidate in candidates
-        if candidate.steps
     )
 
     return pd.DataFrame.from_records(
@@ -425,35 +482,43 @@ def _make_df_steps_row(
     reduced_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
     extended_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
     ofv_drop = reduced_ofv - extended_ofv
-    last_step = candidate.steps[-1]
-    last_effect = last_step.effect
-    is_backward = isinstance(last_step, BackwardStep)
+    if candidate.steps:
+        last_step = candidate.steps[-1]
+        last_effect = last_step.effect
+        parameter, covariate = last_effect.parameter, last_effect.covariate
+        extended_state = f'{last_effect.operation} {last_effect.fp}'
+        is_backward = isinstance(last_step, BackwardStep)
+        alpha = last_step.alpha
+        extended_significant = lrt_test(
+            parent_model,
+            candidate.model,
+            reduced_ofv,
+            extended_ofv,
+            alpha,
+        )
+    else:
+        parameter, covariate, extended_state = '', '', ''
+        is_backward = False
+        alpha, extended_significant = np.nan, np.nan
+
     p_value = lrt_p_value(parent_model, model, reduced_ofv, extended_ofv)
-    alpha = last_step.alpha
-    selected = children_count[model.name] >= 1 or model is best_model
-    extended_significant = lrt_test(
-        parent_model,
-        model,
-        reduced_ofv,
-        extended_ofv,
-        alpha,
-    )
+    selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
+
     assert not selected or (model is parent_model) or extended_significant
     return {
         'step': len(candidate.steps),
-        'parameter': last_effect.parameter,
-        'covariate': last_effect.covariate,
-        'extended_state': f'{last_effect.operation} {last_effect.fp}',
+        'parameter': parameter,
+        'covariate': covariate,
+        'extended_state': extended_state,
         'reduced_ofv': reduced_ofv,
         'extended_ofv': extended_ofv,
         'ofv_drop': ofv_drop,
-        'delta_df': len(model.parameters) - len(parent_model.parameters),
+        'delta_df': len(model.parameters.nonfixed) - len(parent_model.parameters.nonfixed),
         'pvalue': p_value,
         'goal_pvalue': alpha,
         'is_backward': is_backward,
         'extended_significant': extended_significant,
         'selected': selected,
-        'directory': str(model.database.path),
         'model': model.name,
         'covariate_effects': np.nan,
     }

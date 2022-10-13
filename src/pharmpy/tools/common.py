@@ -5,7 +5,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Results
 from pharmpy.modeling import update_inits
-from pharmpy.tools import rank_models, summarize_errors, summarize_modelfit_results
+from pharmpy.tools import rank_models, summarize_errors
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 
@@ -36,9 +36,6 @@ def create_results(
     res_class: Type[T], input_model, base_model, res_models, rank_type, cutoff, bic_type='mixed'
 ) -> T:
     summary_tool = summarize_tool(res_models, base_model, rank_type, cutoff, bic_type)
-    summary_models = summarize_modelfit_results([base_model] + res_models).reindex(
-        summary_tool.index
-    )
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
         [base_model] + res_models,
         summary_tool['description'],
@@ -57,7 +54,6 @@ def create_results(
     # FIXME: remove best_model, input_model, models when there is function to read db
     res = res_class(
         summary_tool=summary_tool,
-        summary_models=summary_models,
         summary_individuals=summary_individuals,
         summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
@@ -86,8 +82,19 @@ def summarize_tool(
         bic_type=bic_type,
     )
 
-    rows = {model.name: [model.description, model.parent_model] for model in models_all}
-    colnames = ['description', 'parent_model']
+    model_dict = {model.name: model for model in models_all}
+    rows = dict()
+
+    for model in models_all:
+        description, parent_model = model.description, model.parent_model
+        n_params = len(model.parameters.nonfixed)
+        if model.name == start_model.name:
+            d_params = 0
+        else:
+            d_params = n_params - len(model_dict[parent_model].parameters.nonfixed)
+        rows[model.name] = (description, n_params, d_params, parent_model)
+
+    colnames = ['description', 'n_params', 'd_params', 'parent_model']
     index = pd.Index(rows.keys(), name='model')
     df_descr = pd.DataFrame(rows.values(), index=index, columns=colnames)
 

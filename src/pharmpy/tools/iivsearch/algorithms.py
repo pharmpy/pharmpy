@@ -3,7 +3,7 @@ from typing import Dict
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.expressions import subs
-from pharmpy.model import Model
+from pharmpy.model import Model, RandomVariables
 from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.expressions import get_rv_parameters
@@ -11,16 +11,16 @@ from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
 
-def brute_force_no_of_etas(base_model):
+def brute_force_no_of_etas(base_model, index_offset=0):
     wf = Workflow()
 
-    base_model.description = _create_description(base_model)
+    base_model.description = create_description(base_model)
 
     iivs = base_model.random_variables.iiv
     eta_combos = _get_eta_combinations(iivs)
 
     for i, combo in enumerate(eta_combos, 1):
-        model_name = f'iivsearch_no_of_etas_candidate{i}'
+        model_name = f'iivsearch_run{i + index_offset}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
@@ -38,20 +38,20 @@ def brute_force_no_of_etas(base_model):
     return wf
 
 
-def brute_force_block_structure(base_model):
+def brute_force_block_structure(base_model, index_offset=0):
     wf = Workflow()
 
-    base_model.description = _create_description(base_model)
+    base_model.description = create_description(base_model)
 
     iivs = base_model.random_variables.iiv
     eta_combos = _get_eta_combinations(iivs, as_blocks=True)
-    model_no = 1
+    model_no = 1 + index_offset
 
     for combo in eta_combos:
         if _is_current_block_structure(iivs, combo):
             continue
 
-        model_name = f'iivsearch_block_structure_candidate{model_no}'
+        model_name = f'iivsearch_run{model_no}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
@@ -103,31 +103,39 @@ def _is_current_block_structure(etas, combos):
     return True
 
 
-def _iiv_param_dict(model: Model) -> Dict[str, str]:
-    iiv = model.random_variables.iiv
-    return {
-        eta: get_rv_parameters(model, eta)[0]
-        for eta in iiv.names
-        if subs(
-            iiv[eta].get_variance(eta),
-            {parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix},
-            simultaneous=True,
-        )
-        != 0
+def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
+    param_subs = {
+        parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix
     }
+    param_dict = dict()
+    for eta in dists.names:
+        if subs(dists[eta].get_variance(eta), param_subs, simultaneous=True) != 0:
+            param_dict[eta] = get_rv_parameters(model, eta)[0]
+    return param_dict
 
 
-def _create_description(model: Model) -> str:
-    param_dict = _iiv_param_dict(model)
+def create_description(model: Model, iov: bool = False) -> str:
+    if iov:
+        dists = model.random_variables.iov
+    else:
+        dists = model.random_variables.iiv
 
+    param_dict = _create_param_dict(model, dists)
     if len(param_dict) == 0:
         return '[]'
 
-    blocks = []
-    for dist in model.random_variables.iiv:
+    blocks, same = [], []
+    for dist in dists:
         rvs_names = dist.names
-        param_names = [param_dict[name] for name in rvs_names]
-        blocks.append(f'[{",".join(param_names)}]')
+        param_names = [param_dict[name] for name in rvs_names if name not in same]
+        if param_names:
+            blocks.append(f'[{",".join(param_names)}]')
+
+        if iov:
+            same_names = []
+            for name in rvs_names:
+                same_names.extend(dists.get_rvs_with_same_dist(name).names)
+            same.extend(same_names)
 
     return '+'.join(blocks)
 
@@ -154,6 +162,6 @@ def copy(name, model):
 
 
 def update_description(model):
-    description = _create_description(model)
+    description = create_description(model)
     model.description = description
     return model

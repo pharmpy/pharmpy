@@ -140,6 +140,7 @@ def start(context, model, groups, p_value, skip):
     if skip is None:
         skip = []
 
+    sum_models = []
     selected_models = [model]
     cwres_models = []
     tool_database = None
@@ -148,15 +149,14 @@ def start(context, model, groups, p_value, skip):
         res, best_model, selected_model_name = call_workflow(
             wf, f'results{current_iteration}', context
         )
+        if current_iteration == 1:
+            sum_models.append(summarize_modelfit_results(model))
+        sum_models.append(summarize_modelfit_results(best_model))
 
         cwres_models.append(res.cwres_models)
         tool_database = res.tool_database
 
         if not selected_model_name.startswith('base'):
-            if best_model.description:
-                best_model.description += '+' + selected_model_name
-            else:
-                best_model.description = selected_model_name
             selected_models.append(best_model)
 
         model = best_model
@@ -170,11 +170,11 @@ def start(context, model, groups, p_value, skip):
 
     sumind = summarize_individuals(selected_models)
     sumcount = summarize_individuals_count_table(df=sumind)
-    summf = summarize_modelfit_results(selected_models)
-    summary_tool = summarize_tool(selected_models[1:], selected_models[0], 'ofv', cutoff)
+    summf = pd.concat(sum_models, keys=list(range(0, current_iteration)), names=['step'])
+    summary_tool = _create_summary_tool(selected_models, cutoff)
     summary_errors = summarize_errors(selected_models)
 
-    return RUVSearchResults(
+    res = RUVSearchResults(
         cwres_models=pd.concat(cwres_models),
         summary_individuals=sumind,
         summary_individuals_count=sumcount,
@@ -184,6 +184,25 @@ def start(context, model, groups, p_value, skip):
         summary_errors=summary_errors,
         tool_database=tool_database,
     )
+    return res
+
+
+def _create_summary_tool(selected_models, cutoff):
+    model_names = [model.name for model in selected_models]
+    iteration_map = {model.name: model_names.index(model.name) for model in selected_models}
+
+    base_model = selected_models[0]
+    ruvsearch_models = selected_models[1:]
+
+    sum_tool = summarize_tool(ruvsearch_models, base_model, 'ofv', cutoff).reset_index()
+    sum_tool['step'] = sum_tool['model'].map(iteration_map)
+    sum_tool_by_iter = sum_tool.set_index(['step', 'model']).sort_index()
+
+    # FIXME workaround since rank_models will exclude ranking of base model since dofv will be 0
+    sum_tool_by_iter.loc[(0, base_model.name), 'ofv'] = base_model.modelfit_results.ofv
+    sum_tool_by_iter.loc[(0, base_model.name), 'dofv'] = 0
+
+    return sum_tool_by_iter.drop(columns=['rank'])
 
 
 def _start_iteration(model):
@@ -338,6 +357,12 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
         idx = res.cwres_models['dofv'].idxmax()
         name = idx[0]
 
+        if current_iteration == 1:
+            base_description = ''
+        else:
+            base_description = model.description + '+'
+        model.description = base_description + name
+
         if name.startswith('power'):
             set_power_on_ruv(model)
             set_initial_estimates(
@@ -388,6 +413,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
                     .get('sigma_add'),
                 },
             )
+
         selected_model_name = name
         model.update_source()
     else:

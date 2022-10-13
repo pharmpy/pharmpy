@@ -7,8 +7,8 @@ from pharmpy.modeling import (
     create_joint_distribution,
 )
 from pharmpy.tools.iivsearch.algorithms import (
+    _create_param_dict,
     _get_eta_combinations,
-    _iiv_param_dict,
     _is_current_block_structure,
     brute_force_block_structure,
     create_eta_blocks,
@@ -132,7 +132,7 @@ def test_create_joint_dist(load_model_for_test, testdata):
 def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
 
-    param_dict = _iiv_param_dict(model)
+    param_dict = _create_param_dict(model, model.random_variables.iiv)
     param_dict_ref = {'ETA(1)': 'CL', 'ETA(2)': 'VC', 'ETA(3)': 'MAT'}
 
     assert param_dict == param_dict_ref
@@ -142,7 +142,7 @@ def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
     )
     model = create_model_for_test(model_code)
 
-    param_dict = _iiv_param_dict(model)
+    param_dict = _create_param_dict(model, model.random_variables.iiv)
 
     assert param_dict == param_dict_ref
 
