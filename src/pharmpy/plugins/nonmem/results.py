@@ -114,8 +114,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self.log = Log()
         path = Path(path)
         self._path = path
-        self._subproblem = subproblem
-        self.model = model
         super().__init__()
         self._read_ext_table()
         self._read_lst_file()
@@ -129,8 +127,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             return
 
         for table in ext_tables:
-            if self._subproblem and table.subproblem != self._subproblem:
-                continue
 
             try:
                 table.data_frame
@@ -537,9 +533,3 @@ def simfit_results(model, model_path):
         res = parse_modelfit_results(model, model_path, subproblem=i)
         results.append(res)
     return results
-
-
-def _check_covariance_status(result):
-    return (
-        isinstance(result, NONMEMModelfitResults) and result._covariance_status['warnings'] is False
-    )
