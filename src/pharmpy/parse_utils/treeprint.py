@@ -5,73 +5,61 @@
 Pretty printing of tree-structures. Inspired by the 'tree' command (Steve
 Baker). In development.
 """
+from __future__ import annotations
 
 import logging
 from collections import namedtuple
+from dataclasses import dataclass
 from enum import Enum
+from typing import Callable, Generic, Optional, Tuple, TypeVar, Union
 
-BranchStyle = Enum('BranchStyle', ['SIMPLE', 'INLINE', 'BUSY'])
+
+class BranchStyle(Enum):
+    SIMPLE = 1
+    INLINE = 2
+    BUSY = 3
+
 
 Indent = namedtuple('Indent', ['header', 'node', 'fork'])
 
 CharSet = namedtuple('CharSet', ['fork', 'horiz', 'vert', 'inline', 'lfork', 'end'])
 
 
-class NodeStyle(object):
-    __defaults = dict(
-        branch=BranchStyle['SIMPLE'],
-        indent=Indent(header=0, node=1, fork=1),
-        char=CharSet(fork='├', horiz='│', vert='─', inline='┌', lfork='└', end=' '),
-    )
+@dataclass(frozen=True)
+class NodeStyle:
+    branch: BranchStyle = BranchStyle['SIMPLE']
+    indent: Indent = Indent(header=0, node=1, fork=1)
+    char: CharSet = CharSet(fork='├', horiz='│', vert='─', inline='┌', lfork='└', end=' ')
 
-    def __init__(self, **styling):
-        for key, val_default in self.__defaults.items():
-            try:
-                val = styling.pop(key)
-            except KeyError:
-                val = val_default
-            finally:
-                setattr(self, key, val)
-        self.verify()
-
-    def verify(self):
+    def __post_init__(self):
         log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
         if self.indent.header > self.indent.node:
-            log.warning("Indent of header > node might break assumptions")
-        charlen = set(len(x) for x in self.char[-1])
-        if charlen != {1}:
-            raise ValueError('len(char)!=1 for some char: %s' % (charlen,))
+            log.warning("Indent of header > indent of node. Might break assumptions.")
+        for x in self.char:
+            if len(x) != 1:
+                raise ValueError(f'len({x}) != 1 (got {len(x)})')
 
 
-class Node(object):
-    _cls_str = '__str__'
-    _cls_map = {}
+T = TypeVar('T')
 
-    def __new__(cls, obj):
-        cls_obj = obj.__class__
-        try:
-            cls_node = cls._cls_map[cls_obj]
-        except KeyError:
 
-            def __init__(self, obj):
-                self._obj = obj
-                cls.__init__(self)
-
-            cls_name = cls_obj.__name__ + cls.__name__
-            cls_node = type(cls_name, (cls,), {'__init__': __init__})
-            cls._cls_map[cls_obj] = cls_node
-        instance = super(cls, cls_node).__new__(cls_node)
-        return instance
-
-    def __init__(self):
-        self._style = None
+class Node(Generic[T]):
+    def __init__(
+        self,
+        obj: T,
+        cls_str: Union[str, Callable[[T], str]] = '__str__',
+        style: Optional[NodeStyle] = None,
+        children: Tuple[Node, ...] = (),
+    ):
+        self._obj = obj
+        self._cls_str = cls_str
+        self._style = style
         self._parent = None
-        self._nodes = list()
-
-    def add(self, *nodes):
-        for node in nodes:
-            node._parent = self
-            self._nodes += [node]
+        self._children = children
+        # NOTE This links the children to the new parent and forces to build
+        # the tree from bottom to top
+        for child in children:
+            child._parent = self
 
     @property
     def style(self):
@@ -88,31 +76,16 @@ class Node(object):
 
     @property
     def lines(self):
-        try:
+        if isinstance(self._cls_str, str):
             attr = getattr(self._obj, self._cls_str)
-        except TypeError:
-            out = str(self._cls_str(self._obj))
-        else:
             try:
                 out = str(attr())
             except TypeError:
                 out = str(attr)
-        finally:
-            if isinstance(out, str):
-                return out.splitlines()
-            else:
-                return out
+        else:
+            out = str(self._cls_str(self._obj))
 
-    @property
-    def type_map(self):
-        cdict = {self._obj.__class__: self.__class__}
-        for node in self._nodes:
-            cdict.update(node.type_map)
-        return cdict
-
-    @classmethod
-    def set_formatter(cls, formatter):
-        cls._cls_str = staticmethod(formatter)
+        return out.splitlines() if isinstance(out, str) else out
 
     def _prefix(self, lines, early_branch, ind_used):
         if self.style.branch != BranchStyle.SIMPLE:
@@ -139,8 +112,8 @@ class Node(object):
         lines = self.lines
         lines[0] = ' ' * ind.header + lines[0]
 
-        idx_last = len(self._nodes) - 1
-        for idx, node in enumerate(self._nodes):
+        idx_last = len(self._children) - 1
+        for idx, node in enumerate(self._children):
             nlines = str(node).splitlines()
             if not nlines:
                 continue
@@ -150,32 +123,28 @@ class Node(object):
         return '\n'.join(lines)
 
     def __repr__(self):
-        head = '%s %s' % (self.__class__.__name__, repr(self._obj))
-        lines = []
-        for node in self._nodes:
-            lines += [' ' + line for line in repr(node).splitlines()]
+        head = f'{self.__class__.__name__}({self._obj.__class__.__name__}) {repr(self._obj)}'
+        lines = [' ' + line for child in self._children for line in repr(child).splitlines()]
         return '\n'.join([head] + lines)
 
 
 def from_ast(ast_node):
-    root = Node(ast_node)
-    try:
-        fields = root._fields
-    except AttributeError:
-        fields = []
-    for field in fields:
-        node = getattr(root, field)
-    for child in ast.iter_child_nodes(ast_node):
-        node = from_ast(child)
-        root.add(node)
+    from ast import iter_child_nodes
+
+    children = tuple(map(from_ast, iter_child_nodes(ast_node)))
+    root = Node(ast_node, children=children)
     return root
 
 
 if __name__ == '__main__':
-    import ast
-
     with open(__file__, 'r') as source:
-        root = ast.parse(source.read())
+        from ast import parse
+
+        root = parse(source.read())
+
     root = from_ast(root)
+    print('=' * 40, 'repr(...)', '=' * 40)
+    print(repr(root))
+    print()
+    print('=' * 40, 'str(...)', '=' * 40)
     print(str(root))
-    # print(repr(root))
