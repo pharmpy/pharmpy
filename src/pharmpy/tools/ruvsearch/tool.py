@@ -221,9 +221,15 @@ def post_process(context, start_model, *models, cutoff, current_iteration):
     if best_model_unfitted is not None:
         fit_wf = create_fit_workflow(models=[best_model_unfitted])
         best_model = call_workflow(fit_wf, f'fit{current_iteration}', context)
-        delta_ofv = start_model.modelfit_results.ofv - best_model.modelfit_results.ofv
-        if delta_ofv > cutoff:
-            return (res, best_model, selected_model_name)
+        best_model_check = [
+            best_model.modelfit_results.ofv,
+            best_model.modelfit_results.residuals,
+            best_model.modelfit_results.predictions,
+        ]
+        if all(check is not None for check in best_model_check):
+            delta_ofv = start_model.modelfit_results.ofv - best_model.modelfit_results.ofv
+            if delta_ofv > cutoff:
+                return (res, best_model, selected_model_name)
 
     return (res, start_model, f"base_{current_iteration}")
 
