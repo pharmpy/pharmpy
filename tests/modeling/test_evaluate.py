@@ -14,7 +14,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
-tabpath = Path(__file__).parent.parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
+tabpath = Path(__file__).resolve().parent.parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
 lincorrect = read_nonmem_dataset(
     tabpath,
     ignore_character='@',

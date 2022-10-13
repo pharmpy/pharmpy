@@ -175,8 +175,9 @@ def test_json(tmp_path):
 
 def test_path():
     di = DataInfo(["C1", "C2"])
-    di = di.derive(path="file.datainfo")
-    assert di.path == Path("file.datainfo")
+    expected = Path.cwd() / "file.datainfo"
+    di = di.derive(path=str(expected))
+    assert di.path == expected
 
 
 def test_types():

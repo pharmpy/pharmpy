@@ -156,7 +156,7 @@ class FREMResults(Results):
 
     """
 
-    rst_path = Path(__file__).parent / 'report.rst'
+    rst_path = Path(__file__).resolve().parent / 'report.rst'
 
     def __init__(
         self,

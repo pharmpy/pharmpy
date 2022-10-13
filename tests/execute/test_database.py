@@ -1,3 +1,4 @@
+import json
 import os
 import os.path
 import shutil
@@ -59,14 +60,15 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             assert line == "ID,TIME,AMT,WGT,APGR,DV,FA1,FA2\n"
 
         with open("database/.datasets/pheno_real.datainfo", "r") as fh:
-            line = fh.readline()
-            assert line.startswith('{"columns": [{"name": ')
+            obj = json.load(fh)
+            assert 'columns' in obj
+            assert obj['path'] == 'pheno_real.csv'
 
         with open("database/pheno_real/pheno_real.mod", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
-            assert line.endswith(f'{sep}database{sep}.datasets{sep}pheno_real.csv IGNORE=@\n')
+            assert line == f'$DATA ..{sep}.datasets{sep}pheno_real.csv IGNORE=@\n'
 
         run1 = copy_model(model, name="run1")
         db.store_model(run1)
@@ -77,7 +79,7 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
-            assert line.endswith(f'{sep}database{sep}.datasets{sep}pheno_real.csv IGNORE=@\n')
+            assert line == f'$DATA ..{sep}.datasets{sep}pheno_real.csv IGNORE=@\n'
 
         run2 = copy_model(model, name="run2")
         add_time_after_dose(run2)
@@ -88,11 +90,12 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             assert line == "ID,TIME,AMT,WGT,APGR,DV,FA1,FA2,TAD\n"
 
         with open("database/.datasets/run2.datainfo", "r") as fh:
-            line = fh.readline()
-            assert line.startswith('{"columns": [{"name": ')
+            obj = json.load(fh)
+            assert 'columns' in obj
+            assert obj['path'] == 'run2.csv'
 
         with open("database/run2/run2.mod", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
-            assert line.endswith(f'{sep}database{sep}.datasets{sep}run2.csv IGNORE=@\n')
+            assert line == f'$DATA ..{sep}.datasets{sep}run2.csv IGNORE=@\n'

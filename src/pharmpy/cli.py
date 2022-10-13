@@ -53,14 +53,15 @@ Definitions
 """
 
 import argparse
-import pathlib
 import pydoc
 import sys
 import warnings
 from collections import OrderedDict, namedtuple
+from pathlib import Path
 from textwrap import dedent
 
 import pharmpy
+from pharmpy.internals.fs import path_absolute
 
 from .deps import pandas as pd
 
@@ -400,7 +401,7 @@ def info(args):
     inst = Install(
         pharmpy.__version__,
         'A list of authors can be found in the AUTHORS.rst',
-        str(pathlib.Path(pharmpy.__file__).parent),
+        str(Path(pharmpy.__file__).resolve().parent),
     )
 
     lines = format_keyval_pairs(inst._asdict(), right_just=True)
@@ -849,8 +850,8 @@ def check_input_path(path):
     Raises if not found or is dir, without tracebacks (see :func:`error_exit`).
     """
     try:
-        path = pathlib.Path(path)
-        path = path.resolve()
+        path = Path(path)
+        path = path_absolute(path)
     except FileNotFoundError:
         pass
 
@@ -955,7 +956,7 @@ group_output.add_argument(
     '-f', '--force', action='store_true', help='remove existing destination files (all)'
 )
 group_output.add_argument(
-    '-o', '--output_file', dest='output_file', metavar='file', type=pathlib.Path, help='output file'
+    '-o', '--output_file', dest='output_file', metavar='file', type=Path, help='output file'
 )
 
 parser_definition = [
@@ -1020,7 +1021,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--path',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to output directory',
                             },
                         ],
@@ -1058,7 +1059,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--path',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to output directory',
                             },
                         ],
@@ -1105,7 +1106,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--path',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to output directory',
                             },
                         ],
@@ -1153,7 +1154,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--path',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to output directory',
                             },
                         ],
@@ -1185,7 +1186,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--path',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to output directory',
                             },
                         ],
@@ -1240,7 +1241,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--path',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to output directory',
                             },
                         ],
@@ -1857,7 +1858,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN bootstrap run directory',
                             }
                         ],
@@ -1872,7 +1873,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN cdd run directory',
                             }
                         ],
@@ -1887,7 +1888,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN frem run directory',
                             },
                             {
@@ -1921,7 +1922,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN linearize run directory',
                             }
                         ],
@@ -1944,7 +1945,7 @@ parser_definition = [
                             {
                                 'name': 'dir',
                                 'metavar': 'file or directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to directory containing results.json '
                                 'or directly to json results file',
                             }
@@ -1960,7 +1961,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN qa run directory',
                             }
                         ],
@@ -1975,7 +1976,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN run directory',
                             }
                         ],
@@ -1990,7 +1991,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN ruvsearch run directory',
                             }
                         ],
@@ -2005,7 +2006,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN scm run directory',
                             }
                         ],
@@ -2020,7 +2021,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN simeval run directory',
                             }
                         ],

@@ -2,6 +2,7 @@ from pathlib import Path
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
+from pharmpy.internals.fs import path_absolute
 from pharmpy.model import (
     Assignment,
     ColumnInfo,
@@ -103,9 +104,10 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
 
 
 def _create_default_datainfo(path):
+    path = path_absolute(path)
     datainfo_path = path.with_suffix('.datainfo')
     if datainfo_path.is_file():
-        di = DataInfo.read_json(path.with_suffix('.datainfo'))
+        di = DataInfo.read_json(datainfo_path)
         di = di.derive(path=path)
     else:
         colnames = list(pd.read_csv(path, nrows=0))

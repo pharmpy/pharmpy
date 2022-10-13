@@ -15,7 +15,7 @@ from pharmpy.tools.psn_helpers import (
 class SCMResults(Results):
     """SCM Results class"""
 
-    rst_path = Path(__file__).parent / 'report.rst'
+    rst_path = Path(__file__).resolve().parent / 'report.rst'
 
     def __init__(self, steps=None, ofv_summary=None, candidate_summary=None):
         self.steps = steps

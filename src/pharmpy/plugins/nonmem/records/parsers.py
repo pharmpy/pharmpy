@@ -4,7 +4,7 @@ from lark import Lark  # pyright: ignore [reportPrivateImportUsage]
 
 from pharmpy.parse_utils import GenericParser
 
-grammar_root = Path(__file__).parent.resolve() / 'grammars'
+grammar_root = Path(__file__).resolve().parent / 'grammars'
 
 
 def install_grammar(cls):

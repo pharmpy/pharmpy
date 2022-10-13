@@ -4,6 +4,7 @@ Next release
 New features
 ============
 
+* Relative paths in files, absolute paths in Python objects (#1180, fixes 887)
 * Validate tool inputs (#1162, fixes #1032)
 * Add allow_nested flag to add_covariate_effect (#1004)
 * Add has_covariate_effect and remove_covariate_effect (#1004)

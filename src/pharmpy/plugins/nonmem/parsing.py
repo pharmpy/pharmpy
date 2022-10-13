@@ -7,6 +7,7 @@ from typing import Optional
 import pharmpy.plugins.nonmem
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
+from pharmpy.internals.fs import path_absolute
 from pharmpy.model import (
     Assignment,
     ColumnInfo,
@@ -463,8 +464,7 @@ def parse_initial_individual_estimates(control_stream, rvs, basepath) -> Optiona
         if not path.is_absolute():
             if basepath is None:
                 raise ValueError("Cannot resolve path for $ETAS")
-            path = basepath / path
-            path = path.resolve()
+            path = path_absolute(basepath / path)
         phi_tables = NONMEMTableFile(path)
         rv_names = [rv for rv in rvs.names if rv.startswith('ETA')]
         phitab = next(phi_tables)
@@ -476,16 +476,15 @@ def parse_initial_individual_estimates(control_stream, rvs, basepath) -> Optiona
 
 def parse_dataset_path(control_stream, basepath) -> Optional[Path]:
     record = next(iter(control_stream.get_records('DATA')), None)
+
     if record is None:
         return None
+
     path = Path(record.filename)
-    if not path.is_absolute():
-        if basepath is not None:
-            path = basepath.parent / path
-    try:
-        return path.resolve()
-    except FileNotFoundError:
-        return path
+    if basepath is not None and not path.is_absolute():
+        path = basepath.parent / path
+
+    return path_absolute(path)
 
 
 def _synonym(key, value):
@@ -571,14 +570,15 @@ def parse_column_info(control_stream):
 
 
 def parse_datainfo(control_stream, path) -> DataInfo:
-    dataset_path = parse_dataset_path(control_stream, path)
+    resolved_dataset_path = parse_dataset_path(control_stream, path)
     (colnames, drop, replacements, _) = parse_column_info(control_stream)
 
-    if dataset_path is not None:
-        path = dataset_path.with_suffix('.datainfo')
-        if path.is_file():
-            di = DataInfo.read_json(path)
-            di = di.derive(path=dataset_path)
+    if resolved_dataset_path is not None:
+        dipath = resolved_dataset_path.with_suffix('.datainfo')
+
+        if dipath.is_file():
+            di = DataInfo.read_json(dipath)
+            di = di.derive(path=resolved_dataset_path)
             different_drop = []
             for colinfo, coldrop in zip(di, drop):
                 if colinfo.drop != coldrop:
@@ -634,7 +634,7 @@ def parse_datainfo(control_stream, path) -> DataInfo:
             info = ColumnInfo(colname, drop=coldrop)
         column_info.append(info)
 
-    di = DataInfo(column_info, path=dataset_path)
+    di = DataInfo(column_info, path=resolved_dataset_path)
     return di
 
 

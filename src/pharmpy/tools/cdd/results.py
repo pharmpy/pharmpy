@@ -14,7 +14,7 @@ from pharmpy.tools.psn_helpers import model_paths, options_from_command
 class CDDResults(Results):
     """CDD Results class"""
 
-    rst_path = Path(__file__).parent / 'report.rst'
+    rst_path = Path(__file__).resolve().parent / 'report.rst'
 
     def __init__(self, case_results=None, case_column=None, individual_predictions_plot=None):
         self.case_results = case_results

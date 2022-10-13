@@ -5,6 +5,7 @@ from os import stat
 from pathlib import Path
 from typing import Union
 
+from pharmpy.internals.fs import path_absolute
 from pharmpy.lock import path_lock
 from pharmpy.model import DataInfo, Model
 from pharmpy.utils import hash_df
@@ -18,6 +19,7 @@ from .baseclass import (
 )
 
 DIRECTORY_PHARMPY_METADATA = '.pharmpy'
+DIRECTORY_DATASETS = '.datasets'
 DIRECTORY_INDEX = '.hash'
 FILE_METADATA = 'metadata.json'
 FILE_MODELFIT_RESULTS = 'results.json'
@@ -63,7 +65,7 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
         path = Path(path)
         if not path.exists():
             path.mkdir(parents=True)
-        self.path = path.resolve()
+        self.path = path_absolute(path)
         self.file_extension = file_extension
         self.ignored_names = frozenset(('stdout', 'stderr', 'nonmem.json', 'nlmixr.json'))
 
@@ -136,7 +138,7 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
         path = Path(path)
         if not path.exists():
             path.mkdir(parents=True)
-        self.path = path.resolve()
+        self.path = path_absolute(path)
         self.file_extension = file_extension
 
     def _read_lock(self):
@@ -202,17 +204,17 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
 
         model = self.model.copy()
         model.update_datainfo()
-        path = self.db.path / '.datasets'
+        datasets_path = self.db.path / DIRECTORY_DATASETS
 
         # NOTE Get the hash of the dataset and list filenames with contents
         # matching this hash only
         h = hash_df(model.dataset)
-        h_dir = path / DIRECTORY_INDEX / str(h)
+        h_dir = datasets_path / DIRECTORY_INDEX / str(h)
         h_dir.mkdir(parents=True, exist_ok=True)
         for hpath in h_dir.iterdir():
             # NOTE This variable holds a string similar to "run1.csv"
             matching_model_filename = hpath.name
-            data_path = path / matching_model_filename
+            data_path = datasets_path / matching_model_filename
             dipath = data_path.with_suffix('.datainfo')
             # TODO Maybe catch FileNotFoundError and similar here (pass)
             curdi = DataInfo.read_json(dipath)
@@ -230,14 +232,14 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             index_path = h_dir / model_filename
             index_path.touch()
 
-            data_path = path / model_filename
-            model.datainfo = model.datainfo.derive(path=data_path.resolve())
+            data_path = path_absolute(datasets_path / model_filename)
+            model.datainfo = model.datainfo.derive(path=data_path)
 
             write_csv(model, path=data_path, force=True)
 
             # NOTE Write datainfo last so that we are "sure" dataset is there
             # if datainfo is there
-            model.datainfo.to_json(path / (model.name + '.datainfo'))
+            model.datainfo.to_json(datasets_path / (model.name + '.datainfo'))
 
         # NOTE Write the model
         model_path = self.db.path / model.name

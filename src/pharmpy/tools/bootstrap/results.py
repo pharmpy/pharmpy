@@ -12,7 +12,7 @@ from pharmpy.tools.psn_helpers import cmd_line_model_path, model_paths
 
 
 class BootstrapResults(Results):
-    rst_path = Path(__file__).parent / 'report.rst'
+    rst_path = Path(__file__).resolve().parent / 'report.rst'
 
     # FIXME: Should inherit from results that take multiple runs like bootstrap, cdd etc.
     def __init__(
