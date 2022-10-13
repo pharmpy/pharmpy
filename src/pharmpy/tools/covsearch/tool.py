@@ -277,9 +277,11 @@ def _greedy_search(
 
         parent = best_candidate_so_far.model
         ofvs = [
-            model.modelfit_results.ofv if model.modelfit_results is not None else np.nan
+            np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
             for model in new_candidate_models
         ]
+        # NOTE We assume parent.modelfit_results is not None
+        assert parent.modelfit_results is not None
         best_model_so_far = lrt_best_of_many(
             parent, new_candidate_models, parent.modelfit_results.ofv, ofvs, alpha
         )
@@ -420,27 +422,23 @@ def _make_df_steps_row(
 ):
     model = candidate.model
     parent_model = models_dict[model.parent_model]
-    reduced_ofv = (
-        np.nan if parent_model.modelfit_results is None else parent_model.modelfit_results.ofv
-    )
-    extended_ofv = np.nan if model.modelfit_results is None else model.modelfit_results.ofv
+    reduced_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
+    extended_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
     ofv_drop = reduced_ofv - extended_ofv
     last_step = candidate.steps[-1]
     last_effect = last_step.effect
     is_backward = isinstance(last_step, BackwardStep)
-    p_value = lrt_p_value(
-        parent_model, model, parent_model.modelfit_results.ofv, model.modelfit_results.ofv
-    )
+    p_value = lrt_p_value(parent_model, model, reduced_ofv, extended_ofv)
     alpha = last_step.alpha
-    selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
+    selected = children_count[model.name] >= 1 or model is best_model
     extended_significant = lrt_test(
         parent_model,
-        candidate.model,
-        parent_model.modelfit_results.ofv,
-        candidate.model.modelfit_results.ofv,
+        model,
+        reduced_ofv,
+        extended_ofv,
         alpha,
     )
-    assert not selected or (candidate.model is parent_model) or extended_significant
+    assert not selected or (model is parent_model) or extended_significant
     return {
         'step': len(candidate.steps),
         'parameter': last_effect.parameter,
@@ -455,8 +453,8 @@ def _make_df_steps_row(
         'is_backward': is_backward,
         'extended_significant': extended_significant,
         'selected': selected,
-        'directory': str(candidate.model.database.path),
-        'model': candidate.model.name,
+        'directory': str(model.database.path),
+        'model': model.name,
         'covariate_effects': np.nan,
     }
 
