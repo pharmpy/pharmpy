@@ -121,7 +121,7 @@ def parse_modelfit_results(model, path, subproblem=None):
     return res
 
 
-class NONMEMChainedModelfitResults(ChainedModelfitResults):
+class NONMEMChainedModelfitResults(ModelfitResults):
     pass
 
 

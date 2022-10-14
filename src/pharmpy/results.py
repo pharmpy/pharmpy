@@ -237,7 +237,3 @@ class ModelfitResults(Results):
             'significant_digits_iterations': self.significant_digits_iterations,
             'significant_digits': self.significant_digits,
         }
-
-
-class ChainedModelfitResults(ModelfitResults):
-    pass
