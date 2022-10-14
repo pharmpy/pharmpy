@@ -315,16 +315,17 @@ def parse_tables(model, path):
             found.add(colname)
             columns_in_table.append(colname)
 
-            noheader = table_rec.has_option("NOHEADER")
-            notitle = table_rec.has_option("NOTITLE") or noheader
-            nolabel = table_rec.has_option("NOLABEL") or noheader
-            path = path.parent / table_rec.path
-            try:
-                table_file = NONMEMTableFile(path, notitle=notitle, nolabel=nolabel)
-            except IOError:
-                continue
-            table = table_file.tables[0]
-            df[columns_in_table] = table.data_frame[columns_in_table]
+        noheader = table_rec.has_option("NOHEADER")
+        notitle = table_rec.has_option("NOTITLE") or noheader
+        nolabel = table_rec.has_option("NOLABEL") or noheader
+        table_path = path.parent / table_rec.path
+        try:
+            table_file = NONMEMTableFile(table_path, notitle=notitle, nolabel=nolabel)
+        except IOError:
+            continue
+        table = table_file.tables[0]
+
+        df[columns_in_table] = table.data_frame[columns_in_table]
 
     if 'ID' in df.columns:
         df['ID'] = df['ID'].convert_dtypes()
