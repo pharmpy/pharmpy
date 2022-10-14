@@ -24,6 +24,7 @@ def parse_modelfit_results(model, path, subproblem=None):
     except (FileNotFoundError, OSError):
         return None
 
+    log = res.log
     table_df = parse_tables(model, path)
     residuals = parse_residuals(table_df)
     predictions = parse_predictions(table_df)
@@ -48,7 +49,7 @@ def parse_modelfit_results(model, path, subproblem=None):
         significant_digits,
         termination_cause,
         estimation_runtime,
-    ) = parse_lst(model, path, table_numbers)
+    ) = parse_lst(model, path, table_numbers, log)
 
     if table_numbers:
         eststeps = table_numbers
@@ -112,7 +113,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         path = Path(path)
         self._path = path
         self._read_ext_table()
-        self._read_lst_file()
 
     def _read_ext_table(self):
         try:
@@ -130,12 +130,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     f"Broken table in ext-file {self._path.with_suffix('.ext')}, "
                     f"table no. {table.number}"
                 )
-
-    def _read_lst_file(self):
-        try:
-            NONMEMResultsFile(self._path.with_suffix('.lst'), self.log)
-        except OSError:
-            return
 
 
 def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
@@ -184,9 +178,9 @@ def empty_lst_results(model):
     return None, np.nan, False, false_vec, nan_vec, nan_vec, none_vec, nan_vec
 
 
-def parse_lst(model, path, table_numbers):
+def parse_lst(model, path, table_numbers, log):
     try:
-        rfile = NONMEMResultsFile(path.with_suffix('.lst'), log=None)
+        rfile = NONMEMResultsFile(path.with_suffix('.lst'), log=log)
     except OSError:
         return empty_lst_results(model)
 
