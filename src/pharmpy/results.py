@@ -1,4 +1,3 @@
-import copy
 import importlib
 import json
 import lzma
@@ -241,10 +240,4 @@ class ModelfitResults(Results):
 
 
 class ChainedModelfitResults(ModelfitResults):
-    def __init__(self, results=None):
-        if isinstance(results, ChainedModelfitResults):
-            self._results = copy.deepcopy(results._results)
-        elif results is None:
-            self._results = []
-        else:
-            self._results = list(results)
+    pass

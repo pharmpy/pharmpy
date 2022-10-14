@@ -3,7 +3,7 @@ from pathlib import Path
 import pharmpy.modeling as modeling
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.results import ChainedModelfitResults, ModelfitResults
+from pharmpy.results import ModelfitResults
 from pharmpy.workflows.log import Log
 
 from .parameters import parameter_translation
@@ -111,7 +111,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self.log = Log()
         path = Path(path)
         self._path = path
-        super().__init__()
         self._read_ext_table()
         self._read_lst_file()
 
