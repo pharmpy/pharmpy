@@ -47,7 +47,7 @@ def parse_modelfit_results(model, path, subproblem=None):
         significant_digits,
         termination_cause,
         estimation_runtime,
-    ) = parse_lst(path, table_numbers)
+    ) = parse_lst(model, path, table_numbers)
 
     last_est_ind = get_last_est(model)
     minsucc_iters = pd.Series(
@@ -181,15 +181,22 @@ def parse_matrix(path, model, table_numbers):
     return df
 
 
-def parse_lst(path, table_numbers):
+def empty_lst_results(model):
+    n = len(model.estimation_steps)
+    false_vec = [False] * n
+    nan_vec = [np.nan] * n
+    none_vec = [None] * n
+    return None, np.nan, False, false_vec, nan_vec, nan_vec, none_vec, nan_vec
+
+
+def parse_lst(model, path, table_numbers):
     try:
         rfile = NONMEMResultsFile(path.with_suffix('.lst'), log=None)
     except OSError:
-        n = len(table_numbers)
-        false_vec = [False] * n
-        nan_vec = [np.nan] * n
-        none_vec = [None] * n
-        return None, np.nan, False, false_vec, nan_vec, nan_vec, none_vec, nan_vec
+        return empty_lst_results(model)
+
+    if not table_numbers:
+        return empty_lst_results(model)
 
     runtime_total = rfile.runtime_total
 
@@ -403,7 +410,16 @@ def parse_ext(model, path, subproblem):
         ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
     except ValueError:
         failed_pe = create_failed_parameter_estimates(model)
-        return [], np.nan, create_failed_ofv_iterations(model), failed_pe, failed_pe, None, None, None
+        return (
+            [],
+            np.nan,
+            create_failed_ofv_iterations(model),
+            failed_pe,
+            failed_pe,
+            None,
+            None,
+            None,
+        )
 
     table_numbers = parse_table_numbers(ext_tables, subproblem)
 
