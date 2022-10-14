@@ -260,7 +260,7 @@ def task_greedy_backward_search(
 
 def _greedy_search(
     state: SearchState,
-    handle_effects: Callable[[int, Candidate, List[EffectLiteral]], List[Candidate]],
+    handle_effects: Callable[[int, Candidate, List[EffectLiteral], int], List[Candidate]],
     candidate_effects: List[EffectLiteral],
     alpha: float,
     max_steps: int,

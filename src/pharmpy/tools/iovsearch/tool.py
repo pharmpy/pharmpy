@@ -116,7 +116,7 @@ def task_brute_force_search(
         list_of_parameters = list(iiv.names)
 
     current_step = 0
-    step_mapping = {current_step: model.name}
+    step_mapping = {current_step: [model.name]}
 
     # NOTE Check that model has at least one IIV.
     if not list_of_parameters:

@@ -119,6 +119,7 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
     models = []
     models_set = set()
     last_res = None
+    final_model = None
 
     for i, algorithm_cur in enumerate(list_of_algorithms):
         state = State(algorithm_cur, models_set, input_model.name)
@@ -151,6 +152,7 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
         last_res = res
 
     assert last_res is not None
+    assert final_model is not None
 
     res_modelfit_input = input_model.modelfit_results
     res_modelfit_final = final_model.modelfit_results
@@ -257,11 +259,11 @@ def validate_input(
 
 @dataclass
 class IIVSearchResults(Results):
-    summary_tool: Optional[pd.DataFrame] = None
-    summary_models: Optional[pd.DataFrame] = None
-    summary_individuals: Optional[pd.DataFrame] = None
-    summary_individuals_count: Optional[pd.DataFrame] = None
-    summary_errors: Optional[pd.DataFrame] = None
-    final_model_name: Optional[str] = None
+    summary_tool: pd.DataFrame
+    summary_individuals: pd.DataFrame
+    summary_individuals_count: pd.DataFrame
+    summary_errors: pd.DataFrame
+    final_model_name: str
     models: Sequence[Model] = ()
-    tool_database: Optional[ToolDatabase] = None
+    summary_models: Optional[pd.DataFrame] = None  # NOTE Not present in Results
+    tool_database: Optional[ToolDatabase] = None  # NOTE Not present in Results

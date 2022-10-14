@@ -156,8 +156,8 @@ def run_amd(
             if subresults.final_model_name != next_model.name:
                 next_model = retrieve_final_model(subresults)
             sum_subtools.append(_create_sum_subtool(tool_name, next_model))
-            sum_models.append(subresults.summary_models.reset_index()),
-            sum_inds_counts.append(subresults.summary_individuals_count.reset_index()),
+            sum_models.append(subresults.summary_models.reset_index())
+            sum_inds_counts.append(subresults.summary_individuals_count.reset_index())
 
     for sums in [sum_models, sum_inds_counts]:
         filtered_results = list(
