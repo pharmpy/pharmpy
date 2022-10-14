@@ -19,9 +19,9 @@ def parse_modelfit_results(model, path, subproblem=None):
     else:
         path = Path(path)
 
+    res = ModelfitResults()
     log = Log()
     try:
-        res = NONMEMChainedModelfitResults()
         try:
             ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
         except ValueError:
@@ -119,10 +119,6 @@ def parse_modelfit_results(model, path, subproblem=None):
     res.residuals = residuals
     res.log = log
     return res
-
-
-class NONMEMChainedModelfitResults(ModelfitResults):
-    pass
 
 
 def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
