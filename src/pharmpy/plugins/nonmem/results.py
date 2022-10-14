@@ -25,7 +25,7 @@ def parse_modelfit_results(model, path, subproblem=None):
             ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
         except ValueError:
             log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
-            return
+            return None
 
         for table in ext_tables:
             try:
@@ -38,10 +38,6 @@ def parse_modelfit_results(model, path, subproblem=None):
     except (FileNotFoundError, OSError):
         return None
 
-    table_df = parse_tables(model, path)
-    residuals = parse_residuals(table_df)
-    predictions = parse_predictions(table_df)
-    iofv, ie, iec = parse_phi(model, path)
     (
         table_numbers,
         final_ofv,
@@ -51,7 +47,12 @@ def parse_modelfit_results(model, path, subproblem=None):
         pe_iterations,
         ses,
         ses_sdcorr,
-    ) = parse_ext(model, path, subproblem)
+    ) = _parse_ext(model, ext_tables, subproblem)
+
+    table_df = parse_tables(model, path)
+    residuals = parse_residuals(table_df)
+    predictions = parse_predictions(table_df)
+    iofv, ie, iec = parse_phi(model, path)
     rse = calculate_relative_standard_errors(final_pe, ses)
     (
         runtime_total,
@@ -405,6 +406,10 @@ def parse_ext(model, path, subproblem):
             None,
             None,
         )
+    return _parse_ext(model, ext_tables, subproblem)
+
+
+def _parse_ext(model, ext_tables: NONMEMTableFile, subproblem):
 
     table_numbers = parse_table_numbers(ext_tables, subproblem)
 
