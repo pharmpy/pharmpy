@@ -144,7 +144,9 @@ def start(context, model, groups, p_value, skip):
     selected_models = [model]
     cwres_models = []
     tool_database = None
-    for current_iteration in range(1, 4):
+    last_iteration = 0
+    for current_iteration in (1, 2, 3):
+        last_iteration = current_iteration
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
         res, best_model, selected_model_name = call_workflow(
             wf, f'results{current_iteration}', context
@@ -170,7 +172,7 @@ def start(context, model, groups, p_value, skip):
 
     sumind = summarize_individuals(selected_models)
     sumcount = summarize_individuals_count_table(df=sumind)
-    summf = pd.concat(sum_models, keys=list(range(0, current_iteration)), names=['step'])
+    summf = pd.concat(sum_models, keys=list(range(last_iteration)), names=['step'])
     summary_tool = _create_summary_tool(selected_models, cutoff)
     summary_errors = summarize_errors(selected_models)
 
