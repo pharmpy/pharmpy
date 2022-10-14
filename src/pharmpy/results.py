@@ -206,10 +206,3 @@ class ModelfitResults(Results):
         self.significant_digits_iterations = significant_digits_iterations
         self.log_likelihood = log_likelihood
         self.log = log
-
-    @classmethod
-    def from_dict(cls, d):
-        # FIXME temp fix since ModelfitResults is getting rewritten
-        if '__version__' in d.keys():
-            del d['__version__']
-        return ModelfitResults(**d)
