@@ -49,16 +49,18 @@ def parse_modelfit_results(model, path, subproblem=None):
         estimation_runtime,
     ) = parse_lst(model, path, table_numbers)
 
+    if table_numbers:
+        eststeps = table_numbers
+    else:
+        eststeps = list(range(1, len(model.estimation_steps) + 1))
     last_est_ind = get_last_est(model)
     minsucc_iters = pd.Series(
-        minimization_successful, index=table_numbers, name='minimization_successful'
+        minimization_successful, index=eststeps, name='minimization_successful'
     )
-    esttime_iters = pd.Series(estimation_runtime, index=table_numbers, name='estimation_runtime')
-    funcevals_iters = pd.Series(
-        function_evaluations, index=table_numbers, name='function_evaluations'
-    )
-    termcause_iters = pd.Series(termination_cause, index=table_numbers, name='termination_cause')
-    sigdigs_iters = pd.Series(significant_digits, index=table_numbers, name='significant_digits')
+    esttime_iters = pd.Series(estimation_runtime, index=eststeps, name='estimation_runtime')
+    funcevals_iters = pd.Series(function_evaluations, index=eststeps, name='function_evaluations')
+    termcause_iters = pd.Series(termination_cause, index=eststeps, name='termination_cause')
+    sigdigs_iters = pd.Series(significant_digits, index=eststeps, name='significant_digits')
 
     if covstatus and ses is not None:
         cov = parse_matrix(path.with_suffix(".cov"), model, table_numbers)
@@ -81,17 +83,9 @@ def parse_modelfit_results(model, path, subproblem=None):
     res.termination_cause_iterations = termcause_iters
     res.significant_digits = significant_digits[-1]
     res.significant_digits_iterations = sigdigs_iters
-    res.ofv = final_ofv
-    res.ofv_iterations = ofv_iterations
-    res.parameter_estimates = final_pe
-    res.parameter_estimates_sdcorr = sdcorr
-    res.parameter_estimates_iterations = pe_iterations
     res.relative_standard_errors = rse
-    res.individual_ofv = iofv
     res.individual_estimates = ie
     res.individual_estimates_covariance = iec
-    res.predictions = predictions
-    res.residuals = residuals
     res.runtime_total = runtime_total
     res.log_likelihood = log_likelihood
     res.covariance_matrix = cov
@@ -99,6 +93,14 @@ def parse_modelfit_results(model, path, subproblem=None):
     res.information_matrix = coi
     res.standard_errors = ses
     res.standard_errors_sdcorr = ses_sdcorr
+    res.individual_ofv = iofv
+    res.parameter_estimates = final_pe
+    res.parameter_estimates_sdcorr = sdcorr
+    res.parameter_estimates_iterations = pe_iterations
+    res.ofv = final_ofv
+    res.ofv_iterations = ofv_iterations
+    res.predictions = predictions
+    res.residuals = residuals
     return res
 
 
@@ -384,7 +386,7 @@ def parse_predictions(df):
 
 
 def create_failed_ofv_iterations(model):
-    steps = list(range(len(model.estimation_steps)))
+    steps = list(range(1, len(model.estimation_steps) + 1))
     iterations = [0] * len(steps)
     ofvs = [np.nan] * len(steps)
     ofv_iterations = create_ofv_iterations_series(ofvs, steps, iterations)
@@ -410,13 +412,18 @@ def parse_ext(model, path, subproblem):
         ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
     except ValueError:
         failed_pe = create_failed_parameter_estimates(model)
+        n = len(model.estimation_steps)
+        df = pd.concat([failed_pe] * n, axis=1).T
+        df['step'] = range(1, n + 1)
+        df['iteration'] = 0
+        df = df.set_index(['step', 'iteration'])
         return (
             [],
             np.nan,
             create_failed_ofv_iterations(model),
             failed_pe,
             failed_pe,
-            None,
+            df,
             None,
             None,
         )
