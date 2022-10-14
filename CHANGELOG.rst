@@ -17,6 +17,16 @@ New features
 Changes
 =======
 
+* Include input model as step 0 in summary_models for AMD tools
+* Rename all AMD tool candidates such that modelsearch_candidate1 -> modelsearch_run1
+* Add columns for number of parameters and delta parameters in summary_tool for AMD tools
+* Only include chosen models in AMD summary_tool
+* New names and description for COVSearch candidates
+* Modify COVSearch summary_tool to include information from the steps-table, remove ranking
+* New candidate descriptions in IOVSearch
+* Add multiindex to RUVSearch which include step/iteration, remove ranking.
+* Add algorithm column to IIVSearch summary_tool, remove algorithm from candidate name
+* Compare final model in IIVSearch to input model, return input if worse
 * Generalize detection of existing effects in add_covariate_effect (#1004)
 * calculate_bic and calculate_aic will need the -2LL as input instead of modelfit_results
 * calculate_eta_shrinkage needs the explicit arguments parameter_estimates and individual_estimates
