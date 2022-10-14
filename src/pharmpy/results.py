@@ -153,7 +153,9 @@ class ModelfitResults(Results):
         parameter_estimates_iterations=None,
         covariance_matrix=None,
         correlation_matrix=None,
+        information_matrix=None,
         standard_errors=None,
+        standard_errors_sdcorr=None,
         relative_standard_errors=None,
         minimization_successful=None,
         minimization_successful_iterations=None,
@@ -161,6 +163,7 @@ class ModelfitResults(Results):
         estimation_runtime_iterations=None,
         individual_ofv=None,
         individual_estimates=None,
+        individual_estimates_covariance=None,
         residuals=None,
         predictions=None,
         runtime_total=None,
@@ -180,7 +183,9 @@ class ModelfitResults(Results):
         self.parameter_estimates_iterations = parameter_estimates_iterations
         self.covariance_matrix = covariance_matrix
         self.correlation_matrix = correlation_matrix
+        self.information_matrix = information_matrix
         self.standard_errors = standard_errors
+        self.standard_errors_sdcorr = standard_errors_sdcorr
         self.relative_standard_errors = relative_standard_errors
         self.minimization_successful = minimization_successful
         self.minimization_successful_iterations = minimization_successful_iterations
@@ -189,6 +194,7 @@ class ModelfitResults(Results):
         self.function_evaluations = function_evaluations
         self.function_evaluations_iterations = function_evaluations_iterations
         self.individual_estimates = individual_estimates
+        self.individual_estimates_covariance = individual_estimates_covariance
         self.individual_ofv = individual_ofv
         self.residuals = residuals
         self.predictions = predictions

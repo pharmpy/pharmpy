@@ -19,7 +19,6 @@ def parse_modelfit_results(model, path, subproblem=None):
     else:
         path = Path(path)
 
-    res = ModelfitResults()
     log = Log()
     try:
         try:
@@ -89,35 +88,37 @@ def parse_modelfit_results(model, path, subproblem=None):
 
     cov, cor, coi, ses = calculate_cov_cor_coi_ses(cov, cor, coi, ses)
 
-    res.minimization_successful = minimization_successful[last_est_ind]
-    res.minimization_successful_iterations = minsucc_iters
-    res.estimation_runtime = estimation_runtime[last_est_ind]
-    res.estimation_runtime_iterations = esttime_iters
-    res.function_evaluations = function_evaluations[last_est_ind]
-    res.function_evaluations_iterations = funcevals_iters
-    res.termination_cause = termination_cause[last_est_ind]
-    res.termination_cause_iterations = termcause_iters
-    res.significant_digits = significant_digits[-1]
-    res.significant_digits_iterations = sigdigs_iters
-    res.relative_standard_errors = rse
-    res.individual_estimates = ie
-    res.individual_estimates_covariance = iec
-    res.runtime_total = runtime_total
-    res.log_likelihood = log_likelihood
-    res.covariance_matrix = cov
-    res.correlation_matrix = cor
-    res.information_matrix = coi
-    res.standard_errors = ses
-    res.standard_errors_sdcorr = ses_sdcorr
-    res.individual_ofv = iofv
-    res.parameter_estimates = final_pe
-    res.parameter_estimates_sdcorr = sdcorr
-    res.parameter_estimates_iterations = pe_iterations
-    res.ofv = final_ofv
-    res.ofv_iterations = ofv_iterations
-    res.predictions = predictions
-    res.residuals = residuals
-    res.log = log
+    res = ModelfitResults(
+        minimization_successful=minimization_successful[last_est_ind],
+        minimization_successful_iterations=minsucc_iters,
+        estimation_runtime=estimation_runtime[last_est_ind],
+        estimation_runtime_iterations=esttime_iters,
+        function_evaluations=function_evaluations[last_est_ind],
+        function_evaluations_iterations=funcevals_iters,
+        termination_cause=termination_cause[last_est_ind],
+        termination_cause_iterations=termcause_iters,
+        significant_digits=significant_digits[-1],
+        significant_digits_iterations=sigdigs_iters,
+        relative_standard_errors=rse,
+        individual_estimates=ie,
+        individual_estimates_covariance=iec,
+        runtime_total=runtime_total,
+        log_likelihood=log_likelihood,
+        covariance_matrix=cov,
+        correlation_matrix=cor,
+        information_matrix=coi,
+        standard_errors=ses,
+        standard_errors_sdcorr=ses_sdcorr,
+        individual_ofv=iofv,
+        parameter_estimates=final_pe,
+        parameter_estimates_sdcorr=sdcorr,
+        parameter_estimates_iterations=pe_iterations,
+        ofv=final_ofv,
+        ofv_iterations=ofv_iterations,
+        predictions=predictions,
+        residuals=residuals,
+        log=log,
+    )
     return res
 
 
