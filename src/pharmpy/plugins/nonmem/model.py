@@ -94,6 +94,7 @@ def convert_model(model):
         code += '$PK\nY=X\n'
         code += '$ERROR\nA=B'
     nm_model = pharmpy.model.Model.create_model(StringIO(code))
+    assert isinstance(nm_model, Model)
     nm_model._datainfo = model.datainfo
     nm_model.random_variables = model.random_variables
     nm_model._parameters = model.parameters

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -15,9 +15,11 @@ from pharmpy.model import (
     DataInfo,
     ExplicitODESystem,
     Infusion,
-    Model,
     ModelSyntaxError,
 )
+
+if TYPE_CHECKING:
+    from .model import Model
 
 from .nmtran_parser import NMTranControlStream
 

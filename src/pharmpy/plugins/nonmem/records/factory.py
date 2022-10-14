@@ -52,7 +52,7 @@ known_records = {
 }
 
 
-def split_raw_record_name(line):
+def split_raw_record_name(line: str):
     """Splits the raw record name of the first line of a record from the rest of the record"""
     m = re.match(r'(\s*\$[A-za-z]+)(.*)', line, flags=re.MULTILINE | re.DOTALL)
     if m:
@@ -84,10 +84,11 @@ def get_canonical_record_name(raw_name):
     return None
 
 
-def create_record(chunk):
+def create_record(chunk: str):
     raw_name, content = split_raw_record_name(chunk)
-    name = get_canonical_record_name(raw_name)
-    if name:
+    canonical_name = get_canonical_record_name(raw_name)
+    if canonical_name:
+        name = canonical_name
         record_class, record_parser_class = known_records[name]
         record = record_class(content, record_parser_class)
     else:

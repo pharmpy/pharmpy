@@ -1,18 +1,24 @@
-import itertools
+from __future__ import annotations
+
 import re
 import warnings
+from itertools import product
 from pathlib import Path
+from typing import TYPE_CHECKING, List, Mapping, Optional
 
 from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.model import (
     Assignment,
     Bolus,
+    Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
+    Distribution,
     ExplicitODESystem,
     Infusion,
-    Model,
+    ODESystem,
     Parameter,
     Parameters,
     RandomVariables,
@@ -20,14 +26,25 @@ from pharmpy.model import (
     data,
 )
 from pharmpy.modeling import simplify_expression
-from pharmpy.plugins.nonmem.records import code_record
 
+if TYPE_CHECKING:
+    from .model import Model
+
+from .nmtran_parser import NMTranControlStream
 from .parameters import parameter_translation
 from .parsing import get_zero_fix_rvs, parse_column_info
+from .records import code_record
+from .records.code_record import CodeRecord
+from .records.etas_record import EtasRecord
+from .records.factory import create_record
+from .records.model_record import ModelRecord
+from .records.omega_record import OmegaRecord
+from .records.sizes_record import SizesRecord
+from .records.theta_record import ThetaRecord
 from .table import NONMEMTableFile, PhiTable
 
 
-def update_description(model):
+def update_description(model: Model):
     if model.description != model.internals._old_description:
         probrec = model.internals.control_stream.get_records('PROBLEM')[0]
         probrec.title = model.description
@@ -70,6 +87,7 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
             if re.match(r'THETA\(\d+\)', name):
                 p_renamed = Parameter(f'THETA({theta_number})', p.init, p.lower, p.upper, p.fix)
             record = create_theta_record(model, p_renamed)
+            assert isinstance(record, ThetaRecord)
             record.add_nonmem_name(p_renamed.name, theta_number)
 
         renamed_params_list.append(p_renamed)
@@ -95,7 +113,7 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
         next_sigma, previous_size = sigma_record.update(new, next_sigma, previous_size)
 
 
-def update_random_variables(model, old, new):
+def update_random_variables(model: Model, old: RandomVariables, new: RandomVariables):
     from pharmpy.plugins.nonmem.records.code_record import diff
 
     if not hasattr(model, '_parameters'):
@@ -129,7 +147,7 @@ def update_random_variables(model, old, new):
         next_eps += len(sigma_record)
 
 
-def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
+def update_random_variable_records(model: Model, rvs_diff, rec_dict, comment_dict):
     removed = []
     eta_number = 1
     number_of_records = 0
@@ -168,15 +186,13 @@ def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
             number_of_records += 1
 
 
-def get_diagonal(rv, rec_dict):
+def get_diagonal(rv: RandomVariables, rec_dict):
     rv_rec = rec_dict[rv.names[0]]
     etas_from_same_record = [eta for eta, rec in rec_dict.items() if rec == rv_rec]
-    if len(etas_from_same_record) > 1:
-        return etas_from_same_record
-    return None
+    return etas_from_same_record if len(etas_from_same_record) >= 2 else None
 
 
-def get_next_theta(model):
+def get_next_theta(model: Model):
     """Find the next available theta number"""
     next_theta = 1
 
@@ -187,7 +203,7 @@ def get_next_theta(model):
     return next_theta
 
 
-def create_theta_record(model, param):
+def create_theta_record(model: Model, param: Parameter):
     param_str = '$THETA  '
 
     if param.upper < 1000000:
@@ -207,7 +223,9 @@ def create_theta_record(model, param):
     return record
 
 
-def create_omega_single(model, rv, eta_number, record_number, comment_dict):
+def create_omega_single(
+    model: Model, rv: Distribution, eta_number: int, record_number: int, comment_dict
+):
     rvs, pset = model.random_variables, model.parameters
 
     if rv.level == 'RUV':
@@ -239,8 +257,10 @@ def create_omega_single(model, rv, eta_number, record_number, comment_dict):
     record.name_map = {variance_param.name: (eta_number, eta_number)}
 
 
-def create_omega_block(model, rvs, eta_number, record_number, comment_dict):
-    rvs = RandomVariables.create([rvs])
+def create_omega_block(
+    model: Model, distribution: Distribution, eta_number: int, record_number: int, comment_dict
+):
+    rvs = RandomVariables.create([distribution])
     cm = rvs.covariance_matrix
     param_str = f'$OMEGA BLOCK({cm.shape[0]})'
 
@@ -271,9 +291,9 @@ def create_omega_block(model, rvs, eta_number, record_number, comment_dict):
 
     eta_map, name_variance = dict(), dict()
 
-    for rv in rvs.names:
-        variance_param = rvs[rv].get_variance(rv)
-        eta_map[rv] = eta_number
+    for rv_name in rvs.names:
+        variance_param = rvs[rv_name].get_variance(rv_name)
+        eta_map[rv_name] = eta_number
         name_variance[variance_param.name] = (eta_number, eta_number)
         eta_number += 1
 
@@ -292,7 +312,7 @@ def create_omega_block(model, rvs, eta_number, record_number, comment_dict):
     record.name_map = {**name_variance, **name_covariance}
 
 
-def insert_omega_record(model, param_str, record_number, record_type):
+def insert_omega_record(model: Model, param_str: str, record_number: int, record_type: str):
     records = model.internals.control_stream.records
     tprecs = model.internals.control_stream.get_records(record_type)
     if tprecs:
@@ -300,25 +320,26 @@ def insert_omega_record(model, param_str, record_number, record_type):
         record = model.internals.control_stream.insert_record(param_str, index + record_number)
     else:
         record = model.internals.control_stream.insert_record(param_str)
+    assert isinstance(record, OmegaRecord)
     return record
 
 
-def update_ode_system(model, old, new):
+def update_ode_system(model: Model, old: Optional[ODESystem], new: ODESystem):
     """Update ODE system
 
     Handle changes from CompartmentSystem to ExplicitODESystem
     """
     if old is None:
-        old = CompartmentalSystem()
+        old = CompartmentalSystem(CompartmentalSystemBuilder())
 
     update_lag_time(model, old, new)
 
-    if type(old) == CompartmentalSystem and type(new) == ExplicitODESystem:
+    if isinstance(old, CompartmentalSystem) and isinstance(new, ExplicitODESystem):
         to_des(model, new)
-    elif type(old) == ExplicitODESystem and type(new) == CompartmentalSystem:
+    elif isinstance(old, ExplicitODESystem) and isinstance(new, CompartmentalSystem):
         # Stay with $DES for now
         update_des(model, old, new)
-    elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
+    elif isinstance(old, CompartmentalSystem) and isinstance(new, CompartmentalSystem):
         if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.datainfo.names:
             df = model.dataset.drop(columns=['RATE'])
             model.dataset = df
@@ -334,20 +355,20 @@ def update_ode_system(model, old, new):
     force_des(model, new)
 
 
-def is_nonlinear_odes(model):
+def is_nonlinear_odes(model: Model):
     """Check if ode system is nonlinear"""
     odes = model.statements.ode_system
+    assert isinstance(odes, CompartmentalSystem)
     M = odes.compartmental_matrix
     return odes.t in M.free_symbols
 
 
-def update_infusion(model, old):
+def update_infusion(model: Model, old: ODESystem):
     statements = model.statements
     new = statements.ode_system
-    if isinstance(old, ExplicitODESystem):
-        old = old.to_compartmental_system()
-    if isinstance(new, ExplicitODESystem):
-        new = new.to_compartmental_system()
+    assert new is not None
+    old = old.to_compartmental_system()
+    new = new.to_compartmental_system()
     if isinstance(new.dosing_compartment.dose, Infusion) and not statements.find_assignment('D1'):
         # Handle direct moving of Infusion dose
         statements.subs({'D2': 'D1'})
@@ -380,12 +401,12 @@ def update_infusion(model, old):
         model.dataset = df
 
 
-def update_des(model, old, new):
+def update_des(model: Model, old: ExplicitODESystem, new: ODESystem):
     """Update where both old and new should be explicit ODE systems"""
     pass
 
 
-def force_des(model, odes):
+def force_des(model: Model, odes: ODESystem):
     """Switch to $DES if necessary"""
     if isinstance(odes, ExplicitODESystem):
         return
@@ -394,10 +415,11 @@ def force_des(model, odes):
     if odes.atoms(sympy.Function) & amounts:
         explicit_odes(model)
         new = model.statements.ode_system
+        assert new is not None
         to_des(model, new)
 
 
-def explicit_odes(model):
+def explicit_odes(model: Model):
     """Convert model from compartmental system to explicit ODE system
     or do nothing if it already has an explicit ODE system
 
@@ -419,7 +441,7 @@ def explicit_odes(model):
     return model
 
 
-def to_des(model, new):
+def to_des(model: Model, new: ODESystem):
     old_des = model.internals.control_stream.get_records('DES')
     model.internals.control_stream.remove_records(old_des)
     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
@@ -438,11 +460,13 @@ def to_des(model, new):
     if not subs.has_option('TOL'):
         subs.append_option('TOL', 9)
     des = model.internals.control_stream.insert_record('$DES\nDUMMY=0')
+    assert isinstance(des, CodeRecord)
     des.from_odes(new)
     model.internals.control_stream.remove_records(
         model.internals.control_stream.get_records('MODEL')
     )
     mod = model.internals.control_stream.insert_record('$MODEL\n')
+    assert isinstance(mod, ModelRecord)
     for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
         name = eq.lhs.args[0].name[2:]
         if new.ics[ic] != 0:
@@ -452,7 +476,7 @@ def to_des(model, new):
         mod.add_compartment(name, dosing=dose)
 
 
-def update_statements(model, old, new, trans):
+def update_statements(model: Model, old: Statements, new: Statements, trans):
     trans['NaN'] = int(data.conf.na_rep)
     main_statements = Statements()
     error_statements = Statements()
@@ -475,7 +499,7 @@ def update_statements(model, old, new, trans):
                 new_solver = model.estimation_steps[0].solver
             else:
                 new_solver = None
-            if type(new_odes) == ExplicitODESystem or new_solver:
+            if isinstance(new_odes, ExplicitODESystem) or new_solver:
                 old_solver = model.internals._old_estimation_steps[0].solver
                 if new_solver != old_solver:
                     advan = solver_to_advan(new_solver)
@@ -493,14 +517,16 @@ def update_statements(model, old, new, trans):
     if not error and len(error_statements) > 0:
         model.internals.control_stream.insert_record('$ERROR\n')
     if error:
-        if len(error_statements) > 0 and error_statements[0].symbol.name == 'F':
+        if (
+            len(error_statements) > 0
+            and isinstance((s := error_statements[0]), Assignment)
+            and s.symbol.name == 'F'
+        ):
             error_statements = error_statements[1:]  # Remove the link statement
         error.rvs, error.trans = model.random_variables, trans
-        try:
-            amounts = list(new.ode_system.amounts)
-        except AttributeError:
-            pass
-        else:
+        new_ode_system = new.ode_system
+        if new_ode_system is not None:
+            amounts = list(new_ode_system.amounts)
             for i, amount in enumerate(amounts, start=1):
                 trans[amount] = sympy.Symbol(f"A({i})")
         error.statements = error_statements.subs(trans)
@@ -509,11 +535,9 @@ def update_statements(model, old, new, trans):
     rec.is_updated = True
 
 
-def update_lag_time(model, old, new):
-    if isinstance(old, ExplicitODESystem):
-        old = old.to_compartmental_system()
-    if isinstance(new, ExplicitODESystem):
-        new = new.to_compartmental_system()
+def update_lag_time(model: Model, old: ODESystem, new: ODESystem):
+    old = old.to_compartmental_system()
+    new = new.to_compartmental_system()
     new_dosing = new.dosing_compartment
     new_lag_time = new_dosing.lag_time
     try:
@@ -532,7 +556,7 @@ def update_lag_time(model, old, new):
         )
 
 
-def new_compartmental_map(cs, oldmap):
+def new_compartmental_map(cs: CompartmentalSystem, oldmap: Mapping[str, int]):
     """Create compartmental map for updated model
     cs - new compartmental system
     old - old compartmental map
@@ -575,7 +599,7 @@ def create_compartment_remap(oldmap, newmap):
     return remap
 
 
-def pk_param_conversion(model, advan, trans):
+def pk_param_conversion(model: Model, advan, trans):
     """Conversion map for pk parameters for removed or added compartment"""
     all_subs = model.internals.control_stream.get_records('SUBROUTINES')
     if not all_subs:
@@ -584,6 +608,7 @@ def pk_param_conversion(model, advan, trans):
     from_advan = subs.advan
     statements = model.statements
     cs = statements.ode_system
+    assert isinstance(cs, CompartmentalSystem)
     oldmap = model._compartment_map
     newmap = new_compartmental_map(cs, oldmap)
     remap = create_compartment_remap(oldmap, newmap)
@@ -598,7 +623,7 @@ def pk_param_conversion(model, advan, trans):
         d[sympy.Symbol(f'A({old})')] = sympy.Symbol(f'A({new})')
     if from_advan == 'ADVAN5' or from_advan == 'ADVAN7':
         reverse_map = {v: k for k, v in newmap.items()}
-        for i, j in itertools.product(range(1, len(oldmap)), range(0, len(oldmap))):
+        for i, j in product(range(1, len(oldmap)), range(0, len(oldmap))):
             if i != j and (i in remap and (j in remap or j == 0)):
                 if i in remap:
                     to_i = remap[i]
@@ -742,7 +767,7 @@ def pk_param_conversion(model, advan, trans):
     model.statements = statements.subs(d)
 
 
-def new_advan_trans(model):
+def new_advan_trans(model: Model):
     """Decide which new advan and trans to be used"""
     all_subs = model.internals.control_stream.get_records('SUBROUTINES')
     if all_subs:
@@ -752,6 +777,7 @@ def new_advan_trans(model):
         oldtrans = None
     statements = model.statements
     odes = model.statements.ode_system
+    assert isinstance(odes, CompartmentalSystem)
     nonlin = is_nonlinear_odes(model)
     if nonlin:
         advan = 'ADVAN13'
@@ -801,6 +827,7 @@ def new_advan_trans(model):
         output = odes.output_compartment
         central = odes.central_compartment
         elimination_rate = odes.get_flow(central, output)
+        assert elimination_rate is not None
         num, den = elimination_rate.as_numer_denom()
         if num.is_Symbol and den.is_Symbol:
             if advan in ['ADVAN1', 'ADVAN2']:
@@ -815,7 +842,7 @@ def new_advan_trans(model):
     return advan, trans
 
 
-def update_subroutines_record(model, advan, trans):
+def update_subroutines_record(model: Model, advan, trans):
     """Update $SUBROUTINES with new advan and trans"""
     all_subs = model.internals.control_stream.get_records('SUBROUTINES')
     if not all_subs:
@@ -835,10 +862,13 @@ def update_subroutines_record(model, advan, trans):
             subs.replace_option(oldtrans, trans)
 
 
-def update_model_record(model, advan):
+def update_model_record(model: Model, advan):
     """Update $MODEL"""
+    odes = model.statements.ode_system
+    if not isinstance(odes, CompartmentalSystem):
+        return
     try:
-        newmap = new_compartmental_map(model.statements.ode_system, model._compartment_map)
+        newmap = new_compartmental_map(odes, model._compartment_map)
     except AttributeError:
         return
     if advan in ['ADVAN1', 'ADVAN2', 'ADVAN3', 'ADVAN4', 'ADVAN10', 'ADVAN11', 'ADVAN12']:
@@ -852,7 +882,8 @@ def update_model_record(model, advan):
                 model.internals.control_stream.get_records('MODEL')
             )
             mod = model.internals.control_stream.insert_record('$MODEL\n')
-            output_name = model.statements.ode_system.output_compartment.name
+            assert isinstance(mod, ModelRecord)
+            output_name = odes.output_compartment.name
             comps = {v: k for k, v in newmap.items() if k != output_name}
             i = 1
             while True:
@@ -866,10 +897,11 @@ def update_model_record(model, advan):
     model._compartment_map = newmap
 
 
-def add_needed_pk_parameters(model, advan, trans):
+def add_needed_pk_parameters(model: Model, advan, trans):
     """Add missing pk parameters that NONMEM needs"""
     statements = model.statements
     odes = statements.ode_system
+    assert isinstance(odes, CompartmentalSystem)
     if advan == 'ADVAN2' or advan == 'ADVAN4' or advan == 'ADVAN12':
         if not statements.find_assignment('KA'):
             comp, rate = odes.get_compartment_outflows(odes.find_depot(statements))[0]
@@ -928,6 +960,8 @@ def add_needed_pk_parameters(model, advan, trans):
                     dest_comp = odes.find_compartment(dest)
                     rate = odes.get_flow(source_comp, dest_comp)
                     if rate is not None:
+                        assert isinstance(source_comp, Compartment)
+                        assert isinstance(dest_comp, Compartment)
                         sn = newmap[source]
                         dn = newmap[dest]
                         if len(str(sn)) > 1 or len(str(dn)) > 1:
@@ -945,11 +979,13 @@ def add_needed_pk_parameters(model, advan, trans):
                         )
 
 
-def add_parameters_ratio(model, numpar, denompar, source, dest):
+def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
     statements = model.statements
     if not statements.find_assignment(numpar) or not statements.find_assignment(denompar):
         odes = statements.ode_system
+        assert isinstance(odes, CompartmentalSystem)
         rate = odes.get_flow(source, dest)
+        assert rate is not None
         numer, denom = rate.as_numer_denom()
         par1 = Assignment(sympy.Symbol(numpar), numer)
         par2 = Assignment(sympy.Symbol(denompar), denom)
@@ -973,7 +1009,9 @@ def add_parameters_ratio(model, numpar, denompar, source, dest):
         )
 
 
-def define_parameter(model, name, value, synonyms=None):
+def define_parameter(
+    model: Model, name: str, value: sympy.Expr, synonyms: Optional[List[str]] = None
+):
     """Define a parameter in statments if not defined
     Update if already defined as other value
     return True if new assignment was added
@@ -981,10 +1019,15 @@ def define_parameter(model, name, value, synonyms=None):
     if synonyms is None:
         synonyms = [name]
     for syn in synonyms:
-        ass = model.statements.find_assignment(syn)
-        if ass:
+        i = model.statements.find_assignment_index(syn)
+        if i is not None:
+            ass = model.statements[i]
+            assert isinstance(ass, Assignment)
             if value != ass.expression and value != sympy.Symbol(name):
-                ass.expression = value
+                replacement_ass = Assignment(ass.symbol, value)
+                model.statements = (
+                    model.statements[:i] + replacement_ass + model.statements[i + 1 :]
+                )
             return False
     new_ass = Assignment(sympy.Symbol(name), value)
     model.statements = (
@@ -996,7 +1039,14 @@ def define_parameter(model, name, value, synonyms=None):
     return True
 
 
-def add_rate_assignment_if_missing(model, name, value, source, dest, synonyms=None):
+def add_rate_assignment_if_missing(
+    model: Model,
+    name: str,
+    value: sympy.Expr,
+    source: Compartment,
+    dest: Compartment,
+    synonyms: Optional[List[str]] = None,
+):
     added = define_parameter(model, name, value, synonyms=synonyms)
     if added:
         cb = CompartmentalSystemBuilder(model.statements.ode_system)
@@ -1006,7 +1056,7 @@ def add_rate_assignment_if_missing(model, name, value, source, dest, synonyms=No
         )
 
 
-def update_abbr_record(model, rv_trans):
+def update_abbr_record(model: Model, rv_trans):
     trans = dict()
     if not rv_trans:
         return trans
@@ -1015,7 +1065,7 @@ def update_abbr_record(model, rv_trans):
     kept = rv_trans.copy()
     abbr_recs = model.internals.control_stream.get_records('ABBREVIATED')
     for rec in abbr_recs:
-        for rk, rv in rec.replace.items():
+        for rv in rec.replace.values():
             for tk, tv in rv_trans.items():
                 if tv.name == rv:
                     del kept[tk]
@@ -1041,7 +1091,7 @@ def update_abbr_record(model, rv_trans):
     return trans
 
 
-def update_estimation(model):
+def update_estimation(model: Model):
     new = model.estimation_steps
     try:
         old = model.internals._old_estimation_steps
@@ -1085,6 +1135,8 @@ def update_estimation(model):
                     protected_attributes += ['EONLY']
             if est.maximum_evaluations is not None:
                 op_prev, est_prev = prev
+                assert op_prev is not None
+                assert est_prev is not None
                 if (
                     est.method.startswith('FO')
                     and op_prev == -1
@@ -1131,6 +1183,7 @@ def update_estimation(model):
             new_records.append(old_records[i])
             i += 1
         prev = (op, est)
+
     if old_records:
         model.internals.control_stream.replace_records(old_records, new_records)
     else:
@@ -1170,21 +1223,22 @@ def update_estimation(model):
 
 def solver_to_advan(solver):
     if solver == 'LSODA':
-        advan = 'ADVAN13'
+        return 'ADVAN13'
     elif solver == 'CVODES':
-        advan = 'ADVAN14'
+        return 'ADVAN14'
     elif solver == 'DGEAR':
-        advan = 'ADVAN8'
+        return 'ADVAN8'
     elif solver == 'DVERK':
-        advan = 'ADVAN6'
+        return 'ADVAN6'
     elif solver == 'IDA':
-        advan = 'ADVAN15'
+        return 'ADVAN15'
     elif solver == 'LSODI':
-        advan = 'ADVAN9'
-    return advan
+        return 'ADVAN9'
+
+    raise ValueError(solver)
 
 
-def update_ccontra(model, path=None, force=False):
+def update_ccontra(model: Model, path=None, force=False):
     h = model.observation_transformation
     y = model.dependent_variable
     dhdy = sympy.diff(h, y)
@@ -1248,7 +1302,7 @@ def update_ccontra(model, path=None, force=False):
         fh.write(ccontr3)
 
 
-def update_name_of_tables(control_stream, new_name):
+def update_name_of_tables(control_stream: NMTranControlStream, new_name: str):
     m = re.search(r'.*?(\d+)$', new_name)
     if m:
         n = int(m.group(1))
@@ -1262,13 +1316,11 @@ def update_name_of_tables(control_stream, new_name):
                 table.path = table_path.parent / new_table_name
 
 
-def update_sizes(model):
+def update_sizes(model: Model):
     """Update $SIZES if needed"""
     all_sizes = model.internals.control_stream.get_records('SIZES')
-    if len(all_sizes) == 0:
-        sizes = create_record('$SIZES ')
-    else:
-        sizes = all_sizes[0]
+    sizes = all_sizes[0] if all_sizes else create_record('$SIZES ')
+    assert isinstance(sizes, SizesRecord)
     odes = model.statements.ode_system
 
     if odes is not None and isinstance(odes, CompartmentalSystem):
@@ -1281,7 +1333,7 @@ def update_sizes(model):
         model.internals.control_stream.insert_record(str(sizes))
 
 
-def update_input(model):
+def update_input(model: Model):
     """Update $INPUT"""
     input_records = model.internals.control_stream.get_records("INPUT")
     _, drop, _, colnames = parse_column_info(model.internals.control_stream)
@@ -1319,7 +1371,7 @@ def update_input(model):
         last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
 
 
-def update_initial_individual_estimates(model, path, nofiles=False):
+def update_initial_individual_estimates(model: Model, path, nofiles=False):
     """Update $ETAS
 
     Could have 0 FIX in model. Need to read these
@@ -1363,6 +1415,7 @@ def update_initial_individual_estimates(model, path, nofiles=False):
             record = eta_records[0]
         else:
             record = model.internals.control_stream.append_record('$ETAS ')
+        assert isinstance(record, EtasRecord)
         record.path = phi_path
 
         first_est_record = model.internals.control_stream.get_records('ESTIMATION')[0]
@@ -1372,11 +1425,11 @@ def update_initial_individual_estimates(model, path, nofiles=False):
             first_est_record.set_option('MCETA', 1)
 
 
-def _sort_eta_columns(df):
+def _sort_eta_columns(df: pd.DataFrame):
     return df.reindex(sorted(df.columns), axis=1)
 
 
-def abbr_translation(model, rv_trans):
+def abbr_translation(model: Model, rv_trans):
     abbr_pharmpy = model.internals.control_stream.abbreviated.translate_to_pharmpy_names()
     abbr_replace = model.internals.control_stream.abbreviated.replace
     abbr_trans = update_abbr_record(model, rv_trans)
