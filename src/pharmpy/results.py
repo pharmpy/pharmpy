@@ -213,33 +213,3 @@ class ModelfitResults(Results):
         if '__version__' in d.keys():
             del d['__version__']
         return ModelfitResults(**d)
-
-    def to_dict(self):
-        # FIXME: This is not going to be needed as soon as ModelfitResults
-        #       becomes a standard Results class
-        return {
-            'ofv': self.ofv,
-            'parameter_estimates': self.parameter_estimates,
-            'parameter_estimates_sdcorr': self.parameter_estimates_sdcorr,
-            'parameter_estimates_iterations': self.parameter_estimates_iterations,
-            'covariance_matrix': self.covariance_matrix,
-            'correlation_matrix': self.correlation_matrix,
-            'standard_errors': self.standard_errors,
-            'minimization_successful': self.minimization_successful,
-            'minimization_successful_iterations': self.minimization_successful_iterations,
-            'estimation_runtime': self.estimation_runtime,
-            'estimation_runtime_iterations': self.estimation_runtime_iterations,
-            'individual_estimates': self.individual_estimates,
-            'individual_ofv': self.individual_ofv,
-            'residuals': self.residuals,
-            'runtime_total': self.runtime_total,
-            'termination_cause': self.termination_cause,
-            'termination_cause_iterations': self.termination_cause_iterations,
-            'function_evaluations': self.function_evaluations,
-            'function_evaluations_iterations': self.function_evaluations_iterations,
-            'log_likelihood': self.log_likelihood,
-            'log': self.log,
-            'relative_standard_errors': self.relative_standard_errors,
-            'significant_digits_iterations': self.significant_digits_iterations,
-            'significant_digits': self.significant_digits,
-        }
