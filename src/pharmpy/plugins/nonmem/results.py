@@ -19,12 +19,26 @@ def parse_modelfit_results(model, path, subproblem=None):
     else:
         path = Path(path)
 
+    log = Log()
     try:
-        res = NONMEMChainedModelfitResults(path, model=model, subproblem=subproblem)
+        res = NONMEMChainedModelfitResults()
+        try:
+            ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
+        except ValueError:
+            log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
+            return
+
+        for table in ext_tables:
+            try:
+                table.data_frame
+            except ValueError:
+                log.log_error(
+                    f"Broken table in ext-file {path.with_suffix('.ext')}, "
+                    f"table no. {table.number}"
+                )
     except (FileNotFoundError, OSError):
         return None
 
-    log = res.log
     table_df = parse_tables(model, path)
     residuals = parse_residuals(table_df)
     predictions = parse_predictions(table_df)
@@ -103,33 +117,12 @@ def parse_modelfit_results(model, path, subproblem=None):
     res.ofv_iterations = ofv_iterations
     res.predictions = predictions
     res.residuals = residuals
+    res.log = log
     return res
 
 
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
-    def __init__(self, path, model=None, subproblem=None):
-        # Path is path to any result file
-        self.log = Log()
-        path = Path(path)
-        self._path = path
-        self._read_ext_table()
-
-    def _read_ext_table(self):
-        try:
-            ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
-        except ValueError:
-            # The ext-file is illegal
-            self.log.log_error(f"Broken ext-file {self._path.with_suffix('.ext')}")
-            return
-
-        for table in ext_tables:
-            try:
-                table.data_frame
-            except ValueError:
-                self.log.log_error(
-                    f"Broken table in ext-file {self._path.with_suffix('.ext')}, "
-                    f"table no. {table.number}"
-                )
+    pass
 
 
 def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
