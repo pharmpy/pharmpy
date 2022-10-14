@@ -262,26 +262,27 @@ def parse_phi(model, path):
         return None, None, None
     table = phi_tables.tables[-1]
 
-    if table is not None:
-        trans = rv_translation(model.internals.control_stream, reverse=True)
-        rv_names = [name for name in model.random_variables.etas.names if name in trans]
-        try:
-            individual_ofv = table.iofv
-            individual_estimates = table.etas.rename(
-                columns=rv_translation(model.internals.control_stream)
-            )[rv_names]
-            covs = table.etcs
-            covs = covs.transform(
-                lambda cov: cov.rename(
-                    columns=rv_translation(model.internals.control_stream),
-                    index=rv_translation(model.internals.control_stream),
-                )
+    if table is None:
+        return None, None, None
+
+    trans = rv_translation(model.internals.control_stream, reverse=True)
+    rv_names = [name for name in model.random_variables.etas.names if name in trans]
+    try:
+        individual_ofv = table.iofv
+        individual_estimates = table.etas.rename(
+            columns=rv_translation(model.internals.control_stream)
+        )[rv_names]
+        covs = table.etcs
+        covs = covs.transform(
+            lambda cov: cov.rename(
+                columns=rv_translation(model.internals.control_stream),
+                index=rv_translation(model.internals.control_stream),
             )
-            covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
-            return individual_ofv, individual_estimates, covs
-        except KeyError:
-            pass
-    return None, None, None
+        )
+        covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
+        return individual_ofv, individual_estimates, covs
+    except KeyError:
+        return None, None, None
 
 
 def parse_tables(model, path):
