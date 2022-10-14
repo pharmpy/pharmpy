@@ -105,12 +105,6 @@ def parse_modelfit_results(model, path, subproblem=None):
     return res
 
 
-class NONMEMModelfitResults(ModelfitResults):
-    def __init__(self, chain):
-        self._chain = chain
-        super().__init__()
-
-
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def __init__(self, path, model=None, subproblem=None):
         # Path is path to any result file
@@ -130,7 +124,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             return
 
         for table in ext_tables:
-
             try:
                 table.data_frame
             except ValueError:
