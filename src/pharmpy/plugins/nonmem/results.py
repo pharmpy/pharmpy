@@ -3,12 +3,13 @@ from pathlib import Path
 import pharmpy.modeling as modeling
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.plugins.nonmem.parsing import parameter_translation
-from pharmpy.plugins.nonmem.results_file import NONMEMResultsFile
-from pharmpy.plugins.nonmem.table import NONMEMTableFile
-from pharmpy.plugins.nonmem.update import rv_translation
 from pharmpy.results import ChainedModelfitResults, ModelfitResults
 from pharmpy.workflows.log import Log
+
+from .parameters import parameter_translation
+from .random_variables import rv_translation
+from .results_file import NONMEMResultsFile
+from .table import NONMEMTableFile
 
 
 def parse_modelfit_results(model, path, subproblem=None):

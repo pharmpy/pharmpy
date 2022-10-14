@@ -22,8 +22,8 @@ from pharmpy.model import (
 from pharmpy.modeling import simplify_expression
 from pharmpy.plugins.nonmem.records import code_record
 
-from .parsing import get_zero_fix_rvs, parameter_translation, parse_column_info
-from .records.factory import create_record
+from .parameters import parameter_translation
+from .parsing import get_zero_fix_rvs, parse_column_info
 from .table import NONMEMTableFile, PhiTable
 
 
@@ -1317,25 +1317,6 @@ def update_input(model):
     last_input_record = input_records[-1]
     for ci in model.datainfo[len(colnames) :]:
         last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
-
-
-def rv_translation(control_stream, reverse=False, remove_idempotent=False, as_symbols=False):
-    d = dict()
-    for record in control_stream.get_records('OMEGA'):
-        for key, value in record.eta_map.items():
-            nonmem_name = f'ETA({value})'
-            d[nonmem_name] = key
-    for record in control_stream.get_records('SIGMA'):
-        for key, value in record.eta_map.items():
-            nonmem_name = f'EPS({value})'
-            d[nonmem_name] = key
-    if remove_idempotent:
-        d = {key: val for key, val in d.items() if key != val}
-    if reverse:
-        d = {val: key for key, val in d.items()}
-    if as_symbols:
-        d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in d.items()}
-    return d
 
 
 def update_initial_individual_estimates(model, path, nofiles=False):

@@ -27,9 +27,9 @@ from pharmpy.modeling.write_csv import create_dataset_path, write_csv
 from .config import conf
 from .dataset import read_nonmem_dataset
 from .nmtran_parser import NMTranControlStream, NMTranParser
+from .parameters import parameter_translation
 from .parsing import (
     create_name_trans,
-    parameter_translation,
     parse_column_info,
     parse_datainfo,
     parse_description,
@@ -41,10 +41,10 @@ from .parsing import (
     parse_value_type,
     replace_synonym_in_filters,
 )
+from .random_variables import rv_translation
 from .results import parse_modelfit_results
 from .update import (
     abbr_translation,
-    rv_translation,
     update_ccontra,
     update_description,
     update_estimation,
