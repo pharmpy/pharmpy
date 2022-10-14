@@ -1,8 +1,4 @@
-import pathlib
-
-import pharmpy.config as config
-from pharmpy.utils import normalize_user_given_path
-
+from .config import NONMEMConfiguration, conf
 from .detect import detect_model
 from .model import Model, convert_model
 from .results import parse_modelfit_results
@@ -23,7 +19,7 @@ r"""
        "basic". The order denotes priority order
    * - ``default_nonmem_path``
      - Path()
-     - pathlib.path
+     - pathlib.Path
      - Full path to the default NONMEM installation director
    * - ``write_etas_in_abbr``
      - ``False``
@@ -31,27 +27,11 @@ r"""
      - Whether to write etas as $ABBR records
 """
 
-
-class NONMEMConfiguration(config.Configuration):
-    module = 'pharmpy.plugins.nonmem'  # TODO: change default
-    parameter_names = config.ConfigItem(
-        ['basic'],
-        'Naming scheme of NONMEM parameters. Possible settings are "abbr" ($ABBR), "comment", and '
-        '"basic". The order denotes priority order',
-        list,
-    )
-    default_nonmem_path = config.ConfigItem(
-        pathlib.Path(''),
-        'Full path to the default NONMEM installation directory',
-        cls=normalize_user_given_path,
-    )
-    write_etas_in_abbr = config.ConfigItem(False, 'Whether to write etas as $ABBR records', bool)
-    licfile = config.ConfigItem(
-        None, 'Path to the NONMEM license file', cls=normalize_user_given_path
-    )
-
-
-conf = NONMEMConfiguration()
-
-
-__all__ = ['detect_model', 'convert_model', 'parse_modelfit_results', 'Model']
+__all__ = (
+    'detect_model',
+    'convert_model',
+    'parse_modelfit_results',
+    'Model',
+    'conf',
+    'NONMEMConfiguration',
+)

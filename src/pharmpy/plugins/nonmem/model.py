@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import pharmpy.model
-import pharmpy.plugins.nonmem
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs
@@ -24,8 +23,9 @@ from pharmpy.model import (
     Statements,
 )
 from pharmpy.modeling.write_csv import create_dataset_path, write_csv
-from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
+from .config import conf
+from .dataset import read_nonmem_dataset
 from .nmtran_parser import NMTranControlStream, NMTranParser
 from .parsing import (
     create_name_trans,
@@ -253,7 +253,7 @@ class Model(pharmpy.model.Model):
             self.internals.control_stream, reverse=True, remove_idempotent=True, as_symbols=True
         )
         trans.update(rv_trans)
-        if pharmpy.plugins.nonmem.conf.write_etas_in_abbr:
+        if conf.write_etas_in_abbr:
             abbr = abbr_translation(self, rv_trans)
             trans.update(abbr)
         if hasattr(self, '_statements'):
