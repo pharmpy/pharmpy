@@ -263,7 +263,7 @@ class IIVSearchResults(Results):
     summary_individuals: pd.DataFrame
     summary_individuals_count: pd.DataFrame
     summary_errors: pd.DataFrame
-    final_model_name: str
+    final_model_name: Optional[str] = None
     models: Sequence[Model] = ()
     summary_models: Optional[pd.DataFrame] = None  # NOTE Not present in Results
     tool_database: Optional[ToolDatabase] = None  # NOTE Not present in Results
