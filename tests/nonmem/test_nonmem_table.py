@@ -67,7 +67,6 @@ def test_create_phi_table(tmp_path):
         df = pd.DataFrame({'ETA(1)': [1, 2], 'ETA(2)': [5, 6]}, index=[1, 2])
         df.index.name = 'ID'
         phi = PhiTable(df=df)
-        phi.create_content()
         correct = (
             ' SUBJECT_NO   ID           ETA(1)       ETA(2)      \n'
             '            1            1  1.00000E+00  5.00000E+00\n'
@@ -103,7 +102,7 @@ def test_nonmemtablefile_notitle_github_issues_1251(tmp_path):
             )
 
         table_file = NONMEMTableFile(filename, notitle=True)
-        table = next(table_file)
+        table = table_file[0]
         df = table.data_frame
 
         assert tuple(df.columns) == ('ID', 'TIME', 'CWRES', 'CIPREDI', 'VC')

@@ -45,14 +45,10 @@ class NONMEMTableFile:
                     table = self._parse_table(current, suffix)
                     tables.append(table)
             self.tables = tables
-            self._count = 0
         elif tables is not None:
             self.tables = tables
         else:
             raise ValueError('NONMEMTableFile: path and tables cannot be both None')
-
-    def __iter__(self):
-        return self
 
     def _parse_table(
         self,
@@ -102,6 +98,12 @@ class NONMEMTableFile:
 
         return table
 
+    def __iter__(self):
+        return iter(self.tables)
+
+    def __getitem__(self, i):
+        return self.tables[i]
+
     def __len__(self):
         return len(self.tables)
 
@@ -129,15 +131,7 @@ class NONMEMTableFile:
         with open(path, 'w') as df:
             for table in self.tables:
                 print('TABLE NO.     1', file=df)
-                table.create_content()
                 print(table.content, file=df, end='')
-
-    def __next__(self):
-        if self._count >= len(self):
-            raise StopIteration
-        else:
-            self._count += 1
-            return self.tables[self._count - 1]
 
 
 class NONMEMTable:
@@ -165,6 +159,22 @@ class NONMEMTable:
     @property
     def data_frame(self):
         return self._df
+
+    @property
+    def content(self):
+        df = self._df.copy(deep=True)
+        df.reset_index(inplace=True)
+        df.insert(loc=0, column='SUBJECT_NO', value=np.arange(len(df)) + 1)
+        fmt = '%13d%13d' + '%13.5E' * (len(df.columns) - 2)
+
+        header_fmt = ' %-12s' * len(df.columns) + '\n'
+        header = header_fmt % tuple(df.columns)
+
+        with StringIO() as s:
+            np.savetxt(s, df.values, fmt=fmt)
+            body = s.getvalue()
+
+        return header + body
 
     @staticmethod
     def rename_index(df, ext=True):
@@ -229,21 +239,6 @@ class PhiTable(NONMEMTable):
         ]
         etcs = pd.Series(etc_frames, index=df['ID'], dtype='object')
         return etcs
-
-    def create_content(self):
-        df = self._df.copy(deep=True)
-        df.reset_index(inplace=True)
-        df.insert(loc=0, column='SUBJECT_NO', value=np.arange(len(df)) + 1)
-        fmt = '%13d%13d' + '%13.5E' * (len(df.columns) - 2)
-
-        header_fmt = ' %-12s' * len(df.columns) + '\n'
-        header = header_fmt % tuple(df.columns)
-
-        with StringIO() as s:
-            np.savetxt(s, df.values, fmt=fmt)
-            body = s.getvalue()
-
-        self.content = header + body
 
 
 class ExtTable(NONMEMTable):

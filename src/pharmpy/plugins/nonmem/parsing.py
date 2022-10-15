@@ -21,7 +21,7 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
 )
-from pharmpy.plugins.nonmem.table import NONMEMTableFile
+from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 
 from .advan import _compartmental_model
 from .parameters import parameter_translation
@@ -442,7 +442,8 @@ def parse_initial_individual_estimates(control_stream, rvs, basepath) -> Optiona
             path = path_absolute(basepath / path)
         phi_tables = NONMEMTableFile(path)
         rv_names = [rv for rv in rvs.names if rv.startswith('ETA')]
-        phitab = next(phi_tables)
+        phitab = phi_tables[0]
+        assert isinstance(phitab, PhiTable)
         names = [name for name in rv_names if name in phitab.etas.columns]
         return phitab.etas[names]
     else:
