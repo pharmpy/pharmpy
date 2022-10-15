@@ -235,13 +235,15 @@ class PhiTable(NONMEMTable):
         df.reset_index(inplace=True)
         df.insert(loc=0, column='SUBJECT_NO', value=np.arange(len(df)) + 1)
         fmt = '%13d%13d' + '%13.5E' * (len(df.columns) - 2)
+
+        header_fmt = ' %-12s' * len(df.columns) + '\n'
+        header = header_fmt % tuple(df.columns)
+
         with StringIO() as s:
             np.savetxt(s, df.values, fmt=fmt)
-            self.content = s.getvalue()
-        with StringIO() as s:
-            header_fmt = ' %-12s' * len(df.columns) + '\n'
-            header = header_fmt % tuple(df.columns)
-            self.content = header + self.content
+            body = s.getvalue()
+
+        self.content = header + body
 
 
 class ExtTable(NONMEMTable):
