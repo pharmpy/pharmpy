@@ -1135,17 +1135,14 @@ def update_estimation(model: Model):
                     protected_attributes += ['EONLY']
             if est.maximum_evaluations is not None:
                 op_prev, est_prev = prev
-                assert op_prev is not None
-                assert est_prev is not None
-                if (
+                if not (
                     est.method.startswith('FO')
                     and op_prev == -1
                     and est.evaluation
+                    and est_prev is not None
                     and not est_prev.evaluation
                     and est_prev.maximum_evaluations == est.maximum_evaluations
                 ):
-                    pass
-                else:
                     if set(protected_attributes).intersection({'MAXEVALS', 'MAXEVAL'}):
                         raise ValueError('MAXEVAL already set by evaluation=True')
                     est_code += f' MAXEVAL={est.maximum_evaluations}'
