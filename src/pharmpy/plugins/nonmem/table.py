@@ -20,7 +20,9 @@ class NONMEMTableFile:
                 raise OSError("Empty table file")
             with open(str(path), 'r') as tablefile:
                 if notitle:
-                    self._add_table(tablefile.read().splitlines(), notitle=notitle, nolabel=nolabel)
+                    self._add_table(
+                        tablefile.read().splitlines(keepends=True), notitle=notitle, nolabel=nolabel
+                    )
                 else:
                     current = []
                     for line in tablefile:
@@ -41,6 +43,8 @@ class NONMEMTableFile:
         return self
 
     def _add_table(self, content, suffix=None, notitle=False, nolabel=False):
+        # NOTE Content lines must contain endlines!
+
         table_line = None if notitle else content.pop(0)
 
         if suffix == '.ext':
