@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import re
 from io import StringIO
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Union
 
 import pharmpy.math
 from pharmpy.deps import numpy as np
@@ -11,28 +13,38 @@ from pharmpy.deps import pandas as pd
 class NONMEMTableFile:
     """A NONMEM table file that can contain multiple tables"""
 
-    def __init__(self, path=None, tables=None, notitle=False, nolabel=False):
+    def __init__(
+        self,
+        path: Optional[Union[str, Path]] = None,
+        tables: Optional[List[NONMEMTable]] = None,
+        notitle: bool = False,
+        nolabel: bool = False,
+    ):
         if path is not None:
             path = Path(path)
             suffix = path.suffix
-            self.tables = []
+            tables = []
             if path.stat().st_size == 0:
                 raise OSError("Empty table file")
             with open(str(path), 'r') as tablefile:
                 if notitle:
-                    self._add_table(
+                    table = self._parse_table(
                         tablefile.read().splitlines(keepends=True), notitle=notitle, nolabel=nolabel
                     )
+                    tables.append(table)
                 else:
                     current = []
                     for line in tablefile:
                         if line.startswith("TABLE NO."):
                             if current:
-                                self._add_table(current, suffix)
+                                table = self._parse_table(current, suffix)
+                                tables.append(table)
                             current = [line]
                         else:
                             current.append(line)
-                    self._add_table(current, suffix)
+                    table = self._parse_table(current, suffix)
+                    tables.append(table)
+            self.tables = tables
             self._count = 0
         elif tables is not None:
             self.tables = tables
@@ -42,7 +54,13 @@ class NONMEMTableFile:
     def __iter__(self):
         return self
 
-    def _add_table(self, content, suffix=None, notitle=False, nolabel=False):
+    def _parse_table(
+        self,
+        content: List[str],
+        suffix: Optional[str] = None,
+        notitle: bool = False,
+        nolabel: bool = False,
+    ) -> NONMEMTable:
         # NOTE Content lines must contain endlines!
 
         table_line = None if notitle else content.pop(0)
@@ -81,7 +99,8 @@ class NONMEMTableFile:
                 table.iteration1 = int(m.group(6))
                 table.superproblem2 = int(m.group(7))
                 table.iteration2 = int(m.group(8))
-        self.tables.append(table)
+
+        return table
 
     def __len__(self):
         return len(self.tables)
