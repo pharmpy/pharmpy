@@ -1,5 +1,5 @@
-Next release
-------------
+0.79.0
+------
 
 New features
 ============
@@ -55,6 +55,7 @@ Changes
 * Move summarize_errors to pharmpy.tools
 * Move rank_models to pharmpy.tools
 * Move summarize_modelfit_results to pharmpy.tools
+* Speedup parsing of NONMEM results
 
 Bug fixes
 =========
