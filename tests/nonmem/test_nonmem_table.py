@@ -89,3 +89,22 @@ def test_errors(testdata):
     assert isinstance(ext_table, ExtTable)
     with pytest.raises(ValueError):
         ext_table.data_frame
+
+
+def test_nonmemtablefile_notitle_github_issues_1251(tmp_path):
+    filename = 'tab'
+    with TemporaryDirectoryChanger(tmp_path):
+
+        with open(filename, 'w') as fd:
+            fd.write(
+                ' ID          TIME        CWRES       CIPREDI     VC\n'
+                '  1.1000E+02  0.0000E+00  0.0000E+00  0.0000E+00  9.5921E+01\n'
+                '  1.1000E+02  0.0000E+00  0.0000E+00  0.0000E+00  9.5921E+01\n'
+            )
+
+        table_file = NONMEMTableFile(filename, notitle=True)
+        table = next(table_file)
+        df = table.data_frame
+
+        assert tuple(df.columns) == ('ID', 'TIME', 'CWRES', 'CIPREDI', 'VC')
+        assert len(df) == 2
