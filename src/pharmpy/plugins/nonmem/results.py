@@ -149,14 +149,17 @@ def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
 
 def parse_matrix(path, model, table_numbers):
     try:
-        table = NONMEMTableFile(path)
+        tables = NONMEMTableFile(path)
     except OSError:
         return None
 
-    df = table.table_no(table_numbers[-1]).data_frame
+    last_table = tables.table_no(table_numbers[-1])
+    assert last_table is not None
+    df = last_table.data_frame
     if df is not None:
         if model:
-            df = df.rename(index=parameter_translation(model.internals.control_stream))
+            index = parameter_translation(model.internals.control_stream)
+            df = df.rename(index=index)
             df.columns = df.index
     return df
 
@@ -444,6 +447,7 @@ def parse_ofv(model, ext_tables, subproblem):
     step = []
     iteration = []
     ofv = []
+    final_table = None
     for i, table in enumerate(ext_tables.tables, start=1):
         if subproblem and table.subproblem != subproblem:
             continue
@@ -454,6 +458,8 @@ def parse_ofv(model, ext_tables, subproblem):
         iteration += list(df['ITERATION'])
         ofv += list(df['OBJ'])
         final_table = table
+
+    assert final_table is not None
     final_ofv = final_table.final_ofv
     ofv_iterations = create_ofv_iterations_series(ofv, step, iteration)
     return final_ofv, ofv_iterations
@@ -470,6 +476,9 @@ def calculate_relative_standard_errors(pe, se):
 
 def parse_parameter_estimates(model, ext_tables, subproblem):
     pe = pd.DataFrame()
+    fixed_param_names = []
+    final_table = None
+    fix = None
     for i, table in enumerate(ext_tables.tables, start=1):
         if subproblem and table.subproblem != subproblem:
             continue
@@ -483,15 +492,18 @@ def parse_parameter_estimates(model, ext_tables, subproblem):
         if model:
             df = df.rename(columns=parameter_translation(model.internals.control_stream))
         pe = pd.concat([pe, df])
+        final_table = table
 
-    final = table.final_parameter_estimates
+    assert fix is not None
+    assert final_table is not None
+    final = final_table.final_parameter_estimates
     final = final.drop(fixed_param_names)
     if model:
         final = final.rename(index=parameter_translation(model.internals.control_stream))
     pe = pe.rename(columns={'ITERATION': 'iteration'}).set_index(['step', 'iteration'])
 
     try:
-        sdcorr = table.omega_sigma_stdcorr[~fix]
+        sdcorr = final_table.omega_sigma_stdcorr[~fix]
     except KeyError:
         sdcorr_ests = pd.Series(np.nan, index=pe.index)
     else:
@@ -524,14 +536,15 @@ def parse_standard_errors(model, ext_tables):
 
 def get_fixed_parameters(table, model):
     try:
-        fix = table.fixed
+        return table.fixed
     except KeyError:
         # NM 7.2 does not have row -1000000006 indicating FIXED status
         ests = table.final_parameter_estimates
         if model:
             fixed = pd.Series(model.parameters.fix)
-            fix = pd.concat([fixed, pd.Series(True, index=ests.index.difference(fixed.index))])
-    return fix
+            return pd.concat([fixed, pd.Series(True, index=ests.index.difference(fixed.index))])
+
+    raise ValueError('Could not get fixed parameters')
 
 
 def simfit_results(model, model_path):
