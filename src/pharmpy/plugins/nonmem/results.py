@@ -9,7 +9,7 @@ from pharmpy.workflows.log import Log
 from .parameters import parameter_translation
 from .random_variables import rv_translation
 from .results_file import NONMEMResultsFile
-from .table import NONMEMTableFile
+from .table import NONMEMTableFile, PhiTable
 
 
 def parse_modelfit_results(model, path, subproblem=None):
@@ -265,18 +265,20 @@ def parse_phi(model, path):
     if table is None:
         return None, None, None
 
-    trans = rv_translation(model.internals.control_stream, reverse=True)
-    rv_names = [name for name in model.random_variables.etas.names if name in trans]
+    assert isinstance(table, PhiTable)
+
+    columns = rv_translation(model.internals.control_stream)
+    trans = set(columns.values())
+    rv_names = list(filter(trans.__contains__, model.random_variables.etas.names))
     try:
         individual_ofv = table.iofv
-        individual_estimates = table.etas.rename(
-            columns=rv_translation(model.internals.control_stream)
-        )[rv_names]
+        individual_estimates = table.etas.rename(columns=columns)[rv_names]
         covs = table.etcs
+        index = columns
         covs = covs.transform(
             lambda cov: cov.rename(
-                columns=rv_translation(model.internals.control_stream),
-                index=rv_translation(model.internals.control_stream),
+                columns=columns,
+                index=index,
             )
         )
         covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
