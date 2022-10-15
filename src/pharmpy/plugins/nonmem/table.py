@@ -156,7 +156,7 @@ class NONMEMTable:
 
     def __init__(self, content=None, df=None):
         if content is not None:
-            self._df = pd.read_table(StringIO(content), sep=r'\s+', engine='python')
+            self._df = pd.read_table(StringIO(content), sep=r'\s+', engine='c')
         elif df is not None:
             self._df = df
         else:
