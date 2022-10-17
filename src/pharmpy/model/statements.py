@@ -1437,6 +1437,7 @@ class Compartment:
         if self.dose is not None:
             symbs |= self.dose.free_symbols
         symbs |= self.lag_time.free_symbols
+        symbs |= self.bioavailability.free_symbols
         return symbs
 
     def subs(self, substitutions):
