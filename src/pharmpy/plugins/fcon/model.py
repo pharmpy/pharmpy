@@ -24,12 +24,11 @@ class Model(BaseModel):
         self.code = src
         self.path = path
 
-    @property
-    def dataset(self):
-        found = False
+    def _parse_labels_and_formats(self):
         in_labl = False
         labels = []
-        for line in self.code.split('\n'):
+        lines = iter(self.code.split('\n'))
+        for line in lines:
             if line.startswith('LABL'):
                 in_labl = True
             if in_labl:
@@ -40,12 +39,17 @@ class Model(BaseModel):
                     a = stripped.split(',')
                     labels.extend(a)
             if line.startswith('FORM'):
-                found = True
-            elif found:
-                formats = line.strip()[1:-1].split(',')
+                next_line = next(lines)
+                formats = next_line.strip()[1:-1].split(',')
                 break
-        if not found:
+        else:
             raise ModelSyntaxError("Problems parsing the FORM record in FCONS")
+
+        return labels, formats
+
+    @property
+    def dataset(self):
+        labels, formats = self._parse_labels_and_formats()
         widths = []
         for fmt in formats:
             m = re.match(r'(\d+)\w(\d+)', fmt)
