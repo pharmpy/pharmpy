@@ -23,9 +23,9 @@ def _model_count(rundir: Path):
 )
 def test_amd(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', '.')
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.datainfo', '.')
-        input = 'mox_simulated_normal.csv'
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.csv', '.')
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.datainfo', '.')
+        input = 'moxo_simulated_amd.csv'
         res = run_amd(
             input,
             modeltype='pk_oral',
