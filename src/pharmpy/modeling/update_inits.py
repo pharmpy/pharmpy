@@ -2,8 +2,10 @@
 :meta private:
 """
 
+from pharmpy.model import Model
 
-def update_inits(model, parameter_estimates, move_est_close_to_bounds=False):
+
+def update_inits(model: Model, parameter_estimates, move_est_close_to_bounds=False):
     """Update initial parameter estimate for a model
 
     Updates initial estimates of population parameters for a model.
@@ -36,15 +38,10 @@ def update_inits(model, parameter_estimates, move_est_close_to_bounds=False):
     {'THETA(1)': 0.00469555, 'THETA(2)': 0.984258, 'THETA(3)': 0.15892, 'OMEGA(1,1)': 0.0293508...}
 
     """
-    if isinstance(model, list) and len(model) == 1:
-        model = model[0]
-
     if move_est_close_to_bounds:
-        param_est = _move_est_close_to_bounds(model, parameter_estimates)
-    else:
-        param_est = parameter_estimates
+        parameter_estimates = _move_est_close_to_bounds(model, parameter_estimates)
 
-    model.parameters = model.parameters.set_initial_estimates(param_est)
+    model.parameters = model.parameters.set_initial_estimates(parameter_estimates)
 
     return model
 
