@@ -485,9 +485,7 @@ class DataInfo(Sequence):
                 cols.append(self._columns[index])
             return DataInfo(columns=cols)
         if isinstance(i, slice):
-            return DataInfo(
-                self._columns[i.start : i.stop : i.step], path=self._path, separator=self._separator
-            )
+            return DataInfo(self._columns[i], path=self._path, separator=self._separator)
 
         return self._columns[self._getindex(i)]
 
