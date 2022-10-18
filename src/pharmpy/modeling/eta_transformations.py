@@ -167,10 +167,7 @@ def _create_new_thetas(model, transformation, no_of_thetas):
     thetas = dict()
     theta_name = str(create_symbol(model, stem=transformation, force_numbering=True))
 
-    if transformation == 'lambda':
-        param_settings = [0.01, -3, 3]
-    else:
-        param_settings = [80, 3, 100]
+    param_settings = (0.01, -3, 3) if transformation == 'lambda' else (80, 3, 100)
 
     if no_of_thetas == 1:
         pset.append(Parameter(theta_name, *param_settings))
