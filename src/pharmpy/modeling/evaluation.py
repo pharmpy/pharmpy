@@ -17,10 +17,10 @@ from .expressions import (
     get_population_prediction_expression,
 )
 
-ParameterMap = Mapping[Union[str, sympy.Symbol], Union[float, sympy.Float]]
+ParameterMap = Mapping[Union[str, 'sympy.Symbol'], Union[float, 'sympy.Float']]
 
 
-class DataFrameMapping(Mapping[sympy.Symbol, np.ndarray]):
+class DataFrameMapping(Mapping['sympy.Symbol', 'np.ndarray']):
     def __init__(self, df: pd.DataFrame):
         self._df = df
 
