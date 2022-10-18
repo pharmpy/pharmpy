@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache, reduce
 from itertools import chain
 from operator import __and__, is_
-from typing import Callable, Dict, Iterable, List, Set
+from typing import Callable, Dict, Iterable, List, Mapping, Set
 
 from pharmpy.deps import sympy
 
@@ -77,7 +77,7 @@ def _sympify_new(new) -> sympy.Expr:
     return sympy.sympify(new, strict=not isinstance(new, (str, type)))
 
 
-def subs(expr: sympy.Expr, mapping: Dict[sympy.Expr, sympy.Expr], simultaneous: bool = False):
+def subs(expr: sympy.Expr, mapping: Mapping[sympy.Expr, sympy.Expr], simultaneous: bool = False):
     _mapping = xreplace_dict(mapping)
     if (simultaneous or _mapping_is_not_recursive(_mapping)) and all(
         map(_old_does_not_need_generic_subs, _mapping.keys())
