@@ -57,7 +57,8 @@ def evaluate_expression(model, expression, parameter_estimates=None):
     expression = sympify(expression)
     full_expr = model.statements.before_odes.full_expression(expression)
     inits = model.parameters.inits
-    expr = subs(subs(full_expr, dict(parameter_estimates)), inits)
+    mapping = inits if parameter_estimates is None else {**inits, **parameter_estimates}
+    expr = subs(full_expr, mapping)
     data = model.dataset
 
     def func(row):
