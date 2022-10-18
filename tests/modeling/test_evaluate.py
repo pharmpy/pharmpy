@@ -29,7 +29,7 @@ def test_evaluate_expression(load_model_for_test, testdata):
     assert ser[743] == pytest.approx(1.110262)
 
 
-def test_evaulate_population_prediction(load_model_for_test, testdata):
+def test_evaluate_population_prediction(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'minimal.mod'
     model = load_model_for_test(path)
 
