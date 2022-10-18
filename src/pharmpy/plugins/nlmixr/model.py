@@ -3,7 +3,9 @@ import os
 import subprocess
 import uuid
 import warnings
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
@@ -44,6 +46,7 @@ def convert_model(model):
 
     generic_model = convert_model(model, 'generic')
     nlmixr_model.__dict__ = generic_model.__dict__
+    nlmixr_model.internals = NLMIXRModelInternals()
     nlmixr_model.filename_extension = '.R'
     nlmixr_model.update_source()
     return nlmixr_model
@@ -124,9 +127,10 @@ def create_model(cg, model):
     for s in model.statements:
         if isinstance(s, Assignment):
             if s.symbol == model.dependent_variable:
-
+                sigma = None
                 for dist in model.random_variables.epsilons:
                     sigma = dist.variance
+                assert sigma is not None
                 # FIXME: Needs to be generalized
                 cg.add('Y <- F')
                 cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')
@@ -163,7 +167,16 @@ def create_fit(cg, model):
     cg.add(f'fit <- nlmixr({model.name}, dataset, "focei")')
 
 
+@dataclass
+class NLMIXRModelInternals:
+    src: Optional[str] = None
+    path: Optional[Path] = None
+
+
 class Model(pharmpy.model.Model):
+    def __init__(self):
+        self.internals = NLMIXRModelInternals()
+
     def update_source(self, path=None):
         cg = CodeGenerator()
         cg.add('library(nlmixr)')
@@ -178,13 +191,15 @@ class Model(pharmpy.model.Model):
         cg.add('}')
         cg.empty_line()
         create_fit(cg, self)
-        self._src = str(cg)
-        self._path = None
+        self.internals.src = str(cg)
+        self.internals.path = None
 
     @property
     def model_code(self):
-        self.update_source(path=self._path)
-        return self._src
+        self.update_source(path=self.internals.path)
+        code = self.internals.src
+        assert code is not None
+        return code
 
 
 def parse_modelfit_results(model, path):
@@ -227,7 +242,7 @@ def execute_model(model, db):
     database = db.model_database
     model = convert_model(model)
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
-    model._path = path
+    model.internals.path = path
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     write_csv(model, path=path)
