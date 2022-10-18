@@ -16,6 +16,7 @@ __all__ = (
     'run_covsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_iivsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_iovsearch',  # pyright: ignore [reportUnsupportedDunderAll]
+    'run_modelfit',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_modelsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_ruvsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_tool',  # pyright: ignore [reportUnsupportedDunderAll]

@@ -11,9 +11,6 @@ from .run import run_tool
 
 def wrap(tool_name: str) -> Callable:
 
-    if tool_name == 'modelfit':
-        raise ValueError('Cannot wrap `modelfit` tool.')
-
     tool_module = importlib.import_module(f'pharmpy.tools.{tool_name}')
 
     if 'create_workflow' not in dir(tool_module):
