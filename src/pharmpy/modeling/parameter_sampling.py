@@ -314,6 +314,7 @@ def sample_individual_estimates(
 
     """
     rng = create_rng(rng)
+    assert rng is not None
     ests = individual_estimates
     covs = individual_estimates_covariance
     if parameters is None:
