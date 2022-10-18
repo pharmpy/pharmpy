@@ -621,7 +621,7 @@ def expand_additional_doses(model, flag=False):
     df = df.apply(fn, axis=1)
     df = df.apply(lambda x: x.explode() if x.name in ['_TIMES', '_EXPANDED'] else x)
     df = df.astype({'_EXPANDED': np.bool_})
-    df = df.groupby([idcol, '_RESETGROUP']).apply(
+    df = df.groupby([idcol, '_RESETGROUP'], group_keys=False).apply(
         lambda x: x.sort_values(by='_TIMES', kind='stable')
     )
     df[idv] = df['_TIMES']
@@ -900,7 +900,7 @@ def add_time_after_dose(model):
                     df.loc[i, 'TAD'] = ii_time
             return df
 
-        df = df.groupby([idlab, idv, '_DOSEID']).apply(fn)
+        df = df.groupby([idlab, idv, '_DOSEID'], group_keys=False).apply(fn)
 
     df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
 

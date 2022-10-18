@@ -1,4 +1,5 @@
 import json
+import warnings
 from lzma import open as lzma_open
 from pathlib import Path
 from typing import Any, Dict
@@ -165,7 +166,14 @@ class ResultsJSONEncoder(json.JSONEncoder):
             d['__class__'] = 'Series'
             return d
         elif obj.__class__.__module__.startswith('altair.'):
-            d = obj.to_dict()
+            with warnings.catch_warnings():
+                # FIXME Remove filter once altair stops relying on deprecated APIs
+                warnings.filterwarnings(
+                    "ignore",
+                    message=".*iteritems is deprecated and will be removed in a future version. Use .items instead.",
+                    category=FutureWarning,
+                )
+                d = obj.to_dict()
             d['__class__'] = 'vega-lite'
             return d
         elif isinstance(obj, Model):

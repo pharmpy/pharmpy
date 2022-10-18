@@ -57,7 +57,9 @@ def candidate_summary_dataframe(steps):
             ],
             index=forward_steps.index,
         )
-        return df.groupby(level=['parameter', 'covariate', 'extended_state']).sum(min_count=1)
+        return df.groupby(level=['parameter', 'covariate', 'extended_state']).sum(
+            numeric_only=True, min_count=1
+        )
 
 
 def ofv_summary_dataframe(steps, final_included=True, iterations=True):
