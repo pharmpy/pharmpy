@@ -1,6 +1,6 @@
 import copy
 import uuid
-from typing import Generic, TypeVar
+from typing import Generic, Optional, TypeVar
 
 from pharmpy.deps import networkx as nx
 
@@ -19,8 +19,9 @@ class Workflow(Generic[T]):
         List of tasks for initialization
     """
 
-    def __init__(self, tasks=None):
+    def __init__(self, tasks=None, name: Optional[str] = None):
         self._g = nx.DiGraph()
+        self.name = name
         if tasks:
             for task in tasks:
                 self.add_task(task)
