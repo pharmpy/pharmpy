@@ -6,9 +6,10 @@ to point to your grammar file) to define a powerful parser.
 """
 import copy
 import re
+from abc import ABC
 from typing import Optional
 
-from lark import Tree  # pyright: ignore [reportPrivateImportUsage]
+from lark import Lark, Tree  # pyright: ignore [reportPrivateImportUsage]
 from lark.lexer import Token
 
 from . import prettyprint
@@ -424,7 +425,7 @@ class NoSuchRuleException(AttributeError):
         super().__init__(f'no {repr(rule)} child in tree{post}')
 
 
-class GenericParser:
+class GenericParser(ABC):
     """
     Generic parser using lark.
 
@@ -452,6 +453,7 @@ class GenericParser:
     """:class:`AttrTree` implementation."""
     AttrTree = AttrTree
 
+    lark: Lark
     lark_options = dict(
         ambiguity='resolve',
         debug=False,
