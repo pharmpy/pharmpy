@@ -373,7 +373,7 @@ class Model(pharmpy.model.Model):
         # Let TIME be the idv in both $PK and $PRED models
         # Remove individuals without observations
         col_names = list(df.columns)
-        have_pk = self.internals.control_stream.get_pk_record()
+        have_pk = control_stream.get_pk_record()
         if have_pk:
             if 'EVID' in col_names:
                 df_obs = df.astype({'EVID': 'float'}).query('EVID == 0')
