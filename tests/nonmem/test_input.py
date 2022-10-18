@@ -11,6 +11,17 @@ def test_read_raw_dataset(pheno):
     assert list(df.columns) == ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
 
 
+def test_remove_individuals_without_observations(create_model_for_test, datadir):
+    # first individual of data has no observations
+    data = datadir / 'pheno_no_obs_1stID.dta'
+    model = create_model_for_test(
+        f"$PROBLEM\n$INPUT ID TIME AMT WT APGR DV FA1 FA2\n" f"$DATA {data} IGNORE=@\n" f"$PK\n"
+    )
+    df = model.dataset
+    assert 1 not in df['ID']
+    assert len(df['ID'].unique()) == 58
+
+
 def test_ignore_with_synonym(create_model_for_test, pheno_data):
     model = create_model_for_test(
         f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"

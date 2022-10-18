@@ -371,18 +371,19 @@ class Model(pharmpy.model.Model):
             dtype=None if raw else self.datainfo.get_dtype_dict(),
         )
         # Let TIME be the idv in both $PK and $PRED models
-
         # Remove individuals without observations
-        try:
-            from pharmpy.modeling.data import get_observations
-
-            # This is a hack to be able to use the get_observations function
-            # before the dataset has been properly read in.
-            self._data_frame = df
-            have_obs = set(get_observations(self).index.unique(level=0))
-        except DatasetError:
-            pass
-        else:
+        col_names = list(df.columns)
+        have_pk = self.internals.control_stream.get_pk_record()
+        if have_pk:
+            if 'EVID' in col_names:
+                df_obs = df.astype({'EVID': 'float'}).query('EVID == 0')
+            elif 'MDV' in col_names:
+                df_obs = df.astype({'MDV': 'float'}).query('MDV == 0')
+            elif 'AMT' in col_names:
+                df_obs = df.astype({'AMT': 'float'}).query('AMT == 0')
+            else:
+                raise DatasetError('Could not identify observation rows in dataset')
+            have_obs = set(df_obs['ID'].unique())
             all_ids = set(df['ID'].unique())
             ids_to_remove = all_ids - have_obs
             df = df[~df['ID'].isin(ids_to_remove)]
