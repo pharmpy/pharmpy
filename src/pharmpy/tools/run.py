@@ -432,6 +432,7 @@ def print_fit_summary(model):
         print_fmt("Condition number", condno)
         print_fmt("Condition number < 1000", bool_ok_error(condno < 1000))
         cor = model.modelfit_results.correlation_matrix
+        assert cor is not None
         hicorr = check_high_correlations(model, cor)
         print_fmt("No correlations arger than 0.9", bool_ok_error(hicorr.empty))
 

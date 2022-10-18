@@ -8,7 +8,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify, xreplace_dict
 from pharmpy.math import round_to_n_sigdig
-from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder
+from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
 from pharmpy.model.distributions.numeric import ConstantDistribution
 from pharmpy.model.random_variables import (
     eval_expr,
@@ -634,7 +634,7 @@ def calculate_bic(model, likelihood, type=None):
     return likelihood + penalty
 
 
-def check_high_correlations(model, cor, limit=0.9):
+def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9):
     """Check for highly correlated parameter estimates
 
     Parameters
@@ -662,10 +662,7 @@ def check_high_correlations(model, cor, limit=0.9):
               OMEGA(2,2)    0.356662
     dtype: float64
     """
-    if cor is not None:
-        high_and_below_diagonal = cor.abs().ge(limit) & np.triu(np.ones(cor.shape), k=1).astype(
-            bool
-        )
+    high_and_below_diagonal = cor.abs().ge(limit) & np.triu(np.ones(cor.shape), k=1).astype(bool)
     return cor.where(high_and_below_diagonal).stack()
 
 
