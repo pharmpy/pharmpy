@@ -891,10 +891,12 @@ def add_time_after_dose(model):
         def fn(df):
             if len(df) < 2:
                 return df
+            ii_time = None
             for i in df.index:
                 if df.loc[i, ss] > 0:
                     ii_time = df.loc[i, ii]
                 else:
+                    assert ii_time is not None
                     df.loc[i, 'TAD'] = ii_time
             return df
 
