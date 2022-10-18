@@ -87,13 +87,11 @@ def set_power_on_ruv(
                 guard_assignment = Assignment(ipred, guard_expr)
                 ind = sset.find_assignment_index('Y')
                 sset = sset[0:ind] + guard_assignment + sset[ind:]
-                break
             break
+    else:
+        alternative = None
 
-        else:
-            alternative = None
-
-    for i, e in enumerate(eps.names):
+    for e in eps.names:
         theta_name = str(create_symbol(model, stem='power', force_numbering=True))
         if lower_limit is None:
             theta = Parameter(theta_name, theta_init)
