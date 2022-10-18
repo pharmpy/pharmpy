@@ -5,7 +5,7 @@ import warnings
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
@@ -69,6 +69,7 @@ class NONMEMModelInternals:
     _old_random_variables: RandomVariables
     _old_statements: Statements
     _old_initial_individual_estimates: Optional[pd.DataFrame]
+    _compartment_map: Optional[Dict[str, int]]
 
 
 def convert_model(model):
@@ -116,7 +117,7 @@ def convert_model(model):
     nm_model.description = model.description
     nm_model.update_source()
     if model.statements.ode_system:
-        nm_model._compartment_map = {
+        nm_model.internals._compartment_map = {
             name: i for i, name in enumerate(model.statements.ode_system.compartment_names, start=1)
         }
     return nm_model
@@ -145,7 +146,7 @@ class Model(pharmpy.model.Model):
 
         parameters = parse_parameters(control_stream)
 
-        statements = parse_statements(self, control_stream)
+        statements, comp_map = parse_statements(self, control_stream)
 
         rvs = parse_random_variables(control_stream)
 
@@ -214,6 +215,7 @@ class Model(pharmpy.model.Model):
             _old_random_variables=_old_random_variables,
             _old_statements=statements,
             _old_initial_individual_estimates=init_etas,
+            _compartment_map=comp_map,
         )
 
         # NOTE This requires self.internals to be defined

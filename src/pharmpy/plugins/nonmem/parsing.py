@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
 import pharmpy.plugins.nonmem
 from pharmpy.deps import pandas as pd
@@ -75,12 +75,13 @@ def parse_random_variables(control_stream) -> RandomVariables:
     return rvs
 
 
-def parse_statements(model, control_stream) -> Statements:
+def parse_statements(model, control_stream) -> Tuple[Statements, Optional[Dict[str, int]]]:
     rec = control_stream.get_pred_pk_record()
     statements = rec.statements
 
     des = control_stream.get_des_record()
     error = control_stream.get_error_record()
+    comp_map = None
 
     if error:
         sub = control_stream.get_records('SUBROUTINES')[0]
@@ -91,7 +92,7 @@ def parse_statements(model, control_stream) -> Statements:
             # FIXME: Dummy link statement
             statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
         else:
-            cm, link = comp
+            cm, link, comp_map = comp
             statements += [cm, link]
             for i, amount in enumerate(cm.amounts, start=1):
                 trans_amounts[sympy.Symbol(f"A({i})")] = amount
@@ -99,7 +100,7 @@ def parse_statements(model, control_stream) -> Statements:
         if trans_amounts:
             statements = statements.subs(trans_amounts)
 
-    return statements
+    return statements, comp_map
 
 
 def _adjust_iovs(rvs: RandomVariables) -> RandomVariables:

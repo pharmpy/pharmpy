@@ -609,7 +609,8 @@ def pk_param_conversion(model: Model, advan, trans):
     statements = model.statements
     cs = statements.ode_system
     assert isinstance(cs, CompartmentalSystem)
-    oldmap = model._compartment_map
+    oldmap = model.internals._compartment_map
+    assert oldmap is not None
     newmap = new_compartmental_map(cs, oldmap)
     remap = create_compartment_remap(oldmap, newmap)
     d = dict()
@@ -867,16 +868,17 @@ def update_model_record(model: Model, advan):
     odes = model.statements.ode_system
     if not isinstance(odes, CompartmentalSystem):
         return
-    try:
-        newmap = new_compartmental_map(odes, model._compartment_map)
-    except AttributeError:
+
+    oldmap = model.internals._compartment_map
+    if oldmap is None:
         return
+    newmap = new_compartmental_map(odes, oldmap)
+
     if advan in ['ADVAN1', 'ADVAN2', 'ADVAN3', 'ADVAN4', 'ADVAN10', 'ADVAN11', 'ADVAN12']:
         model.internals.control_stream.remove_records(
             model.internals.control_stream.get_records('MODEL')
         )
     else:
-        oldmap = model._compartment_map
         if oldmap != newmap or model.estimation_steps[0].solver:
             model.internals.control_stream.remove_records(
                 model.internals.control_stream.get_records('MODEL')
@@ -894,7 +896,7 @@ def update_model_record(model: Model, advan):
                 else:
                     mod.add_compartment(comps[i], dosing=False)
                 i += 1
-    model._compartment_map = newmap
+    model.internals._compartment_map = newmap
 
 
 def add_needed_pk_parameters(model: Model, advan, trans):
@@ -952,7 +954,9 @@ def add_needed_pk_parameters(model: Model, advan, trans):
         add_parameters_ratio(model, 'Q2', 'V2', peripheral1, central)
         add_parameters_ratio(model, 'Q3', 'V3', peripheral2, central)
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
-        newmap = new_compartmental_map(odes, model._compartment_map)
+        oldmap = model.internals._compartment_map
+        assert oldmap is not None
+        newmap = new_compartmental_map(odes, oldmap)
         for source in newmap.keys():
             for dest in newmap.keys():
                 if source != dest and source != len(newmap):

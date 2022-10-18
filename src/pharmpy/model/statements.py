@@ -360,7 +360,7 @@ class ExplicitODESystem(ODESystem):
         return sympy.Matrix(amounts)
 
     @property
-    def compartment_names(self):
+    def compartment_names(self) -> List[str]:
         """Names of all compartments
 
         Examples
@@ -371,8 +371,7 @@ class ExplicitODESystem(ODESystem):
         >>> odes.compartment_names
         ['CENTRAL', 'OUTPUT']
         """
-        names = [ode.lhs.args[0].name[2:] for ode in self.odes]
-        return names
+        return [ode.lhs.args[0].name[2:] for ode in self.odes]
 
     def __repr__(self):
         a = []
@@ -1133,7 +1132,7 @@ class CompartmentalSystem(ODESystem):
         return sympy.Matrix(amts)
 
     @property
-    def compartment_names(self):
+    def compartment_names(self) -> List[str]:
         """Names of all compartments
 
         Examples

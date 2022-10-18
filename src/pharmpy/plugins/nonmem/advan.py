@@ -315,11 +315,10 @@ def _compartmental_model(
 
         ode = ExplicitODESystem(eqs, ics)
         ass = _f_link_assignment(control_stream, sympy.Symbol('A_CENTRAL'))
-        return ode, ass
+        return ode, ass, None
     else:
         return None
-    model._compartment_map = comp_map
-    return CompartmentalSystem(cb), ass
+    return CompartmentalSystem(cb), ass, comp_map
 
 
 def _f_link_assignment(control_stream: NMTranControlStream, compartment):
