@@ -88,7 +88,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     model.estimation_steps = eststeps
     model.filename_extension = '.mod'  # Should this really be needed?
 
-    set_proportional_error_model(model, zero_protection=True)
+    set_proportional_error_model(model)
     create_joint_distribution(
         model,
         [eta_cl_name, eta_vc_name],
