@@ -1,3 +1,19 @@
+0.80.0 (2022-10-19)
+-------------------
+
+Changes
+=======
+
+* modeling.fit returns ModelfitResults instead of Model
+* Let zero_protect default to True for modeling.set_proportional_error_model
+* Faster parsing of NONMEM table files
+
+Bug fixes
+=========
+
+* Let bioavailability parameters be part of rhs of ode_system
+* Make sure initials are non-zero for absorption parameters
+
 0.79.0 (2022-10-16)
 -------------------
 
