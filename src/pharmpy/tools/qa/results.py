@@ -114,7 +114,7 @@ def outliers(simeval_res, cdd_res):
     cases.reset_index(inplace=True)
     cases.set_index('skipped_individuals', inplace=True)
     dofv = cases.loc[outliers].delta_ofv
-    top_three = dofv.sort_values(ascending=False)[:3]
+    top_three = dofv.sort_values(ascending=False).iloc[:3]
     dofv_tab = pd.DataFrame(
         {
             'section': ['outliers'] * len(top_three),
