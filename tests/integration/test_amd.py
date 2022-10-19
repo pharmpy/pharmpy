@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.tools import run_amd
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def _model_count(rundir: Path):
@@ -22,7 +22,7 @@ def _model_count(rundir: Path):
     'ignore::UserWarning',
 )
 def test_amd(tmp_path, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.csv', '.')
         shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.datainfo', '.')
         input = 'moxo_simulated_amd.csv'
@@ -56,7 +56,7 @@ def test_amd(tmp_path, testdata):
 
 
 def test_skip_most(tmp_path, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         models = testdata / 'nonmem' / 'models'
         shutil.copy2(models / 'mox_simulated_normal.csv', '.')
         shutil.copy2(models / 'mox2.mod', '.')
@@ -95,7 +95,7 @@ def test_skip_most(tmp_path, testdata):
 
 
 def test_skip_iovsearch_one_occasion(tmp_path, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         models = testdata / 'nonmem' / 'models'
         shutil.copy2(models / 'mox_simulated_normal.csv', '.')
         shutil.copy2(models / 'mox2.mod', '.')
@@ -130,7 +130,7 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
 
 
 def test_skip_iovsearch_missing_occasion(tmp_path, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         models = testdata / 'nonmem' / 'models'
         shutil.copy2(models / 'mox_simulated_normal.csv', '.')
         shutil.copy2(models / 'mox2.mod', '.')

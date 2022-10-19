@@ -9,8 +9,8 @@ from bs4 import BeautifulSoup
 from csscompressor import compress
 from sphinx.application import Sphinx
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.tmp import TemporaryDirectory
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def generate_report(rst_path, results_path):
@@ -26,7 +26,7 @@ def generate_report(rst_path, results_path):
         conf_path = Path(__file__).resolve().parent
 
         # Change directory for results.json to be found
-        with TemporaryDirectoryChanger(source_path):
+        with chdir(source_path):
             with open(os.devnull, 'w') as devnull:
                 with warnings.catch_warnings():
                     # Don't display deprecation warnings.

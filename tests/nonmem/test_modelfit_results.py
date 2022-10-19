@@ -6,9 +6,9 @@ import pytest
 
 import pharmpy.plugins.nonmem as nonmem
 from pharmpy.config import ConfigurationContext
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.plugins.nonmem.results import simfit_results
 from pharmpy.results import read_results
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_ofv(pheno):
@@ -270,7 +270,7 @@ def test_runtime_different_formats(
     shutil.copy(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_real.mod')
     shutil.copy(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_real.ext')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
 
         with open('pheno_real.lst', 'a') as f:
             f.write(lst_file_repl)

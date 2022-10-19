@@ -1,3 +1,4 @@
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Assignment
 from pharmpy.modeling import (
     has_additive_error_model,
@@ -14,7 +15,6 @@ from pharmpy.modeling import (
     use_thetas_for_error_stdev,
 )
 from pharmpy.modeling.error import _get_prop_init, set_time_varying_error_model
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_remove_error_model(testdata, load_model_for_test):
@@ -508,7 +508,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model.name = 'run1'
     set_dtbs_error_model(model)
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         model.update_source()
         with open('run1_contr.f90') as fh:
             assert fh.readline().startswith('      subroutine contr')

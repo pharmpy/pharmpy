@@ -1,8 +1,8 @@
 import pandas as pd
 import pytest
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.plugins.nonmem.table import CovTable, ExtTable, NONMEMTableFile, PhiTable
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_nonmem_table(pheno_ext):
@@ -63,7 +63,7 @@ def test_cov_table(pheno_cov):
 
 
 def test_create_phi_table(tmp_path):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         df = pd.DataFrame({'ETA(1)': [1, 2], 'ETA(2)': [5, 6]}, index=[1, 2])
         df.index.name = 'ID'
         phi = PhiTable(df=df)
@@ -92,7 +92,7 @@ def test_errors(testdata):
 
 def test_nonmemtablefile_notitle_github_issues_1251(tmp_path):
     filename = 'tab'
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
 
         with open(filename, 'w') as fd:
             fd.write(

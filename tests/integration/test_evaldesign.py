@@ -1,12 +1,12 @@
 import shutil
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.tools import run_tool
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_evaldesign(tmp_path, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         for path in (testdata / 'nonmem').glob('pheno_real.*'):
             shutil.copy2(path, tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)

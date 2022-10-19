@@ -3,14 +3,14 @@ import shutil
 import pytest
 
 from pharmpy.config import ConfigurationContext
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.plugins.nonmem import conf
 from pharmpy.tools import fit, run_tool
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_run_tool_ruvsearch_resume_flag(tmp_path, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         for path in (testdata / 'nonmem').glob('pheno_real.*'):
             shutil.copy2(path, tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
@@ -42,7 +42,7 @@ def test_run_tool_ruvsearch_resume_flag(tmp_path, testdata):
 
 
 def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         # FIXME: temporary workaround so that read in parameter estimates use the Pharmpy name
@@ -97,7 +97,7 @@ def test_run_tool_modelsearch_resume_flag(
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
     # FIXME: temporary workaround so that read in parameter estimates use the Pharmpy name
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
             model_start = Model.create_model('mox2.mod')
             model_start.datainfo = model_start.datainfo.derive(

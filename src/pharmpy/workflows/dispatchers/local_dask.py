@@ -1,14 +1,14 @@
 import warnings
 
 import pharmpy.workflows.dispatchers
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.tmp import TemporaryDirectory
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def run(workflow):
 
     with TemporaryDirectory() as tempdirname:
-        with TemporaryDirectoryChanger(tempdirname):
+        with chdir(tempdirname):
             dsk = workflow.as_dask_dict()
 
             if pharmpy.workflows.dispatchers.conf.dask_dispatcher:

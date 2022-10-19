@@ -8,6 +8,7 @@ import pytest
 
 import pharmpy
 from pharmpy.deps import numpy as np
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.results import read_results
 from pharmpy.tools.run import (
     _create_metadata_common,
@@ -19,7 +20,6 @@ from pharmpy.tools.run import (
     summarize_errors,
     summarize_modelfit_results,
 )
-from pharmpy.utils import TemporaryDirectoryChanger
 from pharmpy.workflows import LocalDirectoryToolDatabase, local_dask
 
 
@@ -59,7 +59,7 @@ def test_create_metadata_tool():
 
 
 def test_get_run_setup(tmp_path):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         name = 'modelsearch'
 
         dispatcher, database = _get_run_setup(common_options={}, toolname=name)
@@ -76,7 +76,7 @@ def test_get_run_setup(tmp_path):
 
 
 def test_create_metadata_common(tmp_path):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         name = 'modelsearch'
 
         dispatcher = local_dask
@@ -182,7 +182,7 @@ def test_retrieve_final_model(testdata):
 
 
 def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         model = load_model_for_test(pheno_path)
         shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
 
@@ -369,7 +369,7 @@ def test_summarize_modelfit_results(
 
 
 def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_path, pheno_path):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         model = load_model_for_test(pheno_path)
         shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
 

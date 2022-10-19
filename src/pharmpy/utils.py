@@ -1,4 +1,3 @@
-import os
 from collections.abc import Collection, Container, Iterable, Iterator, Sequence, Sized
 from functools import wraps
 from inspect import Signature, signature
@@ -12,20 +11,6 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
-
-
-class TemporaryDirectoryChanger:
-    def __init__(self, path):
-        self.path = path
-        self.old_path = Path.cwd()
-
-    def __enter__(self):
-        os.chdir(self.path)
-        return self
-
-    def __exit__(self, *args):
-        os.chdir(self.old_path)
-
 
 _unit_subs = None
 

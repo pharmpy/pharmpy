@@ -12,6 +12,7 @@ from threading import Barrier
 
 import pytest
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.lock import (
     AcquiringProcessLevelLockWouldBlockError,
     AcquiringThreadLevelLockWouldBlockError,
@@ -20,7 +21,6 @@ from pharmpy.internals.fs.lock import (
     process_level_path_lock,
     thread_level_lock,
 )
-from pharmpy.utils import TemporaryDirectoryChanger
 
 mp = get_context(method='spawn')
 
@@ -50,7 +50,7 @@ def threads(n: int):
 
 @contextmanager
 def lock(directory):
-    with TemporaryDirectoryChanger(directory):
+    with chdir(directory):
         lock = Path('lock')
         lock.touch()
         path = str(lock)

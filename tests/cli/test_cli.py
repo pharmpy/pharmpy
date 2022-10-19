@@ -7,7 +7,7 @@ from contextlib import redirect_stdout
 import pytest
 
 import pharmpy.cli as cli
-from pharmpy.utils import TemporaryDirectoryChanger
+from pharmpy.internals.fs.cwd import chdir
 
 
 def test_model_print(datadir, capsys):
@@ -23,7 +23,7 @@ def test_add_covariate_effect(datadir, operation, tmp_path):
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
     shutil.copy(datadir / 'pheno.datainfo', tmp_path / 'pheno.datainfo')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         args = ['model', 'add_cov_effect', 'run1.mod', 'CL', 'WGT', 'exp', '--operation', operation]
         cli.main(args)
 
@@ -44,7 +44,7 @@ def test_eta_transformation(datadir, transformation, eta, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         args = ['model', transformation, 'run1.mod', '--etas', 'ETA(1)']
         cli.main(args)
 
@@ -65,7 +65,7 @@ def test_add_iiv(datadir, options, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         args = ['model', 'add_iiv', 'run1.mod', 'S1', 'exp'] + options
         cli.main(args)
 
@@ -84,7 +84,7 @@ def test_add_iov(datadir, options, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
 
         args = ['model', 'add_iov', 'run1.mod', 'FA1', '--etas', 'ETA(1)'] + options
         cli.main(args)
@@ -123,7 +123,7 @@ def test_create_joint_distribution(datadir, eta_args, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
 
         args = ['model', 'create_joint_distribution', 'run1.mod'] + eta_args
         cli.main(args)
@@ -145,7 +145,7 @@ def test_iiv_on_ruv(datadir, epsilons_args, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
 
         args = ['model', 'iiv_on_ruv', 'run1.mod'] + epsilons_args
         cli.main(args)
@@ -165,7 +165,7 @@ def test_remove_iiv(datadir, to_remove, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
 
         args = ['model', 'remove_iiv', 'run1.mod'] + to_remove
         cli.main(args)
@@ -184,7 +184,7 @@ def test_remove_iov(datadir, tmp_path):
     shutil.copy(datadir / 'qa/iov.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
 
         args = ['model', 'remove_iov', 'run1.mod']
         cli.main(args)
@@ -207,7 +207,7 @@ def test_power_on_ruv(datadir, epsilons_args, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
 
         args = ['model', 'power_on_ruv', 'run1.mod'] + epsilons_args
         cli.main(args)
@@ -228,7 +228,7 @@ def test_update_inits(datadir, tmp_path):
     shutil.copy(datadir / 'pheno_real.phi', tmp_path / 'run1.phi')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
 
         args = ['model', 'update_inits', 'run1.mod']
         cli.main(args)
@@ -242,7 +242,7 @@ def test_model_sample(datadir, tmp_path):
     shutil.copy(datadir / 'pheno_real.cov', tmp_path / 'run1.cov')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
 
         args = ['model', 'sample', 'run1.mod', '--seed=24']
         cli.main(args)

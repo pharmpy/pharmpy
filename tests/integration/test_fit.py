@@ -4,10 +4,10 @@ import pytest
 
 import pharmpy.modeling as modeling
 from pharmpy.config import site_config_dir, user_config_dir
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.plugins.nonmem import conf
 from pharmpy.tools import fit
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_configuration():
@@ -18,7 +18,7 @@ def test_configuration():
 
 
 def test_fit_single(tmp_path, model_count, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         model = Model.create_model('pheno.mod')
@@ -32,7 +32,7 @@ def test_fit_single(tmp_path, model_count, testdata):
 
 
 def test_fit_multiple(tmp_path, model_count, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path / 'pheno_1.mod')
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno_1.dta')
         model_1 = Model.create_model('pheno_1.mod')
@@ -52,7 +52,7 @@ def test_fit_multiple(tmp_path, model_count, testdata):
 
 
 def test_fit_copy(tmp_path, model_count, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path / 'pheno.mod')
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno.dta')
 
@@ -80,7 +80,7 @@ def test_fit_nlmixr(tmp_path, testdata):
 
     if str(conf.rpath) == '.':
         pytest.skip("No R selected in conf. Skipping nlmixr tests")
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         model = Model.create_model('pheno.mod')

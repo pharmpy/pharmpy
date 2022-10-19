@@ -1,13 +1,13 @@
 import shutil
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.modeling import remove_covariance_step
 from pharmpy.tools import retrieve_final_model, run_tool
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_ruvsearch(tmp_path, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):
             shutil.copy2(path, tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'ruvsearch' / 'moxo_simulated_resmod.csv', tmp_path)

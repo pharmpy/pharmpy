@@ -4,13 +4,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import read_model
 from pharmpy.tools import fit, run_modelsearch
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_exhaustive(tmp_path, model_count, start_model):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         res = run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=start_model)
 
         assert len(res.summary_tool) == 4
@@ -54,7 +54,7 @@ def test_exhaustive_stepwise_basic(
     last_model_parent_name,
     model_with_error,
 ):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         res = run_modelsearch(search_space, 'exhaustive_stepwise', model=start_model)
 
         assert len(res.summary_tool) == no_of_models + 1
@@ -103,7 +103,7 @@ def test_exhaustive_stepwise_iiv_strategies(
     no_of_models,
     no_of_added_etas,
 ):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         res = run_modelsearch(
             search_space,
             'exhaustive_stepwise',
@@ -131,7 +131,7 @@ def test_exhaustive_stepwise_iiv_strategies(
 
 
 def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, model_count, start_model):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         start_model = start_model.copy()
         start_model.name = 'start_model_copy'
         start_model.modelfit_results = None
@@ -150,7 +150,7 @@ def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, model_count, start
 
 
 def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_model):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         res = run_modelsearch('PERIPHERALS(1)', 'exhaustive_stepwise', model=start_model)
 
         assert ',999999) ; POP_QP1' in res.models[0].model_code
@@ -158,7 +158,7 @@ def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_model):
 
 
 def test_summary_individuals(tmp_path, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         m = read_model('pheno_real.mod')
