@@ -21,6 +21,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
+from pharmpy.results import ModelfitResults
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import execute_workflow, split_common_options
@@ -30,7 +31,7 @@ from pharmpy.workflows.tool_database import ToolDatabase
 
 def fit(
     model_or_models: Union[Model, List[Model]], tool: Optional[str] = None
-) -> Union[Model, List[Model]]:
+) -> Union[ModelfitResults, List[ModelfitResults]]:
     """Fit models.
 
     Parameters
@@ -42,15 +43,15 @@ def fit(
 
     Return
     ------
-    Model | list[Model]
-        Input model or models with model fit results
+    ModelfitResults | list[ModelfitResults]
+        ModelfitResults for the model or models
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model
     >>> from pharmpy.tools import fit
     >>> model = load_example_model("pheno")      # doctest: +SKIP
-    >>> fit(model)      # doctest: +SKIP
+    >>> results = fit(model)      # doctest: +SKIP
 
     See also
     --------
@@ -83,7 +84,7 @@ def fit(
     if kept:
         run_tool('modelfit', kept, tool=tool)
 
-    return models[0] if single else models
+    return models[0].modelfit_results if single else [model.modelfit_results for model in models]
 
 
 def create_results(path, **kwargs):

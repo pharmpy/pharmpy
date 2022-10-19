@@ -46,7 +46,7 @@ def summarize_individuals(models: List[Model]) -> pd.DataFrame:
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import fit, summarize_individuals
-    >>> fit(model)  # doctest: +SKIP
+    >>> fit_results = fit(model)  # doctest: +SKIP
     <Pharmpy model object pheno>
     >>> from pharmpy.tools import run_tool # doctest: +SKIP
     >>> results = run_tool(
