@@ -86,15 +86,13 @@ def read_model_from_database(name, database=None):
     return model
 
 
-def read_model_from_string(code, path=None):
+def read_model_from_string(code):
     """Read model from the model code in a string
 
     Parameters
     ----------
     code : str
         Model code to read
-    path : Path or str
-        Specified to set the path for the created model
 
     Returns
     -------
@@ -123,12 +121,6 @@ def read_model_from_string(code, path=None):
 
     """
     model = Model.create_model(StringIO(code))
-    if path is not None:
-        path = normalize_user_given_path(path)
-        import pharmpy.workflows
-
-        # FIXME model.database should be removed
-        model.database = pharmpy.workflows.default_model_database(path)
     return model
 
 
