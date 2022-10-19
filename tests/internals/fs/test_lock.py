@@ -12,7 +12,7 @@ from threading import Barrier
 
 import pytest
 
-from pharmpy.lock import (
+from pharmpy.internals.fs.lock import (
     AcquiringProcessLevelLockWouldBlockError,
     AcquiringThreadLevelLockWouldBlockError,
     RecursiveDeadlockError,
