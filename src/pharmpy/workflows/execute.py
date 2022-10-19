@@ -1,8 +1,8 @@
 import inspect
 from typing import TypeVar
 
+from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import Model, Results
-from pharmpy.utils import normalize_user_given_path
 
 from .workflows import Workflow
 

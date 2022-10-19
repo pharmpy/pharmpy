@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from pharmpy.config import ConfigItem, Configuration
-from pharmpy.utils import normalize_user_given_path
+from pharmpy.internals.fs.path import normalize_user_given_path
 
 
 class NONMEMConfiguration(Configuration):

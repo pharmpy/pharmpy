@@ -11,6 +11,7 @@ import pharmpy.results
 import pharmpy.tools.modelfit
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import Model, Results
 from pharmpy.modeling import (
     calculate_aic,
@@ -23,7 +24,6 @@ from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.results import ModelfitResults
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
-from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import execute_workflow, split_common_options
 from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
 from pharmpy.workflows.tool_database import ToolDatabase
