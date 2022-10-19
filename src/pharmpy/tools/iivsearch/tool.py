@@ -215,6 +215,8 @@ def post_process(state, rank_type, cutoff, input_model, base_model_name, *models
         else:
             res_models.append(model)
 
+    assert len(res_models) > 0
+
     if not base_model:
         raise ValueError('Error in workflow: No base model')
 
