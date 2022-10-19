@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Union
 
@@ -16,7 +17,7 @@ from pharmpy.tools import (
 )
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.utils import runtime_type_check, same_arguments_as
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, ToolDatabase, Workflow
 
 
 def create_workflow(
@@ -170,19 +171,11 @@ def results(start_model, allometry_model):
     return res
 
 
+@dataclass
 class AllometryResults(Results):
-    def __init__(
-        self,
-        summary_models=None,
-        summary_individuals=None,
-        summary_individuals_count=None,
-        summary_errors=None,
-        final_model_name=None,
-        tool_database=None,
-    ):
-        self.summary_models = summary_models
-        self.summary_individuals = summary_individuals
-        self.summary_individuals_count = summary_individuals_count
-        self.summary_errors = summary_errors
-        self.final_model_name = final_model_name
-        self.tool_database = tool_database
+    summary_models: Optional[pd.DataFrame] = None
+    summary_individuals: Optional[pd.DataFrame] = None
+    summary_individuals_count: Optional[pd.DataFrame] = None
+    summary_errors: Optional[pd.DataFrame] = None
+    final_model_name: Optional[str] = None
+    tool_database: Optional[ToolDatabase] = None
