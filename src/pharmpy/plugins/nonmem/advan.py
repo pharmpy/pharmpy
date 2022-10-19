@@ -41,7 +41,7 @@ def _compartmental_model(
         cb.add_compartment(central)
         cb.add_compartment(output)
         cb.add_flow(central, output, _advan1and2_trans(trans))
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
     elif advan == 'ADVAN2':
         dose = _dosing(model, control_stream, 1)
@@ -58,7 +58,7 @@ def _compartmental_model(
         cb.add_compartment(output)
         cb.add_flow(central, output, _advan1and2_trans(trans))
         cb.add_flow(depot, central, sympy.Symbol('KA'))
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN3':
         dose = _dosing(model, control_stream, 1)
@@ -80,7 +80,7 @@ def _compartmental_model(
         cb.add_flow(central, output, k)
         cb.add_flow(central, peripheral, k12)
         cb.add_flow(peripheral, central, k21)
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'PERIPHERAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN4':
         dose = _dosing(model, control_stream, 1)
@@ -107,7 +107,7 @@ def _compartmental_model(
         cb.add_flow(central, output, k)
         cb.add_flow(central, peripheral, k23)
         cb.add_flow(peripheral, central, k32)
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL': 3, 'OUTPUT': 4}
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         cb = CompartmentalSystemBuilder()
@@ -125,11 +125,13 @@ def _compartmental_model(
         for i, (name, opts) in enumerate(modrec.compartments(), 1):
             if 'DEFOBSERVATION' in opts:
                 defobs = name
+                obs_no = i
             if 'DEFDOSE' in opts:
                 defdose = name
                 dose_no = i
             if name == 'CENTRAL':
                 central = name
+                central_no = i
             elif name == 'DEPOT':
                 depot = name
                 depot_no = i
@@ -144,8 +146,10 @@ def _compartmental_model(
         if not defobs:
             if central:
                 defobs = central
+                obs_no = central_no
             else:
                 defobs = comp_names[0]
+                obs_no = 1
 
         if not defdose:
             if depot:
@@ -179,7 +183,7 @@ def _compartmental_model(
                 defobs = comp
         for from_n, to_n, rate in _find_rates(control_stream, len(comp_names)):
             cb.add_flow(compartments[from_n - 1], compartments[to_n - 1], rate)
-        ass = _f_link_assignment(control_stream, defobs)
+        ass = _f_link_assignment(control_stream, defobs, obs_no)
     elif advan == 'ADVAN10':
         dose = _dosing(model, control_stream, 1)
         cb = CompartmentalSystemBuilder()
@@ -193,7 +197,7 @@ def _compartmental_model(
         km = sympy.Symbol('KM')
         t = sympy.Symbol('t')
         cb.add_flow(central, output, vm / (km + sympy.Function(central.amount.name)(t)))
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
     elif advan == 'ADVAN11':
         dose = _dosing(model, control_stream, 1)
@@ -224,7 +228,7 @@ def _compartmental_model(
         cb.add_flow(per1, central, k21)
         cb.add_flow(central, per2, k13)
         cb.add_flow(per2, central, k31)
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'PERIPHERAL1': 2, 'PERIPHERAL2': 3, 'OUTPUT': 4}
     elif advan == 'ADVAN12':
         dose = _dosing(model, control_stream, 1)
@@ -260,7 +264,7 @@ def _compartmental_model(
         cb.add_flow(per1, central, k32)
         cb.add_flow(central, per2, k24)
         cb.add_flow(per2, central, k42)
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
     elif des:
         rec_model = control_stream.get_records('MODEL')[0]
@@ -314,22 +318,24 @@ def _compartmental_model(
         eqs = [sympy.Eq(dadt_dose.symbol, dadt_dose.expression)] + dadt_rest
 
         ode = ExplicitODESystem(eqs, ics)
-        ass = _f_link_assignment(control_stream, sympy.Symbol('A_CENTRAL'))
+        # FIXME: 1 is not correct. Should use $MODEL as ADVAN5
+        ass = _f_link_assignment(control_stream, sympy.Symbol('A_CENTRAL'), 1)
         return ode, ass, None
     else:
         return None
     return CompartmentalSystem(cb), ass, comp_map
 
 
-def _f_link_assignment(control_stream: NMTranControlStream, compartment):
+def _f_link_assignment(control_stream: NMTranControlStream, compartment, compno: int):
     f = sympy.Symbol('F')
     try:
         fexpr = compartment.amount
     except AttributeError:
         fexpr = compartment
     pkrec = control_stream.get_records('PK')[0]
-    if pkrec.statements.find_assignment('S1'):
-        fexpr = fexpr / sympy.Symbol('S1')
+    scaling = f'S{compno}'
+    if pkrec.statements.find_assignment(scaling):
+        fexpr = fexpr / sympy.Symbol(scaling)
     ass = Assignment(f, fexpr)
     return ass
 

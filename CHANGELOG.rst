@@ -1,3 +1,11 @@
+next version
+------------
+
+Bug fixes
+=========
+
+* Correct scaling for F in NOMEM models for ADVAN 2,4,5,7 and 12
+
 0.80.0 (2022-10-19)
 -------------------
 
