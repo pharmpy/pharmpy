@@ -7,7 +7,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify, xreplace_dict
-from pharmpy.math import round_to_n_sigdig
+from pharmpy.internals.math import round_to_n_sigdig
 from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
 from pharmpy.model.distributions.numeric import ConstantDistribution
 from pharmpy.model.random_variables import (

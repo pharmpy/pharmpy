@@ -5,7 +5,7 @@ import warnings
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.math import corr2cov, nearest_postive_semidefinite
+from pharmpy.internals.math import corr2cov, nearest_postive_semidefinite
 from pharmpy.model import Parameter, Parameters
 from pharmpy.modeling.help_functions import _get_etas
 

@@ -3,9 +3,9 @@ import re
 import warnings
 from typing import List, Literal, Optional, Tuple, Union
 
-import pharmpy.math
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
+from pharmpy.internals.math import flattened_to_symmetric, triangular_root
 from pharmpy.model import (
     JointNormalDistribution,
     ModelSyntaxError,
@@ -98,10 +98,10 @@ class OmegaRecord(Record):
                     labels.extend([None] * (n - 1))
                     comments.extend([None] * (n - 1))
             if not same:
-                if size != pharmpy.math.triangular_root(len(inits)):
+                if size != triangular_root(len(inits)):
                     raise ModelSyntaxError('Wrong number of inits in BLOCK')
                 if not cholesky:
-                    A = pharmpy.math.flattened_to_symmetric(inits)
+                    A = flattened_to_symmetric(inits)
                     if corr:
                         for i in range(size):
                             for j in range(size):
@@ -313,7 +313,7 @@ class OmegaRecord(Record):
             if len(set(new_fix)) != 1:  # Not all true or all false
                 raise ValueError('Cannot only fix some parameters in block')
 
-            A = pharmpy.math.flattened_to_symmetric(inits)
+            A = flattened_to_symmetric(inits)
 
             if corr:
                 for i in range(size):
@@ -518,7 +518,7 @@ class OmegaRecord(Record):
                 init = node.init.NUMERIC
                 n = node.n.INT if node.find('n') else 1
                 inits += [init] * n
-            A = pharmpy.math.flattened_to_symmetric(inits)
+            A = flattened_to_symmetric(inits)
             A = np.delete(A, list(indices), axis=0)
             A = np.delete(A, list(indices), axis=1)
             s = f' BLOCK({len(A)})'

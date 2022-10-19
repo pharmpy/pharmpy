@@ -7,7 +7,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import symengine, sympy
 from pharmpy.expressions import subs
-from pharmpy.math import conditional_joint_normal, is_posdef
+from pharmpy.internals.math import conditional_joint_normal, is_posdef
 from pharmpy.model import Model, Results
 from pharmpy.modeling import (
     calculate_individual_shrinkage,

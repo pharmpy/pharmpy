@@ -5,9 +5,9 @@ from io import StringIO
 from pathlib import Path
 from typing import List, Optional, Union
 
-import pharmpy.math
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.math import flattened_to_symmetric
 
 
 class NONMEMTableFile:
@@ -232,7 +232,7 @@ class PhiTable(NONMEMTable):
         eta_col_names = [col for col in df if col.startswith('ETA')]
         etc_col_names = [col for col in df if col.startswith('ETC')]
         vals = df[etc_col_names].values
-        matrix_array = [pharmpy.math.flattened_to_symmetric(x) for x in vals]
+        matrix_array = [flattened_to_symmetric(x) for x in vals]
         etc_frames = [
             pd.DataFrame(matrix, columns=eta_col_names, index=eta_col_names)
             for matrix in matrix_array

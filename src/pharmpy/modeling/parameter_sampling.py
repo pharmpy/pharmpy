@@ -3,7 +3,7 @@ from functools import partial
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.math import is_posdef, nearest_postive_semidefinite
+from pharmpy.internals.math import is_posdef, nearest_postive_semidefinite
 
 
 def create_rng(seed=None):
