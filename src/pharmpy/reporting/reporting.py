@@ -9,7 +9,8 @@ from bs4 import BeautifulSoup
 from csscompressor import compress
 from sphinx.application import Sphinx
 
-from pharmpy.utils import TemporaryDirectory, TemporaryDirectoryChanger
+from pharmpy.internals.fs.tmp import TemporaryDirectory
+from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def generate_report(rst_path, results_path):

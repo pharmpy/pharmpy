@@ -1,7 +1,8 @@
 import warnings
 
 import pharmpy.workflows.dispatchers
-from pharmpy.utils import TemporaryDirectory, TemporaryDirectoryChanger
+from pharmpy.internals.fs.tmp import TemporaryDirectory
+from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def run(workflow):

@@ -1,10 +1,10 @@
 from pathlib import Path
 
-import pharmpy.utils as utils
+from pharmpy.internals.fs.tmp import TemporaryDirectory
 
 
 def test_tempdir():
-    with utils.TemporaryDirectory() as td:
+    with TemporaryDirectory() as td:
         path = Path(td)
         assert path.is_dir()
     assert not path.is_dir()
