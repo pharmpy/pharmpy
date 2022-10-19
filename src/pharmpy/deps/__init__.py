@@ -1,12 +1,12 @@
-from ..lazyload import LazyLoader
+from pharmpy.internals.module.lazy import LazyImport
 
-altair = LazyLoader('altair', globals(), 'pharmpy.deps.altair', 'altair')
-networkx = LazyLoader('networkx', globals(), 'networkx')
-numpy = LazyLoader('numpy', globals(), 'numpy')
-pandas = LazyLoader('pandas', globals(), 'pandas')
-symengine = LazyLoader('symengine', globals(), 'symengine')
-sympy = LazyLoader('sympy', globals(), 'sympy')
-sympy_stats = LazyLoader('sympy_stats', globals(), 'sympy.stats')
+altair = LazyImport('altair', globals(), 'pharmpy.deps.altair', 'altair')
+networkx = LazyImport('networkx', globals(), 'networkx')
+numpy = LazyImport('numpy', globals(), 'numpy')
+pandas = LazyImport('pandas', globals(), 'pandas')
+symengine = LazyImport('symengine', globals(), 'symengine')
+sympy = LazyImport('sympy', globals(), 'sympy')
+sympy_stats = LazyImport('sympy_stats', globals(), 'sympy.stats')
 
 __all__ = (
     'altair',

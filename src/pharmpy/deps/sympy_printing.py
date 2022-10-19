@@ -1,5 +1,5 @@
-from ..lazyload import LazyLoader
+from pharmpy.internals.module.lazy import LazyImport
 
-str = LazyLoader('str', globals(), 'sympy.printing.str')
-fortran = LazyLoader('fortran', globals(), 'sympy.printing.fortran')
-codeprinter = LazyLoader('codeprinter', globals(), 'sympy.printing.codeprinter')
+str = LazyImport('str', globals(), 'sympy.printing.str')
+fortran = LazyImport('fortran', globals(), 'sympy.printing.fortran')
+codeprinter = LazyImport('codeprinter', globals(), 'sympy.printing.codeprinter')

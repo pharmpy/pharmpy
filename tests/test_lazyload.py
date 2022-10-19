@@ -1,20 +1,20 @@
-from pharmpy.lazyload import LazyLoader
+from pharmpy.internals.module.lazy import LazyImport
 
 
 def test_dir():
-    import pharmpy.lazyload
+    import pharmpy.internals.module.lazy
 
-    lazyload = LazyLoader('x', {}, 'pharmpy.lazyload')
-    assert dir(pharmpy.lazyload) == dir(lazyload)
+    module = LazyImport('x', {}, 'pharmpy.internals.module.lazy')
+    assert dir(pharmpy.internals.module.lazy) == dir(module)
 
 
 def test_getattr():
-    lazyload = LazyLoader('x', {}, 'pharmpy.lazyload')
-    assert getattr(lazyload, 'LazyLoader') is LazyLoader
+    module = LazyImport('x', {}, 'pharmpy.internals.module.lazy')
+    assert getattr(module, 'LazyImport') is LazyImport
 
 
 def test_submodule():
     import os
 
-    loader = LazyLoader('x', {}, 'os', attr='path')
-    assert dir(loader) == dir(os.path)
+    module = LazyImport('x', {}, 'os', attr='path')
+    assert dir(module) == dir(os.path)

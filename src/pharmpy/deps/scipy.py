@@ -1,4 +1,4 @@
-from ..lazyload import LazyLoader
+from pharmpy.internals.module.lazy import LazyImport
 
-stats = LazyLoader('stats', globals(), 'scipy.stats')
-linalg = LazyLoader('linalg', globals(), 'scipy.linalg')
+stats = LazyImport('stats', globals(), 'scipy.stats')
+linalg = LazyImport('linalg', globals(), 'scipy.linalg')

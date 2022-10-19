@@ -1,5 +1,5 @@
-from ..lazyload import LazyLoader
+from pharmpy.internals.module.lazy import LazyImport
 
-box = LazyLoader('box', globals(), 'rich.box')
-console = LazyLoader('console', globals(), 'rich.console')
-table = LazyLoader('table', globals(), 'rich.table')
+box = LazyImport('box', globals(), 'rich.box')
+console = LazyImport('console', globals(), 'rich.console')
+table = LazyImport('table', globals(), 'rich.table')

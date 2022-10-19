@@ -2,7 +2,7 @@ from importlib import import_module
 from types import ModuleType
 
 
-class LazyLoader(ModuleType):
+class LazyImport(ModuleType):
     """Class that masquerades as a module and lazily loads it when accessed the first time
 
     The code for the class is taken from TensorFlow and is under the Apache 2.0 license
@@ -16,7 +16,7 @@ class LazyLoader(ModuleType):
         self._parent_module_globals = parent_module_globals
         self._attr = attr
 
-        super(LazyLoader, self).__init__(name)
+        super(LazyImport, self).__init__(name)
 
     def _load(self):
         # Import the target module and insert it into the parent's namespace
@@ -25,7 +25,7 @@ class LazyLoader(ModuleType):
         self._parent_module_globals[self._local_name] = resolved
 
         # Update this object's dict so that if someone keeps a reference to the
-        #   LazyLoader, lookups are efficient (__getattr__ is only called on lookups
+        #   LazyImport, lookups are efficient (__getattr__ is only called on lookups
         #   that fail).
         self.__dict__.update(resolved.__dict__)
         return resolved
