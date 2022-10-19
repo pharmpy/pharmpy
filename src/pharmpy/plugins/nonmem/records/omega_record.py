@@ -6,19 +6,18 @@ from typing import List, Literal, Optional, Tuple, Union
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
 from pharmpy.internals.math import flattened_to_symmetric, triangular_root
+from pharmpy.internals.parse import AttrToken, AttrTree
+from pharmpy.internals.parse.generic import (
+    insert_after,
+    insert_before_or_at_end,
+    remove_token_and_space,
+)
 from pharmpy.model import (
     JointNormalDistribution,
     ModelSyntaxError,
     NormalDistribution,
     Parameter,
     RandomVariables,
-)
-from pharmpy.parse_utils.generic import (
-    AttrToken,
-    AttrTree,
-    insert_after,
-    insert_before_or_at_end,
-    remove_token_and_space,
 )
 
 from .parsers import OmegaRecordParser

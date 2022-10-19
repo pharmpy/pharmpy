@@ -11,9 +11,9 @@ import lark
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.ds.ordered_set import OrderedSet
 from pharmpy.internals.expr.subs import subs
+from pharmpy.internals.parse import AttrToken, NoSuchRuleException
 from pharmpy.internals.sequence.lcs import diff
 from pharmpy.model import Assignment, Statement, Statements
-from pharmpy.parse_utils.generic import AttrToken, NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 
 from .record import Record

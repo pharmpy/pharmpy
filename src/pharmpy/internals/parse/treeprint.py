@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
-
 """
 Pretty printing of tree-structures. Inspired by the 'tree' command (Steve
 Baker). In development.

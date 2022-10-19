@@ -3,8 +3,7 @@ from collections import OrderedDict
 
 import pytest
 
-from pharmpy.parse_utils import prettyprint
-from pharmpy.parse_utils.generic import AttrToken, AttrTree
+from pharmpy.internals.parse import AttrToken, AttrTree, prettyprint
 
 
 def assert_create(expect, *args, **kwargs):

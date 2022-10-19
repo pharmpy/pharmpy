@@ -1,4 +1,4 @@
-from pharmpy.parse_utils import AttrTree
+from pharmpy.internals.parse import AttrTree
 
 from .record import Record
 

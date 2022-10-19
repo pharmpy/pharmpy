@@ -2,7 +2,7 @@ from pathlib import Path
 
 from lark import Lark  # pyright: ignore [reportPrivateImportUsage]
 
-from pharmpy.parse_utils import GenericParser
+from pharmpy.internals.parse import GenericParser
 
 grammar_root = Path(__file__).resolve().parent / 'grammars'
 

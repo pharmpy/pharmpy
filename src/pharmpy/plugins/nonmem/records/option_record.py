@@ -7,7 +7,7 @@ Assumes 'KEY=VALUE' and does not support 'KEY VALUE'.
 import re
 from collections import OrderedDict, namedtuple
 
-from pharmpy.parse_utils.generic import AttrTree
+from pharmpy.internals.parse import AttrTree
 
 from .record import Record
 
