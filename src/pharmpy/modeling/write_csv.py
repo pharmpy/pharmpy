@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional, Union
 
-from pharmpy.internals.fs import path_absolute
+from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import Model
 
 

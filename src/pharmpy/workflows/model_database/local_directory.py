@@ -5,7 +5,7 @@ from os import stat
 from pathlib import Path
 from typing import Union
 
-from pharmpy.internals.fs import path_absolute
+from pharmpy.internals.fs.path import path_absolute
 from pharmpy.lock import path_lock
 from pharmpy.model import DataInfo, Model
 from pharmpy.utils import hash_df

@@ -3,7 +3,7 @@ import shutil
 from itertools import count
 from pathlib import Path
 
-from pharmpy.internals.fs import path_absolute
+from pharmpy.internals.fs.path import path_absolute
 
 from ..model_database import LocalModelDirectoryDatabase
 from .baseclass import ToolDatabase

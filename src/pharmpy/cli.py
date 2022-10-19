@@ -61,7 +61,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import pharmpy
-from pharmpy.internals.fs import path_absolute
+from pharmpy.internals.fs.path import path_absolute
 
 from .deps import pandas as pd
 

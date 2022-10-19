@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.fs import path_absolute
+from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import (
     Assignment,
     ColumnInfo,

@@ -11,7 +11,7 @@ import pharmpy.model
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs
-from pharmpy.internals.fs import path_relative_to
+from pharmpy.internals.fs.path import path_relative_to
 from pharmpy.model import (
     Assignment,
     DatasetError,
