@@ -6,9 +6,8 @@ from typing import Dict, Iterable, Set, Tuple, TypeVar
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.expr.tree import prune
+from pharmpy.internals.graph.directed.reachability import reachable_from
 from pharmpy.model import Assignment, ODESystem
-
-from .expressions import _reachable_from
 
 T = TypeVar('T')
 
@@ -114,7 +113,7 @@ def _filter_equations(
 
     graph = _adjacency_list(edges)
 
-    dependent_symbols = _reachable_from(
+    dependent_symbols = reachable_from(
         {symbol},
         graph.__getitem__,
     )
