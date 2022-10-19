@@ -5,7 +5,7 @@ from collections.abc import Collection, Hashable, Sized
 from math import sqrt
 from typing import Dict, List, Optional, Set, Tuple
 
-import pharmpy.unicode as unicode
+import pharmpy.internals.unicode as unicode
 from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
 from pharmpy.internals.expr.parse import parse as parse_expr

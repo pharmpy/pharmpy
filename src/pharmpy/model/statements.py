@@ -5,7 +5,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence
 from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, overload
 
-import pharmpy.unicode as unicode
+import pharmpy.internals.unicode as unicode
 from pharmpy.deps import networkx as nx
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.assumptions import assume_all
