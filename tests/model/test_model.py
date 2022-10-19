@@ -6,7 +6,7 @@ from pharmpy.model import Model
 from pharmpy.modeling import convert_model, create_symbol, load_example_model
 from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
-tabpath = Path(__file__).resolve().parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
+tabpath = Path(__file__).resolve().parent.parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
 lincorrect = read_nonmem_dataset(
     tabpath,
     ignore_character='@',
