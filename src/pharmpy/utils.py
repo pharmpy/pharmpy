@@ -8,31 +8,6 @@ from typing import Iterable as TypingIterable  # NOTE needed for Python 3.8
 from typing import List, Literal, Optional, Tuple, Type, Union, get_args, get_origin, get_type_hints
 
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
-from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
-
-_unit_subs = None
-
-
-def unit_subs():
-
-    global _unit_subs
-    if _unit_subs is None:
-        subs = {}
-        import sympy.physics.units as units
-
-        for k, v in units.__dict__.items():
-            if isinstance(v, sympy.Expr) and v.has(units.Unit):
-                subs[sympy.Symbol(k)] = v
-
-        _unit_subs = subs
-
-    return _unit_subs
-
-
-def parse_units(s):
-    return subs(parse_expr(s), unit_subs(), simultaneous=True) if isinstance(s, str) else s
 
 
 def normalize_user_given_path(path: Union[str, Path]) -> Path:

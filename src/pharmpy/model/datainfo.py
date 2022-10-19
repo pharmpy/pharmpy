@@ -9,8 +9,8 @@ from typing import Optional, Union, overload
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
+from pharmpy.internals.expr.units import parse as parse_units
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
-from pharmpy.utils import parse_units
 
 
 class ColumnInfo:
