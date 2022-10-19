@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, List, Mapping, Optional
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy, sympy_printing
+from pharmpy.internals.sequence.lcs import diff
 from pharmpy.model import (
     Assignment,
     Bolus,
@@ -114,8 +115,6 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
 
 
 def update_random_variables(model: Model, old: RandomVariables, new: RandomVariables):
-    from pharmpy.plugins.nonmem.records.code_record import diff
-
     if not hasattr(model, '_parameters'):
         model.parameters
 
