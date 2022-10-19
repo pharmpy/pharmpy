@@ -1,11 +1,14 @@
 import importlib
 import json
 import lzma
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Results
+from pharmpy.workflows import Log
 
 
 class ResultsJSONDecoder(json.JSONDecoder):
@@ -95,6 +98,7 @@ def read_results(path_or_buf):
     return ResultsJSONDecoder().decode(s)
 
 
+@dataclass
 class ModelfitResults(Results):
     """Base class for results from a modelfit operation
 
@@ -144,65 +148,32 @@ class ModelfitResults(Results):
         Number of function evaluations
     """
 
-    def __init__(
-        self,
-        ofv=None,
-        ofv_iterations=None,
-        parameter_estimates=None,
-        parameter_estimates_sdcorr=None,
-        parameter_estimates_iterations=None,
-        covariance_matrix=None,
-        correlation_matrix=None,
-        information_matrix=None,
-        standard_errors=None,
-        standard_errors_sdcorr=None,
-        relative_standard_errors=None,
-        minimization_successful=None,
-        minimization_successful_iterations=None,
-        estimation_runtime=None,
-        estimation_runtime_iterations=None,
-        individual_ofv=None,
-        individual_estimates=None,
-        individual_estimates_covariance=None,
-        residuals=None,
-        predictions=None,
-        runtime_total=None,
-        termination_cause=None,
-        termination_cause_iterations=None,
-        function_evaluations=None,
-        function_evaluations_iterations=None,
-        significant_digits=None,
-        significant_digits_iterations=None,
-        log_likelihood=None,
-        log=None,
-    ):
-        self.ofv = ofv
-        self.ofv_iterations = ofv_iterations
-        self.parameter_estimates = parameter_estimates
-        self.parameter_estimates_sdcorr = parameter_estimates_sdcorr
-        self.parameter_estimates_iterations = parameter_estimates_iterations
-        self.covariance_matrix = covariance_matrix
-        self.correlation_matrix = correlation_matrix
-        self.information_matrix = information_matrix
-        self.standard_errors = standard_errors
-        self.standard_errors_sdcorr = standard_errors_sdcorr
-        self.relative_standard_errors = relative_standard_errors
-        self.minimization_successful = minimization_successful
-        self.minimization_successful_iterations = minimization_successful_iterations
-        self.estimation_runtime = estimation_runtime
-        self.estimation_runtime_iterations = estimation_runtime_iterations
-        self.function_evaluations = function_evaluations
-        self.function_evaluations_iterations = function_evaluations_iterations
-        self.individual_estimates = individual_estimates
-        self.individual_estimates_covariance = individual_estimates_covariance
-        self.individual_ofv = individual_ofv
-        self.residuals = residuals
-        self.predictions = predictions
-        self.runtime_total = runtime_total
-        self.termination_cause = termination_cause
-        self.termination_cause_iterations = termination_cause_iterations
-        self.function_evaluations = function_evaluations
-        self.significant_digits = significant_digits
-        self.significant_digits_iterations = significant_digits_iterations
-        self.log_likelihood = log_likelihood
-        self.log = log
+    ofv: Optional[float] = None
+    ofv_iterations: Optional[pd.Series] = None
+    parameter_estimates: Optional[pd.Series] = None
+    parameter_estimates_sdcorr: Optional[pd.Series] = None
+    parameter_estimates_iterations: Optional[pd.DataFrame] = None
+    covariance_matrix: Optional[pd.DataFrame] = None
+    correlation_matrix: Optional[pd.DataFrame] = None
+    information_matrix: Optional[pd.DataFrame] = None
+    standard_errors: Optional[pd.Series] = None
+    standard_errors_sdcorr: Optional[pd.Series] = None
+    relative_standard_errors: Optional[pd.Series] = None
+    minimization_successful: Optional[bool] = None
+    minimization_successful_iterations: Optional[pd.DataFrame] = None
+    estimation_runtime: Optional[float] = None
+    estimation_runtime_iterations: Optional[pd.DataFrame] = None
+    individual_ofv: Optional[pd.Series] = None
+    individual_estimates: Optional[pd.DataFrame] = None
+    individual_estimates_covariance: Optional[pd.DataFrame] = None
+    residuals: Optional[pd.DataFrame] = None
+    predictions: Optional[pd.DataFrame] = None
+    runtime_total: Optional[float] = None
+    termination_cause: Optional[str] = None
+    termination_cause_iterations: Optional[pd.Series] = None
+    function_evaluations: Optional[float] = None
+    function_evaluations_iterations: Optional[pd.Series] = None
+    significant_digits: Optional[float] = None
+    significant_digits_iterations: Optional[pd.Series] = None
+    log_likelihood: Optional[float] = None
+    log: Optional[Log] = None
