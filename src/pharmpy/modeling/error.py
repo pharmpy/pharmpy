@@ -4,7 +4,8 @@
 from __future__ import annotations
 
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import subs, sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, NormalDistribution, Statements
 
 from .common import remove_unused_parameters_and_rvs
@@ -28,7 +29,7 @@ def _canonicalize_data_transformation(model, value):
     if value is None:
         value = model.dependent_variable
     else:
-        value = sympify(value)
+        value = parse_expr(value)
         if value.free_symbols != {model.dependent_variable}:
             raise ValueError(
                 f"Expression for data transformation must contain the dependent variable "
@@ -698,7 +699,7 @@ def set_time_varying_error_model(model, cutoff, idv='TIME'):
 
     """
     y = model.statements.find_assignment('Y')
-    idv = sympify(idv)
+    idv = parse_expr(idv)
     theta = create_symbol(model, 'time_varying')
     eps = model.random_variables.epsilons
     expr = sympy.Piecewise(

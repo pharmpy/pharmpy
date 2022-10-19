@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Optional, Union
 
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.model import Assignment, Model, Parameter, Parameters
 
 from .expressions import create_symbol
@@ -81,13 +81,13 @@ def add_allometry(
     S₁ = V
 
     """
-    variable = sympify(allometric_variable)
-    reference = sympify(reference_value)
+    variable = parse_expr(allometric_variable)
+    reference = parse_expr(reference_value)
 
     parsed_parameters = []
 
     if parameters is not None:
-        parsed_parameters = [sympify(p) for p in parameters]
+        parsed_parameters = [parse_expr(p) for p in parameters]
 
     if parameters is None or initials is None:
         cls = find_clearance_parameters(model)

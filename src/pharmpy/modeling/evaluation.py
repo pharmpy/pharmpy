@@ -6,8 +6,9 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.deps.scipy import linalg
-from pharmpy.internals.expr import subs, sympify
-from pharmpy.internals.expressions import eval_expr
+from pharmpy.internals.expr.eval import eval_expr
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Model
 
 from .expressions import (
@@ -80,7 +81,7 @@ def evaluate_expression(
     Length: 744, dtype: float64
 
     """
-    expression = sympify(expression)
+    expression = parse_expr(expression)
     full_expr = model.statements.before_odes.full_expression(expression)
     inits = model.parameters.inits
     mapping = inits if parameter_estimates is None else {**inits, **parameter_estimates}

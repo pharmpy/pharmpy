@@ -15,7 +15,8 @@ from typing import List, Literal, Optional, Tuple, Type, Union, get_args, get_or
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import subs, sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 
 
 class TemporaryDirectoryChanger:
@@ -129,7 +130,7 @@ def unit_subs():
 
 
 def parse_units(s):
-    return subs(sympify(s), unit_subs(), simultaneous=True) if isinstance(s, str) else s
+    return subs(parse_expr(s), unit_subs(), simultaneous=True) if isinstance(s, str) else s
 
 
 def normalize_user_given_path(path: Union[str, Path]) -> Path:

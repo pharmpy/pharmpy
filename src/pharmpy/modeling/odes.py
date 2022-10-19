@@ -4,7 +4,7 @@
 from typing import Set
 
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import subs
+from pharmpy.internals.expr.subs import subs
 from pharmpy.model import (
     Assignment,
     Bolus,

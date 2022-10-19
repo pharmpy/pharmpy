@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import canonical_ode_rhs
+from pharmpy.internals.expr.ode import canonical_ode_rhs
 from pharmpy.model import (
     Assignment,
     Bolus,

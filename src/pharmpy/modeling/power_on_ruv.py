@@ -6,7 +6,8 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import subs, sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model, Parameter, Parameters
 
 from .error import has_proportional_error_model
@@ -69,7 +70,7 @@ def set_power_on_ruv(
     if ipred is None:
         ipred = get_ipred(model)
     else:
-        ipred = sympify(ipred)
+        ipred = parse_expr(ipred)
 
     if has_proportional_error_model(model):
         theta_init = 1

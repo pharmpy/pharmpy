@@ -10,7 +10,8 @@ from typing import List, Literal, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import subs, sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model, Parameter, Parameters, Statement, Statements
 
 from .data import get_baselines
@@ -470,7 +471,7 @@ def _create_template(effect, model, covariate):
         return CovariateEffect.power()
     else:
         symbol = sympy.Symbol('symbol')
-        expression = sympify(effect)
+        expression = parse_expr(effect)
         return CovariateEffect(Assignment(symbol, expression))
 
 

@@ -8,14 +8,11 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, overload
 import pharmpy.unicode as unicode
 from pharmpy.deps import networkx as nx
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import (
-    assume_all,
-    canonical_ode_rhs,
-    free_images,
-    free_images_and_symbols,
-    subs,
-    sympify,
-)
+from pharmpy.internals.expr.assumptions import assume_all
+from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
+from pharmpy.internals.expr.ode import canonical_ode_rhs
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 
 
 class Statement(ABC):
@@ -75,7 +72,7 @@ class Assignment(Statement):
         if not (symbol.is_Symbol or symbol.is_Derivative or symbol.is_Function):
             raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
         if isinstance(expression, str):
-            expression = sympify(expression)
+            expression = parse_expr(expression)
         return cls(symbol, expression)
 
     @property
@@ -521,7 +518,7 @@ class CompartmentalSystemBuilder:
         >>> cb.add_compartment("CENTRAL")
         >>> cb.add_flow(depot, central, "KA")
         """
-        self._g.add_edge(source, destination, rate=sympify(rate))
+        self._g.add_edge(source, destination, rate=parse_expr(rate))
 
     def remove_flow(self, source, destination):
         """Remove flow between two compartments
@@ -1383,9 +1380,9 @@ class Compartment:
         if dose is not None and not isinstance(dose, Dose):
             raise TypeError("dose must be of Dose type (or None)")
         if lag_time is not None:
-            lag_time = sympify(lag_time)
+            lag_time = parse_expr(lag_time)
         if bioavailability is not None:
-            bioavailability = sympify(bioavailability)
+            bioavailability = parse_expr(bioavailability)
         return cls(name, dose, lag_time, bioavailability)
 
     @property
@@ -1512,7 +1509,7 @@ class Bolus(Dose):
 
     @classmethod
     def create(cls, amount):
-        return cls(sympify(amount))
+        return cls(parse_expr(amount))
 
     @property
     def amount(self):
@@ -1591,10 +1588,10 @@ class Infusion(Dose):
         if rate is not None and duration is not None:
             raise ValueError('Cannot have both rate and duration for Infusion')
         if rate is not None:
-            rate = sympify(rate)
+            rate = parse_expr(rate)
         else:
-            duration = sympify(duration)
-        return cls(sympify(amount), rate, duration)
+            duration = parse_expr(duration)
+        return cls(parse_expr(amount), rate, duration)
 
     @property
     def amount(self):
@@ -1959,7 +1956,7 @@ class Statements(Sequence):
         if isinstance(symbol, str):
             symbol = sympy.Symbol(symbol)
         if isinstance(expression, str):
-            expression = sympify(expression)
+            expression = parse_expr(expression)
 
         last = True
         new = list(self._statements)
@@ -2137,7 +2134,7 @@ class Statements(Sequence):
         THETA(1)*WGT*exp(ETA(1))
         """
         if isinstance(expression, str):
-            expression = sympify(expression)
+            expression = parse_expr(expression)
         for statement in reversed(self):
             if isinstance(statement, ODESystem):
                 raise ValueError(

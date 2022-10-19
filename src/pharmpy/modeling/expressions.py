@@ -5,7 +5,8 @@ from itertools import filterfalse
 from typing import Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import subs, sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 from pharmpy.model import (
     Assignment,
     Compartment,
@@ -350,7 +351,7 @@ def simplify_expression(model, expr):
     PTVCL
     >>> conf.parameter_names = ['basic']
     """
-    expr = sympify(expr)
+    expr = parse_expr(expr)
     d = dict()
     for p in model.parameters:
         if p.fix:

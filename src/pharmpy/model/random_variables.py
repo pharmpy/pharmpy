@@ -7,8 +7,9 @@ from typing import Container, Dict, Iterable, Sequence, Set, Tuple, Union, overl
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
-from pharmpy.internals.expr import subs, sympify, xreplace_dict
-from pharmpy.internals.expressions import eval_expr
+from pharmpy.internals.expr.eval import eval_expr
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs, xreplace_dict
 from pharmpy.internals.math import cov2corr, is_positive_semidefinite, nearest_postive_semidefinite
 
 from .distributions.numeric import NumericDistribution
@@ -658,7 +659,7 @@ class RandomVariables(CollectionsSequence):
 
         parameters in the distributions will first be replaced"""
 
-        sympified_expr = sympify(expr)
+        sympified_expr = parse_expr(expr)
         xreplace_parameters = {} if parameters is None else xreplace_dict(parameters)
 
         return _sample_from_distributions(

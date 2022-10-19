@@ -2,7 +2,7 @@ import math
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import subs
+from pharmpy.internals.expr.subs import subs
 
 # This module could probably be made private.
 

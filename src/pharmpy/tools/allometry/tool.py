@@ -6,7 +6,7 @@ from typing import List, Optional, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.model import Model, Results
 from pharmpy.modeling import add_allometry, get_pk_parameters
 from pharmpy.tools import (
@@ -129,7 +129,7 @@ def validate_input(
     parameters,
 ):
     if model is not None:
-        if not set(map(str, sympify(allometric_variable).free_symbols)).issubset(
+        if not set(map(str, parse_expr(allometric_variable).free_symbols)).issubset(
             model.datainfo.names
         ):
             raise ValueError(

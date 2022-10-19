@@ -5,7 +5,24 @@ from typing import Mapping, Set
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import subs
+
+from .subs import subs
+
+
+def eval_expr(
+    expr: sympy.Expr,
+    datasize: int,
+    datamap: Mapping[sympy.Symbol, np.ndarray],
+) -> np.ndarray:
+    # NOTE We avoid querying for free_symbols if we know none are expected
+    fs = _free_symbols(expr) if datamap else set()
+
+    if fs:
+        ordered_symbols, fn = _lambdify_canonical(expr)
+        data = [datamap[rv] for rv in ordered_symbols]
+        return fn(*data)
+
+    return np.full(datasize, float(expr.evalf()))
 
 
 @lru_cache(maxsize=256)
@@ -14,7 +31,7 @@ def _free_symbols(expr: sympy.Expr) -> Set[sympy.Symbol]:
 
 
 @lru_cache(maxsize=256)
-def lambdify_canonical(expr: sympy.Expr):
+def _lambdify_canonical(expr: sympy.Expr):
     fs = _free_symbols(expr)
     ordered_symbols = sorted(fs, key=str)
     # NOTE Substitution allows to use cse. Otherwise weird things happen with
@@ -27,19 +44,3 @@ def lambdify_canonical(expr: sympy.Expr):
     )
     fn = sympy.lambdify(ordered_substitutes, substituted_expr, modules='numpy', cse=True)
     return ordered_symbols, fn
-
-
-def eval_expr(
-    expr: sympy.Expr,
-    datasize: int,
-    datamap: Mapping[sympy.Symbol, np.ndarray],
-) -> np.ndarray:
-    # NOTE We avoid querying for free_symbols if we know none are expected
-    fs = _free_symbols(expr) if datamap else set()
-
-    if fs:
-        ordered_symbols, fn = lambdify_canonical(expr)
-        data = [datamap[rv] for rv in ordered_symbols]
-        return fn(*data)
-
-    return np.full(datasize, float(expr.evalf()))

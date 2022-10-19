@@ -4,7 +4,8 @@ from collections import defaultdict
 from typing import Dict, Iterable, Set, Tuple, TypeVar
 
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import prune, subs
+from pharmpy.internals.expr.subs import subs
+from pharmpy.internals.expr.tree import prune
 from pharmpy.model import Assignment, ODESystem
 
 from .expressions import _reachable_from

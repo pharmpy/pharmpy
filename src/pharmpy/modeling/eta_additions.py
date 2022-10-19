@@ -10,7 +10,8 @@ from typing import Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import subs, sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 from pharmpy.model import (
     Assignment,
     JointNormalDistribution,
@@ -341,7 +342,7 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
             )
         )
 
-        iovs.append(Assignment(iov, sympify(0)))
+        iovs.append(Assignment(iov, parse_expr(0)))
         iovs.append(Assignment(iov, expression))
 
         etai = sympy.Symbol(etai_name(i))
@@ -451,7 +452,7 @@ def _create_template(expression, operation):
     elif expression == 'log':
         return EtaAddition.logit()
     else:
-        expression = sympify(f'original {operation} {expression}')
+        expression = parse_expr(f'original {operation} {expression}')
         return EtaAddition(expression)
 
 

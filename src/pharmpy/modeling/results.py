@@ -6,7 +6,8 @@ from itertools import chain
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.expr import subs, sympify, xreplace_dict
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs, xreplace_dict
 from pharmpy.internals.math import round_to_n_sigdig
 from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
 from pharmpy.model.distributions.numeric import ConstantDistribution
@@ -499,10 +500,10 @@ def _split_equation(s):
         a = s.split('=')
         if len(a) == 1:
             name = None
-            expr = sympify(s)
+            expr = parse_expr(s)
         else:
             name = a[0].strip()
-            expr = sympify(a[1])
+            expr = parse_expr(a[1])
     elif isinstance(s, sympy.Eq):
         name = s.lhs.name
         expr = s.rhs
