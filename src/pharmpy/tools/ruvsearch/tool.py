@@ -4,6 +4,7 @@ from typing import List, Optional
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.deps.scipy import stats
+from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.model import (
     Assignment,
     EstimationStep,
@@ -34,7 +35,7 @@ from pharmpy.tools import (
 )
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.utils import runtime_type_check, same_arguments_as
+from pharmpy.utils import runtime_type_check
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 from .results import RUVSearchResults, calculate_results
@@ -431,7 +432,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
 
 
 @runtime_type_check
-@same_arguments_as(create_workflow)
+@with_same_arguments_as(create_workflow)
 def validate_input(model, groups, p_value, skip):
     if groups <= 0:
         raise ValueError(f'Invalid `groups`: got `{groups}`, must be >= 1.')

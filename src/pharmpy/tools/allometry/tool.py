@@ -7,6 +7,7 @@ from typing import List, Optional, Union
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.model import Model, Results
 from pharmpy.modeling import add_allometry, get_pk_parameters
 from pharmpy.tools import (
@@ -16,7 +17,7 @@ from pharmpy.tools import (
     summarize_modelfit_results,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.utils import runtime_type_check, same_arguments_as
+from pharmpy.utils import runtime_type_check
 from pharmpy.workflows import Task, ToolDatabase, Workflow
 
 
@@ -122,7 +123,7 @@ def _add_allometry_on_model(
 
 
 @runtime_type_check
-@same_arguments_as(create_workflow)
+@with_same_arguments_as(create_workflow)
 def validate_input(
     model,
     allometric_variable,

@@ -4,6 +4,7 @@ from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
 import pharmpy.tools.iivsearch.algorithms
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
+from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.model import Assignment, Model, Results
 from pharmpy.modeling import add_iov, copy_model, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
@@ -11,7 +12,7 @@ from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools import rank_models, summarize_modelfit_results
 from pharmpy.tools.common import create_results, summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.utils import runtime_type_check, same_arguments_as
+from pharmpy.utils import runtime_type_check
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 NAME_WF = 'iovsearch'
@@ -306,7 +307,7 @@ def task_results(rank_type, cutoff, bic_type, models):
 
 
 @runtime_type_check
-@same_arguments_as(create_workflow)
+@with_same_arguments_as(create_workflow)
 def validate_input(
     model,
     column,

@@ -6,13 +6,14 @@ from typing import List, Optional, Sequence, Set, Union
 
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.model import Model, Results
 from pharmpy.modeling import add_pk_iiv, calculate_bic, copy_model, create_joint_distribution
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.utils import runtime_type_check, same_arguments_as
+from pharmpy.utils import runtime_type_check
 from pharmpy.workflows import Task, ToolDatabase, Workflow, call_workflow
 
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock'))
@@ -239,7 +240,7 @@ def post_process(state, rank_type, cutoff, input_model, base_model_name, *models
 
 
 @runtime_type_check
-@same_arguments_as(create_workflow)
+@with_same_arguments_as(create_workflow)
 def validate_input(
     algorithm,
     iiv_strategy,

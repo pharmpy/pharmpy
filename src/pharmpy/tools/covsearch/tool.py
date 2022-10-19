@@ -5,6 +5,7 @@ from typing import Any, Callable, Iterable, List, Sequence, Tuple, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.model import Model
 from pharmpy.modeling import add_covariate_effect, copy_model, get_pk_parameters
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
@@ -22,7 +23,7 @@ from pharmpy.tools.mfl.feature.covariate import (
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
-from pharmpy.utils import runtime_type_check, same_arguments_as
+from pharmpy.utils import runtime_type_check
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 from .results import COVSearchResults
@@ -525,7 +526,7 @@ def _make_df_steps_row(
 
 
 @runtime_type_check
-@same_arguments_as(create_workflow)
+@with_same_arguments_as(create_workflow)
 def validate_input(effects, p_forward, p_backward, algorithm, model):
     if algorithm not in ALGORITHMS:
         raise ValueError(
