@@ -25,7 +25,7 @@ class OrderedSet(Generic[T], MutableSet, AbstractSet[T]):
         return key in self._dict
 
     def __iter__(self):
-        # NOTE This preserves the insertion order
+        # NOTE This follows insertion order
         return iter(self._dict)
 
     def __len__(self):
@@ -47,19 +47,19 @@ class OrderedSet(Generic[T], MutableSet, AbstractSet[T]):
 
     # NOTE The following are only required if performance matters
 
-    def update(self, *iterables: Iterable[T]):
-        self._dict.update(_map(chain(*iterables)))
-
     def remove(self, key: T):
         del self._dict[key]
 
     def clear(self):
         self._dict.clear()
 
+    # NOTE The following mimic the behavior of native sets
+
+    def update(self, *iterables: Iterable[T]):
+        self._dict.update(_map(chain(*iterables)))
+
     def copy(self):
         return OrderedSet(self)
-
-    # NOTE The following mimics the behavior of native sets
 
     def __repr__(self):
         c = self.__class__.__name__
