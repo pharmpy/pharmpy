@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs, sympify
+from pharmpy.internals.expr import subs, sympify
 from pharmpy.model import Assignment, Model, Parameter, Parameters
 
 from .error import has_proportional_error_model

@@ -5,7 +5,7 @@ from itertools import filterfalse
 from typing import Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs, sympify
+from pharmpy.internals.expr import subs, sympify
 from pharmpy.model import (
     Assignment,
     Compartment,

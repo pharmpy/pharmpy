@@ -10,7 +10,7 @@ from typing import Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs, sympify
+from pharmpy.internals.expr import subs, sympify
 from pharmpy.model import (
     Assignment,
     JointNormalDistribution,

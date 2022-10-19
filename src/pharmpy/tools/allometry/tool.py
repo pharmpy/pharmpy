@@ -6,7 +6,7 @@ from typing import List, Optional, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
+from pharmpy.internals.expr import sympify
 from pharmpy.model import Model, Results
 from pharmpy.modeling import add_allometry, get_pk_parameters
 from pharmpy.tools import (

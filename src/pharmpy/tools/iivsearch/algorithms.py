@@ -2,7 +2,7 @@ from itertools import combinations
 from typing import Dict
 
 import pharmpy.tools.modelfit as modelfit
-from pharmpy.expressions import subs
+from pharmpy.internals.expr import subs
 from pharmpy.model import Model, RandomVariables
 from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution

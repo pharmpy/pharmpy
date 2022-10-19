@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Set, Tuple
 import pharmpy.unicode as unicode
 from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
-from pharmpy.expressions import subs, sympify
+from pharmpy.internals.expr import subs, sympify
 
 from .numeric import MultivariateNormalDistribution as NumericMultivariateNormalDistribution
 from .numeric import NormalDistribution as NumericNormalDistribution

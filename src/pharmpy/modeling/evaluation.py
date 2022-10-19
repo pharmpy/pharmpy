@@ -6,7 +6,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.deps.scipy import linalg
-from pharmpy.expressions import subs, sympify
+from pharmpy.internals.expr import subs, sympify
 from pharmpy.internals.expressions import eval_expr
 from pharmpy.model import Model
 

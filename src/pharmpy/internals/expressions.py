@@ -5,7 +5,7 @@ from typing import Mapping, Set
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs
+from pharmpy.internals.expr import subs
 
 
 @lru_cache(maxsize=256)

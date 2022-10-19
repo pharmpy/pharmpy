@@ -15,7 +15,7 @@ from typing import List, Literal, Optional, Tuple, Type, Union, get_args, get_or
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs, sympify
+from pharmpy.internals.expr import subs, sympify
 
 
 class TemporaryDirectoryChanger:

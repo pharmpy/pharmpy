@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs, sympify
+from pharmpy.internals.expr import subs, sympify
 from pharmpy.model import Assignment, NormalDistribution, Statements
 
 from .common import remove_unused_parameters_and_rvs

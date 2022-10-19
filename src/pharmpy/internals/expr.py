@@ -183,7 +183,7 @@ def prune(predicate: Callable[[sympy.Expr], bool], expr: sympy.Expr):
     Examples
     --------
     >>> import sympy
-    >>> from pharmpy.expressions import prune
+    >>> from pharmpy.internals.expr import prune
     >>> prune(lambda expr: expr.func is sympy.exp, sympy.exp(2))
     0
     >>> prune(lambda expr: expr.func is sympy.exp, 3*sympy.exp(2))

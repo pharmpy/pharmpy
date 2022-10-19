@@ -7,7 +7,7 @@ from typing import Container, Dict, Iterable, Sequence, Set, Tuple, Union, overl
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
-from pharmpy.expressions import subs, sympify, xreplace_dict
+from pharmpy.internals.expr import subs, sympify, xreplace_dict
 from pharmpy.internals.expressions import eval_expr
 from pharmpy.internals.math import cov2corr, is_positive_semidefinite, nearest_postive_semidefinite
 

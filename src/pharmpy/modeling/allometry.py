@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Optional, Union
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
+from pharmpy.internals.expr import sympify
 from pharmpy.model import Assignment, Model, Parameter, Parameters
 
 from .expressions import create_symbol

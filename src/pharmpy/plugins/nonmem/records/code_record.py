@@ -9,8 +9,8 @@ from typing import Any, Iterable, Iterator, Sequence, Tuple
 import lark
 
 from pharmpy.deps import sympy, sympy_printing
-from pharmpy.expressions import subs
 from pharmpy.internals.ds.ordered_set import OrderedSet
+from pharmpy.internals.expr import subs
 from pharmpy.model import Assignment, Statement, Statements
 from pharmpy.parse_utils.generic import AttrToken, NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser

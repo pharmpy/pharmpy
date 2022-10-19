@@ -8,7 +8,7 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, overload
 import pharmpy.unicode as unicode
 from pharmpy.deps import networkx as nx
 from pharmpy.deps import sympy
-from pharmpy.expressions import (
+from pharmpy.internals.expr import (
     assume_all,
     canonical_ode_rhs,
     free_images,
