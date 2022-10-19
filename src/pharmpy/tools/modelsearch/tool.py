@@ -3,11 +3,11 @@ from typing import Optional, Union
 import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
+from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model, Results
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results
-from pharmpy.utils import runtime_type_check
 from pharmpy.workflows import Task, Workflow
 
 from ..mfl.parse import parse
@@ -108,7 +108,7 @@ def post_process(rank_type, cutoff, *models):
     return res
 
 
-@runtime_type_check
+@with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
     search_space,
