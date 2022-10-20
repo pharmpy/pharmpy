@@ -772,7 +772,7 @@ class DataInfo(Sequence):
         path = d.get('path', None)
         if path:
             path = Path(path)
-        separator = d.get('separator', None)
+        separator = d.get('separator', ',')
         di = DataInfo(columns, path=path, separator=separator, force_absolute_path=False)
         return di
 
