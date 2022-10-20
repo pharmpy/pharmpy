@@ -26,8 +26,10 @@ import importlib
 
 import pharmpy.config as config
 
+from .args import split_common_options
+from .call import call_workflow
 from .dispatchers import local_dask
-from .execute import call_workflow, execute_workflow, split_common_options
+from .execute import execute_workflow
 from .log import Log
 from .model_database import (
     LocalDirectoryDatabase,
@@ -35,8 +37,9 @@ from .model_database import (
     ModelDatabase,
     NullModelDatabase,
 )
+from .task import Task
 from .tool_database import LocalDirectoryToolDatabase, NullToolDatabase, ToolDatabase
-from .workflows import Task, Workflow
+from .workflow import Workflow
 
 
 class WorkflowConfiguration(config.Configuration):

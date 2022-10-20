@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 import copy
 import uuid
-from typing import Generic, Optional, TypeVar
+from typing import Generic, Iterable, List, Optional, TypeVar, Union
 
 from pharmpy.deps import networkx as nx
+
+from .task import Task
 
 T = TypeVar('T')
 
@@ -19,14 +23,14 @@ class Workflow(Generic[T]):
         List of tasks for initialization
     """
 
-    def __init__(self, tasks=None, name: Optional[str] = None):
+    def __init__(self, tasks: Optional[Iterable[Task]] = None, name: Optional[str] = None):
         self._g = nx.DiGraph()
         self.name = name
         if tasks:
             for task in tasks:
                 self.add_task(task)
 
-    def add_task(self, task, predecessors=None):
+    def add_task(self, task: Task, predecessors: Optional[Union[Task, List[Task]]] = None):
         """Add a task to the workflow
 
         Predecessors will be connected if given.
@@ -46,7 +50,9 @@ class Workflow(Generic[T]):
                 for pred in predecessors:
                     self._g.add_edge(pred, task)
 
-    def insert_workflow(self, other, predecessors=None):
+    def insert_workflow(
+        self, other: Workflow, predecessors: Optional[Union[Task, List[Task]]] = None
+    ):
         """Insert other workflow
 
         Parameters
@@ -99,26 +105,23 @@ class Workflow(Generic[T]):
         as_dict = dict()
         for task in nx.dfs_tree(self._g):
             key = ids[task]
-            if task.has_input():
-                input_list = list(task.task_input)
-            else:
-                input_list = []
-            input_list.extend([ids[t] for t in self._g.predecessors(task)])
+            input_list = list(task.task_input)
+            input_list.extend(ids[t] for t in self._g.predecessors(task))
             value = (task.function, *input_list)
             as_dict[key] = value
         return as_dict
 
     @property
-    def input_tasks(self):
+    def input_tasks(self) -> List[Task]:
         """All input (source) tasks of entire workflow"""
         return [node for node in self._g.nodes if self._g.in_degree(node) == 0]
 
     @property
-    def output_tasks(self):
+    def output_tasks(self) -> List[Task]:
         """All output tasks (sink) tasks of entire workflow"""
         return [node for node in self._g.nodes if self._g.out_degree(node) == 0]
 
-    def get_upstream_tasks(self, task):
+    def get_upstream_tasks(self, task: Task) -> List[Task]:
         """Get all tasks upstream of a certain task
 
         Parameters
@@ -131,10 +134,10 @@ class Workflow(Generic[T]):
         list
             Upstream tasks
         """
-        edges = list(nx.edge_dfs(self._g, task, orientation='reverse'))
+        edges = nx.edge_dfs(self._g, task, orientation='reverse')
         return [node for node, _, _ in edges]
 
-    def get_predecessors(self, task):
+    def get_predecessors(self, task: Task) -> List[Task]:
         """Get all predecessors of task
 
         Parameters
@@ -149,7 +152,7 @@ class Workflow(Generic[T]):
         """
         return list(self._g.predecessors(task))
 
-    def get_successors(self, task):
+    def get_successors(self, task: Task) -> List[Task]:
         """Get all successors of task
 
         Parameters
@@ -164,7 +167,7 @@ class Workflow(Generic[T]):
         """
         return list(self._g.successors(task))
 
-    def copy(self):
+    def copy(self) -> Workflow[T]:
         """Deepcopy of workflow
 
         Returns
@@ -175,7 +178,7 @@ class Workflow(Generic[T]):
         wf_copy = copy.deepcopy(self)
         return wf_copy
 
-    def plot_dask(self, filename):
+    def plot_dask(self, filename: str):
         """Save a visualization of workflow to file
 
         Parameters
@@ -188,7 +191,7 @@ class Workflow(Generic[T]):
         visualize(self.as_dask_dict(), filename=filename, collapse_outputs=True)
 
     @property
-    def tasks(self):
+    def tasks(self) -> List[Task]:
         """All tasks in workflow"""
         return list(self._g.nodes())
 
@@ -198,39 +201,7 @@ class Workflow(Generic[T]):
     def __str__(self):
         return '\n'.join([str(task) for task in self._g])
 
-    def __add__(self, other):
+    def __add__(self, other: Workflow):
         wf_new = Workflow()
         wf_new._g = nx.compose(self._g, other._g)
         return wf_new
-
-
-class Task:
-    """One task
-
-    Parameters
-    ----------
-    name : str
-        Name of task
-    function : func
-        Task function
-    task_input : any
-        Input arguments to func
-    """
-
-    def __init__(self, name, function, *task_input):
-        self.name = name
-        self.function = function
-        self.task_input = task_input
-
-    def has_input(self):
-        """Check if task has any input
-
-        Returns
-        -------
-        bool
-            True if input else False
-        """
-        return len(self.task_input) > 0
-
-    def __repr__(self):
-        return self.name

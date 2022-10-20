@@ -14,19 +14,6 @@ def tasks():
     return t1, t2, t3, t4
 
 
-def test_create_tasks():
-    t1 = Task('t1', 'func', 'input')
-    assert t1.task_input[0] == 'input'
-    t2 = Task('t2', 'func', 1)
-    assert t2.task_input[0] == 1
-    t3 = Task('t3', 'func', 1, 2, 3)
-    assert t3.task_input[2] == 3
-    t4 = Task('t4', 'func', [1, 2, 3])
-    assert t4.task_input[0] == [1, 2, 3]
-    t5 = Task('t5', 'func')
-    assert not t5.has_input()
-
-
 def test_add_tasks(tasks):
     wf = Workflow()
 
@@ -76,7 +63,7 @@ def test_get_output(tasks):
     assert wf.output_tasks == [t4]
 
 
-def test_as_dict(tasks):
+def test_as_dask_dict(tasks):
     wf = Workflow()
 
     t1, t2, t3, t4 = tasks
@@ -93,11 +80,71 @@ def test_as_dict(tasks):
     )
 
 
+def test_as_dask_dict_raises(tasks):
+    wf = Workflow(tasks)
+
+    with pytest.raises(ValueError, match='.*one output task.*'):
+        wf.as_dask_dict()
+
+
+def test_insert_workflow(tasks):
+    t1, t2, t3, t4 = tasks
+
+    wf = Workflow([t1])
+    wf.insert_workflow(Workflow([t2, t3]))
+    wf.insert_workflow(Workflow([t4]))
+
+    assert set(wf.input_tasks) == {t1}
+    assert set(wf.output_tasks) == {t4}
+
+
+def test_insert_workflow_with_single_predecessors(tasks):
+    t1, t2, t3, t4 = tasks
+
+    wf = Workflow([t1])
+    wf.insert_workflow(Workflow([t2, t3]), predecessors=t1)
+    wf.insert_workflow(Workflow([t4]), predecessors=t2)
+
+    assert set(wf.input_tasks) == {t1}
+    assert set(wf.output_tasks) == {t3, t4}
+
+
+def test_insert_workflow_with_predecessors(tasks):
+    t1, t2, t3, t4 = tasks
+
+    wf = Workflow([t1])
+    wf.insert_workflow(Workflow([t2, t3]), predecessors=[t1])
+    wf.insert_workflow(Workflow([t4]), predecessors=[t2, t3])
+
+    assert set(wf.input_tasks) == {t1}
+    assert set(wf.output_tasks) == {t4}
+
+
+def test_insert_workflow_nm():
+    t1, t2, t3, t4, t5 = map(lambda i: Task(f't{i}', lambda: 0), range(5))
+    wf1 = Workflow([t1, t2])
+    wf2 = Workflow([t3, t4, t5])
+    with pytest.raises(ValueError, match='.*not supported.*'):
+        wf1.insert_workflow(wf2)
+
+
+def test_get_upstream_tasks():
+    t1, t2, t3, t4, t5 = map(lambda i: Task(f't{i}', lambda: 0), range(5))
+    wf = Workflow([t1, t2])
+    wf.insert_workflow(Workflow([t3]))
+    wf.insert_workflow(Workflow([t4, t5]))
+
+    assert set(wf.get_upstream_tasks(t4)) == set(wf.get_upstream_tasks(t5)) == {t1, t2, t3}
+    assert set(wf.get_upstream_tasks(t1)) == set(wf.get_upstream_tasks(t2)) == set()
+    assert set(wf.get_upstream_tasks(t3)) == {t1, t2}
+
+
 def test_copy(tasks):
     t1, t2, t3, t4 = tasks
     wf = Workflow([t1, t2, t3, t4])
     wf2 = wf.copy()
     assert len(wf) == len(wf2)
+    assert str(wf) == str(wf2)
 
 
 def test_add(tasks):
