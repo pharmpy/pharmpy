@@ -29,7 +29,7 @@ def test_amd(tmp_path, testdata):
         res = run_amd(
             input,
             modeltype='pk_oral',
-            search_space='PERIPHERALS(1)',
+            search_space='PERIPHERALS(1);LAGTIME()',
             occasion='VISI',
         )
 
