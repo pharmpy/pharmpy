@@ -102,7 +102,8 @@ def calculate_parameters_from_ucp(model, scale, ucps):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> scale = calculate_ucp_scale(model)
-    >>> values = {'THETA(1)': 0.1, 'THETA(2)': 0.1, 'THETA(3)': 0.1, 'OMEGA(1,1)': 0.1, 'OMEGA(2,2)': 0.1, 'SIGMA(1,1)': 0.1}
+    >>> values = {'THETA(1)': 0.1, 'THETA(2)': 0.1, 'THETA(3)': 0.1, \
+                  'OMEGA(1,1)': 0.1, 'OMEGA(2,2)': 0.1, 'SIGMA(1,1)': 0.1}
     >>> calculate_parameters_from_ucp(model, scale, values)
     THETA(1)                  0.004693
     THETA(2)                   1.00916
@@ -115,7 +116,7 @@ def calculate_parameters_from_ucp(model, scale, ucps):
     See also
     --------
     calculate_ucp_scale : Calculate the scale for conversion from ucps
-    """  # noqa: E501
+    """
     omega_symbolic = model.random_variables.etas.covariance_matrix
     omega = omega_symbolic.subs(dict(ucps))
     omega = np.array(omega).astype(np.float64)
