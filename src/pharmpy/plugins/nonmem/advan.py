@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Optional, Tuple
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -112,65 +112,52 @@ def _compartmental_model(
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         cb = CompartmentalSystemBuilder()
         modrec = control_stream.get_records('MODEL')[0]
-        defobs = None
-        defdose = None
-        central = None
-        depot = None
-        first_dose = None
+        defobs: Optional[Tuple[str, int]] = None
+        defdose: Optional[Tuple[str, int]] = None
+        defcentral: Optional[Tuple[str, int]] = None
+        defdepot: Optional[Tuple[str, int]] = None
+        deffirst_dose: Optional[Tuple[str, int]] = None
         compartments = []
         comp_names = []
-        dose_no = -1
-        depot_no = -1
-        first_dose_no = -1
         for i, (name, opts) in enumerate(modrec.compartments(), 1):
             if 'DEFOBSERVATION' in opts:
-                defobs = name
-                obs_no = i
+                defobs = (name, i)
             if 'DEFDOSE' in opts:
-                defdose = name
-                dose_no = i
+                defdose = (name, i)
             if name == 'CENTRAL':
-                central = name
-                central_no = i
+                defcentral = (name, i)
             elif name == 'DEPOT':
-                depot = name
-                depot_no = i
-            if first_dose is None and 'NODOSE' not in opts:
-                first_dose = name
-                first_dose_no = i
+                defdepot = (name, i)
+            if deffirst_dose is None and 'NODOSE' not in opts:
+                deffirst_dose = (name, i)
             comp_names.append(name)
 
         comp_names.append('OUTPUT')
         comp_map = {name: i for i, name in enumerate(comp_names, 1)}
 
-        if not defobs:
-            if central:
-                defobs = central
-                obs_no = central_no
+        if defobs is None:
+            if defcentral is None:
+                defobs = (comp_names[0], 1)
             else:
-                defobs = comp_names[0]
-                obs_no = 1
+                defobs = defcentral
 
-        if not defdose:
-            if depot:
-                defdose = depot
-                dose_no = depot_no
-            elif first_dose is not None:
-                defdose = first_dose
-                dose_no = first_dose_no
+        if defdose is None:
+            if defdepot is not None:
+                defdose = defdepot
+            elif deffirst_dose is not None:
+                defdose = deffirst_dose
             else:
                 raise ModelSyntaxError('Dosing compartment is unknown')
 
-        assert dose_no != -1
-
-        dose = _dosing(model, control_stream, dose_no)
+        dose = _dosing(model, control_stream, defdose[1])
+        obscomp = None
         for i, name in enumerate(comp_names):
             if i == len(comp_names) - 1:
                 output = Compartment(name)
                 cb.add_compartment(output)
                 compartments.append(output)
                 break
-            if name == defdose:
+            if name == defdose[0]:
                 curdose = dose
             else:
                 curdose = None
@@ -179,11 +166,13 @@ def _compartmental_model(
             )
             cb.add_compartment(comp)
             compartments.append(comp)
-            if name == defobs:
-                defobs = comp
+            if name == defobs[0]:
+                obscomp = comp
+
+        assert obscomp is not None
         for from_n, to_n, rate in _find_rates(control_stream, len(comp_names)):
             cb.add_flow(compartments[from_n - 1], compartments[to_n - 1], rate)
-        ass = _f_link_assignment(control_stream, defobs, obs_no)
+        ass = _f_link_assignment(control_stream, obscomp, defobs[1])
     elif advan == 'ADVAN10':
         dose = _dosing(model, control_stream, 1)
         cb = CompartmentalSystemBuilder()
@@ -326,7 +315,7 @@ def _compartmental_model(
     return CompartmentalSystem(cb), ass, comp_map
 
 
-def _f_link_assignment(control_stream: NMTranControlStream, compartment, compno: int):
+def _f_link_assignment(control_stream: NMTranControlStream, compartment: Compartment, compno: int):
     f = sympy.Symbol('F')
     try:
         fexpr = compartment.amount
