@@ -11,6 +11,7 @@ from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model, Results
 from pharmpy.modeling import add_pk_iiv, calculate_bic, copy_model, create_joint_distribution
 from pharmpy.modeling.results import RANK_TYPES
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -32,6 +33,7 @@ def create_workflow(
     iiv_strategy: str = 'no_add',
     rank_type: str = 'bic',
     cutoff: Optional[Union[float, int]] = None,
+    results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
@@ -48,6 +50,8 @@ def create_workflow(
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
+    results : ModelfitResults
+        Results for model
     model : Model
         Pharmpy model
 
@@ -61,7 +65,7 @@ def create_workflow(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import run_iivsearch     # doctest: +SKIP
-    >>> run_iivsearch('brute_force', model=model)   # doctest: +SKIP
+    >>> run_iivsearch('brute_force', results=model.modelfit_results, model=model)   # doctest: +SKIP
     """
 
     wf = Workflow()

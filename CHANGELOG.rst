@@ -6,6 +6,11 @@ New features
 
 * Add tools.read_modelfit_results
 
+Changes
+=======
+
+* run_modelsearch and run_iivsearch now need results as a separate input
+
 Bug fixes
 =========
 

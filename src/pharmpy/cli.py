@@ -153,6 +153,7 @@ def run_iivsearch(args):
         rank_type=args.rank_type,
         cutoff=args.cutoff,
         model=args.model,
+        results=args.model.modelfit_results,
         path=args.path,
     )
 
