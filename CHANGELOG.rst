@@ -9,7 +9,7 @@ New features
 Changes
 =======
 
-* run_modelsearch and run_iivsearch now need results as a separate input
+* run_modelsearch, run_iovsearch and run_iivsearch now need results as a separate input
 
 Bug fixes
 =========

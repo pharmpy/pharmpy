@@ -7,7 +7,7 @@ from pharmpy.tools import fit, run_iovsearch
 
 def test_default_mox2(tmp_path, model_count, start_model):
     with chdir(tmp_path):
-        res = run_iovsearch('VISI', model=start_model)
+        res = run_iovsearch('VISI', results=start_model.modelfit_results, model=start_model)
         rundir = tmp_path / 'iovsearch_dir1'
         assert model_count(rundir) == 8
 
@@ -16,7 +16,9 @@ def test_default_mox2(tmp_path, model_count, start_model):
 
 def test_rank_type_ofv_mox2(tmp_path, model_count, start_model):
     with chdir(tmp_path):
-        res = run_iovsearch('VISI', model=start_model, rank_type='ofv')
+        res = run_iovsearch(
+            'VISI', results=start_model.modelfit_results, model=start_model, rank_type='ofv'
+        )
         rundir = tmp_path / 'iovsearch_dir1'
         assert model_count(rundir) == 8
 
@@ -29,7 +31,7 @@ def test_default_mox1(tmp_path, model_count, testdata):
     with chdir(tmp_path):
         start_model = Model.create_model('mox1.mod')
         fit(start_model)
-        res = run_iovsearch('VISI', model=start_model)
+        res = run_iovsearch('VISI', results=start_model.modelfit_results, model=start_model)
         rundir = tmp_path / 'iovsearch_dir1'
         assert model_count(rundir) == 7
 

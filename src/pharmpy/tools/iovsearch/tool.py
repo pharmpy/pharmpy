@@ -10,6 +10,7 @@ from pharmpy.model import Assignment, Model, Results
 from pharmpy.modeling import add_iov, copy_model, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
 from pharmpy.modeling.results import RANK_TYPES
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import rank_models, summarize_modelfit_results
 from pharmpy.tools.common import create_results, summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -26,6 +27,7 @@ def create_workflow(
     rank_type: str = 'bic',
     cutoff: Optional[Union[float, int]] = None,
     distribution: str = 'same-as-iiv',
+    results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
@@ -55,7 +57,7 @@ def create_workflow(
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> run_iovsearch('OCC', model=model)      # doctest: +SKIP
+    >>> run_iovsearch('OCC', results=model.modelfit_results, model=model)      # doctest: +SKIP
     """
 
     wf = Workflow()

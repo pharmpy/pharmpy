@@ -169,6 +169,7 @@ def run_iovsearch(args):
         cutoff=args.cutoff,
         distribution=args.distribution,
         model=args.model,
+        results=args.model.modelfit_results,
         path=args.path,
     )
 
