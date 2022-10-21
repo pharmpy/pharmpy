@@ -1,4 +1,3 @@
-from itertools import chain, combinations
 from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import pharmpy.tools.iivsearch.algorithms
@@ -6,6 +5,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_subsets
 from pharmpy.model import Assignment, Model, Results
 from pharmpy.modeling import add_iov, copy_model, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
@@ -247,39 +247,6 @@ def best_model(
         return [model for model in candidates if model.name == best_model_name][0]
     except IndexError:
         return base
-
-
-def subsets(iterable: Iterable[T], min_size: int = 0, max_size: int = -1) -> Iterable[Tuple[T]]:
-    """Returns an iterable over all the subsets of the input iterable with
-    minimum and maximum size constraints. Allows maximum_size to be given
-    relatively to iterable "length" by specifying a negative value.
-
-    Adapted from powerset function defined in
-    https://docs.python.org/3/library/itertools.html#itertools-recipes
-
-    subsets([1,2,3], min_size=1, max_size=2) --> (1,) (2,) (3,) (1,2) (1,3) (2,3)"
-    """
-    s = list(iterable)
-    max_size = len(s) + max_size + 1 if max_size < 0 else max_size
-    return chain.from_iterable(combinations(s, r) for r in range(min_size, max_size + 1))
-
-
-def non_empty_proper_subsets(iterable: Iterable[T]) -> Iterable[Tuple[T]]:
-    """Returns an iterable over all the non-empty proper subsets of the input
-    iterable.
-
-    non_empty_proper_subsets([1,2,3]) --> (1,) (2,) (3,) (1,2) (1,3) (2,3)"
-    """
-    return subsets(iterable, min_size=1, max_size=-2)
-
-
-def non_empty_subsets(iterable: Iterable[T]) -> Iterable[Tuple[T]]:
-    """Returns an iterable over all the non-empty subsets of the input
-    iterable.
-
-    non_empty_subsets([1,2,3]) --> (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-    """
-    return subsets(iterable, min_size=1, max_size=-1)
 
 
 def task_results(rank_type, cutoff, bic_type, models):
