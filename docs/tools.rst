@@ -122,6 +122,7 @@ script:
     res = run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)',
                           'reduced_stepwise',
                           model=start_model,
+                          results=start_model_results,
                           iiv_strategy='absorption_delay',
                           rank_type='bic',
                           cutoff=None)
