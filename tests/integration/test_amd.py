@@ -67,6 +67,7 @@ def test_skip_most(tmp_path, testdata):
         with pytest.warns(Warning) as record:
             res = run_amd(
                 model,
+                results=model.modelfit_results,
                 modeltype='pk_oral',
                 order=['iovsearch', 'allometry', 'covariates'],
                 continuous=[],
@@ -106,6 +107,7 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
         with pytest.warns(Warning) as record:
             res = run_amd(
                 model,
+                results=model.modelfit_results,
                 modeltype='pk_oral',
                 order=['iovsearch'],
                 occasion='XAT2',
@@ -141,6 +143,7 @@ def test_skip_iovsearch_missing_occasion(tmp_path, testdata):
         with pytest.warns(Warning) as record:
             res = run_amd(
                 model,
+                results=model.modelfit_results,
                 modeltype='pk_oral',
                 order=['iovsearch'],
                 occasion='XYZ',

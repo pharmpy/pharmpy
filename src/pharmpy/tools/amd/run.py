@@ -16,6 +16,7 @@ from .results import AMDResults
 
 def run_amd(
     input,
+    results=None,
     modeltype='pk_oral',
     cl_init=0.01,
     vc_init=1,
@@ -37,6 +38,8 @@ def run_amd(
     ----------
     input : Model or Path
         Read model object/Path to a dataset
+    results : ModelfitResults
+        Reults of input if input is a model
     modeltype : str
         Type of model to build. Either 'pk_oral' or 'pk_iv'
     cl_init : float
@@ -72,7 +75,7 @@ def run_amd(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import run_amd # doctest: +SKIP
-    >>> run_amd(model)      # doctest: +SKIP
+    >>> run_amd(model, results=model.modelfit_results)      # doctest: +SKIP
 
     See also
     --------
