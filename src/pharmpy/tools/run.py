@@ -18,6 +18,7 @@ from pharmpy.modeling import (
     calculate_bic,
     check_high_correlations,
     copy_model,
+    read_model,
     read_model_from_database,
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
@@ -799,3 +800,22 @@ def _summarize_step(model, i):
             summary_dict[f'{param}_RSE'] = rses[param]
 
     return summary_dict
+
+
+def read_modelfit_results(path):
+    """Read results from external tool for a model
+
+    Parameters
+    ----------
+    path : Path or str
+        Path to model file
+
+    Return
+    ------
+    ModelfitResults
+        Results object
+    """
+    path = Path(path)
+    # FIXME: Quick and dirty solution
+    model = read_model(path)
+    return model.modelfit_results

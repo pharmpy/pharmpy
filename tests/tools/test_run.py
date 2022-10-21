@@ -15,6 +15,7 @@ from pharmpy.tools.run import (
     _create_metadata_tool,
     _get_run_setup,
     rank_models,
+    read_modelfit_results,
     retrieve_final_model,
     retrieve_models,
     summarize_errors,
@@ -398,3 +399,8 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
         assert summary.loc['pheno_no_header']['warnings_found'] == 1
         assert summary.loc['pheno_rounding_error']['errors_found'] == 2
         assert summary.loc['pheno_rounding_error']['warnings_found'] == 0
+
+
+def test_read_modelfit_results(testdata):
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    assert res.ofv == 586.27605628188053

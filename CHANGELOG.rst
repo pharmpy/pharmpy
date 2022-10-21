@@ -1,6 +1,11 @@
 next version
 ------------
 
+New features
+============
+
+* Add tools.read_modelfit_results
+
 Bug fixes
 =========
 
