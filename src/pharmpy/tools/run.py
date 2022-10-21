@@ -261,6 +261,8 @@ def _create_metadata_tool(tool_name, tool_params, tool_options, args):
                 name, value = p.name, p.default
         if isinstance(value, Model):
             value = str(value)  # FIXME: better model representation
+        elif isinstance(value, ModelfitResults):
+            value = "FIXME"
         tool_metadata['tool_options'][name] = value
 
     return tool_metadata

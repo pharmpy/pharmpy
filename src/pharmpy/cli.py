@@ -137,6 +137,7 @@ def run_modelsearch(args):
         rank_type=args.rank_type,
         cutoff=args.cutoff,
         iiv_strategy=args.iiv_strategy,
+        results=args.model.modelfit_results,
         model=args.model,
         path=args.path,
     )
