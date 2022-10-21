@@ -183,6 +183,7 @@ def run_covsearch(args):
         p_forward=args.p_forward,
         max_steps=args.max_steps,
         algorithm=args.algorithm,
+        results=args.model.modelfit_restuls,
         model=args.model,
         path=args.path,
     )

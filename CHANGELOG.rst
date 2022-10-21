@@ -9,7 +9,7 @@ New features
 Changes
 =======
 
-* run_modelsearch, run_iovsearch, run_ruvsearch, run_allometry and run_iivsearch now need results as a separate input
+* run_modelsearch, run_iovsearch, run_ruvsearch, run_allometry, run_covsearch and run_iivsearch now need results as a separate input
 
 Bug fixes
 =========

@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass
 from itertools import count
-from typing import Any, Callable, Iterable, List, Sequence, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -12,6 +12,7 @@ from pharmpy.modeling import add_covariate_effect, copy_model, get_pk_parameters
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import (
@@ -101,6 +102,7 @@ def create_workflow(
     p_backward: float = 0.01,
     max_steps: int = -1,
     algorithm: str = 'scm-forward-then-backward',
+    results: Optional[ModelfitResults] = None,
     model: Union[Model, None] = None,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
@@ -119,6 +121,8 @@ def create_workflow(
     algorithm : str
         The search algorithm to use. Currently 'scm-forward' and
         'scm-forward-then-backward' are supported.
+    results : ModelfitResults
+        Results of model
     model : Model
         Pharmpy model
 
@@ -137,7 +141,7 @@ def create_workflow(
     ...     ('CL', 'APGR', 'exp', '*'),
     ...     ('V', 'WGT', 'exp', '*'),
     ...     ('V', 'APGR', 'exp', '*'),
-    ... ], model=model)      # doctest: +SKIP
+    ... ], model=model, results=model.modelfit_results)      # doctest: +SKIP
 
     """
 
