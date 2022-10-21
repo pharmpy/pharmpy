@@ -146,7 +146,7 @@ def read_results(path):
     return res
 
 
-def run_tool(name, *args, **kwargs) -> Union[Model, List[Model], Tuple[Model], Results]:
+def run_tool(name: str, *args, **kwargs) -> Union[Model, List[Model], Tuple[Model], Results]:
     """Run tool workflow
 
     Parameters
@@ -171,7 +171,19 @@ def run_tool(name, *args, **kwargs) -> Union[Model, List[Model], Tuple[Model], R
     >>> res = run_tool("ruvsearch", model)   # doctest: +SKIP
 
     """
-    tool = importlib.import_module(f'pharmpy.tools.{name}')
+    # NOTE The implementation of run_tool is split into those two functions to
+    # allow for individual testing and mocking.
+    tool = import_tool(name)
+    return run_tool_with_name(name, tool, *args, **kwargs)
+
+
+def import_tool(name: str):
+    return importlib.import_module(f'pharmpy.tools.{name}')
+
+
+def run_tool_with_name(
+    name: str, tool, *args, **kwargs
+) -> Union[Model, List[Model], Tuple[Model], Results]:
     common_options, tool_options = split_common_options(kwargs)
 
     tool_params = inspect.signature(tool.create_workflow).parameters
