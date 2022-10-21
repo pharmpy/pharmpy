@@ -73,6 +73,7 @@ napoleon_use_rtype = False
 napoleon_use_param = False
 
 automodapi_inheritance_diagram = False
+autodoc_typehints = 'none'
 graphviz_output_format = 'svg'
 
 import doctest
