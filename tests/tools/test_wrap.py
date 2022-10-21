@@ -8,6 +8,8 @@ def _is_iivsearch(obj):
     assert 'algorithm' in params.keys()
     assert 'rank_type' in params.keys()
     assert params['rank_type'].default == 'bic'
+    assert 'kwargs' in params.keys()
+    assert 'kwargs' in obj.__doc__
     return True
 
 
@@ -16,6 +18,8 @@ def _is_modelsearch(obj):
     assert 'search_space' in params.keys()
     assert 'rank_type' in params.keys()
     assert params['rank_type'].default == 'bic'
+    assert 'kwargs' in params.keys()
+    assert 'kwargs' in obj.__doc__
     return True
 
 

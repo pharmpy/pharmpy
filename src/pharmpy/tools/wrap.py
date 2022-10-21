@@ -3,6 +3,8 @@
 """
 
 import importlib
+import inspect
+import re
 from functools import wraps
 from typing import Callable
 
@@ -33,4 +35,28 @@ def _create_wrap(tool_name: str, create_workflow: Callable) -> Callable:
         return run_tool(tool_name, *args, **kwargs)
 
     func.__name__ = f'run_{tool_name}'
+
+    # NOTE override the signature to include **kwargs which are used in run_tool, needed for pharmr
+    func.__signature__ = _append_kwargs_to_sig(inspect.signature(create_workflow))
+
+    # NOTE add kwargs to docstring
+    func.__doc__ = _append_kwargs_to_doc(func.__doc__, run_tool.__doc__)
+
     return func
+
+
+def _append_kwargs_to_sig(sig: inspect.Signature) -> inspect.Signature:
+    param_kwargs = inspect.Parameter('kwargs', inspect.Parameter.VAR_KEYWORD)
+    return sig.replace(parameters=tuple(sig.parameters.values()) + (param_kwargs,))
+
+
+def _append_kwargs_to_doc(doc_wrapper: str, doc_run_tool: str) -> str:
+    # NOTE get where in docstring to add kwargs documentation
+    m_wrapper = re.compile(r'(.)\s*Returns*\s*\n\s*-------')
+    search_wrapper = re.search(m_wrapper, doc_wrapper)
+
+    # NOTE get documentation for kwargs from run_tool
+    m_run_tool = re.compile(r'(\s*kwargs\n(.+\n))\n.\s*Returns*\s*\n\s*-+')
+    search_run_tool = re.search(m_run_tool, doc_run_tool)
+
+    return doc_wrapper.replace(search_wrapper.group(0), search_run_tool.group(0))
