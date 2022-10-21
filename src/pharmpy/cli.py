@@ -207,6 +207,7 @@ def run_allometry(args):
     run_tool(
         'allometry',
         model=args.model,
+        results=args.model.modelfit_results,
         allometric_variable=args.allometric_variable,
         reference_value=args.reference_value,
         parameters=args.parameters,

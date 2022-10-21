@@ -16,7 +16,9 @@ def test_allometry(tmp_path, testdata):
 
         model = Model.create_model('pheno_real.mod')
         model.datainfo = model.datainfo.derive(path=tmp_path / 'pheno.dta')
-        res = run_tool('allometry', model, allometric_variable='WGT')
+        res = run_tool(
+            'allometry', model, results=model.modelfit_results, allometric_variable='WGT'
+        )
         assert len(res.summary_models) == 2
 
         db: ModelDatabase = res.tool_database.model_database

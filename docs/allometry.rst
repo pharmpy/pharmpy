@@ -19,7 +19,8 @@ To initiate allometry in Python:
     from pharmpy.tools import run_allometry
 
     start_model = read_model('path/to/model')
-    res = run_allometry(model=start_model)
+    start_model_results = read_modelfit_results('path/to/model')
+    res = run_allometry(model=start_model, results=start_model_results)
 
 To run allometry from the command line, the example code is redefined accordingly:
 
@@ -34,6 +35,10 @@ Arguments
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | Argument                                          | Description                                                                             |
 +===================================================+=========================================================================================+
+| ``model``                                         | Pharmpy model                                                                           |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``results``                                       | ModelfitResults of model                                                                |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``allometric_variable``                           | Name of the variable to use for allometric scaling (default is WT)                      |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``reference_value``                               | Reference value for the allometric variable (default is 70)                             |

@@ -11,6 +11,7 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model, Results
 from pharmpy.modeling import add_allometry, get_pk_parameters
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import (
     summarize_errors,
     summarize_individuals,
@@ -23,6 +24,7 @@ from pharmpy.workflows import Task, ToolDatabase, Workflow
 
 def create_workflow(
     model: Optional[Model] = None,
+    results: Optional[ModelfitResults] = None,
     allometric_variable: Union[str, sympy.Expr] = 'WT',
     reference_value: Union[str, int, float, sympy.Expr] = 70,
     parameters: Optional[List[Union[str, sympy.Expr]]] = None,
@@ -37,6 +39,8 @@ def create_workflow(
     ----------
     model : Model
         Pharmpy model
+    results : ModelfitResults
+        Results for model
     allometric_variable : str
         Name of the variable to use for allometric scaling (default is WT)
     reference_value : float
@@ -62,7 +66,7 @@ def create_workflow(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import run_allometry # doctest: +SKIP
-    >>> run_allometry(model=model, allometric_variable='WGT')      # doctest: +SKIP
+    >>> run_allometry(model=model, results=model.modelfit_results, allometric_variable='WGT') # doctest: +SKIP
 
     """
 
@@ -86,7 +90,7 @@ def create_workflow(
     wf.add_task(task_add_allometry, predecessors=start_task)
     fit_wf = create_fit_workflow(n=1)
     wf.insert_workflow(fit_wf, predecessors=task_add_allometry)
-    results_task = Task('results', results)
+    results_task = Task('results', globals()['results'])
     wf.add_task(results_task, predecessors=[start_task] + fit_wf.output_tasks)
     return wf
 
