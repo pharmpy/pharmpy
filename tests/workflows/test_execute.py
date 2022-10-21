@@ -52,19 +52,20 @@ def test_execute_workflow_binary(tmp_path):
 
 
 @pytest.mark.filterwarnings("ignore:.*Port .* is already in use.:UserWarning")
-def test_execute_workflow_parallel(tmp_path):
+def test_execute_workflow_map_reduce(tmp_path):
     n = 10
     f = lambda x: x**2  # noqa E731
-    layer1 = list(map(lambda i: Task(f'x{i}', lambda: i), range(n)))
-    layer2 = list(map(lambda i: Task(f'f{i}', f), range(n)))
-    wf = Workflow(layer1)
-    wf.insert_workflow(Workflow(layer2))
-    wf.add_task(Task('g', lambda *y: y), predecessors=wf.output_tasks)
+    layer_init = list(map(lambda i: Task(f'x{i}', lambda: i), range(n)))
+    layer_map = list(map(lambda i: Task(f'f(x{i})', f), range(n)))
+    layer_reduce = [Task('reduce', lambda *y: sum(y))]
+    wf = Workflow(layer_init)
+    wf.insert_workflow(Workflow(layer_map))
+    wf.insert_workflow(Workflow(layer_reduce))
 
     with chdir(tmp_path):
         res = execute_workflow(wf)
 
-    assert res == tuple(map(f, range(n)))
+    assert res == sum(map(f, range(n)))
 
 
 @pytest.mark.filterwarnings("ignore:.*Port .* is already in use.:UserWarning")
