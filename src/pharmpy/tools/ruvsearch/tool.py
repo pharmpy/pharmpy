@@ -28,6 +28,7 @@ from pharmpy.modeling import (
     set_power_on_ruv,
 )
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import (
     summarize_errors,
     summarize_individuals,
@@ -45,6 +46,7 @@ SKIP = frozenset(('IIV_on_RUV', 'power', 'combined', 'time_varying'))
 
 def create_workflow(
     model: Optional[Model] = None,
+    results: Optional[ModelfitResults] = None,
     groups: int = 4,
     p_value: float = 0.05,
     skip: Optional[List[str]] = None,
@@ -55,6 +57,8 @@ def create_workflow(
     ----------
     model : Model
         Pharmpy model
+    results : ModelfitResults
+        Results of model
     groups : int
         The number of bins to use for the time varying models
     p_value : float
@@ -72,7 +76,7 @@ def create_workflow(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import run_ruvsearch # doctest: +SKIP
-    >>> run_ruvsearch(model=model)      # doctest: +SKIP
+    >>> run_ruvsearch(model=model, results=model.modelfit_results)      # doctest: +SKIP
 
     """
 

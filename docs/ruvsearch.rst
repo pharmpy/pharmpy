@@ -19,7 +19,8 @@ To initiate RUVsearch in Python/R:
     from pharmpy.tools import run_ruvsearch
 
     start_model = read_model('path/to/model')
-    res = run_ruvsearch(model=start_model)
+    start_model_results = read_modelfit_results('path/to/model')
+    res = run_ruvsearch(model=start_model, results=start_model_results)
 
 To run RUVsearch from the command line, the example code is redefined accordingly:
 
@@ -41,6 +42,8 @@ Arguments
 | ``skip``                                          | List of residual error models to not consider                                           |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``model``                                         | Start model                                                                             |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``results``                                       | ModelfitResults for the start model                                                     |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 
 ~~~~~~
@@ -120,7 +123,7 @@ Consider a standard ruvsearch run:
 
 .. pharmpy-code::
 
-    res = run_ruvsearch(model=start_model)
+    res = run_ruvsearch(model=start_model, results=start_model_results)
 
 The ``cwres_models`` table contains information on the residual error models, such as the iteration times, the changes of OFV compared to the base CWRES model and some key parameter estimates.
 
