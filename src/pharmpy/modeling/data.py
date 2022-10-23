@@ -1154,7 +1154,14 @@ def _translate_nonmem_time_and_date_value(ser, timecol, datecol):
             year = a[0]
             month = a[1]
             day = a[2]
-        year = int(year)
+        if len(year) < 3:
+            year = int(year)
+            if year > 50:
+                year += 1900
+            else:
+                year += 2000
+        else:
+            year = int(year)
         month = int(month)
         day = int(day)
         hour = int(timeval)
