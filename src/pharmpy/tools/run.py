@@ -705,7 +705,7 @@ def summarize_modelfit_results(results, include_all_estimation_steps=False):
     >>> from pharmpy.modeling import load_example_model
     >>> from pharmpy.tools import summarize_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> summarize_modelfit_results(model) # doctest: +ELLIPSIS
+    >>> summarize_modelfit_results(model.modelfit_results) # doctest: +SKIP
                      description  minimization_successful ...        ofv  ... runtime_total  ...
     pheno PHENOBARB SIMPLE MODEL                     True ... 586.276056  ...           4.0  ...
     """
