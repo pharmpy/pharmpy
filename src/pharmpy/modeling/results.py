@@ -287,7 +287,7 @@ def calculate_individual_parameter_statistics(
     batches = []
 
     if not all_covariate_free_symbols:
-        cases = {'median': dict()}
+        cases = {'median': {}}
     else:
         dataset = model.dataset
         column_filter = ['ID'] + list(symbol.name for symbol in all_covariate_free_symbols)

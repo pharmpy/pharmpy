@@ -940,7 +940,7 @@ def psn_reorder_base_model_inits(model, path):
         with open(order_path, 'r') as fh:
             lines = fh.readlines()
         lines = lines[1:-1]
-        replacements = dict()
+        replacements = {}
         for line in lines:
             stripped = line.strip().replace(' ', '').replace("'", '').rstrip(',').replace('>', '')
             a = stripped.split('=')

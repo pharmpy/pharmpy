@@ -161,7 +161,7 @@ class VariabilityHierarchy:
     def levels(self):
         """Dictionary of variability level name to numerical level"""
         ind = self._find_reference()
-        d = dict()
+        d = {}
         for level in self._levels:
             d[level.name] = ind
             ind += 1
@@ -582,7 +582,7 @@ class RandomVariables(CollectionsSequence):
         joined_rvs = self[inds]
         assert isinstance(joined_rvs, RandomVariables)
         means, M, names, _ = joined_rvs._calc_covariance_matrix()
-        cov_to_params = dict()
+        cov_to_params = {}
         if fill != 0:
             for row, col in product(range(M.rows), range(M.cols)):
                 if M[row, col] == 0:

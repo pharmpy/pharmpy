@@ -213,7 +213,7 @@ def parse_modelfit_results(model, path):
     except (FileNotFoundError, OSError):
         return None
     ofv = rdata['ofv']['ofv'][0]
-    omegas_sigmas = dict()
+    omegas_sigmas = {}
     omega = model.random_variables.etas.covariance_matrix
     for i in range(0, omega.rows):
         for j in range(0, omega.cols):
@@ -224,7 +224,7 @@ def parse_modelfit_results(model, path):
     for i in range(len(sigma)):
         omegas_sigmas[sigma[i]] = rdata['sigma']['sigma'][i]
     thetas_index = 0
-    pe = dict()
+    pe = {}
     for param in model.parameters:
         if param.fix:
             continue

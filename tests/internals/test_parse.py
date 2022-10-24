@@ -30,7 +30,7 @@ def test_tree_create_bad():
     with pytest.raises(ValueError):
         AttrTree.create('root', [])
     with pytest.raises(ValueError):
-        AttrTree.create('root', dict())
+        AttrTree.create('root', {})
 
     # tokens must have str as only "child", but trees can't have str as "children"
     with pytest.raises(TypeError):  # "not iterable"

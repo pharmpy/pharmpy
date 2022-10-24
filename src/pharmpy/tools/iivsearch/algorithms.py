@@ -102,7 +102,7 @@ def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
     param_subs = {
         parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix
     }
-    param_dict = dict()
+    param_dict = {}
     # FIXME temporary workaround, should handle IIV on eps
     symbs_before_ode = [symb.name for symb in model.statements.before_odes.free_symbols]
     for eta in dists.names:

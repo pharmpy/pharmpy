@@ -144,8 +144,8 @@ def _transform_etas(model, transformation, etas):
 
 
 def _create_new_etas(etas_original, transformation):
-    etas_subs = dict()
-    etas_assignment = dict()
+    etas_subs = {}
+    etas_assignment = {}
     if transformation == 'boxcox':
         eta_new = 'etab'
     elif transformation == 'tdist':
@@ -164,7 +164,7 @@ def _create_new_etas(etas_original, transformation):
 
 def _create_new_thetas(model, transformation, no_of_thetas):
     pset = list(model.parameters)
-    thetas = dict()
+    thetas = {}
     theta_name = str(create_symbol(model, stem=transformation, force_numbering=True))
 
     param_settings = (0.01, -3, 3) if transformation == 'lambda' else (80, 3, 100)

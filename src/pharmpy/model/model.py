@@ -223,8 +223,8 @@ class Model:
 
     @staticmethod
     def _compare_before_after_params(old, new):
-        before = dict()
-        after = dict()
+        before = {}
+        after = {}
         for key, value in old.items():
             if new[key] != value:
                 before[key] = value

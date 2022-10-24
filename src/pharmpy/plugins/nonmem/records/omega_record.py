@@ -37,7 +37,7 @@ class OmegaRecord(Record):
         try:
             self.comment_map
         except AttributeError:
-            self.comment_map = dict()
+            self.comment_map = {}
 
         if seen_labels is None:
             seen_labels = set()

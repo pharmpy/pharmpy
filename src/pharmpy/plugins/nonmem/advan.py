@@ -258,7 +258,7 @@ def _compartmental_model(
     elif des:
         rec_model = control_stream.get_records('MODEL')[0]
 
-        subs_dict, comp_names = dict(), dict()
+        subs_dict, comp_names = {}, {}
         comps = [c for c, _ in rec_model.compartments()]
 
         t = sympy.Symbol('t')

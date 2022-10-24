@@ -128,7 +128,7 @@ class EstMethodResults(Results):
 
 
 def summarize_estimation_steps(models):
-    dfs = dict()
+    dfs = {}
     for model in models:
         df = model.estimation_steps.to_dataframe()
         df.index = range(1, len(df) + 1)

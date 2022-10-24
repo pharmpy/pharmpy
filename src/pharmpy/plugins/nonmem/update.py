@@ -118,8 +118,8 @@ def update_random_variables(model: Model, old: RandomVariables, new: RandomVaria
     if not hasattr(model, '_parameters'):
         model.parameters
 
-    rec_dict = dict()
-    comment_dict = dict()
+    rec_dict = {}
+    comment_dict = {}
 
     for omega_record in model.internals.control_stream.get_records(
         'OMEGA'
@@ -288,7 +288,7 @@ def create_omega_block(
 
             param_str = f'{param_str.rstrip()}\n'
 
-    eta_map, name_variance = dict(), dict()
+    eta_map, name_variance = {}, {}
 
     for rv_name in rvs.names:
         variance_param = rvs[rv_name].get_variance(rv_name)
@@ -565,7 +565,7 @@ def new_compartmental_map(cs: CompartmentalSystem, oldmap: Mapping[str, int]):
     comp = cs.dosing_compartment
     central = cs.central_compartment
     i = 1
-    compmap = dict()
+    compmap = {}
     while True:
         compmap[comp.name] = i
         i += 1
@@ -591,7 +591,7 @@ def create_compartment_remap(oldmap, newmap):
     For all compartments where remapping is needed
     Assume that compartments with same name in new and old are the same compartments
     """
-    remap = dict()
+    remap = {}
     for name, number in oldmap.items():
         if name in newmap:
             remap[number] = newmap[name]
@@ -612,7 +612,7 @@ def pk_param_conversion(model: Model, advan, trans):
     assert oldmap is not None
     newmap = new_compartmental_map(cs, oldmap)
     remap = create_compartment_remap(oldmap, newmap)
-    d = dict()
+    d = {}
     for old, new in remap.items():
         d[sympy.Symbol(f'S{old}')] = sympy.Symbol(f'S{new}')
         d[sympy.Symbol(f'F{old}')] = sympy.Symbol(f'F{new}')

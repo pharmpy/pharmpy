@@ -137,7 +137,7 @@ def _translate_condition(c):
 def _translate_sympy_sign(s):
     args = s.expression.args
 
-    subs_dict = dict()
+    subs_dict = {}
     for arg in args:
         if str(arg).startswith('sign'):
             sign_arg = arg.args[0]

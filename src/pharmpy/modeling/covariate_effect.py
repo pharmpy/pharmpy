@@ -236,7 +236,7 @@ def add_covariate_effect(
         warnings.warn(f'Covariate effect of {covariate} on {parameter} already exists')
         return model
 
-    statistics = dict()
+    statistics = {}
     statistics['mean'] = _calculate_mean(model.dataset, covariate)
     statistics['median'] = _calculate_median(model, covariate)
     statistics['std'] = _calculate_std(model, covariate)
@@ -301,7 +301,7 @@ def _create_thetas(model, parameter, effect, covariate, template, _ctre=re.compi
 
     pset = model.parameters
 
-    theta_names = dict()
+    theta_names = {}
 
     if no_of_thetas == 1:
         inits = _choose_param_inits(effect, model, covariate)
@@ -374,7 +374,7 @@ def _choose_param_inits(effect, model, covariate, index=None):
     df = model.dataset
     init_default = 0.001
 
-    inits = dict()
+    inits = {}
 
     cov_median = _calculate_median(model, covariate)
     cov_min = df[str(covariate)].min()

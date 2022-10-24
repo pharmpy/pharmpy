@@ -14,8 +14,8 @@ def split_common_options(d):
     Tuple of common options and other option dictionaries
     """
     execute_options = ['path', 'resume']
-    common_options = dict()
-    other_options = dict()
+    common_options = {}
+    other_options = {}
     for key, value in d.items():
         if key in execute_options:
             if key == 'path':

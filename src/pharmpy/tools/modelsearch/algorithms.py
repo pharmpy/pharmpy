@@ -162,7 +162,7 @@ def _get_best_model(*models):
 
 
 def _get_possible_actions(wf, mfl_statements):
-    actions = dict()
+    actions = {}
     if wf.output_tasks:
         tasks = wf.output_tasks
     else:
@@ -172,7 +172,7 @@ def _get_possible_actions(wf, mfl_statements):
         if task:
             feat_previous = _get_previous_features(wf, task, mfl_funcs)
         else:
-            feat_previous = list()
+            feat_previous = []
 
         trans_possible = [
             feat

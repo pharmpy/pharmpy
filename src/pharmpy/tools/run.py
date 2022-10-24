@@ -252,7 +252,7 @@ def _create_metadata_tool(tool_name, tool_params, tool_options, args):
         'pharmpy_version': pharmpy.__version__,
         'tool_name': tool_name,
         'stats': {'start_time': _now()},
-        'tool_options': dict(),
+        'tool_options': {},
     }
 
     for i, p in enumerate(tool_params.values()):
@@ -281,7 +281,7 @@ def _create_metadata_tool(tool_name, tool_params, tool_options, args):
 
 
 def _create_metadata_common(common_options, dispatcher, database, toolname):
-    setup_metadata = dict()
+    setup_metadata = {}
     setup_metadata['dispatcher'] = dispatcher.__name__
     # FIXME: naming of workflows/tools should be consistent (db and input name of tool)
     setup_metadata['database'] = {
@@ -626,7 +626,7 @@ def rank_models(
     models_sorted = sorted(models_to_rank, key=_get_delta, reverse=True)
 
     # Create rank for models, if two have the same value they will have the same rank
-    ranking = dict()
+    ranking = {}
     rank, count, prev = 0, 0, None
     for model in models_sorted:
         count += 1
@@ -637,7 +637,7 @@ def rank_models(
             count = 0
         ranking[model.name] = rank
 
-    rows = dict()
+    rows = {}
     for model in models_all:
         delta, rank_value, rank = np.nan, np.nan, np.nan
         if model.name in ranking.keys():
@@ -759,7 +759,7 @@ def _get_model_result_summary(res, include_all_estimation_steps=False):
 
 
 def _summarize_step(res, i):
-    summary_dict = dict()
+    summary_dict = {}
 
     if i >= 0:
         minsucc = res.minimization_successful_iterations.iloc[i]

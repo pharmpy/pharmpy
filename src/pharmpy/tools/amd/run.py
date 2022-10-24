@@ -121,7 +121,7 @@ def run_amd(
             search_space = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
 
     db = default_tool_database(toolname='amd', path=path)
-    run_subfuncs = dict()
+    run_subfuncs = {}
     for section in order:
         if section == 'structural':
             func = _subfunc_modelsearch(search_space=search_space, path=db.path)
