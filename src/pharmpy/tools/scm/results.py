@@ -214,9 +214,9 @@ def model_name_series_to_dataframe(modelname, parcov_dictionary, is_backward, in
 
 def parse_mixed_block(block):
     m1 = None
-    readded = list()
-    stashed = list()
-    included_relations = dict()
+    readded = []
+    stashed = []
+    included_relations = {}
 
     pattern = {
         'm1': re.compile(r'Model\s+directory\s+(?P<m1folder>\S+)'),
@@ -246,15 +246,15 @@ def parse_mixed_block(block):
             for relation in match.group('relations').split(','):
                 par, cov, state = relation.split('-')
                 if par not in included_relations.keys():
-                    included_relations[par] = dict()
+                    included_relations[par] = {}
                 included_relations[par][cov] = state
 
     return m1, readded, stashed, included_relations
 
 
 def parse_chosen_relation_block(block):
-    chosen = dict()
-    criterion = dict()
+    chosen = {}
+    criterion = {}
     pattern = {
         'chosen': re.compile(
             r'Parameter-covariate relation chosen in this '
@@ -284,7 +284,7 @@ def parse_chosen_relation_block(block):
         criterion = match.groupdict()
     criterion['is_backward'] = is_backward
 
-    included_relations = dict()
+    included_relations = {}
 
     if len(block) > 4 and pattern['included'].match(block[4]):
         for row in block[5:]:
@@ -300,7 +300,7 @@ def parse_chosen_relation_block(block):
 
 
 def names_without_state(model_names):
-    return [parcov for parcov in model_names.str.extract(r'(.+)-\d+$').values.flatten()]
+    return list(model_names.str.extract(r'(.+)-\d+$').values.flatten())
 
 
 def extended_states(model_names, included_relations):
@@ -363,7 +363,7 @@ def step_data_frame(step, included_relations):
 
 
 def prior_included_step(included_relations, gof_is_pvalue):
-    states = list()
+    states = []
     extra = None
     if gof_is_pvalue:
         extra = {'delta_df': 0, 'pvalue': np.nan, 'goal_pvalue': np.nan}
@@ -373,7 +373,7 @@ def prior_included_step(included_relations, gof_is_pvalue):
         for cov, state in d.items():
             states.append(
                 {
-                    'step': int(0),
+                    'step': 0,
                     'parameter': par,
                     'covariate': cov,
                     'extended_state': int(state),
@@ -557,7 +557,7 @@ def relations_from_config_file(path, files):
             break  # do not check any other file, if more than one
 
     if included_lines:
-        included_relations = dict()
+        included_relations = {}
         p = re.compile(r'\s*([^-]+)-(\d+)\s*')
         for row in included_lines:
             par, covstates = row.split(r'=')
@@ -571,7 +571,7 @@ def relations_from_config_file(path, files):
         included_relations = None
 
     if test_lines:
-        test_relations = dict()
+        test_relations = {}
         for row in test_lines:
             par, covs = row.split(r'=')
             par = str.strip(par)

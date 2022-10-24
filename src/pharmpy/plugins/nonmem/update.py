@@ -1060,7 +1060,7 @@ def add_rate_assignment_if_missing(
 
 
 def update_abbr_record(model: Model, rv_trans):
-    trans = dict()
+    trans = {}
     if not rv_trans:
         return trans
     # Remove already abbreviated symbols
