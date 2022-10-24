@@ -1,3 +1,11 @@
+0.81.1 (2022-10-24)
+-------------------
+
+Bug fixes
+=========
+
+* Handle NM-TRAN datasets with one and two digit year in DATx column using default LAST20 (50)
+
 0.81.0 (2022-10-21)
 -------------------
 
