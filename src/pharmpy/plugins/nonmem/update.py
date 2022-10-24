@@ -1065,14 +1065,9 @@ def update_abbr_record(model: Model, rv_trans):
         return trans
     # Remove already abbreviated symbols
     # FIXME: Doesn't update if name has changed
-    kept = rv_trans.copy()
     abbr_recs = model.internals.control_stream.get_records('ABBREVIATED')
-    for rec in abbr_recs:
-        for rv in rec.replace.values():
-            for tk, tv in rv_trans.items():
-                if tv.name == rv:
-                    del kept[tk]
-    rv_trans = kept
+    to_delete = set().union(*(rec.replace.values() for rec in abbr_recs))
+    rv_trans = {tk: tv for tk, tv in rv_trans.items() if tv.name not in to_delete}
     if not rv_trans:
         return trans
 

@@ -1,8 +1,9 @@
-from itertools import combinations
+from itertools import chain
 from typing import Dict
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.internals.expr.subs import subs
+from pharmpy.internals.set.subsets import non_empty_subsets, subsets
 from pharmpy.model import Model, RandomVariables
 from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
@@ -73,26 +74,20 @@ def brute_force_block_structure(base_model, index_offset=0):
 
 def _get_eta_combinations(etas, as_blocks=False):
     # All possible combinations of etas
-    eta_combos = []
-    for i in range(1, len(etas.names) + 1):
-        eta_combos += [list(combo) for combo in combinations(etas.names, i)]
+    eta_combos = list(map(list, non_empty_subsets(etas.names)))
     if not as_blocks:
         return eta_combos
 
     # All possible combinations of blocks
     block_combos = []
-    for i in range(1, len(etas.names) + 1):
-        for combo in combinations(eta_combos, i):
-            combo = list(combo)
-            etas_in_combo = _flatten(combo)
-            etas_unique = set(etas_in_combo)
-            if len(etas_in_combo) == len(etas.names) and len(etas_unique) == len(etas.names):
-                block_combos.append(combo)
+    for combo in subsets(eta_combos, min_size=1, max_size=len(etas.names)):
+        combo = list(combo)
+        etas_in_combo = list(chain.from_iterable(combo))
+        etas_unique = set(etas_in_combo)
+        # FIXME Use proper partitioning algorithm
+        if len(etas_in_combo) == len(etas.names) and len(etas_unique) == len(etas.names):
+            block_combos.append(combo)
     return block_combos
-
-
-def _flatten(list_to_flatten):
-    return [item for sublist in list_to_flatten for item in sublist]
 
 
 def _is_current_block_structure(etas, combos):

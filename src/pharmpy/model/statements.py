@@ -1974,16 +1974,15 @@ class Statements(Sequence):
         graph = nx.DiGraph()
         for i in range(len(self) - 1, -1, -1):
             rhs = self[i].rhs_symbols
-            for s in rhs:
-                for j in range(i - 1, -1, -1):
-                    statement = self[j]
-                    if (
-                        isinstance(statement, Assignment)
-                        and statement.symbol == s
-                        or isinstance(statement, ODESystem)
-                        and s in statement.amounts
-                    ):
-                        graph.add_edge(i, j)
+            for j in range(i - 1, -1, -1):
+                statement = self[j]
+                if (
+                    isinstance(statement, Assignment)
+                    and statement.symbol in rhs
+                    or isinstance(statement, ODESystem)
+                    and not rhs.isdisjoint(statement.amounts)
+                ):
+                    graph.add_edge(i, j)
         return graph
 
     def direct_dependencies(self, statement):
@@ -2090,12 +2089,11 @@ class Statements(Sequence):
         removed_ind = self._statements.index(statement)
         # Statements defining symbols and dependencies
         candidates = set()
-        for s in symbols:
-            for i in range(removed_ind - 1, -1, -1):
-                stat = self[i]
-                if isinstance(stat, Assignment) and stat.symbol == s:
-                    candidates.add(i)
-                    break
+        symbols_set = set(symbols)
+        for i in range(removed_ind - 1, -1, -1):
+            stat = self[i]
+            if isinstance(stat, Assignment) and stat.symbol in symbols_set:
+                candidates.add(i)
         for i in candidates.copy():
             if i in graph:
                 candidates |= set(nx.dfs_preorder_nodes(graph, i))

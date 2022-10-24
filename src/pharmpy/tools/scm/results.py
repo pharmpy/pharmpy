@@ -305,11 +305,13 @@ def names_without_state(model_names):
 
 def extended_states(model_names, included_relations):
     model_parcov = names_without_state(model_names)
-    statedict = {parcov: int(-99) for parcov in model_parcov}
-    for par, d in included_relations.items():
-        for cov, state in d.items():
-            statedict[f'{par}{cov}'] = int(state)
-    return [statedict[parcov] for parcov in model_parcov]
+    placeholder = -99
+    statedict = {
+        f'{par}{cov}': int(state)
+        for par, d in included_relations.items()
+        for cov, state in d.items()
+    }
+    return [statedict.get(parcov, placeholder) for parcov in model_parcov]
 
 
 def step_data_frame(step, included_relations):
@@ -626,11 +628,7 @@ def psn_scm_options(path):
 
 
 def parcov_dict_from_test_relations(test_relations):
-    parcov = dict()
-    for par, covs in test_relations.items():
-        for cov in covs:
-            parcov[f'{par}{cov}'] = (par, cov)
-    return parcov
+    return {f'{par}{cov}': (par, cov) for par, covs in test_relations.items() for cov in covs}
 
 
 def add_covariate_effects(res, path):
