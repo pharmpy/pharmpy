@@ -1,5 +1,5 @@
-import itertools
 import warnings
+from itertools import product
 from pathlib import Path
 
 from pharmpy.deps import altair as alt
@@ -698,7 +698,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     mean_col = []
     p95_col = []
 
-    for param, cov in itertools.product(range(npars), range(ncovs)):
+    for param, cov in product(range(npars), range(ncovs)):
         if covariates[cov] in categorical:
             param_col.append(param_names[param])
             cov_col.append(covariates[cov])
@@ -751,7 +751,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     p5_col = []
     p95_col = []
     ind_col = []
-    for curid, param in itertools.product(range(nids), range(npars)):
+    for curid, param in product(range(nids), range(npars)):
         param_col.append(param_names[param])
         obs_col.append(original_id_bar[curid, param])
         p5_col.append(id_5th[curid, param])
@@ -774,7 +774,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     sdobs_col = []
     sd5th_col = []
     sd95th_col = []
-    for par, cond in itertools.product(range(npars), range(ncovs + 2)):
+    for par, cond in product(range(npars), range(ncovs + 2)):
         if cond == 0:
             condition = 'none'
         elif cond == ncovs + 1:
