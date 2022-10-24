@@ -1,3 +1,12 @@
+0.82.0 (2002-10-24)
+-------------------
+
+Changes
+=======
+
+* modeling.summarize_modelfit_results takes results objects instead of model objects
+* Do not include aic and bic in summarize_modelfit_results
+
 0.81.1 (2022-10-24)
 -------------------
 
