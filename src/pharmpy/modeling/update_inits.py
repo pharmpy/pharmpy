@@ -46,7 +46,7 @@ def update_inits(model: Model, parameter_estimates, move_est_close_to_bounds=Fal
     return model
 
 
-def _move_est_close_to_bounds(model, pe):
+def _move_est_close_to_bounds(model: Model, pe):
     rvs, pset = model.random_variables, model.parameters
     est = pe.to_dict()
     sdcorr = rvs.parameters_sdcorr(est)
