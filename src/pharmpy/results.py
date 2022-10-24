@@ -104,6 +104,10 @@ class ModelfitResults(Results):
 
     Attributes
     ----------
+    name : str
+        Name of model
+    description : str
+        Description of model
     correlation_matrix : pd.DataFrame
         Correlation matrix of the population parameter estimates
     covariance_matrix : pd.DataFrame
@@ -148,6 +152,8 @@ class ModelfitResults(Results):
         Number of function evaluations
     """
 
+    name: Optional[str] = None
+    description: Optional[str] = None
     ofv: Optional[float] = None
     ofv_iterations: Optional[pd.Series] = None
     parameter_estimates: Optional[pd.Series] = None

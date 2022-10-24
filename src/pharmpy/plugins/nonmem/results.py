@@ -90,6 +90,8 @@ def parse_modelfit_results(model, path, subproblem=None):
     cov, cor, coi, ses = calculate_cov_cor_coi_ses(cov, cor, coi, ses)
 
     res = ModelfitResults(
+        name=model.name,
+        description=model.description,
         minimization_successful=minimization_successful[last_est_ind],
         minimization_successful_iterations=minsucc_iters,
         estimation_runtime=estimation_runtime[last_est_ind],
