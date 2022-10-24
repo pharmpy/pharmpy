@@ -279,14 +279,9 @@ def _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements):
     else:
         n_prev = []
     if not n_prev:
-        if n == min(n_all):
-            return True
-        else:
-            return False
+        return n == min(n_all)
     n_index = n_all.index(n)
-    if n_index > 0 and n_all[n_index - 1] < n:
-        return True
-    return False
+    return n_index > 0 and n_all[n_index - 1] < n
 
 
 def _copy(name, features, model):
