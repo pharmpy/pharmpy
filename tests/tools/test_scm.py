@@ -68,6 +68,7 @@ def test_main(testdata):
     res3 = scm.psn_scm_results(dirs['onlyf'])
     assert res3.steps is not None
     sum1 = res3.ofv_summary
+    assert sum1 is not None
     assert [float(x) for x in sum1['pvalue'].values] == approx([nan, nan, 2.22e-13], nan_ok=True)
     assert res3.ofv_summary is not None
 
@@ -101,6 +102,7 @@ CL,WGT,3,  1,1,   0, 0,
     direct = df1['directory'].iloc[0]
     assert direct == 'rundir/m1' or direct == 'rundir\\m1'
     sum1 = scm.ofv_summary_dataframe(df1)
+    assert sum1 is not None
     assert [float(x) for x in sum1['pvalue'].values] == approx(
         [2.26e-10, 0.000002, 0.002178, 0.014192, 0.490010, 9999, 0.027672, 8.15e-24]
     )
@@ -136,10 +138,12 @@ V,WGT,2,  1,1,   0, 0,1,,,
     )
     assert df2 is not None
     sum2 = scm.ofv_summary_dataframe(df2)
+    assert sum2 is not None
     assert [float(x) for x in sum2['ofv_drop'].iloc[2:7].values] == approx(
         [2.90120, 3.00434, 1.18187, 1.18187, 3.00434]
     )
     cand2 = scm.candidate_summary_dataframe(df2)
+    assert cand2 is not None
     assert [int(t) for t in cand2['N_test']] == [6, 3, 2, 4, 5, 1]
 
     df3 = scm.psn_scm_parse_logfile(
