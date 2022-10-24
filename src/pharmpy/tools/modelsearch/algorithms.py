@@ -69,7 +69,7 @@ def exhaustive_stepwise(search_space, iiv_strategy):
                 model_no = len(model_tasks) + 1
                 model_name = f'modelsearch_run{model_no}'
 
-                wf_create_model, task_function = _create_model_workflow(
+                wf_create_model, _ = _create_model_workflow(
                     model_name, feat, mfl_funcs[feat], iiv_strategy
                 )
 
@@ -112,7 +112,7 @@ def reduced_stepwise(search_space, iiv_strategy):
                 model_no = len(model_tasks) + 1
                 model_name = f'modelsearch_run{model_no}'
 
-                wf_create_model, task_transformed = _create_model_workflow(
+                wf_create_model, _ = _create_model_workflow(
                     model_name, feat, mfl_funcs[feat], iiv_strategy
                 )
 

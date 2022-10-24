@@ -338,7 +338,7 @@ def test_parse_runtable_block_gof_ofv(testdata):
     pd.testing.assert_frame_equal(table, correct)
 
 
-def test_parse_mixed_block(testdata):
+def test_parse_mixed_block():
     block = [
         'Using user-defined ofv change criteria',
         'Degree of freedom  |  Required ofv change',
@@ -469,7 +469,7 @@ def test_parse_mixed_block(testdata):
     }
 
 
-def test_parse_chosen_relation_block(testdata):
+def test_parse_chosen_relation_block():
     block = [
         'Parameter-covariate relation chosen in this forward step: PHA-DISDUR-5 \n',
         'CRITERION              PVAL < 0.01 \n',
