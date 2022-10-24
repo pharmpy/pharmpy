@@ -271,7 +271,7 @@ def _is_allowed(feat_current, func_current, feat_previous, mfl_statements):
 
 def _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements):
     n_all: List[Any] = list(
-        t[1] for t in all_funcs(Model(), mfl_statements) if t[0] == 'PERIPHERALS'
+        args[0] for (kind, *args) in all_funcs(Model(), mfl_statements) if kind == 'PERIPHERALS'
     )
     n = func_current.keywords['n']
     if peripheral_previous:
