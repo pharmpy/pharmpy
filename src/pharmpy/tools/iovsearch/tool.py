@@ -45,6 +45,8 @@ def create_workflow(
         is None (all models will be ranked)
     distribution : str
         Which distribution added IOVs should have (default is same-as-iiv)
+    results : ModelfitResults
+        Results for model
     model : Model
         Pharmpy model
 
