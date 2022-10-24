@@ -957,8 +957,10 @@ def add_needed_pk_parameters(model: Model, advan, trans):
         assert oldmap is not None
         newmap = new_compartmental_map(odes, oldmap)
         for source in newmap.keys():
+            if source == len(newmap):  # NOTE Skip last
+                continue
             for dest in newmap.keys():
-                if source != dest and source != len(newmap):
+                if source != dest:  # NOTE Skip same
                     source_comp = odes.find_compartment(source)
                     dest_comp = odes.find_compartment(dest)
                     rate = odes.get_flow(source_comp, dest_comp)
