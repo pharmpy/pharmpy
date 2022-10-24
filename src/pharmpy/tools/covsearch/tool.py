@@ -458,7 +458,7 @@ def _modify_summary_tool(summary_tool, steps):
 
 
 def _summarize_models(models, steps):
-    summary_models = summarize_modelfit_results(models)
+    summary_models = summarize_modelfit_results([model.modelfit_results for model in models])
     summary_models['step'] = steps.reset_index().set_index(['model'])['step']
 
     return summary_models.reset_index().set_index(['step', 'model'])

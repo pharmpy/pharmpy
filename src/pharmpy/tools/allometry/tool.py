@@ -158,8 +158,8 @@ def results(start_model, allometry_model):
     allometry_model_failed = allometry_model.modelfit_results is None
     best_model = start_model if allometry_model_failed else allometry_model
 
-    summod_start = summarize_modelfit_results(start_model)
-    summod_allometry = summarize_modelfit_results(allometry_model)
+    summod_start = summarize_modelfit_results(start_model.modelfit_results)
+    summod_allometry = summarize_modelfit_results(allometry_model.modelfit_results)
     summods = pd.concat([summod_start, summod_allometry], keys=[0, 1], names=['step'])
     suminds = summarize_individuals([start_model, allometry_model])
     sumcount = summarize_individuals_count_table(df=suminds)

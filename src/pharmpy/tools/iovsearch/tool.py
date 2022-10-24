@@ -262,7 +262,7 @@ def task_results(rank_type, cutoff, bic_type, models):
     sum_mod, sum_tool = [], []
     for step, model_names in step_mapping.items():
         candidates = [model for model in [base_model] + res_models if model.name in model_names]
-        sum_mod_step = summarize_modelfit_results(candidates)
+        sum_mod_step = summarize_modelfit_results([model.modelfit_results for model in candidates])
         sum_mod.append(sum_mod_step)
         if step >= 1:
             ref_model = model_dict[candidates[0].parent_model]

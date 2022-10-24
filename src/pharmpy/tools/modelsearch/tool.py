@@ -105,8 +105,10 @@ def post_process(rank_type, cutoff, *models):
         ModelSearchResults, input_model, input_model, res_models, rank_type, cutoff
     )
 
-    summary_input = summarize_modelfit_results(input_model)
-    summary_candidates = summarize_modelfit_results(res_models)
+    summary_input = summarize_modelfit_results(input_model.modelfit_results)
+    summary_candidates = summarize_modelfit_results(
+        [model.modelfit_results for model in res_models]
+    )
 
     res.summary_models = pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step'])
 

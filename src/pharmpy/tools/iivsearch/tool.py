@@ -140,7 +140,7 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
 
         if i == 0:
             # Have input model as first row in summary of models as step 0
-            sum_models.append(summarize_modelfit_results(input_model))
+            sum_models.append(summarize_modelfit_results(input_model.modelfit_results))
 
         sum_tools.append(res.summary_tool)
         sum_models.append(res.summary_models)
@@ -236,9 +236,13 @@ def post_process(state, rank_type, cutoff, input_model, base_model_name, *models
     # If base model is model from a previous step or is the input model to the full tool,
     # it should be excluded in this step
     if base_model_name in state.model_names_so_far or base_model_name == state.input_model_name:
-        res.summary_models = summarize_modelfit_results(res_models)
+        res.summary_models = summarize_modelfit_results(
+            [model.modelfit_results for model in res_models]
+        )
     else:
-        res.summary_models = summarize_modelfit_results(models)
+        res.summary_models = summarize_modelfit_results(
+            [model.modelfit_results for model in models]
+        )
 
     return res
 

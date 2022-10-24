@@ -157,8 +157,8 @@ def start(context, model, groups, p_value, skip):
             wf, f'results{current_iteration}', context
         )
         if current_iteration == 1:
-            sum_models.append(summarize_modelfit_results(model))
-        sum_models.append(summarize_modelfit_results(best_model))
+            sum_models.append(summarize_modelfit_results(model.modelfit_results))
+        sum_models.append(summarize_modelfit_results(best_model.modelfit_results))
 
         cwres_models.append(res.cwres_models)
         tool_database = res.tool_database

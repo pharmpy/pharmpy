@@ -678,7 +678,7 @@ def _get_rankval(model, rank_type, bic_type):
         raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
 
 
-def summarize_modelfit_results(models, include_all_estimation_steps=False):
+def summarize_modelfit_results(results, include_all_estimation_steps=False):
     """Summarize results of model runs
 
     Summarize different results after fitting a model, includes runtime, ofv,
@@ -690,8 +690,8 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
 
     Parameters
     ----------
-    models : list, Model
-        List of models or single model
+    results : list, ModelfitResults
+        List of ModelfitResults or single ModelfitResults
     include_all_estimation_steps : bool
         Whether to include all estimation steps, default is False
 
@@ -709,61 +709,44 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
                      description  minimization_successful ...        ofv  ... runtime_total  ...
     pheno PHENOBARB SIMPLE MODEL                     True ... 586.276056  ...           4.0  ...
     """
-    # FIXME: add option for bic type?
-    if isinstance(models, Model):
-        models = [models]
+    if isinstance(results, ModelfitResults):
+        results = [results]
 
     summaries = []
 
-    for model in models:
-        if model.modelfit_results is not None:
-            summary = _get_model_result_summary(model, include_all_estimation_steps)
-            summary.insert(0, 'description', model.description)
+    for res in results:
+        if res is not None:
+            summary = _get_model_result_summary(res, include_all_estimation_steps)
+            summary.insert(0, 'description', res.description)
             summaries.append(summary)
-        else:
-            if include_all_estimation_steps:
-                for i, est in enumerate(model.estimation_steps):
-                    index = pd.MultiIndex.from_tuples(
-                        [(model.name, i + 1)], names=['model', 'step']
-                    )
-                    if est.evaluation:
-                        run_type = 'evaluation'
-                    else:
-                        run_type = 'estimation'
-                    empty_df = pd.DataFrame({'run_type': run_type}, index=index)
-                    summaries.append(empty_df)
-            else:
-                index = pd.Index([model.name], name='model')
-                empty_df = pd.DataFrame(index=index)
-                summaries.append(empty_df)
 
     df = pd.concat(summaries)
 
     return df
 
 
-def _get_model_result_summary(model, include_all_estimation_steps=False):
+def _get_model_result_summary(res, include_all_estimation_steps=False):
     if not include_all_estimation_steps:
-        summary_dict = _summarize_step(model, -1)
-        index = pd.Index([model.name], name='model')
+        summary_dict = _summarize_step(res, -1)
+        index = pd.Index([res.name], name='model')
         summary_df = pd.DataFrame(summary_dict, index=index)
     else:
         summary_dicts = []
         tuples = []
-        for i in range(len(model.estimation_steps)):
-            summary_dict = _summarize_step(model, i)
-            is_evaluation = model.estimation_steps[i].evaluation
+        for i in range(len(res.evaluation)):
+            summary_dict = _summarize_step(res, i)
+            is_evaluation = res.evaluation.iloc[i]
             if is_evaluation:
                 run_type = 'evaluation'
             else:
                 run_type = 'estimation'
             summary_dict = {'run_type': run_type, **summary_dict}
             summary_dicts.append(summary_dict)
-            tuples.append((model.name, i + 1))
+            tuples.append((res.name, i + 1))
         index = pd.MultiIndex.from_tuples(tuples, names=['model', 'step'])
         summary_df = pd.DataFrame(summary_dicts, index=index)
 
-    log_df = model.modelfit_results.log.to_dataframe()
+    log_df = res.log.to_dataframe()
 
     no_of_errors = len(log_df[log_df['category'] == 'ERROR'])
     no_of_warnings = len(log_df[log_df['category'] == 'WARNING'])
@@ -775,8 +758,7 @@ def _get_model_result_summary(model, include_all_estimation_steps=False):
     return summary_df
 
 
-def _summarize_step(model, i):
-    res = model.modelfit_results
+def _summarize_step(res, i):
     summary_dict = dict()
 
     if i >= 0:

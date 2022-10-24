@@ -303,7 +303,7 @@ def test_summarize_modelfit_results(
 ):
     pheno = load_model_for_test(pheno_path)
 
-    summary_single = summarize_modelfit_results(pheno)
+    summary_single = summarize_modelfit_results(pheno.modelfit_results)
 
     assert summary_single.loc['pheno_real']['ofv'] == 586.2760562818805
     assert summary_single['OMEGA(1,1)_estimate'].mean() == 0.0293508
@@ -312,7 +312,7 @@ def test_summarize_modelfit_results(
 
     mox = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
 
-    summary_multiple = summarize_modelfit_results([pheno, mox])
+    summary_multiple = summarize_modelfit_results([pheno.modelfit_results, mox.modelfit_results])
 
     assert summary_multiple.loc['mox1']['ofv'] == -624.5229577248352
     assert summary_multiple['OMEGA(1,1)_estimate'].mean() == 0.2236304
@@ -324,11 +324,11 @@ def test_summarize_modelfit_results(
     pheno_no_res = create_model_for_test(pheno.model_code)
     pheno_no_res.name = 'pheno_no_res'
 
-    summary_no_res = summarize_modelfit_results([pheno, pheno_no_res])
+    summary_no_res = summarize_modelfit_results(
+        [pheno.modelfit_results, pheno_no_res.modelfit_results]
+    )
 
     assert summary_no_res.loc['pheno_real']['ofv'] == 586.2760562818805
-    assert np.isnan(summary_no_res.loc['pheno_no_res']['ofv'])
-    assert np.all(np.isnan(summary_no_res.filter(regex='estimate$').loc['pheno_no_res']))
 
     pheno_multest = load_model_for_test(
         testdata
@@ -340,13 +340,15 @@ def test_summarize_modelfit_results(
         / 'pheno_multEST.mod'
     )
 
-    summary_multest = summarize_modelfit_results([pheno_multest, mox])
+    summary_multest = summarize_modelfit_results(
+        [pheno_multest.modelfit_results, mox.modelfit_results]
+    )
 
     assert len(summary_multest.index) == 2
 
     assert not summary_multest.loc['pheno_multEST']['minimization_successful']
     summary_multest_full = summarize_modelfit_results(
-        [pheno_multest, mox], include_all_estimation_steps=True
+        [pheno_multest.modelfit_results, mox.modelfit_results], include_all_estimation_steps=True
     )
 
     assert len(summary_multest_full.index) == 3
@@ -360,13 +362,11 @@ def test_summarize_modelfit_results(
     pheno_multest_no_res.name = 'pheno_multest_no_res'
 
     summary_multest_full_no_res = summarize_modelfit_results(
-        [pheno_multest_no_res, mox], include_all_estimation_steps=True
+        [pheno_multest_no_res.modelfit_results, mox.modelfit_results],
+        include_all_estimation_steps=True,
     )
 
     assert summary_multest_full_no_res.loc['mox1', 1]['ofv'] == -624.5229577248352
-    assert np.isnan(summary_multest_full_no_res.loc['pheno_multest_no_res', 1]['ofv'])
-    estimates = summary_multest_full_no_res.loc['pheno_multest_no_res', 2].iloc[2:]
-    assert estimates.isnull().all()
 
 
 def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_path, pheno_path):
@@ -390,8 +390,12 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
             path=tmp_path / 'pheno_data.csv'
         )
 
-        models = [model, model_no_header, model_rounding_error]
-        summary = summarize_modelfit_results(models)
+        results = [
+            model.modelfit_results,
+            model_no_header.modelfit_results,
+            model_rounding_error.modelfit_results,
+        ]
+        summary = summarize_modelfit_results(results)
 
         assert summary.loc['pheno_real']['errors_found'] == 0
         assert summary.loc['pheno_real']['warnings_found'] == 0
