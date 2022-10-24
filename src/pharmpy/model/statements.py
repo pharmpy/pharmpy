@@ -1149,8 +1149,7 @@ class CompartmentalSystem(ODESystem):
             dosecmt = self.dosing_compartment
         except ValueError:
             # Fallback for cases where no dose is available (yet)
-            nodes = [node for node in self._g.nodes]
-            return nodes
+            return list(self._g.nodes)
         # Order compartments
         output = self.output_compartment
 

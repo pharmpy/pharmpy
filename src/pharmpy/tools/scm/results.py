@@ -98,7 +98,7 @@ def psn_scm_parse_logfile(logfile, options, parcov_dictionary):
     """Read SCM results"""
 
     logfile = Path(logfile)
-    df = pd.concat([step for step in log_steps(logfile, options, parcov_dictionary)])
+    df = pd.concat(list(log_steps(logfile, options, parcov_dictionary)))
     if 'stashed' in df.columns:
         df.fillna(value={'stashed': False, 'readded': False}, inplace=True)
     return df
@@ -294,7 +294,7 @@ def parse_chosen_relation_block(block):
             par = match.group('parameter')
             if re.search(r'-\d+$', par):
                 raise NotImplementedError('Missing whitespace between param and included covs')
-            included_relations[par] = {p: c for p, c in pattern['covstate'].findall(row)}
+            included_relations[par] = dict(pattern['covstate'].findall(row))
 
     return chosen, criterion, included_relations
 
@@ -501,7 +501,7 @@ def split_merged_base_and_new_ofv(rawtable):
         rawtable.insert(3, 'newfixed', subdf.newfixed)
         # rename columns to get original labels at correct positions
         old = list(rawtable.columns)
-        rawtable.rename(columns={o: correct for o, correct in zip(old, column_names)}, inplace=True)
+        rawtable.rename(columns=dict(zip(old, column_names)), inplace=True)
 
     return rawtable
 

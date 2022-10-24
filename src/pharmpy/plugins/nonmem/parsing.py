@@ -194,7 +194,7 @@ def create_name_trans(control_stream, rvs, statements):
             f'names for these.'
         )
 
-    names_nonmem_all = rvs.names + [key for key in parameter_translation(control_stream).keys()]
+    names_nonmem_all = rvs.names + list(parameter_translation(control_stream).keys())
 
     if set(names_nonmem_all) - set(names_sset_translated + names_pset_translated + names_basic):
         raise ValueError(

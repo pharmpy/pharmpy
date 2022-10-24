@@ -308,8 +308,7 @@ def _create_thetas(model, parameter, effect, covariate, template, _ctre=re.compi
 
         theta_name = f'POP_{parameter}{covariate}'
         pset = Parameters(
-            [p for p in pset]
-            + [Parameter(theta_name, inits['init'], inits['lower'], inits['upper'])]
+            list(pset) + [Parameter(theta_name, inits['init'], inits['lower'], inits['upper'])]
         )
         theta_names['theta'] = theta_name
     else:
@@ -318,8 +317,7 @@ def _create_thetas(model, parameter, effect, covariate, template, _ctre=re.compi
 
             theta_name = f'POP_{parameter}{covariate}_{i}'
             pset = Parameters(
-                [p for p in pset]
-                + [Parameter(theta_name, inits['init'], inits['lower'], inits['upper'])]
+                list(pset) + [Parameter(theta_name, inits['init'], inits['lower'], inits['upper'])]
             )
             theta_names[new_theta] = theta_name
 

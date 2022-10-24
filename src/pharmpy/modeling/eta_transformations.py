@@ -163,7 +163,7 @@ def _create_new_etas(etas_original, transformation):
 
 
 def _create_new_thetas(model, transformation, no_of_thetas):
-    pset = [p for p in model.parameters]
+    pset = list(model.parameters)
     thetas = dict()
     theta_name = str(create_symbol(model, stem=transformation, force_numbering=True))
 

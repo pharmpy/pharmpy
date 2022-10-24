@@ -169,7 +169,7 @@ def update_random_variable_records(model: Model, rvs_diff, rec_dict, comment_dic
             recs_to_remove = [rec for rec in rvs_rec if rec not in removed]
             if recs_to_remove:
                 model.internals.control_stream.remove_records(recs_to_remove)
-                removed += [rec for rec in recs_to_remove]
+                removed += list(recs_to_remove)
         else:
             diag_rvs = get_diagonal(rvs, rec_dict)
             # Account for etas in diagonal
@@ -485,7 +485,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         old_odes = old.ode_system
         if new_odes != old_odes:
             colnames, drop, _, _ = parse_column_info(model.internals.control_stream)
-            col_dropped = {key: value for key, value in zip(colnames, drop)}
+            col_dropped = dict(zip(colnames, drop))
             if 'CMT' in col_dropped.keys() and not col_dropped['CMT']:
                 warnings.warn(
                     'Compartment structure has been updated, CMT-column '
@@ -1156,7 +1156,7 @@ def update_estimation(model: Model):
             if est.keep_every_nth_iter is not None:
                 est_code += f' PRINT={est.keep_every_nth_iter}'
             if est.tool_options:
-                option_names = {key for key in est.tool_options.keys()}
+                option_names = set(est.tool_options.keys())
                 overlapping_attributes = set(protected_attributes).intersection(option_names)
                 if overlapping_attributes:
                     overlapping_attributes_str = ', '.join(list(overlapping_attributes))

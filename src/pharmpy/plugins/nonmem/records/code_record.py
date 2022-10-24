@@ -191,7 +191,7 @@ def _order_terms(assignment, rvs, trans):
         return assignment.expression
 
     def arg_len(symb):
-        return len([s for s in symb.args])
+        return len(symb.args)
 
     terms_iiv_iov.sort(reverse=True, key=arg_len)
     terms_ruv.sort(reverse=True, key=arg_len)

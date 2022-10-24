@@ -116,7 +116,7 @@ def add_allometry(
     if not (len(parsed_parameters) == len(initials) == len(lower_bounds) == len(upper_bounds)):
         raise ValueError("The number of parameters, initials and bounds must be the same")
 
-    params = [p for p in model.parameters]
+    params = list(model.parameters)
     for p, init, lower, upper in zip(parsed_parameters, initials, lower_bounds, upper_bounds):
         symb = create_symbol(model, f'ALLO_{p.name}')
         param = Parameter(symb.name, init=init, lower=lower, upper=upper, fix=fixed)
