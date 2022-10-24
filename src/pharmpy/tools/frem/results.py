@@ -805,14 +805,12 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
         [['all'] + covariates, param_names], names=['condition', 'parameter']
     )
     df = pd.DataFrame(index=index)
+    indices = range(len(param_names))
     if parameter_variability_all is not None:
-        for i in range(len(param_names)):
-            for j in range(len(param_names)):
-                df.loc[('all', param_names[i]), param_names[j]] = parameter_variability_all[i][j]
-    for k, name in enumerate(covariates):
-        for i in range(len(param_names)):
-            for j in range(len(param_names)):
-                df.loc[(name, param_names[i]), param_names[j]] = parameter_variability[k][i][j]
+        for i, j in product(indices, repeat=2):
+            df.loc[('all', param_names[i]), param_names[j]] = parameter_variability_all[i][j]
+    for (k, name), i, j in product(enumerate(covariates), indices, indices):
+        df.loc[(name, param_names[i]), param_names[j]] = parameter_variability[k][i][j]
     res.parameter_variability = df
     return res
 
