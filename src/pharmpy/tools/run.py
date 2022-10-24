@@ -795,8 +795,6 @@ def _summarize_step(model, i):
         i + 1,
     ].iloc[-1]
     summary_dict['ofv'] = ofv
-    summary_dict['aic'] = calculate_aic(model, res.ofv)
-    summary_dict['bic'] = calculate_bic(model, res.ofv)
     summary_dict['runtime_total'] = res.runtime_total
     summary_dict['estimation_runtime'] = res.estimation_runtime_iterations.iloc[i]
 
