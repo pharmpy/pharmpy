@@ -33,7 +33,7 @@ project = 'Pharmpy'
 year = '2018-2022'
 authors = ['the Pharmpy development team']
 copyright = '{0}; {1}'.format(year, ', '.join(authors))
-version = release = '0.81.1'
+version = release = '0.82.0'
 html_show_sourcelink = False
 
 pygments_style = 'trac'
