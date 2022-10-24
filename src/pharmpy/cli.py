@@ -56,7 +56,7 @@ import argparse
 import pydoc
 import sys
 import warnings
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 from pathlib import Path
 from textwrap import dedent
 
@@ -96,7 +96,7 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 
     key_width = max(len(field) for field in data_dict.keys())
     if sort:
-        data_dict = OrderedDict(sorted(data_dict.items()))
+        data_dict = dict(sorted(data_dict.items()))
     if right_just:
         line_format = '  %%%ds\t%%s' % key_width
     else:
@@ -418,7 +418,7 @@ def model_print(args):
     lines = []
     for i, model in enumerate(args.models):
         lines += ['[%d/%d] %r' % (i + 1, len(args.models), model.name)]
-        dict_ = OrderedDict()
+        dict_ = {}
         try:
             dict_['dataset'] = repr(model.dataset)
         except FileNotFoundError as e:
