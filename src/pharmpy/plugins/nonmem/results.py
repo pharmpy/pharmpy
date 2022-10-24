@@ -89,6 +89,8 @@ def parse_modelfit_results(model, path, subproblem=None):
 
     cov, cor, coi, ses = calculate_cov_cor_coi_ses(cov, cor, coi, ses)
 
+    evaluation = parse_evaluation(model)
+
     res = ModelfitResults(
         name=model.name,
         description=model.description,
@@ -120,6 +122,7 @@ def parse_modelfit_results(model, path, subproblem=None):
         ofv_iterations=ofv_iterations,
         predictions=predictions,
         residuals=residuals,
+        evaluation=evaluation,
         log=log,
     )
     return res
@@ -534,6 +537,13 @@ def parse_standard_errors(model, ext_tables):
     if model:
         sdcorr_ses = sdcorr_ses.rename(index=parameter_translation(model.internals.control_stream))
     return ses, sdcorr_ses
+
+
+def parse_evaluation(model):
+    index = list(range(1, len(model.estimation_steps) + 1))
+    evaluation = [est.evaluation for est in model.estimation_steps]
+    ser = pd.Series(evaluation, index=index, name='evaluation')
+    return ser
 
 
 def get_fixed_parameters(table, model):

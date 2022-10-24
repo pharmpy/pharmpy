@@ -150,6 +150,8 @@ class ModelfitResults(Results):
         The cause of premature termination. One of 'maxevals_exceeded' and 'rounding_errors'
     function_evaluations : int
         Number of function evaluations
+    evaluation : pd.Series
+        A bool for each estimation step. True if this was a model evaluation and False otherwise
     """
 
     name: Optional[str] = None
@@ -183,3 +185,4 @@ class ModelfitResults(Results):
     significant_digits_iterations: Optional[pd.Series] = None
     log_likelihood: Optional[float] = None
     log: Optional[Log] = None
+    evaluation: Optional[pd.Series] = None
