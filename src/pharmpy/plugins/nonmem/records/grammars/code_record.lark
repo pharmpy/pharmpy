@@ -19,12 +19,12 @@ call: "CALL"i WS CNAME [WS] "(" [WS] _atom [WS] ("," [WS] _atom [WS])* ")"
 return: "RETURN"i
 assignment: variable [WS] "=" [WS] expression
 
-while: [WS] "DO"i [WS] "WHILE"i [WS] "(" logical_expression ")" [WS] NEWLINE ([WS] statement NEWLINE)* [WS] "END DO"i [WS]
+while: [WS] "DO"i [WS] "WHILE"i [WS] "(" logical_expression ")" [WS] LINEENDING ([WS] statement LINEENDING)* [WS] "END DO"i [WS]
 
 block_if: block_if_start block_if_elseif* block_if_else? block_if_end
-block_if_start: [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] NEWLINE ([WS] statement [WS] NEWLINE)*
-block_if_else: [WS] "ELSE"i [WS] NEWLINE ([WS] statement NEWLINE)*
-block_if_elseif: [WS] "ELSE"i [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] NEWLINE ([WS] statement [WS] NEWLINE)*
+block_if_start: [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] LINEENDING ([WS] statement [WS] LINEENDING)*
+block_if_else: [WS] "ELSE"i [WS] LINEENDING ([WS] statement LINEENDING)*
+block_if_elseif: [WS] "ELSE"i [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] LINEENDING ([WS] statement [WS] LINEENDING)*
 block_if_end: [WS] ("END IF"i | "ENDIF"i) [WS]
 
 logical_if: "IF"i [WS] "(" logical_expression ")" [WS] (assignment | exit | call)
@@ -83,5 +83,5 @@ SIGMA: "SIGMA"i
 
 WS: /([ \t]+|[ \t]*&[ \t]*\r?\n[ \t]*)/
 
-%import .definitions (COMMENT, NEWLINE, WS_ALL)
+%import .definitions (COMMENT, LINEENDING, WS_ALL)
 %import common (CNAME, SIGNED_INT)

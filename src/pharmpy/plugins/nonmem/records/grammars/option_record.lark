@@ -1,12 +1,28 @@
-root: (option | ws | COMMENT)*
+root : _empty_lines _options? _end?
 
-option: KEY [WS] "=" [WS] VALUE
-      | VALUE
+_options: (_options _sep)? option
 
-KEY: /\w+/
-VALUE: /\([^)]*\)|[^\s=;]+/
+_empty_lines: _sep?
 
-// common rules
-ws      : WS_ALL
+_sep: ws
+    | ws newline
+    | ws COMMENT newline
+    | newline
+    | COMMENT newline
 
-%import .definitions (COMMENT, WS, WS_ALL)
+_end: ws COMMENT?
+    | ws newline COMMENT?
+    | ws COMMENT newline COMMENT?
+    | newline COMMENT?
+    | COMMENT newline COMMENT?
+
+newline: (newline COMMENT?)? NEWLINE
+ws: WS
+
+option: KEY ("=" VALUE)?
+
+KEY: ATOM
+VALUE: ATOM
+ATOM: /\([^)]*\)|[^\s=;]+/
+
+%import .definitions (COMMENT, WS, NEWLINE)

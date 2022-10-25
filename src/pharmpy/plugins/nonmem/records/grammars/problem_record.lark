@@ -1,5 +1,5 @@
-root: raw_title NEWLINE*
+root: raw_title LINEENDING*
 raw_title: [ANYTHING]
 ANYTHING: /[^\n]+/
 
-%import .definitions (NEWLINE)
+%import .definitions (LINEENDING)

@@ -18,7 +18,11 @@
 //   5. "FIXED" can appear almost anywhere and multiple times in a row
 //      when parentheses are used
 
-root : _ws* theta (NEWLINE | WS | theta | option)*
+root : _ws* WS? theta (_add_or_finish | _next_line_or_finish)
+_thetas_or_options: (theta | option) (_add_or_finish | _next_line_or_finish)
+_add_or_finish: WS (_thetas_or_options | _next_line_or_finish)
+_next_line_or_finish: COMMENT? _next_line?
+_next_line: NEWLINE _ws* _thetas_or_options?
 
 ?option : KEY [WS] "=" [WS] VALUE -> option
         | VALUE                   -> option
@@ -49,9 +53,9 @@ KEY   : /(?!([0-9]|\(|FIX))\w+/
 VALUE : /(?!([0-9]|\(|FIX))[^\s=;]+/
 
 // common misc rules
-_ws: [WS] [NEWLINE]
+_ws: WS? COMMENT? NEWLINE
 
-%import .definitions (INT, NEWLINE, NUMERIC, WS)
+%import .definitions (INT, COMMENT, NEWLINE, NUMERIC, WS)
 
 NEG_INF: "-INF"i | "-1000000"i
 POS_INF: "INF"i | "1000000"i

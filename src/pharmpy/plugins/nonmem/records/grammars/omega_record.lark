@@ -24,24 +24,31 @@
 //   %input | VARIANCE CORRELATION BLOCK(2)\n0.64\n-0.394 0.58|
 //   %input | CHOLESKY BLOCK(2)\n0.8\n-0.3 0.7|
 
-root : NEWLINE
-     | [WS] [diagonal] ([_ws] diag_item)+ [_ws]           // form 1
-     | [_opt] block [_opt] (_item)+ [_ws]      // form 2
-     | [_opt] block [_opt] same ([_ws] comment)* [_ws]    // form 3
-     | [_opt] bare_block [_opt] same ([_ws] comment)* [_ws]    // form 3 w/o n
-     | [_opt] block [_opt] values (_opt | [_ws] comment)* [_ws]  // form 4
+root : _empty_lines _record _trailing_comments? WS? NEWLINE*
 
-diag_item: init [_diag_options]
-         | "(" [WS] _diag_options [WS] init [WS] ")" [n]
-         | "(" [WS] init [WS] _diag_options [WS] ")" [n]
-         | "(" [WS] _diag_options [WS] init [WS] _diag_options [WS] ")" [n]
-_diag_options: (_ws (FIX | SD | VAR))*
+_record : WS? diagonal? (_sep diag_item)+                               // form 1
+     | _options? block _sep _options_right? _items                      // form 2
+     | _options? block _sep _options_right? same                        // form 3
+     | _options? bare_block _sep _options_right? same                   // form 3 w/o n
+     | _options? block _sep _options_right? values _sep _options_right? // form 4
+
+_trailing_comments: (NEWLINE+ | WS)? _trailing_comments_loop
+_trailing_comments_loop: _trailing_comment (NEWLINE+ _trailing_comments_loop)?
+_trailing_comment: comment
+
+_options: (_sep _opt)+ _sep
+_options_right: (_opt _sep)+
+
+diag_item: init (_sep _diag_option)*
+         | _lpar (_diag_option _sep)* init (_sep _diag_option)* _rpar n?
+_diag_option: FIX | SD | VAR
 
 // repeat of init or comment (form 1 & 2)
-_item : [_ws] omega | [_ws] comment
+_items : omega _more_items?
+_more_items : _sep_comment _items
 
 // can be tied to WHOLE record or ONE INIT
-_opt     : (_ws (FIX | VAR | SD | CORR | COV | CHOLESKY))* [_ws]  // note ws injection as 1st child
+_opt     : FIX | VAR | SD | CORR | COV | CHOLESKY
 FIX      : "FIXED" | "FIXE" | "FIX"
 VAR      : "VARIANCE" | "VARIANC" | "VARIAN" | "VARIA" | "VARI" | "VAR" | "VA" | "V"
 SD       : "STANDARD" | "STANDAR" | "STANDA" | "STAND" | "STAN" | "STA" | "ST" | "SD" | "S"
@@ -50,10 +57,10 @@ COV      : "COVARIANCE" | "COVARIANC" | "COVARIAN" | "COVARIA" | "COVARI" | "COV
 CHOLESKY : "CHOLESKY" | "CHOLESK" | "CHOLES" | "CHOLE" | "CHOL" | "CHO"
 
 // parentheses sizes (optional for SAME and BLOCK with SAME)
-block       : ("BLOCK" | "BLOC" | "BLO") [_ws] _lpar size _rpar
+block       : ("BLOCK" | "BLOC" | "BLO") _empty_lines _lpar size _rpar
 bare_block  : ("BLOCK" | "BLOC" | "BLO")
-same        : "SAME" [_lpar size _rpar]
-diagonal    : ("DIAGONAL" | "DIAGONA" | "DIAGON" | "DIAGO" | "DIAG" | "DIA") [_ws] _lpar [WS] size [WS] _rpar [_ws]
+same        : "SAME" (_lpar size _rpar)?
+diagonal    : ("DIAGONAL" | "DIAGONA" | "DIAGON" | "DIAGO" | "DIAG" | "DIA") _empty_lines _lpar size _rpar
 values      : "VALUES" _lpar diag sep odiag _rpar
 
 size  : INT
@@ -61,20 +68,24 @@ diag  : NUMERIC
 odiag : NUMERIC
 
 // separator and clustering of init values
-sep : WS | [WS] "," [WS]
-_lpar : "(" [WS]
-_rpar : [WS] ")"
+sep : WS | WS? "," WS?
+_lpar : "(" WS?
+_rpar : WS? ")"
 
 // omega init value
-omega : init _opt*
-      | _lpar init _opt* _rpar [n]
-      | _lpar _opt* init _rpar [n]
+omega : init (_sep _opt)*
+      | _lpar init (_sep _opt)* _sep _rpar n?
+      | _lpar (_opt _sep)* init _rpar n?
 
 init  : NUMERIC
 n     : "x" INT
 
 // common misc rules
-_ws: [WS] [NEWLINE]
+_empty_lines: _line_ending* WS?
+_line_ending: WS? COMMENT? NEWLINE
+_sep: (WS | _line_ending+ WS?)
+_line_ending_comment: WS? comment? NEWLINE
+_sep_comment: (WS | _line_ending_comment+ WS?)
 comment: COMMENT
 
 %import .definitions (COMMENT, INT, NEWLINE, NUMERIC, WS)

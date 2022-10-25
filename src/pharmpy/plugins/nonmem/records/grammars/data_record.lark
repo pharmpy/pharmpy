@@ -9,7 +9,8 @@
 //        [BLANKOK]
 //        [MISDAT=@r@...]
 
-root : ws (comment [ws])* (filename | ASTERISK) (ws option | [ws] comment)* [ws]
+root : _empty_lines (filename | ASTERISK) (_sep _options)? _empty_lines comment?
+_options: option (_sep _options)?
 
 ASTERISK: "*"
 // dataset (always, unless only ASTERISK terminal)
@@ -26,7 +27,7 @@ filename: TEXT | QUOTE
         | ACCEPT [WS] "=" [WS] _list            -> accept
         | ACCEPT [WS] _list                     -> accept
         | KEY [WS] "=" [WS] VALUE               -> option
-        | VALUE                                 -> option
+        | KEY                                   -> option
 
 // specific option terminals
 char: CHAR | CHARQUOTE
@@ -40,17 +41,21 @@ KEY   : /(?!(;|IGN|ACC|NULL|NUL))\w+/      // TODO: parse all options or use pri
 VALUE : /(?!(;|IGN|ACC|NULL|NUL))[^\s=]+/  // TODO: parse all options or use priority (instead of negative lookahead)
 
 // _list is only a container (filter thus on accept/ignore)
-_list  : "(" [ws] filter [ws] ("," [ws] filter [ws])* ")"
-filter : COLUMN [ws] operator [ws] value | COLUMN [ws] value        // inlined rules -> terminals (has no depth)
+_list  : "(" _list_items ")"
+_list_items : _empty_lines filter _empty_lines ("," _list_items)?
+filter : COLUMN _empty_lines operator _empty_lines value | COLUMN _empty_lines value        // inlined rules -> terminals (has no depth)
 ?operator: OP_EQ | OP_STR_EQ | OP_NE | OP_STR_NE | OP_LT | OP_GT | OP_LT_EQ | OP_GT_EQ
 ?value: TEXT | QUOTE
 
 COLUMN : /\w+/  // TODO: verify correct coverage
 
 // common misc rules
-ws      : WS_ALL
+ws      : WS
+newline : NEWLINE
 comment : COMMENT
-COMMENT: /;.*/
+_empty_lines: _line_ending* ws?
+_line_ending: ws? comment? newline
+_sep: (ws | _line_ending+ ws?)
 
 // common operators
 OP_EQ    : ".EQN."
@@ -70,4 +75,4 @@ QUOTE : /"[^"]*"/
 CHARQUOTE : /"[^"]"/
           | /'[^']'/
 
-%import .definitions (WS, WS_ALL)
+%import .definitions (WS, NEWLINE, COMMENT)

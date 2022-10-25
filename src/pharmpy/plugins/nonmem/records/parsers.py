@@ -10,7 +10,7 @@ grammar_root = Path(__file__).resolve().parent / 'grammars'
 def install_grammar(cls):
     grammar = Path(grammar_root / cls.grammar_filename).resolve()
     with open(str(grammar), 'r') as fh:
-        cls.lark = Lark(fh, **GenericParser.lark_options)
+        cls.lark = Lark(fh, **{**GenericParser.lark_options, **getattr(cls, 'grammar_options', {})})
     return cls
 
 
@@ -21,6 +21,10 @@ class RecordParser(GenericParser):
 @install_grammar
 class AbbreviatedRecordParser(RecordParser):
     grammar_filename = 'abbreviated_record.lark'
+    grammar_options = dict(
+        parser='earley',
+        lexer='dynamic',
+    )
 
 
 @install_grammar
@@ -40,6 +44,11 @@ class ProblemRecordParser(RecordParser):
 @install_grammar
 class ThetaRecordParser(RecordParser):
     grammar_filename = 'theta_record.lark'
+    grammar_options = dict(
+        parser='earley',
+        lexer='dynamic',
+        ambiguity='resolve',
+    )
     non_empty = [
         {'comment': (1, 'COMMENT')},
     ]
@@ -48,6 +57,11 @@ class ThetaRecordParser(RecordParser):
 @install_grammar
 class OmegaRecordParser(RecordParser):
     grammar_filename = 'omega_record.lark'
+    grammar_options = dict(
+        parser='earley',
+        lexer='dynamic',
+        ambiguity='resolve',
+    )
     non_empty = [
         {'comment': (1, 'COMMENT')},
     ]
@@ -61,8 +75,18 @@ class OptionRecordParser(RecordParser):
 @install_grammar
 class DataRecordParser(RecordParser):
     grammar_filename = 'data_record.lark'
+    grammar_options = dict(
+        parser='earley',
+        lexer='dynamic',
+        ambiguity='resolve',
+    )
 
 
 @install_grammar
 class CodeRecordParser(RecordParser):
     grammar_filename = 'code_record.lark'
+    grammar_options = dict(
+        parser='earley',
+        lexer='dynamic',
+        ambiguity='resolve',
+    )

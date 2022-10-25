@@ -11,7 +11,12 @@
 //               [FUNCTION function_name(input_vector_name,dimension[,usage])]
 //               [VECTOR input_vector_name(dimension)]
 
-root : ws ([ws] option | [ws] NEWLINE)*
+root : _ws* WS? _options
+_options: option (_add_or_finish | _next_line_or_finish)
+_add_or_finish: WS (_options | _next_line_or_finish)
+_next_line_or_finish: COMMENT? _next_line?
+_next_line: NEWLINE _ws* _options?
+_ws: WS? COMMENT? NEWLINE
 
 // option rules
 ?option : COMRES SEP SIGNED_INT             -> comres
@@ -29,7 +34,7 @@ root : ws ([ws] option | [ws] NEWLINE)*
         | FUNCTION SYMBOL "(" SYMBOL "," INT ")" -> function
         | VECTOR SYMBOL "(" INT ")"       -> vector
 
-declaration: [ws] [(INTEGER | DOWHILE) ws] CNAME ["(" [ws] INT ["," [ws] INT] [ws] ")"] [ws] -> declare
+declaration: ws? [(INTEGER | DOWHILE) ws] CNAME ["(" [ws] INT ["," [ws] INT] [ws] ")"] [ws] -> declare
 
 ANY: /[^ \n\r\t=]+/
 SEP: /\s*=\s*|\s+(?!=)/
@@ -56,5 +61,5 @@ DOWHILE: "DOWHILE"
 // common misc rules
 ws      : WS_ALL
 
-%import .definitions (INT, SIGNED_INT, SYMBOL, WS_ALL, NEWLINE)
+%import .definitions (INT, SIGNED_INT, SYMBOL, WS_ALL, WS, COMMENT, NEWLINE)
 %import common.CNAME

@@ -9,7 +9,7 @@
 //              [RANMETHOD=[n|S|m|P] ]
 //              [PARAFILE=[filename|ON|OFF]
 
-root : ws ([ws] option | [ws] NEWLINE)*
+root : ws ([ws] option | [ws] LINEENDING)*
 
 // option rules
 ?option: "(" INT ")"                        -> seed
@@ -31,4 +31,4 @@ NOPREDICTION: "NOPREDICTION"
 // common misc rules
 ws      : WS_ALL
 
-%import .definitions (INT, SIGNED_INT, SYMBOL, WS_ALL, NEWLINE)
+%import .definitions (INT, SIGNED_INT, SYMBOL, WS_ALL, LINEENDING)

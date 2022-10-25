@@ -13,17 +13,11 @@ from .record import Record
 
 
 def _get_key(node):
-    if hasattr(node, 'KEY'):
-        return node.KEY
-    else:
-        return node.VALUE
+    return node.KEY
 
 
 def _get_value(node):
-    if hasattr(node, 'KEY'):
-        return node.VALUE
-    else:
-        return None
+    return getattr(node, 'VALUE', None)
 
 
 class OptionRecord(Record):
@@ -98,7 +92,7 @@ class OptionRecord(Record):
                 return
             last_option = node
 
-        ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
+        ws_node = AttrTree.create('ws', [{'WS': ' '}])
         option_node = self._create_option(key, new_value)
         # If no other options add first else add just after last option
         if last_option is None:
@@ -113,7 +107,7 @@ class OptionRecord(Record):
 
     def _create_option(self, key, value=None):
         if value is None:
-            node = AttrTree.create('option', [{'VALUE': key}])
+            node = AttrTree.create('option', [{'KEY': key}])
         else:
             node = AttrTree.create('option', [{'KEY': key}, {'EQUAL': '='}, {'VALUE': value}])
         return node
@@ -125,7 +119,7 @@ class OptionRecord(Record):
 
     def _prepend_option_node(self, node):
         """Add a new option as firt option"""
-        ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
+        ws_node = AttrTree.create('ws', [{'WS': ' '}])
         new = [node, ws_node]
         self.root.children = [self.root.children[0]] + new + self.root.children[1:]
 
@@ -141,21 +135,20 @@ class OptionRecord(Record):
         """Add a new option as last option"""
         last_child = self.root.children[-1]
         if last_child.rule == 'option':
-            ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
+            ws_node = AttrTree.create('ws', [{'WS': ' '}])
             self.root.children += [ws_node, node]
-        elif last_child.rule == 'ws':
-            if '\n' in str(last_child):
-                if len(self.root.children) > 1 and self.root.children[-2].rule == 'comment':
-                    # Avoid putting option at same line as comment
-                    ws_node = AttrTree.create('ws', [{'WS_ALL': '\n'}])
-                    self.root.children += [node, ws_node]
-                else:
-                    ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
-                    self.root.children[-1:0] = [ws_node, node]
+        elif last_child.rule == 'newline':
+            if len(self.root.children) >= 2 and self.root.children[-2].rule == 'comment':
+                # Avoid putting option at same line as comment
+                ws_node = AttrTree.create('newline', [{'NEWLINE': '\n'}])
+                self.root.children += [node, ws_node]
             else:
+                ws_node = AttrTree.create('ws', [{'WS': ' '}])
+                self.root.children[-1:0] = [ws_node, node]
+        elif last_child.rule == 'ws':
                 self.root.children.append(node)
         else:
-            ws_node = AttrTree.create('ws', [{'WS_ALL': '\n'}])
+            ws_node = AttrTree.create('newline', [{'NEWLINE': '\n'}])
             self.root.children += [ws_node, node]
 
     def replace_option(self, old, new):
@@ -174,7 +167,7 @@ class OptionRecord(Record):
         for node in self.root.children:
             if node.rule == 'option':
                 if key == _get_key(node):
-                    if new_children[-1].rule == 'ws' and '\n' not in str(new_children[-1]):
+                    if new_children[-1].rule == 'ws':
                         new_children.pop()
                 else:
                     new_children.append(node)
@@ -190,7 +183,7 @@ class OptionRecord(Record):
             if node.rule == 'option':
                 curkey = _get_key(node)
                 if key[: len(curkey)] == curkey and i == n:
-                    if new_children[-1].rule == 'ws' and '\n' not in str(new_children[-1]):
+                    if new_children[-1].rule == 'ws':
                         new_children.pop()
                 else:
                     new_children.append(node)

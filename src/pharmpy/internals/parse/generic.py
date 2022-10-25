@@ -15,6 +15,9 @@ from lark.lexer import Token
 from . import prettyprint
 
 
+TYPES_OF_NEWLINE = frozenset(('WS_ALL', 'LINEENDING', 'NEWLINE'))
+TYPES_OF_COMMENT = frozenset(('COMMENT', 'LINEENDING'))
+
 def rule_of(item):
     """Rule of a tree or token. Convenience function (will not raise)."""
 
@@ -292,7 +295,7 @@ class AttrTree(Tree):
         new_children = []
         comment_flag = False
         for child in self.children:
-            if child.rule == 'COMMENT' or child.rule == 'NEWLINE':
+            if child.rule in TYPES_OF_COMMENT:
                 if not comment_flag:
                     new_children.append(child)
                 else:
@@ -313,14 +316,13 @@ class AttrTree(Tree):
 
     def _clean_ws(self, new_children):
         new_children_clean = []
-        types_of_newline = ['WS_ALL', 'NEWLINE']
         last_index = len(new_children) - 1
 
         prev_rule = None
 
         for i, child in enumerate(new_children):
-            if child.rule in types_of_newline:
-                if prev_rule in types_of_newline or prev_rule == 'verbatim':
+            if child.rule in TYPES_OF_NEWLINE:
+                if prev_rule in TYPES_OF_NEWLINE or prev_rule == 'verbatim':
                     continue
                 if i == last_index:
                     continue
@@ -455,17 +457,16 @@ class GenericParser(ABC):
 
     lark: Lark
     lark_options = dict(
-        ambiguity='resolve',
-        debug=False,
-        keep_all_tokens=True,
-        maybe_placeholders=False,
-        lexer='dynamic',
-        parser='earley',
         start='root',
+        parser='lalr',
+        keep_all_tokens=True,
+        propagate_positions=False,
+        maybe_placeholders=False,
+        debug=False,
+        cache=False,
     )
 
-    def __init__(self, buf=None, **lark_options):
-        self.lark_options.update(lark_options)
+    def __init__(self, buf=None):
         self.root = self.parse(buf)
 
     def parse(self, buf):
