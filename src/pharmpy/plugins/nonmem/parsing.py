@@ -556,17 +556,23 @@ def parse_datainfo(control_stream, path) -> DataInfo:
         if dipath.is_file():
             di = DataInfo.read_json(dipath)
             di = di.derive(path=resolved_dataset_path)
-            different_drop = []
+            different_drop, cols_new = [], []
             for colinfo, coldrop in zip(di, drop):
                 if colinfo.drop != coldrop:
-                    colinfo.drop = coldrop
+                    colinfo_new = colinfo.derive(drop=coldrop)
                     different_drop.append(colinfo.name)
+                    cols_new.append(colinfo_new)
+                else:
+                    cols_new.append(colinfo)
 
             if different_drop:
+                di_new = di.derive(columns=tuple(cols_new))
                 warnings.warn(
                     "NONMEM .mod and dataset .datainfo disagree on "
                     f"DROP for columns {', '.join(different_drop)}."
                 )
+                return di_new
+
             return di
 
     column_info = []

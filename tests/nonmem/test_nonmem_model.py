@@ -1156,3 +1156,29 @@ $ESTIMATION METHOD=1 INTER
 """
     model = Model.create_model(StringIO(code))
     assert model.value_type == sympy.Symbol('F_FLAG')
+
+
+def test_datainfo_model_drop_clash(testdata):
+    datapath = testdata / 'nonmem' / 'pheno.dta'
+    code = f"""$PROBLEM
+$DATA {datapath} IGNORE=@
+$INPUT ID TIME AMT WGT=DROP APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+CL=THETA(1)
+
+$ERROR
+Y=F+F*EPS(1)
+
+$THETA (0,0.00469307) ; TVCL
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    with pytest.warns(
+        UserWarning, match='NONMEM .mod and dataset .datainfo disagree on DROP for columns WGT'
+    ):
+        model = Model.create_model(StringIO(code))
+
+    assert model.datainfo['WGT'].drop
