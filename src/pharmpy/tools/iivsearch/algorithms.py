@@ -108,8 +108,13 @@ def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
         parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix
     }
     param_dict = dict()
+    # FIXME temporary workaround, should handle IIV on eps
+    symbs_before_ode = [symb.name for symb in model.statements.before_odes.free_symbols]
     for eta in dists.names:
         if subs(dists[eta].get_variance(eta), param_subs, simultaneous=True) != 0:
+            # Skip etas that are before ODE
+            if eta not in symbs_before_ode:
+                continue
             param_dict[eta] = get_rv_parameters(model, eta)[0]
     return param_dict
 
@@ -127,7 +132,9 @@ def create_description(model: Model, iov: bool = False) -> str:
     blocks, same = [], []
     for dist in dists:
         rvs_names = dist.names
-        param_names = [param_dict[name] for name in rvs_names if name not in same]
+        param_names = [
+            param_dict[name] for name in rvs_names if name not in same and name in param_dict.keys()
+        ]
         if param_names:
             blocks.append(f'[{",".join(param_names)}]')
 

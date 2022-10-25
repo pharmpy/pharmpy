@@ -118,7 +118,8 @@ def task_brute_force_search(
     # NOTE Default is to try all IIV ETAs.
     if list_of_parameters is None:
         iiv = model.random_variables.iiv
-        list_of_parameters = list(iiv.names)
+        iiv_before_odes = iiv.free_symbols.intersection(model.statements.before_odes.free_symbols)
+        list_of_parameters = [iiv.name for iiv in iiv_before_odes]
 
     current_step = 0
     step_mapping = {current_step: [model.name]}
