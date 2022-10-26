@@ -1206,12 +1206,12 @@ def _find_time_and_date_columns(model):
     for col in di:
         if col.datatype == 'nmtran-time' and not col.drop:
             if time is None:
-                time = col.name
+                time = col
             else:
                 raise ValueError(f"Multiple time columns found {time} and {col.name}")
         elif col.datatype == 'nmtran-date' and not col.drop:
             if date is None:
-                date = col.name
+                date = col
             else:
                 raise ValueError(f"Multiple date columns found {date} and {col.name}")
     if time is None and date is not None:
@@ -1241,17 +1241,20 @@ def translate_nmtran_time(model):
     """
     timecol, datecol = _find_time_and_date_columns(model)
     df = model.dataset.copy()
-    idcol = model.datainfo.id_column.name
+    di = model.datainfo
+    idname = di.id_column.name
     if datecol is None:
         if timecol is not None:
-            df = _translate_time_column(df, timecol, idcol)
+            df = _translate_time_column(df, timecol.name, idname)
         else:
             return model
     else:
-        df = _translate_time_and_date_columns(df, timecol, datecol, idcol)
-        drop_columns(model, datecol)
-        model.datainfo[timecol].unit = 'h'
-    model.datainfo[timecol].datatype = 'float64'
+        df = _translate_time_and_date_columns(df, timecol.name, datecol.name, idname)
+        model = drop_columns(model, datecol.name)
+        timecol = timecol.derive(unit='h')
+    timecol = timecol.derive(datatype='float64')
+    di = di.set_column(timecol)
+    model.datainfo = di
     model.dataset = df
     return model
 
