@@ -57,7 +57,7 @@ nbformat==5.7.0
 nest-asyncio==1.5.6
 networkx==2.8.7
 notebook==6.5.1
-numexpr==2.8.3
+numexpr==2.8.4
 numpy==1.23.4
 packaging==21.3
 pandas==1.5.1
