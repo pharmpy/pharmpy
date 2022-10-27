@@ -10,13 +10,14 @@ _sep: ws
     | newline
     | COMMENT newline
 
-_end: ws COMMENT?
+_end: COMMENT
+    | ws COMMENT?
     | ws newline COMMENT?
     | ws COMMENT newline COMMENT?
     | newline COMMENT?
     | COMMENT newline COMMENT?
 
-newline: (newline COMMENT?)? NEWLINE
+newline: (newline COMMENT?)? NEWLINE WS?
 ws: WS
 
 option: KEY ("=" VALUE)?

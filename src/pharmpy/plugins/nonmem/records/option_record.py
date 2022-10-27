@@ -146,7 +146,7 @@ class OptionRecord(Record):
                 ws_node = AttrTree.create('ws', [{'WS': ' '}])
                 self.root.children[-1:0] = [ws_node, node]
         elif last_child.rule == 'ws':
-                self.root.children.append(node)
+            self.root.children.append(node)
         else:
             ws_node = AttrTree.create('newline', [{'NEWLINE': '\n'}])
             self.root.children += [ws_node, node]

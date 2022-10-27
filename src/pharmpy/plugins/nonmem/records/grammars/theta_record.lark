@@ -18,28 +18,44 @@
 //   5. "FIXED" can appear almost anywhere and multiple times in a row
 //      when parentheses are used
 
-root : _ws* WS? theta (_add_or_finish | _next_line_or_finish)
-_thetas_or_options: (theta | option) (_add_or_finish | _next_line_or_finish)
-_add_or_finish: WS (_thetas_or_options | _next_line_or_finish)
-_next_line_or_finish: COMMENT? _next_line?
-_next_line: NEWLINE _ws* _thetas_or_options?
+root : _empty_lines _options? _end?
 
-?option : KEY [WS] "=" [WS] VALUE -> option
+_options: (_options _sep)? (theta | option)
+
+_empty_lines: _sep?
+
+_sep: ws
+    | ws newline
+    | ws COMMENT newline
+    | newline
+    | COMMENT newline
+
+_end: COMMENT
+    | ws COMMENT?
+    | ws newline COMMENT?
+    | ws COMMENT newline COMMENT?
+    | newline COMMENT?
+    | COMMENT newline COMMENT?
+
+newline: (newline COMMENT?)? NEWLINE WS?
+ws: WS
+
+?option : KEY WS? "=" WS? VALUE -> option
         | VALUE                   -> option
 
 theta : init [WS FIX]                    // form 1
-      | _lpar [_fixes] init [_fixes] _rpar            // form 2+3+5 (init)
-      | _lpar [_fixes] low [_fixes] sep [_fixes] init [_fixes] [sep] _rpar    // form 2+3+5 (low, init)
-      | _lpar [_fixes] low [_fixes] sep [_fixes] init [_fixes]  sep [_fixes] up [_fixes] _rpar  // form 2+3+5 (low, init, up)
-      | _lpar [_fixes] low [_fixes] sepsep [_fixes] up [_fixes] _rpar        // form 4+5 (low, up)
+      | _lpar _fixes? init _fixes? _rpar            // form 2+3+5 (init)
+      | _lpar _fixes? low _fixes? sep _fixes? init _fixes? sep? _rpar    // form 2+3+5 (low, init)
+      | _lpar _fixes? low _fixes? sep _fixes? init _fixes?  sep _fixes? up _fixes? _rpar  // form 2+3+5 (low, init, up)
+      | _lpar _fixes? low _fixes? sepsep _fixes? up _fixes? _rpar        // form 4+5 (low, up)
 sep : WS
-    | [WS] "," [WS]
-sepsep : [WS] "," [WS] "," [WS]
-_lpar : "(" [WS]
-_rpar : [WS] ")" n
-      | [WS] ")" [WS] FIX
-      | [WS] ")"
-_fixes: ([WS] FIX [WS])+
+    | WS? "," WS?
+sepsep : WS? "," WS? "," WS?
+_lpar : "(" WS?
+_rpar : WS? ")" n
+      | WS? ")" WS? FIX
+      | WS? ")"
+_fixes: (WS? FIX WS?)+
 
 init : NUMERIC
 low  : NUMERIC | NEG_INF
@@ -52,8 +68,6 @@ FIX : "FIXED" | "FIXE" | "FIX"
 KEY   : /(?!([0-9]|\(|FIX))\w+/
 VALUE : /(?!([0-9]|\(|FIX))[^\s=;]+/
 
-// common misc rules
-_ws: WS? COMMENT? NEWLINE
 
 %import .definitions (INT, COMMENT, NEWLINE, NUMERIC, WS)
 

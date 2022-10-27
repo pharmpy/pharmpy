@@ -14,9 +14,9 @@ from lark.lexer import Token
 
 from . import prettyprint
 
+TYPES_OF_NEWLINE = frozenset(('WS_ALL', 'LINEENDING', 'NEWLINE', 'newline'))
+TYPES_OF_COMMENT = frozenset(('COMMENT', 'LINEENDING', 'newline'))
 
-TYPES_OF_NEWLINE = frozenset(('WS_ALL', 'LINEENDING', 'NEWLINE'))
-TYPES_OF_COMMENT = frozenset(('COMMENT', 'LINEENDING'))
 
 def rule_of(item):
     """Rule of a tree or token. Convenience function (will not raise)."""
@@ -312,7 +312,7 @@ class AttrTree(Tree):
 
     @staticmethod
     def _newline_node():
-        return AttrToken('WS_ALL', '\n')
+        return AttrToken('NEWLINE', '\n')
 
     def _clean_ws(self, new_children):
         new_children_clean = []
