@@ -69,7 +69,7 @@ setup(
     ],
     install_requires=[
         'lark>=1.1.2',
-        'sympy>=1.8',
+        'sympy>=1.9',
         'symengine>=0.9.2',
         'pandas>=1.4',
         'numexpr',
