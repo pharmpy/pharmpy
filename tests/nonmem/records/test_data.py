@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 import pytest
 from lark.exceptions import UnexpectedCharacters
 
@@ -61,7 +59,7 @@ def test_data_filename_set(parser):
 
 def test_option_record(parser):
     record = parser.parse('$DATA pheno.dta NOWIDE').records[0]
-    assert record.option_pairs == OrderedDict([('NOWIDE', None)])
+    assert record.option_pairs == {'NOWIDE': None}
 
 
 def test_ignore_character(parser):

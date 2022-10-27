@@ -8,13 +8,28 @@ from pharmpy.modeling import (
 )
 from pharmpy.tools.iivsearch.algorithms import (
     _create_param_dict,
-    _get_eta_combinations,
-    _is_current_block_structure,
+    _is_rv_block_structure,
+    _rv_block_structures,
     brute_force_block_structure,
+    brute_force_no_of_etas,
     create_eta_blocks,
 )
 from pharmpy.tools.iivsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
+
+
+@pytest.mark.parametrize(
+    'list_of_parameters, no_of_models',
+    [([], 7), (['QP1'], 15)],
+)
+def test_brute_force_no_of_etas(load_model_for_test, testdata, list_of_parameters, no_of_models):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    add_peripheral_compartment(model)
+    add_iiv(model, list_of_parameters, 'add')
+    wf = brute_force_no_of_etas(model)
+    fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
+
+    assert len(fit_tasks) == no_of_models
 
 
 @pytest.mark.parametrize(
@@ -38,82 +53,76 @@ def test_brute_force_block_structure(
     assert len(fit_tasks) == no_of_models
 
 
-def test_get_eta_combinations_4_etas(load_model_for_test, pheno_path):
+def test_rv_block_structures_4_etas(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     add_iiv(model, ['TVCL', 'TVV'], 'exp')
 
-    eta_combos = _get_eta_combinations(model.random_variables.iiv)
-    assert len(eta_combos) == 15
+    block_structures = list(_rv_block_structures(model.random_variables.iiv))
 
-    block_combos = _get_eta_combinations(model.random_variables.iiv, as_blocks=True)
+    assert len(block_structures) == 15
 
-    assert len(block_combos) == 15
-
-    combos_unique = [(tuple(i) for i in combo) for combo in block_combos]
-    assert len(combos_unique) == 15
-
-    len_of_combos = [list(map(lambda i: len(i), combo)) for combo in block_combos]
-    assert len_of_combos.count([4]) == 1
-    assert len_of_combos.count([1, 3]) == 4
-    assert len_of_combos.count([2, 2]) == 3
-    assert len_of_combos.count([1, 1, 2]) == 6
-    assert len_of_combos.count([1, 1, 1, 1]) == 1
+    block_structures_integer_partitions = [
+        tuple(map(len, block_structure)) for block_structure in block_structures
+    ]
+    assert block_structures_integer_partitions.count((4,)) == 1
+    assert block_structures_integer_partitions.count((1, 3)) == 4
+    assert block_structures_integer_partitions.count((2, 2)) == 3
+    assert block_structures_integer_partitions.count((1, 1, 2)) == 6
+    assert block_structures_integer_partitions.count((1, 1, 1, 1)) == 1
 
 
-def test_get_eta_combinations_5_etas(load_model_for_test, pheno_path):
+def test_rv_block_structures_5_etas(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     add_iiv(model, ['TVCL', 'TVV', 'TAD'], 'exp')
 
-    eta_combos = _get_eta_combinations(model.random_variables.iiv)
-    assert len(eta_combos) == 31
+    block_structures = list(_rv_block_structures(model.random_variables.iiv))
+    assert len(block_structures) == 52
 
-    block_combos = _get_eta_combinations(model.random_variables.iiv, as_blocks=True)
-    assert len(block_combos) == 52
-
-    combos_unique = [(tuple(i) for i in combo) for combo in block_combos]
-    assert len(combos_unique) == 52
-
-    len_of_combos = [list(map(lambda i: len(i), combo)) for combo in block_combos]
-    assert len_of_combos.count([5]) == 1
-    assert len_of_combos.count([1, 4]) == 5
-    assert len_of_combos.count([2, 3]) == 10
-    assert len_of_combos.count([1, 1, 3]) == 10
-    assert len_of_combos.count([1, 2, 2]) == 15
-    assert len_of_combos.count([1, 1, 1, 2]) == 10
-    assert len_of_combos.count([1, 1, 1, 1, 1]) == 1
+    block_structures_integer_partitions = [
+        tuple(map(len, block_structure)) for block_structure in block_structures
+    ]
+    assert block_structures_integer_partitions.count((5,)) == 1
+    assert block_structures_integer_partitions.count((1, 4)) == 5
+    assert block_structures_integer_partitions.count((2, 3)) == 10
+    assert block_structures_integer_partitions.count((1, 1, 3)) == 10
+    assert block_structures_integer_partitions.count((1, 2, 2)) == 15
+    assert block_structures_integer_partitions.count((1, 1, 1, 2)) == 10
+    assert block_structures_integer_partitions.count((1, 1, 1, 1, 1)) == 1
 
 
-def test_is_current_block_structure(load_model_for_test, pheno_path):
+def test_is_rv_block_structure(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     add_iiv(model, ['TVCL', 'TVV'], 'exp')
 
-    eta_combos = [['ETA(1)', 'ETA(2)'], ['ETA_TVCL'], ['ETA_TVV']]
+    etas_block_structure = (('ETA(1)', 'ETA(2)'), ('ETA_TVCL',), ('ETA_TVV',))
     create_joint_distribution(
-        model, eta_combos[0], individual_estimates=model.modelfit_results.individual_estimates
+        model,
+        list(etas_block_structure[0]),
+        individual_estimates=model.modelfit_results.individual_estimates,
     )
     etas = model.random_variables.iiv
-    assert _is_current_block_structure(etas, eta_combos)
+    assert _is_rv_block_structure(etas, etas_block_structure)
 
-    eta_combos = [['ETA(1)'], ['ETA(2)'], ['ETA_TVCL', 'ETA_TVV']]
-    assert not _is_current_block_structure(etas, eta_combos)
+    etas_block_structure = (('ETA(1)',), ('ETA(2)',), ('ETA_TVCL', 'ETA_TVV'))
+    assert not _is_rv_block_structure(etas, etas_block_structure)
 
-    eta_combos = [['ETA(1)'], ['ETA(2)', 'ETA_TVCL'], ['ETA_TVV']]
-    assert not _is_current_block_structure(etas, eta_combos)
+    etas_block_structure = (('ETA(1)',), ('ETA(2)', 'ETA_TVCL'), ('ETA_TVV',))
+    assert not _is_rv_block_structure(etas, etas_block_structure)
 
     create_joint_distribution(
         model, individual_estimates=model.modelfit_results.individual_estimates
     )
-    eta_combos = [['ETA(1)', 'ETA(2)', 'ETA_TVCL', 'ETA_TVV']]
+    etas_block_structure = (('ETA(1)', 'ETA(2)', 'ETA_TVCL', 'ETA_TVV'),)
     etas = model.random_variables.iiv
-    assert _is_current_block_structure(etas, eta_combos)
+    assert _is_rv_block_structure(etas, etas_block_structure)
 
 
 def test_create_joint_dist(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     add_peripheral_compartment(model)
     add_pk_iiv(model)
-    eta_combos = [['ETA(1)', 'ETA(2)'], ['ETA_QP1'], ['ETA_VP1']]
-    create_eta_blocks(eta_combos, model)
+    etas_block_structure = (('ETA(1)', 'ETA(2)'), ('ETA_QP1',), ('ETA_VP1',))
+    create_eta_blocks(etas_block_structure, model)
     assert len(model.random_variables.iiv) == 4
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
@@ -124,8 +133,8 @@ def test_create_joint_dist(load_model_for_test, testdata):
         ['ETA(1)', 'ETA(2)'],
         individual_estimates=model.modelfit_results.individual_estimates,
     )
-    eta_combos = [['ETA(1)'], ['ETA(2)'], ['ETA(3)', 'ETA_VP1', 'ETA_QP1']]
-    create_eta_blocks(eta_combos, model)
+    etas_block_structure = (('ETA(1)',), ('ETA(2)',), ('ETA(3)', 'ETA_VP1', 'ETA_QP1'))
+    create_eta_blocks(etas_block_structure, model)
     assert len(model.random_variables.iiv) == 3
 
 

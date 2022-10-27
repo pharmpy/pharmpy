@@ -86,7 +86,7 @@ def parse_statements(model, control_stream) -> Tuple[Statements, Optional[Dict[s
     if error:
         sub = control_stream.get_records('SUBROUTINES')[0]
         comp = _compartmental_model(model, control_stream, sub.advan, sub.trans, des)
-        trans_amounts = dict()
+        trans_amounts = {}
         if comp is None:
             statements += ExplicitODESystem([], {})  # FIXME: Placeholder for ODE-system
             # FIXME: Dummy link statement
@@ -149,7 +149,7 @@ def create_name_trans(control_stream, rvs, statements):
         },
     }
 
-    trans_sset, trans_pset = dict(), dict()
+    trans_sset, trans_pset = {}, {}
     names_sset_translated, names_pset_translated, names_basic = [], [], []
     clashing_symbols = set()
 
@@ -194,7 +194,7 @@ def create_name_trans(control_stream, rvs, statements):
             f'names for these.'
         )
 
-    names_nonmem_all = rvs.names + [key for key in parameter_translation(control_stream).keys()]
+    names_nonmem_all = rvs.names + list(parameter_translation(control_stream).keys())
 
     if set(names_nonmem_all) - set(names_sset_translated + names_pset_translated + names_basic):
         raise ValueError(

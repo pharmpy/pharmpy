@@ -12,7 +12,7 @@ def get_lag_times(model):
     """
     odes = model.statements.ode_system
     names = odes.compartment_names
-    d = dict()
+    d = {}
     for name in names:
         cmt = odes.find_compartment(name)
         if cmt.lag_time:
@@ -34,7 +34,7 @@ def get_bioavailability(model):
     """
     odes = model.statements.ode_system
     names = odes.compartment_names
-    d = dict()
+    d = {}
     for name in names:
         cmt = odes.find_compartment(name)
         if cmt.bioavailability != 1:

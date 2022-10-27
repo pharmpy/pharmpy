@@ -93,7 +93,7 @@ class Workflow(Generic[T]):
         dict
             Dask workflow dictionary
         """
-        ids = dict()
+        ids = {}
         for task in self._g.nodes():
             ids[task] = f'{task.name}-{uuid.uuid4()}'
 
@@ -102,7 +102,7 @@ class Workflow(Generic[T]):
         else:
             raise ValueError("Workflow can only have one output task")
 
-        as_dict = dict()
+        as_dict = {}
         for task in nx.dfs_tree(self._g):
             key = ids[task]
             input_list = list(task.task_input)

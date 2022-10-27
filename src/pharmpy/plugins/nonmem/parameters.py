@@ -11,7 +11,7 @@ def parameter_translation(
     """Get a dict of NONMEM name to Pharmpy parameter name
     i.e. {'THETA(1)': 'TVCL', 'OMEGA(1,1)': 'IVCL'}
     """
-    d = dict()
+    d = {}
     for theta_record in control_stream.get_records('THETA'):
         for key, value in theta_record.name_map.items():
             nonmem_name = f'THETA({value})'

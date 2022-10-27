@@ -1,4 +1,5 @@
 from functools import partial
+from itertools import product
 from typing import Iterable
 
 from pharmpy.model import Model
@@ -18,15 +19,14 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
                 if isinstance(statement.depot, Wildcard)
                 else [statement.depot]
             )
-            for count in statement.counts:
-                for depot in depots:
-                    if depot.name == 'DEPOT':
-                        yield ('TRANSITS', count, depot.name), partial(
-                            set_transit_compartments, n=count
-                        )
-                    elif depot.name == 'NODEPOT':
-                        yield ('TRANSITS', count, depot.name), partial(
-                            set_transit_compartments, n=count + 1, keep_depot=False
-                        )
-                    else:
-                        raise ValueError(f'Transit depot {depot} not supported')
+            for count, depot in product(statement.counts, depots):
+                if depot.name == 'DEPOT':
+                    yield ('TRANSITS', count, depot.name), partial(
+                        set_transit_compartments, n=count
+                    )
+                elif depot.name == 'NODEPOT':
+                    yield ('TRANSITS', count, depot.name), partial(
+                        set_transit_compartments, n=count + 1, keep_depot=False
+                    )
+                else:
+                    raise ValueError(f'Transit depot {depot} not supported')

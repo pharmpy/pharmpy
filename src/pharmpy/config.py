@@ -106,7 +106,7 @@ class ConfigurationContext:
         self.options = kwargs
 
     def __enter__(self):
-        old = dict()
+        old = {}
         for key in self.options.keys():
             old[key] = getattr(self.config, key)
         for key, val in self.options.items():

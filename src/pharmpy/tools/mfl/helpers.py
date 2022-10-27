@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import defaultdict
 from itertools import chain, product
 from typing import Iterable, Tuple
 
@@ -31,13 +31,13 @@ def all_funcs(model: Model, statements: Iterable[Statement]):
         )
     )
 
-    return OrderedDict((key, fn) for key, fn in features)
+    return dict(features)
 
 
 def _group_incompatible_features(funcs):
-    grouped = OrderedDict()
+    grouped = defaultdict(list)
     for key in funcs.keys():
-        grouped.setdefault(key[0], []).append(key)
+        grouped[key[0]].append(key)
     return grouped
 
 

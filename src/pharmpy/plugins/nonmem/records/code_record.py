@@ -13,7 +13,7 @@ from pharmpy.internals.ds.ordered_set import OrderedSet
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.parse import AttrToken, NoSuchRuleException
 from pharmpy.internals.sequence.lcs import diff
-from pharmpy.model import Assignment, Statement, Statements
+from pharmpy.model import Assignment, RandomVariables, Statement, Statements
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 
 from .record import Record
@@ -137,7 +137,7 @@ def _translate_condition(c):
 def _translate_sympy_sign(s):
     args = s.expression.args
 
-    subs_dict = dict()
+    subs_dict = {}
     for arg in args:
         if str(arg).startswith('sign'):
             sign_arg = arg.args[0]
@@ -155,7 +155,7 @@ def _print_custom(assignment, rvs, trans):
     return f'{assignment.symbol} = {expr_ordered}'
 
 
-def _order_terms(assignment, rvs, trans):
+def _order_terms(assignment: Assignment, rvs: RandomVariables, trans):
     """Order terms such that random variables are placed last. Currently only supports
     additions."""
     if not isinstance(assignment.expression, sympy.Add) or rvs is None:
@@ -191,7 +191,7 @@ def _order_terms(assignment, rvs, trans):
         return assignment.expression
 
     def arg_len(symb):
-        return len([s for s in symb.args])
+        return len(symb.args)
 
     terms_iiv_iov.sort(reverse=True, key=arg_len)
     terms_ruv.sort(reverse=True, key=arg_len)

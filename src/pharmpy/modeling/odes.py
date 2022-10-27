@@ -575,7 +575,7 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
 def _rename_parameter(model: Model, old_name, new_name):
     a = model.statements.find_assignment(old_name)
     assert a is not None
-    d = dict()
+    d = {}
     for s in a.rhs_symbols:
         if s in model.parameters:
             old_par = s

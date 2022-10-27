@@ -17,7 +17,7 @@ class NONMEMResultsFile:
 
     def __init__(self, path=None, log=None):
         self.log = log
-        self.table = dict()
+        self.table = {}
         self.nonmem_version = None
         self.runtime_total = None
         if path is not None:
@@ -450,7 +450,7 @@ class NONMEMResultsFile:
                 yield ('runtime', runtime)
 
     def table_blocks(self, path):
-        block = dict()
+        block = {}
         table_number = 'INIT'
         for name, content in self.tag_items(path):
             if name == 'TERM' or name == 'TERE':
@@ -459,7 +459,7 @@ class NONMEMResultsFile:
             elif name == 'TBLN':
                 if bool(block):
                     yield (table_number, block)
-                block = dict()
+                block = {}
                 table_number = int(content)
             elif name == 'runtime':
                 yield ('runtime', {'total': content})

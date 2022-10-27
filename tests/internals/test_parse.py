@@ -1,5 +1,4 @@
 import textwrap
-from collections import OrderedDict
 
 import pytest
 
@@ -30,7 +29,7 @@ def test_tree_create_bad():
     with pytest.raises(ValueError):
         AttrTree.create('root', [])
     with pytest.raises(ValueError):
-        AttrTree.create('root', dict())
+        AttrTree.create('root', {})
 
     # tokens must have str as only "child", but trees can't have str as "children"
     with pytest.raises(TypeError):  # "not iterable"
@@ -73,11 +72,13 @@ def test_tree_create_shallow():
 def test_tree_create_deep():
     """Test creating trees with deep, actually usable, structures."""
 
-    inp = OrderedDict(firstLEAF='(leaf #1) ')
-    inp['tree_anons'] = ['TEXT123 ', "'some string maybe' "]
-    inp['tree'] = dict(nested_tree=dict(end_LEAF_node='!?#@'))
-    inp['top_tree_again'] = dict(INTLEAF=123.456)
-    inp['LEAF'] = 'THE_END'
+    inp = {
+        'firstLEAF': '(leaf #1) ',
+        'tree_anons': ['TEXT123 ', "'some string maybe' "],
+        'tree': dict(nested_tree=dict(end_LEAF_node='!?#@')),
+        'top_tree_again': dict(INTLEAF=123.456),
+        'LEAF': 'THE_END',
+    }
     out = """
     root "(leaf #1) TEXT123 'some string maybe' !?#@123.456THE_END"
      ├─ firstLEAF "(leaf #1) "
@@ -113,12 +114,10 @@ def test_tree_create_abuse():
     assert_create(out, False, [[['1'], ['2']], ['3'], '4'])
 
     # just throwing stuff at the wall.. but it seems to stick!
-    od = OrderedDict()
-    od['good_tree'] = dict(LEAF_A=' (^._.^)~ hello! ')
-    od['bad_tree'] = dict(LEAF_B=None)
-    inp = OrderedDict(
-        item=[od, dict(dict(Btree=[dict(END_LEAF='...THE END')])), dict(_LEAF_=' (nope, here!)')]
-    )
+    od = {'good_tree': dict(LEAF_A=' (^._.^)~ hello! '), 'bad_tree': dict(LEAF_B=None)}
+    inp = {
+        'item': [od, dict(dict(Btree=[dict(END_LEAF='...THE END')])), dict(_LEAF_=' (nope, here!)')]
+    }
     out = """
     root " (^._.^)~ hello! None...THE END (nope, here!)"
      └─ item " (^._.^)~ hello! None...THE END (nope, here!)"

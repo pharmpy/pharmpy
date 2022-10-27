@@ -8,7 +8,9 @@ from .option_record import OptionRecord
 class SizesRecord(OptionRecord):
     @property
     def LTH(self):
-        return int(self.option_pairs.get('LTH', 100))
+        lth = self.option_pairs.get('LTH', 100)
+        assert lth is not None
+        return int(lth)
 
     @LTH.setter
     def LTH(self, value):
@@ -19,7 +21,9 @@ class SizesRecord(OptionRecord):
 
     @property
     def PC(self):
-        return int(self.option_pairs.get('PC', 30))
+        pc = self.option_pairs.get('PC', 30)
+        assert pc is not None
+        return int(pc)
 
     @PC.setter
     def PC(self, value):

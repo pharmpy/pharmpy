@@ -8,7 +8,7 @@ from .nmtran_parser import NMTranControlStream
 def rv_translation(
     control_stream: NMTranControlStream, reverse=False, remove_idempotent=False, as_symbols=False
 ):
-    d = dict()
+    d = {}
     for record in control_stream.get_records('OMEGA'):
         for key, value in record.eta_map.items():
             nonmem_name = f'ETA({value})'

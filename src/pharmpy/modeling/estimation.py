@@ -121,7 +121,7 @@ def calculate_parameters_from_ucp(model, scale, ucps):
     omega = omega_symbolic.subs(dict(ucps))
     omega = np.array(omega).astype(np.float64)
     descaled_omega = _descale_matrix(omega, scale.omega)
-    omega_dict = dict()
+    omega_dict = {}
     for symb, numb in zip(omega_symbolic, np.nditer(descaled_omega)):
         if symb.is_Symbol:
             omega_dict[symb] = numb
@@ -130,7 +130,7 @@ def calculate_parameters_from_ucp(model, scale, ucps):
     sigma = sigma_symbolic.subs(dict(ucps))
     sigma = np.array(sigma).astype(np.float64)
     descaled_sigma = _descale_matrix(sigma, scale.sigma)
-    sigma_dict = dict()
+    sigma_dict = {}
     for symb, numb in zip(sigma_symbolic, np.nditer(descaled_sigma)):
         if symb.is_Symbol:
             sigma_dict[symb] = numb
@@ -146,7 +146,7 @@ def calculate_parameters_from_ucp(model, scale, ucps):
     prop_scale = np.exp(diff_scale) / (1.0 + np.exp(diff_scale))
     descaled = prop_scale * scale.range_ul + scale.lb
 
-    d = dict()
+    d = {}
     i = 0
     for p in model.parameters:
         if not p.fix:

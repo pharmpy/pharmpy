@@ -69,7 +69,7 @@ class EstimationStep:
         self._solver_rtol = solver_rtol
         self._solver_atol = solver_atol
         if tool_options is None:
-            self._tool_options = dict()
+            self._tool_options = {}
         else:
             self._tool_options = tool_options
         if eta_derivatives is None:

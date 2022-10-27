@@ -5,7 +5,7 @@ Assumes 'KEY=VALUE' and does not support 'KEY VALUE'.
 """
 
 import re
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 
 from pharmpy.internals.parse import AttrTree
 
@@ -33,10 +33,7 @@ class OptionRecord(Record):
         If no value exists set it to None
         Can only handle cases where options are supposed to be unique
         """
-        pairs = OrderedDict()
-        for node in self.root.all('option'):
-            pairs[_get_key(node)] = _get_value(node)
-        return pairs
+        return {_get_key(node): _get_value(node) for node in self.root.all('option')}
 
     @property
     def all_options(self):
@@ -56,10 +53,10 @@ class OptionRecord(Record):
         return None
 
     def has_option(self, name):
-        return name in self.option_pairs.keys()
+        return name in self.option_pairs
 
     def get_option_startswith(self, s):
-        for opt in self.option_pairs.keys():
+        for opt in self.option_pairs:
             if opt.startswith(s):
                 return opt
         return None
@@ -237,7 +234,7 @@ class OptionRecord(Record):
 
     def remove_option_startswith(self, start):
         """Remove all options that startswith"""
-        for key in self.option_pairs.keys():
+        for key in self.option_pairs:
             if key.startswith(start):
                 self.remove_option(key)
 

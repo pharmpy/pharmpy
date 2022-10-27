@@ -39,7 +39,7 @@ def _lambdify_canonical(expr: sympy.Expr):
     ordered_substitutes = [sympy.Symbol(f'__tmp{i}') for i in range(len(ordered_symbols))]
     substituted_expr = subs(
         expr,
-        {key: value for key, value in zip(ordered_symbols, ordered_substitutes)},
+        dict(zip(ordered_symbols, ordered_substitutes)),
         simultaneous=True,
     )
     fn = sympy.lambdify(ordered_substitutes, substituted_expr, modules='numpy', cse=True)

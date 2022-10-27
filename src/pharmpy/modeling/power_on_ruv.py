@@ -65,7 +65,7 @@ def set_power_on_ruv(
     eps = model.random_variables.epsilons
     if list_of_eps is not None:
         eps = eps[list_of_eps]
-    pset, sset = [p for p in model.parameters], model.statements
+    pset, sset = list(model.parameters), model.statements
 
     if ipred is None:
         ipred = get_ipred(model)

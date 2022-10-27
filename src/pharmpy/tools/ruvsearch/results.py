@@ -126,7 +126,7 @@ def psn_resmod_results(path):
         df2.set_index(['iteration', 'DVID', 'model'], inplace=True)
         parameters = pd.Series(name='parameters', index=df.index, dtype=object)
         for rowind, row in df.iterrows():
-            d = dict()
+            d = {}
             for i in range(4, len(row)):
                 if row[i] is not None:
                     a = row[i].split('=')

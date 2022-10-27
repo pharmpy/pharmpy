@@ -355,7 +355,7 @@ def simplify_expression(model, expr):
     >>> conf.parameter_names = ['basic']
     """
     expr = parse_expr(expr)
-    d = dict()
+    d = {}
     for p in model.parameters:
         if p.fix:
             s = sympy.Float(p.init)
@@ -489,7 +489,7 @@ def make_declarative(model):
     S₁ = V
     """
     assigned_symbols = set()
-    duplicated_symbols = dict()  # symbol to last index
+    duplicated_symbols = {}  # symbol to last index
     for i, s in enumerate(model.statements):
         if not isinstance(s, Assignment):
             continue
@@ -501,7 +501,7 @@ def make_declarative(model):
         else:
             assigned_symbols.add(symb)
 
-    current = dict()
+    current = {}
     newstats = []
     for i, s in enumerate(model.statements):
         if not isinstance(s, Assignment):
@@ -612,7 +612,7 @@ def cleanup_model(model):
     """
     make_declarative(model)
 
-    current = dict()
+    current = {}
     newstats = []
     for s in model.statements:
         if isinstance(s, Assignment) and s.expression.is_Symbol:
@@ -726,7 +726,7 @@ def greekify_model(model, named_subscripts=False):
             subscript = f'{row}{col}'
         return subscript
 
-    subs = dict()
+    subs = {}
     for i, theta in enumerate(get_thetas(model), start=1):
         subscript = get_subscript(theta, i, named_subscripts)
         subs[theta.symbol] = sympy.Symbol(f"theta_{subscript}")

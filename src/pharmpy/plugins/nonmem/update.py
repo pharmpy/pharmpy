@@ -118,8 +118,8 @@ def update_random_variables(model: Model, old: RandomVariables, new: RandomVaria
     if not hasattr(model, '_parameters'):
         model.parameters
 
-    rec_dict = dict()
-    comment_dict = dict()
+    rec_dict = {}
+    comment_dict = {}
 
     for omega_record in model.internals.control_stream.get_records(
         'OMEGA'
@@ -169,7 +169,7 @@ def update_random_variable_records(model: Model, rvs_diff, rec_dict, comment_dic
             recs_to_remove = [rec for rec in rvs_rec if rec not in removed]
             if recs_to_remove:
                 model.internals.control_stream.remove_records(recs_to_remove)
-                removed += [rec for rec in recs_to_remove]
+                removed += list(recs_to_remove)
         else:
             diag_rvs = get_diagonal(rvs, rec_dict)
             # Account for etas in diagonal
@@ -288,7 +288,7 @@ def create_omega_block(
 
             param_str = f'{param_str.rstrip()}\n'
 
-    eta_map, name_variance = dict(), dict()
+    eta_map, name_variance = {}, {}
 
     for rv_name in rvs.names:
         variance_param = rvs[rv_name].get_variance(rv_name)
@@ -485,7 +485,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         old_odes = old.ode_system
         if new_odes != old_odes:
             colnames, drop, _, _ = parse_column_info(model.internals.control_stream)
-            col_dropped = {key: value for key, value in zip(colnames, drop)}
+            col_dropped = dict(zip(colnames, drop))
             if 'CMT' in col_dropped.keys() and not col_dropped['CMT']:
                 warnings.warn(
                     'Compartment structure has been updated, CMT-column '
@@ -565,7 +565,7 @@ def new_compartmental_map(cs: CompartmentalSystem, oldmap: Mapping[str, int]):
     comp = cs.dosing_compartment
     central = cs.central_compartment
     i = 1
-    compmap = dict()
+    compmap = {}
     while True:
         compmap[comp.name] = i
         i += 1
@@ -591,7 +591,7 @@ def create_compartment_remap(oldmap, newmap):
     For all compartments where remapping is needed
     Assume that compartments with same name in new and old are the same compartments
     """
-    remap = dict()
+    remap = {}
     for name, number in oldmap.items():
         if name in newmap:
             remap[number] = newmap[name]
@@ -612,7 +612,7 @@ def pk_param_conversion(model: Model, advan, trans):
     assert oldmap is not None
     newmap = new_compartmental_map(cs, oldmap)
     remap = create_compartment_remap(oldmap, newmap)
-    d = dict()
+    d = {}
     for old, new in remap.items():
         d[sympy.Symbol(f'S{old}')] = sympy.Symbol(f'S{new}')
         d[sympy.Symbol(f'F{old}')] = sympy.Symbol(f'F{new}')
@@ -957,8 +957,10 @@ def add_needed_pk_parameters(model: Model, advan, trans):
         assert oldmap is not None
         newmap = new_compartmental_map(odes, oldmap)
         for source in newmap.keys():
+            if source == len(newmap):  # NOTE Skip last
+                continue
             for dest in newmap.keys():
-                if source != dest and source != len(newmap):
+                if source != dest:  # NOTE Skip same
                     source_comp = odes.find_compartment(source)
                     dest_comp = odes.find_compartment(dest)
                     rate = odes.get_flow(source_comp, dest_comp)
@@ -1060,19 +1062,14 @@ def add_rate_assignment_if_missing(
 
 
 def update_abbr_record(model: Model, rv_trans):
-    trans = dict()
+    trans = {}
     if not rv_trans:
         return trans
     # Remove already abbreviated symbols
     # FIXME: Doesn't update if name has changed
-    kept = rv_trans.copy()
     abbr_recs = model.internals.control_stream.get_records('ABBREVIATED')
-    for rec in abbr_recs:
-        for rv in rec.replace.values():
-            for tk, tv in rv_trans.items():
-                if tv.name == rv:
-                    del kept[tk]
-    rv_trans = kept
+    to_delete = set().union(*(rec.replace.values() for rec in abbr_recs))
+    rv_trans = {tk: tv for tk, tv in rv_trans.items() if tv.name not in to_delete}
     if not rv_trans:
         return trans
 
@@ -1159,7 +1156,7 @@ def update_estimation(model: Model):
             if est.keep_every_nth_iter is not None:
                 est_code += f' PRINT={est.keep_every_nth_iter}'
             if est.tool_options:
-                option_names = {key for key in est.tool_options.keys()}
+                option_names = set(est.tool_options.keys())
                 overlapping_attributes = set(protected_attributes).intersection(option_names)
                 if overlapping_attributes:
                     overlapping_attributes_str = ', '.join(list(overlapping_attributes))

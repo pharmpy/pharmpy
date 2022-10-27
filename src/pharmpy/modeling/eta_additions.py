@@ -80,7 +80,7 @@ def add_iiv(
     """
     rvs, pset, sset = (
         model.random_variables,
-        [p for p in model.parameters],
+        list(model.parameters),
         model.statements,
     )
 
@@ -293,7 +293,7 @@ def _add_iov_explicit(model, occ, etas, categories, iov_name, etai_name, eta_nam
 
     rvs, pset, sset = (
         model.random_variables,
-        [p for p in model.parameters],
+        list(model.parameters),
         model.statements,
     )
 

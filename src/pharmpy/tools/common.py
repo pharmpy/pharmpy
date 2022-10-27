@@ -83,7 +83,7 @@ def summarize_tool(
     )
 
     model_dict = {model.name: model for model in models_all}
-    rows = dict()
+    rows = {}
 
     for model in models_all:
         description, parent_model = model.description, model.parent_model

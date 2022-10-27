@@ -78,10 +78,9 @@ def execute_workflow(
     elif isinstance(res, Model):
         original_input_models[0].modelfit_results = res.modelfit_results
     elif isinstance(res, list) or isinstance(res, tuple):
-        for model in res:
-            for original_model in original_input_models:
-                if original_model.name == model.name:
-                    original_model.modelfit_results = model.modelfit_results
-                    break
+        index = {model.name: model for model in res}
+        for original_model in original_input_models:
+            if (model := index.get(original_model.name, None)) is not None:
+                original_model.modelfit_results = model.modelfit_results
 
     return res

@@ -98,7 +98,7 @@ def psn_scm_parse_logfile(logfile, options, parcov_dictionary):
     """Read SCM results"""
 
     logfile = Path(logfile)
-    df = pd.concat([step for step in log_steps(logfile, options, parcov_dictionary)])
+    df = pd.concat(list(log_steps(logfile, options, parcov_dictionary)))
     if 'stashed' in df.columns:
         df.fillna(value={'stashed': False, 'readded': False}, inplace=True)
     return df
@@ -214,9 +214,9 @@ def model_name_series_to_dataframe(modelname, parcov_dictionary, is_backward, in
 
 def parse_mixed_block(block):
     m1 = None
-    readded = list()
-    stashed = list()
-    included_relations = dict()
+    readded = []
+    stashed = []
+    included_relations = {}
 
     pattern = {
         'm1': re.compile(r'Model\s+directory\s+(?P<m1folder>\S+)'),
@@ -246,15 +246,15 @@ def parse_mixed_block(block):
             for relation in match.group('relations').split(','):
                 par, cov, state = relation.split('-')
                 if par not in included_relations.keys():
-                    included_relations[par] = dict()
+                    included_relations[par] = {}
                 included_relations[par][cov] = state
 
     return m1, readded, stashed, included_relations
 
 
 def parse_chosen_relation_block(block):
-    chosen = dict()
-    criterion = dict()
+    chosen = {}
+    criterion = {}
     pattern = {
         'chosen': re.compile(
             r'Parameter-covariate relation chosen in this '
@@ -284,7 +284,7 @@ def parse_chosen_relation_block(block):
         criterion = match.groupdict()
     criterion['is_backward'] = is_backward
 
-    included_relations = dict()
+    included_relations = {}
 
     if len(block) > 4 and pattern['included'].match(block[4]):
         for row in block[5:]:
@@ -294,22 +294,24 @@ def parse_chosen_relation_block(block):
             par = match.group('parameter')
             if re.search(r'-\d+$', par):
                 raise NotImplementedError('Missing whitespace between param and included covs')
-            included_relations[par] = {p: c for p, c in pattern['covstate'].findall(row)}
+            included_relations[par] = dict(pattern['covstate'].findall(row))
 
     return chosen, criterion, included_relations
 
 
 def names_without_state(model_names):
-    return [parcov for parcov in model_names.str.extract(r'(.+)-\d+$').values.flatten()]
+    return list(model_names.str.extract(r'(.+)-\d+$').values.flatten())
 
 
 def extended_states(model_names, included_relations):
     model_parcov = names_without_state(model_names)
-    statedict = {parcov: int(-99) for parcov in model_parcov}
-    for par, d in included_relations.items():
-        for cov, state in d.items():
-            statedict[f'{par}{cov}'] = int(state)
-    return [statedict[parcov] for parcov in model_parcov]
+    placeholder = -99
+    statedict = {
+        f'{par}{cov}': int(state)
+        for par, d in included_relations.items()
+        for cov, state in d.items()
+    }
+    return [statedict.get(parcov, placeholder) for parcov in model_parcov]
 
 
 def step_data_frame(step, included_relations):
@@ -361,7 +363,7 @@ def step_data_frame(step, included_relations):
 
 
 def prior_included_step(included_relations, gof_is_pvalue):
-    states = list()
+    states = []
     extra = None
     if gof_is_pvalue:
         extra = {'delta_df': 0, 'pvalue': np.nan, 'goal_pvalue': np.nan}
@@ -371,7 +373,7 @@ def prior_included_step(included_relations, gof_is_pvalue):
         for cov, state in d.items():
             states.append(
                 {
-                    'step': int(0),
+                    'step': 0,
                     'parameter': par,
                     'covariate': cov,
                     'extended_state': int(state),
@@ -499,7 +501,7 @@ def split_merged_base_and_new_ofv(rawtable):
         rawtable.insert(3, 'newfixed', subdf.newfixed)
         # rename columns to get original labels at correct positions
         old = list(rawtable.columns)
-        rawtable.rename(columns={o: correct for o, correct in zip(old, column_names)}, inplace=True)
+        rawtable.rename(columns=dict(zip(old, column_names)), inplace=True)
 
     return rawtable
 
@@ -555,7 +557,7 @@ def relations_from_config_file(path, files):
             break  # do not check any other file, if more than one
 
     if included_lines:
-        included_relations = dict()
+        included_relations = {}
         p = re.compile(r'\s*([^-]+)-(\d+)\s*')
         for row in included_lines:
             par, covstates = row.split(r'=')
@@ -569,7 +571,7 @@ def relations_from_config_file(path, files):
         included_relations = None
 
     if test_lines:
-        test_relations = dict()
+        test_relations = {}
         for row in test_lines:
             par, covs = row.split(r'=')
             par = str.strip(par)
@@ -626,11 +628,7 @@ def psn_scm_options(path):
 
 
 def parcov_dict_from_test_relations(test_relations):
-    parcov = dict()
-    for par, covs in test_relations.items():
-        for cov in covs:
-            parcov[f'{par}{cov}'] = (par, cov)
-    return parcov
+    return {f'{par}{cov}': (par, cov) for par, covs in test_relations.items() for cov in covs}
 
 
 def add_covariate_effects(res, path):

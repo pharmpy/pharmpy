@@ -1323,7 +1323,7 @@ class Checker:
         self.datainfo = datainfo
         self.dataset = dataset
         self.verbose = verbose
-        self.check_results = dict()
+        self.check_results = {}
         self.violations = []
 
     def set_result(self, code, test=False, violation=None, skip=False, warn=False):

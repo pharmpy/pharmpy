@@ -241,7 +241,7 @@ class Model(pharmpy.model.Model):
                 statement = Assignment(sympy.Symbol('DUMMYETA'), sympy.Symbol(eta.names[0]))
                 self.statements = statement + self.statements
                 self.random_variables = self.random_variables + eta
-                self.parameters = Parameters([p for p in self.parameters] + [omega])
+                self.parameters = Parameters(list(self.parameters) + [omega])
             update_random_variables(
                 self, self.internals._old_random_variables, self._random_variables
             )
