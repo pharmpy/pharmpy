@@ -9,70 +9,95 @@
 //        [BLANKOK]
 //        [MISDAT=@r@...]
 
-root : _empty_lines (filename | ASTERISK) (_sep _options)? _empty_lines comment?
-_options: option (_sep _options)?
+root : _empty_lines (filename | ASTERISK) (_sep _options)? _end?
+_options: (_options _sep)? any_option
 
 ASTERISK: "*"
 // dataset (always, unless only ASTERISK terminal)
-filename: TEXT | QUOTE
+filename: TEXT | QTEXT
 
 // option rules
-?option : "(" [WS] TEXT [WS] ")"                -> format
-        | IGNORE [WS] EQUALS [WS] char          -> ignchar
-        | IGNORE [WS] char                      -> ignchar
-        | IGNORE [WS] "=" [WS] _list            -> ignore
-        | IGNORE [WS] _list                     -> ignore
-        | NULL [WS] "=" [WS] (char)             -> null
-        | NULL [WS] (char)                      -> null
-        | ACCEPT [WS] "=" [WS] _list            -> accept
-        | ACCEPT [WS] _list                     -> accept
-        | KEY [WS] "=" [WS] VALUE               -> option
-        | KEY                                   -> option
+?any_option : IGNORE WS? EQUALS WS? char         -> ignchar
+            | IGNORE WS? char                    -> ignchar
+            | IGNORE WS? EQUALS WS? _list           -> ignore
+            | IGNORE WS? _list                   -> ignore
+            | NULL WS? EQUALS WS? (char)            -> null
+            | NULL WS? (char)                    -> null
+            | ACCEPT WS? EQUALS WS? _list           -> accept
+            | ACCEPT WS? _list                   -> accept
+            | KEY WS? EQUALS WS? VALUE              -> option
+            | KEY                                -> option
+            | format
+
+format: "(" WS? TEXT WS? ")"
 
 // specific option terminals
-char: CHAR | CHARQUOTE
-IGNORE : "IGNORE"|"IGNOR"|"IGNO"|"IGN"
-ACCEPT : "ACCEPT"|"ACCEP"|"ACCE"|"ACC"
+char: CHAR | QCHAR
+IGNORE : "IGNORE" | "IGNOR" | "IGNO" | "IGN"
+ACCEPT : "ACCEPT" | "ACCEP" | "ACCE" | "ACC"
+NULL : "NULL" | "NUL"
 EQUALS : "="
-NULL : "NULL"|"NUL"
 
 // generic option terminals (key/value)
-KEY   : /(?!(;|IGN|ACC|NULL|NUL))\w+/      // TODO: parse all options or use priority (instead of negative lookahead)
-VALUE : /(?!(;|IGN|ACC|NULL|NUL))[^\s=]+/  // TODO: parse all options or use priority (instead of negative lookahead)
+KEY   : /(?!(;|IGN|ACC|NUL))\w+/      // TODO: parse all options or use priority (instead of negative lookahead)
+VALUE : /(?!(;|IGN|ACC|NUL))[^\s=]+/  // TODO: parse all options or use priority (instead of negative lookahead)
 
 // _list is only a container (filter thus on accept/ignore)
 _list  : "(" _list_items ")"
-_list_items : _empty_lines filter _empty_lines ("," _list_items)?
-filter : COLUMN _empty_lines operator _empty_lines value | COLUMN _empty_lines value        // inlined rules -> terminals (has no depth)
-?operator: OP_EQ | OP_STR_EQ | OP_NE | OP_STR_NE | OP_LT | OP_GT | OP_LT_EQ | OP_GT_EQ
-?value: TEXT | QUOTE
+_list_items : (_list_items ",")? _empty_lines filter _empty_lines
+filter : column _empty_lines (operator _empty_lines)? value // inlined rules -> terminals (has no depth)
 
+?operator: OP_EQ
+         | OP_NE
+         | OP_LT
+         | OP_LT_EQ
+         | OP_GT
+         | OP_GT_EQ
+         | OP_STR_EQ
+         | OP_STR_NE
+
+?value: TEXT
+      | QTEXT
+
+?column: COLUMN
 COLUMN : /\w+/  // TODO: verify correct coverage
 
 // common misc rules
+_empty_lines: _sep?
+_sep: ws
+    | ws _newlines
+    | ws comment _newlines
+    | _newlines
+    | comment _newlines
+_end: comment
+    | ws comment?
+    | ws _newlines comment?
+    | ws comment _newlines comment?
+    | _newlines comment?
+    | comment _newlines comment?
+
+_newlines: (_newlines comment?)? newline ws?
 ws      : WS
 newline : NEWLINE
 comment : COMMENT
-_empty_lines: _line_ending* ws?
-_line_ending: ws? comment? newline
-_sep: (ws | _line_ending+ ws?)
 
 // common operators
-OP_EQ    : ".EQN."
-OP_STR_EQ: ".EQ." | "==" | "="
-OP_NE    : ".NEN."
-OP_STR_NE: ".NE." | "/="
-OP_LT    : ".LT." | "<"
-OP_GT    : ".GT." | ">"
-OP_LT_EQ : ".LE." | "<="
-OP_GT_EQ : ".GE." | ">="
+OP_EQ     : ".EQN."
+OP_NE     : ".NEN."
+OP_LT     : ".LT." | "<"
+OP_LT_EQ  : ".LE." | "<="
+OP_GT     : ".GT." | ">"
+OP_GT_EQ  : ".GE." | ">="
+OP_STR_EQ : ".EQ." | "==" | "="
+OP_STR_NE : ".NE." | "/="
 
 // common naked/enquoted text terminals
-TEXT : /[^"',;()=\s]+/
-CHAR : /[^';()=\s]/
-QUOTE : /"[^"]*"/
+TEXT  : /[^"',;()=\s]+/
+QTEXT : /"[^"]*"/
       | /'[^']*'/
-CHARQUOTE : /"[^"]"/
-          | /'[^']'/
+
+CHAR  : /[^';()=\s]/
+QCHAR : /"[^"]"/
+      | /'[^']'/
 
 %import .definitions (WS, NEWLINE, COMMENT)

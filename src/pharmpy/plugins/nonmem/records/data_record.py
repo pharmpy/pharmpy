@@ -7,6 +7,9 @@ from pharmpy.model import ModelSyntaxError
 
 from .option_record import OptionRecord
 
+TYPES_OF_SPACE = frozenset(('ws', 'newline'))
+TYPES_OF_KEEP = frozenset(('ws', 'newline', 'comment'))
+
 
 class DataRecord(OptionRecord):
     @property
@@ -25,9 +28,9 @@ class DataRecord(OptionRecord):
             new = [AttrToken('ASTERISK', '*')]
             nodes = []
             for child in self.root.children:
-                if new and child.rule == 'ws':
+                if new and child.rule in TYPES_OF_SPACE:
                     nodes += [child, new.pop()]
-                elif child.rule in {'ws', 'comment'}:
+                elif child.rule in TYPES_OF_KEEP:
                     nodes += [child]
             self.root = AttrTree.create('root', nodes)
         else:
@@ -64,7 +67,7 @@ class DataRecord(OptionRecord):
                     node = AttrTree.create('filename', {'QUOTE': '"%s"' % filename})
                 else:
                     node = AttrTree.create('filename', {'QUOTE': "'%s'" % filename})
-            (pre, old, post) = self.root.partition('filename')
+            (pre, _, post) = self.root.partition('filename')
             self.root.children = pre + [node] + post
 
     @property
