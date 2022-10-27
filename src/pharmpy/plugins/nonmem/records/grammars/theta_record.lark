@@ -43,19 +43,28 @@ ws: WS
 ?option : KEY WS? "=" WS? VALUE -> option
         | VALUE                   -> option
 
-theta : init [WS FIX]                    // form 1
-      | _lpar _fixes? init _fixes? _rpar            // form 2+3+5 (init)
-      | _lpar _fixes? low _fixes? sep _fixes? init _fixes? sep? _rpar    // form 2+3+5 (low, init)
-      | _lpar _fixes? low _fixes? sep _fixes? init _fixes?  sep _fixes? up _fixes? _rpar  // form 2+3+5 (low, init, up)
-      | _lpar _fixes? low _fixes? sepsep _fixes? up _fixes? _rpar        // form 4+5 (low, up)
-sep : WS
-    | WS? "," WS?
-sepsep : WS? "," WS? "," WS?
+theta : init (WS FIX)?                    // form 1
+      | _lpar _inside _rpar _after?       // form 2+3+4+5
+
+_inside: _init            // form 2+3+5 (init)
+       | _low (WS? sep WS? _lfixes?)? init _rfixes? (WS? sep)?    // form 2+3+5 (low, init)
+       | _low (WS? sep WS? _lfixes?)? init _rfixes? (WS? sep WS?  _lfixes?)? up _rfixes?  // form 2+3+5 (low, init, up?)
+       | _low WS? sep WS? sep WS? _lfixes? up _rfixes?        // form 4+5 (low, up)
+
+_init: _lfixes? init _rfixes?
+_low: _lfixes? low _rfixes?
+
+sep : ","
 _lpar : "(" WS?
-_rpar : WS? ")" n
-      | WS? ")" WS? FIX
-      | WS? ")"
-_fixes: (WS? FIX WS?)+
+_rpar : WS? ")"
+
+_after: n | WS? FIX
+
+_fixes: (_fixes WS)? FIX
+_lfixes: _fixes WS
+_rfixes: WS _fixes
+_lrfixes: WS _fixes WS
+
 
 init : NUMERIC
 low  : NUMERIC | NEG_INF
