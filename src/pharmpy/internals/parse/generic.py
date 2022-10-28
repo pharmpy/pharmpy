@@ -7,9 +7,9 @@ to point to your grammar file) to define a powerful parser.
 import copy
 import re
 from abc import ABC
-from typing import Optional
+from typing import Any, Optional, Union
 
-from lark import Lark, Tree
+from lark import Lark, Tree, Visitor
 from lark.lexer import Token
 
 from . import prettyprint
@@ -18,24 +18,20 @@ TYPES_OF_NEWLINE = frozenset(('WS_ALL', 'LINEENDING', 'NEWLINE', 'newline'))
 TYPES_OF_COMMENT = frozenset(('COMMENT', 'LINEENDING', 'newline'))
 
 
-def rule_of(item):
+def rule_of(item: Union[Tree, Token, Any]) -> str:
     """Rule of a tree or token. Convenience function (will not raise)."""
 
-    try:
+    if isinstance(item, Tree):
         return item.data
-    except AttributeError:
-        try:
-            return item.type
-        except AttributeError:
-            return ''
+    elif isinstance(item, Token):
+        return item.type
+    else:
+        return ''
 
 
-def empty_rule(rule):
+def empty_rule(rule: str):
     """Create empty Tree or Token, depending on (all) upper-case or not."""
-
-    if rule == rule.upper():
-        return Token(rule, '')
-    return Tree(rule, [])
+    return Token(rule, '') if rule == rule.upper() else Tree(rule, [])
 
 
 class AttrToken(Token):
@@ -112,7 +108,11 @@ class AttrToken(Token):
         return hash(repr(self))
 
     def __eq__(self, other):
-        return hash(self) == hash(other)
+        if not isinstance(other, AttrToken):
+            return False
+        if self.type != other.type:
+            return False
+        return repr(self) == repr(other)
 
     def __str__(self):
         return str(self.value)
@@ -427,6 +427,16 @@ class NoSuchRuleException(AttributeError):
         super().__init__(f'no {repr(rule)} child in tree{post}')
 
 
+_numbered = re.compile(r'(newline|ws)[\d]+')
+
+
+class RenameNumbered(Visitor):
+    def __default__(self, tree):
+        rule = tree.data
+        if match := _numbered.match(rule):
+            tree.data = match.group(1)
+
+
 class GenericParser(ABC):
     """
     Generic parser using lark.
@@ -482,6 +492,10 @@ class GenericParser(ABC):
         root = self.lark.parse(self.buffer)
         if self.non_empty:
             root = self.insert(root, self.non_empty)
+
+        if self.lark.options.parser == 'lalr':
+            RenameNumbered().visit(root)
+
         return self.AttrTree.transform(tree=root)
 
     @classmethod

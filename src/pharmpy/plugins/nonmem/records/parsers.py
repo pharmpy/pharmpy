@@ -73,11 +73,6 @@ class OptionRecordParser(RecordParser):
 @install_grammar
 class DataRecordParser(RecordParser):
     grammar_filename = 'data_record.lark'
-    grammar_options = dict(
-        parser='earley',
-        lexer='dynamic',
-        ambiguity='resolve',
-    )
 
 
 @install_grammar
