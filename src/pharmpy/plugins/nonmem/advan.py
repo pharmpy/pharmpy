@@ -301,7 +301,9 @@ def _compartmental_model(
                 rate = dose.rate
                 duration = dose.amount / dose.rate
 
-            dadt_dose.expression += sympy.Piecewise((rate, duration > t), (0, True))
+            dose_symb = dadt_dose.symbol
+            dose_expr = dadt_dose.expression + sympy.Piecewise((rate, duration > t), (0, True))
+            dadt_dose = Assignment(dose_symb, dose_expr)
             ics[comp_names['A(1)'](0)] = sympy.Integer(0)
 
         eqs = [sympy.Eq(dadt_dose.symbol, dadt_dose.expression)] + dadt_rest
