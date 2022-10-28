@@ -265,6 +265,7 @@ def _compartmental_model(
         for i, c in enumerate(comps, 1):
             a = sympy.Function(f'A_{c}')
             subs_dict[f'DADT({i})'] = sympy.Derivative(a(t))
+            subs_dict[f'DADT ({i})'] = sympy.Derivative(a(t))
             subs_dict[f'A({i})'] = a(t)
             comp_names[f'A({i})'] = a
 
