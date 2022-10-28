@@ -1,23 +1,12 @@
-root : _empty_lines _options? _end?
+root : _begin _options? _end
 
 _options: (_options _sep)? option
 
-_empty_lines: _sep?
+_begin: _sep?
+_end: ws? (COMMENT? newline)? COMMENT?
+_sep: ws | ws? COMMENT? newline
 
-_sep: ws
-    | ws newline
-    | ws COMMENT newline
-    | newline
-    | COMMENT newline
-
-_end: COMMENT
-    | ws COMMENT?
-    | ws newline COMMENT?
-    | ws COMMENT newline COMMENT?
-    | newline COMMENT?
-    | COMMENT newline COMMENT?
-
-newline: (newline COMMENT?)? NEWLINE WS?
+newline: (newline COMMENT?)? NEWLINE ws?
 ws: WS
 
 option: KEY ("=" VALUE)?

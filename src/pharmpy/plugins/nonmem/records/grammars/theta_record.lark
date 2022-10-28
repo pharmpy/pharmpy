@@ -18,43 +18,30 @@
 //   5. "FIXED" can appear almost anywhere and multiple times in a row
 //      when parentheses are used
 
-root : _empty_lines _options? _end?
+root : _begin _options? _end
 
 _options: (_options _sep)? (theta | option)
 
-_empty_lines: _sep?
+_begin: _sep?
+_end: WS? (COMMENT? _newlines)? COMMENT?
+_sep: WS | WS? COMMENT? _newlines
 
-_sep: ws
-    | ws newline
-    | ws COMMENT newline
-    | newline
-    | COMMENT newline
-
-_end: COMMENT
-    | ws COMMENT?
-    | ws newline COMMENT?
-    | ws COMMENT newline COMMENT?
-    | newline COMMENT?
-    | COMMENT newline COMMENT?
-
-newline: (newline COMMENT?)? NEWLINE WS?
-ws: WS
+_newlines: (_newlines COMMENT?)? NEWLINE WS?
 
 ?option : KEY WS? "=" WS? VALUE -> option
-        | VALUE                   -> option
+        | VALUE                 -> option
 
 theta : init (WS FIX)?                    // form 1
       | _lpar _inside _rpar _after?       // form 2+3+4+5
 
 _inside: _init            // form 2+3+5 (init)
-       | _low (WS? sep WS? _lfixes?)? init _rfixes? (WS? sep)?    // form 2+3+5 (low, init)
-       | _low (WS? sep WS? _lfixes?)? init _rfixes? (WS? sep WS?  _lfixes?)? up _rfixes?  // form 2+3+5 (low, init, up?)
-       | _low WS? sep WS? sep WS? _lfixes? up _rfixes?        // form 4+5 (low, up)
+       | _low (WS? "," WS? _lfixes?)? init _rfixes? (WS? ",")?    // form 2+3+5 (low, init)
+       | _low (WS? "," WS? _lfixes?)? init _rfixes? (WS? "," WS?  _lfixes?)? up _rfixes?  // form 2+3+5 (low, init, up?)
+       | _low WS? "," WS? "," WS? _lfixes? up _rfixes?        // form 4+5 (low, up)
 
 _init: _lfixes? init _rfixes?
 _low: _lfixes? low _rfixes?
 
-sep : ","
 _lpar : "(" WS?
 _rpar : WS? ")"
 
@@ -71,14 +58,13 @@ low  : NUMERIC | NEG_INF
 up   : NUMERIC | POS_INF
 n    : "x" INT
 
+NEG_INF: "-INF"i | "-1000000"
+POS_INF: "INF"i | "1000000"
+
 FIX : "FIXED" | "FIXE" | "FIX"
 
 // generic option terminals (key/value)
 KEY   : /(?!([0-9]|\(|FIX))\w+/
 VALUE : /(?!([0-9]|\(|FIX))[^\s=;]+/
 
-
 %import .definitions (INT, COMMENT, NEWLINE, NUMERIC, WS)
-
-NEG_INF: "-INF"i | "-1000000"i
-POS_INF: "INF"i | "1000000"i
