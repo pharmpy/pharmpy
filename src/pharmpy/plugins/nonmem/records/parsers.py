@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from lark import Lark
+from lark import Lark, Tree, Visitor
 
 from pharmpy.internals.parse import GenericParser
 
@@ -41,6 +41,17 @@ class ProblemRecordParser(RecordParser):
     ]
 
 
+class InitOrLow(Visitor):
+    def theta(self, tree):
+        assert tree.data == 'theta'
+        other = {'init', 'up'}
+        subtrees = list(filter(lambda child: isinstance(child, Tree), tree.children))
+        is_low = any(tree.data in other for tree in subtrees)
+        for tree in subtrees:
+            if tree.data == 'init_or_low':
+                tree.data = 'low' if is_low else 'init'
+
+
 @install_grammar
 class ThetaRecordParser(RecordParser):
     grammar_filename = 'theta_record.lark'
@@ -50,6 +61,7 @@ class ThetaRecordParser(RecordParser):
     non_empty = [
         {'comment': (1, 'COMMENT')},
     ]
+    post_process = [InitOrLow()]
 
 
 @install_grammar

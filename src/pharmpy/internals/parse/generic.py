@@ -7,9 +7,9 @@ to point to your grammar file) to define a powerful parser.
 import copy
 import re
 from abc import ABC
-from typing import Any, Optional, Union
+from typing import Any, List, Optional, Union
 
-from lark import Lark, Tree, Visitor
+from lark import Lark, Transformer, Tree, Visitor
 from lark.lexer import Token
 
 from . import prettyprint
@@ -475,6 +475,7 @@ class GenericParser(ABC):
         debug=False,
         cache=False,
     )
+    post_process: List[Union[Visitor, Transformer]] = []
 
     def __init__(self, buf=None):
         self.root = self.parse(buf)
@@ -495,6 +496,14 @@ class GenericParser(ABC):
 
         if self.lark.options.parser == 'lalr':
             RenameNumbered().visit(root)
+
+        for processor in self.post_process:
+            if isinstance(processor, Visitor):
+                processor.visit(root)
+            elif isinstance(processor, Transformer):
+                root = processor.transform(root)
+            else:
+                raise TypeError(f'Processor {processor} must be a Visitor or a Transformer')
 
         return self.AttrTree.transform(tree=root)
 
