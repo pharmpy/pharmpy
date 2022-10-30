@@ -19,7 +19,7 @@ def brute_force_no_of_etas(base_model, index_offset=0):
 
     iivs = base_model.random_variables.iiv
 
-    for i, to_remove in enumerate(non_empty_subsets(iivs), 1):
+    for i, to_remove in enumerate(non_empty_subsets(iivs.names), 1):
         model_name = f'iivsearch_run{i + index_offset}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
