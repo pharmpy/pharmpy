@@ -21,11 +21,6 @@ class RecordParser(GenericParser):
 @install_grammar
 class AbbreviatedRecordParser(RecordParser):
     grammar_filename = 'abbreviated_record.lark'
-    grammar_options = dict(
-        parser='earley',
-        lexer='dynamic',
-        ambiguity='resolve',
-    )
 
 
 @install_grammar

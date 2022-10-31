@@ -11,35 +11,41 @@
 //               [FUNCTION function_name(input_vector_name,dimension[,usage])]
 //               [VECTOR input_vector_name(dimension)]
 
-root : _ws* WS? _options
-_options: option (_add_or_finish | _next_line_or_finish)
-_add_or_finish: WS (_options | _next_line_or_finish)
-_next_line_or_finish: COMMENT? _next_line?
-_next_line: NEWLINE _ws* _options?
-_ws: WS? COMMENT? NEWLINE
+root : _begin _options _end
+_options: (_options _sep)? option
+
+_begin: _sep?
+_end: ws? (COMMENT? newline)? COMMENT?
+_sep: ws | ws? COMMENT? newline
 
 // option rules
-?option : COMRES SEP SIGNED_INT             -> comres
-        | COMSAV SEP SIGNED_INT             -> comsav
-        | DERIV2 SEP ("NO" | "NOCOMMON")    -> deriv2
-        | DERIV1 SEP "NO"                   -> deriv1
-        | FASTDER                           -> fastder
-        | NOFASTDER                         -> nofastder
-        | CHECKMU                           -> checkmu
-        | NOCHECKMU                         -> nocheckmu
-        | DES SEP ("COMPACT" | "FULL")      -> des
-        | REPLACE ws ANY SEP ANY            -> replace
-        | DECLARE ws declaration ("," declaration)* -> declare
-        | PROTECT                           -> protect
-        | FUNCTION SYMBOL "(" SYMBOL "," INT ")" -> function
-        | VECTOR SYMBOL "(" INT ")"       -> vector
+?option : COMRES SEP SIGNED_INT                         -> comres
+        | COMSAV SEP SIGNED_INT                         -> comsav
+        | DERIV2 SEP (NO | NOCOMMON)                    -> deriv2
+        | DERIV1 SEP NO                                 -> deriv1
+        | FASTDER                                       -> fastder
+        | NOFASTDER                                     -> nofastder
+        | CHECKMU                                       -> checkmu
+        | NOCHECKMU                                     -> nocheckmu
+        | DES SEP (COMPACT | FULL)                      -> des
+        | REPLACE ws2 ANY SEP ANY                        -> replace
+        | DECLARE ws1 _declarations                      -> declare
+        | PROTECT                                       -> protect
+        | FUNCTION SYMBOL "(" SYMBOL "," INT ")"        -> function
+        | VECTOR SYMBOL "(" INT ")"                     -> vector
 
-declaration: ws? [(INTEGER | DOWHILE) ws] CNAME ["(" [ws] INT ["," [ws] INT] [ws] ")"] [ws] -> declare
+declaration: ((INTEGER | DOWHILE) ws1)? CNAME ("(" ws? INT ("," ws? INT)? ws?  ")")? -> declare
+
+_declarations: (_declarations ws? "," ws1?)? declaration
 
 ANY: /[^ \n\r\t=]+/
 SEP: /\s*=\s*|\s+(?!=)/
 
 // option terminals
+COMPACT: "COMPACT"
+FULL: "FULL"
+NO: "NO"
+NOCOMMON: "NOCOMMON"
 COMRES: "COMRES" | "COMRE" | "COMR"
 COMSAV: "COMSAV" | "COMSA" | "COMS"
 DERIV1: "DERIV1"
@@ -57,9 +63,11 @@ VECTOR: "VECTOR" | "VECTO" | "VECT" | "VEC"
 INTEGER: "INTEGER"
 DOWHILE: "DOWHILE"
 
-
 // common misc rules
-ws      : WS_ALL
+newline: (newline COMMENT?)? NEWLINE ws?
+ws : WS_ALL
+ws1 : WS_ALL
+ws2 : WS_ALL
 
 %import .definitions (INT, SIGNED_INT, SYMBOL, WS_ALL, WS, COMMENT, NEWLINE)
 %import common.CNAME
