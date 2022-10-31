@@ -480,14 +480,14 @@ class CodeRecord(Record):
         statement_nodes = []
         for node in node_tree.all('statement'):
             if node_index == 0:
-                node.children.insert(0, AttrToken('LF', '\n'))
+                node.children.insert(0, AttrToken('NEWLINE', '\n'))
             if (
-                not node.all('LF')
+                not node.all('NEWLINE')
                 and node_index != 0
                 or len(self.root.children) > 0
                 and self.root.children[0].rule != 'empty_line'
             ):
-                node.children.append(AttrToken('LF', '\n'))
+                node.children.append(AttrToken('NEWLINE', '\n'))
             statement_nodes.append(node)
         return statement_nodes
 

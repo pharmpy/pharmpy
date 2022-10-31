@@ -3,16 +3,15 @@
 
 root: empty_line* [pseudo] (statement | verbatim | empty_line)+
 
-empty_line: [WS] [COMMENT] LF
-LF: /\r?\n/
+empty_line: [WS] [COMMENT] NEWLINE
 
-pseudo: [WS] PSEUDO_STATEMENT ")" [WS] [COMMENT] LF
+pseudo: [WS] PSEUDO_STATEMENT ")" [WS] [COMMENT] NEWLINE
 PSEUDO_STATEMENT: /[(][^)]*/
 
-verbatim: [WS] VERBATIM_STATEMENT [LF]
+verbatim: [WS] VERBATIM_STATEMENT [NEWLINE]
 VERBATIM_STATEMENT: /"[^\n]*/
 
-statement: [WS] (assignment | logical_if | block_if | while | exit | call | return) [WS] [COMMENT] [LF]
+statement: [WS] (assignment | logical_if | block_if | while | exit | call | return) [WS] [COMMENT] [NEWLINE]
 
 exit: "EXIT"i ([WS] | WS ("1" | "2") | WS ("1" | "2") WS SIGNED_INT)
 call: "CALL"i WS CNAME [WS] "(" [WS] _atom [WS] ("," [WS] _atom [WS])* ")"
@@ -83,5 +82,5 @@ SIGMA: "SIGMA"i
 
 WS: /([ \t]+|[ \t]*&[ \t]*\r?\n[ \t]*)/
 
-%import .definitions (COMMENT, LINEENDING, WS_ALL)
+%import .definitions (COMMENT, LINEENDING, NEWLINE)
 %import common (CNAME, SIGNED_INT)
