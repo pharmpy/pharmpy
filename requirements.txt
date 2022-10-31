@@ -20,7 +20,7 @@ dask==2022.10.0
 debugpy==1.6.3
 decorator==5.1.1
 defusedxml==0.7.1
-distributed==2022.10.0
+distributed==2022.10.1
 docutils==0.18.0
 entrypoints==0.4
 executing==1.2.0
