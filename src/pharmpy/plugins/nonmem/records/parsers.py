@@ -24,6 +24,7 @@ class AbbreviatedRecordParser(RecordParser):
     grammar_options = dict(
         parser='earley',
         lexer='dynamic',
+        ambiguity='resolve',
     )
 
 
@@ -57,6 +58,8 @@ class ThetaRecordParser(RecordParser):
     grammar_filename = 'theta_record.lark'
     grammar_options = dict(
         parser='earley',
+        lexer='dynamic',
+        ambiguity='resolve',
     )
     non_empty = [
         {'comment': (1, 'COMMENT')},
