@@ -1,3 +1,4 @@
+import shutil
 from io import StringIO
 
 import pytest
@@ -1003,7 +1004,8 @@ $ESTIMATION METHOD=1 INTER
 def test_convert_model_iv(testdata, tmp_path):
     # FIXME move to unit test for amd?
     with chdir(tmp_path):
-        start_model = create_start_model(testdata / 'nonmem' / 'pheno_rate.dta', modeltype='pk_iv')
+        shutil.copy2(testdata / 'nonmem' / 'pheno_rate.dta', '.')
+        start_model = create_start_model('pheno_rate.dta', modeltype='pk_iv')
         convert_model(start_model)
 
 
