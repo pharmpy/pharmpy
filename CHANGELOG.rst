@@ -1,4 +1,22 @@
-0.82.0 (2002-10-24)
+0.83.0 (2022-11-01)
+-------------------
+
+Changes
+=======
+
+* Only test IOV on statements before ODE
+
+Bug fixes
+=========
+
+* Allow spaces in DADT definitions when parsing ODE
+* Fix issue where expression setter was used
+* Fix issue in IIVSearch where tool doesn't continue to next step if there is a multivariate distribution
+* Input dataset into model constructor in convert model (fixes #1293)
+* Modelfit should not crash if .lst-file does not exist, warns if .lst and .ext-files do not exist (#1302, #1303)
+
+
+0.82.0 (2022-10-24)
 -------------------
 
 Changes
