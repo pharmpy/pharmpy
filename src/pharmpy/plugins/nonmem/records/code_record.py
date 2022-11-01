@@ -267,19 +267,17 @@ class ExpressionInterpreter(Interpreter):
             return sympy.And
         elif name == '.OR.':
             return sympy.Or
-        else:  # name == '.NOT.':
+        elif name == '.NOT.':
             return sympy.Not
+        else:
+            raise ValueError(f'Unknown logical operator "{name}"')
 
-    def func(self, node):
-        func, expr = self.visit_children(node)
-        return func(expr)
-
-    def func2(self, node):
-        a, p = self.visit_children(node)
-        return sympy.Mod(a, p)
+    def img(self, node):
+        fn, *parameters = self.visit_children(node)
+        return fn(*parameters)
 
     @staticmethod
-    def intrinsic_func(node):
+    def fn1(node):
         smallz = 2.8e-103
         name = str(node).upper()
         if name == "EXP" or name == "DEXP":
@@ -328,8 +326,18 @@ class ExpressionInterpreter(Interpreter):
             return lambda x: sympy.Piecewise((100, x > 100), (x, True))
         elif name == "PNG":
             return lambda x: sympy.Piecewise((0, x < 0), (x, True))
-        else:  # name == "PHI":
+        elif name == "PHI":
             return lambda x: (1 + sympy.erf(x) / sympy.sqrt(2)) / 2
+        else:
+            raise ValueError(f'Unknown unary function "{name}".')
+
+    @staticmethod
+    def fn2(node):
+        name = str(node).upper()
+        if name == "MOD":
+            return sympy.Mod
+        else:
+            raise ValueError(f'Unknown binary function "{name}".')
 
     def power(self, node):
         b, e = self.visit_children(node)

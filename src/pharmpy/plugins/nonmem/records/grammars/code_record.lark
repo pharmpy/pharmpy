@@ -26,38 +26,38 @@ _statement: assignment
           | call
           | return
 
-exit: EXIT (CONT ("1" | "2") | CONT ("1" | "2") CONT SIGNED_INT)?
-call: CALL CONT CNAME CONT? "(" CONT? _atoms CONT? ")"
-_atoms: (_atoms CONT? "," CONT?)? _atom
+exit: EXIT (_cont ("1" | "2") | _cont ("1" | "2") _cont SIGNED_INT)?
+call: CALL _cont CNAME _cont? "(" _cont? _atoms _cont? ")"
+_atoms: (_atoms _cont? "," _cont?)? _atom
 return: RETURN
-assignment: variable CONT? "=" CONT? expression
+assignment: variable _cont? "=" _cont? expression
 
-while: WS? DO CONT? WHILE CONT? "(" logical_expression ")" CONT? _line_ending (CONT? statement _empty_lines?)* CONT? ENDDO CONT?
+while: WS? DO _cont? WHILE _cont? "(" logical_expression ")" _cont? _line_ending (_cont? statement _empty_lines?)* _cont? ENDDO _cont?
 
 block_if: block_if_start block_if_elseif* block_if_else? block_if_end
-block_if_start: WS? IF CONT? "(" logical_expression ")" CONT? THEN CONT?  _line_ending (CONT? statement (CONT? _empty_lines)?)*
-block_if_else: WS? ELSE CONT? _line_ending (CONT? statement _empty_lines?)*
-block_if_elseif: WS? ELSE CONT? IF CONT? "(" logical_expression ")" CONT? THEN CONT? _line_ending (CONT? statement (CONT? _empty_lines)?)*
-block_if_end: WS? ENDIF CONT?
+block_if_start: WS? IF _cont? "(" logical_expression ")" _cont? THEN _cont?  _line_ending (_cont? statement (_cont? _empty_lines)?)*
+block_if_else: WS? ELSE _cont? _line_ending (_cont? statement _empty_lines?)*
+block_if_elseif: WS? ELSE _cont? IF _cont? "(" logical_expression ")" _cont? THEN _cont? _line_ending (_cont? statement (_cont? _empty_lines)?)*
+block_if_end: WS? ENDIF _cont?
 
-EXIT: "EXIT"i
-CALL: "CALL"i
-RETURN: "RETURN"i
-DO: "DO"i
-WHILE: "WHILE"i
-ENDDO: "END DO"i
-IF: "IF"i
-THEN: "THEN"i
-ELSE: "ELSE"i
-ENDIF: "END IF"i
-     | "ENDIF"i
+EXIT   : "EXIT"i
+CALL   : "CALL"i
+RETURN : "RETURN"i
+DO     : "DO"i
+WHILE  : "WHILE"i
+ENDDO  : "END DO"i
+IF     : "IF"i
+THEN   : "THEN"i
+ELSE   : "ELSE"i
+ENDIF  : "END IF"i
+       | "ENDIF"i
 
-logical_if: IF CONT? "(" logical_expression ")" CONT? (assignment | exit | call)
-?logical_expression: _or_term (or_op _or_term)*
-_or_term: _and_term (and_op _and_term)*
-_and_term: (not_op)? not_term
-not_term: _eq_term (eq_op _eq_term)? -> logical_expression
-_eq_term: _rel_term (rel_op _rel_term)?
+logical_if: IF _cont? "(" _cont? logical_expression _cont? ")" _cont? (assignment | exit | call)
+?logical_expression: _or_term (_cont? or_op _cont? _or_term)*
+_or_term: _and_term (_cont? and_op _cont? _and_term)*
+_and_term: (not_op _cont?)? not_term
+not_term: _eq_term (_cont? eq_op _cont? _eq_term)? -> logical_expression
+_eq_term: _rel_term (_cont? rel_op _cont? _rel_term)?
 _rel_term: expression
 
 or_op: ".OR."i                            -> logical_operator
@@ -80,10 +80,10 @@ rel_op: ".LT."i                           -> logical_operator
 
 not_op: ".NOT."i                          -> logical_operator
 
-?expression: term (add_op CONT? term)*
-?term: _factor (mul_op CONT? _factor)* -> expression
-_factor: (UNARY_OP CONT?)? (_atom | power)
-?power: _atom ("**" _factor)?
+?expression: term (_cont? add_op _cont? term)*
+?term: _factor (_cont? mul_op _cont? _factor)* -> expression
+_factor: (UNARY_OP _cont?)? (_atom | power)
+?power: _atom (_cont? "**" _cont? _factor)?
 
 UNARY_OP: "+"
         | "-"
@@ -94,39 +94,44 @@ mul_op  : "*" -> operator
         | "/" -> operator
 
 
-_atom: CONT? (func | func2 | symbol | number | "(" expression ")") CONT?
+_atom: img
+     | symbol
+     | number
+     | "(" expression ")"
 
-func: intrinsic_func "(" expression ")"
-func2: "MOD"i "(" expression "," expression ")"
+img: fn1 "(" _cont? expression _cont? ")"
+   | fn2 "(" _cont? expression _cont? "," _cont? expression _cont? ")"
 
-intrinsic_func: "LOG"i
-              | "LOG10"i
-              | "EXP"i
-              | "DEXP"i
-              | "SQRT"i
-              | "SIN"i
-              | "COS"i
-              | "ABS"i
-              | "TAN"i
-              | "ASIN"i
-              | "ACOS"i
-              | "ATAN"i
-              | "INT"i
-              | "GAMLN"i
-              | "PHI"i
-              | "PLOG"i
-              | "PLOG10"i
-              | "PSQRT"i
-              | "PEXP"i
-              | "PDZ"i
-              | "PZR"i
-              | "PNP"i
-              | "PHE"i
-              | "PNG"i
-              | "PTAN"i
-              | "PATAN"i
-              | "PASIN"i
-              | "PACOS"i
+fn1: "LOG"i
+   | "LOG10"i
+   | "EXP"i
+   | "DEXP"i
+   | "SQRT"i
+   | "SIN"i
+   | "COS"i
+   | "ABS"i
+   | "TAN"i
+   | "ASIN"i
+   | "ACOS"i
+   | "ATAN"i
+   | "INT"i
+   | "GAMLN"i
+   | "PHI"i
+   | "PLOG"i
+   | "PLOG10"i
+   | "PSQRT"i
+   | "PEXP"i
+   | "PDZ"i
+   | "PZR"i
+   | "PNP"i
+   | "PHE"i
+   | "PNG"i
+   | "PTAN"i
+   | "PATAN"i
+   | "PASIN"i
+   | "PACOS"i
+
+fn2: "MOD"i
 
 variable: vector
         | CNAME
@@ -139,9 +144,9 @@ vector: CNAME (subscript | double_subscript)
 parameter: (THETA | ETA | EPS | OMEGA | SIGMA) subscript
          | (OMEGA | SIGMA) double_subscript
 
-subscript: CONT? "(" CONT? SIGNED_INT CONT? ")"
-         | CONT? "(" CONT? CNAME CONT? ")"
-double_subscript: CONT? "(" CONT? SIGNED_INT CONT? "," CONT? SIGNED_INT CONT? ")"
+subscript: _cont? "(" _cont? SIGNED_INT _cont? ")"
+         | _cont? "(" _cont? CNAME _cont? ")"
+double_subscript: _cont? "(" _cont? SIGNED_INT _cont? "," _cont? SIGNED_INT _cont? ")"
 
 number: SIGNED_INT
       | FLOAT
@@ -159,7 +164,10 @@ OMEGA: "OMEGA"i
 
 SIGMA: "SIGMA"i
 
-CONT: /([ \x00\t]+|[ \x00\t]*&[ \x00\t]*\r?\n[ \x00\t]*)/
+_cont: WS
+     | WS? CONT WS?
+
+CONT: /&[ \x00\t]*\r?\n/
 
 %import .definitions (COMMENT, NEWLINE, WS)
 %import common (CNAME, SIGNED_INT)
