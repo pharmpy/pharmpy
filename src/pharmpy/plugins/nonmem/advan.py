@@ -549,7 +549,7 @@ def _dosing(model: Model, control_stream: NMTranControlStream, dose_comp: int):
     def dataset():
         if not hasattr(model, '_data_frame'):
             return model._read_dataset(control_stream, raw=False)
-        return model.dataset
+        return model._data_frame
 
     return dosing(model.datainfo, dataset, dose_comp)
 
