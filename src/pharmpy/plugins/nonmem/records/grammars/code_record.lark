@@ -4,7 +4,7 @@
 root: _empty_lines? (pseudo _empty_lines?)? _statements?
 _empty_lines: _empty_lines? empty_line
 empty_line: WS? COMMENT? NEWLINE
-_line_ending: (COMMENT? NEWLINE WS?)+
+_line_ending: (_line_ending WS?)? COMMENT? NEWLINE
 
 _statements: _statements? (statement | verbatim) _empty_lines?
 
@@ -32,13 +32,13 @@ _atoms: (_atoms _cont? "," _cont?)? _atom
 return: RETURN
 assignment: variable _cont? "=" _cont? expression
 
-while: WS? DO _cont? WHILE _cont? "(" logical_expression ")" _cont? _line_ending (_cont? statement _empty_lines?)* _cont? ENDDO _cont?
+while: WS? DO _cont? WHILE _cont? "(" logical_expression ")" WS? _line_ending (WS? statement _empty_lines?)* WS? ENDDO
 
 block_if: block_if_start block_if_elseif* block_if_else? block_if_end
-block_if_start: WS? IF _cont? "(" logical_expression ")" _cont? THEN _cont?  _line_ending (_cont? statement (_cont? _empty_lines)?)*
-block_if_else: WS? ELSE _cont? _line_ending (_cont? statement _empty_lines?)*
-block_if_elseif: WS? ELSE _cont? IF _cont? "(" logical_expression ")" _cont? THEN _cont? _line_ending (_cont? statement (_cont? _empty_lines)?)*
-block_if_end: WS? ENDIF _cont?
+block_if_start: WS? IF _cont? "(" logical_expression ")" _cont? THEN WS? _line_ending (WS? statement _empty_lines?)*
+block_if_elseif: WS? ELSE _cont? IF _cont? "(" logical_expression ")" _cont? THEN WS? _line_ending (WS? statement _empty_lines?)*
+block_if_else: WS? ELSE WS? _line_ending (WS? statement _empty_lines?)*
+block_if_end: WS? ENDIF
 
 EXIT   : "EXIT"i
 CALL   : "CALL"i
@@ -97,7 +97,7 @@ mul_op  : "*" -> operator
 _atom: img
      | symbol
      | number
-     | "(" expression ")"
+     | "(" _cont? expression _cont? ")"
 
 img: fn1 "(" _cont? expression _cont? ")"
    | fn2 "(" _cont? expression _cont? "," _cont? expression _cont? ")"
