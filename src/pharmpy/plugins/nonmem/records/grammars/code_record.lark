@@ -1,32 +1,58 @@
 // A precedence climbing grammar is used for expressions
 // The top level has one full line of code per rule
 
-root: empty_line* [pseudo] (statement | verbatim | empty_line)+
+root: _empty_lines? (pseudo _empty_lines?)? _statements?
+_empty_lines: _empty_lines? empty_line
+empty_line: WS? COMMENT? NEWLINE
+_line_ending: (COMMENT? NEWLINE WS?)+
 
-empty_line: [WS] [COMMENT] NEWLINE
+_statements: _statements? (statement | verbatim) _empty_lines?
 
-pseudo: [WS] PSEUDO_STATEMENT ")" [WS] [COMMENT] NEWLINE
-PSEUDO_STATEMENT: /[(][^)]*/
+pseudo: WS? PSEUDO_STATEMENT ")" WS? COMMENT? NEWLINE
+PSEUDO_STATEMENT: /[(][^)]*/ // NOTE Early's dynamic lexer does not support zero-width regexes
 
-verbatim: [WS] VERBATIM_STATEMENT [NEWLINE]
+// NOTE trailing NEWLINE needs to be optional in case of EOF
+verbatim: WS? VERBATIM_STATEMENT NEWLINE
 VERBATIM_STATEMENT: /"[^\n]*/
 
-statement: [WS] (assignment | logical_if | block_if | while | exit | call | return) [WS] [COMMENT] [NEWLINE]
+// NOTE trailing NEWLINE needs to be optional in case of EOF
+statement: WS? _statement WS? COMMENT? NEWLINE
 
-exit: "EXIT"i ([WS] | WS ("1" | "2") | WS ("1" | "2") WS SIGNED_INT)
-call: "CALL"i WS CNAME [WS] "(" [WS] _atom [WS] ("," [WS] _atom [WS])* ")"
-return: "RETURN"i
-assignment: variable [WS] "=" [WS] expression
+_statement: assignment
+          | logical_if
+          | block_if
+          | while
+          | exit
+          | call
+          | return
 
-while: [WS] "DO"i [WS] "WHILE"i [WS] "(" logical_expression ")" [WS] LINEENDING ([WS] statement LINEENDING)* [WS] "END DO"i [WS]
+exit: EXIT (CONT ("1" | "2") | CONT ("1" | "2") CONT SIGNED_INT)?
+call: CALL CONT CNAME CONT? "(" CONT? _atoms CONT? ")"
+_atoms: (_atoms CONT? "," CONT?)? _atom
+return: RETURN
+assignment: variable CONT? "=" CONT? expression
+
+while: WS? DO CONT? WHILE CONT? "(" logical_expression ")" CONT? _line_ending (CONT? statement _empty_lines?)* CONT? ENDDO CONT?
 
 block_if: block_if_start block_if_elseif* block_if_else? block_if_end
-block_if_start: [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] LINEENDING ([WS] statement [WS] LINEENDING)*
-block_if_else: [WS] "ELSE"i [WS] LINEENDING ([WS] statement LINEENDING)*
-block_if_elseif: [WS] "ELSE"i [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] LINEENDING ([WS] statement [WS] LINEENDING)*
-block_if_end: [WS] ("END IF"i | "ENDIF"i) [WS]
+block_if_start: WS? IF CONT? "(" logical_expression ")" CONT? THEN CONT?  _line_ending (CONT? statement (CONT? _empty_lines)?)*
+block_if_else: WS? ELSE CONT? _line_ending (CONT? statement _empty_lines?)*
+block_if_elseif: WS? ELSE CONT? IF CONT? "(" logical_expression ")" CONT? THEN CONT? _line_ending (CONT? statement (CONT? _empty_lines)?)*
+block_if_end: WS? ENDIF CONT?
 
-logical_if: "IF"i [WS] "(" logical_expression ")" [WS] (assignment | exit | call)
+EXIT: "EXIT"i
+CALL: "CALL"i
+RETURN: "RETURN"i
+DO: "DO"i
+WHILE: "WHILE"i
+ENDDO: "END DO"i
+IF: "IF"i
+THEN: "THEN"i
+ELSE: "ELSE"i
+ENDIF: "END IF"i
+     | "ENDIF"i
+
+logical_if: IF CONT? "(" logical_expression ")" CONT? (assignment | exit | call)
 ?logical_expression: _or_term (or_op _or_term)*
 _or_term: _and_term (and_op _and_term)*
 _and_term: (not_op)? not_term
@@ -34,53 +60,106 @@ not_term: _eq_term (eq_op _eq_term)? -> logical_expression
 _eq_term: _rel_term (rel_op _rel_term)?
 _rel_term: expression
 
-or_op: (".OR."i) -> logical_operator
-and_op: (".AND."i) -> logical_operator
-eq_op: ("==" | ".EQ."i) -> logical_operator
-      | ("/=" | ".NE."i) -> logical_operator
-rel_op: (".LT."i | "<" | ".LE."i | "<=" | ".GT."i | ">" | ".GE."i | ">=") -> logical_operator
-not_op: ".NOT."i -> logical_operator
+or_op: ".OR."i                            -> logical_operator
 
-?expression: term (add_op [WS] term)*
-?term: _factor (mul_op _factor)* -> expression
-_factor: [UNARY_OP] (_atom | power)
+and_op: ".AND."i                          -> logical_operator
+
+eq_op: "=="                               -> logical_operator
+     | ".EQ."i                            -> logical_operator
+     | "/="                               -> logical_operator
+     | ".NE."i                            -> logical_operator
+
+rel_op: ".LT."i                           -> logical_operator
+      | "<"                               -> logical_operator
+      | ".LE."i                           -> logical_operator
+      | "<="                              -> logical_operator
+      | ".GT."i                           -> logical_operator
+      | ">"                               -> logical_operator
+      | ".GE."i                           -> logical_operator
+      | ">="                              -> logical_operator
+
+not_op: ".NOT."i                          -> logical_operator
+
+?expression: term (add_op CONT? term)*
+?term: _factor (mul_op CONT? _factor)* -> expression
+_factor: (UNARY_OP CONT?)? (_atom | power)
 ?power: _atom ("**" _factor)?
 
-UNARY_OP: "+" | "-"
-add_op: "+" -> operator
-      | "-" -> operator
-mul_op: "*" -> operator
-      | "/" -> operator
+UNARY_OP: "+"
+        | "-"
+
+add_op  : "+" -> operator
+        | "-" -> operator
+mul_op  : "*" -> operator
+        | "/" -> operator
 
 
-_atom: [WS] (func | func2 | symbol | number | "(" expression ")") [WS]
+_atom: CONT? (func | func2 | symbol | number | "(" expression ")") CONT?
 
 func: intrinsic_func "(" expression ")"
 func2: "MOD"i "(" expression "," expression ")"
 
-intrinsic_func: "LOG"i | "LOG10"i | "EXP"i | "DEXP"i | "SQRT"i | "SIN"i | "COS"i | "ABS"i | "TAN"i | "ASIN"i | "ACOS"i | "ATAN"i | "INT"i | "GAMLN"i | "PHI"i
-    | "PLOG"i | "PLOG10"i | "PSQRT"i | "PEXP"i | "PDZ"i | "PZR"i | "PNP"i | "PHE"i | "PNG"i | "PTAN"i | "PATAN"i | "PASIN"i | "PACOS"i
+intrinsic_func: "LOG"i
+              | "LOG10"i
+              | "EXP"i
+              | "DEXP"i
+              | "SQRT"i
+              | "SIN"i
+              | "COS"i
+              | "ABS"i
+              | "TAN"i
+              | "ASIN"i
+              | "ACOS"i
+              | "ATAN"i
+              | "INT"i
+              | "GAMLN"i
+              | "PHI"i
+              | "PLOG"i
+              | "PLOG10"i
+              | "PSQRT"i
+              | "PEXP"i
+              | "PDZ"i
+              | "PZR"i
+              | "PNP"i
+              | "PHE"i
+              | "PNG"i
+              | "PTAN"i
+              | "PATAN"i
+              | "PASIN"i
+              | "PACOS"i
 
-variable: vector | CNAME
+variable: vector
+        | CNAME
 
-symbol: parameter | vector | CNAME
+symbol: parameter
+      | vector
+      | CNAME
+
 vector: CNAME (subscript | double_subscript)
 parameter: (THETA | ETA | EPS | OMEGA | SIGMA) subscript
          | (OMEGA | SIGMA) double_subscript
 
-subscript: [WS] "(" [WS] SIGNED_INT [WS] ")" | [WS] "(" [WS] CNAME [WS] ")"
-double_subscript: [WS] "(" [WS] SIGNED_INT [WS] "," [WS] SIGNED_INT [WS] ")"
+subscript: CONT? "(" CONT? SIGNED_INT CONT? ")"
+         | CONT? "(" CONT? CNAME CONT? ")"
+double_subscript: CONT? "(" CONT? SIGNED_INT CONT? "," CONT? SIGNED_INT CONT? ")"
 
-number: SIGNED_INT | FLOAT
+number: SIGNED_INT
+      | FLOAT
 
 FLOAT: /[-+]?((\d+\.\d*|\.\d+)([ed][-+]?\d+)?|\d+([ed][-+]?\d+))/i
+
 THETA: "THETA"i
+
 ETA: "ETA"i
-EPS: "EPS"i | "ERR"i
+
+EPS: "EPS"i
+   | "ERR"i
+
 OMEGA: "OMEGA"i
+
 SIGMA: "SIGMA"i
 
-WS: /([ \t]+|[ \t]*&[ \t]*\r?\n[ \t]*)/
+CONT: /([ \x00\t]+|[ \x00\t]*&[ \x00\t]*\r?\n[ \x00\t]*)/
 
-%import .definitions (COMMENT, LINEENDING, NEWLINE)
+%import .definitions (COMMENT, NEWLINE, WS)
 %import common (CNAME, SIGNED_INT)

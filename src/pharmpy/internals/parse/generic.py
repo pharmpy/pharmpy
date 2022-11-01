@@ -14,7 +14,7 @@ from lark.lexer import Token
 
 from . import prettyprint
 
-TYPES_OF_NEWLINE = frozenset(('WS_ALL', 'LINEENDING', 'NEWLINE', 'newline'))
+TYPES_OF_NEWLINE = frozenset(('CONT', 'WS_ALL', 'LINEENDING', 'NEWLINE', 'newline'))
 TYPES_OF_COMMENT = frozenset(('COMMENT', 'LINEENDING', 'newline'))
 
 
@@ -243,36 +243,39 @@ class AttrTree(Tree):
         """Evaluated value (self)."""
         return self
 
+    def first_index(self, rule: str):
+        """Returns index of first child matching 'rule', or -1."""
+        return next((i for i, child in enumerate(self.children) if child.rule == rule), -1)
+
     def find(self, rule):
         """Returns first child matching 'rule', or None."""
-        return next((child for child in self.children if child.rule == rule), None)
+        i = self.first_index(rule)
+        return None if i == -1 else self.children[i]
 
     def all(self, rule):
         """Returns all children matching rule, or []."""
         return list(filter(lambda child: child.rule == rule, self.children))
 
-    def set(self, rule, value):
+    def set(self, rule, new_child):
         """Sets first child matching rule. Raises if none."""
-        for i, child in enumerate(self.children):
-            if child.rule == rule:
-                self.children[i] = value
-                return
-        raise NoSuchRuleException(rule, self)
+        i = self.first_index(rule)
+        if i == -1:
+            raise NoSuchRuleException(rule, self)
+
+        self.children[i] = new_child
 
     def partition(self, rule):
         """Partition children into (head, item, tail).
 
         Search for child item 'rule' and return the part before it (head), the item, and the part
         after it (tail). If 'rule' is not found, return (children, [], [])."""
-        head, item, tail = [], [], []
-        for node in self.children:
-            if not item and node.rule == rule:
-                item += [node]
-            elif not item:
-                head += [node]
-            else:
-                tail += [node]
-        return (head, item, tail)
+
+        i = self.first_index(rule)
+        return (
+            (list(self.children), [], [])
+            if i == -1
+            else (self.children[:i], [self.children[i]], self.children[i + 1 :])
+        )
 
     def tree_walk(self):
         """Generator for iterating depth-first (i.e. parse order) over children."""
@@ -285,11 +288,7 @@ class AttrTree(Tree):
 
     def remove(self, rule):
         """Remove all children with rule. Not recursively"""
-        new_children = []
-        for child in self.children:
-            if child.rule != rule:
-                new_children.append(child)
-        self.children = new_children
+        self.children = [child for child in self.children if child.rule != rule]
 
     def remove_node(self, node):
         new_children = []

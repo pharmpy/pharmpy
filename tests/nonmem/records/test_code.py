@@ -2,6 +2,12 @@ import pytest
 import sympy
 
 from pharmpy.model import Assignment
+from pharmpy.plugins.nonmem.records.code_record import CodeRecord
+
+
+def _ensure_trailing_newline(buf):
+    # FIXME This should not be necessary
+    return buf if buf[-1] == '\n' else buf + '\n'
 
 
 def S(x):
@@ -208,6 +214,7 @@ def S(x):
     ],
 )
 def test_single_assignments(parser, buf, sym, expression):
+    buf = _ensure_trailing_newline(buf)
     rec = parser.parse(buf).records[0]
     assert len(rec.statements) == 1
     assert rec.statements[0].symbol == sym
@@ -223,6 +230,16 @@ def test_single_assignments(parser, buf, sym, expression):
             [
                 (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)), (0, True))),
                 (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)), (0, True))),
+            ],
+        ),
+        (
+            '$PRED\nIF (FA1.EQ.0) IOV_1 = ETA(3)\nIF (FA1.EQ.1) IOV_1 = ETA(4)',
+            [
+                (S('IOV_1'), sympy.Piecewise((S('ETA(3)'), sympy.Eq(S('FA1'), 0)), (0, True))),
+                (
+                    S('IOV_1'),
+                    sympy.Piecewise((S('ETA(4)'), sympy.Eq(S('FA1'), 1)), (S('IOV_1'), True)),
+                ),
             ],
         ),
         (
@@ -338,19 +355,24 @@ def test_single_assignments(parser, buf, sym, expression):
     ],
 )
 def test_block_if(parser, buf, symb_expr_arr):
+    buf = _ensure_trailing_newline(buf)
     rec = parser.parse(buf).records[0]
     assert len(rec.statements) == len(symb_expr_arr)
     for statement, (symb, expr) in zip(rec.statements, symb_expr_arr):
         assert statement.symbol == symb
         assert statement.expression == expr
 
-    buf = '$PRED\nIF (FA1.EQ.0) IOV_1 = ETA(3)\nIF (FA1.EQ.1) IOV_1 = ETA(4)'
+
+@pytest.mark.parametrize(
+    'buf',
+    (
+        '$PK IF (CL.EQ.0) EXIT 1',
+        '$PK IF (CL.EQ.0) EXIT 1 24',
+    ),
+)
+def test_exit(parser, buf):
+    buf = _ensure_trailing_newline(buf)
     rec = parser.parse(buf).records[0]
-
-
-def test_exit(parser):
-    rec = parser.parse("$PK IF (CL.EQ.0) EXIT 1").records[0]
-    rec = parser.parse("$PK IF (CL.EQ.0) EXIT 1 24").records[0]
     assert len(rec.statements) == 0
 
 
@@ -368,6 +390,7 @@ def test_exit(parser):
     ],
 )
 def test_grammar_repeats(parser, buf):  # Tests that there are no repeats due to parsing grammar
+    buf = _ensure_trailing_newline(buf)
     rec = parser.parse(buf).records[0]
     tree_walk_gen = rec.root.tree_walk()
     parent = next(tree_walk_gen)
@@ -375,8 +398,7 @@ def test_grammar_repeats(parser, buf):  # Tests that there are no repeats due to
     for child in tree_walk_gen:
         repeats_present = str(parent.eval) == str(child.eval) and parent.rule == child.rule
         parent = child
-
-    assert repeats_present is False
+        assert not repeats_present
 
 
 def test_pheno(parser):
@@ -444,6 +466,8 @@ IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
     ],
 )
 def test_statements_setter_identical(parser, buf_original, buf_new):
+    buf_original = _ensure_trailing_newline(buf_original)
+    buf_new = _ensure_trailing_newline(buf_new)
     rec_original = parser.parse(buf_original).records[0]
     rec_new = parser.parse(buf_new).records[0]
 
@@ -463,6 +487,8 @@ def test_statements_setter_identical(parser, buf_original, buf_new):
     ],
 )
 def test_statements_setter_remove(parser, buf_original, buf_new):
+    buf_original = _ensure_trailing_newline(buf_original)
+    buf_new = _ensure_trailing_newline(buf_new)
     rec_original = parser.parse(buf_original).records[0]
     rec_new = parser.parse(buf_new).records[0]
 
@@ -557,8 +583,7 @@ def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression,
     rec_original = parser.parse(buf_original).records[0]
 
     assignment = Assignment(sym, expression)
-    statements = rec_original.statements
-    statements += [assignment]
+    statements = rec_original.statements + [assignment]
     rec_original.statements = statements
 
     assert str(rec_original) == buf_new
@@ -591,8 +616,7 @@ def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression,
 def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
     rec_original = parser.parse(buf_original).records[0]
 
-    statements = rec_original.statements
-    statements += assignment
+    statements = rec_original.statements + assignment
     statements = statements.subs(nonmem_names)
     rec_original.statements = statements
 
@@ -603,6 +627,7 @@ def test_nested_block_if(parser):
     code = (
         '\nIF (X.EQ.23) THEN\nIF (Y.EQ.0) THEN\nCL=1\nELSE\nCL=2\nENDIF\n' 'CL=5\nELSE\nCL=6\nENDIF'
     )
+    code = _ensure_trailing_newline(code)
     rec = parser.parse('$PRED' + code).records[0]
 
     s = rec.statements
@@ -617,39 +642,39 @@ def test_nested_block_if(parser):
         (
             S('BTIME'),
             sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0))),
-            '\nIF (AMT.GT.0) BTIME = TIME\n',
+            'IF (AMT.GT.0) BTIME = TIME\n',
         ),
-        (S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2))), '\nIF (X.EQ.2) CL = 23\n'),
+        (S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2))), 'IF (X.EQ.2) CL = 23\n'),
         (
             S('CLWGT'),
             sympy.Piecewise((23, sympy.Eq(S('X'), 1)), (0, sympy.Eq(S('X'), 0))),
-            '\nIF (X.EQ.1) CLWGT = 23\nIF (X.EQ.0) CLWGT = 0\n',
+            'IF (X.EQ.1) CLWGT = 23\nIF (X.EQ.0) CLWGT = 0\n',
         ),
         (
             S('X'),
             sympy.Piecewise((0, sympy.And(sympy.Ne(S('Y'), 1), sympy.Ne(S('K'), 2)))),
-            '\nIF (K.NE.2.AND.Y.NE.1) X = 0\n',
+            'IF (K.NE.2.AND.Y.NE.1) X = 0\n',
         ),
         (
             S('X'),
             sympy.Piecewise((0, sympy.Ne(S('Y'), 1)), (1, True)),
-            '\nIF (Y.NE.1) THEN\n    X = 0\nELSE\n    X = 1\nEND IF\n',
+            'IF (Y.NE.1) THEN\n    X = 0\nELSE\n    X = 1\nEND IF\n',
         ),
         (
             S('X'),
             sympy.Piecewise((0, sympy.Ne(S('Y'), 1)), (2, sympy.Eq(S('Y'), 15)), (1, True)),
-            '\nIF (Y.NE.1) THEN\n    X = 0\nELSE IF (Y.EQ.15) THEN\n    X = 2\nELSE\n    X = 1\nEND IF\n',  # noqa: E501
+            'IF (Y.NE.1) THEN\n    X = 0\nELSE IF (Y.EQ.15) THEN\n    X = 2\nELSE\n    X = 1\nEND IF\n',  # noqa: E501
         ),
     ],
 )
 def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
     buf_original = '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'
     rec = parser.parse(buf_original).records[0]
+    assert isinstance(rec, CodeRecord)
     s = Assignment(symbol, expression)
-    statements = rec.statements
-    statements += s
+    statements = rec.statements + s
     rec.statements = statements
-    assert str(rec) == buf_original.strip() + buf_expected
+    assert str(rec) == buf_original + buf_expected
 
 
 def test_empty_record(parser):
@@ -661,8 +686,7 @@ def test_set_block_if(parser):
     rec = parser.parse('$PRED\n').records[0]
     z = S('z')
     s = Assignment(sympy.Symbol('X'), sympy.Piecewise((23, z < 12), (5, True)))
-    statements = rec.statements
-    statements += s
+    statements = rec.statements + s
     rec.statements = statements
     correct = """$PRED
 IF (z.LT.12) THEN

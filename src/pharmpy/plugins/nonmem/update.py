@@ -458,7 +458,7 @@ def to_des(model: Model, new: ODESystem):
         subs.append_option('ADVAN13')
     if not subs.has_option('TOL'):
         subs.append_option('TOL', 9)
-    des = model.internals.control_stream.insert_record('$DES\nDUMMY=0')
+    des = model.internals.control_stream.insert_record('$DES\nDUMMY=0\n')
     assert isinstance(des, CodeRecord)
     des.from_odes(new)
     model.internals.control_stream.remove_records(

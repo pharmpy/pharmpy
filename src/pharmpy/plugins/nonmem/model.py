@@ -92,7 +92,7 @@ def convert_model(model):
     else:
         code += '$SUBROUTINES ADVAN1 TRANS2\n'
         code += '$PK\nY=X\n'
-        code += '$ERROR\nA=B'
+        code += '$ERROR\nA=B\n'
     nm_model = Model(code, dataset=model.dataset)
     assert isinstance(nm_model, Model)
     nm_model._datainfo = model.datainfo
