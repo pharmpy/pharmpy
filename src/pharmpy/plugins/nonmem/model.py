@@ -94,7 +94,7 @@ def convert_model(model):
         code += '$SUBROUTINES ADVAN1 TRANS2\n'
         code += '$PK\nY=X\n'
         code += '$ERROR\nA=B'
-    nm_model = pharmpy.model.Model.create_model(StringIO(code))
+    nm_model = Model(StringIO(code).read(), dataset=model.dataset)
     assert isinstance(nm_model, Model)
     nm_model._datainfo = model.datainfo
     nm_model.random_variables = model.random_variables
@@ -124,7 +124,7 @@ def convert_model(model):
 
 
 class Model(pharmpy.model.Model):
-    def __init__(self, code, path=None, **kwargs):
+    def __init__(self, code, path=None, dataset=None, **kwargs):
         self.modelfit_results = None
         parser = NMTranParser()
         if path is None:
@@ -136,6 +136,11 @@ class Model(pharmpy.model.Model):
         control_stream = parser.parse(code)
         di = parse_datainfo(control_stream, path)
         self.datainfo = di
+        # FIXME temporary workaround remove when changing constructor
+        # NOTE inputting the dataset is needed for IV models when using convert_model, since it needs to read the
+        # RATE column to decide dosing, meaning it needs the dataset before parsing statements
+        if dataset is not None:
+            self.dataset = dataset
         self._old_datainfo = di
         self._dataset_updated = False
         self._parent_model = None

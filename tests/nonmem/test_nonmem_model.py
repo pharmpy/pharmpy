@@ -5,6 +5,7 @@ import sympy
 from sympy import Symbol as symbol
 
 from pharmpy.config import ConfigurationContext
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import (
     Assignment,
     EstimationStep,
@@ -28,6 +29,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
+from pharmpy.tools.amd.funcs import create_start_model
 
 
 def S(x):
@@ -996,6 +998,13 @@ $SIGMA 3 ; SI1
 $ESTIMATION METHOD=1 INTER
 """
     assert model.model_code == correct
+
+
+def test_convert_model_iv(testdata, tmp_path):
+    # FIXME move to unit test for amd?
+    with chdir(tmp_path):
+        start_model = create_start_model(testdata / 'nonmem' / 'pheno_rate.dta', modeltype='pk_iv')
+        convert_model(start_model)
 
 
 def test_parse_derivatives(load_model_for_test, testdata):
