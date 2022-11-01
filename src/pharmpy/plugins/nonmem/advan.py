@@ -547,7 +547,9 @@ def _advan12_trans(trans: str):
 def _dosing(model: Model, control_stream: NMTranControlStream, dose_comp: int):
     # FIXME Use lambda: model.dataset instead
     def dataset():
-        return model._read_dataset(control_stream, raw=False)
+        if not hasattr(model, '_data_frame'):
+            return model._read_dataset(control_stream, raw=False)
+        return model._data_frame
 
     return dosing(model.datainfo, dataset, dose_comp)
 
