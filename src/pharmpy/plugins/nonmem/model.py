@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
-from io import StringIO
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
@@ -94,7 +93,7 @@ def convert_model(model):
         code += '$SUBROUTINES ADVAN1 TRANS2\n'
         code += '$PK\nY=X\n'
         code += '$ERROR\nA=B'
-    nm_model = Model(StringIO(code).read(), dataset=model.dataset)
+    nm_model = Model(code, dataset=model.dataset)
     assert isinstance(nm_model, Model)
     nm_model._datainfo = model.datainfo
     nm_model.random_variables = model.random_variables
