@@ -81,6 +81,7 @@ def retrieve_from_database_or_execute_model_with_tool(tool):
             # happened such as a missing or outdated license. We do not do that
             # at the moment.
 
+            # NOTE Right now we only rely on model name comparison
             # if db_model == model and model.has_same_dataset_as(db_model):
             if db_model and model.has_same_dataset_as(db_model):
                 # NOTE Inputs are identical so we can reuse the results
