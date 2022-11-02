@@ -32,11 +32,11 @@ _atoms: (_atoms _cont? "," _cont?)? atom
 return: RETURN
 assignment: variable _cont? "=" _cont? real_expr
 
-while: WS? DO _cont? WHILE _cont? "(" condition ")" WS? _line_ending (statement _empty_lines?)* WS? ENDDO
+while: WS? DO _cont? WHILE _cont? "(" bool_expr ")" WS? _line_ending (statement _empty_lines?)* WS? ENDDO
 
 block_if: block_if_start block_if_elseif* block_if_else? block_if_end
-block_if_start: WS? IF _cont? "(" condition ")" _cont? THEN WS? _line_ending (statement _empty_lines?)*
-block_if_elseif: WS? ELSE _cont? IF _cont? "(" condition ")" _cont? THEN WS? _line_ending (statement _empty_lines?)*
+block_if_start: WS? IF _cont? "(" bool_expr ")" _cont? THEN WS? _line_ending (statement _empty_lines?)*
+block_if_elseif: WS? ELSE _cont? IF _cont? "(" bool_expr ")" _cont? THEN WS? _line_ending (statement _empty_lines?)*
 block_if_else: WS? ELSE WS? _line_ending (statement _empty_lines?)*
 block_if_end: WS? ENDIF
 
@@ -52,8 +52,8 @@ ELSE   : "ELSE"i
 ENDIF  : "END IF"i
        | "ENDIF"i
 
-logical_if: IF _cont? "(" _cont? condition _cont? ")" _cont? (assignment | exit | call)
-condition: or_expr
+logical_if: IF _cont? "(" _cont? bool_expr _cont? ")" _cont? (assignment | exit | call)
+bool_expr: or_expr
 
 ?or_expr: and_expr
         | or_expr _cont? lor _cont? and_expr           -> instruction_infix

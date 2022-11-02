@@ -244,7 +244,7 @@ class ExpressionInterpreter(Interpreter):
     def pow_op(self, _):
         return sympy.Pow
 
-    def condition(self, node):
+    def bool_expr(self, node):
         t = self.visit_children(node)
         return t[0]
 
@@ -555,7 +555,7 @@ def _parse_tree(tree):
                 s.append(ass)
                 new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
             elif node.rule == 'logical_if':
-                logic_expr = ExpressionInterpreter().visit(node.condition)
+                logic_expr = ExpressionInterpreter().visit(node.bool_expr)
                 try:
                     assignment = node.assignment
                 except NoSuchRuleException:
@@ -578,7 +578,7 @@ def _parse_tree(tree):
                 blocks = []  # [(logic, [(symb1, expr1), ...]), ...]
                 symbols = OrderedSet()
 
-                first_logic = interpreter.visit(node.block_if_start.condition)
+                first_logic = interpreter.visit(node.block_if_start.bool_expr)
                 first_block = node.block_if_start
                 first_symb_exprs = []
                 for ifstat in first_block.all('statement'):
@@ -590,7 +590,7 @@ def _parse_tree(tree):
 
                 else_if_blocks = node.all('block_if_elseif')
                 for elseif in else_if_blocks:
-                    logic = interpreter.visit(elseif.condition)
+                    logic = interpreter.visit(elseif.bool_expr)
                     elseif_symb_exprs = []
                     for elseifstat in elseif.all('statement'):
                         for assign_node in elseifstat.all('assignment'):
