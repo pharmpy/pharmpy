@@ -55,7 +55,9 @@ def spec(model: Model, statements: Iterable[Statement]) -> Iterable[Spec]:
             definition[statement.name] = statement.value
 
     for effect in effects:
-        yield _effects_to_tuple(model, definition, effect)
+        t = _effects_to_tuple(model, definition, effect)
+        if all(t):  # NOTE We do not yield empty products
+            yield t
 
 
 def _ensure_tuple_or_list(x):
@@ -72,19 +74,19 @@ def parse_spec(spec: Iterable[Spec]) -> Iterable[EffectLiteral]:
 
 
 def _effects_to_tuple(model: Model, definition, effect: CovariateEffects) -> Spec:
-    parameter = (
+    parameters = tuple(
         _interpret_symbol(model, definition, effect.parameter)
         if isinstance(effect.parameter, Symbol)
         else effect.parameter
     )
-    covariate = (
+    covariates = tuple(
         _interpret_symbol(model, definition, effect.covariate)
         if isinstance(effect.covariate, Symbol)
         else effect.covariate
     )
-    fp = all_continuous_covariate_effects if effect.fp is EffectFunctionWildcard else effect.fp
-    op = effect.op
-    return (tuple(parameter), tuple(covariate), tuple(f.lower() for f in fp), op)
+    fps = all_continuous_covariate_effects if effect.fp is EffectFunctionWildcard else effect.fp
+    ops = effect.op
+    return (parameters, covariates, tuple(fp.lower() for fp in fps), ops)
 
 
 def _interpret_symbol(model: Model, definition, symbol: Symbol) -> List[str]:

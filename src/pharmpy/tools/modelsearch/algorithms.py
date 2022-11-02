@@ -12,10 +12,20 @@ from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
-from ..mfl.helpers import all_combinations, all_funcs, get_funcs_same_type, key_to_str
+from ..mfl.helpers import (
+    all_combinations,
+    funcs,
+    get_funcs_same_type,
+    key_to_str,
+    modelsearch_features,
+)
 from ..mfl.parse import parse
 
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock', 'absorption_delay'))
+
+
+def model_search_funcs(mfl_statements):
+    return funcs(Model(), mfl_statements, modelsearch_features)
 
 
 def exhaustive(search_space, iiv_strategy):
@@ -25,8 +35,8 @@ def exhaustive(search_space, iiv_strategy):
 
     model_tasks = []
 
-    combinations = list(all_combinations(Model(), mfl_statements))
-    funcs = all_funcs(Model(), mfl_statements)
+    funcs = model_search_funcs(mfl_statements)
+    combinations = list(all_combinations(funcs))
 
     for i, combo in enumerate(combinations, 1):
         model_name = f'modelsearch_run{i}'
@@ -56,7 +66,7 @@ def exhaustive(search_space, iiv_strategy):
 
 def exhaustive_stepwise(search_space, iiv_strategy):
     mfl_statements = parse(search_space)
-    mfl_funcs = all_funcs(Model(), mfl_statements)
+    mfl_funcs = model_search_funcs(mfl_statements)
 
     wf_search = Workflow()
     model_tasks = []
@@ -89,7 +99,7 @@ def exhaustive_stepwise(search_space, iiv_strategy):
 
 def reduced_stepwise(search_space, iiv_strategy):
     mfl_statements = parse(search_space)
-    mfl_funcs = all_funcs(Model(), mfl_statements)
+    mfl_funcs = model_search_funcs(mfl_statements)
 
     wf_search = Workflow()
     model_tasks = []
@@ -168,7 +178,7 @@ def _get_possible_actions(wf, mfl_statements):
     else:
         tasks = ['']
     for task in tasks:
-        mfl_funcs = all_funcs(Model(), mfl_statements)
+        mfl_funcs = model_search_funcs(mfl_statements)
         if task:
             feat_previous = _get_previous_features(wf, task, mfl_funcs)
         else:
@@ -235,7 +245,7 @@ def _apply_transformation(feat, func, model):
 
 
 def _is_allowed(feat_current, func_current, feat_previous, mfl_statements):
-    mfl_funcs = all_funcs(Model(), mfl_statements)
+    mfl_funcs = model_search_funcs(mfl_statements)
     func_type = get_funcs_same_type(mfl_funcs, feat_current)
     # Check if current function is in previous transformations
     if feat_current in feat_previous:
@@ -271,7 +281,7 @@ def _is_allowed(feat_current, func_current, feat_previous, mfl_statements):
 
 def _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements):
     n_all: List[Any] = list(
-        args[0] for (kind, *args) in all_funcs(Model(), mfl_statements) if kind == 'PERIPHERALS'
+        args[0] for (kind, *args) in model_search_funcs(mfl_statements) if kind == 'PERIPHERALS'
     )
     n = func_current.keywords['n']
     if peripheral_previous:

@@ -19,10 +19,9 @@ def test_skip_most(tmp_path, testdata):
             res = run_amd(
                 model,
                 results=model.modelfit_results,
+                search_space='LET(CONTINUOUS, []); LET(CATEGORICAL, [])',
                 modeltype='pk_oral',
                 order=['iovsearch', 'allometry', 'covariates'],
-                continuous=[],
-                categorical=[],
                 occasion=None,
                 path=db.path,
                 resume=True,
