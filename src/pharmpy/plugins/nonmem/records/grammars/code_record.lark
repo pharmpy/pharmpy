@@ -61,7 +61,7 @@ bool_expr: or_expr
 
 ?or_expr: and_expr
         | or_expr _cont? lor _cont? and_expr           -> instruction_infix
-         // NOTE Left-associativity for logical or
+        // NOTE Left-associativity for logical or
 
 ?and_expr: not_expr
          | and_expr _cont? land _cont? not_expr        -> instruction_infix
@@ -74,7 +74,7 @@ bool_expr: or_expr
         | rel_expr _cont? _eq_op _cont? eq_expr        -> instruction_infix
 
 ?rel_expr: real_expr
-         | real_expr _cont? _rel_op _cont? real_expr -> instruction_infix
+         | real_expr _cont? _rel_op _cont? real_expr   -> instruction_infix
 
 lor: ".OR."i
 
@@ -106,7 +106,7 @@ real_expr: add_expr
           | _sign _cont? pow_expr                   -> instruction_unary
 
 ?pow_expr: atom
-         | atom _cont? pow_op _cont? sign_expr     -> instruction_infix
+         | atom _cont? pow_op _cont? sign_expr      -> instruction_infix
          // NOTE Right-associativity for exponentiation
 
 _sign: pos_op | neg_op
