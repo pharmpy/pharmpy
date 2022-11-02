@@ -32,11 +32,13 @@ _atoms: (_atoms _cont? "," _cont?)? atom
 return: RETURN
 assignment: variable _cont? "=" _cont? real_expr
 
-while: DO _cont? WHILE _cont? "(" bool_expr ")" _empty_lines _statements? WS? ENDDO
+_condition: "(" _cont? bool_expr _cont? ")"
+
+while: DO _cont? WHILE _cont? _condition _empty_lines _statements? WS? ENDDO
 
 block_if: block_if_start WS? (block_if_elseif WS?)* (block_if_else WS?)? block_if_end
-block_if_start: IF _cont? "(" bool_expr ")" _cont? THEN _empty_lines _statements?
-block_if_elseif: ELSEIF _cont? "(" bool_expr ")" _cont? THEN _empty_lines _statements?
+block_if_start: IF _cont? _condition _cont? THEN _empty_lines _statements?
+block_if_elseif: ELSEIF _cont? _condition _cont? THEN _empty_lines _statements?
 block_if_else: ELSE _empty_lines _statements?
 block_if_end: ENDIF
 
@@ -54,7 +56,7 @@ ELSEIF : "ELSE IF"i
 ENDIF  : "END IF"i
        | "ENDIF"i
 
-logical_if: IF _cont? "(" _cont? bool_expr _cont? ")" _cont? (assignment | exit | call)
+logical_if: IF _cont? _condition _cont? (assignment | exit | call)
 bool_expr: or_expr
 
 ?or_expr: and_expr
