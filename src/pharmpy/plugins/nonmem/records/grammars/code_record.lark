@@ -32,11 +32,11 @@ _atoms: (_atoms _cont? "," _cont?)? _atom
 return: RETURN
 assignment: variable _cont? "=" _cont? expression
 
-while: WS? DO _cont? WHILE _cont? "(" logical_expression ")" WS? _line_ending (WS? statement _empty_lines?)* WS? ENDDO
+while: WS? DO _cont? WHILE _cont? "(" condition ")" WS? _line_ending (WS? statement _empty_lines?)* WS? ENDDO
 
 block_if: block_if_start block_if_elseif* block_if_else? block_if_end
-block_if_start: WS? IF _cont? "(" logical_expression ")" _cont? THEN WS? _line_ending (WS? statement _empty_lines?)*
-block_if_elseif: WS? ELSE _cont? IF _cont? "(" logical_expression ")" _cont? THEN WS? _line_ending (WS? statement _empty_lines?)*
+block_if_start: WS? IF _cont? "(" condition ")" _cont? THEN WS? _line_ending (WS? statement _empty_lines?)*
+block_if_elseif: WS? ELSE _cont? IF _cont? "(" condition ")" _cont? THEN WS? _line_ending (WS? statement _empty_lines?)*
 block_if_else: WS? ELSE WS? _line_ending (WS? statement _empty_lines?)*
 block_if_end: WS? ENDIF
 
@@ -52,33 +52,39 @@ ELSE   : "ELSE"i
 ENDIF  : "END IF"i
        | "ENDIF"i
 
-logical_if: IF _cont? "(" _cont? logical_expression _cont? ")" _cont? (assignment | exit | call)
-?logical_expression: _or_term (_cont? or_op _cont? _or_term)*
-_or_term: _and_term (_cont? and_op _cont? _and_term)*
-_and_term: (not_op _cont?)? not_term
-not_term: _eq_term (_cont? eq_op _cont? _eq_term)? -> logical_expression
-_eq_term: _rel_term (_cont? rel_op _cont? _rel_term)?
-_rel_term: expression
+logical_if: IF _cont? "(" _cont? condition _cont? ")" _cont? (assignment | exit | call)
+condition: or_expr
 
-or_op: ".OR."i                            -> logical_operator
+?or_expr: and_expr
+        | or_expr _cont? lor _cont? and_expr           -> instruction_infix
 
-and_op: ".AND."i                          -> logical_operator
+?and_expr: not_expr
+         | and_expr _cont? land _cont? not_expr        -> instruction_infix
 
-eq_op: "=="                               -> logical_operator
-     | ".EQ."i                            -> logical_operator
-     | "/="                               -> logical_operator
-     | ".NE."i                            -> logical_operator
+?not_expr: eq_expr
+         | lnot _cont? eq_expr                         -> instruction_unary
 
-rel_op: ".LT."i                           -> logical_operator
-      | "<"                               -> logical_operator
-      | ".LE."i                           -> logical_operator
-      | "<="                              -> logical_operator
-      | ".GT."i                           -> logical_operator
-      | ">"                               -> logical_operator
-      | ".GE."i                           -> logical_operator
-      | ">="                              -> logical_operator
+?eq_expr: rel_expr
+        | rel_expr _cont? _eq_op _cont? eq_expr        -> instruction_infix
 
-not_op: ".NOT."i                          -> logical_operator
+?rel_expr: expression
+         | expression _cont? _rel_op _cont? expression -> instruction_infix
+
+lor: ".OR."i
+
+land: ".AND."i
+
+_eq_op: eq | ne
+eq: "==" | ".EQ."i
+ne: "/=" | ".NE."i
+
+_rel_op: lt | le | gt | ge
+lt: ".LT."i | "<"
+le: ".LE."i | "<="
+gt: ".GT."i | ">"
+ge: ".GE."i | ">="
+
+lnot: ".NOT."i
 
 ?expression: term (_cont? add_op _cont? term)*
 ?term: _factor (_cont? mul_op _cont? _factor)* -> expression

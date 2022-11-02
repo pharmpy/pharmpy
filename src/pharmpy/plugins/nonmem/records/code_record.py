@@ -235,42 +235,44 @@ class ExpressionInterpreter(Interpreter):
             expr = unary_factor * t[0]
         return expr
 
-    def logical_expression(self, node):
+    def condition(self, node):
         t = self.visit_children(node)
-        if len(t) > 2:
-            ops = t[1::2]
-            terms = t[2::2]
-            expr = t[0]
-            for op, term in zip(ops, terms):
-                expr = op(expr, term)
-            return expr
-        else:
-            op, expr = self.visit_children(node)
-            return op(expr)
+        return t[0]
 
-    @staticmethod
-    def logical_operator(node):
-        name = str(node).upper()
-        if name == '==' or name == '.EQ.':
-            return sympy.Eq
-        elif name == '/=' or name == '.NE.':
-            return sympy.Ne
-        elif name == '<=' or name == '.LE.':
-            return sympy.Le
-        elif name == '>=' or name == '.GE.':
-            return sympy.Ge
-        elif name == '<' or name == '.LT.':
-            return sympy.Lt
-        elif name == '>' or name == '.GT.':
-            return sympy.Gt
-        elif name == '.AND.':
-            return sympy.And
-        elif name == '.OR.':
-            return sympy.Or
-        elif name == '.NOT.':
-            return sympy.Not
-        else:
-            raise ValueError(f'Unknown logical operator "{name}"')
+    def instruction_infix(self, node):
+        a, op, b = self.visit_children(node)
+        return op(a, b)
+
+    def instruction_unary(self, node):
+        f, x = self.visit_children(node)
+        return f(x)
+
+    def land(self, _):
+        return sympy.And
+
+    def lor(self, _):
+        return sympy.Or
+
+    def lnot(self, _):
+        return sympy.Not
+
+    def eq(self, _):
+        return sympy.Eq
+
+    def ne(self, _):
+        return sympy.Ne
+
+    def le(self, _):
+        return sympy.Le
+
+    def lt(self, _):
+        return sympy.Lt
+
+    def ge(self, _):
+        return sympy.Ge
+
+    def gt(self, _):
+        return sympy.Gt
 
     def img(self, node):
         fn, *parameters = self.visit_children(node)
@@ -553,7 +555,7 @@ def _parse_tree(tree):
                 s.append(ass)
                 new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
             elif node.rule == 'logical_if':
-                logic_expr = ExpressionInterpreter().visit(node.logical_expression)
+                logic_expr = ExpressionInterpreter().visit(node.condition)
                 try:
                     assignment = node.assignment
                 except NoSuchRuleException:
@@ -576,7 +578,7 @@ def _parse_tree(tree):
                 blocks = []  # [(logic, [(symb1, expr1), ...]), ...]
                 symbols = OrderedSet()
 
-                first_logic = interpreter.visit(node.block_if_start.logical_expression)
+                first_logic = interpreter.visit(node.block_if_start.condition)
                 first_block = node.block_if_start
                 first_symb_exprs = []
                 for ifstat in first_block.all('statement'):
@@ -588,7 +590,7 @@ def _parse_tree(tree):
 
                 else_if_blocks = node.all('block_if_elseif')
                 for elseif in else_if_blocks:
-                    logic = interpreter.visit(elseif.logical_expression)
+                    logic = interpreter.visit(elseif.condition)
                     elseif_symb_exprs = []
                     for elseifstat in elseif.all('statement'):
                         for assign_node in elseifstat.all('assignment'):
