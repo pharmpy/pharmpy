@@ -21,6 +21,8 @@ from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 
 from .record import Record
 
+_smallz = 2.8e-103
+
 
 class MyPrinter(sympy_printing.str.StrPrinter):
     def _print_Add(self, expr):
@@ -208,7 +210,7 @@ def _order_terms(assignment: Assignment, rvs: RandomVariables, trans):
 
 class ExpressionInterpreter(Interpreter):
     def visit_children(self, tree):
-        """Does not visit tokens"""
+        """Does not visit and discards tokens"""
         return [self.visit(child) for child in tree.children if isinstance(child, Tree)]
 
     def instruction_unary(self, node):
@@ -279,71 +281,79 @@ class ExpressionInterpreter(Interpreter):
         fn, *parameters = self.visit_children(node)
         return fn(*parameters)
 
-    @staticmethod
-    def fn1(node):
-        smallz = 2.8e-103
-        name = str(node).upper()
-        if name == "EXP" or name == "DEXP":
-            return sympy.exp
-        if name == "PEXP":
-            return lambda x: sympy.Piecewise((sympy.exp(100), x > 100), (sympy.exp(x), True))
-        elif name == "LOG":
-            return sympy.log
-        elif name == "PLOG":
-            return lambda x: sympy.Piecewise((sympy.log(smallz), x < smallz), (sympy.log(x), True))
-        elif name == "LOG10":
-            return lambda x: sympy.log(x, 10)
-        elif name == "PLOG10":
-            return lambda x: sympy.Piecewise(
-                (sympy.log(smallz, 10), x < smallz), (sympy.log(x, 10), True)
-            )
-        elif name == "SQRT":
-            return sympy.sqrt
-        elif name == "PSQRT":
-            return lambda x: sympy.Piecewise((0, x < 0), (sympy.sqrt(x), True))
-        elif name == "SIN":
-            return sympy.sin
-        elif name == "COS":
-            return sympy.cos
-        elif name == "ABS":
-            return sympy.Abs
-        elif name == "TAN" or name == "PTAN":
-            return sympy.tan
-        elif name == "ASIN" or name == "PASIN":
-            return sympy.asin
-        elif name == "ACOS" or name == "PACOS":
-            return sympy.acos
-        elif name == "ATAN" or name == "PATAN":
-            return sympy.atan
-        elif name == "INT":
-            return lambda x: sympy.sign(x) * sympy.floor(sympy.Abs(x))
-        elif name == "GAMLN":
-            return sympy.loggamma
-        elif name == "PDZ":
-            return lambda x: sympy.Piecewise((1 / smallz, abs(x) < smallz), (1 / x, True))
-        elif name == "PZR":
-            return lambda x: sympy.Piecewise((smallz, abs(x) < smallz), (x, True))
-        elif name == "PNP":
-            return lambda x: sympy.Piecewise((smallz, x < smallz), (x, True))
-        elif name == "PHE":
-            return lambda x: sympy.Piecewise((100, x > 100), (x, True))
-        elif name == "PNG":
-            return lambda x: sympy.Piecewise((0, x < 0), (x, True))
-        elif name == "PHI":
-            return lambda x: (1 + sympy.erf(x) / sympy.sqrt(2)) / 2
-        else:
-            raise ValueError(f'Unknown unary function "{name}".')
+    def exp(self, _):
+        return sympy.exp
 
-    @staticmethod
-    def fn2(node):
-        name = str(node).upper()
-        if name == "MOD":
-            return sympy.Mod
-        else:
-            raise ValueError(f'Unknown binary function "{name}".')
+    def pexp(self, _):
+        return _pexp
 
-    @staticmethod
-    def number(node):
+    def log(self, _):
+        return sympy.log
+
+    def plog(self, _):
+        return _plog
+
+    def log10(self, _):
+        return _log10
+
+    def plog10(self, _):
+        return _plog10
+
+    def sqrt(self, _):
+        return sympy.sqrt
+
+    def psqrt(self, _):
+        return lambda x: sympy.Piecewise((0, x < 0), (sympy.sqrt(x), True))
+
+    def sin(self, _):
+        return sympy.sin
+
+    def cos(self, _):
+        return sympy.cos
+
+    def tan(self, _):
+        return sympy.tan
+
+    def asin(self, _):
+        return sympy.asin
+
+    def acos(self, _):
+        return sympy.acos
+
+    def atan(self, _):
+        return sympy.atan
+
+    def abs(self, _):
+        return sympy.Abs
+
+    def int(self, _):
+        return lambda x: sympy.sign(x) * sympy.floor(sympy.Abs(x))
+
+    def loggamma(self, _):
+        return sympy.loggamma
+
+    def pdz(self, _):
+        return lambda x: sympy.Piecewise((1 / _smallz, abs(x) < _smallz), (1 / x, True))
+
+    def pzr(self, _):
+        return lambda x: sympy.Piecewise((_smallz, abs(x) < _smallz), (x, True))
+
+    def pnp(self, _):
+        return lambda x: sympy.Piecewise((_smallz, x < _smallz), (x, True))
+
+    def phe(self, _):
+        return lambda x: sympy.Piecewise((100, x > 100), (x, True))
+
+    def png(self, _):
+        return lambda x: sympy.Piecewise((0, x < 0), (x, True))
+
+    def phi(self, _):
+        return lambda x: (1 + sympy.erf(x) / sympy.sqrt(2)) / 2
+
+    def mod(self, _):
+        return sympy.Mod
+
+    def number(self, node):
         s = str(node)
         try:
             return sympy.Integer(s)
@@ -352,8 +362,7 @@ class ExpressionInterpreter(Interpreter):
             s = s.replace('D', 'E')
             return sympy.Float(s)
 
-    @staticmethod
-    def symbol(node):
+    def symbol(self, node):
         name = str(node).upper()
         if name.startswith('ERR('):
             name = 'EPS' + name[3:]
@@ -630,3 +639,19 @@ def _parse_tree(tree):
                 new_index.append((child_index, child_index + 1, len(s) - len(symbols), len(s)))
 
     return new_index, Statements(s)
+
+
+def _pexp(x):
+    return sympy.Piecewise((sympy.exp(100), x > 100), (sympy.exp(x), True))
+
+
+def _plog(x):
+    return sympy.Piecewise((sympy.log(_smallz), x < _smallz), (sympy.log(x), True))
+
+
+def _log10(x):
+    return sympy.log(x, 10)
+
+
+def _plog10(x):
+    return sympy.Piecewise((sympy.log(_smallz, 10), x < _smallz), (sympy.log(x, 10), True))
