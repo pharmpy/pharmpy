@@ -396,9 +396,8 @@ def test_grammar_repeats(parser, buf):  # Tests that there are no repeats due to
     parent = next(tree_walk_gen)
 
     for child in tree_walk_gen:
-        repeats_present = str(parent.eval) == str(child.eval) and parent.rule == child.rule
+        assert str(parent.eval) != str(child.eval) or parent.rule != child.rule
         parent = child
-        assert not repeats_present
 
 
 def test_pheno(parser):
