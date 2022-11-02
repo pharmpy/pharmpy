@@ -27,12 +27,17 @@ _statement: assignment
           | return
 
 exit: EXIT (_cont ("1" | "2") (_cont SIGNED_INT)?)?
-call: CALL _cont CNAME _cont? "(" _cont? _atoms _cont? ")"
-_atoms: (_atoms _cont? "," _cont?)? atom
+call: CALL _cont CNAME _cont? _lpar _atoms _rpar
+_atoms: (_atoms _sep)? atom
 return: RETURN
-assignment: variable _cont? "=" _cont? real_expr
+assignment: variable _cont? EQUALS _cont? real_expr
+EQUALS: "="
 
-_condition: "(" _cont? bool_expr _cont? ")"
+_lpar: "(" _cont?
+_rpar: _cont? ")"
+_sep: _cont? "," _cont?
+
+_condition: _lpar bool_expr _rpar
 
 while: DO _cont? WHILE _cont? _condition _empty_lines _statements? WS? ENDDO
 
@@ -127,10 +132,10 @@ pow_op : "**"
 ?atom: img
      | symbol
      | number
-     | "(" _cont? real_expr _cont? ")" -> real_expr
+     | _lpar real_expr _rpar -> real_expr
 
-img: _fn1 "(" _cont? real_expr _cont? ")"
-   | _fn2 "(" _cont? real_expr _cont? "," _cont? real_expr _cont? ")"
+img: _fn1 _lpar real_expr _rpar
+   | _fn2 _lpar real_expr _sep real_expr _rpar
 
 _fn1: exp | pexp
     | log | plog
@@ -186,8 +191,8 @@ vector: CNAME (subscript | double_subscript)
 parameter: (THETA | ETA | EPS | OMEGA | SIGMA) subscript
          | (OMEGA | SIGMA) double_subscript
 
-subscript: "(" _cont? (CNAME | SIGNED_INT) _cont? ")"
-double_subscript: "(" _cont? SIGNED_INT _cont? "," _cont? SIGNED_INT _cont? ")"
+subscript: _lpar (CNAME | SIGNED_INT) _rpar
+double_subscript: _lpar SIGNED_INT _sep SIGNED_INT _rpar
 
 number: SIGNED_INT
       | FLOAT
