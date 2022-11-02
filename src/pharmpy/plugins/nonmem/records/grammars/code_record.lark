@@ -32,12 +32,12 @@ _atoms: (_atoms _cont? "," _cont?)? _atom
 return: RETURN
 assignment: variable _cont? "=" _cont? expression
 
-while: WS? DO _cont? WHILE _cont? "(" condition ")" WS? _line_ending (WS? statement _empty_lines?)* WS? ENDDO
+while: WS? DO _cont? WHILE _cont? "(" condition ")" WS? _line_ending (statement _empty_lines?)* WS? ENDDO
 
 block_if: block_if_start block_if_elseif* block_if_else? block_if_end
-block_if_start: WS? IF _cont? "(" condition ")" _cont? THEN WS? _line_ending (WS? statement _empty_lines?)*
-block_if_elseif: WS? ELSE _cont? IF _cont? "(" condition ")" _cont? THEN WS? _line_ending (WS? statement _empty_lines?)*
-block_if_else: WS? ELSE WS? _line_ending (WS? statement _empty_lines?)*
+block_if_start: WS? IF _cont? "(" condition ")" _cont? THEN WS? _line_ending (statement _empty_lines?)*
+block_if_elseif: WS? ELSE _cont? IF _cont? "(" condition ")" _cont? THEN WS? _line_ending (statement _empty_lines?)*
+block_if_else: WS? ELSE WS? _line_ending (statement _empty_lines?)*
 block_if_end: WS? ENDIF
 
 EXIT   : "EXIT"i
