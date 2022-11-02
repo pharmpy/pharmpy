@@ -5,6 +5,7 @@ Generic NONMEM code record class.
 from __future__ import annotations
 
 import re
+from operator import neg, pos, sub, truediv
 from typing import Iterator, Literal, Sequence, Set, Tuple
 
 from lark import Tree
@@ -210,42 +211,42 @@ class ExpressionInterpreter(Interpreter):
         """Does not visit tokens"""
         return [self.visit(child) for child in tree.children if isinstance(child, Tree)]
 
-    def expression(self, node):
-        t = self.visit_children(node)
-
-        if bool(node.find('UNARY_OP')) and str(node.tokens[0]) == '-':
-            unary_factor = -1
-        else:
-            unary_factor = 1
-
-        if len(t) > 2:
-            ops = t[1::2]
-            terms = t[2::2]
-            expr = unary_factor * t[0]
-            for op, term in zip(ops, terms):
-                if op == '+':
-                    expr += term
-                elif op == '-':
-                    expr -= term
-                elif op == '*':
-                    expr *= term
-                else:  # op == '/':
-                    expr /= term
-        else:
-            expr = unary_factor * t[0]
-        return expr
-
-    def condition(self, node):
-        t = self.visit_children(node)
-        return t[0]
+    def instruction_unary(self, node):
+        f, x = self.visit_children(node)
+        return f(x)
 
     def instruction_infix(self, node):
         a, op, b = self.visit_children(node)
         return op(a, b)
 
-    def instruction_unary(self, node):
-        f, x = self.visit_children(node)
-        return f(x)
+    def real_expr(self, node):
+        t = self.visit_children(node)
+        return t[0]
+
+    def neg_op(self, _):
+        return neg
+
+    def pos_op(self, _):
+        return pos
+
+    def add_op(self, _):
+        return sympy.Add
+
+    def sub_op(self, _):
+        return sub
+
+    def mul_op(self, _):
+        return sympy.Mul
+
+    def div_op(self, _):
+        return truediv
+
+    def pow_op(self, _):
+        return sympy.Pow
+
+    def condition(self, node):
+        t = self.visit_children(node)
+        return t[0]
 
     def land(self, _):
         return sympy.And
@@ -340,14 +341,6 @@ class ExpressionInterpreter(Interpreter):
             return sympy.Mod
         else:
             raise ValueError(f'Unknown binary function "{name}".')
-
-    def power(self, node):
-        b, e = self.visit_children(node)
-        return b**e
-
-    @staticmethod
-    def operator(node):
-        return str(node)
 
     @staticmethod
     def number(node):
@@ -550,7 +543,7 @@ def _parse_tree(tree):
             # multiple times because there is no break on a match.
             if node.rule == 'assignment':
                 name = str(node.variable).upper()
-                expr = ExpressionInterpreter().visit(node.expression)
+                expr = ExpressionInterpreter().visit(node.real_expr)
                 ass = Assignment(sympy.Symbol(name), expr)
                 s.append(ass)
                 new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
@@ -562,7 +555,7 @@ def _parse_tree(tree):
                     pass
                 else:
                     name = str(assignment.variable).upper()
-                    expr = ExpressionInterpreter().visit(assignment.expression)
+                    expr = ExpressionInterpreter().visit(assignment.real_expr)
                     # Check if symbol was previously declared
                     else_val = (
                         sympy.Symbol(name)
@@ -584,7 +577,7 @@ def _parse_tree(tree):
                 for ifstat in first_block.all('statement'):
                     for assign_node in ifstat.all('assignment'):
                         name = str(assign_node.variable).upper()
-                        first_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
+                        first_symb_exprs.append((name, interpreter.visit(assign_node.real_expr)))
                         symbols.add(name)
                 blocks.append((first_logic, first_symb_exprs))
 
@@ -596,7 +589,7 @@ def _parse_tree(tree):
                         for assign_node in elseifstat.all('assignment'):
                             name = str(assign_node.variable).upper()
                             elseif_symb_exprs.append(
-                                (name, interpreter.visit(assign_node.expression))
+                                (name, interpreter.visit(assign_node.real_expr))
                             )
                             symbols.add(name)
                     blocks.append((logic, elseif_symb_exprs))
@@ -607,9 +600,7 @@ def _parse_tree(tree):
                     for elsestat in else_block.all('statement'):
                         for assign_node in elsestat.all('assignment'):
                             name = str(assign_node.variable).upper()
-                            else_symb_exprs.append(
-                                (name, interpreter.visit(assign_node.expression))
-                            )
+                            else_symb_exprs.append((name, interpreter.visit(assign_node.real_expr)))
                             symbols.add(name)
                     piecewise_logic = True
                     if len(blocks[0][1]) == 0 and not else_if_blocks:

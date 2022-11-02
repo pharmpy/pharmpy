@@ -28,9 +28,9 @@ _statement: assignment
 
 exit: EXIT (_cont ("1" | "2") | _cont ("1" | "2") _cont SIGNED_INT)?
 call: CALL _cont CNAME _cont? "(" _cont? _atoms _cont? ")"
-_atoms: (_atoms _cont? "," _cont?)? _atom
+_atoms: (_atoms _cont? "," _cont?)? atom
 return: RETURN
-assignment: variable _cont? "=" _cont? expression
+assignment: variable _cont? "=" _cont? real_expr
 
 while: WS? DO _cont? WHILE _cont? "(" condition ")" WS? _line_ending (statement _empty_lines?)* WS? ENDDO
 
@@ -57,9 +57,11 @@ condition: or_expr
 
 ?or_expr: and_expr
         | or_expr _cont? lor _cont? and_expr           -> instruction_infix
+         // NOTE Left-associativity for logical or
 
 ?and_expr: not_expr
          | and_expr _cont? land _cont? not_expr        -> instruction_infix
+         // NOTE Left-associativity for logical and
 
 ?not_expr: eq_expr
          | lnot _cont? eq_expr                         -> instruction_unary
@@ -67,8 +69,8 @@ condition: or_expr
 ?eq_expr: rel_expr
         | rel_expr _cont? _eq_op _cont? eq_expr        -> instruction_infix
 
-?rel_expr: expression
-         | expression _cont? _rel_op _cont? expression -> instruction_infix
+?rel_expr: real_expr
+         | real_expr _cont? _rel_op _cont? real_expr -> instruction_infix
 
 lor: ".OR."i
 
@@ -86,27 +88,45 @@ ge: ".GE."i | ">="
 
 lnot: ".NOT."i
 
-?expression: term (_cont? add_op _cont? term)*
-?term: _factor (_cont? mul_op _cont? _factor)* -> expression
-_factor: (UNARY_OP _cont?)? (_atom | power)
-?power: _atom (_cont? "**" _cont? _factor)?
+real_expr: add_expr
 
-UNARY_OP: "+"
-        | "-"
+?add_expr: mul_expr
+         | add_expr _cont? _add_op _cont? mul_expr  -> instruction_infix
+         // NOTE Left-associativity for addition and subtraction
 
-add_op  : "+" -> operator
-        | "-" -> operator
-mul_op  : "*" -> operator
-        | "/" -> operator
+?mul_expr: sign_expr
+         | mul_expr _cont? _mul_op _cont? sign_expr -> instruction_infix
+         // NOTE Left-associativity for multiplication and division
+
+?sign_expr: pow_expr
+          | _sign _cont? pow_expr                   -> instruction_unary
+
+?pow_expr: atom
+         | atom _cont? pow_op _cont? sign_expr     -> instruction_infix
+         // NOTE Right-associativity for exponentiation
+
+_sign: pos_op | neg_op
+pos_op: "+"
+neg_op: "-"
+
+_add_op: add_op | sub_op
+add_op  : "+"
+sub_op  : "-"
+
+_mul_op : mul_op | div_op
+mul_op  : "*"
+div_op  : "/"
+
+pow_op : "**"
 
 
-_atom: img
+?atom: img
      | symbol
      | number
-     | "(" _cont? expression _cont? ")"
+     | "(" _cont? real_expr _cont? ")" -> real_expr
 
-img: fn1 "(" _cont? expression _cont? ")"
-   | fn2 "(" _cont? expression _cont? "," _cont? expression _cont? ")"
+img: fn1 "(" _cont? real_expr _cont? ")"
+   | fn2 "(" _cont? real_expr _cont? "," _cont? real_expr _cont? ")"
 
 fn1: "LOG"i
    | "LOG10"i
