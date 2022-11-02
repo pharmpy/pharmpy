@@ -21,8 +21,6 @@ from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 
 from .record import Record
 
-_smallz = 2.8e-103
-
 
 class MyPrinter(sympy_printing.str.StrPrinter):
     def _print_Add(self, expr):
@@ -285,25 +283,25 @@ class ExpressionInterpreter(Interpreter):
         return sympy.exp
 
     def pexp(self, _):
-        return _pexp
+        return PEXP
 
     def log(self, _):
         return sympy.log
 
     def plog(self, _):
-        return _plog
+        return PLOG
 
     def log10(self, _):
-        return _log10
+        return LOG10
 
     def plog10(self, _):
-        return _plog10
+        return PLOG10
 
     def sqrt(self, _):
         return sympy.sqrt
 
     def psqrt(self, _):
-        return lambda x: sympy.Piecewise((0, x < 0), (sympy.sqrt(x), True))
+        return PSQRT
 
     def sin(self, _):
         return sympy.sin
@@ -327,28 +325,28 @@ class ExpressionInterpreter(Interpreter):
         return sympy.Abs
 
     def int(self, _):
-        return lambda x: sympy.sign(x) * sympy.floor(sympy.Abs(x))
+        return INT
 
     def loggamma(self, _):
         return sympy.loggamma
 
     def pdz(self, _):
-        return lambda x: sympy.Piecewise((1 / _smallz, abs(x) < _smallz), (1 / x, True))
+        return PDZ
 
     def pzr(self, _):
-        return lambda x: sympy.Piecewise((_smallz, abs(x) < _smallz), (x, True))
+        return PZR
 
     def pnp(self, _):
-        return lambda x: sympy.Piecewise((_smallz, x < _smallz), (x, True))
+        return PNP
 
     def phe(self, _):
-        return lambda x: sympy.Piecewise((100, x > 100), (x, True))
+        return PHE
 
     def png(self, _):
-        return lambda x: sympy.Piecewise((0, x < 0), (x, True))
+        return PNG
 
     def phi(self, _):
-        return lambda x: (1 + sympy.erf(x) / sympy.sqrt(2)) / 2
+        return PHI
 
     def mod(self, _):
         return sympy.Mod
@@ -641,17 +639,54 @@ def _parse_tree(tree):
     return new_index, Statements(s)
 
 
-def _pexp(x):
+# NOTE Follows: functions that can be used in .mod files.
+
+_smallz = 2.8e-103
+
+
+def PEXP(x):
     return sympy.Piecewise((sympy.exp(100), x > 100), (sympy.exp(x), True))
 
 
-def _plog(x):
+def PLOG(x):
     return sympy.Piecewise((sympy.log(_smallz), x < _smallz), (sympy.log(x), True))
 
 
-def _log10(x):
+def LOG10(x):
     return sympy.log(x, 10)
 
 
-def _plog10(x):
+def PLOG10(x):
     return sympy.Piecewise((sympy.log(_smallz, 10), x < _smallz), (sympy.log(x, 10), True))
+
+
+def PSQRT(x):
+    return sympy.Piecewise((0, x < 0), (sympy.sqrt(x), True))
+
+
+def INT(x):
+    return sympy.sign(x) * sympy.floor(sympy.Abs(x))
+
+
+def PDZ(x):
+    return sympy.Piecewise((1 / _smallz, abs(x) < _smallz), (1 / x, True))
+
+
+def PZR(x):
+    return sympy.Piecewise((_smallz, abs(x) < _smallz), (x, True))
+
+
+def PNP(x):
+    return sympy.Piecewise((_smallz, x < _smallz), (x, True))
+
+
+def PHE(x):
+    return sympy.Piecewise((100, x > 100), (x, True))
+
+
+def PNG(x):
+    return sympy.Piecewise((0, x < 0), (x, True))
+
+
+def PHI(x):
+    return (1 + sympy.erf(x) / sympy.sqrt(2)) / 2
