@@ -26,7 +26,7 @@ _statement: assignment
           | call
           | return
 
-exit: EXIT (_cont ("1" | "2") | _cont ("1" | "2") _cont SIGNED_INT)?
+exit: EXIT (_cont ("1" | "2") (_cont SIGNED_INT)?)?
 call: CALL _cont CNAME _cont? "(" _cont? _atoms _cont? ")"
 _atoms: (_atoms _cont? "," _cont?)? atom
 return: RETURN
@@ -36,7 +36,7 @@ while: DO _cont? WHILE _cont? "(" bool_expr ")" _empty_lines _statements? WS? EN
 
 block_if: block_if_start WS? (block_if_elseif WS?)* (block_if_else WS?)? block_if_end
 block_if_start: IF _cont? "(" bool_expr ")" _cont? THEN _empty_lines _statements?
-block_if_elseif: ELSE _cont? IF _cont? "(" bool_expr ")" _cont? THEN _empty_lines _statements?
+block_if_elseif: ELSEIF _cont? "(" bool_expr ")" _cont? THEN _empty_lines _statements?
 block_if_else: ELSE _empty_lines _statements?
 block_if_end: ENDIF
 
@@ -49,6 +49,8 @@ ENDDO  : "END DO"i
 IF     : "IF"i
 THEN   : "THEN"i
 ELSE   : "ELSE"i
+ELSEIF : "ELSE IF"i
+       | "ELSEIF"i
 ENDIF  : "END IF"i
        | "ENDIF"i
 
