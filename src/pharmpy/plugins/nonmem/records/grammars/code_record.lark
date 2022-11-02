@@ -47,19 +47,19 @@ block_if_elseif: ELSEIF _cont? _condition _cont? THEN _empty_lines _statements?
 block_if_else: ELSE _empty_lines _statements?
 block_if_end: ENDIF
 
-EXIT   : "EXIT"i
-CALL   : "CALL"i
-RETURN : "RETURN"i
-DO     : "DO"i
-WHILE  : "WHILE"i
-ENDDO  : "END DO"i
-IF     : "IF"i
-THEN   : "THEN"i
-ELSE   : "ELSE"i
-ELSEIF : "ELSE IF"i
-       | "ELSEIF"i
-ENDIF  : "END IF"i
-       | "ENDIF"i
+EXIT.9   : "EXIT"i
+CALL.9   : "CALL"i
+RETURN.9 : "RETURN"i
+DO.9     : "DO"i
+WHILE.9  : "WHILE"i
+ENDDO.9  : "END DO"i
+IF.9     : "IF"i
+THEN.9   : "THEN"i
+ELSE.9   : "ELSE"i
+ELSEIF.9 : "ELSE IF"i
+         | "ELSEIF"i
+ENDIF.9  : "END IF"i
+         | "ENDIF"i
 
 logical_if: IF _cont? _condition _cont? (assignment | exit | call)
 bool_expr: or_expr
