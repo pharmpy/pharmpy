@@ -182,9 +182,8 @@ vector: CNAME (subscript | double_subscript)
 parameter: (THETA | ETA | EPS | OMEGA | SIGMA) subscript
          | (OMEGA | SIGMA) double_subscript
 
-subscript: _cont? "(" _cont? SIGNED_INT _cont? ")"
-         | _cont? "(" _cont? CNAME _cont? ")"
-double_subscript: _cont? "(" _cont? SIGNED_INT _cont? "," _cont? SIGNED_INT _cont? ")"
+subscript: "(" _cont? (CNAME | SIGNED_INT) _cont? ")"
+double_subscript: "(" _cont? SIGNED_INT _cont? "," _cont? SIGNED_INT _cont? ")"
 
 number: SIGNED_INT
       | FLOAT
