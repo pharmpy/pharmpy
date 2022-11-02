@@ -4,7 +4,7 @@ from __future__ import annotations
 from functools import partial
 from typing import Literal, Union
 
-from lark import Tree  # pyright: ignore [reportPrivateImportUsage]
+from lark import Tree
 from lark.lexer import Token
 
 from .treeprint import Node

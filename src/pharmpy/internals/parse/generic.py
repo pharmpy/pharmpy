@@ -9,7 +9,7 @@ import re
 from abc import ABC
 from typing import Optional
 
-from lark import Lark, Tree  # pyright: ignore [reportPrivateImportUsage]
+from lark import Lark, Tree
 from lark.lexer import Token
 
 from . import prettyprint
@@ -55,7 +55,7 @@ class AttrToken(Token):
     def transform(cls, token, **kwargs):
         """Alternative constructor: From Token (with optional overrides)."""
         kwargs = {
-            'type_': token.type,
+            'type': token.type,
             'value': token.value,
             'start_pos': token.start_pos,
             'line': token.line,

@@ -43,7 +43,7 @@ jupyter-core==4.11.2
 jupyter-sphinx==0.4.0
 jupyterlab-pygments==0.2.2
 jupyterlab-widgets==3.0.3
-lark==1.1.3
+lark==1.1.4
 locket==1.0.0
 lxml==4.9.1
 MarkupSafe==2.1.1

@@ -6,7 +6,8 @@ Generic NONMEM code record class.
 import re
 from typing import Iterator, Literal, Sequence, Tuple
 
-import lark
+from lark import Tree
+from lark.visitors import Interpreter
 
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.ds.ordered_set import OrderedSet
@@ -202,14 +203,10 @@ def _order_terms(assignment: Assignment, rvs: RandomVariables, trans):
     return MyPrinter().doprint(new_order)
 
 
-class ExpressionInterpreter(lark.visitors.Interpreter):
+class ExpressionInterpreter(Interpreter):
     def visit_children(self, tree):
         """Does not visit tokens"""
-        return [
-            self.visit(child)
-            for child in tree.children
-            if isinstance(child, lark.Tree)  # pyright: ignore [reportPrivateImportUsage]
-        ]
+        return [self.visit(child) for child in tree.children if isinstance(child, Tree)]
 
     def expression(self, node):
         t = self.visit_children(node)

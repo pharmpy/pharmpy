@@ -1,6 +1,6 @@
 from typing import List
 
-from lark import Lark  # pyright: ignore [reportPrivateImportUsage]
+from lark import Lark
 
 from .grammar import grammar
 from .interpreter import MFLInterpreter
