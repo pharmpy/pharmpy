@@ -1,12 +1,12 @@
 // A precedence climbing grammar is used for expressions
 // The top level has one full line of code per rule
 
-root: _empty_lines? (pseudo _empty_lines?)? _statements?
+root: _empty_lines? (pseudo _empty_lines?)? _statements_and_verbatims?
 _empty_lines: _empty_lines? empty_line
 empty_line: WS? COMMENT? NEWLINE
-_line_ending: (_line_ending WS?)? COMMENT? NEWLINE
 
-_statements: _statements? (statement | verbatim) _empty_lines?
+_statements_and_verbatims: _statements_and_verbatims? (statement | verbatim) _empty_lines?
+_statements: _statements? statement _empty_lines?
 
 pseudo: WS? PSEUDO_STATEMENT ")" WS? COMMENT? NEWLINE
 PSEUDO_STATEMENT: /[(][^)]*/ // NOTE Early's dynamic lexer does not support zero-width regexes
@@ -32,12 +32,12 @@ _atoms: (_atoms _cont? "," _cont?)? atom
 return: RETURN
 assignment: variable _cont? "=" _cont? real_expr
 
-while: WS? DO _cont? WHILE _cont? "(" bool_expr ")" WS? _line_ending (statement _empty_lines?)* WS? ENDDO
+while: WS? DO _cont? WHILE _cont? "(" bool_expr ")" _empty_lines _statements? WS? ENDDO
 
 block_if: block_if_start block_if_elseif* block_if_else? block_if_end
-block_if_start: WS? IF _cont? "(" bool_expr ")" _cont? THEN WS? _line_ending (statement _empty_lines?)*
-block_if_elseif: WS? ELSE _cont? IF _cont? "(" bool_expr ")" _cont? THEN WS? _line_ending (statement _empty_lines?)*
-block_if_else: WS? ELSE WS? _line_ending (statement _empty_lines?)*
+block_if_start: WS? IF _cont? "(" bool_expr ")" _cont? THEN _empty_lines _statements?
+block_if_elseif: WS? ELSE _cont? IF _cont? "(" bool_expr ")" _cont? THEN _empty_lines _statements?
+block_if_else: WS? ELSE _empty_lines _statements?
 block_if_end: WS? ENDIF
 
 EXIT   : "EXIT"i
