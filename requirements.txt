@@ -75,7 +75,7 @@ pycparser==2.21
 Pygments==2.13.0
 pyparsing==3.0.9
 pyreadr==0.4.7
-pyrsistent==0.19.1
+pyrsistent==0.19.2
 python-dateutil==2.8.2
 pytz==2022.6
 pywin32>=302,!=304; sys_platform == 'win32' and platform_python_implementation != 'PyPy'
