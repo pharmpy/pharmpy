@@ -63,8 +63,7 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
 
     def __init__(self, path='.', file_extension='.mod'):
         path = Path(path)
-        if not path.exists():
-            path.mkdir(parents=True)
+        path.mkdir(parents=True, exist_ok=True)
         self.path = path_absolute(path)
         self.file_extension = file_extension
         self.ignored_names = frozenset(('stdout', 'stderr', 'nonmem.json', 'nlmixr.json'))
@@ -136,8 +135,7 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
 
     def __init__(self, path: Union[str, Path] = '.', file_extension='.mod'):
         path = Path(path)
-        if not path.exists():
-            path.mkdir(parents=True)
+        path.mkdir(parents=True, exist_ok=True)
         self.path = path_absolute(path)
         self.file_extension = file_extension
 
@@ -249,23 +247,20 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
     def store_local_file(self, path, new_filename=None):
         if Path(path).is_file():
             destination = self.db.path / self.model.name
-            if not destination.is_dir():
-                destination.mkdir(parents=True)
+            destination.mkdir(parents=True, exist_ok=True)
             if new_filename:
                 destination = destination / new_filename
             shutil.copy2(path, destination)
 
     def store_metadata(self, metadata):
         destination = self.db.path / self.model.name / DIRECTORY_PHARMPY_METADATA
-        if not destination.is_dir():
-            destination.mkdir(parents=True)
+        destination.mkdir(parents=True, exist_ok=True)
         with open(destination / FILE_METADATA, 'w') as f:
             json.dump(metadata, f, indent=2)
 
     def store_modelfit_results(self):
         destination = self.db.path / self.model.name / DIRECTORY_PHARMPY_METADATA
-        if not destination.is_dir():
-            destination.mkdir(parents=True)
+        destination.mkdir(parents=True, exist_ok=True)
 
         if self.model.modelfit_results:
             self.model.modelfit_results.to_json(destination / FILE_MODELFIT_RESULTS)
