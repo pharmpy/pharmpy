@@ -29,6 +29,7 @@ def run_amd(
     allometric_variable=None,
     occasion=None,
     path=None,
+    resume=False,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -64,6 +65,8 @@ def run_amd(
         Name of occasion column
     path : str or Path
         Path to run AMD in
+    resume : bool
+        Whether to allow resuming previous run
 
     Returns
     -------
@@ -120,7 +123,7 @@ def run_amd(
         else:
             search_space = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
 
-    db = default_tool_database(toolname='amd', path=path)
+    db = default_tool_database(toolname='amd', path=path, exist_ok=resume)
     run_subfuncs = {}
     for section in order:
         if section == 'structural':
@@ -146,7 +149,7 @@ def run_amd(
                 f"Unrecognized section {section} in order. Must be one of {default_order}"
             )
 
-    run_tool('modelfit', model, path=db.path / 'modelfit')
+    run_tool('modelfit', model, path=db.path / 'modelfit', resume=resume)
     next_model = model
     sum_subtools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
     sum_subtools.append(_create_sum_subtool('start', model))
