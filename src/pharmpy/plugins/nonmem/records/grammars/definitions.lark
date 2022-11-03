@@ -1,5 +1,4 @@
 WS_ALL: /\s+/
-LINEENDING: (COMMENT? NEWLINE WS?)+
 
 WS: /[ \x00\t]+/
 NEWLINE: /\r?\n/

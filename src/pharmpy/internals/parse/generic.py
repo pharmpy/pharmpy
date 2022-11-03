@@ -14,8 +14,8 @@ from lark.lexer import Token
 
 from . import prettyprint
 
-TYPES_OF_NEWLINE = frozenset(('CONT', 'WS_ALL', 'LINEENDING', 'NEWLINE', 'newline'))
-TYPES_OF_COMMENT = frozenset(('COMMENT', 'LINEENDING', 'newline'))
+TYPES_OF_NEWLINE = frozenset(('CONT', 'WS_ALL', 'NEWLINE', 'newline'))
+TYPES_OF_COMMENT = frozenset(('COMMENT', 'newline'))
 
 
 def rule_of(item: Union[Tree, Token, Any]) -> str:
