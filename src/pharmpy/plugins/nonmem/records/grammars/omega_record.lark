@@ -91,15 +91,13 @@ _begin: _skip
 _skip: WS? (COMMENT? _newlines)?
 _sep : ws2 | ws2? COMMENT? _newlines
 _newlines : (_newlines COMMENT?)? newline2 ws2?
-_sep_comment : ws3 | ws3? comment? _newlines_comment
+_sep_comment : ws3 | ws3? COMMENT? _newlines_comment
 _newlines3 : (_newlines3 COMMENT?)? newline3 ws3?
-_newlines_comment : (_newlines3 comment?)? newline3 ws3?
+_newlines_comment : (_newlines3 COMMENT?)? newline3 ws3?
 _end: _trailing_comments? WS? NEWLINE*
 _trailing_comments: (NEWLINE+ | WS)? _trailing_comments_loop
 _trailing_comments_loop: _trailing_comment (NEWLINE+ _trailing_comments_loop)?
-_trailing_comment: comment
+_trailing_comment: COMMENT
 
-
-comment: COMMENT
 
 %import .definitions (COMMENT, INT, NEWLINE, NUMERIC, WS)
