@@ -5,17 +5,14 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence
 from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, overload
 
-import pharmpy.unicode as unicode
+import pharmpy.internals.unicode as unicode
 from pharmpy.deps import networkx as nx
 from pharmpy.deps import sympy
-from pharmpy.expressions import (
-    assume_all,
-    canonical_ode_rhs,
-    free_images,
-    free_images_and_symbols,
-    subs,
-    sympify,
-)
+from pharmpy.internals.expr.assumptions import assume_all
+from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
+from pharmpy.internals.expr.ode import canonical_ode_rhs
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 
 
 class Statement(ABC):
@@ -75,7 +72,7 @@ class Assignment(Statement):
         if not (symbol.is_Symbol or symbol.is_Derivative or symbol.is_Function):
             raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
         if isinstance(expression, str):
-            expression = sympify(expression)
+            expression = parse_expr(expression)
         return cls(symbol, expression)
 
     @property
@@ -360,7 +357,7 @@ class ExplicitODESystem(ODESystem):
         return sympy.Matrix(amounts)
 
     @property
-    def compartment_names(self):
+    def compartment_names(self) -> List[str]:
         """Names of all compartments
 
         Examples
@@ -371,8 +368,7 @@ class ExplicitODESystem(ODESystem):
         >>> odes.compartment_names
         ['CENTRAL', 'OUTPUT']
         """
-        names = [ode.lhs.args[0].name[2:] for ode in self.odes]
-        return names
+        return [ode.lhs.args[0].name[2:] for ode in self.odes]
 
     def __repr__(self):
         a = []
@@ -522,7 +518,7 @@ class CompartmentalSystemBuilder:
         >>> cb.add_compartment("CENTRAL")
         >>> cb.add_flow(depot, central, "KA")
         """
-        self._g.add_edge(source, destination, rate=sympify(rate))
+        self._g.add_edge(source, destination, rate=parse_expr(rate))
 
     def remove_flow(self, source, destination):
         """Remove flow between two compartments
@@ -1133,7 +1129,7 @@ class CompartmentalSystem(ODESystem):
         return sympy.Matrix(amts)
 
     @property
-    def compartment_names(self):
+    def compartment_names(self) -> List[str]:
         """Names of all compartments
 
         Examples
@@ -1153,8 +1149,7 @@ class CompartmentalSystem(ODESystem):
             dosecmt = self.dosing_compartment
         except ValueError:
             # Fallback for cases where no dose is available (yet)
-            nodes = [node for node in self._g.nodes]
-            return nodes
+            return list(self._g.nodes)
         # Order compartments
         output = self.output_compartment
 
@@ -1384,9 +1379,9 @@ class Compartment:
         if dose is not None and not isinstance(dose, Dose):
             raise TypeError("dose must be of Dose type (or None)")
         if lag_time is not None:
-            lag_time = sympify(lag_time)
+            lag_time = parse_expr(lag_time)
         if bioavailability is not None:
-            bioavailability = sympify(bioavailability)
+            bioavailability = parse_expr(bioavailability)
         return cls(name, dose, lag_time, bioavailability)
 
     @property
@@ -1437,6 +1432,7 @@ class Compartment:
         if self.dose is not None:
             symbs |= self.dose.free_symbols
         symbs |= self.lag_time.free_symbols
+        symbs |= self.bioavailability.free_symbols
         return symbs
 
     def subs(self, substitutions):
@@ -1512,7 +1508,7 @@ class Bolus(Dose):
 
     @classmethod
     def create(cls, amount):
-        return cls(sympify(amount))
+        return cls(parse_expr(amount))
 
     @property
     def amount(self):
@@ -1591,10 +1587,10 @@ class Infusion(Dose):
         if rate is not None and duration is not None:
             raise ValueError('Cannot have both rate and duration for Infusion')
         if rate is not None:
-            rate = sympify(rate)
+            rate = parse_expr(rate)
         else:
-            duration = sympify(duration)
-        return cls(sympify(amount), rate, duration)
+            duration = parse_expr(duration)
+        return cls(parse_expr(amount), rate, duration)
 
     @property
     def amount(self):
@@ -1959,7 +1955,7 @@ class Statements(Sequence):
         if isinstance(symbol, str):
             symbol = sympy.Symbol(symbol)
         if isinstance(expression, str):
-            expression = sympify(expression)
+            expression = parse_expr(expression)
 
         last = True
         new = list(self._statements)
@@ -1977,16 +1973,15 @@ class Statements(Sequence):
         graph = nx.DiGraph()
         for i in range(len(self) - 1, -1, -1):
             rhs = self[i].rhs_symbols
-            for s in rhs:
-                for j in range(i - 1, -1, -1):
-                    statement = self[j]
-                    if (
-                        isinstance(statement, Assignment)
-                        and statement.symbol == s
-                        or isinstance(statement, ODESystem)
-                        and s in statement.amounts
-                    ):
-                        graph.add_edge(i, j)
+            for j in range(i - 1, -1, -1):
+                statement = self[j]
+                if (
+                    isinstance(statement, Assignment)
+                    and statement.symbol in rhs
+                    or isinstance(statement, ODESystem)
+                    and not rhs.isdisjoint(statement.amounts)
+                ):
+                    graph.add_edge(i, j)
         return graph
 
     def direct_dependencies(self, statement):
@@ -2093,12 +2088,11 @@ class Statements(Sequence):
         removed_ind = self._statements.index(statement)
         # Statements defining symbols and dependencies
         candidates = set()
-        for s in symbols:
-            for i in range(removed_ind - 1, -1, -1):
-                stat = self[i]
-                if isinstance(stat, Assignment) and stat.symbol == s:
-                    candidates.add(i)
-                    break
+        symbols_set = set(symbols)
+        for i in range(removed_ind - 1, -1, -1):
+            stat = self[i]
+            if isinstance(stat, Assignment) and stat.symbol in symbols_set:
+                candidates.add(i)
         for i in candidates.copy():
             if i in graph:
                 candidates |= set(nx.dfs_preorder_nodes(graph, i))
@@ -2137,7 +2131,7 @@ class Statements(Sequence):
         THETA(1)*WGT*exp(ETA(1))
         """
         if isinstance(expression, str):
-            expression = sympify(expression)
+            expression = parse_expr(expression)
         for statement in reversed(self):
             if isinstance(statement, ODESystem):
                 raise ValueError(

@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 import sympy
 
+from pharmpy.internals.fs.tmp import TemporaryDirectory
 from pharmpy.modeling import (
     convert_model,
     copy_model,
@@ -20,7 +21,6 @@ from pharmpy.modeling import (
     set_name,
     write_model,
 )
-from pharmpy.utils import TemporaryDirectory
 from pharmpy.workflows import LocalModelDirectoryDatabase
 
 

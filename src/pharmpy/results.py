@@ -1,13 +1,16 @@
-import copy
+from __future__ import annotations
+
 import importlib
 import json
 import lzma
-from collections.abc import MutableSequence
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Results
+from pharmpy.workflows import Log
 
 
 class ResultsJSONDecoder(json.JSONDecoder):
@@ -97,13 +100,16 @@ def read_results(path_or_buf):
     return ResultsJSONDecoder().decode(s)
 
 
+@dataclass
 class ModelfitResults(Results):
     """Base class for results from a modelfit operation
 
-    model_name - name of model that generated the results model
-
     Attributes
     ----------
+    name : str
+        Name of model
+    description : str
+        Description of model
     correlation_matrix : pd.DataFrame
         Correlation matrix of the population parameter estimates
     covariance_matrix : pd.DataFrame
@@ -122,6 +128,8 @@ class ModelfitResults(Results):
         Estimated covariance between etas
     parameter_estimates : pd.Series
         Population parameter estimates
+    parameter_estimates_iterations : pd.DataFrame
+        All recorded iterations for parameter estimates
     parameter_estimates_sdcorr : pd.Series
         Population parameter estimates with variability parameters as standard deviations and
         correlations
@@ -138,193 +146,45 @@ class ModelfitResults(Results):
     standard_errors_sdcorr : pd.Series
         Standard errors of the population parameter estimates on standard deviation and correlation
         scale
+    relative_standard_errors : pd.Series
+        Relative standard errors of the population parameter estimates
     termination_cause : str
         The cause of premature termination. One of 'maxevals_exceeded' and 'rounding_errors'
     function_evaluations : int
         Number of function evaluations
+    evaluation : pd.Series
+        A bool for each estimation step. True if this was a model evaluation and False otherwise
     """
 
-    def __init__(
-        self,
-        ofv=None,
-        ofv_iterations=None,
-        parameter_estimates=None,
-        parameter_estimates_sdcorr=None,
-        covariance_matrix=None,
-        correlation_matrix=None,
-        standard_errors=None,
-        minimization_successful=None,
-        individual_ofv=None,
-        individual_estimates=None,
-        residuals=None,
-        predictions=None,
-        runtime_total=None,
-        termination_cause=None,
-        function_evaluations=None,
-        significant_digits=None,
-        log_likelihood=None,
-        log=None,
-    ):
-        self.ofv = ofv
-        self.ofv_iterations = ofv_iterations
-        self.parameter_estimates = parameter_estimates
-        self.parameter_estimates_sdcorr = parameter_estimates_sdcorr
-        self.covariance_matrix = covariance_matrix
-        self.correlation_matrix = correlation_matrix
-        self.standard_errors = standard_errors
-        self.minimization_successful = minimization_successful
-        self.individual_estimates = individual_estimates
-        self.individual_ofv = individual_ofv
-        self.residuals = residuals
-        self.predictions = predictions
-        self.runtime_total = runtime_total
-        self.termination_cause = termination_cause
-        self.function_evaluations = function_evaluations
-        self.significant_digits = significant_digits
-        self.log_likelihood = log_likelihood
-        self.log = log
-
-    def __bool__(self):
-        return bool(self.ofv) and bool(self.parameter_estimates)
-
-    @classmethod
-    def from_dict(cls, d):
-        # FIXME temp fix since ModelfitResults is getting rewritten
-        if '__version__' in d.keys():
-            del d['__version__']
-        return ModelfitResults(**d)
-
-    def to_dict(self):
-        return {
-            'ofv': self.ofv,
-            'parameter_estimates': self.parameter_estimates,
-            'parameter_estimates_sdcorr': self.parameter_estimates_sdcorr,
-            'covariance_matrix': self.covariance_matrix,
-            'correlation_matrix': self.correlation_matrix,
-            'standard_errors': self.standard_errors,
-            'minimization_successful': self.minimization_successful,
-            'individual_estimates': self.individual_estimates,
-            'individual_ofv': self.individual_ofv,
-            'residuals': self.residuals,
-            'runtime_total': self.runtime_total,
-            'termination_cause': self.termination_cause,
-            'function_evaluations': self.function_evaluations,
-            'log_likelihood': self.log_likelihood,
-            'log': self.log,
-        }
-
-    @property
-    def relative_standard_errors(self):
-        """Relative standard errors of population parameter estimates"""
-        if self.standard_errors is not None:
-            ser = self.standard_errors / self.parameter_estimates
-            ser.name = 'RSE'
-            return ser
-
-
-class ChainedModelfitResults(MutableSequence, ModelfitResults):
-    """A sequence of modelfit results given in order from first to final
-    inherits from both list and ModelfitResults. Each method from ModelfitResults
-    will be performed on the final modelfit object
-    """
-
-    def __init__(self, results=None):
-        if isinstance(results, ChainedModelfitResults):
-            self._results = copy.deepcopy(results._results)
-        elif results is None:
-            self._results = []
-        else:
-            self._results = list(results)
-
-    def __getitem__(self, ind):
-        return self._results[ind]
-
-    def __setitem__(self, ind, value):
-        self._results[ind] = value
-
-    def __delitem__(self, ind):
-        del self._results[ind]
-
-    def __len__(self):
-        return len(self._results)
-
-    def insert(self, ind, value):
-        self._results.insert(ind, value)
-
-    @property
-    def log_likelihood(self):
-        return self[-1].log_likelihood
-
-    @property
-    def minimization_successful(self):
-        return self._get_last_est('minimization_successful')
-
-    @property
-    def estimation_runtime(self):
-        return self._get_last_est('estimation_runtime')
-
-    def _get_last_est(self, attr):
-        est_steps = self.model.estimation_steps
-        # Find last estimation
-        for step, result in zip(reversed(est_steps), reversed(self)):
-            if not step.evaluation:
-                value = getattr(result, attr, None)
-                if value is not None:
-                    return value
-        # If all steps were evaluation the last evaluation step is relevant
-        return getattr(self[-1], attr, None)
-
-    @property
-    def parameter_estimates(self):
-        return self[-1].parameter_estimates
-
-    @parameter_estimates.setter
-    def parameter_estimates(self, value):
-        self[-1].parameter_estimates = value
-
-    @property
-    def parameter_estimates_sdcorr(self):
-        return self[-1].parameter_estimates_sdcorr
-
-    @property
-    def covariance_matrix(self):
-        return self[-1].covariance_matrix
-
-    @property
-    def information_matrix(self):
-        return self[-1].information_matrix
-
-    @property
-    def correlation_matrix(self):
-        return self[-1].correlation_matrix
-
-    @property
-    def standard_errors(self):
-        return self[-1].standard_errors
-
-    @property
-    def standard_errors_sdcorr(self):
-        return self[-1].standard_errors_sdcorr
-
-    @property
-    def model_name(self):
-        return self[-1].model_name
-
-    @property
-    def function_evaluations(self):
-        return self._get_last_est('function_evaluations')
-
-    @property
-    def termination_cause(self):
-        return self._get_last_est('termination_cause')
-
-    @property
-    def runtime_total(self):
-        return self[-1].runtime_total
-
-    @property
-    def significant_digits(self):
-        return self[-1].significant_digits
-
-    def __repr__(self):
-        return repr(self._results[-1])
+    name: Optional[str] = None
+    description: Optional[str] = None
+    ofv: Optional[float] = None
+    ofv_iterations: Optional[pd.Series] = None
+    parameter_estimates: Optional[pd.Series] = None
+    parameter_estimates_sdcorr: Optional[pd.Series] = None
+    parameter_estimates_iterations: Optional[pd.DataFrame] = None
+    covariance_matrix: Optional[pd.DataFrame] = None
+    correlation_matrix: Optional[pd.DataFrame] = None
+    information_matrix: Optional[pd.DataFrame] = None
+    standard_errors: Optional[pd.Series] = None
+    standard_errors_sdcorr: Optional[pd.Series] = None
+    relative_standard_errors: Optional[pd.Series] = None
+    minimization_successful: Optional[bool] = None
+    minimization_successful_iterations: Optional[pd.DataFrame] = None
+    estimation_runtime: Optional[float] = None
+    estimation_runtime_iterations: Optional[pd.DataFrame] = None
+    individual_ofv: Optional[pd.Series] = None
+    individual_estimates: Optional[pd.DataFrame] = None
+    individual_estimates_covariance: Optional[pd.DataFrame] = None
+    residuals: Optional[pd.DataFrame] = None
+    predictions: Optional[pd.DataFrame] = None
+    runtime_total: Optional[float] = None
+    termination_cause: Optional[str] = None
+    termination_cause_iterations: Optional[pd.Series] = None
+    function_evaluations: Optional[float] = None
+    function_evaluations_iterations: Optional[pd.Series] = None
+    significant_digits: Optional[float] = None
+    significant_digits_iterations: Optional[pd.Series] = None
+    log_likelihood: Optional[float] = None
+    log: Optional[Log] = None
+    evaluation: Optional[pd.Series] = None

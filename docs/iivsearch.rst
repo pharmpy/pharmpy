@@ -20,8 +20,10 @@ To initiate IIVsearch in Python/R:
     from pharmpy.tools import run_iivsearch
 
     start_model = read_model('path/to/model')
+    start_model_results = read_model_results('path/to/model')
     res = run_iivsearch(algorithm='brute_force',
                         model=start_model,
+                        results=start_model_results,
                         iiv_strategy='no_add',
                         rank_type='bic',
                         cutoff=None)
@@ -54,6 +56,8 @@ Arguments
 |                                               | cutoff (default is none)                                           |
 +-----------------------------------------------+--------------------------------------------------------------------+
 | ``model``                                     | Input model                                                        |
++-----------------------------------------------+--------------------------------------------------------------------+
+| ``results``                                   | ModelfitResults of input model                                     |
 +-----------------------------------------------+--------------------------------------------------------------------+
 
 .. note::
@@ -238,6 +242,7 @@ Consider a iivsearch run:
 
     res = run_iivsearch(algorithm='brute_force',
                         model=start_model,
+                        results=start_model_results,
                         iiv_strategy='no_add',
                         rank_type='bic',
                         cutoff=None)

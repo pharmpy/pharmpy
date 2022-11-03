@@ -33,7 +33,7 @@ project = 'Pharmpy'
 year = '2018-2022'
 authors = ['the Pharmpy development team']
 copyright = '{0}; {1}'.format(year, ', '.join(authors))
-version = release = '0.78.0'
+version = release = '0.83.0'
 html_show_sourcelink = False
 
 pygments_style = 'trac'
@@ -73,6 +73,7 @@ napoleon_use_rtype = False
 napoleon_use_param = False
 
 automodapi_inheritance_diagram = False
+autodoc_typehints = 'none'
 graphviz_output_format = 'svg'
 
 import doctest

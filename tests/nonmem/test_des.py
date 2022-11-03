@@ -1,5 +1,4 @@
-import sympy
-
+from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.modeling import add_peripheral_compartment, set_michaelis_menten_elimination
 
 
@@ -66,7 +65,7 @@ def test_conversion_round_trip(load_example_model_for_test):
     cs = es.to_compartmental_system()
     central = cs.central_compartment
     output = cs.output_compartment
-    assert cs.get_flow(central, output) == sympy.sympify('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
+    assert cs.get_flow(central, output) == parse_expr('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
 
 
 def test_des_mm(load_example_model_for_test, create_model_for_test):
@@ -83,4 +82,4 @@ def test_des_mm(load_example_model_for_test, create_model_for_test):
     cs = model.statements.ode_system.to_compartmental_system()
     central = cs.central_compartment
     output = cs.output_compartment
-    assert cs.get_flow(central, output) == sympy.sympify('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
+    assert cs.get_flow(central, output) == parse_expr('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')

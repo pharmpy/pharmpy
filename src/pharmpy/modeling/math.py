@@ -1,6 +1,6 @@
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.math import cov2corr
+from pharmpy.internals.math import cov2corr
 
 
 def calculate_se_from_cov(cov):

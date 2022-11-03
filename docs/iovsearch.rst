@@ -20,7 +20,9 @@ To initiate IOVsearch in Python/R:
     from pharmpy.tools import run_iovsearch
 
     start_model = read_model('path/to/model')
+    start_model_results = read_modelfit_results('path/to/model')
     res = run_iovsearch(model=start_model,
+                        results=start_model_results,
                         column='OCC',
                         list_of_parameters=None,
                         distribution='same-as-iiv',
@@ -37,6 +39,7 @@ You can limit the search to only certain parameters by giving a list:
 .. pharmpy-code::
 
     res = run_iovsearch(model=start_model,
+                        results=start_model_results,
                         column='OCC',
                         list_of_parameters=['CL', 'V'])
 
@@ -68,6 +71,8 @@ Arguments
 |                                             | cutoff (default is none)                                             |
 +---------------------------------------------+----------------------------------------------------------------------+
 | ``model``                                   | Start model                                                          |
++---------------------------------------------+----------------------------------------------------------------------+
+| ``results``                                 | ModelfitResults of start model                                       |
 +---------------------------------------------+----------------------------------------------------------------------+
 
 ~~~~~~~~~
@@ -175,6 +180,7 @@ structure explicitly as in the following example:
 .. pharmpy-code::
 
     res = run_iovsearch(model=start_model,
+                        results=start_model_results,
                         column='OCC',
                         list_of_parameters=[['CL', 'V'], ['KA']],
                         distribution='explicit')
@@ -218,6 +224,7 @@ Consider a IOVsearch run:
 
     res = run_iovsearch(column='VISI',
                         model=start_model,
+                        results=start_model_results,
                         list_of_parameters=None,
                         rank_type='bic',
                         cutoff=None,

@@ -1,17 +1,19 @@
-from itertools import chain, combinations
 from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import pharmpy.tools.iivsearch.algorithms
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
+from pharmpy.internals.fn.signature import with_same_arguments_as
+from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_subsets
 from pharmpy.model import Assignment, Model, Results
 from pharmpy.modeling import add_iov, copy_model, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
 from pharmpy.modeling.results import RANK_TYPES
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import rank_models, summarize_modelfit_results
 from pharmpy.tools.common import create_results, summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 NAME_WF = 'iovsearch'
@@ -25,6 +27,7 @@ def create_workflow(
     rank_type: str = 'bic',
     cutoff: Optional[Union[float, int]] = None,
     distribution: str = 'same-as-iiv',
+    results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
@@ -42,6 +45,8 @@ def create_workflow(
         is None (all models will be ranked)
     distribution : str
         Which distribution added IOVs should have (default is same-as-iiv)
+    results : ModelfitResults
+        Results for model
     model : Model
         Pharmpy model
 
@@ -54,7 +59,7 @@ def create_workflow(
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> run_iovsearch('OCC', model=model)      # doctest: +SKIP
+    >>> run_iovsearch('OCC', results=model.modelfit_results, model=model)      # doctest: +SKIP
     """
 
     wf = Workflow()
@@ -113,10 +118,11 @@ def task_brute_force_search(
     # NOTE Default is to try all IIV ETAs.
     if list_of_parameters is None:
         iiv = model.random_variables.iiv
-        list_of_parameters = list(iiv.names)
+        iiv_before_odes = iiv.free_symbols.intersection(model.statements.before_odes.free_symbols)
+        list_of_parameters = [iiv.name for iiv in iiv_before_odes]
 
     current_step = 0
-    step_mapping = {current_step: model.name}
+    step_mapping = {current_step: [model.name]}
 
     # NOTE Check that model has at least one IIV.
     if not list_of_parameters:
@@ -246,39 +252,6 @@ def best_model(
         return base
 
 
-def subsets(iterable: Iterable[T], min_size: int = 0, max_size: int = -1) -> Iterable[Tuple[T]]:
-    """Returns an iterable over all the subsets of the input iterable with
-    minimum and maximum size constraints. Allows maximum_size to be given
-    relatively to iterable "length" by specifying a negative value.
-
-    Adapted from powerset function defined in
-    https://docs.python.org/3/library/itertools.html#itertools-recipes
-
-    subsets([1,2,3], min_size=1, max_size=2) --> (1,) (2,) (3,) (1,2) (1,3) (2,3)"
-    """
-    s = list(iterable)
-    max_size = len(s) + max_size + 1 if max_size < 0 else max_size
-    return chain.from_iterable(combinations(s, r) for r in range(min_size, max_size + 1))
-
-
-def non_empty_proper_subsets(iterable: Iterable[T]) -> Iterable[Tuple[T]]:
-    """Returns an iterable over all the non-empty proper subsets of the input
-    iterable.
-
-    non_empty_proper_subsets([1,2,3]) --> (1,) (2,) (3,) (1,2) (1,3) (2,3)"
-    """
-    return subsets(iterable, min_size=1, max_size=-2)
-
-
-def non_empty_subsets(iterable: Iterable[T]) -> Iterable[Tuple[T]]:
-    """Returns an iterable over all the non-empty subsets of the input
-    iterable.
-
-    non_empty_subsets([1,2,3]) --> (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-    """
-    return subsets(iterable, min_size=1, max_size=-1)
-
-
 def task_results(rank_type, cutoff, bic_type, models):
     step_mapping, (base_model, *res_models) = models
 
@@ -290,7 +263,7 @@ def task_results(rank_type, cutoff, bic_type, models):
     sum_mod, sum_tool = [], []
     for step, model_names in step_mapping.items():
         candidates = [model for model in [base_model] + res_models if model.name in model_names]
-        sum_mod_step = summarize_modelfit_results(candidates)
+        sum_mod_step = summarize_modelfit_results([model.modelfit_results for model in candidates])
         sum_mod.append(sum_mod_step)
         if step >= 1:
             ref_model = model_dict[candidates[0].parent_model]
@@ -305,8 +278,8 @@ def task_results(rank_type, cutoff, bic_type, models):
     return res
 
 
-@runtime_type_check
-@same_arguments_as(create_workflow)
+@with_runtime_arguments_type_check
+@with_same_arguments_as(create_workflow)
 def validate_input(
     model,
     column,

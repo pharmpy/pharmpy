@@ -1,3 +1,4 @@
+import shutil
 from io import StringIO
 
 import pytest
@@ -5,6 +6,7 @@ import sympy
 from sympy import Symbol as symbol
 
 from pharmpy.config import ConfigurationContext
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import (
     Assignment,
     EstimationStep,
@@ -28,6 +30,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
+from pharmpy.tools.amd.funcs import create_start_model
 
 
 def S(x):
@@ -335,10 +338,6 @@ def test_add_random_variables_and_statements(pheno):
     assert str(model.internals.control_stream.get_pred_pk_record()).endswith(
         'X = 1 + ETA(3) + EPS(2)\n\n'
     )
-
-
-def test_results(pheno):
-    assert len(pheno.modelfit_results) == 1  # A chain of one estimation
 
 
 def test_minimal(load_model_for_test, datadir):
@@ -1002,6 +1001,14 @@ $ESTIMATION METHOD=1 INTER
     assert model.model_code == correct
 
 
+def test_convert_model_iv(testdata, tmp_path):
+    # FIXME move to unit test for amd?
+    with chdir(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'pheno_rate.dta', '.')
+        start_model = create_start_model('pheno_rate.dta', modeltype='pk_iv')
+        convert_model(start_model)
+
+
 def test_parse_derivatives(load_model_for_test, testdata):
     model = load_model_for_test(
         testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
@@ -1160,3 +1167,29 @@ $ESTIMATION METHOD=1 INTER
 """
     model = Model.create_model(StringIO(code))
     assert model.value_type == sympy.Symbol('F_FLAG')
+
+
+def test_datainfo_model_drop_clash(testdata):
+    datapath = testdata / 'nonmem' / 'pheno.dta'
+    code = f"""$PROBLEM
+$DATA {datapath} IGNORE=@
+$INPUT ID TIME AMT WGT=DROP APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+CL=THETA(1)
+
+$ERROR
+Y=F+F*EPS(1)
+
+$THETA (0,0.00469307) ; TVCL
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    with pytest.warns(
+        UserWarning, match='NONMEM .mod and dataset .datainfo disagree on DROP for columns WGT'
+    ):
+        model = Model.create_model(StringIO(code))
+
+    assert model.datainfo['WGT'].drop

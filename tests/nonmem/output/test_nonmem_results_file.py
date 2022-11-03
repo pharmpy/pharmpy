@@ -432,8 +432,6 @@ def test_covariance_status(testdata):
     model = read_model(
         testdata / 'nonmem' / 'modelfit_results' / 'covariance' / 'pheno_nocovariance.mod'
     )
-    for result in model.modelfit_results:
-        assert result._covariance_status['warnings'] is None
     assert model.modelfit_results.standard_errors is None
     assert model.modelfit_results.covariance_matrix is None
     assert model.modelfit_results.correlation_matrix is None

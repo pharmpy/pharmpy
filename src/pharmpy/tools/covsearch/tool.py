@@ -1,15 +1,18 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass
 from itertools import count
-from typing import Any, Callable, Iterable, List, Sequence, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.fn.signature import with_same_arguments_as
+from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import add_covariate_effect, copy_model, get_pk_parameters
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import (
@@ -22,7 +25,6 @@ from pharmpy.tools.mfl.feature.covariate import (
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
-from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 from .results import COVSearchResults
@@ -100,6 +102,7 @@ def create_workflow(
     p_backward: float = 0.01,
     max_steps: int = -1,
     algorithm: str = 'scm-forward-then-backward',
+    results: Optional[ModelfitResults] = None,
     model: Union[Model, None] = None,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
@@ -118,6 +121,8 @@ def create_workflow(
     algorithm : str
         The search algorithm to use. Currently 'scm-forward' and
         'scm-forward-then-backward' are supported.
+    results : ModelfitResults
+        Results of model
     model : Model
         Pharmpy model
 
@@ -136,7 +141,7 @@ def create_workflow(
     ...     ('CL', 'APGR', 'exp', '*'),
     ...     ('V', 'WGT', 'exp', '*'),
     ...     ('V', 'APGR', 'exp', '*'),
-    ... ], model=model)      # doctest: +SKIP
+    ... ], model=model, results=model.modelfit_results)      # doctest: +SKIP
 
     """
 
@@ -260,7 +265,7 @@ def task_greedy_backward_search(
 
 def _greedy_search(
     state: SearchState,
-    handle_effects: Callable[[int, Candidate, List[EffectLiteral]], List[Candidate]],
+    handle_effects: Callable[[int, Candidate, List[EffectLiteral], int], List[Candidate]],
     candidate_effects: List[EffectLiteral],
     alpha: float,
     max_steps: int,
@@ -453,7 +458,7 @@ def _modify_summary_tool(summary_tool, steps):
 
 
 def _summarize_models(models, steps):
-    summary_models = summarize_modelfit_results(models)
+    summary_models = summarize_modelfit_results([model.modelfit_results for model in models])
     summary_models['step'] = steps.reset_index().set_index(['model'])['step']
 
     return summary_models.reset_index().set_index(['step', 'model'])
@@ -524,8 +529,8 @@ def _make_df_steps_row(
     }
 
 
-@runtime_type_check
-@same_arguments_as(create_workflow)
+@with_runtime_arguments_type_check
+@with_same_arguments_as(create_workflow)
 def validate_input(effects, p_forward, p_backward, algorithm, model):
     if algorithm not in ALGORITHMS:
         raise ValueError(

@@ -18,7 +18,7 @@ class AbbreviatedRecord(Record):
     @property
     def replace(self):
         """Give a dict of all REPLACE in record"""
-        d = dict()
+        d = {}
         for replace in self.root.all('replace'):
             strings = replace.all('ANY')
             first = strip_quote(str(strings[0]))

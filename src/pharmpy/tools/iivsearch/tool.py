@@ -6,13 +6,15 @@ from typing import List, Optional, Sequence, Set, Union
 
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.fn.signature import with_same_arguments_as
+from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model, Results
 from pharmpy.modeling import add_pk_iiv, calculate_bic, copy_model, create_joint_distribution
 from pharmpy.modeling.results import RANK_TYPES
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, ToolDatabase, Workflow, call_workflow
 
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock'))
@@ -31,6 +33,7 @@ def create_workflow(
     iiv_strategy: str = 'no_add',
     rank_type: str = 'bic',
     cutoff: Optional[Union[float, int]] = None,
+    results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
@@ -47,6 +50,8 @@ def create_workflow(
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
+    results : ModelfitResults
+        Results for model
     model : Model
         Pharmpy model
 
@@ -60,7 +65,7 @@ def create_workflow(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import run_iivsearch     # doctest: +SKIP
-    >>> run_iivsearch('brute_force', model=model)   # doctest: +SKIP
+    >>> run_iivsearch('brute_force', results=model.modelfit_results, model=model)   # doctest: +SKIP
     """
 
     wf = Workflow()
@@ -119,6 +124,7 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
     models = []
     models_set = set()
     last_res = None
+    final_model = None
 
     for i, algorithm_cur in enumerate(list_of_algorithms):
         state = State(algorithm_cur, models_set, input_model.name)
@@ -134,7 +140,7 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
 
         if i == 0:
             # Have input model as first row in summary of models as step 0
-            sum_models.append(summarize_modelfit_results(input_model))
+            sum_models.append(summarize_modelfit_results(input_model.modelfit_results))
 
         sum_tools.append(res.summary_tool)
         sum_models.append(res.summary_models)
@@ -150,7 +156,11 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
         iiv_strategy = 'no_add'
         last_res = res
 
+        if len(base_model.random_variables.iiv.names) <= 1:
+            break
+
     assert last_res is not None
+    assert final_model is not None
 
     res_modelfit_input = input_model.modelfit_results
     res_modelfit_final = final_model.modelfit_results
@@ -213,6 +223,8 @@ def post_process(state, rank_type, cutoff, input_model, base_model_name, *models
         else:
             res_models.append(model)
 
+    assert len(res_models) > 0
+
     if not base_model:
         raise ValueError('Error in workflow: No base model')
 
@@ -224,15 +236,19 @@ def post_process(state, rank_type, cutoff, input_model, base_model_name, *models
     # If base model is model from a previous step or is the input model to the full tool,
     # it should be excluded in this step
     if base_model_name in state.model_names_so_far or base_model_name == state.input_model_name:
-        res.summary_models = summarize_modelfit_results(res_models)
+        res.summary_models = summarize_modelfit_results(
+            [model.modelfit_results for model in res_models]
+        )
     else:
-        res.summary_models = summarize_modelfit_results(models)
+        res.summary_models = summarize_modelfit_results(
+            [model.modelfit_results for model in models]
+        )
 
     return res
 
 
-@runtime_type_check
-@same_arguments_as(create_workflow)
+@with_runtime_arguments_type_check
+@with_same_arguments_as(create_workflow)
 def validate_input(
     algorithm,
     iiv_strategy,
@@ -257,11 +273,11 @@ def validate_input(
 
 @dataclass
 class IIVSearchResults(Results):
-    summary_tool: Optional[pd.DataFrame] = None
-    summary_models: Optional[pd.DataFrame] = None
-    summary_individuals: Optional[pd.DataFrame] = None
-    summary_individuals_count: Optional[pd.DataFrame] = None
-    summary_errors: Optional[pd.DataFrame] = None
+    summary_tool: pd.DataFrame
+    summary_individuals: pd.DataFrame
+    summary_individuals_count: pd.DataFrame
+    summary_errors: pd.DataFrame
     final_model_name: Optional[str] = None
     models: Sequence[Model] = ()
-    tool_database: Optional[ToolDatabase] = None
+    summary_models: Optional[pd.DataFrame] = None  # NOTE Not present in Results
+    tool_database: Optional[ToolDatabase] = None  # NOTE Not present in Results

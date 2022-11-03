@@ -12,9 +12,9 @@ Currenly contains:
 import warnings
 from collections.abc import Mapping
 
-import pharmpy.math
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.math import round_and_keep_sum
 
 
 class DatasetIterator:
@@ -174,9 +174,7 @@ class Resample(DatasetIterator):
                 non_rounded_sample_sizes = stratas.apply(
                     lambda x: (len(x) / numgroups) * sample_size
                 )
-                rounded_sample_sizes = pharmpy.math.round_and_keep_sum(
-                    non_rounded_sample_sizes, sample_size
-                )
+                rounded_sample_sizes = round_and_keep_sum(non_rounded_sample_sizes, sample_size)
                 sample_size_dict = dict(rounded_sample_sizes)  # strata: numsamples
             else:
                 sample_size_dict = sample_size

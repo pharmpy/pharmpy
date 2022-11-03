@@ -1,46 +1,64 @@
+from __future__ import annotations
+
 import re
 from io import StringIO
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Union
 
-import pharmpy.math
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.math import flattened_to_symmetric
 
 
 class NONMEMTableFile:
     """A NONMEM table file that can contain multiple tables"""
 
-    def __init__(self, path=None, tables=None, notitle=False, nolabel=False):
+    def __init__(
+        self,
+        path: Optional[Union[str, Path]] = None,
+        tables: Optional[List[NONMEMTable]] = None,
+        notitle: bool = False,
+        nolabel: bool = False,
+    ):
         if path is not None:
             path = Path(path)
             suffix = path.suffix
-            self.tables = []
+            tables = []
             if path.stat().st_size == 0:
                 raise OSError("Empty table file")
             with open(str(path), 'r') as tablefile:
                 if notitle:
-                    self._add_table(tablefile.read().splitlines(), notitle=notitle, nolabel=nolabel)
+                    table = self._parse_table(
+                        tablefile.read().splitlines(keepends=True), notitle=notitle, nolabel=nolabel
+                    )
+                    tables.append(table)
                 else:
                     current = []
                     for line in tablefile:
                         if line.startswith("TABLE NO."):
                             if current:
-                                self._add_table(current, suffix)
+                                table = self._parse_table(current, suffix)
+                                tables.append(table)
                             current = [line]
                         else:
                             current.append(line)
-                    self._add_table(current, suffix)
-            self._count = 0
+                    table = self._parse_table(current, suffix)
+                    tables.append(table)
+            self.tables = tables
         elif tables is not None:
             self.tables = tables
         else:
             raise ValueError('NONMEMTableFile: path and tables cannot be both None')
 
-    def __iter__(self):
-        return self
+    def _parse_table(
+        self,
+        content: List[str],
+        suffix: Optional[str] = None,
+        notitle: bool = False,
+        nolabel: bool = False,
+    ) -> NONMEMTable:
+        # NOTE Content lines must contain endlines!
 
-    def _add_table(self, content, suffix=None, notitle=False, nolabel=False):
         table_line = None if notitle else content.pop(0)
 
         if suffix == '.ext':
@@ -77,7 +95,14 @@ class NONMEMTableFile:
                 table.iteration1 = int(m.group(6))
                 table.superproblem2 = int(m.group(7))
                 table.iteration2 = int(m.group(8))
-        self.tables.append(table)
+
+        return table
+
+    def __iter__(self):
+        return iter(self.tables)
+
+    def __getitem__(self, i):
+        return self.tables[i]
 
     def __len__(self):
         return len(self.tables)
@@ -106,15 +131,7 @@ class NONMEMTableFile:
         with open(path, 'w') as df:
             for table in self.tables:
                 print('TABLE NO.     1', file=df)
-                table.create_content()
                 print(table.content, file=df, end='')
-
-    def __next__(self):
-        if self._count >= len(self):
-            raise StopIteration
-        else:
-            self._count += 1
-            return self.tables[self._count - 1]
 
 
 class NONMEMTable:
@@ -133,7 +150,7 @@ class NONMEMTable:
 
     def __init__(self, content=None, df=None):
         if content is not None:
-            self._df = pd.read_table(StringIO(content), sep=r'\s+', engine='python')
+            self._df = pd.read_table(StringIO(content), sep=r'\s+', engine='c')
         elif df is not None:
             self._df = df
         else:
@@ -142,6 +159,22 @@ class NONMEMTable:
     @property
     def data_frame(self):
         return self._df
+
+    @property
+    def content(self):
+        df = self._df.copy(deep=True)
+        df.reset_index(inplace=True)
+        df.insert(loc=0, column='SUBJECT_NO', value=np.arange(len(df)) + 1)
+        fmt = '%13d%13d' + '%13.5E' * (len(df.columns) - 2)
+
+        header_fmt = ' %-12s' * len(df.columns) + '\n'
+        header = header_fmt % tuple(df.columns)
+
+        with StringIO() as s:
+            np.savetxt(s, df.values, fmt=fmt)
+            body = s.getvalue()
+
+        return header + body
 
     @staticmethod
     def rename_index(df, ext=True):
@@ -199,26 +232,13 @@ class PhiTable(NONMEMTable):
         eta_col_names = [col for col in df if col.startswith('ETA')]
         etc_col_names = [col for col in df if col.startswith('ETC')]
         vals = df[etc_col_names].values
-        matrix_array = [pharmpy.math.flattened_to_symmetric(x) for x in vals]
+        matrix_array = [flattened_to_symmetric(x) for x in vals]
         etc_frames = [
             pd.DataFrame(matrix, columns=eta_col_names, index=eta_col_names)
             for matrix in matrix_array
         ]
         etcs = pd.Series(etc_frames, index=df['ID'], dtype='object')
         return etcs
-
-    def create_content(self):
-        df = self._df.copy(deep=True)
-        df.reset_index(inplace=True)
-        df.insert(loc=0, column='SUBJECT_NO', value=np.arange(len(df)) + 1)
-        fmt = '%13d%13d' + '%13.5E' * (len(df.columns) - 2)
-        with StringIO() as s:
-            np.savetxt(s, df.values, fmt=fmt)
-            self.content = s.getvalue()
-        with StringIO() as s:
-            header_fmt = ' %-12s' * len(df.columns) + '\n'
-            header = header_fmt % tuple(df.columns)
-            self.content = header + self.content
 
 
 class ExtTable(NONMEMTable):

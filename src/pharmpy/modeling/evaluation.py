@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import List, Mapping, Optional, Union
+
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.deps.scipy import linalg
-from pharmpy.expressions import subs, sympify
+from pharmpy.internals.expr.eval import eval_expr
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
+from pharmpy.model import Model
 
 from .expressions import (
     calculate_epsilon_gradient_expression,
@@ -11,8 +18,28 @@ from .expressions import (
     get_population_prediction_expression,
 )
 
+ParameterMap = Mapping[Union[str, 'sympy.Symbol'], Union[float, 'sympy.Float']]
 
-def evaluate_expression(model, expression, parameter_estimates=None):
+
+class DataFrameMapping(Mapping['sympy.Symbol', 'np.ndarray']):
+    def __init__(self, df: pd.DataFrame):
+        self._df = df
+
+    def __getitem__(self, symbol: sympy.Symbol):
+        return self._df[symbol.name].to_numpy()
+
+    def __len__(self):
+        return len(self._df)
+
+    def __iter__(self):
+        return map(sympy.Symbol, self._df.columns)
+
+
+def evaluate_expression(
+    model: Model,
+    expression: Union[str, sympy.Expr],
+    parameter_estimates: Optional[ParameterMap] = None,
+):
     """Evaluate expression using model
 
     Calculate the value of expression for each data record.
@@ -54,21 +81,21 @@ def evaluate_expression(model, expression, parameter_estimates=None):
     Length: 744, dtype: float64
 
     """
-    expression = sympify(expression)
+    expression = parse_expr(expression)
     full_expr = model.statements.before_odes.full_expression(expression)
     inits = model.parameters.inits
-    expr = subs(subs(full_expr, dict(parameter_estimates)), inits)
-    data = model.dataset
+    mapping = inits if parameter_estimates is None else {**inits, **parameter_estimates}
+    expr = subs(full_expr, mapping)
 
-    def func(row):
-        value = subs(expr, dict(row))
-        return np.float64(value.evalf())
+    df = model.dataset
 
-    df = data.apply(func, axis=1)
-    return df
+    array = eval_expr(expr, len(df), DataFrameMapping(df))
+    return pd.Series(array)
 
 
-def evaluate_population_prediction(model, parameters=None, dataset=None):
+def evaluate_population_prediction(
+    model: Model, parameters: Optional[ParameterMap] = None, dataset: Optional[pd.DataFrame] = None
+):
     """Evaluate the numeric population prediction
 
     The prediction is evaluated at the current model parameter values
@@ -116,23 +143,21 @@ def evaluate_population_prediction(model, parameters=None, dataset=None):
     evaluate_individual_prediction : Evaluate the individual prediction
     """
     y = get_population_prediction_expression(model)
+    mapping = model.parameters.inits if parameters is None else parameters
+    expr = subs(y, mapping)
 
-    if parameters is not None:
-        y = subs(y, parameters)
-    else:
-        y = subs(y, model.parameters.inits)
+    df = model.dataset if dataset is None else dataset
 
-    if dataset is not None:
-        df = dataset
-    else:
-        df = model.dataset
-
-    pred = df.apply(lambda row: np.float64(subs(y, row.to_dict())), axis=1)
-    pred.name = 'PRED'
-    return pred
+    pred = eval_expr(expr, len(df), DataFrameMapping(df))
+    return pd.Series(pred, name='PRED')
 
 
-def evaluate_individual_prediction(model, etas=None, parameters=None, dataset=None):
+def evaluate_individual_prediction(
+    model: Model,
+    etas: Optional[pd.DataFrame] = None,
+    parameters: Optional[ParameterMap] = None,
+    dataset: Optional[pd.DataFrame] = None,
+):
     """Evaluate the numeric individual prediction
 
     The prediction is evaluated at the current model parameter values
@@ -185,45 +210,40 @@ def evaluate_individual_prediction(model, etas=None, parameters=None, dataset=No
     """
 
     y = get_individual_prediction_expression(model)
-    if parameters is not None:
-        y = subs(y, parameters)
-    else:
-        y = subs(y, model.parameters.inits)
+    mapping = model.parameters.inits if parameters is None else parameters
+    y = subs(y, mapping)
 
-    if dataset is not None:
-        df = dataset
-    else:
-        df = model.dataset
+    df = model.dataset if dataset is None else dataset
 
     idcol = model.datainfo.id_column.name
 
-    if etas is None:
-        etas = pd.DataFrame(
+    _etas = (
+        pd.DataFrame(
             0,
             index=df[idcol].unique(),
             columns=model.random_variables.etas.names,
         )
+        if etas is None
+        else etas
+    )
 
-    def fn(row):
-        row = row.to_dict()
-        curetas = etas.loc[row[idcol]].to_dict()
-        a = np.float64(subs(subs(y, row), curetas))
-        return a
+    _df = df.join(_etas, on=idcol)
 
-    ipred = df.apply(fn, axis=1)
-    ipred.name = 'IPRED'
-    return ipred
+    ipred = eval_expr(y, len(_df), DataFrameMapping(_df))
+    return pd.Series(ipred, name='IPRED')
 
 
-def _replace_parameters(model, y, parameters):
-    if parameters is not None:
-        y = [subs(x, parameters) for x in y]
-    else:
-        y = [subs(x, model.parameters.inits) for x in y]
-    return y
+def _replace_parameters(model: Model, y: List[sympy.Expr], parameters: Optional[ParameterMap]):
+    mapping = model.parameters.inits if parameters is None else parameters
+    return [subs(x, mapping) for x in y]
 
 
-def evaluate_eta_gradient(model, etas=None, parameters=None, dataset=None):
+def evaluate_eta_gradient(
+    model: Model,
+    etas: Optional[pd.DataFrame] = None,
+    parameters: Optional[ParameterMap] = None,
+    dataset: Optional[pd.DataFrame] = None,
+):
     """Evaluate the numeric eta gradient
 
     The gradient is evaluated at the current model parameter values
@@ -280,36 +300,38 @@ def evaluate_eta_gradient(model, etas=None, parameters=None, dataset=None):
     y = calculate_eta_gradient_expression(model)
     y = _replace_parameters(model, y, parameters)
 
-    if dataset is not None:
-        df = dataset
-    else:
-        df = model.dataset
+    df = model.dataset if dataset is None else dataset
     idcol = model.datainfo.id_column.name
 
-    if etas is None:
-        if model.initial_individual_estimates is not None:
-            etas = model.initial_individual_estimates
-        else:
-            etas = pd.DataFrame(
-                0,
-                index=df[idcol].unique(),
-                columns=model.random_variables.etas.names,
-            )
-
-    def fn(row):
-        row = row.to_dict()
-        curetas = etas.loc[row[idcol]].to_dict()
-        a = [np.float64(subs(subs(x, row), curetas)) for x in y]
-        return a
+    if etas is not None:
+        _etas = etas
+    elif model.initial_individual_estimates is not None:
+        _etas = model.initial_individual_estimates
+    else:
+        _etas = pd.DataFrame(
+            0,
+            index=df[idcol].unique(),
+            columns=model.random_variables.etas.names,
+        )
 
     derivative_names = [f'dF/d{eta}' for eta in model.random_variables.etas.names]
-    grad = df.apply(fn, axis=1, result_type='expand')
-    grad = pd.DataFrame(grad)
-    grad.columns = derivative_names
-    return grad
+
+    _df = df.join(_etas, on=idcol)
+
+    return pd.DataFrame(
+        {
+            name: eval_expr(expr, len(_df), DataFrameMapping(_df))
+            for expr, name in zip(y, derivative_names)
+        }
+    )
 
 
-def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
+def evaluate_epsilon_gradient(
+    model: Model,
+    etas: Optional[pd.DataFrame] = None,
+    parameters: Optional[ParameterMap] = None,
+    dataset: Optional[pd.DataFrame] = None,
+):
     """Evaluate the numeric epsilon gradient
 
     The gradient is evaluated at the current model parameter values
@@ -369,37 +391,37 @@ def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
     repl = {sympy.Symbol(eps): 0 for eps in eps_names}
     y = [subs(x, repl) for x in y]
 
-    if dataset is not None:
-        df = dataset
-    else:
-        df = model.dataset
+    df = model.dataset if dataset is None else dataset
 
     idcol = model.datainfo.id_column.name
 
-    if etas is None:
-        if model.initial_individual_estimates is not None:
-            etas = model.initial_individual_estimates
-        else:
-            etas = pd.DataFrame(
-                0,
-                index=df[idcol].unique(),
-                columns=model.random_variables.etas.names,
-            )
+    if etas is not None:
+        _etas = etas
+    elif model.initial_individual_estimates is not None:
+        _etas = model.initial_individual_estimates
+    else:
+        _etas = pd.DataFrame(
+            0,
+            index=df[idcol].unique(),
+            columns=model.random_variables.etas.names,
+        )
 
-    def fn(row):
-        row = row.to_dict()
-        curetas = etas.loc[row[idcol]].to_dict()
-        a = [np.float64(subs(subs(x, row), curetas)) for x in y]
-        return a
-
-    grad = df.apply(fn, axis=1, result_type='expand')
+    _df = df.join(_etas, on=idcol)
     derivative_names = [f'dY/d{eps}' for eps in eps_names]
-    grad = pd.DataFrame(grad)
-    grad.columns = derivative_names
-    return grad
+
+    return pd.DataFrame(
+        {
+            name: eval_expr(expr, len(_df), DataFrameMapping(_df))
+            for expr, name in zip(y, derivative_names)
+        }
+    )
 
 
-def evaluate_weighted_residuals(model, parameters=None, dataset=None):
+def evaluate_weighted_residuals(
+    model: Model,
+    parameters: Optional[ParameterMap] = None,
+    dataset: Optional[pd.DataFrame] = None,
+):
     """Evaluate the weighted residuals
 
     The residuals is evaluated at the current model parameter values
@@ -445,16 +467,12 @@ def evaluate_weighted_residuals(model, parameters=None, dataset=None):
 
     omega = model.random_variables.etas.covariance_matrix
     sigma = model.random_variables.epsilons.covariance_matrix
-    if parameters is None:
-        parameters = model.parameters.inits
+    parameters = model.parameters.inits if parameters is None else parameters
     omega = omega.subs(parameters)
     sigma = sigma.subs(parameters)
     omega = np.float64(omega)
     sigma = np.float64(sigma)
-    if dataset is not None:
-        df = dataset
-    else:
-        df = model.dataset
+    df = model.dataset if dataset is None else dataset
     # FIXME: Could have option to gradients to set all etas 0
     etas = pd.DataFrame(
         0,
@@ -477,6 +495,5 @@ def evaluate_weighted_residuals(model, parameters=None, dataset=None):
         Ci = Gi @ omega @ Gi.T + np.diag(np.diag(Hi @ sigma @ Hi.T))
         WRESi = linalg.sqrtm(linalg.inv(Ci)) @ (DVi - Fi)
         WRES = np.concatenate((WRES, WRESi))
-    ser = pd.Series(WRES)
-    ser.name = 'WRES'
-    return ser
+
+    return pd.Series(WRES, name='WRES')

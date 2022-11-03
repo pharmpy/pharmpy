@@ -8,6 +8,7 @@ class TableRecord(OptionRecord):
     @property
     def path(self):
         file_option = self.option_pairs['FILE']
+        assert file_option is not None
         return Path(file_option)
 
     @path.setter

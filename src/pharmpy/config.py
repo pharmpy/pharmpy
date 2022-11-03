@@ -3,6 +3,7 @@
 
 import configparser
 import os
+from abc import ABC
 from pathlib import Path
 
 import appdirs
@@ -82,7 +83,9 @@ class ConfigItem:
             ) from exc
 
 
-class Configuration:
+class Configuration(ABC):
+    module: str
+
     def __init__(self):
         if user_config_file_enabled() and self.module in config_file.keys():
             for key, value in config_file[self.module].items():
@@ -103,7 +106,7 @@ class ConfigurationContext:
         self.options = kwargs
 
     def __enter__(self):
-        old = dict()
+        old = {}
         for key in self.options.keys():
             old[key] = getattr(self.config, key)
         for key, val in self.options.items():

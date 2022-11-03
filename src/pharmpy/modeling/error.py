@@ -4,7 +4,8 @@
 from __future__ import annotations
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs, sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, NormalDistribution, Statements
 
 from .common import remove_unused_parameters_and_rvs
@@ -28,7 +29,7 @@ def _canonicalize_data_transformation(model, value):
     if value is None:
         value = model.dependent_variable
     else:
-        value = sympify(value)
+        value = parse_expr(value)
         if value.free_symbols != {model.dependent_variable}:
             raise ValueError(
                 f"Expression for data transformation must contain the dependent variable "
@@ -163,7 +164,7 @@ def _get_prop_init(model):
         return (dv_min / 2) ** 2
 
 
-def set_proportional_error_model(model, data_trans=None, zero_protection=False):
+def set_proportional_error_model(model, data_trans=None, zero_protection=True):
     r"""Set a proportional error model. Initial estimate for new sigma is 0.09.
 
     The error function being applied depends on the data transformation.
@@ -197,14 +198,26 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
     >>> model = remove_error_model(load_example_model("pheno"))
     >>> set_proportional_error_model(model)    # doctest: +ELLIPSIS
     <...>
-    >>> model.statements.find_assignment("Y")
-    Y = F⋅εₚ + F
+    >>> model.statements.after_odes
+        A_CENTRAL
+        ─────────
+    F =     S₁
+    W = F
+               ⎧2.225e-16  for F = 0
+               ⎨
+    IPREDADJ = ⎩    F      otherwise
+    Y = F + IPREDADJ⋅εₚ
+    IPRED = F
+    IRES = DV - IPRED
+            IRES
+            ────
+    IWRES =  W
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
     >>> set_proportional_error_model(
     ...     model,
-    ...     data_trans="log(Y)", zero_protection=True
+    ...     data_trans="log(Y)"
     ... )    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.after_odes
@@ -686,7 +699,7 @@ def set_time_varying_error_model(model, cutoff, idv='TIME'):
 
     """
     y = model.statements.find_assignment('Y')
-    idv = sympify(idv)
+    idv = parse_expr(idv)
     theta = create_symbol(model, 'time_varying')
     eps = model.random_variables.epsilons
     expr = sympy.Piecewise(

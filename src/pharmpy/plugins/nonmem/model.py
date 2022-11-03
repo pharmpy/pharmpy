@@ -3,15 +3,14 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
-from io import StringIO
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import pharmpy.model
-import pharmpy.plugins.nonmem
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs
+from pharmpy.internals.expr.subs import subs
+from pharmpy.internals.fs.path import path_relative_to
 from pharmpy.model import (
     Assignment,
     DatasetError,
@@ -22,13 +21,14 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
 )
-from pharmpy.modeling.write_csv import write_csv
-from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
+from pharmpy.modeling.write_csv import create_dataset_path, write_csv
 
+from .config import conf
+from .dataset import read_nonmem_dataset
 from .nmtran_parser import NMTranControlStream, NMTranParser
+from .parameters import parameter_translation
 from .parsing import (
     create_name_trans,
-    parameter_translation,
     parse_column_info,
     parse_datainfo,
     parse_description,
@@ -40,10 +40,10 @@ from .parsing import (
     parse_value_type,
     replace_synonym_in_filters,
 )
+from .random_variables import rv_translation
 from .results import parse_modelfit_results
 from .update import (
     abbr_translation,
-    rv_translation,
     update_ccontra,
     update_description,
     update_estimation,
@@ -68,6 +68,7 @@ class NONMEMModelInternals:
     _old_random_variables: RandomVariables
     _old_statements: Statements
     _old_initial_individual_estimates: Optional[pd.DataFrame]
+    _compartment_map: Optional[Dict[str, int]]
 
 
 def convert_model(model):
@@ -92,7 +93,8 @@ def convert_model(model):
         code += '$SUBROUTINES ADVAN1 TRANS2\n'
         code += '$PK\nY=X\n'
         code += '$ERROR\nA=B'
-    nm_model = pharmpy.model.Model.create_model(StringIO(code))
+    nm_model = Model(code, dataset=model.dataset)
+    assert isinstance(nm_model, Model)
     nm_model._datainfo = model.datainfo
     nm_model.random_variables = model.random_variables
     nm_model._parameters = model.parameters
@@ -114,14 +116,14 @@ def convert_model(model):
     nm_model.description = model.description
     nm_model.update_source()
     if model.statements.ode_system:
-        nm_model._compartment_map = {
+        nm_model.internals._compartment_map = {
             name: i for i, name in enumerate(model.statements.ode_system.compartment_names, start=1)
         }
     return nm_model
 
 
 class Model(pharmpy.model.Model):
-    def __init__(self, code, path=None, **kwargs):
+    def __init__(self, code, path=None, dataset=None, **kwargs):
         self.modelfit_results = None
         parser = NMTranParser()
         if path is None:
@@ -133,6 +135,11 @@ class Model(pharmpy.model.Model):
         control_stream = parser.parse(code)
         di = parse_datainfo(control_stream, path)
         self.datainfo = di
+        # FIXME temporary workaround remove when changing constructor
+        # NOTE inputting the dataset is needed for IV models when using convert_model, since it needs to read the
+        # RATE column to decide dosing, meaning it needs the dataset before parsing statements
+        if dataset is not None:
+            self.dataset = dataset
         self._old_datainfo = di
         self._dataset_updated = False
         self._parent_model = None
@@ -143,7 +150,7 @@ class Model(pharmpy.model.Model):
 
         parameters = parse_parameters(control_stream)
 
-        statements = parse_statements(self, control_stream)
+        statements, comp_map = parse_statements(self, control_stream)
 
         rvs = parse_random_variables(control_stream)
 
@@ -212,6 +219,7 @@ class Model(pharmpy.model.Model):
             _old_random_variables=_old_random_variables,
             _old_statements=statements,
             _old_initial_individual_estimates=init_etas,
+            _compartment_map=comp_map,
         )
 
         # NOTE This requires self.internals to be defined
@@ -237,7 +245,7 @@ class Model(pharmpy.model.Model):
                 statement = Assignment(sympy.Symbol('DUMMYETA'), sympy.Symbol(eta.names[0]))
                 self.statements = statement + self.statements
                 self.random_variables = self.random_variables + eta
-                self.parameters = Parameters([p for p in self.parameters] + [omega])
+                self.parameters = Parameters(list(self.parameters) + [omega])
             update_random_variables(
                 self, self.internals._old_random_variables, self._random_variables
             )
@@ -252,7 +260,7 @@ class Model(pharmpy.model.Model):
             self.internals.control_stream, reverse=True, remove_idempotent=True, as_symbols=True
         )
         trans.update(rv_trans)
-        if pharmpy.plugins.nonmem.conf.write_etas_in_abbr:
+        if conf.write_etas_in_abbr:
             abbr = abbr_translation(self, rv_trans)
             trans.update(abbr)
         if hasattr(self, '_statements'):
@@ -266,15 +274,15 @@ class Model(pharmpy.model.Model):
         ):
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
             if self.datainfo.path is None:  # or self.datainfo.path == self._old_datainfo.path:
-                if path is not None:
-                    dir_path = path.parent
+                dir_path = Path(self.name + ".csv") if path is None else path.parent
+
+                if nofiles:
+                    datapath = create_dataset_path(self, path=dir_path)
                 else:
-                    dir_path = self.name + ".csv"
-                if not nofiles:
                     datapath = write_csv(self, path=dir_path, force=force)
-                    self.datainfo = self.datainfo.derive(path=datapath.name)
-                else:
-                    self.datainfo = self.datainfo.derive(path=Path(dir_path))
+
+                self.datainfo = self.datainfo.derive(path=datapath)
+
             data_record = self.internals.control_stream.get_records('DATA')[0]
 
             label = self.datainfo.names[0]
@@ -288,13 +296,14 @@ class Model(pharmpy.model.Model):
             self._dataset_updated = False
             self._old_datainfo = self.datainfo
 
-            path = self.datainfo.path
-            if path is not None:
+            datapath = self.datainfo.path
+            if datapath is not None:
                 assert (
-                    not path.exists() or path.is_file()
-                ), f'input path change, but no file exists at target {str(path)}'
+                    not datapath.exists() or datapath.is_file()
+                ), f'input path change, but no file exists at target {str(datapath)}'
                 data_record = self.internals.control_stream.get_records('DATA')[0]
-                data_record.filename = str(path)
+                parent_path = Path.cwd() if path is None else path.parent
+                data_record.filename = str(path_relative_to(parent_path, datapath))
 
         update_sizes(self)
         update_estimation(self)
@@ -368,18 +377,19 @@ class Model(pharmpy.model.Model):
             dtype=None if raw else self.datainfo.get_dtype_dict(),
         )
         # Let TIME be the idv in both $PK and $PRED models
-
         # Remove individuals without observations
-        try:
-            from pharmpy.modeling.data import get_observations
-
-            # This is a hack to be able to use the get_observations function
-            # before the dataset has been properly read in.
-            self._data_frame = df
-            have_obs = set(get_observations(self).index.unique(level=0))
-        except DatasetError:
-            pass
-        else:
+        col_names = list(df.columns)
+        have_pk = control_stream.get_pk_record()
+        if have_pk:
+            if 'EVID' in col_names:
+                df_obs = df.astype({'EVID': 'float'}).query('EVID == 0')
+            elif 'MDV' in col_names:
+                df_obs = df.astype({'MDV': 'float'}).query('MDV == 0')
+            elif 'AMT' in col_names:
+                df_obs = df.astype({'AMT': 'float'}).query('AMT == 0')
+            else:
+                raise DatasetError('Could not identify observation rows in dataset')
+            have_obs = set(df_obs['ID'].unique())
             all_ids = set(df['ID'].unique())
             ids_to_remove = all_ids - have_obs
             df = df[~df['ID'].isin(ids_to_remove)]

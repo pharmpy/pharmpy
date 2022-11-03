@@ -6,27 +6,14 @@ import pytest
 
 import pharmpy.plugins.nonmem as nonmem
 from pharmpy.config import ConfigurationContext
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.plugins.nonmem.results import simfit_results
 from pharmpy.results import read_results
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_ofv(pheno):
     res = pheno.modelfit_results
     assert res.ofv == 586.27605628188053
-
-
-def test_tool_files(pheno):
-    res = pheno.modelfit_results
-    names = [str(p.name) for p in res.tool_files]
-    assert names == [
-        'pheno_real.lst',
-        'pheno_real.ext',
-        'pheno_real.cov',
-        'pheno_real.cor',
-        'pheno_real.coi',
-        'pheno_real.phi',
-    ]
 
 
 def test_special_models(testdata, load_model_for_test):
@@ -35,12 +22,10 @@ def test_special_models(testdata, load_model_for_test):
     assert (
         pytest.approx(withBayes.modelfit_results.standard_errors['THETA(1)'], 1e-13) == 2.51942e00
     )
-    assert (
-        pytest.approx(withBayes.modelfit_results[0].standard_errors['THETA(1)'], 1e-13)
-        == 3.76048e-01
-    )
-    assert withBayes.modelfit_results[0].minimization_successful is False
-    assert withBayes.modelfit_results[1].minimization_successful is False
+    succ1 = withBayes.modelfit_results.minimization_successful_iterations.iloc[0]
+    succ2 = withBayes.modelfit_results.minimization_successful_iterations.iloc[1]
+    assert succ1 is not None and not succ1
+    assert succ2 is not None and not succ2
 
     maxeval0 = load_model_for_test(onePROB / 'oneEST' / 'noSIM' / 'maxeval0.mod')
     assert maxeval0.modelfit_results.minimization_successful is None
@@ -285,7 +270,7 @@ def test_runtime_different_formats(
     shutil.copy(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_real.mod')
     shutil.copy(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_real.ext')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
 
         with open('pheno_real.lst', 'a') as f:
             f.write(lst_file_repl)
@@ -299,7 +284,7 @@ def test_estimation_runtime_steps(pheno_path, testdata, load_model_for_test):
     model = load_model_for_test(pheno_path)
 
     res = model.modelfit_results
-    assert res[0].estimation_runtime == 0.32
+    assert res.estimation_runtime_iterations.iloc[0] == 0.32
     assert res.runtime_total == 4
 
     model = load_model_for_test(
@@ -312,8 +297,8 @@ def test_estimation_runtime_steps(pheno_path, testdata, load_model_for_test):
         / 'pheno_multEST.mod'
     )
     res = model.modelfit_results
-    assert res[0].estimation_runtime == 0.33
-    assert res[1].estimation_runtime == 2.75
+    assert res.estimation_runtime_iterations.iloc[0] == 0.33
+    assert res.estimation_runtime_iterations.iloc[1] == 2.75
     assert res.runtime_total == 7
     assert res.estimation_runtime == 0.33
 
@@ -331,7 +316,7 @@ def test_evaluation(testdata, load_model_for_test):
     res = model.modelfit_results
 
     assert round(res.ofv, 3) == 729.955
-    assert res[-1].minimization_successful
+    assert res.minimization_successful_iterations.iloc[-1]
     assert not res.minimization_successful
 
 

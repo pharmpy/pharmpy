@@ -4,7 +4,7 @@
 from typing import Set
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs
+from pharmpy.internals.expr.subs import subs
 from pharmpy.model import (
     Assignment,
     Bolus,
@@ -575,7 +575,7 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
 def _rename_parameter(model: Model, old_name, new_name):
     a = model.statements.find_assignment(old_name)
     assert a is not None
-    d = dict()
+    d = {}
     for s in a.rhs_symbols:
         if s in model.parameters:
             old_par = s
@@ -1310,7 +1310,8 @@ def _get_absorption_init(model, param_name) -> float:
 
     time_label = model.datainfo.idv_column.name
     obs = get_observations(model)
-    time_min = obs.index.get_level_values(level=time_label).min()
+    time = obs.index.get_level_values(level=time_label)
+    time_min = time[time != 0].min()
 
     if param_name == 'MDT':
         return float(time_min) / 2

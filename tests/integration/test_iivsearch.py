@@ -2,15 +2,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import NormalDistribution
 from pharmpy.modeling import set_seq_zo_fo_absorption
 from pharmpy.tools import fit, retrieve_models, run_iivsearch
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_block_structure(tmp_path, model_count, start_model):
-    with TemporaryDirectoryChanger(tmp_path):
-        res = run_iivsearch('brute_force_block_structure', model=start_model)
+    with chdir(tmp_path):
+        res = run_iivsearch(
+            'brute_force_block_structure', results=start_model.modelfit_results, model=start_model
+        )
 
         no_of_candidate_models = 4
         assert len(res.summary_tool) == no_of_candidate_models + 1
@@ -43,8 +45,10 @@ def test_block_structure(tmp_path, model_count, start_model):
 
 
 def test_no_of_etas(tmp_path, model_count, start_model):
-    with TemporaryDirectoryChanger(tmp_path):
-        res = run_iivsearch('brute_force_no_of_etas', model=start_model)
+    with chdir(tmp_path):
+        res = run_iivsearch(
+            'brute_force_no_of_etas', results=start_model.modelfit_results, model=start_model
+        )
 
         no_of_candidate_models = 7
         assert len(res.summary_tool) == no_of_candidate_models + 1
@@ -73,8 +77,8 @@ def test_no_of_etas(tmp_path, model_count, start_model):
 
 
 def test_brute_force(tmp_path, model_count, start_model):
-    with TemporaryDirectoryChanger(tmp_path):
-        res = run_iivsearch('brute_force', model=start_model)
+    with chdir(tmp_path):
+        res = run_iivsearch('brute_force', results=start_model.modelfit_results, model=start_model)
 
         no_of_candidate_models = 8
         assert len(res.summary_tool) == no_of_candidate_models + 2
@@ -125,7 +129,7 @@ def test_brute_force(tmp_path, model_count, start_model):
     ['add_diagonal', 'fullblock'],
 )
 def test_no_of_etas_iiv_strategies(tmp_path, model_count, start_model, iiv_strategy):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         start_model = start_model.copy()
         start_model.name = 'moxo2_copy'
         start_model.modelfit_results = None
@@ -136,6 +140,7 @@ def test_no_of_etas_iiv_strategies(tmp_path, model_count, start_model, iiv_strat
         res = run_iivsearch(
             'brute_force_no_of_etas',
             iiv_strategy=iiv_strategy,
+            results=start_model.modelfit_results,
             model=start_model,
         )
 

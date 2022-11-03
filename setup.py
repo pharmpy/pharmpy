@@ -1,7 +1,7 @@
 import io
 import re
 from glob import glob
-from os.path import basename, dirname, join, splitext
+from os.path import abspath, basename, dirname, join, splitext
 from textwrap import dedent
 
 from setuptools import find_packages, setup
@@ -9,7 +9,9 @@ from setuptools import find_packages, setup
 
 def read(*names, **kwargs):
     """Read file path relative to setup.py (in encoding; default: utf8)"""
-    return io.open(join(dirname(__file__), *names), encoding=kwargs.get('encoding', 'utf8')).read()
+    return io.open(
+        join(dirname(abspath(__file__)), *names), encoding=kwargs.get('encoding', 'utf8')
+    ).read()
 
 
 def strip_refs(text_str):
@@ -27,7 +29,7 @@ def longdesc(text_str):
 
 setup(
     name='pharmpy-core',
-    version='0.78.0',
+    version='0.83.0',
     license='GNU Lesser General Public License v3 (LGPLv3)',
     description='Pharmacometric modeling',
     long_description='%s\n\n%s'
@@ -66,8 +68,8 @@ setup(
         'pharmacometrics',
     ],
     install_requires=[
-        'lark>=1.1.2',
-        'sympy>=1.8',
+        'lark>=1.1.4',
+        'sympy>=1.9',
         'symengine>=0.9.2',
         'pandas>=1.4',
         'numexpr',

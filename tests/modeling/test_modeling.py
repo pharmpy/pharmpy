@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 import sympy
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import (
     add_iiv,
     add_iov,
@@ -45,7 +46,6 @@ from pharmpy.modeling import (
     update_inits,
 )
 from pharmpy.modeling.odes import find_clearance_parameters, find_volume_parameters
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_set_first_order_elimination(load_model_for_test, testdata):
@@ -2684,7 +2684,7 @@ $OMEGA 0.1'''
 def test_remove_iov_with_options(
     tmp_path, load_model_for_test, testdata, distribution, occ, to_remove, cases, rest
 ):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model = load_model_for_test('mox2.mod')
@@ -2709,7 +2709,7 @@ def test_update_inits(load_model_for_test, testdata, etas_file, force, file_exis
     shutil.copy(testdata / 'nonmem/pheno.ext', tmp_path / 'run1.ext')
     shutil.copy(testdata / 'nonmem/pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         with open('run1.mod', 'a') as f:
             f.write(etas_file)
 
@@ -2770,7 +2770,7 @@ def test_update_inits_no_res(load_model_for_test, testdata, tmp_path):
     shutil.copy(testdata / 'nonmem/pheno.mod', tmp_path / 'run1.mod')
     shutil.copy(testdata / 'nonmem/pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         shutil.copy(testdata / 'nonmem/pheno.ext', tmp_path / 'run1.ext')
         shutil.copy(testdata / 'nonmem/pheno.lst', tmp_path / 'run1.lst')
 
@@ -2829,7 +2829,7 @@ def test_set_power_on_ruv(
     shutil.copy(testdata / 'nonmem/pheno_real.ext', tmp_path / 'run1.ext')
     shutil.copy(testdata / 'nonmem/pheno.dta', tmp_path / 'pheno.dta')
 
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         model_pheno = load_model_for_test('run1.mod')
         model_more_eps = re.sub(
             r'( 0.031128  ;        IVV\n)',

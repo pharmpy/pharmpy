@@ -9,6 +9,7 @@ __all__ = (
     'print_fit_summary',  # pyright: ignore [reportUnsupportedDunderAll]
     'rank_models',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_results',  # pyright: ignore [reportUnsupportedDunderAll]
+    'read_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_final_model',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_models',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_allometry',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -16,6 +17,7 @@ __all__ = (
     'run_covsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_iivsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_iovsearch',  # pyright: ignore [reportUnsupportedDunderAll]
+    'run_modelfit',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_modelsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_ruvsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_tool',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -34,6 +36,7 @@ _run_keys = {
     'fit',
     'print_fit_summary',
     'rank_models',
+    'read_modelfit_results',
     'read_results',
     'retrieve_final_model',
     'retrieve_models',

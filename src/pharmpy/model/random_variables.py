@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from collections.abc import Container as CollectionsContainer
 from collections.abc import Sequence as CollectionsSequence
-from functools import lru_cache
 from itertools import chain, product
 from typing import Container, Dict, Iterable, Sequence, Set, Tuple, Union, overload
 
-import pharmpy.math
 from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
-from pharmpy.expressions import subs, sympify, xreplace_dict
+from pharmpy.internals.expr.eval import eval_expr
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs, xreplace_dict
+from pharmpy.internals.math import cov2corr, is_positive_semidefinite, nearest_postive_semidefinite
 
 from .distributions.numeric import NumericDistribution
 from .distributions.symbolic import Distribution, JointNormalDistribution, NormalDistribution
@@ -160,7 +161,7 @@ class VariabilityHierarchy:
     def levels(self):
         """Dictionary of variability level name to numerical level"""
         ind = self._find_reference()
-        d = dict()
+        d = {}
         for level in self._levels:
             d[level.name] = ind
             ind += 1
@@ -581,7 +582,7 @@ class RandomVariables(CollectionsSequence):
         joined_rvs = self[inds]
         assert isinstance(joined_rvs, RandomVariables)
         means, M, names, _ = joined_rvs._calc_covariance_matrix()
-        cov_to_params = dict()
+        cov_to_params = {}
         if fill != 0:
             for row, col in product(range(M.rows), range(M.cols)):
                 if M[row, col] == 0:
@@ -625,7 +626,7 @@ class RandomVariables(CollectionsSequence):
                 symb_sigma = dist.variance
                 sigma = symb_sigma.subs(dict(parameter_values))
                 A = np.array(sigma).astype(np.float64)
-                B = pharmpy.math.nearest_postive_semidefinite(A)
+                B = nearest_postive_semidefinite(A)
                 if B is not A:
                     for row in range(len(A)):
                         for col in range(row + 1):
@@ -647,7 +648,7 @@ class RandomVariables(CollectionsSequence):
                 sigma = sigma.subs(replacement)
                 if not sigma.free_symbols:  # Cannot validate since missing params
                     a = np.array(sigma).astype(np.float64)
-                    if not pharmpy.math.is_positive_semidefinite(a):
+                    if not is_positive_semidefinite(a):
                         return False
                 else:
                     raise TypeError("Cannot validate parameters since all are not numeric")
@@ -658,7 +659,7 @@ class RandomVariables(CollectionsSequence):
 
         parameters in the distributions will first be replaced"""
 
-        sympified_expr = sympify(expr)
+        sympified_expr = parse_expr(expr)
         xreplace_parameters = {} if parameters is None else xreplace_dict(parameters)
 
         return _sample_from_distributions(
@@ -718,7 +719,7 @@ class RandomVariables(CollectionsSequence):
             if len(dist) > 1:
                 sigma_sym = dist.variance
                 sigma = np.array(sigma_sym.subs(values)).astype(np.float64)
-                corr = pharmpy.math.cov2corr(sigma)
+                corr = cov2corr(sigma)
                 for i in range(sigma_sym.rows):
                     for j in range(sigma_sym.cols):
                         name = sigma_sym[i, j].name
@@ -799,22 +800,6 @@ def sample_expr_from_rvs(
     return eval_expr(expr, nsamples, samples)
 
 
-def eval_expr(
-    expr: sympy.Expr,
-    nsamples: int,
-    samples: Dict[sympy.Symbol, np.ndarray],
-) -> np.ndarray:
-    # NOTE We avoid querying for free_symbols if we know none are expected
-    fs = _free_symbols(expr) if samples else set()
-
-    if fs:
-        ordered_symbols, fn = _lambdify_canonical(expr)
-        data = [samples[rv] for rv in ordered_symbols]
-        return fn(*data)
-
-    return np.full(nsamples, float(expr.evalf()))
-
-
 def sample_rvs(
     sampling_rvs: Iterable[Tuple[Tuple[sympy.Symbol, ...], NumericDistribution]],
     nsamples: int,
@@ -832,24 +817,3 @@ def sample_rvs(
             data[symbols[0]] = cursample
 
     return data
-
-
-@lru_cache(maxsize=256)
-def _free_symbols(expr: sympy.Expr) -> Set[sympy.Symbol]:
-    return expr.free_symbols
-
-
-@lru_cache(maxsize=256)
-def _lambdify_canonical(expr: sympy.Expr):
-    fs = _free_symbols(expr)
-    ordered_symbols = sorted(fs, key=str)
-    # NOTE Substitution allows to use cse. Otherwise weird things happen with
-    # symbols that look like function eval (e.g. ETA(1), THETA(3), OMEGA(1,1)).
-    ordered_substitutes = [sympy.Symbol(f'__tmp{i}') for i in range(len(ordered_symbols))]
-    substituted_expr = subs(
-        expr,
-        {key: value for key, value in zip(ordered_symbols, ordered_substitutes)},
-        simultaneous=True,
-    )
-    fn = sympy.lambdify(ordered_substitutes, substituted_expr, modules='numpy', cse=True)
-    return ordered_symbols, fn

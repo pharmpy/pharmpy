@@ -10,6 +10,7 @@ from typing import Union
 
 import pharmpy.config as config
 from pharmpy.deps import sympy
+from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
@@ -20,7 +21,6 @@ from pharmpy.model import (
     Parameters,
     RandomVariables,
 )
-from pharmpy.utils import normalize_user_given_path
 
 
 def read_model(path):
@@ -474,7 +474,7 @@ def load_example_model(name):
     available = ('pheno', 'pheno_linear')
     if name not in available:
         raise ValueError(f'Unknown example model {name}. Available examples: {available}')
-    path = Path(__file__).parent.resolve() / 'example_models' / (name + '.mod')
+    path = Path(__file__).resolve().parent / 'example_models' / (name + '.mod')
     model = read_model(path)
     return model
 

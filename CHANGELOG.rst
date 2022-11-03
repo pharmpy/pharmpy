@@ -1,9 +1,79 @@
-Next release
-------------
+0.83.0 (2022-11-01)
+-------------------
+
+Changes
+=======
+
+* Only test IOV on statements before ODE
+
+Bug fixes
+=========
+
+* Allow spaces in DADT definitions when parsing ODE
+* Fix issue where expression setter was used
+* Fix issue in IIVSearch where tool doesn't continue to next step if there is a multivariate distribution
+* Input dataset into model constructor in convert model (fixes #1293)
+* Modelfit should not crash if .lst-file does not exist, warns if .lst and .ext-files do not exist (#1302, #1303)
+
+
+0.82.0 (2022-10-24)
+-------------------
+
+Changes
+=======
+
+* modeling.summarize_modelfit_results takes results objects instead of model objects
+* Do not include aic and bic in summarize_modelfit_results
+
+0.81.1 (2022-10-24)
+-------------------
+
+Bug fixes
+=========
+
+* Handle NM-TRAN datasets with one and two digit year in DATx column using default LAST20 (50)
+
+0.81.0 (2022-10-21)
+-------------------
 
 New features
 ============
 
+* Add tools.read_modelfit_results
+
+Changes
+=======
+
+* run_modelsearch, run_iovsearch, run_ruvsearch, run_allometry, run_covsearch, run_amd and run_iivsearch now need results as a separate input
+
+Bug fixes
+=========
+
+* Correct scaling for F in NOMEM models for ADVAN 2,4,5,7 and 12
+
+0.80.0 (2022-10-19)
+-------------------
+
+Changes
+=======
+
+* modeling.fit returns ModelfitResults instead of Model
+* Let zero_protect default to True for modeling.set_proportional_error_model
+* Faster parsing of NONMEM table files
+
+Bug fixes
+=========
+
+* Let bioavailability parameters be part of rhs of ode_system
+* Make sure initials are non-zero for absorption parameters
+
+0.79.0 (2022-10-16)
+-------------------
+
+New features
+============
+
+* Relative paths in files, absolute paths in Python objects (#1180, fixes 887)
 * Validate tool inputs (#1162, fixes #1032)
 * Add allow_nested flag to add_covariate_effect (#1004)
 * Add has_covariate_effect and remove_covariate_effect (#1004)
@@ -16,6 +86,16 @@ New features
 Changes
 =======
 
+* Include input model as step 0 in summary_models for AMD tools
+* Rename all AMD tool candidates such that modelsearch_candidate1 -> modelsearch_run1
+* Add columns for number of parameters and delta parameters in summary_tool for AMD tools
+* Only include chosen models in AMD summary_tool
+* New names and description for COVSearch candidates
+* Modify COVSearch summary_tool to include information from the steps-table, remove ranking
+* New candidate descriptions in IOVSearch
+* Add multiindex to RUVSearch which include step/iteration, remove ranking.
+* Add algorithm column to IIVSearch summary_tool, remove algorithm from candidate name
+* Compare final model in IIVSearch to input model, return input if worse
 * Generalize detection of existing effects in add_covariate_effect (#1004)
 * calculate_bic and calculate_aic will need the -2LL as input instead of modelfit_results
 * calculate_eta_shrinkage needs the explicit arguments parameter_estimates and individual_estimates
@@ -44,6 +124,7 @@ Changes
 * Move summarize_errors to pharmpy.tools
 * Move rank_models to pharmpy.tools
 * Move summarize_modelfit_results to pharmpy.tools
+* Speedup parsing of NONMEM results
 
 Bug fixes
 =========

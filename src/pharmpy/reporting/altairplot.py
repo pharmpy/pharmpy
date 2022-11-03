@@ -55,7 +55,7 @@ If this configuration is not specified, all are set to True.
 import contextlib
 import io
 import json
-import os
+import os.path
 import warnings
 
 import jinja2

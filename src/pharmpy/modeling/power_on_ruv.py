@@ -6,7 +6,8 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs, sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model, Parameter, Parameters
 
 from .error import has_proportional_error_model
@@ -64,12 +65,12 @@ def set_power_on_ruv(
     eps = model.random_variables.epsilons
     if list_of_eps is not None:
         eps = eps[list_of_eps]
-    pset, sset = [p for p in model.parameters], model.statements
+    pset, sset = list(model.parameters), model.statements
 
     if ipred is None:
         ipred = get_ipred(model)
     else:
-        ipred = sympify(ipred)
+        ipred = parse_expr(ipred)
 
     if has_proportional_error_model(model):
         theta_init = 1
@@ -87,13 +88,11 @@ def set_power_on_ruv(
                 guard_assignment = Assignment(ipred, guard_expr)
                 ind = sset.find_assignment_index('Y')
                 sset = sset[0:ind] + guard_assignment + sset[ind:]
-                break
             break
+    else:
+        alternative = None
 
-        else:
-            alternative = None
-
-    for i, e in enumerate(eps.names):
+    for e in eps.names:
         theta_name = str(create_symbol(model, stem='power', force_numbering=True))
         if lower_limit is None:
             theta = Parameter(theta_name, theta_init)

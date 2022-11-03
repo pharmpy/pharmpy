@@ -11,18 +11,20 @@ import pharmpy.results
 import pharmpy.tools.modelfit
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import Model, Results
 from pharmpy.modeling import (
     calculate_aic,
     calculate_bic,
     check_high_correlations,
     copy_model,
+    read_model,
     read_model_from_database,
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
+from pharmpy.results import ModelfitResults
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
-from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import execute_workflow, split_common_options
 from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
 from pharmpy.workflows.tool_database import ToolDatabase
@@ -30,7 +32,7 @@ from pharmpy.workflows.tool_database import ToolDatabase
 
 def fit(
     model_or_models: Union[Model, List[Model]], tool: Optional[str] = None
-) -> Union[Model, List[Model]]:
+) -> Union[ModelfitResults, List[ModelfitResults]]:
     """Fit models.
 
     Parameters
@@ -42,15 +44,15 @@ def fit(
 
     Return
     ------
-    Model | list[Model]
-        Input model or models with model fit results
+    ModelfitResults | list[ModelfitResults]
+        ModelfitResults for the model or models
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model
     >>> from pharmpy.tools import fit
     >>> model = load_example_model("pheno")      # doctest: +SKIP
-    >>> fit(model)      # doctest: +SKIP
+    >>> results = fit(model)      # doctest: +SKIP
 
     See also
     --------
@@ -84,7 +86,7 @@ def fit(
     if kept:
         run_tool('modelfit', kept, tool=tool)
 
-    return models[0] if single else models
+    return models[0].modelfit_results if single else [model.modelfit_results for model in models]
 
 
 def create_results(path, **kwargs):
@@ -145,7 +147,7 @@ def read_results(path):
     return res
 
 
-def run_tool(name, *args, **kwargs) -> Union[Model, List[Model], Tuple[Model], Results]:
+def run_tool(name: str, *args, **kwargs) -> Union[Model, List[Model], Tuple[Model], Results]:
     """Run tool workflow
 
     Parameters
@@ -170,16 +172,28 @@ def run_tool(name, *args, **kwargs) -> Union[Model, List[Model], Tuple[Model], R
     >>> res = run_tool("ruvsearch", model)   # doctest: +SKIP
 
     """
-    tool = importlib.import_module(f'pharmpy.tools.{name}')
+    # NOTE The implementation of run_tool is split into those two functions to
+    # allow for individual testing and mocking.
+    tool = import_tool(name)
+    return run_tool_with_name(name, tool, *args, **kwargs)
+
+
+def import_tool(name: str):
+    return importlib.import_module(f'pharmpy.tools.{name}')
+
+
+def run_tool_with_name(
+    name: str, _tool, *args, **kwargs
+) -> Union[Model, List[Model], Tuple[Model], Results]:
     common_options, tool_options = split_common_options(kwargs)
 
-    tool_params = inspect.signature(tool.create_workflow).parameters
+    tool_params = inspect.signature(_tool.create_workflow).parameters
     tool_metadata = _create_metadata_tool(name, tool_params, tool_options, args)
 
-    if validate_input := getattr(tool, 'validate_input', None):
+    if validate_input := getattr(_tool, 'validate_input', None):
         validate_input(*args, **tool_options)
 
-    wf = tool.create_workflow(*args, **tool_options)
+    wf = _tool.create_workflow(*args, **tool_options)
 
     dispatcher, database = _get_run_setup(common_options, wf.name)
     setup_metadata = _create_metadata_common(common_options, dispatcher, database, wf.name)
@@ -239,7 +253,7 @@ def _create_metadata_tool(tool_name, tool_params, tool_options, args):
         'pharmpy_version': pharmpy.__version__,
         'tool_name': tool_name,
         'stats': {'start_time': _now()},
-        'tool_options': dict(),
+        'tool_options': {},
     }
 
     for i, p in enumerate(tool_params.values()):
@@ -260,13 +274,15 @@ def _create_metadata_tool(tool_name, tool_params, tool_options, args):
                 name, value = p.name, p.default
         if isinstance(value, Model):
             value = str(value)  # FIXME: better model representation
+        elif isinstance(value, ModelfitResults):
+            value = "FIXME"
         tool_metadata['tool_options'][name] = value
 
     return tool_metadata
 
 
 def _create_metadata_common(common_options, dispatcher, database, toolname):
-    setup_metadata = dict()
+    setup_metadata = {}
     setup_metadata['dispatcher'] = dispatcher.__name__
     # FIXME: naming of workflows/tools should be consistent (db and input name of tool)
     setup_metadata['database'] = {
@@ -433,6 +449,7 @@ def print_fit_summary(model):
         print_fmt("Condition number", condno)
         print_fmt("Condition number < 1000", bool_ok_error(condno < 1000))
         cor = model.modelfit_results.correlation_matrix
+        assert cor is not None
         hicorr = check_high_correlations(model, cor)
         print_fmt("No correlations arger than 0.9", bool_ok_error(hicorr.empty))
 
@@ -501,7 +518,7 @@ def summarize_errors(models):
 
     for model in models:
         res = model.modelfit_results
-        if res and len(res.log.log) > 0:
+        if res is not None and len(res.log.log) > 0:
             for i, entry in enumerate(res.log.log):
                 idcs.append((model.name, entry.category, i))
                 rows.append([entry.time, entry.message])
@@ -610,7 +627,7 @@ def rank_models(
     models_sorted = sorted(models_to_rank, key=_get_delta, reverse=True)
 
     # Create rank for models, if two have the same value they will have the same rank
-    ranking = dict()
+    ranking = {}
     rank, count, prev = 0, 0, None
     for model in models_sorted:
         count += 1
@@ -621,7 +638,7 @@ def rank_models(
             count = 0
         ranking[model.name] = rank
 
-    rows = dict()
+    rows = {}
     for model in models_all:
         delta, rank_value, rank = np.nan, np.nan, np.nan
         if model.name in ranking.keys():
@@ -662,7 +679,7 @@ def _get_rankval(model, rank_type, bic_type):
         raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
 
 
-def summarize_modelfit_results(models, include_all_estimation_steps=False):
+def summarize_modelfit_results(results, include_all_estimation_steps=False):
     """Summarize results of model runs
 
     Summarize different results after fitting a model, includes runtime, ofv,
@@ -674,8 +691,8 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
 
     Parameters
     ----------
-    models : list, Model
-        List of models or single model
+    results : list, ModelfitResults
+        List of ModelfitResults or single ModelfitResults
     include_all_estimation_steps : bool
         Whether to include all estimation steps, default is False
 
@@ -689,65 +706,48 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
     >>> from pharmpy.modeling import load_example_model
     >>> from pharmpy.tools import summarize_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> summarize_modelfit_results(model) # doctest: +ELLIPSIS
+    >>> summarize_modelfit_results(model.modelfit_results) # doctest: +SKIP
                      description  minimization_successful ...        ofv  ... runtime_total  ...
     pheno PHENOBARB SIMPLE MODEL                     True ... 586.276056  ...           4.0  ...
     """
-    # FIXME: add option for bic type?
-    if isinstance(models, Model):
-        models = [models]
+    if isinstance(results, ModelfitResults):
+        results = [results]
 
     summaries = []
 
-    for model in models:
-        if model.modelfit_results:
-            summary = _get_model_result_summary(model, include_all_estimation_steps)
-            summary.insert(0, 'description', model.description)
+    for res in results:
+        if res is not None:
+            summary = _get_model_result_summary(res, include_all_estimation_steps)
+            summary.insert(0, 'description', res.description)
             summaries.append(summary)
-        else:
-            if include_all_estimation_steps:
-                for i, est in enumerate(model.estimation_steps):
-                    index = pd.MultiIndex.from_tuples(
-                        [(model.name, i + 1)], names=['model', 'step']
-                    )
-                    if est.evaluation:
-                        run_type = 'evaluation'
-                    else:
-                        run_type = 'estimation'
-                    empty_df = pd.DataFrame({'run_type': run_type}, index=index)
-                    summaries.append(empty_df)
-            else:
-                index = pd.Index([model.name], name='model')
-                empty_df = pd.DataFrame(index=index)
-                summaries.append(empty_df)
 
     df = pd.concat(summaries)
 
     return df
 
 
-def _get_model_result_summary(model, include_all_estimation_steps=False):
+def _get_model_result_summary(res, include_all_estimation_steps=False):
     if not include_all_estimation_steps:
-        summary_dict = _summarize_step(model, -1)
-        index = pd.Index([model.name], name='model')
+        summary_dict = _summarize_step(res, -1)
+        index = pd.Index([res.name], name='model')
         summary_df = pd.DataFrame(summary_dict, index=index)
     else:
         summary_dicts = []
         tuples = []
-        for i in range(len(model.estimation_steps)):
-            summary_dict = _summarize_step(model, i)
-            is_evaluation = model.estimation_steps[i].evaluation
+        for i in range(len(res.evaluation)):
+            summary_dict = _summarize_step(res, i)
+            is_evaluation = res.evaluation.iloc[i]
             if is_evaluation:
                 run_type = 'evaluation'
             else:
                 run_type = 'estimation'
             summary_dict = {'run_type': run_type, **summary_dict}
             summary_dicts.append(summary_dict)
-            tuples.append((model.name, i + 1))
+            tuples.append((res.name, i + 1))
         index = pd.MultiIndex.from_tuples(tuples, names=['model', 'step'])
         summary_df = pd.DataFrame(summary_dicts, index=index)
 
-    log_df = model.modelfit_results.log.to_dataframe()
+    log_df = res.log.to_dataframe()
 
     no_of_errors = len(log_df[log_df['category'] == 'ERROR'])
     no_of_warnings = len(log_df[log_df['category'] == 'WARNING'])
@@ -759,17 +759,16 @@ def _get_model_result_summary(model, include_all_estimation_steps=False):
     return summary_df
 
 
-def _summarize_step(model, i):
-    res = model.modelfit_results
-    summary_dict = dict()
+def _summarize_step(res, i):
+    summary_dict = {}
 
     if i >= 0:
-        step = res[i]
+        minsucc = res.minimization_successful_iterations.iloc[i]
     else:
-        step = res
+        minsucc = res.minimization_successful
 
-    if step.minimization_successful is not None:
-        summary_dict['minimization_successful'] = step.minimization_successful
+    if minsucc is not None:
+        summary_dict['minimization_successful'] = minsucc
     else:
         summary_dict['minimization_successful'] = False
 
@@ -779,14 +778,14 @@ def _summarize_step(model, i):
         i + 1,
     ].iloc[-1]
     summary_dict['ofv'] = ofv
-    summary_dict['aic'] = calculate_aic(model, res.ofv)
-    summary_dict['bic'] = calculate_bic(model, res.ofv)
-    summary_dict['runtime_total'] = step.runtime_total
-    summary_dict['estimation_runtime'] = step.estimation_runtime
+    summary_dict['runtime_total'] = res.runtime_total
+    summary_dict['estimation_runtime'] = res.estimation_runtime_iterations.iloc[i]
 
-    pe = step.parameter_estimates
-    ses = step.standard_errors
-    rses = step.relative_standard_errors
+    pe = res.parameter_estimates_iterations.loc[
+        i + 1,
+    ].iloc[-1]
+    ses = res.standard_errors
+    rses = res.relative_standard_errors
 
     for param in pe.index:
         summary_dict[f'{param}_estimate'] = pe[param]
@@ -796,3 +795,22 @@ def _summarize_step(model, i):
             summary_dict[f'{param}_RSE'] = rses[param]
 
     return summary_dict
+
+
+def read_modelfit_results(path):
+    """Read results from external tool for a model
+
+    Parameters
+    ----------
+    path : Path or str
+        Path to model file
+
+    Return
+    ------
+    ModelfitResults
+        Results object
+    """
+    path = Path(path)
+    # FIXME: Quick and dirty solution
+    model = read_model(path)
+    return model.modelfit_results

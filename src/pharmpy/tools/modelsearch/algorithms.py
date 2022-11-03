@@ -69,7 +69,7 @@ def exhaustive_stepwise(search_space, iiv_strategy):
                 model_no = len(model_tasks) + 1
                 model_name = f'modelsearch_run{model_no}'
 
-                wf_create_model, task_function = _create_model_workflow(
+                wf_create_model, _ = _create_model_workflow(
                     model_name, feat, mfl_funcs[feat], iiv_strategy
                 )
 
@@ -112,7 +112,7 @@ def reduced_stepwise(search_space, iiv_strategy):
                 model_no = len(model_tasks) + 1
                 model_name = f'modelsearch_run{model_no}'
 
-                wf_create_model, task_transformed = _create_model_workflow(
+                wf_create_model, _ = _create_model_workflow(
                     model_name, feat, mfl_funcs[feat], iiv_strategy
                 )
 
@@ -162,7 +162,7 @@ def _get_best_model(*models):
 
 
 def _get_possible_actions(wf, mfl_statements):
-    actions = dict()
+    actions = {}
     if wf.output_tasks:
         tasks = wf.output_tasks
     else:
@@ -172,7 +172,7 @@ def _get_possible_actions(wf, mfl_statements):
         if task:
             feat_previous = _get_previous_features(wf, task, mfl_funcs)
         else:
-            feat_previous = list()
+            feat_previous = []
 
         trans_possible = [
             feat
@@ -271,7 +271,7 @@ def _is_allowed(feat_current, func_current, feat_previous, mfl_statements):
 
 def _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements):
     n_all: List[Any] = list(
-        t[1] for t in all_funcs(Model(), mfl_statements) if t[0] == 'PERIPHERALS'
+        args[0] for (kind, *args) in all_funcs(Model(), mfl_statements) if kind == 'PERIPHERALS'
     )
     n = func_current.keywords['n']
     if peripheral_previous:
@@ -279,14 +279,9 @@ def _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements):
     else:
         n_prev = []
     if not n_prev:
-        if n == min(n_all):
-            return True
-        else:
-            return False
+        return n == min(n_all)
     n_index = n_all.index(n)
-    if n_index > 0 and n_all[n_index - 1] < n:
-        return True
-    return False
+    return n_index > 0 and n_all[n_index - 1] < n
 
 
 def _copy(name, features, model):

@@ -2,7 +2,7 @@ import itertools
 import warnings
 from pathlib import Path
 
-from pharmpy.data_structures import OrderedSet
+from pharmpy.internals.ds.ordered_set import OrderedSet
 from pharmpy.model import Model
 from pharmpy.modeling import (
     get_covariate_baselines,
@@ -50,7 +50,7 @@ def check_covariates(input_model, covariates):
     # Covariates with only one baseline value
     unique = (cov_bls.iloc[0] == cov_bls.iloc[1:]).all()
     covset = OrderedSet(covariates)
-    unique_covariates = OrderedSet(list((unique[unique].index)))
+    unique_covariates = OrderedSet(unique[unique].index)
     covset -= unique_covariates
     if unique_covariates:
         warnings.warn(

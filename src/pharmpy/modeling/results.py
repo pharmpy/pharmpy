@@ -6,9 +6,10 @@ from itertools import chain
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs, sympify, xreplace_dict
-from pharmpy.math import round_to_n_sigdig
-from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs, xreplace_dict
+from pharmpy.internals.math import round_to_n_sigdig
+from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
 from pharmpy.model.distributions.numeric import ConstantDistribution
 from pharmpy.model.random_variables import (
     eval_expr,
@@ -286,7 +287,7 @@ def calculate_individual_parameter_statistics(
     batches = []
 
     if not all_covariate_free_symbols:
-        cases = {'median': dict()}
+        cases = {'median': {}}
     else:
         dataset = model.dataset
         column_filter = ['ID'] + list(symbol.name for symbol in all_covariate_free_symbols)
@@ -499,10 +500,10 @@ def _split_equation(s):
         a = s.split('=')
         if len(a) == 1:
             name = None
-            expr = sympify(s)
+            expr = parse_expr(s)
         else:
             name = a[0].strip()
-            expr = sympify(a[1])
+            expr = parse_expr(a[1])
     elif isinstance(s, sympy.Eq):
         name = s.lhs.name
         expr = s.rhs
@@ -634,7 +635,7 @@ def calculate_bic(model, likelihood, type=None):
     return likelihood + penalty
 
 
-def check_high_correlations(model, cor, limit=0.9):
+def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9):
     """Check for highly correlated parameter estimates
 
     Parameters
@@ -662,10 +663,7 @@ def check_high_correlations(model, cor, limit=0.9):
               OMEGA(2,2)    0.356662
     dtype: float64
     """
-    if cor is not None:
-        high_and_below_diagonal = cor.abs().ge(limit) & np.triu(np.ones(cor.shape), k=1).astype(
-            bool
-        )
+    high_and_below_diagonal = cor.abs().ge(limit) & np.triu(np.ones(cor.shape), k=1).astype(bool)
     return cor.where(high_and_below_diagonal).stack()
 
 

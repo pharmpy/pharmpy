@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Optional, Union
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.model import Assignment, Model, Parameter, Parameters
 
 from .expressions import create_symbol
@@ -81,13 +81,13 @@ def add_allometry(
     S₁ = V
 
     """
-    variable = sympify(allometric_variable)
-    reference = sympify(reference_value)
+    variable = parse_expr(allometric_variable)
+    reference = parse_expr(reference_value)
 
     parsed_parameters = []
 
     if parameters is not None:
-        parsed_parameters = [sympify(p) for p in parameters]
+        parsed_parameters = [parse_expr(p) for p in parameters]
 
     if parameters is None or initials is None:
         cls = find_clearance_parameters(model)
@@ -116,7 +116,7 @@ def add_allometry(
     if not (len(parsed_parameters) == len(initials) == len(lower_bounds) == len(upper_bounds)):
         raise ValueError("The number of parameters, initials and bounds must be the same")
 
-    params = [p for p in model.parameters]
+    params = list(model.parameters)
     for p, init, lower, upper in zip(parsed_parameters, initials, lower_bounds, upper_bounds):
         symb = create_symbol(model, f'ALLO_{p.name}')
         param = Parameter(symb.name, init=init, lower=lower, upper=upper, fix=fixed)

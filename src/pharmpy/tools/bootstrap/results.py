@@ -12,7 +12,7 @@ from pharmpy.tools.psn_helpers import cmd_line_model_path, model_paths
 
 
 class BootstrapResults(Results):
-    rst_path = Path(__file__).parent / 'report.rst'
+    rst_path = Path(__file__).resolve().parent / 'report.rst'
 
     # FIXME: Should inherit from results that take multiple runs like bootstrap, cdd etc.
     def __init__(
@@ -238,13 +238,15 @@ def psn_bootstrap_results(path):
     # Create proper result objects to pass to calculate_results
     dofv_results = None
     if (path / 'm1' / 'dofv_1.mod').is_file():
-        from pharmpy.plugins.nonmem.table import NONMEMTableFile
+        # FIXME We should not depend on NONMEM here
+        from pharmpy.plugins.nonmem.table import ExtTable, NONMEMTableFile
 
         dofv_results = []
         for table_path in (path / 'm1').glob('dofv_*.ext'):
             table_file = NONMEMTableFile(table_path)
             next_table = 1
             for table in table_file:
+                assert isinstance(table, ExtTable)
                 while next_table != table.number:
                     dofv_results.append(None)
                     next_table += 1

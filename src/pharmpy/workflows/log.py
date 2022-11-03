@@ -6,7 +6,7 @@ from typing import Optional
 from pharmpy.deps import pandas as pd
 
 
-@dataclass
+@dataclass(frozen=True)
 class LogEntry:
     category: Optional[str] = None
     time: datetime.datetime = datetime.datetime.now()

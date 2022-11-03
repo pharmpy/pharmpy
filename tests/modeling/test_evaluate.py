@@ -14,7 +14,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
-tabpath = Path(__file__).parent.parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
+tabpath = Path(__file__).resolve().parent.parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
 lincorrect = read_nonmem_dataset(
     tabpath,
     ignore_character='@',
@@ -29,7 +29,7 @@ def test_evaluate_expression(load_model_for_test, testdata):
     assert ser[743] == pytest.approx(1.110262)
 
 
-def test_evaulate_population_prediction(load_model_for_test, testdata):
+def test_evaluate_population_prediction(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'minimal.mod'
     model = load_model_for_test(path)
 

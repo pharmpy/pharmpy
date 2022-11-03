@@ -4,15 +4,17 @@ Generic NONMEM code record class.
 """
 
 import re
-from typing import Any, Iterable, Iterator, Sequence, Tuple
+from typing import Iterator, Literal, Sequence, Tuple
 
-import lark
+from lark import Tree
+from lark.visitors import Interpreter
 
-from pharmpy.data_structures import OrderedSet
 from pharmpy.deps import sympy, sympy_printing
-from pharmpy.expressions import subs
-from pharmpy.model import Assignment, Statement, Statements
-from pharmpy.parse_utils.generic import AttrToken, NoSuchRuleException
+from pharmpy.internals.ds.ordered_set import OrderedSet
+from pharmpy.internals.expr.subs import subs
+from pharmpy.internals.parse import AttrToken, NoSuchRuleException
+from pharmpy.internals.sequence.lcs import diff
+from pharmpy.model import Assignment, RandomVariables, Statement, Statements
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 
 from .record import Record
@@ -136,7 +138,7 @@ def _translate_condition(c):
 def _translate_sympy_sign(s):
     args = s.expression.args
 
-    subs_dict = dict()
+    subs_dict = {}
     for arg in args:
         if str(arg).startswith('sign'):
             sign_arg = arg.args[0]
@@ -154,7 +156,7 @@ def _print_custom(assignment, rvs, trans):
     return f'{assignment.symbol} = {expr_ordered}'
 
 
-def _order_terms(assignment, rvs, trans):
+def _order_terms(assignment: Assignment, rvs: RandomVariables, trans):
     """Order terms such that random variables are placed last. Currently only supports
     additions."""
     if not isinstance(assignment.expression, sympy.Add) or rvs is None:
@@ -190,7 +192,7 @@ def _order_terms(assignment, rvs, trans):
         return assignment.expression
 
     def arg_len(symb):
-        return len([s for s in symb.args])
+        return len(symb.args)
 
     terms_iiv_iov.sort(reverse=True, key=arg_len)
     terms_ruv.sort(reverse=True, key=arg_len)
@@ -201,14 +203,10 @@ def _order_terms(assignment, rvs, trans):
     return MyPrinter().doprint(new_order)
 
 
-class ExpressionInterpreter(lark.visitors.Interpreter):
+class ExpressionInterpreter(Interpreter):
     def visit_children(self, tree):
         """Does not visit tokens"""
-        return [
-            self.visit(child)
-            for child in tree.children
-            if isinstance(child, lark.Tree)  # pyright: ignore [reportPrivateImportUsage]
-        ]
+        return [self.visit(child) for child in tree.children if isinstance(child, Tree)]
 
     def expression(self, node):
         t = self.visit_children(node)
@@ -358,78 +356,8 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         return symb
 
 
-def lcslen(a: Sequence, b: Sequence) -> Sequence[Sequence[int]]:
-    # generate matrix of length of longest common subsequence for sublists of both lists
-    lengths = [[0] * (len(b) + 1) for _ in range(len(a) + 1)]
-    for i, x in enumerate(a):
-        for j, y in enumerate(b):
-            if x == y:
-                lengths[i + 1][j + 1] = lengths[i][j] + 1
-            else:
-                lengths[i + 1][j + 1] = max(lengths[i + 1][j], lengths[i][j + 1])
-    return lengths
-
-
-def lcsdiff(
-    c: Sequence[Sequence[int]], x: Sequence, y: Sequence, i: int, j: int
-) -> Iterable[Tuple[int, Any]]:
-    """Print the diff using LCS length matrix using backtracking"""
-    if i < 0 and j < 0:
-        return
-    elif i < 0:
-        yield from lcsdiff(c, x, y, i, j - 1)
-        yield 1, y[j]
-    elif j < 0:
-        yield from lcsdiff(c, x, y, i - 1, j)
-        yield -1, x[i]
-    elif x[i] == y[j]:
-        yield from lcsdiff(c, x, y, i - 1, j - 1)
-        yield 0, x[i]
-    elif c[i + 1][j] >= c[i][j + 1]:
-        yield from lcsdiff(c, x, y, i, j - 1)
-        yield 1, y[j]
-    else:
-        yield from lcsdiff(c, x, y, i - 1, j)
-        yield -1, x[i]
-
-
-def diff(old: Sequence, new: Sequence):
-    """Get diff between a and b in order for all elements
-
-    Optimizes by first handling equal elements from the head and tail
-    Each entry is a pair of operation (+1, -1 or 0) and the element
-    """
-    i = 0
-    for a, b in zip(old, new):
-        if a == b:
-            yield (0, b)
-            i += 1
-        else:
-            break
-
-    rold = old[i:]
-    rnew = new[i:]
-
-    saved = []
-    for a, b in zip(reversed(rold), reversed(rnew)):
-        if a == b:
-            saved.append((0, b))
-        else:
-            break
-
-    rold = rold[: len(rold) - len(saved)]
-    rnew = rnew[: len(rnew) - len(saved)]
-
-    c = lcslen(rold, rnew)
-    for op, val in lcsdiff(c, rold, rnew, len(rold) - 1, len(rnew) - 1):
-        yield op, val
-
-    while saved:
-        yield saved.pop()
-
-
 def _index_statements_diff(
-    index: Sequence[Tuple[int, int, int, int]], it: Iterator[Tuple[int, Statement]]
+    index: Sequence[Tuple[int, int, int, int]], it: Iterator[Tuple[Literal[-1, 0, 1], Statement]]
 ):
     """This function reorders and groups a diff of statements according to the
     given index mapping"""
@@ -502,7 +430,7 @@ class CodeRecord(Record):
         return statements
 
     @statements.setter
-    def statements(self, new):
+    def statements(self, new: Sequence[Statement]):
         try:
             old = self._statements
         except AttributeError:

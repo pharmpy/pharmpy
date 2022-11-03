@@ -16,6 +16,7 @@ from .results import AMDResults
 
 def run_amd(
     input,
+    results=None,
     modeltype='pk_oral',
     cl_init=0.01,
     vc_init=1,
@@ -37,6 +38,8 @@ def run_amd(
     ----------
     input : Model or Path
         Read model object/Path to a dataset
+    results : ModelfitResults
+        Reults of input if input is a model
     modeltype : str
         Type of model to build. Either 'pk_oral' or 'pk_iv'
     cl_init : float
@@ -72,7 +75,7 @@ def run_amd(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import run_amd # doctest: +SKIP
-    >>> run_amd(model)      # doctest: +SKIP
+    >>> run_amd(model, results=model.modelfit_results)      # doctest: +SKIP
 
     See also
     --------
@@ -118,7 +121,7 @@ def run_amd(
             search_space = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
 
     db = default_tool_database(toolname='amd', path=path)
-    run_subfuncs = dict()
+    run_subfuncs = {}
     for section in order:
         if section == 'structural':
             func = _subfunc_modelsearch(search_space=search_space, path=db.path)
@@ -156,8 +159,8 @@ def run_amd(
             if subresults.final_model_name != next_model.name:
                 next_model = retrieve_final_model(subresults)
             sum_subtools.append(_create_sum_subtool(tool_name, next_model))
-            sum_models.append(subresults.summary_models.reset_index()),
-            sum_inds_counts.append(subresults.summary_individuals_count.reset_index()),
+            sum_models.append(subresults.summary_models.reset_index())
+            sum_inds_counts.append(subresults.summary_individuals_count.reset_index())
 
     for sums in [sum_models, sum_inds_counts]:
         filtered_results = list(

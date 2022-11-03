@@ -54,7 +54,7 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
             'The number of provided eta names must be equal to the number of epsilons.'
         )
 
-    rvs, pset, sset = model.random_variables, [p for p in model.parameters], model.statements
+    rvs, pset, sset = model.random_variables, list(model.parameters), model.statements
 
     if same_eta:
         eta = _create_eta(pset, 1, eta_names)
@@ -63,7 +63,7 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
     else:
         etas = [_create_eta(pset, i + 1, eta_names) for i in range(len(eps))]
         rvs = rvs + etas
-        eta_dict = {e: eta for e, eta in zip(eps, etas)}
+        eta_dict = dict(zip(eps, etas))
 
     for e in eps:
         sset = sset.subs(

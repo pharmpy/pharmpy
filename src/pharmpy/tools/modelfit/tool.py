@@ -3,12 +3,30 @@ from pharmpy.workflows import Task, Workflow
 
 
 def create_workflow(models=None, n=None, tool=None):
+    """Run modelfit tool.
+
+    Parameters
+    ----------
+    models : Model
+        A list of models are one single model object
+    n : int
+        Number of models to fit. This is only used if the tool is going to be combined with other tools.
+    tool : str
+        Which tool to use for fitting. Currently 'nonmem' or 'nlmixr' can be used.
+
+    Returns
+    -------
+    ModelfitResults
+        Modelfit tool result object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model
+    >>> model = load_example_model("pheno")
+    >>> from pharmpy.tools import run_modelfit     # doctest: +SKIP
+    >>> run_modelfit(model)   # doctest: +SKIP
     """
-    If models is None and n is None: fit one unknown model
-    If models is model object (n must be None): fit that one model
-    If models is list of models (n must be None): fit these models
-    If models is None and n is an int: fit n unknown models
-    """
+
     wf = create_fit_workflow(models, n, tool)
     wf.name = "modelfit"
     task_result = Task('results', post_process_results)
@@ -63,6 +81,7 @@ def retrieve_from_database_or_execute_model_with_tool(tool):
             # happened such as a missing or outdated license. We do not do that
             # at the moment.
 
+            # NOTE Right now we only rely on model name comparison
             # if db_model == model and model.has_same_dataset_as(db_model):
             if db_model and model.has_same_dataset_as(db_model):
                 # NOTE Inputs are identical so we can reuse the results

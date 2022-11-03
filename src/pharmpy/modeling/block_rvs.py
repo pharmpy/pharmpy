@@ -2,15 +2,18 @@
 :meta private:
 """
 import warnings
+from typing import List, Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
-from pharmpy.math import corr2cov, nearest_postive_semidefinite
-from pharmpy.model import Parameter, Parameters
+from pharmpy.internals.math import corr2cov, nearest_postive_semidefinite
+from pharmpy.model import Model, Parameter, Parameters
 from pharmpy.modeling.help_functions import _get_etas
 
 
-def create_joint_distribution(model, rvs=None, individual_estimates=None):
+def create_joint_distribution(
+    model: Model, rvs: Optional[List[str]] = None, individual_estimates=None
+):
     """
     Combines some or all etas into a joint distribution.
 

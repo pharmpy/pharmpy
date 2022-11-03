@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.expressions import sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.fn.signature import with_same_arguments_as
+from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model, Results
 from pharmpy.modeling import add_allometry, get_pk_parameters
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import (
     summarize_errors,
     summarize_individuals,
@@ -15,12 +19,12 @@ from pharmpy.tools import (
     summarize_modelfit_results,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.utils import runtime_type_check, same_arguments_as
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, ToolDatabase, Workflow
 
 
 def create_workflow(
     model: Optional[Model] = None,
+    results: Optional[ModelfitResults] = None,
     allometric_variable: Union[str, sympy.Expr] = 'WT',
     reference_value: Union[str, int, float, sympy.Expr] = 70,
     parameters: Optional[List[Union[str, sympy.Expr]]] = None,
@@ -35,6 +39,8 @@ def create_workflow(
     ----------
     model : Model
         Pharmpy model
+    results : ModelfitResults
+        Results for model
     allometric_variable : str
         Name of the variable to use for allometric scaling (default is WT)
     reference_value : float
@@ -60,7 +66,7 @@ def create_workflow(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import run_allometry # doctest: +SKIP
-    >>> run_allometry(model=model, allometric_variable='WGT')      # doctest: +SKIP
+    >>> run_allometry(model=model, results=model.modelfit_results, allometric_variable='WGT') # doctest: +SKIP
 
     """
 
@@ -84,7 +90,7 @@ def create_workflow(
     wf.add_task(task_add_allometry, predecessors=start_task)
     fit_wf = create_fit_workflow(n=1)
     wf.insert_workflow(fit_wf, predecessors=task_add_allometry)
-    results_task = Task('results', results)
+    results_task = Task('results', globals()['results'])
     wf.add_task(results_task, predecessors=[start_task] + fit_wf.output_tasks)
     return wf
 
@@ -120,15 +126,15 @@ def _add_allometry_on_model(
     return model
 
 
-@runtime_type_check
-@same_arguments_as(create_workflow)
+@with_runtime_arguments_type_check
+@with_same_arguments_as(create_workflow)
 def validate_input(
     model,
     allometric_variable,
     parameters,
 ):
     if model is not None:
-        if not set(map(str, sympify(allometric_variable).free_symbols)).issubset(
+        if not set(map(str, parse_expr(allometric_variable).free_symbols)).issubset(
             model.datainfo.names
         ):
             raise ValueError(
@@ -152,8 +158,8 @@ def results(start_model, allometry_model):
     allometry_model_failed = allometry_model.modelfit_results is None
     best_model = start_model if allometry_model_failed else allometry_model
 
-    summod_start = summarize_modelfit_results(start_model)
-    summod_allometry = summarize_modelfit_results(allometry_model)
+    summod_start = summarize_modelfit_results(start_model.modelfit_results)
+    summod_allometry = summarize_modelfit_results(allometry_model.modelfit_results)
     summods = pd.concat([summod_start, summod_allometry], keys=[0, 1], names=['step'])
     suminds = summarize_individuals([start_model, allometry_model])
     sumcount = summarize_individuals_count_table(df=suminds)
@@ -170,19 +176,11 @@ def results(start_model, allometry_model):
     return res
 
 
+@dataclass
 class AllometryResults(Results):
-    def __init__(
-        self,
-        summary_models=None,
-        summary_individuals=None,
-        summary_individuals_count=None,
-        summary_errors=None,
-        final_model_name=None,
-        tool_database=None,
-    ):
-        self.summary_models = summary_models
-        self.summary_individuals = summary_individuals
-        self.summary_individuals_count = summary_individuals_count
-        self.summary_errors = summary_errors
-        self.final_model_name = final_model_name
-        self.tool_database = tool_database
+    summary_models: Optional[pd.DataFrame] = None
+    summary_individuals: Optional[pd.DataFrame] = None
+    summary_individuals_count: Optional[pd.DataFrame] = None
+    summary_errors: Optional[pd.DataFrame] = None
+    final_model_name: Optional[str] = None
+    tool_database: Optional[ToolDatabase] = None

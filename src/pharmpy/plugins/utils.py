@@ -1,8 +1,8 @@
 """Utils for managing plugins."""
 
-import importlib
-import pkgutil
+from importlib import import_module
 from pathlib import Path
+from pkgutil import iter_modules
 
 
 class PluginError(Exception):
@@ -34,12 +34,11 @@ def load_plugins():
     """Find and import all available plugins"""
     plugin_path = Path(__file__).resolve().parent
 
-    modules = list()
-
     # str on path to workaround https://bugs.python.org/issue44061
-    for _, modname, ispkg in pkgutil.iter_modules([str(plugin_path)], 'pharmpy.plugins.'):
-        if ispkg:
-            module = importlib.import_module(modname)
-            modules.append(module)
+    plugin_path = str(plugin_path)
 
-    return modules
+    return [
+        import_module(modname)
+        for _, modname, ispkg in iter_modules([plugin_path], 'pharmpy.plugins.')
+        if ispkg
+    ]

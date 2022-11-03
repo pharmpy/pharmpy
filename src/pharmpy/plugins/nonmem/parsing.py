@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
 import pharmpy.plugins.nonmem
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
+from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import (
     Assignment,
     ColumnInfo,
@@ -20,9 +21,10 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
 )
-from pharmpy.plugins.nonmem.table import NONMEMTableFile
+from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 
 from .advan import _compartmental_model
+from .parameters import parameter_translation
 
 
 def parse_parameters(control_stream) -> Parameters:
@@ -73,23 +75,24 @@ def parse_random_variables(control_stream) -> RandomVariables:
     return rvs
 
 
-def parse_statements(model, control_stream) -> Statements:
+def parse_statements(model, control_stream) -> Tuple[Statements, Optional[Dict[str, int]]]:
     rec = control_stream.get_pred_pk_record()
     statements = rec.statements
 
     des = control_stream.get_des_record()
     error = control_stream.get_error_record()
+    comp_map = None
 
     if error:
         sub = control_stream.get_records('SUBROUTINES')[0]
         comp = _compartmental_model(model, control_stream, sub.advan, sub.trans, des)
-        trans_amounts = dict()
+        trans_amounts = {}
         if comp is None:
             statements += ExplicitODESystem([], {})  # FIXME: Placeholder for ODE-system
             # FIXME: Dummy link statement
             statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
         else:
-            cm, link = comp
+            cm, link, comp_map = comp
             statements += [cm, link]
             for i, amount in enumerate(cm.amounts, start=1):
                 trans_amounts[sympy.Symbol(f"A({i})")] = amount
@@ -97,7 +100,7 @@ def parse_statements(model, control_stream) -> Statements:
         if trans_amounts:
             statements = statements.subs(trans_amounts)
 
-    return statements
+    return statements, comp_map
 
 
 def _adjust_iovs(rvs: RandomVariables) -> RandomVariables:
@@ -118,32 +121,6 @@ def _adjust_iovs(rvs: RandomVariables) -> RandomVariables:
 
     updated.append(rvs[-1])  # NOTE The last distribution does not need update
     return RandomVariables.create(updated)
-
-
-def parameter_translation(control_stream, reverse=False, remove_idempotent=False, as_symbols=False):
-    """Get a dict of NONMEM name to Pharmpy parameter name
-    i.e. {'THETA(1)': 'TVCL', 'OMEGA(1,1)': 'IVCL'}
-    """
-    d = dict()
-    for theta_record in control_stream.get_records('THETA'):
-        for key, value in theta_record.name_map.items():
-            nonmem_name = f'THETA({value})'
-            d[nonmem_name] = key
-    for record in control_stream.get_records('OMEGA'):
-        for key, value in record.name_map.items():
-            nonmem_name = f'OMEGA({value[0]},{value[1]})'
-            d[nonmem_name] = key
-    for record in control_stream.get_records('SIGMA'):
-        for key, value in record.name_map.items():
-            nonmem_name = f'SIGMA({value[0]},{value[1]})'
-            d[nonmem_name] = key
-    if remove_idempotent:
-        d = {key: val for key, val in d.items() if key != val}
-    if reverse:
-        d = {val: key for key, val in d.items()}
-    if as_symbols:
-        d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in d.items()}
-    return d
 
 
 def create_name_trans(control_stream, rvs, statements):
@@ -172,7 +149,7 @@ def create_name_trans(control_stream, rvs, statements):
         },
     }
 
-    trans_sset, trans_pset = dict(), dict()
+    trans_sset, trans_pset = {}, {}
     names_sset_translated, names_pset_translated, names_basic = [], [], []
     clashing_symbols = set()
 
@@ -217,7 +194,7 @@ def create_name_trans(control_stream, rvs, statements):
             f'names for these.'
         )
 
-    names_nonmem_all = rvs.names + [key for key in parameter_translation(control_stream).keys()]
+    names_nonmem_all = rvs.names + list(parameter_translation(control_stream).keys())
 
     if set(names_nonmem_all) - set(names_sset_translated + names_pset_translated + names_basic):
         raise ValueError(
@@ -463,11 +440,11 @@ def parse_initial_individual_estimates(control_stream, rvs, basepath) -> Optiona
         if not path.is_absolute():
             if basepath is None:
                 raise ValueError("Cannot resolve path for $ETAS")
-            path = basepath / path
-            path = path.resolve()
+            path = path_absolute(basepath / path)
         phi_tables = NONMEMTableFile(path)
         rv_names = [rv for rv in rvs.names if rv.startswith('ETA')]
-        phitab = next(phi_tables)
+        phitab = phi_tables[0]
+        assert isinstance(phitab, PhiTable)
         names = [name for name in rv_names if name in phitab.etas.columns]
         return phitab.etas[names]
     else:
@@ -476,16 +453,15 @@ def parse_initial_individual_estimates(control_stream, rvs, basepath) -> Optiona
 
 def parse_dataset_path(control_stream, basepath) -> Optional[Path]:
     record = next(iter(control_stream.get_records('DATA')), None)
+
     if record is None:
         return None
+
     path = Path(record.filename)
-    if not path.is_absolute():
-        if basepath is not None:
-            path = basepath.parent / path
-    try:
-        return path.resolve()
-    except FileNotFoundError:
-        return path
+    if basepath is not None and not path.is_absolute():
+        path = basepath.parent / path
+
+    return path_absolute(path)
 
 
 def _synonym(key, value):
@@ -571,25 +547,32 @@ def parse_column_info(control_stream):
 
 
 def parse_datainfo(control_stream, path) -> DataInfo:
-    dataset_path = parse_dataset_path(control_stream, path)
+    resolved_dataset_path = parse_dataset_path(control_stream, path)
     (colnames, drop, replacements, _) = parse_column_info(control_stream)
 
-    if dataset_path is not None:
-        path = dataset_path.with_suffix('.datainfo')
-        if path.is_file():
-            di = DataInfo.read_json(path)
-            di = di.derive(path=dataset_path)
-            different_drop = []
+    if resolved_dataset_path is not None:
+        dipath = resolved_dataset_path.with_suffix('.datainfo')
+
+        if dipath.is_file():
+            di = DataInfo.read_json(dipath)
+            di = di.derive(path=resolved_dataset_path)
+            different_drop, cols_new = [], []
             for colinfo, coldrop in zip(di, drop):
                 if colinfo.drop != coldrop:
-                    colinfo.drop = coldrop
+                    colinfo_new = colinfo.derive(drop=coldrop)
                     different_drop.append(colinfo.name)
+                    cols_new.append(colinfo_new)
+                else:
+                    cols_new.append(colinfo)
 
             if different_drop:
+                di_new = di.derive(columns=tuple(cols_new))
                 warnings.warn(
                     "NONMEM .mod and dataset .datainfo disagree on "
                     f"DROP for columns {', '.join(different_drop)}."
                 )
+                return di_new
+
             return di
 
     column_info = []
@@ -634,7 +617,7 @@ def parse_datainfo(control_stream, path) -> DataInfo:
             info = ColumnInfo(colname, drop=coldrop)
         column_info.append(info)
 
-    di = DataInfo(column_info, path=dataset_path)
+    di = DataInfo(column_info, path=resolved_dataset_path)
     return di
 
 

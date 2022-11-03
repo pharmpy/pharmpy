@@ -3,7 +3,7 @@ import re
 import warnings
 from io import StringIO
 
-from lark import Lark  # pyright: ignore [reportPrivateImportUsage]
+from lark import Lark
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd

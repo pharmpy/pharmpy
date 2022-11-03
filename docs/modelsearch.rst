@@ -20,9 +20,11 @@ To initiate modelsearch in Python:
     from pharmpy.tools import run_modelsearch
 
     start_model = read_model('path/to/model')
+    start_model_results = read_modelfit_results('path/to/model')
     res = run_modelsearch(search_space='PERIPHERALS(1);LAGTIME()',
                           algorithm='reduced_stepwise',
                           model=start_model,
+                          results=start_model_results,
                           iiv_strategy='absorption_delay',
                           rank_type='bic',
                           cutoff=None)
@@ -65,6 +67,8 @@ For a more detailed description of each argument, see their respective chapter o
 |                                                 | add to absorption delay parameters)                              |
 +-------------------------------------------------+------------------------------------------------------------------+
 | ``model``                                       | Start model                                                      |
++-------------------------------------------------+------------------------------------------------------------------+
+| ``results``                                     | ModelfitResults of the start model                               |
 +-------------------------------------------------+------------------------------------------------------------------+
 
 .. _the search space:
@@ -306,6 +310,7 @@ Consider a modelsearch run with the search space of zero order absorption and ad
     res = run_modelsearch(search_space='PERIPHERALS(1);LAGTIME()',
                           algorithm='reduced_stepwise',
                           model=start_model,
+                          results=start_model_results,
                           iiv_strategy='absorption_delay',
                           rank_type='bic',
                           cutoff=None)

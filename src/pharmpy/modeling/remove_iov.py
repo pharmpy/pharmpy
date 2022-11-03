@@ -3,6 +3,7 @@
 """
 
 import warnings
+from collections import defaultdict
 
 from pharmpy.deps import sympy
 from pharmpy.model import Model
@@ -78,13 +79,10 @@ def _get_iov_etas(model: Model, list_of_etas):
 
 def _get_iov_groups(model: Model):
     iovs = model.random_variables.iov
-    same = {}
+    same = defaultdict(set)
     for dist in iovs:
         for i, name in enumerate(dist.names):
             key = (i, dist.variance)
-            if key in same:
-                same[key].add(name)
-            else:
-                same[key] = {name}
+            same[key].add(name)
 
     return same.values()

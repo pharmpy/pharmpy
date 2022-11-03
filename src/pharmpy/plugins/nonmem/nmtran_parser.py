@@ -104,7 +104,7 @@ class NMTranControlStream:
         self.records.append(record)
         return record
 
-    def insert_record(self, content, at_index=None):
+    def insert_record(self, content: str, at_index=None):
         """Create and insert a new record at the correct position
 
         If the record type is already present the new record will be put
@@ -116,6 +116,7 @@ class NMTranControlStream:
 
         record = create_record(content)
         name = record.name
+        assert isinstance(name, str)
 
         if at_index:
             self.records.insert(at_index, record)

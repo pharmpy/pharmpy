@@ -2,8 +2,9 @@ import re
 import warnings
 from itertools import count
 
+from pharmpy.internals.parse import AttrToken
+from pharmpy.internals.parse.generic import remove_token_and_space
 from pharmpy.model import Parameter
-from pharmpy.parse_utils.generic import AttrToken, remove_token_and_space
 
 from .record import Record
 

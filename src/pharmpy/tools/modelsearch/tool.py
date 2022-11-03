@@ -2,11 +2,13 @@ from typing import Optional, Union
 
 import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.fn.signature import with_same_arguments_as
+from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model, Results
 from pharmpy.modeling.results import RANK_TYPES
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results
-from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow
 
 from ..mfl.parse import parse
@@ -18,6 +20,7 @@ def create_workflow(
     iiv_strategy: str = 'absorption_delay',
     rank_type: str = 'bic',
     cutoff: Optional[Union[float, int]] = None,
+    results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):
     """Run Modelsearch tool. For more details, see :ref:`modelsearch`.
@@ -36,6 +39,8 @@ def create_workflow(
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
+    results : ModelfitResults
+        Results for model
     model : Model
         Pharmpy model
 
@@ -49,7 +54,8 @@ def create_workflow(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import run_modelsearch # doctest: +SKIP
-    >>> run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=model) # doctest: +SKIP
+    >>> res = model.modelfit_results
+    >>> run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', results=res, model=model) # doctest: +SKIP
 
     """
 
@@ -99,16 +105,18 @@ def post_process(rank_type, cutoff, *models):
         ModelSearchResults, input_model, input_model, res_models, rank_type, cutoff
     )
 
-    summary_input = summarize_modelfit_results(input_model)
-    summary_candidates = summarize_modelfit_results(res_models)
+    summary_input = summarize_modelfit_results(input_model.modelfit_results)
+    summary_candidates = summarize_modelfit_results(
+        [model.modelfit_results for model in res_models]
+    )
 
     res.summary_models = pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step'])
 
     return res
 
 
-@runtime_type_check
-@same_arguments_as(create_workflow)
+@with_runtime_arguments_type_check
+@with_same_arguments_as(create_workflow)
 def validate_input(
     search_space,
     algorithm,

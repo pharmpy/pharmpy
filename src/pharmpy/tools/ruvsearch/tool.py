@@ -4,6 +4,8 @@ from typing import List, Optional
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.deps.scipy import stats
+from pharmpy.internals.fn.signature import with_same_arguments_as
+from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import (
     Assignment,
     EstimationStep,
@@ -26,6 +28,7 @@ from pharmpy.modeling import (
     set_power_on_ruv,
 )
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import (
     summarize_errors,
     summarize_individuals,
@@ -34,7 +37,6 @@ from pharmpy.tools import (
 )
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.utils import runtime_type_check, same_arguments_as
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 from .results import RUVSearchResults, calculate_results
@@ -44,6 +46,7 @@ SKIP = frozenset(('IIV_on_RUV', 'power', 'combined', 'time_varying'))
 
 def create_workflow(
     model: Optional[Model] = None,
+    results: Optional[ModelfitResults] = None,
     groups: int = 4,
     p_value: float = 0.05,
     skip: Optional[List[str]] = None,
@@ -54,6 +57,8 @@ def create_workflow(
     ----------
     model : Model
         Pharmpy model
+    results : ModelfitResults
+        Results of model
     groups : int
         The number of bins to use for the time varying models
     p_value : float
@@ -71,7 +76,7 @@ def create_workflow(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import run_ruvsearch # doctest: +SKIP
-    >>> run_ruvsearch(model=model)      # doctest: +SKIP
+    >>> run_ruvsearch(model=model, results=model.modelfit_results)      # doctest: +SKIP
 
     """
 
@@ -144,14 +149,16 @@ def start(context, model, groups, p_value, skip):
     selected_models = [model]
     cwres_models = []
     tool_database = None
-    for current_iteration in range(1, 4):
+    last_iteration = 0
+    for current_iteration in (1, 2, 3):
+        last_iteration = current_iteration
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
         res, best_model, selected_model_name = call_workflow(
             wf, f'results{current_iteration}', context
         )
         if current_iteration == 1:
-            sum_models.append(summarize_modelfit_results(model))
-        sum_models.append(summarize_modelfit_results(best_model))
+            sum_models.append(summarize_modelfit_results(model.modelfit_results))
+        sum_models.append(summarize_modelfit_results(best_model.modelfit_results))
 
         cwres_models.append(res.cwres_models)
         tool_database = res.tool_database
@@ -170,7 +177,7 @@ def start(context, model, groups, p_value, skip):
 
     sumind = summarize_individuals(selected_models)
     sumcount = summarize_individuals_count_table(df=sumind)
-    summf = pd.concat(sum_models, keys=list(range(0, current_iteration)), names=['step'])
+    summf = pd.concat(sum_models, keys=list(range(last_iteration)), names=['step'])
     summary_tool = _create_summary_tool(selected_models, cutoff)
     summary_errors = summarize_errors(selected_models)
 
@@ -221,9 +228,15 @@ def post_process(context, start_model, *models, cutoff, current_iteration):
     if best_model_unfitted is not None:
         fit_wf = create_fit_workflow(models=[best_model_unfitted])
         best_model = call_workflow(fit_wf, f'fit{current_iteration}', context)
-        delta_ofv = start_model.modelfit_results.ofv - best_model.modelfit_results.ofv
-        if delta_ofv > cutoff:
-            return (res, best_model, selected_model_name)
+        best_model_check = [
+            best_model.modelfit_results.ofv,
+            best_model.modelfit_results.residuals,
+            best_model.modelfit_results.predictions,
+        ]
+        if all(check is not None for check in best_model_check):
+            delta_ofv = start_model.modelfit_results.ofv - best_model.modelfit_results.ofv
+            if delta_ofv > cutoff:
+                return (res, best_model, selected_model_name)
 
     return (res, start_model, f"base_{current_iteration}")
 
@@ -422,8 +435,8 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
     return model, selected_model_name
 
 
-@runtime_type_check
-@same_arguments_as(create_workflow)
+@with_runtime_arguments_type_check
+@with_same_arguments_as(create_workflow)
 def validate_input(model, groups, p_value, skip):
     if groups <= 0:
         raise ValueError(f'Invalid `groups`: got `{groups}`, must be >= 1.')

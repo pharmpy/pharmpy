@@ -20,8 +20,10 @@ To initiate COVsearch in Python/R:
     from pharmpy.tools import run_covsearch
 
     start_model = read_model('path/to/model')
+    start_model_results = read_modelfit_results('path/to/model')
     res = run_covsearch(algorithm='scm-forward-then-backward',
                         model=start_model,
+                        results=start_model_results,
                         effects='COVARIATE(@IIV, @CONTINUOUS, *); COVARIATE(@IIV, @CATEGORICAL, CAT)',
                         p_forward=0.05,
                         p_backward=0.01,
@@ -61,6 +63,8 @@ Arguments
 |                                             | for no maximum (default).                                             |
 +---------------------------------------------+-----------------------------------------------------------------------+
 | :ref:`algorithm<algorithm_covsearch>`       | The search algorithm to use (default is `'scm-forward-then-backward'`)|
++---------------------------------------------+-----------------------------------------------------------------------+
+| ``results``                                 | ModelfitResults of start model                                        |
 +---------------------------------------------+-----------------------------------------------------------------------+
 | ``model``                                   | Start model                                                           |
 +---------------------------------------------+-----------------------------------------------------------------------+
@@ -260,7 +264,7 @@ Consider a `covsearch` run:
 
 .. pharmpy-code::
 
-    res = run_covsearch(model=start_model,
+    res = run_covsearch(model=start_model, results=start_model_results,
                         effects='COVARIATE([CL, MAT, VC], [AGE, WT], EXP);COVARIATE([CL, MAT, VC], [SEX], CAT)')
 
 

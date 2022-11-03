@@ -3,12 +3,13 @@ from pathlib import Path
 import pharmpy.modeling as modeling
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.plugins.nonmem.parsing import parameter_translation
-from pharmpy.plugins.nonmem.results_file import NONMEMResultsFile
-from pharmpy.plugins.nonmem.table import NONMEMTableFile
-from pharmpy.plugins.nonmem.update import rv_translation
-from pharmpy.results import ChainedModelfitResults, ModelfitResults
+from pharmpy.results import ModelfitResults
 from pharmpy.workflows.log import Log
+
+from .parameters import parameter_translation
+from .random_variables import rv_translation
+from .results_file import NONMEMResultsFile
+from .table import NONMEMTableFile, PhiTable
 
 
 def parse_modelfit_results(model, path, subproblem=None):
@@ -18,323 +19,248 @@ def parse_modelfit_results(model, path, subproblem=None):
     else:
         path = Path(path)
 
+    log = Log()
     try:
-        res = NONMEMChainedModelfitResults(path, model=model, subproblem=subproblem)
+        try:
+            ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
+        except ValueError:
+            log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
+            return None
+
+        for table in ext_tables:
+            try:
+                table.data_frame
+            except ValueError:
+                log.log_error(
+                    f"Broken table in ext-file {path.with_suffix('.ext')}, "
+                    f"table no. {table.number}"
+                )
     except (FileNotFoundError, OSError):
         return None
+
+    (
+        table_numbers,
+        final_ofv,
+        ofv_iterations,
+        final_pe,
+        sdcorr,
+        pe_iterations,
+        ses,
+        ses_sdcorr,
+    ) = _parse_ext(model, ext_tables, subproblem)
 
     table_df = parse_tables(model, path)
     residuals = parse_residuals(table_df)
     predictions = parse_predictions(table_df)
     iofv, ie, iec = parse_phi(model, path)
-    final_ofv, ofv_iterations = parse_ext(model, path, subproblem)
+    rse = calculate_relative_standard_errors(final_pe, ses)
+    (
+        runtime_total,
+        log_likelihood,
+        covstatus,
+        minimization_successful,
+        function_evaluations,
+        significant_digits,
+        termination_cause,
+        estimation_runtime,
+    ) = parse_lst(model, path, table_numbers, log)
 
-    res.ofv = final_ofv
-    res.ofv_iterations = ofv_iterations
-    res.individual_ofv = iofv
-    res.individual_estimates = ie
-    res.individual_estimates_covariance = iec
-    res.predictions = predictions
-    res.residuals = residuals
+    if table_numbers:
+        eststeps = table_numbers
+    else:
+        eststeps = list(range(1, len(model.estimation_steps) + 1))
+    last_est_ind = get_last_est(model)
+    minsucc_iters = pd.Series(
+        minimization_successful, index=eststeps, name='minimization_successful'
+    )
+    esttime_iters = pd.Series(estimation_runtime, index=eststeps, name='estimation_runtime')
+    funcevals_iters = pd.Series(function_evaluations, index=eststeps, name='function_evaluations')
+    termcause_iters = pd.Series(termination_cause, index=eststeps, name='termination_cause')
+    sigdigs_iters = pd.Series(significant_digits, index=eststeps, name='significant_digits')
+
+    if covstatus and ses is not None:
+        cov = parse_matrix(path.with_suffix(".cov"), model, table_numbers)
+        cor = parse_matrix(path.with_suffix(".cor"), model, table_numbers)
+        if cor is not None:
+            np.fill_diagonal(cor.values, 1)
+        coi = parse_matrix(path.with_suffix(".coi"), model, table_numbers)
+    else:
+        cov, cor, coi = None, None, None
+
+    cov, cor, coi, ses = calculate_cov_cor_coi_ses(cov, cor, coi, ses)
+
+    evaluation = parse_evaluation(model)
+
+    res = ModelfitResults(
+        name=model.name,
+        description=model.description,
+        minimization_successful=minimization_successful[last_est_ind],
+        minimization_successful_iterations=minsucc_iters,
+        estimation_runtime=estimation_runtime[last_est_ind],
+        estimation_runtime_iterations=esttime_iters,
+        function_evaluations=function_evaluations[last_est_ind],
+        function_evaluations_iterations=funcevals_iters,
+        termination_cause=termination_cause[last_est_ind],
+        termination_cause_iterations=termcause_iters,
+        significant_digits=significant_digits[-1],
+        significant_digits_iterations=sigdigs_iters,
+        relative_standard_errors=rse,
+        individual_estimates=ie,
+        individual_estimates_covariance=iec,
+        runtime_total=runtime_total,
+        log_likelihood=log_likelihood,
+        covariance_matrix=cov,
+        correlation_matrix=cor,
+        information_matrix=coi,
+        standard_errors=ses,
+        standard_errors_sdcorr=ses_sdcorr,
+        individual_ofv=iofv,
+        parameter_estimates=final_pe,
+        parameter_estimates_sdcorr=sdcorr,
+        parameter_estimates_iterations=pe_iterations,
+        ofv=final_ofv,
+        ofv_iterations=ofv_iterations,
+        predictions=predictions,
+        residuals=residuals,
+        evaluation=evaluation,
+        log=log,
+    )
     return res
 
 
-class NONMEMModelfitResults(ModelfitResults):
-    def __init__(self, chain):
-        self._chain = chain
-        super().__init__()
+def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
+    if cov is None:
+        if cor is not None:
+            cov = modeling.calculate_cov_from_corrse(cor, ses)
+        elif coi is not None:
+            cov = modeling.calculate_cov_from_inf(coi)
+    if cor is None:
+        if cov is not None:
+            cor = modeling.calculate_corr_from_cov(cov)
+        elif coi is not None:
+            cor = modeling.calculate_corr_from_inf(coi)
+    if coi is None:
+        if cov is not None:
+            coi = modeling.calculate_inf_from_cov(cov)
+        elif cor is not None:
+            coi = modeling.calculate_inf_from_corrse(cor, ses)
+    if ses is None:
+        if cov is not None:
+            ses = modeling.calculate_se_from_cov(cov)
+        elif coi is not None:
+            ses = modeling.calculate_se_from_inf(coi)
+    return cov, cor, coi, ses
 
-    def _set_covariance_status(self, results_file, table_with_cov=None):
-        covariance_status = {
-            'requested': True
-            if self.standard_errors is not None
-            else (table_with_cov == self.table_number),
-            'completed': (self.standard_errors is not None),
-            'warnings': None,
-        }
-        if self.standard_errors is not None and results_file is not None:
-            status = results_file.covariance_status(self.table_number)
-            if status['covariance_step_ok'] is not None:
-                covariance_status['warnings'] = not status['covariance_step_ok']
 
-        self._covariance_status = covariance_status
+def parse_matrix(path, model, table_numbers):
+    try:
+        tables = NONMEMTableFile(path)
+    except OSError:
+        return None
 
-    def _set_estimation_status(self, results_file, requested):
-        estimation_status = {'requested': requested}
-        status = NONMEMResultsFile.unknown_termination()
+    last_table = tables.table_no(table_numbers[-1])
+    assert last_table is not None
+    df = last_table.data_frame
+    if df is not None:
+        if model:
+            index = parameter_translation(model.internals.control_stream)
+            df = df.rename(index=index)
+            df.columns = df.index
+    return df
+
+
+def empty_lst_results(model):
+    n = len(model.estimation_steps)
+    false_vec = [False] * n
+    nan_vec = [np.nan] * n
+    none_vec = [None] * n
+    return None, np.nan, False, false_vec, nan_vec, nan_vec, none_vec, nan_vec
+
+
+def parse_lst(model, path, table_numbers, log):
+    try:
+        rfile = NONMEMResultsFile(path.with_suffix('.lst'), log=log)
+    except OSError:
+        return empty_lst_results(model)
+
+    if not table_numbers:
+        return empty_lst_results(model)
+
+    runtime_total = rfile.runtime_total
+
+    try:
+        log_likelihood = rfile.table[table_numbers[-1]]['ofv_with_constant']
+    except (KeyError, FileNotFoundError):
+        log_likelihood = np.nan
+
+    status = rfile.covariance_status(table_numbers[-1])
+    covstatus = status['covariance_step_ok']
+
+    (
+        minimization_successful,
+        function_evaluations,
+        significant_digits,
+        termination_cause,
+        estimation_runtime,
+    ) = parse_estimation_status(rfile, table_numbers)
+
+    return (
+        runtime_total,
+        log_likelihood,
+        covstatus,
+        minimization_successful,
+        function_evaluations,
+        significant_digits,
+        termination_cause,
+        estimation_runtime,
+    )
+
+
+def parse_estimation_status(results_file, table_numbers):
+    minimization_successful = []
+    function_evaluations = []
+    significant_digits = []
+    termination_cause = []
+    estimation_runtime = []
+    for tabno in table_numbers:
         if results_file is not None:
-            status = results_file.estimation_status(self.table_number)
-        for k, v in status.items():
-            estimation_status[k] = v
-        self._estimation_status = estimation_status
-        self.minimization_successful = estimation_status['minimization_successful']
-        self.function_evaluations = estimation_status['function_evaluations']
-        self.significant_digits = estimation_status['significant_digits']
+            estimation_status = results_file.estimation_status(tabno)
+        else:
+            estimation_status = NONMEMResultsFile.unknown_termination()
+        minimization_successful.append(estimation_status['minimization_successful'])
+        function_evaluations.append(estimation_status['function_evaluations'])
+        significant_digits.append(estimation_status['significant_digits'])
         if estimation_status['maxevals_exceeded'] is True:
-            self.termination_cause = 'maxevals_exceeded'
+            tc = 'maxevals_exceeded'
         elif estimation_status['rounding_errors'] is True:
-            self.termination_cause = 'rounding_errors'
+            tc = 'rounding_errors'
         else:
-            self.termination_cause = None
-
-
-class NONMEMChainedModelfitResults(ChainedModelfitResults):
-    def __init__(self, path, model=None, subproblem=None):
-        # Path is path to any result file
-        self.log = Log()
-        path = Path(path)
-        self._path = path
-        self._subproblem = subproblem
-        self.model = model
-        extensions = ['.lst', '.ext', '.cov', '.cor', '.coi', '.phi']
-        self.tool_files = [self._path.with_suffix(ext) for ext in extensions]
-        super().__init__()
-        self._read_ext_table()
-        self._read_lst_file()
-        self._read_cov_table()
-        self._read_cor_table()
-        self._read_coi_table()
-        self._calculate_cov_cor_coi()
-
-    def __getattr__(self, item):
-        # Avoid infinite recursion when deepcopying
-        # See https://stackoverflow.com/questions/47299243/recursionerror-when-python-copy-deepcopy
-        if item.startswith('__'):
-            raise AttributeError('')
-        return super().__getattribute__(item)
-
-    def __getitem__(self, key):
-        return super().__getitem__(key)
-
-    def __bool__(self):
-        # without this, an existing but 'unloaded' object will evaluate to False
-        return len(self) > 0
-
-    def _read_ext_table(self):
+            tc = None
+        termination_cause.append(tc)
         try:
-            ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
-        except ValueError:
-            # The ext-file is illegal
-            self.log.log_error(f"Broken ext-file {self._path.with_suffix('.ext')}")
-            result_obj = NONMEMModelfitResults(self)
-            result_obj.model_name = self._path.stem
-            result_obj.model = self.model
-            is_covariance_step = self.model.estimation_steps[0].cov
-            result_obj = self._fill_empty_results(result_obj, is_covariance_step)
-            result_obj.table_number = 1
-            self.append(result_obj)
-            return
+            er = results_file.table[tabno]['estimation_runtime']
+        except (KeyError, FileNotFoundError):
+            er = np.nan
+        estimation_runtime.append(er)
 
-        for table in ext_tables:
-            if self._subproblem and table.subproblem != self._subproblem:
-                continue
-            result_obj = NONMEMModelfitResults(self)
-            result_obj.model_name = self._path.stem
-            result_obj.model = self.model
-            result_obj.table_number = table.number
+    return (
+        minimization_successful,
+        function_evaluations,
+        significant_digits,
+        termination_cause,
+        estimation_runtime,
+    )
 
-            try:
-                table.data_frame
-            except ValueError:
-                self.log.log_error(
-                    f"Broken table in ext-file {self._path.with_suffix('.ext')}, "
-                    f"table no. {table.number}"
-                )
-                is_covariance_step = self.model.estimation_steps[table.number - 1].cov
-                result_obj = self._fill_empty_results(result_obj, is_covariance_step)
-                self.append(result_obj)
-                continue
 
-            ests = table.final_parameter_estimates
-            try:
-                fix = table.fixed
-            except KeyError:
-                # NM 7.2 does not have row -1000000006 indicating FIXED status
-                if self.model:
-                    fixed = pd.Series(self.model.parameters.fix)
-                    fix = pd.concat(
-                        [fixed, pd.Series(True, index=ests.index.difference(fixed.index))]
-                    )
-            ests = ests[~fix]
-            if self.model:
-                ests = ests.rename(index=parameter_translation(self.model.internals.control_stream))
-            result_obj.parameter_estimates = ests
-
-            try:
-                sdcorr = table.omega_sigma_stdcorr[~fix]
-            except KeyError:
-                pass
-            else:
-                if self.model:
-                    sdcorr = sdcorr.rename(
-                        index=parameter_translation(self.model.internals.control_stream)
-                    )
-                sdcorr_ests = ests.copy()
-                sdcorr_ests.update(sdcorr)
-                result_obj.parameter_estimates_sdcorr = sdcorr_ests
-            try:
-                ses = table.standard_errors
-                result_obj._set_covariance_status(table)
-
-            except Exception:
-                # If there are no standard errors in ext-file it means
-                # there can be no cov, cor or coi either
-                result_obj.standard_errors = None
-                result_obj.covariance_matrix = None
-                result_obj.correlation_matrix = None
-                result_obj.information_matrix = None
-                result_obj._set_covariance_status(None)
-            else:
-                ses = ses[~fix]
-                sdcorr = table.omega_sigma_se_stdcorr[~fix]
-                if self.model:
-                    ses = ses.rename(
-                        index=parameter_translation(self.model.internals.control_stream)
-                    )
-                    sdcorr = sdcorr.rename(
-                        index=parameter_translation(self.model.internals.control_stream)
-                    )
-                result_obj.standard_errors = ses
-                sdcorr_ses = ses.copy()
-                sdcorr_ses.update(sdcorr)
-                if self.model:
-                    sdcorr_ses = sdcorr_ses.rename(
-                        index=parameter_translation(self.model.internals.control_stream)
-                    )
-                result_obj.standard_errors_sdcorr = sdcorr_ses
-            self.append(result_obj)
-
-    def _fill_empty_results(self, result_obj, is_covariance_step):
-        # Parameter estimates NaN for all parameters that should be estimated
-        pe = pd.Series(
-            np.nan, name='estimates', index=list(self.model.parameters.nonfixed.inits.keys())
-        )
-        result_obj.parameter_estimates = pe
-        result_obj.ofv = np.nan
-        if is_covariance_step:
-            se = pd.Series(
-                np.nan, name='SE', index=list(self.model.parameters.nonfixed.inits.keys())
-            )
-            result_obj.standard_errors = se
-        else:
-            result_obj.standard_errors = None
-        return result_obj
-
-    def _read_lst_file(self):
-        try:
-            rfile = NONMEMResultsFile(self._path.with_suffix('.lst'), self.log)
-        except OSError:
-            return
-        table_with_cov = -99
-        if self.model is not None:
-            if len(self.model.internals.control_stream.get_records('COVARIANCE')) > 0:
-                table_with_cov = self[-1].table_number  # correct unless interrupted
-        for table_no, result_obj in enumerate(self, 1):
-            result_obj._set_estimation_status(rfile, requested=True)
-            # _covariance_status already set to None if ext table did not have standard errors
-            result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
-            try:
-                result_obj.estimation_runtime = rfile.table[table_no]['estimation_runtime']
-            except (KeyError, FileNotFoundError):
-                result_obj.estimation_runtime = np.nan
-            try:
-                result_obj.log_likelihood = rfile.table[table_no]['ofv_with_constant']
-            except (KeyError, FileNotFoundError):
-                result_obj.log_likelihood = np.nan
-            result_obj.runtime_total = rfile.runtime_total
-
-    def _read_cov_table(self):
-        try:
-            cov_table = NONMEMTableFile(self._path.with_suffix('.cov'))
-        except OSError:
-            for result_obj in self:
-                if not hasattr(result_obj, 'covariance_matrix'):
-                    result_obj.covariance_matrix = None
-            return
-        for result_obj in self:
-            if _check_covariance_status(result_obj):
-                df = cov_table.table_no(result_obj.table_number).data_frame
-                if df is not None:
-                    if self.model:
-                        df = df.rename(
-                            index=parameter_translation(self.model.internals.control_stream)
-                        )
-                        df.columns = df.index
-                result_obj.covariance_matrix = df
-            else:
-                result_obj.covariance_matrix = None
-
-    def _read_coi_table(self):
-        try:
-            coi_table = NONMEMTableFile(self._path.with_suffix('.coi'))
-        except OSError:
-            for result_obj in self:
-                if not hasattr(result_obj, 'information_matrix'):
-                    result_obj.information_matrix = None
-            return
-        for result_obj in self:
-            if _check_covariance_status(result_obj):
-                df = coi_table.table_no(result_obj.table_number).data_frame
-                if df is not None:
-                    if self.model:
-                        df = df.rename(
-                            index=parameter_translation(self.model.internals.control_stream)
-                        )
-                        df.columns = df.index
-                result_obj.information_matrix = df
-            else:
-                result_obj.information_matrix = None
-
-    def _read_cor_table(self):
-        try:
-            cor_table = NONMEMTableFile(self._path.with_suffix('.cor'))
-        except OSError:
-            for result_obj in self:
-                if not hasattr(result_obj, 'correlation_matrix'):
-                    result_obj.correlation_matrix = None
-            return
-        for result_obj in self:
-            if _check_covariance_status(result_obj):
-                cor = cor_table.table_no(result_obj.table_number).data_frame
-                if cor is not None:
-                    if self.model:
-                        cor = cor.rename(
-                            index=parameter_translation(self.model.internals.control_stream)
-                        )
-                        cor.columns = cor.index
-                    np.fill_diagonal(cor.values, 1)
-                result_obj.correlation_matrix = cor
-            else:
-                result_obj.correlation_matrix = None
-
-    def _calculate_cov_cor_coi(self):
-        for obj in self:
-            if obj.covariance_matrix is None:
-                if obj.correlation_matrix is not None:
-                    obj.covariance_matrix = modeling.calculate_cov_from_corrse(
-                        obj.correlation_matrix, obj.standard_errors
-                    )
-                elif obj.information_matrix is not None:
-                    obj.covariance_matrix = modeling.calculate_cov_from_inf(obj.information_matrix)
-            if obj.correlation_matrix is None:
-                if obj.covariance_matrix is not None:
-                    obj.correlation_matrix = modeling.calculate_corr_from_cov(obj.covariance_matrix)
-                elif obj.information_matrix is not None:
-                    obj.correlation_matrix = modeling.calculate_corr_from_inf(
-                        obj.information_matrix
-                    )
-            if obj.information_matrix is None:
-                if obj.covariance_matrix is not None:
-                    obj.information_matrix = modeling.calculate_inf_from_cov(obj.covariance_matrix)
-                elif obj.correlation_matrix is not None:
-                    obj.information_matrix = modeling.calculate_inf_from_corrse(
-                        obj.correlation_matrix, obj.standard_errors
-                    )
-            if obj.standard_errors is None:
-                if obj.covariance_matrix is not None:
-                    obj.standard_errors = modeling.calculate_se_from_cov(obj.covariance_matrix)
-                elif obj.information_matrix is not None:
-                    obj.standard_errors = modeling.calculate_se_from_inf(obj.information_matrix)
+def get_last_est(model):
+    est_steps = model.estimation_steps
+    # Find last estimation
+    for i in range(len(est_steps) - 1, -1, -1):
+        step = est_steps[i]
+        if not step.evaluation:
+            return i
+    # If all steps were evaluation the last evaluation step is relevant
+    return len(est_steps) - 1
 
 
 def parse_phi(model, path):
@@ -344,26 +270,29 @@ def parse_phi(model, path):
         return None, None, None
     table = phi_tables.tables[-1]
 
-    if table is not None:
-        trans = rv_translation(model.internals.control_stream, reverse=True)
-        rv_names = [name for name in model.random_variables.etas.names if name in trans]
-        try:
-            individual_ofv = table.iofv
-            individual_estimates = table.etas.rename(
-                columns=rv_translation(model.internals.control_stream)
-            )[rv_names]
-            covs = table.etcs
-            covs = covs.transform(
-                lambda cov: cov.rename(
-                    columns=rv_translation(model.internals.control_stream),
-                    index=rv_translation(model.internals.control_stream),
-                )
+    if table is None:
+        return None, None, None
+
+    assert isinstance(table, PhiTable)
+
+    columns = rv_translation(model.internals.control_stream)
+    trans = set(columns.values())
+    rv_names = list(filter(trans.__contains__, model.random_variables.etas.names))
+    try:
+        individual_ofv = table.iofv
+        individual_estimates = table.etas.rename(columns=columns)[rv_names]
+        covs = table.etcs
+        index = columns
+        covs = covs.transform(
+            lambda cov: cov.rename(
+                columns=columns,
+                index=index,
             )
-            covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
-            return individual_ofv, individual_estimates, covs
-        except KeyError:
-            pass
-    return None, None, None
+        )
+        covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
+        return individual_ofv, individual_estimates, covs
+    except KeyError:
+        return None, None, None
 
 
 def parse_tables(model, path):
@@ -398,16 +327,17 @@ def parse_tables(model, path):
             found.add(colname)
             columns_in_table.append(colname)
 
-            noheader = table_rec.has_option("NOHEADER")
-            notitle = table_rec.has_option("NOTITLE") or noheader
-            nolabel = table_rec.has_option("NOLABEL") or noheader
-            path = path.parent / table_rec.path
-            try:
-                table_file = NONMEMTableFile(path, notitle=notitle, nolabel=nolabel)
-            except IOError:
-                continue
-            table = table_file.tables[0]
-            df[columns_in_table] = table.data_frame[columns_in_table]
+        noheader = table_rec.has_option("NOHEADER")
+        notitle = table_rec.has_option("NOTITLE") or noheader
+        nolabel = table_rec.has_option("NOLABEL") or noheader
+        table_path = path.parent / table_rec.path
+        try:
+            table_file = NONMEMTableFile(table_path, notitle=notitle, nolabel=nolabel)
+        except IOError:
+            continue
+        table = table_file.tables[0]
+
+        df[columns_in_table] = table.data_frame[columns_in_table]
 
     if 'ID' in df.columns:
         df['ID'] = df['ID'].convert_dtypes()
@@ -446,7 +376,7 @@ def parse_predictions(df):
 
 
 def create_failed_ofv_iterations(model):
-    steps = list(range(len(model.estimation_steps)))
+    steps = list(range(1, len(model.estimation_steps) + 1))
     iterations = [0] * len(steps)
     ofvs = [np.nan] * len(steps)
     ofv_iterations = create_ofv_iterations_series(ofvs, steps, iterations)
@@ -462,15 +392,68 @@ def create_ofv_iterations_series(ofv, steps, iterations):
     return ofv_iterations
 
 
+def create_failed_parameter_estimates(model):
+    pe = pd.Series(np.nan, name='estimates', index=list(model.parameters.nonfixed.inits.keys()))
+    return pe
+
+
 def parse_ext(model, path, subproblem):
     try:
         ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
     except ValueError:
-        return np.nan, create_failed_ofv_iterations(model)
+        failed_pe = create_failed_parameter_estimates(model)
+        n = len(model.estimation_steps)
+        df = pd.concat([failed_pe] * n, axis=1).T
+        df['step'] = range(1, n + 1)
+        df['iteration'] = 0
+        df = df.set_index(['step', 'iteration'])
+        return (
+            [],
+            np.nan,
+            create_failed_ofv_iterations(model),
+            failed_pe,
+            failed_pe,
+            df,
+            None,
+            None,
+        )
+    return _parse_ext(model, ext_tables, subproblem)
+
+
+def _parse_ext(model, ext_tables: NONMEMTableFile, subproblem):
+
+    table_numbers = parse_table_numbers(ext_tables, subproblem)
+
+    final_ofv, ofv_iterations = parse_ofv(model, ext_tables, subproblem)
+    final_pe, sdcorr, pe_iterations = parse_parameter_estimates(model, ext_tables, subproblem)
+    ses, ses_sdcorr = parse_standard_errors(model, ext_tables)
+    return (
+        table_numbers,
+        final_ofv,
+        ofv_iterations,
+        final_pe,
+        sdcorr,
+        pe_iterations,
+        ses,
+        ses_sdcorr,
+    )
+
+
+def parse_table_numbers(ext_tables, subproblem):
+    table_numbers = []
+    for table in ext_tables.tables:
+        if subproblem and table.subproblem != subproblem:
+            continue
+        table_numbers.append(table.number)
+    return table_numbers
+
+
+def parse_ofv(model, ext_tables, subproblem):
     step = []
     iteration = []
     ofv = []
-    for i, table in enumerate(ext_tables, start=1):
+    final_table = None
+    for i, table in enumerate(ext_tables.tables, start=1):
         if subproblem and table.subproblem != subproblem:
             continue
         df = table.data_frame
@@ -479,9 +462,101 @@ def parse_ext(model, path, subproblem):
         step += [i] * n
         iteration += list(df['ITERATION'])
         ofv += list(df['OBJ'])
-        final_ofv = table.final_ofv
+        final_table = table
+
+    assert final_table is not None
+    final_ofv = final_table.final_ofv
     ofv_iterations = create_ofv_iterations_series(ofv, step, iteration)
     return final_ofv, ofv_iterations
+
+
+def calculate_relative_standard_errors(pe, se):
+    if pe is None or se is None:
+        ser = None
+    else:
+        ser = se / pe
+        ser.name = 'RSE'
+    return ser
+
+
+def parse_parameter_estimates(model, ext_tables, subproblem):
+    pe = pd.DataFrame()
+    fixed_param_names = []
+    final_table = None
+    fix = None
+    for i, table in enumerate(ext_tables.tables, start=1):
+        if subproblem and table.subproblem != subproblem:
+            continue
+        df = table.data_frame
+        df = df[df['ITERATION'] >= 0]
+
+        fix = get_fixed_parameters(table, model)
+        fixed_param_names = [name for name in list(df.columns)[1:-1] if fix[name]]
+        df = df.drop(fixed_param_names + ['OBJ'], axis=1)
+        df['step'] = i
+        if model:
+            df = df.rename(columns=parameter_translation(model.internals.control_stream))
+        pe = pd.concat([pe, df])
+        final_table = table
+
+    assert fix is not None
+    assert final_table is not None
+    final = final_table.final_parameter_estimates
+    final = final.drop(fixed_param_names)
+    if model:
+        final = final.rename(index=parameter_translation(model.internals.control_stream))
+    pe = pe.rename(columns={'ITERATION': 'iteration'}).set_index(['step', 'iteration'])
+
+    try:
+        sdcorr = final_table.omega_sigma_stdcorr[~fix]
+    except KeyError:
+        sdcorr_ests = pd.Series(np.nan, index=pe.index)
+    else:
+        if model:
+            sdcorr = sdcorr.rename(index=parameter_translation(model.internals.control_stream))
+        sdcorr_ests = final.copy()
+        sdcorr_ests.update(sdcorr)
+    return final, sdcorr_ests, pe
+
+
+def parse_standard_errors(model, ext_tables):
+    table = ext_tables.tables[-1]
+    try:
+        ses = table.standard_errors
+    except Exception:
+        return None, None
+
+    fix = get_fixed_parameters(table, model)
+    ses = ses[~fix]
+    sdcorr = table.omega_sigma_se_stdcorr[~fix]
+    if model:
+        ses = ses.rename(index=parameter_translation(model.internals.control_stream))
+        sdcorr = sdcorr.rename(index=parameter_translation(model.internals.control_stream))
+    sdcorr_ses = ses.copy()
+    sdcorr_ses.update(sdcorr)
+    if model:
+        sdcorr_ses = sdcorr_ses.rename(index=parameter_translation(model.internals.control_stream))
+    return ses, sdcorr_ses
+
+
+def parse_evaluation(model):
+    index = list(range(1, len(model.estimation_steps) + 1))
+    evaluation = [est.evaluation for est in model.estimation_steps]
+    ser = pd.Series(evaluation, index=index, name='evaluation')
+    return ser
+
+
+def get_fixed_parameters(table, model):
+    try:
+        return table.fixed
+    except KeyError:
+        # NM 7.2 does not have row -1000000006 indicating FIXED status
+        ests = table.final_parameter_estimates
+        if model:
+            fixed = pd.Series(model.parameters.fix)
+            return pd.concat([fixed, pd.Series(True, index=ests.index.difference(fixed.index))])
+
+    raise ValueError('Could not get fixed parameters')
 
 
 def simfit_results(model, model_path):
@@ -492,9 +567,3 @@ def simfit_results(model, model_path):
         res = parse_modelfit_results(model, model_path, subproblem=i)
         results.append(res)
     return results
-
-
-def _check_covariance_status(result):
-    return (
-        isinstance(result, NONMEMModelfitResults) and result._covariance_status['warnings'] is False
-    )

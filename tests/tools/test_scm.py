@@ -68,6 +68,7 @@ def test_main(testdata):
     res3 = scm.psn_scm_results(dirs['onlyf'])
     assert res3.steps is not None
     sum1 = res3.ofv_summary
+    assert sum1 is not None
     assert [float(x) for x in sum1['pvalue'].values] == approx([nan, nan, 2.22e-13], nan_ok=True)
     assert res3.ofv_summary is not None
 
@@ -101,6 +102,7 @@ CL,WGT,3,  1,1,   0, 0,
     direct = df1['directory'].iloc[0]
     assert direct == 'rundir/m1' or direct == 'rundir\\m1'
     sum1 = scm.ofv_summary_dataframe(df1)
+    assert sum1 is not None
     assert [float(x) for x in sum1['pvalue'].values] == approx(
         [2.26e-10, 0.000002, 0.002178, 0.014192, 0.490010, 9999, 0.027672, 8.15e-24]
     )
@@ -136,10 +138,12 @@ V,WGT,2,  1,1,   0, 0,1,,,
     )
     assert df2 is not None
     sum2 = scm.ofv_summary_dataframe(df2)
+    assert sum2 is not None
     assert [float(x) for x in sum2['ofv_drop'].iloc[2:7].values] == approx(
         [2.90120, 3.00434, 1.18187, 1.18187, 3.00434]
     )
     cand2 = scm.candidate_summary_dataframe(df2)
+    assert cand2 is not None
     assert [int(t) for t in cand2['N_test']] == [6, 3, 2, 4, 5, 1]
 
     df3 = scm.psn_scm_parse_logfile(
@@ -338,7 +342,7 @@ def test_parse_runtable_block_gof_ofv(testdata):
     pd.testing.assert_frame_equal(table, correct)
 
 
-def test_parse_mixed_block(testdata):
+def test_parse_mixed_block():
     block = [
         'Using user-defined ofv change criteria',
         'Degree of freedom  |  Required ofv change',
@@ -356,9 +360,9 @@ def test_parse_mixed_block(testdata):
     ]
     m1, readded, stashed, included_relations = scm.parse_mixed_block(block)
     assert m1 == '/sandbox/asrscm/scm_dir8/backward_scm_dir1/scm_dir1/scm_dir1/m1'
-    assert readded == list()
-    assert stashed == list()
-    assert included_relations == dict()
+    assert readded == []
+    assert stashed == []
+    assert included_relations == {}
 
     block = [
         'Forward search done. Starting backward search inside forward top level directory',
@@ -366,9 +370,9 @@ def test_parse_mixed_block(testdata):
     ]
     m1, readded, stashed, included_relations = scm.parse_mixed_block(block)
     assert m1 == '/home/run1080scm_3/backward_scm_dir1/m1'
-    assert readded == list()
-    assert stashed == list()
-    assert included_relations == dict()
+    assert readded == []
+    assert stashed == []
+    assert included_relations == {}
 
     block = [
         'Taking a step forward in adaptive scope reduction scm after reducing scope '
@@ -379,7 +383,7 @@ def test_parse_mixed_block(testdata):
     ]
     m1, readded, stashed, included_relations = scm.parse_mixed_block(block)
     assert m1 == '/home/Drug/run15asr_2.dir/rundir/reduced_forward_scm_dir2/m1'
-    assert readded == list()
+    assert readded == []
     assert stashed == [
         ('CL', 'SEX'),
         ('CL', 'QUAT'),
@@ -397,7 +401,7 @@ def test_parse_mixed_block(testdata):
         ('VM', 'SEX'),
         ('VM', 'QUAT'),
     ]
-    assert included_relations == dict()
+    assert included_relations == {}
 
     block = [
         'Taking a step forward in adaptive scope reduction '
@@ -406,9 +410,9 @@ def test_parse_mixed_block(testdata):
     ]
     m1, readded, stashed, included_relations = scm.parse_mixed_block(block)
     assert m1 == '/home/shared/rundir/reduced_forward_scm_dir3/m1'
-    assert readded == list()
+    assert readded == []
     assert stashed == [('V2', 'SEX')]
-    assert included_relations == dict()
+    assert included_relations == {}
 
     block = [
         'Taking a step forward in adaptive scope reduction '
@@ -416,16 +420,16 @@ def test_parse_mixed_block(testdata):
     ]
     m1, readded, stashed, included_relations = scm.parse_mixed_block(block)
     assert m1 is None
-    assert readded == list()
+    assert readded == []
     assert stashed == [('V1', 'RACE')]
-    assert included_relations == dict()
+    assert included_relations == {}
 
     block = ['No models to test, there are no relations to add.']
     m1, readded, stashed, included_relations = scm.parse_mixed_block(block)
     assert m1 is None
-    assert readded == list()
-    assert stashed == list()
-    assert included_relations == dict()
+    assert readded == []
+    assert stashed == []
+    assert included_relations == {}
 
     block = [
         'Scope reduction requested in adaptive scope reduction scm after forward step 6 but',
@@ -461,7 +465,7 @@ def test_parse_mixed_block(testdata):
         ('V2', 'DOSE'),
         ('V1', 'RACE'),
     ]
-    assert stashed == list()
+    assert stashed == []
     assert included_relations == {
         'CL': {'CRCL': '5', 'DOSE': '2', 'RACE': '2'},
         'V1': {'SEX': '2'},
@@ -469,7 +473,7 @@ def test_parse_mixed_block(testdata):
     }
 
 
-def test_parse_chosen_relation_block(testdata):
+def test_parse_chosen_relation_block():
     block = [
         'Parameter-covariate relation chosen in this forward step: PHA-DISDUR-5 \n',
         'CRITERION              PVAL < 0.01 \n',
@@ -486,9 +490,9 @@ def test_parse_chosen_relation_block(testdata):
     assert criterion == {'gof': 'PVAL', 'pvalue': '0.01', 'is_backward': False}
     assert included_relations == {
         'PHA': {'DISDUR': '5', 'MENS': '2'},
-        'PHIA': dict(),
+        'PHIA': {},
         'PHIB': {'MENS': '2'},
-        'SLP': dict(),
+        'SLP': {},
     }
     block = [
         'Parameter-covariate relation chosen in this forward step: PHA-WT-5',
@@ -519,20 +523,20 @@ def test_parse_chosen_relation_block(testdata):
     ]
 
     chosen, criterion, included_relations = scm.parse_chosen_relation_block(block)
-    assert chosen == dict()
+    assert chosen == {}
     assert criterion == {'gof': 'PVAL', 'pvalue': '0.01', 'is_backward': False}
 
-    assert included_relations == dict()
+    assert included_relations == {}
 
     block = [
         'Parameter-covariate relation chosen in this backward step: --',
         'CRITERION              PVAL > 0.001',
     ]
     chosen, criterion, included_relations = scm.parse_chosen_relation_block(block)
-    assert chosen == dict()
+    assert chosen == {}
     assert criterion == {'gof': 'PVAL', 'pvalue': '0.001', 'is_backward': True}
 
-    assert included_relations == dict()
+    assert included_relations == {}
 
     block = [
         'Parameter-covariate relation chosen in this forward step: V-CV2-2',

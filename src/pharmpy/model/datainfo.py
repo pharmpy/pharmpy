@@ -5,11 +5,12 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Union, overload
+from typing import Optional, Union, overload
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.utils import parse_units
+from pharmpy.internals.expr.units import parse as parse_units
+from pharmpy.internals.fs.path import path_absolute, path_relative_to
 
 
 class ColumnInfo:
@@ -399,7 +400,7 @@ class DataInfo(Sequence):
         Character or regexp separator for dataset
     """
 
-    def __init__(self, columns=None, path=None, separator=','):
+    def __init__(self, columns=None, path=None, separator=',', force_absolute_path=True):
         if columns is None:
             self._columns = ()
         elif len(columns) > 0 and isinstance(columns[0], str):
@@ -411,9 +412,9 @@ class DataInfo(Sequence):
         else:
             self._columns = tuple(columns)
         if path is not None:
-            self._path = Path(path)
-        else:
-            self._path = path
+            path = Path(path)
+        assert not force_absolute_path or path is None or path.is_absolute()
+        self._path = path
         self._separator = separator
 
     def derive(self, **kwargs):
@@ -484,9 +485,7 @@ class DataInfo(Sequence):
                 cols.append(self._columns[index])
             return DataInfo(columns=cols)
         if isinstance(i, slice):
-            return DataInfo(
-                self._columns[i.start : i.stop : i.step], path=self._path, separator=self._separator
-            )
+            return DataInfo(self._columns[i], path=self._path, separator=self._separator)
 
         return self._columns[self._getindex(i)]
 
@@ -704,7 +703,7 @@ class DataInfo(Sequence):
             for col in self
         }
 
-    def to_json(self, path=None):
+    def _to_dict(self, path: Optional[str]):
         a = []
         for col in self._columns:
             d = {
@@ -720,18 +719,26 @@ class DataInfo(Sequence):
             if col.descriptor is not None:
                 d["descriptor"] = col.descriptor
             a.append(d)
-        s = json.dumps(
-            {
-                "columns": a,
-                "path": str(self.path) if self.path is not None else None,
-                "separator": self._separator,
-            }
-        )
+
+        return {
+            "columns": a,
+            "path": path,
+            "separator": self._separator,
+        }
+
+    def to_json(self, path=None):
         if path is None:
-            return s
+            return json.dumps(self._to_dict(str(self.path) if self.path is not None else None))
         else:
             with open(path, 'w') as fp:
-                fp.write(s)
+                json.dump(
+                    self._to_dict(
+                        str(path_relative_to(Path(path).parent, self.path))
+                        if self.path is not None
+                        else None
+                    ),
+                    fp,
+                )
 
     @staticmethod
     def from_json(s):
@@ -765,8 +772,8 @@ class DataInfo(Sequence):
         path = d.get('path', None)
         if path:
             path = Path(path)
-        separator = d.get('separator', None)
-        di = DataInfo(columns, path=path, separator=separator)
+        separator = d.get('separator', ',')
+        di = DataInfo(columns, path=path, separator=separator, force_absolute_path=False)
         return di
 
     @staticmethod
@@ -785,7 +792,12 @@ class DataInfo(Sequence):
         """
         with open(path, 'r') as fp:
             s = fp.read()
-        return DataInfo.from_json(s)
+        di = DataInfo.from_json(s)
+        return (
+            di
+            if di.path is None or di.path.is_absolute()
+            else di.derive(path=path_absolute(Path(path).parent / di.path))
+        )
 
     def __repr__(self):
         labels = [col.name for col in self._columns]

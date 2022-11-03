@@ -5,10 +5,11 @@ from collections.abc import Collection, Hashable, Sized
 from math import sqrt
 from typing import Dict, List, Optional, Set, Tuple
 
-import pharmpy.unicode as unicode
+import pharmpy.internals.unicode as unicode
 from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
-from pharmpy.expressions import subs, sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 
 from .numeric import MultivariateNormalDistribution as NumericMultivariateNormalDistribution
 from .numeric import NormalDistribution as NumericNormalDistribution
@@ -113,8 +114,8 @@ class NormalDistribution(Distribution):
     @classmethod
     def create(cls, name, level, mean, variance):
         level = level.upper()
-        mean = sympify(mean)
-        variance = sympify(variance)
+        mean = parse_expr(mean)
+        variance = parse_expr(variance)
         if sympy.ask(sympy.Q.nonnegative(variance)) is False:
             raise ValueError("Variance of normal distribution must be non-negative")
         return cls(name, level, mean, variance)
@@ -129,11 +130,11 @@ class NormalDistribution(Distribution):
         if mean is None:
             mean = self._mean
         else:
-            mean = sympify(mean)
+            mean = parse_expr(mean)
         if variance is None:
             variance = self._variance
         else:
-            variance = sympify(variance)
+            variance = parse_expr(variance)
             if sympy.ask(sympy.Q.nonnegative(variance)) is False:
                 raise ValueError("Variance of normal distribution must be non-negative")
         return NormalDistribution(name, level, mean, variance)

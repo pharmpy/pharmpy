@@ -14,7 +14,7 @@ from pharmpy.tools.psn_helpers import model_paths, options_from_command
 class CDDResults(Results):
     """CDD Results class"""
 
-    rst_path = Path(__file__).parent / 'report.rst'
+    rst_path = Path(__file__).resolve().parent / 'report.rst'
 
     def __init__(self, case_results=None, case_column=None, individual_predictions_plot=None):
         self.case_results = case_results
@@ -45,7 +45,9 @@ def compute_delta_ofv(base_model: Model, cdd_models: List[Model], skipped_indivi
     if iofv is None:
         return [np.nan] * len(cdd_models)
 
-    cdd_ofvs = [m.modelfit_results.ofv if m.modelfit_results else np.nan for m in cdd_models]
+    cdd_ofvs = [
+        m.modelfit_results.ofv if m.modelfit_results is not None else np.nan for m in cdd_models
+    ]
 
     # need to set dtype for index.difference to work
     skipped_indices = [
@@ -69,7 +71,7 @@ def compute_covariance_ratios(cdd_models, covariance_matrix):
         orig_det = np.linalg.det(covariance_matrix)
         return [
             sqrt(np.linalg.det(m.modelfit_results.covariance_matrix) / orig_det)
-            if m.modelfit_results and m.modelfit_results.covariance_matrix is not None
+            if m.modelfit_results is not None and m.modelfit_results.covariance_matrix is not None
             else np.nan
             for m in cdd_models
         ]
@@ -89,7 +91,7 @@ def calculate_results(
         data=[
             pd.Series(m.modelfit_results.parameter_estimates, name=m.name)
             for m in cdd_models
-            if m.modelfit_results
+            if m.modelfit_results is not None
         ]
     )
 

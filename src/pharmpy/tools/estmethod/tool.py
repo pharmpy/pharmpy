@@ -82,7 +82,9 @@ def post_process(input_model, *models):
         rank_type,
         -1000,
     )
-    summary_models = summarize_modelfit_results([base_model] + res_models)
+    summary_models = summarize_modelfit_results(
+        [base_model.modelfit_results] + [model.modelfit_results for model in res_models]
+    )
     summary_settings = summarize_estimation_steps([base_model] + res_models)
 
     if base_model.name == input_model.name:
@@ -102,7 +104,7 @@ def post_process(input_model, *models):
 
 
 class EstMethodResults(Results):
-    rst_path = Path(__file__).parent / 'report.rst'
+    rst_path = Path(__file__).resolve().parent / 'report.rst'
 
     def __init__(
         self,
@@ -126,7 +128,7 @@ class EstMethodResults(Results):
 
 
 def summarize_estimation_steps(models):
-    dfs = dict()
+    dfs = {}
     for model in models:
         df = model.estimation_steps.to_dataframe()
         df.index = range(1, len(df) + 1)

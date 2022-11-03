@@ -159,7 +159,7 @@ def split_doc_to_subtypes(doc_str):
 
     doc_type_current = 'description'
 
-    doc_dict = dict()
+    doc_dict = {}
     doc_dict[doc_type_current] = []
 
     for row in doc_split:

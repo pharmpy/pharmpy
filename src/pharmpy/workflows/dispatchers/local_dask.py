@@ -1,13 +1,19 @@
 import warnings
+from typing import TypeVar
 
 import pharmpy.workflows.dispatchers
-from pharmpy.utils import TemporaryDirectory, TemporaryDirectoryChanger
+from pharmpy.internals.fs.cwd import chdir
+from pharmpy.internals.fs.tmp import TemporaryDirectory
+
+from ..workflow import Workflow
+
+T = TypeVar('T')
 
 
-def run(workflow):
+def run(workflow: Workflow[T]) -> T:
 
     with TemporaryDirectory() as tempdirname:
-        with TemporaryDirectoryChanger(tempdirname):
+        with chdir(tempdirname):
             dsk = workflow.as_dask_dict()
 
             if pharmpy.workflows.dispatchers.conf.dask_dispatcher:
@@ -43,4 +49,4 @@ def run(workflow):
                             print(client)
                             dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
                             res = client.get(dsk_optimized, 'results')
-    return res
+    return res  # pyright: ignore [reportGeneralTypeIssues]

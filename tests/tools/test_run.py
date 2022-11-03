@@ -8,18 +8,19 @@ import pytest
 
 import pharmpy
 from pharmpy.deps import numpy as np
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.results import read_results
 from pharmpy.tools.run import (
     _create_metadata_common,
     _create_metadata_tool,
     _get_run_setup,
     rank_models,
+    read_modelfit_results,
     retrieve_final_model,
     retrieve_models,
     summarize_errors,
     summarize_modelfit_results,
 )
-from pharmpy.utils import TemporaryDirectoryChanger
 from pharmpy.workflows import LocalDirectoryToolDatabase, local_dask
 
 
@@ -59,7 +60,7 @@ def test_create_metadata_tool():
 
 
 def test_get_run_setup(tmp_path):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         name = 'modelsearch'
 
         dispatcher, database = _get_run_setup(common_options={}, toolname=name)
@@ -76,7 +77,7 @@ def test_get_run_setup(tmp_path):
 
 
 def test_create_metadata_common(tmp_path):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         name = 'modelsearch'
 
         dispatcher = local_dask
@@ -182,7 +183,7 @@ def test_retrieve_final_model(testdata):
 
 
 def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         model = load_model_for_test(pheno_path)
         shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
 
@@ -302,7 +303,7 @@ def test_summarize_modelfit_results(
 ):
     pheno = load_model_for_test(pheno_path)
 
-    summary_single = summarize_modelfit_results(pheno)
+    summary_single = summarize_modelfit_results(pheno.modelfit_results)
 
     assert summary_single.loc['pheno_real']['ofv'] == 586.2760562818805
     assert summary_single['OMEGA(1,1)_estimate'].mean() == 0.0293508
@@ -311,7 +312,7 @@ def test_summarize_modelfit_results(
 
     mox = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
 
-    summary_multiple = summarize_modelfit_results([pheno, mox])
+    summary_multiple = summarize_modelfit_results([pheno.modelfit_results, mox.modelfit_results])
 
     assert summary_multiple.loc['mox1']['ofv'] == -624.5229577248352
     assert summary_multiple['OMEGA(1,1)_estimate'].mean() == 0.2236304
@@ -323,11 +324,11 @@ def test_summarize_modelfit_results(
     pheno_no_res = create_model_for_test(pheno.model_code)
     pheno_no_res.name = 'pheno_no_res'
 
-    summary_no_res = summarize_modelfit_results([pheno, pheno_no_res])
+    summary_no_res = summarize_modelfit_results(
+        [pheno.modelfit_results, pheno_no_res.modelfit_results]
+    )
 
     assert summary_no_res.loc['pheno_real']['ofv'] == 586.2760562818805
-    assert np.isnan(summary_no_res.loc['pheno_no_res']['ofv'])
-    assert np.all(np.isnan(summary_no_res.filter(regex='estimate$').loc['pheno_no_res']))
 
     pheno_multest = load_model_for_test(
         testdata
@@ -339,14 +340,15 @@ def test_summarize_modelfit_results(
         / 'pheno_multEST.mod'
     )
 
-    summary_multest = summarize_modelfit_results([pheno_multest, mox])
+    summary_multest = summarize_modelfit_results(
+        [pheno_multest.modelfit_results, mox.modelfit_results]
+    )
 
     assert len(summary_multest.index) == 2
 
     assert not summary_multest.loc['pheno_multEST']['minimization_successful']
-
     summary_multest_full = summarize_modelfit_results(
-        [pheno_multest, mox], include_all_estimation_steps=True
+        [pheno_multest.modelfit_results, mox.modelfit_results], include_all_estimation_steps=True
     )
 
     assert len(summary_multest_full.index) == 3
@@ -360,17 +362,15 @@ def test_summarize_modelfit_results(
     pheno_multest_no_res.name = 'pheno_multest_no_res'
 
     summary_multest_full_no_res = summarize_modelfit_results(
-        [pheno_multest_no_res, mox], include_all_estimation_steps=True
+        [pheno_multest_no_res.modelfit_results, mox.modelfit_results],
+        include_all_estimation_steps=True,
     )
 
     assert summary_multest_full_no_res.loc['mox1', 1]['ofv'] == -624.5229577248352
-    assert np.isnan(summary_multest_full_no_res.loc['pheno_multest_no_res', 1]['ofv'])
-    estimates = summary_multest_full_no_res.loc['pheno_multest_no_res', 2].iloc[2:]
-    assert estimates.isnull().all()
 
 
 def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_path, pheno_path):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         model = load_model_for_test(pheno_path)
         shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
 
@@ -390,8 +390,12 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
             path=tmp_path / 'pheno_data.csv'
         )
 
-        models = [model, model_no_header, model_rounding_error]
-        summary = summarize_modelfit_results(models)
+        results = [
+            model.modelfit_results,
+            model_no_header.modelfit_results,
+            model_rounding_error.modelfit_results,
+        ]
+        summary = summarize_modelfit_results(results)
 
         assert summary.loc['pheno_real']['errors_found'] == 0
         assert summary.loc['pheno_real']['warnings_found'] == 0
@@ -399,3 +403,8 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
         assert summary.loc['pheno_no_header']['warnings_found'] == 1
         assert summary.loc['pheno_rounding_error']['errors_found'] == 2
         assert summary.loc['pheno_rounding_error']['warnings_found'] == 0
+
+
+def test_read_modelfit_results(testdata):
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    assert res.ofv == 586.27605628188053

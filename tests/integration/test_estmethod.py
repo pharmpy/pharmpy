@@ -2,11 +2,12 @@ import shutil
 
 import pytest
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.tools import run_tool
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
+@pytest.mark.filterwarnings('ignore:.*.ext does not exist')
 @pytest.mark.parametrize(
     'algorithm, methods, solvers, no_of_candidates, advan_ref',
     [
@@ -18,7 +19,7 @@ from pharmpy.utils import TemporaryDirectoryChanger
 def test_estmethod(
     tmp_path, model_count, testdata, algorithm, methods, solvers, no_of_candidates, advan_ref
 ):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         for path in (testdata / 'nonmem').glob('pheno_real.*'):
             shutil.copy2(path, tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)

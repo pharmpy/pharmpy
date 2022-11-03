@@ -2,10 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
+from typing import Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
-from pharmpy.expressions import subs, sympify
+from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
+from pharmpy.internals.graph.directed.connected_components import strongly_connected_component_of
+from pharmpy.internals.graph.directed.inverse import inverse as graph_inverse
+from pharmpy.internals.graph.directed.reachability import reachable_from
 from pharmpy.model import (
     Assignment,
     Compartment,
@@ -350,8 +354,8 @@ def simplify_expression(model, expr):
     PTVCL
     >>> conf.parameter_names = ['basic']
     """
-    expr = sympify(expr)
-    d = dict()
+    expr = parse_expr(expr)
+    d = {}
     for p in model.parameters:
         if p.fix:
             s = sympy.Float(p.init)
@@ -485,7 +489,7 @@ def make_declarative(model):
     S₁ = V
     """
     assigned_symbols = set()
-    duplicated_symbols = dict()  # symbol to last index
+    duplicated_symbols = {}  # symbol to last index
     for i, s in enumerate(model.statements):
         if not isinstance(s, Assignment):
             continue
@@ -497,7 +501,7 @@ def make_declarative(model):
         else:
             assigned_symbols.add(symb)
 
-    current = dict()
+    current = {}
     newstats = []
     for i, s in enumerate(model.statements):
         if not isinstance(s, Assignment):
@@ -608,7 +612,7 @@ def cleanup_model(model):
     """
     make_declarative(model)
 
-    current = dict()
+    current = {}
     newstats = []
     for s in model.statements:
         if isinstance(s, Assignment) and s.expression.is_Symbol:
@@ -722,7 +726,7 @@ def greekify_model(model, named_subscripts=False):
             subscript = f'{row}{col}'
         return subscript
 
-    subs = dict()
+    subs = {}
     for i, theta in enumerate(get_thetas(model), start=1):
         subscript = get_subscript(theta, i, named_subscripts)
         subs[theta.symbol] = sympy.Symbol(f"theta_{subscript}")
@@ -838,7 +842,7 @@ def _depends_on_any_of(
         raise KeyError(symbol)
 
     # NOTE Could be faster by returning immediately once found
-    return not _reachable_from({symbol}, lambda x: dependency_graph.get(x, [])).isdisjoint(symbols)
+    return not reachable_from({symbol}, lambda x: dependency_graph.get(x, [])).isdisjoint(symbols)
 
 
 def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
@@ -1273,7 +1277,7 @@ def _pk_free_symbols_from_compartment(
 
 def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Compartment]:
 
-    central_component_vertices = _strongly_connected_component_of(
+    central_component_vertices = strongly_connected_component_of(
         cs.central_compartment,
         lambda u: map(lambda flow: flow[0], cs.get_compartment_outflows(u)),
         lambda u: map(lambda flow: flow[0], cs.get_compartment_inflows(u)),
@@ -1288,7 +1292,7 @@ def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Com
         else cs.get_compartment_outflows
     )
 
-    return _reachable_from(
+    return reachable_from(
         {compartment},
         lambda u: filterfalse(
             central_component_vertices.__contains__,
@@ -1344,15 +1348,15 @@ def _filter_symbols(
     leaves: Union[Set[sympy.Symbol], None] = None,
 ) -> Set[sympy.Symbol]:
 
-    dependents = _graph_inverse(dependency_graph)
+    dependents = graph_inverse(dependency_graph)
 
-    free_symbols = _reachable_from(roots, lambda x: dependency_graph.get(x, []))
+    free_symbols = reachable_from(roots, lambda x: dependency_graph.get(x, []))
 
     reachable = (
         free_symbols
         if leaves is None
         else (
-            _reachable_from(
+            reachable_from(
                 leaves,
                 lambda x: dependents.get(x, []),
             ).intersection(free_symbols)
@@ -1440,48 +1444,3 @@ def _dependency_graph(assignments: Sequence[Assignment]):
                     dependencies[key] = (value - {symbol}) | previous_def
 
     return dependencies
-
-
-def _graph_inverse(g: Dict[T, Set[U]]) -> Dict[U, Set[T]]:
-
-    h = {}
-
-    for left, deps in g.items():
-        for right in deps:
-            if right in h:
-                h[right].add(left)
-            else:
-                h[right] = {left}
-
-    return h
-
-
-def _reachable_from(start_nodes: Set[T], neighbors: Callable[[T], Iterable[T]]) -> Set[T]:
-    queue = list(start_nodes)
-    closure = set(start_nodes)
-    while queue:
-        u = queue.pop()
-        n = neighbors(u)
-        for v in n:
-            if v not in closure:
-                queue.append(v)
-                closure.add(v)
-
-    return closure
-
-
-def _strongly_connected_component_of(
-    vertex: T, successors: Callable[[T], Iterable[T]], predecessors: Callable[[T], Iterable[T]]
-):
-
-    forward_reachable = _reachable_from({vertex}, successors)
-
-    # NOTE This searches for backward reachable vertices on the graph induced
-    # by the forward reachable vertices and is equivalent to (but less wasteful
-    # than) first computing the backward reachable vertices on the original
-    # graph and then computing the intersection with the forward reachable
-    # vertices.
-    return _reachable_from(
-        {vertex},
-        lambda u: filter(forward_reachable.__contains__, predecessors(u)),
-    )

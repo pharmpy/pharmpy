@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import re
-from typing import Callable
+from typing import TYPE_CHECKING, Callable, Optional, Tuple
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.expressions import canonical_ode_rhs
+from pharmpy.internals.expr.ode import canonical_ode_rhs
 from pharmpy.model import (
     Assignment,
     Bolus,
@@ -15,9 +15,11 @@ from pharmpy.model import (
     DataInfo,
     ExplicitODESystem,
     Infusion,
-    Model,
     ModelSyntaxError,
 )
+
+if TYPE_CHECKING:
+    from .model import Model
 
 from .nmtran_parser import NMTranControlStream
 
@@ -39,7 +41,7 @@ def _compartmental_model(
         cb.add_compartment(central)
         cb.add_compartment(output)
         cb.add_flow(central, output, _advan1and2_trans(trans))
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
     elif advan == 'ADVAN2':
         dose = _dosing(model, control_stream, 1)
@@ -56,7 +58,7 @@ def _compartmental_model(
         cb.add_compartment(output)
         cb.add_flow(central, output, _advan1and2_trans(trans))
         cb.add_flow(depot, central, sympy.Symbol('KA'))
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN3':
         dose = _dosing(model, control_stream, 1)
@@ -78,7 +80,7 @@ def _compartmental_model(
         cb.add_flow(central, output, k)
         cb.add_flow(central, peripheral, k12)
         cb.add_flow(peripheral, central, k21)
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'PERIPHERAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN4':
         dose = _dosing(model, control_stream, 1)
@@ -105,66 +107,57 @@ def _compartmental_model(
         cb.add_flow(central, output, k)
         cb.add_flow(central, peripheral, k23)
         cb.add_flow(peripheral, central, k32)
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL': 3, 'OUTPUT': 4}
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         cb = CompartmentalSystemBuilder()
         modrec = control_stream.get_records('MODEL')[0]
-        defobs = None
-        defdose = None
-        central = None
-        depot = None
-        first_dose = None
+        defobs: Optional[Tuple[str, int]] = None
+        defdose: Optional[Tuple[str, int]] = None
+        defcentral: Optional[Tuple[str, int]] = None
+        defdepot: Optional[Tuple[str, int]] = None
+        deffirst_dose: Optional[Tuple[str, int]] = None
         compartments = []
         comp_names = []
-        dose_no = -1
-        depot_no = -1
-        first_dose_no = -1
         for i, (name, opts) in enumerate(modrec.compartments(), 1):
             if 'DEFOBSERVATION' in opts:
-                defobs = name
+                defobs = (name, i)
             if 'DEFDOSE' in opts:
-                defdose = name
-                dose_no = i
+                defdose = (name, i)
             if name == 'CENTRAL':
-                central = name
+                defcentral = (name, i)
             elif name == 'DEPOT':
-                depot = name
-                depot_no = i
-            if first_dose is None and 'NODOSE' not in opts:
-                first_dose = name
-                first_dose_no = i
+                defdepot = (name, i)
+            if deffirst_dose is None and 'NODOSE' not in opts:
+                deffirst_dose = (name, i)
             comp_names.append(name)
 
         comp_names.append('OUTPUT')
         comp_map = {name: i for i, name in enumerate(comp_names, 1)}
 
-        if not defobs:
-            if central:
-                defobs = central
+        if defobs is None:
+            if defcentral is None:
+                defobs = (comp_names[0], 1)
             else:
-                defobs = comp_names[0]
+                defobs = defcentral
 
-        if not defdose:
-            if depot:
-                defdose = depot
-                dose_no = depot_no
-            elif first_dose is not None:
-                defdose = first_dose
-                dose_no = first_dose_no
+        if defdose is None:
+            if defdepot is not None:
+                defdose = defdepot
+            elif deffirst_dose is not None:
+                defdose = deffirst_dose
             else:
                 raise ModelSyntaxError('Dosing compartment is unknown')
 
-        assert dose_no != -1
-
-        dose = _dosing(model, control_stream, dose_no)
+        dose = _dosing(model, control_stream, defdose[1])
+        obscomp = None
         for i, name in enumerate(comp_names):
             if i == len(comp_names) - 1:
                 output = Compartment(name)
                 cb.add_compartment(output)
                 compartments.append(output)
                 break
-            if name == defdose:
+            if name == defdose[0]:
                 curdose = dose
             else:
                 curdose = None
@@ -173,11 +166,13 @@ def _compartmental_model(
             )
             cb.add_compartment(comp)
             compartments.append(comp)
-            if name == defobs:
-                defobs = comp
+            if name == defobs[0]:
+                obscomp = comp
+
+        assert obscomp is not None
         for from_n, to_n, rate in _find_rates(control_stream, len(comp_names)):
             cb.add_flow(compartments[from_n - 1], compartments[to_n - 1], rate)
-        ass = _f_link_assignment(control_stream, defobs)
+        ass = _f_link_assignment(control_stream, obscomp, defobs[1])
     elif advan == 'ADVAN10':
         dose = _dosing(model, control_stream, 1)
         cb = CompartmentalSystemBuilder()
@@ -191,7 +186,7 @@ def _compartmental_model(
         km = sympy.Symbol('KM')
         t = sympy.Symbol('t')
         cb.add_flow(central, output, vm / (km + sympy.Function(central.amount.name)(t)))
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
     elif advan == 'ADVAN11':
         dose = _dosing(model, control_stream, 1)
@@ -222,7 +217,7 @@ def _compartmental_model(
         cb.add_flow(per1, central, k21)
         cb.add_flow(central, per2, k13)
         cb.add_flow(per2, central, k31)
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'PERIPHERAL1': 2, 'PERIPHERAL2': 3, 'OUTPUT': 4}
     elif advan == 'ADVAN12':
         dose = _dosing(model, control_stream, 1)
@@ -258,18 +253,19 @@ def _compartmental_model(
         cb.add_flow(per1, central, k32)
         cb.add_flow(central, per2, k24)
         cb.add_flow(per2, central, k42)
-        ass = _f_link_assignment(control_stream, central)
+        ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
     elif des:
         rec_model = control_stream.get_records('MODEL')[0]
 
-        subs_dict, comp_names = dict(), dict()
+        subs_dict, comp_names = {}, {}
         comps = [c for c, _ in rec_model.compartments()]
 
         t = sympy.Symbol('t')
         for i, c in enumerate(comps, 1):
             a = sympy.Function(f'A_{c}')
             subs_dict[f'DADT({i})'] = sympy.Derivative(a(t))
+            subs_dict[f'DADT ({i})'] = sympy.Derivative(a(t))
             subs_dict[f'A({i})'] = a(t)
             comp_names[f'A({i})'] = a
 
@@ -306,29 +302,32 @@ def _compartmental_model(
                 rate = dose.rate
                 duration = dose.amount / dose.rate
 
-            dadt_dose.expression += sympy.Piecewise((rate, duration > t), (0, True))
+            dose_symb = dadt_dose.symbol
+            dose_expr = dadt_dose.expression + sympy.Piecewise((rate, duration > t), (0, True))
+            dadt_dose = Assignment(dose_symb, dose_expr)
             ics[comp_names['A(1)'](0)] = sympy.Integer(0)
 
         eqs = [sympy.Eq(dadt_dose.symbol, dadt_dose.expression)] + dadt_rest
 
         ode = ExplicitODESystem(eqs, ics)
-        ass = _f_link_assignment(control_stream, sympy.Symbol('A_CENTRAL'))
-        return ode, ass
+        # FIXME: 1 is not correct. Should use $MODEL as ADVAN5
+        ass = _f_link_assignment(control_stream, sympy.Symbol('A_CENTRAL'), 1)
+        return ode, ass, None
     else:
         return None
-    model._compartment_map = comp_map
-    return CompartmentalSystem(cb), ass
+    return CompartmentalSystem(cb), ass, comp_map
 
 
-def _f_link_assignment(control_stream: NMTranControlStream, compartment):
+def _f_link_assignment(control_stream: NMTranControlStream, compartment: Compartment, compno: int):
     f = sympy.Symbol('F')
     try:
         fexpr = compartment.amount
     except AttributeError:
         fexpr = compartment
     pkrec = control_stream.get_records('PK')[0]
-    if pkrec.statements.find_assignment('S1'):
-        fexpr = fexpr / sympy.Symbol('S1')
+    scaling = f'S{compno}'
+    if pkrec.statements.find_assignment(scaling):
+        fexpr = fexpr / sympy.Symbol(scaling)
     ass = Assignment(f, fexpr)
     return ass
 
@@ -548,7 +547,9 @@ def _advan12_trans(trans: str):
 def _dosing(model: Model, control_stream: NMTranControlStream, dose_comp: int):
     # FIXME Use lambda: model.dataset instead
     def dataset():
-        return model._read_dataset(control_stream, raw=False)
+        if not hasattr(model, '_data_frame'):
+            return model._read_dataset(control_stream, raw=False)
+        return model._data_frame
 
     return dosing(model.datainfo, dataset, dose_comp)
 

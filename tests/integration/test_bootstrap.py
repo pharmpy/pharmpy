@@ -1,12 +1,12 @@
 import shutil
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.tools import run_tool
-from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_bootstrap(tmp_path, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
+    with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.ext', tmp_path)

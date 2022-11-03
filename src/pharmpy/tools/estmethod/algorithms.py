@@ -107,7 +107,7 @@ def _create_eval_settings(laplace=False):
 
 
 def _create_est_settings(method):
-    est_settings = dict()
+    est_settings = {}
     interaction = True
     laplace = False
     maximum_evaluations = 9999

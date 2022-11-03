@@ -621,7 +621,7 @@ def expand_additional_doses(model, flag=False):
     df = df.apply(fn, axis=1)
     df = df.apply(lambda x: x.explode() if x.name in ['_TIMES', '_EXPANDED'] else x)
     df = df.astype({'_EXPANDED': np.bool_})
-    df = df.groupby([idcol, '_RESETGROUP']).apply(
+    df = df.groupby([idcol, '_RESETGROUP'], group_keys=False).apply(
         lambda x: x.sort_values(by='_TIMES', kind='stable')
     )
     df[idv] = df['_TIMES']
@@ -891,14 +891,16 @@ def add_time_after_dose(model):
         def fn(df):
             if len(df) < 2:
                 return df
+            ii_time = None
             for i in df.index:
                 if df.loc[i, ss] > 0:
                     ii_time = df.loc[i, ii]
                 else:
+                    assert ii_time is not None
                     df.loc[i, 'TAD'] = ii_time
             return df
 
-        df = df.groupby([idlab, idv, '_DOSEID']).apply(fn)
+        df = df.groupby([idlab, idv, '_DOSEID'], group_keys=False).apply(fn)
 
     df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
 
@@ -1152,7 +1154,14 @@ def _translate_nonmem_time_and_date_value(ser, timecol, datecol):
             year = a[0]
             month = a[1]
             day = a[2]
-        year = int(year)
+        if len(year) < 3:
+            year = int(year)
+            if year > 50:
+                year += 1900
+            else:
+                year += 2000
+        else:
+            year = int(year)
         month = int(month)
         day = int(day)
         hour = int(timeval)
@@ -1314,7 +1323,7 @@ class Checker:
         self.datainfo = datainfo
         self.dataset = dataset
         self.verbose = verbose
-        self.check_results = dict()
+        self.check_results = {}
         self.violations = []
 
     def set_result(self, code, test=False, violation=None, skip=False, warn=False):

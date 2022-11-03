@@ -2,8 +2,8 @@
 NONMEM data record class.
 """
 
+from pharmpy.internals.parse import AttrToken, AttrTree
 from pharmpy.model import ModelSyntaxError
-from pharmpy.parse_utils import AttrToken, AttrTree
 
 from .option_record import OptionRecord
 

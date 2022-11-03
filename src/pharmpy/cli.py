@@ -53,14 +53,15 @@ Definitions
 """
 
 import argparse
-import pathlib
 import pydoc
 import sys
 import warnings
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
+from pathlib import Path
 from textwrap import dedent
 
 import pharmpy
+from pharmpy.internals.fs.path import path_absolute
 
 from .deps import pandas as pd
 
@@ -95,7 +96,7 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 
     key_width = max(len(field) for field in data_dict.keys())
     if sort:
-        data_dict = OrderedDict(sorted(data_dict.items()))
+        data_dict = dict(sorted(data_dict.items()))
     if right_just:
         line_format = '  %%%ds\t%%s' % key_width
     else:
@@ -136,6 +137,7 @@ def run_modelsearch(args):
         rank_type=args.rank_type,
         cutoff=args.cutoff,
         iiv_strategy=args.iiv_strategy,
+        results=args.model.modelfit_results,
         model=args.model,
         path=args.path,
     )
@@ -151,6 +153,7 @@ def run_iivsearch(args):
         rank_type=args.rank_type,
         cutoff=args.cutoff,
         model=args.model,
+        results=args.model.modelfit_results,
         path=args.path,
     )
 
@@ -166,6 +169,7 @@ def run_iovsearch(args):
         cutoff=args.cutoff,
         distribution=args.distribution,
         model=args.model,
+        results=args.model.modelfit_results,
         path=args.path,
     )
 
@@ -179,6 +183,7 @@ def run_covsearch(args):
         p_forward=args.p_forward,
         max_steps=args.max_steps,
         algorithm=args.algorithm,
+        results=args.model.modelfit_restuls,
         model=args.model,
         path=args.path,
     )
@@ -203,6 +208,7 @@ def run_allometry(args):
     run_tool(
         'allometry',
         model=args.model,
+        results=args.model.modelfit_results,
         allometric_variable=args.allometric_variable,
         reference_value=args.reference_value,
         parameters=args.parameters,
@@ -400,7 +406,7 @@ def info(args):
     inst = Install(
         pharmpy.__version__,
         'A list of authors can be found in the AUTHORS.rst',
-        str(pathlib.Path(pharmpy.__file__).parent),
+        str(Path(pharmpy.__file__).resolve().parent),
     )
 
     lines = format_keyval_pairs(inst._asdict(), right_just=True)
@@ -412,7 +418,7 @@ def model_print(args):
     lines = []
     for i, model in enumerate(args.models):
         lines += ['[%d/%d] %r' % (i + 1, len(args.models), model.name)]
-        dict_ = OrderedDict()
+        dict_ = {}
         try:
             dict_['dataset'] = repr(model.dataset)
         except FileNotFoundError as e:
@@ -849,8 +855,8 @@ def check_input_path(path):
     Raises if not found or is dir, without tracebacks (see :func:`error_exit`).
     """
     try:
-        path = pathlib.Path(path)
-        path = path.resolve()
+        path = Path(path)
+        path = path_absolute(path)
     except FileNotFoundError:
         pass
 
@@ -875,7 +881,8 @@ def input_model(path):
     path = check_input_path(path)
     from pharmpy.model import Model
 
-    return Model.create_model(path)
+    model = Model.create_model(path)
+    return model
 
 
 def input_model_or_dataset(path):
@@ -955,7 +962,7 @@ group_output.add_argument(
     '-f', '--force', action='store_true', help='remove existing destination files (all)'
 )
 group_output.add_argument(
-    '-o', '--output_file', dest='output_file', metavar='file', type=pathlib.Path, help='output file'
+    '-o', '--output_file', dest='output_file', metavar='file', type=Path, help='output file'
 )
 
 parser_definition = [
@@ -1020,7 +1027,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--path',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to output directory',
                             },
                         ],
@@ -1058,7 +1065,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--path',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to output directory',
                             },
                         ],
@@ -1105,7 +1112,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--path',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to output directory',
                             },
                         ],
@@ -1153,7 +1160,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--path',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to output directory',
                             },
                         ],
@@ -1185,7 +1192,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--path',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to output directory',
                             },
                         ],
@@ -1240,7 +1247,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--path',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to output directory',
                             },
                         ],
@@ -1857,7 +1864,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN bootstrap run directory',
                             }
                         ],
@@ -1872,7 +1879,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN cdd run directory',
                             }
                         ],
@@ -1887,7 +1894,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN frem run directory',
                             },
                             {
@@ -1921,7 +1928,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN linearize run directory',
                             }
                         ],
@@ -1944,7 +1951,7 @@ parser_definition = [
                             {
                                 'name': 'dir',
                                 'metavar': 'file or directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to directory containing results.json '
                                 'or directly to json results file',
                             }
@@ -1960,7 +1967,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN qa run directory',
                             }
                         ],
@@ -1975,7 +1982,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN run directory',
                             }
                         ],
@@ -1990,7 +1997,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN ruvsearch run directory',
                             }
                         ],
@@ -2005,7 +2012,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN scm run directory',
                             }
                         ],
@@ -2020,7 +2027,7 @@ parser_definition = [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
-                                'type': pathlib.Path,
+                                'type': Path,
                                 'help': 'Path to PsN simeval run directory',
                             }
                         ],

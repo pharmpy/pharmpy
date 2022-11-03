@@ -3,6 +3,8 @@ import shutil
 from itertools import count
 from pathlib import Path
 
+from pharmpy.internals.fs.path import path_absolute
+
 from ..model_database import LocalModelDirectoryDatabase
 from .baseclass import ToolDatabase
 
@@ -35,7 +37,7 @@ class LocalDirectoryToolDatabase(ToolDatabase):
             path.mkdir(parents=True, exist_ok=exist_ok)
 
         assert path is not None
-        self.path = path.resolve()
+        self.path = path_absolute(path)
 
         modeldb = LocalModelDirectoryDatabase(self.path / 'models')
         self.model_database = modeldb

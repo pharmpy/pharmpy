@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import copy
 from collections.abc import Sequence
+from typing import overload
 
 from pharmpy.deps import pandas as pd
 
@@ -66,7 +69,7 @@ class EstimationStep:
         self._solver_rtol = solver_rtol
         self._solver_atol = solver_atol
         if tool_options is None:
-            self._tool_options = dict()
+            self._tool_options = {}
         else:
             self._tool_options = tool_options
         if eta_derivatives is None:
@@ -246,9 +249,17 @@ class EstimationSteps(Sequence):
         else:
             self._steps = tuple(steps)
 
+    @overload
+    def __getitem__(self, i: int) -> EstimationStep:
+        ...
+
+    @overload
+    def __getitem__(self, i: slice) -> EstimationSteps:
+        ...
+
     def __getitem__(self, i):
         if isinstance(i, slice):
-            return EstimationSteps(self._steps[i.start : i.stop : i.step])
+            return EstimationSteps(self._steps[i])
         return self._steps[i]
 
     def __add__(self, other):
