@@ -11,63 +11,112 @@
 //               [FUNCTION function_name(input_vector_name,dimension[,usage])]
 //               [VECTOR input_vector_name(dimension)]
 
-root : _begin _options _end
-_options: (_options _sep)? option
-
-_begin: _sep?
-_end: ws? (COMMENT? newline)? COMMENT?
-_sep: ws | ws? COMMENT? newline
+root : option+
 
 // option rules
-?option : COMRES SEP SIGNED_INT                         -> comres
-        | COMSAV SEP SIGNED_INT                         -> comsav
-        | DERIV2 SEP (NO | NOCOMMON)                    -> deriv2
-        | DERIV1 SEP NO                                 -> deriv1
-        | FASTDER                                       -> fastder
-        | NOFASTDER                                     -> nofastder
-        | CHECKMU                                       -> checkmu
-        | NOCHECKMU                                     -> nocheckmu
-        | DES SEP (COMPACT | FULL)                      -> des
-        | REPLACE ws2 ANY SEP ANY                        -> replace
-        | DECLARE ws1 _declarations                      -> declare
-        | PROTECT                                       -> protect
-        | FUNCTION SYMBOL "(" SYMBOL "," INT ")"        -> function
-        | VECTOR SYMBOL "(" INT ")"                     -> vector
+?option : COMRES "="? SIGNED_INT                   -> comres
+        | COMSAV "="? SIGNED_INT                   -> comsav
+        | DERIV2 "="? (NO | NOCOMMON)              -> deriv2
+        | DERIV1 "="? NO                           -> deriv1
+        | FASTDER                                  -> fastder
+        | NOFASTDER                                -> nofastder
+        | CHECKMU                                  -> checkmu
+        | NOCHECKMU                                -> nocheckmu
+        | DES "="? (COMPACT | FULL)                -> des
+        | REPLACE ANY "="? ANY                     -> replace
+        | DECLARE _declarations                    -> declare
+        | PROTECT                                  -> protect
+        | FUNCTION SYMBOL "(" SYMBOL "," INT ")"   -> function
+        | VECTOR SYMBOL "(" INT ")"                -> vector
 
-declaration: ((INTEGER | DOWHILE) ws1)? CNAME ("(" ws? INT ("," ws? INT)? ws?  ")")? -> declare
+_declarations: (_declarations ",")? declaration
 
-_declarations: (_declarations ws? "," ws1?)? declaration
+declaration: (INTEGER | DOWHILE)? CNAME _dimensions? -> declare
+_dimensions: "(" INT ("," INT)? ")"
 
-ANY: /[^ \n\r\t=]+/
-SEP: /\s*=\s*|\s+(?!=)/
+
+ANY: /[^ \x00\n\r\t=]+/
 
 // option terminals
 COMPACT: "COMPACT"
 FULL: "FULL"
 NO: "NO"
 NOCOMMON: "NOCOMMON"
-COMRES: "COMRES" | "COMRE" | "COMR"
-COMSAV: "COMSAV" | "COMSA" | "COMS"
+COMRES: "COMRES"
+      | "COMRE"
+      | "COMR"
+
+COMSAV: "COMSAV"
+      | "COMSA"
+      | "COMS"
+
 DERIV1: "DERIV1"
 DERIV2: "DERIV2"
-FASTDER: "FASTDER" | "FASTDE" | "FASTD" | "FAST" | "FAS"
-NOFASTDER: "NOFASTDER" | "NOFASTDE" | "NOFASTD" | "NOFAST" | "NOFAS" | "NOFA" | "NOF"
-CHECKMU: "CHECKMU" | "CHECKM" | "CHECK" | "CHEC" | "CHE"
-NOCHECKMU: "NOCHECKMU" | "NOCHECKM" | "NOCHECK" | "NOCHEC" | "NOCHE" | "NOCH" | "NOC"
+FASTDER: "FASTDER"
+       | "FASTDE"
+       | "FASTD"
+       | "FAST"
+       | "FAS"
+
+NOFASTDER: "NOFASTDER"
+         | "NOFASTDE"
+         | "NOFASTD"
+         | "NOFAST"
+         | "NOFAS"
+         | "NOFA"
+         | "NOF"
+
+CHECKMU: "CHECKMU"
+       | "CHECKM"
+       | "CHECK"
+       | "CHEC"
+       | "CHE"
+
+NOCHECKMU: "NOCHECKMU"
+         | "NOCHECKM"
+         | "NOCHECK"
+         | "NOCHEC"
+         | "NOCHE"
+         | "NOCH"
+         | "NOC"
+
 DES: "DES"
-REPLACE: "REPLACE" | "REPLAC" | "REPLA" | "REPL" | "REP"
-DECLARE: "DECLARE" | "DECLAR" | "DECLA" | "DECL" | "DEC"
-PROTECT: "PROTECT" | "PROTEC" | "PROTE" | "PROT" | "PRO"
-FUNCTION: "FUNCTION" | "FUNCTIO" | "FUNCTI" | "FUNCT" | "FUNC" | "FUN"
-VECTOR: "VECTOR" | "VECTO" | "VECT" | "VEC"
+REPLACE: "REPLACE"
+       | "REPLAC"
+       | "REPLA"
+       | "REPL"
+       | "REP"
+
+DECLARE: "DECLARE"
+       | "DECLAR"
+       | "DECLA"
+       | "DECL"
+       | "DEC"
+
+PROTECT: "PROTECT"
+       | "PROTEC"
+       | "PROTE"
+       | "PROT"
+       | "PRO"
+
+FUNCTION: "FUNCTION"
+        | "FUNCTIO"
+        | "FUNCTI"
+        | "FUNCT"
+        | "FUNC"
+        | "FUN"
+
+VECTOR: "VECTOR"
+      | "VECTO"
+      | "VECT"
+      | "VEC"
+
 INTEGER: "INTEGER"
 DOWHILE: "DOWHILE"
 
-// common misc rules
-newline: (newline COMMENT?)? NEWLINE ws?
-ws : WS_ALL
-ws1 : WS_ALL
-ws2 : WS_ALL
-
-%import .definitions (INT, SIGNED_INT, SYMBOL, WS_ALL, WS, COMMENT, NEWLINE)
+%import .definitions (INT, SIGNED_INT, SYMBOL, WS, COMMENT, NEWLINE)
 %import common.CNAME
+
+%ignore WS
+%ignore COMMENT
+%ignore NEWLINE

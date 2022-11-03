@@ -14,7 +14,7 @@ from lark.lexer import Token
 
 from . import prettyprint
 
-TYPES_OF_NEWLINE = frozenset(('CONT', 'WS_ALL', 'NEWLINE', 'newline'))
+TYPES_OF_NEWLINE = frozenset(('CONT', 'NEWLINE', 'newline'))
 TYPES_OF_COMMENT = frozenset(('COMMENT', 'newline'))
 
 
