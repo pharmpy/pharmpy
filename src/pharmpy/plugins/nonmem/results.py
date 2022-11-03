@@ -22,7 +22,8 @@ def parse_modelfit_results(model, path, subproblem=None):
     log = Log()
     try:
         try:
-            ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
+            ext_path = path.with_suffix('.ext')
+            ext_tables = NONMEMTableFile(ext_path)
         except ValueError:
             log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
             return None
