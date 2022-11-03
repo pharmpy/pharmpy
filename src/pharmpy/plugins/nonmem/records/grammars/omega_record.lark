@@ -60,14 +60,14 @@ CHOLESKY : "CHOLESKY" | "CHOLESK" | "CHOLES" | "CHOLE" | "CHOL" | "CHO"
 
 // parentheses sizes (optional for SAME and BLOCK with SAME)
 BLOCK       : "BLOCK" | "BLOC" | "BLO"
-block       : BLOCK _lpar size _rpar
+block       : BLOCK _lpar_int size _rpar
 bare_block  : BLOCK
 
 SAME.1      : "SAME"
-same        : SAME (_lpar size _rpar)?
+same        : SAME (_lpar_int size _rpar)?
 
 DIAGONAL    : "DIAGONAL" | "DIAGONA" | "DIAGON" | "DIAGO" | "DIAG" | "DIA"
-diagonal    : DIAGONAL _lpar size _rpar
+diagonal    : DIAGONAL _lpar_int size _rpar
 
 VALUES      : "VALUES"
 values      : VALUES _lpar diag _sep? odiag _rpar
@@ -79,10 +79,12 @@ odiag : NUMERIC
 // separator and clustering of init values
 _sep : ","
 _lpar : "("
+_lpar_int : "("
 _rpar : ")"
 
 init  : NUMERIC
-n     : "x" INT
+n     : X INT
+X     : "x"
 
 
 %import .definitions (INT, NUMERIC, COMMENT, NEWLINE, WS)

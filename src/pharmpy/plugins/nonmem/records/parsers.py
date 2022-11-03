@@ -168,9 +168,6 @@ class ThetaRecordParser(RecordParser):
 class OmegaRecordParser(RecordParser):
     grammar_filename = 'omega_record.lark'
     grammar_options = dict(
-        parser='earley',
-        lexer='dynamic',
-        ambiguity='resolve',
         propagate_positions=True,
     )
     non_empty = [
