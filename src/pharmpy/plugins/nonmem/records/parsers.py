@@ -171,10 +171,12 @@ class OmegaRecordParser(RecordParser):
         parser='earley',
         lexer='dynamic',
         ambiguity='resolve',
+        propagate_positions=True,
     )
     non_empty = [
         {'comment': (1, 'COMMENT')},
     ]
+    post_process = [insert_ignored]
 
 
 @install_grammar

@@ -24,80 +24,68 @@
 //   %input | VARIANCE CORRELATION BLOCK(2)\n0.64\n-0.394 0.58|
 //   %input | CHOLESKY BLOCK(2)\n0.8\n-0.3 0.7|
 
-root : _begin _record _end
+root : _record
 
-_record : (diagonal _sep)? _diag_items                        // form 1
-        | _options block _sep _options _omegas                // form 2
-        | _options block _sep _options same                   // form 3
-        | _options bare_block _sep _options same              // form 3 w/o n
-        | _options block _sep _options values _roptions       // form 4
+_record : (diagonal _sep?)? _diag_items                        // form 1
+        | _options block _sep? _options _omegas                // form 2
+        | _options block _sep? _options same                   // form 3
+        | _options bare_block _sep? _options same              // form 3 w/o n
+        | _options block _sep? _options values _roptions       // form 4
 
-_options: (_option _sep)*
-_roptions: _roptions? _sep _option
+_options: (_option _sep?)*
+_roptions: _roptions? _sep? _option
 
-_diag_items: (_diag_items _sep)? diag_item
+_diag_items: (_diag_items _sep?)? diag_item
 diag_item: init _diag_options?
-         | _lpar1 (_diag_option _sep)* init _diag_options? _rpar n?
-_diag_options: _diag_options? _sep _diag_option
+         | _lpar (_diag_option _sep?)* init _diag_options? _rpar n?
+_diag_options: _diag_options? _sep? _diag_option
 _diag_option: FIX | SD | VAR
 
 // repeat of init or comment (form 1 & 2)
-_omegas : (_omegas _sep_comment)? omega
+_omegas : _omegas? omega
 
 // omega init value
 omega : init _roptions?
-      | _lpar1 init (_sep _option)* _rpar n?
-      | _lpar1 (_option _sep)+ init _rpar n?
+      | _lpar init (_sep? _option)* _rpar n?
+      | _lpar (_option _sep?)+ init _rpar n?
 
 // can be tied to WHOLE record or ONE INIT
 _option  : FIX | VAR | SD | CORR | COV | CHOLESKY
 FIX      : "FIXED" | "FIXE" | "FIX"
 VAR      : "VARIANCE" | "VARIANC" | "VARIAN" | "VARIA" | "VARI" | "VAR" | "VA" | "V"
-SAME.1   : "SAME"
 SD       : "STANDARD" | "STANDAR" | "STANDA" | "STAND" | "STAN" | "STA" | "ST" | "SD" | "S"
 CORR     : "CORRELATION" | "CORRELATIO" | "CORRELATI" | "CORRELAT" | "CORRELA" | "CORREL" | "CORRE" | "CORR" | "COR"
 COV      : "COVARIANCE" | "COVARIANC" | "COVARIAN" | "COVARIA" | "COVARI" | "COVAR" | "COVA" | "COV"
 CHOLESKY : "CHOLESKY" | "CHOLESK" | "CHOLES" | "CHOLE" | "CHOL" | "CHO"
 
 // parentheses sizes (optional for SAME and BLOCK with SAME)
-block       : ("BLOCK" | "BLOC" | "BLO") _skip _lpar0 size _rpar
-bare_block  : ("BLOCK" | "BLOC" | "BLO")
-same        : SAME (_lpar0 size _rpar)?
-diagonal    : ("DIAGONAL" | "DIAGONA" | "DIAGON" | "DIAGO" | "DIAG" | "DIA") _skip _lpar0 size _rpar
-values      : "VALUES" _lpar1 diag sep odiag _rpar
+BLOCK       : "BLOCK" | "BLOC" | "BLO"
+block       : BLOCK _lpar size _rpar
+bare_block  : BLOCK
+
+SAME.1      : "SAME"
+same        : SAME (_lpar size _rpar)?
+
+DIAGONAL    : "DIAGONAL" | "DIAGONA" | "DIAGON" | "DIAGO" | "DIAG" | "DIA"
+diagonal    : DIAGONAL _lpar size _rpar
+
+VALUES      : "VALUES"
+values      : VALUES _lpar diag _sep? odiag _rpar
 
 size  : INT
 diag  : NUMERIC
 odiag : NUMERIC
 
 // separator and clustering of init values
-sep : WS | WS? "," WS?
-_lpar0 : "(" ws0?
-_lpar1 : "(" ws1?
-_rpar : WS? ")"
-
-?ws0: WS
-?ws1: WS
-?ws2: WS
-?ws3: WS
-?newline2: NEWLINE
-?newline3: NEWLINE
+_sep : ","
+_lpar : "("
+_rpar : ")"
 
 init  : NUMERIC
 n     : "x" INT
 
-// common misc rules
-_begin: _skip
-_skip: WS? (COMMENT? _newlines)?
-_sep : ws2 | ws2? COMMENT? _newlines
-_newlines : (_newlines COMMENT?)? newline2 ws2?
-_sep_comment : ws3 | ws3? COMMENT? _newlines_comment
-_newlines3 : (_newlines3 COMMENT?)? newline3 ws3?
-_newlines_comment : (_newlines3 COMMENT?)? newline3 ws3?
-_end: _trailing_comments? WS? NEWLINE*
-_trailing_comments: (NEWLINE+ | WS)? _trailing_comments_loop
-_trailing_comments_loop: _trailing_comment (NEWLINE+ _trailing_comments_loop)?
-_trailing_comment: COMMENT
 
-
-%import .definitions (COMMENT, INT, NEWLINE, NUMERIC, WS)
+%import .definitions (INT, NUMERIC, COMMENT, NEWLINE, WS)
+%ignore WS
+%ignore COMMENT
+%ignore NEWLINE
