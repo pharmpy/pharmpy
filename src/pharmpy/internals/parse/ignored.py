@@ -1,4 +1,4 @@
-from typing import Iterator, List, Tuple, Union
+from typing import Iterable, Iterator, List, Tuple, Union
 
 from lark import Token, Transformer, Tree
 from lark.tree import Meta
@@ -6,7 +6,7 @@ from lark.tree import Meta
 WS = {' ', '\x00', '\t'}
 
 
-def _tokenize_ignored_characters(s: str, i: int, j: int):
+def _tokenize_ignored_characters(s: str, i: int, j: int) -> Iterable[Token]:
     # TODO propagate line/column information
     head = i
     while i < j:
@@ -91,15 +91,21 @@ class InterleaveIgnored(Transformer):
 
 def with_ignored_tokens(source, tree):
     new_tree = InterleaveIgnored(source).transform(tree)
+
     final_meta = Meta()
     # TODO propagate line/column information
     final_meta.start_pos = 0
     final_meta.end_pos = len(source)
     final_meta.empty = False
-    final_children = (
-        list(_tokenize_ignored_characters(source, 0, new_tree.meta.start_pos))
-        + new_tree.children
-        + list(_tokenize_ignored_characters(source, new_tree.meta.end_pos, len(source)))
-    )
+
+    if new_tree.children:
+        final_children: List[Union[Tree, Token]] = (
+            list(_tokenize_ignored_characters(source, 0, new_tree.meta.start_pos))
+            + new_tree.children
+            + list(_tokenize_ignored_characters(source, new_tree.meta.end_pos, len(source)))
+        )
+    else:
+        final_children = list(_tokenize_ignored_characters(source, 0, len(source)))
+
     final_tree = Tree(new_tree.data, final_children, final_meta)
     return final_tree
