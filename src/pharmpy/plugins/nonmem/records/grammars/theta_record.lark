@@ -18,46 +18,40 @@
 //   5. "FIXED" can appear almost anywhere and multiple times in a row
 //      when parentheses are used
 
-root : _begin (_options _end)?
+root : _options?
 
-_options : (_options _sep)? (theta | option)
+_options : _options? (theta | option)
 
-_begin : _sep?
-_end : WS? (COMMENT? _newlines)? COMMENT?
-_sep : WS | WS? COMMENT? _newlines
+option : KEY "=" VALUE
+       | VALUE
 
-_newlines : (_newlines COMMENT?)? NEWLINE WS?
-
-?option : KEY WS? "=" WS? VALUE -> option
-        | VALUE                 -> option
-
-theta : init (WS FIX)?                    // form 1
-      | _lpar _inside _rpar _after?       // form 2+3+4+5
+theta : init FIX?                    // form 1
+      | _lpar _inside _rpar _after?  // form 2+3+4+5
 
 _inside: _init_or_low _rest
 
-_rest: // (empty, NO rest) form 2+3+5 (init)
-     | (WS | WS? "," WS? _lfixes?) init _rfixes? (WS? ",")?    // form 2+3+5 (low, init)
-     | (WS | WS? "," WS? _lfixes?) init _rfixes? (WS? "," WS?  _lfixes?)? up _rfixes?  // form 2+3+5 (low, init, up?)
-     | WS? "," WS? "," WS? _lfixes? up _rfixes?        // form 4+5 (low, up)
+_rest:                                                          // (empty, NO rest) form 2+3+5 (init)
+     | (_sep _fixes?)? init _fixes? _sep?                       // form 2+3+5 (low, init)
+     | (_sep _fixes?)? init _fixes? (_sep _fixes?)? up _fixes?  // form 2+3+5 (low, init, up?)
+     | _sep _sep _fixes? up _fixes?                             // form 4+5 (low, up)
 
-_init_or_low : _lfixes? init_or_low _rfixes?
+_init_or_low : _fixes? init_or_low _fixes?
 
-_lpar : "(" WS?
-_rpar : WS? ")"
+_lpar : "("
+_rpar : ")"
+_sep : ","
 
-_after: n | WS? FIX
+_after: n | FIX
 
-_fixes: (_fixes WS)? FIX
-_lfixes: _fixes WS
-_rfixes: WS _fixes
+_fixes: _fixes? FIX
 
 
 init_or_low: NUMERIC | NEG_INF // Hack to get around LALR(1) limitations
 init : NUMERIC
 low  : NUMERIC | NEG_INF
 up   : NUMERIC | POS_INF
-n    : "x" INT
+n    : X INT
+X.1  : "x"
 
 NEG_INF: "-INF"i | "-1000000"
 POS_INF: "INF"i | "1000000"
@@ -66,6 +60,9 @@ FIX : "FIXED" | "FIXE" | "FIX"
 
 // generic option terminals (key/value)
 KEY   : /(?!([0-9]|\(|FIX))\w+/
-VALUE : /(?!([0-9]|\(|FIX))[^\s=;]+/
+VALUE : /(?!(,|[0-9]|\(|FIX))[^\s=;]+/
 
-%import .definitions (INT, COMMENT, NEWLINE, NUMERIC, WS)
+%import .definitions (INT, NUMERIC, COMMENT, NEWLINE, WS)
+%ignore WS
+%ignore COMMENT
+%ignore NEWLINE

@@ -7,7 +7,7 @@ to point to your grammar file) to define a powerful parser.
 import copy
 import re
 from abc import ABC
-from typing import Any, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 from lark import Lark, Transformer, Tree, Visitor
 from lark.lexer import Token
@@ -474,7 +474,7 @@ class GenericParser(ABC):
         debug=False,
         cache=False,
     )
-    post_process: List[Union[Visitor, Transformer]] = []
+    post_process: List[Union[Visitor, Transformer, Callable[[str, Tree], Tree]]] = []
 
     def __init__(self, buf=None):
         self.root = self.parse(buf)
@@ -501,6 +501,8 @@ class GenericParser(ABC):
                 processor.visit(root)
             elif isinstance(processor, Transformer):
                 root = processor.transform(root)
+            elif isinstance(processor, Callable):
+                root = processor(self.buffer, root)
             else:
                 raise TypeError(f'Processor {processor} must be a Visitor or a Transformer')
 
