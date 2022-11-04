@@ -63,6 +63,10 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     covariate : str
         Name of covariate.
 
+    Return
+    ------
+    Model
+        Reference to the same model
 
     Examples
     --------
@@ -91,6 +95,8 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
         kept_thetas, model.statements.after_odes.free_symbols
     )
     model.parameters = Parameters((p for p in model.parameters if p.symbol in kept_parameters))
+
+    return model
 
 
 def add_covariate_effect(
