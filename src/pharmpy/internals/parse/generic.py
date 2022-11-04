@@ -493,9 +493,6 @@ class GenericParser(ABC):
         if self.non_empty:
             root = self.insert(root, self.non_empty)
 
-        if self.lark.options.parser == 'lalr':
-            RenameNumbered().visit(root)
-
         for processor in self.post_process:
             if isinstance(processor, Visitor):
                 processor.visit(root)
