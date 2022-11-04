@@ -5,8 +5,8 @@ def get_lag_times(model):
     ----------
     model : Pharmpy model
 
-    Result
-    ------
+    Returns
+    -------
     dict
         Dictionary from compartment name to lag time expression
     """
@@ -27,8 +27,8 @@ def get_bioavailability(model):
     ----------
     model : Pharmpy model
 
-    Result
-    ------
+    Returns
+    -------
     dict
         Dictionary from compartment name to bioavailability expression
     """

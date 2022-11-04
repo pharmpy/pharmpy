@@ -767,7 +767,6 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
     ----------
     model : Model
         Pharmpy model to retrieve the individuals parameters from
-
     level : str
         The variability level to look for: 'iiv', 'iov', or 'all' (default)
 
@@ -1183,7 +1182,6 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
     ----------
     model : Model
         Pharmpy model to retrieve the PK parameters from
-
     kind : str
         The type of parameter to retrieve: 'absorption', 'distribution',
         'elimination', or 'all' (default).
