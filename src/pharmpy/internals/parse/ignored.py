@@ -4,6 +4,7 @@ from lark import Token, Transformer, Tree
 from lark.tree import Meta
 
 WS = {' ', '\x00', '\t'}
+LF = {'\r', '\n'}
 
 
 def _tokenize_ignored_characters(s: str, i: int, j: int) -> Iterable[Token]:
@@ -30,9 +31,15 @@ def _tokenize_ignored_characters(s: str, i: int, j: int) -> Iterable[Token]:
 
             yield Token('NEWLINE', s[i:head], start_pos=i, end_pos=head)
 
-        else:
-            assert first == '\n'
+        elif first == '\n':
             yield Token('NEWLINE', s[i:head], start_pos=i, end_pos=head)
+
+        else:
+            assert first == '&'
+            while head < j and s[head] not in LF:
+                head += 1
+
+            yield Token('CONT', s[i:head], start_pos=i, end_pos=head)
 
         i = head
 
