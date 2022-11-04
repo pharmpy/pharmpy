@@ -42,7 +42,7 @@ class OptionRecord(Record):
 
     def get_option(self, name):
         for opt in self.all_options:
-            if opt.key[0:3] == name[0:3]:
+            if opt.key[:3] == name[:3]:
                 return opt.value
         return None
 
@@ -165,12 +165,9 @@ class OptionRecord(Record):
         """Remove all options key"""
         new_children = []
         for node in self.root.children:
-            if node.rule == 'option':
-                if key == _get_key(node):
-                    if new_children[-1].rule == 'ws':
-                        new_children.pop()
-                else:
-                    new_children.append(node)
+            if node.rule == 'option' and key == _get_key(node):
+                if new_children[-1].rule == 'WS':
+                    new_children.pop()
             else:
                 new_children.append(node)
         self.root.children = new_children
