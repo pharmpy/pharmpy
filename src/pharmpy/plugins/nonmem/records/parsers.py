@@ -109,7 +109,6 @@ class RenameNumbered(Visitor):
 class CodeRecordParser(RecordParser):
     grammar_filename = 'code_record.lark'
     grammar_options = dict(
-        parser='earley',
-        lexer='dynamic',
-        ambiguity='resolve',
+        propagate_positions=True,
     )
+    post_process = [with_ignored_tokens]

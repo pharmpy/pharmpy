@@ -3,20 +3,21 @@
 
 root: _empty_lines? (pseudo _empty_lines?)? _statements_and_verbatims?
 _empty_lines: _empty_lines? empty_line
-empty_line: WS? COMMENT? NEWLINE
+empty_line: NEWLINE
 
 _statements_and_verbatims: _statements_and_verbatims? (statement | verbatim) _empty_lines?
 _statements: _statements? statement _empty_lines?
 
-pseudo: WS? PSEUDO_STATEMENT ")" WS? COMMENT? NEWLINE
-PSEUDO_STATEMENT: /[(][^)]*/ // NOTE Early's dynamic lexer does not support zero-width regexes
+pseudo: "(" pseudo_statement ")" NEWLINE
+pseudo_statement: PSEUDO_STATEMENT?
+PSEUDO_STATEMENT: /[^)]+/
 
 // NOTE trailing NEWLINE needs to be optional in case of EOF
-verbatim: WS? VERBATIM_STATEMENT NEWLINE
+verbatim: VERBATIM_STATEMENT NEWLINE
 VERBATIM_STATEMENT: /"[^\n]*/
 
 // NOTE trailing NEWLINE needs to be optional in case of EOF
-statement: WS? _statement WS? COMMENT? NEWLINE
+statement: _statement NEWLINE
 
 _statement: assignment
           | logical_if
@@ -26,33 +27,34 @@ _statement: assignment
           | call
           | return
 
-exit: EXIT (_cont ("1" | "2") (_cont SIGNED_INT)?)?
-call: CALL _cont CNAME _cont? _lpar _atoms _rpar
+exit: EXIT (("1" | "2") (SIGNED_INT)?)?
+call: CALL CNAME _lpar _atoms _rpar
 _atoms: (_atoms _sep)? atom
 return: RETURN
-assignment: variable _cont? EQUALS _cont? real_expr
+assignment: variable EQUALS real_expr
 EQUALS: "="
 
-_lpar: "(" _cont?
-_rpar: _cont? ")"
-_sep: _cont? "," _cont?
+_lpar: "("
+_rpar: ")"
+_sep: ","
 
 _condition: _lpar bool_expr _rpar
 
-while: DO _cont? WHILE _cont? _condition _empty_lines _statements? WS? ENDDO
+while: DOWHILE _condition _empty_lines _statements? ENDDO
 
-block_if: block_if_start WS? (block_if_elseif WS?)* (block_if_else WS?)? block_if_end
-block_if_start: IF _cont? _condition _cont? THEN _empty_lines _statements?
-block_if_elseif: ELSEIF _cont? _condition _cont? THEN _empty_lines _statements?
+block_if: block_if_start (block_if_elseif)* (block_if_else)? block_if_end
+block_if_start: IF _condition THEN _empty_lines _statements?
+block_if_elseif: ELSEIF _condition THEN _empty_lines _statements?
 block_if_else: ELSE _empty_lines _statements?
 block_if_end: ENDIF
 
 EXIT.9   : "EXIT"i
 CALL.9   : "CALL"i
 RETURN.9 : "RETURN"i
-DO.9     : "DO"i
-WHILE.9  : "WHILE"i
+DOWHILE.9: "DO WHILE"i
+         | "DOWHILE"i
 ENDDO.9  : "END DO"i
+         | "ENDDO"i
 IF.9     : "IF"i
 THEN.9   : "THEN"i
 ELSE.9   : "ELSE"i
@@ -61,72 +63,89 @@ ELSEIF.9 : "ELSE IF"i
 ENDIF.9  : "END IF"i
          | "ENDIF"i
 
-logical_if: IF _cont? _condition _cont? (assignment | exit | call)
+logical_if: IF _condition (assignment | exit | call)
 bool_expr: or_expr
 
 ?or_expr: and_expr
-        | or_expr _cont? lor _cont? and_expr           -> instruction_infix
+        | or_expr lor and_expr           -> instruction_infix
         // NOTE Left-associativity for logical or
 
 ?and_expr: not_expr
-         | and_expr _cont? land _cont? not_expr        -> instruction_infix
+         | and_expr land not_expr        -> instruction_infix
          // NOTE Left-associativity for logical and
 
 ?not_expr: eq_expr
-         | lnot _cont? eq_expr                         -> instruction_unary
+         | lnot eq_expr                         -> instruction_unary
 
 ?eq_expr: rel_expr
-        | rel_expr _cont? _eq_op _cont? eq_expr        -> instruction_infix
+        | rel_expr _eq_op eq_expr        -> instruction_infix
 
 ?rel_expr: real_expr
-         | real_expr _cont? _rel_op _cont? real_expr   -> instruction_infix
+         | real_expr _rel_op real_expr   -> instruction_infix
 
-lor: ".OR."i
+lor: LOR
+LOR: ".OR."i
 
-land: ".AND."i
+land: LAND
+LAND: ".AND."i
+
+lnot: LNOT
+LNOT: ".NOT."i
 
 _eq_op: eq | ne
-eq: "==" | ".EQ."i
-ne: "/=" | ".NE."i
+eq: EQ
+EQ: "==" | ".EQ."i
+
+ne: NE
+NE: "/=" | ".NE."i
 
 _rel_op: lt | le | gt | ge
-lt: ".LT."i | "<"
-le: ".LE."i | "<="
-gt: ".GT."i | ">"
-ge: ".GE."i | ">="
-
-lnot: ".NOT."i
+lt: LT
+LT: ".LT."i | "<"
+le: LE
+LE: ".LE."i | "<="
+gt: GT
+GT: ".GT."i | ">"
+ge: GE
+GE: ".GE."i | ">="
 
 real_expr: add_expr
 
 ?add_expr: mul_expr
-         | add_expr _cont? _add_op _cont? mul_expr  -> instruction_infix
+         | add_expr _add_op mul_expr  -> instruction_infix
          // NOTE Left-associativity for addition and subtraction
 
 ?mul_expr: sign_expr
-         | mul_expr _cont? _mul_op _cont? sign_expr -> instruction_infix
+         | mul_expr _mul_op sign_expr -> instruction_infix
          // NOTE Left-associativity for multiplication and division
 
 ?sign_expr: pow_expr
-          | _sign _cont? pow_expr                   -> instruction_unary
+          | _sign pow_expr                   -> instruction_unary
 
 ?pow_expr: atom
-         | atom _cont? pow_op _cont? sign_expr      -> instruction_infix
+         | atom pow_op sign_expr      -> instruction_infix
          // NOTE Right-associativity for exponentiation
 
 _sign: pos_op | neg_op
-pos_op: "+"
-neg_op: "-"
+pos_op: POS
+POS: "+"
+neg_op: NEG
+NEG: "-"
 
 _add_op: add_op | sub_op
-add_op  : "+"
-sub_op  : "-"
+add_op  : ADD
+ADD: "+"
+sub_op  : SUB
+SUB: "-"
 
 _mul_op : mul_op | div_op
-mul_op  : "*"
-div_op  : "/"
+mul_op  : MUL
+MUL: "*"
+div_op  : DIV
+DIV: "/"
 
-pow_op : "**"
+pow_op : POW
+POW: "**"
 
 
 ?atom: img
@@ -197,7 +216,7 @@ double_subscript: _lpar SIGNED_INT _sep SIGNED_INT _rpar
 number: SIGNED_INT
       | FLOAT
 
-FLOAT: /[-+]?((\d+\.\d*|\.\d+)([ed][-+]?\d+)?|\d+([ed][-+]?\d+))/i
+FLOAT: /[-+]?((\d+\.\d+|\.\d+)([ed][-+]?\d+)?|\d+([ed][-+]?\d+))/i
 
 THETA: "THETA"i
 
@@ -210,10 +229,10 @@ OMEGA: "OMEGA"i
 
 SIGMA: "SIGMA"i
 
-_cont: WS
-     | WS? CONT WS?
-
-CONT: /&[ \x00\t]*\r?\n/
+CONT: "&" WS? NEWLINE
 
 %import .definitions (COMMENT, NEWLINE, WS)
 %import common (CNAME, SIGNED_INT)
+%ignore WS
+%ignore COMMENT
+%ignore CONT
