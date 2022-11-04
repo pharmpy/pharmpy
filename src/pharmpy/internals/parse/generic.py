@@ -426,7 +426,7 @@ class NoSuchRuleException(AttributeError):
         super().__init__(f'no {repr(rule)} child in tree{post}')
 
 
-_numbered = re.compile(r'(newline|ws)[\d]+')
+_numbered = re.compile(r'([a-z]+)[\d]+')
 
 
 class RenameNumbered(Visitor):
