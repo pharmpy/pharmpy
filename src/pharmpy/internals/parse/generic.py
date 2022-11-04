@@ -426,16 +426,6 @@ class NoSuchRuleException(AttributeError):
         super().__init__(f'no {repr(rule)} child in tree{post}')
 
 
-_numbered = re.compile(r'([a-z]+)[\d]+')
-
-
-class RenameNumbered(Visitor):
-    def __default__(self, tree):
-        rule = tree.data
-        if match := _numbered.match(rule):
-            tree.data = match.group(1)
-
-
 class GenericParser(ABC):
     """
     Generic parser using lark.

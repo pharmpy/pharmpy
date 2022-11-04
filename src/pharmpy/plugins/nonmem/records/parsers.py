@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from lark import Lark, Tree, Visitor
@@ -92,6 +93,16 @@ class DataRecordParser(RecordParser):
         propagate_positions=True,
     )
     post_process = [with_ignored_tokens]
+
+
+_numbered = re.compile(r'([a-z]+)[\d]+')
+
+
+class RenameNumbered(Visitor):
+    def __default__(self, tree):
+        rule = tree.data
+        if match := _numbered.match(rule):
+            tree.data = match.group(1)
 
 
 @install_grammar
