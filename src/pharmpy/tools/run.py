@@ -88,7 +88,7 @@ def fit(
     return models[0].modelfit_results if single else [model.modelfit_results for model in models]
 
 
-def create_results(path, **kwargs):
+def create_results(path: Union[str, Path], **kwargs) -> Results:
     """Create/recalculate results object given path to run directory
 
     Parameters
@@ -118,7 +118,7 @@ def create_results(path, **kwargs):
     return res
 
 
-def read_results(path):
+def read_results(path: Union[str, Path]) -> Results:
     """Read results object from file
 
     Parameters
@@ -322,7 +322,10 @@ def _get_run_setup(common_options, toolname):
     return dispatcher, database
 
 
-def retrieve_models(source, names=None):
+def retrieve_models(
+    source: Union[str, Path, Results, ToolDatabase, ModelDatabase],
+    names: Optional[List[str]] = None,
+) -> Union[Model, List[Model]]:
     """Retrieve models after a tool run
 
     Any models created and run by the tool can be
@@ -379,7 +382,7 @@ def retrieve_models(source, names=None):
     return models
 
 
-def retrieve_final_model(res):
+def retrieve_final_model(res: Results) -> Model:
     """Retrieve final model from a result object
 
     Parameters
@@ -408,7 +411,7 @@ def retrieve_final_model(res):
     return retrieve_models(res, names=[res.final_model_name])[0]
 
 
-def print_fit_summary(model):
+def print_fit_summary(model: Model):
     """Print a summary of the model fit
 
     Parameters
@@ -464,7 +467,7 @@ def print_fit_summary(model):
     print(df)
 
 
-def write_results(results, path, lzma=False, csv=False):
+def write_results(results: Results, path: Union[str, Path], lzma: bool = False, csv: bool = False):
     """Write results object to json (or csv) file
 
     Note that the csv-file cannot be read into a results object again.
@@ -486,7 +489,7 @@ def write_results(results, path, lzma=False, csv=False):
         results.to_json(path, lzma=lzma)
 
 
-def summarize_errors(models):
+def summarize_errors(models: Union[Model, List[Model]]) -> pd.Dataframe:
     """Summarize errors and warnings from one or multiple model runs.
 
     Summarize the errors and warnings found after running the model/models.
@@ -535,7 +538,12 @@ def summarize_errors(models):
 
 
 def rank_models(
-    base_model, models, errors_allowed=None, rank_type='ofv', cutoff=None, bic_type='mixed'
+    base_model: Model,
+    models: List[Model],
+    errors_allowed: Optional[List[str]] = None,
+    rank_type: str = 'ofv',
+    cutoff: Optional[float] = None,
+    bic_type: str = 'mixed',
 ) -> pd.DataFrame:
     """Ranks a list of models
 
@@ -678,7 +686,10 @@ def _get_rankval(model, rank_type, bic_type):
         raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
 
 
-def summarize_modelfit_results(results, include_all_estimation_steps=False):
+def summarize_modelfit_results(
+    results: Union[ModelfitResults, List[ModelfitResults]],
+    include_all_estimation_steps: bool = False,
+) -> pd.Dataframe:
     """Summarize results of model runs
 
     Summarize different results after fitting a model, includes runtime, ofv,
@@ -796,7 +807,7 @@ def _summarize_step(res, i):
     return summary_dict
 
 
-def read_modelfit_results(path):
+def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
     """Read results from external tool for a model
 
     Parameters
