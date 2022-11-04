@@ -1,9 +1,13 @@
-def get_lag_times(model):
+from pharmpy.model.model import Model
+
+
+def get_lag_times(model: Model):
     """Get lag times for all compartments
 
     Parameters
     ----------
-    model : Pharmpy model
+    model : Model
+        Pharmpy model
 
     Returns
     -------
@@ -20,12 +24,13 @@ def get_lag_times(model):
     return d
 
 
-def get_bioavailability(model):
+def get_bioavailability(model: Model):
     """Get bioavailability of doses for all compartments
 
     Parameters
     ----------
-    model : Pharmpy model
+    model : Model
+        Pharmpy model
 
     Returns
     -------
