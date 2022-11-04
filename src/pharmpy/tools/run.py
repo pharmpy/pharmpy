@@ -325,7 +325,7 @@ def _get_run_setup(common_options, toolname):
 def retrieve_models(
     source: Union[str, Path, Results, ToolDatabase, ModelDatabase],
     names: Optional[List[str]] = None,
-) -> Union[Model, List[Model]]:
+) -> List[Model]:
     """Retrieve models after a tool run
 
     Any models created and run by the tool can be
@@ -360,9 +360,10 @@ def retrieve_models(
         # FIXME: Should be using metadata to know how to init databases
         db = LocalModelDirectoryDatabase(path / 'models')
     elif isinstance(source, Results):
-        if hasattr(source, 'tool_database'):
-            db = source.tool_database.model_database
-        else:
+        try:
+            db_tool = getattr(source, 'tool_database')
+            db = db_tool.model_database
+        except AttributeError:
             raise ValueError(
                 f'Results type \'{source.__class__.__name__}\' does not serialize tool database'
             )
@@ -372,7 +373,7 @@ def retrieve_models(
         db = source
     else:
         raise NotImplementedError(f'Not implemented for type \'{type(source)}\'')
-    names_all = db.list_models()
+    names_all: List[str] = db.list_models()
     if names is None:
         names = names_all
     diff = set(names).difference(names_all)
