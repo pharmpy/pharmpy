@@ -1357,7 +1357,7 @@ def update_input(model: Model):
 
         if i >= len(model.datainfo):
             last_child = input_records[0].root.children[-1]
-            if last_child.rule == 'newline':
+            if last_child.rule == 'NEWLINE':
                 keep.append(last_child)
             break
 

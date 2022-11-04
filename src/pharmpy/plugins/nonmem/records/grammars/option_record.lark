@@ -1,13 +1,4 @@
-root : _begin _options? _end
-
-_options: (_options _sep)? option
-
-_begin: _sep?
-_end: ws? (COMMENT? newline)? COMMENT?
-_sep: ws | ws? COMMENT? newline
-
-newline: (newline COMMENT?)? NEWLINE ws?
-ws: WS
+root : option*
 
 option: KEY ("=" VALUE)?
 
@@ -15,4 +6,7 @@ KEY: ATOM
 VALUE: ATOM
 ATOM: /\([^)]*\)|[^\s=;]+/
 
-%import .definitions (COMMENT, WS, NEWLINE)
+%import .definitions (WS, COMMENT, NEWLINE)
+%ignore WS
+%ignore COMMENT
+%ignore NEWLINE

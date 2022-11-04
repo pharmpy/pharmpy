@@ -6,8 +6,11 @@ Assumes 'KEY=VALUE' and does not support 'KEY VALUE'.
 
 import re
 from collections import namedtuple
+from typing import Tuple
 
-from pharmpy.internals.parse import AttrTree
+from lark import Token
+
+from pharmpy.internals.parse import AttrToken, AttrTree
 
 from .record import Record
 
@@ -92,17 +95,17 @@ class OptionRecord(Record):
                 return
             last_option = node
 
-        ws_node = AttrTree.create('ws', [{'WS': ' '}])
+        ws_token = AttrToken('WS', ' ')
         option_node = self._create_option(key, new_value)
         # If no other options add first else add just after last option
         if last_option is None:
-            self.root.children = [ws_node, option_node] + self.root.children
+            self.root.children = [ws_token, option_node] + self.root.children
         else:
             new_children = []
             for node in self.root.children:
                 new_children.append(node)
                 if node is last_option:
-                    new_children += [ws_node, option_node]
+                    new_children += [ws_token, option_node]
             self.root.children = new_children
 
     def _create_option(self, key, value=None):
@@ -119,8 +122,8 @@ class OptionRecord(Record):
 
     def _prepend_option_node(self, node):
         """Add a new option as firt option"""
-        ws_node = AttrTree.create('ws', [{'WS': ' '}])
-        new = [node, ws_node]
+        ws_token = AttrToken('WS', ' ')
+        new = [node, ws_token]
         self.root.children = [self.root.children[0]] + new + self.root.children[1:]
 
     def append_option(self, key, value=None):
@@ -131,25 +134,25 @@ class OptionRecord(Record):
         node = self._create_option(key, value)
         self.append_option_node(node)
 
+    def _append_option_args(self) -> Tuple[int, int, Token]:
+        children = self.root.children
+        n = len(children)
+        # NOTE Pop trailing whitespace if any
+        j = n - 1 if children[-1].rule == 'WS' else n
+        for i, child in zip(reversed(range(n)), reversed(children)):
+            rule = child.rule
+            if rule == 'option':
+                return (i + 1, j, AttrToken('WS', ' '))
+            elif rule not in ('WS', 'NEWLINE'):
+                return (i + 1, j, AttrToken('NEWLINE', '\n'))
+
+        return (0, j, AttrToken('WS', ' '))
+
     def append_option_node(self, node):
         """Add a new option as last option"""
-        last_child = self.root.children[-1]
-        if last_child.rule == 'option':
-            ws_node = AttrTree.create('ws', [{'WS': ' '}])
-            self.root.children += [ws_node, node]
-        elif last_child.rule == 'newline':
-            if len(self.root.children) >= 2 and self.root.children[-2].rule == 'comment':
-                # Avoid putting option at same line as comment
-                ws_node = AttrTree.create('newline', [{'NEWLINE': '\n'}])
-                self.root.children += [node, ws_node]
-            else:
-                ws_node = AttrTree.create('ws', [{'WS': ' '}])
-                self.root.children[-1:0] = [ws_node, node]
-        elif last_child.rule == 'ws':
-            self.root.children.append(node)
-        else:
-            ws_node = AttrTree.create('newline', [{'NEWLINE': '\n'}])
-            self.root.children += [ws_node, node]
+        i, j, sep = self._append_option_args()
+        children = self.root.children
+        self.root.children = children[:i] + [sep, node] + children[i:j]
 
     def replace_option(self, old, new):
         """Replace an option"""
@@ -180,7 +183,7 @@ class OptionRecord(Record):
             if node.rule == 'option':
                 curkey = _get_key(node)
                 if key[: len(curkey)] == curkey and i == n:
-                    if new_children[-1].rule == 'ws':
+                    if new_children[-1].rule == 'WS':
                         new_children.pop()
                 else:
                     new_children.append(node)

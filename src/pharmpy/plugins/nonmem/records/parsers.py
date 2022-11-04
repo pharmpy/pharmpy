@@ -79,11 +79,19 @@ class OmegaRecordParser(RecordParser):
 @install_grammar
 class OptionRecordParser(RecordParser):
     grammar_filename = 'option_record.lark'
+    grammar_options = dict(
+        propagate_positions=True,
+    )
+    post_process = [with_ignored_tokens]
 
 
 @install_grammar
 class DataRecordParser(RecordParser):
     grammar_filename = 'data_record.lark'
+    grammar_options = dict(
+        propagate_positions=True,
+    )
+    post_process = [with_ignored_tokens]
 
 
 @install_grammar

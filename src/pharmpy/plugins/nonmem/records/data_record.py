@@ -7,8 +7,8 @@ from pharmpy.model import ModelSyntaxError
 
 from .option_record import OptionRecord
 
-TYPES_OF_SPACE = frozenset(('ws', 'newline'))
-TYPES_OF_KEEP = frozenset(('ws', 'newline', 'comment'))
+TYPES_OF_SPACE = frozenset(('WS', 'NEWLINE'))
+TYPES_OF_KEEP = frozenset(('WS', 'NEWLINE', 'COMMENT'))
 
 
 class DataRecord(OptionRecord):

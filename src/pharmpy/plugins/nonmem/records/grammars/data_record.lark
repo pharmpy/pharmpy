@@ -9,41 +9,37 @@
 //        [BLANKOK]
 //        [MISDAT=@r@...]
 
-root : _begin (filename | ASTERISK) (_sep5 _options)? _end
-_options: (_options _sep5)? any_option
+root : (filename | ASTERISK) any_option*
 
 ASTERISK: "*"
 // dataset (always, unless only ASTERISK terminal)
 filename: FILENAME | QFILENAME
 
 // option rules
-?any_option : IGNORE ws8? (eq7 ws7?)? char        -> ignchar
-            | IGNORE ws8? (eq7 ws7?)? _list       -> ignore
-            | NULL ws8? (eq7 ws7?)? char          -> null
-            | ACCEPT ws8? (eq7 ws7?)? _list       -> accept
-            | KEY (ws10? eq6 ws6? VALUE)?          -> option
+?any_option : IGNORE EQUALS? char        -> ignchar
+            | IGNORE EQUALS? _list       -> ignore
+            | NULL EQUALS? char          -> null
+            | ACCEPT EQUALS? _list       -> accept
+            | KEY (EQUALS VALUE)?        -> option
             | format
 
-format: "(" ws11? FORMAT ws11? ")"
+format: "(" FORMAT ")"
 
 // specific option terminals
 char: CHAR
 IGNORE : "IGNORE" | "IGNOR" | "IGNO" | "IGN"
 ACCEPT : "ACCEPT" | "ACCEP" | "ACCE" | "ACC"
-NULL : "NULL" | "NUL"
+NULL   : "NULL" | "NUL"
 EQUALS : "="
-
-?eq6: EQUALS
-?eq7: EQUALS
 
 // generic option terminals (key-value pairs)
 KEY   : /(?!(;|IGN|ACC|NUL))\w+/      // TODO: parse all options or use priority (instead of negative lookahead)
 VALUE : /(?!(;|IGN|ACC|NUL))[^\s=]+/  // TODO: parse all options or use priority (instead of negative lookahead)
 
 // _list is only a container (filter thus on accept/ignore)
-_list  : "(" _list_items _skip2 ")"
-_list_items : (_list_items _skip2 ",")? _skip1 filter
-filter : column _skip3 (operator _skip4)? expr // inlined rules -> terminals (has no depth)
+_list  : "(" _list_items ")"
+_list_items : (_list_items ",")? filter
+filter : column operator? expr
 
 ?operator.1: OP_EQ
            | OP_NE
@@ -59,46 +55,6 @@ filter : column _skip3 (operator _skip4)? expr // inlined rules -> terminals (ha
 
 ?column: COLUMN
 COLUMN: /\w+/  // TODO: verify correct coverage
-
-// common misc rules
-_begin: ws0? (comment? _newlines0)?
-_end: ws5? (comment? _newlines5)? comment?
-_skip1: ws1? (comment? _newlines1)?
-_skip2: ws2? (comment? _newlines2)?
-_skip3: ws3? (comment? _newlines3)?
-_skip4: ws4? (comment? _newlines4)?
-_sep5: ws5 | ws5? comment? _newlines5
-
-_newlines0: (_newlines0 comment?)? newline0 ws0?
-_newlines1: (_newlines1 comment?)? newline1 ws1?
-_newlines2: (_newlines2 comment?)? newline2 ws2?
-_newlines3: (_newlines3 comment?)? newline3 ws3?
-_newlines4: (_newlines4 comment?)? newline4 ws4?
-_newlines5: (_newlines5 comment?)? newline5 ws5?
-_newlines9: (_newlines9 comment?)? newline9 ws9?
-
-ws0: WS
-ws1: WS
-ws2: WS
-ws3: WS
-ws4: WS
-ws5: WS
-ws6: WS
-ws7: WS
-ws8: WS
-ws9: WS
-ws10: WS
-ws11: WS
-
-newline0 : NEWLINE
-newline1 : NEWLINE
-newline2 : NEWLINE
-newline3 : NEWLINE
-newline4 : NEWLINE
-newline5 : NEWLINE
-newline9 : NEWLINE
-
-comment : COMMENT
 
 // common operators
 OP_EQ     : ".EQN."
@@ -125,4 +81,7 @@ CHAR : /"[^"]"/
      | /'[^']'/
      | /[^';()=\s]/
 
-%import .definitions (WS, NEWLINE, COMMENT)
+%import .definitions (WS, COMMENT, NEWLINE)
+%ignore WS
+%ignore COMMENT
+%ignore NEWLINE
