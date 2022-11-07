@@ -28,11 +28,7 @@ def test_amd(tmp_path, testdata):
         res = run_amd(
             input,
             modeltype='pk_oral',
-            search_space=(
-                'PERIPHERALS(1);'
-                'COVARIATE(@IIV, @CONTINUOUS, exp, *);'
-                'COVARIATE(@IIV, @CATEGORICAL, cat, *)'
-            ),
+            search_space='PERIPHERALS(1)',
             occasion='VISI',
         )
 

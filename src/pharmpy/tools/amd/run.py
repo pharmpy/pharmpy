@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
@@ -9,10 +9,27 @@ from pharmpy.modeling.eta_additions import get_occasion_levels
 from pharmpy.tools import retrieve_final_model, summarize_errors, write_results
 from pharmpy.tools.mfl.feature.covariate import spec as covariate_spec
 from pharmpy.tools.mfl.parse import parse as mfl_parse
+from pharmpy.tools.mfl.statement.feature.absorption import Absorption
+from pharmpy.tools.mfl.statement.feature.covariate import CovariateEffects, Ref
+from pharmpy.tools.mfl.statement.feature.elimination import Elimination
+from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
+from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
+from pharmpy.tools.mfl.statement.feature.symbols import Name, Wildcard
+from pharmpy.tools.mfl.statement.feature.transits import Transits
+from pharmpy.tools.mfl.statement.statement import Statement
 from pharmpy.workflows import default_tool_database
 
 from ..run import run_tool
 from .results import AMDResults
+
+modelsearch_statement_types = (
+    Absorption,
+    Elimination,
+    LagTime,
+    Peripherals,
+    Transits,
+    CovariateEffects,
+)
 
 
 def run_amd(
@@ -106,30 +123,44 @@ def run_amd(
     if order is None:
         order = default_order
 
-    if search_space is None:
+    input_search_space_features = [] if search_space is None else mfl_parse(search_space)
+    default_search_space_features = []
+
+    if not any(
+        map(
+            lambda statement: isinstance(statement, modelsearch_statement_types),
+            input_search_space_features,
+        )
+    ):
         if modeltype == 'pk_oral':
-            search_space = (
-                'ABSORPTION([ZO,SEQ-ZO-FO])\n'
-                'ELIMINATION([MM,MIX-FO-MM])\n'
-                'LAGTIME()\n'
-                'TRANSITS([1,3,10],*)\n'
-                'PERIPHERALS(1)\n'
-                'COVARIATE(@IIV, @CONTINUOUS, exp, *)\n'
-                'COVARIATE(@IIV, @CATEGORICAL, cat, *)'
-            )
+            default_search_space_features += [
+                Absorption((Name('ZO'), Name('SEQ-ZO-FO'))),
+                Elimination((Name('MM'), Name('MIX-FO-MM'))),
+                LagTime(),
+                Transits((1, 3, 10), Wildcard()),
+                Peripherals((1,)),
+            ]
         else:
-            search_space = (
-                'ELIMINATION([MM,MIX-FO-MM])\n'
-                'PERIPHERALS([1,2])\n'
-                'COVARIATE(@IIV, @CONTINUOUS, exp, *)\n'
-                'COVARIATE(@IIV, @CATEGORICAL, cat, *)'
-            )
+            default_search_space_features += [
+                Elimination((Name('MM'), Name('MIX-FO-MM'))),
+                Peripherals((1, 2)),
+            ]
+
+    if not any(
+        map(lambda statement: isinstance(statement, CovariateEffects), input_search_space_features)
+    ):
+        default_search_space_features += [
+            CovariateEffects(Ref('IIV'), Ref('CONTINUOUS'), ('exp',), '*'),
+            CovariateEffects(Ref('IIV'), Ref('CATEGORICAL'), ('cat',), '*'),
+        ]
+
+    search_space_features = default_search_space_features + input_search_space_features
 
     db = default_tool_database(toolname='amd', path=path, exist_ok=resume)
     run_subfuncs = {}
     for section in order:
         if section == 'structural':
-            func = _subfunc_modelsearch(search_space=search_space, path=db.path)
+            func = _subfunc_modelsearch(search_space=search_space_features, path=db.path)
             run_subfuncs['modelsearch'] = func
         elif section == 'iivsearch':
             func = _subfunc_iiv(path=db.path)
@@ -144,7 +175,7 @@ def run_amd(
             func = _subfunc_allometry(allometric_variable=allometric_variable, path=db.path)
             run_subfuncs['allometry'] = func
         elif section == 'covariates':
-            func = _subfunc_covariates(search_space=search_space, path=db.path)
+            func = _subfunc_covariates(search_space=search_space_features, path=db.path)
             run_subfuncs['covsearch'] = func
         else:
             raise ValueError(
@@ -251,7 +282,7 @@ def noop_subfunc(_: Model):
     return None
 
 
-def _subfunc_modelsearch(search_space, path) -> SubFunc:
+def _subfunc_modelsearch(search_space: List[Statement], path) -> SubFunc:
     def _run_modelsearch(model):
         res = run_tool(
             'modelsearch',
@@ -290,9 +321,9 @@ def _subfunc_ruvsearch(path) -> SubFunc:
     return _run_ruvsearch
 
 
-def _subfunc_covariates(search_space, path) -> SubFunc:
+def _subfunc_covariates(search_space: List[Statement], path) -> SubFunc:
     def _run_covariates(model):
-        effects = list(covariate_spec(model, mfl_parse(search_space)))
+        effects = list(covariate_spec(model, search_space))
 
         if not effects:
             warnings.warn(

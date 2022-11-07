@@ -19,18 +19,17 @@ from ..mfl.helpers import (
     key_to_str,
     modelsearch_features,
 )
-from ..mfl.parse import parse
+from ..mfl.statement.statement import Statement
 
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock', 'absorption_delay'))
 
 
-def model_search_funcs(mfl_statements):
+def model_search_funcs(mfl_statements: List[Statement]):
     return funcs(Model(), mfl_statements, modelsearch_features)
 
 
-def exhaustive(search_space, iiv_strategy):
+def exhaustive(mfl_statements: List[Statement], iiv_strategy: str):
     # TODO: rewrite using _create_model_workflow
-    mfl_statements = parse(search_space)
     wf_search = Workflow()
 
     model_tasks = []
@@ -64,8 +63,7 @@ def exhaustive(search_space, iiv_strategy):
     return wf_search, model_tasks
 
 
-def exhaustive_stepwise(search_space, iiv_strategy):
-    mfl_statements = parse(search_space)
+def exhaustive_stepwise(mfl_statements: List[Statement], iiv_strategy: str):
     mfl_funcs = model_search_funcs(mfl_statements)
 
     wf_search = Workflow()
@@ -97,8 +95,7 @@ def exhaustive_stepwise(search_space, iiv_strategy):
     return wf_search, model_tasks
 
 
-def reduced_stepwise(search_space, iiv_strategy):
-    mfl_statements = parse(search_space)
+def reduced_stepwise(mfl_statements: List[Statement], iiv_strategy: str):
     mfl_funcs = model_search_funcs(mfl_statements)
 
     wf_search = Workflow()

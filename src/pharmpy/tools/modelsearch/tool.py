@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
@@ -12,11 +12,12 @@ from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.workflows import Task, Workflow
 
-from ..mfl.parse import parse
+from ..mfl.parse import parse as mfl_parse
+from ..mfl.statement.statement import Statement
 
 
 def create_workflow(
-    search_space: str,
+    search_space: Union[str, List[Statement]],
     algorithm: str,
     iiv_strategy: str = 'absorption_delay',
     rank_type: str = 'bic',
@@ -71,7 +72,9 @@ def create_workflow(
     wf.add_task(start_task)
 
     algorithm_func = getattr(algorithms, algorithm)
-    wf_search, candidate_model_tasks = algorithm_func(search_space, iiv_strategy)
+
+    mfl_statements = mfl_parse(search_space) if isinstance(search_space, str) else search_space
+    wf_search, candidate_model_tasks = algorithm_func(mfl_statements, iiv_strategy)
     wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
 
     task_result = Task(
@@ -144,10 +147,11 @@ def validate_input(
             f' must be one of {sorted(algorithms.IIV_STRATEGIES)}.'
         )
 
-    try:
-        parse(search_space)
-    except:  # noqa E722
-        raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
+    if isinstance(search_space, str):
+        try:
+            mfl_parse(search_space)
+        except:  # noqa E722
+            raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
 
     if model is not None:
         try:
