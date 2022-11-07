@@ -239,7 +239,7 @@ class OptionRecord(Record):
                 self.remove_option(key)
 
     @staticmethod
-    def match_option(valid, option):
+    def match_option(options, query):
         """Match a given option to any from a set of valid options
 
         NONMEM allows matching down to three letters as long as
@@ -247,17 +247,20 @@ class OptionRecord(Record):
 
         return the canonical form of the matched option or None for no match
         """
-        i = 3
-        match = None
-        while i <= len(option) and not match:
-            for opt in valid:
-                if opt[:i] == option[:i]:
-                    if match:
-                        match = None
-                        i += 1
-                        break
-                    else:
-                        match = opt
-            else:
-                return match
-        return match
+
+        min_prefix_len = 3
+
+        if len(query) < min_prefix_len:
+            # NOTE This keeps the original implementation's behavior but maybe
+            # this could be changed?
+            return None
+
+        i = min_prefix_len
+
+        candidates = [option for option in options if option[:i] == query[:i]]
+
+        while len(candidates) >= 2 and i < len(query):
+            candidates = [option for option in options if option[i] == query[i]]
+            i += 1
+
+        return candidates[0] if len(candidates) == 1 else None
