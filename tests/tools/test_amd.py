@@ -153,13 +153,11 @@ def _record_warnings():
             warnings.filterwarnings(
                 "ignore",
                 module='distributed',
-                message='Port .* is already in use',
                 category=UserWarning,
             )
             warnings.filterwarnings(
                 "ignore",
                 module='distributed',
-                message='unclosed .*socket',
                 category=ResourceWarning,
             )
             yield record
