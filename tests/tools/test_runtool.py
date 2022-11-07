@@ -76,7 +76,6 @@ class MockedToolWithInputValidation(MockedTool):
         ),
     ),
 )
-@pytest.mark.filterwarnings("ignore:.*Port .* is already in use.:UserWarning")
 def test_run_tool_without_input_validation(tmp_path, pheno, name, tool, args, expected):
     with chdir(tmp_path):
         res = run_tool_with_name(name, tool, *args, pheno)

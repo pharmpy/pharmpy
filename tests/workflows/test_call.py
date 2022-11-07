@@ -32,7 +32,6 @@ def add(a, b):
     return wf
 
 
-@pytest.mark.filterwarnings("ignore:.*Port .* is already in use.:UserWarning")
 def test_call_workflow_threaded(tmp_path):
     a, b = 1, 2
     wf = add(a, b)
@@ -43,7 +42,6 @@ def test_call_workflow_threaded(tmp_path):
                 execute_workflow(wf)
 
 
-@pytest.mark.filterwarnings("ignore:.*Port .* is already in use.:UserWarning")
 def test_call_workflow_distributed(tmp_path):
     a, b = 1, 2
     wf = add(a, b)
