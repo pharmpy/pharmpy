@@ -139,9 +139,9 @@ def _load_model(testdata: Path):
         txn.store_modelfit_results()
         # NOTE This are needed because currently caching of the results cannot
         # read from the JSON file created above.
-        txn.store_local_file('mox2.ext', 'start.ext')
-        txn.store_local_file('mox2.lst', 'start.lst')
-        txn.store_local_file('mox2.phi', 'start.phi')
+        txn.store_local_file(models / 'mox2.ext', 'start.ext')
+        txn.store_local_file(models / 'mox2.lst', 'start.lst')
+        txn.store_local_file(models / 'mox2.phi', 'start.phi')
 
     return db_tool, model
 
