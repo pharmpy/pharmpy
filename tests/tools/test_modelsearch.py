@@ -37,60 +37,60 @@ def test_exhaustive_algorithm():
     [
         (
             'ABSORPTION(ZO);PERIPHERALS(1)',
-            0,
+            'no_add',
             4,
         ),
         ('ABSORPTION(ZO);TRANSITS(1)', False, 2),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
-            0,
+            'no_add',
             7,
         ),
         (
             'ABSORPTION(ZO);PERIPHERALS([1, 2])',
-            0,
+            'no_add',
             8,
         ),
         (
             'ABSORPTION(SEQ-ZO-FO);LAGTIME()',
-            0,
+            'no_add',
             2,
         ),
         (
             'ABSORPTION(ZO);LAGTIME();PERIPHERALS(1)',
-            0,
+            'no_add',
             15,
         ),
         (
             'ABSORPTION(ZO);LAGTIME();PERIPHERALS([1,2]);ELIMINATION(ZO)',
-            0,
+            'no_add',
             170,
         ),
         (
             'LAGTIME();TRANSITS(1);PERIPHERALS(1)',
-            1,
+            'diagonal',
             7,
         ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);ELIMINATION(MM)',
-            0,
+            'no_add',
             7,
         ),
         ('ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)', 0, 7),
         (
             'LAGTIME();TRANSITS(1)',
-            0,
+            'no_add',
             2,
         ),
         (
             'ABSORPTION(ZO);TRANSITS(3, *)',
-            0,
+            'no_add',
             3,
         ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME();TRANSITS([1,3,10],*);'
             'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])',
-            0,
+            'no_add',
             246,
         ),
     ],
