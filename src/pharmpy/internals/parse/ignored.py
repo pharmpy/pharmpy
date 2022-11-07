@@ -20,7 +20,7 @@ def _tokenize_ignored_characters(s: str, i: int, j: int) -> Iterable[Token]:
             yield Token('WS', s[i:head], start_pos=i, end_pos=head)
 
         elif first == ';':
-            while head < j and s[head] != '\n' and s[head] != '\r':
+            while head < j and s[head] not in LF:
                 head += 1
 
             yield Token('COMMENT', s[i:head], start_pos=i, end_pos=head)
@@ -81,10 +81,7 @@ def _interleave_ignored(source: str, it: Iterator[Union[Tree, Token]]):
 
 
 def interleave_ignored(source: str, children: List[Union[Tree, Token]]):
-    if len(children) < 2:
-        return children
-    else:
-        return list(_interleave_ignored(source, iter(children)))
+    return children if len(children) < 2 else list(_interleave_ignored(source, iter(children)))
 
 
 class InterleaveIgnored(Transformer):
@@ -105,14 +102,15 @@ def with_ignored_tokens(source, tree):
     final_meta.end_pos = len(source)
     final_meta.empty = False
 
-    if new_tree.children:
-        final_children: List[Union[Tree, Token]] = (
+    final_children: List[Union[Tree, Token]] = (
+        (
             list(_tokenize_ignored_characters(source, 0, new_tree.meta.start_pos))
             + new_tree.children
             + list(_tokenize_ignored_characters(source, new_tree.meta.end_pos, len(source)))
         )
-    else:
-        final_children = list(_tokenize_ignored_characters(source, 0, len(source)))
+        if new_tree.children
+        else list(_tokenize_ignored_characters(source, 0, len(source)))
+    )
 
-    final_tree = Tree(new_tree.data, final_children, final_meta)
-    return final_tree
+    final_data = new_tree.data
+    return Tree(final_data, final_children, final_meta)
