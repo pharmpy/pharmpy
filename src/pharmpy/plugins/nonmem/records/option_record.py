@@ -1,7 +1,7 @@
 """
 Generic NONMEM option record class.
 
-Assumes 'KEY=VALUE' and does not support 'KEY VALUE'.
+Assumes 'KEY=VALUE' or 'VALUE' and does not support 'KEY VALUE' in general.
 """
 
 import re
@@ -23,6 +23,9 @@ def _get_value(node):
     return getattr(node, 'VALUE', None)
 
 
+Option = namedtuple('Option', ['key', 'value'])
+
+
 class OptionRecord(Record):
     @property
     def option_pairs(self):
@@ -37,7 +40,6 @@ class OptionRecord(Record):
         """Extract all options even if non-unique.
         returns a list of named two-tuples with key and value
         """
-        Option = namedtuple('Option', ['key', 'value'])
         pairs = []
         for node in self.root.all('option'):
             pairs += [Option(_get_key(node), _get_value(node))]
@@ -61,7 +63,7 @@ class OptionRecord(Record):
     def get_option_lists(self, option):
         """Generator for lists of one option
 
-        For example COMPARTMENT in $MODEL
+        For example COMPARTMENT in $MODEL. This handles 'KEY VALUE' syntax.
         """
         next_value = False
         for node in self.root.all('option'):
