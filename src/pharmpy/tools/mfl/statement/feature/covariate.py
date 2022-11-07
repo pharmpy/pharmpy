@@ -9,9 +9,9 @@ from .symbols import Symbol, Wildcard
 
 @dataclass(frozen=True)
 class CovariateEffects(ModelFeature):
-    parameter: Union[Symbol, Tuple[str]]
-    covariate: Union[Symbol, Tuple[str]]
-    fp: Tuple[str]
+    parameter: Union[Symbol, Tuple[str, ...]]
+    covariate: Union[Symbol, Tuple[str, ...]]
+    fp: Tuple[str, ...]
     op: Literal['*', '+'] = '*'
 
 

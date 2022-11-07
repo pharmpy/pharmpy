@@ -7,7 +7,7 @@ from lark.visitors import Interpreter
 @dataclass(frozen=True)
 class Definition:
     name: str
-    value: Tuple[str]
+    value: Tuple[str, ...]
 
 
 class DefinitionInterpreter(Interpreter):
