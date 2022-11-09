@@ -18,40 +18,51 @@
 //   5. "FIXED" can appear almost anywhere and multiple times in a row
 //      when parentheses are used
 
-root : _ws* theta (NEWLINE | WS | theta | option)*
+root : _options?
 
-?option : KEY [WS] "=" [WS] VALUE -> option
-        | VALUE                   -> option
+_options : _options? (theta | option)
 
-theta : init [WS FIX]                    // form 1
-      | _lpar [_fixes] init [_fixes] _rpar            // form 2+3+5 (init)
-      | _lpar [_fixes] low [_fixes] sep [_fixes] init [_fixes] [sep] _rpar    // form 2+3+5 (low, init)
-      | _lpar [_fixes] low [_fixes] sep [_fixes] init [_fixes]  sep [_fixes] up [_fixes] _rpar  // form 2+3+5 (low, init, up)
-      | _lpar [_fixes] low [_fixes] sepsep [_fixes] up [_fixes] _rpar        // form 4+5 (low, up)
-sep : WS
-    | [WS] "," [WS]
-sepsep : [WS] "," [WS] "," [WS]
-_lpar : "(" [WS]
-_rpar : [WS] ")" n
-      | [WS] ")" [WS] FIX
-      | [WS] ")"
-_fixes: ([WS] FIX [WS])+
+option : KEY "=" VALUE
+       | VALUE
 
+theta : init FIX?                    // form 1
+      | _lpar _inside _rpar _after?  // form 2+3+4+5
+
+_inside: _init_or_low _rest
+
+_rest:                                                          // (empty, NO rest) form 2+3+5 (init)
+     | (_sep _fixes?)? init _fixes? _sep?                       // form 2+3+5 (low, init)
+     | (_sep _fixes?)? init _fixes? (_sep _fixes?)? up _fixes?  // form 2+3+5 (low, init, up?)
+     | _sep _sep _fixes? up _fixes?                             // form 4+5 (low, up)
+
+_init_or_low : _fixes? init_or_low _fixes?
+
+_lpar : "("
+_rpar : ")"
+_sep : ","
+
+_after: n | FIX
+
+_fixes: _fixes? FIX
+
+
+init_or_low: NUMERIC | NEG_INF // Hack to get around LALR(1) limitations
 init : NUMERIC
 low  : NUMERIC | NEG_INF
 up   : NUMERIC | POS_INF
-n    : "x" INT
+n    : X INT
+X.1  : "x"
+
+NEG_INF: "-INF"i | "-1000000"
+POS_INF: "INF"i | "1000000"
 
 FIX : "FIXED" | "FIXE" | "FIX"
 
 // generic option terminals (key/value)
 KEY   : /(?!([0-9]|\(|FIX))\w+/
-VALUE : /(?!([0-9]|\(|FIX))[^\s=;]+/
+VALUE : /(?!(,|[0-9]|\(|FIX))[^\s=;]+/
 
-// common misc rules
-_ws: [WS] [NEWLINE]
-
-%import .definitions (INT, NEWLINE, NUMERIC, WS)
-
-NEG_INF: "-INF"i | "-1000000"i
-POS_INF: "INF"i | "1000000"i
+%import .definitions (INT, NUMERIC, COMMENT, NEWLINE, WS)
+%ignore WS
+%ignore COMMENT
+%ignore NEWLINE

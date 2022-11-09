@@ -10,11 +10,13 @@ from .statement.statement import Statement
 def parse(code: str) -> List[Statement]:
     parser = Lark(
         grammar,
+        start='start',
         parser='lalr',
         # lexer='standard',  # NOTE This does not work because lexing for the
         #      MFL grammar is context-dependent
         propagate_positions=False,
         maybe_placeholders=False,
+        debug=False,
         cache=True,
     )
 

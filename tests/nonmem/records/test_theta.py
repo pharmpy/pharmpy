@@ -7,7 +7,7 @@ from pharmpy.plugins.nonmem import conf
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize(
-    'buf,comment,results',
+    'buf,comment,expected',
     [
         ('$THETA 0', False, [('THETA(1)', 0, -1000000, 1000000, False)]),
         ('$THETA (0,1,INF)', False, [('THETA(1)', 1, 0, 1000000, False)]),
@@ -77,29 +77,15 @@ from pharmpy.plugins.nonmem import conf
         ),
     ],
 )
-def test_parameters(parser, buf, comment, results):
-    if comment:
-        opt = ['comment', 'basic']
-    else:
-        opt = ['basic']
+def test_parameters(parser, buf, comment, expected):
+    opt = ['comment', 'basic'] if comment else ['basic']
     with ConfigurationContext(conf, parameter_names=opt):
         recs = parser.parse(buf)
         rec = recs.records[0]
         pset = Parameters(rec.parameters(1))
-        assert len(pset) == len(results)
+        assert pset == Parameters([Parameter(*res) for res in expected])
+
         assert len(pset) == len(rec)
-        for res in results:
-            name = res[0]
-            init = res[1]
-            lower = res[2]
-            upper = res[3]
-            fix = res[4]
-            param = pset[name]
-            assert param.name == name
-            assert param.init == init
-            assert param.lower == lower
-            assert param.upper == upper
-            assert param.fix == fix
 
 
 def test_theta_num(parser):

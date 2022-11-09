@@ -1,29 +1,29 @@
 """
 Generic NONMEM option record class.
 
-Assumes 'KEY=VALUE' and does not support 'KEY VALUE'.
+Assumes 'KEY=VALUE' or 'VALUE' and does not support 'KEY VALUE' in general.
 """
 
 import re
 from collections import namedtuple
+from typing import Tuple
 
-from pharmpy.internals.parse import AttrTree
+from lark import Token
+
+from pharmpy.internals.parse import AttrToken, AttrTree
 
 from .record import Record
 
 
 def _get_key(node):
-    if hasattr(node, 'KEY'):
-        return node.KEY
-    else:
-        return node.VALUE
+    return node.KEY
 
 
 def _get_value(node):
-    if hasattr(node, 'KEY'):
-        return node.VALUE
-    else:
-        return None
+    return getattr(node, 'VALUE', None)
+
+
+Option = namedtuple('Option', ['key', 'value'])
 
 
 class OptionRecord(Record):
@@ -40,7 +40,6 @@ class OptionRecord(Record):
         """Extract all options even if non-unique.
         returns a list of named two-tuples with key and value
         """
-        Option = namedtuple('Option', ['key', 'value'])
         pairs = []
         for node in self.root.all('option'):
             pairs += [Option(_get_key(node), _get_value(node))]
@@ -48,7 +47,7 @@ class OptionRecord(Record):
 
     def get_option(self, name):
         for opt in self.all_options:
-            if opt.key[0:3] == name[0:3]:
+            if opt.key[:3] == name[:3]:
                 return opt.value
         return None
 
@@ -64,7 +63,7 @@ class OptionRecord(Record):
     def get_option_lists(self, option):
         """Generator for lists of one option
 
-        For example COMPARTMENT in $MODEL
+        For example COMPARTMENT in $MODEL. This handles 'KEY VALUE' syntax.
         """
         next_value = False
         for node in self.root.all('option'):
@@ -98,22 +97,22 @@ class OptionRecord(Record):
                 return
             last_option = node
 
-        ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
+        ws_token = AttrToken('WS', ' ')
         option_node = self._create_option(key, new_value)
         # If no other options add first else add just after last option
         if last_option is None:
-            self.root.children = [ws_node, option_node] + self.root.children
+            self.root.children = [ws_token, option_node] + self.root.children
         else:
             new_children = []
             for node in self.root.children:
                 new_children.append(node)
                 if node is last_option:
-                    new_children += [ws_node, option_node]
+                    new_children += [ws_token, option_node]
             self.root.children = new_children
 
     def _create_option(self, key, value=None):
         if value is None:
-            node = AttrTree.create('option', [{'VALUE': key}])
+            node = AttrTree.create('option', [{'KEY': key}])
         else:
             node = AttrTree.create('option', [{'KEY': key}, {'EQUAL': '='}, {'VALUE': value}])
         return node
@@ -125,8 +124,8 @@ class OptionRecord(Record):
 
     def _prepend_option_node(self, node):
         """Add a new option as firt option"""
-        ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
-        new = [node, ws_node]
+        ws_token = AttrToken('WS', ' ')
+        new = [node, ws_token]
         self.root.children = [self.root.children[0]] + new + self.root.children[1:]
 
     def append_option(self, key, value=None):
@@ -137,26 +136,25 @@ class OptionRecord(Record):
         node = self._create_option(key, value)
         self.append_option_node(node)
 
+    def _append_option_args(self) -> Tuple[int, int, Token]:
+        children = self.root.children
+        n = len(children)
+        # NOTE Pop trailing whitespace if any
+        j = n - 1 if children[-1].rule == 'WS' else n
+        for i, child in zip(reversed(range(n)), reversed(children)):
+            rule = child.rule
+            if rule == 'option':
+                return (i + 1, j, AttrToken('WS', ' '))
+            elif rule not in ('WS', 'NEWLINE'):
+                return (i + 1, j, AttrToken('NEWLINE', '\n'))
+
+        return (0, j, AttrToken('WS', ' '))
+
     def append_option_node(self, node):
         """Add a new option as last option"""
-        last_child = self.root.children[-1]
-        if last_child.rule == 'option':
-            ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
-            self.root.children += [ws_node, node]
-        elif last_child.rule == 'ws':
-            if '\n' in str(last_child):
-                if len(self.root.children) > 1 and self.root.children[-2].rule == 'comment':
-                    # Avoid putting option at same line as comment
-                    ws_node = AttrTree.create('ws', [{'WS_ALL': '\n'}])
-                    self.root.children += [node, ws_node]
-                else:
-                    ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
-                    self.root.children[-1:0] = [ws_node, node]
-            else:
-                self.root.children.append(node)
-        else:
-            ws_node = AttrTree.create('ws', [{'WS_ALL': '\n'}])
-            self.root.children += [ws_node, node]
+        i, j, sep = self._append_option_args()
+        children = self.root.children
+        self.root.children = children[:i] + [sep, node] + children[i:j]
 
     def replace_option(self, old, new):
         """Replace an option"""
@@ -172,12 +170,9 @@ class OptionRecord(Record):
         """Remove all options key"""
         new_children = []
         for node in self.root.children:
-            if node.rule == 'option':
-                if key == _get_key(node):
-                    if new_children[-1].rule == 'ws' and '\n' not in str(new_children[-1]):
-                        new_children.pop()
-                else:
-                    new_children.append(node)
+            if node.rule == 'option' and key == _get_key(node):
+                if new_children[-1].rule == 'WS':
+                    new_children.pop()
             else:
                 new_children.append(node)
         self.root.children = new_children
@@ -190,7 +185,7 @@ class OptionRecord(Record):
             if node.rule == 'option':
                 curkey = _get_key(node)
                 if key[: len(curkey)] == curkey and i == n:
-                    if new_children[-1].rule == 'ws' and '\n' not in str(new_children[-1]):
+                    if new_children[-1].rule == 'WS':
                         new_children.pop()
                 else:
                     new_children.append(node)

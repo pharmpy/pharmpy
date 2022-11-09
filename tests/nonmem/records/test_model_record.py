@@ -39,7 +39,7 @@ def test_ncomps(parser, buf, expected):
 def test_add_compartment(parser, buf, add, kwargs, expected):
     recs = parser.parse(buf)
     rec = recs.records[0]
-    rec.add_compartment('CENTRAL', **kwargs)
+    rec.add_compartment(add, **kwargs)
     assert str(rec) == expected
 
 

@@ -7,15 +7,18 @@ from pharmpy.model import ModelSyntaxError
 
 from .option_record import OptionRecord
 
+TYPES_OF_SPACE = frozenset(('WS', 'NEWLINE'))
+TYPES_OF_KEEP = frozenset(('WS', 'NEWLINE', 'COMMENT'))
+
 
 class DataRecord(OptionRecord):
     @property
     def filename(self):
         """The (raw, unresolved) path of the dataset."""
         filename = self.root.filename
-        if filename.find('TEXT'):
+        if filename.find('FILENAME'):
             return str(filename)
-        else:  # 'QUOTE'
+        else:  # 'QFILENAME'
             return str(filename)[1:-1]
 
     @filename.setter
@@ -25,15 +28,17 @@ class DataRecord(OptionRecord):
             new = [AttrToken('ASTERISK', '*')]
             nodes = []
             for child in self.root.children:
-                if new and child.rule == 'ws':
+                if new and child.rule in TYPES_OF_SPACE:
                     nodes += [child, new.pop()]
-                elif child.rule in {'ws', 'comment'}:
+                elif child.rule in TYPES_OF_KEEP:
                     nodes += [child]
             self.root = AttrTree.create('root', nodes)
         else:
             # replace only 'filename' rule and quote appropriately if, but only if, needed
             filename = str(value)
             quoted = [
+                '"',
+                "'",
                 ',',
                 ';',
                 '(',
@@ -58,37 +63,45 @@ class DataRecord(OptionRecord):
                 'MISDAT',
             ]
             if not any(x in filename for x in quoted):
-                node = AttrTree.create('filename', {'TEXT': filename})
+                node = AttrTree.create('filename', {'FILENAME': filename})
             else:
-                if "'" in filename:
-                    node = AttrTree.create('filename', {'QUOTE': '"%s"' % filename})
+                if "'" not in filename:
+                    node = AttrTree.create('filename', {'QFILENAME': "'%s'" % filename})
+                elif '"' not in filename:
+                    node = AttrTree.create('filename', {'QFILENAME': '"%s"' % filename})
                 else:
-                    node = AttrTree.create('filename', {'QUOTE': "'%s'" % filename})
-            (pre, old, post) = self.root.partition('filename')
+                    raise ValueError('Cannot have both " and \' in filename.')
+            (pre, _, post) = self.root.partition('filename')
             self.root.children = pre + [node] + post
 
     @property
     def ignore_character(self):
         """The comment character from ex IGNORE=C or None if not available."""
+        char = None
         if hasattr(self.root, 'ignchar') and self.root.ignchar.find('char'):
-            chars = set()
             for option in self.root.all('ignchar'):
+                if char is not None:
+                    raise ModelSyntaxError("Redefinition of ignore character in $DATA")
                 char = str(option.char)
                 if len(char) == 3:  # It must be quoted
                     char = char[1:-1]
-                chars.add(char)
-            if len(chars) > 1:
-                raise ModelSyntaxError("Redefinition of ignore character in $DATA")
-            else:
-                return chars.pop()
-        else:
-            return None
+
+        return char
 
     @ignore_character.setter
-    def ignore_character(self, c):
+    def ignore_character(self, c: str):
         if c != self.ignore_character:
             self.root.remove('ignchar')
-            char_node = AttrTree.create('char', [{'CHAR': c}])
+            char = c if len(c) == 1 else f'"{c}"'
+            if len(c) == 1:
+                char = c
+            elif "'" not in c:
+                char = f"'{c}'"
+            elif '"' not in c:
+                char = f'"{c}"'
+            else:
+                raise ValueError('Cannot have both " and \' in ignore character.')
+            char_node = AttrTree.create('char', [{'CHAR': char}])
             node = AttrTree.create('ignchar', [{'IGNORE': 'IGNORE'}, {'EQUALS': '='}, char_node])
             self.append_option_node(node)
 

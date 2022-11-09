@@ -1,5 +1,5 @@
-root: raw_title NEWLINE*
-raw_title: [ANYTHING]
-ANYTHING: /[^\n]+/
+root: WS? raw_title (NEWLINE WS? COMMENT?)*
+raw_title: ANYTHING?
+ANYTHING: /[^ \x00\t\r\n;][^\r\n]*/
 
-%import .definitions (NEWLINE)
+%import .definitions (WS, COMMENT, NEWLINE)

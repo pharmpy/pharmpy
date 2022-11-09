@@ -33,6 +33,11 @@ from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.tools.amd.funcs import create_start_model
 
 
+def _ensure_trailing_newline(buf):
+    # FIXME This should not be necessary
+    return buf if buf[-1] == '\n' else buf + '\n'
+
+
 def S(x):
     return symbol(x)
 
@@ -395,6 +400,7 @@ def test_statements_setter(pheno, buf_new, len_expected):
     model = pheno.copy()
 
     parser = NMTranParser()
+    buf_new = _ensure_trailing_newline(buf_new)
     statements_new = parser.parse(f'$PRED\n{buf_new}').records[0].statements
 
     assert len(model.statements) == 15

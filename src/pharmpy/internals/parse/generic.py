@@ -7,32 +7,31 @@ to point to your grammar file) to define a powerful parser.
 import copy
 import re
 from abc import ABC
-from typing import Optional
+from typing import Any, Callable, List, Optional, Union
 
-from lark import Lark, Tree
+from lark import Lark, Transformer, Tree, Visitor
 from lark.lexer import Token
 
 from . import prettyprint
 
+TYPES_OF_NEWLINE = frozenset(('CONT', 'NEWLINE'))
+TYPES_OF_COMMENT = frozenset(('COMMENT',))
 
-def rule_of(item):
+
+def rule_of(item: Union[Tree, Token, Any]) -> str:
     """Rule of a tree or token. Convenience function (will not raise)."""
 
-    try:
+    if isinstance(item, Tree):
         return item.data
-    except AttributeError:
-        try:
-            return item.type
-        except AttributeError:
-            return ''
+    elif isinstance(item, Token):
+        return item.type
+    else:
+        return ''
 
 
-def empty_rule(rule):
+def empty_rule(rule: str):
     """Create empty Tree or Token, depending on (all) upper-case or not."""
-
-    if rule == rule.upper():
-        return Token(rule, '')
-    return Tree(rule, [])
+    return Token(rule, '') if rule == rule.upper() else Tree(rule, [])
 
 
 class AttrToken(Token):
@@ -109,7 +108,11 @@ class AttrToken(Token):
         return hash(repr(self))
 
     def __eq__(self, other):
-        return hash(self) == hash(other)
+        if not isinstance(other, AttrToken):
+            return False
+        if self.type != other.type:
+            return False
+        return repr(self) == repr(other)
 
     def __str__(self):
         return str(self.value)
@@ -240,36 +243,39 @@ class AttrTree(Tree):
         """Evaluated value (self)."""
         return self
 
+    def first_index(self, rule: str):
+        """Returns index of first child matching 'rule', or -1."""
+        return next((i for i, child in enumerate(self.children) if child.rule == rule), -1)
+
     def find(self, rule):
         """Returns first child matching 'rule', or None."""
-        return next((child for child in self.children if child.rule == rule), None)
+        i = self.first_index(rule)
+        return None if i == -1 else self.children[i]
 
     def all(self, rule):
         """Returns all children matching rule, or []."""
         return list(filter(lambda child: child.rule == rule, self.children))
 
-    def set(self, rule, value):
+    def set(self, rule, new_child):
         """Sets first child matching rule. Raises if none."""
-        for i, child in enumerate(self.children):
-            if child.rule == rule:
-                self.children[i] = value
-                return
-        raise NoSuchRuleException(rule, self)
+        i = self.first_index(rule)
+        if i == -1:
+            raise NoSuchRuleException(rule, self)
+
+        self.children[i] = new_child
 
     def partition(self, rule):
         """Partition children into (head, item, tail).
 
         Search for child item 'rule' and return the part before it (head), the item, and the part
         after it (tail). If 'rule' is not found, return (children, [], [])."""
-        head, item, tail = [], [], []
-        for node in self.children:
-            if not item and node.rule == rule:
-                item += [node]
-            elif not item:
-                head += [node]
-            else:
-                tail += [node]
-        return (head, item, tail)
+
+        i = self.first_index(rule)
+        return (
+            (list(self.children), [], [])
+            if i == -1
+            else (self.children[:i], [self.children[i]], self.children[i + 1 :])
+        )
 
     def tree_walk(self):
         """Generator for iterating depth-first (i.e. parse order) over children."""
@@ -282,17 +288,13 @@ class AttrTree(Tree):
 
     def remove(self, rule):
         """Remove all children with rule. Not recursively"""
-        new_children = []
-        for child in self.children:
-            if child.rule != rule:
-                new_children.append(child)
-        self.children = new_children
+        self.children = [child for child in self.children if child.rule != rule]
 
     def remove_node(self, node):
         new_children = []
         comment_flag = False
         for child in self.children:
-            if child.rule == 'COMMENT' or child.rule == 'NEWLINE':
+            if child.rule in TYPES_OF_COMMENT:
                 if not comment_flag:
                     new_children.append(child)
                 else:
@@ -309,18 +311,17 @@ class AttrTree(Tree):
 
     @staticmethod
     def _newline_node():
-        return AttrToken('WS_ALL', '\n')
+        return AttrToken('NEWLINE', '\n')
 
     def _clean_ws(self, new_children):
         new_children_clean = []
-        types_of_newline = ['WS_ALL', 'NEWLINE']
         last_index = len(new_children) - 1
 
         prev_rule = None
 
         for i, child in enumerate(new_children):
-            if child.rule in types_of_newline:
-                if prev_rule in types_of_newline or prev_rule == 'verbatim':
+            if child.rule in TYPES_OF_NEWLINE:
+                if prev_rule in TYPES_OF_NEWLINE or prev_rule == 'verbatim':
                     continue
                 if i == last_index:
                     continue
@@ -455,17 +456,17 @@ class GenericParser(ABC):
 
     lark: Lark
     lark_options = dict(
-        ambiguity='resolve',
-        debug=False,
-        keep_all_tokens=True,
-        maybe_placeholders=False,
-        lexer='dynamic',
-        parser='earley',
         start='root',
+        parser='lalr',
+        keep_all_tokens=True,
+        propagate_positions=False,
+        maybe_placeholders=False,
+        debug=False,
+        cache=False,
     )
+    post_process: List[Union[Visitor, Transformer, Callable[[str, Tree], Tree]]] = []
 
-    def __init__(self, buf=None, **lark_options):
-        self.lark_options.update(lark_options)
+    def __init__(self, buf=None):
         self.root = self.parse(buf)
 
     def parse(self, buf):
@@ -481,6 +482,17 @@ class GenericParser(ABC):
         root = self.lark.parse(self.buffer)
         if self.non_empty:
             root = self.insert(root, self.non_empty)
+
+        for processor in self.post_process:
+            if isinstance(processor, Visitor):
+                processor.visit(root)
+            elif isinstance(processor, Transformer):
+                root = processor.transform(root)
+            elif isinstance(processor, Callable):
+                root = processor(self.buffer, root)
+            else:
+                raise TypeError(f'Processor {processor} must be a Visitor or a Transformer')
+
         return self.AttrTree.transform(tree=root)
 
     @classmethod

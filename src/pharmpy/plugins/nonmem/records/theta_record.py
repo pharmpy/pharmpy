@@ -67,7 +67,7 @@ class ThetaRecord(Record):
                             else:
                                 found = True
                                 continue
-                        if found and subnode.rule == 'NEWLINE':
+                        if found and subnode.rule == 'COMMENT':
                             m = re.search(r';\s*([a-zA-Z_]\w*)', str(subnode))
                             if m:
                                 name = m.group(1)

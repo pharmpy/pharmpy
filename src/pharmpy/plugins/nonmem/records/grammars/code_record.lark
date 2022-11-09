@@ -1,87 +1,238 @@
 // A precedence climbing grammar is used for expressions
 // The top level has one full line of code per rule
 
-root: empty_line* [pseudo] (statement | verbatim | empty_line)+
+root: _empty_lines? (pseudo _empty_lines?)? _statements_and_verbatims?
+_empty_lines: _empty_lines? empty_line
+empty_line: NEWLINE
 
-empty_line: [WS] [COMMENT] LF
-LF: /\r?\n/
+_statements_and_verbatims: _statements_and_verbatims? (statement | verbatim) _empty_lines?
+_statements: _statements? statement _empty_lines?
 
-pseudo: [WS] PSEUDO_STATEMENT ")" [WS] [COMMENT] LF
-PSEUDO_STATEMENT: /[(][^)]*/
+pseudo: "(" pseudo_statement ")" NEWLINE
+pseudo_statement: PSEUDO_STATEMENT?
+PSEUDO_STATEMENT: /[^)]+/
 
-verbatim: [WS] VERBATIM_STATEMENT [LF]
+// NOTE trailing NEWLINE needs to be optional in case of EOF
+verbatim: VERBATIM_STATEMENT NEWLINE
 VERBATIM_STATEMENT: /"[^\n]*/
 
-statement: [WS] (assignment | logical_if | block_if | while | exit | call | return) [WS] [COMMENT] [LF]
+// NOTE trailing NEWLINE needs to be optional in case of EOF
+statement: _statement NEWLINE
 
-exit: "EXIT"i ([WS] | WS ("1" | "2") | WS ("1" | "2") WS SIGNED_INT)
-call: "CALL"i WS CNAME [WS] "(" [WS] _atom [WS] ("," [WS] _atom [WS])* ")"
-return: "RETURN"i
-assignment: variable [WS] "=" [WS] expression
+_statement: assignment
+          | logical_if
+          | block_if
+          | while
+          | exit
+          | call
+          | return
 
-while: [WS] "DO"i [WS] "WHILE"i [WS] "(" logical_expression ")" [WS] NEWLINE ([WS] statement NEWLINE)* [WS] "END DO"i [WS]
+exit: EXIT (("1" | "2") (SIGNED_INT)?)?
+call: CALL CNAME _lpar _atoms _rpar
+_atoms: (_atoms _sep)? atom
+return: RETURN
+assignment: variable EQUALS real_expr
+EQUALS: "="
 
-block_if: block_if_start block_if_elseif* block_if_else? block_if_end
-block_if_start: [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] NEWLINE ([WS] statement [WS] NEWLINE)*
-block_if_else: [WS] "ELSE"i [WS] NEWLINE ([WS] statement NEWLINE)*
-block_if_elseif: [WS] "ELSE"i [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] NEWLINE ([WS] statement [WS] NEWLINE)*
-block_if_end: [WS] ("END IF"i | "ENDIF"i) [WS]
+_lpar: "("
+_rpar: ")"
+_sep: ","
 
-logical_if: "IF"i [WS] "(" logical_expression ")" [WS] (assignment | exit | call)
-?logical_expression: _or_term (or_op _or_term)*
-_or_term: _and_term (and_op _and_term)*
-_and_term: (not_op)? not_term
-not_term: _eq_term (eq_op _eq_term)? -> logical_expression
-_eq_term: _rel_term (rel_op _rel_term)?
-_rel_term: expression
+_condition: _lpar bool_expr _rpar
 
-or_op: (".OR."i) -> logical_operator
-and_op: (".AND."i) -> logical_operator
-eq_op: ("==" | ".EQ."i) -> logical_operator
-      | ("/=" | ".NE."i) -> logical_operator
-rel_op: (".LT."i | "<" | ".LE."i | "<=" | ".GT."i | ">" | ".GE."i | ">=") -> logical_operator
-not_op: ".NOT."i -> logical_operator
+while: DOWHILE _condition _empty_lines _statements? ENDDO
 
-?expression: term (add_op [WS] term)*
-?term: _factor (mul_op _factor)* -> expression
-_factor: [UNARY_OP] (_atom | power)
-?power: _atom ("**" _factor)?
+block_if: block_if_start (block_if_elseif)* (block_if_else)? block_if_end
+block_if_start: IF _condition THEN _empty_lines _statements?
+block_if_elseif: ELSEIF _condition THEN _empty_lines _statements?
+block_if_else: ELSE _empty_lines _statements?
+block_if_end: ENDIF
 
-UNARY_OP: "+" | "-"
-add_op: "+" -> operator
-      | "-" -> operator
-mul_op: "*" -> operator
-      | "/" -> operator
+EXIT.9   : "EXIT"i
+CALL.9   : "CALL"i
+RETURN.9 : "RETURN"i
+DOWHILE.9: "DO WHILE"i
+         | "DOWHILE"i
+ENDDO.9  : "END DO"i
+         | "ENDDO"i
+IF.9     : "IF"i
+THEN.9   : "THEN"i
+ELSE.9   : "ELSE"i
+ELSEIF.9 : "ELSE IF"i
+         | "ELSEIF"i
+ENDIF.9  : "END IF"i
+         | "ENDIF"i
+
+logical_if: IF _condition (assignment | exit | call)
+bool_expr: or_expr
+
+?or_expr: and_expr
+        | or_expr lor and_expr           -> instruction_infix
+        // NOTE Left-associativity for logical or
+
+?and_expr: not_expr
+         | and_expr land not_expr        -> instruction_infix
+         // NOTE Left-associativity for logical and
+
+?not_expr: eq_expr
+         | lnot eq_expr                         -> instruction_unary
+
+?eq_expr: rel_expr
+        | rel_expr _eq_op eq_expr        -> instruction_infix
+
+?rel_expr: real_expr
+         | real_expr _rel_op real_expr   -> instruction_infix
+
+lor: LOR
+LOR: ".OR."i
+
+land: LAND
+LAND: ".AND."i
+
+lnot: LNOT
+LNOT: ".NOT."i
+
+_eq_op: eq | ne
+eq: EQ
+EQ: "==" | ".EQ."i
+
+ne: NE
+NE: "/=" | ".NE."i
+
+_rel_op: lt | le | gt | ge
+lt: LT
+LT: ".LT."i | "<"
+le: LE
+LE: ".LE."i | "<="
+gt: GT
+GT: ".GT."i | ">"
+ge: GE
+GE: ".GE."i | ">="
+
+real_expr: add_expr
+
+?add_expr: mul_expr
+         | add_expr _add_op mul_expr  -> instruction_infix
+         // NOTE Left-associativity for addition and subtraction
+
+?mul_expr: sign_expr
+         | mul_expr _mul_op sign_expr -> instruction_infix
+         // NOTE Left-associativity for multiplication and division
+
+?sign_expr: pow_expr
+          | _sign pow_expr                   -> instruction_unary
+
+?pow_expr: atom
+         | atom pow_op sign_expr      -> instruction_infix
+         // NOTE Right-associativity for exponentiation
+
+_sign: pos_op | neg_op
+pos_op: POS
+POS: "+"
+neg_op: NEG
+NEG: "-"
+
+_add_op: add_op | sub_op
+add_op  : ADD
+ADD: "+"
+sub_op  : SUB
+SUB: "-"
+
+_mul_op : mul_op | div_op
+mul_op  : MUL
+MUL: "*"
+div_op  : DIV
+DIV: "/"
+
+pow_op : POW
+POW: "**"
 
 
-_atom: [WS] (func | func2 | symbol | number | "(" expression ")") [WS]
+?atom: img
+     | symbol
+     | number
+     | _lpar real_expr _rpar -> real_expr
 
-func: intrinsic_func "(" expression ")"
-func2: "MOD"i "(" expression "," expression ")"
+img: _fn1 _lpar real_expr _rpar
+   | _fn2 _lpar real_expr _sep real_expr _rpar
 
-intrinsic_func: "LOG"i | "LOG10"i | "EXP"i | "DEXP"i | "SQRT"i | "SIN"i | "COS"i | "ABS"i | "TAN"i | "ASIN"i | "ACOS"i | "ATAN"i | "INT"i | "GAMLN"i | "PHI"i
-    | "PLOG"i | "PLOG10"i | "PSQRT"i | "PEXP"i | "PDZ"i | "PZR"i | "PNP"i | "PHE"i | "PNG"i | "PTAN"i | "PATAN"i | "PASIN"i | "PACOS"i
+_fn1: exp | pexp
+    | log | plog
+    | log10 | plog10
+    | sqrt | psqrt
+    | sin | cos | tan
+    | asin | acos | atan
+    | abs
+    | int
+    | loggamma
+    | pdz
+    | pzr
+    | pnp
+    | phe
+    | png
+    | phi
 
-variable: vector | CNAME
+exp: "EXP"i | "DEXP"i
+pexp: "PEXP"i
+log: "LOG"i
+plog: "PLOG"i
+log10: "LOG10"i
+plog10: "PLOG10"i
+sqrt: "SQRT"i
+psqrt: "PSQRT"i
+sin: "SIN"i
+cos: "COS"i
+tan: "TAN"i | "PTAN"i
+asin: "ASIN"i | "PASIN"i
+acos: "ACOS"i | "PACOS"i
+atan: "ATAN"i | "PATAN"i
+abs: "ABS"i
+int: "INT"i
+loggamma: "GAMLN"i
+pdz: "PDZ"i
+pzr: "PZR"i
+pnp: "PNP"i
+phe: "PHE"i
+png: "PNG"i
+phi: "PHI"i
 
-symbol: parameter | vector | CNAME
+_fn2: mod
+mod: "MOD"i
+
+variable: vector
+        | CNAME
+
+symbol: parameter
+      | vector
+      | CNAME
+
 vector: CNAME (subscript | double_subscript)
 parameter: (THETA | ETA | EPS | OMEGA | SIGMA) subscript
          | (OMEGA | SIGMA) double_subscript
 
-subscript: [WS] "(" [WS] SIGNED_INT [WS] ")" | [WS] "(" [WS] CNAME [WS] ")"
-double_subscript: [WS] "(" [WS] SIGNED_INT [WS] "," [WS] SIGNED_INT [WS] ")"
+subscript: _lpar (CNAME | SIGNED_INT) _rpar
+double_subscript: _lpar SIGNED_INT _sep SIGNED_INT _rpar
 
-number: SIGNED_INT | FLOAT
+number: SIGNED_INT
+      | FLOAT
 
-FLOAT: /[-+]?((\d+\.\d*|\.\d+)([ed][-+]?\d+)?|\d+([ed][-+]?\d+))/i
+FLOAT: /[-+]?((\d+\.\d+|\.\d+)([ed][-+]?\d+)?|\d+([ed][-+]?\d+))/i
+
 THETA: "THETA"i
+
 ETA: "ETA"i
-EPS: "EPS"i | "ERR"i
+
+EPS: "EPS"i
+   | "ERR"i
+
 OMEGA: "OMEGA"i
+
 SIGMA: "SIGMA"i
 
-WS: /([ \t]+|[ \t]*&[ \t]*\r?\n[ \t]*)/
+CONT: "&" WS? NEWLINE
 
-%import .definitions (COMMENT, NEWLINE, WS_ALL)
+%import .definitions (COMMENT, NEWLINE, WS)
 %import common (CNAME, SIGNED_INT)
+%ignore WS
+%ignore COMMENT
+%ignore CONT
