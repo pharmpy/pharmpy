@@ -1,3 +1,11 @@
+next release
+------------
+
+New features
+============
+
+* Add modeling.deidentify_data
+
 0.83.0 (2022-11-01)
 -------------------
 

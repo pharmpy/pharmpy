@@ -102,6 +102,7 @@ from .compartments import get_bioavailability, get_lag_times
 from .data import (
     add_time_after_dose,
     check_dataset,
+    deidentify_data,
     drop_columns,
     drop_dropped_columns,
     expand_additional_doses,
@@ -227,6 +228,7 @@ __all__ = [
     'create_report',
     'create_rng',
     'create_symbol',
+    'deidentify_data',
     'drop_columns',
     'drop_dropped_columns',
     'evaluate_epsilon_gradient',

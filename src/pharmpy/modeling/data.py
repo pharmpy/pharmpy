@@ -8,7 +8,9 @@ from pharmpy.deps import sympy
 from pharmpy.deps.rich import box as rich_box
 from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import table as rich_table
-from pharmpy.model import DataInfo, DatasetError
+from pharmpy.model import CompartmentalSystem, DataInfo, DatasetError
+
+from .iterators import resample_data
 
 
 def get_ids(model):
@@ -802,7 +804,7 @@ def get_cmt(model):
     else:
         return model.dataset[cmtcols[0].name]
     odes = model.statements.ode_system
-    if odes:
+    if isinstance(odes, CompartmentalSystem):
         dosing = odes.dosing_compartment
         names = odes.compartment_names
         dose_cmt = names.index(dosing.name) + 1
@@ -1589,5 +1591,65 @@ def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str], datatype=No
             dtype=datainfo.get_dtype_dict(),
             float_precision='round_trip',
         )
+
+    return df
+
+
+def deidentify_data(df, id_column='ID', date_columns=None):
+    """Deidentify a dataset
+
+    Two operations are performed on the dataset:
+
+    1. All ID numbers are randomized from the range [1, n]
+    2. All columns containing dates will have the year changed
+
+    The year change is done by letting the earliest year in the dataset
+    be used as a reference and by maintaining leap years. The reference year
+    will either be 1901, 1902, 1903 or 1904 depending on its distance to the closest
+    preceeding leap year.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        A dataset
+    id_column : str
+        Name of the id column
+    date_columns : list
+        Names of all date columns
+
+    Results
+    -------
+    pd.DataFrame
+        Deidentified dataset
+    """
+    df = df.copy()
+    df[id_column] = pd.to_numeric(df[id_column])
+    resampler = resample_data(df, id_column)
+    df, _ = next(resampler)
+
+    if date_columns is None:
+        return df
+    for datecol in date_columns:
+        if pd.api.types.is_datetime64_any_dtype(df[datecol]):
+            pass
+        elif df[datecol].dtype == 'object':
+            # assume string
+            df[datecol] = pd.to_datetime(df[datecol])
+        else:
+            raise ValueError(f"Column {datecol} does not seem to contain a date")
+    earliest_date = df[date_columns].min().min()
+
+    # Handle leap year modulo
+    earliest_year_modulo = earliest_date.year % 4
+    reference_offset = 4 if earliest_year_modulo == 0 else earliest_year_modulo
+    reference_year = 1900 + reference_offset
+    delta = earliest_date.year - reference_year
+
+    def convert(x):
+        new = x.replace(year=x.year - delta)
+        return new
+
+    for datecol in date_columns:
+        df[datecol] = df[datecol].transform(convert)
 
     return df
