@@ -1600,7 +1600,7 @@ def deidentify_data(df, id_column='ID', date_columns=None):
 
     Two operations are performed on the dataset:
 
-    1. All ID numbers are randomized from the range [1, n]
+    1. All ID numbers are randomized from the range 1 to n
     2. All columns containing dates will have the year changed
 
     The year change is done by letting the earliest year in the dataset
