@@ -7,6 +7,7 @@ from pharmpy.internals.fs.path import path_absolute
 
 from ..model_database import LocalModelDirectoryDatabase
 from .baseclass import ToolDatabase
+from .metadata import MetadataJSONDecoder, MetadataJSONEncoder
 
 
 class LocalDirectoryToolDatabase(ToolDatabase):
@@ -62,10 +63,10 @@ class LocalDirectoryToolDatabase(ToolDatabase):
     def store_metadata(self, metadata):
         path = self.path / 'metadata.json'
         with open(path, 'w') as f:
-            json.dump(metadata, f, indent=4)
+            json.dump(metadata, f, indent=4, cls=MetadataJSONEncoder)
 
     def read_metadata(self):
         path = self.path / 'metadata.json'
         with open(path, 'r') as f:
-            metadata = json.load(f)
+            metadata = json.load(f, cls=MetadataJSONDecoder)
         return metadata
