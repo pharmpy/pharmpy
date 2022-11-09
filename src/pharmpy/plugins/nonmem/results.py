@@ -276,21 +276,21 @@ def parse_phi(model, path):
 
     assert isinstance(table, PhiTable)
 
-    columns = rv_translation(model.internals.control_stream)
-    trans = set(columns.values())
-    rv_names = list(filter(trans.__contains__, model.random_variables.etas.names))
+    trans = rv_translation(model.internals.control_stream)
+    eta_names = set(trans.values())
+    rv_names = list(filter(eta_names.__contains__, model.random_variables.etas.names))
     try:
         individual_ofv = table.iofv
-        individual_estimates = table.etas.rename(columns=columns)[rv_names]
-        covs = table.etcs
-        index = columns
-        covs = covs.transform(
-            lambda cov: cov.rename(
-                columns=columns,
-                index=index,
-            )
-        )
-        covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
+        individual_estimates = table.etas.rename(columns=trans)[rv_names]
+        ids, eta_col_names, matrix_array = table.etc_data()
+        index = {trans[x]: i for i, x in enumerate(eta_col_names)}
+        indices = tuple(map(index.__getitem__, rv_names))
+        selector = np.ix_(indices, indices)
+        etc_frames = [
+            pd.DataFrame(matrix[selector], columns=rv_names, index=rv_names)
+            for matrix in matrix_array
+        ]
+        covs = pd.Series(etc_frames, index=ids, dtype='object')
         return individual_ofv, individual_estimates, covs
     except KeyError:
         return None, None, None

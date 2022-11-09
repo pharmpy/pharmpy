@@ -218,7 +218,7 @@ class PhiTable(NONMEMTable):
 
     @property
     def etas(self):
-        df = self._df.copy(deep=True)
+        df = self._df
         df = df.loc[df.iloc[:, 2:].any(axis=1)]
         eta_col_names = [col for col in df if col.startswith('ETA')]
         etas = df[eta_col_names]
@@ -227,18 +227,22 @@ class PhiTable(NONMEMTable):
 
     @property
     def etcs(self):
-        df = self._df.copy(deep=True)
+        ids, eta_col_names, matrix_array = self.etc_data()
+        etc_frames = [
+            pd.DataFrame(matrix, columns=eta_col_names, index=eta_col_names)
+            for matrix in matrix_array
+        ]
+        etcs = pd.Series(etc_frames, index=ids, dtype='object')
+        return etcs
+
+    def etc_data(self):
+        df = self._df
         df = df.loc[df.iloc[:, 2:].any(axis=1)]
         eta_col_names = [col for col in df if col.startswith('ETA')]
         etc_col_names = [col for col in df if col.startswith('ETC')]
         vals = df[etc_col_names].values
         matrix_array = [flattened_to_symmetric(x) for x in vals]
-        etc_frames = [
-            pd.DataFrame(matrix, columns=eta_col_names, index=eta_col_names)
-            for matrix in matrix_array
-        ]
-        etcs = pd.Series(etc_frames, index=df['ID'], dtype='object')
-        return etcs
+        return df['ID'], eta_col_names, matrix_array
 
 
 class ExtTable(NONMEMTable):
