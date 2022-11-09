@@ -48,17 +48,28 @@ class ModelfitResultsError(ModelError):
 class Model:
     """The Pharmpy model class"""
 
-    def __init__(self):
-        self.parameters = Parameters([])
-        self.random_variables = RandomVariables.create([])
-        self.statements = Statements()
-        self.dependent_variable = sympy.Symbol('y')
-        self.observation_transformation = self.dependent_variable
-        self.modelfit_results = None
-        self.parent_model = None
-        self.initial_individual_estimates = None
-        self.value_type = 'PREDICTION'
-        self.description = ''
+    def __init__(
+        self,
+        parameters=Parameters([]),
+        random_variables=RandomVariables.create([]),
+        statements=Statements(),
+        dependent_variable=sympy.Symbol('y'),
+        modelfit_results=None,
+        parent_model=None,
+        initial_individual_estimates=None,
+        value_type='PREDICTION',
+        description='',
+    ):
+        self.parameters = parameters
+        self.random_variables = random_variables
+        self.statements = statements
+        self.dependent_variable = dependent_variable
+        self.observation_transformation = dependent_variable
+        self.modelfit_results = modelfit_results
+        self.parent_model = parent_model
+        self.initial_individual_estimates = initial_individual_estimates
+        self.value_type = value_type
+        self.description = description
 
     def __eq__(self, other):
         """Compare two models for equality
