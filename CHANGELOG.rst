@@ -6,6 +6,11 @@ New features
 
 * Add modeling.deidentify_data
 
+Changes
+=======
+
+* Change CLI anonymize into deidentify
+
 0.83.0 (2022-11-01)
 -------------------
 

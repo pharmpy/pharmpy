@@ -320,8 +320,8 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
         # Is a dataset
         try:
             # If no output_file supplied will use name of df
-            if not force or not path.is_file():
-                path = new_df.to_csv(path=path)
+            if force or not path.is_file():
+                path = new_df.to_csv(path, index=False)
                 print(f'Dataset written to {path}')
             else:
                 error(exception=FileExistsError("Use -f or --force to force an overwrite"))
@@ -376,20 +376,21 @@ def data_resample(args):
             error(e)
 
 
-def data_anonymize(args):
-    """Subcommand to anonymize a dataset
-    anonymization is really a special resample case where the specified group
-    (usually the ID) is given new random unique values and reordering.
+def data_deidentify(args):
+    """Subcommand to deidentify a dataset
     Will be default try to overwrite original file (but won't unless force)
     """
     path = check_input_path(args.dataset)
     dataset = pd.read_csv(path, dtype=str)
-    dataset[args.group] = pd.to_numeric(dataset[args.group])
 
-    from pharmpy.modeling import resample_data
+    from pharmpy.modeling import deidentify_data
 
-    resampler = resample_data(dataset, args.group)
-    df, _ = next(resampler)
+    if args.datecols:
+        datecols = args.datecols.split(',')
+    else:
+        datecols = None
+    df = deidentify_data(dataset, id_column=args.idcol, date_columns=datecols)
+
     if args.output_file:
         output_file = args.output_file
     else:
@@ -1469,11 +1470,12 @@ parser_definition = [
                     }
                 },
                 {
-                    'anonymize': {
-                        'help': 'Anonymize dataset by renumbering a specific data column',
-                        'description': 'Anonymize dataset by renumbering a specific data column',
+                    'deidentify': {
+                        'help': 'Deidentify dataset',
+                        'description': 'Deidentify dataset by renumbering the id column and '
+                        'changing dates.',
                         'parents': [args_output],
-                        'func': data_anonymize,
+                        'func': data_deidentify,
                         'args': [
                             {
                                 'name': 'dataset',
@@ -1482,11 +1484,18 @@ parser_definition = [
                                 'help': 'A csv file dataset',
                             },
                             {
-                                'name': '--group',
+                                'name': '--idcol',
                                 'metavar': 'COLUMN',
                                 'type': str,
                                 'default': 'ID',
-                                'help': 'column to anonymize (default ID)',
+                                'help': 'id column name (default ID)',
+                            },
+                            {
+                                'name': '--datecols',
+                                'type': str,
+                                'metavar': 'COLUMNS',
+                                'default': '',
+                                'help': 'Comma separated list of date column names',
                             },
                         ],
                     }
