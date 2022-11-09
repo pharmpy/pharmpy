@@ -5,7 +5,7 @@ from os import stat
 from pathlib import Path
 from typing import Union
 
-from pharmpy.internals.df import hash_df
+from pharmpy.internals.df import hash_df_fs
 from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import DataInfo, Model
@@ -206,8 +206,8 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
 
         # NOTE Get the hash of the dataset and list filenames with contents
         # matching this hash only
-        h = hash_df(model.dataset)
-        h_dir = datasets_path / DIRECTORY_INDEX / str(h)
+        h = hash_df_fs(model.dataset)
+        h_dir = datasets_path / DIRECTORY_INDEX / h
         h_dir.mkdir(parents=True, exist_ok=True)
         for hpath in h_dir.iterdir():
             # NOTE This variable holds a string similar to "run1.csv"
