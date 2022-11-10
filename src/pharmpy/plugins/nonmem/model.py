@@ -21,6 +21,7 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
 )
+from pharmpy.model.model import compare_before_after_params
 from pharmpy.modeling.write_csv import create_dataset_path, write_csv
 
 from .config import conf
@@ -133,11 +134,14 @@ class Model(pharmpy.model.Model):
         self.modelfit_results = None
         parser = NMTranParser()
         if path is None:
-            self._name = 'run1'
-            self.filename_extension = '.ctl'
+            name = 'run1'
+            filename_extension = '.ctl'
         else:
-            self._name = path.stem
-            self.filename_extension = path.suffix
+            name = path.stem
+            filename_extension = path.suffix
+
+        self._name = name
+        self.filename_extension = filename_extension
         control_stream = parser.parse(code)
         di = parse_datainfo(control_stream, path)
         self.datainfo = di
@@ -194,7 +198,7 @@ class Model(pharmpy.model.Model):
 
         if not rvs.validate_parameters(parameters.inits):
             nearest = rvs.nearest_valid_parameters(parameters.inits)
-            before, after = self._compare_before_after_params(parameters.inits, nearest)
+            before, after = compare_before_after_params(parameters.inits, nearest)
             warnings.warn(
                 f"Adjusting initial estimates to create positive semidefinite "
                 f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
@@ -219,7 +223,7 @@ class Model(pharmpy.model.Model):
 
         self.internals = NONMEMModelInternals(
             control_stream=control_stream,
-            old_name=self._name,
+            old_name=name,
             _old_description=description,
             _old_estimation_steps=steps,
             _old_observation_transformation=dv,

@@ -220,7 +220,7 @@ class Model:
         if inits and not self.random_variables.validate_parameters(inits):
             nearest = self.random_variables.nearest_valid_parameters(inits)
             if nearest != inits:
-                before, after = self._compare_before_after_params(inits, nearest)
+                before, after = compare_before_after_params(inits, nearest)
                 warnings.warn(
                     f"Adjusting initial estimates to create positive semidefinite "
                     f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
@@ -231,16 +231,6 @@ class Model:
                 raise ValueError("New parameter inits are not valid")
 
         self._parameters = value
-
-    @staticmethod
-    def _compare_before_after_params(old, new):
-        before = {}
-        after = {}
-        for key, value in old.items():
-            if new[key] != value:
-                before[key] = value
-                after[key] = new[key]
-        return before, after
 
     @property
     def random_variables(self):
@@ -442,3 +432,14 @@ class Model:
         # Read in model results here?
         # Set filename extension?
         return model
+
+
+def compare_before_after_params(old, new):
+    # FIXME Move this to the right module
+    before = {}
+    after = {}
+    for key, value in old.items():
+        if new[key] != value:
+            before[key] = value
+            after[key] = new[key]
+    return before, after
