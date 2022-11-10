@@ -50,10 +50,12 @@ class Model:
 
     def __init__(
         self,
+        name=None,
         parameters=Parameters([]),
         random_variables=RandomVariables.create([]),
         statements=Statements(),
         dependent_variable=None,
+        estimation_steps=None,
         modelfit_results=None,
         parent_model=None,
         initial_individual_estimates=None,
@@ -63,11 +65,15 @@ class Model:
         actual_dependent_variable = (
             sympy.Symbol('y') if dependent_variable is None else dependent_variable
         )
-        self.parameters = parameters
+        if name is not None:  # FIXME This conditional should not be necessary
+            self.name = name
         self.random_variables = random_variables
+        self.parameters = parameters
         self.statements = statements
         self.dependent_variable = actual_dependent_variable
         self.observation_transformation = actual_dependent_variable
+        if estimation_steps is not None:  # FIXME This conditional should not be necessary
+            self.estimation_steps = estimation_steps
         self.modelfit_results = modelfit_results
         self.parent_model = parent_model
         self.initial_individual_estimates = initial_individual_estimates

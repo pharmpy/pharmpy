@@ -40,7 +40,7 @@ from .parsing import (
     parse_value_type,
 )
 from .random_variables import rv_translation
-from .results import parse_modelfit_results
+from .results import _parse_modelfit_results
 from .update import (
     abbr_translation,
     update_ccontra,
@@ -226,6 +226,20 @@ class Model(pharmpy.model.Model):
 
         self._statements = statements
 
+        self.modelfit_results = _parse_modelfit_results(
+            path,
+            control_stream,
+            pharmpy.model.Model(  # FIXME This should not be necessary
+                name=name,
+                description=description,
+                parameters=parameters,
+                random_variables=rvs,
+                statements=statements,
+                dependent_variable=dv,
+                estimation_steps=steps,
+            ),
+        )
+
         self.internals = NONMEMModelInternals(
             control_stream=control_stream,
             old_name=name,
@@ -238,9 +252,6 @@ class Model(pharmpy.model.Model):
             _old_initial_individual_estimates=init_etas,
             _compartment_map=comp_map,
         )
-
-        # NOTE This requires self.internals to be defined
-        self.modelfit_results = None if path is None else parse_modelfit_results(self, path)
 
     def update_source(self, path=None, force=False, nofiles=False):
         """Update the source
