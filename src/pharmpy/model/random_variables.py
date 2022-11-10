@@ -32,7 +32,7 @@ class VariabilityLevel:
     name : str
         A unique identifying name
     reference : bool
-        Is this the reference level. Normally IIV would be the reference level
+        Is this the reference level? Normally IIV would be the reference level
     group : str
         Name of data column to group this level. None for no grouping (default)
     """
@@ -41,6 +41,16 @@ class VariabilityLevel:
         self._name = name
         self._reference = reference
         self._group = group
+
+    @classmethod
+    def create(cls, name, reference=False, group=None):
+        return VariabilityLevel(name, bool(reference), group)
+
+    def replace(self, **kwargs):
+        name = kwargs.get('name', self._name)
+        reference = kwargs.get('reference', self._reference)
+        group = kwargs.get('group', self._group)
+        return VariabilityLevel(name, bool(reference), group)
 
     def __eq__(self, other):
         return (
