@@ -255,7 +255,7 @@ def test_single_assignments(parser, buf, sym, expression):
             ],
         ),
         (
-            '$PRED    IF (A>=0.5) THEN   \n  VAR=1+2 \nELSE IF (B.EQ.23) THEN ; C\nVAR=9.25\n'
+            '$PRED    IF (A>=.5) THEN   \n  VAR=1+2 \nELSE IF (B.EQ.23) THEN ; C\nVAR=9.25\n'
             'END IF  \n',
             [
                 (
@@ -302,6 +302,30 @@ def test_single_assignments(parser, buf, sym, expression):
             ],
         ),
         (
+            '$PRED\nIF (NEWIND.NE.2.OR.EVID.GE.3.) THEN ; begin\nTNXD=TIME ; TIME\nENDIF',
+            [
+                (
+                    S('TNXD'),
+                    sympy.Piecewise(
+                        (S('TIME'), sympy.Or(sympy.Ne(S('NEWIND'), 2), sympy.Ge(S('EVID'), 3.0))),
+                        (0, True),
+                    ),
+                )
+            ],
+        ),
+        (
+            '$PRED\nIF (NEWIND.NE.2..OR.EVID.GE.3) THEN ; begin\nTNXD=TIME ; TIME\nENDIF',
+            [
+                (
+                    S('TNXD'),
+                    sympy.Piecewise(
+                        (S('TIME'), sympy.Or(sympy.Ne(S('NEWIND'), 2.0), sympy.Ge(S('EVID'), 3))),
+                        (0, True),
+                    ),
+                )
+            ],
+        ),
+        (
             '$PRED IF (B0.LT.3) THEN\nCL = THETA(1)\nELSE;A close comment\nCL = 23\nENDIF',
             [(S('CL'), sympy.Piecewise((S('THETA(1)'), S('B0') < 3), (23, True)))],
         ),
@@ -318,17 +342,17 @@ def test_single_assignments(parser, buf, sym, expression):
             ],
         ),
         (
-            '$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE\nEND IF',
+            '$PRED\nIF (X.EQ.0) THEN\nY = 23.\nZ = 9\nELSE\nEND IF',
             [
-                (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)), (0, True))),
+                (S('Y'), sympy.Piecewise((23.0, sympy.Eq(S('X'), 0)), (0, True))),
                 (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)), (0, True))),
             ],
         ),
         (
-            '$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE IF (X.EQ.23) THEN\nELSE\nEND IF',
+            '$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9.\nELSE IF (X.EQ.23) THEN\nELSE\nEND IF',
             [
                 (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)), (0, True))),
-                (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0)), (0, True))),
+                (S('Z'), sympy.Piecewise((9.0, sympy.Eq(S('X'), 0)), (0, True))),
             ],
         ),
         (

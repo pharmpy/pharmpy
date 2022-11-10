@@ -8,9 +8,11 @@ empty_line: NEWLINE
 _statements_and_verbatims: _statements_and_verbatims? (statement | verbatim) _empty_lines?
 _statements: _statements? statement _empty_lines?
 
-pseudo: "(" pseudo_statement ")" NEWLINE
+pseudo: _lpar_pseudo_statement pseudo_statement ")" NEWLINE
 pseudo_statement: PSEUDO_STATEMENT?
-PSEUDO_STATEMENT: /[^)]+/
+// LALR(1) hack: PSEUDO_STATEMENT matches almost anything so we need to lower
+// its priority.
+PSEUDO_STATEMENT.-1: /[^)]+/
 
 // NOTE trailing NEWLINE needs to be optional in case of EOF
 verbatim: VERBATIM_STATEMENT NEWLINE
@@ -35,6 +37,9 @@ assignment: variable EQUALS real_expr
 EQUALS: "="
 
 _lpar: "("
+// LALR(1) hack: the following helps the contextual lexer to
+// distinguish between low-priority PSEUDO_STATEMENT and CNAME
+_lpar_pseudo_statement: "("
 _rpar: ")"
 _sep: ","
 
@@ -214,9 +219,14 @@ subscript: _lpar (CNAME | SIGNED_INT) _rpar
 double_subscript: _lpar SIGNED_INT _sep SIGNED_INT _rpar
 
 number: SIGNED_INT
-      | FLOAT
+      | FLOAT | FLOAT2
 
-FLOAT: /[-+]?((\d+\.\d+|\.\d+)([ed][-+]?\d+)?|\d+([ed][-+]?\d+))/i
+FLOAT.2: SIGN? /\d*/ "." /\d+/ FLOAT_EXPONENT?
+       | SIGN? /\d+/ "."? FLOAT_EXPONENT
+FLOAT2.1: SIGN? /\d+/ DOT_NOT_FOLLOWED_BY_AMBIGUOUS_BOOLEAN_EXPR_OPERATOR_LOOK_AHEAD
+SIGN: "-" | "+"
+FLOAT_EXPONENT: /[ed][-+]?\d+/i
+DOT_NOT_FOLLOWED_BY_AMBIGUOUS_BOOLEAN_EXPR_OPERATOR_LOOK_AHEAD: /\.(?!((AND|OR|NOT|EQ|NE|LT|LE|GT|GE)\.))/
 
 THETA: "THETA"i
 
