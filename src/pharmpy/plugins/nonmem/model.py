@@ -221,6 +221,11 @@ class Model(pharmpy.model.Model):
         )
         self._initial_individual_estimates = init_etas
 
+        vt = parse_value_type(control_stream, statements)
+        self._value_type = vt
+
+        self._statements = statements
+
         self.internals = NONMEMModelInternals(
             control_stream=control_stream,
             old_name=name,
@@ -236,11 +241,6 @@ class Model(pharmpy.model.Model):
 
         # NOTE This requires self.internals to be defined
         self.modelfit_results = None if path is None else parse_modelfit_results(self, path)
-
-        vt = parse_value_type(control_stream, statements)
-        self._value_type = vt
-
-        self._statements = statements
 
     def update_source(self, path=None, force=False, nofiles=False):
         """Update the source
