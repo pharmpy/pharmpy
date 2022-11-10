@@ -53,18 +53,21 @@ class Model:
         parameters=Parameters([]),
         random_variables=RandomVariables.create([]),
         statements=Statements(),
-        dependent_variable=sympy.Symbol('y'),
+        dependent_variable=None,
         modelfit_results=None,
         parent_model=None,
         initial_individual_estimates=None,
         value_type='PREDICTION',
         description='',
     ):
+        actual_dependent_variable = (
+            sympy.Symbol('y') if dependent_variable is None else dependent_variable
+        )
         self.parameters = parameters
         self.random_variables = random_variables
         self.statements = statements
-        self.dependent_variable = dependent_variable
-        self.observation_transformation = dependent_variable
+        self.dependent_variable = actual_dependent_variable
+        self.observation_transformation = actual_dependent_variable
         self.modelfit_results = modelfit_results
         self.parent_model = parent_model
         self.initial_individual_estimates = initial_individual_estimates
