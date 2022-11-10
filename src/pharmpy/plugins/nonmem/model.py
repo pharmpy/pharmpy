@@ -13,7 +13,7 @@ from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.fs.path import path_relative_to
 from pharmpy.model import (
     Assignment,
-    DatasetError,
+    DataInfo,
     EstimationSteps,
     NormalDistribution,
     Parameter,
@@ -24,13 +24,12 @@ from pharmpy.model import (
 from pharmpy.modeling.write_csv import create_dataset_path, write_csv
 
 from .config import conf
-from .dataset import read_nonmem_dataset
 from .nmtran_parser import NMTranControlStream, NMTranParser
 from .parameters import parameter_translation
 from .parsing import (
     create_name_trans,
-    parse_column_info,
     parse_datainfo,
+    parse_dataset,
     parse_description,
     parse_estimation_steps,
     parse_initial_individual_estimates,
@@ -38,7 +37,6 @@ from .parsing import (
     parse_random_variables,
     parse_statements,
     parse_value_type,
-    replace_synonym_in_filters,
 )
 from .random_variables import rv_translation
 from .results import parse_modelfit_results
@@ -122,6 +120,14 @@ def convert_model(model):
     return nm_model
 
 
+def _dataset(control_stream: NMTranControlStream, di: DataInfo, df: Optional[pd.DataFrame]):
+    # FIXME Use lambda: model.dataset instead
+    if df is None:
+        return lambda: parse_dataset(di, control_stream, raw=False)
+    else:
+        return lambda: df
+
+
 class Model(pharmpy.model.Model):
     def __init__(self, code, path=None, dataset=None, **kwargs):
         self.modelfit_results = None
@@ -150,7 +156,9 @@ class Model(pharmpy.model.Model):
 
         parameters = parse_parameters(control_stream)
 
-        statements, comp_map = parse_statements(self, control_stream)
+        statements, comp_map = parse_statements(
+            self.datainfo, _dataset(control_stream, self.datainfo, dataset), control_stream
+        )
 
         rvs = parse_random_variables(control_stream)
 
@@ -198,7 +206,7 @@ class Model(pharmpy.model.Model):
 
         self._parameters = parameters
 
-        steps = parse_estimation_steps(control_stream, self._random_variables)
+        steps = parse_estimation_steps(control_stream, rvs)
         self._estimation_steps = steps
 
         description = parse_description(control_stream)
@@ -324,7 +332,9 @@ class Model(pharmpy.model.Model):
     @property
     def dataset(self):
         if not hasattr(self, '_data_frame'):
-            self._data_frame = self._read_dataset(self.internals.control_stream, raw=False)
+            self._data_frame = parse_dataset(
+                self.datainfo, self.internals.control_stream, raw=False
+            )
         return self._data_frame
 
     @dataset.setter
@@ -335,62 +345,6 @@ class Model(pharmpy.model.Model):
         self.update_datainfo()
 
     def read_raw_dataset(self, parse_columns: Tuple[str, ...] = ()):
-        return self._read_dataset(
-            self.internals.control_stream, raw=True, parse_columns=parse_columns
+        return parse_dataset(
+            self.datainfo, self.internals.control_stream, raw=True, parse_columns=parse_columns
         )
-
-    def _read_dataset(
-        self,
-        control_stream: NMTranControlStream,
-        raw: bool = False,
-        parse_columns: Tuple[str, ...] = (),
-    ):
-        data_records = control_stream.get_records('DATA')
-        ignore_character = data_records[0].ignore_character
-        null_value = data_records[0].null_value
-        (colnames, drop, replacements, _) = parse_column_info(control_stream)
-
-        if raw:
-            ignore = None
-            accept = None
-        else:
-            # FIXME: All direct handling of control stream spanning
-            # over one or more records should move
-            ignore = data_records[0].ignore
-            accept = data_records[0].accept
-            # FIXME: This should really only be done if setting the dataset
-            if ignore:
-                ignore = replace_synonym_in_filters(ignore, replacements)
-            else:
-                accept = replace_synonym_in_filters(accept, replacements)
-
-        df = read_nonmem_dataset(
-            self.datainfo.path,
-            raw,
-            ignore_character,
-            colnames,
-            drop,
-            null_value=null_value,
-            parse_columns=parse_columns,
-            ignore=ignore,
-            accept=accept,
-            dtype=None if raw else self.datainfo.get_dtype_dict(),
-        )
-        # Let TIME be the idv in both $PK and $PRED models
-        # Remove individuals without observations
-        col_names = list(df.columns)
-        have_pk = control_stream.get_pk_record()
-        if have_pk:
-            if 'EVID' in col_names:
-                df_obs = df.astype({'EVID': 'float'}).query('EVID == 0')
-            elif 'MDV' in col_names:
-                df_obs = df.astype({'MDV': 'float'}).query('MDV == 0')
-            elif 'AMT' in col_names:
-                df_obs = df.astype({'AMT': 'float'}).query('AMT == 0')
-            else:
-                raise DatasetError('Could not identify observation rows in dataset')
-            have_obs = set(df_obs['ID'].unique())
-            all_ids = set(df['ID'].unique())
-            ids_to_remove = all_ids - have_obs
-            df = df[~df['ID'].isin(ids_to_remove)]
-        return df

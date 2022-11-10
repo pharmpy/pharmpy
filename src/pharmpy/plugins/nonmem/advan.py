@@ -25,14 +25,21 @@ from .nmtran_parser import NMTranControlStream
 
 
 def compartmental_model(model: Model, advan: str, trans, des=None):
-    return _compartmental_model(model, model.internals.control_stream, advan, trans, des)
+    di = model.datainfo
+    control_stream = model.internals.control_stream
+    return _compartmental_model(di, lambda: model.dataset, control_stream, advan, trans, des)
 
 
 def _compartmental_model(
-    model: Model, control_stream: NMTranControlStream, advan: str, trans, des=None
+    di: DataInfo,
+    dataset: Callable[[], pd.DataFrame],
+    control_stream: NMTranControlStream,
+    advan: str,
+    trans,
+    des=None,
 ):
     if advan == 'ADVAN1':
-        dose = _dosing(model, control_stream, 1)
+        dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         central = Compartment(
             'CENTRAL', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
@@ -44,7 +51,7 @@ def _compartmental_model(
         ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
     elif advan == 'ADVAN2':
-        dose = _dosing(model, control_stream, 1)
+        dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         depot = Compartment(
             'DEPOT', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
@@ -61,7 +68,7 @@ def _compartmental_model(
         ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN3':
-        dose = _dosing(model, control_stream, 1)
+        dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         central = Compartment(
             'CENTRAL', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
@@ -83,7 +90,7 @@ def _compartmental_model(
         ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'PERIPHERAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN4':
-        dose = _dosing(model, control_stream, 1)
+        dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         depot = Compartment(
             'DEPOT', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
@@ -149,7 +156,7 @@ def _compartmental_model(
             else:
                 raise ModelSyntaxError('Dosing compartment is unknown')
 
-        dose = _dosing(model, control_stream, defdose[1])
+        dose = dosing(di, dataset, defdose[1])
         obscomp = None
         for i, name in enumerate(comp_names):
             if i == len(comp_names) - 1:
@@ -174,7 +181,7 @@ def _compartmental_model(
             cb.add_flow(compartments[from_n - 1], compartments[to_n - 1], rate)
         ass = _f_link_assignment(control_stream, obscomp, defobs[1])
     elif advan == 'ADVAN10':
-        dose = _dosing(model, control_stream, 1)
+        dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         central = Compartment(
             'CENTRAL', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
@@ -189,7 +196,7 @@ def _compartmental_model(
         ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
     elif advan == 'ADVAN11':
-        dose = _dosing(model, control_stream, 1)
+        dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         central = Compartment(
             'CENTRAL', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
@@ -220,7 +227,7 @@ def _compartmental_model(
         ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'PERIPHERAL1': 2, 'PERIPHERAL2': 3, 'OUTPUT': 4}
     elif advan == 'ADVAN12':
-        dose = _dosing(model, control_stream, 1)
+        dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         depot = Compartment(
             'DEPOT', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
@@ -272,7 +279,7 @@ def _compartmental_model(
         sset = des.statements.subs(subs_dict)
 
         a_out = sympy.Function('A_OUTPUT')
-        dose = _dosing(model, control_stream, 1)
+        dose = dosing(di, dataset, 1)
 
         ics = {v(0): sympy.Integer(0) for v in comp_names.values()}
         ics[a_out(0)] = sympy.Integer(0)
@@ -548,31 +555,19 @@ def _advan12_trans(trans: str):
         )
 
 
-def _dosing(model: Model, control_stream: NMTranControlStream, dose_comp: int):
-    # FIXME Use lambda: model.dataset instead
-    def dataset():
-        if not hasattr(model, '_data_frame'):
-            return model._read_dataset(control_stream, raw=False)
-        return model._data_frame
-
-    return dosing(model.datainfo, dataset, dose_comp)
-
-
 def dosing(di: DataInfo, dataset: Callable[[], pd.DataFrame], dose_comp: int):
-    colnames = di.names
-
-    if 'RATE' in colnames and not di['RATE'].drop:
-        df = dataset()
-        if (df['RATE'] == 0).all():
-            return Bolus(sympy.Symbol('AMT'))
-        elif (df['RATE'] == -1).any():
-            return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol(f'R{dose_comp}'))
-        elif (df['RATE'] == -2).any():
-            return Infusion(sympy.Symbol('AMT'), duration=sympy.Symbol(f'D{dose_comp}'))
-        else:
-            return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol('RATE'))
-    else:
+    if 'RATE' not in di.names or di['RATE'].drop:
         return Bolus(sympy.Symbol('AMT'))
+
+    df = dataset()
+    if (df['RATE'] == 0).all():
+        return Bolus(sympy.Symbol('AMT'))
+    elif (df['RATE'] == -1).any():
+        return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol(f'R{dose_comp}'))
+    elif (df['RATE'] == -2).any():
+        return Infusion(sympy.Symbol('AMT'), duration=sympy.Symbol(f'D{dose_comp}'))
+    else:
+        return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol('RATE'))
 
 
 def _get_alag(control_stream: NMTranControlStream, n: int):
