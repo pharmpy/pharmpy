@@ -82,7 +82,7 @@ class ThetaRecord(Record):
                 if not name:
                     name = f'THETA({current_theta})'
                 seen_labels.add(name)
-                new_par = Parameter(name, init, lower, upper, fix)
+                new_par = Parameter.create(name, init, lower, upper, fix)
                 current_theta += 1
                 pset.append(new_par)
 

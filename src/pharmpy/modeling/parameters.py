@@ -257,7 +257,7 @@ def fix_parameters(model, parameter_names):
     new = []
     for p in params:
         if p.name in parameter_names:
-            new_param = p.derive(fix=True)
+            new_param = p.replace(fix=True)
         else:
             new_param = p
         new.append(new_param)
@@ -311,7 +311,7 @@ def unfix_parameters(model, parameter_names):
     new = []
     for p in params:
         if p.name in parameter_names:
-            new_param = p.derive(fix=False)
+            new_param = p.replace(fix=False)
         else:
             new_param = p
         new.append(new_param)
@@ -447,7 +447,7 @@ def fix_or_unfix_parameters(model, parameters):
     new = []
     for p in params:
         if p.name in parameters:
-            new_param = p.derive(fix=parameters[p.name])
+            new_param = p.replace(fix=parameters[p.name])
         else:
             new_param = p
         new.append(new_param)
@@ -540,7 +540,7 @@ def add_population_parameter(model, name, init, lower=None, upper=None, fix=Fals
     POP_KA      2.000000   -oo       oo  False
     """
 
-    param = Parameter(name, init, lower=lower, upper=upper, fix=fix)
+    param = Parameter.create(name, init, lower=lower, upper=upper, fix=fix)
     params = model.parameters + param
     model.parameters = params
     return model

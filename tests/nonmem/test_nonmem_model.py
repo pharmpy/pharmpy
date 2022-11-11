@@ -156,10 +156,10 @@ def test_adjust_iovs(load_model_for_test, testdata):
 @pytest.mark.parametrize(
     'param_new,init_expected,buf_new',
     [
-        (Parameter('COVEFF', 0.2), 0.2, '$THETA  0.2 ; COVEFF'),
-        (Parameter('THETA', 0.1), 0.1, '$THETA  0.1 ; THETA'),
-        (Parameter('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX ; THETA'),
-        (Parameter('RUV_prop', 0.1), 0.1, '$THETA  0.1 ; RUV_prop'),
+        (Parameter.create('COVEFF', 0.2), 0.2, '$THETA  0.2 ; COVEFF'),
+        (Parameter.create('THETA', 0.1), 0.1, '$THETA  0.1 ; THETA'),
+        (Parameter.create('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX ; THETA'),
+        (Parameter.create('RUV_prop', 0.1), 0.1, '$THETA  0.1 ; RUV_prop'),
     ],
 )
 def test_add_parameters(pheno, param_new, init_expected, buf_new):
@@ -252,7 +252,7 @@ def test_add_statements(pheno, statement_new, buf_new):
 @pytest.mark.parametrize(
     'param_new, statement_new, buf_new',
     [
-        (Parameter('X', 0.1), Assignment(S('Y'), S('X') + S('S1')), 'Y = S1 + THETA(4)'),
+        (Parameter.create('X', 0.1), Assignment(S('Y'), S('X') + S('S1')), 'Y = S1 + THETA(4)'),
     ],
 )
 def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new):

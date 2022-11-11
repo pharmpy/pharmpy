@@ -86,7 +86,7 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
             # This is a new theta
             theta_number = get_next_theta(model)
             if re.match(r'THETA\(\d+\)', name):
-                p_renamed = Parameter(f'THETA({theta_number})', p.init, p.lower, p.upper, p.fix)
+                p_renamed = p.replace(name=f'THETA({theta_number})')
             record = create_theta_record(model, p_renamed)
             assert isinstance(record, ThetaRecord)
             record.add_nonmem_name(p_renamed.name, theta_number)
@@ -205,16 +205,31 @@ def get_next_theta(model: Model):
 def create_theta_record(model: Model, param: Parameter):
     param_str = '$THETA  '
 
-    if param.upper < 1000000:
-        if param.lower <= -1000000:
-            param_str += f'(-INF,{param.init},{param.upper})'
-        else:
-            param_str += f'({param.lower},{param.init},{param.upper})'
+    if param.init == 0.0:
+        init = 0
     else:
-        if param.lower <= -1000000:
-            param_str += f'{param.init}'
+        init = param.init
+
+    if param.lower == 0.0:
+        lower = 0
+    else:
+        lower = param.lower
+
+    if param.upper == 0.0:
+        upper = 0
+    else:
+        upper = param.upper
+
+    if upper < 1000000:
+        if lower <= -1000000:
+            param_str += f'(-INF,{init},{upper})'
         else:
-            param_str += f'({param.lower},{param.init})'
+            param_str += f'({lower},{init},{upper})'
+    else:
+        if lower <= -1000000:
+            param_str += f'{init}'
+        else:
+            param_str += f'({lower},{init})'
     if param.fix:
         param_str += ' FIX'
     param_str += '\n'

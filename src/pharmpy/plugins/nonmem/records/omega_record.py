@@ -70,7 +70,7 @@ class OmegaRecord(Record):
                         self.comment_map[name] = comment
                     seen_labels.add(name)
                     coords.append((row, row))
-                    param = Parameter(name, init, lower=0, fix=fixed)
+                    param = Parameter.create(name, init, lower=0, fix=fixed)
                     parameters.append(param)
                     row += 1
             size = 1
@@ -128,7 +128,7 @@ class OmegaRecord(Record):
                         coords.append((i + start_omega, j + start_omega))
                         init = A[i, j]
                         lower = None if i != j else 0
-                        param = Parameter(name, init, lower=lower, fix=fix)
+                        param = Parameter.create(name, init, lower=lower, fix=fix)
                         parameters.append(param)
                         label_index += 1
             next_omega = start_omega + size

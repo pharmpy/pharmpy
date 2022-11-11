@@ -15,7 +15,7 @@ class Parameter:
     -------
 
     >>> from pharmpy.model import Parameter
-    >>> param = Parameter("TVCL", 0.005, lower=0)
+    >>> param = Parameter("TVCL", 0.005, lower=0.0)
     >>> param.init
     0.005
 
@@ -29,31 +29,25 @@ class Parameter:
         A boolean to indicate whether the parameter is fixed or not. Note that fixing a parameter
         will keep its bounds even if a fixed parameter is actually constrained to one single
         value. This is so that unfixing will take back the previous bounds.
-    lower : number
+    lower : float
         The lower bound of the parameter. Default no bound. Must be less than the init.
-    upper : number
+    upper : float
         The upper bound of the parameter. Default no bound. Must be greater than the init.
     """
 
     def __init__(
         self,
         name: str,
-        init: Union[float, sympy.Float],
-        lower: Optional[Union[float, sympy.Float]] = None,
-        upper: Optional[Union[float, sympy.Float]] = None,
+        init: float,
+        lower: float = -float("inf"),
+        upper: float = float("inf"),
         fix: bool = False,
     ):
         self._name = name
         self._init = init
-        if lower is None:
-            self._lower = -sympy.oo
-        else:
-            self._lower = lower
-        if upper is None:
-            self._upper = sympy.oo
-        else:
-            self._upper = upper
-        self._fix = bool(fix)
+        self._lower = lower
+        self._upper = upper
+        self._fix = fix
 
     @classmethod
     def create(
@@ -65,15 +59,33 @@ class Parameter:
         fix: Any = False,
     ):
         """Alternative constructor for Parameter with error checking"""
-        if init is sympy.nan or np.isnan(init):
-            raise ValueError('Initial estimate cannot be NaN')
         if not isinstance(name, str):
             raise ValueError("Name of parameter must be of type string")
-        if lower is not None and init < lower:
+        if init is sympy.nan or np.isnan(init):
+            raise ValueError('Initial estimate cannot be NaN')
+        if lower is None:
+            lower = -float('inf')
+        else:
+            lower = float(lower)
+        if upper is None:
+            upper = float('inf')
+        else:
+            upper = float(upper)
+        if init < lower:
             raise ValueError(f'Lower bound {lower} cannot be greater than init {init}')
-        if upper is not None and init > upper:
+        if init > upper:
             raise ValueError(f'Upper bound {upper} cannot be less than init {init}')
         return cls(name, init, lower, upper, bool(fix))
+
+    def replace(self, **kwargs):
+        """Replace properties and create a new Parameter"""
+        name = kwargs.get('name', self._name)
+        init = kwargs.get('init', self._init)
+        lower = kwargs.get('lower', self._lower)
+        upper = kwargs.get('upper', self._upper)
+        fix = kwargs.get('fix', self._fix)
+        new = Parameter.create(name, init, lower=lower, upper=upper, fix=fix)
+        return new
 
     @property
     def name(self):
@@ -84,19 +96,6 @@ class Parameter:
     def fix(self):
         """Should parameter be fixed or not"""
         return self._fix
-
-    def derive(self, init=None, lower=None, upper=None, fix=None):
-        """Derive a new parameter with new properties"""
-        if init is None:
-            init = self.init
-        if lower is None:
-            lower = self.lower
-        if upper is None:
-            upper = self.upper
-        if fix is None:
-            fix = self.fix
-        new = Parameter(self.name, init, lower=lower, upper=upper, fix=fix)
-        return new
 
     @property
     def symbol(self):
@@ -138,7 +137,7 @@ class Parameter:
         )
 
 
-class Parameters(Sequence):
+class Parameters(CollectionsSequence):
     """An immutable collection of parameters
 
     Class representing a group of parameters. Usually all parameters in a model.
@@ -297,9 +296,7 @@ class Parameters(Sequence):
         new = []
         for p in self:
             if p.name in inits:
-                newparam = Parameter.create(
-                    name=p.name, init=inits[p.name], lower=p.lower, upper=p.upper, fix=p.fix
-                )
+                newparam = p.replace(init=inits[p.name])
             else:
                 newparam = p
             new.append(newparam)
@@ -326,9 +323,7 @@ class Parameters(Sequence):
         new = []
         for p in self:
             if p.name in fix:
-                newparam = Parameter.create(
-                    name=p.name, init=p.init, lower=p.lower, upper=p.upper, fix=fix[p.name]
-                )
+                newparam = p.replace(fix=fix[p.name])
             else:
                 newparam = p
             new.append(newparam)
