@@ -131,8 +131,16 @@ class Parameter:
         )
 
     def __repr__(self):
+        if self._lower == -float("inf"):
+            lower = "-∞"
+        else:
+            lower = self._lower
+        if self._upper == float("inf"):
+            upper = "∞"
+        else:
+            upper = self._upper
         return (
-            f'Parameter("{self._name}", {self._init}, lower={self._lower}, upper={self._upper}, '
+            f'Parameter("{self._name}", {self._init}, lower={lower}, upper={upper}, '
             f'fix={self._fix})'
         )
 
@@ -154,7 +162,7 @@ class Parameters(CollectionsSequence):
     >>> par2 = Parameter("y", 1)
     >>> pset = Parameters([par1, par2])
     >>> pset["x"]
-    Parameter("x", 0, lower=-oo, upper=oo, fix=False)
+    Parameter("x", 0, lower=-∞, upper=∞, fix=False)
 
     >>> "x" in pset
     True
@@ -370,10 +378,17 @@ class Parameters(CollectionsSequence):
     def __repr__(self):
         if len(self) == 0:
             return "Parameters()"
-        return self.to_dataframe().to_string()
+        return (
+            self.to_dataframe().replace(float("inf"), "∞").replace(-float("inf"), "-∞").to_string()
+        )
 
     def _repr_html_(self):
         if len(self) == 0:
             return "Parameters()"
         else:
-            return self.to_dataframe().to_html()
+            return (
+                self.to_dataframe()
+                .replace(float("inf"), "∞")
+                .replace(-float("inf"), "-∞")
+                .to_html()
+            )

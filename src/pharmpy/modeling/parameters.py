@@ -19,10 +19,10 @@ def get_thetas(model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> get_thetas(model)
-                 value  lower    upper    fix
-    THETA(1)  0.004693   0.00  1000000  False
-    THETA(2)  1.009160   0.00  1000000  False
-    THETA(3)  0.100000  -0.99  1000000  False
+                 value  lower      upper    fix
+    THETA(1)  0.004693   0.00  1000000.0  False
+    THETA(2)  1.009160   0.00  1000000.0  False
+    THETA(3)  0.100000  -0.99  1000000.0  False
 
     See also
     --------
@@ -53,8 +53,8 @@ def get_omegas(model):
     >>> model = load_example_model("pheno")
     >>> get_omegas(model)
                    value  lower upper    fix
-    OMEGA(1,1)  0.030963      0    oo  False
-    OMEGA(2,2)  0.031128      0    oo  False
+    OMEGA(1,1)  0.030963    0.0     ∞  False
+    OMEGA(2,2)  0.031128    0.0     ∞  False
 
     See also
     --------
@@ -84,7 +84,7 @@ def get_sigmas(model):
     >>> model = load_example_model("pheno")
     >>> get_sigmas(model)
                    value  lower upper    fix
-    SIGMA(1,1)  0.013241      0    oo  False
+    SIGMA(1,1)  0.013241    0.0     ∞  False
 
     See also
     --------
@@ -119,7 +119,7 @@ def set_initial_estimates(model, inits):
     >>> set_initial_estimates(model, {'THETA(1)': 2})   # doctest: +ELLIPSIS
     <...>
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 2, lower=0.0, upper=1000000, fix=False)
+    Parameter("THETA(1)", 2, lower=0.0, upper=1000000.0, fix=False)
 
     See also
     --------
@@ -194,7 +194,7 @@ def set_lower_bounds(model, bounds):
     >>> set_lower_bounds(model, {'THETA(1)': -10})   # doctest: +ELLIPSIS
     <...>
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=-10, upper=1000000, fix=False)
+    Parameter("THETA(1)", 0.00469307, lower=-10, upper=1000000.0, fix=False)
 
     See also
     --------
@@ -236,11 +236,11 @@ def fix_parameters(model, parameter_names):
     >>> from pharmpy.modeling import fix_parameters, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=False)
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
     >>> fix_parameters(model, 'THETA(1)')       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=True)
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=True)
 
     See also
     --------
@@ -341,11 +341,11 @@ def fix_parameters_to(model, inits):
     >>> from pharmpy.modeling import fix_parameters_to, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=False)
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
     >>> fix_parameters_to(model, {'THETA(1)': 0.5})       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000, fix=True)
+    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000.0, fix=True)
 
     See also
     --------
@@ -386,7 +386,7 @@ def unfix_parameters_to(model, inits):
     >>> model.parameters.fix        # doctest: +ELLIPSIS
     {'THETA(1)': False, 'THETA(2)': True, 'THETA(3)': True, ...}
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000, fix=False)
+    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000.0, fix=False)
 
     Returns
     -------
@@ -423,11 +423,11 @@ def fix_or_unfix_parameters(model, parameters):
     >>> from pharmpy.modeling import fix_or_unfix_parameters, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=False)
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
     >>> fix_or_unfix_parameters(model, {'THETA(1)': True})       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=True)
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=True)
 
     Returns
     -------
@@ -470,11 +470,11 @@ def unconstrain_parameters(model, parameter_names):
     >>> from pharmpy.modeling import unconstrain_parameters, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=False)
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
     >>> unconstrain_parameters(model, ['THETA(1)'])       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=-oo, upper=oo, fix=False)
+    Parameter("THETA(1)", 0.00469307, lower=-∞, upper=∞, fix=False)
 
     Returns
     -------
@@ -530,14 +530,14 @@ def add_population_parameter(model, name, init, lower=None, upper=None, fix=Fals
     >>> add_population_parameter(model, 'POP_KA', 2)       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters
-                   value lower    upper    fix
-    THETA(1)    0.004693   0.0  1000000  False
-    THETA(2)    1.009160   0.0  1000000  False
-    THETA(3)    0.100000 -0.99  1000000  False
-    OMEGA(1,1)  0.030963     0       oo  False
-    OMEGA(2,2)  0.031128     0       oo  False
-    SIGMA(1,1)  0.013241     0       oo  False
-    POP_KA      2.000000   -oo       oo  False
+                   value lower      upper    fix
+    THETA(1)    0.004693   0.0  1000000.0  False
+    THETA(2)    1.009160   0.0  1000000.0  False
+    THETA(3)    0.100000 -0.99  1000000.0  False
+    OMEGA(1,1)  0.030963   0.0          ∞  False
+    OMEGA(2,2)  0.031128   0.0          ∞  False
+    SIGMA(1,1)  0.013241   0.0          ∞  False
+    POP_KA      2.000000    -∞          ∞  False
     """
 
     param = Parameter.create(name, init, lower=lower, upper=upper, fix=fix)
