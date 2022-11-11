@@ -1,18 +1,74 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, List, Optional, Union
 
 import pharmpy.tools.estmethod.algorithms as algorithms
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.fn.signature import with_same_arguments_as
+from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.model import Model
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, summarize_tool
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
+EST_METHODS = ['FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES']
+SOLVERS = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI']
 
-def create_workflow(algorithm, methods=None, solvers=None, model=None):
+ALGORITHMS = frozenset(['exhaustive', 'reduced'])
+
+
+def create_workflow(
+    algorithm: str,
+    methods: Optional[Union[List[str], str]] = None,
+    solvers: Optional[Union[List[str], str]] = None,
+    results: Optional[ModelfitResults] = None,
+    model: Optional[Model] = None,
+):
+    """Run estmethod tool.
+
+    Parameters
+    ----------
+    algorithm : str
+        The algorithm to use (can be 'exhaustive' or 'reduced'
+    methods : list or None
+        List of estimation methods to test. Can be specified as 'all', a list of methods, or
+        None (to not test any estimation method)
+    solvers : list, str or None
+        List of solver to test. Can be specified as 'all', a list of solvers, or None (to
+        not test any solver)
+    results : ModelfitResults
+        Results for model
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    EstMethodResults
+        Estmethod tool result object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> from pharmpy.tools import run_estmethod # doctest: +SKIP
+    >>> res = model.modelfit_results
+    >>> methods = ['imp', 'saem']
+    >>> run_estmethod('reduced', methods=methods, solvers='all', results=res, model=model) # doctest: +SKIP
+
+    """
     wf = Workflow()
     wf.name = "estmethod"
+
+    if methods == 'all':
+        methods = EST_METHODS
+    elif methods is None:
+        methods = [None]
+    if solvers == 'all':
+        solvers = SOLVERS
+    elif solvers is None:
+        solvers = [None]
 
     algorithm_func = getattr(algorithms, algorithm)
 
@@ -22,8 +78,6 @@ def create_workflow(algorithm, methods=None, solvers=None, model=None):
         start_task = Task('start_estmethod', start)
 
     wf.add_task(start_task)
-
-    methods, solvers = _format_input_options(methods, solvers)
 
     wf_algorithm, task_base_model_fit = algorithm_func(methods, solvers)
     wf.insert_workflow(wf_algorithm, predecessors=start_task)
@@ -40,26 +94,6 @@ def create_workflow(algorithm, methods=None, solvers=None, model=None):
     wf.add_task(task_post_process, predecessors=model_tasks)
 
     return wf
-
-
-def _format_input_options(methods, solvers):
-    if not methods:
-        methods = ['foce', 'fo', 'imp', 'impmap', 'its', 'saem', 'laplace', 'bayes']
-    elif isinstance(methods, str):
-        methods = [methods]
-    elif isinstance(methods, list):
-        methods = [method.lower() for method in methods]
-
-    if solvers == 'all':
-        solvers = [None, 'cvodes', 'dgear', 'dverk', 'ida', 'lsoda', 'lsodi']
-    elif isinstance(solvers, str) or not solvers:
-        solvers = [solvers]
-    elif isinstance(solvers, list):
-        solvers = [solver.lower() for solver in solvers]
-    if None not in solvers:
-        solvers.insert(0, None)
-
-    return methods, solvers
 
 
 def start(model):
@@ -84,7 +118,8 @@ def post_process(input_model, *models):
         -1000,
     )
     summary_models = summarize_modelfit_results(
-        [base_model.modelfit_results] + [model.modelfit_results for model in res_models]
+        [base_model.modelfit_results] + [model.modelfit_results for model in res_models],
+        include_all_estimation_steps=True,
     )
     summary_settings = summarize_estimation_steps([base_model] + res_models)
 
@@ -119,3 +154,39 @@ def summarize_estimation_steps(models):
         dfs[model.name] = df.drop(columns=['tool_options'])
 
     return pd.concat(dfs.values(), keys=dfs.keys())
+
+
+@with_runtime_arguments_type_check
+@with_same_arguments_as(create_workflow)
+def validate_input(algorithm, methods, solvers):
+    if algorithm not in ALGORITHMS:
+        raise ValueError(
+            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'
+        )
+
+    if methods is None and solvers is None:
+        raise ValueError(
+            'Invalid search space options: please specify at least `methods` or `solvers`'
+        )
+
+    if methods is not None:
+        _validate_search_space(methods, EST_METHODS, 'methods')
+
+    if solvers is not None:
+        _validate_search_space(solvers, SOLVERS, 'solvers')
+
+
+def _validate_search_space(input_search_space, allowed_search_space, option_name):
+    if isinstance(input_search_space, str):
+        if input_search_space != 'all':
+            raise ValueError(
+                f'Invalid `{option_name}`: if option is str it must be `all`, got {input_search_space}'
+            )
+    else:
+        option_diff = {option.upper() for option in input_search_space}.difference(
+            allowed_search_space
+        )
+        if option_diff:
+            raise ValueError(
+                f'Invalid `{option_name}`: {option_diff} not in {sorted(allowed_search_space)}'
+            )

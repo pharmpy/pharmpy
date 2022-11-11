@@ -7,11 +7,11 @@ from pharmpy.tools.estmethod.tool import create_workflow
 @pytest.mark.parametrize(
     'methods, solvers, no_of_models',
     [
-        ('foce', None, 2),
+        (['foce'], None, 2),
         (['foce', 'laplace'], None, 4),
         (['laplace'], None, 3),
-        ('foce', ['lsoda'], 4),
-        ('foce', 'all', 14),
+        (['foce'], ['lsoda'], 3),
+        (['foce'], 'all', 13),
     ],
 )
 def test_algorithm(methods, solvers, no_of_models):
