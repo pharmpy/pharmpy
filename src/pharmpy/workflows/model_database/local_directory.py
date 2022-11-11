@@ -32,14 +32,15 @@ def get_modelfit_results(model, path):
     # the database. For this to work roundtrip of DataFrames in json is needed.
     # This is currently broken because of rounding issue in pandas
     # Also the modelfit_results attribute will soon be removed from model objects.
-    if hasattr(model, "internals"):
-        from pharmpy.plugins.nonmem import parse_modelfit_results
+    import pharmpy.plugins.nonmem as nonmem
 
-        res = parse_modelfit_results(model, path)
+    if isinstance(model, nonmem.Model):
+        res = nonmem.parse_modelfit_results(model, path)
     else:
-        from pharmpy.plugins.nlmixr import parse_modelfit_results
+        import pharmpy.plugins.nlmixr as nlmixr
 
-        res = parse_modelfit_results(model, path)
+        assert isinstance(model, nlmixr.Model)
+        res = nlmixr.parse_modelfit_results(model, path)
 
     model.modelfit_results = res
 
