@@ -23,7 +23,6 @@ from pharmpy.workflows import Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
 MINIMAL_VALID_MFL_STRING = 'LET(x, 0)'
-MINIMAL_VALID_MFL_STATEMENT_LIST = []
 
 
 def test_exhaustive_algorithm():
@@ -162,7 +161,7 @@ $ESTIMATION METHOD=1 INTERACTION
     )
 
     with pytest.raises(ValueError, match='Invalid `model`'):
-        validate_input(MINIMAL_VALID_MFL_STATEMENT_LIST, 'exhaustive', model=model)
+        validate_input(MINIMAL_VALID_MFL_STRING, 'exhaustive', model=model)
 
 
 def test_is_allowed():

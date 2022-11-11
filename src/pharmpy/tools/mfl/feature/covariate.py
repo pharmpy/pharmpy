@@ -5,9 +5,9 @@ from pharmpy.model import Model
 from pharmpy.modeling.covariate_effect import EffectType, OperationType, add_covariate_effect
 from pharmpy.modeling.expressions import get_individual_parameters, get_pk_parameters
 
-from ..statement.definition import Definition
+from ..statement.definition import Let
 from ..statement.feature.covariate import (
-    CovariateEffects,
+    Covariate,
     CovariateWildcard,
     EffectFunctionWildcard,
     ParameterWildcard,
@@ -49,9 +49,9 @@ def spec(model: Model, statements: Iterable[Statement]) -> Iterable[Spec]:
     effects = []
     definition = {}
     for statement in statements:
-        if isinstance(statement, CovariateEffects):
+        if isinstance(statement, Covariate):
             effects.append(statement)
-        elif isinstance(statement, Definition):
+        elif isinstance(statement, Let):
             definition[statement.name] = statement.value
 
     for effect in effects:
@@ -73,7 +73,7 @@ def parse_spec(spec: Iterable[Spec]) -> Iterable[EffectLiteral]:
         yield from product(parameters, covariates, fps, operations)
 
 
-def _effects_to_tuple(model: Model, definition, effect: CovariateEffects) -> Spec:
+def _effects_to_tuple(model: Model, definition, effect: Covariate) -> Spec:
     parameters = tuple(
         _interpret_symbol(model, definition, effect.parameter)
         if isinstance(effect.parameter, Symbol)

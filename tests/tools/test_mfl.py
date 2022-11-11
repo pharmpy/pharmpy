@@ -1,7 +1,18 @@
+from typing import Tuple
+
 import pytest
 
 from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import parse
+from pharmpy.tools.mfl.statement.feature.absorption import Absorption
+from pharmpy.tools.mfl.statement.feature.covariate import Covariate, Ref
+from pharmpy.tools.mfl.statement.feature.elimination import Elimination
+from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
+from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
+from pharmpy.tools.mfl.statement.feature.symbols import Name, Wildcard
+from pharmpy.tools.mfl.statement.feature.transits import Transits
+from pharmpy.tools.mfl.statement.statement import Statement
+from pharmpy.tools.mfl.stringify import stringify
 
 
 @pytest.mark.parametrize(
@@ -307,3 +318,43 @@ def test_all_funcs(load_model_for_test, pheno_path, source, expected):
 def test_illegal_mfl(code):
     with pytest.raises(Exception):
         parse(code)
+
+
+@pytest.mark.parametrize(
+    ('statements', 'expected'),
+    (
+        (
+            (
+                Absorption((Name('ZO'), Name('SEQ-ZO-FO'))),
+                Elimination((Name('MM'), Name('MIX-FO-MM'))),
+                LagTime(),
+                Transits((1, 3, 10), Wildcard()),
+                Peripherals((1,)),
+            ),
+            'ABSORPTION([ZO,SEQ-ZO-FO]);'
+            'ELIMINATION([MM,MIX-FO-MM]);'
+            'LAGTIME();'
+            'TRANSITS([1,3,10],*);'
+            'PERIPHERALS(1)',
+        ),
+        (
+            (
+                Elimination((Name('MM'), Name('MIX-FO-MM'))),
+                Peripherals((1, 2)),
+            ),
+            'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS(1..2)',
+        ),
+        (
+            (
+                Covariate(Ref('IIV'), Ref('CONTINUOUS'), ('EXP',), '*'),
+                Covariate(Ref('IIV'), Ref('CATEGORICAL'), ('CAT',), '*'),
+            ),
+            'COVARIATE(@IIV,@CONTINUOUS,EXP);' 'COVARIATE(@IIV,@CATEGORICAL,CAT)',
+        ),
+    ),
+)
+def test_stringify(statements: Tuple[Statement, ...], expected: str):
+    result = stringify(statements)
+    assert result == expected
+    parsed = parse(result)
+    assert tuple(parsed) == statements
