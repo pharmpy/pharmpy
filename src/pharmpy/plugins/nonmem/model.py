@@ -21,7 +21,7 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
 )
-from pharmpy.model.model import compare_before_after_params
+from pharmpy.model.model import compare_before_after_params, update_datainfo
 from pharmpy.modeling.write_csv import create_dataset_path, write_csv
 
 from .config import conf
@@ -145,12 +145,16 @@ class Model(pharmpy.model.Model):
         control_stream = parser.parse(code)
         di = parse_datainfo(control_stream, path)
         self.datainfo = di
+        self._old_datainfo = di
         # FIXME temporary workaround remove when changing constructor
         # NOTE inputting the dataset is needed for IV models when using convert_model, since it needs to read the
         # RATE column to decide dosing, meaning it needs the dataset before parsing statements
         if dataset is not None:
-            self.dataset = dataset
-        self._old_datainfo = di
+            self._dataset_updated = True
+            self._data_frame = dataset
+            di = update_datainfo(di.derive(path=None), dataset)
+            self._datainfo = di
+
         self._dataset_updated = False
         self._parent_model = None
 
@@ -161,7 +165,7 @@ class Model(pharmpy.model.Model):
         parameters = parse_parameters(control_stream)
 
         statements, comp_map = parse_statements(
-            self.datainfo, _dataset(control_stream, self.datainfo, dataset), control_stream
+            di, _dataset(control_stream, di, dataset), control_stream
         )
 
         rvs = parse_random_variables(control_stream)
