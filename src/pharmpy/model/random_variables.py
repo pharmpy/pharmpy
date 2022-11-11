@@ -79,6 +79,9 @@ class VariabilityLevel:
         """Group variable for variability level"""
         return self._group
 
+    def __repr__(self):
+        return f"VariabilityLevel({self._name}, reference={self._reference}, group={self._group})"
+
 
 class VariabilityHierarchy:
     """Description of a variability hierarchy"""

@@ -539,6 +539,8 @@ def test_variability_level():
     assert new.reference is False
     assert new.group == 'L1'
 
+    assert repr(level) == "VariabilityLevel(IIV, reference=True, group=ID)"
+
 
 def test_variability_hierarchy():
     lev1 = VariabilityLevel('IIV', reference=True, group='ID')
