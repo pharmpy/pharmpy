@@ -10,12 +10,14 @@ Inherit to *implement*, i.e. to define support for a specific model type.
 Definitions
 -----------
 """
+from __future__ import annotations
 
 import copy
 import warnings
 from io import IOBase
 from pathlib import Path
 
+from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.plugins.utils import detect_model
 
@@ -375,26 +377,11 @@ class Model:
 
     def update_datainfo(self):
         """Update model.datainfo for a new dataset"""
-        colnames = self.dataset.columns
         try:
             curdi = self.datainfo
         except AttributeError:
             curdi = DataInfo()
-        newdi = []
-        for colname in colnames:
-            try:
-                col = curdi[colname]
-            except IndexError:
-                datatype = ColumnInfo.convert_pd_dtype_to_datatype(
-                    self.dataset.dtypes[colname].name
-                )
-                col = ColumnInfo(colname, datatype=datatype)
-            newdi.append(col)
-        newdi = curdi.derive(columns=newdi)
-        if curdi != newdi:
-            # Remove path if dataset has been updated
-            newdi = newdi.derive(path=None)
-        self.datainfo = newdi
+        self.datainfo = update_datainfo(curdi, self.dataset)
 
     def copy(self):
         """Create a deepcopy of the model object"""
@@ -452,3 +439,19 @@ def compare_before_after_params(old, new):
             before[key] = value
             after[key] = new[key]
     return before, after
+
+
+def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame):
+    colnames = dataset.columns
+    columns = []
+    for colname in colnames:
+        try:
+            col = curdi[colname]
+        except IndexError:
+            datatype = ColumnInfo.convert_pd_dtype_to_datatype(dataset.dtypes[colname].name)
+            col = ColumnInfo(colname, datatype=datatype)
+        columns.append(col)
+    newdi = curdi.derive(columns=columns)
+
+    # NOTE Remove path if dataset has been updated
+    return curdi if newdi == curdi else newdi.derive(path=None)
