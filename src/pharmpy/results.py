@@ -12,8 +12,14 @@ from typing import Optional, Union
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Results
+from pharmpy.model import Model, Results
 from pharmpy.workflows import Log
+
+
+def mfr(model: Model) -> ModelfitResults:
+    res = model.modelfit_results
+    assert isinstance(res, ModelfitResults)
+    return res
 
 
 class ResultsJSONDecoder(json.JSONDecoder):

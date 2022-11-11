@@ -5,6 +5,7 @@ from pathlib import Path
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
+from pharmpy.results import mfr
 from pharmpy.tools.psn_helpers import (
     arguments_from_command,
     options_from_command,
@@ -651,12 +652,17 @@ def add_covariate_effects(res, path):
         all_thetas = [param for param in model.parameters if param.symbol not in varpars]
         new_thetas = all_thetas[-degrees:]
         covariate_effects = {
-            param.name: model.modelfit_results.parameter_estimates[param.name]
-            for param in new_thetas
+            param.name: _parameter_estimates(model, param.name) for param in new_thetas
         }
         return covariate_effects
 
     steps['covariate_effects'] = steps.apply(fn, axis=1)
+
+
+def _parameter_estimates(model: Model, parameter: str):
+    pe = mfr(model).parameter_estimates
+    assert pe is not None
+    return pe[parameter]
 
 
 def psn_scm_results(path):

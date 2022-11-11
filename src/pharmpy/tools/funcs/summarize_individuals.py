@@ -81,7 +81,9 @@ def summarize_individuals(models: List[Model]) -> pd.DataFrame:
 
 
 def parent_model_name(model: Model) -> str:
-    return model.parent_model
+    name = model.parent_model
+    assert isinstance(name, str)
+    return name
 
 
 def model_name(model: Model) -> str:
@@ -138,12 +140,14 @@ def dofv(parent_model: Union[Model, None], candidate_model: Model) -> Union[pd.S
 def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) -> pd.DataFrame:
     id_column_name = model.datainfo.id_column.name
     index = pd.Index(data=model.dataset[id_column_name].unique(), name=id_column_name)
+    parent_model_name = model.parent_model
+    parent_model = None if parent_model_name is None else modelsDict.get(parent_model_name)
     df = pd.DataFrame(
         {
-            'parent_model': parent_model_name(model),
+            'parent_model': parent_model_name,
             'outlier_count': outlier_count(model),
             'ofv': ofv(model),
-            'dofv_vs_parent': dofv(modelsDict.get(model.parent_model), model),
+            'dofv_vs_parent': dofv(parent_model, model),
             'predicted_dofv': predicted_dofv(model),
             'predicted_residual': predicted_residual(model),
         },

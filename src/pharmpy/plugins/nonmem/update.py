@@ -1396,6 +1396,7 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
 
     estimates = model.initial_individual_estimates
     if estimates is not model.internals._old_initial_individual_estimates:
+        assert estimates is not None
         rv_names = {rv for rv in model.random_variables.names if rv.startswith('ETA')}
         columns = set(estimates.columns)
         if columns < rv_names:

@@ -56,11 +56,14 @@ class Model:
         parameters=Parameters([]),
         random_variables=RandomVariables.create([]),
         statements=Statements(),
+        dataset=None,
+        datainfo=None,
         dependent_variable=None,
         estimation_steps=None,
         modelfit_results=None,
         parent_model=None,
         initial_individual_estimates=None,
+        filename_extension=None,
         value_type='PREDICTION',
         description='',
     ):
@@ -68,19 +71,25 @@ class Model:
             sympy.Symbol('y') if dependent_variable is None else dependent_variable
         )
         if name is not None:  # FIXME This conditional should not be necessary
-            self.name = name
-        self.random_variables = random_variables
-        self.parameters = parameters
-        self.statements = statements
-        self.dependent_variable = actual_dependent_variable
-        self.observation_transformation = actual_dependent_variable
+            self._name = name
+        if datainfo is not None:  # FIXME This conditional should not be necessary
+            self._datainfo = datainfo
+        if dataset is not None:  # FIXME This conditional should not be necessary
+            self._dataset = dataset
+        self._random_variables = random_variables
+        self._parameters = parameters
+        self._statements = statements
+        self._dependent_variable = actual_dependent_variable
+        self._observation_transformation = actual_dependent_variable
         if estimation_steps is not None:  # FIXME This conditional should not be necessary
-            self.estimation_steps = estimation_steps
-        self.modelfit_results = modelfit_results
-        self.parent_model = parent_model
-        self.initial_individual_estimates = initial_individual_estimates
-        self.value_type = value_type
-        self.description = description
+            self._estimation_steps = estimation_steps
+        self._modelfit_results = modelfit_results
+        self._parent_model = parent_model
+        self._initial_individual_estimates = initial_individual_estimates
+        if filename_extension is not None:  # FIXME This conditional should not be necessary
+            self._filename_extension = filename_extension
+        self._value_type = value_type
+        self._description = description
 
     def __eq__(self, other):
         """Compare two models for equality
@@ -423,7 +432,7 @@ class Model:
             raise ValueError("Unknown input type to Model constructor")
 
         model_module = detect_model(code)
-        model = model_module.Model(code, path, **kwargs)
+        model = model_module.parse_code(code, path, **kwargs)
         # Setup model database here
         # Read in model results here?
         # Set filename extension?

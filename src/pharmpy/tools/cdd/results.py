@@ -8,6 +8,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import linalg
 from pharmpy.model import Model, Results
 from pharmpy.modeling import plot_individual_predictions
+from pharmpy.results import mfr
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
 
 
@@ -41,7 +42,7 @@ def compute_cook_scores(base_estimate, cdd_estimates, covariance_matrix):
 
 
 def compute_delta_ofv(base_model: Model, cdd_models: List[Model], skipped_individuals):
-    iofv = base_model.modelfit_results.individual_ofv
+    iofv = mfr(base_model).individual_ofv
     if iofv is None:
         return [np.nan] * len(cdd_models)
 

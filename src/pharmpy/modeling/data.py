@@ -1246,11 +1246,12 @@ def translate_nmtran_time(model):
     di = model.datainfo
     idname = di.id_column.name
     if datecol is None:
-        if timecol is not None:
-            df = _translate_time_column(df, timecol.name, idname)
-        else:
+        if timecol is None:
             return model
+        else:
+            df = _translate_time_column(df, timecol.name, idname)
     else:
+        assert timecol is not None
         df = _translate_time_and_date_columns(df, timecol.name, datecol.name, idname)
         model = drop_columns(model, datecol.name)
         timecol = timecol.derive(unit='h')
