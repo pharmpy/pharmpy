@@ -12,6 +12,7 @@ from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.workflows import Task, Workflow
 
+from ..mfl.filter import modelsearch_statement_types
 from ..mfl.parse import parse as mfl_parse
 
 
@@ -147,9 +148,18 @@ def validate_input(
         )
 
     try:
-        mfl_parse(search_space)
+        statements = mfl_parse(search_space)
     except:  # noqa E722
         raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
+
+    bad_statements = list(
+        filter(lambda statement: not isinstance(statement, modelsearch_statement_types), statements)
+    )
+
+    if bad_statements:
+        raise ValueError(
+            f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
+        )
 
     if model is not None:
         try:

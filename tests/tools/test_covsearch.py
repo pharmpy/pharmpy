@@ -83,6 +83,12 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
         ),
         (
             ('nonmem', 'pheno.mod'),
+            dict(effects='LAGTIME()'),
+            ValueError,
+            'Invalid `effects`',
+        ),
+        (
+            ('nonmem', 'pheno.mod'),
             dict(
                 effects=(
                     ('CL', 'WGT', 'exp', '*'),

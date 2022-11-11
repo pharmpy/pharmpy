@@ -22,7 +22,7 @@ from pharmpy.tools.modelsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
-MINIMAL_VALID_MFL_STRING = 'LET(x, 0)'
+MINIMAL_VALID_MFL_STRING = 'LAGTIME()'
 
 
 def test_exhaustive_algorithm():
@@ -282,6 +282,12 @@ def test_validate_input_with_model(load_model_for_test, testdata):
         (
             None,
             dict(search_space=MINIMAL_INVALID_MFL_STRING),
+            ValueError,
+            'Invalid `search_space`',
+        ),
+        (
+            None,
+            dict(search_space='LET(x, 0)'),
             ValueError,
             'Invalid `search_space`',
         ),

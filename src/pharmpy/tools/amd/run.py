@@ -8,6 +8,7 @@ from pharmpy.modeling.data import remove_loq_data
 from pharmpy.modeling.eta_additions import get_occasion_levels
 from pharmpy.tools import retrieve_final_model, summarize_errors, write_results
 from pharmpy.tools.mfl.feature.covariate import spec as covariate_spec
+from pharmpy.tools.mfl.filter import covsearch_statement_types, modelsearch_statement_types
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate, Ref
@@ -22,14 +23,6 @@ from pharmpy.workflows import default_tool_database
 
 from ..run import run_tool
 from .results import AMDResults
-
-modelsearch_statement_types = (
-    Absorption,
-    Elimination,
-    LagTime,
-    Peripherals,
-    Transits,
-)
 
 
 def run_amd(
@@ -147,9 +140,12 @@ def run_amd(
             )
 
     covsearch_features = tuple(
-        filter(lambda statement: isinstance(statement, Covariate), input_search_space_features)
+        filter(
+            lambda statement: isinstance(statement, covsearch_statement_types),
+            input_search_space_features,
+        )
     )
-    if not covsearch_features:
+    if not any(map(lambda statement: isinstance(statement, Covariate), covsearch_features)):
         covsearch_features = (
             Covariate(Ref('IIV'), Ref('CONTINUOUS'), ('exp',), '*'),
             Covariate(Ref('IIV'), Ref('CATEGORICAL'), ('cat',), '*'),
