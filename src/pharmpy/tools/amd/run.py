@@ -149,7 +149,7 @@ def run_amd(
         covsearch_features = (
             Covariate(Ref('IIV'), Ref('CONTINUOUS'), ('exp',), '*'),
             Covariate(Ref('IIV'), Ref('CATEGORICAL'), ('cat',), '*'),
-        )
+        ) + covsearch_features
 
     db = default_tool_database(toolname='amd', path=path, exist_ok=resume)
     run_subfuncs = {}
