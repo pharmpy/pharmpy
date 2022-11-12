@@ -1,7 +1,7 @@
-from pharmpy.model import Parameter, Parameters
+from pharmpy.model import Model, Parameter, Parameters
 
 
-def get_thetas(model):
+def get_thetas(model: Model):
     """Get all thetas (structural parameters) of a model
 
     Parameters
@@ -34,7 +34,7 @@ def get_thetas(model):
     return Parameters(thetas)
 
 
-def get_omegas(model):
+def get_omegas(model: Model):
     """Get all omegas (variability parameters) of a model
 
     Parameters
@@ -65,7 +65,7 @@ def get_omegas(model):
     return Parameters(omegas)
 
 
-def get_sigmas(model):
+def get_sigmas(model: Model):
     """Get all sigmas (residual error variability parameters) of a model
 
     Parameters
@@ -97,7 +97,7 @@ def get_sigmas(model):
     return Parameters(sigmas)
 
 
-def set_initial_estimates(model, inits):
+def set_initial_estimates(model: Model, inits):
     """Set initial estimates
 
     Parameters
@@ -130,7 +130,7 @@ def set_initial_estimates(model, inits):
     return model
 
 
-def set_upper_bounds(model, bounds):
+def set_upper_bounds(model: Model, bounds):
     """Set parameter upper bounds
 
     Parameters
@@ -172,7 +172,7 @@ def set_upper_bounds(model, bounds):
     return model
 
 
-def set_lower_bounds(model, bounds):
+def set_lower_bounds(model: Model, bounds):
     """Set parameter lower bounds
 
     Parameters
@@ -214,7 +214,7 @@ def set_lower_bounds(model, bounds):
     return model
 
 
-def fix_parameters(model, parameter_names):
+def fix_parameters(model: Model, parameter_names):
     """Fix parameters
 
     Fix all listed parameters
@@ -265,7 +265,7 @@ def fix_parameters(model, parameter_names):
     return model
 
 
-def unfix_parameters(model, parameter_names):
+def unfix_parameters(model: Model, parameter_names):
     """Unfix parameters
 
     Unfix all listed parameters
@@ -319,7 +319,7 @@ def unfix_parameters(model, parameter_names):
     return model
 
 
-def fix_parameters_to(model, inits):
+def fix_parameters_to(model: Model, inits):
     """Fix parameters to
 
     Fix all listed parameters to specified value/values
@@ -361,7 +361,7 @@ def fix_parameters_to(model, inits):
     return model
 
 
-def unfix_parameters_to(model, inits):
+def unfix_parameters_to(model: Model, inits):
     """Unfix parameters to
 
     Unfix all listed parameters to specified value/values
@@ -406,7 +406,7 @@ def unfix_parameters_to(model, inits):
     return model
 
 
-def fix_or_unfix_parameters(model, parameters):
+def fix_or_unfix_parameters(model: Model, parameters):
     """Fix or unfix parameters
 
     Set fixedness of parameters to specified values
@@ -455,7 +455,7 @@ def fix_or_unfix_parameters(model, parameters):
     return model
 
 
-def unconstrain_parameters(model, parameter_names):
+def unconstrain_parameters(model: Model, parameter_names):
     """Remove all constraints from parameters
 
     Parameters
@@ -500,7 +500,7 @@ def unconstrain_parameters(model, parameter_names):
     return model
 
 
-def add_population_parameter(model, name, init, lower=None, upper=None, fix=False):
+def add_population_parameter(model: Model, name, init, lower=None, upper=None, fix=False):
     """Add a new population parameter to the model
 
     Parameters
