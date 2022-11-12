@@ -160,4 +160,9 @@ def _record_warnings():
                 module='distributed',
                 category=ResourceWarning,
             )
+            warnings.filterwarnings(
+                "ignore",
+                module='distributed',
+                category=RuntimeWarning,
+            )
             yield record
