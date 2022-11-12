@@ -26,9 +26,7 @@ def test_skip_most(tmp_path, testdata):
                 resume=True,
             )
 
-        assert len(record) == 5
-
-        for warning, match in zip(
+        _validate_record(
             record,
             [
                 'IOVsearch will be skipped because occasion is None',
@@ -37,8 +35,7 @@ def test_skip_most(tmp_path, testdata):
                 'AMDResults.summary_models is None',
                 'AMDResults.summary_individuals_count is None',
             ],
-        ):
-            assert match in str(warning.message)
+        )
 
         assert len(res.summary_tool) == 1
         assert res.summary_models is None
@@ -61,9 +58,7 @@ def test_skip_covsearch(tmp_path, testdata):
                 resume=True,
             )
 
-        assert len(record) == 5
-
-        for warning, match in zip(
+        _validate_record(
             record,
             [
                 'NONMEM .mod and dataset .datainfo disagree on DROP',
@@ -72,8 +67,7 @@ def test_skip_covsearch(tmp_path, testdata):
                 'AMDResults.summary_models is None',
                 'AMDResults.summary_individuals_count is None',
             ],
-        ):
-            assert match in str(warning.message)
+        )
 
         assert len(res.summary_tool) == 1
         assert res.summary_models is None
@@ -96,17 +90,14 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
                 resume=True,
             )
 
-        assert len(record) == 3
-
-        for warning, match in zip(
+        _validate_record(
             record,
             [
                 'Skipping IOVsearch because there are less than two occasion categories',
                 'AMDResults.summary_models is None',
                 'AMDResults.summary_individuals_count is None',
             ],
-        ):
-            assert match in str(warning.message)
+        )
 
         assert len(res.summary_tool) == 1
         assert res.summary_models is None
@@ -129,17 +120,14 @@ def test_skip_iovsearch_missing_occasion(tmp_path, testdata):
                 resume=True,
             )
 
-        assert len(record) == 3
-
-        for warning, match in zip(
+        _validate_record(
             record,
             [
                 'Skipping IOVsearch because dataset is missing column "XYZ"',
                 'AMDResults.summary_models is None',
                 'AMDResults.summary_individuals_count is None',
             ],
-        ):
-            assert match in str(warning.message)
+        )
 
         assert len(res.summary_tool) == 1
         assert res.summary_models is None
@@ -201,3 +189,10 @@ def _record_warnings():
                 category=RuntimeWarning,
             )
             yield record
+
+
+def _validate_record(record, expected):
+    assert len(record) == len(expected)
+
+    for warning, match in zip(record, expected):
+        assert match in str(warning.message)
