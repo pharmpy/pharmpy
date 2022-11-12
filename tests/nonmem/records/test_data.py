@@ -12,7 +12,7 @@ def test_data_filename_get(parser):
     assert record.filename == '/home/full/pheno.dta'
 
     record = parser.parse("$DATA 'pheno.dta'").records[0]
-    assert str(record.root.filename) == "'pheno.dta'"
+    assert str(record.root.subtree('filename')) == "'pheno.dta'"
     assert record.filename == "pheno.dta"
 
     record = parser.parse(r'$DATA "C:\windowspath\with space in.csv"').records[0]

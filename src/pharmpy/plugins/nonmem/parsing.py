@@ -653,11 +653,12 @@ def get_zero_fix_rvs(control_stream, eta=True):
 def replace_synonym_in_filters(filters, replacements):
     result = []
     for f in filters:
-        if f.COLUMN in replacements:
+        col = f.leaf('COLUMN').value
+        if col in replacements:
             s = ''
             for child in f.children:
                 if child.rule == 'COLUMN':
-                    value = replacements[f.COLUMN]
+                    value = replacements[col]
                 else:
                     value = str(child)
                 s += value

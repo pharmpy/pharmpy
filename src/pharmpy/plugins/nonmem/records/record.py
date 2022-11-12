@@ -1,5 +1,7 @@
 from typing import Optional
 
+from pharmpy.internals.parse import AttrTree
+
 
 class Record:
     """
@@ -12,7 +14,7 @@ class Record:
     raw_name: Optional[str] = None
 
     def __init__(self, content, parser_class):
-        self._root = parser_class(content).root
+        self._root: AttrTree = parser_class(content).root
 
     @property
     def root(self):

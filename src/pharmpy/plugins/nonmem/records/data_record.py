@@ -15,7 +15,7 @@ class DataRecord(OptionRecord):
     @property
     def filename(self):
         """The (raw, unresolved) path of the dataset."""
-        filename = self.root.filename
+        filename = self.root.subtree('filename')
         if filename.find('FILENAME'):
             return str(filename)
         else:  # 'QFILENAME'
@@ -66,23 +66,23 @@ class DataRecord(OptionRecord):
                 node = AttrTree.create('filename', {'FILENAME': filename})
             else:
                 if "'" not in filename:
-                    node = AttrTree.create('filename', {'QFILENAME': "'%s'" % filename})
+                    node = AttrTree.create('filename', {'QFILENAME': f"'{filename}'"})
                 elif '"' not in filename:
-                    node = AttrTree.create('filename', {'QFILENAME': '"%s"' % filename})
+                    node = AttrTree.create('filename', {'QFILENAME': f'"{filename}"'})
                 else:
                     raise ValueError('Cannot have both " and \' in filename.')
             (pre, _, post) = self.root.partition('filename')
-            self.root.children = pre + [node] + post
+            self.root = AttrTree(self.root.rule, pre + (node,) + post)
 
     @property
     def ignore_character(self):
         """The comment character from ex IGNORE=C or None if not available."""
         char = None
-        if hasattr(self.root, 'ignchar') and self.root.ignchar.find('char'):
-            for option in self.root.all('ignchar'):
+        if self.root.first_branch('ignchar', 'char'):
+            for option in self.root.subtrees('ignchar'):
                 if char is not None:
                     raise ModelSyntaxError("Redefinition of ignore character in $DATA")
-                char = str(option.char)
+                char = str(option.subtree('char'))
                 if len(char) == 3:  # It must be quoted
                     char = char[1:-1]
 
@@ -91,7 +91,7 @@ class DataRecord(OptionRecord):
     @ignore_character.setter
     def ignore_character(self, c: str):
         if c != self.ignore_character:
-            self.root.remove('ignchar')
+            self.root = self.root.remove('ignchar')
             char = c if len(c) == 1 else f'"{c}"'
             if len(c) == 1:
                 char = c
@@ -121,8 +121,8 @@ class DataRecord(OptionRecord):
         """The value to replace for NULL (i.e. . etc) in the dataset
         note that only +,-,0 (meaning 0) and 1-9 are allowed
         """
-        if hasattr(self.root, 'null') and self.root.null.find('char'):
-            char = str(self.root.null.char)
+        if subtree := self.root.first_branch('null', 'char'):
+            char = str(subtree)
             if char == '+' or char == '-':
                 return 0
             else:
@@ -133,23 +133,23 @@ class DataRecord(OptionRecord):
     @property
     def ignore(self):
         filters = []
-        for option in self.root.all('ignore'):
-            for filt in option.all('filter'):
+        for option in self.root.subtrees('ignore'):
+            for filt in option.subtrees('filter'):
                 filters.append(filt)
         return filters
 
     @ignore.deleter
     def ignore(self):
-        self.root.remove('ignore')
+        self.root = self.root.remove('ignore')
 
     @property
     def accept(self):
         filters = []
-        for option in self.root.all('accept'):
-            for filt in option.all('filter'):
+        for option in self.root.subtrees('accept'):
+            for filt in option.subtrees('filter'):
                 filters.append(filt)
         return filters
 
     @accept.deleter
     def accept(self):
-        self.root.remove('accept')
+        self.root = self.root.remove('accept')

@@ -4,121 +4,74 @@ Generic parser using lark.
 Subclass :class:`GenericParser` (remember to set :attr:`GenericParser.grammar`
 to point to your grammar file) to define a powerful parser.
 """
-import copy
+from __future__ import annotations
+
 import re
 from abc import ABC
-from typing import Any, Callable, List, Optional, Union
+from itertools import chain
+from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 from lark import Lark, Transformer, Tree, Visitor
 from lark.lexer import Token
 
 from . import prettyprint
+from .tree import Leaf as ImmutableLeaf
+from .tree import Tree as ImmutableTree
 
 TYPES_OF_NEWLINE = frozenset(('CONT', 'NEWLINE'))
 TYPES_OF_COMMENT = frozenset(('COMMENT',))
 
 
-def rule_of(item: Union[Tree, Token, Any]) -> str:
-    """Rule of a tree or token. Convenience function (will not raise)."""
-
-    if isinstance(item, Tree):
-        return item.data
-    elif isinstance(item, Token):
-        return item.type
-    else:
-        return ''
-
-
-def empty_rule(rule: str):
-    """Create empty Tree or Token, depending on (all) upper-case or not."""
-    return Token(rule, '') if rule == rule.upper() else Tree(rule, [])
-
-
-class AttrToken(Token):
-    """Token with attribute access.
-
-    Created by :meth:`AttrTree.transform` from :class:`lark.lexer.Token`.
-
-    Attributes:
-        self.rule: Name, in common with :class:`AttrTree`.
-        self.eval: Transformed data type, in common with :class:`AttrTree`.
-
-    Can be instantiated with :meth:`.__init__`(rule, content), via :class:`lark.lexer.Token`, or
-    alternative constructor :meth:`.transform` (transform object of class
-    :class:`lark.lexer.Token`).
-    """
-
-    __slots__ = ()
-
-    @classmethod
-    def transform(cls, token, **kwargs):
-        """Alternative constructor: From Token (with optional overrides)."""
-        kwargs = {
-            'type': token.type,
-            'value': token.value,
-            'start_pos': token.start_pos,
-            'line': token.line,
-            'column': token.column,
-            **kwargs,
-        }
-        return cls(**kwargs)
-
-    @property
-    def rule(self):
-        """Rule name (synonymous with 'type')"""
-        return self.type
-
-    @rule.setter
-    def rule(self, value):
-        self.type = value
-
-    @property
-    def eval(self):
-        """Evaluated value (str, int, float)."""
-        if self.type in {'DIGIT', 'INT', 'SIGNED_INT'}:
-            return int(self.value)
-        elif self.type in {
-            'DECIMAL',
-            'EXP',
-            'FLOAT',
-            'NUMBER',
-            'NUMERIC',
-            'SIGNED_FLOAT',
-            'SIGNED_NUMBER',
-        }:
-            return float(self.value)
-        elif self.type == 'NEG_INF':
-            return float('-INF')
-        elif self.type == 'POS_INF':
-            return float('INF')
-        else:
-            return str(self.value)
-
-    def replace(self, value):
-        """Returns copy (same rule), but with content replaced."""
-        return self.transform(token=self, value=value)
-
-    def __deepcopy__(self, _):
-        return AttrToken(self.type, self.value, self.start_pos, self.line, self.column)
-
+class AttrToken(ImmutableLeaf):
     def __repr__(self):
         return '%s(%s, %s)' % (self.__class__.__name__, repr(self.rule), repr(self.value))
-
-    def __hash__(self):
-        return hash(repr(self))
-
-    def __eq__(self, other):
-        if not isinstance(other, AttrToken):
-            return False
-        if self.type != other.type:
-            return False
-        return repr(self) == repr(other)
 
     def __str__(self):
         return str(self.value)
 
 
-class AttrTree(Tree):
+def _newline_node():
+    return AttrToken('NEWLINE', '\n')
+
+
+def eval_token(token: AttrToken) -> Union[int, float, str]:
+    """Evaluated value (str, int, float)."""
+    if token.rule in ('DIGIT', 'INT', 'SIGNED_INT'):
+        return int(token.value)
+    elif token.rule in (
+        'DECIMAL',
+        'EXP',
+        'FLOAT',
+        'FLOAT2',
+        'NUMBER',
+        'NUMERIC',
+        'SIGNED_FLOAT',
+        'SIGNED_NUMBER',
+    ):
+        return float(token.value)
+    elif token.rule == 'NEG_INF':
+        return float('-INF')
+    elif token.rule == 'POS_INF':
+        return float('INF')
+    else:
+        return token.value
+
+
+def _parse_create_input(rule: Optional[str], items):
+    try:
+        names, items = zip(*items.items())
+    except AttributeError:
+        if isinstance(items, str):
+            raise TypeError(str)
+        length = len(items)
+        names: Tuple[Optional[str]] = (None,) * length
+    if not items:
+        raise ValueError(f'refusing empty tree {repr(rule)} (only tokens are childless)')
+
+    return (rule, list(zip(names, items)), [])
+
+
+class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
     """Tree with attribute access.
 
     Created in :meth:`GenericParser.parse` by :meth:`transform`, from :class:`lark.Tree`.
@@ -135,25 +88,8 @@ class AttrTree(Tree):
         2. :meth:`.create` (create from nested iterators).
     """
 
-    AttrToken = AttrToken
-
-    @classmethod
-    def transform(cls, tree, **kwargs):
-        """Alternative constructor: From Tree (with optional overrides)."""
-        kwargs = {'data': tree.data, 'children': tree.children, 'meta': tree._meta, **kwargs}
-        children = kwargs['children'].copy()
-        for i, child in enumerate(children):
-            if isinstance(child, Tree):
-                children[i] = cls.transform(tree=child)
-            elif isinstance(child, Token):
-                children[i] = cls.AttrToken.transform(token=child)
-            else:
-                children[i] = cls.AttrToken('STRING', str(child))
-        kwargs['children'] = children
-        return cls(**kwargs)
-
-    @classmethod
-    def create(cls, rule, items, _anon_count=0, _list=False):
+    @staticmethod
+    def create(rule: Optional[str], items) -> AttrTree:
         """Alternative constructor: Creates new tree from (possibly nested) iterables.
 
         Only non-iterable items become leaves (i.e. content of token nodes). All others are trees.
@@ -163,11 +99,8 @@ class AttrTree(Tree):
             2. Token: Native naming scheme, __ANON_%d, of Lark is used.
 
         Args:
-            items: Child (tree) nodes or content (token) nodes.
             rule: Name of root tree (__ANON_0 if False).
-            _anon_count: Internal. Anonymous numbering offset.
-            _list: Internal. Recursion state. Drop 'rule' & return list of children, which are
-                orphaned if name is False.
+            items: Child (tree) nodes or content (token) nodes.
 
         Raises:
             TypeError: 'items' not iterable or instance of 'str' (only leaves shall contain 'str').
@@ -176,95 +109,88 @@ class AttrTree(Tree):
         .. note:: Please follow convention of all lower/upper case for trees/tokens.
         """
 
-        def non_iterable(rule, items):
-            raise TypeError(
-                '%s object is not iterable (of children for tree %s)'
-                % repr(items.__class__.__name__),
-                repr(rule),
-            )
+        _anon_count = 0
+        stack = [_parse_create_input(rule, items)]
 
-        # determine mode of operation; 'items' dict-like OR just iterable?
-        try:
-            names, items = zip(*items.items())
-        except AttributeError:
-            if isinstance(items, str):
-                non_iterable(rule, items)
-            try:
-                length = len(items)
-            except TypeError:
-                non_iterable(rule, items)
-            names = [None] * length
-        if not items:
-            raise ValueError('refusing empty tree %s (only tokens are childless)' % repr(rule))
+        while True:
+            rule_name, args, children = stack[-1]
+            i = len(children)
+            if i == len(args):
+                # NOTE We flatten anonymous trees
+                flattened = tuple(
+                    chain.from_iterable(
+                        child if isinstance(child, tuple) else (child,) for child in children
+                    )
+                )
+                tree = (
+                    flattened
+                    if not rule_name
+                    else AttrTree(
+                        rule_name,
+                        flattened,
+                    )
+                )
+                stack.pop()
+                if stack:
+                    # NOTE We had this tree as child of parent
+                    stack[-1][-1].append(tree)
+                    continue
+                else:
+                    return tree if isinstance(tree, AttrTree) else AttrTree('__ANON_0', tree)
 
-        # create the nodes
-        new_nodes = []
-        for name, thing in zip(names, items):
-            try:  # try to recurse down
-                nodes, _anon_count = cls.create(name, thing, _anon_count=_anon_count, _list=True)
-            except TypeError:  # looks like a leaf
-                try:  # don't convert existing nodes (to leaves)
-                    name = thing.rule
-                except AttributeError:
-                    if not name:
-                        _anon_count += 1
-                        name = '__ANON_%d' % (_anon_count,)
-                    new_nodes += [cls.AttrToken(name, str(thing))]
-                else:  # node already, won't recreate
-                    new_nodes += [thing]
+            name, thing = args[i]
+
+            if isinstance(thing, (AttrTree, AttrToken)):
+                # NOTE Do not convert existing nodes
+                children.append(thing)
+            elif isinstance(thing, (str, int, float, type(None))):
+                # NOTE leaf
+                if not name:
+                    _anon_count += 1
+                    name = '__ANON_%d' % (_anon_count,)
+                children.append(AttrToken(name, str(thing)))
             else:
-                new_nodes += nodes
-        # list (and counter) for recursion
-        if _list:
-            return [cls(rule, new_nodes)] if rule else new_nodes, _anon_count
-
-        # tree to external caller
-        if rule:
-            return cls(rule, new_nodes)
-        return cls('__ANON_0', new_nodes)
+                # NOTE recurse
+                stack.append(_parse_create_input(name, thing))
 
     # -- public interface ----------------------------------------------
     @property
-    def rule(self):
-        """Rule name (synonymous with 'data')."""
-        return self.data
-
-    @rule.setter
-    def rule(self, value):
-        self.data = value
-
-    @property
-    def rules(self):
+    def rules(self) -> List[str]:
         """All rules of (immediate) children."""
         return [node.rule for node in self.children]
 
-    @property
-    def eval(self):
-        """Evaluated value (self)."""
-        return self
-
-    def first_index(self, rule: str):
+    def first_index(self, rule: str) -> int:
         """Returns index of first child matching 'rule', or -1."""
         return next((i for i, child in enumerate(self.children) if child.rule == rule), -1)
 
-    def find(self, rule):
+    def find(self, rule) -> Optional[Union[AttrTree, AttrToken]]:
         """Returns first child matching 'rule', or None."""
         i = self.first_index(rule)
         return None if i == -1 else self.children[i]
 
-    def all(self, rule):
-        """Returns all children matching rule, or []."""
-        return list(filter(lambda child: child.rule == rule, self.children))
+    def first_branch(self, *rules) -> Optional[Union[AttrTree, AttrToken]]:
+        current = self
+        for rule in rules:
+            if not isinstance(current, AttrTree):
+                return None
+            current = current.find(rule)
+        return current
 
-    def set(self, rule, new_child):
+    def set(self, rule, new_child) -> AttrTree:
         """Sets first child matching rule. Raises if none."""
         i = self.first_index(rule)
         if i == -1:
             raise NoSuchRuleException(rule, self)
 
-        self.children[i] = new_child
+        return AttrTree(self.rule, self.children[:i] + (new_child,) + self.children[i + 1 :])
 
-    def partition(self, rule):
+    def partition(
+        self, rule
+    ) -> Tuple[
+        Tuple[Union[AttrTree, AttrToken], ...],
+        Tuple[Union[AttrTree, AttrToken], ...],
+        Tuple[Union[AttrTree, AttrToken], ...],
+    ]:
         """Partition children into (head, item, tail).
 
         Search for child item 'rule' and return the part before it (head), the item, and the part
@@ -272,48 +198,26 @@ class AttrTree(Tree):
 
         i = self.first_index(rule)
         return (
-            (list(self.children), [], [])
+            (self.children, (), ())
             if i == -1
-            else (self.children[:i], [self.children[i]], self.children[i + 1 :])
+            else (self.children[:i], (self.children[i],), self.children[i + 1 :])
         )
 
     def tree_walk(self):
         """Generator for iterating depth-first (i.e. parse order) over children."""
         for child in self.children:
             yield child
-            try:
+            if isinstance(child, AttrTree):
                 yield from child.tree_walk()
-            except AttributeError:
-                continue
 
     def remove(self, rule):
         """Remove all children with rule. Not recursively"""
-        self.children = [child for child in self.children if child.rule != rule]
+        return AttrTree(
+            self.rule,
+            tuple(child for child in self.children if child.rule != rule),
+        )
 
-    def remove_node(self, node):
-        new_children = []
-        comment_flag = False
-        for child in self.children:
-            if child.rule in TYPES_OF_COMMENT:
-                if not comment_flag:
-                    new_children.append(child)
-                else:
-                    if str(child).startswith('\n\n'):
-                        new_children.append(child.replace(str(child)[1:]))
-                    comment_flag = False
-            elif str(child.eval) != str(node.eval):
-                new_children.append(child)
-                if child.rule == 'statement':
-                    comment_flag = False
-            else:
-                comment_flag = True
-        self.children = new_children
-
-    @staticmethod
-    def _newline_node():
-        return AttrToken('NEWLINE', '\n')
-
-    def _clean_ws(self, new_children):
+    def _clean_ws(self, new_children: Sequence[Union[AttrTree, AttrToken]]):
         new_children_clean = []
         last_index = len(new_children) - 1
 
@@ -326,7 +230,7 @@ class AttrTree(Tree):
                 if i == last_index:
                     continue
             if re.search('\n{2,}', str(child)):
-                new_children_clean.append(self._newline_node())
+                new_children_clean.append(_newline_node())
             else:
                 new_children_clean.append(child)
 
@@ -335,45 +239,84 @@ class AttrTree(Tree):
         return new_children_clean
 
     def add_node(self, node, following_node=None, comment=False):
-        new_children = copy.deepcopy(self.children)
-
-        if comment:
-            new_children = self._clean_ws(new_children)
+        new_children = self._clean_ws(self.children) if comment else list(self.children)
 
         if following_node is None:
             if not comment:
-                new_children.append(self._newline_node())
+                new_children.append(_newline_node())
             new_children.append(node)
         else:
             index = self.children.index(following_node)
             new_children.insert(index, node)
 
-            newline_node = copy.deepcopy(new_children[index - 1])
+            newline_node = new_children[index - 1]
             new_children.insert(index + 1, newline_node)
 
         new_children_clean = self._clean_ws(new_children)
-        self.children = new_children_clean
+        return AttrTree(self.rule, tuple(new_children_clean))
 
     def add_comment_node(self, comment, adjacent_node=None):
         comment_node = AttrToken('COMMENT', f' ; {comment}')
-        self.add_node(comment_node, adjacent_node, comment=True)
+        return self.add_node(comment_node, adjacent_node, comment=True)
 
     def add_newline_node(self):
-        self.children.append(self._newline_node())
+        return AttrTree(self.rule, self.children + (_newline_node(),))
 
-    def get_last_node(self):
-        return self.children[-1]
+    def subtrees(self, rule) -> Iterable[AttrTree]:
+        for child in self.children:
+            if isinstance(child, AttrTree) and child.rule == rule:
+                yield child
+
+    def subtree(self, rule) -> AttrTree:
+        try:
+            return next(iter(self.subtrees(rule)))
+        except StopIteration:
+            raise NoSuchRuleException(f'No subtree "{rule}" in {repr(self)}.')
+
+    def subtree_at(self, i: int) -> AttrTree:
+        child = self.children[i]
+        if isinstance(child, AttrTree):
+            return child
+
+        raise ValueError(f'The is no subtree at index {i}')
+
+    def leaves(self, rule) -> Iterable[AttrToken]:
+        for child in self.children:
+            if isinstance(child, AttrToken) and child.rule == rule:
+                yield child
+
+    def leaf(self, rule) -> AttrToken:
+        try:
+            return next(iter(self.leaves(rule)))
+        except StopIteration:
+            raise NoSuchRuleException(f'No leaf "{rule}" in {repr(self)}.')
+
+    def leaf_at(self, i: int) -> AttrToken:
+        child = self.children[i]
+        if isinstance(child, AttrToken):
+            return child
+
+        raise ValueError(f'The is no subtree at index {i}')
+
+    def replace_first(self, child: Union[AttrTree, AttrToken]) -> AttrTree:
+        i = self.first_index(child.rule)
+        if i == -1 or self.children[i] == child:
+            return self
+
+        new_children = self.children[:i] + (child,) + self.children[i + 1 :]
+        return AttrTree(self.rule, new_children)
+
+    def map(
+        self, fn: Callable[[Union[AttrTree, AttrToken]], Union[AttrTree, AttrToken]]
+    ) -> AttrTree:
+        return AttrTree(self.rule, tuple(map(fn, self.children)))
 
     @property
-    def tokens(self):
-        """All tokens as flattened list."""
-        items = []
-        for item in self.children:
-            try:
-                items += item.tokens
-            except AttributeError:
-                items += [item]
-        return items
+    def tokens(self) -> Iterable[AttrToken]:
+        """All tokens in depth-first order."""
+        for child in self.tree_walk():
+            if isinstance(child, AttrToken):
+                yield child
 
     @property
     def debug(self, *args, **kwargs):
@@ -384,38 +327,15 @@ class AttrTree(Tree):
         """Prints debug formatted tree structure."""
         print(self.debug)
 
-    def set_child(self, attr, value):
-        self.find(attr).value = value
-
     # -- private methods -----------------------------------------------
     def __len__(self):
         return len(self.children)
-
-    def __setattr__(self, attr, value):
-        if attr in ['data', 'children', '_meta']:
-            object.__setattr__(self, attr, value)
-        else:
-            self.set_child(attr, value)
-
-    def __getattr__(self, attr):
-        if attr in ['data', 'children', '_meta']:
-            return object.__getattribute__(self, attr)
-        child = self.find(attr)
-        if child is None:
-            raise NoSuchRuleException(attr, self)
-        return child.eval
 
     def __str__(self):
         return ''.join(str(x) for x in self.children)
 
     def __repr__(self):
         return '%s(%s, %s)' % (self.__class__.__name__, repr(self.rule), repr(self.children))
-
-    def __hash__(self):
-        return hash(repr(self))
-
-    def __eq__(self, other):
-        return hash(self) == hash(other)
 
 
 class NoSuchRuleException(AttributeError):
@@ -433,13 +353,9 @@ class GenericParser(ABC):
     Inherit to define a parser, say ThetaRecordParser for NONMEM, with the workflow:
 
     1. Lex and parse a 'buffer' using Lark_ (from :attr:`grammar` file). Builds AST.
-    2. Shape AST by options (see :attr:`non_empty`).
-    3. Convert to :class:`AttrTree` for convenient traversal (attribute access).
+    2. Convert to :class:`AttrTree` for immutability and convenience traversal.
 
     Attributes:
-        self.non_empty: Insert empty placeholders if missing. Dict of rule -> (pos, name), where a
-            Tree or Token (if uppercase) will be inserted at 'pos' of the children of 'rule', if
-            none exists.
         self.buffer: Buffer parsed by :meth:`parse`.
         self.grammar: Path to grammar file.
         self.root: Root of final tree. Instance of :class:`AttrTree`.
@@ -447,9 +363,6 @@ class GenericParser(ABC):
     .. _Lark:
         https://github.com/lark-parser/lark
     """
-
-    """Children to create if missing"""
-    non_empty = []
 
     """:class:`AttrTree` implementation."""
     AttrTree = AttrTree
@@ -464,7 +377,7 @@ class GenericParser(ABC):
         debug=False,
         cache=False,
     )
-    post_process: List[Union[Visitor, Transformer, Callable[[str, Tree], Tree]]] = []
+    post_process: Tuple[Union[Visitor, Transformer, Callable[[str, Tree], Tree]], ...] = ()
 
     def __init__(self, buf=None):
         self.root = self.parse(buf)
@@ -480,8 +393,6 @@ class GenericParser(ABC):
             return None
 
         root = self.lark.parse(self.buffer)
-        if self.non_empty:
-            root = self.insert(root, self.non_empty)
 
         for processor in self.post_process:
             if isinstance(processor, Visitor):
@@ -493,29 +404,7 @@ class GenericParser(ABC):
             else:
                 raise TypeError(f'Processor {processor} must be a Visitor or a Transformer')
 
-        return self.AttrTree.transform(tree=root)
-
-    @classmethod
-    def insert(cls, item, non_empty):
-        """Inserts missing Tree/Token amongst children (see :attr:`non_empty`).
-
-        Args:
-            item: Tree to recurse.
-            non_empty: Dict of rule -> (pos, name) tuple.
-        """
-        if not non_empty or isinstance(item, Token):
-            return item
-        for d in non_empty:
-            try:
-                pos, name = d[rule_of(item)]
-            except KeyError:
-                pass
-            else:
-                if not any(rule_of(child) == name for child in item.children):
-                    item.children.insert(pos, empty_rule(name))
-        for i, child in enumerate(item.children):
-            item.children[i] = cls.insert(child, non_empty)
-        return item
+        return _from_lark_tree(root)
 
     def __str__(self):
         if not self.root:
@@ -524,7 +413,14 @@ class GenericParser(ABC):
         return '\n'.join(lines)
 
 
-def remove_token_and_space(tree, rule, recursive=False):
+def _remove_token_and_space(node: Union[AttrTree, AttrToken], rule: str):
+    if isinstance(node, AttrTree):
+        return remove_token_and_space(node, rule, recursive=True)
+    else:
+        return node
+
+
+def remove_token_and_space(tree: AttrTree, rule: str, recursive: bool = False):
     """Remove all tokens with rule and any WS before it"""
     new_nodes = []
     for node in tree.children:
@@ -533,14 +429,16 @@ def remove_token_and_space(tree, rule, recursive=False):
                 new_nodes.pop()
         else:
             new_nodes.append(node)
-    tree.children = new_nodes
+
     if recursive:
-        for node in tree.children:
-            if hasattr(node, 'children'):
-                remove_token_and_space(node, rule, recursive=True)
+        new_nodes = (_remove_token_and_space(node, rule) for node in new_nodes)
+
+    return AttrTree(tree.rule, tuple(new_nodes))
 
 
-def insert_before_or_at_end(tree, rule, nodes):
+def insert_before_or_at_end(
+    tree: ImmutableTree, rule: str, nodes: Iterable[Union[ImmutableTree, ImmutableLeaf]]
+):
     """Insert nodes before rule or if rule does not exist at end"""
     kept = []
     found = False
@@ -551,14 +449,32 @@ def insert_before_or_at_end(tree, rule, nodes):
         kept.append(node)
     if not found:
         kept.extend(nodes)
-    tree.children = kept
+
+    return AttrTree(tree.rule, tuple(kept))
 
 
-def insert_after(tree, rule, nodes):
+def insert_after(
+    tree: ImmutableTree, rule: str, nodes: Iterable[Union[ImmutableTree, ImmutableLeaf]]
+):
     """Insert nodes after rule"""
     kept = []
     for node in tree.children:
         kept.append(node)
         if node.rule == rule:
             kept.extend(nodes)
-    tree.children = kept
+
+    return AttrTree(tree.rule, tuple(kept))
+
+
+def _from_lark_tree(tree: Tree) -> AttrTree:
+    return AttrTree(
+        tree.data,
+        tuple(
+            _from_lark_tree(child) if isinstance(child, Tree) else _from_lark_token(child)
+            for child in tree.children
+        ),
+    )
+
+
+def _from_lark_token(token: Token) -> AttrToken:
+    return AttrToken(token.type, token.value)

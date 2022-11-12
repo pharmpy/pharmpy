@@ -16,7 +16,7 @@ from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.immutable import Immutable
 
 
-class Statement(ABC, Immutable):
+class Statement(Immutable):
     """Abstract base class for all types of statements"""
 
     def __add__(self, other):
