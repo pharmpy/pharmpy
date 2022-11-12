@@ -322,9 +322,9 @@ def _subfunc_covariates(search_space: Tuple[Statement], path) -> SubFunc:
 
         if not effects:
             warnings.warn(
-                'Skipping COVsearch because continuous and/or categorical are None'
-                ' and could not be inferred through .datainfo via "covariate" type'
-                ' and "continuous" flag.'
+                'Skipping COVsearch because no effect candidates could be generated.'
+                ' Check search_space definition'
+                ' and .datainfo usage of "covariate" type and "continuous" flag.'
             )
             return None
 
