@@ -126,7 +126,7 @@ def test_set_name(pheno):
 def test_copy_model(pheno):
     run1 = copy_model(pheno)
     assert id(pheno) != id(run1)
-    assert id(pheno.parameters) != id(run1.parameters)
+    assert id(pheno.parameters) == id(run1.parameters)
     run2 = copy_model(run1, "run2")
     assert run2.name == "run2"
     assert run2.parent_model == "pheno_real"

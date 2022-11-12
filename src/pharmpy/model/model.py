@@ -53,8 +53,8 @@ class Model:
     def __init__(
         self,
         name=None,
-        parameters=Parameters([]),
-        random_variables=RandomVariables.create([]),
+        parameters=Parameters(()),
+        random_variables=RandomVariables.create(()),
         statements=Statements(),
         dataset=None,
         datainfo=None,

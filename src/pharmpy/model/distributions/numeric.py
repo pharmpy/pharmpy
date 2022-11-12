@@ -4,9 +4,10 @@ from abc import abstractmethod
 from typing import Union
 
 from pharmpy.deps import numpy as np
+from pharmpy.internals.immutable import Immutable
 
 
-class NumericDistribution:
+class NumericDistribution(Immutable):
     @abstractmethod
     def sample(self, rng, size: int) -> np.ndarray:
         pass

@@ -94,7 +94,7 @@ def parse_statements(
         comp = _compartmental_model(di, dataset, control_stream, sub.advan, sub.trans, des)
         trans_amounts = {}
         if comp is None:
-            statements += ExplicitODESystem([], {})  # FIXME: Placeholder for ODE-system
+            statements += ExplicitODESystem((), {})  # FIXME: Placeholder for ODE-system
             # FIXME: Dummy link statement
             statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
         else:

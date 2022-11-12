@@ -98,7 +98,7 @@ class AttrToken(Token):
         """Returns copy (same rule), but with content replaced."""
         return self.transform(token=self, value=value)
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, _):
         return AttrToken(self.type, self.value, self.start_pos, self.line, self.column)
 
     def __repr__(self):

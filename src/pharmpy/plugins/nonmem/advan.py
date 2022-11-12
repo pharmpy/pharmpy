@@ -314,7 +314,7 @@ def _compartmental_model(
             dadt_dose = Assignment(dose_symb, dose_expr)
             ics[comp_names['A(1)'](0)] = sympy.Integer(0)
 
-        eqs = [sympy.Eq(dadt_dose.symbol, dadt_dose.expression)] + dadt_rest
+        eqs = (sympy.Eq(dadt_dose.symbol, dadt_dose.expression), *dadt_rest)
 
         ode = ExplicitODESystem(eqs, ics)
 

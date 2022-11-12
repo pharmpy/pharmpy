@@ -6,9 +6,10 @@ from typing import Any, Optional, Sequence, Union, overload
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
+from pharmpy.internals.immutable import Immutable
 
 
-class Parameter:
+class Parameter(Immutable):
     """A single parameter
 
     Example
@@ -145,7 +146,7 @@ class Parameter:
         )
 
 
-class Parameters(CollectionsSequence):
+class Parameters(CollectionsSequence, Immutable):
     """An immutable collection of parameters
 
     Class representing a group of parameters. Usually all parameters in a model.
