@@ -31,27 +31,33 @@ __all__ = (
 
 _allowed = set(__all__)
 
-_run_keys = {
-    'create_results',
-    'fit',
-    'print_fit_summary',
-    'rank_models',
-    'read_modelfit_results',
-    'read_results',
-    'retrieve_final_model',
-    'retrieve_models',
-    'run_tool',
-    'summarize_errors',
-    'summarize_modelfit_results',
-    'write_results',
+_not_wrapped = {
+    '.amd.run': ('run_amd',),
+    '.run': (
+        'create_results',
+        'fit',
+        'print_fit_summary',
+        'rank_models',
+        'read_modelfit_results',
+        'read_results',
+        'retrieve_final_model',
+        'retrieve_models',
+        'run_tool',
+        'summarize_errors',
+        'summarize_modelfit_results',
+        'write_results',
+    ),
+    '.funcs': (
+        'predict_outliers',
+        'predict_influential_individuals',
+        'predict_influential_outliers',
+        'summarize_individuals',
+        'summarize_individuals_count_table',
+    ),
 }
 
-_func_keys = {
-    'predict_outliers',
-    'predict_influential_individuals',
-    'predict_influential_outliers',
-    'summarize_individuals',
-    'summarize_individuals_count_table',
+_not_wrapped_module_name_index = {
+    key: module for module, keys in _not_wrapped.items() for key in keys
 }
 
 _tool_cache = {}
@@ -64,25 +70,18 @@ def __getattr__(key):
 
     import importlib
 
-    if key == 'run_amd':
-        module = importlib.import_module('.amd.run', __name__)
-        return getattr(module, 'run_amd')
-
-    if key in _run_keys:
-        module = importlib.import_module('.run', __name__)
+    if key in _not_wrapped_module_name_index:
+        module = importlib.import_module(_not_wrapped_module_name_index[key], __name__)
         return getattr(module, key)
 
-    if key in _func_keys:
-        module = importlib.import_module('.funcs', __name__)
-        return getattr(module, key)
-
-    assert key[:4] == 'run_'
+    assert key.startswith('run_')
 
     with _tool_lock:
         if key not in _tool_cache:
             module = importlib.import_module('.wrap', __name__)
             wrap = getattr(module, 'wrap')
-            _tool_cache[key] = wrap(key[4:])
+            tool_name = key[4:]  # NOTE This removes the run_ prefix
+            _tool_cache[key] = wrap(tool_name)
 
     return _tool_cache[key]
 

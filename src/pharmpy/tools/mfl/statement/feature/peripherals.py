@@ -7,7 +7,7 @@ from .feature import ModelFeature, feature
 
 @dataclass(frozen=True)
 class Peripherals(ModelFeature):
-    counts: Tuple[int]
+    counts: Tuple[int, ...]
 
 
 class PeripheralsInterpreter(CountInterpreter):

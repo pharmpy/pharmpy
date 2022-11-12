@@ -38,13 +38,13 @@ def _group_incompatible_features(funcs):
     grouped = defaultdict(list)
     for key in funcs.keys():
         grouped[key[0]].append(key)
-    return grouped
+    return grouped.values()
 
 
 def all_combinations(model: Model, statements: Iterable[Statement]) -> Iterable[Tuple[FeatureKey]]:
     funcs = all_funcs(model, statements)
     grouped = _group_incompatible_features(funcs)
-    feats = ((None, *group) for group in grouped.values())
+    feats = ((None, *group) for group in grouped)
     for t in product(*feats):
         a = tuple(elt for elt in t if elt is not None)
         if a:

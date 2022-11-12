@@ -9,7 +9,7 @@ from .symbols import Name, Wildcard
 
 @dataclass(frozen=True)
 class Absorption(ModelFeature):
-    modes: Union[Tuple[Name[Literal['FO', 'ZO', 'SEQ-FO-ZO']]], Wildcard]
+    modes: Union[Tuple[Name[Literal['FO', 'ZO', 'SEQ-FO-ZO']], ...], Wildcard]
 
 
 class AbsorptionInterpreter(Interpreter):
