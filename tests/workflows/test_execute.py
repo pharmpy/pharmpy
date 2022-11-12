@@ -1,10 +1,14 @@
+from dataclasses import dataclass
+from typing import Optional
+
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
+from pharmpy.model import Results
 from pharmpy.modeling import set_bolus_absorption
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import read_results
-from pharmpy.workflows import Task, Workflow, execute_workflow
+from pharmpy.workflows import Task, ToolDatabase, Workflow, execute_workflow
 
 
 def test_execute_workflow_constant(tmp_path):
@@ -123,10 +127,15 @@ def test_execute_workflow_results(tmp_path):
     assert not hasattr(res, 'tool_database')
 
 
+@dataclass
+class MyResults(Results):
+    ofv: float
+    tool_database: Optional[ToolDatabase] = None
+
+
 def test_execute_workflow_results_with_tool_database(tmp_path):
     ofv = 3
-    mfr = ModelfitResults(ofv=ofv)
-    mfr.tool_database = None
+    mfr = MyResults(ofv=ofv)
 
     wf = Workflow([Task('result', lambda: mfr)])
 
