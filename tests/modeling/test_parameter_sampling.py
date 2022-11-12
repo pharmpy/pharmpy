@@ -31,10 +31,12 @@ def test_sample_parameters_uniformly():
 def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     rng = np.random.default_rng(318)
+    pe = model.modelfit_results.parameter_estimates
+    cm = model.modelfit_results.covariance_matrix
     samples = sample_parameters_from_covariance_matrix(
         model,
-        model.modelfit_results.parameter_estimates,
-        model.modelfit_results.covariance_matrix,
+        pe,
+        cm,
         n=3,
         rng=rng,
     )
@@ -50,12 +52,13 @@ def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
     )
     pd.testing.assert_frame_equal(samples, correct, atol=1e-6)
     # Make cov matrix non-posdef
-    model.modelfit_results.covariance_matrix['THETA(1)']['THETA(1)'] = -1
+    cm2 = cm.copy()
+    cm2['THETA(1)']['THETA(1)'] = -1
     with pytest.warns(UserWarning):
         sample_parameters_from_covariance_matrix(
             model,
-            model.modelfit_results.parameter_estimates,
-            model.modelfit_results.covariance_matrix,
+            pe,
+            cm2,
             n=1,
             force_posdef_covmatrix=True,
         )

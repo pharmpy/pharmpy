@@ -2731,7 +2731,7 @@ def test_update_inits_move_est(load_model_for_test, pheno_path):
     create_joint_distribution(model, individual_estimates=res.individual_estimates)
     add_iiv(model, 'S1', 'add')
 
-    param_est = res.parameter_estimates
+    param_est = res.parameter_estimates.copy()
     param_est['IIV_CL_IIV_V'] = 0.0285  # Correlation > 0.99
     param_est['IIV_S1'] = 0.0005
 
@@ -2747,9 +2747,8 @@ def test_update_inits_zero_fix(load_model_for_test, pheno_path):
     d = {name: 0 for name in model.random_variables.iiv.parameter_names}
     fix_parameters_to(model, d)
     res = model.modelfit_results
-    param_est = res.parameter_estimates
-    del param_est['OMEGA(1,1)']
-    update_inits(model, model.modelfit_results.parameter_estimates)
+    param_est = res.parameter_estimates.drop(index=['OMEGA(1,1)'])
+    update_inits(model, param_est)
     assert model.parameters['OMEGA(1,1)'].init == 0
     assert model.parameters['OMEGA(1,1)'].fix
 
@@ -2757,9 +2756,8 @@ def test_update_inits_zero_fix(load_model_for_test, pheno_path):
     d = {name: 0 for name in model.random_variables.iiv.parameter_names}
     fix_parameters_to(model, d)
     res = model.modelfit_results
-    param_est = res.parameter_estimates
-    del param_est['OMEGA(1,1)']
-    update_inits(model, model.modelfit_results.parameter_estimates, move_est_close_to_bounds=True)
+    param_est = res.parameter_estimates.drop(index=['OMEGA(1,1)'])
+    update_inits(model, param_est, move_est_close_to_bounds=True)
     assert model.parameters['OMEGA(1,1)'].init == 0
     assert model.parameters['OMEGA(1,1)'].fix
 

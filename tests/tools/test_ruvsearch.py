@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import pytest
 
 from pharmpy.modeling import remove_covariance_step
@@ -143,7 +145,8 @@ def test_validate_input_raises_modelfit_results(load_model_for_test, testdata):
 def test_validate_input_raises_cwres(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     remove_covariance_step(model)
-    del model.modelfit_results.residuals['CWRES']
+    mfr = model.modelfit_results
+    model.modelfit_results = replace(mfr, residuals=mfr.residuals.drop(columns=['CWRES']))
 
     with pytest.raises(ValueError, match="CWRES"):
         validate_input(model=model)
@@ -152,7 +155,8 @@ def test_validate_input_raises_cwres(load_model_for_test, testdata):
 def test_validate_input_raises_cipredi(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     remove_covariance_step(model)
-    del model.modelfit_results.predictions['CIPREDI']
+    mfr = model.modelfit_results
+    model.modelfit_results = replace(mfr, predictions=mfr.predictions.drop(columns=['CIPREDI']))
 
     with pytest.raises(ValueError, match="IPRED"):
         validate_input(model=model)
@@ -161,7 +165,8 @@ def test_validate_input_raises_cipredi(load_model_for_test, testdata):
 def test_validate_input_raises_ipred(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     remove_covariance_step(model)
-    del model.modelfit_results.predictions['IPRED']
+    mfr = model.modelfit_results
+    model.modelfit_results = replace(mfr, predictions=mfr.predictions.drop(columns=['IPRED']))
 
     with pytest.raises(ValueError, match="IPRED"):
         validate_input(model=model)
