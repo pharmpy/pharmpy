@@ -310,8 +310,12 @@ def _compartmental_model(
         eqs = [sympy.Eq(dadt_dose.symbol, dadt_dose.expression)] + dadt_rest
 
         ode = ExplicitODESystem(eqs, ics)
-        # FIXME: 1 is not correct. Should use $MODEL as ADVAN5
-        ass = _f_link_assignment(control_stream, sympy.Symbol('A_CENTRAL'), 1)
+
+        for i, (name, opts) in enumerate(rec_model.compartments(), 1):
+            if i == 1 or 'DEFOBSERVATION' in opts:
+                defobs = (name, i)
+
+        ass = _f_link_assignment(control_stream, sympy.Symbol(f'A_{defobs[0]}'), defobs[1])
         return ode, ass, None
     else:
         return None
