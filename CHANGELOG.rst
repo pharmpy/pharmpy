@@ -1,3 +1,18 @@
+0.84.1 (2022-11-13)
+-------------------
+
+Changes
+=======
+
+* Much faster parsing of NONMEM models
+* 4 times faster parsing of NONMEM phi files
+
+Bug fixes
+=========
+
+* Have correct F-statement in $ERROR for $DES NONMEM models 
+* Read compartment names correctly when having both NCOMP and COMP in $MODEL of NONMEM models
+
 0.84.0 (2022-11-09)
 -------------------
 
