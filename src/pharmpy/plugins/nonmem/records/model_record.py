@@ -47,7 +47,11 @@ class ModelRecord(OptionRecord):
 
     def compartments(self):
         ncomps = self.ncomps
-        if ncomps is not None and not self.has_option("COMPARTMENT"):
+        if (
+            ncomps is not None
+            and not self.has_option("COMPARTMENT")
+            and not self.has_option("COMP")
+        ):
             for i in range(1, ncomps + 1):
                 yield f'COMP{i}', []
             return
