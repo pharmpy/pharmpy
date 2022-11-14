@@ -63,9 +63,9 @@ class EstimationStep(Immutable):
             self._predictions = predictions
         if solver is not None:
             solver = solver.upper()
-        if not (solver is None or solver in self.supported_solvers):
+        if not (solver is None or solver in EstimationStep.supported_solvers):
             raise ValueError(
-                f"Unknown solver {solver}. Recognized solvers are {self.supported_solvers}."
+                f"Unknown solver {solver}. Recognized solvers are {EstimationStep.supported_solvers}."
             )
         self._solver = solver
         self._solver_rtol = solver_rtol
@@ -90,9 +90,9 @@ class EstimationStep(Immutable):
 
     def _canonicalize_and_check_method(self, method):
         method = method.upper()
-        if method not in self.supported_methods:
+        if method not in EstimationStep.supported_methods:
             raise ValueError(
-                f'EstimationStep: {method} not recognized. Use any of {self.supported_methods}.'
+                f'EstimationStep: {method} not recognized. Use any of {EstimationStep.supported_methods}.'
             )
         return method
 
