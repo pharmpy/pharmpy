@@ -1,7 +1,8 @@
 import warnings
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from itertools import product
 from pathlib import Path
+from typing import Any, Optional
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
@@ -19,8 +20,10 @@ from pharmpy.modeling import (
     sample_parameters_from_covariance_matrix,
     set_covariates,
 )
+from pharmpy.workflows import ToolDatabase
 
 
+@dataclass(frozen=True)
 class FREMResults(Results):
     """FREM Results class
 
@@ -159,39 +162,21 @@ class FREMResults(Results):
 
     rst_path = Path(__file__).resolve().parent / 'report.rst'
 
-    def __init__(
-        self,
-        coefficients=None,
-        parameter_variability=None,
-        covariate_effects=None,
-        individual_effects=None,
-        unexplained_variability=None,
-        covariate_statistics=None,
-        covariate_effects_plot=None,
-        individual_effects_plot=None,
-        unexplained_variability_plot=None,
-        covariate_baselines=None,
-        parameter_inits_and_estimates=None,
-        base_parameter_change=None,
-        estimated_covariates=None,
-        ofv=None,
-    ):
-        # FIXME: Lots of boilerplate code ahead. Could be simplified with python 3.7 dataclass
-        #        or namedtuple
-        self.coefficients = coefficients
-        self.parameter_variability = parameter_variability
-        self.covariate_effects = covariate_effects
-        self.individual_effects = individual_effects
-        self.unexplained_variability = unexplained_variability
-        self.covariate_statistics = covariate_statistics
-        self.covariate_effects_plot = covariate_effects_plot
-        self.individual_effects_plot = individual_effects_plot
-        self.unexplained_variability_plot = unexplained_variability_plot
-        self.covariate_baselines = covariate_baselines
-        self.parameter_inits_and_estimates = parameter_inits_and_estimates
-        self.base_parameter_change = base_parameter_change
-        self.ofv = ofv
-        self.estimated_covariates = estimated_covariates
+    coefficients: Optional[Any] = None
+    parameter_variability: Optional[Any] = None
+    covariate_effects: Optional[Any] = None
+    individual_effects: Optional[Any] = None
+    unexplained_variability: Optional[Any] = None
+    covariate_statistics: Optional[Any] = None
+    covariate_effects_plot: Optional[Any] = None
+    individual_effects_plot: Optional[Any] = None
+    unexplained_variability_plot: Optional[Any] = None
+    covariate_baselines: Optional[Any] = None
+    parameter_inits_and_estimates: Optional[Any] = None
+    base_parameter_change: Optional[Any] = None
+    estimated_covariates: Optional[Any] = None
+    ofv: Optional[Any] = None
+    tool_database: Optional[ToolDatabase] = None
 
 
 def plot_covariate_effects(res):
@@ -436,35 +421,39 @@ def calculate_results(
     mod_names.append(frem_model.name)
     ofv = pd.DataFrame({'ofv': mod_ofvs}, index=mod_names)
     ofv.index.name = 'model_name'
-    res.ofv = ofv
-    add_parameter_inits_and_estimates(res, frem_model, intermediate_models)
+    estimates = parameter_inits_and_estimates(frem_model, intermediate_models)
+    res = replace(res, ofv=ofv, parameter_inits_and_estimates=estimates)
+
     if intermediate_models:
-        add_base_vs_frem_model(res, frem_model, intermediate_models[0])
+        ser = base_vs_frem_model(frem_model, intermediate_models[0])
+        res = replace(res, base_parameter_change=ser)
 
     estimated_covbase = _calculate_covariate_baselines(frem_model, continuous + categorical)
     mean = estimated_covbase.mean()
     stdev = estimated_covbase.std()
     estcovs = pd.DataFrame({'mean': mean, 'stdev': stdev})
-    res.estimated_covariates = estcovs
 
-    res.covariate_effects_plot = plot_covariate_effects(res)
-    res.individual_effects_plot = plot_individual_effects(res)
-    res.unexplained_variability_plot = plot_unexplained_variability(res)
+    res = replace(res, estimated_covariates=estcovs)
 
-    return res
+    return replace(
+        res,
+        covariate_effects_plot=plot_covariate_effects(res),
+        individual_effects_plot=plot_individual_effects(res),
+        unexplained_variability_plot=plot_unexplained_variability(res),
+    )
 
 
-def add_base_vs_frem_model(res, frem_model, model_1):
+def base_vs_frem_model(frem_model, model_1):
     base_ests = model_1.modelfit_results.parameter_estimates
     final_ests = frem_model.modelfit_results.parameter_estimates
     ser = pd.Series(dtype=np.float64)
     for param in base_ests.keys():
         ser[param] = (final_ests[param] - base_ests[param]) / abs(base_ests[param]) * 100
     ser.name = 'relative_change'
-    res.base_parameter_change = ser
+    return ser
 
 
-def add_parameter_inits_and_estimates(res, frem_model, intermediate_models):
+def parameter_inits_and_estimates(frem_model, intermediate_models) -> pd.DataFrame:
     model_names = []
     df = pd.DataFrame()
 
@@ -494,7 +483,7 @@ def add_parameter_inits_and_estimates(res, frem_model, intermediate_models):
     model_names.append(frem_model.name)
     index = pd.MultiIndex.from_product([model_names, ['init', 'estimate']], names=['model', 'type'])
     df.index = index
-    res.parameter_inits_and_estimates = df
+    return df
 
 
 def calculate_results_using_cov_sampling(
@@ -583,9 +572,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     cov_95th = covariate_baselines.quantile(0.95, interpolation='higher')
     is_categorical = cov_refs.index.isin(categorical)
 
-    res = FREMResults()
-
-    res.covariate_statistics = pd.DataFrame(
+    covariate_statistics = pd.DataFrame(
         {
             'p5': cov_5th,
             'mean': cov_means,
@@ -597,7 +584,8 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
         },
         index=covariates,
     )
-    res.covariate_statistics.index.name = 'covariate'
+
+    covariate_statistics.index.name = 'covariate'
 
     ncovs = len(covariates)
     npars = sigma_symb.rows - ncovs
@@ -679,8 +667,6 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
                 original_variability[ncovs + 1, :] = np.diag(sigma_id_bar)
                 parameter_variability_all = sigma_id_bar
 
-    res.coefficients = coefficients
-
     # Create covariate effects table
     mu_bars_given_5th = np.exp(mu_bars_given_5th)
     mu_bars_given_95th = np.exp(mu_bars_given_95th)
@@ -733,7 +719,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
         }
     )
     df.set_index(['parameter', 'covariate', 'condition'], inplace=True)
-    res.covariate_effects = df
+    covariate_effects = df
 
     # Create id table
     mu_id_bars = np.exp(mu_id_bars)
@@ -763,7 +749,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     )
     df.index.name = 'ID'
     df = df.set_index('parameter', append=True)
-    res.individual_effects = df
+    individual_effects = df
 
     # Create unexplained variability table
     sd_5th = np.sqrt(np.nanquantile(variability, 0.05, axis=0))
@@ -797,9 +783,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
         }
     )
     df = df.set_index(['parameter', 'covariate'])
-    res.unexplained_variability = df
-
-    res.covariate_baselines = covariate_baselines
+    unexplained_variability = df
 
     # Create frem_parameter_variability
     index = pd.MultiIndex.from_product(
@@ -812,8 +796,17 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
             df.loc[('all', param_names[i]), param_names[j]] = parameter_variability_all[i][j]
     for (k, name), i, j in product(enumerate(covariates), indices, indices):
         df.loc[(name, param_names[i]), param_names[j]] = parameter_variability[k][i][j]
-    res.parameter_variability = df
-    return res
+    parameter_variability = df
+
+    return FREMResults(
+        covariate_statistics=covariate_statistics,
+        coefficients=coefficients,
+        covariate_effects=covariate_effects,
+        individual_effects=individual_effects,
+        unexplained_variability=unexplained_variability,
+        covariate_baselines=covariate_baselines,
+        parameter_variability=parameter_variability,
+    )
 
 
 def get_params(frem_model, rvs, npars):

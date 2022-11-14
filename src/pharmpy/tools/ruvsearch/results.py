@@ -1,32 +1,19 @@
+from __future__ import annotations
+
 import warnings
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Optional
 
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Results
+from pharmpy.tools.common import ToolResults
 
 
-class RUVSearchResults(Results):
+@dataclass(frozen=True)
+class RUVSearchResults(ToolResults):
     """RUVSearch results class"""
 
-    def __init__(
-        self,
-        cwres_models=None,
-        summary_individuals=None,
-        summary_individuals_count=None,
-        final_model_name=None,
-        summary_models=None,
-        summary_tool=None,
-        summary_errors=None,
-        tool_database=None,
-    ):
-        self.cwres_models = cwres_models
-        self.summary_individuals = summary_individuals
-        self.summary_individuals_count = summary_individuals_count
-        self.final_model_name = final_model_name
-        self.summary_models = summary_models
-        self.summary_tool = summary_tool
-        self.summary_errors = summary_errors
-        self.tool_database = tool_database
+    cwres_models: Optional[Any] = None
 
 
 def calculate_results(models):
@@ -107,32 +94,30 @@ def calculate_results(models):
     df_final.set_index(['model', 'dvid', 'iteration'], inplace=True)
     df_final.sort_index(inplace=True)
 
-    res = RUVSearchResults(cwres_models=df_final)
-    return res
+    return RUVSearchResults(cwres_models=df_final)
 
 
 def psn_resmod_results(path):
     path = Path(path)
-    res = RUVSearchResults()
     respath = path / 'resmod_results.csv'
-    if respath.is_file():
-        df = pd.read_csv(respath, names=range(40), skiprows=[0], engine='python')
-        df[0].fillna(1, inplace=True)
-        df[1].fillna(1, inplace=True)
-        df.dropna(how='all', axis=1, inplace=True)
-        df2 = df[[0, 1, 2, 3]].copy()
-        df2 = df2.astype({0: int})
-        df2.columns = ['iteration', 'DVID', 'model', 'dOFV']
-        df2.set_index(['iteration', 'DVID', 'model'], inplace=True)
-        parameters = pd.Series(name='parameters', index=df.index, dtype=object)
-        for rowind, row in df.iterrows():
-            d = {}
-            for i in range(4, len(row)):
-                if row[i] is not None:
-                    a = row[i].split('=')
-                    d[a[0]] = float(a[1])
-            parameters[rowind] = d
-        parameters.index = df2.index
-        df2['parameters'] = parameters
-        res.cwres_models = df2
-    return res
+    if not respath.is_file():
+        return RUVSearchResults()
+    df = pd.read_csv(respath, names=range(40), skiprows=[0], engine='python')
+    df[0].fillna(1, inplace=True)
+    df[1].fillna(1, inplace=True)
+    df.dropna(how='all', axis=1, inplace=True)
+    df2 = df[[0, 1, 2, 3]].copy()
+    df2 = df2.astype({0: int})
+    df2.columns = ['iteration', 'DVID', 'model', 'dOFV']
+    df2.set_index(['iteration', 'DVID', 'model'], inplace=True)
+    parameters = pd.Series(name='parameters', index=df.index, dtype=object)
+    for rowind, row in df.iterrows():
+        d = {}
+        for i in range(4, len(row)):
+            if row[i] is not None:
+                a = row[i].split('=')
+                d[a[0]] = float(a[1])
+        parameters[rowind] = d
+    parameters.index = df2.index
+    df2['parameters'] = parameters
+    return RUVSearchResults(cwres_models=df2)

@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import re
+from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
+from typing import Any, Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -13,15 +17,15 @@ from pharmpy.tools.psn_helpers import (
 )
 
 
+@dataclass(frozen=True)
 class SCMResults(Results):
     """SCM Results class"""
 
     rst_path = Path(__file__).resolve().parent / 'report.rst'
 
-    def __init__(self, steps=None, ofv_summary=None, candidate_summary=None):
-        self.steps = steps
-        self.candidate_summary = candidate_summary
-        self.ofv_summary = ofv_summary
+    steps: Optional[Any] = None
+    ofv_summary: Optional[Any] = None
+    candidate_summary: Optional[Any] = None
 
 
 def candidate_summary_dataframe(steps):
@@ -632,8 +636,7 @@ def parcov_dict_from_test_relations(test_relations):
     return {f'{par}{cov}': (par, cov) for par, covs in test_relations.items() for cov in covs}
 
 
-def add_covariate_effects(res, path):
-    steps = res.steps
+def _add_covariate_effects_to_steps(steps, path):
     if 'delta_df' not in steps:
         return
 
@@ -687,9 +690,11 @@ def psn_scm_results(path):
     else:
         raise IOError(r'Could not find test_relations in scm config file')
 
-    res = SCMResults(steps=psn_scm_parse_logfile(logfile, options, parcov_dictionary))
-    res.candidate_summary = candidate_summary_dataframe(res.steps)
-    res.ofv_summary = ofv_summary_dataframe(res.steps, final_included=True, iterations=True)
+    steps = psn_scm_parse_logfile(logfile, options, parcov_dictionary)
+    _add_covariate_effects_to_steps(steps, path)
 
-    add_covariate_effects(res, path)
-    return res
+    return SCMResults(
+        steps=steps,
+        candidate_summary=candidate_summary_dataframe(steps),
+        ofv_summary=ofv_summary_dataframe(steps, final_included=True, iterations=True),
+    )

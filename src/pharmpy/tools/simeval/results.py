@@ -1,16 +1,21 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Optional
+
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
 from pharmpy.modeling import plot_individual_predictions
 from pharmpy.tools.simfit.results import psn_simfit_results
 
 
+@dataclass(frozen=True)
 class SimevalResults(Results):
     """Simeval results class"""
 
-    def __init__(self, sampled_iofv=None, iofv_summary=None, individual_predictions_plot=None):
-        self.sampled_iofv = sampled_iofv
-        self.iofv_summary = iofv_summary
-        self.individual_predictions_plot = individual_predictions_plot
+    sampled_iofv: Optional[Any] = None
+    iofv_summary: Optional[Any] = None
+    individual_predictions_plot: Optional[Any] = None
 
 
 def calculate_results(original_model, simfit_results):

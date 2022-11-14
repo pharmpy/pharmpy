@@ -1,11 +1,15 @@
+from __future__ import annotations
+
 import warnings
-from typing import Any, Type, TypeVar
+from dataclasses import dataclass
+from typing import Any, Optional, Sequence, Type, TypeVar
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Results
+from pharmpy.model import Model, Results
 from pharmpy.modeling import update_inits
 from pharmpy.tools import rank_models, summarize_errors
+from pharmpy.workflows import ToolDatabase
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 
@@ -29,11 +33,30 @@ def update_initial_estimates(model):
     return model
 
 
-T = TypeVar('T', bound=Results)
+@dataclass(frozen=True)
+class ToolResults(Results):
+    summary_tool: Optional[Any] = None
+    summary_models: Optional[pd.DataFrame] = None
+    summary_individuals: Optional[pd.DataFrame] = None
+    summary_individuals_count: Optional[pd.DataFrame] = None
+    summary_errors: Optional[pd.DataFrame] = None
+    final_model_name: Optional[str] = None
+    models: Sequence[Model] = ()
+    tool_database: Optional[ToolDatabase] = None
+
+
+T = TypeVar('T', bound=ToolResults)
 
 
 def create_results(
-    res_class: Type[T], input_model, base_model, res_models, rank_type, cutoff, bic_type='mixed'
+    res_class: Type[T],
+    input_model,
+    base_model,
+    res_models,
+    rank_type,
+    cutoff,
+    bic_type='mixed',
+    **rest,
 ) -> T:
     summary_tool = summarize_tool(res_models, base_model, rank_type, cutoff, bic_type)
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
@@ -59,6 +82,7 @@ def create_results(
         summary_errors=summary_errors,
         final_model_name=best_model.name,
         models=models,
+        **rest,
     )
 
     return res

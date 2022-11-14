@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
 from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import pharmpy.tools.iivsearch.algorithms
@@ -6,13 +9,18 @@ from pharmpy.deps import sympy
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_subsets
-from pharmpy.model import Assignment, Model, Results
+from pharmpy.model import Assignment, Model
 from pharmpy.modeling import add_iov, copy_model, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import rank_models, summarize_modelfit_results
-from pharmpy.tools.common import create_results, summarize_tool, update_initial_estimates
+from pharmpy.tools.common import (
+    ToolResults,
+    create_results,
+    summarize_tool,
+    update_initial_estimates,
+)
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
 
@@ -255,10 +263,6 @@ def best_model(
 def task_results(rank_type, cutoff, bic_type, models):
     step_mapping, (base_model, *res_models) = models
 
-    res = create_results(
-        IOVSearchResults, base_model, base_model, res_models, rank_type, cutoff, bic_type=bic_type
-    )
-
     model_dict = {model.name: model for model in [base_model] + res_models}
     sum_mod, sum_tool = [], []
     for step, model_names in step_mapping.items():
@@ -272,10 +276,17 @@ def task_results(rank_type, cutoff, bic_type, models):
 
     keys = list(range(1, len(step_mapping)))
 
-    res.summary_models = pd.concat(sum_mod, keys=[0] + keys, names=['step'])
-    res.summary_tool = pd.concat(sum_tool, keys=keys, names=['step'])
-
-    return res
+    return create_results(
+        IOVSearchResults,
+        base_model,
+        base_model,
+        res_models,
+        rank_type,
+        cutoff,
+        bic_type=bic_type,
+        summary_models=pd.concat(sum_mod, keys=[0] + keys, names=['step']),
+        summary_tool=pd.concat(sum_tool, keys=keys, names=['step']),
+    )
 
 
 @with_runtime_arguments_type_check
@@ -318,26 +329,9 @@ def validate_input(
                 )
 
 
-class IOVSearchResults(Results):
-    def __init__(
-        self,
-        summary_tool=None,
-        summary_models=None,
-        summary_individuals=None,
-        summary_individuals_count=None,
-        summary_errors=None,
-        final_model_name=None,
-        models=None,
-        tool_database=None,
-    ):
-        self.summary_tool = summary_tool
-        self.summary_models = summary_models
-        self.summary_individuals = summary_individuals
-        self.summary_individuals_count = summary_individuals_count
-        self.summary_errors = summary_errors
-        self.final_model_name = final_model_name
-        self.models = models
-        self.tool_database = tool_database
+@dataclass(frozen=True)
+class IOVSearchResults(ToolResults):
+    pass
 
 
 def _get_iov_piecewise_assignment_symbols(model: Model):

@@ -116,7 +116,7 @@ def read_results(path_or_str: Union[str, Path]):
         return json.load(readable, cls=ResultsJSONDecoder)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ModelfitResults(Results, Immutable):
     """Base class for results from a modelfit operation
 

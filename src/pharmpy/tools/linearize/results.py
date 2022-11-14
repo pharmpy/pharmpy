@@ -1,15 +1,19 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
 from pharmpy.modeling import plot_iofv_vs_iofv
 
 
+@dataclass(frozen=True)
 class LinearizeResults(Results):
-    def __init__(self, ofv=None, iofv=None, iofv_plot=None):
-        self.ofv = ofv
-        self.iofv = iofv
-        self.iofv_plot = iofv_plot
+    ofv: Optional[float] = None
+    iofv: Optional[Any] = None
+    iofv_plot: Optional[Any] = None
 
 
 def calculate_results(base_model, linear_model):

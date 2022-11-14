@@ -1,19 +1,20 @@
+from dataclasses import dataclass
+from typing import Any, Optional
+
 from pharmpy.model import Model, Results
 from pharmpy.plugins.nonmem.results import simfit_results
 
 
+@dataclass(frozen=True)
 class SimfitResults(Results):
     """Simfit results class"""
 
-    def __init__(self):
-        pass
+    modelfit_results: Optional[Any] = None
 
 
 def calculate_results(modelfit_results):
     """Calculate simfit results"""
-    res = SimfitResults()
-    res.modelfit_results = modelfit_results
-    return res
+    return SimfitResults(modelfit_results=modelfit_results)
 
 
 def psn_simfit_results(paths):
