@@ -13,8 +13,8 @@ from pharmpy.tools.common import ToolResults, summarize_tool
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
-EST_METHODS = ['FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES']
-SOLVERS = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI']
+EST_METHODS = ('FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES')
+SOLVERS = ('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI')
 
 ALGORITHMS = frozenset(['exhaustive', 'reduced'])
 
@@ -61,15 +61,6 @@ def create_workflow(
     wf = Workflow()
     wf.name = "estmethod"
 
-    if methods == 'all':
-        methods = EST_METHODS
-    elif methods is None:
-        methods = [None]
-    if solvers == 'all':
-        solvers = SOLVERS
-    elif solvers is None:
-        solvers = [None]
-
     algorithm_func = getattr(algorithms, algorithm)
 
     if model is not None:
@@ -79,7 +70,9 @@ def create_workflow(
 
     wf.add_task(start_task)
 
-    wf_algorithm, task_base_model_fit = algorithm_func(methods, solvers)
+    wf_algorithm, task_base_model_fit = algorithm_func(
+        _format_input(methods, EST_METHODS), _format_input(solvers, SOLVERS)
+    )
     wf.insert_workflow(wf_algorithm, predecessors=start_task)
 
     wf_fit = create_fit_workflow(n=len(wf.output_tasks))
@@ -94,6 +87,15 @@ def create_workflow(
     wf.add_task(task_post_process, predecessors=model_tasks)
 
     return wf
+
+
+def _format_input(input_option, default_option):
+    if input_option == 'all':
+        return default_option
+    elif input_option is None:
+        return [None]
+    else:
+        return [entry.upper() for entry in input_option]
 
 
 def start(model):

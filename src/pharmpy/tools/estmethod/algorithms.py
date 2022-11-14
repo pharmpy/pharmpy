@@ -17,16 +17,17 @@ def exhaustive(methods, solvers):
 
     candidate_no = 1
     for method, solver in itertools.product(methods, solvers):
-        # This is to run the models without the updated initial estimates (FOCE has already been run)
-        if method != 'FOCE' or solver is not None:
+        # This is equivalent to the base model
+        if not (method == 'FOCE' and solver is None):
+            # Create model with original estimates
             wf_estmethod_original = _create_candidate_model_wf(
-                candidate_no, method=method, solver=solver, update=False
+                candidate_no, method, solver, update=False
             )
             wf.insert_workflow(wf_estmethod_original, predecessors=task_base_model_fit)
             candidate_no += 1
-        wf_estmethod_update = _create_candidate_model_wf(
-            candidate_no, method=method, solver=solver, update=True
-        )
+
+        # Create model with updated estimates from FOCE
+        wf_estmethod_update = _create_candidate_model_wf(candidate_no, method, solver, update=True)
         wf.insert_workflow(wf_estmethod_update, predecessors=task_base_model_fit)
         candidate_no += 1
 
@@ -41,9 +42,7 @@ def reduced(methods, solvers):
 
     candidate_no = 1
     for method, solver in itertools.product(methods, solvers):
-        wf_estmethod = _create_candidate_model_wf(
-            candidate_no, method=method, solver=solver, update=False
-        )
+        wf_estmethod = _create_candidate_model_wf(candidate_no, method, solver, update=False)
         wf.insert_workflow(wf_estmethod, predecessors=task_start)
         candidate_no += 1
 
@@ -97,8 +96,8 @@ def _create_est_model(method, solver, update, model):
     laplace = True if method == 'LAPLACE' else False
     eval_settings = _create_eval_settings(laplace)
 
-    est_method, eval_method = est_settings['method'], eval_settings['method']
-    model.description = _create_description(est_method, eval_method, solver=None, update=update)
+    eval_method = eval_settings['method']
+    model.description = _create_description(method, eval_method, solver=None, update=update)
 
     while len(model.estimation_steps) > 0:
         remove_estimation_step(model, 0)
