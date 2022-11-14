@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence
-from types import MappingProxyType
 from typing import Iterable, List, Mapping, Optional, Set, Tuple, Union, overload
 
 import pharmpy.internals.unicode as unicode
@@ -13,7 +12,7 @@ from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
 from pharmpy.internals.expr.ode import canonical_ode_rhs
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
-from pharmpy.internals.immutable import Immutable
+from pharmpy.internals.immutable import Immutable, frozenmapping
 
 
 class Statement(Immutable):
@@ -251,7 +250,7 @@ class ExplicitODESystem(ODESystem):
 
     def __init__(self, odes: Tuple[sympy.Eq, ...], ics: Mapping[sympy.Expr, sympy.Expr]):
         self._odes = odes
-        self._ics = MappingProxyType(ics)  # NOTE This guarantees immutability
+        self._ics = frozenmapping(ics)
 
     @property
     def odes(self) -> Tuple[sympy.Eq, ...]:
