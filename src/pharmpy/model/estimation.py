@@ -12,8 +12,8 @@ class EstimationStep(Immutable):
 
     """Supported estimation methods
     """
-    supported_methods = ('FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES')
-    supported_solvers = ('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI')
+    supported_methods = frozenset(('FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'))
+    supported_solvers = frozenset(('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'))
 
     def __init__(
         self,
@@ -65,7 +65,7 @@ class EstimationStep(Immutable):
             solver = solver.upper()
         if not (solver is None or solver in EstimationStep.supported_solvers):
             raise ValueError(
-                f"Unknown solver {solver}. Recognized solvers are {EstimationStep.supported_solvers}."
+                f"Unknown solver {solver}. Recognized solvers are {sorted(EstimationStep.supported_solvers)}."
             )
         self._solver = solver
         self._solver_rtol = solver_rtol
@@ -92,7 +92,7 @@ class EstimationStep(Immutable):
         method = method.upper()
         if method not in EstimationStep.supported_methods:
             raise ValueError(
-                f'EstimationStep: {method} not recognized. Use any of {EstimationStep.supported_methods}.'
+                f'EstimationStep: {method} not recognized. Use any of {sorted(EstimationStep.supported_methods)}.'
             )
         return method
 
