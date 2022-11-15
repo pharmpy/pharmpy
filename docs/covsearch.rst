@@ -57,7 +57,7 @@ Arguments
 +---------------------------------------------+-----------------------------------------------------------------------+
 | ``p_forward``                               | The p-value threshold for forward steps (default is `0.05`)           |
 +---------------------------------------------+-----------------------------------------------------------------------+
-| ``p_backward``                              | The p-value threshold for forward steps (default is `0.01`)           |
+| ``p_backward``                              | The p-value threshold for backward steps (default is `0.01`)          |
 +---------------------------------------------+-----------------------------------------------------------------------+
 | ``max_steps``                               | The maximum number of search algorithm steps to perform, or `-1`      |
 |                                             | for no maximum (default).                                             |
