@@ -911,12 +911,13 @@ def calculate_results_using_bipp(
     while k < remaining_samples:
         bootstrap = pool.sample(n=ninds, replace=True, random_state=rng.bit_generator)
         ishk = ishr.loc[bootstrap.index]
-        cf = (1 / (1 - ishk.mean())) ** (1 / 2)
-        corrected_bootstrap = bootstrap * cf
-        bootstrap_cov = corrected_bootstrap.cov()
-        if not is_posdef(bootstrap_cov.to_numpy()):
+        mean = ishk.to_numpy().mean(0)
+        cf = (1 / (1 - mean)) ** (1 / 2)
+        corrected_bootstrap = np.multiply(bootstrap.to_numpy(), cf)
+        bootstrap_cov = np.cov(np.transpose(corrected_bootstrap))
+        if not is_posdef(bootstrap_cov):
             continue
-        parameter_samples[k, :] = bootstrap_cov.values[lower_indices]
+        parameter_samples[k, :] = bootstrap_cov[lower_indices]
         k += 1
     frame = pd.DataFrame(parameter_samples, columns=pop_params)
     # Shift to the mean of the parameter estimate
