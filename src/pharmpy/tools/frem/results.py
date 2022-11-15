@@ -9,7 +9,11 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import symengine, sympy
 from pharmpy.internals.expr.subs import subs
-from pharmpy.internals.math import conditional_joint_normal, is_posdef
+from pharmpy.internals.math import (
+    conditional_joint_normal,
+    conditional_joint_normal_lambda,
+    is_posdef,
+)
 from pharmpy.model import Model, Results
 from pharmpy.modeling import (
     calculate_individual_shrinkage,
@@ -655,10 +659,12 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
                 for parind, parname in enumerate(param_names):
                     coefficients[cov]['each', parname] = cov_sigma[parind][-1] / cov_sigma[-1][-1]
 
+        id_mu = np.array([0] * npars + list(cov_refs))
+        cjn = conditional_joint_normal_lambda(id_mu, sigma, npars)
         for i in range(len(estimated_covbase)):
             row = covbase[i, :]
-            id_mu = np.array([0] * npars + list(cov_refs))
-            mu_id_bar, sigma_id_bar = conditional_joint_normal(id_mu, sigma, row)
+            assert npars + len(row) == len(id_mu)
+            mu_id_bar, sigma_id_bar = cjn(row)
             if sample_no != 'estimates':
                 mu_id_bars[sample_no, i, :] = mu_id_bar
                 variability[sample_no, -1, :] = np.diag(sigma_id_bar)
