@@ -164,6 +164,9 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
 
     res_modelfit_input = input_model.modelfit_results
     res_modelfit_final = final_model.modelfit_results
+
+    # NOTE Compute name of final model
+    final_model_name = last_res.final_model_name
     if res_modelfit_input and res_modelfit_final:
         bic_input = calculate_bic(input_model, res_modelfit_input.ofv, type='iiv')
         bic_final = calculate_bic(final_model, res_modelfit_final.ofv, type='iiv')
@@ -173,22 +176,20 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
                 f'({bic_final}) than {input_model.name} ({bic_input}), selecting '
                 f'input model'
             )
-            last_res.final_model_name = input_model.name
+            final_model_name = input_model.name
 
     keys = list(range(1, len(list_of_algorithms) + 1))
 
-    res = IIVSearchResults(
+    return IIVSearchResults(
         summary_tool=_concat_summaries(sum_tools, keys),
         summary_models=_concat_summaries(sum_models, [0] + keys),  # To include input model
         summary_individuals=_concat_summaries(sum_inds, keys),
         summary_individuals_count=_concat_summaries(sum_inds_count, keys),
         summary_errors=_concat_summaries(sum_errs, keys),
-        final_model_name=last_res.final_model_name,
+        final_model_name=final_model_name,
         models=models,
         tool_database=last_res.tool_database,
     )
-
-    return res
 
 
 def _concat_summaries(summaries, keys):

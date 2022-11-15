@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import pharmpy.tools.iivsearch.algorithms
@@ -276,7 +276,7 @@ def task_results(rank_type, cutoff, bic_type, models):
 
     keys = list(range(1, len(step_mapping)))
 
-    return create_results(
+    res = create_results(
         IOVSearchResults,
         base_model,
         base_model,
@@ -285,8 +285,12 @@ def task_results(rank_type, cutoff, bic_type, models):
         cutoff,
         bic_type=bic_type,
         summary_models=pd.concat(sum_mod, keys=[0] + keys, names=['step']),
-        summary_tool=pd.concat(sum_tool, keys=keys, names=['step']),
     )
+
+    # NOTE This overwrites the default summary_tool field
+    res = replace(res, summary_tool=pd.concat(sum_tool, keys=keys, names=['step']))
+
+    return res
 
 
 @with_runtime_arguments_type_check
