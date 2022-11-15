@@ -62,9 +62,19 @@ class ResultsJSONDecoder(json.JSONDecoder):
                     series.name = name
                 return series
 
-        if module is None or module.startswith('altair.'):
+        if module is None:
             if cls == 'vega-lite':
-                return alt.Chart.from_dict(obj)
+                # NOTE Slow parsing for parsing PsN frem output and old format
+                return alt.Chart.from_dict(obj, validate=True)
+
+        if module is not None and module.startswith('altair.'):
+            # NOTE Fast parsing when reading own output
+            assert cls is not None
+            try:
+                class_ = getattr(alt, cls)
+            except AttributeError:
+                raise ValueError(f'Unknown class {cls} in {module}')
+            return class_.from_dict(obj, validate=False)
 
         if cls is not None and cls.endswith('Results'):
             if module is None:

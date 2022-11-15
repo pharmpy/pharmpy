@@ -175,7 +175,8 @@ class ResultsJSONEncoder(json.JSONEncoder):
                     category=FutureWarning,
                 )
                 d = obj.to_dict()
-            d['__class__'] = 'vega-lite'
+            d['__module__'] = obj.__class__.__module__
+            d['__class__'] = obj.__class__.__qualname__
             return d
         elif isinstance(obj, Model):
             # TODO consider using other representation, e.g. path
