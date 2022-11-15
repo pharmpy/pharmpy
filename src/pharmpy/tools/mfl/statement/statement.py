@@ -1,6 +1,6 @@
 from typing import Union
 
-from .definition import Definition
+from .definition import Let
 from .feature.feature import ModelFeature
 
-Statement = Union[Definition, ModelFeature]
+Statement = Union[Let, ModelFeature]

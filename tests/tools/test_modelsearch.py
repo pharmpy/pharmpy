@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     set_zero_order_elimination,
 )
 from pharmpy.tools.mfl.parse import parse
+from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelsearch.algorithms import (
     _add_iiv_to_func,
     _is_allowed,
@@ -21,12 +22,13 @@ from pharmpy.tools.modelsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
-MINIMAL_VALID_MFL_STRING = 'LET(x, 0)'
+MINIMAL_VALID_MFL_STRING = 'LAGTIME()'
 
 
 def test_exhaustive_algorithm():
     mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
-    wf, _ = exhaustive(mfl, iiv_strategy=0)
+    search_space = mfl_parse(mfl)
+    wf, _ = exhaustive(search_space, iiv_strategy='no_add')
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == 3
@@ -95,8 +97,9 @@ def test_exhaustive_algorithm():
         ),
     ],
 )
-def test_exhaustive_stepwise_algorithm(mfl, iiv_strategy, no_of_models):
-    wf, _ = exhaustive_stepwise(mfl, iiv_strategy=iiv_strategy)
+def test_exhaustive_stepwise_algorithm(mfl: str, iiv_strategy: str, no_of_models: int):
+    search_space = mfl_parse(mfl)
+    wf, _ = exhaustive_stepwise(search_space, iiv_strategy=iiv_strategy)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
@@ -121,8 +124,9 @@ def test_exhaustive_stepwise_algorithm(mfl, iiv_strategy, no_of_models):
         ),
     ],
 )
-def test_reduced_stepwise_algorithm(mfl, no_of_models):
-    wf, _ = reduced_stepwise(mfl, iiv_strategy=0)
+def test_reduced_stepwise_algorithm(mfl: str, no_of_models: int):
+    search_space = mfl_parse(mfl)
+    wf, _ = reduced_stepwise(search_space, iiv_strategy='no_add')
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
@@ -278,6 +282,12 @@ def test_validate_input_with_model(load_model_for_test, testdata):
         (
             None,
             dict(search_space=MINIMAL_INVALID_MFL_STRING),
+            ValueError,
+            'Invalid `search_space`',
+        ),
+        (
+            None,
+            dict(search_space='LET(x, 0)'),
             ValueError,
             'Invalid `search_space`',
         ),

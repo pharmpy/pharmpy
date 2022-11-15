@@ -1,13 +1,24 @@
 import warnings
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
 
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.model import Model, Results
 from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.data import remove_loq_data
 from pharmpy.modeling.eta_additions import get_occasion_levels
 from pharmpy.tools import retrieve_final_model, summarize_errors, write_results
+from pharmpy.tools.mfl.feature.covariate import spec as covariate_spec
+from pharmpy.tools.mfl.filter import covsearch_statement_types, modelsearch_statement_types
+from pharmpy.tools.mfl.parse import parse as mfl_parse
+from pharmpy.tools.mfl.statement.feature.absorption import Absorption
+from pharmpy.tools.mfl.statement.feature.covariate import Covariate, Ref
+from pharmpy.tools.mfl.statement.feature.elimination import Elimination
+from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
+from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
+from pharmpy.tools.mfl.statement.feature.symbols import Name, Wildcard
+from pharmpy.tools.mfl.statement.feature.transits import Transits
+from pharmpy.tools.mfl.statement.statement import Statement
+from pharmpy.tools.mfl.stringify import stringify as mfl_stringify
 from pharmpy.workflows import default_tool_database
 
 from ..run import run_tool
@@ -24,8 +35,6 @@ def run_amd(
     search_space=None,
     lloq=None,
     order=None,
-    categorical=None,
-    continuous=None,
     allometric_variable=None,
     occasion=None,
     path=None,
@@ -55,10 +64,6 @@ def run_amd(
         Lower limit of quantification. LOQ data will be removed.
     order : list
         Runorder of components
-    categorical : list
-        List of categorical covariates
-    continuous : list
-        List of continuous covariates
     allometric_variable: str or Symbol
         Variable to use for allometry
     occasion : str
@@ -111,23 +116,46 @@ def run_amd(
     if order is None:
         order = default_order
 
-    if search_space is None:
+    input_search_space_features = [] if search_space is None else mfl_parse(search_space)
+
+    modelsearch_features = tuple(
+        filter(
+            lambda statement: isinstance(statement, modelsearch_statement_types),
+            input_search_space_features,
+        )
+    )
+    if not modelsearch_features:
         if modeltype == 'pk_oral':
-            search_space = (
-                'ABSORPTION([ZO,SEQ-ZO-FO]);'
-                'ELIMINATION([MM,MIX-FO-MM]);'
-                'LAGTIME();'
-                'TRANSITS([1,3,10],*);'
-                'PERIPHERALS(1)'
+            modelsearch_features = (
+                Absorption((Name('ZO'), Name('SEQ-ZO-FO'))),
+                Elimination((Name('MM'), Name('MIX-FO-MM'))),
+                LagTime(),
+                Transits((1, 3, 10), Wildcard()),
+                Peripherals((1,)),
             )
         else:
-            search_space = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
+            modelsearch_features = (
+                Elimination((Name('MM'), Name('MIX-FO-MM'))),
+                Peripherals((1, 2)),
+            )
+
+    covsearch_features = tuple(
+        filter(
+            lambda statement: isinstance(statement, covsearch_statement_types),
+            input_search_space_features,
+        )
+    )
+    if not any(map(lambda statement: isinstance(statement, Covariate), covsearch_features)):
+        covsearch_features = (
+            Covariate(Ref('IIV'), Ref('CONTINUOUS'), ('exp',), '*'),
+            Covariate(Ref('IIV'), Ref('CATEGORICAL'), ('cat',), '*'),
+        ) + covsearch_features
 
     db = default_tool_database(toolname='amd', path=path, exist_ok=resume)
     run_subfuncs = {}
     for section in order:
         if section == 'structural':
-            func = _subfunc_modelsearch(search_space=search_space, path=db.path)
+            func = _subfunc_modelsearch(search_space=modelsearch_features, path=db.path)
             run_subfuncs['modelsearch'] = func
         elif section == 'iivsearch':
             func = _subfunc_iiv(path=db.path)
@@ -142,7 +170,7 @@ def run_amd(
             func = _subfunc_allometry(allometric_variable=allometric_variable, path=db.path)
             run_subfuncs['allometry'] = func
         elif section == 'covariates':
-            func = _subfunc_covariates(continuous=continuous, categorical=categorical, path=db.path)
+            func = _subfunc_covariates(search_space=covsearch_features, path=db.path)
             run_subfuncs['covsearch'] = func
         else:
             raise ValueError(
@@ -249,11 +277,11 @@ def noop_subfunc(_: Model):
     return None
 
 
-def _subfunc_modelsearch(search_space, path) -> SubFunc:
+def _subfunc_modelsearch(search_space: Tuple[Statement], path) -> SubFunc:
     def _run_modelsearch(model):
         res = run_tool(
             'modelsearch',
-            search_space=search_space,
+            search_space=mfl_stringify(search_space),
             algorithm='reduced_stepwise',
             model=model,
             path=path / 'modelsearch',
@@ -288,37 +316,21 @@ def _subfunc_ruvsearch(path) -> SubFunc:
     return _run_ruvsearch
 
 
-def _subfunc_covariates(continuous, categorical, path) -> SubFunc:
+def _subfunc_covariates(search_space: Tuple[Statement], path) -> SubFunc:
     def _run_covariates(model):
-        nonlocal continuous, categorical
-        if continuous is None:
-            continuous = []
-            for col in model.datainfo:
-                if col.type == 'covariate' and col.continuous is True:
-                    continuous.append(col.name)
-        con_covariates = [sympy.Symbol(item) for item in continuous]
+        effects = list(covariate_spec(model, search_space))
 
-        if categorical is None:
-            categorical = []
-            for col in model.datainfo:
-                if col.type == 'covariate' and col.continuous is False:
-                    categorical.append(col.name)
-        cat_covariates = [sympy.Symbol(item) for item in categorical]
-
-        if not continuous and not categorical:
+        if not effects:
             warnings.warn(
-                'Skipping COVsearch because continuous and/or categorical are None'
-                ' and could not be inferred through .datainfo via "covariate" type'
-                ' and "continuous" flag.'
+                'Skipping COVsearch because no effect candidates could be generated.'
+                ' Check search_space definition'
+                ' and .datainfo usage of "covariate" type and "continuous" flag.'
             )
             return None
 
-        covariates_search_space = (
-            f'LET(CONTINUOUS, {con_covariates}); LET(CATEGORICAL, {cat_covariates})\n'
-            f'COVARIATE(@IIV, @CONTINUOUS, exp, *)\n'
-            f'COVARIATE(@IIV, @CATEGORICAL, cat, *)'
+        res = run_tool(
+            'covsearch', mfl_stringify(search_space), model=model, path=path / 'covsearch'
         )
-        res = run_tool('covsearch', covariates_search_space, model=model, path=path / 'covsearch')
         assert isinstance(res, Results)
         return res
 

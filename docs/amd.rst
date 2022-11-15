@@ -25,8 +25,7 @@ To initiate AMD in Python/R:
     res = run_amd(input=dataset_path,
                   modeltype='pk_oral',
                   order=order,
-                  categorical=['SEX'],
-                  continuous=['AGE'],
+                  search_space='LET(CATEGORICAL, [SEX]); LET(CONTINUOUS, [AGE])'
                   allometric_variable='WGT',
                   occasion='VISI')
 
@@ -56,15 +55,11 @@ Arguments
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``mat_init``                                      | Initial estimate for the mean absorption time (only for oral models, default is 0.1)                            |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| :ref:`search_space<search_space_amd>`             | MFL for search space for structural model (default is 'pk_oral' search space)                                   |
+| :ref:`search_space<search_space_amd>`             | MFL for search space of structural and covariate models (default depends on ``modeltype``)                      |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``lloq``                                          | Lower limit of quantification. LOQ data will be removed.                                                        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | :ref:`order<order_amd>`                           | Run order of tools (default is ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']) |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``categorical``                                   | List of categorical covariates (default is a list of all categorical covariates found in datainfo)              |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``continuous``                                    | List of continuous covariates (default is a list of all continuous covariates found in datainfo)                |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``allometric_variable``                           | Variable to use for allometry (default is name of column described as body weight)                              |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -98,9 +93,9 @@ Search space
 ~~~~~~~~~~~~
 
 .. note::
-    Please see the description of :ref:`mfl` for how to define the search space for the structural model.
+    Please see the description of :ref:`mfl` for how to define the search space for the structural and covariate models.
 
-The search space has different defaults depending on which type of data has been inputted. For a PK oral model, the
+The search space has different defaults depending on which type of data has been inputed. For a PK oral model, the
 default is:
 
 .. code-block::
@@ -110,6 +105,8 @@ default is:
     LAGTIME()
     TRANSITS([1,3,10],*)
     PERIPHERALS(1)
+    COVARIATE(@IIV, @CONTINUOUS, *)
+    COVARIATE(@IIV, @CATEGORICAL, CAT)
 
 For a PK IV model, the default is:
 
@@ -117,6 +114,20 @@ For a PK IV model, the default is:
 
     ELIMINATION([MM,MIX-FO-MM])
     PERIPHERALS([1,2])
+    COVARIATE(@IIV, @CONTINUOUS, *)
+    COVARIATE(@IIV, @CATEGORICAL, CAT)
+
+Note that defaults are overriden selectively: structural model features
+defaults will be ignored as soon as one structural model feature is explicitly
+given, but the covariate model defaults will stay in place, and vice versa. For
+instance, if one defines ``search_space`` as ``LAGTIME()``, the effective
+search space will be as follows:
+
+.. code-block::
+
+    LAGTIME()
+    COVARIATE(@IIV, @CONTINUOUS, *)
+    COVARIATE(@IIV, @CATEGORICAL, CAT)
 
 .. _order_amd:
 
@@ -353,7 +364,7 @@ settings that the AMD tool uses for this subtool can be seen in the table below.
 +---------------+----------------------------------------------------------------------------------------------------+
 | Argument      | Setting                                                                                            |
 +===============+====================================================================================================+
-| effects       | Given in :ref:`AMD options<amd_args>` (``categorical`` and ``continuous``)                         |
+| effects       | Given in :ref:`AMD options<amd_args>` (``search_space``)                                           |
 +---------------+----------------------------------------------------------------------------------------------------+
 | p_forward     | ``0.05``                                                                                           |
 +---------------+----------------------------------------------------------------------------------------------------+

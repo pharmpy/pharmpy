@@ -21,16 +21,12 @@ def test_skip_most(tmp_path, testdata):
                 results=model.modelfit_results,
                 modeltype='pk_oral',
                 order=['iovsearch', 'allometry', 'covariates'],
-                continuous=[],
-                categorical=[],
                 occasion=None,
                 path=db.path,
                 resume=True,
             )
 
-        assert len(record) == 5
-
-        for warning, match in zip(
+        _validate_record(
             record,
             [
                 'IOVsearch will be skipped because occasion is None',
@@ -39,8 +35,39 @@ def test_skip_most(tmp_path, testdata):
                 'AMDResults.summary_models is None',
                 'AMDResults.summary_individuals_count is None',
             ],
-        ):
-            assert match in str(warning.message)
+        )
+
+        assert len(res.summary_tool) == 1
+        assert res.summary_models is None
+        assert res.summary_individuals_count is None
+        assert res.final_model.name == 'start'
+
+
+def test_skip_covsearch(tmp_path, testdata):
+    with chdir(tmp_path):
+        db, model = _load_model(testdata, with_datainfo=True)
+
+        with _record_warnings() as record:
+            res = run_amd(
+                model,
+                results=model.modelfit_results,
+                search_space='LET(CONTINUOUS, []); LET(CATEGORICAL, [])',
+                modeltype='pk_oral',
+                order=['covariates'],
+                path=db.path,
+                resume=True,
+            )
+
+        _validate_record(
+            record,
+            [
+                'NONMEM .mod and dataset .datainfo disagree on DROP',
+                'NONMEM .mod and dataset .datainfo disagree on DROP',
+                'Skipping COVsearch',
+                'AMDResults.summary_models is None',
+                'AMDResults.summary_individuals_count is None',
+            ],
+        )
 
         assert len(res.summary_tool) == 1
         assert res.summary_models is None
@@ -63,17 +90,14 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
                 resume=True,
             )
 
-        assert len(record) == 3
-
-        for warning, match in zip(
+        _validate_record(
             record,
             [
                 'Skipping IOVsearch because there are less than two occasion categories',
                 'AMDResults.summary_models is None',
                 'AMDResults.summary_individuals_count is None',
             ],
-        ):
-            assert match in str(warning.message)
+        )
 
         assert len(res.summary_tool) == 1
         assert res.summary_models is None
@@ -96,17 +120,14 @@ def test_skip_iovsearch_missing_occasion(tmp_path, testdata):
                 resume=True,
             )
 
-        assert len(record) == 3
-
-        for warning, match in zip(
+        _validate_record(
             record,
             [
                 'Skipping IOVsearch because dataset is missing column "XYZ"',
                 'AMDResults.summary_models is None',
                 'AMDResults.summary_individuals_count is None',
             ],
-        ):
-            assert match in str(warning.message)
+        )
 
         assert len(res.summary_tool) == 1
         assert res.summary_models is None
@@ -114,7 +135,7 @@ def test_skip_iovsearch_missing_occasion(tmp_path, testdata):
         assert res.final_model.name == 'start'
 
 
-def _load_model(testdata: Path):
+def _load_model(testdata: Path, with_datainfo: bool = False):
     models = testdata / 'nonmem' / 'models'
 
     # NOTE We need to make a local copy and read the model locally to avoid
@@ -122,6 +143,8 @@ def _load_model(testdata: Path):
     # to ignore.
 
     shutil.copy2(models / 'mox_simulated_normal.csv', '.')
+    if with_datainfo:
+        shutil.copy2(models / 'mox_simulated_normal.datainfo', '.')
     shutil.copy2(models / 'mox2.mod', '.')
     shutil.copy2(models / 'mox2.ext', '.')
     shutil.copy2(models / 'mox2.lst', '.')
@@ -166,3 +189,10 @@ def _record_warnings():
                 category=RuntimeWarning,
             )
             yield record
+
+
+def _validate_record(record, expected):
+    assert len(record) == len(expected)
+
+    for warning, match in zip(record, expected):
+        assert match in str(warning.message)

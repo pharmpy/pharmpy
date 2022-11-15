@@ -1,8 +1,11 @@
+from dataclasses import dataclass
+
 from lark.visitors import Interpreter
 
 from .feature import ModelFeature
 
 
+@dataclass(frozen=True)
 class LagTime(ModelFeature):
     pass
 
