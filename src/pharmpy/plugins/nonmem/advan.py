@@ -318,8 +318,11 @@ def _compartmental_model(
 
         ode = ExplicitODESystem(eqs, ics)
 
-        for i, (name, opts) in enumerate(rec_model.compartments(), 1):
-            if i == 1 or 'DEFOBSERVATION' in opts:
+        # NOTE Search for DEFOBSERVATION, default to first
+        it = iter(rec_model.compartments())
+        defobs = (next(it)[0], 1)
+        for i, (name, opts) in enumerate(it, start=2):
+            if 'DEFOBSERVATION' in opts:
                 defobs = (name, i)
 
         ass = _f_link_assignment(control_stream, sympy.Symbol(f'A_{defobs[0]}'), defobs[1])
