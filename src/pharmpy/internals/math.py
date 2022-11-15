@@ -194,11 +194,10 @@ def conditional_joint_normal_lambda(mu, sigma, n):
     S22_inv = np.linalg.inv(S22)
     S12_at_S22_inv = S12 @ S22_inv
 
-    mu_bar_almost = M1 - S12_at_S22_inv @ M2
     sigma_bar = S11 - S12_at_S22_inv @ S21
 
     def _cjn_eval(a):
-        mu_bar = mu_bar_almost + S12_at_S22_inv @ a
+        mu_bar = M1 + S12_at_S22_inv @ (a - M2)
         return mu_bar, sigma_bar
 
     return _cjn_eval
