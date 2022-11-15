@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-import copy
 from collections.abc import Sequence
 from typing import overload
 
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.immutable import Immutable
 
 
-class EstimationStep:
+class EstimationStep(Immutable):
     """Definition of one estimation operation"""
 
     """Supported estimation methods
     """
-    supported_methods = ['FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES']
+    supported_methods = frozenset(('FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'))
+    supported_solvers = frozenset(('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'))
 
     def __init__(
         self,
@@ -60,11 +61,12 @@ class EstimationStep:
             self._predictions = []
         else:
             self._predictions = predictions
-        supported = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI']
         if solver is not None:
             solver = solver.upper()
-        if not (solver is None or solver in supported):
-            raise ValueError(f"Unknown solver {solver}. Recognized solvers are {supported}.")
+        if not (solver is None or solver in EstimationStep.supported_solvers):
+            raise ValueError(
+                f"Unknown solver {solver}. Recognized solvers are {sorted(EstimationStep.supported_solvers)}."
+            )
         self._solver = solver
         self._solver_rtol = solver_rtol
         self._solver_atol = solver_atol
@@ -81,18 +83,16 @@ class EstimationStep:
 
     def derive(self, **kwargs):
         """Derive a new EstimationStep with new properties"""
-        new = copy.copy(self)
-        for key, value in kwargs.items():
-            if key in ['method', 'solver']:
-                value = value.upper()
-            new.__dict__['_' + key] = value
+        d = {key[1:]: value for key, value in self.__dict__.items()}
+        d.update(kwargs)
+        new = EstimationStep(**d)
         return new
 
     def _canonicalize_and_check_method(self, method):
         method = method.upper()
-        if method not in self.supported_methods:
+        if method not in EstimationStep.supported_methods:
             raise ValueError(
-                f'EstimationStep: {method} not recognized. Use any of {self.supported_methods}.'
+                f'EstimationStep: {method} not recognized. Use any of {sorted(EstimationStep.supported_methods)}.'
             )
         return method
 
@@ -234,7 +234,7 @@ class EstimationStep:
         )
 
 
-class EstimationSteps(Sequence):
+class EstimationSteps(Sequence, Immutable):
     """A sequence of estimation steps
 
     Parameters

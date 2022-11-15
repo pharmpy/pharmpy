@@ -1,5 +1,5 @@
 from collections import Counter, defaultdict
-from dataclasses import astuple, dataclass
+from dataclasses import astuple, dataclass, replace
 from itertools import count
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
@@ -436,12 +436,15 @@ def task_results(p_forward: float, p_backward: float, state: SearchState):
         COVSearchResults, base_model, base_model, res_models, 'lrt', (p_forward, p_backward)
     )
 
-    res.steps = _make_df_steps(best_model, candidates)
-    res.candidate_summary = candidate_summary_dataframe(res.steps)
-    res.ofv_summary = ofv_summary_dataframe(res.steps, final_included=True, iterations=True)
-
-    res.summary_tool = _modify_summary_tool(res.summary_tool, res.steps)
-    res.summary_models = _summarize_models(models, res.steps)
+    steps = _make_df_steps(best_model, candidates)
+    res = replace(
+        res,
+        steps=steps,
+        candidate_summary=candidate_summary_dataframe(steps),
+        ofv_summary=ofv_summary_dataframe(steps, final_included=True, iterations=True),
+        summary_tool=_modify_summary_tool(res.summary_tool, steps),
+        summary_models=_summarize_models(models, steps),
+    )
 
     return res
 

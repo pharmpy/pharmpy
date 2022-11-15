@@ -8,13 +8,11 @@ import re
 from operator import neg, pos, sub, truediv
 from typing import Iterator, Literal, Sequence, Set, Tuple
 
-from lark import Tree
-from lark.visitors import Interpreter
-
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.ds.ordered_set import OrderedSet
 from pharmpy.internals.expr.subs import subs
-from pharmpy.internals.parse import NoSuchRuleException
+from pharmpy.internals.parse import AttrTree, NoSuchRuleException
+from pharmpy.internals.parse.tree import Interpreter
 from pharmpy.internals.sequence.lcs import diff
 from pharmpy.model import Assignment, RandomVariables, Statement, Statements
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
@@ -207,20 +205,16 @@ def _order_terms(assignment: Assignment, rvs: RandomVariables, trans):
 
 
 class ExpressionInterpreter(Interpreter):
-    def visit_children(self, tree):
-        """Does not visit and discards tokens"""
-        return [self.visit(child) for child in tree.children if isinstance(child, Tree)]
-
     def instruction_unary(self, node):
-        f, x = self.visit_children(node)
+        f, x = self.visit_subtrees(node)
         return f(x)
 
     def instruction_infix(self, node):
-        a, op, b = self.visit_children(node)
+        a, op, b = self.visit_subtrees(node)
         return op(a, b)
 
     def real_expr(self, node):
-        t = self.visit_children(node)
+        t = self.visit_subtrees(node)
         return t[0]
 
     def neg_op(self, _):
@@ -245,7 +239,7 @@ class ExpressionInterpreter(Interpreter):
         return sympy.Pow
 
     def bool_expr(self, node):
-        t = self.visit_children(node)
+        t = self.visit_subtrees(node)
         return t[0]
 
     def land(self, _):
@@ -276,7 +270,7 @@ class ExpressionInterpreter(Interpreter):
         return sympy.Gt
 
     def img(self, node):
-        fn, *parameters = self.visit_children(node)
+        fn, *parameters = self.visit_subtrees(node)
         return fn(*parameters)
 
     def exp(self, _):
@@ -496,7 +490,7 @@ class CodeRecord(Record):
             last_node_index = nj
         # NOTE We copy any non-statement nodes that are remaining
         new_children.extend(self.root.children[last_node_index:])
-        self.root.children = new_children
+        self.root = AttrTree(self.root.rule, tuple(new_children))
         self._index = new_index
         self._statements = new
 
@@ -504,7 +498,7 @@ class CodeRecord(Record):
         statement_str = nmtran_assignment_string(s, defined_symbols, self.rvs, self.trans) + '\n'
         node_tree = CodeRecordParser(statement_str).root
         assert node_tree is not None
-        statement_nodes = node_tree.all('statement')
+        statement_nodes = list(node_tree.subtrees('statement'))
         return statement_nodes
 
     def from_odes(self, ode_system):
@@ -538,31 +532,34 @@ class CodeRecord(Record):
         return super(CodeRecord, self).__str__()
 
 
-def _parse_tree(tree):
+def _parse_tree(tree: AttrTree):
     s = []
     new_index = []
+    interpreter = ExpressionInterpreter()
     for child_index, child in enumerate(tree.children):
-        if child.rule != 'statement':
+        if not isinstance(child, AttrTree) or child.rule != 'statement':
             continue
         for node in child.children:
             # NOTE why does this iterate over the children?
             # Right now it looks like it could add the same statement
             # multiple times because there is no break on a match.
+            if not isinstance(node, AttrTree):
+                continue
             if node.rule == 'assignment':
-                name = str(node.variable).upper()
-                expr = ExpressionInterpreter().visit(node.real_expr)
+                name = str(node.subtree('variable')).upper()
+                expr = interpreter.visit(node.subtree('real_expr'))
                 ass = Assignment(sympy.Symbol(name), expr)
                 s.append(ass)
                 new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
             elif node.rule == 'logical_if':
-                logic_expr = ExpressionInterpreter().visit(node.bool_expr)
+                logic_expr = interpreter.visit(node.subtree('bool_expr'))
                 try:
-                    assignment = node.assignment
+                    assignment = node.subtree('assignment')
                 except NoSuchRuleException:
                     pass
                 else:
-                    name = str(assignment.variable).upper()
-                    expr = ExpressionInterpreter().visit(assignment.real_expr)
+                    name = str(assignment.subtree('variable')).upper()
+                    expr = interpreter.visit(assignment.subtree('real_expr'))
                     # Check if symbol was previously declared
                     else_val = (
                         sympy.Symbol(name)
@@ -574,43 +571,46 @@ def _parse_tree(tree):
                     s.append(ass)
                     new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
             elif node.rule == 'block_if':
-                interpreter = ExpressionInterpreter()
                 blocks = []  # [(logic, [(symb1, expr1), ...]), ...]
                 symbols = OrderedSet()
 
-                first_logic = interpreter.visit(node.block_if_start.bool_expr)
-                first_block = node.block_if_start
+                first_block = node.subtree('block_if_start')
+                first_logic = interpreter.visit(first_block.subtree('bool_expr'))
                 first_symb_exprs = []
-                for ifstat in first_block.all('statement'):
-                    for assign_node in ifstat.all('assignment'):
-                        name = str(assign_node.variable).upper()
-                        first_symb_exprs.append((name, interpreter.visit(assign_node.real_expr)))
+                for ifstat in first_block.subtrees('statement'):
+                    for assign_node in ifstat.subtrees('assignment'):
+                        name = str(assign_node.subtree('variable')).upper()
+                        first_symb_exprs.append(
+                            (name, interpreter.visit(assign_node.subtree('real_expr')))
+                        )
                         symbols.add(name)
                 blocks.append((first_logic, first_symb_exprs))
 
-                else_if_blocks = node.all('block_if_elseif')
-                for elseif in else_if_blocks:
-                    logic = interpreter.visit(elseif.bool_expr)
+                for elseif in node.subtrees('block_if_elseif'):
+                    logic = interpreter.visit(elseif.subtree('bool_expr'))
                     elseif_symb_exprs = []
-                    for elseifstat in elseif.all('statement'):
-                        for assign_node in elseifstat.all('assignment'):
-                            name = str(assign_node.variable).upper()
+                    for elseifstat in elseif.subtrees('statement'):
+                        for assign_node in elseifstat.subtrees('assignment'):
+                            name = str(assign_node.subtree('variable')).upper()
                             elseif_symb_exprs.append(
-                                (name, interpreter.visit(assign_node.real_expr))
+                                (name, interpreter.visit(assign_node.subtree('real_expr')))
                             )
                             symbols.add(name)
                     blocks.append((logic, elseif_symb_exprs))
 
                 else_block = node.find('block_if_else')
                 if else_block:
+                    assert isinstance(else_block, AttrTree)
                     else_symb_exprs = []
-                    for elsestat in else_block.all('statement'):
-                        for assign_node in elsestat.all('assignment'):
-                            name = str(assign_node.variable).upper()
-                            else_symb_exprs.append((name, interpreter.visit(assign_node.real_expr)))
+                    for elsestat in else_block.subtrees('statement'):
+                        for assign_node in elsestat.subtrees('assignment'):
+                            name = str(assign_node.subtree('variable')).upper()
+                            else_symb_exprs.append(
+                                (name, interpreter.visit(assign_node.subtree('real_expr')))
+                            )
                             symbols.add(name)
                     piecewise_logic = True
-                    if len(blocks[0][1]) == 0 and not else_if_blocks:
+                    if len(blocks) == 1 and len(blocks[0][1]) == 0:
                         # Special case for empty if
                         piecewise_logic = sympy.Not(blocks[0][0])
                     blocks.append((piecewise_logic, else_symb_exprs))

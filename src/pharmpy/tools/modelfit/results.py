@@ -1,11 +1,16 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Optional
+
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Results
 
 
+@dataclass(frozen=True)
 class AggregatedModelfitResults(Results):
-    def __init__(self, ofv=None, parameter_estimates=None):
-        self.ofv = ofv
-        self.parameter_estimates = parameter_estimates
+    ofv: Optional[float] = None
+    parameter_estimates: Optional[Any] = None
 
 
 def calculate_results(models):
@@ -19,5 +24,4 @@ def calculate_results(models):
         [model.modelfit_results.parameter_estimates for model in models], index=names
     )
 
-    res = AggregatedModelfitResults(ofv=ofv, parameter_estimates=params)
-    return res
+    return AggregatedModelfitResults(ofv=ofv, parameter_estimates=params)

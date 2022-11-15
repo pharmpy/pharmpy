@@ -12,8 +12,15 @@ from typing import Optional, Union
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Results
+from pharmpy.internals.immutable import Immutable
+from pharmpy.model import Model, Results
 from pharmpy.workflows import Log
+
+
+def mfr(model: Model) -> ModelfitResults:
+    res = model.modelfit_results
+    assert isinstance(res, ModelfitResults)
+    return res
 
 
 class ResultsJSONDecoder(json.JSONDecoder):
@@ -109,8 +116,8 @@ def read_results(path_or_str: Union[str, Path]):
         return json.load(readable, cls=ResultsJSONDecoder)
 
 
-@dataclass
-class ModelfitResults(Results):
+@dataclass(frozen=True)
+class ModelfitResults(Results, Immutable):
     """Base class for results from a modelfit operation
 
     Attributes

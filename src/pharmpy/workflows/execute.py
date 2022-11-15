@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from dataclasses import replace
 from typing import TypeVar
 
 from pharmpy.model import Model, Results
@@ -69,7 +72,7 @@ def execute_workflow(
 
     if isinstance(res, Results):
         if hasattr(res, 'tool_database'):
-            res.tool_database = database  # pyright: ignore [reportGeneralTypeIssues]
+            res = replace(res, tool_database=database)
         database.store_results(res)
         if hasattr(res, 'rst_path'):
             from pharmpy.modeling.reporting import create_report

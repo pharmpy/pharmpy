@@ -5,15 +5,18 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union, overload
+from typing import Optional
+from typing import Sequence as TypingSequence
+from typing import Tuple, Union, cast, overload
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.units import parse as parse_units
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
+from pharmpy.internals.immutable import Immutable
 
 
-class ColumnInfo:
+class ColumnInfo(Immutable):
     """Information about one data column
 
     Parameters
@@ -143,7 +146,7 @@ class ColumnInfo:
         datatype="float64",
         descriptor=None,
     ):
-        if scale in ['nominal', 'ordinal']:
+        if scale in ('nominal', 'ordinal'):
             if continuous is True:
                 raise ValueError("A nominal or ordinal column cannot be continuous")
             else:
@@ -385,7 +388,7 @@ class ColumnInfo:
         return ser.to_string(name=True)
 
 
-class DataInfo(Sequence):
+class DataInfo(Sequence, Immutable):
     """Metadata for the dataset
 
     Can be indexed to get ColumnInfo for the columns.
@@ -400,17 +403,19 @@ class DataInfo(Sequence):
         Character or regexp separator for dataset
     """
 
-    def __init__(self, columns=None, path=None, separator=',', force_absolute_path=True):
+    def __init__(
+        self,
+        columns: Optional[Union[TypingSequence[ColumnInfo], TypingSequence[str]]] = None,
+        path: Optional[Union[str, Path]] = None,
+        separator: str = ',',
+        force_absolute_path: bool = True,
+    ):
         if columns is None:
-            self._columns = ()
+            self._columns: Tuple[ColumnInfo, ...] = ()
         elif len(columns) > 0 and isinstance(columns[0], str):
-            cols = []
-            for name in columns:
-                colinf = ColumnInfo(name)
-                cols.append(colinf)
-            self._columns = tuple(cols)
+            self._columns = tuple(map(ColumnInfo, columns))
         else:
-            self._columns = tuple(columns)
+            self._columns = cast(Tuple[ColumnInfo, ...], tuple(columns))
         if path is not None:
             path = Path(path)
         assert not force_absolute_path or path is None or path.is_absolute()

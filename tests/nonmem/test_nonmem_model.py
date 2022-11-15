@@ -415,7 +415,7 @@ def test_statements_setter(pheno, buf_new, len_expected):
 def test_deterministic_theta_comments(pheno):
     no_option = 0
     for theta_record in pheno.internals.control_stream.get_records('THETA'):
-        no_option += len(theta_record.root.all('option'))
+        no_option += len(list(theta_record.root.subtrees('option')))
 
     assert no_option == 0
 

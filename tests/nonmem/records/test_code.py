@@ -420,7 +420,7 @@ def test_grammar_repeats(parser, buf):  # Tests that there are no repeats due to
     parent = next(tree_walk_gen)
 
     for child in tree_walk_gen:
-        assert str(parent.eval) != str(child.eval) or parent.rule != child.rule
+        assert parent != child
         parent = child
 
 
@@ -518,7 +518,9 @@ def test_statements_setter_remove(parser, buf_original, buf_new):
     rec_original.statements = rec_new.statements
 
     assert rec_original.statements == rec_new.statements
-    assert rec_original.root.all('statement') == rec_new.root.all('statement')
+    assert tuple(rec_original.root.subtrees('statement')) == tuple(
+        rec_new.root.subtrees('statement')
+    )
 
 
 @pytest.mark.usefixtures('parser')
@@ -561,7 +563,9 @@ def test_statements_setter_add(parser, buf_original, buf_new):
 
     rec_original.statements = rec_new.statements
     assert rec_original.statements == rec_new.statements
-    assert rec_original.root.all('statement') == rec_new.root.all('statement')
+    assert tuple(rec_original.root.subtrees('statement')) == tuple(
+        rec_new.root.subtrees('statement')
+    )
 
 
 @pytest.mark.usefixtures('parser')
@@ -580,7 +584,9 @@ def test_statements_setter_change(parser, buf_original, buf_new):
     rec_original.statements = rec_new.statements
 
     assert rec_original.statements == rec_new.statements
-    assert rec_original.root.all('statement') == rec_new.root.all('statement')
+    assert tuple(rec_original.root.subtrees('statement')) == tuple(
+        rec_new.root.subtrees('statement')
+    )
     assert str(rec_original) == buf_new
 
 

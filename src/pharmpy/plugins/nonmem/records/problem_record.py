@@ -8,7 +8,7 @@ _ws = {' ', '\x00', '\t'}
 class ProblemRecord(Record):
     @property
     def title(self):
-        return str(self.root.raw_title)
+        return str(self.root.subtree('raw_title'))
 
     @title.setter
     def title(self, new_title):
@@ -20,6 +20,12 @@ class ProblemRecord(Record):
         title_tree = AttrTree.create('raw_title', dict(ANYTHING=new_title))
 
         _, _, after = self.root.partition('raw_title')
-        before = [AttrToken('WS', ' ')]
 
-        self.root = AttrTree(self.root.data, before + [title_tree] + after)
+        self.root = AttrTree(
+            self.root.rule,
+            (
+                AttrToken('WS', ' '),
+                title_tree,
+            )
+            + after,
+        )

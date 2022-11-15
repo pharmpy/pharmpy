@@ -10,12 +10,14 @@ Inherit to *implement*, i.e. to define support for a specific model type.
 Definitions
 -----------
 """
+from __future__ import annotations
 
 import copy
 import warnings
 from io import IOBase
 from pathlib import Path
 
+from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.plugins.utils import detect_model
 
@@ -48,17 +50,46 @@ class ModelfitResultsError(ModelError):
 class Model:
     """The Pharmpy model class"""
 
-    def __init__(self):
-        self.parameters = Parameters([])
-        self.random_variables = RandomVariables.create([])
-        self.statements = Statements()
-        self.dependent_variable = sympy.Symbol('y')
-        self.observation_transformation = self.dependent_variable
-        self.modelfit_results = None
-        self.parent_model = None
-        self.initial_individual_estimates = None
-        self.value_type = 'PREDICTION'
-        self.description = ''
+    def __init__(
+        self,
+        name=None,
+        parameters=Parameters(()),
+        random_variables=RandomVariables.create(()),
+        statements=Statements(),
+        dataset=None,
+        datainfo=None,
+        dependent_variable=None,
+        estimation_steps=None,
+        modelfit_results=None,
+        parent_model=None,
+        initial_individual_estimates=None,
+        filename_extension=None,
+        value_type='PREDICTION',
+        description='',
+    ):
+        actual_dependent_variable = (
+            sympy.Symbol('y') if dependent_variable is None else dependent_variable
+        )
+        if name is not None:  # FIXME This conditional should not be necessary
+            self._name = name
+        if datainfo is not None:  # FIXME This conditional should not be necessary
+            self._datainfo = datainfo
+        if dataset is not None:  # FIXME This conditional should not be necessary
+            self._dataset = dataset
+        self._random_variables = random_variables
+        self._parameters = parameters
+        self._statements = statements
+        self._dependent_variable = actual_dependent_variable
+        self._observation_transformation = actual_dependent_variable
+        if estimation_steps is not None:  # FIXME This conditional should not be necessary
+            self._estimation_steps = estimation_steps
+        self._modelfit_results = modelfit_results
+        self._parent_model = parent_model
+        self._initial_individual_estimates = initial_individual_estimates
+        if filename_extension is not None:  # FIXME This conditional should not be necessary
+            self._filename_extension = filename_extension
+        self._value_type = value_type
+        self._description = description
 
     def __eq__(self, other):
         """Compare two models for equality
@@ -209,7 +240,7 @@ class Model:
         if inits and not self.random_variables.validate_parameters(inits):
             nearest = self.random_variables.nearest_valid_parameters(inits)
             if nearest != inits:
-                before, after = self._compare_before_after_params(inits, nearest)
+                before, after = compare_before_after_params(inits, nearest)
                 warnings.warn(
                     f"Adjusting initial estimates to create positive semidefinite "
                     f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
@@ -220,16 +251,6 @@ class Model:
                 raise ValueError("New parameter inits are not valid")
 
         self._parameters = value
-
-    @staticmethod
-    def _compare_before_after_params(old, new):
-        before = {}
-        after = {}
-        for key, value in old.items():
-            if new[key] != value:
-                before[key] = value
-                after[key] = new[key]
-        return before, after
 
     @property
     def random_variables(self):
@@ -365,26 +386,11 @@ class Model:
 
     def update_datainfo(self):
         """Update model.datainfo for a new dataset"""
-        colnames = self.dataset.columns
         try:
             curdi = self.datainfo
         except AttributeError:
             curdi = DataInfo()
-        newdi = []
-        for colname in colnames:
-            try:
-                col = curdi[colname]
-            except IndexError:
-                datatype = ColumnInfo.convert_pd_dtype_to_datatype(
-                    self.dataset.dtypes[colname].name
-                )
-                col = ColumnInfo(colname, datatype=datatype)
-            newdi.append(col)
-        newdi = curdi.derive(columns=newdi)
-        if curdi != newdi:
-            # Remove path if dataset has been updated
-            newdi = newdi.derive(path=None)
-        self.datainfo = newdi
+        self.datainfo = update_datainfo(curdi, self.dataset)
 
     def copy(self):
         """Create a deepcopy of the model object"""
@@ -426,8 +432,35 @@ class Model:
             raise ValueError("Unknown input type to Model constructor")
 
         model_module = detect_model(code)
-        model = model_module.Model(code, path, **kwargs)
+        model = model_module.parse_code(code, path, **kwargs)
         # Setup model database here
         # Read in model results here?
         # Set filename extension?
         return model
+
+
+def compare_before_after_params(old, new):
+    # FIXME Move this to the right module
+    before = {}
+    after = {}
+    for key, value in old.items():
+        if new[key] != value:
+            before[key] = value
+            after[key] = new[key]
+    return before, after
+
+
+def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame):
+    colnames = dataset.columns
+    columns = []
+    for colname in colnames:
+        try:
+            col = curdi[colname]
+        except IndexError:
+            datatype = ColumnInfo.convert_pd_dtype_to_datatype(dataset.dtypes[colname].name)
+            col = ColumnInfo(colname, datatype=datatype)
+        columns.append(col)
+    newdi = curdi.derive(columns=columns)
+
+    # NOTE Remove path if dataset has been updated
+    return curdi if newdi == curdi else newdi.derive(path=None)

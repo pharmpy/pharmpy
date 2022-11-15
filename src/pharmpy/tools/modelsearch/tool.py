@@ -1,14 +1,15 @@
+from dataclasses import dataclass
 from typing import Optional, Union
 
 import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
-from pharmpy.tools.common import create_results
+from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.workflows import Task, Workflow
 
 from ..mfl.parse import parse
@@ -101,18 +102,20 @@ def post_process(rank_type, cutoff, *models):
     if not input_model:
         raise ValueError('Error in workflow: No input model')
 
-    res = create_results(
-        ModelSearchResults, input_model, input_model, res_models, rank_type, cutoff
-    )
-
     summary_input = summarize_modelfit_results(input_model.modelfit_results)
     summary_candidates = summarize_modelfit_results(
         [model.modelfit_results for model in res_models]
     )
 
-    res.summary_models = pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step'])
-
-    return res
+    return create_results(
+        ModelSearchResults,
+        input_model,
+        input_model,
+        res_models,
+        rank_type,
+        cutoff,
+        summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step']),
+    )
 
 
 @with_runtime_arguments_type_check
@@ -159,23 +162,6 @@ def validate_input(
             )
 
 
-class ModelSearchResults(Results):
-    def __init__(
-        self,
-        summary_tool=None,
-        summary_models=None,
-        summary_individuals=None,
-        summary_individuals_count=None,
-        summary_errors=None,
-        final_model_name=None,
-        models=None,
-        tool_database=None,
-    ):
-        self.summary_tool = summary_tool
-        self.summary_models = summary_models
-        self.summary_individuals = summary_individuals
-        self.summary_individuals_count = summary_individuals_count
-        self.summary_errors = summary_errors
-        self.final_model_name = final_model_name
-        self.models = models
-        self.tool_database = tool_database
+@dataclass(frozen=True)
+class ModelSearchResults(ToolResults):
+    pass

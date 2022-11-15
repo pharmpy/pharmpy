@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 import warnings
-from dataclasses import dataclass
-from typing import List, Optional, Sequence, Set, Union
+from dataclasses import dataclass, replace
+from typing import List, Optional, Set, Union
 
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
 from pharmpy.modeling import add_pk_iiv, calculate_bic, copy_model, create_joint_distribution
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
-from pharmpy.tools.common import create_results
+from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, ToolDatabase, Workflow, call_workflow
+from pharmpy.workflows import Task, Workflow, call_workflow
 
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock'))
 IIV_ALGORITHMS = frozenset(('brute_force',) + tuple(dir(algorithms)))
@@ -232,19 +232,19 @@ def post_process(state, rank_type, cutoff, input_model, base_model_name, *models
         IIVSearchResults, input_model, base_model, res_models, rank_type, cutoff, bic_type='iiv'
     )
 
-    res.summary_tool['algorithm'] = state.algorithm
+    summary_tool = res.summary_tool
+    assert summary_tool is not None
+    summary_tool['algorithm'] = state.algorithm
     # If base model is model from a previous step or is the input model to the full tool,
     # it should be excluded in this step
     if base_model_name in state.model_names_so_far or base_model_name == state.input_model_name:
-        res.summary_models = summarize_modelfit_results(
+        summary_models = summarize_modelfit_results(
             [model.modelfit_results for model in res_models]
         )
     else:
-        res.summary_models = summarize_modelfit_results(
-            [model.modelfit_results for model in models]
-        )
+        summary_models = summarize_modelfit_results([model.modelfit_results for model in models])
 
-    return res
+    return replace(res, summary_models=summary_models)
 
 
 @with_runtime_arguments_type_check
@@ -271,13 +271,6 @@ def validate_input(
         )
 
 
-@dataclass
-class IIVSearchResults(Results):
-    summary_tool: pd.DataFrame
-    summary_individuals: pd.DataFrame
-    summary_individuals_count: pd.DataFrame
-    summary_errors: pd.DataFrame
-    final_model_name: Optional[str] = None
-    models: Sequence[Model] = ()
-    summary_models: Optional[pd.DataFrame] = None  # NOTE Not present in Results
-    tool_database: Optional[ToolDatabase] = None  # NOTE Not present in Results
+@dataclass(frozen=True)
+class IIVSearchResults(ToolResults):
+    pass

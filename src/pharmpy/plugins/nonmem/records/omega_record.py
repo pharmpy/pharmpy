@@ -1,13 +1,14 @@
 import math
 import re
 import warnings
-from typing import List, Literal, Optional, Tuple, Union
+from typing import List, Literal, Optional, Tuple, Union, cast
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
 from pharmpy.internals.math import flattened_to_symmetric, triangular_root
 from pharmpy.internals.parse import AttrToken, AttrTree
 from pharmpy.internals.parse.generic import (
+    eval_token,
     insert_after,
     insert_before_or_at_end,
     remove_token_and_space,
@@ -42,12 +43,12 @@ class OmegaRecord(Record):
         if seen_labels is None:
             seen_labels = set()
         if not (block or bare_block):
-            for node in self.root.all('diag_item'):
-                init = node.init.NUMERIC
+            for node in self.root.subtrees('diag_item'):
+                init = cast(float, eval_token(node.subtree('init').leaf('NUMERIC')))
                 fixed = bool(node.find('FIX'))
                 sd = bool(node.find('SD'))
                 var = bool(node.find('VAR'))
-                n = node.n.INT if node.find('n') else 1
+                n = cast(int, eval_token(node.subtree('n').leaf('INT'))) if node.find('n') else 1
                 if sd and var:
                     name = '(anonymous)' if self.name is None else self.name.upper()
                     raise ModelSyntaxError(
@@ -80,12 +81,12 @@ class OmegaRecord(Record):
             if bare_block:
                 size = previous_size
             else:
-                size = self.root.block.size.INT
+                size = cast(int, eval_token(self.root.subtree('block').subtree('size').leaf('INT')))
             fix, sd, corr, cholesky = self._block_flags()
             labels, comments = [], []
-            for node in self.root.all('omega'):
-                init = node.init.NUMERIC
-                n = node.n.INT if node.find('n') else 1
+            for node in self.root.subtrees('omega'):
+                init = cast(float, eval_token(node.subtree('init').leaf('NUMERIC')))
+                n = cast(int, eval_token(node.subtree('n').leaf('INT'))) if node.find('n') else 1
                 inits += [init] * n
                 name = self._find_label(node, seen_labels)
                 comment = self._get_name(node)
@@ -177,7 +178,7 @@ class OmegaRecord(Record):
         cov = bool(self.root.find('COV'))
         corr = bool(self.root.find('CORR'))
         cholesky = bool(self.root.find('CHOLESKY'))
-        for node in self.root.all('omega'):
+        for node in self.root.subtrees('omega'):
             if node.find('FIX'):
                 if fix:
                     raise ModelSyntaxError('Cannot specify option FIX more than once')
@@ -242,12 +243,16 @@ class OmegaRecord(Record):
             i = first_omega
             new_nodes = []
             for node in self.root.children:
-                if node.rule != 'diag_item':
+                if not isinstance(node, AttrTree) or node.rule != 'diag_item':
                     new_nodes.append(node)
                 else:
                     sd = bool(node.find('SD'))
                     fix = bool(node.find('FIX'))
-                    n = node.n.INT if node.find('n') else 1
+                    n = (
+                        cast(int, eval_token(node.subtree('n').leaf('INT')))
+                        if node.find('n')
+                        else 1
+                    )
                     new_inits = []
                     new_fix = []
                     for j in range(i, i + n):
@@ -259,48 +264,52 @@ class OmegaRecord(Record):
                         value = int(value) if value.is_integer() else value
                         new_inits.append(value)
                         new_fix.append(parameters[name].fix)
+                    new_init = new_inits[0]
                     if n == 1 or (
-                        new_inits.count(new_inits[0]) == len(new_inits)
+                        new_inits.count(new_init) == len(new_inits)
                         and new_fix.count(new_fix[0]) == len(new_fix)
                     ):  # All equal?
-                        if float(str(node.init)) != new_inits[0]:
-                            node.init.tokens[0].value = str(new_inits[0])
+                        init = node.subtree('init')
+                        if eval_token(init.leaf('NUMERIC')) != new_init:
+                            new_init = int(new_init) if float(new_init).is_integer() else new_init
+                            init = init.replace_first(AttrToken('NUMERIC', str(new_init)))
+                        node = node.replace_first(init)
                         if new_fix[0] != fix:
                             if new_fix[0]:
-                                insert_before_or_at_end(
+                                node = insert_before_or_at_end(
                                     node, 'RPAR', [AttrToken('WS', ' '), AttrToken('FIX', 'FIX')]
                                 )
                             else:
-                                remove_token_and_space(node, 'FIX')
+                                node = remove_token_and_space(node, 'FIX')
                         new_nodes.append(node)
                     else:
                         # Need to split xn
-                        new_children = []
-                        for child in node.children:
-                            if child.rule != 'n':
-                                new_children.append(child)
-                        node.children = new_children
-                        for j, init in enumerate(new_inits):
-                            new_node = AttrTree.transform(node)
-                            if float(str(new_node.init)) != init:
-                                new_node.init.tokens[0].value = str(init)
+                        node = node.remove('n')
+                        for j, new_init in enumerate(new_inits):
+                            init = node.subtree('init')
+                            if eval_token(init.leaf('NUMERIC')) != new_init:
+                                new_init = (
+                                    int(new_init) if float(new_init).is_integer() else new_init
+                                )
+                                init = init.replace_first(AttrToken('NUMERIC', str(new_init)))
+                            node = node.replace_first(init)
                             if new_fix[j] != fix:
-                                insert_before_or_at_end(
+                                node = insert_before_or_at_end(
                                     node, 'RPAR', [AttrToken('WS', ' '), AttrToken('FIX', 'FIX')]
                                 )
                             else:
-                                remove_token_and_space(node, 'FIX')
-                            new_nodes.append(new_node)
+                                node = remove_token_and_space(node, 'FIX')
+                            new_nodes.append(node)
                             if j != len(new_inits) - 1:  # Not the last
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
                     i += n
-            self.root.children = new_nodes
+            self.root = AttrTree(self.root.rule, tuple(new_nodes))
             next_omega = i
         else:
             same = bool(self.root.find('same'))
             if same:
                 return first_omega + previous_size, previous_size
-            size = self.root.block.size.INT
+            size = cast(int, eval_token(self.root.subtree('block').subtree('size').leaf('INT')))
             fix, sd, corr, cholesky = self._block_flags()
             inits = []
             new_fix = []
@@ -330,39 +339,49 @@ class OmegaRecord(Record):
             i = 0
             new_nodes = []
             for node in self.root.children:
-                if node.rule != 'omega':
+                if not isinstance(node, AttrTree) or node.rule != 'omega':
                     new_nodes.append(node)
                 else:
-                    n = node.n.INT if node.find('n') else 1
+                    n = (
+                        cast(int, eval_token(node.subtree('n').leaf('INT')))
+                        if node.find('n')
+                        else 1
+                    )
                     if array[i : i + n].count(array[i]) == n:  # All equal?
-                        if float(str(node.init)) != array[i]:
-                            value = int(array[i]) if float(array[i]).is_integer() else array[i]
-                            node.init.tokens[0].value = str(value)
+                        init = node.subtree('init')
+                        new_init = array[i]
+                        if eval_token(init.leaf('NUMERIC')) != new_init:
+                            new_init = int(new_init) if float(new_init).is_integer() else new_init
+                            init = init.replace_first(AttrToken('NUMERIC', str(new_init)))
+                        node = node.replace_first(init)
                         new_nodes.append(node)
                     else:
-                        # Need to split xn
+                        # NOTE Split xn
                         new_children = []
                         for child in node.children:
-                            if child.rule not in ['n', 'LPAR', 'RPAR']:
+                            if child.rule not in ('n', 'LPAR', 'RPAR'):
                                 new_children.append(child)
-                        node.children = new_children
-                        for j, init in enumerate(array[i : i + n]):
-                            new_node = AttrTree.transform(node)
-                            if float(str(new_node.init)) != init:
-                                init = int(init) if float(init).is_integer() else init
-                                new_node.init.tokens[0].value = str(init)
-                            new_nodes.append(new_node)
-                            if j != n - 1:  # Not the last
+                        node = AttrTree(node.rule, tuple(new_children))
+                        for j, new_init in enumerate(array[i : i + n]):
+                            init = node.subtree('init')
+                            if eval_token(init.leaf('NUMERIC')) != new_init:
+                                new_init = (
+                                    int(new_init) if float(new_init).is_integer() else new_init
+                                )
+                                init = init.replace_first(AttrToken('NUMERIC', str(new_init)))
+                            node = node.replace_first(init)
+                            new_nodes.append(node)
+                            if j != n - 1:  # NOTE Not the last
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
                     i += n
-            self.root.children = new_nodes
+            self.root = AttrTree(self.root.rule, tuple(new_nodes))
             if new_fix[0] != fix:
                 if new_fix[0]:
-                    insert_after(
+                    self.root = insert_after(
                         self.root, 'block', [AttrToken('WS', ' '), AttrToken('FIX', 'FIX')]
                     )
                 else:
-                    remove_token_and_space(self.root, 'FIX', recursive=True)
+                    self.root = remove_token_and_space(self.root, 'FIX', recursive=True)
             next_omega = first_omega + size
         return next_omega, size
 
@@ -416,8 +435,8 @@ class OmegaRecord(Record):
             dists = []
             etas = []
             i = start_omega
-            numetas = len(self.root.all('diag_item'))
-            for _ in self.root.all('diag_item'):
+            numetas = len(list(self.root.subtrees('diag_item')))
+            for _ in range(numetas):
                 omega_name = rev_map[(i, i)]
                 name = self._rv_name(i)
                 dist = NormalDistribution.create(name, level, 0, sympy.Symbol(omega_name))
@@ -430,7 +449,9 @@ class OmegaRecord(Record):
                 assert previous_cov is not None
                 numetas = previous_cov.rows
             else:
-                numetas = self.root.block.size.INT
+                numetas = cast(
+                    int, eval_token(self.root.subtree('block').subtree('size').leaf('INT'))
+                )
             params, _, _ = self.parameters(start_omega, getattr(previous_cov, 'rows', None))
             all_zero_fix = (
                 all(param.init == 0 and param.fix for param in params)
@@ -507,15 +528,21 @@ class OmegaRecord(Record):
                     i += 1
                 else:
                     keep.append(node)
-            self.root.children = keep
+            self.root = AttrTree(self.root.rule, tuple(keep))
         elif same and not bare_block:
-            self.root.block.size.INT = len(self) - len(indices)
+            self.root = self.root.replace_first(
+                (block := self.root.subtree('block')).replace_first(
+                    block.subtree('size').replace_first(
+                        AttrToken('INT', str(len(self) - len(indices)))
+                    )
+                )
+            )
         elif block:
             fix, sd, corr, cholesky = self._block_flags()
             inits = []
-            for node in self.root.all('omega'):
-                init = node.init.NUMERIC
-                n = node.n.INT if node.find('n') else 1
+            for node in self.root.subtrees('omega'):
+                init = cast(float, eval_token(node.subtree('init').leaf('NUMERIC')))
+                n = cast(int, eval_token(node.subtree('n').leaf('INT'))) if node.find('n') else 1
                 inits += [init] * n
             A = flattened_to_symmetric(inits)
             A = np.delete(A, list(indices), axis=0)

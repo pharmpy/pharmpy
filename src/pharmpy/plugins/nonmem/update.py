@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, List, Mapping, Optional
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy, sympy_printing
+from pharmpy.internals.parse import AttrTree
 from pharmpy.internals.sequence.lcs import diff
 from pharmpy.model import (
     Assignment,
@@ -472,7 +473,7 @@ def to_des(model: Model, new: ODESystem):
     else:
         subs.append_option('ADVAN13')
     if not subs.has_option('TOL'):
-        subs.append_option('TOL', 9)
+        subs.append_option('TOL', '9')
     des = model.internals.control_stream.insert_record('$DES\nDUMMY=0\n')
     assert isinstance(des, CodeRecord)
     des.from_odes(new)
@@ -1376,7 +1377,7 @@ def update_input(model: Model):
                 keep.append(last_child)
             break
 
-    input_records[0].root.children = keep
+    input_records[0].root = AttrTree(input_records[0].root.rule, tuple(keep))
 
     last_input_record = input_records[-1]
     for ci in model.datainfo[len(colnames) :]:
@@ -1396,6 +1397,7 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
 
     estimates = model.initial_individual_estimates
     if estimates is not model.internals._old_initial_individual_estimates:
+        assert estimates is not None
         rv_names = {rv for rv in model.random_variables.names if rv.startswith('ETA')}
         columns = set(estimates.columns)
         if columns < rv_names:
@@ -1434,7 +1436,7 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
         try:
             first_est_record.option_pairs['MCETA']
         except KeyError:
-            first_est_record.set_option('MCETA', 1)
+            first_est_record.set_option('MCETA', '1')
 
 
 def _sort_eta_columns(df: pd.DataFrame):

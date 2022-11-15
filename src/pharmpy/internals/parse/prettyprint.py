@@ -4,9 +4,7 @@ from __future__ import annotations
 from functools import partial
 from typing import Literal, Union
 
-from lark import Tree
-from lark.lexer import Token
-
+from .tree import Leaf, Tree
 from .treeprint import Node
 
 MAXLEN = 60
@@ -24,7 +22,7 @@ def _preview(content: str):
 
 
 def _formatter(content: Union[bool, Literal['full']], ast_node):
-    """Formats AST node (Tree and Token) for treeprint"""
+    """Formats AST node (Tree and Leaf) for treeprint"""
     if content:
         if content == 'full':
             lines = [ast_node.rule] + str(ast_node).splitlines(True)
@@ -40,11 +38,11 @@ def _format_tree(content: Union[bool, Literal['full']], ast_tree: Tree):
     return _formatter(content, ast_tree)
 
 
-def _format_token(content: Union[bool, Literal['full']], ast_token: Token):
+def _format_token(content: Union[bool, Literal['full']], ast_token: Leaf):
     return _formatter(content, ast_token)
 
 
-def transform(ast_tree_or_token: Union[Tree, Token], content: Union[bool, Literal['full']] = True):
+def transform(ast_tree_or_token: Union[Tree, Leaf], content: Union[bool, Literal['full']] = True):
     """
     Traverses tree and generates :class:`treeprint.Node`, which can format a
     multiline (command) tree-styled string.
@@ -56,7 +54,7 @@ def transform(ast_tree_or_token: Union[Tree, Token], content: Union[bool, Litera
         Multiline string, ready for the printing press.
     """
 
-    if isinstance(ast_tree_or_token, Token):
+    if isinstance(ast_tree_or_token, Leaf):
         formatter = partial(_format_token, content)
         return Node(ast_tree_or_token, cls_str=formatter, children=())
     elif isinstance(ast_tree_or_token, Tree):

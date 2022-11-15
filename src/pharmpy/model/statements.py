@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import copy
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence
-from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, overload
+from typing import Iterable, List, Mapping, Optional, Set, Tuple, Union, overload
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.deps import networkx as nx
@@ -13,9 +12,10 @@ from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
 from pharmpy.internals.expr.ode import canonical_ode_rhs
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
+from pharmpy.internals.immutable import Immutable, frozenmapping
 
 
-class Statement(ABC):
+class Statement(Immutable):
     """Abstract base class for all types of statements"""
 
     def __add__(self, other):
@@ -248,17 +248,17 @@ class ExplicitODESystem(ODESystem):
     ⎩A_CENTRAL(0) = 0
     """
 
-    def __init__(self, odes: List[sympy.Eq], ics: Dict[sympy.Expr, sympy.Expr]):
+    def __init__(self, odes: Tuple[sympy.Eq, ...], ics: Mapping[sympy.Expr, sympy.Expr]):
         self._odes = odes
-        self._ics = ics
+        self._ics = frozenmapping(ics)
 
     @property
-    def odes(self):
+    def odes(self) -> Tuple[sympy.Eq, ...]:
         """List of ordinary differential equations"""
         return self._odes
 
     @property
-    def ics(self):
+    def ics(self) -> Mapping[sympy.Expr, sympy.Expr]:
         """Initial conditions"""
         return self._ics
 
@@ -315,7 +315,7 @@ class ExplicitODESystem(ODESystem):
             for key, value in substitutions.items()
         }
         d.update(substitutions)
-        odes = [subs(ode, d) for ode in self.odes]
+        odes = tuple(subs(ode, d) for ode in self.odes)
         ics = {subs(key, d): subs(value, d) for key, value in self.ics.items()}
         return ExplicitODESystem(odes, ics)
 
@@ -379,10 +379,6 @@ class ExplicitODESystem(ODESystem):
             ics_str = sympy.pretty(sympy.Eq(key, value))
             a += ics_str.split('\n')
         return _bracket(a)
-
-    def __deepcopy__(self, memo):
-        newone = type(self)(copy.copy(self.odes), copy.copy(self.ics))
-        return newone
 
     def __eq__(self, other):
         return (
@@ -643,7 +639,7 @@ class CompartmentalSystem(ODESystem):
     """
 
     def __init__(self, builder):
-        self._g = builder._g.copy()
+        self._g = nx.freeze(builder._g.copy())
 
     @property
     def free_symbols(self):
@@ -1239,6 +1235,8 @@ class CompartmentalSystem(ODESystem):
         inputs = self.zero_order_inputs
         a = self.compartmental_matrix @ amount_funcs + inputs
         eqs = [sympy.Eq(lhs, canonical_ode_rhs(rhs)) for lhs, rhs in zip(derivatives, a)]
+        if skip_output:
+            eqs = eqs[:-1]
         ics = {}
         output = self.output_compartment
         for node in self._g.nodes:
@@ -1252,9 +1250,7 @@ class CompartmentalSystem(ODESystem):
                 ics[sympy.Function(node.amount.name)(time)] = node.dose.amount
             else:
                 ics[sympy.Function(node.amount.name)(0)] = sympy.Integer(0)
-        if skip_output:
-            eqs = eqs[:-1]
-        return ExplicitODESystem(eqs, ics)
+        return ExplicitODESystem(tuple(eqs), ics)
 
     def __len__(self):
         """The number of compartments including output"""

@@ -1,6 +1,6 @@
 from .config import NONMEMConfiguration, conf
 from .detect import detect_model
-from .model import Model, convert_model
+from .model import Model, convert_model, parse_code
 from .results import parse_modelfit_results
 
 r"""
@@ -28,6 +28,7 @@ r"""
 """
 
 __all__ = (
+    'parse_code',
     'detect_model',
     'convert_model',
     'parse_modelfit_results',

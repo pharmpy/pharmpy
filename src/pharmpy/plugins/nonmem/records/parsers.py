@@ -2,7 +2,7 @@ from pathlib import Path
 
 from lark import Lark, Tree, Visitor
 
-from pharmpy.internals.parse import GenericParser, with_ignored_tokens
+from pharmpy.internals.parse import GenericParser, InsertMissing, with_ignored_tokens
 
 grammar_root = Path(__file__).resolve().parent / 'grammars'
 
@@ -24,7 +24,7 @@ class AbbreviatedRecordParser(RecordParser):
     grammar_options = dict(
         propagate_positions=True,
     )
-    post_process = [with_ignored_tokens]
+    post_process = (with_ignored_tokens,)
 
 
 @install_grammar
@@ -35,10 +35,14 @@ class SimulationRecordParser(RecordParser):
 @install_grammar
 class ProblemRecordParser(RecordParser):
     grammar_filename = 'problem_record.lark'
-    non_empty = [
-        {'root': (0, 'raw_title')},
-        {'raw_title': (0, 'REST_OF_LINE')},
-    ]
+    post_process = (
+        InsertMissing(
+            (
+                {'root': ((0, 'raw_title'),)},
+                {'raw_title': ((0, 'REST_OF_LINE'),)},
+            )
+        ),
+    )
 
 
 class InitOrLow(Visitor):
@@ -58,10 +62,11 @@ class ThetaRecordParser(RecordParser):
     grammar_options = dict(
         propagate_positions=True,
     )
-    non_empty = [
-        {'comment': (1, 'COMMENT')},
-    ]
-    post_process = [InitOrLow(), with_ignored_tokens]
+    post_process = (
+        InsertMissing(({'comment': ((1, 'COMMENT'),)},)),
+        InitOrLow(),
+        with_ignored_tokens,
+    )
 
 
 @install_grammar
@@ -70,10 +75,7 @@ class OmegaRecordParser(RecordParser):
     grammar_options = dict(
         propagate_positions=True,
     )
-    non_empty = [
-        {'comment': (1, 'COMMENT')},
-    ]
-    post_process = [with_ignored_tokens]
+    post_process = (InsertMissing(({'comment': ((1, 'COMMENT'),)},)), with_ignored_tokens)
 
 
 @install_grammar
@@ -82,7 +84,7 @@ class OptionRecordParser(RecordParser):
     grammar_options = dict(
         propagate_positions=True,
     )
-    post_process = [with_ignored_tokens]
+    post_process = (with_ignored_tokens,)
 
 
 @install_grammar
@@ -91,7 +93,7 @@ class DataRecordParser(RecordParser):
     grammar_options = dict(
         propagate_positions=True,
     )
-    post_process = [with_ignored_tokens]
+    post_process = (with_ignored_tokens,)
 
 
 @install_grammar
@@ -100,4 +102,4 @@ class CodeRecordParser(RecordParser):
     grammar_options = dict(
         propagate_positions=True,
     )
-    post_process = [with_ignored_tokens]
+    post_process = (with_ignored_tokens,)

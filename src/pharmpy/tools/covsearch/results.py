@@ -1,33 +1,14 @@
-from typing import Any, Union
+from __future__ import annotations
 
-from pharmpy.model import Results
+from dataclasses import dataclass
+from typing import Optional
 
-DataFrame = Any  # NOTE should be pd.DataFrame but we wan lazy loading
+from pharmpy.deps import pandas as pd
+from pharmpy.tools.common import ToolResults
 
 
-class COVSearchResults(Results):
-    def __init__(
-        self,
-        summary_tool=None,
-        summary_models=None,
-        summary_individuals=None,
-        summary_individuals_count=None,
-        summary_errors=None,
-        final_model_name=None,
-        models=None,
-        steps: Union[None, DataFrame] = None,
-        ofv_summary: Union[None, DataFrame] = None,
-        candidate_summary: Union[None, DataFrame] = None,
-        tool_database=None,
-    ):
-        self.summary_tool = summary_tool
-        self.summary_models = summary_models
-        self.summary_individuals = summary_individuals
-        self.summary_individuals_count = summary_individuals_count
-        self.summary_errors = summary_errors
-        self.final_model_name = final_model_name
-        self.models = models
-        self.steps = steps
-        self.candidate_summary = candidate_summary
-        self.ofv_summary = ofv_summary
-        self.tool_database = tool_database
+@dataclass(frozen=True)
+class COVSearchResults(ToolResults):
+    steps: Optional[pd.DataFrame] = None
+    ofv_summary: Optional[pd.DataFrame] = None
+    candidate_summary: Optional[pd.DataFrame] = None

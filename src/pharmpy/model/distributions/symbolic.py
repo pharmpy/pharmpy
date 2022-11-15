@@ -10,13 +10,14 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
+from pharmpy.internals.immutable import Immutable
 
 from .numeric import MultivariateNormalDistribution as NumericMultivariateNormalDistribution
 from .numeric import NormalDistribution as NumericNormalDistribution
 from .numeric import NumericDistribution
 
 
-class Distribution(Sized, Hashable):
+class Distribution(Sized, Hashable, Immutable):
     @abstractmethod
     def derive(self, level: Optional[str] = None, **kwargs):
         pass

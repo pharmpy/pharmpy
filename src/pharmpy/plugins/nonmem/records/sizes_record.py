@@ -17,7 +17,7 @@ class SizesRecord(OptionRecord):
         if value < 101:
             self.remove_option('LTH')
         else:
-            self.set_option('LTH', value)
+            self.set_option('LTH', str(value))
 
     @property
     def PC(self):
@@ -33,6 +33,6 @@ class SizesRecord(OptionRecord):
                 f'compartments.'
             )
         if value > 30:
-            self.set_option('PC', value)
+            self.set_option('PC', str(value))
         else:
             self.remove_option('PC')

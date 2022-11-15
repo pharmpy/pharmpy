@@ -443,20 +443,18 @@ def calculate_pk_parameters_statistics(
     # Any abs + 1comp + FO elimination
     if not peripherals and odes.t not in elimination_rate.free_symbols:
         elimination_system = statements.ode_system
-        # keep central and output
         for name in elimination_system.compartment_names:
-            if name not in [central.name, output.name]:
+            if name not in (central.name, output.name):  # NOTE keep central and output
                 cb = CompartmentalSystemBuilder(elimination_system)
                 cb.remove_compartment(elimination_system.find_compartment(name))
                 elimination_system = CompartmentalSystem(cb)
                 exodes = elimination_system.to_explicit_system(skip_output=True)
-                ode_list, ics = exodes.odes, exodes.ics
+                eq = exodes.odes[0]
+                ic = dict(exodes.ics).popitem()[0]
                 A0 = sympy.Symbol('A0')
-                ic = ics.popitem()
-                ics = {ic[0]: A0}
-                sols = sympy.dsolve(ode_list[0], ics=ics)
-                eq = sympy.Eq(sympy.Rational(1, 2) * A0, sols.rhs)
-                thalf_elim = sympy.solve(eq, odes.t)[0]
+                sols = sympy.dsolve(eq, ics={ic: A0})
+                eq_half = sympy.Eq(sympy.Rational(1, 2) * A0, sols.rhs)
+                thalf_elim = sympy.solve(eq_half, odes.t)[0]
                 expressions.append(sympy.Eq(sympy.Symbol('t_half_elim'), thalf_elim))
 
     # Bolus dose + 2comp + FO elimination

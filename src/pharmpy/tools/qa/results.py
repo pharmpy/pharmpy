@@ -1,4 +1,6 @@
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Optional
 
 import yaml
 
@@ -10,32 +12,19 @@ from pharmpy.model import Model, Results
 from pharmpy.results import read_results
 
 
+@dataclass(frozen=True)
 class QAResults(Results):
-    def __init__(
-        self,
-        dofv=None,
-        fullblock_parameters=None,
-        boxcox_parameters=None,
-        tdist_parameters=None,
-        add_etas_parameters=None,
-        iov_parameters=None,
-        influential_individuals=None,
-        covariate_effects=None,
-        univariate_sum=None,
-        residual_error=None,
-        structural_bias=None,
-    ):
-        self.dofv = dofv
-        self.fullblock_parameters = fullblock_parameters
-        self.boxcox_parameters = boxcox_parameters
-        self.tdist_parameters = tdist_parameters
-        self.add_etas_parameters = add_etas_parameters
-        self.iov_parameters = iov_parameters
-        self.influential_individuals = influential_individuals
-        self.covariate_effects = covariate_effects
-        self.univariate_sum = univariate_sum
-        self.residual_error = residual_error
-        self.structural_bias = structural_bias
+    dofv: Optional[Any] = None
+    fullblock_parameters: Optional[Any] = None
+    boxcox_parameters: Optional[Any] = None
+    tdist_parameters: Optional[Any] = None
+    add_etas_parameters: Optional[Any] = None
+    iov_parameters: Optional[Any] = None
+    influential_individuals: Optional[Any] = None
+    covariate_effects: Optional[Any] = None
+    univariate_sum: Optional[Any] = None
+    residual_error: Optional[Any] = None
+    structural_bias: Optional[Any] = None
 
 
 def calculate_results(
@@ -52,6 +41,7 @@ def calculate_results(
     scm_results=None,
     simeval_results=None,
     resmod_idv_results=None,
+    **kwargs,
 ):
     fullblock_table, fullblock_dofv = calc_fullblock(original_model, fullblock_model)
     boxcox_table, boxcox_dofv = calc_transformed_etas(
@@ -63,7 +53,7 @@ def calculate_results(
     frem_dofv = calc_frem_dofv(base_model, fullblock_model, frem_results)
     univariate_sum, scm_table, scm_dofv = calc_scm_dofv(scm_results)
     infinds, cdd_dofv = influential_individuals(cdd_results)
-    outs, simeval_dofv = outliers(simeval_results, cdd_results)
+    _, simeval_dofv = outliers(simeval_results, cdd_results)
     resmodtab, resmod_dofv = resmod(resmod_idv_results)
 
     dofv_table = pd.concat(
@@ -81,7 +71,8 @@ def calculate_results(
         ]
     )
     dofv_table.set_index(['section', 'run', 'dvid'], inplace=True)
-    res = QAResults(
+
+    return QAResults(
         dofv=dofv_table,
         fullblock_parameters=fullblock_table,
         boxcox_parameters=boxcox_table,
@@ -92,8 +83,8 @@ def calculate_results(
         covariate_effects=scm_table,
         univariate_sum=univariate_sum,
         residual_error=resmodtab,
+        **kwargs,
     )
-    return res
 
 
 def outliers(simeval_res, cdd_res):
@@ -569,7 +560,9 @@ def psn_qa_results(path):
     else:
         resmod_idv_res = None
 
-    res = calculate_results(
+    bias = read_results_summary(path)
+
+    return calculate_results(
         original_model,
         base_model,
         fullblock_model=fullblock_model,
@@ -583,9 +576,5 @@ def psn_qa_results(path):
         scm_results=scm_res,
         simeval_results=simeval_res,
         resmod_idv_results=resmod_idv_res,
+        structural_bias=bias,
     )
-
-    bias = read_results_summary(path)
-    res.structural_bias = bias
-
-    return res

@@ -1,10 +1,11 @@
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Optional
 
 import pharmpy.tools.estmethod.algorithms as algorithms
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Results
 from pharmpy.tools import summarize_modelfit_results
-from pharmpy.tools.common import summarize_tool
+from pharmpy.tools.common import ToolResults, summarize_tool
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -92,7 +93,7 @@ def post_process(input_model, *models):
     else:
         models = [base_model] + res_models
 
-    res = EstMethodResults(
+    return EstMethodResults(
         summary_tool=summary_tool,
         summary_models=summary_models,
         summary_settings=summary_settings,
@@ -100,31 +101,14 @@ def post_process(input_model, *models):
         models=models,
     )
 
-    return res
 
-
-class EstMethodResults(Results):
+@dataclass(frozen=True)
+class EstMethodResults(ToolResults):
     rst_path = Path(__file__).resolve().parent / 'report.rst'
 
-    def __init__(
-        self,
-        summary_tool=None,
-        summary_models=None,
-        summary_individuals=None,
-        summary_individuals_count=None,
-        summary_settings=None,
-        best_model=None,
-        input_model=None,
-        models=None,
-    ):
-        self.summary_tool = summary_tool
-        self.summary_models = summary_models
-        self.summary_individuals = summary_individuals
-        self.summary_individuals_count = summary_individuals_count
-        self.summary_settings = summary_settings
-        self.best_model = best_model
-        self.input_model = input_model
-        self.models = models
+    summary_settings: Optional[Any] = None
+    best_model: Optional[Any] = None
+    input_model: Optional[Any] = None
 
 
 def summarize_estimation_steps(models):

@@ -1,10 +1,12 @@
-import pytest
+from dataclasses import dataclass, replace
+from typing import Optional
 
 from pharmpy.internals.fs.cwd import chdir
+from pharmpy.model import Results
 from pharmpy.modeling import set_bolus_absorption
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import read_results
-from pharmpy.workflows import Task, Workflow, execute_workflow
+from pharmpy.workflows import Task, ToolDatabase, Workflow, execute_workflow
 
 
 def test_execute_workflow_constant(tmp_path):
@@ -123,10 +125,15 @@ def test_execute_workflow_results(tmp_path):
     assert not hasattr(res, 'tool_database')
 
 
+@dataclass(frozen=True)
+class MyResults(Results):
+    ofv: Optional[float] = None
+    tool_database: Optional[ToolDatabase] = None
+
+
 def test_execute_workflow_results_with_tool_database(tmp_path):
     ofv = 3
-    mfr = ModelfitResults(ofv=ofv)
-    mfr.tool_database = None
+    mfr = MyResults(ofv=ofv)
 
     wf = Workflow([Task('result', lambda: mfr)])
 
@@ -138,14 +145,12 @@ def test_execute_workflow_results_with_tool_database(tmp_path):
 
 
 def test_execute_workflow_results_with_report(testdata, tmp_path):
-    mfr = read_results(testdata / 'frem' / 'results.json')
-    mfr.tool_database = None
+    mfr = replace(read_results(testdata / 'frem' / 'results.json'), tool_database=None)
 
     wf = Workflow([Task('result', lambda: mfr)])
 
     with chdir(tmp_path):
-        with pytest.warns(UserWarning, match=".*unexpected keyword argument 'tool_database'.*"):
-            res = execute_workflow(wf)
+        res = execute_workflow(wf)
         html = res.tool_database.path / 'results.html'
         assert html.is_file()
         assert html.stat().st_size > 500000
