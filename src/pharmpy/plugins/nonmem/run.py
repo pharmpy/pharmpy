@@ -75,12 +75,11 @@ def execute_model(model, db):
 
     start = time.time()
     timeout = 5
-    while True:
-        try:
-            (model_path / 'results.lst').rename((model_path / basename).with_suffix('.lst'))
-        except FileNotFoundError:
-            if time.time() - start > timeout:
-                break  # NOTE warns later when looking for .lst and .ext file
+    while time.time() - start < timeout:
+        results_path = (model_path / 'results.lst')
+        if results_path.is_file():
+            results_path.rename((model_path / basename).with_suffix('.lst'))
+        else:
             time.sleep(1)
 
     metadata = {
