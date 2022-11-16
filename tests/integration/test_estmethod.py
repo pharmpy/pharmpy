@@ -7,7 +7,7 @@ from pharmpy.model import Model
 from pharmpy.tools import run_estmethod
 
 
-@pytest.mark.filterwarnings('ignore:.*.ext does not exist')
+@pytest.mark.filterwarnings('ignore:.*Expected result files do not exist')
 @pytest.mark.parametrize(
     'algorithm, methods, solvers, no_of_candidates, advan_ref',
     [
