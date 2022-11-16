@@ -2,6 +2,7 @@ import json
 import os
 import os.path
 import subprocess
+import time
 import uuid
 import warnings
 from itertools import repeat
@@ -72,10 +73,15 @@ def execute_model(model, db):
 
     basename = Path(model.name)
 
-    try:
-        (model_path / 'results.lst').rename((model_path / basename).with_suffix('.lst'))
-    except FileNotFoundError:
-        pass  # NOTE warns later when looking for .lst and .ext file
+    start = time.time()
+    timeout = 5
+    while True:
+        try:
+            (model_path / 'results.lst').rename((model_path / basename).with_suffix('.lst'))
+        except FileNotFoundError:
+            if time.time() - start > timeout:
+                break  # NOTE warns later when looking for .lst and .ext file
+            time.sleep(1)
 
     metadata = {
         'plugin': 'nonmem',
