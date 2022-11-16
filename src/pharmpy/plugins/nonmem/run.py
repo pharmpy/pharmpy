@@ -73,12 +73,14 @@ def execute_model(model, db):
 
     basename = Path(model.name)
 
+    results_path = model_path / 'results.lst'
     start = time.time()
     timeout = 5
+
     while time.time() - start < timeout:
-        results_path = model_path / 'results.lst'
         if results_path.is_file():
             results_path.rename((model_path / basename).with_suffix('.lst'))
+            break
         else:
             time.sleep(1)
 
@@ -112,8 +114,8 @@ def execute_model(model, db):
                 file_path = (model_path / basename).with_suffix(suffix)
                 txn.store_local_file(file_path)
 
-        for rec in model.internals.control_stream.get_records('TABLE'):
-            txn.store_local_file(model_path / rec.path)
+            for rec in model.internals.control_stream.get_records('TABLE'):
+                txn.store_local_file(model_path / rec.path)
 
         txn.store_local_file(stdout)
         txn.store_local_file(stderr)
