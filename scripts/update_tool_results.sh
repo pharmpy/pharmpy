@@ -25,7 +25,7 @@ rm -rf $TESTPATH
 cd ..
 mkdir $TESTPATH
 
-python3 -m venv $TESTPATH/pharmpy_venv
+python3.9 -m venv $TESTPATH/pharmpy_venv
 activate () {
     . $TESTPATH/pharmpy_venv/bin/activate
 }
