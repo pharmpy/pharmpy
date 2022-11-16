@@ -10,8 +10,8 @@ class NullToolDatabase(ToolDatabase):
     """
 
     def __init__(self, toolname, **kwargs):
-        self.model_database = NullModelDatabase()
         super().__init__(toolname)
+        self.model_database = NullModelDatabase()
 
     def store_local_file(self, source_path):
         pass

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 
 class ToolDatabase(ABC):
@@ -12,6 +13,15 @@ class ToolDatabase(ABC):
 
     def __init__(self, toolname):
         self.toolname = toolname
+
+    @property
+    def path(self):
+        """ModelDatabase to store results of models run by tool"""
+        return self._path
+
+    @path.setter
+    def path(self, value: Path):
+        self._path = value
 
     @property
     def model_database(self):

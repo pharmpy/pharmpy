@@ -23,6 +23,8 @@ class LocalDirectoryToolDatabase(ToolDatabase):
     """
 
     def __init__(self, toolname, path=None, exist_ok=False):
+        super().__init__(toolname)
+
         if path is None:
             for i in count(1):
                 name = f'{toolname}_dir{i}'
@@ -41,8 +43,6 @@ class LocalDirectoryToolDatabase(ToolDatabase):
 
         modeldb = LocalModelDirectoryDatabase(self.path / 'models')
         self.model_database = modeldb
-
-        super().__init__(toolname)
 
     def to_dict(self):
         return {'toolname': self.toolname, 'path': str(self.path)}
