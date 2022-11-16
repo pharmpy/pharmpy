@@ -13,6 +13,7 @@ from pandas.testing import assert_series_equal
 
 from pharmpy.internals.math import (
     conditional_joint_normal,
+    conditional_joint_normal_lambda,
     corr2cov,
     cov2corr,
     flattened_to_symmetric,
@@ -144,3 +145,27 @@ def test_conditional_joint_normal():
     mu_bar, _ = conditional_joint_normal(mu, WGT_sigma, np.array([WGT_5th]))
 
     np.testing.assert_array_almost_equal(mu_bar, np.array([-0.12459637, -0.04671127]))
+
+
+def test_conditional_joint_normal_lambda():
+    sigma = [
+        [0.0419613930249351, 0.0194493895550238, -0.00815616219453746, 0.0943578658777171],
+        [0.0194493895550238, 0.0296333601234358, 0.107516199715367, 0.0353748349332184],
+        [-0.00815616219453746, 0.107516199715367, 0.883267716518442, 0.101648158864576],
+        [0.0943578658777171, 0.0353748349332184, 0.101648158864576, 0.887220758887173],
+    ]
+    sigma = np.array(sigma)
+
+    scaling = np.diag(np.array([1, 1, 2.2376, 0.70456]))
+    scaled_sigma = scaling @ sigma @ scaling.T
+
+    WGT_mean = 1.52542372881356
+    WGT_5th = 0.7
+    WGT_sigma = scaled_sigma[[0, 1, 3]][:, [0, 1, 3]]
+    mu = [0, 0, WGT_mean]
+
+    mu_1, sigma_1 = conditional_joint_normal(mu, WGT_sigma, np.array([WGT_5th]))
+    mu_2, sigma_2 = conditional_joint_normal_lambda(mu, WGT_sigma, len(mu) - 1)(np.array([WGT_5th]))
+
+    assert (mu_1 == mu_2).all()
+    assert (sigma_1 == sigma_2).all()

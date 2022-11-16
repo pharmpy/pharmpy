@@ -182,6 +182,27 @@ def conditional_joint_normal(mu, sigma, a):
     return mu_bar, sigma_bar
 
 
+def conditional_joint_normal_lambda(mu, sigma, n):
+    # NOTE Same as conditional_joint_normal but for fixed mu, sigma, and len(a)
+    S11 = sigma[0:n, 0:n]
+    S12 = sigma[0:n, n:]
+    S21 = sigma[n:, 0:n]
+    S22 = sigma[n:, n:]
+    M1 = mu[0:n]
+    M2 = mu[n:]
+
+    S22_inv = np.linalg.inv(S22)
+    S12_at_S22_inv = S12 @ S22_inv
+
+    sigma_bar = S11 - S12_at_S22_inv @ S21
+
+    def _cjn_eval(a):
+        mu_bar = M1 + S12_at_S22_inv @ (a - M2)
+        return mu_bar, sigma_bar
+
+    return _cjn_eval
+
+
 def round_to_n_sigdig(x, n):
     if x == 0:
         return x

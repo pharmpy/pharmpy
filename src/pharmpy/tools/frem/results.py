@@ -9,7 +9,11 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import symengine, sympy
 from pharmpy.internals.expr.subs import subs
-from pharmpy.internals.math import conditional_joint_normal, is_posdef
+from pharmpy.internals.math import (
+    conditional_joint_normal,
+    conditional_joint_normal_lambda,
+    is_posdef,
+)
 from pharmpy.model import Model, Results
 from pharmpy.modeling import (
     calculate_individual_shrinkage,
@@ -655,10 +659,12 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
                 for parind, parname in enumerate(param_names):
                     coefficients[cov]['each', parname] = cov_sigma[parind][-1] / cov_sigma[-1][-1]
 
+        id_mu = np.array([0] * npars + list(cov_refs))
+        cjn = conditional_joint_normal_lambda(id_mu, sigma, npars)
         for i in range(len(estimated_covbase)):
             row = covbase[i, :]
-            id_mu = np.array([0] * npars + list(cov_refs))
-            mu_id_bar, sigma_id_bar = conditional_joint_normal(id_mu, sigma, row)
+            assert npars + len(row) == len(id_mu)
+            mu_id_bar, sigma_id_bar = cjn(row)
             if sample_no != 'estimates':
                 mu_id_bars[sample_no, i, :] = mu_id_bar
                 variability[sample_no, -1, :] = np.diag(sigma_id_bar)
@@ -905,12 +911,13 @@ def calculate_results_using_bipp(
     while k < remaining_samples:
         bootstrap = pool.sample(n=ninds, replace=True, random_state=rng.bit_generator)
         ishk = ishr.loc[bootstrap.index]
-        cf = (1 / (1 - ishk.mean())) ** (1 / 2)
-        corrected_bootstrap = bootstrap * cf
-        bootstrap_cov = corrected_bootstrap.cov()
-        if not is_posdef(bootstrap_cov.to_numpy()):
+        mean = ishk.to_numpy().mean(0)
+        cf = (1 / (1 - mean)) ** (1 / 2)
+        corrected_bootstrap = np.multiply(bootstrap.to_numpy(), cf)
+        bootstrap_cov = np.cov(np.transpose(corrected_bootstrap))
+        if not is_posdef(bootstrap_cov):
             continue
-        parameter_samples[k, :] = bootstrap_cov.values[lower_indices]
+        parameter_samples[k, :] = bootstrap_cov[lower_indices]
         k += 1
     frame = pd.DataFrame(parameter_samples, columns=pop_params)
     # Shift to the mean of the parameter estimate

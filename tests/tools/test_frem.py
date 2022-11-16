@@ -71,8 +71,7 @@ def test_create_model3b(load_model_for_test, testdata):
 
 def test_bipp_covariance(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
-    np.random.seed(9532)
-    res = calculate_results_using_bipp(model, continuous=['APGR', 'WGT'], categorical=[])
+    res = calculate_results_using_bipp(model, continuous=['APGR', 'WGT'], categorical=[], rng=9532)
     assert res
 
 
