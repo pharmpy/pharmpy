@@ -104,7 +104,7 @@ def create_workflow(
     max_steps: int = -1,
     algorithm: str = 'scm-forward-then-backward',
     results: Optional[ModelfitResults] = None,
-    model: Union[Model, None] = None,
+    model: Optional[Model] = None,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
