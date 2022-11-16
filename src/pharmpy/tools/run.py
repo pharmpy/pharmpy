@@ -206,10 +206,9 @@ def run_tool_with_name(
         wf=wf,
         tool_params=tool_params,
         tool_param_types=tool_param_types,
+        args=args,
         tool_options=tool_options,
         common_options=common_options,
-        args=args,
-        kwargs=kwargs,
     )
 
     database.store_metadata(tool_metadata)
@@ -230,14 +229,13 @@ def _create_metadata(
     wf: Workflow,
     tool_params,
     tool_param_types,
-    tool_options,
-    common_options,
     args: Sequence,
-    kwargs: Mapping[str, Any],
+    tool_options: Mapping[str, Any],
+    common_options: Mapping[str, Any],
 ):
 
     tool_metadata = _create_metadata_tool(
-        database, name, tool_params, tool_param_types, tool_options, args, kwargs
+        database, name, tool_params, tool_param_types, args, tool_options
     )
     setup_metadata = _create_metadata_common(database, dispatcher, wf.name, common_options)
     tool_metadata['common_options'] = setup_metadata
@@ -256,7 +254,6 @@ def _create_metadata_tool(
     tool_name: str,
     tool_params,
     tool_param_types,
-    tool_options,
     args: Sequence,
     kwargs: Mapping[str, Any],
 ):
@@ -275,13 +272,13 @@ def _create_metadata_tool(
                 name, value = p.name, args[i]
             except IndexError:
                 try:
-                    name, value = p.name, tool_options[p.name]
+                    name, value = p.name, kwargs[p.name]
                 except KeyError:
                     raise ValueError(f'{tool_name}: \'{p.name}\' was not set')
         # Named args
         else:
-            if p.name in tool_options.keys():
-                name, value = p.name, tool_options[p.name]
+            if p.name in kwargs.keys():
+                name, value = p.name, kwargs[p.name]
             else:
                 name, value = p.name, p.default
         if isinstance(value, Model):

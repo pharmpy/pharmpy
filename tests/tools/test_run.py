@@ -26,21 +26,19 @@ from pharmpy.workflows import LocalDirectoryToolDatabase, local_dask
 
 
 @pytest.mark.parametrize(
-    ('tool_options', 'args', 'kwargs'),
+    ('args', 'kwargs'),
     (
         (
-            {'iiv_strategy': 'no_add'},
             ('ABSORPTION(ZO)', 'exhaustive'),
-            {},
+            {'iiv_strategy': 'no_add'},
         ),
         (
-            {'algorithm': 'exhaustive'},
             ('ABSORPTION(ZO)',),
-            {},
+            {'algorithm': 'exhaustive'},
         ),
     ),
 )
-def test_create_metadata_tool(tmp_path, pheno, tool_options, args, kwargs):
+def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
     with chdir(tmp_path):
         tool_name = 'modelsearch'
         database = LocalDirectoryToolDatabase(tool_name)
@@ -53,7 +51,6 @@ def test_create_metadata_tool(tmp_path, pheno, tool_options, args, kwargs):
             tool_name=tool_name,
             tool_params=tool_params,
             tool_param_types=tool_param_types,
-            tool_options=tool_options,
             args=args,
             kwargs={'model': pheno, **kwargs},
         )
@@ -82,7 +79,6 @@ def test_create_metadata_tool_raises(tmp_path, pheno):
                 tool_name=tool_name,
                 tool_params=tool_params,
                 tool_param_types=tool_param_types,
-                tool_options={},
                 args=('ABSORPTION(ZO)',),
                 kwargs={'model': pheno},
             )
