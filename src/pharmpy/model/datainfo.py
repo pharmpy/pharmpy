@@ -821,7 +821,7 @@ class DataInfo(Sequence, Immutable):
                 'scale': scales,
                 'continuous': cont,
                 'categories': cats,
-                'units': units,
+                'unit': units,
                 'drop': drop,
                 'datatype': datatype,
                 'descriptor': descriptor,
