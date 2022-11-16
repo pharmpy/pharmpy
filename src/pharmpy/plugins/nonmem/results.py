@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import pharmpy.modeling as modeling
 from pharmpy.deps import numpy as np
@@ -10,6 +10,7 @@ from pharmpy.model import EstimationSteps, Model, Parameters, RandomVariables
 from pharmpy.results import ModelfitResults
 from pharmpy.workflows.log import Log
 
+from .config import conf
 from .nmtran_parser import NMTranControlStream
 from .parameters import parameter_translation
 from .random_variables import rv_translation
@@ -490,6 +491,7 @@ def _parse_parameter_estimates(
     fixed_param_names = []
     final_table = None
     fix = None
+    pe_translation = parameter_translation(control_stream)
     for i, table in enumerate(ext_tables.tables, start=1):
         if subproblem and table.subproblem != subproblem:
             continue
@@ -497,11 +499,11 @@ def _parse_parameter_estimates(
         df = df[df['ITERATION'] >= 0]
 
         assert isinstance(table, ExtTable)
-        fix = _get_fixed_parameters(table, parameters)
+        fix = _get_fixed_parameters(table, parameters, pe_translation)
         fixed_param_names = [name for name in list(df.columns)[1:-1] if fix[name]]
         df = df.drop(fixed_param_names + ['OBJ'], axis=1)
         df['step'] = i
-        df = df.rename(columns=parameter_translation(control_stream))
+        df = df.rename(columns=pe_translation)
         pe = pd.concat([pe, df])
         final_table = table
 
@@ -509,7 +511,7 @@ def _parse_parameter_estimates(
     assert final_table is not None
     final = final_table.final_parameter_estimates
     final = final.drop(fixed_param_names)
-    final = final.rename(index=parameter_translation(control_stream))
+    final = final.rename(index=pe_translation)
     pe = pe.rename(columns={'ITERATION': 'iteration'}).set_index(['step', 'iteration'])
 
     try:
@@ -517,7 +519,7 @@ def _parse_parameter_estimates(
     except KeyError:
         sdcorr_ests = pd.Series(np.nan, index=pe.index)
     else:
-        sdcorr = sdcorr.rename(index=parameter_translation(control_stream))
+        sdcorr = sdcorr.rename(index=pe_translation)
         sdcorr_ests = final.copy()
         sdcorr_ests.update(sdcorr)
     return final, sdcorr_ests, pe
@@ -532,15 +534,16 @@ def _parse_standard_errors(
         ses = table.standard_errors
     except KeyError:
         return None, None
+    pe_translation = parameter_translation(control_stream)
 
-    fix = _get_fixed_parameters(table, parameters)
+    fix = _get_fixed_parameters(table, parameters, pe_translation)
     ses = ses[~fix]
     sdcorr = table.omega_sigma_se_stdcorr[~fix]
-    ses = ses.rename(index=parameter_translation(control_stream))
-    sdcorr = sdcorr.rename(index=parameter_translation(control_stream))
+    ses = ses.rename(index=pe_translation)
+    sdcorr = sdcorr.rename(index=pe_translation)
     sdcorr_ses = ses.copy()
     sdcorr_ses.update(sdcorr)
-    sdcorr_ses = sdcorr_ses.rename(index=parameter_translation(control_stream))
+    sdcorr_ses = sdcorr_ses.rename(index=pe_translation)
     return ses, sdcorr_ses
 
 
@@ -550,13 +553,16 @@ def _parse_evaluation(estimation_steps: EstimationSteps):
     return pd.Series(evaluation, index=index, name='evaluation')
 
 
-def _get_fixed_parameters(table: ExtTable, parameters: Parameters):
+def _get_fixed_parameters(table: ExtTable, parameters: Parameters, pe_translation: Dict):
     try:
         return table.fixed
     except KeyError:
         # NM 7.2 does not have row -1000000006 indicating FIXED status
         ests = table.final_parameter_estimates
         fixed = pd.Series(parameters.fix)
+        if 'comment' in conf.parameter_names:
+            # NOTE parameters in result file haven't been renamed yet
+            fixed = fixed.rename({value: key for key, value in pe_translation.items()})
         return pd.concat([fixed, pd.Series(True, index=ests.index.difference(fixed.index))])
 
 

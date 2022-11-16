@@ -7,7 +7,7 @@ import pytest
 import pharmpy.plugins.nonmem as nonmem
 from pharmpy.config import ConfigurationContext
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.plugins.nonmem.results import simfit_results
+from pharmpy.plugins.nonmem.results import parse_modelfit_results, simfit_results
 from pharmpy.results import read_results
 
 
@@ -179,6 +179,13 @@ def test_parameter_estimates(load_model_for_test, pheno_path):
         assert len(pe) == 6
         assert pe['PTVCL'] == 4.69555e-3
         assert pe['IVV'] == 2.7906e-2
+
+
+def test_parameter_estimates_ext_missing_fix(load_model_for_test, pheno_path, testdata):
+    with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
+        model = load_model_for_test(pheno_path)
+        res = parse_modelfit_results(model, testdata / 'nonmem' / 'errors' / 'run_interrupted.mod')
+        assert len(res.parameter_estimates.index.values) == len(model.parameters)
 
 
 def test_simfit(testdata, load_model_for_test):
