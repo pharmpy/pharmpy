@@ -2,6 +2,7 @@ import inspect
 import os
 import shutil
 from pathlib import Path
+from typing import get_type_hints
 
 import pytest
 
@@ -24,39 +25,67 @@ from pharmpy.tools.run import (
 from pharmpy.workflows import LocalDirectoryToolDatabase, local_dask
 
 
-def test_create_metadata_tool():
-    tool_name = 'modelsearch'
-    tool = import_tool(tool_name)
-    tool_params = inspect.signature(tool.create_workflow).parameters
+@pytest.mark.parametrize(
+    ('tool_options', 'args', 'kwargs'),
+    (
+        (
+            {'iiv_strategy': 'no_add'},
+            ('ABSORPTION(ZO)', 'exhaustive'),
+            {},
+        ),
+        (
+            {'algorithm': 'exhaustive'},
+            ('ABSORPTION(ZO)',),
+            {},
+        ),
+    ),
+)
+def test_create_metadata_tool(tmp_path, pheno, tool_options, args, kwargs):
+    with chdir(tmp_path):
+        tool_name = 'modelsearch'
+        database = LocalDirectoryToolDatabase(tool_name)
+        tool = import_tool(tool_name)
+        tool_params = inspect.signature(tool.create_workflow).parameters
+        tool_param_types = get_type_hints(tool.create_workflow)
 
-    metadata = _create_metadata_tool(
-        tool_name=tool_name,
-        tool_params=tool_params,
-        tool_options={'iiv_strategy': 0},
-        args=('ABSORPTION(ZO)', 'exhaustive'),
-    )
-
-    assert metadata['pharmpy_version'] == pharmpy.__version__
-    assert metadata['tool_name'] == 'modelsearch'
-    assert metadata['tool_options']['rank_type'] == 'bic'
-
-    metadata = _create_metadata_tool(
-        tool_name=tool_name,
-        tool_params=tool_params,
-        tool_options={'algorithm': 'exhaustive'},
-        args=('ABSORPTION(ZO)',),
-    )
-
-    assert metadata['tool_name'] == 'modelsearch'
-    assert metadata['tool_options']['algorithm'] == 'exhaustive'
-
-    with pytest.raises(Exception, match='modelsearch: \'algorithm\' was not set'):
-        _create_metadata_tool(
+        metadata = _create_metadata_tool(
+            database=database,
             tool_name=tool_name,
             tool_params=tool_params,
-            tool_options={},
-            args=('ABSORPTION(ZO)',),
+            tool_param_types=tool_param_types,
+            tool_options=tool_options,
+            args=args,
+            kwargs={'model': pheno, **kwargs},
         )
+
+        rundir = tmp_path / 'modelsearch_dir1'
+
+        assert (rundir / 'models' / 'input_model' / '.pharmpy').exists()
+
+        assert metadata['pharmpy_version'] == pharmpy.__version__
+        assert metadata['tool_name'] == 'modelsearch'
+        assert metadata['tool_options']['model'] == 'input_model'
+        assert metadata['tool_options']['rank_type'] == 'bic'
+        assert metadata['tool_options']['algorithm'] == 'exhaustive'
+
+
+def test_create_metadata_tool_raises(tmp_path, pheno):
+    with chdir(tmp_path):
+        tool_name = 'modelsearch'
+        database = LocalDirectoryToolDatabase(tool_name)
+        tool = import_tool(tool_name)
+        tool_params = inspect.signature(tool.create_workflow).parameters
+        tool_param_types = get_type_hints(tool.create_workflow)
+        with pytest.raises(Exception, match='modelsearch: \'algorithm\' was not set'):
+            _create_metadata_tool(
+                database=database,
+                tool_name=tool_name,
+                tool_params=tool_params,
+                tool_param_types=tool_param_types,
+                tool_options={},
+                args=('ABSORPTION(ZO)',),
+                kwargs={'model': pheno},
+            )
 
 
 def test_get_run_setup(tmp_path):
@@ -84,7 +113,10 @@ def test_create_metadata_common(tmp_path):
         database = LocalDirectoryToolDatabase(name)
 
         metadata = _create_metadata_common(
-            common_options={}, dispatcher=dispatcher, database=database, toolname=name
+            database=database,
+            dispatcher=dispatcher,
+            toolname=name,
+            common_options={},
         )
 
         assert metadata['dispatcher'] == 'pharmpy.workflows.dispatchers.local_dask'
@@ -99,7 +131,10 @@ def test_create_metadata_common(tmp_path):
         database = LocalDirectoryToolDatabase(name, path)
 
         metadata = _create_metadata_common(
-            common_options={'path': path}, dispatcher=dispatcher, database=database, toolname=name
+            database=database,
+            dispatcher=dispatcher,
+            toolname=name,
+            common_options={'path': path},
         )
 
         path = Path(metadata['database']['path'])

@@ -236,15 +236,11 @@ def _create_metadata(
     kwargs: Mapping[str, Any],
 ):
 
-    tool_metadata = _create_metadata_tool(name, tool_params, tool_options, args)
-    setup_metadata = _create_metadata_common(common_options, dispatcher, database, wf.name)
+    tool_metadata = _create_metadata_tool(
+        database, name, tool_params, tool_param_types, tool_options, args, kwargs
+    )
+    setup_metadata = _create_metadata_common(database, dispatcher, wf.name, common_options)
     tool_metadata['common_options'] = setup_metadata
-
-    if name != 'modelfit':
-        db = database.model_database
-        for key, value in _store_input_models(db, tool_params, tool_param_types, args, kwargs):
-            # TODO Somehow merge this in _create_metadata_tool
-            tool_metadata['tool_options'][key] = value
 
     return tool_metadata
 
@@ -255,7 +251,15 @@ def _update_metadata(tool_metadata, res):
     return tool_metadata
 
 
-def _create_metadata_tool(tool_name, tool_params, tool_options, args):
+def _create_metadata_tool(
+    database: ToolDatabase,
+    tool_name: str,
+    tool_params,
+    tool_param_types,
+    tool_options,
+    args: Sequence,
+    kwargs: Mapping[str, Any],
+):
     # FIXME: add config file dump, estimation tool etc.
     tool_metadata = {
         'pharmpy_version': pharmpy.__version__,
@@ -281,15 +285,22 @@ def _create_metadata_tool(tool_name, tool_params, tool_options, args):
             else:
                 name, value = p.name, p.default
         if isinstance(value, Model):
-            value = str(value)  # FIXME: better model representation
+            value = str(value)  # NOTE Overwritten below if tool_name != modelfit
         elif isinstance(value, ModelfitResults):
-            value = "FIXME"
+            value = 'FIXME'  # FIXME
         tool_metadata['tool_options'][name] = value
+
+    if tool_name != 'modelfit':
+        db = database.model_database
+        for key, value in _store_input_models(db, tool_params, tool_param_types, args, kwargs):
+            tool_metadata['tool_options'][key] = value
 
     return tool_metadata
 
 
-def _create_metadata_common(common_options, dispatcher, database, toolname):
+def _create_metadata_common(
+    database: ToolDatabase, dispatcher, toolname: Optional[str], common_options: Mapping[str, Any]
+):
     setup_metadata = {}
     setup_metadata['dispatcher'] = dispatcher.__name__
     # FIXME: naming of workflows/tools should be consistent (db and input name of tool)
