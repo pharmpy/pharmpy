@@ -175,7 +175,7 @@ def run_tool(name: str, *args, **kwargs) -> Union[Model, List[Model], Tuple[Mode
     # NOTE The implementation of run_tool is split into those two functions to
     # allow for individual testing and mocking.
     tool = import_tool(name)
-    return run_tool_with_name(name, tool, *args, **kwargs)
+    return run_tool_with_name(name, tool, args, kwargs)
 
 
 def import_tool(name: str):
@@ -183,14 +183,14 @@ def import_tool(name: str):
 
 
 def run_tool_with_name(
-    name: str, _tool, *args, **kwargs
+    name: str, tool, args: Sequence, kwargs: Mapping[str, Any]
 ) -> Union[Model, List[Model], Tuple[Model], Results]:
     common_options, tool_options = split_common_options(kwargs)
 
-    if validate_input := getattr(_tool, 'validate_input', None):
+    if validate_input := getattr(tool, 'validate_input', None):
         validate_input(*args, **tool_options)
 
-    create_workflow = _tool.create_workflow
+    create_workflow = tool.create_workflow
 
     wf = create_workflow(*args, **tool_options)
 
@@ -307,7 +307,9 @@ def _create_metadata_common(common_options, dispatcher, database, toolname):
     return setup_metadata
 
 
-def _store_input_models(db: ModelDatabase, params, types, args: Sequence, kwargs: Mapping[str, Any]):
+def _store_input_models(
+    db: ModelDatabase, params, types, args: Sequence, kwargs: Mapping[str, Any]
+):
     for param_key, model in _input_models(params, types, args, kwargs):
         input_model_name = f'input_{param_key}'
         _store_input_model(db, model, input_model_name)
