@@ -78,5 +78,5 @@ class MockedToolWithInputValidation(MockedTool):
 )
 def test_run_tool_without_input_validation(tmp_path, pheno, name, tool, args, expected):
     with chdir(tmp_path):
-        res = run_tool_with_name(name, tool, *args, pheno)
+        res = run_tool_with_name(name, tool, (*args, pheno), {})
         assert expected(res)
