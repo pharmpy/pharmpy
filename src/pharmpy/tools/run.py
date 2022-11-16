@@ -25,7 +25,7 @@ from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.results import ModelfitResults, mfr
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
-from pharmpy.workflows import execute_workflow, split_common_options
+from pharmpy.workflows import Workflow, execute_workflow, split_common_options
 from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
 from pharmpy.workflows.tool_database import ToolDatabase
 
@@ -187,17 +187,56 @@ def run_tool_with_name(
 ) -> Union[Model, List[Model], Tuple[Model], Results]:
     common_options, tool_options = split_common_options(kwargs)
 
-    create_workflow = _tool.create_workflow
-    tool_params = inspect.signature(create_workflow).parameters
-    tool_metadata = _create_metadata_tool(name, tool_params, tool_options, args)
-    tool_param_types = get_type_hints(create_workflow)
-
     if validate_input := getattr(_tool, 'validate_input', None):
         validate_input(*args, **tool_options)
+
+    create_workflow = _tool.create_workflow
 
     wf = create_workflow(*args, **tool_options)
 
     dispatcher, database = _get_run_setup(common_options, wf.name)
+
+    tool_params = inspect.signature(create_workflow).parameters
+    tool_param_types = get_type_hints(create_workflow)
+
+    tool_metadata = _create_metadata(
+        database=database,
+        dispatcher=dispatcher,
+        name=name,
+        wf=wf,
+        tool_params=tool_params,
+        tool_param_types=tool_param_types,
+        tool_options=tool_options,
+        common_options=common_options,
+        args=args,
+        kwargs=kwargs,
+    )
+
+    database.store_metadata(tool_metadata)
+
+    res = execute_workflow(wf, dispatcher=dispatcher, database=database)
+    assert name == 'modelfit' or isinstance(res, Results)
+
+    tool_metadata = _update_metadata(tool_metadata, res)
+    database.store_metadata(tool_metadata)
+
+    return res
+
+
+def _create_metadata(
+    database: ToolDatabase,
+    dispatcher,
+    name: str,
+    wf: Workflow,
+    tool_params,
+    tool_param_types,
+    tool_options,
+    common_options,
+    args: Sequence,
+    kwargs: Mapping[str, Any],
+):
+
+    tool_metadata = _create_metadata_tool(name, tool_params, tool_options, args)
     setup_metadata = _create_metadata_common(common_options, dispatcher, database, wf.name)
     tool_metadata['common_options'] = setup_metadata
 
@@ -207,47 +246,13 @@ def run_tool_with_name(
             # TODO Somehow merge this in _create_metadata_tool
             tool_metadata['tool_options'][key] = value
 
-    database.store_metadata(tool_metadata)
+    return tool_metadata
 
-    res = execute_workflow(wf, dispatcher=dispatcher, database=database)
-    assert name == 'modelfit' or isinstance(res, Results)
 
+def _update_metadata(tool_metadata, res):
+    # FIXME Make metadata immutable
     tool_metadata['stats']['end_time'] = _now()
-    database.store_metadata(tool_metadata)
-
-    return res
-
-
-def _store_input_models(db: ModelDatabase, params, types, args: Sequence, kwargs: Mapping[str, Any]):
-    for param_key, model in _input_models(params, types, args, kwargs):
-        input_model_name = f'input_{param_key}'
-        _store_input_model(db, model, input_model_name)
-        yield param_key, input_model_name
-
-
-def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
-    for i, param_key in enumerate(params):
-        param = params[param_key]
-        param_type = types.get(param_key)
-        if param_type in (Model, Optional[Model]):
-            # NOTE We do not handle *model, or **model
-            assert param.kind != param.VAR_POSITIONAL
-            assert param.kind != param.VAR_KEYWORD
-            model = args[i] if i < len(args) else kwargs.get(param_key)
-            # NOTE We do not handle missing optional models
-            assert model is not None
-            yield param_key, model
-
-
-def _store_input_model(db: ModelDatabase, model: Model, name: str):
-    model_copy = copy_model(model, name)
-    with db.transaction(model_copy) as txn:
-        txn.store_model()
-        txn.store_modelfit_results()
-
-
-def _now():
-    return datetime.now().astimezone().isoformat()
+    return tool_metadata
 
 
 def _create_metadata_tool(tool_name, tool_params, tool_options, args):
@@ -300,6 +305,38 @@ def _create_metadata_common(common_options, dispatcher, database, toolname):
             setup_metadata[str(key)] = value
 
     return setup_metadata
+
+
+def _store_input_models(db: ModelDatabase, params, types, args: Sequence, kwargs: Mapping[str, Any]):
+    for param_key, model in _input_models(params, types, args, kwargs):
+        input_model_name = f'input_{param_key}'
+        _store_input_model(db, model, input_model_name)
+        yield param_key, input_model_name
+
+
+def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
+    for i, param_key in enumerate(params):
+        param = params[param_key]
+        param_type = types.get(param_key)
+        if param_type in (Model, Optional[Model]):
+            # NOTE We do not handle *model, or **model
+            assert param.kind != param.VAR_POSITIONAL
+            assert param.kind != param.VAR_KEYWORD
+            model = args[i] if i < len(args) else kwargs.get(param_key)
+            # NOTE We do not handle missing optional models
+            assert model is not None
+            yield param_key, model
+
+
+def _store_input_model(db: ModelDatabase, model: Model, name: str):
+    model_copy = copy_model(model, name)
+    with db.transaction(model_copy) as txn:
+        txn.store_model()
+        txn.store_modelfit_results()
+
+
+def _now():
+    return datetime.now().astimezone().isoformat()
 
 
 def _get_run_setup(common_options, toolname) -> Tuple[Any, ToolDatabase]:
