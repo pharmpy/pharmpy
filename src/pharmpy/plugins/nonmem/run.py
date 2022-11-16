@@ -76,7 +76,7 @@ def execute_model(model, db):
     start = time.time()
     timeout = 5
     while time.time() - start < timeout:
-        results_path = (model_path / 'results.lst')
+        results_path = model_path / 'results.lst'
         if results_path.is_file():
             results_path.rename((model_path / basename).with_suffix('.lst'))
         else:
@@ -100,14 +100,17 @@ def execute_model(model, db):
 
         txn.store_model()
 
-        for suffix in ['.lst', '.ext', '.phi', '.cov', '.cor', '.coi']:
-            file_path = (model_path / basename).with_suffix(suffix)
-            if suffix in ['.lst', '.ext'] and not file_path.is_file():
-                warnings.warn(f'File {basename.with_suffix(suffix)} does not exist')
-                for file in path.glob('*'):
-                    txn.store_local_file(file)
-                break
-            txn.store_local_file(file_path)
+        if (
+            not (model_path / basename).with_suffix('.lst').is_file()
+            or not (model_path / basename).with_suffix('.ext').is_file()
+        ):
+            warnings.warn(f'Expected result files do not exist, copying everything: {basename}')
+            for file in path.glob('*'):
+                txn.store_local_file(file)
+        else:
+            for suffix in ['.lst', '.ext', '.phi', '.cov', '.cor', '.coi']:
+                file_path = (model_path / basename).with_suffix(suffix)
+                txn.store_local_file(file_path)
 
         for rec in model.internals.control_stream.get_records('TABLE'):
             txn.store_local_file(model_path / rec.path)
