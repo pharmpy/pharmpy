@@ -10,13 +10,14 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
+from pharmpy.internals.immutable import Immutable
 
 from .numeric import MultivariateNormalDistribution as NumericMultivariateNormalDistribution
 from .numeric import NormalDistribution as NumericNormalDistribution
 from .numeric import NumericDistribution
 
 
-class Distribution(Sized, Hashable):
+class Distribution(Sized, Hashable, Immutable):
     @abstractmethod
     def derive(self, level: Optional[str] = None, **kwargs):
         pass
@@ -99,7 +100,7 @@ class NormalDistribution(Distribution):
     Example
     -------
     >>> from pharmpy.model import NormalDistribution, Parameter
-    >>> omega = Parameter('OMEGA_CL', 0.1)
+    >>> omega = Parameter.create('OMEGA_CL', 0.1)
     >>> dist = NormalDistribution.create("IIV_CL", "IIV", 0, omega.symbol)
     >>> dist
     IIV_CL ~ N(0, OMEGA_CL)
@@ -174,7 +175,7 @@ class NormalDistribution(Distribution):
         --------
         >>> import sympy
         >>> from pharmpy.model import NormalDistribution, Parameter
-        >>> omega = Parameter("OMEGA_CL", 0.1)
+        >>> omega = Parameter.create("OMEGA_CL", 0.1)
         >>> dist = NormalDistribution.create("IIV_CL", "IIV", 0, omega.symbol)
         >>> dist = dist.subs({omega.symbol: sympy.Symbol("OMEGA_NEW")})
         >>> dist

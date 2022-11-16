@@ -1,6 +1,7 @@
 import warnings
+from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 import pharmpy.visualization
 from pharmpy.deps import numpy as np
@@ -11,37 +12,23 @@ from pharmpy.results import ModelfitResults
 from pharmpy.tools.psn_helpers import cmd_line_model_path, model_paths
 
 
+@dataclass(frozen=True)
 class BootstrapResults(Results):
     rst_path = Path(__file__).resolve().parent / 'report.rst'
 
     # FIXME: Should inherit from results that take multiple runs like bootstrap, cdd etc.
-    def __init__(
-        self,
-        parameter_statistics=None,
-        parameter_distribution=None,
-        covariance_matrix=None,
-        ofv_distribution=None,
-        ofv_statistics=None,
-        included_individuals=None,
-        ofvs=None,
-        parameter_estimates=None,
-        ofv_plot=None,
-        parameter_estimates_correlation_plot=None,
-        dofv_quantiles_plot=None,
-        parameter_estimates_histogram=None,
-    ):
-        self.parameter_statistics = parameter_statistics
-        self.parameter_distribution = parameter_distribution
-        self.covariance_matrix = covariance_matrix
-        self.ofv_distribution = ofv_distribution
-        self.ofv_statistics = ofv_statistics
-        self.included_individuals = included_individuals
-        self.ofvs = ofvs
-        self.parameter_estimates = parameter_estimates
-        self.ofv_plot = ofv_plot
-        self.parameter_estimates_correlation_plot = parameter_estimates_correlation_plot
-        self.dofv_quantiles_plot = dofv_quantiles_plot
-        self.parameter_estimates_histogram = parameter_estimates_histogram
+    parameter_statistics: Optional[Any] = None
+    parameter_distribution: Optional[Any] = None
+    covariance_matrix: Optional[Any] = None
+    ofv_distribution: Optional[Any] = None
+    ofv_statistics: Optional[Any] = None
+    included_individuals: Optional[Any] = None
+    ofvs: Optional[Any] = None
+    parameter_estimates: Optional[Any] = None
+    ofv_plot: Optional[Any] = None
+    parameter_estimates_correlation_plot: Optional[Any] = None
+    dofv_quantiles_plot: Optional[Any] = None
+    parameter_estimates_histogram: Optional[Any] = None
 
 
 def plot_ofv(res):
@@ -188,13 +175,14 @@ def calculate_results(
         parameter_estimates=parameter_estimates,
     )
 
-    res.ofv_plot = plot_ofv(res)
-    # FIXME: plot broken
-    # res.parameter_estimates_correlation_plot = plot_parameter_estimates_correlation(res)
-    res.dofv_quantiles_plot = plot_dofv_quantiles(res)
-    res.parameter_estimates_histogram = plot_parameter_estimates_histogram(res)
-
-    return res
+    return replace(
+        res,
+        ofv_plot=plot_ofv(res),
+        # FIXME: plot broken
+        # parameter_estimates_correlation_plot = plot_parameter_estimates_correlation(res)
+        dofv_quantiles_plot=plot_dofv_quantiles(res),
+        parameter_estimates_histogram=plot_parameter_estimates_histogram(res),
+    )
 
 
 def create_distribution(df):

@@ -8,10 +8,10 @@ from .symbols import Symbol, Wildcard
 
 
 @dataclass(frozen=True)
-class CovariateEffects(ModelFeature):
-    parameter: Union[Symbol, Tuple[str]]
-    covariate: Union[Symbol, Tuple[str]]
-    fp: Tuple[str]
+class Covariate(ModelFeature):
+    parameter: Union[Symbol, Tuple[str, ...]]
+    covariate: Union[Symbol, Tuple[str, ...]]
+    fp: Tuple[str, ...]
     op: Literal['*', '+'] = '*'
 
 
@@ -29,7 +29,7 @@ class CovariateInterpreter(Interpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert 3 <= len(children) <= 4
-        return feature(CovariateEffects, children)
+        return feature(Covariate, children)
 
     def option(self, tree):
         children = self.visit_children(tree)

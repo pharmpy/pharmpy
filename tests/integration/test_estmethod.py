@@ -4,15 +4,15 @@ import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
-from pharmpy.tools import run_tool
+from pharmpy.tools import run_estmethod
 
 
 @pytest.mark.filterwarnings('ignore:.*.ext does not exist')
 @pytest.mark.parametrize(
     'algorithm, methods, solvers, no_of_candidates, advan_ref',
     [
-        ('exhaustive', 'imp', None, 3, 'ADVAN1'),
-        ('exhaustive', 'imp', ['lsoda'], 5, 'ADVAN13'),
+        ('exhaustive', ['imp'], None, 3, 'ADVAN1'),
+        ('exhaustive', ['imp'], ['lsoda'], 3, 'ADVAN13'),
         ('reduced', ['foce', 'imp'], None, 2, 'ADVAN1'),
     ],
 )
@@ -26,7 +26,7 @@ def test_estmethod(
         model_start = Model.create_model('pheno_real.mod')
         model_start.datainfo = model_start.datainfo.derive(path=tmp_path / 'pheno.dta')
 
-        res = run_tool('estmethod', algorithm, methods=methods, solvers=solvers, model=model_start)
+        res = run_estmethod(algorithm, methods=methods, solvers=solvers, model=model_start)
 
         if algorithm == 'reduced':
             no_of_models = no_of_candidates + 1

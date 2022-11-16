@@ -230,7 +230,7 @@ def sample_parameters_from_covariance_matrix(
     sample_individual_estimates : Sample individual estiates given their covariance
 
     """
-    sigma = covariance_matrix[parameter_estimates.index].loc[parameter_estimates.index].to_numpy()
+    sigma = covariance_matrix.loc[parameter_estimates.index, parameter_estimates.index].to_numpy()
     if not is_posdef(sigma):
         if force_posdef_covmatrix:
             old_sigma = sigma
@@ -322,7 +322,7 @@ def sample_individual_estimates(
     ests = ests[parameters]
     samples = pd.DataFrame()
     for (idx, mu), sigma in zip(ests.iterrows(), covs):
-        sigma = sigma[parameters].loc[parameters]
+        sigma = sigma.loc[parameters, parameters]
         sigma = nearest_postive_semidefinite(sigma)
         id_samples = rng.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
         id_df = pd.DataFrame(id_samples, columns=ests.columns)

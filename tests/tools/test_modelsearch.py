@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     set_zero_order_elimination,
 )
 from pharmpy.tools.mfl.parse import parse
+from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelsearch.algorithms import (
     _add_iiv_to_func,
     _is_allowed,
@@ -21,12 +22,13 @@ from pharmpy.tools.modelsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
-MINIMAL_VALID_MFL_STRING = 'LET(x, 0)'
+MINIMAL_VALID_MFL_STRING = 'LAGTIME()'
 
 
 def test_exhaustive_algorithm():
     mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
-    wf, _ = exhaustive(mfl, iiv_strategy=0)
+    search_space = mfl_parse(mfl)
+    wf, _ = exhaustive(search_space, iiv_strategy='no_add')
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == 3
@@ -37,66 +39,67 @@ def test_exhaustive_algorithm():
     [
         (
             'ABSORPTION(ZO);PERIPHERALS(1)',
-            0,
+            'no_add',
             4,
         ),
         ('ABSORPTION(ZO);TRANSITS(1)', False, 2),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
-            0,
+            'no_add',
             7,
         ),
         (
             'ABSORPTION(ZO);PERIPHERALS([1, 2])',
-            0,
+            'no_add',
             8,
         ),
         (
             'ABSORPTION(SEQ-ZO-FO);LAGTIME()',
-            0,
+            'no_add',
             2,
         ),
         (
             'ABSORPTION(ZO);LAGTIME();PERIPHERALS(1)',
-            0,
+            'no_add',
             15,
         ),
         (
             'ABSORPTION(ZO);LAGTIME();PERIPHERALS([1,2]);ELIMINATION(ZO)',
-            0,
+            'no_add',
             170,
         ),
         (
             'LAGTIME();TRANSITS(1);PERIPHERALS(1)',
-            1,
+            'diagonal',
             7,
         ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);ELIMINATION(MM)',
-            0,
+            'no_add',
             7,
         ),
         ('ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)', 0, 7),
         (
             'LAGTIME();TRANSITS(1)',
-            0,
+            'no_add',
             2,
         ),
         (
             'ABSORPTION(ZO);TRANSITS(3, *)',
-            0,
+            'no_add',
             3,
         ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME();TRANSITS([1,3,10],*);'
             'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])',
-            0,
+            'no_add',
             246,
         ),
     ],
 )
-def test_exhaustive_stepwise_algorithm(mfl, iiv_strategy, no_of_models):
-    wf, _ = exhaustive_stepwise(mfl, iiv_strategy=iiv_strategy)
+def test_exhaustive_stepwise_algorithm(mfl: str, iiv_strategy: str, no_of_models: int):
+    search_space = mfl_parse(mfl)
+    wf, _ = exhaustive_stepwise(search_space, iiv_strategy=iiv_strategy)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
@@ -121,8 +124,9 @@ def test_exhaustive_stepwise_algorithm(mfl, iiv_strategy, no_of_models):
         ),
     ],
 )
-def test_reduced_stepwise_algorithm(mfl, no_of_models):
-    wf, _ = reduced_stepwise(mfl, iiv_strategy=0)
+def test_reduced_stepwise_algorithm(mfl: str, no_of_models: int):
+    search_space = mfl_parse(mfl)
+    wf, _ = reduced_stepwise(search_space, iiv_strategy='no_add')
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
@@ -278,6 +282,12 @@ def test_validate_input_with_model(load_model_for_test, testdata):
         (
             None,
             dict(search_space=MINIMAL_INVALID_MFL_STRING),
+            ValueError,
+            'Invalid `search_space`',
+        ),
+        (
+            None,
+            dict(search_space='LET(x, 0)'),
             ValueError,
             'Invalid `search_space`',
         ),

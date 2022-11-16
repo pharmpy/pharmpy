@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, List, Mapping, Optional
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy, sympy_printing
+from pharmpy.internals.parse import AttrTree
 from pharmpy.internals.sequence.lcs import diff
 from pharmpy.model import (
     Assignment,
@@ -86,7 +87,7 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
             # This is a new theta
             theta_number = get_next_theta(model)
             if re.match(r'THETA\(\d+\)', name):
-                p_renamed = Parameter(f'THETA({theta_number})', p.init, p.lower, p.upper, p.fix)
+                p_renamed = p.replace(name=f'THETA({theta_number})')
             record = create_theta_record(model, p_renamed)
             assert isinstance(record, ThetaRecord)
             record.add_nonmem_name(p_renamed.name, theta_number)
@@ -205,16 +206,31 @@ def get_next_theta(model: Model):
 def create_theta_record(model: Model, param: Parameter):
     param_str = '$THETA  '
 
-    if param.upper < 1000000:
-        if param.lower <= -1000000:
-            param_str += f'(-INF,{param.init},{param.upper})'
-        else:
-            param_str += f'({param.lower},{param.init},{param.upper})'
+    if param.init == 0.0:
+        init = 0
     else:
-        if param.lower <= -1000000:
-            param_str += f'{param.init}'
+        init = param.init
+
+    if param.lower == 0.0:
+        lower = 0
+    else:
+        lower = param.lower
+
+    if param.upper == 0.0:
+        upper = 0
+    else:
+        upper = param.upper
+
+    if upper < 1000000:
+        if lower <= -1000000:
+            param_str += f'(-INF,{init},{upper})'
         else:
-            param_str += f'({param.lower},{param.init})'
+            param_str += f'({lower},{init},{upper})'
+    else:
+        if lower <= -1000000:
+            param_str += f'{init}'
+        else:
+            param_str += f'({lower},{init})'
     if param.fix:
         param_str += ' FIX'
     param_str += '\n'
@@ -457,8 +473,8 @@ def to_des(model: Model, new: ODESystem):
     else:
         subs.append_option('ADVAN13')
     if not subs.has_option('TOL'):
-        subs.append_option('TOL', 9)
-    des = model.internals.control_stream.insert_record('$DES\nDUMMY=0')
+        subs.append_option('TOL', '9')
+    des = model.internals.control_stream.insert_record('$DES\nDUMMY=0\n')
     assert isinstance(des, CodeRecord)
     des.from_odes(new)
     model.internals.control_stream.remove_records(
@@ -1357,11 +1373,11 @@ def update_input(model: Model):
 
         if i >= len(model.datainfo):
             last_child = input_records[0].root.children[-1]
-            if last_child.rule == 'ws' and '\n' in str(last_child):
+            if last_child.rule == 'NEWLINE':
                 keep.append(last_child)
             break
 
-    input_records[0].root.children = keep
+    input_records[0].root = AttrTree(input_records[0].root.rule, tuple(keep))
 
     last_input_record = input_records[-1]
     for ci in model.datainfo[len(colnames) :]:
@@ -1381,6 +1397,7 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
 
     estimates = model.initial_individual_estimates
     if estimates is not model.internals._old_initial_individual_estimates:
+        assert estimates is not None
         rv_names = {rv for rv in model.random_variables.names if rv.startswith('ETA')}
         columns = set(estimates.columns)
         if columns < rv_names:
@@ -1419,7 +1436,7 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
         try:
             first_est_record.option_pairs['MCETA']
         except KeyError:
-            first_est_record.set_option('MCETA', 1)
+            first_est_record.set_option('MCETA', '1')
 
 
 def _sort_eta_columns(df: pd.DataFrame):

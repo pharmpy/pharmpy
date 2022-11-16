@@ -523,6 +523,25 @@ def test_parameters_sdcorr():
     assert params == {'x': 2.0, 'y': 0.0625, 'z': 4.0, 'k': 23}
 
 
+def test_variability_level():
+    level = VariabilityLevel('IIV', reference=True, group='ID')
+    assert level.name == 'IIV'
+    assert level.reference is True
+    assert level.group == 'ID'
+
+    new = level.replace(group='L1')
+    assert new.name == 'IIV'
+    assert new.reference is True
+    assert new.group == 'L1'
+
+    new = level.replace(group='L1', reference=False)
+    assert new.name == 'IIV'
+    assert new.reference is False
+    assert new.group == 'L1'
+
+    assert repr(level) == "VariabilityLevel(IIV, reference=True, group=ID)"
+
+
 def test_variability_hierarchy():
     lev1 = VariabilityLevel('IIV', reference=True, group='ID')
     levs = VariabilityHierarchy([lev1])

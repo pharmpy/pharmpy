@@ -1,5 +1,5 @@
 from collections import Counter, defaultdict
-from dataclasses import astuple, dataclass
+from dataclasses import astuple, dataclass, replace
 from itertools import count
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
@@ -22,11 +22,12 @@ from pharmpy.tools.mfl.feature.covariate import (
     parse_spec,
     spec,
 )
-from pharmpy.tools.mfl.parse import parse
+from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import Task, Workflow, call_workflow
 
+from ..mfl.filter import covsearch_statement_types
 from .results import COVSearchResults
 
 NAME_WF = 'covsearch'
@@ -208,7 +209,7 @@ def task_greedy_forward_search(
 ) -> SearchState:
     candidate = state.best_candidate_so_far
     assert state.all_candidates_so_far == [candidate]
-    effect_spec = spec(candidate.model, parse(effects)) if isinstance(effects, str) else effects
+    effect_spec = spec(candidate.model, mfl_parse(effects)) if isinstance(effects, str) else effects
     candidate_effects = sorted(set(parse_spec(effect_spec)))
 
     def handle_effects(
@@ -436,12 +437,15 @@ def task_results(p_forward: float, p_backward: float, state: SearchState):
         COVSearchResults, base_model, base_model, res_models, 'lrt', (p_forward, p_backward)
     )
 
-    res.steps = _make_df_steps(best_model, candidates)
-    res.candidate_summary = candidate_summary_dataframe(res.steps)
-    res.ofv_summary = ofv_summary_dataframe(res.steps, final_included=True, iterations=True)
-
-    res.summary_tool = _modify_summary_tool(res.summary_tool, res.steps)
-    res.summary_models = _summarize_models(models, res.steps)
+    steps = _make_df_steps(best_model, candidates)
+    res = replace(
+        res,
+        steps=steps,
+        candidate_summary=candidate_summary_dataframe(steps),
+        ofv_summary=ofv_summary_dataframe(steps, final_included=True, iterations=True),
+        summary_tool=_modify_summary_tool(res.summary_tool, steps),
+        summary_models=_summarize_models(models, steps),
+    )
 
     return res
 
@@ -550,10 +554,22 @@ def validate_input(effects, p_forward, p_backward, algorithm, model):
     if model is not None:
         if isinstance(effects, str):
             try:
-                parsed = parse(effects)
+                statements = mfl_parse(effects)
             except:  # noqa E722
                 raise ValueError(f'Invalid `effects`, could not be parsed: `{effects}`')
-            effect_spec = spec(model, parsed)
+
+            bad_statements = list(
+                filter(
+                    lambda statement: not isinstance(statement, covsearch_statement_types),
+                    statements,
+                )
+            )
+
+            if bad_statements:
+                raise ValueError(
+                    f'Invalid `effects`: found unknown statement of type {type(bad_statements[0]).__name__}.'
+                )
+            effect_spec = spec(model, statements)
         else:
             effect_spec = effects
 

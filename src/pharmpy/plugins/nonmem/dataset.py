@@ -127,13 +127,13 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
     statements = ignore if ignore else accept
 
     grammar = r'''
-        start: column [space] operator [space] value | column [space] value
+        start: column skip1? (operator skip2?)? expr
         column: COLNAME
-        operator: OP_EQ | OP_STR_EQ | OP_NE | OP_STR_NE | OP_LT | OP_GT | OP_LT_EQ | OP_GT_EQ
-        value: TEXT | QUOTE
-        space: WS
         COLNAME: /\w+/
+        skip1: WS
+        skip2: WS
         WS: /\s+/
+        operator: OP_EQ | OP_STR_EQ | OP_NE | OP_STR_NE | OP_LT | OP_GT | OP_LT_EQ | OP_GT_EQ
         OP_EQ    : ".EQN."
         OP_STR_EQ: ".EQ." | "==" | "="
         OP_NE    : ".NEN."
@@ -142,22 +142,32 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
         OP_GT    : ".GT." | ">"
         OP_LT_EQ : ".LE." | "<="
         OP_GT_EQ : ".GE." | ">="
-        TEXT: /[^"',;()=\s]+/
-        QUOTE: /"[^"]*"/
-             | /'[^']*'/
+        expr: EXPR | QEXPR
+        EXPR  : /[^"',;()=<>\/.\s][^"',;()=\s]*/
+        QEXPR : /"[^"]*"/
+              | /'[^']*'/
     '''
-    parser = Lark(grammar)
+    parser = Lark(
+        grammar,
+        start='start',
+        parser='lalr',
+        lexer='contextual',
+        propagate_positions=False,
+        maybe_placeholders=False,
+        debug=False,
+        cache=True,
+    )
     for s in statements:
         tree = parser.parse(s)
         column = ''
-        value = ''
+        expr = ''
         operator = '=='
         operator_type = str
         for st in tree.iter_subtrees():
             if st.data == 'column':
                 column = str(st.children[0])
-            elif st.data == 'value':
-                value = str(st.children[0])
+            elif st.data == 'expr':
+                expr = str(st.children[0])
             elif st.data == 'operator':
                 operator_token = st.children[0]
                 tp = operator_token.type  # pyright: ignore [reportGeneralTypeIssues]
@@ -185,14 +195,14 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
                 elif tp == 'OP_STR_NE':
                     operator = '!='
                     operator_type = str
-        if len(value) >= 3 and (
-            (value.startswith("'") and value.endswith("'"))
-            or (value.startswith('"') and value.endswith('"'))
+        if len(expr) >= 3 and (
+            (expr.startswith("'") and expr.endswith("'"))
+            or (expr.startswith('"') and expr.endswith('"'))
         ):
-            value = value[1:-1]
+            expr = expr[1:-1]
 
         if operator_type == str:
-            expression = f'{column} {operator} "{value}"'
+            expression = f'{column} {operator} "{expr}"'
             if ignore:
                 expression = 'not(' + expression + ')'
             df.query(expression, inplace=True)
@@ -202,7 +212,7 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
             # Using a name with spaces since this cannot collide with other NONMEM names
             magic_colname = 'a a'
             df[magic_colname] = df[column].apply(_convert_data_item, args=(str(null_value),))
-            expression = f'`{magic_colname}` {operator} {value}'
+            expression = f'`{magic_colname}` {operator} {expr}'
             if ignore:
                 expression = 'not(' + expression + ')'
             df.query(expression, inplace=True)

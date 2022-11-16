@@ -1,8 +1,11 @@
+import numpy as np
+import pandas as pd
 import pytest
 
 from pharmpy.modeling import (
     add_time_after_dose,
     check_dataset,
+    deidentify_data,
     drop_columns,
     drop_dropped_columns,
     expand_additional_doses,
@@ -305,3 +308,33 @@ def test_expand_additional_doses(load_model_for_test, testdata):
     assert df.loc[2, 'EXPANDED']
     assert df.loc[3, 'EXPANDED']
     assert not df.loc[4, 'EXPANDED']
+
+
+def test_deidentify_data():
+    np.random.seed(23)
+
+    example = pd.DataFrame(
+        {'ID': [1, 1, 2, 2], 'DATE': ["2012-05-25", "2013-04-02", "2011-12-23", "2005-02-28"]}
+    )
+    df = deidentify_data(example, date_columns=['DATE'])
+    correct = pd.to_datetime(
+        pd.Series(["1908-05-25", "1909-04-02", "1907-12-23", "1901-02-28"], name='DATE')
+    )
+    pd.testing.assert_series_equal(df['DATE'], correct)
+
+    example = pd.DataFrame(
+        {
+            'ID': [1, 1, 2, 2],
+            'DATE': ["2012-05-25", "2013-04-02", "2011-12-23", "2005-02-28"],
+            'BIRTH': ["1980-07-07", "1980-07-07", "1956-10-12", "1956-10-12"],
+        }
+    )
+    df = deidentify_data(example, date_columns=['DATE', 'BIRTH'])
+    correct_date = pd.to_datetime(
+        pd.Series(["1959-12-23", "1953-02-28", "1960-05-25", "1961-04-02"], name='DATE')
+    )
+    correct_birth = pd.to_datetime(
+        pd.Series(["1904-10-12", "1904-10-12", "1928-07-07", "1928-07-07"], name='BIRTH')
+    )
+    pd.testing.assert_series_equal(df['DATE'], correct_date)
+    pd.testing.assert_series_equal(df['BIRTH'], correct_birth)

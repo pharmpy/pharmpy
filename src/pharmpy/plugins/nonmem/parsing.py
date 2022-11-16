@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
 
 import pharmpy.plugins.nonmem
 from pharmpy.deps import pandas as pd
@@ -24,6 +24,8 @@ from pharmpy.model import (
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 
 from .advan import _compartmental_model
+from .dataset import read_nonmem_dataset
+from .nmtran_parser import NMTranControlStream
 from .parameters import parameter_translation
 
 
@@ -75,7 +77,11 @@ def parse_random_variables(control_stream) -> RandomVariables:
     return rvs
 
 
-def parse_statements(model, control_stream) -> Tuple[Statements, Optional[Dict[str, int]]]:
+def parse_statements(
+    di: DataInfo,
+    dataset: Callable[[], pd.DataFrame],
+    control_stream: NMTranControlStream,
+) -> Tuple[Statements, Optional[Dict[str, int]]]:
     rec = control_stream.get_pred_pk_record()
     statements = rec.statements
 
@@ -85,10 +91,10 @@ def parse_statements(model, control_stream) -> Tuple[Statements, Optional[Dict[s
 
     if error:
         sub = control_stream.get_records('SUBROUTINES')[0]
-        comp = _compartmental_model(model, control_stream, sub.advan, sub.trans, des)
+        comp = _compartmental_model(di, dataset, control_stream, sub.advan, sub.trans, des)
         trans_amounts = {}
         if comp is None:
-            statements += ExplicitODESystem([], {})  # FIXME: Placeholder for ODE-system
+            statements += ExplicitODESystem((), {})  # FIXME: Placeholder for ODE-system
             # FIXME: Dummy link statement
             statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
         else:
@@ -647,11 +653,12 @@ def get_zero_fix_rvs(control_stream, eta=True):
 def replace_synonym_in_filters(filters, replacements):
     result = []
     for f in filters:
-        if f.COLUMN in replacements:
+        col = f.leaf('COLUMN').value
+        if col in replacements:
             s = ''
             for child in f.children:
                 if child.rule == 'COLUMN':
-                    value = replacements[f.COLUMN]
+                    value = replacements[col]
                 else:
                     value = str(child)
                 s += value
@@ -659,3 +666,60 @@ def replace_synonym_in_filters(filters, replacements):
             s = str(f)
         result.append(s)
     return result
+
+
+def parse_dataset(
+    di: DataInfo,
+    control_stream: NMTranControlStream,
+    raw: bool = False,
+    parse_columns: Tuple[str, ...] = (),
+):
+    data_records = control_stream.get_records('DATA')
+    ignore_character = data_records[0].ignore_character
+    null_value = data_records[0].null_value
+    (colnames, drop, replacements, _) = parse_column_info(control_stream)
+
+    if raw:
+        ignore = None
+        accept = None
+    else:
+        # FIXME: All direct handling of control stream spanning
+        # over one or more records should move
+        ignore = data_records[0].ignore
+        accept = data_records[0].accept
+        # FIXME: This should really only be done if setting the dataset
+        if ignore:
+            ignore = replace_synonym_in_filters(ignore, replacements)
+        else:
+            accept = replace_synonym_in_filters(accept, replacements)
+
+    df = read_nonmem_dataset(
+        di.path,
+        raw,
+        ignore_character,
+        colnames,
+        drop,
+        null_value=null_value,
+        parse_columns=parse_columns,
+        ignore=ignore,
+        accept=accept,
+        dtype=None if raw else di.get_dtype_dict(),
+    )
+    # Let TIME be the idv in both $PK and $PRED models
+    # Remove individuals without observations
+    col_names = list(df.columns)
+    have_pk = control_stream.get_pk_record()
+    if have_pk:
+        if 'EVID' in col_names:
+            df_obs = df.astype({'EVID': 'float'}).query('EVID == 0')
+        elif 'MDV' in col_names:
+            df_obs = df.astype({'MDV': 'float'}).query('MDV == 0')
+        elif 'AMT' in col_names:
+            df_obs = df.astype({'AMT': 'float'}).query('AMT == 0')
+        else:
+            raise DatasetError('Could not identify observation rows in dataset')
+        have_obs = set(df_obs['ID'].unique())
+        all_ids = set(df['ID'].unique())
+        ids_to_remove = all_ids - have_obs
+        df = df[~df['ID'].isin(ids_to_remove)]
+    return df

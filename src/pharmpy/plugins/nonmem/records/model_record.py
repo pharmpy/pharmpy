@@ -18,15 +18,11 @@ class ModelRecord(OptionRecord):
         return nc
 
     def add_compartment(self, name, dosing=False):
-        options = [name]
-        if dosing:
-            options.append('DEFDOSE')
+        options = (name, 'DEFDOSE') if dosing else (name,)
         self.append_option('COMPARTMENT', f'({" ".join(options)})')
 
     def prepend_compartment(self, name, dosing=False):
-        options = [name]
-        if dosing:
-            options.append('DEFDOSE')
+        options = (name, 'DEFDOSE') if dosing else (name,)
         self.prepend_option('COMPARTMENT', f'({" ".join(options)})')
 
     def get_compartment_number(self, name):
@@ -51,7 +47,11 @@ class ModelRecord(OptionRecord):
 
     def compartments(self):
         ncomps = self.ncomps
-        if ncomps is not None and not self.has_option("COMPARTMENT"):
+        if (
+            ncomps is not None
+            and not self.has_option("COMPARTMENT")
+            and not self.has_option("COMP")
+        ):
             for i in range(1, ncomps + 1):
                 yield f'COMP{i}', []
             return

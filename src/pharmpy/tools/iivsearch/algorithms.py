@@ -8,6 +8,7 @@ from pharmpy.model import Model, RandomVariables
 from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.expressions import get_rv_parameters
+from pharmpy.results import mfr
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
@@ -135,7 +136,7 @@ def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model):
             split_joint_distribution(model, part)
         else:
             create_joint_distribution(
-                model, list(part), individual_estimates=model.modelfit_results.individual_estimates
+                model, list(part), individual_estimates=mfr(model).individual_estimates
             )
     return model
 

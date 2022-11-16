@@ -1,25 +1,27 @@
 import re
+from dataclasses import dataclass
 from math import sqrt
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import linalg
 from pharmpy.model import Model, Results
 from pharmpy.modeling import plot_individual_predictions
+from pharmpy.results import mfr
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
 
 
+@dataclass(frozen=True)
 class CDDResults(Results):
     """CDD Results class"""
 
     rst_path = Path(__file__).resolve().parent / 'report.rst'
 
-    def __init__(self, case_results=None, case_column=None, individual_predictions_plot=None):
-        self.case_results = case_results
-        self.case_column = case_column
-        self.individual_predictions_plot = individual_predictions_plot
+    case_results: Optional[Any] = None
+    case_column: Optional[Any] = None
+    individual_predictions_plot: Optional[Any] = None
 
 
 def compute_cook_scores(base_estimate, cdd_estimates, covariance_matrix):
@@ -41,7 +43,7 @@ def compute_cook_scores(base_estimate, cdd_estimates, covariance_matrix):
 
 
 def compute_delta_ofv(base_model: Model, cdd_models: List[Model], skipped_individuals):
-    iofv = base_model.modelfit_results.individual_ofv
+    iofv = mfr(base_model).individual_ofv
     if iofv is None:
         return [np.nan] * len(cdd_models)
 
@@ -97,8 +99,6 @@ def calculate_results(
 
     cdd_model_names = [m.name for m in cdd_models]
 
-    res = CDDResults(case_column=case_column)
-
     # create Series of NaN values and then replace any computable results
     cook_temp = pd.Series(np.nan, index=cdd_model_names)
     try:
@@ -149,7 +149,6 @@ def calculate_results(
             iplot = None
     else:
         iplot = None
-    res.individual_predictions_plot = iplot
 
     try:
         covmatrix = base_model.modelfit_results.covariance_matrix
@@ -171,8 +170,9 @@ def calculate_results(
     )
 
     case_results.index = pd.RangeIndex(start=1, stop=len(case_results) + 1)
-    res.case_results = case_results
-    return res
+    return CDDResults(
+        case_column=case_column, individual_predictions_plot=iplot, case_results=case_results
+    )
 
 
 def psn_cdd_options(path: Union[str, Path]):

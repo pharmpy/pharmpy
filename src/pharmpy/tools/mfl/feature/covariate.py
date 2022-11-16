@@ -1,13 +1,13 @@
 from itertools import product
-from typing import Iterable, List, Tuple, TypeVar, Union
+from typing import Iterable, Tuple, TypeVar, Union
 
 from pharmpy.model import Model
 from pharmpy.modeling.covariate_effect import EffectType, OperationType, add_covariate_effect
 from pharmpy.modeling.expressions import get_individual_parameters, get_pk_parameters
 
-from ..statement.definition import Definition
+from ..statement.definition import Let
 from ..statement.feature.covariate import (
-    CovariateEffects,
+    Covariate,
     CovariateWildcard,
     EffectFunctionWildcard,
     ParameterWildcard,
@@ -49,13 +49,15 @@ def spec(model: Model, statements: Iterable[Statement]) -> Iterable[Spec]:
     effects = []
     definition = {}
     for statement in statements:
-        if isinstance(statement, CovariateEffects):
+        if isinstance(statement, Covariate):
             effects.append(statement)
-        elif isinstance(statement, Definition):
+        elif isinstance(statement, Let):
             definition[statement.name] = statement.value
 
     for effect in effects:
-        yield _effects_to_tuple(model, definition, effect)
+        t = _effects_to_tuple(model, definition, effect)
+        if all(t):  # NOTE We do not yield empty products
+            yield t
 
 
 def _ensure_tuple_or_list(x):
@@ -71,49 +73,51 @@ def parse_spec(spec: Iterable[Spec]) -> Iterable[EffectLiteral]:
         yield from product(parameters, covariates, fps, operations)
 
 
-def _effects_to_tuple(model: Model, definition, effect: CovariateEffects) -> Spec:
-    parameter = (
+def _effects_to_tuple(model: Model, definition, effect: Covariate) -> Spec:
+    parameters = (
         _interpret_symbol(model, definition, effect.parameter)
         if isinstance(effect.parameter, Symbol)
         else effect.parameter
     )
-    covariate = (
+    covariates = (
         _interpret_symbol(model, definition, effect.covariate)
         if isinstance(effect.covariate, Symbol)
         else effect.covariate
     )
-    fp = all_continuous_covariate_effects if effect.fp is EffectFunctionWildcard else effect.fp
-    op = effect.op
-    return (tuple(parameter), tuple(covariate), tuple(f.lower() for f in fp), op)
+    fps = all_continuous_covariate_effects if effect.fp is EffectFunctionWildcard else effect.fp
+    ops = effect.op
+    return (parameters, covariates, tuple(fp.lower() for fp in fps), ops)
 
 
-def _interpret_symbol(model: Model, definition, symbol: Symbol) -> List[str]:
+def _interpret_symbol(model: Model, definition, symbol: Symbol) -> Tuple[str, ...]:
     if isinstance(symbol, Ref):
-        value = definition.get(symbol.name, [])
-        if symbol.name in ['ABSORPTION', 'ELIMINATION', 'DISTRIBUTION']:
-            return value or get_pk_parameters(model, kind=symbol.name.lower())
-        elif symbol.name == 'CATEGORICAL':
-            return value or [
-                column.name
-                for column in model.datainfo
-                if column.type == 'covariate' and not column.continuous
-            ]
-        elif symbol.name == 'CONTINUOUS':
-            return value or [
-                column.name
-                for column in model.datainfo
-                if column.type == 'covariate' and column.continuous
-            ]
-        elif symbol.name == 'IIV':
-            return get_individual_parameters(model, level='iiv')
-        else:
-            return value
+        try:
+            return definition[symbol.name]
+        except KeyError:
+            if symbol.name in ['ABSORPTION', 'ELIMINATION', 'DISTRIBUTION']:
+                return tuple(get_pk_parameters(model, kind=symbol.name.lower()))
+            elif symbol.name == 'CATEGORICAL':
+                return tuple(
+                    column.name
+                    for column in model.datainfo
+                    if column.type == 'covariate' and not column.continuous
+                )
+            elif symbol.name == 'CONTINUOUS':
+                return tuple(
+                    column.name
+                    for column in model.datainfo
+                    if column.type == 'covariate' and column.continuous
+                )
+            elif symbol.name == 'IIV':
+                return tuple(get_individual_parameters(model, level='iiv'))
+            else:
+                return ()
 
     assert isinstance(symbol, Wildcard)
 
     if symbol is ParameterWildcard:
-        return get_pk_parameters(model)
+        return tuple(get_pk_parameters(model))
 
     assert symbol is CovariateWildcard
 
-    return [column.name for column in model.datainfo if column.type == 'covariate']
+    return tuple(column.name for column in model.datainfo if column.type == 'covariate')

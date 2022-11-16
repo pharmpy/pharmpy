@@ -36,7 +36,12 @@ def load_model_for_test(tmp_path_factory):
         # TODO Cache based on file contents instead.
 
         def _parse_model():
-            return Model.create_model(given_path)
+            model = Model.create_model(given_path)
+            try:
+                model.dataset  # NOTE Force parsing of dataset
+            except FileNotFoundError:
+                pass  # NOTE The error will resurface later if needed
+            return model
 
         basetemp = tmp_path_factory.getbasetemp().resolve()
 

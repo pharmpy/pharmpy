@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from typing import Any, Optional
+
 from pharmpy.model import Results
 from pharmpy.workflows import Task, Workflow
 
@@ -20,8 +23,8 @@ def post_process_results(res):
     return res
 
 
+@dataclass(frozen=True)
 class EvalDesignResults(Results):
-    def __init__(self, ofv=None, individual_ofv=None, information_matrix=None):
-        self.ofv = ofv
-        self.individual_ofv = individual_ofv
-        self.information_matrix = information_matrix
+    ofv: Optional[float] = None
+    individual_ofv: Optional[Any] = None
+    information_matrix: Optional[Any] = None

@@ -1,7 +1,7 @@
-from pharmpy.model import Parameter, Parameters
+from pharmpy.model import Model, Parameter, Parameters
 
 
-def get_thetas(model):
+def get_thetas(model: Model):
     """Get all thetas (structural parameters) of a model
 
     Parameters
@@ -19,10 +19,10 @@ def get_thetas(model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> get_thetas(model)
-                 value  lower    upper    fix
-    THETA(1)  0.004693   0.00  1000000  False
-    THETA(2)  1.009160   0.00  1000000  False
-    THETA(3)  0.100000  -0.99  1000000  False
+                 value  lower      upper    fix
+    THETA(1)  0.004693   0.00  1000000.0  False
+    THETA(2)  1.009160   0.00  1000000.0  False
+    THETA(3)  0.100000  -0.99  1000000.0  False
 
     See also
     --------
@@ -34,7 +34,7 @@ def get_thetas(model):
     return Parameters(thetas)
 
 
-def get_omegas(model):
+def get_omegas(model: Model):
     """Get all omegas (variability parameters) of a model
 
     Parameters
@@ -53,8 +53,8 @@ def get_omegas(model):
     >>> model = load_example_model("pheno")
     >>> get_omegas(model)
                    value  lower upper    fix
-    OMEGA(1,1)  0.030963      0    oo  False
-    OMEGA(2,2)  0.031128      0    oo  False
+    OMEGA(1,1)  0.030963    0.0     ∞  False
+    OMEGA(2,2)  0.031128    0.0     ∞  False
 
     See also
     --------
@@ -65,7 +65,7 @@ def get_omegas(model):
     return Parameters(omegas)
 
 
-def get_sigmas(model):
+def get_sigmas(model: Model):
     """Get all sigmas (residual error variability parameters) of a model
 
     Parameters
@@ -84,7 +84,7 @@ def get_sigmas(model):
     >>> model = load_example_model("pheno")
     >>> get_sigmas(model)
                    value  lower upper    fix
-    SIGMA(1,1)  0.013241      0    oo  False
+    SIGMA(1,1)  0.013241    0.0     ∞  False
 
     See also
     --------
@@ -97,7 +97,7 @@ def get_sigmas(model):
     return Parameters(sigmas)
 
 
-def set_initial_estimates(model, inits):
+def set_initial_estimates(model: Model, inits):
     """Set initial estimates
 
     Parameters
@@ -119,7 +119,7 @@ def set_initial_estimates(model, inits):
     >>> set_initial_estimates(model, {'THETA(1)': 2})   # doctest: +ELLIPSIS
     <...>
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 2, lower=0.0, upper=1000000, fix=False)
+    Parameter("THETA(1)", 2, lower=0.0, upper=1000000.0, fix=False)
 
     See also
     --------
@@ -130,7 +130,7 @@ def set_initial_estimates(model, inits):
     return model
 
 
-def set_upper_bounds(model, bounds):
+def set_upper_bounds(model: Model, bounds):
     """Set parameter upper bounds
 
     Parameters
@@ -172,7 +172,7 @@ def set_upper_bounds(model, bounds):
     return model
 
 
-def set_lower_bounds(model, bounds):
+def set_lower_bounds(model: Model, bounds):
     """Set parameter lower bounds
 
     Parameters
@@ -194,7 +194,7 @@ def set_lower_bounds(model, bounds):
     >>> set_lower_bounds(model, {'THETA(1)': -10})   # doctest: +ELLIPSIS
     <...>
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=-10, upper=1000000, fix=False)
+    Parameter("THETA(1)", 0.00469307, lower=-10, upper=1000000.0, fix=False)
 
     See also
     --------
@@ -214,7 +214,7 @@ def set_lower_bounds(model, bounds):
     return model
 
 
-def fix_parameters(model, parameter_names):
+def fix_parameters(model: Model, parameter_names):
     """Fix parameters
 
     Fix all listed parameters
@@ -236,11 +236,11 @@ def fix_parameters(model, parameter_names):
     >>> from pharmpy.modeling import fix_parameters, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=False)
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
     >>> fix_parameters(model, 'THETA(1)')       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=True)
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=True)
 
     See also
     --------
@@ -257,7 +257,7 @@ def fix_parameters(model, parameter_names):
     new = []
     for p in params:
         if p.name in parameter_names:
-            new_param = p.derive(fix=True)
+            new_param = p.replace(fix=True)
         else:
             new_param = p
         new.append(new_param)
@@ -265,7 +265,7 @@ def fix_parameters(model, parameter_names):
     return model
 
 
-def unfix_parameters(model, parameter_names):
+def unfix_parameters(model: Model, parameter_names):
     """Unfix parameters
 
     Unfix all listed parameters
@@ -311,7 +311,7 @@ def unfix_parameters(model, parameter_names):
     new = []
     for p in params:
         if p.name in parameter_names:
-            new_param = p.derive(fix=False)
+            new_param = p.replace(fix=False)
         else:
             new_param = p
         new.append(new_param)
@@ -319,7 +319,7 @@ def unfix_parameters(model, parameter_names):
     return model
 
 
-def fix_parameters_to(model, inits):
+def fix_parameters_to(model: Model, inits):
     """Fix parameters to
 
     Fix all listed parameters to specified value/values
@@ -341,11 +341,11 @@ def fix_parameters_to(model, inits):
     >>> from pharmpy.modeling import fix_parameters_to, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=False)
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
     >>> fix_parameters_to(model, {'THETA(1)': 0.5})       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000, fix=True)
+    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000.0, fix=True)
 
     See also
     --------
@@ -361,7 +361,7 @@ def fix_parameters_to(model, inits):
     return model
 
 
-def unfix_parameters_to(model, inits):
+def unfix_parameters_to(model: Model, inits):
     """Unfix parameters to
 
     Unfix all listed parameters to specified value/values
@@ -386,7 +386,7 @@ def unfix_parameters_to(model, inits):
     >>> model.parameters.fix        # doctest: +ELLIPSIS
     {'THETA(1)': False, 'THETA(2)': True, 'THETA(3)': True, ...}
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000, fix=False)
+    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000.0, fix=False)
 
     Returns
     -------
@@ -406,7 +406,7 @@ def unfix_parameters_to(model, inits):
     return model
 
 
-def fix_or_unfix_parameters(model, parameters):
+def fix_or_unfix_parameters(model: Model, parameters):
     """Fix or unfix parameters
 
     Set fixedness of parameters to specified values
@@ -423,11 +423,11 @@ def fix_or_unfix_parameters(model, parameters):
     >>> from pharmpy.modeling import fix_or_unfix_parameters, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=False)
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
     >>> fix_or_unfix_parameters(model, {'THETA(1)': True})       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=True)
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=True)
 
     Returns
     -------
@@ -447,7 +447,7 @@ def fix_or_unfix_parameters(model, parameters):
     new = []
     for p in params:
         if p.name in parameters:
-            new_param = p.derive(fix=parameters[p.name])
+            new_param = p.replace(fix=parameters[p.name])
         else:
             new_param = p
         new.append(new_param)
@@ -455,7 +455,7 @@ def fix_or_unfix_parameters(model, parameters):
     return model
 
 
-def unconstrain_parameters(model, parameter_names):
+def unconstrain_parameters(model: Model, parameter_names):
     """Remove all constraints from parameters
 
     Parameters
@@ -470,11 +470,11 @@ def unconstrain_parameters(model, parameter_names):
     >>> from pharmpy.modeling import unconstrain_parameters, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=False)
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
     >>> unconstrain_parameters(model, ['THETA(1)'])       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=-oo, upper=oo, fix=False)
+    Parameter("THETA(1)", 0.00469307, lower=-∞, upper=∞, fix=False)
 
     Returns
     -------
@@ -500,7 +500,7 @@ def unconstrain_parameters(model, parameter_names):
     return model
 
 
-def add_population_parameter(model, name, init, lower=None, upper=None, fix=False):
+def add_population_parameter(model: Model, name, init, lower=None, upper=None, fix=False):
     """Add a new population parameter to the model
 
     Parameters
@@ -530,17 +530,17 @@ def add_population_parameter(model, name, init, lower=None, upper=None, fix=Fals
     >>> add_population_parameter(model, 'POP_KA', 2)       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters
-                   value lower    upper    fix
-    THETA(1)    0.004693   0.0  1000000  False
-    THETA(2)    1.009160   0.0  1000000  False
-    THETA(3)    0.100000 -0.99  1000000  False
-    OMEGA(1,1)  0.030963     0       oo  False
-    OMEGA(2,2)  0.031128     0       oo  False
-    SIGMA(1,1)  0.013241     0       oo  False
-    POP_KA      2.000000   -oo       oo  False
+                   value lower      upper    fix
+    THETA(1)    0.004693   0.0  1000000.0  False
+    THETA(2)    1.009160   0.0  1000000.0  False
+    THETA(3)    0.100000 -0.99  1000000.0  False
+    OMEGA(1,1)  0.030963   0.0          ∞  False
+    OMEGA(2,2)  0.031128   0.0          ∞  False
+    SIGMA(1,1)  0.013241   0.0          ∞  False
+    POP_KA      2.000000    -∞          ∞  False
     """
 
-    param = Parameter(name, init, lower=lower, upper=upper, fix=fix)
+    param = Parameter.create(name, init, lower=lower, upper=upper, fix=fix)
     params = model.parameters + param
     model.parameters = params
     return model

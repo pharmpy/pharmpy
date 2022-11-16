@@ -1,4 +1,3 @@
-import importlib
 import inspect
 import os
 import shutil
@@ -14,6 +13,7 @@ from pharmpy.tools.run import (
     _create_metadata_common,
     _create_metadata_tool,
     _get_run_setup,
+    import_tool,
     rank_models,
     read_modelfit_results,
     retrieve_final_model,
@@ -25,12 +25,12 @@ from pharmpy.workflows import LocalDirectoryToolDatabase, local_dask
 
 
 def test_create_metadata_tool():
-    name = 'modelsearch'
-    tool = importlib.import_module(f'pharmpy.tools.{name}')
+    tool_name = 'modelsearch'
+    tool = import_tool(tool_name)
     tool_params = inspect.signature(tool.create_workflow).parameters
 
     metadata = _create_metadata_tool(
-        tool_name=name,
+        tool_name=tool_name,
         tool_params=tool_params,
         tool_options={'iiv_strategy': 0},
         args=('ABSORPTION(ZO)', 'exhaustive'),
@@ -41,7 +41,7 @@ def test_create_metadata_tool():
     assert metadata['tool_options']['rank_type'] == 'bic'
 
     metadata = _create_metadata_tool(
-        tool_name=name,
+        tool_name=tool_name,
         tool_params=tool_params,
         tool_options={'algorithm': 'exhaustive'},
         args=('ABSORPTION(ZO)',),
@@ -52,7 +52,7 @@ def test_create_metadata_tool():
 
     with pytest.raises(Exception, match='modelsearch: \'algorithm\' was not set'):
         _create_metadata_tool(
-            tool_name=name,
+            tool_name=tool_name,
             tool_params=tool_params,
             tool_options={},
             args=('ABSORPTION(ZO)',),

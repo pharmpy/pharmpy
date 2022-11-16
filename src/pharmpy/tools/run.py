@@ -23,7 +23,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
-from pharmpy.results import ModelfitResults
+from pharmpy.results import ModelfitResults, mfr
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import execute_workflow, split_common_options
 from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
@@ -86,10 +86,10 @@ def fit(
     if kept:
         run_tool('modelfit', kept, tool=tool)
 
-    return models[0].modelfit_results if single else [model.modelfit_results for model in models]
+    return mfr(models[0]) if single else list(map(mfr, models))
 
 
-def create_results(path, **kwargs):
+def create_results(path: Union[str, Path], **kwargs) -> Results:
     """Create/recalculate results object given path to run directory
 
     Parameters
@@ -119,7 +119,7 @@ def create_results(path, **kwargs):
     return res
 
 
-def read_results(path):
+def read_results(path: Union[str, Path]) -> Results:
     """Read results object from file
 
     Parameters
@@ -323,7 +323,10 @@ def _get_run_setup(common_options, toolname):
     return dispatcher, database
 
 
-def retrieve_models(source, names=None):
+def retrieve_models(
+    source: Union[str, Path, Results, ToolDatabase, ModelDatabase],
+    names: Optional[List[str]] = None,
+) -> List[Model]:
     """Retrieve models after a tool run
 
     Any models created and run by the tool can be
@@ -358,9 +361,10 @@ def retrieve_models(source, names=None):
         # FIXME: Should be using metadata to know how to init databases
         db = LocalModelDirectoryDatabase(path / 'models')
     elif isinstance(source, Results):
-        if hasattr(source, 'tool_database'):
-            db = source.tool_database.model_database
-        else:
+        try:
+            db_tool = getattr(source, 'tool_database')
+            db = db_tool.model_database
+        except AttributeError:
             raise ValueError(
                 f'Results type \'{source.__class__.__name__}\' does not serialize tool database'
             )
@@ -370,7 +374,7 @@ def retrieve_models(source, names=None):
         db = source
     else:
         raise NotImplementedError(f'Not implemented for type \'{type(source)}\'')
-    names_all = db.list_models()
+    names_all: List[str] = db.list_models()
     if names is None:
         names = names_all
     diff = set(names).difference(names_all)
@@ -380,7 +384,7 @@ def retrieve_models(source, names=None):
     return models
 
 
-def retrieve_final_model(res):
+def retrieve_final_model(res: Results) -> Model:
     """Retrieve final model from a result object
 
     Parameters
@@ -404,12 +408,18 @@ def retrieve_final_model(res):
     retrieve_models
 
     """
-    if res.final_model_name is None:
+    try:
+        final_model_name = getattr(res, 'final_model_name')
+    except AttributeError:
+        raise ValueError('Attribute \'final_model_name\' is missing from results object')
+
+    if final_model_name is None:
         raise ValueError('Attribute \'final_model_name\' is None')
-    return retrieve_models(res, names=[res.final_model_name])[0]
+
+    return retrieve_models(res, names=[final_model_name])[0]
 
 
-def print_fit_summary(model):
+def print_fit_summary(model: Model):
     """Print a summary of the model fit
 
     Parameters
@@ -433,12 +443,14 @@ def print_fit_summary(model):
     def print_fmt(text, result):
         print(f"{text:33} {result}")
 
-    res = model.modelfit_results
+    res = mfr(model)
 
     print_header("Parameter estimation status", first=True)
     print_fmt("Minimization successful", bool_ok_error(res.minimization_successful))
     print_fmt("No rounding errors", bool_ok_error(res.termination_cause != 'rounding_errors'))
-    print_fmt("Objective function value", round(res.ofv, 1))
+    ofv = res.ofv
+    assert ofv is not None
+    print_fmt("Objective function value", round(ofv, 1))
 
     print_header("Parameter uncertainty status")
     cov_run = model.estimation_steps[-1].cov
@@ -448,7 +460,7 @@ def print_fit_summary(model):
         condno = round(np.linalg.cond(res.correlation_matrix), 1)
         print_fmt("Condition number", condno)
         print_fmt("Condition number < 1000", bool_ok_error(condno < 1000))
-        cor = model.modelfit_results.correlation_matrix
+        cor = res.correlation_matrix
         assert cor is not None
         hicorr = check_high_correlations(model, cor)
         print_fmt("No correlations arger than 0.9", bool_ok_error(hicorr.empty))
@@ -457,6 +469,7 @@ def print_fit_summary(model):
     pe = res.parameter_estimates
     if cov_run:
         se = res.standard_errors
+        assert se is not None
         rse = se / pe
         rse.name = 'RSE'
         df = pd.concat([pe, se, rse], axis=1)
@@ -465,7 +478,7 @@ def print_fit_summary(model):
     print(df)
 
 
-def write_results(results, path, lzma=False, csv=False):
+def write_results(results: Results, path: Union[str, Path], lzma: bool = False, csv: bool = False):
     """Write results object to json (or csv) file
 
     Note that the csv-file cannot be read into a results object again.
@@ -487,7 +500,7 @@ def write_results(results, path, lzma=False, csv=False):
         results.to_json(path, lzma=lzma)
 
 
-def summarize_errors(models):
+def summarize_errors(models: Union[Model, List[Model]]) -> pd.Dataframe:
     """Summarize errors and warnings from one or multiple model runs.
 
     Summarize the errors and warnings found after running the model/models.
@@ -536,7 +549,12 @@ def summarize_errors(models):
 
 
 def rank_models(
-    base_model, models, errors_allowed=None, rank_type='ofv', cutoff=None, bic_type='mixed'
+    base_model: Model,
+    models: List[Model],
+    errors_allowed: Optional[List[str]] = None,
+    rank_type: str = 'ofv',
+    cutoff: Optional[float] = None,
+    bic_type: str = 'mixed',
 ) -> pd.DataFrame:
     """Ranks a list of models
 
@@ -679,7 +697,10 @@ def _get_rankval(model, rank_type, bic_type):
         raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
 
 
-def summarize_modelfit_results(results, include_all_estimation_steps=False):
+def summarize_modelfit_results(
+    results: Union[ModelfitResults, List[ModelfitResults]],
+    include_all_estimation_steps: bool = False,
+) -> pd.Dataframe:
     """Summarize results of model runs
 
     Summarize different results after fitting a model, includes runtime, ofv,
@@ -797,7 +818,7 @@ def _summarize_step(res, i):
     return summary_dict
 
 
-def read_modelfit_results(path):
+def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
     """Read results from external tool for a model
 
     Parameters
@@ -813,4 +834,4 @@ def read_modelfit_results(path):
     path = Path(path)
     # FIXME: Quick and dirty solution
     model = read_model(path)
-    return model.modelfit_results
+    return mfr(model)

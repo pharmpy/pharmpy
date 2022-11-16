@@ -4,6 +4,7 @@
 # purposes.
 
 import re
+from pathlib import Path
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model as BaseModel
@@ -19,9 +20,9 @@ def detect_model(src, *args, **kwargs):
 
 
 class Model(BaseModel):
-    def __init__(self, src, path, **kwargs):
+    def __init__(self, code, path, **_):
         super().__init__()
-        self.code = src
+        self.code = code
         self.path = path
 
     def _parse_labels_and_formats(self):
@@ -58,3 +59,7 @@ class Model(BaseModel):
             widths += [int(m.group(2))] * int(m.group(1))
         df = pd.read_fwf(self.path.parent / 'FDATA', widths=widths, header=None, names=labels)
         return df
+
+
+def parse_code(code: str, path: Path, **kwargs):
+    return Model(code, path, **kwargs)

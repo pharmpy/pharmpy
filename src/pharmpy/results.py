@@ -3,14 +3,24 @@ from __future__ import annotations
 import importlib
 import json
 import lzma
+import re
+from contextlib import closing
 from dataclasses import dataclass
+from io import StringIO
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Results
+from pharmpy.internals.immutable import Immutable
+from pharmpy.model import Model, Results
 from pharmpy.workflows import Log
+
+
+def mfr(model: Model) -> ModelfitResults:
+    res = model.modelfit_results
+    assert isinstance(res, ModelfitResults)
+    return res
 
 
 class ResultsJSONDecoder(json.JSONDecoder):
@@ -82,26 +92,32 @@ class ResultsJSONDecoder(json.JSONDecoder):
         return obj
 
 
-def read_results(path_or_buf):
-    if '{' in str(path_or_buf):  # Heuristic to determine if path or buffer
-        s = path_or_buf
+def _is_likely_to_be_json(source: str):
+    # NOTE Heuristic to determine if path or buffer: first non-space character
+    # is '{'.
+    match = re.match(r'\s*([^\s])', source)
+    return match is not None and match.group(1) == '{'
+
+
+def read_results(path_or_str: Union[str, Path]):
+    if isinstance(path_or_str, str) and _is_likely_to_be_json(path_or_str):
+        manager = closing(StringIO(path_or_str))
     else:
-        path = Path(path_or_buf)
+        path = Path(path_or_str)
         if path.is_dir():
             path /= 'results.json'
-        if not path.is_file():
-            raise FileNotFoundError(str(path))
+
         if path.name.endswith('.xz'):
-            with lzma.open(path, 'r') as json_file:
-                s = json_file.read().decode('utf-8')
+            manager = lzma.open(path, 'r', encoding='utf-8')
         else:
-            with open(path, 'r') as json_file:
-                s = json_file.read()
-    return ResultsJSONDecoder().decode(s)
+            manager = open(path, 'r')
+
+    with manager as readable:
+        return json.load(readable, cls=ResultsJSONDecoder)
 
 
-@dataclass
-class ModelfitResults(Results):
+@dataclass(frozen=True)
+class ModelfitResults(Results, Immutable):
     """Base class for results from a modelfit operation
 
     Attributes

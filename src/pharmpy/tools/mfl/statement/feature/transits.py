@@ -8,7 +8,7 @@ from .symbols import Name, Wildcard
 
 @dataclass(frozen=True)
 class Transits(ModelFeature):
-    counts: Tuple[int]
+    counts: Tuple[int, ...]
     depot: Union[Name[Literal['DEPOT']], Name[Literal['NODEPOT']], Wildcard] = Name('DEPOT')
 
 

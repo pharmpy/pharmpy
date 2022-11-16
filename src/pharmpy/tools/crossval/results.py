@@ -1,15 +1,19 @@
+from __future__ import annotations
+
 import re
+from dataclasses import dataclass
+from typing import Any, Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
 
 
+@dataclass(frozen=True)
 class CrossvalResults(Results):
     """Crossval results class"""
 
-    def __init__(self, runs=None, prediction_ofv_sum=None):
-        self.runs = runs
-        self.prediction_ofv_sum = prediction_ofv_sum
+    runs: Optional[Any] = None
+    prediction_ofv_sum: Optional[Any] = None
 
 
 def calculate_results(estimation_models, prediction_models):
@@ -21,8 +25,7 @@ def calculate_results(estimation_models, prediction_models):
         index=pd.RangeIndex(start=1, stop=len(est_ofvs) + 1),
     )
 
-    res = CrossvalResults(runs=runs, prediction_ofv_sum=sum(pred_ofvs))
-    return res
+    return CrossvalResults(runs=runs, prediction_ofv_sum=sum(pred_ofvs))
 
 
 def psn_crossval_results(path):

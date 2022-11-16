@@ -5,7 +5,7 @@ from os import stat
 from pathlib import Path
 from typing import Union
 
-from pharmpy.internals.df import hash_df
+from pharmpy.internals.df import hash_df_fs
 from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import DataInfo, Model
@@ -32,14 +32,15 @@ def get_modelfit_results(model, path):
     # the database. For this to work roundtrip of DataFrames in json is needed.
     # This is currently broken because of rounding issue in pandas
     # Also the modelfit_results attribute will soon be removed from model objects.
-    if hasattr(model, "internals"):
-        from pharmpy.plugins.nonmem import parse_modelfit_results
+    import pharmpy.plugins.nonmem as nonmem
 
-        res = parse_modelfit_results(model, path)
+    if isinstance(model, nonmem.Model):
+        res = nonmem.parse_modelfit_results(model, path)
     else:
-        from pharmpy.plugins.nlmixr import parse_modelfit_results
+        import pharmpy.plugins.nlmixr as nlmixr
 
-        res = parse_modelfit_results(model, path)
+        assert isinstance(model, nlmixr.Model)
+        res = nlmixr.parse_modelfit_results(model, path)
 
     model.modelfit_results = res
 
@@ -63,8 +64,7 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
 
     def __init__(self, path='.', file_extension='.mod'):
         path = Path(path)
-        if not path.exists():
-            path.mkdir(parents=True)
+        path.mkdir(parents=True, exist_ok=True)
         self.path = path_absolute(path)
         self.file_extension = file_extension
         self.ignored_names = frozenset(('stdout', 'stderr', 'nonmem.json', 'nlmixr.json'))
@@ -136,8 +136,7 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
 
     def __init__(self, path: Union[str, Path] = '.', file_extension='.mod'):
         path = Path(path)
-        if not path.exists():
-            path.mkdir(parents=True)
+        path.mkdir(parents=True, exist_ok=True)
         self.path = path_absolute(path)
         self.file_extension = file_extension
 
@@ -208,8 +207,8 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
 
         # NOTE Get the hash of the dataset and list filenames with contents
         # matching this hash only
-        h = hash_df(model.dataset)
-        h_dir = datasets_path / DIRECTORY_INDEX / str(h)
+        h = hash_df_fs(model.dataset)
+        h_dir = datasets_path / DIRECTORY_INDEX / h
         h_dir.mkdir(parents=True, exist_ok=True)
         for hpath in h_dir.iterdir():
             # NOTE This variable holds a string similar to "run1.csv"
@@ -249,23 +248,20 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
     def store_local_file(self, path, new_filename=None):
         if Path(path).is_file():
             destination = self.db.path / self.model.name
-            if not destination.is_dir():
-                destination.mkdir(parents=True)
+            destination.mkdir(parents=True, exist_ok=True)
             if new_filename:
                 destination = destination / new_filename
             shutil.copy2(path, destination)
 
     def store_metadata(self, metadata):
         destination = self.db.path / self.model.name / DIRECTORY_PHARMPY_METADATA
-        if not destination.is_dir():
-            destination.mkdir(parents=True)
+        destination.mkdir(parents=True, exist_ok=True)
         with open(destination / FILE_METADATA, 'w') as f:
             json.dump(metadata, f, indent=2)
 
     def store_modelfit_results(self):
         destination = self.db.path / self.model.name / DIRECTORY_PHARMPY_METADATA
-        if not destination.is_dir():
-            destination.mkdir(parents=True)
+        destination.mkdir(parents=True, exist_ok=True)
 
         if self.model.modelfit_results:
             self.model.modelfit_results.to_json(destination / FILE_MODELFIT_RESULTS)

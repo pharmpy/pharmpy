@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+from dataclasses import replace
 from typing import Iterable
 
 import numpy as np
@@ -70,7 +71,7 @@ $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0.0,0.00469307) ; POP_CL
+$THETA  (0,0.00469307) ; POP_CL
 $OMEGA  0.0309626 ; IIV_CLMM
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
@@ -97,7 +98,7 @@ $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0.0,0.00469307) ; POP_CL
+$THETA  (0,0.00469307) ; POP_CL
 $OMEGA  0.0309626 ; IIV_CLMM
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
@@ -133,7 +134,7 @@ $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0.0,0.00469307) ; POP_CLMM
+$THETA  (0,0.00469307) ; POP_CLMM
 $THETA  (0,0.067,1358.0) FIX ; POP_KM
 $OMEGA  0.0309626 ; IIV_CLMM
 $OMEGA 0.031128  ; IVV
@@ -163,7 +164,7 @@ $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0.0,0.00469307) ; POP_CLMM
+$THETA  (0,0.00469307) ; POP_CLMM
 $THETA  (0,0.067,1358.0) ; POP_KM
 $OMEGA  0.0309626 ; IIV_CLMM
 $OMEGA 0.031128  ; IVV
@@ -229,7 +230,7 @@ $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0.0,0.00469307) ; POP_CLMM
+$THETA  (0,0.00469307) ; POP_CLMM
 $THETA  (0,135.8,1358.0) ; POP_KM
 $OMEGA  0.0309626 ; IIV_CLMM
 $OMEGA 0.031128  ; IVV
@@ -260,7 +261,7 @@ $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0.0,0.00469307) ; POP_CLMM
+$THETA  (0,0.00469307) ; POP_CLMM
 $THETA  (0,135.8,1358.0) FIX ; POP_KM
 $OMEGA  0.0309626 ; IIV_CLMM
 $OMEGA 0.031128  ; IVV
@@ -306,7 +307,7 @@ DADT(1) = -A(1)*CLMM*KM/(V*(A(1)/V + KM))
 $ERROR
 Y=F+F*EPS(1)
 $THETA (0,1.00916) ; POP_V
-$THETA  (0.0,0.00469307) ; POP_CLMM
+$THETA  (0,0.00469307) ; POP_CLMM
 $THETA  (0,135.8,1358.0) ; POP_KM
 $OMEGA  0.25 ; IIV_CLMM
 $OMEGA 0.5  ; IIV_V
@@ -2727,19 +2728,16 @@ def test_update_inits_move_est(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     res = model.modelfit_results
 
-    create_joint_distribution(
-        model, individual_estimates=model.modelfit_results.individual_estimates
-    )
+    create_joint_distribution(model, individual_estimates=res.individual_estimates)
     add_iiv(model, 'S1', 'add')
 
-    param_est = res.parameter_estimates
+    param_est = res.parameter_estimates.copy()
     param_est['IIV_CL_IIV_V'] = 0.0285  # Correlation > 0.99
     param_est['IIV_S1'] = 0.0005
-    res.parameter_estimates = param_est
 
-    update_inits(model, model.modelfit_results.parameter_estimates, move_est_close_to_bounds=True)
+    update_inits(model, param_est, move_est_close_to_bounds=True)
 
-    assert model.parameters['OMEGA(1,1)'].init == res.parameter_estimates['OMEGA(1,1)']
+    assert model.parameters['OMEGA(1,1)'].init == param_est['OMEGA(1,1)']
     assert model.parameters['IIV_S1'].init == 0.01
     assert round(model.parameters['IIV_CL_IIV_V'].init, 6) == 0.025757
 
@@ -2749,9 +2747,8 @@ def test_update_inits_zero_fix(load_model_for_test, pheno_path):
     d = {name: 0 for name in model.random_variables.iiv.parameter_names}
     fix_parameters_to(model, d)
     res = model.modelfit_results
-    param_est = res.parameter_estimates
-    del param_est['OMEGA(1,1)']
-    update_inits(model, model.modelfit_results.parameter_estimates)
+    param_est = res.parameter_estimates.drop(index=['OMEGA(1,1)'])
+    update_inits(model, param_est)
     assert model.parameters['OMEGA(1,1)'].init == 0
     assert model.parameters['OMEGA(1,1)'].fix
 
@@ -2759,9 +2756,8 @@ def test_update_inits_zero_fix(load_model_for_test, pheno_path):
     d = {name: 0 for name in model.random_variables.iiv.parameter_names}
     fix_parameters_to(model, d)
     res = model.modelfit_results
-    param_est = res.parameter_estimates
-    del param_est['OMEGA(1,1)']
-    update_inits(model, model.modelfit_results.parameter_estimates, move_est_close_to_bounds=True)
+    param_est = res.parameter_estimates.drop(index=['OMEGA(1,1)'])
+    update_inits(model, param_est, move_est_close_to_bounds=True)
     assert model.parameters['OMEGA(1,1)'].init == 0
     assert model.parameters['OMEGA(1,1)'].fix
 
@@ -2776,8 +2772,11 @@ def test_update_inits_no_res(load_model_for_test, testdata, tmp_path):
 
         model = load_model_for_test('run1.mod')
 
-        model.modelfit_results.parameter_estimates = pd.Series(
-            np.nan, name='estimates', index=list(model.parameters.nonfixed.inits.keys())
+        model.modelfit_results = replace(
+            model.modelfit_results,
+            parameter_estimates=pd.Series(
+                np.nan, name='estimates', index=list(model.parameters.nonfixed.inits.keys())
+            ),
         )
 
         with pytest.raises(ValueError):

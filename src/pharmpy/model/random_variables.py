@@ -3,13 +3,14 @@ from __future__ import annotations
 from collections.abc import Container as CollectionsContainer
 from collections.abc import Sequence as CollectionsSequence
 from itertools import chain, product
-from typing import Container, Dict, Iterable, Sequence, Set, Tuple, Union, overload
+from typing import Container, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union, overload
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
 from pharmpy.internals.expr.eval import eval_expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
+from pharmpy.internals.immutable import Immutable
 from pharmpy.internals.math import cov2corr, is_positive_semidefinite, nearest_postive_semidefinite
 
 from .distributions.numeric import NumericDistribution
@@ -24,7 +25,7 @@ def _create_rng(seed=None) -> np.random.Generator:
         return np.random.default_rng(seed)
 
 
-class VariabilityLevel:
+class VariabilityLevel(Immutable):
     """A variability level
 
     Parameters
@@ -32,15 +33,25 @@ class VariabilityLevel:
     name : str
         A unique identifying name
     reference : bool
-        Is this the reference level. Normally IIV would be the reference level
+        Is this the reference level? Normally IIV would be the reference level
     group : str
         Name of data column to group this level. None for no grouping (default)
     """
 
-    def __init__(self, name, reference=False, group=None):
+    def __init__(self, name: str, reference: bool = False, group: Optional[str] = None):
         self._name = name
         self._reference = reference
         self._group = group
+
+    @classmethod
+    def create(cls, name: str, reference=False, group: Optional[str] = None):
+        return VariabilityLevel(name, bool(reference), group)
+
+    def replace(self, **kwargs):
+        name = kwargs.get('name', self._name)
+        reference = kwargs.get('reference', self._reference)
+        group = kwargs.get('group', self._group)
+        return VariabilityLevel(name, bool(reference), group)
 
     def __eq__(self, other):
         return (
@@ -55,12 +66,12 @@ class VariabilityLevel:
             return VariabilityHierarchy([self] + other._levels)
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Name of the variability level"""
         return self._name
 
     @property
-    def reference(self):
+    def reference(self) -> bool:
         """Is this the reference level"""
         return self._reference
 
@@ -69,8 +80,11 @@ class VariabilityLevel:
         """Group variable for variability level"""
         return self._group
 
+    def __repr__(self):
+        return f"VariabilityLevel({self._name}, reference={self._reference}, group={self._group})"
 
-class VariabilityHierarchy:
+
+class VariabilityHierarchy(Immutable):
     """Description of a variability hierarchy"""
 
     def __init__(self, levels=None):
@@ -148,7 +162,7 @@ class VariabilityHierarchy:
         return new
 
     @property
-    def names(self):
+    def names(self) -> List[str]:
         """Names of all variability levels"""
         return [varlev.name for varlev in self._levels]
 
@@ -174,7 +188,7 @@ class VariabilityHierarchy:
         return value in self.names
 
 
-class RandomVariables(CollectionsSequence):
+class RandomVariables(CollectionsSequence, Immutable):
     """A collection of distributions of random variables
 
     This class provides a container for random variables that preserves their order

@@ -1,20 +1,22 @@
 import json
 import warnings
+from dataclasses import dataclass
 from lzma import open as lzma_open
 from pathlib import Path
 from typing import Any, Dict
 
 import pharmpy
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.immutable import Immutable
 
 from .model import Model
 
 
-class Results:
+@dataclass(frozen=True)
+class Results(Immutable):
     """Base class for all result classes"""
 
-    def __init__(self, **_):
-        self.__version__ = pharmpy.__version__  # NOTE Default version if not overridden
+    __version__: str = pharmpy.__version__  # NOTE Default version if not overridden
 
     @classmethod
     def from_dict(cls, d):
@@ -24,11 +26,10 @@ class Results:
             'best_model',  # NOTE Was removed in d5b3503 and 8578c8b
             'input_model',  # NOTE Was removed in d5b3503 and 8578c8b
         }
-        res_obj = cls(
+        return cls(
+            __version__=d.get('__version__', 'unknown'),  # NOTE Override default version
             **{k: v for k, v in d.items() if k not in removed_keys},
         )
-        res_obj.__version__ = d.get('__version__', 'unknown')  # NOTE Override default version
-        return res_obj
 
     def to_json(self, path=None, lzma=False):
         """Serialize results object as json

@@ -13,7 +13,6 @@ from pharmpy.workflows import (
     LocalModelDirectoryDatabase,
     ModelDatabase,
     NullModelDatabase,
-    NullToolDatabase,
 )
 
 
@@ -38,8 +37,6 @@ def test_local_directory(tmp_path):
 
 
 def test_null_database():
-    db = NullToolDatabase("any", sl1=23, model=45, opr=12, dummy="some dummy kwargs")
-    db.store_local_file("path")
     db = NullModelDatabase(klr=123, f="oe")
     db.store_local_file("path", 34)
 

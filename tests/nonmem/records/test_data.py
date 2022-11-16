@@ -1,5 +1,5 @@
 import pytest
-from lark.exceptions import UnexpectedCharacters
+from lark.exceptions import UnexpectedToken
 
 from pharmpy.model import ModelSyntaxError
 
@@ -12,7 +12,7 @@ def test_data_filename_get(parser):
     assert record.filename == '/home/full/pheno.dta'
 
     record = parser.parse("$DATA 'pheno.dta'").records[0]
-    assert str(record.root.filename) == "'pheno.dta'"
+    assert str(record.root.subtree('filename')) == "'pheno.dta'"
     assert record.filename == "pheno.dta"
 
     record = parser.parse(r'$DATA "C:\windowspath\with space in.csv"').records[0]
@@ -98,7 +98,7 @@ def test_ignore_character(parser):
     assert record.ignore_character == '"'
     assert str(record) == '$DATA pheno.dta IGNORE="'
 
-    with pytest.raises(UnexpectedCharacters):
+    with pytest.raises(UnexpectedToken):
         record = parser.parse('$DATA pheno.dta IGNORE=""').records[0]
 
     record = parser.parse('$DATA pheno.dta IGNORE=c IGNORE=@').records[0]

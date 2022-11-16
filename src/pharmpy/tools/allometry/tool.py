@@ -9,7 +9,7 @@ from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
 from pharmpy.modeling import add_allometry, get_pk_parameters
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import (
@@ -18,8 +18,9 @@ from pharmpy.tools import (
     summarize_individuals_count_table,
     summarize_modelfit_results,
 )
+from pharmpy.tools.common import ToolResults
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, ToolDatabase, Workflow
+from pharmpy.workflows import Task, Workflow
 
 
 def create_workflow(
@@ -165,7 +166,7 @@ def results(start_model, allometry_model):
     sumcount = summarize_individuals_count_table(df=suminds)
     sumerrs = summarize_errors([start_model, allometry_model])
 
-    res = AllometryResults(
+    return AllometryResults(
         summary_models=summods,
         summary_individuals=suminds,
         summary_individuals_count=sumcount,
@@ -173,14 +174,7 @@ def results(start_model, allometry_model):
         final_model_name=best_model.name,
     )
 
-    return res
 
-
-@dataclass
-class AllometryResults(Results):
-    summary_models: Optional[pd.DataFrame] = None
-    summary_individuals: Optional[pd.DataFrame] = None
-    summary_individuals_count: Optional[pd.DataFrame] = None
-    summary_errors: Optional[pd.DataFrame] = None
-    final_model_name: Optional[str] = None
-    tool_database: Optional[ToolDatabase] = None
+@dataclass(frozen=True)
+class AllometryResults(ToolResults):
+    pass

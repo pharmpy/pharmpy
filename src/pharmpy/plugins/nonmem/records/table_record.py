@@ -13,7 +13,7 @@ class TableRecord(OptionRecord):
 
     @path.setter
     def path(self, value):
-        self.set_option('FILE', value)
+        self.set_option('FILE', str(value))
 
     @property
     def eta_derivatives(self):

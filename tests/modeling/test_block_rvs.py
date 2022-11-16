@@ -42,7 +42,7 @@ def test_choose_param_init(load_model_for_test, pheno_path):
     rv_new = NormalDistribution.create('ETA(3)', 'IIV', 0, S('OMEGA(3,3)'))
     rvs += rv_new
     res = model.modelfit_results
-    ie = res.individual_estimates
+    ie = res.individual_estimates.copy()
     ie['ETA(3)'] = ie['ETA(1)']
     model.modelfit_results = ModelfitResults(
         parameter_estimates=res.parameter_estimates, individual_estimates=ie
@@ -61,7 +61,7 @@ def test_choose_param_init(load_model_for_test, pheno_path):
     # If the standard deviation in individual estimates of one eta is 0
     model = load_model_for_test(pheno_path)
     res = model.modelfit_results
-    ie = res.individual_estimates
+    ie = res.individual_estimates.copy()
     ie['ETA(1)'] = 0
     model.modelfit_results = ModelfitResults(
         parameter_estimates=res.parameter_estimates, individual_estimates=ie

@@ -1,16 +1,21 @@
-def get_lag_times(model):
+from pharmpy.model import Model, ODESystem
+
+
+def get_lag_times(model: Model):
     """Get lag times for all compartments
 
     Parameters
     ----------
-    model : Pharmpy model
+    model : Model
+        Pharmpy model
 
-    Result
-    ------
+    Returns
+    -------
     dict
         Dictionary from compartment name to lag time expression
     """
     odes = model.statements.ode_system
+    assert isinstance(odes, ODESystem)
     names = odes.compartment_names
     d = {}
     for name in names:
@@ -20,19 +25,21 @@ def get_lag_times(model):
     return d
 
 
-def get_bioavailability(model):
+def get_bioavailability(model: Model):
     """Get bioavailability of doses for all compartments
 
     Parameters
     ----------
-    model : Pharmpy model
+    model : Model
+        Pharmpy model
 
-    Result
-    ------
+    Returns
+    -------
     dict
         Dictionary from compartment name to bioavailability expression
     """
     odes = model.statements.ode_system
+    assert isinstance(odes, ODESystem)
     names = odes.compartment_names
     d = {}
     for name in names:

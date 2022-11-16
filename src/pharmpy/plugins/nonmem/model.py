@@ -6,31 +6,23 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
-import pharmpy.model
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.fs.path import path_relative_to
-from pharmpy.model import (
-    Assignment,
-    DatasetError,
-    EstimationSteps,
-    NormalDistribution,
-    Parameter,
-    Parameters,
-    RandomVariables,
-    Statements,
-)
+from pharmpy.model import Assignment, DataInfo, EstimationSteps
+from pharmpy.model import Model as BaseModel
+from pharmpy.model import NormalDistribution, Parameter, Parameters, RandomVariables, Statements
+from pharmpy.model.model import compare_before_after_params, update_datainfo
 from pharmpy.modeling.write_csv import create_dataset_path, write_csv
 
 from .config import conf
-from .dataset import read_nonmem_dataset
 from .nmtran_parser import NMTranControlStream, NMTranParser
 from .parameters import parameter_translation
 from .parsing import (
     create_name_trans,
-    parse_column_info,
     parse_datainfo,
+    parse_dataset,
     parse_description,
     parse_estimation_steps,
     parse_initial_individual_estimates,
@@ -38,10 +30,9 @@ from .parsing import (
     parse_random_variables,
     parse_statements,
     parse_value_type,
-    replace_synonym_in_filters,
 )
 from .random_variables import rv_translation
-from .results import parse_modelfit_results
+from .results import _parse_modelfit_results
 from .update import (
     abbr_translation,
     update_ccontra,
@@ -68,6 +59,8 @@ class NONMEMModelInternals:
     _old_random_variables: RandomVariables
     _old_statements: Statements
     _old_initial_individual_estimates: Optional[pd.DataFrame]
+    _old_datainfo: DataInfo
+    _dataset_updated: bool
     _compartment_map: Optional[Dict[str, int]]
 
 
@@ -92,8 +85,8 @@ def convert_model(model):
     else:
         code += '$SUBROUTINES ADVAN1 TRANS2\n'
         code += '$PK\nY=X\n'
-        code += '$ERROR\nA=B'
-    nm_model = Model(code, dataset=model.dataset)
+        code += '$ERROR\nA=B\n'
+    nm_model = parse_code(code, dataset=model.dataset)
     assert isinstance(nm_model, Model)
     nm_model._datainfo = model.datainfo
     nm_model.random_variables = model.random_variables
@@ -105,7 +98,7 @@ def convert_model(model):
     # FIXME: No handling of other DVs
     nm_model.dependent_variable = sympy.Symbol('Y')
     nm_model.value_type = model.value_type
-    nm_model._data_frame = model.dataset
+    nm_model._dataset = model.dataset
     nm_model._estimation_steps = model.estimation_steps
     nm_model._initial_individual_estimates = model.initial_individual_estimates
     nm_model.observation_transformation = subs(
@@ -122,113 +115,25 @@ def convert_model(model):
     return nm_model
 
 
-class Model(pharmpy.model.Model):
-    def __init__(self, code, path=None, dataset=None, **kwargs):
-        self.modelfit_results = None
-        parser = NMTranParser()
-        if path is None:
-            self._name = 'run1'
-            self.filename_extension = '.ctl'
-        else:
-            self._name = path.stem
-            self.filename_extension = path.suffix
-        control_stream = parser.parse(code)
-        di = parse_datainfo(control_stream, path)
-        self.datainfo = di
-        # FIXME temporary workaround remove when changing constructor
-        # NOTE inputting the dataset is needed for IV models when using convert_model, since it needs to read the
-        # RATE column to decide dosing, meaning it needs the dataset before parsing statements
-        if dataset is not None:
-            self.dataset = dataset
-        self._old_datainfo = di
-        self._dataset_updated = False
-        self._parent_model = None
+def _dataset(control_stream: NMTranControlStream, di: DataInfo, df: Optional[pd.DataFrame]):
+    # FIXME Use lambda: model.dataset instead
+    if df is None:
+        return lambda: parse_dataset(di, control_stream, raw=False)
+    else:
+        return lambda: df
 
-        dv = sympy.Symbol('Y')
-        self.dependent_variable = dv
-        self.observation_transformation = dv
 
-        parameters = parse_parameters(control_stream)
-
-        statements, comp_map = parse_statements(self, control_stream)
-
-        rvs = parse_random_variables(control_stream)
-
-        trans_statements, trans_params = create_name_trans(control_stream, rvs, statements)
-        for theta in control_stream.get_records('THETA'):
-            theta.update_name_map(trans_params)
-        for omega in control_stream.get_records('OMEGA'):
-            omega.update_name_map(trans_params)
-        for sigma in control_stream.get_records('SIGMA'):
-            sigma.update_name_map(trans_params)
-
-        d_par = {key: value for key, value in trans_params.items() if key in parameters}
-
-        d_rv = {
-            sympy.Symbol(key): value for key, value in trans_params.items() if key not in parameters
-        }
-
-        _old_random_variables = rvs  # FIXME: This has to stay here
-        rvs = rvs.subs(d_rv)
-
-        new = []
-        for p in parameters:
-            if p.name in d_par:
-                newparam = Parameter(
-                    name=d_par[p.name], init=p.init, lower=p.lower, upper=p.upper, fix=p.fix
-                )
-            else:
-                newparam = p
-            new.append(newparam)
-        parameters = Parameters(new)
-
-        statements = statements.subs(trans_statements)
-
-        if not rvs.validate_parameters(parameters.inits):
-            nearest = rvs.nearest_valid_parameters(parameters.inits)
-            before, after = self._compare_before_after_params(parameters.inits, nearest)
-            warnings.warn(
-                f"Adjusting initial estimates to create positive semidefinite "
-                f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
-                f"After adjusting: {after}"
-            )
-            parameters = parameters.set_initial_estimates(nearest)
-
-        self._random_variables = rvs
-
-        self._parameters = parameters
-
-        steps = parse_estimation_steps(control_stream, self._random_variables)
-        self._estimation_steps = steps
-
-        description = parse_description(control_stream)
-        self.description = description
-
-        init_etas = parse_initial_individual_estimates(
-            control_stream, rvs, None if path is None else path.parent
+class Model(BaseModel):
+    def __init__(
+        self,
+        internals: NONMEMModelInternals,
+        **kwargs,
+    ):
+        super().__init__(
+            **kwargs,
         )
-        self._initial_individual_estimates = init_etas
-
-        self.internals = NONMEMModelInternals(
-            control_stream=control_stream,
-            old_name=self._name,
-            _old_description=description,
-            _old_estimation_steps=steps,
-            _old_observation_transformation=dv,
-            _old_parameters=parameters,
-            _old_random_variables=_old_random_variables,
-            _old_statements=statements,
-            _old_initial_individual_estimates=init_etas,
-            _compartment_map=comp_map,
-        )
-
-        # NOTE This requires self.internals to be defined
-        self.modelfit_results = None if path is None else parse_modelfit_results(self, path)
-
-        vt = parse_value_type(control_stream, statements)
-        self._value_type = vt
-
-        self._statements = statements
+        assert isinstance(internals, NONMEMModelInternals)
+        self.internals = internals
 
     def update_source(self, path=None, force=False, nofiles=False):
         """Update the source
@@ -268,12 +173,14 @@ class Model(pharmpy.model.Model):
             self.internals._old_statements = self._statements
 
         if (
-            self._dataset_updated
-            or self.datainfo != self._old_datainfo
-            or self.datainfo.path != self._old_datainfo.path
+            self.internals._dataset_updated
+            or self.datainfo != self.internals._old_datainfo
+            or self.datainfo.path != self.internals._old_datainfo.path
         ):
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
-            if self.datainfo.path is None:  # or self.datainfo.path == self._old_datainfo.path:
+            if (
+                self.datainfo.path is None
+            ):  # or self.datainfo.path == self.internals._old_datainfo.path:
                 dir_path = Path(self.name + ".csv") if path is None else path.parent
 
                 if nofiles:
@@ -293,8 +200,8 @@ class Model(pharmpy.model.Model):
             # IGNOREs to add i.e. for filter out certain ID.
             del data_record.ignore
             del data_record.accept
-            self._dataset_updated = False
-            self._old_datainfo = self.datainfo
+            self.internals._dataset_updated = False
+            self.internals._old_datainfo = self.datainfo
 
             datapath = self.datainfo.path
             if datapath is not None:
@@ -323,74 +230,144 @@ class Model(pharmpy.model.Model):
 
     @property
     def dataset(self):
-        if not hasattr(self, '_data_frame'):
-            self._data_frame = self._read_dataset(self.internals.control_stream, raw=False)
-        return self._data_frame
+        if not hasattr(self, '_dataset'):
+            self._dataset = parse_dataset(self.datainfo, self.internals.control_stream, raw=False)
+        return self._dataset
 
     @dataset.setter
     def dataset(self, df):
-        self._dataset_updated = True
-        self._data_frame = df
+        self.internals._dataset_updated = True
+        self._dataset = df
         self.datainfo = self.datainfo.derive(path=None)
         self.update_datainfo()
 
     def read_raw_dataset(self, parse_columns: Tuple[str, ...] = ()):
-        return self._read_dataset(
-            self.internals.control_stream, raw=True, parse_columns=parse_columns
+        return parse_dataset(
+            self.datainfo, self.internals.control_stream, raw=True, parse_columns=parse_columns
         )
 
-    def _read_dataset(
-        self,
-        control_stream: NMTranControlStream,
-        raw: bool = False,
-        parse_columns: Tuple[str, ...] = (),
-    ):
-        data_records = control_stream.get_records('DATA')
-        ignore_character = data_records[0].ignore_character
-        null_value = data_records[0].null_value
-        (colnames, drop, replacements, _) = parse_column_info(control_stream)
 
-        if raw:
-            ignore = None
-            accept = None
+def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.DataFrame] = None, **_):
+    parser = NMTranParser()
+    if path is None:
+        name = 'run1'
+        filename_extension = '.ctl'
+    else:
+        name = path.stem
+        filename_extension = path.suffix
+
+    control_stream = parser.parse(code)
+    di = parse_datainfo(control_stream, path)
+    _old_datainfo = di
+    # FIXME temporary workaround remove when changing constructor
+    # NOTE inputting the dataset is needed for IV models when using convert_model, since it needs to read the
+    # RATE column to decide dosing, meaning it needs the dataset before parsing statements
+    if dataset is not None:
+        di = update_datainfo(di.derive(path=None), dataset)
+
+    dependent_variable = sympy.Symbol('Y')
+
+    parameters = parse_parameters(control_stream)
+
+    statements, comp_map = parse_statements(
+        di, _dataset(control_stream, di, dataset), control_stream
+    )
+
+    rvs = parse_random_variables(control_stream)
+
+    trans_statements, trans_params = create_name_trans(control_stream, rvs, statements)
+    for theta in control_stream.get_records('THETA'):
+        theta.update_name_map(trans_params)
+    for omega in control_stream.get_records('OMEGA'):
+        omega.update_name_map(trans_params)
+    for sigma in control_stream.get_records('SIGMA'):
+        sigma.update_name_map(trans_params)
+
+    d_par = {key: value for key, value in trans_params.items() if key in parameters}
+
+    d_rv = {
+        sympy.Symbol(key): value for key, value in trans_params.items() if key not in parameters
+    }
+
+    _old_random_variables = rvs  # FIXME: This has to stay here
+    rvs = rvs.subs(d_rv)
+
+    new = []
+    for p in parameters:
+        if p.name in d_par:
+            newparam = Parameter(
+                name=d_par[p.name], init=p.init, lower=p.lower, upper=p.upper, fix=p.fix
+            )
         else:
-            # FIXME: All direct handling of control stream spanning
-            # over one or more records should move
-            ignore = data_records[0].ignore
-            accept = data_records[0].accept
-            # FIXME: This should really only be done if setting the dataset
-            if ignore:
-                ignore = replace_synonym_in_filters(ignore, replacements)
-            else:
-                accept = replace_synonym_in_filters(accept, replacements)
+            newparam = p
+        new.append(newparam)
+    parameters = Parameters(new)
 
-        df = read_nonmem_dataset(
-            self.datainfo.path,
-            raw,
-            ignore_character,
-            colnames,
-            drop,
-            null_value=null_value,
-            parse_columns=parse_columns,
-            ignore=ignore,
-            accept=accept,
-            dtype=None if raw else self.datainfo.get_dtype_dict(),
+    statements = statements.subs(trans_statements)
+
+    if not rvs.validate_parameters(parameters.inits):
+        nearest = rvs.nearest_valid_parameters(parameters.inits)
+        before, after = compare_before_after_params(parameters.inits, nearest)
+        warnings.warn(
+            f"Adjusting initial estimates to create positive semidefinite "
+            f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
+            f"After adjusting: {after}"
         )
-        # Let TIME be the idv in both $PK and $PRED models
-        # Remove individuals without observations
-        col_names = list(df.columns)
-        have_pk = control_stream.get_pk_record()
-        if have_pk:
-            if 'EVID' in col_names:
-                df_obs = df.astype({'EVID': 'float'}).query('EVID == 0')
-            elif 'MDV' in col_names:
-                df_obs = df.astype({'MDV': 'float'}).query('MDV == 0')
-            elif 'AMT' in col_names:
-                df_obs = df.astype({'AMT': 'float'}).query('AMT == 0')
-            else:
-                raise DatasetError('Could not identify observation rows in dataset')
-            have_obs = set(df_obs['ID'].unique())
-            all_ids = set(df['ID'].unique())
-            ids_to_remove = all_ids - have_obs
-            df = df[~df['ID'].isin(ids_to_remove)]
-        return df
+        parameters = parameters.set_initial_estimates(nearest)
+
+    estimation_steps = parse_estimation_steps(control_stream, rvs)
+
+    description = parse_description(control_stream)
+
+    init_etas = parse_initial_individual_estimates(
+        control_stream, rvs, None if path is None else path.parent
+    )
+
+    value_type = parse_value_type(control_stream, statements)
+
+    modelfit_results = _parse_modelfit_results(
+        path,
+        control_stream,
+        BaseModel(  # FIXME This should not be necessary
+            name=name,
+            description=description,
+            parameters=parameters,
+            random_variables=rvs,
+            statements=statements,
+            dependent_variable=dependent_variable,
+            estimation_steps=estimation_steps,
+        ),
+    )
+
+    internals = NONMEMModelInternals(
+        control_stream=control_stream,
+        old_name=name,
+        _old_description=description,
+        _old_estimation_steps=estimation_steps,
+        _old_observation_transformation=dependent_variable,
+        _old_parameters=parameters,
+        _old_random_variables=_old_random_variables,
+        _old_statements=statements,
+        _old_initial_individual_estimates=init_etas,
+        _old_datainfo=_old_datainfo,
+        _dataset_updated=False,
+        _compartment_map=comp_map,
+    )
+
+    return Model(
+        name=name,
+        parameters=parameters,
+        random_variables=rvs,
+        statements=statements,
+        dataset=dataset,
+        datainfo=di,
+        dependent_variable=dependent_variable,
+        estimation_steps=estimation_steps,
+        modelfit_results=modelfit_results,
+        parent_model=None,
+        initial_individual_estimates=init_etas,
+        filename_extension=filename_extension,
+        value_type=value_type,
+        description=description,
+        internals=internals,
+    )

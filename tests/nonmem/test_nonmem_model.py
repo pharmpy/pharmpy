@@ -33,6 +33,11 @@ from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.tools.amd.funcs import create_start_model
 
 
+def _ensure_trailing_newline(buf):
+    # FIXME This should not be necessary
+    return buf if buf[-1] == '\n' else buf + '\n'
+
+
 def S(x):
     return symbol(x)
 
@@ -151,10 +156,10 @@ def test_adjust_iovs(load_model_for_test, testdata):
 @pytest.mark.parametrize(
     'param_new,init_expected,buf_new',
     [
-        (Parameter('COVEFF', 0.2), 0.2, '$THETA  0.2 ; COVEFF'),
-        (Parameter('THETA', 0.1), 0.1, '$THETA  0.1 ; THETA'),
-        (Parameter('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX ; THETA'),
-        (Parameter('RUV_prop', 0.1), 0.1, '$THETA  0.1 ; RUV_prop'),
+        (Parameter.create('COVEFF', 0.2), 0.2, '$THETA  0.2 ; COVEFF'),
+        (Parameter.create('THETA', 0.1), 0.1, '$THETA  0.1 ; THETA'),
+        (Parameter.create('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX ; THETA'),
+        (Parameter.create('RUV_prop', 0.1), 0.1, '$THETA  0.1 ; RUV_prop'),
     ],
 )
 def test_add_parameters(pheno, param_new, init_expected, buf_new):
@@ -247,7 +252,7 @@ def test_add_statements(pheno, statement_new, buf_new):
 @pytest.mark.parametrize(
     'param_new, statement_new, buf_new',
     [
-        (Parameter('X', 0.1), Assignment(S('Y'), S('X') + S('S1')), 'Y = S1 + THETA(4)'),
+        (Parameter.create('X', 0.1), Assignment(S('Y'), S('X') + S('S1')), 'Y = S1 + THETA(4)'),
     ],
 )
 def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new):
@@ -395,6 +400,7 @@ def test_statements_setter(pheno, buf_new, len_expected):
     model = pheno.copy()
 
     parser = NMTranParser()
+    buf_new = _ensure_trailing_newline(buf_new)
     statements_new = parser.parse(f'$PRED\n{buf_new}').records[0].statements
 
     assert len(model.statements) == 15
@@ -409,7 +415,7 @@ def test_statements_setter(pheno, buf_new, len_expected):
 def test_deterministic_theta_comments(pheno):
     no_option = 0
     for theta_record in pheno.internals.control_stream.get_records('THETA'):
-        no_option += len(theta_record.root.all('option'))
+        no_option += len(list(theta_record.root.subtrees('option')))
 
     assert no_option == 0
 

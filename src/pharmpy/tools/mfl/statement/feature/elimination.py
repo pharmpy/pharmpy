@@ -9,7 +9,7 @@ from .symbols import Name, Wildcard
 
 @dataclass(frozen=True)
 class Elimination(ModelFeature):
-    modes: Union[Tuple[Name[Literal['FO', 'ZO', 'MM', 'MIX-FO-MM']]], Wildcard]
+    modes: Union[Tuple[Name[Literal['FO', 'ZO', 'MM', 'MIX-FO-MM']], ...], Wildcard]
 
 
 class EliminationInterpreter(Interpreter):

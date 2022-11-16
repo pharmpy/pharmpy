@@ -8,7 +8,9 @@ from pharmpy.deps import sympy
 from pharmpy.deps.rich import box as rich_box
 from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import table as rich_table
-from pharmpy.model import DataInfo, DatasetError
+from pharmpy.model import CompartmentalSystem, DataInfo, DatasetError
+
+from .iterators import resample_data
 
 
 def get_ids(model):
@@ -802,7 +804,7 @@ def get_cmt(model):
     else:
         return model.dataset[cmtcols[0].name]
     odes = model.statements.ode_system
-    if odes:
+    if isinstance(odes, CompartmentalSystem):
         dosing = odes.dosing_compartment
         names = odes.compartment_names
         dose_cmt = names.index(dosing.name) + 1
@@ -1206,12 +1208,12 @@ def _find_time_and_date_columns(model):
     for col in di:
         if col.datatype == 'nmtran-time' and not col.drop:
             if time is None:
-                time = col.name
+                time = col
             else:
                 raise ValueError(f"Multiple time columns found {time} and {col.name}")
         elif col.datatype == 'nmtran-date' and not col.drop:
             if date is None:
-                date = col.name
+                date = col
             else:
                 raise ValueError(f"Multiple date columns found {date} and {col.name}")
     if time is None and date is not None:
@@ -1241,17 +1243,21 @@ def translate_nmtran_time(model):
     """
     timecol, datecol = _find_time_and_date_columns(model)
     df = model.dataset.copy()
-    idcol = model.datainfo.id_column.name
+    di = model.datainfo
+    idname = di.id_column.name
     if datecol is None:
-        if timecol is not None:
-            df = _translate_time_column(df, timecol, idcol)
-        else:
+        if timecol is None:
             return model
+        else:
+            df = _translate_time_column(df, timecol.name, idname)
     else:
-        df = _translate_time_and_date_columns(df, timecol, datecol, idcol)
-        drop_columns(model, datecol)
-        model.datainfo[timecol].unit = 'h'
-    model.datainfo[timecol].datatype = 'float64'
+        assert timecol is not None
+        df = _translate_time_and_date_columns(df, timecol.name, datecol.name, idname)
+        model = drop_columns(model, datecol.name)
+        timecol = timecol.derive(unit='h')
+    timecol = timecol.derive(datatype='float64')
+    di = di.set_column(timecol)
+    model.datainfo = di
     model.dataset = df
     return model
 
@@ -1586,5 +1592,65 @@ def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str], datatype=No
             dtype=datainfo.get_dtype_dict(),
             float_precision='round_trip',
         )
+
+    return df
+
+
+def deidentify_data(df, id_column='ID', date_columns=None):
+    """Deidentify a dataset
+
+    Two operations are performed on the dataset:
+
+    1. All ID numbers are randomized from the range 1 to n
+    2. All columns containing dates will have the year changed
+
+    The year change is done by letting the earliest year in the dataset
+    be used as a reference and by maintaining leap years. The reference year
+    will either be 1901, 1902, 1903 or 1904 depending on its distance to the closest
+    preceeding leap year.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        A dataset
+    id_column : str
+        Name of the id column
+    date_columns : list
+        Names of all date columns
+
+    Results
+    -------
+    pd.DataFrame
+        Deidentified dataset
+    """
+    df = df.copy()
+    df[id_column] = pd.to_numeric(df[id_column])
+    resampler = resample_data(df, id_column)
+    df, _ = next(resampler)
+
+    if date_columns is None:
+        return df
+    for datecol in date_columns:
+        if pd.api.types.is_datetime64_any_dtype(df[datecol]):
+            pass
+        elif df[datecol].dtype == 'object':
+            # assume string
+            df[datecol] = pd.to_datetime(df[datecol])
+        else:
+            raise ValueError(f"Column {datecol} does not seem to contain a date")
+    earliest_date = df[date_columns].min().min()
+
+    # Handle leap year modulo
+    earliest_year_modulo = earliest_date.year % 4
+    reference_offset = 4 if earliest_year_modulo == 0 else earliest_year_modulo
+    reference_year = 1900 + reference_offset
+    delta = earliest_date.year - reference_year
+
+    def convert(x):
+        new = x.replace(year=x.year - delta)
+        return new
+
+    for datecol in date_columns:
+        df[datecol] = df[datecol].transform(convert)
 
     return df
