@@ -21,7 +21,6 @@ from pharmpy.model import (
     Parameters,
     RandomVariables,
 )
-from pharmpy.workflows import default_model_database
 
 
 def read_model(path):
@@ -87,15 +86,13 @@ def read_model_from_database(name, database=None):
     return model
 
 
-def read_model_from_string(code, path=None):
+def read_model_from_string(code):
     """Read model from the model code in a string
 
     Parameters
     ----------
     code : str
         Model code to read
-    path : Path or str
-        Specified to set the path for the created model
 
     Returns
     -------
@@ -124,11 +121,6 @@ def read_model_from_string(code, path=None):
 
     """
     model = Model.create_model(StringIO(code))
-    if path is not None:
-        path = normalize_user_given_path(path)
-        import pharmpy.workflows
-
-        model.database = pharmpy.workflows.default_model_database(path)
     return model
 
 
@@ -179,7 +171,6 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
         raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
     with open(path, 'w', encoding='latin-1') as fp:
         fp.write(model.model_code)
-    model.database = default_model_database(path=path.parent)
     return model
 
 

@@ -69,6 +69,7 @@ def fit(
     # Do not fit model if already fit
     for model in models:
         try:
+            # FIXME model.database should be removed
             db_model = read_model_from_database(model.name, database=model.database)
         except (KeyError, AttributeError):
             db_model = None
