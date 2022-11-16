@@ -99,6 +99,9 @@ def execute_model(model, db):
             file_path = (model_path / basename).with_suffix(suffix)
             if suffix in ['.lst', '.ext'] and not file_path.is_file():
                 warnings.warn(f'File {basename.with_suffix(suffix)} does not exist')
+                for file in path.glob('*'):
+                    txn.store_local_file(file)
+                break
             txn.store_local_file(file_path)
 
         for rec in model.internals.control_stream.get_records('TABLE'):
