@@ -9,6 +9,7 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import add_covariate_effect, copy_model, get_pk_parameters
+from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
@@ -575,17 +576,7 @@ def validate_input(effects, p_forward, p_backward, algorithm, model):
 
         candidate_effects = map(lambda x: Effect(*x), sorted(set(parse_spec(effect_spec))))
 
-        try:
-            di_covariate = model.datainfo.typeix['covariate'].names
-        except IndexError:
-            di_covariate = []
-
-        try:
-            di_unknown = model.datainfo.typeix['unknown'].names
-        except IndexError:
-            di_unknown = []
-
-        allowed_covariates = set(di_covariate).union(di_unknown)
+        allowed_covariates = get_covariates_allowed_in_covariate_effect(model)
         allowed_parameters = set(get_pk_parameters(model)).union(
             str(statement.symbol) for statement in model.statements.before_odes
         )

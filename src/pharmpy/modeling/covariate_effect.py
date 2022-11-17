@@ -6,7 +6,7 @@ import math
 import re
 import warnings
 from operator import add, mul
-from typing import List, Literal, Union
+from typing import List, Literal, Set, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
@@ -633,3 +633,17 @@ class CovariateEffect:
     def __str__(self):
         """String representation of class."""
         return str(self.template)
+
+
+def get_covariates_allowed_in_covariate_effect(model: Model) -> Set[str]:
+    try:
+        di_covariate = model.datainfo.typeix['covariate'].names
+    except IndexError:
+        di_covariate = []
+
+    try:
+        di_unknown = model.datainfo.typeix['unknown'].names
+    except IndexError:
+        di_unknown = []
+
+    return set(di_covariate).union(di_unknown)
