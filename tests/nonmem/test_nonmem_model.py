@@ -24,6 +24,7 @@ from pharmpy.modeling import (
     add_population_parameter,
     create_joint_distribution,
     remove_iiv,
+    set_estimation_step,
     set_initial_estimates,
     set_zero_order_absorption,
     set_zero_order_elimination,
@@ -1005,6 +1006,27 @@ $SIGMA 3 ; SI1
 $ESTIMATION METHOD=1 INTER
 """
     assert model.model_code == correct
+
+
+def test_table_long_ids(testdata):
+    code = f"""$PROBLEM base model
+    $INPUT ID DV TIME
+    $DATA {testdata / "nonmem" / "pheno.dta"} IGNORE=@
+
+    $PRED
+    Y = THETA(1) + ETA(1) + EPS(1)
+
+    $THETA 1  ; TH1
+    $OMEGA 2 ; OM1
+    $SIGMA 3 ; SI1
+    $ESTIMATION METHOD=1 INTER
+    """
+    model = Model.create_model(StringIO(code))
+    dataset_new = model.dataset.copy()
+    dataset_new['ID'] = dataset_new['ID'] * 10000
+    model.dataset = dataset_new
+    set_estimation_step(model, 'FO', residuals=['CWRES'])
+    assert 'FORMAT=' in model.model_code
 
 
 def test_convert_model_iv(testdata, tmp_path):

@@ -27,7 +27,7 @@ from pharmpy.model import (
     Statements,
     data,
 )
-from pharmpy.modeling import simplify_expression
+from pharmpy.modeling import get_ids, simplify_expression
 
 if TYPE_CHECKING:
     from .model import Model
@@ -1230,6 +1230,8 @@ def update_estimation(model: Model):
         s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
         s += f'{model.datainfo.dv_column.name} '
         s += f'{" ".join(cols)} FILE=mytab NOAPPEND NOPRINT'
+        if any(id_val > 99999 for id_val in get_ids(model)):
+            s += ' FORMAT=s1PE16.8'
         model.internals.control_stream.insert_record(s)
     model.internals._old_estimation_steps = new
 
