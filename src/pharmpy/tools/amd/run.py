@@ -280,7 +280,7 @@ def noop_subfunc(_: Model):
     return None
 
 
-def _subfunc_modelsearch(search_space: Tuple[Statement], path) -> SubFunc:
+def _subfunc_modelsearch(search_space: Tuple[Statement, ...], path) -> SubFunc:
     def _run_modelsearch(model):
         res = run_tool(
             'modelsearch',
