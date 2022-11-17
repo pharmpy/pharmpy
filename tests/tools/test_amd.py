@@ -44,6 +44,25 @@ def test_skip_most(tmp_path, testdata):
         assert res.final_model == 'start'
 
 
+def test_raise_covsearch(tmp_path, testdata):
+    with chdir(tmp_path):
+        db, model = _load_model(testdata, with_datainfo=True)
+
+        with pytest.raises(
+            ValueError,
+            match='Invalid `search_space` because of invalid covariate .* got `SJDLKSDJ`',
+        ):
+            run_amd(
+                model,
+                results=model.modelfit_results,
+                search_space='LET(CONTINUOUS, [AGE, SJDLKSDJ]); LET(CATEGORICAL, [SEX])',
+                modeltype='pk_oral',
+                order=['covariates'],
+                path=db.path,
+                resume=True,
+            )
+
+
 def test_skip_covsearch(tmp_path, testdata):
     with chdir(tmp_path):
         db, model = _load_model(testdata, with_datainfo=True)
