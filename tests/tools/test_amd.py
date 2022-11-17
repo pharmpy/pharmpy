@@ -30,6 +30,7 @@ def test_skip_most(tmp_path, testdata):
             record,
             [
                 'IOVsearch will be skipped because occasion is None',
+                'COVsearch will most likely be skipped',
                 'Skipping Allometry',
                 'Skipping COVsearch',
                 'AMDResults.summary_models is None',
@@ -61,6 +62,7 @@ def test_skip_covsearch(tmp_path, testdata):
         _validate_record(
             record,
             [
+                'COVsearch will most likely be skipped',
                 'NONMEM .mod and dataset .datainfo disagree on DROP',
                 'NONMEM .mod and dataset .datainfo disagree on DROP',
                 'Skipping COVsearch',

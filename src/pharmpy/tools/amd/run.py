@@ -6,10 +6,12 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Model, Results
 from pharmpy.modeling.common import convert_model
+from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.data import remove_loq_data
 from pharmpy.modeling.eta_additions import get_occasion_levels
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import retrieve_final_model, summarize_errors, write_results
+from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
 from pharmpy.tools.mfl.feature.covariate import spec as covariate_spec
 from pharmpy.tools.mfl.filter import covsearch_statement_types, modelsearch_statement_types
 from pharmpy.tools.mfl.parse import parse as mfl_parse
@@ -173,7 +175,9 @@ def run_amd(
             func = _subfunc_allometry(allometric_variable=allometric_variable, path=db.path)
             run_subfuncs['allometry'] = func
         elif section == 'covariates':
-            func = _subfunc_covariates(search_space=covsearch_features, path=db.path)
+            func = _subfunc_covariates(
+                amd_start_model=model, search_space=covsearch_features, path=db.path
+            )
             run_subfuncs['covsearch'] = func
         else:
             raise ValueError(
@@ -319,7 +323,26 @@ def _subfunc_ruvsearch(path) -> SubFunc:
     return _run_ruvsearch
 
 
-def _subfunc_covariates(search_space: Tuple[Statement], path) -> SubFunc:
+def _subfunc_covariates(
+    amd_start_model: Model, search_space: Tuple[Statement, ...], path
+) -> SubFunc:
+    covariates = set(extract_covariates(amd_start_model, search_space))
+    if covariates:
+        allowed_covariates = get_covariates_allowed_in_covariate_effect(amd_start_model)
+        for covariate in sorted(covariates):
+            if covariate not in allowed_covariates:
+                raise ValueError(
+                    f'Invalid `search_space` because of invalid covariate found in'
+                    f' search_space: got `{covariate}`,'
+                    f' must be in {sorted(allowed_covariates)}.'
+                )
+    else:
+        warnings.warn(
+            'COVsearch will most likely be skipped because no covariates could be found.'
+            ' Check search_space definition'
+            ' and .datainfo usage of "covariate" type and "continuous" flag.'
+        )
+
     def _run_covariates(model):
         effects = list(covariate_spec(model, search_space))
 
