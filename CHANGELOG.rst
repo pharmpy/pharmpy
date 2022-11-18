@@ -1,3 +1,21 @@
+0.85.0 (2022-11-18)
+-------------------
+
+Changes
+=======
+
+* Covariates are defined in search space option in AMD-tool
+* Store name of final model instead of final model in AMD
+* Change methods and solvers option in estimation method tool: None means none should be tested
+* Add FORMAT option if length of IDs are too long (#1179)
+* Make Result classes immutable
+
+Bugfixes
+========
+
+* Fix bug in results parsing where extracting whether parameters are fixed (#1117)
+* Add timeout-loop to wait for .lst-file when renaming
+
 0.84.1 (2022-11-13)
 -------------------
 
