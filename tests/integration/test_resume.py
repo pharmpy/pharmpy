@@ -153,7 +153,7 @@ def test_run_tool_modelsearch_resume_flag(
                     assert (rundir / 'metadata.json').exists()
 
 
-def test_resume_tool(tmp_path, testdata):
+def test_resume_tool_ruvsearch(tmp_path, testdata):
     with chdir(tmp_path):
         for path in (testdata / 'nonmem').glob('pheno_real.*'):
             shutil.copy2(path, tmp_path)
@@ -163,7 +163,15 @@ def test_resume_tool(tmp_path, testdata):
         model = Model.create_model('pheno_real.mod')
         model.datainfo = model.datainfo.derive(path=tmp_path / 'pheno.dta')
         path = 'x'
-        res = run_tool('resmod', model, groups=4, p_value=0.05, skip=[], path=path)
+        res = run_tool(
+            'ruvsearch',
+            model,
+            results=model.modelfit_results,
+            groups=4,
+            p_value=0.05,
+            skip=[],
+            path=path,
+        )
         assert res
 
         res = resume_tool(path)
