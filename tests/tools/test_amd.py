@@ -40,7 +40,7 @@ def test_skip_most(tmp_path, testdata):
         assert len(res.summary_tool) == 1
         assert res.summary_models is None
         assert res.summary_individuals_count is None
-        assert res.final_model.name == 'start'
+        assert res.final_model == 'start'
 
 
 def test_skip_covsearch(tmp_path, testdata):
@@ -72,7 +72,7 @@ def test_skip_covsearch(tmp_path, testdata):
         assert len(res.summary_tool) == 1
         assert res.summary_models is None
         assert res.summary_individuals_count is None
-        assert res.final_model.name == 'start'
+        assert res.final_model == 'start'
 
 
 def test_skip_iovsearch_one_occasion(tmp_path, testdata):
@@ -102,7 +102,7 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
         assert len(res.summary_tool) == 1
         assert res.summary_models is None
         assert res.summary_individuals_count is None
-        assert res.final_model.name == 'start'
+        assert res.final_model == 'start'
 
 
 def test_skip_iovsearch_missing_occasion(tmp_path, testdata):
@@ -132,7 +132,7 @@ def test_skip_iovsearch_missing_occasion(tmp_path, testdata):
         assert len(res.summary_tool) == 1
         assert res.summary_models is None
         assert res.summary_individuals_count is None
-        assert res.final_model.name == 'start'
+        assert res.final_model == 'start'
 
 
 def _load_model(testdata: Path, with_datainfo: bool = False):
