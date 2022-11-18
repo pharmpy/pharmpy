@@ -282,6 +282,7 @@ def resume_tool(path: str):
     tool_params = inspect.signature(create_workflow).parameters
     tool_param_types = get_type_hints(create_workflow)
 
+    # NOTE Load models to memory
     for model_key in _input_model_param_keys(tool_params, tool_param_types):
         model_name = tool_options.get(model_key)
         if model_name is None:
@@ -292,12 +293,20 @@ def resume_tool(path: str):
             db: ModelDatabase = tool_database.model_database
             try:
                 model = db.retrieve_model(model_name)
+                res = db.retrieve_modelfit_results(model_name)
+                model.modelfit_results = res
             except KeyError:
                 raise ValueError(
                     f'Cannot resume run because model argument "{model_key}" ({model_name}) cannot be restored.'
                 )
             tool_options = tool_options.copy()
             tool_options[model_key] = model
+
+    # NOTE Load results to memory
+    for results_key in _results_param_keys(tool_params, tool_param_types):
+        results_json = tool_options.get(results_key)
+        if results_json is not None:
+            tool_options[results_key] = pharmpy.results.read_results(results_json)
 
     args, kwargs = _parse_metadata_tool_options(tool_params, tool_options)
 
@@ -365,7 +374,7 @@ def _create_metadata_tool(
         if isinstance(value, Model):
             value = str(value)  # NOTE Overwritten below if tool_name != modelfit
         elif isinstance(value, ModelfitResults):
-            value = 'FIXME'  # FIXME
+            value = value.to_json()
         tool_metadata['tool_options'][name] = value
 
     if tool_name != 'modelfit':
@@ -405,24 +414,29 @@ def _store_input_models(
         yield param_key, input_model_name
 
 
-def _input_model_params(params, types):
+def _filter_params(kind, params, types):
     for i, param_key in enumerate(params):
         param = params[param_key]
         param_type = types.get(param_key)
-        if param_type in (Model, Optional[Model]):
-            # NOTE We do not handle *model, or **model
+        if param_type in (kind, Optional[kind]):
+            # NOTE We do not handle *{param_key}, or **{param_key}
             assert param.kind != param.VAR_POSITIONAL
             assert param.kind != param.VAR_KEYWORD
             yield i, param_key
 
 
 def _input_model_param_keys(params, types):
-    for _, param_key in _input_model_params(params, types):
+    for _, param_key in _filter_params(Model, params, types):
+        yield param_key
+
+
+def _results_param_keys(params, types):
+    for _, param_key in _filter_params(ModelfitResults, params, types):
         yield param_key
 
 
 def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
-    for i, param_key in _input_model_params(params, types):
+    for i, param_key in _filter_params(Model, params, types):
         model = args[i] if i < len(args) else kwargs.get(param_key)
         # NOTE We do not handle missing optional models
         assert model is not None

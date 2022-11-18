@@ -9,6 +9,7 @@ from pharmpy.internals.df import hash_df_fs
 from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import DataInfo, Model
+from pharmpy.results import read_results
 
 from .baseclass import (
     ModelSnapshot,
@@ -315,8 +316,12 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         return model
 
     def retrieve_modelfit_results(self):
+        res = self.retrieve_model().modelfit_results
+        if res is not None:
+            return res
+
         # FIXME The following does not work because deserialization of modelfit
-        # results is not generic enough.
-        # path = self.path / name / DIRECTORY_PHARMPY_METADATA / FILE_MODELFIT_RESULTS
-        # return read_results(path)
-        return self.retrieve_model().modelfit_results
+        # results is not generic enough. We only use it to make the resume_tool
+        # test pass.
+        path = self.db.path / self.name / DIRECTORY_PHARMPY_METADATA / FILE_MODELFIT_RESULTS
+        return read_results(path)
