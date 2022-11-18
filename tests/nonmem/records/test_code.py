@@ -23,6 +23,16 @@ def S(x):
             S('Y'),
             S('THETA(1)') + S('ETA(1)') + S('EPS(1)'),
         ),
+        (  # NOTE github issue #1362
+            '$PRED\nY = THETA (1) + ETA(1) + EPS(1)',
+            S('Y'),
+            S('THETA(1)') + S('ETA(1)') + S('EPS(1)'),
+        ),
+        (
+            '$PRED\nY = THETA(1) + ETA(1) + ERR(1)',
+            S('Y'),
+            S('THETA(1)') + S('ETA(1)') + S('EPS(1)'),
+        ),
         ('$PRED\nCL = 2', S('CL'), 2),
         ('$PRED\n;FULL LINE COMMENT\n K=-1', S('K'), -1),
         ('$PRED K=-1.5', S('K'), -1.5),
@@ -217,6 +227,25 @@ def S(x):
             sympy.exp(S('PHI') + S('KPLAG'))
             / (sympy.Integer(1) + sympy.exp(S('PHI') + S('KPLAG'))),
         ),
+        (
+            '$PK\nV=TVV*EXP(ETA2)',
+            S('V'),
+            S('TVV') * sympy.exp(S('ETA2')),
+        ),
+        (
+            '$PK\nV=THETA\t \x00\t \x00\t \x00(1)',
+            S('V'),
+            S('THETA(1)'),
+        ),
+        (
+            '$PK\nV=THETA \t & \t\t\x00\r\n & \t\t\x00\n  (1)',
+            S('V'),
+            S('THETA(1)'),
+        ),
+        ('$PK\nX(Z)=0', S('X(Z)'), 0),
+        ('$PK\nX(  Z \x00)=0', S('X(Z)'), 0),
+        ('$PK\n X \t \t \x00\x00\t \x00(\x00Z)=0', S('X(Z)'), 0),
+        ('$PK\n X \t \t \x00& \t\t\x00\n \t \x00( -1 , 2 )=0', S('X(-1,2)'), 0),
     ],
 )
 def test_single_assignments(parser, buf, sym, expression):

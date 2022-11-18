@@ -355,11 +355,33 @@ class ExpressionInterpreter(Interpreter):
             return sympy.Float(s)
 
     def symbol(self, node):
+        t = self.visit_subtrees(node)
+        return sympy.Symbol(t[0])
+
+    def assignable(self, node):
+        t = self.visit_subtrees(node)
+        return sympy.Symbol(t[0])
+
+    def parameter(self, node):
+        name, *subscripts = self.visit_subtrees(node)
+        return f'{name}({",".join(subscripts)})'
+
+    def vector(self, node):
+        name, *subscripts = self.visit_subtrees(node)
+        return f'{name}({",".join(subscripts)})'
+
+    def name(self, node):
+        return str(node).upper()
+
+    def index(self, node):
+        return str(node)
+
+    def array(self, node):
         name = str(node).upper()
-        if name.startswith('ERR('):
-            name = 'EPS' + name[3:]
-        symb = sympy.Symbol(name)
-        return symb
+        return 'EPS' if name == 'ERR' else name
+
+    def matrix(self, node):
+        return str(node).upper()
 
 
 def _index_statements_diff(
@@ -546,9 +568,9 @@ def _parse_tree(tree: AttrTree):
             if not isinstance(node, AttrTree):
                 continue
             if node.rule == 'assignment':
-                name = str(node.subtree('variable')).upper()
+                symbol = interpreter.visit(node.subtree('assignable'))
                 expr = interpreter.visit(node.subtree('real_expr'))
-                ass = Assignment(sympy.Symbol(name), expr)
+                ass = Assignment(symbol, expr)
                 s.append(ass)
                 new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
             elif node.rule == 'logical_if':
@@ -558,16 +580,14 @@ def _parse_tree(tree: AttrTree):
                 except NoSuchRuleException:
                     pass
                 else:
-                    name = str(assignment.subtree('variable')).upper()
+                    symbol = interpreter.visit(assignment.subtree('assignable'))
                     expr = interpreter.visit(assignment.subtree('real_expr'))
                     # Check if symbol was previously declared
                     else_val = (
-                        sympy.Symbol(name)
-                        if any(map(lambda x: x.symbol.name == name, s))
-                        else sympy.Integer(0)
+                        symbol if any(map(lambda x: x.symbol == symbol, s)) else sympy.Integer(0)
                     )
                     pw = sympy.Piecewise((expr, logic_expr), (else_val, True))
-                    ass = Assignment(sympy.Symbol(name), pw)
+                    ass = Assignment(symbol, pw)
                     s.append(ass)
                     new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
             elif node.rule == 'block_if':
@@ -579,11 +599,11 @@ def _parse_tree(tree: AttrTree):
                 first_symb_exprs = []
                 for ifstat in first_block.subtrees('statement'):
                     for assign_node in ifstat.subtrees('assignment'):
-                        name = str(assign_node.subtree('variable')).upper()
+                        symbol = interpreter.visit(assign_node.subtree('assignable'))
                         first_symb_exprs.append(
-                            (name, interpreter.visit(assign_node.subtree('real_expr')))
+                            (symbol, interpreter.visit(assign_node.subtree('real_expr')))
                         )
-                        symbols.add(name)
+                        symbols.add(symbol)
                 blocks.append((first_logic, first_symb_exprs))
 
                 for elseif in node.subtrees('block_if_elseif'):
@@ -591,11 +611,11 @@ def _parse_tree(tree: AttrTree):
                     elseif_symb_exprs = []
                     for elseifstat in elseif.subtrees('statement'):
                         for assign_node in elseifstat.subtrees('assignment'):
-                            name = str(assign_node.subtree('variable')).upper()
+                            symbol = interpreter.visit(assign_node.subtree('assignable'))
                             elseif_symb_exprs.append(
-                                (name, interpreter.visit(assign_node.subtree('real_expr')))
+                                (symbol, interpreter.visit(assign_node.subtree('real_expr')))
                             )
-                            symbols.add(name)
+                            symbols.add(symbol)
                     blocks.append((logic, elseif_symb_exprs))
 
                 else_block = node.find('block_if_else')
@@ -604,35 +624,35 @@ def _parse_tree(tree: AttrTree):
                     else_symb_exprs = []
                     for elsestat in else_block.subtrees('statement'):
                         for assign_node in elsestat.subtrees('assignment'):
-                            name = str(assign_node.subtree('variable')).upper()
+                            symbol = interpreter.visit(assign_node.subtree('assignable'))
                             else_symb_exprs.append(
-                                (name, interpreter.visit(assign_node.subtree('real_expr')))
+                                (symbol, interpreter.visit(assign_node.subtree('real_expr')))
                             )
-                            symbols.add(name)
+                            symbols.add(symbol)
                     piecewise_logic = True
                     if len(blocks) == 1 and len(blocks[0][1]) == 0:
                         # Special case for empty if
                         piecewise_logic = sympy.Not(blocks[0][0])
                     blocks.append((piecewise_logic, else_symb_exprs))
 
-                for name in symbols:
+                for symbol in symbols:
                     pairs = []
                     for block in blocks:
                         logic = block[0]
                         for cursymb, expr in block[1]:
-                            if cursymb == name:
+                            if cursymb == symbol:
                                 pairs.append((expr, logic))
 
                     if pairs[-1][1] is not True:
                         else_val = (
-                            sympy.Symbol(name)
-                            if any(map(lambda x: x.symbol.name == name, s))
+                            symbol
+                            if any(map(lambda x: x.symbol == symbol, s))
                             else sympy.Integer(0)
                         )
                         pairs.append((else_val, True))
 
                     pw = sympy.Piecewise(*pairs)
-                    ass = Assignment(sympy.Symbol(name), pw)
+                    ass = Assignment(symbol, pw)
                     s.append(ass)
                 new_index.append((child_index, child_index + 1, len(s) - len(symbols), len(s)))
 

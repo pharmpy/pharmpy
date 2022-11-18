@@ -33,7 +33,7 @@ exit: EXIT (("1" | "2") (SIGNED_INT)?)?
 call: CALL CNAME _lpar _atoms _rpar
 _atoms: (_atoms _sep)? atom
 return: RETURN
-assignment: variable EQUALS real_expr
+assignment: assignable EQUALS real_expr
 EQUALS: "="
 
 _lpar: "("
@@ -213,19 +213,24 @@ PHI.2: "PHI"i FOLLOWED_BY_A_PARENTHESIS_LOOKAHEAD
 _fn2: mod
 mod: "MOD"i
 
-variable: vector
-        | CNAME
+assignable: vector
+          | name
 
 symbol: parameter
       | vector
-      | CNAME
+      | name
 
-vector: CNAME (subscript | double_subscript)
-parameter: (THETA | ETA | EPS | OMEGA | SIGMA) subscript
-         | (OMEGA | SIGMA) double_subscript
+vector: name (_subscript | _double_subscript)
+parameter: (array | matrix) _subscript
+         | matrix _double_subscript
 
-subscript: _lpar (CNAME | SIGNED_INT) _rpar
-double_subscript: _lpar SIGNED_INT _sep SIGNED_INT _rpar
+_subscript: _lpar (name | index) _rpar
+_double_subscript: _lpar index _sep index _rpar
+
+array: THETA | ETA | EPS
+matrix: OMEGA | SIGMA
+name: CNAME
+index: SIGNED_INT
 
 number: SIGNED_INT
       | FLOAT | FLOAT2
@@ -237,20 +242,17 @@ SIGN: "-" | "+"
 FLOAT_EXPONENT: /[ed][-+]?\d+/i
 DOT_NOT_FOLLOWED_BY_AMBIGUOUS_BOOLEAN_EXPR_OPERATOR_LOOK_AHEAD: /\.(?!((AND|OR|NOT|EQ|NE|LT|LE|GT|GE)\.))/
 
-THETA: "THETA"i
-
-ETA: "ETA"i
-
-EPS: "EPS"i
-   | "ERR"i
-
-OMEGA: "OMEGA"i
-
-SIGMA: "SIGMA"i
+// NOTE Higher priority compared to vector name tokens
+THETA.1: "THETA"i FOLLOWED_BY_A_PARENTHESIS_LOOKAHEAD
+ETA.1: "ETA"i FOLLOWED_BY_A_PARENTHESIS_LOOKAHEAD
+EPS.1: ("EPS"i | "ERR"i) FOLLOWED_BY_A_PARENTHESIS_LOOKAHEAD
+OMEGA.1: "OMEGA"i FOLLOWED_BY_A_PARENTHESIS_LOOKAHEAD
+SIGMA.1: "SIGMA"i FOLLOWED_BY_A_PARENTHESIS_LOOKAHEAD
 
 CONT: "&" WS? NEWLINE
+FOLLOWED_BY_A_PARENTHESIS_LOOKAHEAD: /(?=(([ \x00\t]+|&[ \x00\t]*\n)*\())/
 
-%import .definitions (COMMENT, NEWLINE, WS, FOLLOWED_BY_A_PARENTHESIS_LOOKAHEAD)
+%import .definitions (COMMENT, NEWLINE, WS)
 %import common (CNAME, SIGNED_INT)
 %ignore WS
 %ignore COMMENT
