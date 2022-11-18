@@ -211,6 +211,12 @@ def S(x):
         ('$PRED\nGROK(1,3) = 0\n', S('GROK(1,3)'), 0),
         ('$PRED\n X = &  \n  23\n', S('X'), 23),
         ('$PRED\nX=2\nDO WHILE (X < 23)\n CL = 2\nEND DO\n', S('X'), 2),
+        (  # NOTE regression when we switched to LALR(1)
+            '$PK\nALAG1 = EXP(PHI+KPLAG)/(1+EXP(PHI+KPLAG))',
+            S('ALAG1'),
+            sympy.exp(S('PHI') + S('KPLAG'))
+            / (sympy.Integer(1) + sympy.exp(S('PHI') + S('KPLAG'))),
+        ),
     ],
 )
 def test_single_assignments(parser, buf, sym, expression):

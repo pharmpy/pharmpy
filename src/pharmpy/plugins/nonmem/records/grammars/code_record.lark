@@ -199,7 +199,16 @@ pzr: "PZR"i
 pnp: "PNP"i
 phe: "PHE"i
 png: "PNG"i
-phi: "PHI"i
+phi: PHI
+
+// NOTE The following is a generic recipe to allow any NONMEM function name to
+// be used as a symbol by the modeler. Here it is applied to PHI but the recipe
+// can be repeated for each function. Note the higher priority given to the
+// token. This works without additional changes because the token is more
+// specific than variable names that are not function names.
+// Overwriting NONMEM function names with own symbols is frowned upon in
+// general so we will only enable this on a case-by-case basis.
+PHI.2: "PHI"i FOLLOWED_BY_A_PARENTHESIS_LOOKAHEAD
 
 _fn2: mod
 mod: "MOD"i
@@ -241,7 +250,7 @@ SIGMA: "SIGMA"i
 
 CONT: "&" WS? NEWLINE
 
-%import .definitions (COMMENT, NEWLINE, WS)
+%import .definitions (COMMENT, NEWLINE, WS, FOLLOWED_BY_A_PARENTHESIS_LOOKAHEAD)
 %import common (CNAME, SIGNED_INT)
 %ignore WS
 %ignore COMMENT
