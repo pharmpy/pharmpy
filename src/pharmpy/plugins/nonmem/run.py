@@ -77,12 +77,17 @@ def execute_model(model, db):
     start = time.time()
     timeout = 5
 
-    while time.time() - start < timeout:
-        if results_path.is_file():
+    while True:
+        try:
             results_path.rename((model_path / basename).with_suffix('.lst'))
             break
-        else:
-            time.sleep(1)
+        except FileNotFoundError:
+            elapsed_time = time.time() - start
+            if elapsed_time >= timeout:
+                warnings.warn(f'UNEXPECTED Could not find .lst-file after waiting {elapsed_time}s')
+                break
+            else:
+                time.sleep(1)
 
     metadata = {
         'plugin': 'nonmem',
