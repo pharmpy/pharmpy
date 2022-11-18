@@ -141,7 +141,7 @@ def read_results(path_or_str: Union[str, Path]):
 
 
 @dataclass(frozen=True)
-class ModelfitResults(Results, Immutable):
+class ModelfitResults(Results):
     """Base class for results from a modelfit operation
 
     Attributes
