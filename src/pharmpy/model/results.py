@@ -138,6 +138,21 @@ class Results(Immutable):
             print(s, file=fh)
 
 
+def _df_to_json(df):
+    if str(df.columns.dtype) == 'int64':
+        # Workaround for https://github.com/pandas-dev/pandas/issues/46392
+        df.columns = df.columns.map(str)
+    # Set double precision to 15 to remove some round-trip errors, however 17 should be set when its possible
+    # See: https://github.com/pandas-dev/pandas/issues/38437
+    return json.loads(df.to_json(orient='table', double_precision=15))
+
+
+def _index_to_json(index):
+    if isinstance(index, pd.MultiIndex):
+        return {'__class__': 'MultiIndex', **_df_to_json(index.to_frame(index=False))}
+    return {'__class__': 'Index', **_df_to_json(index.to_frame(index=False))}
+
+
 class ResultsJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         # NOTE this function is called when the base JSONEncoder does not know
@@ -152,18 +167,24 @@ class ResultsJSONEncoder(json.JSONEncoder):
             d['__class__'] = obj.__class__.__qualname__
             return d
         elif isinstance(obj, pd.DataFrame):
-            if str(obj.columns.dtype) == 'int64':
-                # Workaround for https://github.com/pandas-dev/pandas/issues/46392
-                obj.columns = obj.columns.map(str)
-            # Set double precision to 15 to remove some round-trip errors, however 17 should be set when its possible
-            # See: https://github.com/pandas-dev/pandas/issues/38437
-            d = json.loads(obj.to_json(orient='table', double_precision=15))
+            d = _df_to_json(obj)
             d['__class__'] = 'DataFrame'
             return d
         elif isinstance(obj, pd.Series):
-            d = json.loads(obj.to_json())
-            if obj.name is not None:
-                d['__name__'] = obj.name
+            if obj.size >= 1 and isinstance(obj.iloc[0], pd.DataFrame):
+                # NOTE Hack special case for Series of DataFrame objects
+                return {
+                    'data': [{'__class__': 'DataFrame', **_df_to_json(df)} for df in obj.values],
+                    'index': _index_to_json(obj.index),
+                    'name': obj.name,
+                    'dtype': str(obj.dtype),
+                    '__class__': 'Series[DataFrame]',
+                }
+
+            # NOTE Hack to work around poor support of to_json/read_json of
+            # pd.Series with MultiIndex
+            df = obj.to_frame()
+            d = _df_to_json(df)
             d['__class__'] = 'Series'
             return d
         elif obj.__class__.__module__.startswith('altair.'):
