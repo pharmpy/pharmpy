@@ -2,6 +2,7 @@ import json
 import os
 import os.path
 import subprocess
+import time
 import uuid
 import warnings
 from itertools import repeat
@@ -72,10 +73,21 @@ def execute_model(model, db):
 
     basename = Path(model.name)
 
-    try:
-        (model_path / 'results.lst').rename((model_path / basename).with_suffix('.lst'))
-    except FileNotFoundError:
-        pass  # NOTE warns later when looking for .lst and .ext file
+    results_path = model_path / 'results.lst'
+    start = time.time()
+    timeout = 5
+
+    while True:
+        try:
+            results_path.rename((model_path / basename).with_suffix('.lst'))
+            break
+        except FileNotFoundError:
+            elapsed_time = time.time() - start
+            if elapsed_time >= timeout:
+                warnings.warn(f'UNEXPECTED Could not find .lst-file after waiting {elapsed_time}s')
+                break
+            else:
+                time.sleep(1)
 
     metadata = {
         'plugin': 'nonmem',
@@ -95,14 +107,20 @@ def execute_model(model, db):
 
         txn.store_model()
 
-        for suffix in ['.lst', '.ext', '.phi', '.cov', '.cor', '.coi']:
-            file_path = (model_path / basename).with_suffix(suffix)
-            if suffix in ['.lst', '.ext'] and not file_path.is_file():
-                warnings.warn(f'File {basename.with_suffix(suffix)} does not exist')
-            txn.store_local_file(file_path)
+        if (
+            not (model_path / basename).with_suffix('.lst').is_file()
+            or not (model_path / basename).with_suffix('.ext').is_file()
+        ):
+            warnings.warn(f'Expected result files do not exist, copying everything: {basename}')
+            for file in path.glob('*'):
+                txn.store_local_file(file)
+        else:
+            for suffix in ['.lst', '.ext', '.phi', '.cov', '.cor', '.coi']:
+                file_path = (model_path / basename).with_suffix(suffix)
+                txn.store_local_file(file_path)
 
-        for rec in model.internals.control_stream.get_records('TABLE'):
-            txn.store_local_file(model_path / rec.path)
+            for rec in model.internals.control_stream.get_records('TABLE'):
+                txn.store_local_file(model_path / rec.path)
 
         txn.store_local_file(stdout)
         txn.store_local_file(stderr)
