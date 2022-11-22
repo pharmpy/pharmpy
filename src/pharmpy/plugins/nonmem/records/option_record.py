@@ -6,7 +6,7 @@ Assumes 'KEY=VALUE' or 'VALUE' and does not support 'KEY VALUE' in general.
 
 import re
 from collections import namedtuple
-from typing import Optional, Tuple, Union, cast
+from typing import Iterable, Optional, Tuple, Union, cast
 
 from pharmpy.internals.parse import AttrToken, AttrTree, NoSuchRuleException
 from pharmpy.internals.parse.generic import eval_token
@@ -273,7 +273,7 @@ class OptionRecord(Record):
                 self.remove_option(key)
 
     @staticmethod
-    def match_option(options, query):
+    def match_option(options: Iterable[str], query: str):
         """Match a given option to any from a set of valid options
 
         NONMEM allows matching down to three letters as long as
@@ -289,12 +289,14 @@ class OptionRecord(Record):
             # this could be changed?
             return None
 
-        i = min_prefix_len
+        i: int = min_prefix_len
 
         candidates = [option for option in options if option[:i] == query[:i]]
 
         while len(candidates) >= 2 and i < len(query):
-            candidates = [option for option in options if option[i] == query[i]]
+            candidates = [
+                option for option in candidates if i < len(option) and option[i] == query[i]
+            ]
             i += 1
 
         return candidates[0] if len(candidates) == 1 else None

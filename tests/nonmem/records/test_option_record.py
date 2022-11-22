@@ -124,9 +124,18 @@ def test_add_suboption_for_nth(parser, buf, n, subopt, result):
         (['NOOFF', 'DEFDOSE', 'DEFOBS'], 'DEFO', 'DEFOBS'),
         (['NOOFF', 'DEFDOSE', 'DEFOBS'], 'NO', None),
         (['NOOFF', 'DEFDOSE', 'DEFOBS'], 'NOOF', 'NOOFF'),
+        (['AAA', 'AAA'], 'AAA', None),
+        (['AAA', 'AAA'], 'AAAA', None),
+        (['AAAA', 'AAAA'], 'AAAA', None),
+        (['ZZZZZZBAAA', 'ZZZZZZAAAA', 'ZZZZZZABCD'], 'ZZZZZZAAA', 'ZZZZZZAAAA'),
+        (['AAAA', 'AAAA'], 'AAAAA', None),
+        (['AAAAB', 'AAAA'], 'AAAAA', None),
+        (['AAAAB', 'AAAA', 'AAAAA'], 'AAAAA', 'AAAAA'),
+        (['AAAAB', 'AAAA', 'AAAAA'], 'AAAAAA', 'AAAAA'),
+        (['AAAAB', 'AAAA', 'AAAAAA'], 'AAAAA', 'AAAAAA'),
     ],
 )
-def test_match_option(parser, valid, opt, expected):
+def test_match_option(valid, opt, expected):
     match = OptionRecord.match_option(valid, opt)
     assert match == expected
 
