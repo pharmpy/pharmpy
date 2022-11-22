@@ -1,11 +1,14 @@
 import warnings
-from typing import Callable, Optional, Tuple
+from pathlib import Path
+from typing import Callable, List, Optional, Tuple, Union
 
 from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
 from pharmpy.model import Model, Results
 from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.data import remove_loq_data
 from pharmpy.modeling.eta_additions import get_occasion_levels
+from pharmpy.results import ModelfitResults
 from pharmpy.tools import retrieve_final_model, summarize_errors, write_results
 from pharmpy.tools.mfl.feature.covariate import spec as covariate_spec
 from pharmpy.tools.mfl.filter import covsearch_statement_types, modelsearch_statement_types
@@ -26,19 +29,19 @@ from .results import AMDResults
 
 
 def run_amd(
-    input,
-    results=None,
-    modeltype='pk_oral',
-    cl_init=0.01,
-    vc_init=1,
-    mat_init=0.1,
-    search_space=None,
-    lloq=None,
-    order=None,
-    allometric_variable=None,
-    occasion=None,
-    path=None,
-    resume=False,
+    input: Union[Model, Path, str],
+    results: Optional[ModelfitResults] = None,
+    modeltype: Optional[str] = 'pk_oral',
+    cl_init: Optional[float] = 0.01,
+    vc_init: Optional[float] = 1.0,
+    mat_init: Optional[float] = 0.1,
+    search_space: Optional[str] = None,
+    lloq: Optional[float] = None,
+    order: Optional[List] = None,
+    allometric_variable: Optional[Union[str, sympy.Symbol]] = None,
+    occasion: Optional[str] = None,
+    path: Optional[Union[str, Path]] = None,
+    resume: Optional[bool] = False,
 ):
     """Run Automatic Model Development (AMD) tool
 
