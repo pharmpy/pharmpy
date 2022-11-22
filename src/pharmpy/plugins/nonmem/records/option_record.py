@@ -5,8 +5,8 @@ Assumes 'KEY=VALUE' or 'VALUE' and does not support 'KEY VALUE' in general.
 """
 
 import re
-from collections import namedtuple
-from typing import Iterable, Optional, Tuple, Union, cast
+from dataclasses import dataclass, replace
+from typing import Iterable, List, Optional, Tuple, Union, cast
 
 from pharmpy.internals.parse import AttrToken, AttrTree, NoSuchRuleException
 from pharmpy.internals.parse.generic import eval_token
@@ -25,9 +25,13 @@ def _get_value(node: AttrTree) -> Optional[str]:
         return None
 
 
-Option = namedtuple('Option', ['key', 'value'])
+@dataclass(frozen=True)
+class Option:
+    key: str
+    value: Optional[str]
 
 
+@dataclass(frozen=True)
 class OptionRecord(Record):
     @property
     def option_pairs(self):
@@ -42,9 +46,9 @@ class OptionRecord(Record):
         """Extract all options even if non-unique.
         returns a list of named two-tuples with key and value
         """
-        pairs = []
+        pairs: List[Option] = []
         for node in self.root.subtrees('option'):
-            pairs += [Option(_get_key(node), _get_value(node))]
+            pairs.append(Option(_get_key(node), _get_value(node)))
         return pairs
 
     def get_option(self, name):
@@ -102,8 +106,7 @@ class OptionRecord(Record):
             if _get_key(node) == key:
                 new_children.append(node.replace_first(AttrToken('VALUE', new_value)))
                 new_children.extend(it)
-                self.root = AttrTree(self.root.rule, tuple(new_children))
-                return
+                return replace(self, root=AttrTree(self.root.rule, tuple(new_children)))
 
             new_children.append(node)
 
@@ -113,13 +116,16 @@ class OptionRecord(Record):
         option_node = self._create_option(key, new_value)
         # If no other options add first else add just after last option
         if last_option is None:
-            self.root = AttrTree(
-                self.root.rule,
-                (
-                    ws_token,
-                    option_node,
-                )
-                + self.root.children,
+            return replace(
+                self,
+                root=replace(
+                    self.root,
+                    children=(
+                        ws_token,
+                        option_node,
+                    )
+                    + self.root.children,
+                ),
             )
         else:
             new_children = []
@@ -127,25 +133,27 @@ class OptionRecord(Record):
                 new_children.append(node)
                 if node is last_option:
                     new_children += [ws_token, option_node]
-            self.root = AttrTree(self.root.rule, tuple(new_children))
+
+            return replace(self, root=replace(self.root, children=tuple(new_children)))
 
     def _create_option(self, key: str, value: Optional[str] = None):
-        if value is None:
-            node = AttrTree.create('option', [{'KEY': key}])
-        else:
-            node = AttrTree.create('option', [{'KEY': key}, {'EQUAL': '='}, {'VALUE': value}])
-        return node
+        return (
+            AttrTree.create('option', [{'KEY': key}])
+            if value is None
+            else AttrTree.create('option', [{'KEY': key}, {'EQUAL': '='}, {'VALUE': value}])
+        )
 
     def prepend_option(self, key: str, value: Optional[str] = None):
         """Prepend option"""
         node = self._create_option(key, value)
-        self._prepend_option_node(node)
+        return self._prepend_option_node(node)
 
     def _prepend_option_node(self, node):
         """Add a new option as firt option"""
         ws_token = AttrToken('WS', ' ')
-        new = (node, ws_token)
-        self.root = AttrTree(self.root.rule, self.root.children[:1] + new + self.root.children[1:])
+        to_insert = (node, ws_token)
+        new_children = self.root.children[:1] + to_insert + self.root.children[1:]
+        return replace(self, root=replace(self.root, children=new_children))
 
     def append_option(self, key: str, value: Optional[str] = None):
         """Append option as last option
@@ -153,7 +161,7 @@ class OptionRecord(Record):
         Method applicable to option records with no special grammar
         """
         node = self._create_option(key, value)
-        self.append_option_node(node)
+        return self.append_option_node(node)
 
     def _append_option_args(self) -> Tuple[int, int, AttrToken]:
         children = self.root.children
@@ -173,7 +181,8 @@ class OptionRecord(Record):
         """Add a new option as last option"""
         i, j, sep = self._append_option_args()
         children = self.root.children
-        self.root = AttrTree(self.root.rule, children[:i] + (sep, node) + children[i:j])
+        new_children = children[:i] + (sep, node) + children[i:j]
+        return replace(self, root=replace(self.root, children=new_children))
 
     def replace_option(self, old, new):
         """Replace an option"""
@@ -189,7 +198,7 @@ class OptionRecord(Record):
 
             return node
 
-        self.root = self.root.map(_fn)
+        return replace(self, root=self.root.map(_fn))
 
     def remove_option(self, key):
         """Remove all options key"""
@@ -200,7 +209,8 @@ class OptionRecord(Record):
                     new_children.pop()
             else:
                 new_children.append(node)
-        self.root = AttrTree(self.root.rule, tuple(new_children))
+
+        return replace(self, root=replace(self.root, children=tuple(new_children)))
 
     def remove_nth_option(self, key, n):
         """Remove the nth option key"""
@@ -218,7 +228,8 @@ class OptionRecord(Record):
                     i += 1
             else:
                 new_children.append(node)
-        self.root = AttrTree(self.root.rule, tuple(new_children))
+
+        return replace(self, root=replace(self.root, children=tuple(new_children)))
 
     def add_suboption_for_nth(self, key, n, suboption):
         """Adds a suboption to the nth option key"""
@@ -237,11 +248,12 @@ class OptionRecord(Record):
                             s = f'({s} {suboption})'
                         new_children.append(node.replace_first(AttrToken('VALUE', s)))
                         new_children.extend(it)
-                        self.root = AttrTree(self.root.rule, tuple(new_children))
-                        return
+                        return replace(self, root=replace(self.root, children=tuple(new_children)))
                     i += 1
 
             new_children.append(node)
+
+        raise ValueError('Could not find nth option key')
 
     def remove_suboption_for_all(self, key, suboption):
         """Remove subtoption from all options key"""
@@ -264,13 +276,16 @@ class OptionRecord(Record):
 
             new_children.append(node)
 
-        self.root = AttrTree(self.root.rule, tuple(new_children))
+        return replace(self, root=replace(self.root, children=tuple(new_children)))
 
     def remove_option_startswith(self, start):
         """Remove all options that startswith"""
+        current = self
         for key in self.option_pairs:
             if key.startswith(start):
-                self.remove_option(key)
+                current = current.remove_option(key)
+
+        return current
 
     @staticmethod
     def match_option(options: Iterable[str], query: str):

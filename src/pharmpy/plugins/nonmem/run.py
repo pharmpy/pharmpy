@@ -10,7 +10,11 @@ from pathlib import Path
 
 from pharmpy.model import EstimationSteps
 from pharmpy.modeling import write_csv, write_model
-from pharmpy.plugins.nonmem import conf, convert_model, parse_modelfit_results
+
+from .config import conf
+from .model import convert_model
+from .records.table_record import TableRecord
+from .results import parse_modelfit_results
 
 PARENT_DIR = f'..{os.path.sep}'
 
@@ -120,6 +124,7 @@ def execute_model(model, db):
                 txn.store_local_file(file_path)
 
             for rec in model.internals.control_stream.get_records('TABLE'):
+                assert isinstance(rec, TableRecord)
                 txn.store_local_file(model_path / rec.path)
 
         txn.store_local_file(stdout)

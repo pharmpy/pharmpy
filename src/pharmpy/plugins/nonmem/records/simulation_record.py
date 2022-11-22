@@ -2,6 +2,7 @@
 NONMEM simulation record class.
 """
 
+from dataclasses import dataclass
 from typing import cast
 
 from pharmpy.internals.parse.generic import eval_token
@@ -9,6 +10,7 @@ from pharmpy.internals.parse.generic import eval_token
 from .record import Record
 
 
+@dataclass(frozen=True)
 class SimulationRecord(Record):
     @property
     def nsubs(self):

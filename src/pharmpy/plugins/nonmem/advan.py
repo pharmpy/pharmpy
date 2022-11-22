@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from .model import Model
 
 from .nmtran_parser import NMTranControlStream
+from .records.model_record import ModelRecord
 
 
 def compartmental_model(model: Model, advan: str, trans, des=None):
@@ -34,7 +35,7 @@ def _compartmental_model(
     di: DataInfo,
     dataset: Callable[[], pd.DataFrame],
     control_stream: NMTranControlStream,
-    advan: str,
+    advan: Optional[str],
     trans,
     des=None,
 ):
@@ -119,6 +120,7 @@ def _compartmental_model(
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         cb = CompartmentalSystemBuilder()
         modrec = control_stream.get_records('MODEL')[0]
+        assert isinstance(modrec, ModelRecord)
         defobs: Optional[Tuple[str, int]] = None
         defdose: Optional[Tuple[str, int]] = None
         defcentral: Optional[Tuple[str, int]] = None
@@ -264,6 +266,7 @@ def _compartmental_model(
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
     elif des:
         rec_model = control_stream.get_records('MODEL')[0]
+        assert isinstance(rec_model, ModelRecord)
 
         subs_dict, comp_names = {}, {}
         comps = [c for c, _ in rec_model.compartments()]
@@ -338,7 +341,8 @@ def _f_link_assignment(control_stream: NMTranControlStream, compartment: Compart
         fexpr = compartment.amount
     except AttributeError:
         fexpr = compartment
-    pkrec = control_stream.get_records('PK')[0]
+    pkrec = control_stream.get_pk_record()
+    assert pkrec is not None
     scaling = f'S{compno}'
     if pkrec.statements.find_assignment(scaling):
         fexpr = fexpr / sympy.Symbol(scaling)
@@ -347,7 +351,8 @@ def _f_link_assignment(control_stream: NMTranControlStream, compartment: Compart
 
 
 def _find_rates(control_stream: NMTranControlStream, ncomps: int):
-    pkrec = control_stream.get_records('PK')[0]
+    pkrec = control_stream.get_pk_record()
+    assert pkrec is not None
     for stat in pkrec.statements:
         if hasattr(stat, 'symbol'):
             name = stat.symbol.name
@@ -576,7 +581,8 @@ def dosing(di: DataInfo, dataset: Callable[[], pd.DataFrame], dose_comp: int):
 def _get_alag(control_stream: NMTranControlStream, n: int):
     """Check if ALAGn is defined in model and return it else return 0"""
     alag = f'ALAG{n}'
-    pkrec = control_stream.get_records('PK')[0]
+    pkrec = control_stream.get_pk_record()
+    assert pkrec is not None
     if pkrec.statements.find_assignment(alag):
         return sympy.Symbol(alag)
     else:
@@ -586,7 +592,8 @@ def _get_alag(control_stream: NMTranControlStream, n: int):
 def _get_bioavailability(control_stream: NMTranControlStream, n: int):
     """Check if Fn is defined in model and return it else return 0"""
     fn = f'F{n}'
-    pkrec = control_stream.get_records('PK')[0]
+    pkrec = control_stream.get_pk_record()
+    assert pkrec is not None
     if pkrec.statements.find_assignment(fn):
         return sympy.Symbol(fn)
     else:

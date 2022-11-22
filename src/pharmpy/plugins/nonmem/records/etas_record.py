@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 from pathlib import Path
 
 from .option_record import OptionRecord
 
 
+@dataclass(frozen=True)
 class EtasRecord(OptionRecord):
     @property
     def path(self):
@@ -10,6 +12,5 @@ class EtasRecord(OptionRecord):
         assert file_option is not None
         return Path(file_option)
 
-    @path.setter
-    def path(self, value):
-        self.set_option('FILE', str(value))
+    def with_path(self, value):
+        return self.set_option('FILE', str(value))

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import warnings
+from dataclasses import replace
 from itertools import product
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Mapping, Optional
@@ -9,7 +10,6 @@ from typing import TYPE_CHECKING, List, Mapping, Optional
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy, sympy_printing
-from pharmpy.internals.parse import AttrTree
 from pharmpy.internals.sequence.lcs import diff
 from pharmpy.model import (
     Assignment,
@@ -41,7 +41,9 @@ from .records.etas_record import EtasRecord
 from .records.factory import create_record
 from .records.model_record import ModelRecord
 from .records.omega_record import OmegaRecord
+from .records.option_record import OptionRecord
 from .records.sizes_record import SizesRecord
+from .records.subroutine_record import SubroutineRecord
 from .records.theta_record import ThetaRecord
 from .table import NONMEMTableFile, PhiTable
 
@@ -60,6 +62,7 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
         remove_records = []
         next_theta = 1
         for theta_record in model.internals.control_stream.get_records('THETA'):
+            assert isinstance(theta_record, ThetaRecord)
             current_names = theta_record.name_map.keys()
             if removed >= current_names:
                 remove_records.append(theta_record)
@@ -90,7 +93,7 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
                 p_renamed = p.replace(name=f'THETA({theta_number})')
             record = create_theta_record(model, p_renamed)
             assert isinstance(record, ThetaRecord)
-            record.add_nonmem_name(p_renamed.name, theta_number)
+            record.add_nonmem_name(p_renamed.name)
 
         renamed_params_list.append(p_renamed)
 
@@ -476,6 +479,7 @@ def to_des(model: Model, new: ODESystem):
     old_des = model.internals.control_stream.get_records('DES')
     model.internals.control_stream.remove_records(old_des)
     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
+    assert isinstance(subs, SubroutineRecord)
     subs.remove_option_startswith('TRANS')
     subs.remove_option_startswith('ADVAN')
     subs.remove_option('TOL')
@@ -492,7 +496,7 @@ def to_des(model: Model, new: ODESystem):
         subs.append_option('TOL', '9')
     des = model.internals.control_stream.insert_record('$DES\nDUMMY=0\n')
     assert isinstance(des, CodeRecord)
-    des.from_odes(new)
+    des.from_odes(RandomVariables.create(()), {}, new)
     model.internals.control_stream.remove_records(
         model.internals.control_stream.get_records('MODEL')
     )
@@ -561,9 +565,6 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
             for i, amount in enumerate(amounts, start=1):
                 trans[amount] = sympy.Symbol(f"A({i})")
         error.statements = error_statements.subs(trans)
-        error.is_updated = True
-
-    rec.is_updated = True
 
 
 def update_lag_time(model: Model, old: ODESystem, new: ODESystem):
@@ -1355,21 +1356,29 @@ def update_sizes(model: Model):
 
     if odes is not None and isinstance(odes, CompartmentalSystem):
         n_compartments = len(odes)
-        sizes.PC = n_compartments
-    thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
-    sizes.LTH = len(thetas)
+        sizes = sizes.with_PC(n_compartments)
 
-    if len(all_sizes) == 0 and len(str(sizes)) > 7:
-        model.internals.control_stream.insert_record(str(sizes))
+    rvs_fs = model.random_variables.free_symbols
+    thetas = [p for p in model.parameters if p.symbol not in rvs_fs]
+    sizes = sizes.with_LTH(len(thetas))
+
+    if len(str(sizes)) > 7:
+        if all_sizes:
+            model.internals.control_stream.replace_records({all_sizes[0]}, (sizes,))
+        else:
+            model.internals.control_stream.insert_record(str(sizes))
 
 
 def update_input(model: Model):
     """Update $INPUT"""
-    input_records = model.internals.control_stream.get_records("INPUT")
-    _, drop, _, colnames = parse_column_info(model.internals.control_stream)
+    stream = model.internals.control_stream
+    input_records = stream.get_records("INPUT")
+    first_input_record = input_records[0]
+    assert isinstance(first_input_record, OptionRecord)
+    _, drop, _, colnames = parse_column_info(stream)
     keep = []
     i = 0
-    for child in input_records[0].root.children:
+    for child in first_input_record.root.children:
         if child.rule != 'option':
             keep.append(child)
             continue
@@ -1381,7 +1390,7 @@ def update_input(model: Model):
             anonymous = colnames[i] is None
             key = 'DROP' if anonymous and dropped else model.datainfo[i].name
             value = 'DROP' if not anonymous and dropped else None
-            new = input_records[0]._create_option(key, value)
+            new = first_input_record._create_option(key, value)
             keep.append(new)
         else:
             keep.append(child)
@@ -1389,16 +1398,27 @@ def update_input(model: Model):
         i += 1
 
         if i >= len(model.datainfo):
-            last_child = input_records[0].root.children[-1]
+            last_child = first_input_record.root.children[-1]
             if last_child.rule == 'NEWLINE':
                 keep.append(last_child)
             break
 
-    input_records[0].root = AttrTree(input_records[0].root.rule, tuple(keep))
+    first_input_record = replace(
+        first_input_record, root=replace(first_input_record.root, children=tuple(keep))
+    )
 
     last_input_record = input_records[-1]
+    assert isinstance(last_input_record, OptionRecord)
     for ci in model.datainfo[len(colnames) :]:
-        last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
+        last_input_record = last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
+
+    new_records = (
+        (last_input_record,)
+        if len(input_records) == 1
+        else [first_input_record] + input_records[1:-1] + [last_input_record]
+    )
+
+    stream.replace_records(set(input_records), new_records)
 
 
 def update_initial_individual_estimates(model: Model, path, nofiles=False):

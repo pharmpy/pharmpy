@@ -2,6 +2,7 @@ import pytest
 import sympy
 
 from pharmpy.model import Assignment
+from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.plugins.nonmem.records.code_record import CodeRecord
 
 
@@ -248,12 +249,15 @@ def S(x):
         ('$PK\n X \t \t \x00& \t\t\x00\n \t \x00( -1 , 2 )=0', S('X(-1,2)'), 0),
     ],
 )
-def test_single_assignments(parser, buf, sym, expression):
+def test_single_assignments(parser: NMTranParser, buf, sym, expression):
     buf = _ensure_trailing_newline(buf)
     rec = parser.parse(buf).records[0]
+    assert isinstance(rec, CodeRecord)
     assert len(rec.statements) == 1
-    assert rec.statements[0].symbol == sym
-    assert rec.statements[0].expression == expression
+    assignment = rec.statements[0]
+    assert isinstance(assignment, Assignment)
+    assert assignment.symbol == sym
+    assert assignment.expression == expression
 
 
 @pytest.mark.usefixtures('parser')
@@ -413,9 +417,10 @@ def test_single_assignments(parser, buf, sym, expression):
         ),
     ],
 )
-def test_block_if(parser, buf, symb_expr_arr):
+def test_block_if(parser: NMTranParser, buf, symb_expr_arr):
     buf = _ensure_trailing_newline(buf)
     rec = parser.parse(buf).records[0]
+    assert isinstance(rec, CodeRecord)
     assert len(rec.statements) == len(symb_expr_arr)
     for statement, (symb, expr) in zip(rec.statements, symb_expr_arr):
         assert statement.symbol == symb
@@ -429,9 +434,10 @@ def test_block_if(parser, buf, symb_expr_arr):
         '$PK IF (CL.EQ.0) EXIT 1 24',
     ),
 )
-def test_exit(parser, buf):
+def test_exit(parser: NMTranParser, buf):
     buf = _ensure_trailing_newline(buf)
     rec = parser.parse(buf).records[0]
+    assert isinstance(rec, CodeRecord)
     assert len(rec.statements) == 0
 
 
@@ -448,7 +454,9 @@ def test_exit(parser, buf):
         '$PRED IF (.NOT.X.EQ.2) CL=25',
     ],
 )
-def test_grammar_repeats(parser, buf):  # Tests that there are no repeats due to parsing grammar
+def test_grammar_repeats(
+    parser: NMTranParser, buf
+):  # Tests that there are no repeats due to parsing grammar
     buf = _ensure_trailing_newline(buf)
     rec = parser.parse(buf).records[0]
     tree_walk_gen = rec.root.tree_walk()
@@ -523,11 +531,13 @@ IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
         ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', '$PRED\nY=THETA(1)+ETA(1)+EPS(1)'),
     ],
 )
-def test_statements_setter_identical(parser, buf_original, buf_new):
+def test_statements_setter_identical(parser: NMTranParser, buf_original, buf_new):
     buf_original = _ensure_trailing_newline(buf_original)
     buf_new = _ensure_trailing_newline(buf_new)
     rec_original = parser.parse(buf_original).records[0]
+    assert isinstance(rec_original, CodeRecord)
     rec_new = parser.parse(buf_new).records[0]
+    assert isinstance(rec_new, CodeRecord)
 
     assert rec_original.statements == rec_new.statements
 
@@ -544,11 +554,13 @@ def test_statements_setter_identical(parser, buf_original, buf_new):
         ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nZ = E * F'),
     ],
 )
-def test_statements_setter_remove(parser, buf_original, buf_new):
+def test_statements_setter_remove(parser: NMTranParser, buf_original, buf_new):
     buf_original = _ensure_trailing_newline(buf_original)
     buf_new = _ensure_trailing_newline(buf_new)
     rec_original = parser.parse(buf_original).records[0]
+    assert isinstance(rec_original, CodeRecord)
     rec_new = parser.parse(buf_new).records[0]
+    assert isinstance(rec_new, CodeRecord)
 
     rec_original.statements = rec_new.statements
 
@@ -592,9 +604,11 @@ def test_statements_setter_remove(parser, buf_original, buf_new):
         ),
     ],
 )
-def test_statements_setter_add(parser, buf_original, buf_new):
+def test_statements_setter_add(parser: NMTranParser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
+    assert isinstance(rec_original, CodeRecord)
     rec_new = parser.parse(buf_new).records[0]
+    assert isinstance(rec_new, CodeRecord)
 
     rec_original.statements = rec_new.statements
     assert rec_original.statements == rec_new.statements
@@ -613,9 +627,11 @@ def test_statements_setter_add(parser, buf_original, buf_new):
         ('$PRED\nY = A + B\nX = C - D\nZ = E * F\n', '$PRED\nY = A + B\nX = C\nZ = E * F\n'),
     ],
 )
-def test_statements_setter_change(parser, buf_original, buf_new):
+def test_statements_setter_change(parser: NMTranParser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
+    assert isinstance(rec_original, CodeRecord)
     rec_new = parser.parse(buf_new).records[0]
+    assert isinstance(rec_new, CodeRecord)
     rec_original.statements = rec_new.statements
 
     assert rec_original.statements == rec_new.statements
@@ -643,8 +659,11 @@ def test_statements_setter_change(parser, buf_original, buf_new):
         ),
     ],
 )
-def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression, buf_new):
+def test_statements_setter_add_from_sympy(
+    parser: NMTranParser, buf_original, sym, expression, buf_new
+):
     rec_original = parser.parse(buf_original).records[0]
+    assert isinstance(rec_original, CodeRecord)
 
     assignment = Assignment(sym, expression)
     statements = rec_original.statements + [assignment]
@@ -677,8 +696,9 @@ def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression,
         ),
     ],
 )
-def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
+def test_update(parser: NMTranParser, buf_original, assignment, nonmem_names, buf_expected):
     rec_original = parser.parse(buf_original).records[0]
+    assert isinstance(rec_original, CodeRecord)
 
     statements = rec_original.statements + assignment
     statements = statements.subs(nonmem_names)
@@ -687,12 +707,13 @@ def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
     assert str(rec_original) == buf_expected
 
 
-def test_nested_block_if(parser):
+def test_nested_block_if(parser: NMTranParser):
     code = (
         '\nIF (X.EQ.23) THEN\nIF (Y.EQ.0) THEN\nCL=1\nELSE\nCL=2\nENDIF\n' 'CL=5\nELSE\nCL=6\nENDIF'
     )
     code = _ensure_trailing_newline(code)
     rec = parser.parse('$PRED' + code).records[0]
+    assert isinstance(rec, CodeRecord)
 
     s = rec.statements
     rec.statements = s
@@ -731,7 +752,7 @@ def test_nested_block_if(parser):
         ),
     ],
 )
-def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
+def test_translate_sympy_piecewise(parser: NMTranParser, symbol, expression, buf_expected):
     buf_original = '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'
     rec = parser.parse(buf_original).records[0]
     assert isinstance(rec, CodeRecord)

@@ -1,10 +1,14 @@
 import re
 from itertools import chain
+from typing import Iterable, List, Sequence, Set
 
 from pharmpy.model import ModelSyntaxError
 
+from .records.code_record import CodeRecord
 from .records.factory import create_record
+from .records.parsers import RawRecordParser
 from .records.raw_record import RawRecord
+from .records.record import Record
 
 
 class Abbreviated:
@@ -40,7 +44,7 @@ class NMTranParser:
         record_strings = re.split(r'^([ \t]*\$)', text, flags=re.MULTILINE)
         first = record_strings.pop(0)  # Empty if nothing before first record
         if first:
-            stream.records.append(RawRecord(first))
+            stream.records.append(RawRecord(RawRecordParser(), first, '', ''))
 
         for separator, s in zip(record_strings[0::2], record_strings[1::2]):
             record = create_record(separator + s)
@@ -80,11 +84,11 @@ class NMTranControlStream:
     """Representation of a parsed control stream (model file)"""
 
     def __init__(self):
-        self.records = []
-        self._active_problem = 0
-        self.abbreviated = Abbreviated(self)
+        self.records: List[Record] = []
+        self._active_problem: int = 0
+        self.abbreviated: Abbreviated = Abbreviated(self)
 
-    def get_records(self, name):
+    def get_records(self, name) -> List[Record]:
         """Return a list of all records of a certain type in the current $PROBLEM"""
         current_problem = -1
         found = []
@@ -149,11 +153,11 @@ class NMTranControlStream:
         self.records.insert(index + 1, record)
         return record
 
-    def remove_records(self, records):
+    def remove_records(self, records: Iterable[Record]):
         for rec in records:
             self.records.remove(rec)
 
-    def replace_records(self, old, new):
+    def replace_records(self, old: Set[Record], new: Sequence[Record]):
         keep = []
         first = True
         for rec in self.records:
@@ -165,25 +169,30 @@ class NMTranControlStream:
                     first = False
         self.records = keep
 
+    def _get_first_code_record(self, name):
+        record = self._get_first_record(name)
+        assert record is None or isinstance(record, CodeRecord)
+        return record
+
     def get_pred_pk_record(self):
-        pred = self._get_first_record('PRED')
+        pred = self._get_first_code_record('PRED')
         if pred is not None:
             return pred
 
-        pk = self._get_first_record('PK')
+        pk = self._get_first_code_record('PK')
         if pk is not None:
             return pk
 
         raise ModelSyntaxError('Model has no $PK or $PRED')
 
     def get_pk_record(self):
-        return self._get_first_record('PK')
+        return self._get_first_code_record('PK')
 
     def get_error_record(self):
-        return self._get_first_record('ERROR')
+        return self._get_first_code_record('ERROR')
 
     def get_des_record(self):
-        return self._get_first_record('DES')
+        return self._get_first_code_record('DES')
 
     def __str__(self):
         return ''.join(map(str, self.records))

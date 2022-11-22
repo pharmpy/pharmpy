@@ -2,9 +2,12 @@
 The NONMEM $ESTIMATION record
 """
 
+from dataclasses import dataclass
+
 from .option_record import OptionRecord
 
 
+@dataclass(frozen=True)
 class EstimationRecord(OptionRecord):
     @property
     def likelihood(self):

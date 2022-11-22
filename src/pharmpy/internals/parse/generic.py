@@ -379,20 +379,13 @@ class GenericParser(ABC):
     )
     post_process: Tuple[Union[Visitor, Transformer, Callable[[str, Tree], Tree]], ...] = ()
 
-    def __init__(self, buf=None):
-        self.root = self.parse(buf)
-
-    def parse(self, buf):
+    def parse(self, buf: str):
         """Parses a buffer, transforms and constructs :class:`AttrTree` object.
 
         Args:
             buf: Buffer to parse.
         """
-        self.buffer = buf
-        if self.buffer is None:
-            return None
-
-        root = self.lark.parse(self.buffer)
+        root = self.lark.parse(buf)
 
         for processor in self.post_process:
             if isinstance(processor, Visitor):
@@ -400,17 +393,11 @@ class GenericParser(ABC):
             elif isinstance(processor, Transformer):
                 root = processor.transform(root)
             elif isinstance(processor, Callable):
-                root = processor(self.buffer, root)
+                root = processor(buf, root)
             else:
                 raise TypeError(f'Processor {processor} must be a Visitor or a Transformer')
 
         return _from_lark_tree(root)
-
-    def __str__(self):
-        if not self.root:
-            return repr(self)
-        lines = str(prettyprint.transform(self.root)).splitlines()
-        return '\n'.join(lines)
 
 
 def _remove_token_and_space(node: Union[AttrTree, AttrToken], rule: str):

@@ -2,6 +2,9 @@
 NONMEM data record class.
 """
 
+from dataclasses import dataclass, replace
+from typing import List, Literal
+
 from pharmpy.internals.parse import AttrToken, AttrTree
 from pharmpy.model import ModelSyntaxError
 
@@ -11,6 +14,7 @@ TYPES_OF_SPACE = frozenset(('WS', 'NEWLINE'))
 TYPES_OF_KEEP = frozenset(('WS', 'NEWLINE', 'COMMENT'))
 
 
+@dataclass(frozen=True)
 class DataRecord(OptionRecord):
     @property
     def filename(self):
@@ -21,8 +25,7 @@ class DataRecord(OptionRecord):
         else:  # 'QFILENAME'
             return str(filename)[1:-1]
 
-    @filename.setter
-    def filename(self, value):
+    def with_filename(self, value):
         if not value:
             # erase and replace by * (for previous subproblem)
             new = [AttrToken('ASTERISK', '*')]
@@ -32,47 +35,49 @@ class DataRecord(OptionRecord):
                     nodes += [child, new.pop()]
                 elif child.rule in TYPES_OF_KEEP:
                     nodes += [child]
-            self.root = AttrTree.create('root', nodes)
+            new_children = nodes
+            return replace(self, root=replace(self.root, children=new_children))
+
+        # replace only 'filename' rule and quote appropriately if, but only if, needed
+        filename = str(value)
+        quoted = [
+            '"',
+            "'",
+            ',',
+            ';',
+            '(',
+            ')',
+            '=',
+            ' ',
+            'IGNORE',
+            'NULL',
+            'ACCEPT',
+            'NOWIDE',
+            'WIDE',
+            'CHECKOUT',
+            'RECORDS',
+            'RECORDS',
+            'LRECL',
+            'NOREWIND',
+            'REWIND',
+            'NOOPEN',
+            'LAST20',
+            'TRANSLATE',
+            'BLANKOK',
+            'MISDAT',
+        ]
+        if not any(x in filename for x in quoted):
+            node = AttrTree.create('filename', {'FILENAME': filename})
         else:
-            # replace only 'filename' rule and quote appropriately if, but only if, needed
-            filename = str(value)
-            quoted = [
-                '"',
-                "'",
-                ',',
-                ';',
-                '(',
-                ')',
-                '=',
-                ' ',
-                'IGNORE',
-                'NULL',
-                'ACCEPT',
-                'NOWIDE',
-                'WIDE',
-                'CHECKOUT',
-                'RECORDS',
-                'RECORDS',
-                'LRECL',
-                'NOREWIND',
-                'REWIND',
-                'NOOPEN',
-                'LAST20',
-                'TRANSLATE',
-                'BLANKOK',
-                'MISDAT',
-            ]
-            if not any(x in filename for x in quoted):
-                node = AttrTree.create('filename', {'FILENAME': filename})
+            if "'" not in filename:
+                node = AttrTree.create('filename', {'QFILENAME': f"'{filename}'"})
+            elif '"' not in filename:
+                node = AttrTree.create('filename', {'QFILENAME': f'"{filename}"'})
             else:
-                if "'" not in filename:
-                    node = AttrTree.create('filename', {'QFILENAME': f"'{filename}'"})
-                elif '"' not in filename:
-                    node = AttrTree.create('filename', {'QFILENAME': f'"{filename}"'})
-                else:
-                    raise ValueError('Cannot have both " and \' in filename.')
-            (pre, _, post) = self.root.partition('filename')
-            self.root = AttrTree(self.root.rule, pre + (node,) + post)
+                raise ValueError('Cannot have both " and \' in filename.')
+        pre, _, post = self.root.partition('filename')
+        new_children = pre + (node,) + post
+        return replace(self, root=replace(self.root, children=new_children))
 
     @property
     def ignore_character(self):
@@ -88,33 +93,32 @@ class DataRecord(OptionRecord):
 
         return char
 
-    @ignore_character.setter
-    def ignore_character(self, c: str):
-        if c != self.ignore_character:
-            self.root = self.root.remove('ignchar')
-            char = c if len(c) == 1 else f'"{c}"'
-            if len(c) == 1:
-                char = c
-            elif "'" not in c:
-                char = f"'{c}'"
-            elif '"' not in c:
-                char = f'"{c}"'
-            else:
-                raise ValueError('Cannot have both " and \' in ignore character.')
-            char_node = AttrTree.create('char', [{'CHAR': char}])
-            node = AttrTree.create('ignchar', [{'IGNORE': 'IGNORE'}, {'EQUALS': '='}, char_node])
-            self.append_option_node(node)
+    def with_ignore_character(self, c: str):
+        if c == self.ignore_character:
+            return self
+
+        char = c if len(c) == 1 else f'"{c}"'
+        if len(c) == 1:
+            char = c
+        elif "'" not in c:
+            char = f"'{c}'"
+        elif '"' not in c:
+            char = f'"{c}"'
+        else:
+            raise ValueError('Cannot have both " and \' in ignore character.')
+        char_node = AttrTree.create('char', [{'CHAR': char}])
+        node = AttrTree.create('ignchar', [{'IGNORE': 'IGNORE'}, {'EQUALS': '='}, char_node])
+
+        new_root = self.root.remove('ignchar')
+        return replace(self, root=new_root).append_option_node(node)
 
     def ignore_character_from_header(self, label):
         """Set ignore character from a header label
-        If s[0] is a-zA-Z set @
-        else set s[0]
+        If label[0] is a-zA-Z set @
+        else set label[0]
         """
         c = label[0]
-        if c.isalpha():
-            self.ignore_character = '@'
-        else:
-            self.ignore_character = c
+        return self.with_ignore_character('@' if c.isalpha() else c)
 
     @property
     def null_value(self):
@@ -130,26 +134,23 @@ class DataRecord(OptionRecord):
         else:
             return 0
 
-    @property
-    def ignore(self):
-        filters = []
-        for option in self.root.subtrees('ignore'):
+    def _filters_of(self, name: Literal['ignore', 'accept']):
+        filters: List[AttrTree] = []
+        for option in self.root.subtrees(name):
             for filt in option.subtrees('filter'):
                 filters.append(filt)
         return filters
 
-    @ignore.deleter
+    @property
     def ignore(self):
-        self.root = self.root.remove('ignore')
+        return self._filters_of('ignore')
+
+    def del_ignore(self):
+        return replace(self, root=self.root.remove('ignore'))
 
     @property
     def accept(self):
-        filters = []
-        for option in self.root.subtrees('accept'):
-            for filt in option.subtrees('filter'):
-                filters.append(filt)
-        return filters
+        return self._filters_of('accept')
 
-    @accept.deleter
-    def accept(self):
-        self.root = self.root.remove('accept')
+    def del_accept(self):
+        return replace(self, root=self.root.remove('accept'))

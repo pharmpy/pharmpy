@@ -2,9 +2,12 @@
 The NONMEM $SUBROUTINES record
 """
 
+from dataclasses import dataclass
+
 from .option_record import OptionRecord
 
 
+@dataclass(frozen=True)
 class SubroutineRecord(OptionRecord):
     @property
     def advan(self):
@@ -13,11 +16,9 @@ class SubroutineRecord(OptionRecord):
             advan = self.get_option_startswith('ADVAN')
         return advan
 
-    @advan.setter
-    def advan(self, value):
+    def with_advan(self, value):
         # FIXME: Need replace_option
-        self.remove_option_startswith('ADVAN')
-        self.append_option(value)
+        return self.remove_option_startswith('ADVAN').append_option(value)
 
     @property
     def trans(self):

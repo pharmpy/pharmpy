@@ -2,28 +2,29 @@
 The NONMEM $MODEL record
 """
 
+from dataclasses import dataclass
+
 from .option_record import OptionRecord
 
 
+@dataclass(frozen=True)
 class ModelRecord(OptionRecord):
     @property
     def ncomps(self):
-        nc = self.get_option("NCOMPARTMENTS")
-        if nc is None:
-            nc = self.get_option("NCOMPS")
-            if nc is None:
-                nc = self.get_option("NCM")
-        if nc is not None:
-            nc = int(nc)
-        return nc
+        for option in ('NCOMPARTMENTS', 'NCOMPS', 'NCM'):
+            nc = self.get_option(option)
+            if nc is not None:
+                return int(nc)
+
+        return None
 
     def add_compartment(self, name, dosing=False):
         options = (name, 'DEFDOSE') if dosing else (name,)
-        self.append_option('COMPARTMENT', f'({" ".join(options)})')
+        return self.append_option('COMPARTMENT', f'({" ".join(options)})')
 
     def prepend_compartment(self, name, dosing=False):
         options = (name, 'DEFDOSE') if dosing else (name,)
-        self.prepend_option('COMPARTMENT', f'({" ".join(options)})')
+        return self.prepend_option('COMPARTMENT', f'({" ".join(options)})')
 
     def get_compartment_number(self, name):
         for i, (curname, _) in enumerate(self.compartments()):
@@ -34,16 +35,16 @@ class ModelRecord(OptionRecord):
     def remove_compartment(self, name):
         n = self.get_compartment_number(name)
         assert n is not None
-        self.remove_nth_option('COMPARTMENT', n - 1)
+        return self.remove_nth_option('COMPARTMENT', n - 1)
 
     def set_dosing(self, name):
         n = self.get_compartment_number(name)
         assert n is not None
-        self.add_suboption_for_nth('COMPARTMENT', n - 1, 'DEFDOSE')
+        return self.add_suboption_for_nth('COMPARTMENT', n - 1, 'DEFDOSE')
 
     def move_dosing_first(self):
         self.remove_suboption_for_all('COMPARTMENT', 'DEFDOSE')
-        self.add_suboption_for_nth('COMPARTMENT', 0, 'DEFDOSE')
+        return self.add_suboption_for_nth('COMPARTMENT', 0, 'DEFDOSE')
 
     def compartments(self):
         ncomps = self.ncomps

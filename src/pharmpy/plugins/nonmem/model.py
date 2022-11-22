@@ -32,6 +32,7 @@ from .parsing import (
     parse_value_type,
 )
 from .random_variables import rv_translation
+from .records.data_record import DataRecord
 from .results import _parse_modelfit_results
 from .update import (
     abbr_translation,
@@ -191,26 +192,28 @@ class Model(BaseModel):
                 self.datainfo = self.datainfo.derive(path=datapath)
 
             data_record = self.internals.control_stream.get_records('DATA')[0]
+            assert isinstance(data_record, DataRecord)
 
             label = self.datainfo.names[0]
-            data_record.ignore_character_from_header(label)
+            data_record = data_record.ignore_character_from_header(label)
             update_input(self)
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.
-            del data_record.ignore
-            del data_record.accept
-            self.internals._dataset_updated = False
-            self.internals._old_datainfo = self.datainfo
+            data_record = data_record.del_ignore().del_accept()
 
             datapath = self.datainfo.path
             if datapath is not None and datapath_updated:
                 assert (
                     not datapath.exists() or datapath.is_file()
                 ), f'input path change, but no file exists at target {str(datapath)}'
-                data_record = self.internals.control_stream.get_records('DATA')[0]
                 parent_path = Path.cwd() if path is None else path.parent
-                data_record.filename = str(path_relative_to(parent_path, datapath))
+                data_record = data_record.with_filename(
+                    str(path_relative_to(parent_path, datapath))
+                )
+
+            self.internals._dataset_updated = False
+            self.internals._old_datainfo = self.datainfo
 
         update_sizes(self)
         update_estimation(self)
@@ -276,12 +279,6 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
     rvs = parse_random_variables(control_stream)
 
     trans_statements, trans_params = create_name_trans(control_stream, rvs, statements)
-    for theta in control_stream.get_records('THETA'):
-        theta.update_name_map(trans_params)
-    for omega in control_stream.get_records('OMEGA'):
-        omega.update_name_map(trans_params)
-    for sigma in control_stream.get_records('SIGMA'):
-        sigma.update_name_map(trans_params)
 
     d_par = {key: value for key, value in trans_params.items() if key in parameters}
 

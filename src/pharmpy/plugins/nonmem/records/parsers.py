@@ -18,6 +18,11 @@ class RecordParser(GenericParser):
     pass
 
 
+class RawRecordParser(RecordParser):
+    def parse(self, _):
+        raise TypeError('RawRecordParsers#parse should never be called')
+
+
 @install_grammar
 class AbbreviatedRecordParser(RecordParser):
     grammar_filename = 'abbreviated_record.lark'

@@ -1,9 +1,11 @@
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 from .option_record import OptionRecord
 
 
+@dataclass(frozen=True)
 class TableRecord(OptionRecord):
     @property
     def path(self):
@@ -11,9 +13,8 @@ class TableRecord(OptionRecord):
         assert file_option is not None
         return Path(file_option)
 
-    @path.setter
-    def path(self, value):
-        self.set_option('FILE', str(value))
+    def with_path(self, value):
+        return self.set_option('FILE', str(value))
 
     @property
     def eta_derivatives(self):
@@ -28,10 +29,10 @@ class TableRecord(OptionRecord):
     def _find_derivatives(self, ch):
         derivs = []
         regexp = ch + r'(\d+)1$'
-        for key, value in self.all_options:
-            m = re.match(regexp, key)
-            if not m and value is not None:
-                m = re.match(regexp, value)
+        for option in self.all_options:
+            m = re.match(regexp, option.key)
+            if not m and option.value is not None:
+                m = re.match(regexp, option.value)
             if m:
                 n = m.group(1)
                 derivs.append(int(n))

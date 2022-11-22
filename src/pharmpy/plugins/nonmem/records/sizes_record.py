@@ -2,9 +2,12 @@
 The NONMEM $SIZES record
 """
 
+from dataclasses import dataclass
+
 from .option_record import OptionRecord
 
 
+@dataclass(frozen=True)
 class SizesRecord(OptionRecord):
     @property
     def LTH(self):
@@ -12,12 +15,11 @@ class SizesRecord(OptionRecord):
         assert lth is not None
         return int(lth)
 
-    @LTH.setter
-    def LTH(self, value):
+    def with_LTH(self, value):
         if value < 101:
-            self.remove_option('LTH')
+            return self.remove_option('LTH')
         else:
-            self.set_option('LTH', str(value))
+            return self.set_option('LTH', str(value))
 
     @property
     def PC(self):
@@ -25,14 +27,13 @@ class SizesRecord(OptionRecord):
         assert pc is not None
         return int(pc)
 
-    @PC.setter
-    def PC(self, value):
+    def with_PC(self, value):
         if value > 99:
             raise ValueError(
                 f'Model has {value} compartments, but NONMEM only support a maximum of 99 '
                 f'compartments.'
             )
         if value > 30:
-            self.set_option('PC', str(value))
+            return self.set_option('PC', str(value))
         else:
-            self.remove_option('PC')
+            return self.remove_option('PC')

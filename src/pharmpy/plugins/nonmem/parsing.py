@@ -21,12 +21,14 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
 )
+from pharmpy.plugins.nonmem.records.subroutine_record import SubroutineRecord
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 
 from .advan import _compartmental_model
 from .dataset import read_nonmem_dataset
 from .nmtran_parser import NMTranControlStream
 from .parameters import parameter_translation
+from .records.data_record import DataRecord
 
 
 def parse_parameters(control_stream) -> Parameters:
@@ -91,6 +93,7 @@ def parse_statements(
 
     if error:
         sub = control_stream.get_records('SUBROUTINES')[0]
+        assert isinstance(sub, SubroutineRecord)
         comp = _compartmental_model(di, dataset, control_stream, sub.advan, sub.trans, des)
         trans_amounts = {}
         if comp is None:
@@ -516,7 +519,7 @@ def parse_column_info(control_stream):
     of replacements for reserved names (aka synonyms).
     Anonymous columns, i.e. DROP or SKIP alone, will be given unique names _DROP1, ...
     """
-    input_records = control_stream.get_records("INPUT")
+    input_records = control_stream.get_records('INPUT')
     colnames = []
     drop = []
     synonym_replacement = {}
@@ -676,8 +679,10 @@ def parse_dataset(
     parse_columns: Tuple[str, ...] = (),
 ):
     data_records = control_stream.get_records('DATA')
-    ignore_character = data_records[0].ignore_character
-    null_value = data_records[0].null_value
+    data_record = data_records[0]
+    assert isinstance(data_record, DataRecord)
+    ignore_character = data_record.ignore_character
+    null_value = data_record.null_value
     (colnames, drop, replacements, _) = parse_column_info(control_stream)
 
     if raw:
@@ -686,8 +691,8 @@ def parse_dataset(
     else:
         # FIXME: All direct handling of control stream spanning
         # over one or more records should move
-        ignore = data_records[0].ignore
-        accept = data_records[0].accept
+        ignore = data_record.ignore
+        accept = data_record.accept
         # FIXME: This should really only be done if setting the dataset
         if ignore:
             ignore = replace_synonym_in_filters(ignore, replacements)

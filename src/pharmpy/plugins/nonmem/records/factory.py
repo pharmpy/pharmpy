@@ -1,4 +1,5 @@
 import re
+from typing import Dict, Tuple, Type
 
 from pharmpy.model import ModelSyntaxError
 
@@ -17,11 +18,14 @@ from .parsers import (
     OmegaRecordParser,
     OptionRecordParser,
     ProblemRecordParser,
+    RawRecordParser,
+    RecordParser,
     SimulationRecordParser,
     ThetaRecordParser,
 )
 from .problem_record import ProblemRecord
 from .raw_record import RawRecord
+from .record import Record
 from .simulation_record import SimulationRecord
 from .sizes_record import SizesRecord
 from .subroutine_record import SubroutineRecord
@@ -29,26 +33,26 @@ from .table_record import TableRecord
 from .theta_record import ThetaRecord
 
 # Dictionary from canonical record name to record class and non_empty rules of parser
-known_records = {
-    'ABBREVIATED': (AbbreviatedRecord, AbbreviatedRecordParser),
-    'COVARIANCE': (OptionRecord, OptionRecordParser),
-    'DATA': (DataRecord, DataRecordParser),
-    'DES': (CodeRecord, CodeRecordParser),
-    'ERROR': (CodeRecord, CodeRecordParser),
-    'ESTIMATION': (EstimationRecord, OptionRecordParser),
-    'ETAS': (EtasRecord, OptionRecordParser),
-    'INPUT': (OptionRecord, OptionRecordParser),
-    'MODEL': (ModelRecord, OptionRecordParser),
-    'OMEGA': (OmegaRecord, OmegaRecordParser),
-    'PK': (CodeRecord, CodeRecordParser),
-    'PRED': (CodeRecord, CodeRecordParser),
-    'PROBLEM': (ProblemRecord, ProblemRecordParser),
-    'SIGMA': (OmegaRecord, OmegaRecordParser),
-    'SIMULATION': (SimulationRecord, SimulationRecordParser),
-    'SIZES': (SizesRecord, OptionRecordParser),
-    'SUBROUTINES': (SubroutineRecord, OptionRecordParser),
-    'TABLE': (TableRecord, OptionRecordParser),
-    'THETA': (ThetaRecord, ThetaRecordParser),
+known_records: Dict[str, Tuple[Type[Record], RecordParser]] = {
+    'ABBREVIATED': (AbbreviatedRecord, AbbreviatedRecordParser()),
+    'COVARIANCE': (OptionRecord, OptionRecordParser()),
+    'DATA': (DataRecord, DataRecordParser()),
+    'DES': (CodeRecord, CodeRecordParser()),
+    'ERROR': (CodeRecord, CodeRecordParser()),
+    'ESTIMATION': (EstimationRecord, OptionRecordParser()),
+    'ETAS': (EtasRecord, OptionRecordParser()),
+    'INPUT': (OptionRecord, OptionRecordParser()),
+    'MODEL': (ModelRecord, OptionRecordParser()),
+    'OMEGA': (OmegaRecord, OmegaRecordParser()),
+    'PK': (CodeRecord, CodeRecordParser()),
+    'PRED': (CodeRecord, CodeRecordParser()),
+    'PROBLEM': (ProblemRecord, ProblemRecordParser()),
+    'SIGMA': (OmegaRecord, OmegaRecordParser()),
+    'SIMULATION': (SimulationRecord, SimulationRecordParser()),
+    'SIZES': (SizesRecord, OptionRecordParser()),
+    'SUBROUTINES': (SubroutineRecord, OptionRecordParser()),
+    'TABLE': (TableRecord, OptionRecordParser()),
+    'THETA': (ThetaRecord, ThetaRecordParser()),
 }
 
 
@@ -89,13 +93,8 @@ def create_record(chunk: str):
     canonical_name = get_canonical_record_name(raw_name)
     if canonical_name:
         name = canonical_name
-        record_class, record_parser_class = known_records[name]
-        record = record_class(content, record_parser_class)
+        record_class, record_parser = known_records[name]
+        return record_class(record_parser, content, name, raw_name)
     else:
-        record = RawRecord(content)
         name = raw_name[1:]
-
-    record.name = name
-    record.raw_name = raw_name
-
-    return record
+        return RawRecord(RawRecordParser(), content, name, raw_name)

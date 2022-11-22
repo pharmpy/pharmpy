@@ -1,7 +1,7 @@
 import re
 import warnings
-from itertools import count
-from typing import Union, cast
+from dataclasses import dataclass, replace
+from typing import List, Set, Union, cast
 
 from pharmpy.internals.parse import AttrToken, AttrTree
 from pharmpy.internals.parse.generic import eval_token, remove_token_and_space
@@ -9,20 +9,18 @@ from pharmpy.model import Parameter
 
 from .record import Record
 
+# from .names import nonmem_to_pharmpy
+
 max_upper_bound = 1000000
 min_lower_bound = -1000000
 
 
+@dataclass(frozen=True)
 class ThetaRecord(Record):
-    def __init__(self, content, parser_class):
-        super().__init__(content, parser_class)
-        self.name_map = None
-
-    def add_nonmem_name(self, name_original, theta_number):
-        if not re.match(r'THETA\(\d+\)', name_original):
-            self.root = self.root.add_comment_node(name_original)
-            self.root = self.root.add_newline_node()
-        self.name_map = {name_original: theta_number}
+    def add_nonmem_name(self, name_original):
+        if re.match(r'THETA\(\d+\)', name_original):
+            return self
+        return replace(self, root=self.root.add_comment_node(name_original).add_newline_node())
 
     def parameters(self, first_theta, seen_labels=None):
         """Get a parameter set for this theta record.
@@ -30,7 +28,7 @@ class ThetaRecord(Record):
         """
         if seen_labels is None:
             seen_labels = set()
-        pset = []
+        pset: List[Parameter] = []
         current_theta = first_theta
         for theta in self.root.subtrees('theta'):
             init = eval_token(theta.subtree('init').leaf('NUMERIC'))
@@ -87,8 +85,6 @@ class ThetaRecord(Record):
                 current_theta += 1
                 pset.append(new_par)
 
-        if not self.name_map:
-            self.name_map = {name: first_theta + i for i, name in enumerate([p.name for p in pset])}
         return pset
 
     def _multiple(self, theta: AttrTree) -> int:
@@ -98,14 +94,14 @@ class ThetaRecord(Record):
         else:
             return 1
 
-    def update(self, parameters, first_theta):
+    def update(self, parameters):
         """From a Parameters update the THETAs in this record
 
         Currently only updating initial estimates
         """
-        assert self.name_map is not None
-        i = first_theta
-        index = {v: k for k, v in self.name_map.items()}
+        assert len(self) == len(parameters)
+
+        i = 0
 
         def _update_theta(child: Union[AttrTree, AttrToken]):
             nonlocal i
@@ -115,8 +111,7 @@ class ThetaRecord(Record):
 
             theta = child
 
-            name = index[i]
-            param = parameters[name]
+            param = parameters[i]
             new_init = param.init
             init = theta.subtree('init')
             if eval_token(init.leaf('NUMERIC')) != new_init:
@@ -135,33 +130,9 @@ class ThetaRecord(Record):
 
             return theta
 
-        self.root = self.root.map(_update_theta)
+        return replace(self, root=self.root.map(_update_theta))
 
-    def update_name_map(self, trans):
-        """Update name_map given dict from -> to"""
-        assert self.name_map is not None
-        for key, value in trans.items():
-            if key in self.name_map:
-                n = self.name_map[key]
-                del self.name_map[key]
-                self.name_map[value] = n
-
-    def renumber(self, new_start):
-        assert self.name_map is not None
-        for new_index, name in zip(
-            count(new_start), map(lambda t: t[0], sorted(self.name_map.items(), key=lambda t: t[1]))
-        ):
-            self.name_map[name] = new_index
-
-    def remove(self, names):
-        assert self.name_map is not None
-
-        first_theta = min(self.name_map.values())
-        indices = {self.name_map[name] - first_theta for name in names}
-
-        for name in names:
-            del self.name_map[name]
-
+    def remove(self, indices: Set[int]):
         keep = []
         i = 0
         for node in self.root.children:
@@ -172,7 +143,7 @@ class ThetaRecord(Record):
             else:
                 keep.append(node)
 
-        self.root = AttrTree(self.root.rule, tuple(keep))
+        return replace(self, root=replace(self.root, children=tuple(keep)))
 
     def __len__(self):
         """Number of thetas in this record"""

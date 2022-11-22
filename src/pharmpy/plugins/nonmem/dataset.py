@@ -2,6 +2,7 @@
 import re
 import warnings
 from io import StringIO
+from typing import Optional, Union
 
 from lark import Lark
 
@@ -16,7 +17,7 @@ class NMTRANDataIO(StringIO):
     Currently it takes care of filtering out ignored rows and handles special delimiter cases
     """
 
-    def __init__(self, filename_or_io, ignore_character='#'):
+    def __init__(self, filename_or_io, ignore_character: Optional[str] = '#'):
         """filename_or_io is a string with a path, a path object or any IO object, i.e. StringIO"""
         if not ignore_character:
             ignore_character = '#'
@@ -117,7 +118,7 @@ def _make_ids_unique(df, columns):
     return df
 
 
-def _filter_ignore_accept(df, ignore, accept, null_value):
+def _filter_ignore_accept(df, ignore, accept, null_value: str):
     if ignore and accept:
         raise ValueError("Cannot have both IGNORE and ACCEPT")
 
@@ -211,7 +212,7 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
             # for further information.
             # Using a name with spaces since this cannot collide with other NONMEM names
             magic_colname = 'a a'
-            df[magic_colname] = df[column].apply(_convert_data_item, args=(str(null_value),))
+            df[magic_colname] = df[column].apply(_convert_data_item, args=(null_value,))
             expression = f'`{magic_colname}` {operator} {expr}'
             if ignore:
                 expression = 'not(' + expression + ')'
@@ -224,10 +225,10 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
 def read_nonmem_dataset(
     path_or_io,
     raw=False,
-    ignore_character='#',
+    ignore_character: Optional[str] = '#',
     colnames=(),
     drop=None,
-    null_value='0',
+    null_value: Union[str, int, float] = '0',
     parse_columns=(),
     ignore=None,
     accept=None,
@@ -288,7 +289,7 @@ def read_nonmem_dataset(
     else:
         df.columns = colnames
 
-    df = _filter_ignore_accept(df, ignore, accept, null_value)
+    df = _filter_ignore_accept(df, ignore, accept, str(null_value))
 
     if not raw:
         parse_columns = [col for col, dropped in zip(df.columns, drop) if not dropped]

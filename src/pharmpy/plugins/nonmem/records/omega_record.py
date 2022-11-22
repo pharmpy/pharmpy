@@ -1,6 +1,7 @@
 import math
 import re
 import warnings
+from dataclasses import dataclass
 from typing import List, Literal, Optional, Tuple, Union, cast
 
 from pharmpy.deps import numpy as np
@@ -25,6 +26,7 @@ from .parsers import OmegaRecordParser
 from .record import Record
 
 
+@dataclass(frozen=True)
 class OmegaRecord(Record):
     def parameters(self, start_omega, previous_size, seen_labels=None):
         """Get a Parameters for this omega record"""

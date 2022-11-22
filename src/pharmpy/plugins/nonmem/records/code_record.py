@@ -5,8 +5,11 @@ Generic NONMEM code record class.
 from __future__ import annotations
 
 import re
+from abc import abstractmethod
+from dataclasses import dataclass, replace
+from functools import cached_property
 from operator import neg, pos, sub, truediv
-from typing import Iterator, Literal, Sequence, Set, Tuple
+from typing import Dict, Iterator, List, Literal, Sequence, Set, Tuple
 
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.ds.ordered_set import OrderedSet
@@ -14,10 +17,10 @@ from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.parse import AttrTree, NoSuchRuleException
 from pharmpy.internals.parse.tree import Interpreter
 from pharmpy.internals.sequence.lcs import diff
-from pharmpy.model import Assignment, RandomVariables, Statement, Statements
-from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
+from pharmpy.model import Assignment, ODESystem, RandomVariables, Statement
 
-from .record import Record
+from .parsers import RecordParser
+from .record import GeneratedRecord, ParsedRecord, Record
 
 
 class MyPrinter(sympy_printing.str.StrPrinter):
@@ -61,7 +64,7 @@ class NMTranPrinter(sympy_printing.fortran.FCodePrinter):
 
 
 def nmtran_assignment_string(
-    assignment: Assignment, defined_symbols: Set[sympy.Symbol], rvs, trans
+    assignment: Assignment, defined_symbols: Set[sympy.Symbol], rvs: RandomVariables, trans: Dict
 ):
     if isinstance(assignment.expression, sympy.Piecewise):
         return _translate_sympy_piecewise(assignment, defined_symbols)
@@ -152,12 +155,12 @@ def _translate_sympy_sign(s):
     return expr_str
 
 
-def _print_custom(assignment: Assignment, rvs: RandomVariables, trans):
+def _print_custom(assignment: Assignment, rvs: RandomVariables, trans: Dict):
     expr_ordered = _order_terms(assignment, rvs, trans)
     return f'{assignment.symbol} = {expr_ordered}'
 
 
-def _order_terms(assignment: Assignment, rvs: RandomVariables, trans):
+def _order_terms(assignment: Assignment, rvs: RandomVariables, trans: Dict):
     """Order terms such that random variables are placed last. Currently only supports
     additions."""
     if not isinstance(assignment.expression, sympy.Add) or rvs is None:
@@ -384,9 +387,17 @@ class ExpressionInterpreter(Interpreter):
         return str(node).upper()
 
 
+# NOTE An index establishes a correspondance between tree
+# children and statements. It consists of
+# (ni, nj, si, sj) tuples that map
+# children[ni:nj] to statements[si:sj]
+IndexEntry = Tuple[int, int, int, int]
+Index = Tuple[IndexEntry, ...]
+
+
 def _index_statements_diff(
     last_node_index: int,
-    index: Sequence[Tuple[int, int, int, int]],
+    index: Sequence[IndexEntry],
     it: Iterator[Tuple[Literal[-1, 0, 1], Statement]],
 ):
     """This function reorders and groups a diff of statements according to the
@@ -441,41 +452,38 @@ def _index_statements_diff(
         last_node_index = nj
 
 
+@dataclass(frozen=True)
 class CodeRecord(Record):
-    def __init__(self, content, parser_class):
-        self.is_updated = False
-        self.rvs, self.trans = None, None
-        # NOTE self._index establishes a correspondance between self.root
-        # nodes and self.statements statements. self._index consists of
-        # (ni, nj, si, sj) tuples which maps the nodes
-        # self.root.children[ni:nj] to the statements self.statements[si:sj]
-        self._index = []
-        super().__init__(content, parser_class)
+    @property
+    @abstractmethod
+    def index(self) -> Index:
+        ...
 
     @property
-    def statements(self):
-        index, statements = _parse_tree(self.root)
-        self._index = index
-        self._statements = statements
-        return statements
+    @abstractmethod
+    def statements(self) -> Tuple[Statement, ...]:
+        ...
 
-    @statements.setter
-    def statements(self, new: Sequence[Statement]):
-        try:
-            old = self._statements
-        except AttributeError:
-            old = self.statements
+    @property
+    @abstractmethod
+    def parser(self) -> RecordParser:
+        ...
+
+    def with_statements(self, rvs: RandomVariables, trans: Dict, new: Sequence[Statement]):
+        old = self.statements
         if new == old:
-            return
+            # FIXME Does this really depend only on the list of new statements?
+            return self
         new_children = []
         last_node_index = 0
+        old_index = self.index
         new_index = []
         defined_symbols: Set[sympy.Symbol] = set()  # NOTE Set of all defined symbols so far
         si = 0  # NOTE We keep track of progress in the "new" statements sequence
 
         first_statement_index = (
-            self._index[0][0]  # NOTE start insertion just before the first statement
-            if self._index
+            old_index[0][0]  # NOTE start insertion just before the first statement
+            if old_index
             else (
                 first_verbatim  # NOTE start insertion just before the first verbatim
                 if (first_verbatim := self.root.first_index('verbatim')) != -1
@@ -484,14 +492,14 @@ class CodeRecord(Record):
         )
 
         for op, statements, ni, nj in _index_statements_diff(
-            first_statement_index, self._index, diff(old, new)
+            first_statement_index, old_index, diff(old, new)
         ):
             # NOTE We copy interleaved non-statement nodes
             new_children.extend(self.root.children[last_node_index:ni])
             if op == 1:
                 for s in statements:
                     assert isinstance(s, Assignment)
-                    statement_nodes = self._statement_to_nodes(defined_symbols, s)
+                    statement_nodes = self._statement_to_nodes(rvs, trans, defined_symbols, s)
                     # NOTE We insert the generated nodes just before the next
                     # existing statement node
                     insert_pos = len(new_children)
@@ -512,18 +520,26 @@ class CodeRecord(Record):
             last_node_index = nj
         # NOTE We copy any non-statement nodes that are remaining
         new_children.extend(self.root.children[last_node_index:])
-        self.root = AttrTree(self.root.rule, tuple(new_children))
-        self._index = new_index
-        self._statements = new
 
-    def _statement_to_nodes(self, defined_symbols: Set[sympy.Symbol], s: Assignment):
-        statement_str = nmtran_assignment_string(s, defined_symbols, self.rvs, self.trans) + '\n'
-        node_tree = CodeRecordParser(statement_str).root
+        return GeneratedCodeRecord(
+            name=self.name,
+            raw_name=self.raw_name,
+            statements=tuple(new),
+            index=tuple(new_index),
+            parser=self.parser,
+            root=replace(self.root, children=tuple(new_children)),
+        )
+
+    def _statement_to_nodes(
+        self, rvs: RandomVariables, trans: Dict, defined_symbols: Set[sympy.Symbol], s: Assignment
+    ):
+        statement_str = nmtran_assignment_string(s, defined_symbols, rvs, trans) + '\n'
+        node_tree = self.parser.parse(statement_str)
         assert node_tree is not None
         statement_nodes = list(node_tree.subtrees('statement'))
         return statement_nodes
 
-    def from_odes(self, ode_system):
+    def from_odes(self, rvs: RandomVariables, trans: Dict, ode_system: ODESystem):
         """Set statements of record given an explicit ode system"""
         odes = ode_system.odes[:-1]  # Skip last ode as it is for the output compartment
         functions = [ode.lhs.args[0] for ode in odes]
@@ -535,28 +551,55 @@ class CodeRecord(Record):
             symbol = sympy.Symbol(f'DADT({i + 1})')
             expression = subs(ode.rhs, function_map, simultaneous=True)
             statements.append(Assignment(symbol, expression))
-        self.statements = statements
+
+        return self.with_statements(rvs, trans, statements)
+
+
+@dataclass(frozen=True)
+class ParsedCodeRecord(CodeRecord, ParsedRecord):
+    @cached_property
+    def _index_and_statements(self):
+        return _parse_tree(self.root)
+
+    @property
+    def index(self) -> Index:
+        index, _ = self._index_and_statements
+        return index
+
+    @property
+    def statements(self) -> Tuple[Statement, ...]:
+        _, statements = self._index_and_statements
+        return statements
+
+
+@dataclass(frozen=True)
+class GeneratedCodeRecord(CodeRecord, GeneratedRecord):
+
+    statements: Tuple[Statement, ...]
+    index: Index
+    parser: RecordParser
 
     def __str__(self):
-        if self.is_updated:
-            s = str(self.root)
-            newlines = []
-            # FIXME: Workaround for upper casing all code but not comments.
-            # should properly be handled in a custom printer
-            for line in s.split('\n'):
-                parts = line.split(';', 1)
-                modline = parts[0].upper()
-                if len(parts) == 2:
-                    modline += ';' + parts[1]
-                newlines.append(modline)
-            assert self.raw_name is not None
-            return self.raw_name + '\n'.join(newlines)
-        return super(CodeRecord, self).__str__()
+        return self._cached_str
+
+    @cached_property
+    def _cached_str(self):
+        s = str(self.root)
+        newlines = []
+        # FIXME: Workaround for upper casing all code but not comments.
+        # should properly be handled in a custom printer
+        for line in s.split('\n'):
+            parts = line.split(';', 1)
+            modline = parts[0].upper()
+            if len(parts) == 2:
+                modline += ';' + parts[1]
+            newlines.append(modline)
+        return self.raw_name + '\n'.join(newlines)
 
 
 def _parse_tree(tree: AttrTree):
-    s = []
-    new_index = []
+    s: List[Assignment] = []
+    new_index: List[Tuple[int, int, int, int]] = []
     interpreter = ExpressionInterpreter()
     for child_index, child in enumerate(tree.children):
         if not isinstance(child, AttrTree) or child.rule != 'statement':
@@ -656,7 +699,7 @@ def _parse_tree(tree: AttrTree):
                     s.append(ass)
                 new_index.append((child_index, child_index + 1, len(s) - len(symbols), len(s)))
 
-    return new_index, Statements(s)
+    return tuple(new_index), tuple(s)
 
 
 # NOTE Follows: functions that can be used in .mod files.

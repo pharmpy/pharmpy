@@ -3,6 +3,7 @@ NONMEM abbreviated record class.
 """
 
 import re
+from dataclasses import dataclass
 from itertools import islice
 
 from .record import Record
@@ -20,6 +21,7 @@ def strip_quote(s):
     return s[1:-1] if _is_quoted(s) else s
 
 
+@dataclass(frozen=True)
 class AbbreviatedRecord(Record):
     @property
     def replace(self):
