@@ -500,7 +500,7 @@ def write_results(results: Results, path: Union[str, Path], lzma: bool = False, 
         results.to_json(path, lzma=lzma)
 
 
-def summarize_errors(models: Union[Model, List[Model]]) -> pd.Dataframe:
+def summarize_errors(models: Union[Model, List[Model]]) -> pd.DataFrame:
     """Summarize errors and warnings from one or multiple model runs.
 
     Summarize the errors and warnings found after running the model/models.
@@ -700,7 +700,7 @@ def _get_rankval(model, rank_type, bic_type):
 def summarize_modelfit_results(
     results: Union[ModelfitResults, List[ModelfitResults]],
     include_all_estimation_steps: bool = False,
-) -> pd.Dataframe:
+) -> pd.DataFrame:
     """Summarize results of model runs
 
     Summarize different results after fitting a model, includes runtime, ofv,
