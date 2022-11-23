@@ -9,6 +9,8 @@ class RawRecord(Record):
     Used for unknown records and for anything coming before the first record
     """
 
+    buffer: str
+
     @property
-    def root(self):
+    def tree(self):
         raise TypeError('Cannot access root of raw record')

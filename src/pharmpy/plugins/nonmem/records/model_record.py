@@ -3,13 +3,16 @@ The NONMEM $MODEL record
 """
 
 from dataclasses import dataclass
+from functools import cached_property
 
 from .option_record import OptionRecord
+from .record import with_parsed_and_generated
 
 
+@with_parsed_and_generated
 @dataclass(frozen=True)
 class ModelRecord(OptionRecord):
-    @property
+    @cached_property
     def ncomps(self):
         for option in ('NCOMPARTMENTS', 'NCOMPS', 'NCM'):
             nc = self.get_option(option)

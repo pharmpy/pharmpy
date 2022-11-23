@@ -3,40 +3,43 @@ NONMEM data record class.
 """
 
 from dataclasses import dataclass, replace
-from typing import List, Literal
+from functools import cached_property
+from typing import Literal
 
 from pharmpy.internals.parse import AttrToken, AttrTree
 from pharmpy.model import ModelSyntaxError
 
-from .option_record import OptionRecord
+from .option_record import OptionRecord, replace_tree
+from .record import with_parsed_and_generated
 
 TYPES_OF_SPACE = frozenset(('WS', 'NEWLINE'))
 TYPES_OF_KEEP = frozenset(('WS', 'NEWLINE', 'COMMENT'))
 
 
+@with_parsed_and_generated
 @dataclass(frozen=True)
 class DataRecord(OptionRecord):
-    @property
+    @cached_property
     def filename(self):
         """The (raw, unresolved) path of the dataset."""
-        filename = self.root.subtree('filename')
+        filename = self.tree.subtree('filename')
         if filename.find('FILENAME'):
             return str(filename)
         else:  # 'QFILENAME'
             return str(filename)[1:-1]
 
-    def with_filename(self, value):
+    def replace_filename(self, value):
         if not value:
             # erase and replace by * (for previous subproblem)
             new = [AttrToken('ASTERISK', '*')]
             nodes = []
-            for child in self.root.children:
+            for child in self.tree.children:
                 if new and child.rule in TYPES_OF_SPACE:
                     nodes += [child, new.pop()]
                 elif child.rule in TYPES_OF_KEEP:
                     nodes += [child]
             new_children = nodes
-            return replace(self, root=replace(self.root, children=new_children))
+            return replace_tree(self, replace(self.tree, children=new_children))
 
         # replace only 'filename' rule and quote appropriately if, but only if, needed
         filename = str(value)
@@ -75,16 +78,16 @@ class DataRecord(OptionRecord):
                 node = AttrTree.create('filename', {'QFILENAME': f'"{filename}"'})
             else:
                 raise ValueError('Cannot have both " and \' in filename.')
-        pre, _, post = self.root.partition('filename')
+        pre, _, post = self.tree.partition('filename')
         new_children = pre + (node,) + post
-        return replace(self, root=replace(self.root, children=new_children))
+        return replace_tree(self, replace(self.tree, children=new_children))
 
-    @property
+    @cached_property
     def ignore_character(self):
         """The comment character from ex IGNORE=C or None if not available."""
         char = None
-        if self.root.first_branch('ignchar', 'char'):
-            for option in self.root.subtrees('ignchar'):
+        if self.tree.first_branch('ignchar', 'char'):
+            for option in self.tree.subtrees('ignchar'):
                 if char is not None:
                     raise ModelSyntaxError("Redefinition of ignore character in $DATA")
                 char = str(option.subtree('char'))
@@ -93,7 +96,7 @@ class DataRecord(OptionRecord):
 
         return char
 
-    def with_ignore_character(self, c: str):
+    def replace_ignore_character(self, c: str):
         if c == self.ignore_character:
             return self
 
@@ -109,23 +112,23 @@ class DataRecord(OptionRecord):
         char_node = AttrTree.create('char', [{'CHAR': char}])
         node = AttrTree.create('ignchar', [{'IGNORE': 'IGNORE'}, {'EQUALS': '='}, char_node])
 
-        new_root = self.root.remove('ignchar')
-        return replace(self, root=new_root).append_option_node(node)
+        new_root = self.tree.remove('ignchar')
+        return replace_tree(self, new_root).append_option_node(node)
 
-    def ignore_character_from_header(self, label):
+    def replace_ignore_character_from_header(self, label):
         """Set ignore character from a header label
         If label[0] is a-zA-Z set @
         else set label[0]
         """
         c = label[0]
-        return self.with_ignore_character('@' if c.isalpha() else c)
+        return self.replace_ignore_character('@' if c.isalpha() else c)
 
-    @property
+    @cached_property
     def null_value(self):
         """The value to replace for NULL (i.e. . etc) in the dataset
         note that only +,-,0 (meaning 0) and 1-9 are allowed
         """
-        if subtree := self.root.first_branch('null', 'char'):
+        if subtree := self.tree.first_branch('null', 'char'):
             char = str(subtree)
             if char == '+' or char == '-':
                 return 0
@@ -135,22 +138,19 @@ class DataRecord(OptionRecord):
             return 0
 
     def _filters_of(self, name: Literal['ignore', 'accept']):
-        filters: List[AttrTree] = []
-        for option in self.root.subtrees(name):
-            for filt in option.subtrees('filter'):
-                filters.append(filt)
-        return filters
+        for option in self.tree.subtrees(name):
+            yield from option.subtrees('filter')
 
-    @property
+    @cached_property
     def ignore(self):
-        return self._filters_of('ignore')
+        return tuple(self._filters_of('ignore'))
 
     def del_ignore(self):
-        return replace(self, root=self.root.remove('ignore'))
+        return replace_tree(self, self.tree.remove('ignore'))
 
-    @property
+    @cached_property
     def accept(self):
-        return self._filters_of('accept')
+        return tuple(self._filters_of('accept'))
 
     def del_accept(self):
-        return replace(self, root=self.root.remove('accept'))
+        return replace_tree(self, self.tree.remove('accept'))

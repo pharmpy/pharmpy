@@ -123,8 +123,7 @@ def execute_model(model, db):
                 file_path = (model_path / basename).with_suffix(suffix)
                 txn.store_local_file(file_path)
 
-            for rec in model.internals.control_stream.get_records('TABLE'):
-                assert isinstance(rec, TableRecord)
+            for rec in model.internals.control_stream.get_records(TableRecord, 'TABLE'):
                 txn.store_local_file(model_path / rec.path)
 
         txn.store_local_file(stdout)

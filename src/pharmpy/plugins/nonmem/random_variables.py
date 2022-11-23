@@ -3,17 +3,18 @@ from __future__ import annotations
 from pharmpy.deps import sympy
 
 from .nmtran_parser import NMTranControlStream
+from .records.omega_record import OmegaRecord
 
 
 def rv_translation(
     control_stream: NMTranControlStream, reverse=False, remove_idempotent=False, as_symbols=False
 ):
     d = {}
-    for record in control_stream.get_records('OMEGA'):
+    for record in control_stream.get_records(OmegaRecord, 'OMEGA'):
         for key, value in record.eta_map.items():
             nonmem_name = f'ETA({value})'
             d[nonmem_name] = key
-    for record in control_stream.get_records('SIGMA'):
+    for record in control_stream.get_records(OmegaRecord, 'SIGMA'):
         for key, value in record.eta_map.items():
             nonmem_name = f'EPS({value})'
             d[nonmem_name] = key

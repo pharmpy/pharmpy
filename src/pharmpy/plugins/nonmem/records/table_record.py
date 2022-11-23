@@ -1,30 +1,33 @@
 import re
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 
 from .option_record import OptionRecord
+from .record import with_parsed_and_generated
 
 
+@with_parsed_and_generated
 @dataclass(frozen=True)
 class TableRecord(OptionRecord):
-    @property
+    @cached_property
     def path(self):
         file_option = self.option_pairs['FILE']
         assert file_option is not None
         return Path(file_option)
 
-    def with_path(self, value):
+    def replace_path(self, value):
         return self.set_option('FILE', str(value))
 
-    @property
+    @cached_property
     def eta_derivatives(self):
-        """List of numbers for etas whose derivative are requested"""
-        return self._find_derivatives('G')
+        """Tuple of numbers for etas whose derivative are requested"""
+        return tuple(self._find_derivatives('G'))
 
-    @property
+    @cached_property
     def epsilon_derivatives(self):
-        """List of numbers for epsilons whose derivateives are requested"""
-        return self._find_derivatives('H')
+        """Tuple of numbers for epsilons whose derivateives are requested"""
+        return tuple(self._find_derivatives('H'))
 
     def _find_derivatives(self, ch):
         derivs = []

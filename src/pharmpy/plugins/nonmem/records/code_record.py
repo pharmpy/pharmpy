@@ -469,7 +469,7 @@ class CodeRecord(Record):
     def parser(self) -> RecordParser:
         ...
 
-    def with_statements(self, rvs: RandomVariables, trans: Dict, new: Sequence[Statement]):
+    def replace_statements(self, rvs: RandomVariables, trans: Dict, new: Sequence[Statement]):
         old = self.statements
         if new == old:
             # FIXME Does this really depend only on the list of new statements?
@@ -486,8 +486,8 @@ class CodeRecord(Record):
             if old_index
             else (
                 first_verbatim  # NOTE start insertion just before the first verbatim
-                if (first_verbatim := self.root.first_index('verbatim')) != -1
-                else len(self.root.children)  # NOTE start insertion after all blanks
+                if (first_verbatim := self.tree.first_index('verbatim')) != -1
+                else len(self.tree.children)  # NOTE start insertion after all blanks
             )
         )
 
@@ -495,7 +495,7 @@ class CodeRecord(Record):
             first_statement_index, old_index, diff(old, new)
         ):
             # NOTE We copy interleaved non-statement nodes
-            new_children.extend(self.root.children[last_node_index:ni])
+            new_children.extend(self.tree.children[last_node_index:ni])
             if op == 1:
                 for s in statements:
                     assert isinstance(s, Assignment)
@@ -513,13 +513,13 @@ class CodeRecord(Record):
                 insert_len = nj - ni
                 new_index.append((insert_pos, insert_pos + insert_len, si, si + len(statements)))
                 si += len(statements)
-                new_children.extend(self.root.children[ni:nj])
+                new_children.extend(self.tree.children[ni:nj])
                 for s in statements:
                     if isinstance(s, Assignment):
                         defined_symbols.add(s.symbol)
             last_node_index = nj
         # NOTE We copy any non-statement nodes that are remaining
-        new_children.extend(self.root.children[last_node_index:])
+        new_children.extend(self.tree.children[last_node_index:])
 
         return GeneratedCodeRecord(
             name=self.name,
@@ -527,7 +527,7 @@ class CodeRecord(Record):
             statements=tuple(new),
             index=tuple(new_index),
             parser=self.parser,
-            root=replace(self.root, children=tuple(new_children)),
+            tree=replace(self.tree, children=tuple(new_children)),
         )
 
     def _statement_to_nodes(
@@ -552,14 +552,14 @@ class CodeRecord(Record):
             expression = subs(ode.rhs, function_map, simultaneous=True)
             statements.append(Assignment(symbol, expression))
 
-        return self.with_statements(rvs, trans, statements)
+        return self.replace_statements(rvs, trans, statements)
 
 
 @dataclass(frozen=True)
-class ParsedCodeRecord(CodeRecord, ParsedRecord):
+class ParsedCodeRecord(ParsedRecord, CodeRecord):
     @cached_property
     def _index_and_statements(self):
-        return _parse_tree(self.root)
+        return _parse_tree(self.tree)
 
     @property
     def index(self) -> Index:
@@ -573,18 +573,15 @@ class ParsedCodeRecord(CodeRecord, ParsedRecord):
 
 
 @dataclass(frozen=True)
-class GeneratedCodeRecord(CodeRecord, GeneratedRecord):
+class GeneratedCodeRecord(GeneratedRecord, CodeRecord):
 
     statements: Tuple[Statement, ...]
     index: Index
     parser: RecordParser
 
-    def __str__(self):
-        return self._cached_str
-
     @cached_property
-    def _cached_str(self):
-        s = str(self.root)
+    def buffer(self):
+        s = str(self.tree)
         newlines = []
         # FIXME: Workaround for upper casing all code but not comments.
         # should properly be handled in a custom printer
@@ -594,7 +591,7 @@ class GeneratedCodeRecord(CodeRecord, GeneratedRecord):
             if len(parts) == 2:
                 modline += ';' + parts[1]
             newlines.append(modline)
-        return self.raw_name + '\n'.join(newlines)
+        return '\n'.join(newlines)
 
 
 def _parse_tree(tree: AttrTree):

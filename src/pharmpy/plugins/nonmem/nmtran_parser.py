@@ -1,12 +1,12 @@
 import re
 from itertools import chain
-from typing import Iterable, List, Sequence, Set
+from typing import Iterable, List, Sequence, Set, Type, TypeVar
 
 from pharmpy.model import ModelSyntaxError
 
+from .records.abbreviated_record import AbbreviatedRecord
 from .records.code_record import CodeRecord
 from .records.factory import create_record
-from .records.parsers import RawRecordParser
 from .records.raw_record import RawRecord
 from .records.record import Record
 
@@ -22,15 +22,16 @@ class Abbreviated:
         """Get all $ABBR REPLACE as a dictionary"""
         return dict(
             chain.from_iterable(
-                record.replace.items() for record in self.stream.get_records('ABBREVIATED')
+                record.replace.items()
+                for record in self.stream.get_records(AbbreviatedRecord, 'ABBREVIATED')
             )
         )
 
     def translate_to_pharmpy_names(self):
         return dict(
             chain.from_iterable(
-                record.translate_to_pharmpy_names().items()
-                for record in self.stream.get_records('ABBREVIATED')
+                record.translate_to_pharmpy_names.items()
+                for record in self.stream.get_records(AbbreviatedRecord, 'ABBREVIATED')
             )
         )
 
@@ -44,7 +45,7 @@ class NMTranParser:
         record_strings = re.split(r'^([ \t]*\$)', text, flags=re.MULTILINE)
         first = record_strings.pop(0)  # Empty if nothing before first record
         if first:
-            stream.records.append(RawRecord(RawRecordParser(), first, '', ''))
+            stream.records.append(RawRecord(first, '', ''))
 
         for separator, s in zip(record_strings[0::2], record_strings[1::2]):
             record = create_record(separator + s)
@@ -79,6 +80,8 @@ default_record_order = [
     'TABLE',
 ]
 
+R = TypeVar('R', bound=Record)
+
 
 class NMTranControlStream:
     """Representation of a parsed control stream (model file)"""
@@ -88,19 +91,23 @@ class NMTranControlStream:
         self._active_problem: int = 0
         self.abbreviated: Abbreviated = Abbreviated(self)
 
-    def get_records(self, name) -> List[Record]:
+    def get_records(self, cls: Type[R], name) -> List[R]:
         """Return a list of all records of a certain type in the current $PROBLEM"""
         current_problem = -1
         found = []
         for record in self.records:
             if record.name == 'PROBLEM':
                 current_problem += 1
-            if current_problem == self._active_problem and record.name == name:
+            if (
+                current_problem == self._active_problem
+                and isinstance(record, cls)
+                and record.name == name
+            ):
                 found.append(record)
         return found
 
-    def _get_first_record(self, name):
-        return next(iter(self.get_records(name)), None)
+    def _get_first_record(self, cls: Type[R], name):
+        return next(iter(self.get_records(cls, name)), None)
 
     def append_record(self, content):
         """Create and append record at the end"""
@@ -169,30 +176,28 @@ class NMTranControlStream:
                     first = False
         self.records = keep
 
-    def _get_first_code_record(self, name):
-        record = self._get_first_record(name)
-        assert record is None or isinstance(record, CodeRecord)
-        return record
-
     def get_pred_pk_record(self):
-        pred = self._get_first_code_record('PRED')
+        pred = self.get_pred_record()
         if pred is not None:
             return pred
 
-        pk = self._get_first_code_record('PK')
+        pk = self.get_pk_record()
         if pk is not None:
             return pk
 
         raise ModelSyntaxError('Model has no $PK or $PRED')
 
+    def get_pred_record(self):
+        return self._get_first_record(CodeRecord, 'PRED')
+
     def get_pk_record(self):
-        return self._get_first_code_record('PK')
+        return self._get_first_record(CodeRecord, 'PK')
 
     def get_error_record(self):
-        return self._get_first_code_record('ERROR')
+        return self._get_first_record(CodeRecord, 'ERROR')
 
     def get_des_record(self):
-        return self._get_first_code_record('DES')
+        return self._get_first_record(CodeRecord, 'DES')
 
     def __str__(self):
         return ''.join(map(str, self.records))

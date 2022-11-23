@@ -16,6 +16,7 @@ from pharmpy.model import (
     ExplicitODESystem,
     Infusion,
     ModelSyntaxError,
+    Statements,
 )
 
 if TYPE_CHECKING:
@@ -119,8 +120,7 @@ def _compartmental_model(
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL': 3, 'OUTPUT': 4}
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         cb = CompartmentalSystemBuilder()
-        modrec = control_stream.get_records('MODEL')[0]
-        assert isinstance(modrec, ModelRecord)
+        modrec = control_stream.get_records(ModelRecord, 'MODEL')[0]
         defobs: Optional[Tuple[str, int]] = None
         defdose: Optional[Tuple[str, int]] = None
         defcentral: Optional[Tuple[str, int]] = None
@@ -265,8 +265,7 @@ def _compartmental_model(
         ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
     elif des:
-        rec_model = control_stream.get_records('MODEL')[0]
-        assert isinstance(rec_model, ModelRecord)
+        rec_model = control_stream.get_records(ModelRecord, 'MODEL')[0]
 
         subs_dict, comp_names = {}, {}
         comps = [c for c, _ in rec_model.compartments()]
@@ -344,7 +343,7 @@ def _f_link_assignment(control_stream: NMTranControlStream, compartment: Compart
     pkrec = control_stream.get_pk_record()
     assert pkrec is not None
     scaling = f'S{compno}'
-    if pkrec.statements.find_assignment(scaling):
+    if Statements(pkrec.statements).find_assignment(scaling):
         fexpr = fexpr / sympy.Symbol(scaling)
     ass = Assignment(f, fexpr)
     return ass
@@ -354,7 +353,7 @@ def _find_rates(control_stream: NMTranControlStream, ncomps: int):
     pkrec = control_stream.get_pk_record()
     assert pkrec is not None
     for stat in pkrec.statements:
-        if hasattr(stat, 'symbol'):
+        if isinstance(stat, Assignment):
             name = stat.symbol.name
             m = re.match(r'^K(\d+)(T\d+)?$', name)
             if m:
@@ -583,7 +582,7 @@ def _get_alag(control_stream: NMTranControlStream, n: int):
     alag = f'ALAG{n}'
     pkrec = control_stream.get_pk_record()
     assert pkrec is not None
-    if pkrec.statements.find_assignment(alag):
+    if Statements(pkrec.statements).find_assignment(alag):
         return sympy.Symbol(alag)
     else:
         return sympy.Integer(0)
@@ -594,7 +593,7 @@ def _get_bioavailability(control_stream: NMTranControlStream, n: int):
     fn = f'F{n}'
     pkrec = control_stream.get_pk_record()
     assert pkrec is not None
-    if pkrec.statements.find_assignment(fn):
+    if Statements(pkrec.statements).find_assignment(fn):
         return sympy.Symbol(fn)
     else:
         return sympy.Integer(1)

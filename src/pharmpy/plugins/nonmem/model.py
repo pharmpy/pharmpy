@@ -191,12 +191,19 @@ class Model(BaseModel):
 
                 self.datainfo = self.datainfo.derive(path=datapath)
 
-            data_record = self.internals.control_stream.get_records('DATA')[0]
-            assert isinstance(data_record, DataRecord)
+            original_data_record = self.internals.control_stream.get_records(DataRecord, 'DATA')[0]
+            data_record = original_data_record
 
             label = self.datainfo.names[0]
-            data_record = data_record.ignore_character_from_header(label)
+            data_record = data_record.replace_ignore_character_from_header(label)
+            if data_record is not original_data_record:
+                self.internals.control_stream.replace_records(
+                    {original_data_record},
+                    (data_record,),
+                )
             update_input(self)
+
+            original_data_record = data_record
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.
@@ -208,10 +215,15 @@ class Model(BaseModel):
                     not datapath.exists() or datapath.is_file()
                 ), f'input path change, but no file exists at target {str(datapath)}'
                 parent_path = Path.cwd() if path is None else path.parent
-                data_record = data_record.with_filename(
+                data_record = data_record.replace_filename(
                     str(path_relative_to(parent_path, datapath))
                 )
 
+            if data_record is not original_data_record:
+                self.internals.control_stream.replace_records(
+                    {original_data_record},
+                    (data_record,),
+                )
             self.internals._dataset_updated = False
             self.internals._old_datainfo = self.datainfo
 

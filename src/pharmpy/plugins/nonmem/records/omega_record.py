@@ -1,7 +1,9 @@
 import math
 import re
 import warnings
-from dataclasses import dataclass
+from abc import abstractmethod
+from dataclasses import dataclass, replace
+from functools import cached_property
 from typing import List, Literal, Optional, Tuple, Union, cast
 
 from pharmpy.deps import numpy as np
@@ -22,30 +24,33 @@ from pharmpy.model import (
     RandomVariables,
 )
 
-from .parsers import OmegaRecordParser
-from .record import Record
+from .parsers import RecordParser
+from .record import GeneratedRecord, ParsedRecord, Record, with_parsed_and_generated
 
 
+@with_parsed_and_generated
 @dataclass(frozen=True)
 class OmegaRecord(Record):
+    @property
+    @abstractmethod
+    def parser(self) -> RecordParser:
+        ...
+
     def parameters(self, start_omega, previous_size, seen_labels=None):
         """Get a Parameters for this omega record"""
         row = start_omega
-        block = self.root.find('block')
-        bare_block = self.root.find('bare_block')
-        same = bool(self.root.find('same'))
+        block = self.tree.find('block')
+        bare_block = self.tree.find('bare_block')
+        same = bool(self.tree.find('same'))
         parameters = []
         coords = []
 
-        try:
-            self.comment_map
-        except AttributeError:
-            self.comment_map = {}
+        comment_map = {}
 
         if seen_labels is None:
             seen_labels = set()
         if not (block or bare_block):
-            for node in self.root.subtrees('diag_item'):
+            for node in self.tree.subtrees('diag_item'):
                 init = cast(float, eval_token(node.subtree('init').leaf('NUMERIC')))
                 fixed = bool(node.find('FIX'))
                 sd = bool(node.find('SD'))
@@ -55,7 +60,7 @@ class OmegaRecord(Record):
                     name = '(anonymous)' if self.name is None else self.name.upper()
                     raise ModelSyntaxError(
                         f'Initial estimate for {name} cannot be both'
-                        f' on SD and VAR scale\n{self.root}'
+                        f' on SD and VAR scale\n{self.tree}'
                     )
                 if init == 0 and not fixed:
                     name = '(anonymous)' if self.name is None else self.name.upper()
@@ -70,7 +75,7 @@ class OmegaRecord(Record):
                     if not name:
                         name = f'{self.name}({row},{row})'
                     if comment:
-                        self.comment_map[name] = comment
+                        comment_map[name] = comment
                     seen_labels.add(name)
                     coords.append((row, row))
                     param = Parameter.create(name, init, lower=0, fix=fixed)
@@ -83,10 +88,10 @@ class OmegaRecord(Record):
             if bare_block:
                 size = previous_size
             else:
-                size = cast(int, eval_token(self.root.subtree('block').subtree('size').leaf('INT')))
-            fix, sd, corr, cholesky = self._block_flags()
+                size = cast(int, eval_token(self.tree.subtree('block').subtree('size').leaf('INT')))
+            fix, sd, corr, cholesky = self._block_flags
             labels, comments = [], []
-            for node in self.root.subtrees('omega'):
+            for node in self.tree.subtrees('omega'):
                 init = cast(float, eval_token(node.subtree('init').leaf('NUMERIC')))
                 n = cast(int, eval_token(node.subtree('n').leaf('INT'))) if node.find('n') else 1
                 inits += [init] * n
@@ -127,7 +132,7 @@ class OmegaRecord(Record):
                         if name is None:
                             name = f'{self.name}({i + start_omega},{j + start_omega})'
                         if comment is not None:
-                            self.comment_map[name] = comment
+                            comment_map[name] = comment
                         coords.append((i + start_omega, j + start_omega))
                         init = A[i, j]
                         lower = None if i != j else 0
@@ -135,11 +140,9 @@ class OmegaRecord(Record):
                         parameters.append(param)
                         label_index += 1
             next_omega = start_omega + size
-        try:
-            self.name_map
-        except AttributeError:
-            self.name_map = dict(zip((p.name for p in parameters), coords))
-        return parameters, next_omega, size
+
+        name_map = dict(zip((p.name for p in parameters), coords))
+        return parameters, next_omega, size, comment_map, name_map
 
     def _find_label(self, node, seen_labels):
         """Find label from comment of omega parameter"""
@@ -159,7 +162,7 @@ class OmegaRecord(Record):
     def _get_name(self, node):
         name = None
         found = False
-        for subnode in self.root.tree_walk():
+        for subnode in self.tree.tree_walk():
             if id(subnode) == id(node):
                 found = True
                 continue
@@ -172,15 +175,16 @@ class OmegaRecord(Record):
                     break
         return name
 
+    @cached_property
     def _block_flags(self):
         """Get a tuple of all interesting flags for block"""
-        fix = bool(self.root.find('FIX'))
-        var = bool(self.root.find('VAR'))
-        sd = bool(self.root.find('SD'))
-        cov = bool(self.root.find('COV'))
-        corr = bool(self.root.find('CORR'))
-        cholesky = bool(self.root.find('CHOLESKY'))
-        for node in self.root.subtrees('omega'):
+        fix = bool(self.tree.find('FIX'))
+        var = bool(self.tree.find('VAR'))
+        sd = bool(self.tree.find('SD'))
+        cov = bool(self.tree.find('COV'))
+        corr = bool(self.tree.find('CORR'))
+        cholesky = bool(self.tree.find('CHOLESKY'))
+        for node in self.tree.subtrees('omega'):
             if node.find('FIX'):
                 if fix:
                     raise ModelSyntaxError('Cannot specify option FIX more than once')
@@ -248,13 +252,14 @@ class OmegaRecord(Record):
         """From a Parameters update the OMEGAs in this record
         returns the next omega number
         """
-        block = self.root.find('block')
-        bare_block = self.root.find('bare_block')
+        tree = self.tree
+        block = tree.find('block')
+        bare_block = tree.find('bare_block')
         if not (block or bare_block):
             size = 1
             i = first_omega
             new_nodes = []
-            for node in self.root.children:
+            for node in tree.children:
                 if not isinstance(node, AttrTree) or node.rule != 'diag_item':
                     new_nodes.append(node)
                 else:
@@ -315,14 +320,14 @@ class OmegaRecord(Record):
                             if j != len(new_inits) - 1:  # Not the last
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
                     i += n
-            self.root = AttrTree(self.root.rule, tuple(new_nodes))
+            tree = replace(tree, children=tuple(new_nodes))
             next_omega = i
         else:
-            same = bool(self.root.find('same'))
+            same = bool(tree.find('same'))
             if same:
                 return first_omega + previous_size, previous_size
-            size = cast(int, eval_token(self.root.subtree('block').subtree('size').leaf('INT')))
-            fix, sd, corr, cholesky = self._block_flags()
+            size = cast(int, eval_token(tree.subtree('block').subtree('size').leaf('INT')))
+            fix, sd, corr, cholesky = self._block_flags
             inits = []
             new_fix = []
             for row in range(first_omega, first_omega + size):
@@ -350,7 +355,7 @@ class OmegaRecord(Record):
             array = list(A[inds])
             i = 0
             new_nodes = []
-            for node in self.root.children:
+            for node in tree.children:
                 if not isinstance(node, AttrTree) or node.rule != 'omega':
                     new_nodes.append(node)
                 else:
@@ -386,16 +391,28 @@ class OmegaRecord(Record):
                             if j != n - 1:  # NOTE Not the last
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
                     i += n
-            self.root = AttrTree(self.root.rule, tuple(new_nodes))
+            tree = replace(tree, children=tuple(new_nodes))
             if new_fix[0] != fix:
                 if new_fix[0]:
-                    self.root = insert_after(
-                        self.root, 'block', [AttrToken('WS', ' '), AttrToken('FIX', 'FIX')]
+                    tree = insert_after(
+                        tree, 'block', [AttrToken('WS', ' '), AttrToken('FIX', 'FIX')]
                     )
                 else:
-                    self.root = remove_token_and_space(self.root, 'FIX', recursive=True)
+                    tree = remove_token_and_space(tree, 'FIX', recursive=True)
             next_omega = first_omega + size
-        return next_omega, size
+
+        new_record = (
+            self
+            if tree is self.tree
+            else GeneratedOmegaRecord(
+                name=self.name,
+                raw_name=self.raw_name,
+                tree=tree,
+                parser=self.parser,
+            )
+        )
+
+        return next_omega, size, new_record
 
     def random_variables(
         self,
@@ -417,7 +434,7 @@ class OmegaRecord(Record):
         """
         print('RANDOM_VARIABLES CALL')
         all_zero_fix = False
-        same = bool(self.root.find('same'))
+        same = bool(self.tree.find('same'))
 
         if self.name == 'OMEGA':
             if same:
@@ -441,14 +458,14 @@ class OmegaRecord(Record):
         rev_map = {value: key for key, value in name_map.items()}
         next_cov = None  # The cov matrix if a block
         next_start = previous_start_omega if same else start_omega
-        block = self.root.find('block')
-        bare_block = self.root.find('bare_block')
+        block = self.tree.find('block')
+        bare_block = self.tree.find('bare_block')
         zero_fix = []
         if not (block or bare_block):
             dists = []
             etas = []
             i = start_omega
-            numetas = len(list(self.root.subtrees('diag_item')))
+            numetas = len(list(self.tree.subtrees('diag_item')))
             for _ in range(numetas):
                 omega_name = rev_map[(i, i)]
                 name = self._rv_name(i, numetas, omega_name, start_omega)
@@ -463,7 +480,7 @@ class OmegaRecord(Record):
                 numetas = previous_cov.rows
             else:
                 numetas = cast(
-                    int, eval_token(self.root.subtree('block').subtree('size').leaf('INT'))
+                    int, eval_token(self.tree.subtree('block').subtree('size').leaf('INT'))
                 )
             params, _, _ = self.parameters(start_omega, getattr(previous_cov, 'rows', None))
             all_zero_fix = (
@@ -472,17 +489,22 @@ class OmegaRecord(Record):
                 or (previous_cov == 'ZERO' and same)
             )
             if numetas >= 2:
-                names = [
-                    self._rv_name(
-                        i,
-                        numetas,
-                        str(previous_cov[i - start_omega, i - start_omega])
-                        if same
-                        else rev_map.get((i, i)),
-                        previous_start_omega if same else start_omega,
-                    )
-                    for i in range(start_omega, start_omega + numetas)
-                ]
+                if same:
+                    assert previous_cov is not None
+                    names = [
+                        self._rv_name(
+                            i,
+                            numetas,
+                            str(previous_cov[i - start_omega, i - start_omega]),
+                            previous_start_omega,
+                        )
+                        for i in range(start_omega, start_omega + numetas)
+                    ]
+                else:
+                    names = [
+                        self._rv_name(i, numetas, rev_map.get((i, i)), start_omega)
+                        for i in range(start_omega, start_omega + numetas)
+                    ]
                 if all_zero_fix:
                     zero_fix = names
                 means = [0] * numetas
@@ -546,52 +568,68 @@ class OmegaRecord(Record):
         for name in names:
             del self.eta_map[name]
 
-        block = self.root.find('block')
-        bare_block = self.root.find('bare_block')
-        same = bool(self.root.find('same'))
+        block = self.tree.find('block')
+        bare_block = self.tree.find('bare_block')
+        same = bool(self.tree.find('same'))
         if not (block or bare_block):
             keep = []
             i = 0
-            for node in self.root.children:
+            for node in self.tree.children:
                 if node.rule == 'diag_item':
                     if i not in indices:
                         keep.append(node)
                     i += 1
                 else:
                     keep.append(node)
-            self.root = AttrTree(self.root.rule, tuple(keep))
+            return GeneratedOmegaRecord(
+                name=self.name,
+                raw_name=self.raw_name,
+                tree=replace(self.tree, children=tuple(keep)),
+                parser=self.parser,
+            )
         elif same and not bare_block:
-            self.root = self.root.replace_first(
-                (block := self.root.subtree('block')).replace_first(
-                    block.subtree('size').replace_first(
-                        AttrToken('INT', str(len(self) - len(indices)))
+            return GeneratedOmegaRecord(
+                name=self.name,
+                raw_name=self.raw_name,
+                tree=self.tree.replace_first(
+                    (block := self.tree.subtree('block')).replace_first(
+                        block.subtree('size').replace_first(
+                            AttrToken('INT', str(len(self) - len(indices)))
+                        )
                     )
-                )
+                ),
+                parser=self.parser,
             )
         elif block:
-            fix, sd, corr, cholesky = self._block_flags()
+            fix, sd, corr, cholesky = self._block_flags
             inits = []
-            for node in self.root.subtrees('omega'):
+            for node in self.tree.subtrees('omega'):
                 init = cast(float, eval_token(node.subtree('init').leaf('NUMERIC')))
                 n = cast(int, eval_token(node.subtree('n').leaf('INT'))) if node.find('n') else 1
                 inits += [init] * n
             A = flattened_to_symmetric(inits)
             A = np.delete(A, list(indices), axis=0)
             A = np.delete(A, list(indices), axis=1)
-            s = f' BLOCK({len(A)})'
+            buffer = f' BLOCK({len(A)})'
             if fix:
-                s += ' FIX'
+                buffer += ' FIX'
             if sd:
-                s += ' SD'
+                buffer += ' SD'
             if corr:
-                s += ' CORR'
+                buffer += ' CORR'
             if cholesky:
-                s += ' CHOLESKY'
-            s += '\n'
+                buffer += ' CHOLESKY'
+            buffer += '\n'
             for row in range(0, len(A)):
-                s += ' '.join(np.atleast_1d(A[row, 0 : (row + 1)]).astype(str)) + '\n'
-            parser = OmegaRecordParser(s)
-            self.root = parser.root
+                buffer += ' '.join(np.atleast_1d(A[row, 0 : (row + 1)]).astype(str)) + '\n'
+            return ParsedOmegaRecord(
+                name=self.name,
+                raw_name=self.raw_name,
+                parser=self.parser,
+                buffer=buffer,
+            )
+
+        return self
 
     def update_name_map(self, trans):
         """Update name_map given dict from -> to"""
@@ -603,3 +641,13 @@ class OmegaRecord(Record):
 
     def __len__(self):
         return len(self.eta_map)
+
+
+@dataclass(frozen=True)
+class ParsedOmegaRecord(ParsedRecord, OmegaRecord):
+    pass
+
+
+@dataclass(frozen=True)
+class GeneratedOmegaRecord(GeneratedRecord, OmegaRecord):
+    parser: RecordParser

@@ -14,6 +14,7 @@ from .config import conf
 from .nmtran_parser import NMTranControlStream
 from .parameters import parameter_translation
 from .random_variables import rv_translation
+from .records.table_record import TableRecord
 from .results_file import NONMEMResultsFile
 from .table import ExtTable, NONMEMTableFile, PhiTable
 
@@ -329,12 +330,13 @@ def _parse_tables(path: Path, control_stream: NMTranControlStream) -> pd.DataFra
         'MDV',
     }
 
-    table_recs = control_stream.get_records('TABLE')
+    table_recs = control_stream.get_records(TableRecord, 'TABLE')
     found = set()
     df = pd.DataFrame()
     for table_rec in table_recs:
         columns_in_table = []
-        for key, value in table_rec.all_options:
+        for option in table_rec.all_options:
+            key, value = option.key, option.value
             if key in interesting_columns and key not in found and value is None:
                 # FIXME: Cannot handle synonyms here
                 colname = key

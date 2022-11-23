@@ -7,7 +7,7 @@ from pharmpy.internals.parse import AttrToken, AttrTree
 from pharmpy.internals.parse.generic import eval_token, remove_token_and_space
 from pharmpy.model import Parameter
 
-from .record import Record
+from .record import ReplaceableRecord, replace_tree, with_parsed_and_generated
 
 # from .names import nonmem_to_pharmpy
 
@@ -15,12 +15,13 @@ max_upper_bound = 1000000
 min_lower_bound = -1000000
 
 
+@with_parsed_and_generated
 @dataclass(frozen=True)
-class ThetaRecord(Record):
+class ThetaRecord(ReplaceableRecord):
     def add_nonmem_name(self, name_original):
         if re.match(r'THETA\(\d+\)', name_original):
             return self
-        return replace(self, root=self.root.add_comment_node(name_original).add_newline_node())
+        return replace_tree(self, self.tree.add_comment_node(name_original).add_newline_node())
 
     def parameters(self, first_theta, seen_labels=None):
         """Get a parameter set for this theta record.
@@ -30,7 +31,7 @@ class ThetaRecord(Record):
             seen_labels = set()
         pset: List[Parameter] = []
         current_theta = first_theta
-        for theta in self.root.subtrees('theta'):
+        for theta in self.tree.subtrees('theta'):
             init = eval_token(theta.subtree('init').leaf('NUMERIC'))
             fix = bool(theta.find('FIX'))
             if theta.find('low'):
@@ -59,7 +60,7 @@ class ThetaRecord(Record):
                 if 'comment' in nonmem.conf.parameter_names:
                     # needed to avoid circular import with Python 3.6
                     found = False
-                    for subnode in self.root.tree_walk():
+                    for subnode in self.tree.tree_walk():
                         if id(subnode) == id(theta):
                             if found:
                                 break
@@ -130,12 +131,12 @@ class ThetaRecord(Record):
 
             return theta
 
-        return replace(self, root=self.root.map(_update_theta))
+        return replace_tree(self, self.tree.map(_update_theta))
 
     def remove(self, indices: Set[int]):
         keep = []
         i = 0
-        for node in self.root.children:
+        for node in self.tree.children:
             if node.rule == 'theta':
                 if i not in indices:
                     keep.append(node)
@@ -143,11 +144,11 @@ class ThetaRecord(Record):
             else:
                 keep.append(node)
 
-        return replace(self, root=replace(self.root, children=tuple(keep)))
+        return replace_tree(self, replace(self.tree, children=tuple(keep)))
 
     def __len__(self):
         """Number of thetas in this record"""
         tot = 0
-        for theta in self.root.subtrees('theta'):
+        for theta in self.tree.subtrees('theta'):
             tot += self._multiple(theta)
         return tot

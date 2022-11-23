@@ -5,7 +5,7 @@ import warnings
 from dataclasses import replace
 from itertools import product
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Mapping, Optional
+from typing import TYPE_CHECKING, List, Literal, Mapping, Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -35,23 +35,28 @@ if TYPE_CHECKING:
 from .nmtran_parser import NMTranControlStream
 from .parameters import parameter_translation
 from .parsing import get_zero_fix_rvs, parse_column_info
-from .records import code_record
+from .records.abbreviated_record import AbbreviatedRecord
 from .records.code_record import CodeRecord
+from .records.estimation_record import EstimationRecord
 from .records.etas_record import EtasRecord
 from .records.factory import create_record
 from .records.model_record import ModelRecord
 from .records.omega_record import OmegaRecord
 from .records.option_record import OptionRecord
+from .records.problem_record import ProblemRecord
+from .records.record import replace_tree
 from .records.sizes_record import SizesRecord
 from .records.subroutine_record import SubroutineRecord
+from .records.table_record import TableRecord
 from .records.theta_record import ThetaRecord
 from .table import NONMEMTableFile, PhiTable
 
 
 def update_description(model: Model):
     if model.description != model.internals._old_description:
-        probrec = model.internals.control_stream.get_records('PROBLEM')[0]
-        probrec.title = model.description
+        stream = model.internals.control_stream
+        probrec = stream.get_records(ProblemRecord, 'PROBLEM')[0]
+        stream.replace_records({probrec}, (probrec.replace_title(model.description),))
 
 
 def update_parameters(model: Model, old: Parameters, new: Parameters):
@@ -61,8 +66,7 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
     if removed:
         remove_records = []
         next_theta = 1
-        for theta_record in model.internals.control_stream.get_records('THETA'):
-            assert isinstance(theta_record, ThetaRecord)
+        for theta_record in model.internals.control_stream.get_records(ThetaRecord, 'THETA'):
             current_names = theta_record.name_map.keys()
             if removed >= current_names:
                 remove_records.append(theta_record)
@@ -75,7 +79,7 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
                 # keep all
                 theta_record.renumber(next_theta)
                 next_theta += len(theta_record)
-        for sigma_record in model.internals.control_stream.get_records('SIGMA'):
+        for sigma_record in model.internals.control_stream.get_records(OmegaRecord, 'SIGMA'):
             current_names = sigma_record.name_map.keys()
             if removed >= current_names:
                 remove_records.append(sigma_record)
@@ -92,7 +96,6 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
             if re.match(r'THETA\(\d+\)', name):
                 p_renamed = p.replace(name=f'THETA({theta_number})')
             record = create_theta_record(model, p_renamed)
-            assert isinstance(record, ThetaRecord)
             record.add_nonmem_name(p_renamed.name)
 
         renamed_params_list.append(p_renamed)
@@ -103,18 +106,18 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
         model.parameters = renamed_params
 
     next_theta = 1
-    for theta_record in model.internals.control_stream.get_records('THETA'):
+    for theta_record in model.internals.control_stream.get_records(ThetaRecord, 'THETA'):
         theta_record.update(new, next_theta)
         next_theta += len(theta_record)
 
     next_omega = 1
     previous_size = None
-    for omega_record in model.internals.control_stream.get_records('OMEGA'):
+    for omega_record in model.internals.control_stream.get_records(OmegaRecord, 'OMEGA'):
         next_omega, previous_size = omega_record.update(new, next_omega, previous_size)
 
     next_sigma = 1
     previous_size = None
-    for sigma_record in model.internals.control_stream.get_records('SIGMA'):
+    for sigma_record in model.internals.control_stream.get_records(OmegaRecord, 'SIGMA'):
         next_sigma, previous_size = sigma_record.update(new, next_sigma, previous_size)
 
 
@@ -129,9 +132,11 @@ def update_random_variables(model: Model, old: RandomVariables, new: RandomVaria
     rec_dict = {}
     comment_dict = {}
 
-    for omega_record in model.internals.control_stream.get_records(
-        'OMEGA'
-    ) + model.internals.control_stream.get_records('SIGMA'):
+    omega_and_sigma_records = model.internals.control_stream.get_records(
+        OmegaRecord, 'OMEGA'
+    ) + model.internals.control_stream.get_records(OmegaRecord, 'SIGMA')
+
+    for omega_record in omega_and_sigma_records:
         comment_dict.update(omega_record.comment_map)
         current_names = omega_record.eta_map.keys()
         print('RECORD')
@@ -146,12 +151,12 @@ def update_random_variables(model: Model, old: RandomVariables, new: RandomVaria
     update_random_variable_records(model, rvs_diff_eps, rec_dict, comment_dict)
 
     next_eta = 1
-    for omega_record in model.internals.control_stream.get_records('OMEGA'):
+    for omega_record in model.internals.control_stream.get_records(OmegaRecord, 'OMEGA'):
         omega_record.renumber(next_eta)
         next_eta += len(omega_record)
 
     next_eps = 1
-    for sigma_record in model.internals.control_stream.get_records('SIGMA'):
+    for sigma_record in model.internals.control_stream.get_records(OmegaRecord, 'SIGMA'):
         sigma_record.renumber(next_eps)
         next_eps += len(sigma_record)
 
@@ -215,7 +220,7 @@ def get_next_theta(model: Model):
     """Find the next available theta number"""
     next_theta = 1
 
-    for theta_record in model.internals.control_stream.get_records('THETA'):
+    for theta_record in model.internals.control_stream.get_records(ThetaRecord, 'THETA'):
         thetas = theta_record.parameters(next_theta)
         next_theta += len(thetas)
 
@@ -254,6 +259,7 @@ def create_theta_record(model: Model, param: Parameter):
         param_str += ' FIX'
     param_str += '\n'
     record = model.internals.control_stream.insert_record(param_str)
+    assert isinstance(record, ThetaRecord)
     return record
 
 
@@ -346,9 +352,11 @@ def create_omega_block(
     record.name_map = {**name_variance, **name_covariance}
 
 
-def insert_omega_record(model: Model, param_str: str, record_number: int, record_type: str):
+def insert_omega_record(
+    model: Model, param_str: str, record_number: int, record_type: Literal['OMEGA', 'SIGMA']
+):
     records = model.internals.control_stream.records
-    tprecs = model.internals.control_stream.get_records(record_type)
+    tprecs = model.internals.control_stream.get_records(OmegaRecord, record_type)
     if tprecs:
         index = records.index(tprecs[0])
         record = model.internals.control_stream.insert_record(param_str, index + record_number)
@@ -476,10 +484,9 @@ def explicit_odes(model: Model):
 
 
 def to_des(model: Model, new: ODESystem):
-    old_des = model.internals.control_stream.get_records('DES')
+    old_des = model.internals.control_stream.get_records(CodeRecord, 'DES')
     model.internals.control_stream.remove_records(old_des)
-    subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
-    assert isinstance(subs, SubroutineRecord)
+    subs = model.internals.control_stream.get_records(SubroutineRecord, 'SUBROUTINES')[0]
     subs.remove_option_startswith('TRANS')
     subs.remove_option_startswith('ADVAN')
     subs.remove_option('TOL')
@@ -498,7 +505,7 @@ def to_des(model: Model, new: ODESystem):
     assert isinstance(des, CodeRecord)
     des.from_odes(RandomVariables.create(()), {}, new)
     model.internals.control_stream.remove_records(
-        model.internals.control_stream.get_records('MODEL')
+        model.internals.control_stream.get_records(ModelRecord, 'MODEL')
     )
     mod = model.internals.control_stream.insert_record('$MODEL\n')
     assert isinstance(mod, ModelRecord)
@@ -538,8 +545,12 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                 old_solver = model.internals._old_estimation_steps[0].solver
                 if new_solver != old_solver:
                     advan = solver_to_advan(new_solver)
-                    subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
-                    subs.advan = advan
+                    subs = model.internals.control_stream.get_records(
+                        SubroutineRecord, 'SUBROUTINES'
+                    )[0]
+                    model.internals.control_stream.replace_records(
+                        {subs}, (subs.replace_advan(advan),)
+                    )
 
     main_statements = model.statements.before_odes
     error_statements = model.statements.after_odes
@@ -633,7 +644,7 @@ def create_compartment_remap(oldmap, newmap):
 
 def pk_param_conversion(model: Model, advan, trans):
     """Conversion map for pk parameters for removed or added compartment"""
-    all_subs = model.internals.control_stream.get_records('SUBROUTINES')
+    all_subs = model.internals.control_stream.get_records(SubroutineRecord, 'SUBROUTINES')
     if not all_subs:
         return
     subs = all_subs[0]
@@ -802,7 +813,7 @@ def pk_param_conversion(model: Model, advan, trans):
 
 def new_advan_trans(model: Model):
     """Decide which new advan and trans to be used"""
-    all_subs = model.internals.control_stream.get_records('SUBROUTINES')
+    all_subs = model.internals.control_stream.get_records(SubroutineRecord, 'SUBROUTINES')
     if all_subs:
         subs = all_subs[0]
         oldtrans = subs.get_option_startswith('TRANS')
@@ -877,7 +888,7 @@ def new_advan_trans(model: Model):
 
 def update_subroutines_record(model: Model, advan, trans):
     """Update $SUBROUTINES with new advan and trans"""
-    all_subs = model.internals.control_stream.get_records('SUBROUTINES')
+    all_subs = model.internals.control_stream.get_records(SubroutineRecord, 'SUBROUTINES')
     if not all_subs:
         content = f'$SUBROUTINES {advan} {trans}\n'
         model.internals.control_stream.insert_record(content)
@@ -908,12 +919,12 @@ def update_model_record(model: Model, advan):
 
     if advan in ['ADVAN1', 'ADVAN2', 'ADVAN3', 'ADVAN4', 'ADVAN10', 'ADVAN11', 'ADVAN12']:
         model.internals.control_stream.remove_records(
-            model.internals.control_stream.get_records('MODEL')
+            model.internals.control_stream.get_records(ModelRecord, 'MODEL')
         )
     else:
         if oldmap != newmap or model.estimation_steps[0].solver:
             model.internals.control_stream.remove_records(
-                model.internals.control_stream.get_records('MODEL')
+                model.internals.control_stream.get_records(ModelRecord, 'MODEL')
             )
             mod = model.internals.control_stream.insert_record('$MODEL\n')
             assert isinstance(mod, ModelRecord)
@@ -1100,7 +1111,7 @@ def update_abbr_record(model: Model, rv_trans):
         return trans
     # Remove already abbreviated symbols
     # FIXME: Doesn't update if name has changed
-    abbr_recs = model.internals.control_stream.get_records('ABBREVIATED')
+    abbr_recs = model.internals.control_stream.get_records(AbbreviatedRecord, 'ABBREVIATED')
     to_delete = set().union(*(rec.replace.values() for rec in abbr_recs))
     rv_trans = {tk: tv for tk, tv in rv_trans.items() if tv.name not in to_delete}
     if not rv_trans:
@@ -1135,8 +1146,8 @@ def update_estimation(model: Model):
     if old == new:
         return
 
-    delta = code_record.diff(old, new)
-    old_records = model.internals.control_stream.get_records('ESTIMATION')
+    delta = diff(old, new)
+    old_records = model.internals.control_stream.get_records(EstimationRecord, 'ESTIMATION')
     i = 0
     new_records = []
 
@@ -1214,7 +1225,7 @@ def update_estimation(model: Model):
         prev = (op, est)
 
     if old_records:
-        model.internals.control_stream.replace_records(old_records, new_records)
+        model.internals.control_stream.replace_records(set(old_records), new_records)
     else:
         for rec in new_records:
             model.internals.control_stream.insert_record(str(rec))
@@ -1227,12 +1238,14 @@ def update_estimation(model: Model):
         new_cov |= est.cov
     if not old_cov and new_cov:
         # Add $COV
-        last_est_rec = model.internals.control_stream.get_records('ESTIMATION')[-1]
+        last_est_rec = model.internals.control_stream.get_records(EstimationRecord, 'ESTIMATION')[
+            -1
+        ]
         idx_cov = model.internals.control_stream.records.index(last_est_rec)
         model.internals.control_stream.insert_record('$COVARIANCE\n', at_index=idx_cov + 1)
     elif old_cov and not new_cov:
         # Remove $COV
-        covrecs = model.internals.control_stream.get_records('COVARIANCE')
+        covrecs = model.internals.control_stream.get_records(OptionRecord, 'COVARIANCE')
         model.internals.control_stream.remove_records(covrecs)
 
     # Update $TABLE
@@ -1241,7 +1254,7 @@ def update_estimation(model: Model):
     for estep in new:
         cols.update(estep.predictions)
         cols.update(estep.residuals)
-    tables = model.internals.control_stream.get_records('TABLE')
+    tables = model.internals.control_stream.get_records(TableRecord, 'TABLE')
     if not tables and cols:
         s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
         s += f'{model.datainfo.dv_column.name} '
@@ -1337,30 +1350,32 @@ def update_name_of_tables(control_stream: NMTranControlStream, new_name: str):
     m = re.search(r'.*?(\d+)$', new_name)
     if m:
         n = int(m.group(1))
-        for table in control_stream.get_records('TABLE'):
+        for table in control_stream.get_records(TableRecord, 'TABLE'):
             table_path = table.path
             table_name = table_path.stem
             m = re.search(r'(.*?)(\d+)$', table_name)
             if m:
                 table_stem = m.group(1)
                 new_table_name = f'{table_stem}{n}'
-                table.path = table_path.parent / new_table_name
+                control_stream.replace_records(
+                    {table}, (table.replace_path(table_path.parent / new_table_name),)
+                )
 
 
 def update_sizes(model: Model):
     """Update $SIZES if needed"""
-    all_sizes = model.internals.control_stream.get_records('SIZES')
+    all_sizes = model.internals.control_stream.get_records(SizesRecord, 'SIZES')
     sizes = all_sizes[0] if all_sizes else create_record('$SIZES ')
     assert isinstance(sizes, SizesRecord)
     odes = model.statements.ode_system
 
     if odes is not None and isinstance(odes, CompartmentalSystem):
         n_compartments = len(odes)
-        sizes = sizes.with_PC(n_compartments)
+        sizes = sizes.replace_PC(n_compartments)
 
     rvs_fs = model.random_variables.free_symbols
     thetas = [p for p in model.parameters if p.symbol not in rvs_fs]
-    sizes = sizes.with_LTH(len(thetas))
+    sizes = sizes.replace_LTH(len(thetas))
 
     if len(str(sizes)) > 7:
         if all_sizes:
@@ -1372,13 +1387,12 @@ def update_sizes(model: Model):
 def update_input(model: Model):
     """Update $INPUT"""
     stream = model.internals.control_stream
-    input_records = stream.get_records("INPUT")
+    input_records = stream.get_records(OptionRecord, 'INPUT')
     first_input_record = input_records[0]
-    assert isinstance(first_input_record, OptionRecord)
     _, drop, _, colnames = parse_column_info(stream)
     keep = []
     i = 0
-    for child in first_input_record.root.children:
+    for child in first_input_record.tree.children:
         if child.rule != 'option':
             keep.append(child)
             continue
@@ -1398,17 +1412,16 @@ def update_input(model: Model):
         i += 1
 
         if i >= len(model.datainfo):
-            last_child = first_input_record.root.children[-1]
+            last_child = first_input_record.tree.children[-1]
             if last_child.rule == 'NEWLINE':
                 keep.append(last_child)
             break
 
-    first_input_record = replace(
-        first_input_record, root=replace(first_input_record.root, children=tuple(keep))
+    first_input_record = replace_tree(
+        first_input_record, tree=replace(first_input_record.tree, children=tuple(keep))
     )
 
     last_input_record = input_records[-1]
-    assert isinstance(last_input_record, OptionRecord)
     for ci in model.datainfo[len(colnames) :]:
         last_input_record = last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
 
@@ -1461,15 +1474,17 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
             table_file = NONMEMTableFile(tables=[phi])
             table_file.write(phi_path)
         # FIXME: This is a common operation
-        eta_records = model.internals.control_stream.get_records('ETAS')
+        eta_records = model.internals.control_stream.get_records(EtasRecord, 'ETAS')
         if eta_records:
             record = eta_records[0]
         else:
             record = model.internals.control_stream.append_record('$ETAS ')
         assert isinstance(record, EtasRecord)
-        record.path = phi_path
+        model.internals.control_stream.replace_records({record}, (record.replace_path(phi_path),))
 
-        first_est_record = model.internals.control_stream.get_records('ESTIMATION')[0]
+        first_est_record = model.internals.control_stream.get_records(
+            EstimationRecord, 'ESTIMATION'
+        )[0]
         try:
             first_est_record.option_pairs['MCETA']
         except KeyError:

@@ -3,6 +3,8 @@ from __future__ import annotations
 from pharmpy.deps import sympy
 
 from .nmtran_parser import NMTranControlStream
+from .records.omega_record import OmegaRecord
+from .records.theta_record import ThetaRecord
 
 
 def parameter_translation(
@@ -12,12 +14,12 @@ def parameter_translation(
     i.e. {'THETA(1)': 'TVCL', 'OMEGA(1,1)': 'IVCL'}
     """
     d = {}
-    for theta_record in control_stream.get_records('THETA'):
+    for theta_record in control_stream.get_records(ThetaRecord, 'THETA'):
         for key, value in theta_record.name_map.items():
             nonmem_name = f'THETA({value})'
             d[nonmem_name] = key
     eta_indexes = []
-    for record in control_stream.get_records('OMEGA'):
+    for record in control_stream.get_records(OmegaRecord, 'OMEGA'):
         for key, value in record.name_map.items():
             nonmem_name = f'OMEGA({value[0]},{value[1]})'
             d[nonmem_name] = key
@@ -39,11 +41,11 @@ def parameter_translation(
     prev_start = 1
     prev_cov = None
     same_index = 1
-    for record in control_stream.get_records('OMEGA'):
+    for record in control_stream.get_records(OmegaRecord, 'OMEGA'):
         rvs, next_eta, prev_start, prev_cov, _ = record.random_variables(
             next_eta, prev_start, prev_cov
         )
-        if bool(record.root.find('same')):
+        if bool(record.tree.find('same')):
             same_index += 1
             assert prev_cov is not None
             assert len(rvs) == 1
@@ -60,7 +62,7 @@ def parameter_translation(
         else:
             same_index = 1
 
-    for record in control_stream.get_records('SIGMA'):
+    for record in control_stream.get_records(OmegaRecord, 'SIGMA'):
         for key, value in record.name_map.items():
             nonmem_name = f'SIGMA({value[0]},{value[1]})'
             d[nonmem_name] = key

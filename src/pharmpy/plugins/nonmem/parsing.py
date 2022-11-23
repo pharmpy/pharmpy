@@ -85,15 +85,14 @@ def parse_statements(
     control_stream: NMTranControlStream,
 ) -> Tuple[Statements, Optional[Dict[str, int]]]:
     rec = control_stream.get_pred_pk_record()
-    statements = rec.statements
+    statements = Statements(rec.statements)
 
     des = control_stream.get_des_record()
     error = control_stream.get_error_record()
     comp_map = None
 
     if error:
-        sub = control_stream.get_records('SUBROUTINES')[0]
-        assert isinstance(sub, SubroutineRecord)
+        sub = control_stream.get_records(SubroutineRecord, 'SUBROUTINES')[0]
         comp = _compartmental_model(di, dataset, control_stream, sub.advan, sub.trans, des)
         trans_amounts = {}
         if comp is None:
@@ -678,9 +677,8 @@ def parse_dataset(
     raw: bool = False,
     parse_columns: Tuple[str, ...] = (),
 ):
-    data_records = control_stream.get_records('DATA')
+    data_records = control_stream.get_records(DataRecord, 'DATA')
     data_record = data_records[0]
-    assert isinstance(data_record, DataRecord)
     ignore_character = data_record.ignore_character
     null_value = data_record.null_value
     (colnames, drop, replacements, _) = parse_column_info(control_stream)
