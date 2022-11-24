@@ -192,9 +192,7 @@ def run_tool_with_name(
 
     create_workflow = tool.create_workflow
 
-    wf = create_workflow(*args, **tool_options)
-
-    dispatcher, database = _get_run_setup(common_options, wf.name)
+    dispatcher, database = _get_run_setup(common_options, name)
 
     tool_params = inspect.signature(create_workflow).parameters
     tool_param_types = get_type_hints(create_workflow)
@@ -202,8 +200,7 @@ def run_tool_with_name(
     tool_metadata = _create_metadata(
         database=database,
         dispatcher=dispatcher,
-        name=name,
-        wf=wf,
+        tool_name=name,
         tool_params=tool_params,
         tool_param_types=tool_param_types,
         args=args,
@@ -212,6 +209,9 @@ def run_tool_with_name(
     )
 
     database.store_metadata(tool_metadata)
+
+    wf: Workflow = create_workflow(*args, **tool_options)
+    assert wf.name == name
 
     res = execute_workflow(wf, dispatcher=dispatcher, database=database)
     assert name == 'modelfit' or isinstance(res, Results)
@@ -225,8 +225,7 @@ def run_tool_with_name(
 def _create_metadata(
     database: ToolDatabase,
     dispatcher,
-    name: str,
-    wf: Workflow,
+    tool_name: str,
     tool_params,
     tool_param_types,
     args: Sequence,
@@ -235,9 +234,9 @@ def _create_metadata(
 ):
 
     tool_metadata = _create_metadata_tool(
-        database, name, tool_params, tool_param_types, args, tool_options
+        database, tool_name, tool_params, tool_param_types, args, tool_options
     )
-    setup_metadata = _create_metadata_common(database, dispatcher, wf.name, common_options)
+    setup_metadata = _create_metadata_common(database, dispatcher, tool_name, common_options)
     tool_metadata['common_options'] = setup_metadata
 
     return tool_metadata
@@ -313,7 +312,8 @@ def resume_tool(path: str):
     if validate_input := getattr(tool, 'validate_input', None):
         validate_input(*args, **kwargs)
 
-    wf = create_workflow(*args, **kwargs)
+    wf: Workflow = create_workflow(*args, **kwargs)
+    assert wf.name == tool_name
 
     res = execute_workflow(wf, dispatcher=dispatcher, database=tool_database)
     assert tool_name == 'modelfit' or isinstance(res, Results)
