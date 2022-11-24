@@ -208,8 +208,10 @@ the SCM method with forward steps followed by backward steps.
             s6 [label="AddEffect(V, SEX, CAT)"]
             s7 [label="AddEffect(CL, WT, EXP)"]
             s8 [label="AddEffect(V, SEX, CAT)"]
-            s9 [label="RemoveEffect(V, WT, EXP)"]
-            s10 [label="RemoveEffect(CL, SEX, CAT)"]
+            s9 [label="Forward search best model"]
+            s10 [label="RemoveEffect(V, WT, EXP)"]
+            s11 [label="RemoveEffect(CL, SEX, CAT)"]
+            s12 [label="Backward search best model"]
 
             base -> s0
             base -> s1
@@ -221,7 +223,9 @@ the SCM method with forward steps followed by backward steps.
             s4 -> s7
             s4 -> s8
             s4 -> s9
-            s4 -> s10
+            s9 -> s10
+            s9 -> s11
+            s9 -> s12
         }
 
 To skip the backward steps use search algorithm `'scm-forward'`.
@@ -240,6 +244,7 @@ To skip the backward steps use search algorithm `'scm-forward'`.
             s6 [label="AddEffect(V, SEX, CAT)"]
             s7 [label="AddEffect(CL, WT, EXP)"]
             s8 [label="AddEffect(V, SEX, CAT)"]
+            s9 [label="Forward search best model"]
 
             base -> s0
             base -> s1
@@ -250,6 +255,7 @@ To skip the backward steps use search algorithm `'scm-forward'`.
             s3 -> s6
             s4 -> s7
             s4 -> s8
+            s4 -> s9
         }
 
 
