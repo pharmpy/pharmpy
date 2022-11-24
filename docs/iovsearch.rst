@@ -111,7 +111,7 @@ associated IIVs can be removed.
           shape = rect;
       ]
       remove_iiv [
-          label = "Create candidates where each possible subset\n of IIVs connected to IIV is removed";
+          label = "Create candidates where each possible subset\n of IIVs connected to IOV is removed";
           shape = rect;
       ]
       better_iiv [
