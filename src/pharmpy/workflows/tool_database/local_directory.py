@@ -80,7 +80,7 @@ class LocalDirectoryToolDatabase(ToolDatabase):
 class MetadataJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Model):
-            return str(obj)
+            return obj.name
         if isinstance(obj, ModelfitResults):
             return obj.to_json()
         return super().default(obj)

@@ -206,15 +206,12 @@ def run_tool_with_name(
     )
 
     tool_database.store_metadata(tool_metadata)
-    tool_metadata = tool_database.read_metadata()
 
-    if name != 'modelfit':
-        # NOTE This is a hack so that input models get the same canonical names as
-        # when executed via resume_tool
-        tool_options = _parse_tool_options_from_json_metadata(
-            tool_metadata, tool_params, tool_param_types, tool_database
-        )
-        args, tool_options = _parse_args_kwargs_from_tool_options(tool_params, tool_options)
+    # NOTE This is a hack so that input models get the same canonical names as
+    # when executed via resume_tool
+    args, tool_options = _parse_args_kwargs_from_tool_options(
+        tool_params, tool_metadata['tool_options']
+    )
 
     if validate_input := getattr(tool, 'validate_input', None):
         validate_input(*args, **tool_options)
@@ -427,8 +424,8 @@ def _store_input_models(
 ):
     for param_key, model in _input_models(params, types, args, kwargs):
         input_model_name = f'input_{param_key}'
-        _store_input_model(db, model, input_model_name)
-        yield param_key, input_model_name
+        model_copy = _store_input_model(db, model, input_model_name)
+        yield param_key, model_copy
 
 
 def _filter_params(kind, params, types):
@@ -465,6 +462,7 @@ def _store_input_model(db: ModelDatabase, model: Model, name: str):
     with db.transaction(model_copy) as txn:
         txn.store_model()
         txn.store_modelfit_results()
+    return model_copy
 
 
 def _now():
