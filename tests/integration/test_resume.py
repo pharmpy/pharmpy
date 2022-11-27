@@ -1,6 +1,7 @@
 import shutil
 
 import pytest
+from pandas.testing import assert_frame_equal
 
 from pharmpy.config import ConfigurationContext
 from pharmpy.internals.fs.cwd import chdir
@@ -129,9 +130,9 @@ def test_run_tool_modelsearch_resume_flag(
                     assert len(res.models) == no_of_models
                     assert res.models[-1].modelfit_results
 
-                    assert res.models[0].parent_model == 'mox2'
+                    assert res.models[0].parent_model == 'input_model'
                     assert res.models[-1].parent_model == last_model_parent_name
-                    if last_model_parent_name != 'mox2':
+                    if last_model_parent_name != 'input_model':
                         last_model_features = res.summary_tool.loc[res.models[-1].name][
                             'description'
                         ]
@@ -163,7 +164,7 @@ def test_resume_tool_ruvsearch(tmp_path, testdata):
         model = Model.create_model('pheno_real.mod')
         model.datainfo = model.datainfo.derive(path=tmp_path / 'pheno.dta')
         path = 'x'
-        res = run_tool(
+        run_tool_res = run_tool(
             'ruvsearch',
             model,
             results=model.modelfit_results,
@@ -172,7 +173,21 @@ def test_resume_tool_ruvsearch(tmp_path, testdata):
             skip=[],
             path=path,
         )
-        assert res
+        assert run_tool_res
 
-        res = resume_tool(path)
-        assert res
+        resume_tool_res = resume_tool(path)
+        assert resume_tool_res
+
+        assert type(resume_tool_res) == type(run_tool_res)  # noqa: E721
+
+        assert_frame_equal(resume_tool_res.cwres_models, run_tool_res.cwres_models)
+        assert_frame_equal(resume_tool_res.summary_individuals, run_tool_res.summary_individuals)
+        assert_frame_equal(
+            resume_tool_res.summary_individuals_count, run_tool_res.summary_individuals_count
+        )
+        assert resume_tool_res.final_model_name == run_tool_res.final_model_name
+        assert_frame_equal(resume_tool_res.summary_models, run_tool_res.summary_models)
+        assert_frame_equal(resume_tool_res.summary_tool, run_tool_res.summary_tool)
+        assert_frame_equal(resume_tool_res.summary_errors, run_tool_res.summary_errors)
+        assert type(resume_tool_res.tool_database) == type(run_tool_res.tool_database)  # noqa: E721
+        assert resume_tool_res.tool_database.to_dict() == run_tool_res.tool_database.to_dict()

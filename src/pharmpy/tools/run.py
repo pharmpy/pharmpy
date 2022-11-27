@@ -187,18 +187,15 @@ def run_tool_with_name(
 ) -> Union[Model, List[Model], Tuple[Model], Results]:
     common_options, tool_options = split_common_options(kwargs)
 
-    if validate_input := getattr(tool, 'validate_input', None):
-        validate_input(*args, **tool_options)
-
     create_workflow = tool.create_workflow
 
-    dispatcher, database = _get_run_setup(common_options, name)
+    dispatcher, tool_database = _get_run_setup(common_options, name)
 
     tool_params = inspect.signature(create_workflow).parameters
     tool_param_types = get_type_hints(create_workflow)
 
     tool_metadata = _create_metadata(
-        database=database,
+        database=tool_database,
         dispatcher=dispatcher,
         tool_name=name,
         tool_params=tool_params,
@@ -208,16 +205,28 @@ def run_tool_with_name(
         common_options=common_options,
     )
 
-    database.store_metadata(tool_metadata)
+    tool_database.store_metadata(tool_metadata)
+    tool_metadata = tool_database.read_metadata()
+
+    if name != 'modelfit':
+        # NOTE This is a hack so that input models get the same canonical names as
+        # when executed via resume_tool
+        tool_options = _parse_tool_options_from_json_metadata(
+            tool_metadata, tool_params, tool_param_types, tool_database
+        )
+        args, tool_options = _parse_args_kwargs_from_tool_options(tool_params, tool_options)
+
+    if validate_input := getattr(tool, 'validate_input', None):
+        validate_input(*args, **tool_options)
 
     wf: Workflow = create_workflow(*args, **tool_options)
     assert wf.name == name
 
-    res = execute_workflow(wf, dispatcher=dispatcher, database=database)
+    res = execute_workflow(wf, dispatcher=dispatcher, database=tool_database)
     assert name == 'modelfit' or isinstance(res, Results)
 
     tool_metadata = _update_metadata(tool_metadata, res)
-    database.store_metadata(tool_metadata)
+    tool_database.store_metadata(tool_metadata)
 
     return res
 
@@ -272,7 +281,6 @@ def resume_tool(path: str):
 
     tool_metadata = tool_database.read_metadata()
     tool_name = tool_metadata['tool_name']
-    tool_options = tool_metadata['tool_options']
 
     tool = importlib.import_module(f'pharmpy.tools.{tool_name}')
 
@@ -281,6 +289,34 @@ def resume_tool(path: str):
     tool_params = inspect.signature(create_workflow).parameters
     tool_param_types = get_type_hints(create_workflow)
 
+    tool_options = _parse_tool_options_from_json_metadata(
+        tool_metadata, tool_params, tool_param_types, tool_database
+    )
+
+    args, kwargs = _parse_args_kwargs_from_tool_options(tool_params, tool_options)
+
+    if validate_input := getattr(tool, 'validate_input', None):
+        validate_input(*args, **kwargs)
+
+    wf: Workflow = create_workflow(*args, **kwargs)
+    assert wf.name == tool_name
+
+    res = execute_workflow(wf, dispatcher=dispatcher, database=tool_database)
+    assert tool_name == 'modelfit' or isinstance(res, Results)
+
+    tool_metadata = _update_metadata(tool_metadata, res)
+    tool_database.store_metadata(tool_metadata)
+
+    return res
+
+
+def _parse_tool_options_from_json_metadata(
+    tool_metadata,
+    tool_params,
+    tool_param_types,
+    tool_database,
+):
+    tool_options = tool_metadata['tool_options']
     # NOTE Load models to memory
     for model_key in _input_model_param_keys(tool_params, tool_param_types):
         model_name = tool_options.get(model_key)
@@ -305,26 +341,13 @@ def resume_tool(path: str):
     for results_key in _results_param_keys(tool_params, tool_param_types):
         results_json = tool_options.get(results_key)
         if results_json is not None:
+            tool_options = tool_options.copy()
             tool_options[results_key] = pharmpy.results.read_results(results_json)
 
-    args, kwargs = _parse_metadata_tool_options(tool_params, tool_options)
-
-    if validate_input := getattr(tool, 'validate_input', None):
-        validate_input(*args, **kwargs)
-
-    wf: Workflow = create_workflow(*args, **kwargs)
-    assert wf.name == tool_name
-
-    res = execute_workflow(wf, dispatcher=dispatcher, database=tool_database)
-    assert tool_name == 'modelfit' or isinstance(res, Results)
-
-    tool_metadata = _update_metadata(tool_metadata, res)
-    tool_database.store_metadata(tool_metadata)
-
-    return res
+    return tool_options
 
 
-def _parse_metadata_tool_options(tool_params, tool_options):
+def _parse_args_kwargs_from_tool_options(tool_params, tool_options):
     args = []
     kwargs = {}
     for p in tool_params.values():
@@ -356,25 +379,19 @@ def _create_metadata_tool(
     }
 
     for i, p in enumerate(tool_params.values()):
-        # Positional args
-        if p.default == p.empty:
+        try:
+            name, value = p.name, args[i]
+        except IndexError:
             try:
-                name, value = p.name, args[i]
-            except IndexError:
-                try:
-                    name, value = p.name, kwargs[p.name]
-                except KeyError:
-                    raise ValueError(f'{tool_name}: \'{p.name}\' was not set')
-        # Named args
-        else:
-            if p.name in kwargs.keys():
                 name, value = p.name, kwargs[p.name]
-            else:
-                name, value = p.name, p.default
-        if isinstance(value, Model):
-            value = str(value)  # NOTE Overwritten below if tool_name != modelfit
-        elif isinstance(value, ModelfitResults):
-            value = value.to_json()
+            except KeyError:
+                if p.default == p.empty:
+                    # Positional args
+                    raise ValueError(f'{tool_name}: \'{p.name}\' was not set')
+                else:
+                    # Named args
+                    name, value = p.name, p.default
+
         tool_metadata['tool_options'][name] = value
 
     if tool_name != 'modelfit':

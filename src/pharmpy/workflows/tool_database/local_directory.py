@@ -4,6 +4,8 @@ from itertools import count
 from pathlib import Path
 
 from pharmpy.internals.fs.path import path_absolute
+from pharmpy.model import Model
+from pharmpy.results import ModelfitResults
 
 from ..model_database import LocalModelDirectoryDatabase
 from .baseclass import ToolDatabase
@@ -67,10 +69,26 @@ class LocalDirectoryToolDatabase(ToolDatabase):
     def store_metadata(self, metadata):
         path = self.path / 'metadata.json'
         with open(path, 'w') as f:
-            json.dump(metadata, f, indent=4)
+            json.dump(metadata, f, indent=4, cls=MetadataJSONEncoder)
 
     def read_metadata(self):
         path = self.path / 'metadata.json'
         with open(path, 'r') as f:
-            metadata = json.load(f)
-        return metadata
+            return json.load(f, cls=MetadataJSONDecoder)
+
+
+class MetadataJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Model):
+            return str(obj)
+        if isinstance(obj, ModelfitResults):
+            return obj.to_json()
+        return super().default(obj)
+
+
+class MetadataJSONDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, obj):
+        return obj

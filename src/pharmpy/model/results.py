@@ -3,7 +3,7 @@ import warnings
 from dataclasses import dataclass
 from lzma import open as lzma_open
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Literal, Union, overload
 
 import pharmpy
 from pharmpy.deps import pandas as pd
@@ -30,6 +30,14 @@ class Results(Immutable):
             __version__=d.get('__version__', 'unknown'),  # NOTE Override default version
             **{k: v for k, v in d.items() if k not in removed_keys},
         )
+
+    @overload
+    def to_json(self, path: None = None, lzma: Literal[False] = False) -> str:
+        ...
+
+    @overload
+    def to_json(self, path: Union[str, Path], lzma: bool = False) -> None:
+        ...
 
     def to_json(self, path=None, lzma=False):
         """Serialize results object as json

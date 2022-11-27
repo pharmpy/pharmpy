@@ -1,13 +1,21 @@
+from typing import Iterable, Literal, Optional, Tuple, Union
+
 from pharmpy.model import Model
 from pharmpy.workflows import Task, Workflow
 
+SupportedPlugin = Literal['nonmem', 'nlmixr']
 
-def create_workflow(models=None, n=None, tool=None):
+
+def create_workflow(
+    model_or_models: Optional[Union[Model, Iterable[Model]]] = None,
+    n: Optional[int] = None,
+    tool: Optional[SupportedPlugin] = None,
+) -> Workflow[Union[Model, Tuple[Model, ...]]]:
     """Run modelfit tool.
 
     Parameters
     ----------
-    models : Model
+    model_or_models : Model
         A list of models are one single model object
     n : int
         Number of models to fit. This is only used if the tool is going to be combined with other tools.
@@ -27,9 +35,13 @@ def create_workflow(models=None, n=None, tool=None):
     >>> run_modelfit(model)   # doctest: +SKIP
     """
 
-    wf = create_fit_workflow(models, n, tool)
+    wf = create_fit_workflow(model_or_models, n, tool)
     wf.name = "modelfit"
-    task_result = Task('results', post_process_results)
+    if isinstance(model_or_models, Model) or (model_or_models is None and n is None):
+        post_process_results = post_process_results_one
+    else:
+        post_process_results = post_process_results_many
+    task_result: Task[Union[Model, Tuple[Model, ...]]] = Task('results', post_process_results)
     wf.add_task(task_result, predecessors=wf.output_tasks)
     return wf
 
@@ -56,11 +68,12 @@ def create_fit_workflow(models=None, n=None, tool=None):
     return wf
 
 
-def post_process_results(context, *models):
-    if len(models) > 1:
-        return models
-    else:
-        return models[0]
+def post_process_results_one(context, *models: Model):
+    return models[0]
+
+
+def post_process_results_many(context, *models: Model):
+    return models
 
 
 def retrieve_from_database_or_execute_model_with_tool(tool):
@@ -95,7 +108,7 @@ def retrieve_from_database_or_execute_model_with_tool(tool):
     return task
 
 
-def get_execute_model(tool):
+def get_execute_model(tool: Optional[SupportedPlugin]):
     from pharmpy.tools.modelfit import conf
 
     if tool is None:

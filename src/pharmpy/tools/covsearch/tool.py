@@ -18,6 +18,7 @@ from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import (
     EffectLiteral,
+    InputSpec,
     Spec,
     all_covariate_effects,
     parse_spec,
@@ -99,7 +100,7 @@ ALGORITHMS = frozenset(['scm-forward', 'scm-forward-then-backward'])
 
 
 def create_workflow(
-    effects: Union[str, Sequence[Spec]],
+    effects: Union[str, Sequence[InputSpec]],
     p_forward: float = 0.05,
     p_backward: float = 0.01,
     max_steps: int = -1,

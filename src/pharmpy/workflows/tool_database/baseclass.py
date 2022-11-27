@@ -64,3 +64,8 @@ class ToolDatabase(ABC):
             Tool metadata dictionary
         """
         pass
+
+    @abstractmethod
+    def read_metadata(self):
+        """Read tool metadata"""
+        pass

@@ -128,7 +128,7 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
                     ('V', 'WGT', 'exp', '-'),
                 )
             ),
-            TypeError,
+            ValueError,
             'Invalid `effects`',
         ),
         (

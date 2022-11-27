@@ -21,3 +21,6 @@ class NullToolDatabase(ToolDatabase):
 
     def store_metadata(self, metadata):
         pass
+
+    def read_metadata(self):
+        pass
