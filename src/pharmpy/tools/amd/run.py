@@ -200,7 +200,7 @@ def run_amd(
             sum_models.append(None)
             sum_inds_counts.append(None)
         else:
-            if subresults.final_model_name != next_model.name:
+            if subresults.final_model_name != 'input_model':
                 next_model = retrieve_final_model(subresults)
             sum_subtools.append(_create_sum_subtool(tool_name, next_model))
             sum_models.append(subresults.summary_models.reset_index())
