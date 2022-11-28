@@ -11,6 +11,23 @@ from pharmpy.tools import run_amd
 from pharmpy.workflows import default_tool_database
 
 
+def test_invalid_search_space_raises(tmp_path, testdata):
+    with chdir(tmp_path):
+        db, model = _load_model(testdata)
+
+        with pytest.raises(
+            ValueError,
+            match='Invalid `search_space`, could not be parsed:',
+        ):
+            run_amd(
+                model,
+                results=model.modelfit_results,
+                search_space='XYZ',
+                path=db.path,
+                resume=True,
+            )
+
+
 def test_skip_most(tmp_path, testdata):
     with chdir(tmp_path):
         db, model = _load_model(testdata)

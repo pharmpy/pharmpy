@@ -119,7 +119,10 @@ def run_amd(
     if order is None:
         order = default_order
 
-    input_search_space_features = [] if search_space is None else mfl_parse(search_space)
+    try:
+        input_search_space_features = [] if search_space is None else mfl_parse(search_space)
+    except:  # noqa E722
+        raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
 
     modelsearch_features = tuple(
         filter(
