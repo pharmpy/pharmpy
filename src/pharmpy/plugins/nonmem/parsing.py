@@ -710,16 +710,20 @@ def parse_dataset(
     col_names = list(df.columns)
     have_pk = control_stream.get_pk_record()
     if have_pk:
-        if 'EVID' in col_names:
-            df_obs = df.astype({'EVID': 'float'}).query('EVID == 0')
-        elif 'MDV' in col_names:
-            df_obs = df.astype({'MDV': 'float'}).query('MDV == 0')
-        elif 'AMT' in col_names:
-            df_obs = df.astype({'AMT': 'float'}).query('AMT == 0')
-        else:
-            raise DatasetError('Could not identify observation rows in dataset')
-        have_obs = set(df_obs['ID'].unique())
-        all_ids = set(df['ID'].unique())
-        ids_to_remove = all_ids - have_obs
-        df = df[~df['ID'].isin(ids_to_remove)]
+        df = filter_observations(df, col_names)
     return df
+
+
+def filter_observations(df, col_names):
+    if 'EVID' in col_names:
+        df_obs = df.astype({'EVID': 'float'}).query('EVID == 0')
+    elif 'MDV' in col_names:
+        df_obs = df.astype({'MDV': 'float'}).query('MDV == 0')
+    elif 'AMT' in col_names:
+        df_obs = df.astype({'AMT': 'float'}).query('AMT == 0')
+    else:
+        raise DatasetError('Could not identify observation rows in dataset')
+    have_obs = set(df_obs['ID'].unique())
+    all_ids = set(df['ID'].unique())
+    ids_to_remove = all_ids - have_obs
+    return df[~df['ID'].isin(ids_to_remove)]

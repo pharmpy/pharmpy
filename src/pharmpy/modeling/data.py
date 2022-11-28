@@ -1575,6 +1575,7 @@ def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str], datatype=No
     if datainfo.path is None:
         raise ValueError('datainfo.path is None')
     from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
+    from pharmpy.plugins.nonmem.parsing import filter_observations
 
     if datatype == 'nonmem':
         drop = [col.drop for col in datainfo]
@@ -1585,6 +1586,8 @@ def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str], datatype=No
             colnames=datainfo.names,
             dtype=datainfo.get_dtype_dict(),
         )
+        # This assumes a PK model
+        df = filter_observations(df, list(df.columns))
     else:
         df = pd.read_csv(
             datainfo.path,
@@ -1592,7 +1595,6 @@ def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str], datatype=No
             dtype=datainfo.get_dtype_dict(),
             float_precision='round_trip',
         )
-
     return df
 
 
