@@ -11,6 +11,7 @@ from pharmpy.modeling.data import remove_loq_data
 from pharmpy.modeling.eta_additions import get_occasion_levels
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import retrieve_final_model, summarize_errors, write_results
+from pharmpy.tools.allometry.tool import validate_allometric_variable
 from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
 from pharmpy.tools.mfl.feature.covariate import spec as covariate_spec
 from pharmpy.tools.mfl.filter import covsearch_statement_types, modelsearch_statement_types
@@ -175,7 +176,9 @@ def run_amd(
             func = _subfunc_ruvsearch(path=db.path)
             run_subfuncs['ruvsearch'] = func
         elif section == 'allometry':
-            func = _subfunc_allometry(allometric_variable=allometric_variable, path=db.path)
+            func = _subfunc_allometry(
+                amd_start_model=model, input_allometric_variable=allometric_variable, path=db.path
+            )
             run_subfuncs['allometry'] = func
         elif section == 'covariates':
             func = _subfunc_covariates(
@@ -366,14 +369,30 @@ def _subfunc_covariates(
     return _run_covariates
 
 
-def _subfunc_allometry(allometric_variable, path) -> SubFunc:
+def _subfunc_allometry(amd_start_model: Model, input_allometric_variable, path) -> SubFunc:
+    def _allometric_variable(model: Model):
+        if input_allometric_variable is not None:
+            return input_allometric_variable
+
+        for col in model.datainfo:
+            if col.descriptor == 'body weight':
+                return col.name
+
+        return None
+
+    allometric_variable = _allometric_variable(amd_start_model)
+
+    if allometric_variable is None:
+        warnings.warn(
+            'Allometry will most likely be skipped because allometric_variable is None and could'
+            ' not be inferred through .datainfo via "body weight" descriptor.'
+        )
+
+    else:
+        validate_allometric_variable(amd_start_model, allometric_variable)
+
     def _run_allometry(model):
-        nonlocal allometric_variable
-        if allometric_variable is None:
-            for col in model.datainfo:
-                if col.descriptor == 'body weight':
-                    allometric_variable = col.name
-                    break
+        allometric_variable = _allometric_variable(model)
 
         if allometric_variable is None:
             warnings.warn(
