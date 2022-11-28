@@ -111,7 +111,7 @@ wcwidth==0.2.5
 webencodings==0.5.1
 widgetsnbextension==4.0.3
 zict==2.2.0
-zipp==3.10.0
+zipp==3.11.0
 tflite-runtime==2.10.0; sys_platform == 'linux' and python_version == '3.8'
 tflite-runtime==2.10.0; sys_platform == 'linux' and python_version == '3.9'
 tflite-runtime==2.5.0; sys_platform == 'darwin' and python_version == '3.8'
