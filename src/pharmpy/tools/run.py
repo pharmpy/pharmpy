@@ -207,12 +207,6 @@ def run_tool_with_name(
 
     tool_database.store_metadata(tool_metadata)
 
-    # NOTE This is a hack so that input models get the same canonical names as
-    # when executed via resume_tool
-    args, tool_options = _parse_args_kwargs_from_tool_options(
-        tool_params, tool_metadata['tool_options']
-    )
-
     if validate_input := getattr(tool, 'validate_input', None):
         validate_input(*args, **tool_options)
 
@@ -316,23 +310,27 @@ def _parse_tool_options_from_json_metadata(
     tool_options = tool_metadata['tool_options']
     # NOTE Load models to memory
     for model_key in _input_model_param_keys(tool_params, tool_param_types):
-        model_name = tool_options.get(model_key)
-        if model_name is None:
+        model_metadata = tool_options.get(model_key)
+        if model_metadata is None:
             raise ValueError(
                 f'Cannot resume run because model argument "{model_key}" cannot be restored.'
             )
-        else:
-            db: ModelDatabase = tool_database.model_database
-            try:
-                model = db.retrieve_model(model_name)
-                res = db.retrieve_modelfit_results(model_name)
-                model.modelfit_results = res
-            except KeyError:
-                raise ValueError(
-                    f'Cannot resume run because model argument "{model_key}" ({model_name}) cannot be restored.'
-                )
-            tool_options = tool_options.copy()
-            tool_options[model_key] = model
+
+        assert model_metadata['__class__'] == 'Model'
+        model_name = model_metadata['arg_name']
+        db_name = model_metadata['db_name']
+
+        db: ModelDatabase = tool_database.model_database
+        try:
+            model = copy_model(db.retrieve_model(db_name), model_name)
+            res = db.retrieve_modelfit_results(db_name)
+            model.modelfit_results = res
+        except KeyError:
+            raise ValueError(
+                f'Cannot resume run because model argument "{model_key}" ({model_name}) cannot be restored.'
+            )
+        tool_options = tool_options.copy()
+        tool_options[model_key] = model
 
     # NOTE Load results to memory
     for results_key in _results_param_keys(tool_params, tool_param_types):
@@ -393,8 +391,14 @@ def _create_metadata_tool(
 
     if tool_name != 'modelfit':
         db = database.model_database
-        for key, value in _store_input_models(db, tool_params, tool_param_types, args, kwargs):
-            tool_metadata['tool_options'][key] = value
+        for key, arg_name, db_name in _store_input_models(
+            db, tool_params, tool_param_types, args, kwargs
+        ):
+            tool_metadata['tool_options'][key] = {
+                '__class__': 'Model',
+                'arg_name': arg_name,
+                'db_name': db_name,
+            }
 
     return tool_metadata
 
@@ -424,8 +428,8 @@ def _store_input_models(
 ):
     for param_key, model in _input_models(params, types, args, kwargs):
         input_model_name = f'input_{param_key}'
-        model_copy = _store_input_model(db, model, input_model_name)
-        yield param_key, model_copy
+        _store_input_model(db, model, input_model_name)
+        yield param_key, model.name, input_model_name
 
 
 def _filter_params(kind, params, types):
@@ -462,7 +466,6 @@ def _store_input_model(db: ModelDatabase, model: Model, name: str):
     with db.transaction(model_copy) as txn:
         txn.store_model()
         txn.store_modelfit_results()
-    return model_copy
 
 
 def _now():

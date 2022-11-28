@@ -61,7 +61,9 @@ def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
 
         assert metadata['pharmpy_version'] == pharmpy.__version__
         assert metadata['tool_name'] == 'modelsearch'
-        assert metadata['tool_options']['model'].name == 'input_model'
+        assert metadata['tool_options']['model']['__class__'] == 'Model'
+        assert metadata['tool_options']['model']['arg_name'] == 'pheno_real'
+        assert metadata['tool_options']['model']['db_name'] == 'input_model'
         assert metadata['tool_options']['rank_type'] == 'bic'
         assert metadata['tool_options']['algorithm'] == 'exhaustive'
 

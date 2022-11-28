@@ -25,7 +25,7 @@ def test_block_structure(tmp_path, model_count, start_model):
         )
         assert all(model.random_variables != start_model.random_variables for model in res.models)
 
-        assert res.summary_tool.loc[1, 'input_model']['description'] == '[CL]+[VC]+[MAT]'
+        assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
         input_model = retrieve_models(res, names=['input_model'])[0]
         assert isinstance(input_model.random_variables['ETA(1)'], NormalDistribution)
 
@@ -57,7 +57,7 @@ def test_no_of_etas(tmp_path, model_count, start_model):
 
         assert res.models[-1].modelfit_results
 
-        assert res.summary_tool.loc[1, 'input_model']['description'] == '[CL]+[VC]+[MAT]'
+        assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
         input_model = retrieve_models(res, names=['input_model'])[0]
         assert input_model.random_variables.iiv.names == ['ETA(1)', 'ETA(2)', 'ETA(3)']
 

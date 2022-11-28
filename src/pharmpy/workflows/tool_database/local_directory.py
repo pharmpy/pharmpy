@@ -80,6 +80,8 @@ class LocalDirectoryToolDatabase(ToolDatabase):
 class MetadataJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Model):
+            # NOTE This is only used by modelfit at the moment since we encode
+            # models for other tools upstream.
             return obj.name
         if isinstance(obj, ModelfitResults):
             return obj.to_json()
