@@ -105,12 +105,15 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
         assert res.final_model == 'start'
 
 
-def test_skip_iovsearch_missing_occasion(tmp_path, testdata):
+def test_skip_iovsearch_missing_occasion_raises(tmp_path, testdata):
     with chdir(tmp_path):
         db, model = _load_model(testdata)
 
-        with _record_warnings() as record:
-            res = run_amd(
+        with pytest.raises(
+            ValueError,
+            match='Invalid `occasion`',
+        ):
+            run_amd(
                 model,
                 results=model.modelfit_results,
                 modeltype='pk_oral',
@@ -119,20 +122,6 @@ def test_skip_iovsearch_missing_occasion(tmp_path, testdata):
                 path=db.path,
                 resume=True,
             )
-
-        _validate_record(
-            record,
-            [
-                'Skipping IOVsearch because dataset is missing column "XYZ"',
-                'AMDResults.summary_models is None',
-                'AMDResults.summary_individuals_count is None',
-            ],
-        )
-
-        assert len(res.summary_tool) == 1
-        assert res.summary_models is None
-        assert res.summary_individuals_count is None
-        assert res.final_model == 'start'
 
 
 def _load_model(testdata: Path, with_datainfo: bool = False):

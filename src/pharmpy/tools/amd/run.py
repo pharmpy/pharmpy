@@ -164,7 +164,7 @@ def run_amd(
             func = _subfunc_iiv(path=db.path)
             run_subfuncs['iivsearch'] = func
         elif section == 'iovsearch':
-            func = _subfunc_iov(occasion=occasion, path=db.path)
+            func = _subfunc_iov(amd_start_model=model, occasion=occasion, path=db.path)
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
             func = _subfunc_ruvsearch(path=db.path)
@@ -365,15 +365,20 @@ def _subfunc_allometry(allometric_variable, path) -> SubFunc:
     return _run_allometry
 
 
-def _subfunc_iov(occasion, path) -> SubFunc:
+def _subfunc_iov(amd_start_model, occasion, path) -> SubFunc:
     if occasion is None:
         warnings.warn('IOVsearch will be skipped because occasion is None.')
         return noop_subfunc
 
+    if occasion not in amd_start_model.dataset:
+        raise ValueError(
+            f'Invalid `occasion`: got `{occasion}`,'
+            f' must be one of {sorted(amd_start_model.datainfo.names)}.'
+        )
+
     def _run_iov(model):
 
         if occasion not in model.dataset:
-            # TODO Check this upstream and raise instead of warn
             warnings.warn(f'Skipping IOVsearch because dataset is missing column "{occasion}".')
             return None
 
