@@ -38,5 +38,11 @@ def best_of_two(parent: Model, child: Model, parent_ofv, child_ofv, alpha: float
 def best_of_many(
     parent: Model, models: Iterable[Model], parent_ofv, model_ofvs, alpha: float
 ) -> Model:
-    best_index = np.argmax(model_ofvs)
+    # NOTE numpy.nanargmin ignores NaN values and raises a ValueError when all
+    # values are NaN.
+    # See https://numpy.org/doc/stable/reference/generated/numpy.nanargmin.html
+    try:
+        best_index = np.nanargmin(model_ofvs)
+    except ValueError:
+        return parent
     return best_of_two(parent, list(models)[best_index], parent_ofv, model_ofvs[best_index], alpha)
