@@ -14,6 +14,7 @@ Bugfixes
 * Ignore NaNs when selecting models in COVSearch (#1381)
 * Fix issue where initial estimate for KM (in MM-elimination) was set outside of NONMEM's bounds (#1064)
 * Fix issue where individuals without observations were not filtered for general model objects (afd7707, #1139)
+* Fix issue where saddle reset was not added in start model for AMD (#1394)
 
 0.85.0 (2022-11-18)
 -------------------
