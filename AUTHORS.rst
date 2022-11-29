@@ -37,3 +37,5 @@ A warm thanks to all our sponsors!
 *  F\. Hoffman-La Roche Ltd.
 *  Pharmetheus
 *  Uppsala University
+
+Part of the computations needed for testing of Pharmpy was enabled by resources provided by the Swedish National Infrastructure for Computing (SNIC) at UPPMAX, partially funded by the Swedish Research Council.
