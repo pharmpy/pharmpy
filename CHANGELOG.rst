@@ -1,3 +1,20 @@
+0.86.0 (2022-11-29)
+-------------------
+
+Changes
+=======
+
+* Add description to proxy-models (#1314)
+* Input check covariates (#1355), allometric variable (#1378) occasion-column before running AMD
+
+Bugfixes
+========
+
+* Fix typo in COVSearch that caused it to select model with highest OFV (#1377)
+* Ignore NaNs when selecting models in COVSearch (#1381)
+* Fix issue where initial estimate for KM (in MM-elimination) was set outside of NONMEM's bounds (#1064)
+* Fix issue where individuals without observations were not filtered for general model objects (afd7707, #1139)
+
 0.85.0 (2022-11-18)
 -------------------
 
@@ -7,7 +24,7 @@ Changes
 * Covariates are defined in search space option in AMD-tool
 * Store name of final model instead of final model in AMD
 * Change methods and solvers option in estimation method tool: None means none should be tested
-* Add FORMAT option if length of IDs are too long (#1179)
+* Add FORMAT option if length of IDs are too long (#1139)
 * Make Result classes immutable
 
 Bugfixes
