@@ -47,6 +47,7 @@ def test_skip_most(tmp_path, testdata):
             record,
             [
                 'IOVsearch will be skipped because occasion is None',
+                'COVsearch will most likely be skipped',
                 'Skipping Allometry',
                 'Skipping COVsearch',
                 'AMDResults.summary_models is None',
@@ -58,6 +59,25 @@ def test_skip_most(tmp_path, testdata):
         assert res.summary_models is None
         assert res.summary_individuals_count is None
         assert res.final_model == 'start'
+
+
+def test_raise_covsearch(tmp_path, testdata):
+    with chdir(tmp_path):
+        db, model = _load_model(testdata, with_datainfo=True)
+
+        with pytest.raises(
+            ValueError,
+            match='Invalid `search_space` because of invalid covariate .* got `SJDLKSDJ`',
+        ):
+            run_amd(
+                model,
+                results=model.modelfit_results,
+                search_space='LET(CONTINUOUS, [AGE, SJDLKSDJ]); LET(CATEGORICAL, [SEX])',
+                modeltype='pk_oral',
+                order=['covariates'],
+                path=db.path,
+                resume=True,
+            )
 
 
 def test_skip_covsearch(tmp_path, testdata):
@@ -78,6 +98,7 @@ def test_skip_covsearch(tmp_path, testdata):
         _validate_record(
             record,
             [
+                'COVsearch will most likely be skipped',
                 'NONMEM .mod and dataset .datainfo disagree on DROP',
                 'NONMEM .mod and dataset .datainfo disagree on DROP',
                 'Skipping COVsearch',

@@ -1,5 +1,5 @@
 from itertools import product
-from typing import Iterable, Tuple, TypeVar, Union
+from typing import Dict, Iterable, List, Tuple, TypeVar, Union
 
 from pharmpy.model import Model
 from pharmpy.modeling.covariate_effect import EffectType, OperationType, add_covariate_effect
@@ -45,19 +45,36 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
         yield ('COVARIATE', *args), lambda model: add_covariate_effect(model, *args)
 
 
-def spec(model: Model, statements: Iterable[Statement]) -> Iterable[Spec]:
+Definitions = Dict[str, Tuple[str, ...]]
+
+
+def _partition_statements(statements: Iterable[Statement]) -> Tuple[List[Covariate], Definitions]:
     effects = []
-    definition = {}
+    definitions = {}
     for statement in statements:
         if isinstance(statement, Covariate):
             effects.append(statement)
         elif isinstance(statement, Let):
-            definition[statement.name] = statement.value
+            definitions[statement.name] = statement.value
+
+    return effects, definitions
+
+
+def spec(model: Model, statements: Iterable[Statement]) -> Iterable[Spec]:
+    effects, definitions = _partition_statements(statements)
 
     for effect in effects:
-        t = _effects_to_tuple(model, definition, effect)
+        t = _effect_to_tuple(model, definitions, effect)
         if all(t):  # NOTE We do not yield empty products
             yield t
+
+
+def covariates(model: Model, statements: Iterable[Statement]) -> Iterable[str]:
+    # NOTE This yields the covariates present in the COVARIATE statements
+    effects, definition = _partition_statements(statements)
+
+    for effect in effects:
+        yield from _effect_to_covariates(model, definition, effect)
 
 
 def _ensure_tuple_or_list(x):
@@ -73,20 +90,26 @@ def parse_spec(spec: Iterable[Spec]) -> Iterable[EffectLiteral]:
         yield from product(parameters, covariates, fps, operations)
 
 
-def _effects_to_tuple(model: Model, definition, effect: Covariate) -> Spec:
+def _effect_to_tuple(model: Model, definitions: Definitions, effect: Covariate) -> Spec:
     parameters = (
-        _interpret_symbol(model, definition, effect.parameter)
+        _interpret_symbol(model, definitions, effect.parameter)
         if isinstance(effect.parameter, Symbol)
         else effect.parameter
     )
-    covariates = (
+    covariates = _effect_to_covariates(model, definitions, effect)
+    fps = all_continuous_covariate_effects if effect.fp is EffectFunctionWildcard else effect.fp
+    ops = effect.op
+    return (parameters, covariates, tuple(fp.lower() for fp in fps), ops)
+
+
+def _effect_to_covariates(
+    model: Model, definition: Definitions, effect: Covariate
+) -> Tuple[str, ...]:
+    return (
         _interpret_symbol(model, definition, effect.covariate)
         if isinstance(effect.covariate, Symbol)
         else effect.covariate
     )
-    fps = all_continuous_covariate_effects if effect.fp is EffectFunctionWildcard else effect.fp
-    ops = effect.op
-    return (parameters, covariates, tuple(fp.lower() for fp in fps), ops)
 
 
 def _interpret_symbol(model: Model, definition, symbol: Symbol) -> Tuple[str, ...]:
