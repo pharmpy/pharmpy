@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import partial
-from typing import List, Optional, Union
+from typing import Iterable, List, Optional, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -135,23 +135,33 @@ def validate_input(
     parameters,
 ):
     if model is not None:
-        if not set(map(str, parse_expr(allometric_variable).free_symbols)).issubset(
-            model.datainfo.names
-        ):
-            raise ValueError(
-                f'Invalid `allometric_variable`: got `{allometric_variable}`,'
-                f' free symbols must be a subset of {sorted(model.datainfo.names)}.'
-            )
+        validate_allometric_variable(model, allometric_variable)
+        validate_parameters(model, parameters)
 
-        if parameters is not None:
-            allowed_parameters = set(get_pk_parameters(model)).union(
-                str(statement.symbol) for statement in model.statements.before_odes
+
+def _parse_fs(expr: str):
+    return map(str, parse_expr(expr).free_symbols)
+
+
+def validate_allometric_variable(model: Model, allometric_variable: str):
+    if not set(_parse_fs(allometric_variable)).issubset(model.datainfo.names):
+        raise ValueError(
+            f'Invalid `allometric_variable`: got `{allometric_variable}`,'
+            f' free symbols must be a subset of {sorted(model.datainfo.names)}.'
+        )
+
+
+def validate_parameters(model: Model, parameters: Optional[Iterable[Union[str, sympy.Expr]]]):
+    if parameters is not None:
+        allowed_parameters = set(get_pk_parameters(model)).union(
+            str(statement.symbol) for statement in model.statements.before_odes
+        )
+        if not set().union(*map(_parse_fs, parameters)).issubset(allowed_parameters):
+            raise ValueError(
+                f'Invalid `parameters`: got `{parameters}`,'
+                f' must be NULL/None or'
+                f' free symbols must be a subset of {sorted(allowed_parameters)}.'
             )
-            if not set(parameters).issubset(allowed_parameters):
-                raise ValueError(
-                    f'Invalid `parameters`: got `{parameters}`,'
-                    f' must be NULL/None or a subset of {sorted(allowed_parameters)}.'
-                )
 
 
 def results(start_model, allometry_model):

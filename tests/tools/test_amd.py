@@ -47,6 +47,7 @@ def test_skip_most(tmp_path, testdata):
             record,
             [
                 'IOVsearch will be skipped because occasion is None',
+                'Allometry will most likely be skipped',
                 'COVsearch will most likely be skipped',
                 'Skipping Allometry',
                 'Skipping COVsearch',
@@ -59,6 +60,25 @@ def test_skip_most(tmp_path, testdata):
         assert res.summary_models is None
         assert res.summary_individuals_count is None
         assert res.final_model == 'start'
+
+
+def test_raise_allometry(tmp_path, testdata):
+    with chdir(tmp_path):
+        db, model = _load_model(testdata, with_datainfo=True)
+
+        with pytest.raises(
+            ValueError,
+            match='Invalid `allometric_variable`',
+        ):
+            run_amd(
+                model,
+                results=model.modelfit_results,
+                modeltype='pk_oral',
+                order=['allometry'],
+                allometric_variable='SJDLKSDJ',
+                path=db.path,
+                resume=True,
+            )
 
 
 def test_raise_covsearch(tmp_path, testdata):
