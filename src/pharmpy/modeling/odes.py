@@ -627,6 +627,10 @@ def _get_mm_inits(model: Model, rate_numer, combined):
 
     dv_max = get_observations(model).max()
     km_init = dv_max * 2
+    # FIXME: cap initial estimate, this is NONMEM specific and should be handled more generally
+    #  (https://github.com/pharmpy/pharmpy/issues/1395)
+    if km_init >= 10**6:
+        km_init = 5 * 10**5
 
     return km_init, clmm_init
 
