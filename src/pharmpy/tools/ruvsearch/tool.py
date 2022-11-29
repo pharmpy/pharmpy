@@ -265,6 +265,7 @@ def _create_base_model(input_model, current_iteration):
     base_model.dependent_variable = y.symbol
     base_model.observation_transformation = y.symbol
     base_model.name = f'base_{current_iteration}'
+    base_model.description = base_model.name
     base_model.dataset = _create_dataset(input_model)
 
     est = EstimationStep('foce', interaction=True, maximum_evaluations=9999)
@@ -277,6 +278,7 @@ def _create_iiv_on_ruv_model(input_model, current_iteration):
     model = base_model.copy()
     set_iiv_on_ruv(model)
     model.name = f'IIV_on_RUV_{current_iteration}'
+    model.description = model.name
     return model
 
 
@@ -285,6 +287,7 @@ def _create_power_model(input_model, current_iteration):
     model = base_model.copy()
     set_power_on_ruv(model, ipred='IPRED', lower_limit=None, zero_protection=True)
     model.name = f'power_{current_iteration}'
+    model.description = model.name
     return model
 
 
@@ -295,6 +298,7 @@ def _create_time_varying_model(input_model, groups, i, current_iteration):
     cutoff = model.dataset['TAD'].quantile(q=quantile)
     set_time_varying_error_model(model, cutoff=cutoff, idv='TAD')
     model.name = f"time_varying{i}_{current_iteration}"
+    model.description = model.name
     return model
 
 
@@ -325,6 +329,7 @@ def _create_combined_model(input_model, current_iteration):
     model.random_variables = model.random_variables + [eps_prop, eps_add]
 
     model.name = f'combined_{current_iteration}'
+    model.description = model.name
     return model
 
 
