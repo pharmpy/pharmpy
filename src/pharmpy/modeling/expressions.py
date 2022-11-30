@@ -1106,7 +1106,7 @@ def _remove_covariate_effect_from_statements_recursive(
 
     if isinstance(expression, sympy.Piecewise):
         if any(map(lambda t: covariate in t[1].free_symbols, expression.args)):
-            # NOTE At least on condition depends on the covariate
+            # NOTE At least one condition depends on the covariate
             if all(
                 map(
                     lambda t: _is_univariate(
