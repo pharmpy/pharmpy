@@ -3,7 +3,7 @@ altair==4.2.0
 appdirs==1.4.4
 argon2-cffi==21.3.0
 argon2-cffi-bindings==21.2.0
-asttokens==2.1.0
+asttokens==2.2.0
 attrs==22.1.0
 Babel==2.11.0
 backcall==0.2.0
