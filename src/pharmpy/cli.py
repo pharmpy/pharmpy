@@ -114,11 +114,9 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 
 
 def run_bootstrap(args):
-    # FIXME Bootstrap does not exist
-    from pharmpy.tools.bootstrap import Bootstrap
+    from pharmpy.tools import run_bootstrap
 
-    method = Bootstrap(args.model, resamples=args.samples)
-    method.run()
+    run_bootstrap(args.model, resamples=args.samples)
 
 
 def run_execute(args):
