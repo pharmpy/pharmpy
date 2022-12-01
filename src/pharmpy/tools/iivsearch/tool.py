@@ -156,6 +156,7 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
         iiv_strategy = 'no_add'
         last_res = res
 
+        assert base_model is not None
         if len(base_model.random_variables.iiv.names) <= 1:
             break
 
