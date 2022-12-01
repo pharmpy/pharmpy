@@ -528,11 +528,17 @@ def model_peripheral_compartments(args):
 
 
 def model_error(args):
-    # FIXME error_model does not exist
-    from pharmpy.modeling import error_model
+    import pharmpy.modeling as modeling
 
     model = args.model
-    error_model(model, args.error_type)
+    if args.error_type == 'none':
+        model = modeling.remove_error_model(model)
+    elif args.error_model == 'additive':
+        model = modeling.set_additive_error_model(model)
+    elif args.error_model == 'proportional':
+        model = modeling.set_proportional_error_model(model)
+    else:  # args.error_model == 'combined':
+        model = modeling.set_combined_error_model(model)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
