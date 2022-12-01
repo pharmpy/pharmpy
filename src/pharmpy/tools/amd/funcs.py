@@ -40,7 +40,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     iiv_cl = Parameter('IIV_CL', 0.1)
     iiv_vc = Parameter('IIV_VC', 0.1)
 
-    params = Parameters([pop_cl, pop_vc, iiv_cl, iiv_vc])
+    params = Parameters((pop_cl, pop_vc, iiv_cl, iiv_vc))
 
     eta_cl_name = 'eta_cl'
     eta_cl = NormalDistribution.create(eta_cl_name, 'iiv', 0, iiv_cl.symbol)

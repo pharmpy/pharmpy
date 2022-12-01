@@ -107,7 +107,7 @@ def set_power_on_ruv(
         sset = sset.subs({sympy.Symbol(e): ipred ** sympy.Symbol(theta.name) * sympy.Symbol(e)})
         model.statements = sset
 
-    model.parameters = Parameters(pset)
+    model.parameters = Parameters.create(pset)
     model.statements = sset
 
     return model

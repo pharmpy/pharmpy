@@ -124,7 +124,8 @@ class Parameter(Immutable):
     def __eq__(self, other):
         """Two parameters are equal if they have the same name, init and constraints"""
         return (
-            self._init == other._init
+            isinstance(other, Parameter)
+            and self._init == other._init
             and self._lower == other._lower
             and self._upper == other._upper
             and self._name == other._name
@@ -161,7 +162,7 @@ class Parameters(CollectionsSequence, Immutable):
     >>> from pharmpy.model import Parameters, Parameter
     >>> par1 = Parameter("x", 0)
     >>> par2 = Parameter("y", 1)
-    >>> pset = Parameters([par1, par2])
+    >>> pset = Parameters((par1, par2))
     >>> pset["x"]
     Parameter("x", 0, lower=-∞, upper=∞, fix=False)
 
@@ -170,15 +171,19 @@ class Parameters(CollectionsSequence, Immutable):
 
     """
 
-    def __init__(self, params=None):
-        if isinstance(params, Parameters):
-            self._params = params._params
-        elif params is None:
-            self._params = ()
+    def __init__(self, parameters=()):
+        self._params = parameters
+
+    @classmethod
+    def create(cls, parameters=None):
+        if isinstance(parameters, Parameters):
+            pass
+        elif parameters is None:
+            parameters = ()
         else:
-            self._params = tuple(params)
+            parameters = tuple(parameters)
         names = set()
-        for p in self._params:
+        for p in parameters:
             if not isinstance(p, Parameter):
                 raise ValueError(f'Can not add variable of type {type(p)} to Parameters')
             if p.name in names:
@@ -187,6 +192,13 @@ class Parameters(CollectionsSequence, Immutable):
                     'was added more than once to Parameters'
                 )
             names.add(p.name)
+        return cls(parameters)
+
+    def replace(self, **kwargs):
+        """Replace properties and create a new Parameters object"""
+        parameters = kwargs.get('parameters', self._params)
+        new = Parameter.create(parameters)
+        return new
 
     def __len__(self):
         return len(self._params)
@@ -219,9 +231,9 @@ class Parameters(CollectionsSequence, Immutable):
 
     def __getitem__(self, ind):
         if isinstance(ind, slice):
-            return Parameters(self._params[ind])
+            return Parameters.create(self._params[ind])
         elif not isinstance(ind, str) and isinstance(ind, CollectionsSequence):
-            return Parameters((self._lookup_param(i)[1] for i in ind))
+            return Parameters.create((self._lookup_param(i)[1] for i in ind))
         else:
             _, param = self._lookup_param(ind)
             return param
@@ -248,7 +260,7 @@ class Parameters(CollectionsSequence, Immutable):
         >>> from pharmpy.model import Parameters, Parameter
         >>> par1 = Parameter("CL", 1, lower=0, upper=10)
         >>> par2 = Parameter("V", 10, lower=0, upper=100)
-        >>> pset = Parameters([par1, par2])
+        >>> pset = Parameters((par1, par2))
         >>> pset.to_dataframe()
             value  lower  upper    fix
         CL      1      0     10  False
@@ -309,7 +321,7 @@ class Parameters(CollectionsSequence, Immutable):
             else:
                 newparam = p
             new.append(newparam)
-        return Parameters(new)
+        return Parameters(tuple(new))
 
     @property
     def fix(self):
@@ -336,39 +348,41 @@ class Parameters(CollectionsSequence, Immutable):
             else:
                 newparam = p
             new.append(newparam)
-        return Parameters(new)
+        return Parameters(tuple(new))
 
     @property
     def fixed(self):
         """All fixed parameters"""
         fixed = [p for p in self._params if p.fix]
-        return Parameters(fixed)
+        return Parameters(tuple(fixed))
 
     @property
     def nonfixed(self):
         """All non-fixed parameters"""
         nonfixed = [p for p in self._params if not p.fix]
-        return Parameters(nonfixed)
+        return Parameters(tuple(nonfixed))
 
     def __add__(self, other):
         if isinstance(other, Parameter):
-            return Parameters(self._params + (other,))
+            return Parameters.create(self._params + (other,))
         elif isinstance(other, Parameters):
-            return Parameters(self._params + other._params)
+            return Parameters.create(self._params + other._params)
         elif isinstance(other, Sequence):
-            return Parameters(self._params + tuple(other))
+            return Parameters.create(self._params + tuple(other))
         else:
             raise ValueError(f"Cannot add {other} to Parameters")
 
     def __radd__(self, other):
         if isinstance(other, Parameter):
-            return Parameters((other,) + self._params)
+            return Parameters.create((other,) + self._params)
         elif isinstance(other, Sequence):
-            return Parameters(tuple(other) + self._params)
+            return Parameters.create(tuple(other) + self._params)
         else:
             raise ValueError(f"Cannot add {other} to Parameters")
 
     def __eq__(self, other):
+        if not isinstance(other, Parameters):
+            return False
         if len(self) != len(other):
             return False
         for p1, p2 in zip(self, other):

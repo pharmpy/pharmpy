@@ -94,7 +94,7 @@ def update_parameters(model: Model, old: Parameters, new: Parameters):
 
         renamed_params_list.append(p_renamed)
 
-    renamed_params = Parameters(renamed_params_list)
+    renamed_params = Parameters.create(renamed_params_list)
 
     if renamed_params != new:
         model.parameters = renamed_params

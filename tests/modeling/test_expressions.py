@@ -165,7 +165,7 @@ def test_mu_reference_model_generic(statements, correct):
     th1 = Parameter('THETA(1)', 2, lower=1)
     th2 = Parameter('THETA(2)', 2, lower=1)
     th3 = Parameter('THETA(3)', 2, lower=1)
-    params = Parameters([th1, th2, th3])
+    params = Parameters((th1, th2, th3))
     model.parameters = params
     mu_reference_model(model)
     assert model.statements == Statements(correct)
@@ -178,37 +178,37 @@ def test_simplify_expression():
 
     p1 = Parameter('x', 3)
     p2 = Parameter('y', 9, fix=True)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     model.parameters = pset
     assert simplify_expression(model, x * y) == 9.0 * x
 
     p1 = Parameter('x', 3, lower=0.001)
     p2 = Parameter('y', 9)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     model.parameters = pset
     assert simplify_expression(model, abs(x)) == x
 
     p1 = Parameter('x', 3, lower=0)
     p2 = Parameter('y', 9)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     model.parameters = pset
     assert simplify_expression(model, sympy.Piecewise((2, sympy.Ge(x, 0)), (56, True))) == 2
 
     p1 = Parameter('x', -3, upper=-1)
     p2 = Parameter('y', 9)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     model.parameters = pset
     assert simplify_expression(model, abs(x)) == -x
 
     p1 = Parameter('x', -3, upper=0)
     p2 = Parameter('y', 9)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     model.parameters = pset
     assert simplify_expression(model, sympy.Piecewise((2, sympy.Le(x, 0)), (56, True))) == 2
 
     p1 = Parameter('x', 3)
     p2 = Parameter('y', 9)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     model.parameters = pset
     assert simplify_expression(model, x * y) == x * y
 

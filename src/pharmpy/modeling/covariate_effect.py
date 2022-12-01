@@ -95,7 +95,9 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     kept_parameters = model.random_variables.free_symbols.union(
         kept_thetas, model.statements.after_odes.free_symbols
     )
-    model.parameters = Parameters((p for p in model.parameters if p.symbol in kept_parameters))
+    model.parameters = Parameters.create(
+        (p for p in model.parameters if p.symbol in kept_parameters)
+    )
 
     return model
 
@@ -314,7 +316,7 @@ def _create_thetas(model, parameter, effect, covariate, template, _ctre=re.compi
         inits = _choose_param_inits(effect, model, covariate)
 
         theta_name = f'POP_{parameter}{covariate}'
-        pset = Parameters(
+        pset = Parameters.create(
             list(pset) + [Parameter(theta_name, inits['init'], inits['lower'], inits['upper'])]
         )
         theta_names['theta'] = theta_name
@@ -323,7 +325,7 @@ def _create_thetas(model, parameter, effect, covariate, template, _ctre=re.compi
             inits = _choose_param_inits(effect, model, covariate, i)
 
             theta_name = f'POP_{parameter}{covariate}_{i}'
-            pset = Parameters(
+            pset = Parameters.create(
                 list(pset) + [Parameter(theta_name, inits['init'], inits['lower'], inits['upper'])]
             )
             theta_names[new_theta] = theta_name

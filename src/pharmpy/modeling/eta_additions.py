@@ -123,7 +123,7 @@ def add_iiv(
         )
 
     model.random_variables = rvs
-    model.parameters = Parameters(pset)
+    model.parameters = Parameters.create(pset)
     model.statements = sset
 
     return model
@@ -271,7 +271,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
         model, occ, etas, categories, iov_name, etai_name, eta_name, omega_iov_name
     )
 
-    model.random_variables, model.parameters, model.statements = rvs, Parameters(pset), iovs
+    model.random_variables, model.parameters, model.statements = rvs, Parameters.create(pset), iovs
 
     return model
 
@@ -370,7 +370,7 @@ def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, et
     for i, j in combinations(indices, r=2):
         omega_iov = sympy.Symbol(omega_iov_name(i, j))
         omega_iiv = rvs.get_covariance(etas[i - 1], etas[j - 1])
-        paramset = Parameters(pset)  # FIXME!
+        paramset = Parameters.create(pset)  # FIXME!
         init = paramset[omega_iiv].init * 0.1 if omega_iiv != 0 and omega_iiv in paramset else 0.001
         pset.append(Parameter(str(omega_iov), init=init))
 
@@ -387,7 +387,7 @@ def _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name):
         eta = etas[i - 1]
         omega_iiv = rvs[eta].get_variance(eta)
         omega_iov = sympy.Symbol(omega_iov_name(i, i))
-        paramset = Parameters(pset)  # FIXME!
+        paramset = Parameters.create(pset)  # FIXME!
         init = paramset[omega_iiv].init * 0.1 if omega_iiv in paramset else 0.01
         pset.append(Parameter(str(omega_iov), init=init))
 

@@ -125,6 +125,6 @@ def add_allometry(
         new_ass = Assignment(p, expr)
         ind = model.statements.find_assignment_index(p)
         model.statements = model.statements[0 : ind + 1] + new_ass + model.statements[ind + 1 :]
-    model.parameters = Parameters(params)
+    model.parameters = Parameters.create(params)
 
     return model

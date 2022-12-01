@@ -246,7 +246,7 @@ def _create_base_model(input_model, current_iteration):
     theta = Parameter('theta', 0.1)
     omega = Parameter('omega', 0.01, lower=0)
     sigma = Parameter('sigma', 1, lower=0)
-    params = Parameters([theta, omega, sigma])
+    params = Parameters((theta, omega, sigma))
     base_model.parameters = params
 
     eta_name = 'eta'

@@ -180,7 +180,7 @@ def _create_new_thetas(model, transformation, no_of_thetas):
             thetas[f'theta{i}'] = theta_name
             theta_name = f'{transformation}{theta_no + i}'
 
-    model.parameters = Parameters(pset)
+    model.parameters = Parameters.create(pset)
 
     return thetas
 

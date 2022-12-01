@@ -150,7 +150,7 @@ class Model(BaseModel):
                 statement = Assignment(sympy.Symbol('DUMMYETA'), sympy.Symbol(eta.names[0]))
                 self.statements = statement + self.statements
                 self.random_variables = self.random_variables + eta
-                self.parameters = Parameters(list(self.parameters) + [omega])
+                self.parameters = Parameters.create(list(self.parameters) + [omega])
             update_random_variables(
                 self, self.internals._old_random_variables, self._random_variables
             )
@@ -301,7 +301,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         else:
             newparam = p
         new.append(newparam)
-    parameters = Parameters(new)
+    parameters = Parameters.create(new)
 
     statements = statements.subs(trans_statements)
 

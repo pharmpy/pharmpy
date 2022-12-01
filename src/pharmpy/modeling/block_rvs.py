@@ -91,7 +91,7 @@ def create_joint_distribution(
         covariance_init = _choose_param_init(model, individual_estimates, all_rvs, parent1, parent2)
         param_new = Parameter(cov_name, covariance_init)
         pset_new += param_new
-    model.parameters = Parameters(pset_new)
+    model.parameters = Parameters.create(pset_new)
     model.random_variables = all_rvs
 
     return model
@@ -144,7 +144,9 @@ def split_joint_distribution(model, rvs=None):
 
     removed_parameters = set(parameters_before) - set(parameters_after)
     model.random_variables = new_rvs
-    model.parameters = Parameters([p for p in model.parameters if p.name not in removed_parameters])
+    model.parameters = Parameters(
+        tuple([p for p in model.parameters if p.name not in removed_parameters])
+    )
     return model
 
 

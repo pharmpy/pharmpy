@@ -74,7 +74,7 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
         )
 
     model.random_variables = rvs
-    model.parameters = Parameters(pset)
+    model.parameters = Parameters.create(pset)
     model.statements = sset
 
     return model

@@ -170,7 +170,7 @@ def test_add_parameters(pheno, param_new, init_expected, buf_new):
     assert len(pset) == 6
 
     pset.append(param_new)
-    model.parameters = Parameters(pset)
+    model.parameters = Parameters.create(pset)
 
     assert len(pset) == 7
     assert model.parameters[param_new.name].init == init_expected

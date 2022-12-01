@@ -612,7 +612,7 @@ def _rename_parameter(model: Model, old_name, new_name):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters(new)
+    model.parameters = Parameters.create(new)
     model.statements = model.statements.subs({old_name: new_name})
 
 

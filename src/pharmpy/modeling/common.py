@@ -657,7 +657,7 @@ def remove_unused_parameters_and_rvs(model):
         symb = p.symbol
         if symb in symbols or symb in new_rvs.free_symbols or (p.fix and p.init == 0):
             new_params.append(p)
-    model.parameters = Parameters(new_params)
+    model.parameters = Parameters.create(new_params)
     return model
 
 
@@ -689,7 +689,7 @@ def rename_symbols(model, new_names):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters(new)
+    model.parameters = Parameters.create(new)
 
     model.statements = model.statements.subs(d)
     return model

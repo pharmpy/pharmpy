@@ -31,7 +31,7 @@ def get_thetas(model: Model):
     """
     rvs_fs = model.random_variables.free_symbols
     thetas = [p for p in model.parameters if p.symbol not in rvs_fs]
-    return Parameters(thetas)
+    return Parameters(tuple(thetas))
 
 
 def get_omegas(model: Model):
@@ -62,7 +62,7 @@ def get_omegas(model: Model):
     get_sigmas : Get sigma parameters
     """
     omegas = [p for p in model.parameters if p.symbol in model.random_variables.etas.free_symbols]
-    return Parameters(omegas)
+    return Parameters(tuple(omegas))
 
 
 def get_sigmas(model: Model):
@@ -94,7 +94,7 @@ def get_sigmas(model: Model):
     sigmas = [
         p for p in model.parameters if p.symbol in model.random_variables.epsilons.free_symbols
     ]
-    return Parameters(sigmas)
+    return Parameters(tuple(sigmas))
 
 
 def set_initial_estimates(model: Model, inits):
@@ -168,7 +168,7 @@ def set_upper_bounds(model: Model, bounds):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters(new)
+    model.parameters = Parameters(tuple(new))
     return model
 
 
@@ -210,7 +210,7 @@ def set_lower_bounds(model: Model, bounds):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters(new)
+    model.parameters = Parameters(tuple(new))
     return model
 
 
@@ -261,7 +261,7 @@ def fix_parameters(model: Model, parameter_names):
         else:
             new_param = p
         new.append(new_param)
-    model.parameters = Parameters(new)
+    model.parameters = Parameters(tuple(new))
     return model
 
 
@@ -315,7 +315,7 @@ def unfix_parameters(model: Model, parameter_names):
         else:
             new_param = p
         new.append(new_param)
-    model.parameters = Parameters(new)
+    model.parameters = Parameters(tuple(new))
     return model
 
 
@@ -451,7 +451,7 @@ def fix_or_unfix_parameters(model: Model, parameters):
         else:
             new_param = p
         new.append(new_param)
-    model.parameters = Parameters(new)
+    model.parameters = Parameters(tuple(new))
     return model
 
 
@@ -496,7 +496,7 @@ def unconstrain_parameters(model: Model, parameter_names):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters(new)
+    model.parameters = Parameters(tuple(new))
     return model
 
 

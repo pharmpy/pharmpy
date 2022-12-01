@@ -50,7 +50,7 @@ def parse_parameters(control_stream) -> Parameters:
             next_sigma, previous_size, seen_labels={p.name for p in params}
         )
         params.extend(sigmas)
-    return Parameters(params)
+    return Parameters.create(params)
 
 
 def parse_random_variables(control_stream) -> RandomVariables:
