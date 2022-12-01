@@ -13,3 +13,6 @@ parallel = true
 [report]
 show_missing = true
 precision = 2
+exclude_lines = 
+    pragma: not covered
+    @overload
