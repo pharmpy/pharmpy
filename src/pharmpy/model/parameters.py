@@ -197,7 +197,7 @@ class Parameters(CollectionsSequence, Immutable):
     def replace(self, **kwargs):
         """Replace properties and create a new Parameters object"""
         parameters = kwargs.get('parameters', self._params)
-        new = Parameter.create(parameters)
+        new = Parameters.create(parameters)
         return new
 
     def __len__(self):

@@ -49,6 +49,8 @@ def test_illegal_initialization(name, init, lower, upper, fix):
 def test_repr():
     param = Parameter('X', 2, lower=0, upper=23)
     assert repr(param) == 'Parameter("X", 2, lower=0, upper=23, fix=False)'
+    param = Parameter('X', 2)
+    assert repr(param) == 'Parameter("X", 2, lower=-∞, upper=∞, fix=False)'
 
 
 def test_fix():
@@ -112,6 +114,9 @@ def test_pset_init():
 
     with pytest.raises(ValueError):
         Parameters.create([23])
+
+    pset3 = Parameters.create()
+    assert len(pset3) == 0
 
 
 def test_pset_getitem():
@@ -206,6 +211,16 @@ def test_pset_eq():
     pset3 = Parameters((p1, p3, p2))
     assert pset1 != pset3
     assert pset1 == pset1
+    assert pset1 != 23
+
+
+def test_pset_replace():
+    p1 = Parameter.create('Y', 9)
+    p2 = Parameter.create('X', 3)
+    p3 = Parameter.create('Z', 1)
+    pset1 = Parameters((p1, p2, p3))
+    pset2 = pset1.replace(parameters=(p1, p2))
+    assert len(pset2) == 2
 
 
 def test_hash():
