@@ -99,6 +99,8 @@ def execute_model(model, db):
             {
                 'args': args,
                 'returncode': result.returncode,
+                'stdout': 'stdout',
+                'stderr': 'stderr',
             }
         ]
     }
