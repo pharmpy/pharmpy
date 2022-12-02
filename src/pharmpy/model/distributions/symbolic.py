@@ -201,7 +201,11 @@ class NormalDistribution(Distribution):
 
         else:
             if isinstance(index, slice):
-                index = range(index.start, index.stop, index.step)
+                index = list(
+                    range(index.start, index.stop, index.step if index.step is not None else 1)
+                )
+                if index != [0]:
+                    raise IndexError(index)
 
             if isinstance(index, Collection):
                 if len(index) != 1 or (self._name not in index and 0 not in index):
@@ -397,7 +401,8 @@ class JointNormalDistribution(Distribution):
 
         else:
             if isinstance(index, slice):
-                index = range(index.start, index.stop, index.step)
+                index = range(index.start, index.stop, index.step if index.step is not None else 1)
+                index = [self._names[i] for i in index]
 
             if isinstance(index, Collection):
                 if len(index) == 0 or len(index) > len(self._names):
@@ -427,8 +432,8 @@ class JointNormalDistribution(Distribution):
             else:
                 raise KeyError(index)
 
-        mean = self._mean[index, [0]] if isinstance(index, int) else self._mean[index]
-        variance = self._variance[index][index]
+        mean = self._mean[index, [0]] if isinstance(index, int) else self._mean[index, :]
+        variance = self._variance[index, index]
 
         if len(names) == 1:
             return NormalDistribution(names[0], self._level, mean, variance)

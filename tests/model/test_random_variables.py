@@ -142,6 +142,26 @@ def test_getitem():
     dist1 = NormalDistribution.create('ETA(1)', 'iiv', 0, 1)
     dist2 = NormalDistribution.create('ETA(2)', 'iiv', 0, 0.1)
     dist3 = NormalDistribution.create('ETA(3)', 'iiv', 0, 0.1)
+
+    with pytest.raises(KeyError):
+        dist1[(0, 1)]
+
+    with pytest.raises(IndexError):
+        dist1[1:23]
+
+    with pytest.raises(KeyError):
+        dist1['ETA(2)']
+
+    with pytest.raises(IndexError):
+        dist1[1]
+
+    with pytest.raises(KeyError):
+        dist1[None]
+
+    assert len(dist1[0:1]) == 1
+    assert len(dist1['ETA(1)']) == 1
+    assert len(dist1[0]) == 1
+
     rvs = RandomVariables.create([dist1, dist2, dist3])
     selection = rvs[['ETA(1)', 'ETA(2)']]
     assert len(selection) == 2
@@ -163,6 +183,42 @@ def test_getitem():
 
     with pytest.raises(KeyError):
         rvs[None]
+
+    assert isinstance(dist1[['ETA(1)']], NormalDistribution)
+
+    dist2 = JointNormalDistribution.create(
+        ['ETA(1)', 'ETA(2)', 'ETA(3)'],
+        'iiv',
+        [0, 0, 0],
+        [
+            [symbol('OMEGA(1,1)'), symbol('OMEGA(2,1)'), symbol('OMEGA(3,1)')],
+            [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)'), symbol('OMEGA(2,3)')],
+            [symbol('OMEGA(3,1)'), symbol('OMEGA(2,3)'), symbol('OMEGA(3,3)')],
+        ],
+    )
+
+    assert isinstance(dist2[['ETA(1)', 'ETA(3)']], JointNormalDistribution)
+    assert len(dist2[0:2]) == 2
+    assert dist2['ETA(1)'].names == ('ETA(1)',)
+    assert dist2[0].names == ('ETA(1)',)
+
+    with pytest.raises(KeyError):
+        dist2[None]
+
+    with pytest.raises(KeyError):
+        dist2[['ETA(1)', 'ETA(4)']]
+
+    with pytest.raises(KeyError):
+        dist2[['x', 'y', 'z', 'w']]
+
+    with pytest.raises(KeyError):
+        dist2[tuple()]
+
+    with pytest.raises(IndexError):
+        dist2[4]
+
+    with pytest.raises(KeyError):
+        dist2['ETA(23)']
 
 
 def test_contains():
@@ -234,6 +290,8 @@ def test_subs():
     )
     assert rvs['ETA(3)'].variance == symbol('y')
     assert rvs.names == ['ETA(1)', 'w', 'ETA(3)']
+    dist3 = dist2.subs({'ETA(3)': 'X'})
+    assert dist3.names == ('X',)
 
 
 def test_free_symbols():
@@ -316,6 +374,13 @@ def test_hash():
     dist1 = NormalDistribution.create('ETA(3)', 'iiv', 2, 1)
     dist2 = NormalDistribution.create('ETA(2)', 'iiv', 2, 0)
     assert hash(dist1) != hash(dist2)
+    dist3 = JointNormalDistribution.create(
+        ['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]]
+    )
+    dist4 = JointNormalDistribution.create(
+        ['ETA(1)', 'ETA(3)'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]]
+    )
+    assert hash(dist3) != hash(dist4)
 
 
 def test_nearest_valid_parameters():
@@ -427,6 +492,9 @@ def test_get_variance():
     assert rvs['ETA(1)'].get_variance('ETA(1)') == symbol('OMEGA(1,1)')
     assert rvs['ETA(3)'].get_variance('ETA(3)') == symbol('OMEGA(3,3)')
 
+    with pytest.raises(KeyError):
+        dist2.get_variance('ETA(5)')
+
 
 def test_get_covariance():
     dist1 = JointNormalDistribution.create(
@@ -442,6 +510,11 @@ def test_get_covariance():
     rvs = RandomVariables.create([dist1, dist2])
     assert rvs.get_covariance('ETA(1)', 'ETA(2)') == symbol('OMEGA(2,1)')
     assert rvs.get_covariance('ETA(3)', 'ETA(2)') == 0
+
+    assert dist2.get_covariance('ETA(3)', 'ETA(3)') == symbol('OMEGA(3,3)')
+
+    with pytest.raises(KeyError):
+        dist2.get_covariance('ETA(1)', 'ETA(1)')
 
 
 def test_unjoin():
@@ -618,3 +691,10 @@ def test_get_rvs_with_same_dist():
     rvs = RandomVariables.create([dist1, dist2, dist3])
     same_dist = rvs.get_rvs_with_same_dist('ETA1')
     assert same_dist == RandomVariables.create([dist1, dist2])
+
+
+def test_evalf():
+    var1 = symbol('OMEGA11')
+    dist1 = NormalDistribution.create('ETA1', 'iiv', 0, var1)
+    with pytest.raises(ValueError):
+        dist1.evalf({})
