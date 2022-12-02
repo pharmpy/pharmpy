@@ -1699,7 +1699,7 @@ def set_ode_solver(model, solver):
     """
     new_steps = []
     for step in model.estimation_steps:
-        new = step.derive(solver=solver)
+        new = step.replace(solver=solver)
         new_steps.append(new)
     model.estimation_steps = EstimationSteps(new_steps)
     return model

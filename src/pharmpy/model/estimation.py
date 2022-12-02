@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import overload
 
 from pharmpy.deps import pandas as pd
-from pharmpy.internals.immutable import Immutable
+from pharmpy.internals.immutable import Immutable, frozenmapping
 
 
 class EstimationStep(Immutable):
@@ -36,59 +36,110 @@ class EstimationStep(Immutable):
         eta_derivatives=None,
         epsilon_derivatives=None,
     ):
-        method = self._canonicalize_and_check_method(method)
         self._method = method
         self._interaction = interaction
         self._cov = cov
         self._evaluation = evaluation
-        if maximum_evaluations is not None and maximum_evaluations < 1:
-            raise ValueError(
-                'Number of maximum evaluations must be more than one, use '
-                'evaluation=True or tool_options for special cases (e.g. 0 and -1'
-                'in NONMEM)'
-            )
         self._maximum_evaluations = maximum_evaluations
         self._laplace = laplace
         self._isample = isample
         self._niter = niter
         self._auto = auto
         self._keep_every_nth_iter = keep_every_nth_iter
+        self._residuals = residuals
+        self._predictions = predictions
+        self._solver = solver
+        self._solver_rtol = solver_rtol
+        self._solver_atol = solver_atol
+        self._tool_options = tool_options
+        self._eta_derivatives = eta_derivatives
+        self._epsilon_derivatives = epsilon_derivatives
+
+    @classmethod
+    def create(
+        cls,
+        method,
+        interaction=False,
+        cov=False,
+        evaluation=False,
+        maximum_evaluations=None,
+        laplace=False,
+        isample=None,
+        niter=None,
+        auto=None,
+        keep_every_nth_iter=None,
+        residuals=None,
+        predictions=None,
+        solver=None,
+        solver_rtol=None,
+        solver_atol=None,
+        tool_options=None,
+        eta_derivatives=None,
+        epsilon_derivatives=None,
+    ):
+        method = EstimationStep._canonicalize_and_check_method(method)
+        if maximum_evaluations is not None and maximum_evaluations < 1:
+            raise ValueError(
+                'Number of maximum evaluations must be more than one, use '
+                'evaluation=True or tool_options for special cases (e.g. 0 and -1'
+                'in NONMEM)'
+            )
         if residuals is None:
-            self._residuals = []
+            residuals = ()
         else:
-            self._residuals = residuals
+            residuals = tuple(residuals)
         if predictions is None:
-            self._predictions = []
+            predictions = ()
         else:
-            self._predictions = predictions
+            predictions = tuple(predictions)
         if solver is not None:
             solver = solver.upper()
         if not (solver is None or solver in EstimationStep.supported_solvers):
             raise ValueError(
                 f"Unknown solver {solver}. Recognized solvers are {sorted(EstimationStep.supported_solvers)}."
             )
-        self._solver = solver
-        self._solver_rtol = solver_rtol
-        self._solver_atol = solver_atol
         if tool_options is None:
-            self._tool_options = {}
+            tool_options = frozenmapping({})
         else:
-            self._tool_options = tool_options
+            tool_options = frozenmapping(tool_options)
         if eta_derivatives is None:
-            eta_derivatives = []
-        self._eta_derivatives = eta_derivatives
+            eta_derivatives = ()
+        else:
+            eta_derivatives = tuple(eta_derivatives)
         if epsilon_derivatives is None:
-            epsilon_derivatives = []
-        self._epsilon_derivatives = epsilon_derivatives
+            epsilon_derivatives = ()
+        else:
+            epsilon_derivatives = tuple(epsilon_derivatives)
+        return cls(
+            method=method,
+            interaction=interaction,
+            cov=cov,
+            evaluation=evaluation,
+            maximum_evaluations=maximum_evaluations,
+            laplace=laplace,
+            isample=isample,
+            niter=niter,
+            auto=auto,
+            keep_every_nth_iter=keep_every_nth_iter,
+            residuals=residuals,
+            predictions=predictions,
+            solver=solver,
+            solver_rtol=solver_rtol,
+            solver_atol=solver_atol,
+            tool_options=tool_options,
+            eta_derivatives=eta_derivatives,
+            epsilon_derivatives=epsilon_derivatives,
+        )
 
-    def derive(self, **kwargs):
+    def replace(self, **kwargs):
         """Derive a new EstimationStep with new properties"""
         d = {key[1:]: value for key, value in self.__dict__.items()}
         d.update(kwargs)
-        new = EstimationStep(**d)
+        new = EstimationStep.create(**d)
         return new
 
-    def _canonicalize_and_check_method(self, method):
+    @staticmethod
+    def _canonicalize_and_check_method(method):
         method = method.upper()
         if method not in EstimationStep.supported_methods:
             raise ValueError(

@@ -736,38 +736,38 @@ def test_cmt_warning(load_model_for_test, testdata):
 @pytest.mark.parametrize(
     'estcode,est_steps',
     [
-        ('$ESTIMATION METH=COND INTERACTION', [EstimationStep('foce', interaction=True)]),
-        ('$ESTIMATION INTER METH=COND', [EstimationStep('foce', interaction=True)]),
-        ('$ESTM METH=1 INTERACTION', [EstimationStep('foce', interaction=True)]),
-        ('$ESTIM METH=1', [EstimationStep('foce')]),
-        ('$ESTIMA METH=0', [EstimationStep('fo')]),
-        ('$ESTIMA METH=ZERO', [EstimationStep('fo')]),
-        ('$ESTIMA INTER', [EstimationStep('fo', interaction=True)]),
-        ('$ESTIMA INTER\n$COV', [EstimationStep('fo', interaction=True, cov=True)]),
+        ('$ESTIMATION METH=COND INTERACTION', [EstimationStep.create('foce', interaction=True)]),
+        ('$ESTIMATION INTER METH=COND', [EstimationStep.create('foce', interaction=True)]),
+        ('$ESTM METH=1 INTERACTION', [EstimationStep.create('foce', interaction=True)]),
+        ('$ESTIM METH=1', [EstimationStep.create('foce')]),
+        ('$ESTIMA METH=0', [EstimationStep.create('fo')]),
+        ('$ESTIMA METH=ZERO', [EstimationStep.create('fo')]),
+        ('$ESTIMA INTER', [EstimationStep.create('fo', interaction=True)]),
+        ('$ESTIMA INTER\n$COV', [EstimationStep.create('fo', interaction=True, cov=True)]),
         (
             '$ESTIMA METH=COND INTER\n$EST METH=COND',
             [
-                EstimationStep('foce', interaction=True),
-                EstimationStep('foce', interaction=False),
+                EstimationStep.create('foce', interaction=True),
+                EstimationStep.create('foce', interaction=False),
             ],
         ),
-        ('$ESTIMATION METH=SAEM', [EstimationStep('saem')]),
-        ('$ESTIMATION METH=1 LAPLACE', [EstimationStep('foce', laplace=True)]),
+        ('$ESTIMATION METH=SAEM', [EstimationStep.create('saem')]),
+        ('$ESTIMATION METH=1 LAPLACE', [EstimationStep.create('foce', laplace=True)]),
         (
             '$ESTIMATION METH=0 MAXEVAL=0',
-            [EstimationStep('fo', evaluation=True)],
+            [EstimationStep.create('fo', evaluation=True)],
         ),
         (
             '$ESTIMATION METH=IMP EONLY=1',
-            [EstimationStep('imp', evaluation=True)],
+            [EstimationStep.create('imp', evaluation=True)],
         ),
         (
             '$ESTIMATION METH=COND MAXEVAL=9999',
-            [EstimationStep('foce', maximum_evaluations=9999)],
+            [EstimationStep.create('foce', maximum_evaluations=9999)],
         ),
         (
             '$ESTIMATION METH=COND ISAMPLE=10 NITER=5 AUTO=1 PRINT=2',
-            [EstimationStep('foce', isample=10, niter=5, auto=True, keep_every_nth_iter=2)],
+            [EstimationStep.create('foce', isample=10, niter=5, auto=True, keep_every_nth_iter=2)],
         ),
     ],
 )
@@ -846,7 +846,7 @@ $SIGMA 1
     code += estcode
     model = Model.create_model(StringIO(code))
     steps = model.estimation_steps
-    newstep = steps[0].derive(**kwargs)
+    newstep = steps[0].replace(**kwargs)
     model.estimation_steps = newstep + steps[1:]
     assert model.model_code.split('\n')[-2] == rec_ref
 
@@ -880,7 +880,7 @@ $SIGMA 1
     model = Model.create_model(StringIO(code))
 
     steps = model.estimation_steps
-    newstep = steps[0].derive(**kwargs)
+    newstep = steps[0].replace(**kwargs)
     model.estimation_steps = newstep + steps[1:]
 
     with pytest.raises(ValueError) as excinfo:
@@ -900,16 +900,16 @@ $SIGMA 1
 $EST METH=COND INTER
 '''
     model = Model.create_model(StringIO(code))
-    est_new = EstimationStep('IMP', interaction=True, tool_options={'saddle_reset': 1})
+    est_new = EstimationStep.create('IMP', interaction=True, tool_options={'saddle_reset': 1})
     model.estimation_steps = model.estimation_steps + est_new
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
-    est_new = EstimationStep('SAEM', interaction=True)
+    est_new = EstimationStep.create('SAEM', interaction=True)
     model.estimation_steps = est_new + model.estimation_steps
     assert model.model_code.split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
-    est_new = EstimationStep('FO', evaluation=True)
+    est_new = EstimationStep.create('FO', evaluation=True)
     model.estimation_steps = model.estimation_steps + est_new
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
-    est_new = EstimationStep('IMP', evaluation=True)
+    est_new = EstimationStep.create('IMP', evaluation=True)
     model.estimation_steps = model.estimation_steps + est_new
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP EONLY=1'
 
@@ -1041,8 +1041,8 @@ def test_parse_derivatives(load_model_for_test, testdata):
     model = load_model_for_test(
         testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
     )
-    assert model.estimation_steps[0].eta_derivatives == ['ETA(1)', 'ETA(2)']
-    assert model.estimation_steps[0].epsilon_derivatives == ['EPS(1)']
+    assert model.estimation_steps[0].eta_derivatives == ('ETA(1)', 'ETA(2)')
+    assert model.estimation_steps[0].epsilon_derivatives == ('EPS(1)',)
 
 
 def test_no_etas_in_model(pheno):

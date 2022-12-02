@@ -65,12 +65,13 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
 
     stats = Statements([cl_ass, vc_ass, CompartmentalSystem(cb), ipred, y_ass])
 
-    est = EstimationStep(
+    est = EstimationStep.create(
         "FOCE",
         interaction=True,
         maximum_evaluations=99999,
         predictions=['CIPREDI'],
         residuals=['CWRES'],
+        tool_options={'SADDLE_RESET': 1},
     )
     eststeps = EstimationSteps([est])
 

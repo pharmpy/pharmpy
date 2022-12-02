@@ -380,7 +380,7 @@ def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
             tool_options = None
 
         try:
-            meth = EstimationStep(
+            meth = EstimationStep.create(
                 name,
                 interaction=interaction,
                 cov=cov,

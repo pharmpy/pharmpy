@@ -1110,11 +1110,6 @@ def update_abbr_record(model: Model, rv_trans):
 def update_estimation(model: Model):
     new = model.estimation_steps
     old = model.internals._old_estimation_steps
-    if len(old) == 0 and len(new) > 0:
-        # Automatically add SADDLE_RESET=1 if model started without $EST and one was added
-        # i.e. this will happen if model was created from scratch.
-        if 'SADDLE_RESET' not in new[-1].tool_options:
-            new[-1].tool_options['SADDLE_RESET'] = 1
     if old == new:
         return
 
