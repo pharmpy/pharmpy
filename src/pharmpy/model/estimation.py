@@ -257,7 +257,8 @@ class EstimationStep(Immutable):
 
     def __eq__(self, other):
         return (
-            self.method == other.method
+            isinstance(other, EstimationStep)
+            and self.method == other.method
             and self.interaction == other.interaction
             and self.cov == other.cov
             and self.evaluation == other.evaluation
