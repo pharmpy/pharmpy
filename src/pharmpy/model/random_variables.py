@@ -275,14 +275,11 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         return cls(dists, eta_levels, epsilon_levels)
 
-    def derive(self, dists=None, eta_levels=None, epsilon_levels=None):
-        if dists is None:
-            dists = self._dists
-        if eta_levels is None:
-            eta_levels = self._eta_levels
-        if epsilon_levels is None:
-            epsilon_levels = self._epsilon_levels
-        return RandomVariables(dists, eta_levels, epsilon_levels)
+    def replace(self, **kwargs):
+        dists = kwargs.get('dists', self._dists)
+        eta_levels = kwargs.get('eta_levels', self._eta_levels)
+        epsilon_levels = kwargs.get('epsilon_levels', self._epsilon_levels)
+        return RandomVariables.create(dists, eta_levels, epsilon_levels)
 
     @property
     def eta_levels(self):
@@ -490,7 +487,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         """
         new_dists = tuple(dist.subs(d) for dist in self._dists)
-        return self.derive(dists=new_dists)
+        return self.replace(dists=new_dists)
 
     def unjoin(self, inds):
         """Remove all covariances the random variables have with other random variables
