@@ -41,7 +41,7 @@ class ColumnInfo(Immutable):
         Descriptor (kind) of data
     """
 
-    _all_types = [
+    _all_types = (
         'id',
         'dv',
         'idv',
@@ -55,9 +55,9 @@ class ColumnInfo(Immutable):
         'covariate',
         'mdv',
         'compartment',
-    ]
-    _all_scales = ['nominal', 'ordinal', 'interval', 'ratio']
-    _all_dtypes = [
+    )
+    _all_scales = ('nominal', 'ordinal', 'interval', 'ratio')
+    _all_dtypes = (
         'int8',
         'int16',
         'int32',
@@ -73,8 +73,8 @@ class ColumnInfo(Immutable):
         'nmtran-time',
         'nmtran-date',
         'str',
-    ]
-    _all_descriptors = [
+    )
+    _all_descriptors = (
         None,
         'age',
         'body weight',
@@ -83,7 +83,7 @@ class ColumnInfo(Immutable):
         'time after dose',
         'plasma concentration',
         'subject identifier',
-    ]
+    )
 
     @staticmethod
     def convert_pd_dtype_to_datatype(dtype):
@@ -187,7 +187,8 @@ class ColumnInfo(Immutable):
 
     def __eq__(self, other):
         return (
-            self._name == other._name
+            isinstance(other, ColumnInfo)
+            and self._name == other._name
             and self._type == other._type
             and self._unit == other._unit
             and self._scale == other._scale
@@ -453,6 +454,8 @@ class DataInfo(Sequence, Immutable):
             )
 
     def __eq__(self, other):
+        if not isinstance(other, DataInfo):
+            return False
         if len(self) != len(other):
             return False
         for col1, col2 in zip(self, other):
