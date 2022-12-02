@@ -458,9 +458,9 @@ def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame):
             col = curdi[colname]
         except IndexError:
             datatype = ColumnInfo.convert_pd_dtype_to_datatype(dataset.dtypes[colname].name)
-            col = ColumnInfo(colname, datatype=datatype)
+            col = ColumnInfo.create(colname, datatype=datatype)
         columns.append(col)
-    newdi = curdi.derive(columns=columns)
+    newdi = curdi.replace(columns=columns)
 
     # NOTE Remove path if dataset has been updated
-    return curdi if newdi == curdi else newdi.derive(path=None)
+    return curdi if newdi == curdi else newdi.replace(path=None)

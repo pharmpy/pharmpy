@@ -107,31 +107,34 @@ def _create_default_datainfo(path):
     datainfo_path = path.with_suffix('.datainfo')
     if datainfo_path.is_file():
         di = DataInfo.read_json(datainfo_path)
-        di = di.derive(path=path)
+        di = di.replace(path=path)
     else:
         colnames = list(pd.read_csv(path, nrows=0))
         column_info = []
         for colname in colnames:
-            info = ColumnInfo(colname)
             if colname == 'ID' or colname == 'L1':
-                info = ColumnInfo(colname, type='id', scale='nominal', datatype='int32')
+                info = ColumnInfo.create(colname, type='id', scale='nominal', datatype='int32')
             elif colname == 'DV':
-                info = ColumnInfo(colname, type='dv')
+                info = ColumnInfo.create(colname, type='dv')
             elif colname == 'TIME':
                 if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
                     datatype = 'nmtran-time'
                 else:
                     datatype = 'float64'
-                info = ColumnInfo(colname, type='idv', scale='ratio', datatype=datatype)
+                info = ColumnInfo.create(colname, type='idv', scale='ratio', datatype=datatype)
             elif colname == 'EVID':
-                info = ColumnInfo(colname, type='event', scale='nominal')
+                info = ColumnInfo.create(colname, type='event', scale='nominal')
             elif colname == 'MDV':
                 if 'EVID' in colnames:
-                    info = ColumnInfo(colname, type='mdv')
+                    info = ColumnInfo.create(colname, type='mdv')
                 else:
-                    info = ColumnInfo(colname, type='event', scale='nominal', datatype='int32')
+                    info = ColumnInfo.create(
+                        colname, type='event', scale='nominal', datatype='int32'
+                    )
             elif colname == 'AMT':
-                info = ColumnInfo(colname, type='dose', scale='ratio')
+                info = ColumnInfo.create(colname, type='dose', scale='ratio')
+            else:
+                info = ColumnInfo.create(colname)
             column_info.append(info)
         di = DataInfo(column_info, path=path, separator=',')
     return di

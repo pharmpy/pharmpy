@@ -193,13 +193,15 @@ def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
         model_no_header = load_model_for_test('pheno_no_header.mod')
-        model_no_header.datainfo = model_no_header.datainfo.derive(path=tmp_path / 'pheno_data.csv')
+        model_no_header.datainfo = model_no_header.datainfo.replace(
+            path=tmp_path / 'pheno_data.csv'
+        )
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
         model_rounding_error = load_model_for_test('pheno_rounding_error.mod')
-        model_rounding_error.datainfo = model_rounding_error.datainfo.derive(
+        model_rounding_error.datainfo = model_rounding_error.datainfo.replace(
             path=tmp_path / 'pheno_data.csv'
         )
 
@@ -380,13 +382,15 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
         model_no_header = load_model_for_test('pheno_no_header.mod')
-        model_no_header.datainfo = model_no_header.datainfo.derive(path=tmp_path / 'pheno_data.csv')
+        model_no_header.datainfo = model_no_header.datainfo.replace(
+            path=tmp_path / 'pheno_data.csv'
+        )
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
         model_rounding_error = load_model_for_test('pheno_rounding_error.mod')
-        model_rounding_error.datainfo = model_rounding_error.datainfo.derive(
+        model_rounding_error.datainfo = model_rounding_error.datainfo.replace(
             path=tmp_path / 'pheno_data.csv'
         )
 

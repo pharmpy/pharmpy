@@ -138,6 +138,29 @@ class ColumnInfo(Immutable):
         self,
         name,
         type='unknown',
+        unit=sympy.Integer(1),
+        scale='ratio',
+        continuous=None,
+        categories=None,
+        drop=False,
+        datatype="float64",
+        descriptor=None,
+    ):
+        self._name = name
+        self._type = type
+        self._unit = unit
+        self._scale = scale
+        self._continuous = continuous
+        self._categories = categories
+        self._drop = drop
+        self._datatype = datatype
+        self._descriptor = descriptor
+
+    @classmethod
+    def create(
+        cls,
+        name,
+        type='unknown',
         unit=None,
         scale='ratio',
         continuous=None,
@@ -153,36 +176,38 @@ class ColumnInfo(Immutable):
                 continuous = False
         if continuous is None:
             continuous = True
-        self._continuous = continuous
         if not isinstance(name, str):
             raise TypeError("Column name must be a string")
-        self._name = name
         if type not in ColumnInfo._all_types:
             raise TypeError(f"Unknown column type {type}")
-        self._type = type
         if scale not in ColumnInfo._all_scales:
             raise TypeError(
                 f"Unknown scale of measurement {scale}. Only {ColumnInfo._all_scales} are possible."
             )
-        self._unit = sympy.Integer(1) if unit is None else parse_units(unit)
-        self._scale = scale
-        self._continuous = continuous
-        self._categories = categories  # dict from value to descriptive string
-        self._drop = drop
+        unit = sympy.Integer(1) if unit is None else parse_units(unit)
         if datatype not in ColumnInfo._all_dtypes:
             raise ValueError(
                 f"{datatype} is not a valid datatype. Valid datatypes are {ColumnInfo._all_dtypes}"
             )
-        self._datatype = datatype
         if descriptor not in ColumnInfo._all_descriptors:
             raise TypeError(f"Unknown column descriptor {descriptor}")
-        self._descriptor = descriptor
+        return cls(
+            name=name,
+            type=type,
+            unit=unit,
+            scale=scale,
+            continuous=continuous,
+            categories=categories,
+            drop=drop,
+            datatype=datatype,
+            descriptor=descriptor,
+        )
 
-    def derive(self, **kwargs):
-        """Derive a new ColumnInfo with new properties"""
+    def replace(self, **kwargs):
+        """Replace properties and create a new ColumnInfo"""
         d = {key[1:]: value for key, value in self.__dict__.items()}
         d.update(kwargs)
-        new = ColumnInfo(**d)
+        new = ColumnInfo.create(**d)
         return new
 
     def __eq__(self, other):
@@ -327,10 +352,10 @@ class ColumnInfo(Immutable):
         Examples
         --------
         >>> from pharmpy.model import ColumnInfo
-        >>> col1 = ColumnInfo("WGT", scale='ratio')
+        >>> col1 = ColumnInfo.create("WGT", scale='ratio')
         >>> col1.is_categorical()
         False
-        >>> col2 = ColumnInfo("ID", scale='nominal')
+        >>> col2 = ColumnInfo.create("ID", scale='nominal')
         >>> col2.is_categorical()
         True
 
@@ -352,10 +377,10 @@ class ColumnInfo(Immutable):
         Examples
         --------
         >>> from pharmpy.model import ColumnInfo
-        >>> col1 = ColumnInfo("WGT", scale='ratio')
+        >>> col1 = ColumnInfo.create("WGT", scale='ratio')
         >>> col1.is_numerical()
         True
-        >>> col2 = ColumnInfo("ID", scale='nominal')
+        >>> col2 = ColumnInfo.create("ID", scale='nominal')
         >>> col2.is_numerical()
         False
 
@@ -414,7 +439,7 @@ class DataInfo(Sequence, Immutable):
         if columns is None:
             self._columns: Tuple[ColumnInfo, ...] = ()
         elif len(columns) > 0 and isinstance(columns[0], str):
-            self._columns = tuple(map(ColumnInfo, columns))
+            self._columns = tuple(ColumnInfo.create(col) for col in columns)
         else:
             self._columns = cast(Tuple[ColumnInfo, ...], tuple(columns))
         if path is not None:
@@ -423,7 +448,7 @@ class DataInfo(Sequence, Immutable):
         self._path = path
         self._separator = separator
 
-    def derive(self, **kwargs):
+    def replace(self, **kwargs):
         columns = kwargs.get('columns', self._columns)
         path = kwargs.get('path', self._path)
         separator = kwargs.get('separator', self._separator)
@@ -564,7 +589,7 @@ class DataInfo(Sequence, Immutable):
                 newcols.append(cur)
             else:
                 newcols.append(col)
-        return self.derive(columns=newcols)
+        return self.replace(columns=newcols)
 
     @property
     def id_column(self):
@@ -594,7 +619,7 @@ class DataInfo(Sequence, Immutable):
         else:
             raise IndexError(f"No column {name} in DataInfo")
 
-        newcol = mycol.derive(type=type)
+        newcol = mycol.replace(type=type)
         cols = self._columns[0:ind] + (newcol,) + self._columns[ind + 1 :]
         return DataInfo(cols, path=self._path, separator=self._separator)
 
@@ -675,7 +700,7 @@ class DataInfo(Sequence, Immutable):
             )
         newcols = []
         for v, col in zip(value, self._columns):
-            newcol = col.derive(type=v)
+            newcol = col.replace(type=v)
             newcols.append(newcol)
         return DataInfo(columns=newcols, path=self._path, separator=self._separator)
 
@@ -765,7 +790,7 @@ class DataInfo(Sequence, Immutable):
         d = json.loads(s)
         columns = []
         for col in d['columns']:
-            ci = ColumnInfo(
+            ci = ColumnInfo.create(
                 name=col['name'],
                 type=col.get('type', 'unknown'),
                 scale=col['scale'],
@@ -804,7 +829,7 @@ class DataInfo(Sequence, Immutable):
         return (
             di
             if di.path is None or di.path.is_absolute()
-            else di.derive(path=path_absolute(Path(path).parent / di.path))
+            else di.replace(path=path_absolute(Path(path).parent / di.path))
         )
 
     def __repr__(self):

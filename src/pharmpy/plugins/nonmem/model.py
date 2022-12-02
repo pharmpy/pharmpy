@@ -188,7 +188,7 @@ class Model(BaseModel):
                 else:
                     datapath = write_csv(self, path=dir_path, force=force)
 
-                self.datainfo = self.datainfo.derive(path=datapath)
+                self.datainfo = self.datainfo.replace(path=datapath)
 
             data_record = self.internals.control_stream.get_records('DATA')[0]
 
@@ -238,7 +238,7 @@ class Model(BaseModel):
     def dataset(self, df):
         self.internals._dataset_updated = True
         self._dataset = df
-        self.datainfo = self.datainfo.derive(path=None)
+        self.datainfo = self.datainfo.replace(path=None)
         self.update_datainfo()
 
     def read_raw_dataset(self, parse_columns: Tuple[str, ...] = ()):
@@ -263,7 +263,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
     # NOTE inputting the dataset is needed for IV models when using convert_model, since it needs to read the
     # RATE column to decide dosing, meaning it needs the dataset before parsing statements
     if dataset is not None:
-        di = update_datainfo(di.derive(path=None), dataset)
+        di = update_datainfo(di.replace(path=None), dataset)
 
     dependent_variable = sympy.Symbol('Y')
 

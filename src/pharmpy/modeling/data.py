@@ -378,11 +378,11 @@ def set_covariates(model, covariates):
     newcols = []
     for col in di:
         if col.name in covariates:
-            newcol = col.derive(type='covariate')
+            newcol = col.replace(type='covariate')
             newcols.append(newcol)
         else:
             newcols.append(col)
-    model.datainfo = di.derive(columns=newcols)
+    model.datainfo = di.replace(columns=newcols)
     return model
 
 
@@ -858,8 +858,8 @@ def add_time_after_dose(model):
     else:
         temp.dataset = df
         di = temp.datainfo
-        new_idvcol = di.idv_column.derive(type='unknown')
-        new_timecol = di['_NEWTIME'].derive(type='idv')
+        new_idvcol = di.idv_column.replace(type='unknown')
+        new_timecol = di['_NEWTIME'].replace(type='idv')
         di = di.set_column(new_idvcol).set_column(new_timecol)
         temp.datainfo = di
         expand_additional_doses(temp, flag=True)
@@ -908,7 +908,7 @@ def add_time_after_dose(model):
 
     model.dataset = df  # TAD in datainfo is automatically added here
     di = model.datainfo
-    colinfo = di['TAD'].derive(descriptor='time after dose', unit=di[idv].unit)
+    colinfo = di['TAD'].replace(descriptor='time after dose', unit=di[idv].unit)
     model.datainfo = di.set_column(colinfo)
     return model
 
@@ -1058,13 +1058,13 @@ def drop_columns(model, column_names, mark=False):
     for col in di:
         if col.name in column_names:
             if mark:
-                newcol = col.derive(drop=True)
+                newcol = col.replace(drop=True)
                 newcols.append(newcol)
             else:
                 model.dataset = model.dataset.drop(col.name, axis=1)
         else:
             newcols.append(col)
-    model.datainfo = di.derive(columns=newcols)
+    model.datainfo = di.replace(columns=newcols)
     return model
 
 
@@ -1103,11 +1103,11 @@ def undrop_columns(model, column_names):
     newcols = []
     for col in di:
         if col.name in column_names:
-            newcol = col.derive(drop=False)
+            newcol = col.replace(drop=False)
             newcols.append(newcol)
         else:
             newcols.append(col)
-    model.datainfo = di.derive(columns=newcols)
+    model.datainfo = di.replace(columns=newcols)
     return model
 
 
@@ -1254,8 +1254,8 @@ def translate_nmtran_time(model):
         assert timecol is not None
         df = _translate_time_and_date_columns(df, timecol.name, datecol.name, idname)
         model = drop_columns(model, datecol.name)
-        timecol = timecol.derive(unit='h')
-    timecol = timecol.derive(datatype='float64')
+        timecol = timecol.replace(unit='h')
+    timecol = timecol.replace(datatype='float64')
     di = di.set_column(timecol)
     model.datainfo = di
     model.dataset = df

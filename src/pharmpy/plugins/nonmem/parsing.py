@@ -561,18 +561,18 @@ def parse_datainfo(control_stream, path) -> DataInfo:
 
         if dipath.is_file():
             di = DataInfo.read_json(dipath)
-            di = di.derive(path=resolved_dataset_path)
+            di = di.replace(path=resolved_dataset_path)
             different_drop, cols_new = [], []
             for colinfo, coldrop in zip(di, drop):
                 if colinfo.drop != coldrop:
-                    colinfo_new = colinfo.derive(drop=coldrop)
+                    colinfo_new = colinfo.replace(drop=coldrop)
                     different_drop.append(colinfo.name)
                     cols_new.append(colinfo_new)
                 else:
                     cols_new.append(colinfo)
 
             if different_drop:
-                di_new = di.derive(columns=tuple(cols_new))
+                di_new = di.replace(columns=tuple(cols_new))
                 warnings.warn(
                     "NONMEM .mod and dataset .datainfo disagree on "
                     f"DROP for columns {', '.join(different_drop)}."
@@ -585,42 +585,48 @@ def parse_datainfo(control_stream, path) -> DataInfo:
     have_pk = control_stream.get_pk_record()
     for colname, coldrop in zip(colnames, drop):
         if coldrop and colname not in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
-            info = ColumnInfo(colname, drop=coldrop, datatype='str')
+            info = ColumnInfo.create(colname, drop=coldrop, datatype='str')
         elif colname == 'ID' or colname == 'L1':
-            info = ColumnInfo(colname, drop=coldrop, datatype='int32', type='id', scale='nominal')
+            info = ColumnInfo.create(
+                colname, drop=coldrop, datatype='int32', type='id', scale='nominal'
+            )
         elif colname == 'DV' or colname == replacements.get('DV', None):
-            info = ColumnInfo(colname, drop=coldrop, type='dv')
+            info = ColumnInfo.create(colname, drop=coldrop, type='dv')
         elif colname == 'TIME' or colname == replacements.get('TIME', None):
             if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
                 datatype = 'nmtran-time'
             else:
                 datatype = 'float64'
-            info = ColumnInfo(colname, drop=coldrop, type='idv', scale='ratio', datatype=datatype)
+            info = ColumnInfo.create(
+                colname, drop=coldrop, type='idv', scale='ratio', datatype=datatype
+            )
         elif colname in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
             # Always DROP in mod-file, but actually always used
-            info = ColumnInfo(colname, drop=False, scale='interval', datatype='nmtran-date')
+            info = ColumnInfo.create(colname, drop=False, scale='interval', datatype='nmtran-date')
         elif colname == 'EVID' and have_pk:
-            info = ColumnInfo(colname, drop=coldrop, type='event', scale='nominal')
+            info = ColumnInfo.create(colname, drop=coldrop, type='event', scale='nominal')
         elif colname == 'MDV' and have_pk:
             if 'EVID' in colnames:
                 tp = 'mdv'
             else:
                 tp = 'event'
-            info = ColumnInfo(colname, drop=coldrop, type=tp, scale='nominal', datatype='int32')
+            info = ColumnInfo.create(
+                colname, drop=coldrop, type=tp, scale='nominal', datatype='int32'
+            )
         elif colname == 'II' and have_pk:
-            info = ColumnInfo(colname, drop=coldrop, type='ii', scale='ratio')
+            info = ColumnInfo.create(colname, drop=coldrop, type='ii', scale='ratio')
         elif colname == 'SS' and have_pk:
-            info = ColumnInfo(colname, drop=coldrop, type='ss', scale='nominal')
+            info = ColumnInfo.create(colname, drop=coldrop, type='ss', scale='nominal')
         elif colname == 'ADDL' and have_pk:
-            info = ColumnInfo(colname, drop=coldrop, type='additional', scale='ordinal')
+            info = ColumnInfo.create(colname, drop=coldrop, type='additional', scale='ordinal')
         elif (colname == 'AMT' or colname == replacements.get('AMT', None)) and have_pk:
-            info = ColumnInfo(colname, drop=coldrop, type='dose', scale='ratio')
+            info = ColumnInfo.create(colname, drop=coldrop, type='dose', scale='ratio')
         elif colname == 'CMT' and have_pk:
-            info = ColumnInfo(colname, drop=coldrop, type='compartment', scale='nominal')
+            info = ColumnInfo.create(colname, drop=coldrop, type='compartment', scale='nominal')
         elif colname == 'RATE' and have_pk:
-            info = ColumnInfo(colname, drop=coldrop, type='rate')
+            info = ColumnInfo.create(colname, drop=coldrop, type='rate')
         else:
-            info = ColumnInfo(colname, drop=coldrop)
+            info = ColumnInfo.create(colname, drop=coldrop)
         column_info.append(info)
 
     di = DataInfo(column_info, path=resolved_dataset_path)

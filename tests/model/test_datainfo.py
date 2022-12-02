@@ -9,61 +9,61 @@ from pharmpy.model import ColumnInfo, DataInfo
 
 def test_columninfo_init():
     with pytest.raises(TypeError):
-        ColumnInfo(1)
+        ColumnInfo.create(1)
     with pytest.raises(ValueError):
-        ColumnInfo("WGT", datatype="notadtypeq")
+        ColumnInfo.create("WGT", datatype="notadtypeq")
 
 
 def test_columninfo_type():
     with pytest.raises(TypeError):
-        col = ColumnInfo("DUMMY", type="notaknowntype")
-    col = ColumnInfo("DUMMY", type="id")
+        col = ColumnInfo.create("DUMMY", type="notaknowntype")
+    col = ColumnInfo.create("DUMMY", type="id")
     assert col.type == 'id'
 
-    col2 = ColumnInfo("DUMMY", type='dv')
+    col2 = ColumnInfo.create("DUMMY", type='dv')
     assert col2.type == 'dv'
     assert col2.continuous
 
 
 def test_columninfo_descriptor():
-    col = ColumnInfo("DUMMY", descriptor="body weight")
+    col = ColumnInfo.create("DUMMY", descriptor="body weight")
     assert col.descriptor == "body weight"
-    col2 = ColumnInfo("DUMMY2")
+    col2 = ColumnInfo.create("DUMMY2")
     assert col2.descriptor is None
     with pytest.raises(TypeError):
-        ColumnInfo("DUMMY2", descriptor="notaknowndescriptor")
+        ColumnInfo.create("DUMMY2", descriptor="notaknowndescriptor")
 
 
 def test_columninfo_scale():
     with pytest.raises(TypeError):
-        col = ColumnInfo("DUMMY", scale='notavalidscale')
-    col = ColumnInfo("DUMMY", scale='nominal')
+        col = ColumnInfo.create("DUMMY", scale='notavalidscale')
+    col = ColumnInfo.create("DUMMY", scale='nominal')
     assert col.scale == 'nominal'
     assert not col.continuous
 
 
 def test_columninfo_unit():
-    col = ColumnInfo("DUMMY", unit="nospecialunit")
+    col = ColumnInfo.create("DUMMY", unit="nospecialunit")
     assert col.unit == sympy.Symbol("nospecialunit")
-    col = ColumnInfo("DUMMY", unit="kg")
+    col = ColumnInfo.create("DUMMY", unit="kg")
     assert col.unit == sympy.physics.units.kg
 
 
 def test_columninfo_continuous():
-    ColumnInfo("DUMMY", scale="nominal")
+    ColumnInfo.create("DUMMY", scale="nominal")
     with pytest.raises(ValueError):
-        ColumnInfo("DUMMY", scale="nominal", continuous=True)
+        ColumnInfo.create("DUMMY", scale="nominal", continuous=True)
 
 
 def test_columninfo_is_numerical():
-    col = ColumnInfo("DUMMY", scale='nominal')
+    col = ColumnInfo.create("DUMMY", scale='nominal')
     assert not col.is_numerical()
-    col = ColumnInfo("DUMMY", scale='ratio')
+    col = ColumnInfo.create("DUMMY", scale='ratio')
     assert col.is_numerical()
 
 
 def test_columninfo_repr():
-    col = ColumnInfo("DUMMY", scale='nominal')
+    col = ColumnInfo.create("DUMMY", scale='nominal')
     correct = """type          unknown
 scale         nominal
 continuous      False
@@ -94,7 +94,7 @@ def test_indexing():
     assert di[0].name == 'COL1'
     with pytest.raises(TypeError):
         di[1.0]
-    col = ColumnInfo("COL3")
+    col = ColumnInfo.create("COL3")
     di = col + di[1:]
     assert di["COL3"].name == "COL3"
     di = di[1:]
@@ -133,7 +133,7 @@ def test_get_set_column_type():
     with pytest.raises(IndexError):
         di['DUMMY']
     with pytest.raises(TypeError):
-        di['TIME'] = di['TIME'].derive(type='kzarqj')
+        di['TIME'] = di['TIME'].replace(type='kzarqj')
     assert di['ID'].type == 'id'
 
 
@@ -153,15 +153,17 @@ def test_unit():
 
 
 def test_scale():
-    col = ColumnInfo('WGT', scale='ratio')
+    col = ColumnInfo.create('WGT', scale='ratio')
     assert col
     with pytest.raises(TypeError):
-        ColumnInfo('DUMMY', scale='dummy')
+        ColumnInfo.create('DUMMY', scale='dummy')
 
 
 def test_json(tmp_path):
-    col1 = ColumnInfo("ID", type='id', scale='nominal')
-    col2 = ColumnInfo("TIME", type='idv', scale='ratio', unit="h", descriptor='time after dose')
+    col1 = ColumnInfo.create("ID", type='id', scale='nominal')
+    col2 = ColumnInfo.create(
+        "TIME", type='idv', scale='ratio', unit="h", descriptor='time after dose'
+    )
     di = DataInfo([col1, col2])
     correct = '{"columns": [{"name": "ID", "type": "id", "scale": "nominal", "continuous": false, "categories": null, "unit": "1", "datatype": "float64", "drop": false}, {"name": "TIME", "type": "idv", "scale": "ratio", "continuous": true, "categories": null, "unit": "hour", "datatype": "float64", "drop": false, "descriptor": "time after dose"}], "path": null, "separator": ","}'  # noqa: E501
     assert di.to_json() == correct
@@ -176,7 +178,7 @@ def test_json(tmp_path):
 def test_path():
     di = DataInfo(["C1", "C2"])
     expected = Path.cwd() / "file.datainfo"
-    di = di.derive(path=str(expected))
+    di = di.replace(path=str(expected))
     assert di.path == expected
 
 
@@ -187,8 +189,8 @@ def test_types():
 
 
 def test_descriptor_indexer():
-    col1 = ColumnInfo("ID", type='id')
-    col2 = ColumnInfo("WGT", type='covariate', descriptor='body weight')
+    col1 = ColumnInfo.create("ID", type='id')
+    col2 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
     di = DataInfo([col1, col2])
     bwci = di.descriptorix['body weight']
     assert len(bwci) == 1
@@ -197,8 +199,8 @@ def test_descriptor_indexer():
 
 
 def test_repr():
-    col1 = ColumnInfo("ID", type='id')
-    col2 = ColumnInfo("WGT", type='covariate', descriptor='body weight')
+    col1 = ColumnInfo.create("ID", type='id')
+    col2 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
     di = DataInfo([col1, col2])
     assert type(repr(di)) == str
 
@@ -238,15 +240,15 @@ def test_from_json():
 
 
 def test_get_dtype_dict():
-    col1 = ColumnInfo("ID", type='id', datatype='int32')
-    col2 = ColumnInfo("WGT", type='covariate', descriptor='body weight')
+    col1 = ColumnInfo.create("ID", type='id', datatype='int32')
+    col2 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
     di = DataInfo([col1, col2])
     assert di.get_dtype_dict() == {'ID': 'int32', 'WGT': 'float64'}
 
 
 def test_set_types():
-    col1 = ColumnInfo("ID", type='id', datatype='int32')
-    col2 = ColumnInfo("WGT", type='covariate', descriptor='body weight')
+    col1 = ColumnInfo.create("ID", type='id', datatype='int32')
+    col2 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
     di = DataInfo([col1, col2])
     di.set_types(['id', 'unknown'])
     with pytest.raises(ValueError):
@@ -254,8 +256,8 @@ def test_set_types():
 
 
 def test_set_id_column():
-    col1 = ColumnInfo("ID", type='id', datatype='int32')
-    col2 = ColumnInfo("WGT", type='covariate', descriptor='body weight')
+    col1 = ColumnInfo.create("ID", type='id', datatype='int32')
+    col2 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
     di = DataInfo([col1, col2])
     di.set_id_column('ID')
     with pytest.raises(ValueError):
@@ -263,21 +265,21 @@ def test_set_id_column():
 
 
 def test_set_column():
-    col1 = ColumnInfo("ID", type='id', datatype='int32')
-    col2 = ColumnInfo("WGT", type='unknown')
+    col1 = ColumnInfo.create("ID", type='id', datatype='int32')
+    col2 = ColumnInfo.create("WGT", type='unknown')
     di = DataInfo([col1, col2])
     assert di['WGT'].type == 'unknown'
-    col3 = ColumnInfo("WGT", type='covariate', descriptor='body weight')
+    col3 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
     di = di.set_column(col3)
     assert len(di) == 2
     assert di['WGT'].type == 'covariate'
 
 
 def test_add():
-    col1 = ColumnInfo("ID", type='id', datatype='int32')
-    col2 = ColumnInfo("WGT", type='unknown')
+    col1 = ColumnInfo.create("ID", type='id', datatype='int32')
+    col2 = ColumnInfo.create("WGT", type='unknown')
     di = DataInfo([col1, col2])
-    col3 = ColumnInfo("WGT", type='covariate', descriptor='body weight')
+    col3 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
     newdi = (col3,) + di
     assert len(newdi) == 3
 
@@ -286,9 +288,9 @@ def test_add():
 
 
 def test_is_categorical():
-    col1 = ColumnInfo("ID", scale='nominal', type='id', datatype='int32')
+    col1 = ColumnInfo.create("ID", scale='nominal', type='id', datatype='int32')
     assert col1.is_categorical()
-    col2 = ColumnInfo("WGT", scale='ratio')
+    col2 = ColumnInfo.create("WGT", scale='ratio')
     assert not col2.is_categorical()
 
 
