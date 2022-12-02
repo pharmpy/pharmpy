@@ -63,7 +63,7 @@ class VariabilityLevel(Immutable):
 
     def __add__(self, other):
         if isinstance(other, VariabilityHierarchy):
-            return VariabilityHierarchy([self] + other._levels)
+            return VariabilityHierarchy.create([self] + other._levels)
 
     @property
     def name(self) -> str:
@@ -87,11 +87,15 @@ class VariabilityLevel(Immutable):
 class VariabilityHierarchy(Immutable):
     """Description of a variability hierarchy"""
 
-    def __init__(self, levels=None):
+    def __init__(self, levels=()):
+        self._levels = levels
+
+    @classmethod
+    def create(cls, levels=None):
         if levels is None:
-            self._levels = []
+            levels = []
         elif isinstance(levels, VariabilityHierarchy):
-            self._levels = levels._levels
+            levels = levels._levels
         else:
             found_ref = False
             for level in levels:
@@ -104,7 +108,14 @@ class VariabilityHierarchy(Immutable):
                         found_ref = True
             if not found_ref:
                 raise ValueError("A VariabilityHierarchy must have a reference level")
-            self._levels = list(levels)
+            levels = tuple(levels)
+        return VariabilityHierarchy(levels)
+
+    def replace(self, **kwargs):
+        """Replace properties and create a new VariabilityHierarchy object"""
+        levels = kwargs.get('levels', self._levels)
+        new = VariabilityHierarchy.create(levels)
+        return new
 
     def __eq__(self, other):
         if not isinstance(other, VariabilityHierarchy):
@@ -151,14 +162,14 @@ class VariabilityHierarchy(Immutable):
         else:
             return self._lookup(ind)
         new = [self._lookup(level) for level in levels]
-        return VariabilityHierarchy(new)
+        return VariabilityHierarchy.create(new)
 
     def __add__(self, other):
         if isinstance(other, VariabilityLevel):
             levels = [other]
         else:
             raise ValueError(f"Cannot add {other} to VariabilityLevel")
-        new = VariabilityHierarchy(self._levels + levels)
+        new = VariabilityHierarchy.create(self._levels + levels)
         return new
 
     @property
@@ -246,7 +257,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         if eta_levels is None:
             iiv_level = VariabilityLevel('IIV', reference=True, group='ID')
             iov_level = VariabilityLevel('IOV', reference=False, group='OCC')
-            eta_levels = VariabilityHierarchy([iiv_level, iov_level])
+            eta_levels = VariabilityHierarchy((iiv_level, iov_level))
         else:
             if not isinstance(eta_levels, VariabilityHierarchy):
                 raise TypeError(
@@ -255,7 +266,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         if epsilon_levels is None:
             ruv_level = VariabilityLevel('RUV', reference=True)
-            epsilon_levels = VariabilityHierarchy([ruv_level])
+            epsilon_levels = VariabilityHierarchy((ruv_level,))
         else:
             if not isinstance(epsilon_levels, VariabilityHierarchy):
                 raise TypeError(
