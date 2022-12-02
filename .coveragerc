@@ -16,3 +16,4 @@ precision = 2
 exclude_lines = 
     pragma: not covered
     @overload
+    @abstractmethod
