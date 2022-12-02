@@ -389,7 +389,7 @@ class Model:
         try:
             curdi = self.datainfo
         except AttributeError:
-            curdi = DataInfo()
+            curdi = DataInfo.create()
         self.datainfo = update_datainfo(curdi, self.dataset)
 
     def copy(self):

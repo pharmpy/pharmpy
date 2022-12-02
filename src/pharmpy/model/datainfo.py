@@ -436,45 +436,57 @@ class DataInfo(Sequence, Immutable):
         separator: str = ',',
         force_absolute_path: bool = True,
     ):
+        self._columns = columns
+        self._path = path
+        self._separator = separator
+        self._force_absolute_path = force_absolute_path
+
+    @classmethod
+    def create(
+        cls,
+        columns: Optional[Union[TypingSequence[ColumnInfo], TypingSequence[str]]] = None,
+        path: Optional[Union[str, Path]] = None,
+        separator: str = ',',
+        force_absolute_path: bool = True,
+    ):
         if columns is None:
-            self._columns: Tuple[ColumnInfo, ...] = ()
+            columns: Tuple[ColumnInfo, ...] = ()
         elif len(columns) > 0 and isinstance(columns[0], str):
-            self._columns = tuple(ColumnInfo.create(col) for col in columns)
+            columns = tuple(ColumnInfo.create(col) for col in columns)
         else:
-            self._columns = cast(Tuple[ColumnInfo, ...], tuple(columns))
+            columns = cast(Tuple[ColumnInfo, ...], tuple(columns))
         if path is not None:
             path = Path(path)
         assert not force_absolute_path or path is None or path.is_absolute()
-        self._path = path
-        self._separator = separator
+        return cls(columns=columns, path=path, separator=separator)
 
     def replace(self, **kwargs):
         columns = kwargs.get('columns', self._columns)
         path = kwargs.get('path', self._path)
         separator = kwargs.get('separator', self._separator)
-        return DataInfo(columns=columns, path=path, separator=separator)
+        return DataInfo.create(columns=columns, path=path, separator=separator)
 
     def __add__(self, other):
         if isinstance(other, DataInfo):
-            return DataInfo(
+            return DataInfo.create(
                 columns=self._columns + other._columns, path=self.path, separator=self.separator
             )
         elif isinstance(other, ColumnInfo):
-            return DataInfo(
+            return DataInfo.create(
                 columns=self._columns + (other,), path=self.path, separator=self.separator
             )
         else:
-            return DataInfo(
+            return DataInfo.create(
                 columns=self._columns + tuple(other), path=self.path, separator=self.separator
             )
 
     def __radd__(self, other):
         if isinstance(other, ColumnInfo):
-            return DataInfo(
+            return DataInfo.create(
                 columns=(other,) + self._columns, path=self.path, separator=self.separator
             )
         else:
-            return DataInfo(
+            return DataInfo.create(
                 columns=tuple(other) + self._columns, path=self.path, separator=self.separator
             )
 
@@ -516,9 +528,9 @@ class DataInfo(Sequence, Immutable):
             for ind in i:
                 index = self._getindex(ind)
                 cols.append(self._columns[index])
-            return DataInfo(columns=cols)
+            return DataInfo.create(columns=cols)
         if isinstance(i, slice):
-            return DataInfo(self._columns[i], path=self._path, separator=self._separator)
+            return DataInfo.create(self._columns[i], path=self._path, separator=self._separator)
 
         return self._columns[self._getindex(i)]
 
@@ -621,7 +633,7 @@ class DataInfo(Sequence, Immutable):
 
         newcol = mycol.replace(type=type)
         cols = self._columns[0:ind] + (newcol,) + self._columns[ind + 1 :]
-        return DataInfo(cols, path=self._path, separator=self._separator)
+        return DataInfo.create(cols, path=self._path, separator=self._separator)
 
     def set_id_column(self, name):
         return self._set_column_type(name, 'id')
@@ -702,7 +714,7 @@ class DataInfo(Sequence, Immutable):
         for v, col in zip(value, self._columns):
             newcol = col.replace(type=v)
             newcols.append(newcol)
-        return DataInfo(columns=newcols, path=self._path, separator=self._separator)
+        return DataInfo.create(columns=newcols, path=self._path, separator=self._separator)
 
     def get_dtype_dict(self):
         """Create a dictionary from column names to pandas dtypes
@@ -806,7 +818,7 @@ class DataInfo(Sequence, Immutable):
         if path:
             path = Path(path)
         separator = d.get('separator', ',')
-        di = DataInfo(columns, path=path, separator=separator, force_absolute_path=False)
+        di = DataInfo.create(columns, path=path, separator=separator, force_absolute_path=False)
         return di
 
     @staticmethod
@@ -866,7 +878,7 @@ class TypeIndexer:
         cols = [col for col in self._obj if col.type == i and not col.drop]
         if not cols:
             raise IndexError(f"No columns of type {i} available")
-        return DataInfo(cols)
+        return DataInfo.create(cols)
 
 
 class DescriptorIndexer:
@@ -877,4 +889,4 @@ class DescriptorIndexer:
         cols = [col for col in self._obj if col.descriptor == i and not col.drop]
         if not cols:
             raise IndexError(f"No columns with descriptor {i} available")
-        return DataInfo(cols)
+        return DataInfo.create(cols)

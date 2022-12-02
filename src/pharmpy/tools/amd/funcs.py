@@ -136,5 +136,5 @@ def _create_default_datainfo(path):
             else:
                 info = ColumnInfo.create(colname)
             column_info.append(info)
-        di = DataInfo(column_info, path=path, separator=',')
+        di = DataInfo.create(column_info, path=path, separator=',')
     return di

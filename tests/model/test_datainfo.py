@@ -77,20 +77,21 @@ Name: DUMMY"""
 
 
 def test_init():
-    di = DataInfo()
+    di = DataInfo.create()
     assert len(di) == 0
 
 
 def test_eq():
-    di1 = DataInfo()
-    di2 = DataInfo(columns=["COL1", "COL2"])
+    di1 = DataInfo.create()
+    di2 = DataInfo.create(columns=["COL1", "COL2"])
     assert di1 != di2
-    di3 = DataInfo(columns=["DUMMY1", "DUMMY2"])
+    di3 = DataInfo.create(columns=["DUMMY1", "DUMMY2"])
     assert di2 != di3
+    assert di2 != 23
 
 
 def test_indexing():
-    di = DataInfo(columns=["COL1", "COL2"])
+    di = DataInfo.create(columns=["COL1", "COL2"])
     assert di[0].name == 'COL1'
     with pytest.raises(TypeError):
         di[1.0]
@@ -104,7 +105,7 @@ def test_indexing():
 
 
 def test_id_column():
-    di = DataInfo(['ID', 'TIME', 'DV'])
+    di = DataInfo.create(['ID', 'TIME', 'DV'])
     with pytest.raises(IndexError):
         di = di.set_id_column('DUMMY')
     di = di.set_id_column('ID')
@@ -112,7 +113,7 @@ def test_id_column():
 
 
 def test_dv_label():
-    di = DataInfo(['ID', 'TIME', 'DV'])
+    di = DataInfo.create(['ID', 'TIME', 'DV'])
     with pytest.raises(IndexError):
         di.set_dv_column('DUMMY')
     di = di.set_dv_column('DV')
@@ -120,7 +121,7 @@ def test_dv_label():
 
 
 def test_idv_label():
-    di = DataInfo(['ID', 'TIME', 'DV'])
+    di = DataInfo.create(['ID', 'TIME', 'DV'])
     with pytest.raises(IndexError):
         di.set_idv_column('DUMMY')
     di = di.set_idv_column('TIME')
@@ -128,7 +129,7 @@ def test_idv_label():
 
 
 def test_get_set_column_type():
-    di = DataInfo(['ID', 'TIME', 'DV'])
+    di = DataInfo.create(['ID', 'TIME', 'DV'])
     di = di.set_id_column('ID')
     with pytest.raises(IndexError):
         di['DUMMY']
@@ -138,7 +139,7 @@ def test_get_set_column_type():
 
 
 def test_get_column_label():
-    di = DataInfo(['ID', 'TIME', 'DV', 'WGT', 'APGR'])
+    di = DataInfo.create(['ID', 'TIME', 'DV', 'WGT', 'APGR'])
     di = di.set_id_column('ID')
     di = di[0:3] + di[['WGT', 'APGR']].set_types('covariate')
     assert di.typeix['id'].names == ['ID']
@@ -148,7 +149,7 @@ def test_get_column_label():
 
 
 def test_unit():
-    di = DataInfo(['ID', 'TIME', 'DV', 'WGT', 'APGR'])
+    di = DataInfo.create(['ID', 'TIME', 'DV', 'WGT', 'APGR'])
     assert di['ID'].unit == 1
 
 
@@ -164,7 +165,7 @@ def test_json(tmp_path):
     col2 = ColumnInfo.create(
         "TIME", type='idv', scale='ratio', unit="h", descriptor='time after dose'
     )
-    di = DataInfo([col1, col2])
+    di = DataInfo.create([col1, col2])
     correct = '{"columns": [{"name": "ID", "type": "id", "scale": "nominal", "continuous": false, "categories": null, "unit": "1", "datatype": "float64", "drop": false}, {"name": "TIME", "type": "idv", "scale": "ratio", "continuous": true, "categories": null, "unit": "hour", "datatype": "float64", "drop": false, "descriptor": "time after dose"}], "path": null, "separator": ","}'  # noqa: E501
     assert di.to_json() == correct
 
@@ -176,14 +177,14 @@ def test_json(tmp_path):
 
 
 def test_path():
-    di = DataInfo(["C1", "C2"])
+    di = DataInfo.create(["C1", "C2"])
     expected = Path.cwd() / "file.datainfo"
     di = di.replace(path=str(expected))
     assert di.path == expected
 
 
 def test_types():
-    di = DataInfo(['ID', 'TIME', 'DV'])
+    di = DataInfo.create(['ID', 'TIME', 'DV'])
     di = di.set_id_column('ID').set_dv_column('DV').set_idv_column('TIME')
     assert di.types == ['id', 'idv', 'dv']
 
@@ -191,7 +192,7 @@ def test_types():
 def test_descriptor_indexer():
     col1 = ColumnInfo.create("ID", type='id')
     col2 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
-    di = DataInfo([col1, col2])
+    di = DataInfo.create([col1, col2])
     bwci = di.descriptorix['body weight']
     assert len(bwci) == 1
     with pytest.raises(IndexError):
@@ -201,7 +202,7 @@ def test_descriptor_indexer():
 def test_repr():
     col1 = ColumnInfo.create("ID", type='id')
     col2 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
-    di = DataInfo([col1, col2])
+    di = DataInfo.create([col1, col2])
     assert type(repr(di)) == str
 
 
@@ -242,14 +243,14 @@ def test_from_json():
 def test_get_dtype_dict():
     col1 = ColumnInfo.create("ID", type='id', datatype='int32')
     col2 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
-    di = DataInfo([col1, col2])
+    di = DataInfo.create([col1, col2])
     assert di.get_dtype_dict() == {'ID': 'int32', 'WGT': 'float64'}
 
 
 def test_set_types():
     col1 = ColumnInfo.create("ID", type='id', datatype='int32')
     col2 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
-    di = DataInfo([col1, col2])
+    di = DataInfo.create([col1, col2])
     di.set_types(['id', 'unknown'])
     with pytest.raises(ValueError):
         di.set_types(['id', 'unknown', 'unknown'])
@@ -258,7 +259,7 @@ def test_set_types():
 def test_set_id_column():
     col1 = ColumnInfo.create("ID", type='id', datatype='int32')
     col2 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
-    di = DataInfo([col1, col2])
+    di = DataInfo.create([col1, col2])
     di.set_id_column('ID')
     with pytest.raises(ValueError):
         di.set_id_column("WGT")
@@ -267,7 +268,7 @@ def test_set_id_column():
 def test_set_column():
     col1 = ColumnInfo.create("ID", type='id', datatype='int32')
     col2 = ColumnInfo.create("WGT", type='unknown')
-    di = DataInfo([col1, col2])
+    di = DataInfo.create([col1, col2])
     assert di['WGT'].type == 'unknown'
     col3 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
     di = di.set_column(col3)
@@ -278,7 +279,7 @@ def test_set_column():
 def test_add():
     col1 = ColumnInfo.create("ID", type='id', datatype='int32')
     col2 = ColumnInfo.create("WGT", type='unknown')
-    di = DataInfo([col1, col2])
+    di = DataInfo.create([col1, col2])
     col3 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
     newdi = (col3,) + di
     assert len(newdi) == 3

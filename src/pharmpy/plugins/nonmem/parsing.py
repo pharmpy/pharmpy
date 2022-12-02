@@ -629,7 +629,7 @@ def parse_datainfo(control_stream, path) -> DataInfo:
             info = ColumnInfo.create(colname, drop=coldrop)
         column_info.append(info)
 
-    di = DataInfo(column_info, path=resolved_dataset_path)
+    di = DataInfo.create(column_info, path=resolved_dataset_path)
     return di
 
 
