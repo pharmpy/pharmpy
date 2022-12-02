@@ -269,7 +269,7 @@ def _create_base_model(input_model, current_iteration):
     base_model.dataset = _create_dataset(input_model)
 
     est = EstimationStep.create('foce', interaction=True, maximum_evaluations=9999)
-    base_model.estimation_steps = EstimationSteps([est])
+    base_model.estimation_steps = EstimationSteps.create([est])
     return base_model
 
 

@@ -783,7 +783,7 @@ $SIGMA 1
 '''
     code += estcode
     model = Model.create_model(StringIO(code))
-    correct = EstimationSteps(steps=est_steps)
+    correct = EstimationSteps.create(steps=est_steps)
     assert model.estimation_steps == correct
 
 

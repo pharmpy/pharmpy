@@ -295,11 +295,20 @@ class EstimationSteps(Sequence, Immutable):
         Used for initialization
     """
 
-    def __init__(self, steps=None):
+    def __init__(self, steps=()):
+        self._steps = steps
+
+    @classmethod
+    def create(cls, steps=None):
         if steps is None:
-            self._steps = ()
+            steps = ()
         else:
-            self._steps = tuple(steps)
+            steps = tuple(steps)
+        return EstimationSteps(steps=steps)
+
+    def replace(self, **kwargs):
+        steps = kwargs.get('steps', self._steps)
+        return EstimationSteps.create(steps)
 
     @overload
     def __getitem__(self, i: int) -> EstimationStep:
@@ -365,7 +374,7 @@ class EstimationSteps(Sequence, Immutable):
         niter = [s.niter for s in self._steps]
         auto = [s.auto for s in self._steps]
         keep_every_nth_iter = [s.keep_every_nth_iter for s in self._steps]
-        tool_options = [s.tool_options for s in self._steps]
+        tool_options = [dict(s.tool_options) for s in self._steps]
         df = pd.DataFrame(
             {
                 'method': method,

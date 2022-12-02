@@ -10,6 +10,8 @@ def test_init():
     assert a.solver == 'LSODA'
     with pytest.raises(ValueError):
         EstimationStep.create('foce', solver='unknownsolverz')
+    steps = EstimationSteps.create()
+    assert len(steps) == 0
 
 
 def test_estimation_method():
@@ -41,7 +43,7 @@ def test_repr():
     assert repr(steps) == 'EstimationSteps()'
 
     a = EstimationStep.create('foce')
-    steps = EstimationSteps([a])
+    steps = EstimationSteps.create([a])
     assert type(steps._repr_html_()) == str
     assert type(repr(steps)) == str
 
@@ -51,10 +53,10 @@ def test_eq():
     s2 = EstimationSteps()
     assert s1 == s2
     a = EstimationStep.create('foce')
-    s3 = EstimationSteps([a, a])
+    s3 = EstimationSteps.create([a, a])
     assert s1 != s3
     b = EstimationStep.create('fo')
-    s4 = EstimationSteps([a, b])
+    s4 = EstimationSteps.create([a, b])
     assert s3 != s4
 
 
@@ -62,13 +64,13 @@ def test_len():
     s1 = EstimationSteps()
     assert len(s1) == 0
     a = EstimationStep.create('foce')
-    s2 = EstimationSteps([a, a])
+    s2 = EstimationSteps.create([a, a])
     assert len(s2) == 2
 
 
 def test_radd():
     a = EstimationStep.create('foce')
-    s2 = EstimationSteps([a, a])
+    s2 = EstimationSteps.create([a, a])
     b = EstimationStep.create('fo')
     conc = b + s2
     assert len(conc) == 3
@@ -78,9 +80,9 @@ def test_radd():
 
 def test_add():
     a = EstimationStep.create('foce')
-    s2 = EstimationSteps([a, a])
+    s2 = EstimationSteps.create([a, a])
     b = EstimationStep.create('fo')
-    s3 = EstimationSteps([a, b])
+    s3 = EstimationSteps.create([a, b])
     conc = s2 + b
     assert len(conc) == 3
     conc = s2 + (b,)
@@ -92,7 +94,7 @@ def test_add():
 def test_getitem():
     a = EstimationStep.create('foce')
     b = EstimationStep.create('fo')
-    s = EstimationSteps([a, b])
+    s = EstimationSteps.create([a, b])
     assert s[0].method == 'FOCE'
     assert s[1].method == 'FO'
 
@@ -110,9 +112,14 @@ def test_properties():
     assert a.residuals == ('CWRES',)
 
 
-def test_derive():
+def test_replace():
     a = EstimationStep.create('foce')
     b = a.replace(method='fo')
     assert b.method == 'FO'
     c = a.replace(solver_atol=0.01)
     assert c.solver_atol == 0.01
+
+    steps1 = EstimationSteps((a,))
+    steps2 = EstimationSteps((b,))
+    steps3 = steps1.replace(steps=[steps2])
+    assert len(steps3) == 1
