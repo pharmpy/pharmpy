@@ -61,10 +61,6 @@ class VariabilityLevel(Immutable):
             and self._group == other._group
         )
 
-    def __add__(self, other):
-        if isinstance(other, VariabilityHierarchy):
-            return VariabilityHierarchy.create([self] + other._levels)
-
     @property
     def name(self) -> str:
         """Name of the variability level"""
@@ -93,7 +89,7 @@ class VariabilityHierarchy(Immutable):
     @classmethod
     def create(cls, levels=None):
         if levels is None:
-            levels = []
+            levels = ()
         elif isinstance(levels, VariabilityHierarchy):
             levels = levels._levels
         else:
@@ -166,11 +162,17 @@ class VariabilityHierarchy(Immutable):
 
     def __add__(self, other):
         if isinstance(other, VariabilityLevel):
-            levels = [other]
+            levels = (other,)
         else:
-            raise ValueError(f"Cannot add {other} to VariabilityLevel")
+            raise ValueError(f"Cannot add {other} to VariabilityHierarchy")
         new = VariabilityHierarchy.create(self._levels + levels)
         return new
+
+    def __radd__(self, other):
+        if isinstance(other, VariabilityLevel):
+            return VariabilityHierarchy.create((other,) + self._levels)
+        else:
+            raise ValueError(f"Cannot add {other} to VariabilityLevel")
 
     @property
     def names(self) -> List[str]:
@@ -180,7 +182,9 @@ class VariabilityHierarchy(Immutable):
     def _find_reference(self) -> int:
         # Find numerical level of first level
         # No error checking since having a reference level is an invariant
-        return next((-i for i, level in enumerate(self._levels) if level.reference))
+        return next(  # pragma: no cover
+            (-i for i, level in enumerate(self._levels) if level.reference)
+        )
 
     @property
     def levels(self):
@@ -781,6 +785,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
 def _sample_from_distributions(distributions, expr, parameters, nsamples, rng):
     random_variable_symbols = expr.free_symbols.difference(parameters.keys())
+    print(random_variable_symbols)
     filtered_distributions = filter_distributions(distributions, random_variable_symbols)
     sampling_rvs = subs_distributions(filtered_distributions, parameters)
     sampled_expr = subs(expr, parameters, simultaneous=True)

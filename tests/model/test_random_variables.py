@@ -1,5 +1,6 @@
 import pickle
 
+import numpy as np
 import pytest
 import sympy
 from sympy import Symbol as symbol
@@ -82,6 +83,13 @@ def test_parameters_rv():
     assert dist1.parameter_names == ('OMEGA(2,2)',)
 
 
+def test_init():
+    rvs = RandomVariables.create([])
+    assert len(rvs) == 0
+    rvs = RandomVariables.create()
+    assert len(rvs) == 0
+
+
 def test_illegal_inits():
     with pytest.raises(TypeError):
         RandomVariables.create([8, 1])
@@ -89,6 +97,10 @@ def test_illegal_inits():
     dist2 = NormalDistribution.create('ETA(1)', 'iiv', 0, 1)
     with pytest.raises(ValueError):
         RandomVariables.create([dist1, dist2])
+    with pytest.raises(TypeError):
+        RandomVariables.create([dist1], eta_levels=23)
+    with pytest.raises(TypeError):
+        RandomVariables.create([dist1], epsilon_levels=23)
 
 
 def test_len():
@@ -112,6 +124,7 @@ def test_eq():
 def test_add():
     dist1 = NormalDistribution.create('ETA(1)', 'iiv', 0, 1)
     dist2 = NormalDistribution.create('ETA(2)', 'iiv', 0, 0.1)
+    dist3 = NormalDistribution.create('ETA(3)', 'center', 0, 0.1)
     rvs1 = RandomVariables.create([dist1])
     rvs2 = RandomVariables.create([dist2])
     rvs3 = rvs1 + rvs2
@@ -122,6 +135,18 @@ def test_add():
         rvs1 + None
     with pytest.raises(TypeError):
         None + rvs1
+    assert len([dist2] + rvs1) == 2
+
+    with pytest.raises(ValueError):
+        dist3 + rvs1
+    with pytest.raises(ValueError):
+        rvs1 + dist3
+
+    lev1 = VariabilityLevel('center', reference=True, group='CENTER')
+    levs = VariabilityHierarchy([lev1])
+    rvs4 = RandomVariables.create([dist3], eta_levels=levs)
+    with pytest.raises(ValueError):
+        rvs4 + rvs2
 
 
 def test_getitem():
@@ -439,10 +464,13 @@ def test_sample():
     assert list(samples) == pytest.approx([1.7033555824617346, -1.4031809274765599])
 
     with pytest.raises(ValueError):
-        rvs.sample(rv1 + rv2, samples=1, rng=9532)
+        rvs.sample(rv1 + rv2, samples=1, rng=np.random.default_rng(9532))
 
     samples = rvs.sample(1, samples=2)
     assert list(samples) == [1.0, 1.0]
+
+    with pytest.raises(ValueError):
+        rvs.sample(symbol('ETA3'), parameters=params)
 
 
 def test_variance_parameters():
@@ -617,15 +645,15 @@ def test_variability_level():
 
 def test_variability_hierarchy():
     lev1 = VariabilityLevel('IIV', reference=True, group='ID')
-    levs = VariabilityHierarchy([lev1])
+    levs = VariabilityHierarchy((lev1,))
     assert levs[0].name == 'IIV'
     with pytest.raises(IndexError):
         levs[1].name
     lev2 = VariabilityLevel('CENTER', reference=False, group='CENTER')
-    levs2 = VariabilityHierarchy([lev2, lev1])
+    levs2 = VariabilityHierarchy((lev2, lev1))
     assert len(levs2) == 2
     lev3 = VariabilityLevel('PLANET', reference=False, group='PLANET')
-    levs3 = VariabilityHierarchy([lev3, lev2, lev1])
+    levs3 = VariabilityHierarchy((lev3, lev2, lev1))
     assert len(levs3) == 3
 
     levs4 = levs + lev2
@@ -698,3 +726,61 @@ def test_evalf():
     dist1 = NormalDistribution.create('ETA1', 'iiv', 0, var1)
     with pytest.raises(ValueError):
         dist1.evalf({})
+
+
+def test_levels():
+    dist1 = NormalDistribution.create('ETA1', 'iiv', 0, 'omega')
+    rvs = RandomVariables.create([dist1])
+    assert len(rvs.epsilon_levels) == 1
+    assert len(rvs.eta_levels) == 2
+
+    assert rvs.eta_levels.levels == {'IIV': 0, 'IOV': 1}
+    assert rvs.epsilon_levels.levels == {'RUV': 0}
+
+    with pytest.raises(ValueError):
+        rvs.eta_levels + 23
+
+    with pytest.raises(ValueError):
+        23 + rvs.eta_levels
+
+    assert len(rvs.eta_levels[['IIV', 'IOV']]) == 2
+    assert len(rvs.eta_levels[rvs.eta_levels]) == 2
+    with pytest.raises(ValueError):
+        rvs.eta_levels[['IOV']]
+    assert rvs.eta_levels['IIV'].group == 'ID'
+    assert rvs.eta_levels[rvs.eta_levels['IIV']].group == 'ID'
+
+    lev1 = VariabilityLevel('center', reference=True, group='CENTER')
+    levs = VariabilityHierarchy([lev1])
+    assert levs != rvs.epsilon_levels
+    assert rvs.epsilon_levels != rvs.eta_levels
+    assert rvs.epsilon_levels != 23
+
+    levs2 = levs.replace(levels=[lev1])
+    assert len(levs2) == 1
+
+    lev2 = VariabilityLevel('center', reference=False, group='CENTER')
+    with pytest.raises(ValueError):
+        VariabilityHierarchy.create([lev2])
+    lev3 = VariabilityLevel('other', reference=True, group='OTHER')
+    with pytest.raises(ValueError):
+        VariabilityHierarchy.create([lev1, lev3])
+    with pytest.raises(ValueError):
+        VariabilityHierarchy.create([23])
+    with pytest.raises(KeyError):
+        rvs.eta_levels[None]
+
+    assert len(VariabilityHierarchy.create(levs)) == 1
+    assert len(VariabilityHierarchy.create()) == 0
+
+    assert len(lev2 + rvs.eta_levels) == 3
+
+    x1 = VariabilityLevel.create('other', reference=False, group='OTHER')
+    x2 = VariabilityLevel.create('iiv', reference=True, group='ID')
+    x3 = VariabilityLevel.create('iov', reference=False, group='OCC')
+    h = VariabilityHierarchy.create([x1, x2])
+    assert h[x2].group == 'ID'
+    with pytest.raises(KeyError):
+        h[x3]
+    with pytest.raises(KeyError):
+        h['NOTHING']

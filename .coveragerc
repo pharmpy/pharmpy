@@ -14,6 +14,6 @@ parallel = true
 show_missing = true
 precision = 2
 exclude_lines = 
-    pragma: not covered
+    pragma: no cover
     @overload
     @abstractmethod
