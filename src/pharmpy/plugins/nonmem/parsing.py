@@ -120,7 +120,7 @@ def _adjust_iovs(rvs: RandomVariables) -> RandomVariables:
         if dist.level != 'IOV' and next_dist.level == 'IOV':
             # NOTE The first distribution for an IOV will have been parsed as
             # IIV since we did not know what came after.
-            new_dist = dist.derive(level='IOV')
+            new_dist = dist.replace(level='IOV')
             updated.append(new_dist)
         else:
             updated.append(dist)

@@ -17,7 +17,7 @@ def test_normal_rv():
     dist = NormalDistribution.create('ETA(1)', 'iiv', 0, 1)
     assert dist.names == ('ETA(1)',)
     assert dist.level == 'IIV'
-    dist = dist.derive(name='NEW')
+    dist = dist.replace(name='NEW')
     assert dist.names == ('NEW',)
     with pytest.raises(ValueError):
         NormalDistribution.create('X', 'iiv', 0, -1)
@@ -27,7 +27,7 @@ def test_joint_normal_rv():
     dist = JointNormalDistribution.create(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
     assert dist.names == ('ETA(1)', 'ETA(2)')
     assert dist.level == 'IIV'
-    dist = dist.derive(names=['NEW', 'ETA(2)'])
+    dist = dist.replace(names=['NEW', 'ETA(2)'])
     assert dist.names == ('NEW', 'ETA(2)')
     with pytest.raises(ValueError):
         JointNormalDistribution.create(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[-1, 0.1], [0.1, 2]])

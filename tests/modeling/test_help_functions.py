@@ -28,7 +28,7 @@ def test_get_etas(pheno_path, testdata, load_model_for_test):
     assert rvs[0] == 'ETA(2)'
 
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_block.mod')
-    new_eta = model.random_variables['ETA(1)'].derive(level='IOV')
+    new_eta = model.random_variables['ETA(1)'].replace(level='IOV')
     model.random_variables = new_eta + model.random_variables[1:]
     rvs = _get_etas(model, None)
     assert rvs[0] == 'ETA(2)'
