@@ -80,7 +80,7 @@ def _sample_from_function(
 
     pe = parameter_estimates.to_numpy()
 
-    parameter_summary = model.parameters.to_dataframe().loc[parameter_estimates.index]
+    parameter_summary = model.parameters.to_dataframe().loc[parameter_estimates.keys()]
     parameter_summary = parameter_summary[~parameter_summary['fix']]
     lower = parameter_summary.lower.astype('float64').to_numpy()
     upper = parameter_summary.upper.astype('float64').to_numpy()
@@ -97,7 +97,7 @@ def _sample_from_function(
     i = 0
     while remaining > 0:
         samples = samplingfn(pe, lower, upper, n=remaining, rng=rng)
-        df = pd.DataFrame(samples, columns=parameter_estimates.index)
+        df = pd.DataFrame(samples, columns=parameter_estimates.keys())
         if not force_posdef:
             selected = df[df.apply(model.random_variables.validate_parameters, axis=1)]
         else:
@@ -230,7 +230,7 @@ def sample_parameters_from_covariance_matrix(
     sample_individual_estimates : Sample individual estiates given their covariance
 
     """
-    sigma = covariance_matrix.loc[parameter_estimates.index, parameter_estimates.index].to_numpy()
+    sigma = covariance_matrix.loc[parameter_estimates.keys(), parameter_estimates.keys()].to_numpy()
     if not is_posdef(sigma):
         if force_posdef_covmatrix:
             old_sigma = sigma
