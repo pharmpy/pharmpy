@@ -23,6 +23,10 @@ def update_initial_estimates(model):
     if model.modelfit_results is None:
         warn()
         return model
+    if not model.modelfit_results.minimization_successful:
+        if model.modelfit_results.termination_cause != 'rounding_errors':
+            warn()
+            return model
 
     try:
         update_inits(
