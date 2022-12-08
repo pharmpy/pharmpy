@@ -9,7 +9,7 @@ from pharmpy.model import Results
 
 @dataclass(frozen=True)
 class AMDResults(Results):
-    final_model: Optional[str] = None
+    final_model_name: Optional[str] = None
     summary_tool: Optional[Any] = None
     summary_models: Optional[Any] = None
     summary_individuals_count: Optional[pd.DataFrame] = None
