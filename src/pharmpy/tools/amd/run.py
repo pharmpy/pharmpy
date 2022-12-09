@@ -243,7 +243,7 @@ def run_amd(
 
     summary_errors = summarize_errors(next_model)
     res = AMDResults(
-        final_model_name=next_model.name,
+        final_model=next_model.name,
         summary_tool=summary_tool,
         summary_models=summary_models,
         summary_individuals_count=summary_individuals_count,
