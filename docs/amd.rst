@@ -25,7 +25,7 @@ To initiate AMD in Python/R:
     res = run_amd(input=dataset_path,
                   modeltype='pk_oral',
                   order=order,
-                  search_space='LET(CATEGORICAL, [SEX]); LET(CONTINUOUS, [AGE])'
+                  search_space='LET(CATEGORICAL, [SEX]); LET(CONTINUOUS, [AGE])',
                   allometric_variable='WGT',
                   occasion='VISI')
 
