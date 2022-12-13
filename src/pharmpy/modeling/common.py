@@ -471,7 +471,7 @@ def load_example_model(name):
     IWRES =  W
 
     """
-    available = ('pheno', 'pheno_linear')
+    available = ('moxo', 'pheno', 'pheno_linear')
     if name not in available:
         raise ValueError(f'Unknown example model {name}. Available examples: {available}')
     path = Path(__file__).resolve().parent / 'example_models' / (name + '.mod')

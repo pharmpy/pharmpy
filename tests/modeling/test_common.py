@@ -104,6 +104,9 @@ def test_load_example_model():
     assert len(model.parameters) == 6
     assert len(model.modelfit_results.parameter_estimates) == 6
 
+    model = load_example_model("moxo")
+    assert len(model.parameters) == 11
+
     with pytest.raises(ValueError):
         load_example_model("grekztalb23=")
 
