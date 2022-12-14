@@ -2,10 +2,13 @@
 :meta private:
 """
 
+from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 
 
-def update_inits(model: Model, parameter_estimates, move_est_close_to_bounds=False):
+def update_inits(
+    model: Model, parameter_estimates: pd.Series, move_est_close_to_bounds: bool = False
+):
     """Update initial parameter estimate for a model
 
     Updates initial estimates of population parameters for a model.
@@ -79,7 +82,9 @@ def _is_zero_fix(param):
     return param.init == 0 and param.fix
 
 
-def update_initial_individual_estimates(model, individual_estimates, force=True):
+def update_initial_individual_estimates(
+    model: Model, individual_estimates: pd.Series, force: bool = True
+):
     """Update initial individual estimates for a model
 
     Updates initial individual estimates for a model.

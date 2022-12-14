@@ -2,9 +2,10 @@
 :meta private:
 """
 import warnings
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.math import corr2cov, nearest_postive_semidefinite
 from pharmpy.model import Model, Parameter, Parameters
@@ -12,7 +13,9 @@ from pharmpy.modeling.help_functions import _get_etas
 
 
 def create_joint_distribution(
-    model: Model, rvs: Optional[List[str]] = None, individual_estimates=None
+    model: Model,
+    rvs: Optional[List[str]] = None,
+    individual_estimates: Optional[pd.DataFrame] = None,
 ):
     """
     Combines some or all etas into a joint distribution.
@@ -97,7 +100,7 @@ def create_joint_distribution(
     return model
 
 
-def split_joint_distribution(model, rvs=None):
+def split_joint_distribution(model: Model, rvs: Optional[Union[List[str], str]] = None):
     """
     Splits etas following a joint distribution into separate distributions.
 

@@ -1325,7 +1325,7 @@ def _get_absorption_init(model, param_name) -> float:
     raise NotImplementedError('param_name must be MDT or MAT')
 
 
-def set_peripheral_compartments(model, n):
+def set_peripheral_compartments(model: Model, n: int):
     """Sets the number of peripheral compartments to a specified number.
 
     Parameters
@@ -1656,7 +1656,7 @@ def remove_peripheral_compartment(model: Model):
     return model
 
 
-def set_ode_solver(model, solver):
+def set_ode_solver(model: Model, solver: str):
     """Sets ODE solver to use for model
 
     Recognized solvers and their corresponding NONMEM advans:

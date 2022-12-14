@@ -1,12 +1,15 @@
 """
 :meta private:
 """
+from typing import List, Optional, Union
+
 from pharmpy.deps import sympy
+from pharmpy.model import Model
 from pharmpy.modeling import remove_unused_parameters_and_rvs
 from pharmpy.modeling.help_functions import _format_input_list, _get_etas
 
 
-def remove_iiv(model, to_remove=None):
+def remove_iiv(model: Model, to_remove: Optional[Union[List[str], str]] = None):
     """
     Removes all IIV etas given a list with eta names and/or parameter names.
 

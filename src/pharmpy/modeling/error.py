@@ -3,10 +3,12 @@
 """
 from __future__ import annotations
 
+from typing import Optional, Union
+
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
-from pharmpy.model import Assignment, NormalDistribution, Statements
+from pharmpy.model import Assignment, Model, NormalDistribution, Statements
 
 from .common import remove_unused_parameters_and_rvs
 from .data import get_observations
@@ -38,7 +40,7 @@ def _canonicalize_data_transformation(model, value):
     return value
 
 
-def remove_error_model(model):
+def remove_error_model(model: Model):
     """Remove error model.
 
     Parameters
@@ -73,7 +75,9 @@ def remove_error_model(model):
     return model
 
 
-def set_additive_error_model(model, data_trans=None, series_terms=2):
+def set_additive_error_model(
+    model: Model, data_trans: Optional[Union[str, sympy.Expr]] = None, series_terms: int = 2
+):
     r"""Set an additive error model. Initial estimate for new sigma is :math:`(min(DV)/2)²`.
 
     The error function being applied depends on the data transformation. The table displays
@@ -164,7 +168,9 @@ def _get_prop_init(model):
         return (dv_min / 2) ** 2
 
 
-def set_proportional_error_model(model, data_trans=None, zero_protection=True):
+def set_proportional_error_model(
+    model: Model, data_trans: Optional[Union[str, sympy.Expr]] = None, zero_protection: bool = True
+):
     r"""Set a proportional error model. Initial estimate for new sigma is 0.09.
 
     The error function being applied depends on the data transformation.
@@ -275,7 +281,7 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=True):
     return model
 
 
-def set_combined_error_model(model, data_trans=None):
+def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy.Expr]] = None):
     r"""Set a combined error model. Initial estimates for new sigmas are :math:`(min(DV)/2)²` for
     proportional and 0.09 for additive.
 
@@ -390,7 +396,7 @@ def set_combined_error_model(model, data_trans=None):
     return model
 
 
-def has_additive_error_model(model):
+def has_additive_error_model(model: Model):
     """Check if a model has an additive error model
 
     Parameters
@@ -425,7 +431,7 @@ def has_additive_error_model(model):
     return eps not in (expr - eps).simplify().free_symbols
 
 
-def has_proportional_error_model(model):
+def has_proportional_error_model(model: Model):
     """Check if a model has a proportional error model
 
     Parameters
@@ -460,7 +466,7 @@ def has_proportional_error_model(model):
     return eps not in (expr / (1 + eps)).simplify().free_symbols
 
 
-def has_combined_error_model(model):
+def has_combined_error_model(model: Model):
     """Check if a model has a combined additive and proportinal error model
 
     Parameters
@@ -503,7 +509,7 @@ def has_combined_error_model(model):
     )
 
 
-def use_thetas_for_error_stdev(model):
+def use_thetas_for_error_stdev(model: Model):
     """Use thetas to estimate standard deviation of error
 
     Parameters
@@ -548,7 +554,7 @@ def use_thetas_for_error_stdev(model):
     return model
 
 
-def set_weighted_error_model(model):
+def set_weighted_error_model(model: Model):
     """Encode error model with one epsilon and W as weight
 
     Parameters
@@ -604,7 +610,7 @@ def _index_of_first_assignment(statements: Statements, symbol: sympy.Symbol) -> 
     )
 
 
-def set_dtbs_error_model(model, fix_to_log=False):
+def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     """Dynamic transform both sides
 
     Parameters
@@ -669,7 +675,7 @@ def set_dtbs_error_model(model, fix_to_log=False):
     return model
 
 
-def set_time_varying_error_model(model, cutoff, idv='TIME'):
+def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME'):
     """Set a time varying error model per time cutoff
 
     Parameters

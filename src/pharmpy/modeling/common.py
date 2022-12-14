@@ -6,7 +6,7 @@ import re
 import warnings
 from io import StringIO
 from pathlib import Path
-from typing import Union
+from typing import Dict, Optional, Union
 
 import pharmpy.config as config
 from pharmpy.deps import sympy
@@ -23,7 +23,7 @@ from pharmpy.model import (
 )
 
 
-def read_model(path):
+def read_model(path: Union[str, Path]):
     """Read model from file
 
     Parameters
@@ -86,7 +86,7 @@ def read_model_from_database(name, database=None):
     return model
 
 
-def read_model_from_string(code):
+def read_model_from_string(code: str):
     """Read model from the model code in a string
 
     Parameters
@@ -174,7 +174,7 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
     return model
 
 
-def convert_model(model, to_format):
+def convert_model(model: Model, to_format: str):
     """Convert model to other format
 
     Note that the operation is not done inplace.
@@ -240,7 +240,7 @@ def convert_model(model, to_format):
     return new
 
 
-def generate_model_code(model):
+def generate_model_code(model: Model):
     """Get the model code of the underlying model language
 
     Parameters
@@ -263,7 +263,7 @@ def generate_model_code(model):
     return model.model_code
 
 
-def print_model_code(model):
+def print_model_code(model: Model):
     """Print the model code of the underlying model language
 
     Parameters
@@ -314,7 +314,7 @@ def print_model_code(model):
     print(model.model_code)
 
 
-def copy_model(model, name=None):
+def copy_model(model: Model, name: Optional[str] = None):
     """Copies model to a new model object
 
     Parameters
@@ -342,7 +342,7 @@ def copy_model(model, name=None):
     return new
 
 
-def set_name(model, new_name):
+def set_name(model: Model, new_name: str):
     """Set name of model object
 
     Parameters
@@ -373,7 +373,7 @@ def set_name(model, new_name):
     return model
 
 
-def bump_model_number(model, path=None):
+def bump_model_number(model: Model, path: Union[str, Path] = None):
     """If the model name ends in a number increase it
 
     If path is set increase the number until no file exists
@@ -421,7 +421,7 @@ def bump_model_number(model, path=None):
     return model
 
 
-def load_example_model(name):
+def load_example_model(name: str):
     """Load an example model
 
     Load an example model from models built into Pharmpy
@@ -479,7 +479,7 @@ def load_example_model(name):
     return model
 
 
-def get_model_covariates(model, strings=False):
+def get_model_covariates(model: Model, strings: bool = False):
     """List of covariates used in model
 
     A covariate in the model is here defined to be a data item
@@ -539,7 +539,7 @@ def get_model_covariates(model, strings=False):
     return covs
 
 
-def print_model_symbols(model):
+def print_model_symbols(model: Model):
     """Print all symbols defined in a model
 
     Symbols will be in one of the categories thetas, etas, omegas, epsilons, sigmas,
@@ -613,7 +613,7 @@ def get_config_path():
         return None
 
 
-def remove_unused_parameters_and_rvs(model):
+def remove_unused_parameters_and_rvs(model: Model):
     """Remove any parameters and rvs that are not used in the model statements
 
     Parameters
@@ -661,7 +661,7 @@ def remove_unused_parameters_and_rvs(model):
     return model
 
 
-def rename_symbols(model, new_names):
+def rename_symbols(model: Model, new_names: Dict):
     """Rename symbols in the model
 
     Make sure that no name clash occur.

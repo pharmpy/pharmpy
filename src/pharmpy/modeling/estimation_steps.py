@@ -1,8 +1,10 @@
-from pharmpy.model import EstimationStep
+from typing import Dict, Optional
+
+from pharmpy.model import EstimationStep, Model
 from pharmpy.modeling.help_functions import _as_integer
 
 
-def set_estimation_step(model, method, idx=0, **kwargs):
+def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
     """Set estimation step
 
     Sets estimation step for a model. Methods currently supported are:
@@ -57,7 +59,7 @@ def set_estimation_step(model, method, idx=0, **kwargs):
     return model
 
 
-def add_estimation_step(model, method, idx=None, **kwargs):
+def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **kwargs):
     """Add estimation step
 
     Adds estimation step for a model in a given index. Methods currently supported are:
@@ -117,7 +119,7 @@ def add_estimation_step(model, method, idx=None, **kwargs):
     return model
 
 
-def remove_estimation_step(model, idx):
+def remove_estimation_step(model: Model, idx: int):
     """Remove estimation step
 
     Parameters
@@ -162,7 +164,7 @@ def remove_estimation_step(model, idx):
     return model
 
 
-def append_estimation_step_options(model, tool_options, idx):
+def append_estimation_step_options(model: Model, tool_options: Dict, idx: int):
     """Append estimation step options
 
     Appends options to an existing estimation step.
@@ -215,7 +217,7 @@ def append_estimation_step_options(model, tool_options, idx):
     return model
 
 
-def add_covariance_step(model):
+def add_covariance_step(model: Model):
     """Adds covariance step to the final estimation step
 
     Parameters
@@ -256,7 +258,7 @@ def add_covariance_step(model):
     return model
 
 
-def remove_covariance_step(model):
+def remove_covariance_step(model: Model):
     """Removes covariance step to the final estimation step
 
     Parameters
@@ -295,7 +297,7 @@ def remove_covariance_step(model):
     return model
 
 
-def set_evaluation_step(model, idx=-1):
+def set_evaluation_step(model: Model, idx: int = -1):
     """Set estimation step
 
     Sets estimation step for a model. Methods currently supported are:

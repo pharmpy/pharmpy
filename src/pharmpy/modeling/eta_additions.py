@@ -6,7 +6,7 @@ from collections import Counter
 from functools import reduce
 from itertools import chain, combinations
 from operator import add, mul
-from typing import Union
+from typing import List, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
@@ -15,6 +15,7 @@ from pharmpy.internals.expr.subs import subs
 from pharmpy.model import (
     Assignment,
     JointNormalDistribution,
+    Model,
     NormalDistribution,
     Parameter,
     Parameters,
@@ -25,7 +26,12 @@ from .help_functions import _format_input_list, _format_options, _get_etas
 
 
 def add_iiv(
-    model, list_of_parameters, expression, operation='*', initial_estimate=0.09, eta_names=None
+    model: Model,
+    list_of_parameters: Union[List[str], str],
+    expression: Union[List[str], str],
+    operation: str = '*',
+    initial_estimate: float = 0.09,
+    eta_names: Optional[List[str]] = None,
 ):
     """Adds IIVs to :class:`pharmpy.model`.
 
@@ -132,7 +138,13 @@ def add_iiv(
 ADD_IOV_DISTRIBUTION = frozenset(('disjoint', 'joint', 'explicit', 'same-as-iiv'))
 
 
-def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='disjoint'):
+def add_iov(
+    model: Model,
+    occ: str,
+    list_of_parameters: Optional[Union[List[str], str]] = None,
+    eta_names: Optional[Union[List[str], str]] = None,
+    distribution: str = 'disjoint',
+):
     """Adds IOVs to :class:`pharmpy.model`.
 
     Initial estimate of new IOVs are 10% of the IIV eta it is based on.
@@ -392,7 +404,7 @@ def _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name):
         pset.append(Parameter(str(omega_iov), init=init))
 
 
-def add_pk_iiv(model, initial_estimate=0.09):
+def add_pk_iiv(model: Model, initial_estimate: float = 0.09):
     """Adds IIVs to all PK parameters in :class:`pharmpy.model`.
 
     Will add exponential IIVs to all parameters that are included in the ODE.
