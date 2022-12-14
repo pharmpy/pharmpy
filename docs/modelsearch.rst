@@ -13,10 +13,11 @@ Running
 
 The modelsearch tool is available both in Pharmpy/pharmr and from the command line.
 
-To initiate modelsearch in Python:
+To initiate modelsearch in Python/R:
 
 .. pharmpy-code::
 
+    from pharmpy.modeling import read_model, read_modelfit_results
     from pharmpy.tools import run_modelsearch
 
     start_model = read_model('path/to/model')

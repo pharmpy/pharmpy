@@ -17,6 +17,7 @@ To initiate COVsearch in Python/R:
 
 .. pharmpy-code::
 
+    from pharmpy.modeling import read_model, read_modelfit_results
     from pharmpy.tools import run_covsearch
 
     start_model = read_model('path/to/model')

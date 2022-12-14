@@ -12,10 +12,11 @@ Running
 
 The allometry tool is available both in Pharmpy/pharmr and from the command line.
 
-To initiate allometry in Python:
+To initiate allometry in Python/R:
 
 .. pharmpy-code::
 
+    from pharmpy.modeling import read_model, read_modelfit_results
     from pharmpy.tools import run_allometry
 
     start_model = read_model('path/to/model')
