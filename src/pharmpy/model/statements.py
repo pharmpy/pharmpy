@@ -1262,10 +1262,19 @@ class CompartmentalSystem(ODESystem):
         return f'<pre>{s}</pre>'
 
     def __repr__(self):
+        def lag_string(comp):
+            return f"\ntlag={comp.lag_time}" if comp.lag_time != 0 else ""
+
+        def f_string(comp):
+            return f"\nF={comp.bioavailability}" if comp.bioavailability != 1 else ""
+
+        def comp_string(comp):
+            return comp.name + lag_string(comp) + f_string(comp)
+
         output = self.output_compartment
         output_box = unicode.Box(output.name)
         central = self.central_compartment
-        central_box = unicode.Box(central.name)
+        central_box = unicode.Box(comp_string(central))
         depot = self._find_depot()
         current = self.dosing_compartment
         if depot:
@@ -1286,14 +1295,14 @@ class CompartmentalSystem(ODESystem):
             main_row = 2
         col = 0
         for transit in transits:
-            grid.set(main_row, col, unicode.Box(transit.name))
+            grid.set(main_row, col, unicode.Box(comp_string(transit)))
             col += 1
             grid.set(
                 main_row, col, unicode.Arrow(str(self.get_compartment_outflows(transit)[0][1]))
             )
             col += 1
         if depot:
-            grid.set(main_row, col, unicode.Box(depot.name))
+            grid.set(main_row, col, unicode.Box(comp_string(depot)))
             col += 1
             grid.set(main_row, col, unicode.Arrow(str(self.get_compartment_outflows(depot)[0][1])))
             col += 1
@@ -1304,7 +1313,7 @@ class CompartmentalSystem(ODESystem):
         col += 1
         grid.set(main_row, col, output_box)
         if periphs:
-            grid.set(0, central_col, unicode.Box(periphs[0].name))
+            grid.set(0, central_col, unicode.Box(comp_string(periphs[0])))
             grid.set(
                 1,
                 central_col,
@@ -1313,7 +1322,7 @@ class CompartmentalSystem(ODESystem):
                 ),
             )
         if len(periphs) > 1:
-            grid.set(4, central_col, unicode.Box(periphs[1].name))
+            grid.set(4, central_col, unicode.Box(comp_string(periphs[1])))
             grid.set(
                 3,
                 central_col,
