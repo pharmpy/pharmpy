@@ -18,7 +18,7 @@ from pharmpy.tools import (
     summarize_individuals_count_table,
     summarize_modelfit_results,
 )
-from pharmpy.tools.common import ToolResults
+from pharmpy.tools.common import ToolResults, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -111,6 +111,7 @@ def _add_allometry_on_model(
     fixed,
 ):
     model = input_model.copy()
+    model = update_initial_estimates(model)
     add_allometry(
         model,
         allometric_variable=allometric_variable,

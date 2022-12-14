@@ -13,7 +13,7 @@ from pharmpy.modeling import add_pk_iiv, calculate_bic, copy_model, create_joint
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
-from pharmpy.tools.common import ToolResults, create_results
+from pharmpy.tools.common import ToolResults, create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
 
@@ -110,6 +110,7 @@ def create_algorithm_workflow(input_model, base_model, state, iiv_strategy, rank
 def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
     if iiv_strategy != 'no_add':
         model_iiv = copy_model(input_model, 'base_model')
+        update_initial_estimates(model_iiv)
         _add_iiv(iiv_strategy, model_iiv)
         base_model = model_iiv
     else:
