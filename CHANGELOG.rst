@@ -1,3 +1,14 @@
+0.87.0 (2022-12-14)
+-------------------
+
+Changes
+=======
+
+* Allometry model will update initial estimates in allometry tool
+* Base model in IIVSearch tool will update initial estimates
+* Do not update initial estimates from model that did not minimize successfully (except rounding errors), this affects all AMD subtools
+* Rename derive to replace in some base classes
+
 0.86.0 (2022-11-30)
 -------------------
 
