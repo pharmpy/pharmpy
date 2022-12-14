@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from pharmpy.model import EstimationStep, Model
 from pharmpy.modeling.help_functions import _as_integer
@@ -164,7 +164,7 @@ def remove_estimation_step(model: Model, idx: int):
     return model
 
 
-def append_estimation_step_options(model: Model, tool_options: Dict, idx: int):
+def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], idx: int):
     """Append estimation step options
 
     Appends options to an existing estimation step.

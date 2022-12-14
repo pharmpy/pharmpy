@@ -661,7 +661,9 @@ def remove_unused_parameters_and_rvs(model: Model):
     return model
 
 
-def rename_symbols(model: Model, new_names: Dict):
+def rename_symbols(
+    model: Model, new_names: Dict[Union[str, sympy.Symbol], Union[str, sympy.Symbol]]
+):
     """Rename symbols in the model
 
     Make sure that no name clash occur.
