@@ -75,6 +75,11 @@ class Assignment(Statement):
             expression = parse_expr(expression)
         return cls(symbol, expression)
 
+    def replace(self, **kwargs):
+        symbol = kwargs.get('symbol', self._symbol)
+        expression = kwargs.get('expression', self._expression)
+        return Assignment.create(symbol, expression)
+
     @property
     def symbol(self):
         """Symbol of statement"""
@@ -1389,6 +1394,13 @@ class Compartment:
             bioavailability = parse_expr(bioavailability)
         return cls(name, dose, lag_time, bioavailability)
 
+    def replace(self, **kwargs):
+        name = kwargs.get("name", self._name)
+        dose = kwargs.get("dose", self._dose)
+        lag_time = kwargs.get("lag_time", self._lag_time)
+        bioavailability = kwargs.get("bioavailability", self._bioavailability)
+        return Compartment.create(name=name, dose=dose, lag_time=lag_time, bioavailability=bioavailability)
+
     @property
     def name(self):
         """Compartment name"""
@@ -1515,6 +1527,10 @@ class Bolus(Dose):
     def create(cls, amount):
         return cls(parse_expr(amount))
 
+    def replace(self, **kwargs):
+        amount = kwargs.get("amount", self._amount)
+        return Bolus.create(amount=amount)
+
     @property
     def amount(self):
         """Symbolic amount of dose"""
@@ -1596,6 +1612,12 @@ class Infusion(Dose):
         else:
             duration = parse_expr(duration)
         return cls(parse_expr(amount), rate, duration)
+
+    def replace(self, **kwargs):
+        amount = kwargs.get("amount", self._amount)
+        rate = kwargs.get("rate", self._rate)
+        duration = kwargs.get("duration", self._duration)
+        return Infusion.create(amount=amount, rate=rate, duration=duration)
 
     @property
     def amount(self):
