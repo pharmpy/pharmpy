@@ -797,7 +797,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.get_compartment_outflows("CENTRAL")
-        [(Compartment(OUTPUT), CL/V)]
+        [(Compartment(OUTPUT, amount=A_OUTPUT), CL/V)]
         """
         if isinstance(compartment, str):
             compartment = self.find_compartment(compartment)
@@ -825,7 +825,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.get_compartment_inflows("OUTPUT")
-        [(Compartment(CENTRAL, dose=Bolus(AMT)), CL/V)]
+        [(Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT)), CL/V)]
         """
         if isinstance(compartment, str):
             compartment = self.find_compartment(compartment)
@@ -854,7 +854,7 @@ class CompartmentalSystem(ODESystem):
         >>> model = load_example_model("pheno")
         >>> central = model.statements.ode_system.find_compartment("CENTRAL")
         >>> central
-        Compartment(CENTRAL, dose=Bolus(AMT))
+        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT))
         """
         for comp in self._g.nodes:
             if comp.name == name:
@@ -903,7 +903,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.output_compartment
-        Compartment(OUTPUT)
+        Compartment(OUTPUT, amount=A_OUTPUT)
         """
         zeroout = [node for node, out_degree in self._g.out_degree() if out_degree == 0]
         if len(zeroout) == 1:
@@ -928,7 +928,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.dosing_compartment
-        Compartment(CENTRAL, dose=Bolus(AMT))
+        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT))
         """
         for node in self._g.nodes:
             if node.dose is not None:
@@ -952,7 +952,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.central_compartment
-        Compartment(CENTRAL, dose=Bolus(AMT))
+        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT))
         """
         output = self.output_compartment
         try:
@@ -1060,7 +1060,7 @@ class CompartmentalSystem(ODESystem):
         >>> set_first_order_absorption(model)       # doctest: +ELLIPSIS
         <...>
         >>> model.statements.ode_system.find_depot(model.statements)
-        Compartment(DEPOT, dose=Bolus(AMT))
+        Compartment(DEPOT, amount=A_DEPOT, dose=Bolus(AMT))
         """
         transits = self.find_transit_compartments(statements)
         depot = self._find_depot()
@@ -1375,7 +1375,7 @@ class Compartment:
     >>> comp
     Compartment(DEPOT, amount=A_DEPOT, lag_time=ALAG)
     >>> dose = Bolus.create("AMT")
-    >>> comp = Compartment("DEPOT", dose=dose)
+    >>> comp = Compartment.create("DEPOT", dose=dose)
     >>> comp
     Compartment(DEPOT, amount=A_DEPOT, dose=Bolus(AMT))
     """
