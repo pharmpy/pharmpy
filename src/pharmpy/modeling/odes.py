@@ -739,7 +739,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         comp = dosing_comp
         cb = CompartmentalSystemBuilder(cs)
         while n > 0:
-            new_comp = Compartment(f'TRANSIT{n}')
+            new_comp = Compartment.create(f'TRANSIT{n}')
             cb.add_compartment(new_comp)
             n -= 1
             cb.add_flow(new_comp, comp, rate)
@@ -784,7 +784,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         cb = CompartmentalSystemBuilder(cs)
         cb.remove_flow(last, destination)
         while nadd > 0:
-            new_comp = Compartment(f'TRANSIT{n - nadd + 1}')
+            new_comp = Compartment.create(f'TRANSIT{n - nadd + 1}')
             cb.add_compartment(new_comp)
             cb.add_flow(last, new_comp, rate)
             if rate.is_Symbol:
@@ -1285,7 +1285,9 @@ def _add_first_order_absorption(model, dose, to_comp, lag_time=None):
     """
     odes = model.statements.ode_system
     cb = CompartmentalSystemBuilder(odes)
-    depot = Compartment('DEPOT', dose, lag_time=sympy.Integer(0) if lag_time is None else lag_time)
+    depot = Compartment.create(
+        'DEPOT', dose=dose, lag_time=sympy.Integer(0) if lag_time is None else lag_time
+    )
     cb.add_compartment(depot)
     to_comp = cb.set_dose(to_comp, None)
     to_comp = cb.set_lag_time(to_comp, sympy.Integer(0))
@@ -1514,7 +1516,7 @@ def add_peripheral_compartment(model: Model):
     if vc != 1:
         qp = _add_parameter(model, f'QP{n}', init=qp_init)
         vp = _add_parameter(model, f'VP{n}', init=vp_init)
-        peripheral = Compartment(f'PERIPHERAL{n}')
+        peripheral = Compartment.create(f'PERIPHERAL{n}')
         cb.add_compartment(peripheral)
         cb.add_flow(central, peripheral, qp / vc)
         cb.add_flow(peripheral, central, qp / vp)

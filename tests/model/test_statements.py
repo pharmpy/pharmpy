@@ -278,8 +278,8 @@ def test_repr_html():
 
     cb = CompartmentalSystemBuilder()
     dose = Bolus('AMT')
-    central = Compartment('CENTRAL', dose)
-    output = Compartment('OUTPUT')
+    central = Compartment.create('CENTRAL', dose=dose)
+    output = Compartment.create('OUTPUT')
     cb.add_compartment(central)
     cb.add_compartment(output)
     cb.add_flow(central, output, S('K'))
@@ -333,12 +333,12 @@ def test_dependencies(load_model_for_test, pheno_path):
 def test_builder():
     cb = CompartmentalSystemBuilder()
     dose = Bolus('AMT')
-    central = Compartment('CENTRAL', dose)
-    output = Compartment('OUTPUT')
+    central = Compartment.create('CENTRAL', dose=dose)
+    output = Compartment.create('OUTPUT')
     cb.add_compartment(central)
     cb.add_compartment(output)
     cb.add_flow(central, output, S('K'))
-    depot = Compartment('DEPOT')
+    depot = Compartment.create('DEPOT')
     cb.add_compartment(depot)
     cb.add_flow(depot, central, S('KA'))
     cm = CompartmentalSystem(cb)
@@ -369,8 +369,8 @@ def test_infusion_create():
 
 
 def test_compartment_repr():
-    comp = Compartment("CENTRAL", lag_time='LT')
-    assert repr(comp) == "Compartment(CENTRAL, lag_time=LT)"
+    comp = Compartment.create("CENTRAL", lag_time='LT')
+    assert repr(comp) == "Compartment(CENTRAL, amount=A_CENTRAL, lag_time=LT)"
 
 
 def test_compartment_names(load_model_for_test, testdata):

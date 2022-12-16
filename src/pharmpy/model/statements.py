@@ -422,7 +422,7 @@ class ExplicitODESystem(ODESystem):
             name = convert_name(A.name)
             # FIXME The following is not true in general!
             dose = Bolus(sympy.Symbol("AMT")) if i == 0 else None
-            comp = Compartment(convert_name(A.name), dose)
+            comp = Compartment.create(convert_name(A.name), dose=dose)
             cb.add_compartment(comp)
             compartments[name] = comp
 
@@ -1368,27 +1368,29 @@ class Compartment:
     Examples
     --------
     >>> from pharmpy.model import Bolus, Compartment
-    >>> comp = Compartment("CENTRAL")
+    >>> comp = Compartment.create("CENTRAL")
     >>> comp
-    Compartment(CENTRAL)
-    >>> comp = Compartment("DEPOT", lag_time="ALAG")
+    Compartment(CENTRAL, amount=A_CENTRAL)
+    >>> comp = Compartment.create("DEPOT", lag_time="ALAG")
     >>> comp
-    Compartment(DEPOT, lag_time=ALAG)
+    Compartment(DEPOT, amount=A_DEPOT, lag_time=ALAG)
     >>> dose = Bolus.create("AMT")
     >>> comp = Compartment("DEPOT", dose=dose)
     >>> comp
-    Compartment(DEPOT, dose=Bolus(AMT))
+    Compartment(DEPOT, amount=A_DEPOT, dose=Bolus(AMT))
     """
 
     def __init__(
         self,
         name,
+        amount=None,
         dose=None,
         input=sympy.Integer(0),
         lag_time=sympy.Integer(0),
         bioavailability=sympy.Integer(1),
     ):
         self._name = name
+        self._amount = amount
         self._dose = dose
         self._input = input
         self._lag_time = lag_time
@@ -1398,6 +1400,7 @@ class Compartment:
     def create(
         cls,
         name,
+        amount=None,
         dose=None,
         input=sympy.Integer(0),
         lag_time=sympy.Integer(0),
@@ -1405,29 +1408,49 @@ class Compartment:
     ):
         if not isinstance(name, str):
             raise TypeError("Name of a Compartment must be of string type")
+        if amount is not None:
+            amount = parse_expr(amount)
+        else:
+            amount = sympy.Symbol(f'A_{name}')
         if dose is not None and not isinstance(dose, Dose):
             raise TypeError("dose must be of Dose type (or None)")
         input = parse_expr(input)
         lag_time = parse_expr(lag_time)
         bioavailability = parse_expr(bioavailability)
         return cls(
-            name=name, dose=dose, input=input, lag_time=lag_time, bioavailability=bioavailability
+            name=name,
+            amount=amount,
+            dose=dose,
+            input=input,
+            lag_time=lag_time,
+            bioavailability=bioavailability,
         )
 
     def replace(self, **kwargs):
         name = kwargs.get("name", self._name)
+        amount = kwargs.get("amount", self._amount)
         dose = kwargs.get("dose", self._dose)
         input = kwargs.get("input", self._input)
         lag_time = kwargs.get("lag_time", self._lag_time)
         bioavailability = kwargs.get("bioavailability", self._bioavailability)
         return Compartment.create(
-            name=name, dose=dose, input=input, lag_time=lag_time, bioavailability=bioavailability
+            name=name,
+            amount=amount,
+            dose=dose,
+            input=input,
+            lag_time=lag_time,
+            bioavailability=bioavailability,
         )
 
     @property
     def name(self):
         """Compartment name"""
         return self._name
+
+    @property
+    def amount(self):
+        """Compartment amount symbol"""
+        return self._amount
 
     @property
     def dose(self):
@@ -1448,19 +1471,6 @@ class Compartment:
         return self._bioavailability
 
     @property
-    def amount(self):
-        """Symbol for the amount in the compartment
-
-        Examples
-        --------
-        >>> from pharmpy.model import Compartment
-        >>> comp = Compartment("CENTRAL")
-        >>> comp.amount
-        A_CENTRAL
-        """
-        return sympy.Symbol(f'A_{self.name}')
-
-    @property
     def free_symbols(self):
         """Get set of all free symbols in the compartment
 
@@ -1468,9 +1478,9 @@ class Compartment:
         --------
         >>> from pharmpy.model import Bolus, Compartment
         >>> dose = Bolus.create("AMT")
-        >>> comp = Compartment("CENTRAL", dose=dose, lag_time="ALAG")
+        >>> comp = Compartment.create("CENTRAL", dose=dose, lag_time="ALAG")
         >>> comp.free_symbols  # doctest: +SKIP
-        {ALAG, AMT}
+        {A_CENTRAL, ALAG, AMT}
         """
         symbs = set()
         if self.dose is not None:
@@ -1487,9 +1497,9 @@ class Compartment:
         --------
         >>> from pharmpy.model import Bolus, Compartment
         >>> dose = Bolus.create("AMT")
-        >>> comp = Compartment("CENTRAL", dose=dose)
+        >>> comp = Compartment.create("CENTRAL", dose=dose)
         >>> comp.subs({"AMT": "DOSE"})
-        Compartment(CENTRAL, dose=Bolus(DOSE))
+        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(DOSE))
         """
         if self.dose is not None:
             dose = self.dose.subs(substitutions)
@@ -1497,6 +1507,7 @@ class Compartment:
             dose = None
         return Compartment(
             self.name,
+            amount=subs(self._amount, substitutions),
             dose=dose,
             input=subs(self._input, substitutions),
             lag_time=subs(self._lag_time, substitutions),
@@ -1507,6 +1518,7 @@ class Compartment:
         return (
             isinstance(other, Compartment)
             and self.name == other.name
+            and self.amount == other.amount
             and self.dose == other.dose
             and self.input == other.input
             and self.lag_time == other.lag_time
@@ -1522,7 +1534,7 @@ class Compartment:
         bioavailability = (
             '' if self.bioavailability == 1 else f', bioavailability={self._bioavailability}'
         )
-        return f'Compartment({self.name}{dose}{input}{lag}{bioavailability})'
+        return f'Compartment({self.name}, amount={self._amount}{dose}{input}{lag}{bioavailability})'
 
 
 class Dose(ABC):
