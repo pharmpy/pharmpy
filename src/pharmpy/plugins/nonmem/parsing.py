@@ -554,32 +554,45 @@ def parse_column_info(control_stream):
 
 def parse_datainfo(control_stream, path) -> DataInfo:
     resolved_dataset_path = parse_dataset_path(control_stream, path)
+    di_nonmem = create_nonmem_datainfo(control_stream, resolved_dataset_path)
     (colnames, drop, replacements, _) = parse_column_info(control_stream)
 
-    if resolved_dataset_path is not None:
-        dipath = resolved_dataset_path.with_suffix('.datainfo')
+    if resolved_dataset_path is None:
+        return di_nonmem
 
-        if dipath.is_file():
-            di = DataInfo.read_json(dipath)
-            di = di.replace(path=resolved_dataset_path)
-            different_drop, cols_new = [], []
-            for colinfo, coldrop in zip(di, drop):
-                if colinfo.drop != coldrop:
-                    colinfo_new = colinfo.replace(drop=coldrop)
-                    different_drop.append(colinfo.name)
-                    cols_new.append(colinfo_new)
-                else:
-                    cols_new.append(colinfo)
+    dipath = resolved_dataset_path.with_suffix('.datainfo')
+    if dipath.is_file():
+        di_pharmpy = DataInfo.read_json(dipath)
+        di_pharmpy = di_pharmpy.replace(path=resolved_dataset_path)
+        di_pharmpy = validate_datainfo(di_pharmpy, di_nonmem)
+        return di_pharmpy
+    return di_nonmem
 
-            if different_drop:
-                di_new = di.replace(columns=tuple(cols_new))
-                warnings.warn(
-                    "NONMEM .mod and dataset .datainfo disagree on "
-                    f"DROP for columns {', '.join(different_drop)}."
-                )
-                return di_new
 
-            return di
+def validate_datainfo(di_pharmpy, di_nonmem):
+    different_drop, cols_new = [], []
+    for col_pharmpy, col_nonmem in zip(di_pharmpy, di_nonmem):
+        if col_pharmpy.drop != col_nonmem.drop:
+            colinfo_new = col_pharmpy.replace(drop=col_nonmem.drop)
+            cols_new.append(colinfo_new)
+            if col_nonmem.datatype != 'nmtran-date':
+                different_drop.append(col_pharmpy.name)
+        else:
+            cols_new.append(col_pharmpy)
+
+    if cols_new:
+        di_new = di_pharmpy.replace(columns=tuple(cols_new))
+        if different_drop:
+            warnings.warn(
+                "NONMEM .mod and dataset .datainfo disagree on "
+                f"DROP for columns {', '.join(different_drop)}."
+            )
+        return di_new
+    return di_pharmpy
+
+
+def create_nonmem_datainfo(control_stream, resolved_dataset_path):
+    (colnames, drop, replacements, _) = parse_column_info(control_stream)
 
     column_info = []
     have_pk = control_stream.get_pk_record()

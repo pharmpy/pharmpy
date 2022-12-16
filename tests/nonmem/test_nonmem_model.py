@@ -1010,7 +1010,7 @@ $ESTIMATION METHOD=1 INTER
 
 def test_table_long_ids(testdata):
     code = f"""$PROBLEM base model
-    $INPUT ID DV TIME
+    $INPUT ID TIME AMT WGT APGR DV FA1 FA2
     $DATA {testdata / "nonmem" / "pheno.dta"} IGNORE=@
 
     $PRED
