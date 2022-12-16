@@ -739,6 +739,7 @@ class CompartmentalSystem(ODESystem):
     def __eq__(self, other):
         return (
             isinstance(other, CompartmentalSystem)
+            and self._t == other._t
             and nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
             and self.dosing_compartment.dose == other.dosing_compartment.dose
         )
