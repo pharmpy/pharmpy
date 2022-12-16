@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Iterable, List, Mapping, Optional, Set, Tuple, Union, overload
 
@@ -175,21 +175,8 @@ class Assignment(Statement):
         return f'${sym} = {expr}$'
 
 
-class ODESystemMetaclass(ABCMeta):
-    def __getattr__(cls, key):
-        # NOTE see https://stackoverflow.com/a/3155493
-        if key == 't':
-            return sympy.Symbol('t')
-        raise AttributeError(key)
-
-
-class ODESystem(Statement, ABC, metaclass=ODESystemMetaclass):
+class ODESystem(Statement):
     """Abstract base class for ODE systems of different forms"""
-
-    def __getattr__(self, key):
-        if key == 't':
-            return ODESystem.t
-        raise AttributeError(key)
 
     @abstractmethod
     def to_compartmental_system(self) -> CompartmentalSystem:
@@ -236,7 +223,7 @@ class ExplicitODESystem(ODESystem):
     >>> import sympy
     >>> A_DEPOT = sympy.Function('A_DEPOT')
     >>> A_CENTRAL = sympy.Function('A_CENTRAL')
-    >>> t = ExplicitODESystem.t
+    >>> t = sympy.Symbol('t')
     >>> AMT, KA, K = sympy.symbols('AMT KA K')
     >>> eq1 = sympy.Eq(sympy.Derivative(A_DEPOT(t), t), -KA * A_DEPOT(t))
     >>> eq2 = sympy.Eq(sympy.Derivative(A_CENTRAL(t)), -K*A_CENTRAL(t) + KA*A_DEPOT(t))
@@ -256,6 +243,7 @@ class ExplicitODESystem(ODESystem):
     def __init__(self, odes: Tuple[sympy.Eq, ...], ics: Mapping[sympy.Expr, sympy.Expr]):
         self._odes = odes
         self._ics = frozenmapping(ics)
+        self.t = sympy.Symbol('t')
 
     @property
     def odes(self) -> Tuple[sympy.Eq, ...]:
@@ -643,8 +631,33 @@ class CompartmentalSystem(ODESystem):
     └───────┘      └──────────┘      └──────────┘       └──────┘
     """
 
-    def __init__(self, builder):
-        self._g = nx.freeze(builder._g.copy())
+    def __init__(self, builder=None, graph=None, t=sympy.Symbol('t')):
+        if builder is not None:
+            self._g = nx.freeze(builder._g.copy())
+        elif graph is not None:
+            self._g = graph
+        self._t = t
+
+    @classmethod
+    def create(cls, builder=None, graph=None, t=sympy.Symbol('t')):
+        if builder is None and graph is None or builder is not None and graph is not None:
+            raise ValueError("Need exactly one of builder or graph to create a CompartmentalSystem")
+        t = sympy.sympify(t)
+        return cls(builder=builder, graph=graph, t=t)
+
+    def replace(self, **kwargs):
+        t = kwargs.get('t', self._t)
+        builder = kwargs.get('builder', None)
+        if builder is None:
+            g = kwargs.get('graph', self._g)
+        else:
+            g = None
+        return CompartmentalSystem.create(builder=builder, graph=g, t=t)
+
+    @property
+    def t(self):
+        """Independent variable of ODESystem"""
+        return self._t
 
     @property
     def free_symbols(self):
@@ -1399,7 +1412,9 @@ class Compartment:
         dose = kwargs.get("dose", self._dose)
         lag_time = kwargs.get("lag_time", self._lag_time)
         bioavailability = kwargs.get("bioavailability", self._bioavailability)
-        return Compartment.create(name=name, dose=dose, lag_time=lag_time, bioavailability=bioavailability)
+        return Compartment.create(
+            name=name, dose=dose, lag_time=lag_time, bioavailability=bioavailability
+        )
 
     @property
     def name(self):
