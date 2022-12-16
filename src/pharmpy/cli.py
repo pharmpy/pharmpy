@@ -230,7 +230,14 @@ def run_estmethod(args):
     except AttributeError:
         solvers = args.solvers
 
-    run_tool('estmethod', methods=methods, solvers=solvers, model=args.model)
+    run_tool(
+        'estmethod',
+        args.algorithm,
+        methods=methods,
+        solvers=solvers,
+        model=args.model,
+        path=args.path,
+    )
 
 
 def run_amd(args):
@@ -1265,12 +1272,17 @@ parser_definition = [
                         'parents': [args_model_input],
                         'args': [
                             {
+                                'name': 'algorithm',
+                                'type': str,
+                                'help': 'Algorithm to use',
+                            },
+                            {
                                 'name': '--methods',
                                 'type': str,
                                 'default': None,
                                 'help': 'List of methods to try, mark group of methods in single '
                                 'quote separated by spaces. Supported are: FOCE, FO, IMP, '
-                                'IMPMAP, ITS, SAEM, LAPLACE, BAYES. Default is all.',
+                                'IMPMAP, ITS, SAEM, LAPLACE, BAYES, or \'all\'. Default is None.',
                             },
                             {
                                 'name': '--solvers',
@@ -1279,9 +1291,13 @@ parser_definition = [
                                 'help': 'List of solvers to try, mark group of methods in single '
                                 'quote separated by spaces. Supported are: CVODES '
                                 '(ADVAN14), DGEAR (ADVAN8), DVERK (ADVAN6), IDA '
-                                '(ADVAN15), LSODA (ADVAN13) and LSODI (ADVAN9), '
-                                '. To test all write "all". '
-                                'Default is to use the solver of input model.',
+                                '(ADVAN15), LSODA (ADVAN13) and LSODI (ADVAN9), or \'all\'. '
+                                'Default is None.',
+                            },
+                            {
+                                'name': '--path',
+                                'type': Path,
+                                'help': 'Path to output directory',
                             },
                         ],
                     }

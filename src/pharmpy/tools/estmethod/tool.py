@@ -3,13 +3,14 @@ from pathlib import Path
 from typing import Any, List, Optional, Union
 
 import pharmpy.tools.estmethod.algorithms as algorithms
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
-from pharmpy.tools.common import ToolResults, summarize_tool
+from pharmpy.tools.common import ToolResults
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -111,14 +112,7 @@ def post_process(input_model, *models):
         else:
             res_models.append(model)
 
-    # FIXME: support other rank_type, allow None as cutoff
-    rank_type = 'ofv'
-    summary_tool = summarize_tool(
-        res_models,
-        base_model,
-        rank_type,
-        -1000,
-    )
+    summary_tool = summarize_tool(models)
     summary_models = summarize_modelfit_results(
         [base_model.modelfit_results] + [model.modelfit_results for model in res_models],
         include_all_estimation_steps=True,
@@ -146,6 +140,26 @@ class EstMethodResults(ToolResults):
     summary_settings: Optional[Any] = None
     best_model: Optional[Any] = None
     input_model: Optional[Any] = None
+
+
+def summarize_tool(models):
+    rows = {}
+
+    for model in models:
+        description, parent_model = model.description, model.parent_model
+        res = model.modelfit_results
+        if res is not None:
+            ofv = res.ofv
+            runtime_est = res.estimation_runtime_iterations.iloc[0]
+        else:
+            ofv, runtime_est = np.nan, np.nan
+        rows[model.name] = (description, ofv, runtime_est, parent_model)
+
+    colnames = ['description', 'ofv', 'runtime_estimation', 'parent_model']
+    index = pd.Index(rows.keys(), name='model')
+    df = pd.DataFrame(rows.values(), index=index, columns=colnames)
+
+    return df.sort_values(by=['ofv'])
 
 
 def summarize_estimation_steps(models):

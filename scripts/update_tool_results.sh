@@ -92,3 +92,9 @@ if [ "$TOOL" == 'amd' ] || [ "$TOOL" == 'all' ]; then
   pharmpy run amd $TESTPATH/mox_simulated_normal.csv --modeltype 'pk_oral' --search_space 'PERIPHERALS(1)' --occasion 'VISI' --path $TESTPATH/amd/
   cp_results $TESTPATH/amd/results.json $DEST/amd_results.json
 fi
+
+if [ "$TOOL" == 'estmethod' ] || [ "$TOOL" == 'all' ]; then
+  pharmpy run estmethod $TESTPATH/mox2.mod 'reduced' --methods 'FO IMP' --path $TESTPATH/estmethod/
+  cp_results $TESTPATH/estmethod/results.json $DEST/estmethod_results.json
+fi
+
