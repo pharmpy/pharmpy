@@ -42,7 +42,10 @@ def _compartmental_model(
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         central = Compartment(
-            'CENTRAL', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+            'CENTRAL',
+            dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
         output = Compartment('OUTPUT')
         cb.add_compartment(central)
@@ -54,10 +57,16 @@ def _compartmental_model(
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         depot = Compartment(
-            'DEPOT', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+            'DEPOT',
+            dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
         central = Compartment(
-            'CENTRAL', None, _get_alag(control_stream, 2), _get_bioavailability(control_stream, 2)
+            'CENTRAL',
+            None,
+            lag_time=_get_alag(control_stream, 2),
+            bioavailability=_get_bioavailability(control_stream, 2),
         )
         output = Compartment('OUTPUT')
         cb.add_compartment(depot)
@@ -71,13 +80,16 @@ def _compartmental_model(
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         central = Compartment(
-            'CENTRAL', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+            'CENTRAL',
+            dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
         peripheral = Compartment(
             'PERIPHERAL',
             None,
-            _get_alag(control_stream, 2),
-            _get_bioavailability(control_stream, 2),
+            lag_time=_get_alag(control_stream, 2),
+            bioavailability=_get_bioavailability(control_stream, 2),
         )
         output = Compartment('OUTPUT')
         cb.add_compartment(central)
@@ -93,16 +105,22 @@ def _compartmental_model(
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         depot = Compartment(
-            'DEPOT', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+            'DEPOT',
+            dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
         central = Compartment(
-            'CENTRAL', None, _get_alag(control_stream, 2), _get_bioavailability(control_stream, 2)
+            'CENTRAL',
+            None,
+            lag_time=_get_alag(control_stream, 2),
+            bioavailability=_get_bioavailability(control_stream, 2),
         )
         peripheral = Compartment(
             'PERIPHERAL',
             None,
-            _get_alag(control_stream, 3),
-            _get_bioavailability(control_stream, 3),
+            lag_time=_get_alag(control_stream, 3),
+            bioavailability=_get_bioavailability(control_stream, 3),
         )
         output = Compartment('OUTPUT')
         cb.add_compartment(depot)
@@ -169,7 +187,10 @@ def _compartmental_model(
             else:
                 curdose = None
             comp = Compartment(
-                name, curdose, _get_alag(control_stream, i), _get_bioavailability(control_stream, i)
+                name,
+                curdose,
+                lag_time=_get_alag(control_stream, i),
+                bioavailability=_get_bioavailability(control_stream, i),
             )
             cb.add_compartment(comp)
             compartments.append(comp)
@@ -184,7 +205,10 @@ def _compartmental_model(
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         central = Compartment(
-            'CENTRAL', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+            'CENTRAL',
+            dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
         output = Compartment('OUTPUT')
         cb.add_compartment(central)
@@ -199,19 +223,22 @@ def _compartmental_model(
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         central = Compartment(
-            'CENTRAL', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+            'CENTRAL',
+            dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
         per1 = Compartment(
             'PERIPHERAL1',
             None,
-            _get_alag(control_stream, 2),
-            _get_bioavailability(control_stream, 2),
+            lag_time=_get_alag(control_stream, 2),
+            bioavailability=_get_bioavailability(control_stream, 2),
         )
         per2 = Compartment(
             'PERIPHERAL2',
             None,
-            _get_alag(control_stream, 3),
-            _get_bioavailability(control_stream, 3),
+            lag_time=_get_alag(control_stream, 3),
+            bioavailability=_get_bioavailability(control_stream, 3),
         )
         output = Compartment('OUTPUT')
         cb.add_compartment(central)
@@ -230,22 +257,28 @@ def _compartmental_model(
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         depot = Compartment(
-            'DEPOT', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+            'DEPOT',
+            dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
         central = Compartment(
-            'CENTRAL', None, _get_alag(control_stream, 2), _get_bioavailability(control_stream, 2)
+            'CENTRAL',
+            None,
+            lag_time=_get_alag(control_stream, 2),
+            bioavailability=_get_bioavailability(control_stream, 2),
         )
         per1 = Compartment(
             'PERIPHERAL1',
             None,
-            _get_alag(control_stream, 3),
-            _get_bioavailability(control_stream, 3),
+            lag_time=_get_alag(control_stream, 3),
+            bioavailability=_get_bioavailability(control_stream, 3),
         )
         per2 = Compartment(
             'PERIPHERAL2',
             None,
-            _get_alag(control_stream, 4),
-            _get_bioavailability(control_stream, 4),
+            lag_time=_get_alag(control_stream, 4),
+            bioavailability=_get_bioavailability(control_stream, 4),
         )
         output = Compartment('OUTPUT')
         cb.add_compartment(depot)

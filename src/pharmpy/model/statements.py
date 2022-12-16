@@ -543,10 +543,8 @@ class CompartmentalSystemBuilder:
             Destination compartment
 
         """
-        new_source = Compartment(source.name, None, source.lag_time, source.bioavailability)
-        new_dest = Compartment(
-            destination.name, source.dose, destination.lag_time, destination.bioavailability
-        )
+        new_source = source.replace(dose=None)
+        new_dest = destination.replace(dose=source.dose)
         mapping = {source: new_source, destination: new_dest}
         nx.relabel_nodes(self._g, mapping, copy=False)
 
@@ -565,9 +563,7 @@ class CompartmentalSystemBuilder:
         Compartment
             The new updated compartment
         """
-        new_comp = Compartment(
-            compartment.name, dose, compartment.lag_time, compartment.bioavailability
-        )
+        new_comp = compartment.replace(dose=dose)
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
@@ -587,9 +583,7 @@ class CompartmentalSystemBuilder:
         Compartment
             The new updated compartment
         """
-        new_comp = Compartment(
-            compartment.name, compartment.dose, lag_time, compartment.bioavailability
-        )
+        new_comp = compartment.replace(lag_time=lag_time)
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
@@ -1363,6 +1357,8 @@ class Compartment:
         Compartment name
     dose : Dose
         Dose object for dose into this compartment. Default None for no dose.
+    input : Expression
+        Expression for other inputs to the compartment
     lag_time : Expression
         Lag time for doses entering this compartment. Default 0
     bioavailability : Expression
@@ -1383,37 +1379,48 @@ class Compartment:
     Compartment(DEPOT, dose=Bolus(AMT))
     """
 
-    def __init__(self, name, dose=None, lag_time=None, bioavailability=None):
+    def __init__(
+        self,
+        name,
+        dose=None,
+        input=sympy.Integer(0),
+        lag_time=sympy.Integer(0),
+        bioavailability=sympy.Integer(1),
+    ):
         self._name = name
         self._dose = dose
-        if lag_time is None:
-            self._lag_time = sympy.Integer(0)
-        else:
-            self._lag_time = lag_time
-        if bioavailability is None:
-            self._bioavailability = sympy.Integer(1)
-        else:
-            self._bioavailability = bioavailability
+        self._input = input
+        self._lag_time = lag_time
+        self._bioavailability = bioavailability
 
     @classmethod
-    def create(cls, name, dose=None, lag_time=None, bioavailability=None):
+    def create(
+        cls,
+        name,
+        dose=None,
+        input=sympy.Integer(0),
+        lag_time=sympy.Integer(0),
+        bioavailability=sympy.Integer(1),
+    ):
         if not isinstance(name, str):
             raise TypeError("Name of a Compartment must be of string type")
         if dose is not None and not isinstance(dose, Dose):
             raise TypeError("dose must be of Dose type (or None)")
-        if lag_time is not None:
-            lag_time = parse_expr(lag_time)
-        if bioavailability is not None:
-            bioavailability = parse_expr(bioavailability)
-        return cls(name, dose, lag_time, bioavailability)
+        input = parse_expr(input)
+        lag_time = parse_expr(lag_time)
+        bioavailability = parse_expr(bioavailability)
+        return cls(
+            name=name, dose=dose, input=input, lag_time=lag_time, bioavailability=bioavailability
+        )
 
     def replace(self, **kwargs):
         name = kwargs.get("name", self._name)
         dose = kwargs.get("dose", self._dose)
+        input = kwargs.get("input", self._input)
         lag_time = kwargs.get("lag_time", self._lag_time)
         bioavailability = kwargs.get("bioavailability", self._bioavailability)
         return Compartment.create(
-            name=name, dose=dose, lag_time=lag_time, bioavailability=bioavailability
+            name=name, dose=dose, input=input, lag_time=lag_time, bioavailability=bioavailability
         )
 
     @property
@@ -1424,6 +1431,10 @@ class Compartment:
     @property
     def dose(self):
         return self._dose
+
+    @property
+    def input(self):
+        return self._input
 
     @property
     def lag_time(self):
@@ -1463,6 +1474,7 @@ class Compartment:
         symbs = set()
         if self.dose is not None:
             symbs |= self.dose.free_symbols
+        symbs |= self.input.free_symbols
         symbs |= self.lag_time.free_symbols
         symbs |= self.bioavailability.free_symbols
         return symbs
@@ -1484,9 +1496,10 @@ class Compartment:
             dose = None
         return Compartment(
             self.name,
-            dose,
-            subs(self.lag_time, substitutions),
-            subs(self.bioavailability, substitutions),
+            dose=dose,
+            input=subs(self._input, substitutions),
+            lag_time=subs(self._lag_time, substitutions),
+            bioavailability=subs(self._bioavailability, substitutions),
         )
 
     def __eq__(self, other):
@@ -1494,6 +1507,7 @@ class Compartment:
             isinstance(other, Compartment)
             and self.name == other.name
             and self.dose == other.dose
+            and self.input == other.input
             and self.lag_time == other.lag_time
         )
 
@@ -1501,9 +1515,13 @@ class Compartment:
         return hash(self.name)
 
     def __repr__(self):
-        lag = '' if self.lag_time == 0 else f', lag_time={self.lag_time}'
-        dose = '' if self.dose is None else f', dose={self.dose}'
-        return f'Compartment({self.name}{dose}{lag})'
+        lag = '' if self.lag_time == 0 else f', lag_time={self._lag_time}'
+        dose = '' if self.dose is None else f', dose={self._dose}'
+        input = '' if self.input == 0 else f', input={self._input}'
+        bioavailability = (
+            '' if self.bioavailability == 1 else f', bioavailability={self._bioavailability}'
+        )
+        return f'Compartment({self.name}{dose}{input}{lag}{bioavailability})'
 
 
 class Dose(ABC):

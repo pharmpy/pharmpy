@@ -1285,7 +1285,7 @@ def _add_first_order_absorption(model, dose, to_comp, lag_time=None):
     """
     odes = model.statements.ode_system
     cb = CompartmentalSystemBuilder(odes)
-    depot = Compartment('DEPOT', dose, sympy.Integer(0) if lag_time is None else lag_time)
+    depot = Compartment('DEPOT', dose, lag_time=sympy.Integer(0) if lag_time is None else lag_time)
     cb.add_compartment(depot)
     to_comp = cb.set_dose(to_comp, None)
     to_comp = cb.set_lag_time(to_comp, sympy.Integer(0))
