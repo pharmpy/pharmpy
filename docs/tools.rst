@@ -29,6 +29,7 @@ Tools in Pharmpy
    COVsearch - identify covariates that explain some of the IIV <covsearch>
    RUVsearch - search for best residual error model <ruvsearch>
    allometry - add allometric scaling <allometry>
+   estmethod - compare estimation methods and/or solvers <estmethod>
 
 
 ~~~~~~~~~~~~~~
