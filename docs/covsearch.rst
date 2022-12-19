@@ -264,8 +264,8 @@ To skip the backward steps use search algorithm `'scm-forward'`.
 Results
 ~~~~~~~
 
-The tool creates various summary tables which can be accessed in the results object,
-as well as files in .csv/.json format.
+The results object contains various summary tables which can be accessed in the results object, as well as files in
+.csv/.json format. The name of the selected best model (based on the input selection criteria) is also included.
 
 Consider a `covsearch` run:
 
