@@ -9,7 +9,7 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.results import ModelfitResults
-from pharmpy.tools import summarize_modelfit_results
+from pharmpy.tools import summarize_errors, summarize_modelfit_results
 from pharmpy.tools.common import ToolResults
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
@@ -117,6 +117,7 @@ def post_process(input_model, *models):
         [base_model.modelfit_results] + [model.modelfit_results for model in res_models],
         include_all_estimation_steps=True,
     )
+    summary_errors = summarize_errors(models)
     summary_settings = summarize_estimation_steps([base_model] + res_models)
 
     if base_model.name == input_model.name:
@@ -128,7 +129,7 @@ def post_process(input_model, *models):
         summary_tool=summary_tool,
         summary_models=summary_models,
         summary_settings=summary_settings,
-        input_model=input_model,
+        summary_errors=summary_errors,
         models=models,
     )
 
@@ -138,8 +139,6 @@ class EstMethodResults(ToolResults):
     rst_path = Path(__file__).resolve().parent / 'report.rst'
 
     summary_settings: Optional[Any] = None
-    best_model: Optional[Any] = None
-    input_model: Optional[Any] = None
 
 
 def summarize_tool(models):
