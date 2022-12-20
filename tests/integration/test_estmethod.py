@@ -14,6 +14,7 @@ from pharmpy.tools import run_estmethod
         ('exhaustive', ['imp'], None, 3, 'ADVAN1'),
         ('exhaustive', ['imp'], ['lsoda'], 3, 'ADVAN13'),
         ('reduced', ['foce', 'imp'], None, 2, 'ADVAN1'),
+        ('exhaustive_only_eval', ['foce', 'imp'], None, 2, 'ADVAN1'),
     ],
 )
 def test_estmethod(

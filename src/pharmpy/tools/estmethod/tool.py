@@ -17,7 +17,7 @@ from pharmpy.workflows import Task, Workflow
 EST_METHODS = ('FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES')
 SOLVERS = ('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI')
 
-ALGORITHMS = frozenset(['exhaustive', 'reduced'])
+ALGORITHMS = frozenset(['exhaustive', 'reduced', 'exhaustive_only_eval'])
 
 
 def create_workflow(
@@ -32,7 +32,7 @@ def create_workflow(
     Parameters
     ----------
     algorithm : str
-        The algorithm to use (can be 'exhaustive' or 'reduced'
+        The algorithm to use (can be 'exhaustive', 'reduced' or 'exhaustive_only_eval')
     methods : list or None
         List of estimation methods to test. Can be specified as 'all', a list of methods, or
         None (to not test any estimation method)
