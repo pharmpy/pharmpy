@@ -11,9 +11,9 @@ from pharmpy.tools import run_estmethod
 @pytest.mark.parametrize(
     'algorithm, methods, solvers, no_of_candidates, advan_ref',
     [
-        ('exhaustive', ['imp'], None, 3, 'ADVAN1'),
-        ('exhaustive', ['imp'], ['lsoda'], 3, 'ADVAN13'),
-        ('reduced', ['foce', 'imp'], None, 2, 'ADVAN1'),
+        ('exhaustive', ['foce', 'imp'], None, 2, 'ADVAN1'),
+        ('exhaustive_with_update', ['imp'], None, 3, 'ADVAN1'),
+        ('exhaustive_with_update', ['imp'], ['lsoda'], 3, 'ADVAN13'),
         ('exhaustive_only_eval', ['foce', 'imp'], None, 2, 'ADVAN1'),
     ],
 )

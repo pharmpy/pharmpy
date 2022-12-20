@@ -9,6 +9,21 @@ from pharmpy.workflows import Task, Workflow
 def exhaustive(methods, solvers):
     wf = Workflow()
 
+    task_start = Task('start', start)
+    wf.add_task(task_start)
+
+    candidate_no = 1
+    for method, solver in itertools.product(methods, solvers):
+        wf_estmethod = _create_candidate_model_wf(candidate_no, method, solver, update=False)
+        wf.insert_workflow(wf_estmethod, predecessors=task_start)
+        candidate_no += 1
+
+    return wf, None
+
+
+def exhaustive_with_update(methods, solvers):
+    wf = Workflow()
+
     task_base_model = Task('create_base_model', _create_base_model)
     wf.add_task(task_base_model)
     wf_fit = create_fit_workflow(n=1)
@@ -32,21 +47,6 @@ def exhaustive(methods, solvers):
         candidate_no += 1
 
     return wf, task_base_model_fit
-
-
-def reduced(methods, solvers):
-    wf = Workflow()
-
-    task_start = Task('start', start)
-    wf.add_task(task_start)
-
-    candidate_no = 1
-    for method, solver in itertools.product(methods, solvers):
-        wf_estmethod = _create_candidate_model_wf(candidate_no, method, solver, update=False)
-        wf.insert_workflow(wf_estmethod, predecessors=task_start)
-        candidate_no += 1
-
-    return wf, None
 
 
 def exhaustive_only_eval(methods, solvers):
