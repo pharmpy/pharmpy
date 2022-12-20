@@ -458,8 +458,7 @@ def _parse_ofv(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
     for i, table in enumerate(ext_tables.tables, start=1):
         if subproblem and table.subproblem != subproblem:
             continue
-        df = table.data_frame
-        df = df[df['ITERATION'] >= 0]
+        df = _get_iter_df(table.data_frame)
         n = len(df)
         step += [i] * n
         iteration += list(df['ITERATION'])
@@ -470,6 +469,17 @@ def _parse_ofv(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
     final_ofv = final_table.final_ofv
     ofv_iterations = create_ofv_iterations_series(ofv, step, iteration)
     return final_ofv, ofv_iterations
+
+
+def _get_iter_df(df):
+    final_iter = -(10**9)
+    iters = df['ITERATION']
+    if 0 not in iters.values and final_iter in iters.values:
+        df = df[iters == -(10**9)]
+        df.at[0, 'ITERATION'] = 0
+    else:
+        df = df[iters >= 0]
+    return df
 
 
 def _calculate_relative_standard_errors(pe, se):
@@ -495,9 +505,7 @@ def _parse_parameter_estimates(
     for i, table in enumerate(ext_tables.tables, start=1):
         if subproblem and table.subproblem != subproblem:
             continue
-        df = table.data_frame
-        df = df[df['ITERATION'] >= 0]
-
+        df = _get_iter_df(table.data_frame)
         assert isinstance(table, ExtTable)
         fix = _get_fixed_parameters(table, parameters, pe_translation)
         fixed_param_names = [name for name in list(df.columns)[1:-1] if fix[name]]
