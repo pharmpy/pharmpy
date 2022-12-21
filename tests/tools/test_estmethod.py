@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.tools.estmethod.algorithms import _create_est_model
+from pharmpy.tools.estmethod.algorithms import _create_candidate_model
 from pharmpy.tools.estmethod.tool import SOLVERS, create_workflow, validate_input
 
 
@@ -44,7 +44,9 @@ def test_algorithm(algorithm, methods, solvers, no_of_models):
 def test_create_est_model(load_model_for_test, pheno_path, method, est_rec, eval_rec):
     model = load_model_for_test(pheno_path)
     assert len(model.estimation_steps) == 1
-    est_model = _create_est_model(method, None, model=model, update=False)
+    est_model = _create_candidate_model(
+        method, None, model=model, update=False, is_eval_candidate=False
+    )
     assert len(est_model.estimation_steps) == 2
     assert est_model.model_code.split('\n')[-5] == est_rec
     assert est_model.model_code.split('\n')[-4] == eval_rec

@@ -58,7 +58,7 @@ def exhaustive_only_eval(methods, solvers):
     candidate_no = 1
     for method, solver in itertools.product(methods, solvers):
         wf_estmethod = _create_candidate_model_wf(
-            candidate_no, method, solver, update=False, eval_candidate=True
+            candidate_no, method, solver, update=False, is_eval_candidate=True
         )
         wf.insert_workflow(wf_estmethod, predecessors=task_start)
         candidate_no += 1
@@ -70,7 +70,7 @@ def start(model):
     return model
 
 
-def _create_candidate_model_wf(candidate_no, method, solver, update, eval_candidate=False):
+def _create_candidate_model_wf(candidate_no, method, solver, update, is_eval_candidate=False):
     wf = Workflow()
 
     model_name = f'estmethod_run{candidate_no}'
@@ -83,10 +83,9 @@ def _create_candidate_model_wf(candidate_no, method, solver, update, eval_candid
         task_prev = task_update_inits
     else:
         task_prev = task_copy
-    if eval_candidate:
-        task_create_candidate = Task('create_candidate', _create_eval_model, method, solver)
-    else:
-        task_create_candidate = Task('create_candidate', _create_est_model, method, solver, update)
+    task_create_candidate = Task(
+        'create_candidate', _create_candidate_model, method, solver, update, is_eval_candidate
+    )
     wf.add_task(task_create_candidate, predecessors=task_prev)
     return wf
 
@@ -113,8 +112,8 @@ def _create_base_model(model):
     return base_model
 
 
-def _create_est_model(method, solver, update, model):
-    est_settings = _create_est_settings(method)
+def _create_candidate_model(method, solver, update, is_eval_candidate, model):
+    est_settings = _create_est_settings(method, is_eval_candidate)
     laplace = True if method == 'LAPLACE' else False
     eval_settings = _create_eval_settings(laplace)
 
@@ -131,28 +130,11 @@ def _create_est_model(method, solver, update, model):
     return model
 
 
-def _create_eval_model(method, solver, model):
-    est_settings = _create_est_settings(method)
-    est_settings['evaluation'] = True
-    del est_settings['maximum_evaluations']
-
-    model.description = _create_description([method], solver=solver)
-
-    while len(model.estimation_steps) > 0:
-        remove_estimation_step(model, 0)
-
-    add_estimation_step(model, **est_settings)
-    if solver:
-        model = set_ode_solver(model, solver)
-    return model
-
-
-def _create_est_settings(method):
+def _create_est_settings(method, is_eval_candidate=False):
     est_settings = {
         'method': method,
         'interaction': True,
         'laplace': False,
-        'maximum_evaluations': 9999,
         'auto': True,
         'keep_every_nth_iter': 10,
     }
@@ -160,6 +142,11 @@ def _create_est_settings(method):
     if method == 'LAPLACE':
         est_settings['method'] = 'FOCE'
         est_settings['laplace'] = True
+
+    if is_eval_candidate:
+        est_settings['evaluation'] = True
+    else:
+        est_settings['maximum_evaluations'] = 9999
 
     return est_settings
 
