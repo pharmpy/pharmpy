@@ -1,21 +1,25 @@
 import pytest
 
 from pharmpy.tools.estmethod.algorithms import _create_est_model
-from pharmpy.tools.estmethod.tool import create_workflow
+from pharmpy.tools.estmethod.tool import SOLVERS, create_workflow
 
 
 @pytest.mark.parametrize(
-    'methods, solvers, no_of_models',
+    'algorithm, methods, solvers, no_of_models',
     [
-        (['FOCE'], None, 2),
-        (['FOCE', 'LAPLACE'], None, 4),
-        (['LAPLACE'], None, 3),
-        (['FOCE'], ['LSODA'], 3),
-        (['FOCE'], 'all', 13),
+        ('exhaustive', ['foce'], None, 1),
+        ('exhaustive', ['foce', 'laplace'], None, 2),
+        ('exhaustive', ['foce', 'imp'], ['lsoda'], 2),
+        ('exhaustive', ['foce'], 'all', len(SOLVERS)),
+        ('exhaustive_with_update', ['foce'], None, 2),
+        ('exhaustive_with_update', ['foce', 'laplace'], None, 4),
+        ('exhaustive_with_update', ['laplace'], None, 3),
+        ('exhaustive_with_update', ['foce'], ['lsoda'], 3),
+        ('exhaustive_with_update', ['foce'], 'all', len(SOLVERS) * 2 + 1),
     ],
 )
-def test_algorithm(methods, solvers, no_of_models):
-    wf = create_workflow('exhaustive_with_update', methods=methods, solvers=solvers)
+def test_algorithm(algorithm, methods, solvers, no_of_models):
+    wf = create_workflow(algorithm, methods=methods, solvers=solvers)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
