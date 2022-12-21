@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from itertools import chain
+from typing import Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -193,7 +194,11 @@ def calculate_individual_shrinkage(model, parameter_estimates, individual_estima
 
 
 def calculate_individual_parameter_statistics(
-    model, expr_or_exprs, parameter_estimates, covariance_matrix=None, rng=None
+    model: Model,
+    expr_or_exprs: str,
+    parameter_estimates: pd.Series,
+    covariance_matrix: Optional[pd.DataFrame] = None,
+    rng: Optional[Union[np.random.Generator], int] = None,
 ):
     """Calculate statistics for individual parameters
 
