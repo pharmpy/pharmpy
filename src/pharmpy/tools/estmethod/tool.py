@@ -8,6 +8,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
+from pharmpy.modeling import has_first_order_elimination
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_errors, summarize_modelfit_results
 from pharmpy.tools.common import ToolResults
@@ -173,7 +174,12 @@ def summarize_estimation_steps(models):
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(algorithm, methods, solvers):
+def validate_input(algorithm, methods, solvers, model):
+    if solvers is not None and has_first_order_elimination(model):
+        raise ValueError(
+            'Invalid input `model`: testing non-linear solvers on linear system is not supported'
+        )
+
     if algorithm not in ALGORITHMS:
         raise ValueError(
             f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'

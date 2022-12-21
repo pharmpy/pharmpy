@@ -1,7 +1,7 @@
 import pytest
 
 from pharmpy.tools.estmethod.algorithms import _create_est_model
-from pharmpy.tools.estmethod.tool import SOLVERS, create_workflow
+from pharmpy.tools.estmethod.tool import SOLVERS, create_workflow, validate_input
 
 
 @pytest.mark.parametrize(
@@ -48,3 +48,34 @@ def test_create_est_model(load_model_for_test, pheno_path, method, est_rec, eval
     assert len(est_model.estimation_steps) == 2
     assert est_model.model_code.split('\n')[-5] == est_rec
     assert est_model.model_code.split('\n')[-4] == eval_rec
+
+
+@pytest.mark.parametrize(
+    (
+        'args',
+        'exception',
+        'match',
+    ),
+    [
+        (
+            dict(algorithm='x'),
+            ValueError,
+            'Invalid `algorithm`',
+        ),
+        (
+            dict(algorithm='exhaustive', methods=None, solvers=None),
+            ValueError,
+            'Invalid search space options',
+        ),
+        (
+            dict(algorithm='exhaustive', solvers=['lsoda']),
+            ValueError,
+            'Invalid input `model`',
+        ),
+    ],
+)
+def test_validate_input(load_model_for_test, pheno_path, args, exception, match):
+    model = load_model_for_test(pheno_path)
+    kwargs = {**args, 'model': model}
+    with pytest.raises(ValueError, match=match):
+        validate_input(**kwargs)
