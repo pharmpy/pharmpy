@@ -21,20 +21,20 @@ To initiate Estmethod in Python/R:
 
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
-    res = run_estmethod(algorithm='reduced',
+    res = run_estmethod(algorithm='exhaustive',
                         model=start_model,
                         results=start_model_results,
                         methods='all',
                         solvers=['LSODA', 'LSODI'])
 
-This will take an input model ``start_model``. The tool will use the 'reduced' ``algorithm`` and try all combinations
+This will take an input model ``start_model``. The tool will use the 'exhaustive' ``algorithm`` and try all combinations
 between all available ``methods`` and ``solvers`` LSODA and LSODI.
 
 To run Estmethod from the command line, the example code is redefined accordingly:
 
 .. code::
 
-    pharmpy run estmethod path/to/model 'reduced' --methods 'all' --solvers 'LSODA LSODI'
+    pharmpy run estmethod path/to/model 'exhaustive' --methods 'all' --solvers 'LSODA LSODI'
 
 Arguments
 ~~~~~~~~~
@@ -63,18 +63,20 @@ Algorithms
 There are a few ways Estmethod can test the different solvers/methods. The available algorithms can be seen in the table
 below.
 
-+---------------------------+----------------------------------------------------------------------------------------+
-| Algorithm                 | Description                                                                            |
-+===========================+========================================================================================+
-| ``'reduced'``             | All combinations are tested                                                            |
-+---------------------------+----------------------------------------------------------------------------------------+
-| ``'exhaustive'``          | Similar to ``'reduced'``, but will create candidates updated from FOCE                 |
-+---------------------------+----------------------------------------------------------------------------------------+
++------------------------------+-------------------------------------------------------------------------------------+
+| Algorithm                    | Description                                                                         |
++==============================+=====================================================================================+
+| ``'exhaustive'``             | All combinations are tested (cartesian product)                                     |
++------------------------------+-------------------------------------------------------------------------------------+
+| ``'exhaustive_with_update'`` | All combinations are tested, but additionally creates candidates updated from FOCE  |
++------------------------------+-------------------------------------------------------------------------------------+
+| ``'exhaustive_only_eval'``   | All combinations are tested, but only does evaluation                               |
++------------------------------+-------------------------------------------------------------------------------------+
 
-Reduced
-~~~~~~~
+Exhaustive
+~~~~~~~~~~
 
-The ``reduced`` algorithm works by creating all combinations of methods and solvers. The candidates will have one
+The ``exhaustive`` algorithm works by creating all combinations of methods and solvers. The candidates will have one
 estimation step and an evaluation step with IMP as method to be able to compare the candidates.
 
 .. graphviz::
@@ -119,12 +121,12 @@ Settings for evaluation step is the same as for estimation step, with the follow
 +---------------------------+----------------------------------------------------------------------------------------+
 
 
-Exhaustive
-~~~~~~~~~~
+Exhaustive (with update)
+~~~~~~~~~~~~~~~~~~~~~~
 
-The ``exhaustive`` method is similar to the ``reduced`` algorithm, but in addition to the candidate models that
-the ``reduced`` algorithm create, it will also create a set of candidates that will use the final estimates of
-a candidate with ``FOCE`` as the initial estimates.
+The ``exhaustive_with_update`` algorithm is similar to the ``exhaustive`` algorithm, but in addition to the candidate
+models that the ``exhaustive`` algorithm create, it will also create a set of candidates that will use the final
+estimates of a candidate with ``FOCE`` as the initial estimates.
 
 .. graphviz::
 
@@ -153,7 +155,15 @@ a candidate with ``FOCE`` as the initial estimates.
         update -> s8
     }
 
-Settings are the same as for ``reduced``.
+Settings are the same as for ``exhaustive``.
+
+Exhaustive (only evaluation)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``exhaustive_only_eval`` algorithm has the same algorithm as ``exhaustive``, but instead of estimating the
+candidate models it only evaluates.
+
+Settings are the same as for ``exhaustive`` evaluation step, where the method is the method being examined.
 
 .. _methods_estmethod:
 
@@ -179,11 +189,11 @@ The Estmethod results
 The results object contains various summary tables which can be accessed in the results object, as well as files in
 .csv/.json format.
 
-Consider a Estmethod run with the ``reduced`` algorithm and testing ``FO`` and ``LSODA``:
+Consider a Estmethod run with the ``exhaustive`` algorithm and testing ``FO`` and ``LSODA``:
 
 .. pharmpy-code::
 
-    res = run_estmethod(algorithm='reduced',
+    res = run_estmethod(algorithm='exhaustive',
                         model=start_model,
                         results=start_model_results,
                         methods=['FO', 'IMP'])
