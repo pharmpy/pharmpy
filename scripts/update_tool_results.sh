@@ -94,7 +94,7 @@ if [ "$TOOL" == 'amd' ] || [ "$TOOL" == 'all' ]; then
 fi
 
 if [ "$TOOL" == 'estmethod' ] || [ "$TOOL" == 'all' ]; then
-  pharmpy run estmethod $TESTPATH/mox2.mod 'reduced' --methods 'FO IMP' --path $TESTPATH/estmethod/
+  pharmpy run estmethod $TESTPATH/mox2.mod 'exhaustive' --methods 'FO IMP' --path $TESTPATH/estmethod/
   cp_results $TESTPATH/estmethod/results.json $DEST/estmethod_results.json
 fi
 
