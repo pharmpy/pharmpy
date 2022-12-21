@@ -3396,23 +3396,28 @@ def test_set_ode_solver(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     assert model.estimation_steps[0].solver is None
     assert 'ADVAN1' in model.model_code
+    assert '$MODEL' not in model.model_code
 
     model = load_model_for_test(pheno_path)
     set_michaelis_menten_elimination(model)
     set_ode_solver(model, 'LSODA')
     assert model.estimation_steps[0].solver == 'LSODA'
     assert 'ADVAN13' in model.model_code
+    assert '$MODEL' in model.model_code
 
     model = load_model_for_test(pheno_path)
     set_zero_order_elimination(model)
     assert 'ADVAN13' in model.model_code
+    assert '$MODEL' in model.model_code
     set_ode_solver(model, 'LSODA')
     set_michaelis_menten_elimination(model)
     assert model.estimation_steps[0].solver == 'LSODA'
     assert 'ADVAN13' in model.model_code
+    assert '$MODEL' in model.model_code
     set_ode_solver(model, 'DVERK')
     assert model.estimation_steps[0].solver == 'DVERK'
     assert 'ADVAN6' in model.model_code
+    assert '$MODEL' in model.model_code
 
 
 def test_add_pk_iiv_1(load_model_for_test, pheno_path):

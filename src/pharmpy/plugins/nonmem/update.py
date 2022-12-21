@@ -520,6 +520,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                     advan = solver_to_advan(new_solver)
                     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
                     subs.advan = advan
+                    update_model_record(model, advan)
 
     main_statements = model.statements.before_odes
     error_statements = model.statements.after_odes
