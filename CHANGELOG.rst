@@ -1,3 +1,18 @@
+0.88.0 (2022-12-21)
+-------------------
+
+New features
+============
+
+* Add algorithm `exhaustive_only_eval` to Estmethod tool
+* Add replace methods to Assignment, Compartment, Bolus and Infusion
+
+Changes
+=======
+
+* Rename algorithms in Estmethod tool: `reduced` -> `exhaustive`. `exhaustive` -> `exhaustive_only_eval`
+* Always add iteration 0 in ofv_iterations and parameter_estimates_iterations for eval models with FO/FOCE
+
 0.87.0 (2022-12-14)
 -------------------
 
