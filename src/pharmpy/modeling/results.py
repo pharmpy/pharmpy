@@ -220,7 +220,8 @@ def calculate_individual_parameter_statistics(
         Parameter estimates
     covariance_matrix : pd.DataFrame
         Parameter uncertainty covariance matrix
-    expr_or_exprs : str, sympy expression or iterable of str or sympy expressions
+    expr_or_exprs : str
+        sympy expression or iterable of str or sympy expressions
         Expressions or equations for parameters of interest. If equations are used
         the names of the left hand sides will be used as the names of the parameters.
     rng : Generator or int
