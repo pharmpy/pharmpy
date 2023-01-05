@@ -109,7 +109,7 @@ typing-extensions==4.4.0
 urllib3==1.26.13
 wcwidth==0.2.5
 webencodings==0.5.1
-widgetsnbextension==4.0.4
+widgetsnbextension==4.0.5
 zict==2.2.0
 zipp==3.11.0
 tflite-runtime==2.11.0; sys_platform == 'linux' and python_version == '3.8'
