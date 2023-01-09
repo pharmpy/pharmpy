@@ -42,6 +42,7 @@ def generate_report(rst_path, results_path):
                         "Python 3.12. Use setuptools or check PEP 632 for potential alternatives",
                     )
                     warnings.filterwarnings("ignore", "There is no current event loop")
+                    warnings.filterwarnings("ignore", "Widget._active_widgets is deprecated.")
 
                     app = Sphinx(
                         str(source_path),
