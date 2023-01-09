@@ -43,6 +43,10 @@ def generate_report(rst_path, results_path):
                     )
                     warnings.filterwarnings("ignore", "There is no current event loop")
                     warnings.filterwarnings("ignore", "Widget._active_widgets is deprecated.")
+                    # From jupyter-core 5.1.2
+                    warnings.filterwarnings(
+                        "ignore", "Jupyter is migrating its paths to use standard platformdirs"
+                    )
 
                     app = Sphinx(
                         str(source_path),
