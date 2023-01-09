@@ -42,7 +42,6 @@ def generate_report(rst_path, results_path):
                         "Python 3.12. Use setuptools or check PEP 632 for potential alternatives",
                     )
                     warnings.filterwarnings("ignore", "There is no current event loop")
-                    warnings.filterwarnings("ignore", "Widget._active_widgets is deprecated.")
                     # From jupyter-core 5.1.2
                     warnings.filterwarnings(
                         "ignore", "Jupyter is migrating its paths to use standard platformdirs"
