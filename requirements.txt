@@ -21,7 +21,7 @@ debugpy==1.6.5
 decorator==5.1.1
 defusedxml==0.7.1
 distributed==2022.12.1
-docutils==0.18.0
+docutils==0.19.0
 entrypoints==0.4
 executing==1.2.0
 fastjsonschema==2.16.2
@@ -89,7 +89,7 @@ six==1.16.0
 snowballstemmer==2.2.0
 sortedcontainers==2.4.0
 soupsieve==2.3.2.post1
-Sphinx==5.3.0
+Sphinx==6.1.2
 sphinxcontrib-applehelp==1.0.3
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==2.0.0

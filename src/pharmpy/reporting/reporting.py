@@ -47,6 +47,12 @@ def generate_report(rst_path, results_path):
                     warnings.filterwarnings(
                         "ignore", "Jupyter is migrating its paths to use standard platformdirs"
                     )
+                    warnings.filterwarnings(
+                        "ignore", "The alias 'sphinx.util.progress_message' is deprecated"
+                    )
+                    warnings.filterwarnings(
+                        "ignore", "nodes.Node.traverse\\(\\) is obsoleted by Node.findall\\(\\)."
+                    )
 
                     app = Sphinx(
                         str(source_path),
