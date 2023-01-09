@@ -18,6 +18,7 @@ from pharmpy.model import (
     Parameters,
     RandomVariables,
     Statements,
+    output,
 )
 from pharmpy.modeling import (
     add_iiv,
@@ -56,8 +57,6 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     cb = CompartmentalSystemBuilder()
     central = Compartment.create('CENTRAL', dose=dosing(di, lambda: df, 1))
     cb.add_compartment(central)
-    output = Compartment.create('OUTPUT')
-    cb.add_compartment(output)
     cb.add_flow(central, output, CL / VC)
 
     ipred = Assignment(sympy.Symbol('IPRED'), central.amount / VC)

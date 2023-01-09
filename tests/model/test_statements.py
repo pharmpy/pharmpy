@@ -10,6 +10,7 @@ from pharmpy.model import (
     ExplicitODESystem,
     Infusion,
     Statements,
+    output,
 )
 
 
@@ -173,15 +174,6 @@ def test_find_compartment(load_model_for_test, testdata):
     assert comp is None
 
 
-def test_output_compartment(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    cb = CompartmentalSystemBuilder(model.statements.ode_system)
-    cb.add_compartment("NEW")
-    cm = CompartmentalSystem(cb)
-    with pytest.raises(ValueError):
-        cm.output_compartment
-
-
 def test_dosing_compartment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert model.statements.ode_system.dosing_compartment.name == 'CENTRAL'
@@ -244,17 +236,17 @@ def test_full_expression(load_model_for_test, pheno_path):
 
 def test_to_explicit_ode_system(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    exodes = model.statements.ode_system.to_explicit_system(skip_output=True)
+    exodes = model.statements.ode_system.to_explicit_system()
     odes, ics = exodes.odes, exodes.ics
     assert len(odes) == 1
     assert len(ics) == 1
 
     exodes = model.statements.ode_system.to_explicit_system()
     odes, ics = exodes.odes, exodes.ics
-    assert len(odes) == 2
-    assert len(ics) == 2
+    assert len(odes) == 1
+    assert len(ics) == 1
 
-    assert exodes.amounts == sympy.Matrix([sympy.Symbol('A_CENTRAL'), sympy.Symbol('A_OUTPUT')])
+    assert exodes.amounts == sympy.Matrix([sympy.Symbol('A_CENTRAL')])
 
     newstats = model.statements.to_explicit_system()
     assert isinstance(newstats.ode_system, ExplicitODESystem)
@@ -279,7 +271,6 @@ def test_repr_html():
     cb = CompartmentalSystemBuilder()
     dose = Bolus('AMT')
     central = Compartment.create('CENTRAL', dose=dose)
-    output = Compartment.create('OUTPUT')
     cb.add_compartment(central)
     cb.add_compartment(output)
     cb.add_flow(central, output, S('K'))
@@ -334,9 +325,7 @@ def test_builder():
     cb = CompartmentalSystemBuilder()
     dose = Bolus('AMT')
     central = Compartment.create('CENTRAL', dose=dose)
-    output = Compartment.create('OUTPUT')
     cb.add_compartment(central)
-    cb.add_compartment(output)
     cb.add_flow(central, output, S('K'))
     depot = Compartment.create('DEPOT')
     cb.add_compartment(depot)
@@ -375,4 +364,4 @@ def test_compartment_repr():
 
 def test_compartment_names(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert model.statements.ode_system.compartment_names == ['CENTRAL', 'OUTPUT']
+    assert model.statements.ode_system.compartment_names == ['CENTRAL']

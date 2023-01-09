@@ -525,7 +525,7 @@ class CodeRecord(Record):
 
     def from_odes(self, ode_system):
         """Set statements of record given an explicit ode system"""
-        odes = ode_system.odes[:-1]  # Skip last ode as it is for the output compartment
+        odes = ode_system.odes
         functions = [ode.lhs.args[0] for ode in odes]
         function_map = {f: sympy.Symbol(f'A({i + 1})') for i, f in enumerate(functions)}
         statements = []

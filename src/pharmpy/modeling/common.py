@@ -456,9 +456,9 @@ def load_example_model(name: str):
     V = TVV⋅ℯ
     S₁ = V
     Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
         A_CENTRAL
         ─────────
     F =     S₁

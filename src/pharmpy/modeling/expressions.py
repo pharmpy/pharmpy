@@ -18,6 +18,7 @@ from pharmpy.model import (
     ODESystem,
     Statement,
     Statements,
+    output,
 )
 
 from .parameters import get_thetas
@@ -408,9 +409,9 @@ def solve_ode_system(model):
     >>> model = load_example_model("pheno")
     >>> model.statements.ode_system
     Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
     >>> solve_ode_system(model)        # doctest: +ELLIPSIS
     <...>
 
@@ -424,7 +425,7 @@ def solve_ode_system(model):
     ics.popitem()
     # FIXME: Should set assumptions on symbols before solving
     # FIXME: Need a way to handle systems with no explicit solutions
-    sol = sympy.dsolve(odes.odes[:-1], ics=ics)
+    sol = sympy.dsolve(odes.odes, ics=ics)
     new = []
     for s in model.statements:
         if isinstance(s, ODESystem):
@@ -569,9 +570,9 @@ def cleanup_model(model):
     V = TVV⋅ℯ
     S₁ = V
     Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
         A_CENTRAL
         ─────────
     F =     S₁
@@ -598,9 +599,9 @@ def cleanup_model(model):
              ETA(2)
     V = TVV⋅ℯ
     Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
         A_CENTRAL
         ─────────
     F =     V
@@ -665,9 +666,9 @@ def greekify_model(model, named_subscripts=False):
     V = TVV⋅ℯ
     S₁ = V
     Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
         A_CENTRAL
         ─────────
     F =     S₁
@@ -695,9 +696,9 @@ def greekify_model(model, named_subscripts=False):
              η₂
     V = TVV⋅ℯ
     Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
         A_CENTRAL
         ─────────
     F =     V
@@ -1259,7 +1260,8 @@ def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[sympy.Symbo
         return _pk_free_symbols_from_compartment(cs, cs.central_compartment)
 
     if kind == 'elimination':
-        return _pk_free_symbols_from_compartment(cs, cs.output_compartment)
+        free_symbols = _pk_free_symbols_from_compartment(cs, output)
+        return free_symbols
 
     raise ValueError(f'Cannot handle kind `{kind}`')
 
@@ -1274,7 +1276,6 @@ def _pk_free_symbols_from_compartment(
 
 
 def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Compartment]:
-
     central_component_vertices = strongly_connected_component_of(
         cs.central_compartment,
         lambda u: map(lambda flow: flow[0], cs.get_compartment_outflows(u)),
@@ -1284,11 +1285,7 @@ def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Com
     if compartment == cs.central_compartment:
         return central_component_vertices
 
-    flows = (
-        cs.get_compartment_inflows
-        if compartment == cs.output_compartment
-        else cs.get_compartment_outflows
-    )
+    flows = cs.get_compartment_inflows if compartment == output else cs.get_compartment_outflows
 
     return reachable_from(
         {compartment},
@@ -1302,7 +1299,7 @@ def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Com
 def _get_component_edges(cs: CompartmentalSystem, vertices: Set[Compartment]):
     return (
         ((u, v, rate) for v in vertices for u, rate in cs.get_compartment_inflows(v))
-        if cs.output_compartment in vertices
+        if output in vertices
         else ((u, v, rate) for u in vertices for v, rate in cs.get_compartment_outflows(u))
     )
 
@@ -1333,7 +1330,10 @@ def _get_component_free_symbols(
             yield from rate.free_symbols
 
     for node in vertices:
-        yield from node.free_symbols
+        if node == output:
+            yield from set()
+        else:
+            yield from node.free_symbols
 
 
 def _assignments(sset: Statements):

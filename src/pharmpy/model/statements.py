@@ -293,14 +293,10 @@ class ExplicitODESystem(ODESystem):
         >>> model = load_example_model("pheno")
         >>> odes = model.statements.ode_system.to_explicit_system()
         >>> odes.subs({'AMT': 'DOSE'})
-        ⎧d                  -CL⋅A_CENTRAL(t)
-        ⎪──(A_CENTRAL(t)) = ─────────────────
-        ⎪dt                         V
-        ⎨d                 CL⋅A_CENTRAL(t)
-        ⎪──(A_OUTPUT(t)) = ───────────────
-        ⎪dt                       V
-        ⎪A_CENTRAL(0) = DOSE
-        ⎩A_OUTPUT(0) = 0
+                ⎧d                  -CL⋅A_CENTRAL(t)
+                ⎨──(A_CENTRAL(t)) = ─────────────────
+                ⎪dt                         V
+                ⎩A_CENTRAL(0) = DOSE
         <BLANKLINE>
         """
         d = {
@@ -342,9 +338,7 @@ class ExplicitODESystem(ODESystem):
         >>> model = load_example_model("pheno")
         >>> odes = model.statements.ode_system.to_explicit_system()
         >>> sympy.pprint(odes.amounts)
-        ⎡A_CENTRAL⎤
-        ⎢         ⎥
-        ⎣A_OUTPUT ⎦
+        [A_CENTRAL]
         """
         amounts = [ode.lhs.args[0].name for ode in self.odes]
         return sympy.Matrix(amounts)
@@ -359,7 +353,7 @@ class ExplicitODESystem(ODESystem):
         >>> model = load_example_model("pheno")
         >>> odes = model.statements.ode_system.to_explicit_system()
         >>> odes.compartment_names
-        ['CENTRAL', 'OUTPUT']
+        ['CENTRAL']
         """
         return [ode.lhs.args[0].name[2:] for ode in self.odes]
 
@@ -426,6 +420,7 @@ class ExplicitODESystem(ODESystem):
             cb.add_compartment(comp)
             compartments[name] = comp
 
+        neweqs = list(self.odes)  # Remaining flows
         for eq in self.odes:
             for comp_func in concentrations.intersection(free_images(eq.rhs)):
                 dep = eq.rhs.as_independent(comp_func, as_Add=True)[1]
@@ -435,8 +430,46 @@ class ExplicitODESystem(ODESystem):
                         from_comp = compartments[convert_name(comp_func.name)]
                         to_comp = compartments[convert_name(eq.lhs.args[0].name)]
                         cb.add_flow(from_comp, to_comp, term / comp_func)
+                        for i, neweq in enumerate(neweqs):
+                            if neweq.lhs.args[0].name == eq.lhs.args[0].name:
+                                neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(neweq.rhs - term))
+                            elif neweq.lhs.args[0].name == comp_func.name:
+                                neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(neweq.rhs + term))
 
-        return CompartmentalSystem(cb)
+        for eq in neweqs:
+            if eq.rhs != 0:
+                comp_func = eq.lhs.args[0]
+                from_comp = compartments[convert_name(comp_func.name)]
+                cb.add_flow(from_comp, output, -eq.rhs / comp_func)
+
+        cs = CompartmentalSystem(cb)
+        return cs
+
+
+class Output:
+    def __new__(cls):
+        # Singleton class
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(Output, cls).__new__(cls)
+        return cls.instance
+
+    def __copy_(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
+
+    def __repr__(self):
+        return "Output()"
+
+    def __hash__(self):
+        return 5267
+
+    def __eq__(self, other):
+        return self is other
+
+
+output = Output()
 
 
 class CompartmentalSystemBuilder:
@@ -447,6 +480,7 @@ class CompartmentalSystemBuilder:
             self._g = cs._g.copy()
         else:
             self._g = nx.DiGraph()
+            self._g.add_node(output)  # Single output "compartment"
 
     def add_compartment(self, compartment):
         """Add compartment to system
@@ -595,6 +629,10 @@ def _is_positive(expr: sympy.Expr) -> bool:
     )
 
 
+def _comps(graph):
+    return {comp for comp in graph.nodes if not isinstance(comp, Output)}
+
+
 class CompartmentalSystem(ODESystem):
     """System of ODEs descibed as a compartmental system
 
@@ -607,8 +645,6 @@ class CompartmentalSystem(ODESystem):
     >>> cb.add_compartment(central)
     >>> peripheral = Compartment("PERIPHERAL")
     >>> cb.add_compartment(peripheral)
-    >>> output = Compartment("OUTPUT")
-    >>> cb.add_compartment(output)
     >>> cb.add_flow(central, peripheral, "K12")
     >>> cb.add_flow(peripheral, central, "K21")
     >>> cb.add_flow(central, output, "CL / V")
@@ -620,9 +656,9 @@ class CompartmentalSystem(ODESystem):
                       ↑        │
                      K12      K21
                       │        ↓
-    ┌───────┐      ┌──────────┐      ┌──────────┐       ┌──────┐
-    │CENTRAL│──K12→│PERIPHERAL│──K21→│ CENTRAL  │──CL/V→│OUTPUT│
-    └───────┘      └──────────┘      └──────────┘       └──────┘
+    ┌───────┐      ┌──────────┐      ┌──────────┐
+    │CENTRAL│──K12→│PERIPHERAL│──K21→│ CENTRAL  │──CL/V→
+    └───────┘      └──────────┘      └──────────┘
     """
 
     def __init__(self, builder=None, graph=None, t=sympy.Symbol('t')):
@@ -672,7 +708,7 @@ class CompartmentalSystem(ODESystem):
         free = {sympy.Symbol('t')}
         for (_, _, rate) in self._g.edges.data('rate'):
             free |= rate.free_symbols
-        for node in self._g.nodes:
+        for node in _comps(self._g):
             free |= node.free_symbols
         return free
 
@@ -703,15 +739,15 @@ class CompartmentalSystem(ODESystem):
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.subs({'AMT': 'DOSE'})
         Bolus(DOSE)
-        ┌───────┐       ┌──────┐
-        │CENTRAL│──CL/V→│OUTPUT│
-        └───────┘       └──────┘
+        ┌───────┐
+        │CENTRAL│──CL/V→
+        └───────┘
         """
         cb = CompartmentalSystemBuilder(self)
         for (u, v, rate) in cb._g.edges.data('rate'):
             rate_sub = subs(rate, substitutions, simultaneous=True)
             cb._g.edges[u, v]['rate'] = rate_sub
-        mapping = {comp: comp.subs(substitutions) for comp in self._g.nodes}
+        mapping = {comp: comp.subs(substitutions) for comp in _comps(self._g)}
         nx.relabel_nodes(cb._g, mapping, copy=False)
         return CompartmentalSystem(cb)
 
@@ -797,7 +833,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.get_compartment_outflows("CENTRAL")
-        [(Compartment(OUTPUT, amount=A_OUTPUT), CL/V)]
+        [(Output(), CL/V)]
         """
         if isinstance(compartment, str):
             compartment = self.find_compartment(compartment)
@@ -824,7 +860,7 @@ class CompartmentalSystem(ODESystem):
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.ode_system.get_compartment_inflows("OUTPUT")
+        >>> model.statements.ode_system.get_compartment_inflows(output)
         [(Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT)), CL/V)]
         """
         if isinstance(compartment, str):
@@ -856,7 +892,7 @@ class CompartmentalSystem(ODESystem):
         >>> central
         Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT))
         """
-        for comp in self._g.nodes:
+        for comp in _comps(self._g):
             if comp.name == name:
                 return comp
         else:
@@ -880,36 +916,11 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.get_n_connected("CENTRAL")
-        1
+        0
         """
         out_comps = {c for c, _ in self.get_compartment_outflows(comp)}
         in_comps = {c for c, _ in self.get_compartment_inflows(comp)}
-        return len(out_comps | in_comps)
-
-    @property
-    def output_compartment(self):
-        """Get the output compartment
-
-        An output compartment is defined to be a compartment that does not have any outward
-        flow. A model has to have one and only one output compartment.
-
-        Returns
-        -------
-        Compartment
-            Output compartment of compartmental system
-
-        Examples
-        --------
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> model.statements.ode_system.output_compartment
-        Compartment(OUTPUT, amount=A_OUTPUT)
-        """
-        zeroout = [node for node, out_degree in self._g.out_degree() if out_degree == 0]
-        if len(zeroout) == 1:
-            return zeroout[0]
-        else:
-            raise ValueError('More than one or zero output compartments')
+        return len((out_comps | in_comps) - {output})
 
     @property
     def dosing_compartment(self):
@@ -930,7 +941,7 @@ class CompartmentalSystem(ODESystem):
         >>> model.statements.ode_system.dosing_compartment
         Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT))
         """
-        for node in self._g.nodes:
+        for node in _comps(self._g):
             if node.dose is not None:
                 return node
         raise ValueError('No dosing compartment exists')
@@ -954,7 +965,6 @@ class CompartmentalSystem(ODESystem):
         >>> model.statements.ode_system.central_compartment
         Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT))
         """
-        output = self.output_compartment
         try:
             central = next(self._g.predecessors(output))
         except StopIteration:
@@ -1093,30 +1103,28 @@ class CompartmentalSystem(ODESystem):
         >>> import sympy
         >>> model = load_example_model("pheno")
         >>> sympy.pprint(model.statements.ode_system.compartmental_matrix)
-        ⎡-CL    ⎤
-        ⎢────  0⎥
-        ⎢ V     ⎥
-        ⎢       ⎥
-        ⎢ CL    ⎥
-        ⎢ ──   0⎥
-        ⎣ V     ⎦
+        ⎡-CL ⎤
+        ⎢────⎥
+        ⎣ V  ⎦
         """
-        dod = nx.to_dict_of_dicts(self._g)
-        size = len(self._g.nodes)
-        f = sympy.zeros(size)
         nodes = self._order_compartments()
+        size = len(nodes)
+        f = sympy.zeros(size)
         for i in range(0, size):
             from_comp = nodes[i]
             diagsum = 0
             for j in range(0, size):
                 to_comp = nodes[j]
-                try:
-                    rate = dod[from_comp][to_comp]['rate']
-                except KeyError:
-                    rate = 0
-                f[j, i] = rate
-                diagsum += f[j, i]
-            f[i, i] -= diagsum
+                rate = self.get_flow(from_comp, to_comp)
+                if rate is None:
+                    rate = sympy.Integer(0)
+                if i != j:
+                    f[j, i] = rate
+                diagsum += rate
+            outrate = self.get_flow(from_comp, output)
+            if outrate is None:
+                outrate = sympy.Integer(0)
+            f[i, i] = -outrate - diagsum
         return f
 
     @property
@@ -1129,9 +1137,7 @@ class CompartmentalSystem(ODESystem):
         >>> import sympy
         >>> model = load_example_model("pheno")
         >>> sympy.pprint(model.statements.ode_system.amounts)
-        ⎡A_CENTRAL⎤
-        ⎢         ⎥
-        ⎣A_OUTPUT ⎦
+        [A_CENTRAL]
         """
         ordered_cmts = self._order_compartments()
         amts = [cmt.amount for cmt in ordered_cmts]
@@ -1146,7 +1152,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.compartment_names
-        ['CENTRAL', 'OUTPUT']
+        ['CENTRAL']
         """
         ordered_cmts = self._order_compartments()
         names = [cmt.name for cmt in ordered_cmts]
@@ -1158,9 +1164,8 @@ class CompartmentalSystem(ODESystem):
             dosecmt = self.dosing_compartment
         except ValueError:
             # Fallback for cases where no dose is available (yet)
-            return list(self._g.nodes)
+            return list(_comps(self._g))
         # Order compartments
-        output = self.output_compartment
 
         def sortfunc(x):
             a = list(x)
@@ -1170,7 +1175,6 @@ class CompartmentalSystem(ODESystem):
             return iter(a)
 
         nodes = list(nx.bfs_tree(self._g, dosecmt, sort_neighbors=sortfunc))
-        nodes.append(output)
         return nodes
 
     @property
@@ -1183,9 +1187,7 @@ class CompartmentalSystem(ODESystem):
         >>> import sympy
         >>> model = load_example_model("pheno")
         >>> sympy.pprint(model.statements.ode_system.zero_order_inputs)
-        ⎡0⎤
-        ⎢ ⎥
-        ⎣0⎦
+        [0]
         >>> set_zero_order_absorption(model)    # doctest: +ELLIPSIS
         <...>
         >>> sympy.pprint(model.statements.ode_system.zero_order_inputs)
@@ -1193,9 +1195,7 @@ class CompartmentalSystem(ODESystem):
         ⎢⎪─────  for t < 2⋅MAT⎥
         ⎢⎨2⋅MAT               ⎥
         ⎢⎪                    ⎥
-        ⎢⎩  0      otherwise  ⎥
-        ⎢                     ⎥
-        ⎣          0          ⎦
+        ⎣⎩  0      otherwise  ⎦
         """
         inputs = []
         for node in self._order_compartments():  # self._g.nodes:
@@ -1215,13 +1215,8 @@ class CompartmentalSystem(ODESystem):
     def to_compartmental_system(self):
         return self
 
-    def to_explicit_system(self, skip_output=False):
+    def to_explicit_system(self):
         """Get the compartmental system as an explicit ODE system
-
-        Parameters
-        ----------
-        skip_output : boolean
-            Set to true to leave the output compartment out
 
         Results
         -------
@@ -1235,26 +1230,17 @@ class CompartmentalSystem(ODESystem):
         >>> odes = model.statements.ode_system.to_explicit_system()
         >>> odes
         ⎧d                  -CL⋅A_CENTRAL(t)
-        ⎪──(A_CENTRAL(t)) = ─────────────────
+        ⎨──(A_CENTRAL(t)) = ─────────────────
         ⎪dt                         V
-        ⎨d                 CL⋅A_CENTRAL(t)
-        ⎪──(A_OUTPUT(t)) = ───────────────
-        ⎪dt                       V
-        ⎪A_CENTRAL(0) = AMT
-        ⎩A_OUTPUT(0) = 0
+        ⎩A_CENTRAL(0) = AMT
         """
         amount_funcs = sympy.Matrix([sympy.Function(amt.name)(self.t) for amt in self.amounts])
         derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
         inputs = self.zero_order_inputs
         a = self.compartmental_matrix @ amount_funcs + inputs
         eqs = [sympy.Eq(lhs, canonical_ode_rhs(rhs)) for lhs, rhs in zip(derivatives, a)]
-        if skip_output:
-            eqs = eqs[:-1]
         ics = {}
-        output = self.output_compartment
-        for node in self._g.nodes:
-            if skip_output and node == output:
-                continue
+        for node in _comps(self._g):
             if node.dose is not None and isinstance(node.dose, Bolus):
                 if node.lag_time:
                     time = node.lag_time
@@ -1266,8 +1252,8 @@ class CompartmentalSystem(ODESystem):
         return ExplicitODESystem(tuple(eqs), ics)
 
     def __len__(self):
-        """The number of compartments including output"""
-        return len(self._g.nodes)
+        """The number of compartments"""
+        return len(self._g.nodes) - 1
 
     def _repr_html_(self):
         # Use Unicode art for now. There should be ways of drawing networkx
@@ -1284,8 +1270,6 @@ class CompartmentalSystem(ODESystem):
         def comp_string(comp):
             return comp.name + lag_string(comp) + f_string(comp)
 
-        output = self.output_compartment
-        output_box = unicode.Box(output.name)
         central = self.central_compartment
         central_box = unicode.Box(comp_string(central))
         depot = self._find_depot()
@@ -1300,7 +1284,7 @@ class CompartmentalSystem(ODESystem):
             current = self.get_compartment_outflows(current)[0][0]
         periphs = self.peripheral_compartments
         nrows = 1 + 2 * len(periphs)
-        ncols = 2 * len(transits) + (2 if depot else 0) + 3
+        ncols = 2 * len(transits) + (2 if depot else 0) + 2
         grid = unicode.Grid(nrows, ncols)
         if nrows == 1:
             main_row = 0
@@ -1323,8 +1307,6 @@ class CompartmentalSystem(ODESystem):
         grid.set(main_row, col, central_box)
         col += 1
         grid.set(main_row, col, unicode.Arrow(str(self.get_flow(central, output))))
-        col += 1
-        grid.set(main_row, col, output_box)
         if periphs:
             grid.set(0, central_col, unicode.Box(comp_string(periphs[0])))
             grid.set(
@@ -1830,9 +1812,9 @@ class Statements(Sequence):
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system
         Bolus(AMT)
-        ┌───────┐       ┌──────┐
-        │CENTRAL│──CL/V→│OUTPUT│
-        └───────┘       └──────┘
+        ┌───────┐
+        │CENTRAL│──CL/V→
+        └───────┘
         """
         i = self._get_ode_system_index()
         ret = None if i == -1 else self[i]
@@ -2245,18 +2227,15 @@ class Statements(Sequence):
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system
         Bolus(AMT)
-        ┌───────┐       ┌──────┐
-        │CENTRAL│──CL/V→│OUTPUT│
-        └───────┘       └──────┘
+        ┌───────┐
+        │CENTRAL│──CL/V→
+        └───────┘
         >>> model.statements.ode_system.to_explicit_system()
         ⎧d                  -CL⋅A_CENTRAL(t)
-        ⎪──(A_CENTRAL(t)) = ─────────────────
+        ⎨──(A_CENTRAL(t)) = ─────────────────
         ⎪dt                         V
-        ⎨d                 CL⋅A_CENTRAL(t)
-        ⎪──(A_OUTPUT(t)) = ───────────────
-        ⎪dt                       V
-        ⎪A_CENTRAL(0) = AMT
-        ⎩A_OUTPUT(0) = 0
+        ⎩A_CENTRAL(0) = AMT
+        <BLANKLINE>
         """
         i = self._get_ode_system_index()
         if i == -1:

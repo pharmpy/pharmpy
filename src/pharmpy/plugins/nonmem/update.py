@@ -26,6 +26,7 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
     data,
+    output,
 )
 from pharmpy.modeling import get_ids, simplify_expression
 
@@ -482,7 +483,7 @@ def to_des(model: Model, new: ODESystem):
     )
     mod = model.internals.control_stream.insert_record('$MODEL\n')
     assert isinstance(mod, ModelRecord)
-    for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
+    for eq, ic in zip(new.odes, list(new.ics.keys())):
         name = eq.lhs.args[0].name[2:]
         if new.ics[ic] != 0:
             dose = True
@@ -628,6 +629,9 @@ def pk_param_conversion(model: Model, advan, trans):
     oldmap = model.internals._compartment_map
     assert oldmap is not None
     newmap = new_compartmental_map(cs, oldmap)
+    newmap['OUTPUT'] = len(newmap) + 1
+    oldmap = oldmap.copy()
+    oldmap['OUTPUT'] = len(oldmap) + 1
     remap = create_compartment_remap(oldmap, newmap)
     d = {}
     for old, new in remap.items():
@@ -798,19 +802,19 @@ def new_advan_trans(model: Model):
     nonlin = is_nonlinear_odes(model)
     if nonlin:
         advan = 'ADVAN13'
-    elif len(odes) > 5 or odes.get_n_connected(odes.central_compartment) != len(odes) - 1:
+    elif len(odes) > 4 or odes.get_n_connected(odes.central_compartment) != len(odes) - 1:
         advan = 'ADVAN5'
-    elif len(odes) == 2:
+    elif len(odes) == 1:
         advan = 'ADVAN1'
-    elif len(odes) == 3 and odes.find_depot(statements):
+    elif len(odes) == 2 and odes.find_depot(statements):
         advan = 'ADVAN2'
-    elif len(odes) == 3:
+    elif len(odes) == 2:
         advan = 'ADVAN3'
-    elif len(odes) == 4 and odes.find_depot(statements):
+    elif len(odes) == 3 and odes.find_depot(statements):
         advan = 'ADVAN4'
-    elif len(odes) == 4:
+    elif len(odes) == 3:
         advan = 'ADVAN11'
-    else:  # len(odes) == 5
+    else:  # len(odes) == 4
         advan = 'ADVAN12'
 
     if nonlin:
@@ -841,7 +845,6 @@ def new_advan_trans(model: Model):
         else:
             trans = 'TRANS1'
     elif oldtrans is None:
-        output = odes.output_compartment
         central = odes.central_compartment
         elimination_rate = odes.get_flow(central, output)
         assert elimination_rate is not None
@@ -901,8 +904,7 @@ def update_model_record(model: Model, advan):
             )
             mod = model.internals.control_stream.insert_record('$MODEL\n')
             assert isinstance(mod, ModelRecord)
-            output_name = odes.output_compartment.name
-            comps = {v: k for k, v in newmap.items() if k != output_name}
+            comps = {v: k for k, v in newmap.items()}
             i = 1
             while True:
                 if i not in comps:
@@ -932,18 +934,15 @@ def add_needed_pk_parameters(model: Model, advan, trans):
                 )
     if advan in ['ADVAN1', 'ADVAN2'] and trans == 'TRANS2':
         central = odes.central_compartment
-        output = odes.output_compartment
         add_parameters_ratio(model, 'CL', 'V', central, output)
     elif advan == 'ADVAN3' and trans == 'TRANS4':
         central = odes.central_compartment
-        output = odes.output_compartment
         peripheral = odes.peripheral_compartments[0]
         add_parameters_ratio(model, 'CL', 'V1', central, output)
         add_parameters_ratio(model, 'Q', 'V2', peripheral, central)
         add_parameters_ratio(model, 'Q', 'V1', central, peripheral)
     elif advan == 'ADVAN4':
         central = odes.central_compartment
-        output = odes.output_compartment
         peripheral = odes.peripheral_compartments[0]
         if trans == 'TRANS1':
             rate1 = odes.get_flow(central, peripheral)
@@ -955,7 +954,6 @@ def add_needed_pk_parameters(model: Model, advan, trans):
             add_parameters_ratio(model, 'Q', 'V3', peripheral, central)
     elif advan == 'ADVAN12' and trans == 'TRANS4':
         central = odes.central_compartment
-        output = odes.output_compartment
         peripheral1 = odes.peripheral_compartments[0]
         peripheral2 = odes.peripheral_compartments[1]
         add_parameters_ratio(model, 'CL', 'V2', central, output)
@@ -963,7 +961,6 @@ def add_needed_pk_parameters(model: Model, advan, trans):
         add_parameters_ratio(model, 'Q4', 'V4', peripheral2, central)
     elif advan == 'ADVAN11' and trans == 'TRANS4':
         central = odes.central_compartment
-        output = odes.output_compartment
         peripheral1 = odes.peripheral_compartments[0]
         peripheral2 = odes.peripheral_compartments[1]
         add_parameters_ratio(model, 'CL', 'V1', central, output)
@@ -973,17 +970,20 @@ def add_needed_pk_parameters(model: Model, advan, trans):
         oldmap = model.internals._compartment_map
         assert oldmap is not None
         newmap = new_compartmental_map(odes, oldmap)
+        newmap['OUTPUT'] = len(newmap) + 1
         for source in newmap.keys():
-            if source == len(newmap):  # NOTE Skip last
+            if source == 'OUTPUT':
                 continue
             for dest in newmap.keys():
                 if source != dest:  # NOTE Skip same
                     source_comp = odes.find_compartment(source)
-                    dest_comp = odes.find_compartment(dest)
+                    if dest == 'OUTPUT':
+                        dest_comp = output
+                    else:
+                        dest_comp = odes.find_compartment(dest)
                     rate = odes.get_flow(source_comp, dest_comp)
                     if rate is not None:
                         assert isinstance(source_comp, Compartment)
-                        assert isinstance(dest_comp, Compartment)
                         sn = newmap[source]
                         dn = newmap[dest]
                         if len(str(sn)) > 1 or len(str(dn)) > 1:

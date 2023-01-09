@@ -111,7 +111,7 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_set_zero_order_elimination(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert not has_zero_order_elimination(model)
-    set_zero_order_elimination(model)
+    model = set_zero_order_elimination(model)
     assert has_zero_order_elimination(model)
     assert not has_michaelis_menten_elimination(model)
     assert not has_first_order_elimination(model)
@@ -622,16 +622,16 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_transits_absfo(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    set_transit_compartments(model, 0, keep_depot=False)
+    model = set_transit_compartments(model, 0, keep_depot=False)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 0
-    assert len(model.statements.ode_system) == 2
+    assert len(model.statements.ode_system) == 1
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
-    set_transit_compartments(model, 1, keep_depot=False)
+    model = set_transit_compartments(model, 1, keep_depot=False)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 0
-    assert len(model.statements.ode_system) == 4
+    assert len(model.statements.ode_system) == 3
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -793,7 +793,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_transit_compartments_change_advan(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
-    set_transit_compartments(model, 3)
+    model = set_transit_compartments(model, 3)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 3
     correct = (

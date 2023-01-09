@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Callable, Optional, Tuple
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.expr.ode import canonical_ode_rhs
 from pharmpy.model import (
     Assignment,
     Bolus,
@@ -16,6 +15,7 @@ from pharmpy.model import (
     ExplicitODESystem,
     Infusion,
     ModelSyntaxError,
+    output,
 )
 
 if TYPE_CHECKING:
@@ -47,9 +47,7 @@ def _compartmental_model(
             lag_time=_get_alag(control_stream, 1),
             bioavailability=_get_bioavailability(control_stream, 1),
         )
-        output = Compartment.create('OUTPUT')
         cb.add_compartment(central)
-        cb.add_compartment(output)
         cb.add_flow(central, output, _advan1and2_trans(trans))
         ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
@@ -68,10 +66,8 @@ def _compartmental_model(
             lag_time=_get_alag(control_stream, 2),
             bioavailability=_get_bioavailability(control_stream, 2),
         )
-        output = Compartment.create('OUTPUT')
         cb.add_compartment(depot)
         cb.add_compartment(central)
-        cb.add_compartment(output)
         cb.add_flow(central, output, _advan1and2_trans(trans))
         cb.add_flow(depot, central, sympy.Symbol('KA'))
         ass = _f_link_assignment(control_stream, central, 2)
@@ -91,10 +87,8 @@ def _compartmental_model(
             lag_time=_get_alag(control_stream, 2),
             bioavailability=_get_bioavailability(control_stream, 2),
         )
-        output = Compartment.create('OUTPUT')
         cb.add_compartment(central)
         cb.add_compartment(peripheral)
-        cb.add_compartment(output)
         k, k12, k21 = _advan3_trans(trans)
         cb.add_flow(central, output, k)
         cb.add_flow(central, peripheral, k12)
@@ -122,11 +116,9 @@ def _compartmental_model(
             lag_time=_get_alag(control_stream, 3),
             bioavailability=_get_bioavailability(control_stream, 3),
         )
-        output = Compartment.create('OUTPUT')
         cb.add_compartment(depot)
         cb.add_compartment(central)
         cb.add_compartment(peripheral)
-        cb.add_compartment(output)
         k, k23, k32, ka = _advan4_trans(trans)
         cb.add_flow(depot, central, ka)
         cb.add_flow(central, output, k)
@@ -157,7 +149,6 @@ def _compartmental_model(
                 deffirst_dose = (name, i)
             comp_names.append(name)
 
-        comp_names.append('OUTPUT')
         comp_map = {name: i for i, name in enumerate(comp_names, 1)}
 
         if defobs is None:
@@ -177,11 +168,6 @@ def _compartmental_model(
         dose = dosing(di, dataset, defdose[1])
         obscomp = None
         for i, name in enumerate(comp_names):
-            if i == len(comp_names) - 1:
-                output = Compartment.create(name)
-                cb.add_compartment(output)
-                compartments.append(output)
-                break
             if name == defdose[0]:
                 curdose = dose
             else:
@@ -196,9 +182,10 @@ def _compartmental_model(
             compartments.append(comp)
             if name == defobs[0]:
                 obscomp = comp
+        compartments.append(output)
 
         assert obscomp is not None
-        for from_n, to_n, rate in _find_rates(control_stream, len(comp_names)):
+        for from_n, to_n, rate in _find_rates(control_stream, len(compartments)):
             cb.add_flow(compartments[from_n - 1], compartments[to_n - 1], rate)
         ass = _f_link_assignment(control_stream, obscomp, defobs[1])
     elif advan == 'ADVAN10':
@@ -210,9 +197,7 @@ def _compartmental_model(
             lag_time=_get_alag(control_stream, 1),
             bioavailability=_get_bioavailability(control_stream, 1),
         )
-        output = Compartment.create('OUTPUT')
         cb.add_compartment(central)
-        cb.add_compartment(output)
         vm = sympy.Symbol('VM')
         km = sympy.Symbol('KM')
         t = sympy.Symbol('t')
@@ -240,11 +225,9 @@ def _compartmental_model(
             lag_time=_get_alag(control_stream, 3),
             bioavailability=_get_bioavailability(control_stream, 3),
         )
-        output = Compartment.create('OUTPUT')
         cb.add_compartment(central)
         cb.add_compartment(per1)
         cb.add_compartment(per2)
-        cb.add_compartment(output)
         k, k12, k21, k13, k31 = _advan11_trans(trans)
         cb.add_flow(central, output, k)
         cb.add_flow(central, per1, k12)
@@ -280,12 +263,10 @@ def _compartmental_model(
             lag_time=_get_alag(control_stream, 4),
             bioavailability=_get_bioavailability(control_stream, 4),
         )
-        output = Compartment.create('OUTPUT')
         cb.add_compartment(depot)
         cb.add_compartment(central)
         cb.add_compartment(per1)
         cb.add_compartment(per2)
-        cb.add_compartment(output)
         k, k23, k32, k24, k42, ka = _advan12_trans(trans)
         cb.add_flow(depot, central, ka)
         cb.add_flow(central, output, k)
@@ -311,28 +292,18 @@ def _compartmental_model(
 
         sset = des.statements.subs(subs_dict)
 
-        a_out = sympy.Function('A_OUTPUT')
         dose = dosing(di, dataset, 1)
 
         ics = {v(0): sympy.Integer(0) for v in comp_names.values()}
-        ics[a_out(0)] = sympy.Integer(0)
         ics[comp_names['A(1)'](0)] = dose.amount
 
         dadt_dose = sset.find_assignment(subs_dict['DADT(1)'])
 
-        if len(comps) > 1:
-            dadt_rest = [
-                sympy.Eq(s.symbol, s.expression)
-                for s in sset
-                if s != dadt_dose and not s.symbol.is_Symbol
-            ]
-            lhs_sum = dadt_dose.expression
-            for eq in dadt_rest:
-                lhs_sum += eq.rhs
-            dadt_out = sympy.Eq(sympy.Derivative(a_out(t)), canonical_ode_rhs(-lhs_sum))
-            dadt_rest.append(dadt_out)
-        else:
-            dadt_rest = [sympy.Eq(sympy.Derivative(a_out(t)), dadt_dose.expression * -1)]
+        dadt_rest = [
+            sympy.Eq(s.symbol, s.expression)
+            for s in sset
+            if s != dadt_dose and not s.symbol.is_Symbol
+        ]
 
         if isinstance(dose, Infusion):
             if dose.duration:

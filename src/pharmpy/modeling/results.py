@@ -10,7 +10,7 @@ from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
 from pharmpy.internals.math import round_to_n_sigdig
-from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
+from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model, output
 from pharmpy.model.distributions.numeric import ConstantDistribution
 from pharmpy.model.random_variables import (
     eval_expr,
@@ -425,15 +425,14 @@ def calculate_pk_parameters_statistics(
     statements = model.statements
     odes = statements.ode_system
     central = odes.central_compartment
-    output = odes.output_compartment
     depot = odes.find_depot(statements)
     peripherals = odes.peripheral_compartments
     elimination_rate = odes.get_flow(central, output)
 
     expressions = []  # Eq(name, expr)
     # FO abs + 1comp + FO elimination
-    if len(odes) == 3 and depot and odes.t not in elimination_rate.free_symbols:
-        exodes = odes.to_explicit_system(skip_output=True)
+    if len(odes) == 2 and depot and odes.t not in elimination_rate.free_symbols:
+        exodes = odes.to_explicit_system()
         ode_list, ics = exodes.odes, exodes.ics
         sols = sympy.dsolve(ode_list, ics=ics)
         expr = sols[1].rhs
@@ -450,11 +449,11 @@ def calculate_pk_parameters_statistics(
     if not peripherals and odes.t not in elimination_rate.free_symbols:
         elimination_system = statements.ode_system
         for name in elimination_system.compartment_names:
-            if name not in (central.name, output.name):  # NOTE keep central and output
+            if name != central.name:  # NOTE keep central
                 cb = CompartmentalSystemBuilder(elimination_system)
                 cb.remove_compartment(elimination_system.find_compartment(name))
                 elimination_system = CompartmentalSystem(cb)
-                exodes = elimination_system.to_explicit_system(skip_output=True)
+                exodes = elimination_system.to_explicit_system()
                 eq = exodes.odes[0]
                 ic = dict(exodes.ics).popitem()[0]
                 A0 = sympy.Symbol('A0')
@@ -464,8 +463,8 @@ def calculate_pk_parameters_statistics(
                 expressions.append(sympy.Eq(sympy.Symbol('t_half_elim'), thalf_elim))
 
     # Bolus dose + 2comp + FO elimination
-    if len(peripherals) == 1 and len(odes) == 3 and odes.t not in elimination_rate.free_symbols:
-        exodes = odes.to_explicit_system(skip_output=True)
+    if len(peripherals) == 1 and len(odes) == 2 and odes.t not in elimination_rate.free_symbols:
+        exodes = odes.to_explicit_system()
         ode_list, ics = exodes.odes, exodes.ics
         sols = sympy.dsolve(ode_list, ics=ics)
         A = sympy.Wild('A')

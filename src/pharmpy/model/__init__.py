@@ -17,6 +17,7 @@ from .statements import (
     ODESystem,
     Statement,
     Statements,
+    output,
 )
 
 __all__ = (
@@ -41,6 +42,7 @@ __all__ = (
     'ModelSyntaxError',
     'NormalDistribution',
     'ODESystem',
+    'output',
     'Parameter',
     'Parameters',
     'RandomVariables',
