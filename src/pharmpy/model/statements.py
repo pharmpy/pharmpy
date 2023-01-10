@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Iterable, List, Mapping, Optional, Set, Tuple, Union, overload
+from typing import Iterable, List, Optional, Set, Tuple, Union, overload
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.deps import networkx as nx
@@ -12,7 +12,7 @@ from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
 from pharmpy.internals.expr.ode import canonical_ode_rhs
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
-from pharmpy.internals.immutable import Immutable, frozenmapping
+from pharmpy.internals.immutable import Immutable
 
 
 class Statement(Immutable):
@@ -178,13 +178,7 @@ class Assignment(Statement):
 class ODESystem(Statement):
     """Abstract base class for ODE systems of different forms"""
 
-    @abstractmethod
-    def to_compartmental_system(self) -> CompartmentalSystem:
-        pass
-
-    @abstractmethod
-    def to_explicit_system(self) -> ExplicitODESystem:
-        pass
+    pass
 
 
 def _bracket(a):
@@ -207,243 +201,27 @@ def _bracket(a):
     return '\n'.join(a) + '\n'
 
 
-class ExplicitODESystem(ODESystem):
-    """System of ODEs described explicitly
-
-    Parameters
-    ----------
-    odes : list
-        Symbolic differential equations
-    ics : dict
-        Symbolic initial conditions
-
-    Examples
-    --------
-    >>> from pharmpy.model import ExplicitODESystem
-    >>> import sympy
-    >>> A_DEPOT = sympy.Function('A_DEPOT')
-    >>> A_CENTRAL = sympy.Function('A_CENTRAL')
-    >>> t = sympy.Symbol('t')
-    >>> AMT, KA, K = sympy.symbols('AMT KA K')
-    >>> eq1 = sympy.Eq(sympy.Derivative(A_DEPOT(t), t), -KA * A_DEPOT(t))
-    >>> eq2 = sympy.Eq(sympy.Derivative(A_CENTRAL(t)), -K*A_CENTRAL(t) + KA*A_DEPOT(t))
-    >>> ics = {A_DEPOT(0): AMT, A_CENTRAL(0): 0}
-    >>> odes = ExplicitODESystem([eq1, eq2], ics)
-    >>> odes
-    ⎧d
-    ⎪──(A_DEPOT(t)) = -KA⋅A_DEPOT(t)
-    ⎪dt
-    ⎨d
-    ⎪──(A_CENTRAL(t)) = -K⋅A_CENTRAL(t) + KA⋅A_DEPOT(t)
-    ⎪dt
-    ⎪A_DEPOT(0) = AMT
-    ⎩A_CENTRAL(0) = 0
-    """
-
-    def __init__(self, odes: Tuple[sympy.Eq, ...], ics: Mapping[sympy.Expr, sympy.Expr]):
-        self._odes = odes
-        self._ics = frozenmapping(ics)
-        self.t = sympy.Symbol('t')
-
-    @property
-    def odes(self) -> Tuple[sympy.Eq, ...]:
-        """List of ordinary differential equations"""
-        return self._odes
-
-    @property
-    def ics(self) -> Mapping[sympy.Expr, sympy.Expr]:
-        """Initial conditions"""
-        return self._ics
-
-    @property
-    def free_symbols(self):
-        """Get set of all free symbols in the ODE system
-
-        Returns
-        -------
-        set
-            Set of symbols
-
-        Examples
-        --------
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> odes = model.statements.ode_system.to_explicit_system()
-        >>> odes.free_symbols  # doctest: +SKIP
-        {AMT, CL, V, t}
-        """
-
-        free = set()
-        for ode in self.odes:
-            free |= ode.free_symbols
-        for key, value in self.ics.items():
-            free |= key.free_symbols
-            try:  # To allow for regular python classes as values for ics
-                free |= value.free_symbols
-            except AttributeError:
-                pass
-        return free
-
-    def subs(self, substitutions):
-        """Substitute expressions or symbols in ODE system
-
-        Examples
-        --------
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> odes = model.statements.ode_system.to_explicit_system()
-        >>> odes.subs({'AMT': 'DOSE'})
-                ⎧d                  -CL⋅A_CENTRAL(t)
-                ⎨──(A_CENTRAL(t)) = ─────────────────
-                ⎪dt                         V
-                ⎩A_CENTRAL(0) = DOSE
-        <BLANKLINE>
-        """
-        d = {
-            sympy.Function(str(key))(sympy.Symbol('t')): value
-            for key, value in substitutions.items()
-        }
-        d.update(substitutions)
-        odes = tuple(subs(ode, d) for ode in self.odes)
-        ics = {subs(key, d): subs(value, d) for key, value in self.ics.items()}
-        return ExplicitODESystem(odes, ics)
-
-    @property
-    def rhs_symbols(self):
-        """Get set of all free symbols in the right hand side expressions
-
-        Returns
-        -------
-        set
-            Set of symbols
-
-        Examples
-        --------
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> odes = model.statements.ode_system.to_explicit_system()
-        >>> odes.rhs_symbols   # doctest: +SKIP
-        {AMT, CL, V, t}
-        """
-        return self.free_symbols
-
-    @property
-    def amounts(self):
-        """Column vector of all amount functions
-
-        Examples
-        --------
-        >>> from pharmpy.modeling import load_example_model
-        >>> import sympy
-        >>> model = load_example_model("pheno")
-        >>> odes = model.statements.ode_system.to_explicit_system()
-        >>> sympy.pprint(odes.amounts)
-        [A_CENTRAL]
-        """
-        amounts = [ode.lhs.args[0].name for ode in self.odes]
-        return sympy.Matrix(amounts)
-
-    @property
-    def compartment_names(self) -> List[str]:
-        """Names of all compartments
-
-        Examples
-        --------
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> odes = model.statements.ode_system.to_explicit_system()
-        >>> odes.compartment_names
-        ['CENTRAL']
-        """
-        return [ode.lhs.args[0].name[2:] for ode in self.odes]
-
-    def __repr__(self):
-        a = []
-        for ode in self.odes:
-            ode_str = sympy.pretty(ode)
-            a += ode_str.split('\n')
-        for key, value in self.ics.items():
-            ics_str = sympy.pretty(sympy.Eq(key, value))
-            a += ics_str.split('\n')
-        return _bracket(a)
-
-    def __eq__(self, other):
-        return (
-            isinstance(other, ExplicitODESystem)
-            and self.odes == other.odes
-            and self.ics == other.ics
-        )
-
-    def _repr_latex_(self):
-        rows = []
-        for ode in self.odes:
-            ode_repr = sympy.latex(ode, mul_symbol='dot')
-            rows.append(ode_repr)
-        for k, v in self.ics.items():
-            ics_eq = sympy.Eq(k, v)
-            ics_repr = sympy.latex(ics_eq, mul_symbol='dot')
-            rows.append(ics_repr)
-        return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
-
-    def to_explicit_system(self, skip_output=False):
-        return self
-
-    def to_compartmental_system(self):
-        """Get the explicit system as a compartmental ODE system
-
-        Returns
-        -------
-        CompartmentalSystem
-            The same ODE system in compartmental representation
-
-        Example
-        -------
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> statements = model.statements.to_explicit_system()
-        >>> statements.to_compartmental_system()    # doctest: +SKIP
-        """
-
-        def convert_name(name: str):
-            return name[2:] if name[:2] == 'A_' else name
-
-        cb = CompartmentalSystemBuilder()
-        compartments = {}
-        concentrations = set()
-        for i, eq in enumerate(self.odes):
-            A = eq.lhs.args[0]
-            concentrations.add(A)
-            name = convert_name(A.name)
-            # FIXME The following is not true in general!
-            dose = Bolus(sympy.Symbol("AMT")) if i == 0 else None
-            comp = Compartment.create(convert_name(A.name), dose=dose)
-            cb.add_compartment(comp)
-            compartments[name] = comp
-
-        neweqs = list(self.odes)  # Remaining flows
-        for eq in self.odes:
-            for comp_func in concentrations.intersection(free_images(eq.rhs)):
-                dep = eq.rhs.as_independent(comp_func, as_Add=True)[1]
-                terms = sympy.Add.make_args(dep)
-                for term in terms:
-                    if _is_positive(term):
-                        from_comp = compartments[convert_name(comp_func.name)]
-                        to_comp = compartments[convert_name(eq.lhs.args[0].name)]
-                        cb.add_flow(from_comp, to_comp, term / comp_func)
-                        for i, neweq in enumerate(neweqs):
-                            if neweq.lhs.args[0].name == eq.lhs.args[0].name:
-                                neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(neweq.rhs - term))
-                            elif neweq.lhs.args[0].name == comp_func.name:
-                                neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(neweq.rhs + term))
-
-        for eq in neweqs:
-            if eq.rhs != 0:
-                comp_func = eq.lhs.args[0]
-                from_comp = compartments[convert_name(comp_func.name)]
-                cb.add_flow(from_comp, output, -eq.rhs / comp_func)
-
-        cs = CompartmentalSystem(cb)
-        return cs
+# class ExplicitODESystem(ODESystem):
+#    def __repr__(self):
+#        a = []
+#        for ode in self.odes:
+#            ode_str = sympy.pretty(ode)
+#            a += ode_str.split('\n')
+#        for key, value in self.ics.items():
+#            ics_str = sympy.pretty(sympy.Eq(key, value))
+#            a += ics_str.split('\n')
+#        return _bracket(a)
+#
+#    def _repr_latex_(self):
+#        rows = []
+#        for ode in self.odes:
+#            ode_repr = sympy.latex(ode, mul_symbol='dot')
+#            rows.append(ode_repr)
+#        for k, v in self.ics.items():
+#            ics_eq = sympy.Eq(k, v)
+#            ics_repr = sympy.latex(ics_eq, mul_symbol='dot')
+#            rows.append(ics_repr)
+#        return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
 
 
 class Output:
@@ -622,6 +400,26 @@ class CompartmentalSystemBuilder:
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
 
+    def set_bioavailability(self, compartment, bioavailability):
+        """Set bioavailability of compartment
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to change bioavailability
+        bioavailability : expr
+            New bioavailability
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+        """
+        new_comp = compartment.replace(bioavailability=bioavailability)
+        mapping = {compartment: new_comp}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+        return new_comp
+
 
 def _is_positive(expr: sympy.Expr) -> bool:
     return sympy.ask(
@@ -631,6 +429,49 @@ def _is_positive(expr: sympy.Expr) -> bool:
 
 def _comps(graph):
     return {comp for comp in graph.nodes if not isinstance(comp, Output)}
+
+
+def to_compartmental_system(names, eqs):
+    """Convert an list of odes to a compartmenal system
+
+    names : func to compartment name map
+    """
+
+    cb = CompartmentalSystemBuilder()
+    compartments = {}
+    concentrations = set()
+    for eq in eqs:
+        A = eq.lhs.args[0]
+        concentrations.add(A)
+        name = names[A.func]
+        comp = Compartment.create(name)
+        cb.add_compartment(comp)
+        compartments[name] = comp
+
+    neweqs = list(eqs)  # Remaining flows
+    for eq in eqs:
+        for comp_func in concentrations.intersection(free_images(eq.rhs)):
+            dep = eq.rhs.as_independent(comp_func, as_Add=True)[1]
+            terms = sympy.Add.make_args(dep)
+            for term in terms:
+                if _is_positive(term):
+                    from_comp = compartments[names[comp_func.func]]
+                    to_comp = compartments[names[eq.lhs.args[0].func]]
+                    cb.add_flow(from_comp, to_comp, term / comp_func)
+                    for i, neweq in enumerate(neweqs):
+                        if neweq.lhs.args[0].name == eq.lhs.args[0].name:
+                            neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(neweq.rhs - term))
+                        elif neweq.lhs.args[0].name == comp_func.name:
+                            neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(neweq.rhs + term))
+
+    for eq in neweqs:
+        if eq.rhs != 0:
+            comp_func = eq.lhs.args[0]
+            from_comp = compartments[names[comp_func.func]]
+            cb.add_flow(from_comp, output, -eq.rhs / comp_func)
+
+    cs = CompartmentalSystem(cb)
+    return cs
 
 
 class CompartmentalSystem(ODESystem):
@@ -669,9 +510,16 @@ class CompartmentalSystem(ODESystem):
         self._t = t
 
     @classmethod
-    def create(cls, builder=None, graph=None, t=sympy.Symbol('t')):
-        if builder is None and graph is None or builder is not None and graph is not None:
-            raise ValueError("Need exactly one of builder or graph to create a CompartmentalSystem")
+    def create(cls, builder=None, graph=None, eqs=None, ics=None, t=sympy.Symbol('t')):
+        numargs = (
+            (0 if builder is None else 1) + (0 if graph is None else 1) + (0 if eqs is None else 1)
+        )
+        if numargs != 1:
+            raise ValueError(
+                "Need exactly one of builder, graph or eqs to create a CompartmentalSystem"
+            )
+        if eqs is not None:
+            pass
         t = sympy.sympify(t)
         return cls(builder=builder, graph=graph, t=t)
 
@@ -688,6 +536,31 @@ class CompartmentalSystem(ODESystem):
     def t(self):
         """Independent variable of ODESystem"""
         return self._t
+
+    @property
+    def eqs(self):
+        """Tuple of equations"""
+        amount_funcs = sympy.Matrix([sympy.Function(amt.name)(self.t) for amt in self.amounts])
+        derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
+        inputs = self.zero_order_inputs
+        a = self.compartmental_matrix @ amount_funcs + inputs
+        eqs = [sympy.Eq(lhs, canonical_ode_rhs(rhs)) for lhs, rhs in zip(derivatives, a)]
+        return tuple(eqs)
+
+    @property
+    def ics(self):
+        """Dict of initial conditions"""
+        ics = {}
+        for node in _comps(self._g):
+            if node.dose is not None and isinstance(node.dose, Bolus):
+                if node.lag_time:
+                    time = node.lag_time
+                else:
+                    time = 0
+                ics[sympy.Function(node.amount.name)(time)] = node.dose.amount
+            else:
+                ics[sympy.Function(node.amount.name)(0)] = sympy.Integer(0)
+        return ics
 
     @property
     def free_symbols(self):
@@ -1208,45 +1081,6 @@ class CompartmentalSystem(ODESystem):
             else:
                 inputs.append(0)
         return sympy.Matrix(inputs)
-
-    def to_compartmental_system(self):
-        return self
-
-    def to_explicit_system(self):
-        """Get the compartmental system as an explicit ODE system
-
-        Results
-        -------
-        ExplicitODESystem
-            The same ODE system with explicit equations and initial conditions
-
-        Example
-        -------
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> odes = model.statements.ode_system.to_explicit_system()
-        >>> odes
-        ⎧d                  -CL⋅A_CENTRAL(t)
-        ⎨──(A_CENTRAL(t)) = ─────────────────
-        ⎪dt                         V
-        ⎩A_CENTRAL(0) = AMT
-        """
-        amount_funcs = sympy.Matrix([sympy.Function(amt.name)(self.t) for amt in self.amounts])
-        derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
-        inputs = self.zero_order_inputs
-        a = self.compartmental_matrix @ amount_funcs + inputs
-        eqs = [sympy.Eq(lhs, canonical_ode_rhs(rhs)) for lhs, rhs in zip(derivatives, a)]
-        ics = {}
-        for node in _comps(self._g):
-            if node.dose is not None and isinstance(node.dose, Bolus):
-                if node.lag_time:
-                    time = node.lag_time
-                else:
-                    time = 0
-                ics[sympy.Function(node.amount.name)(time)] = node.dose.amount
-            else:
-                ics[sympy.Function(node.amount.name)(0)] = sympy.Integer(0)
-        return ExplicitODESystem(tuple(eqs), ics)
 
     def __len__(self):
         """The number of compartments"""
@@ -2194,57 +2028,6 @@ class Statements(Sequence):
                 expression, {statement.symbol: statement.expression}, simultaneous=True
             )
         return expression
-
-    def to_compartmental_system(self):
-        """Convert ODE system to a compartmental system
-
-        raise if not possible
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> statements = model.statements.to_compartmental_system()
-        """
-        i = self._get_ode_system_index()
-        if i == -1:
-            return self
-
-        odes = self[i]
-        assert isinstance(odes, ODESystem)
-
-        if isinstance(odes, CompartmentalSystem):
-            return self
-
-        return self[:i] + odes.to_compartmental_system() + self[i + 1 :]
-
-    def to_explicit_system(self):
-        """Convert ODE system to an explicit ODE system
-
-        Example
-        -------
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> model.statements.ode_system
-        Bolus(AMT)
-        ┌───────┐
-        │CENTRAL│──CL/V→
-        └───────┘
-        >>> model.statements.ode_system.to_explicit_system()
-        ⎧d                  -CL⋅A_CENTRAL(t)
-        ⎨──(A_CENTRAL(t)) = ─────────────────
-        ⎪dt                         V
-        ⎩A_CENTRAL(0) = AMT
-        <BLANKLINE>
-        """
-        i = self._get_ode_system_index()
-        if i == -1:
-            return self
-
-        odes = self[i]
-        assert isinstance(odes, ODESystem)
-
-        if isinstance(odes, ExplicitODESystem):
-            return self
-
-        return self[:i] + odes.to_explicit_system() + self[i + 1 :]
 
     def __eq__(self, other):
         if len(self) != len(other):

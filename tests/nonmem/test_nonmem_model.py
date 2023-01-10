@@ -1153,7 +1153,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
 """
     model = Model.create_model(StringIO(code))
-    assert type(model.statements.ode_system.odes[0].rhs) == sympy.Piecewise
+    assert type(model.statements.ode_system.eqs[0].rhs) == sympy.Piecewise
 
 
 @pytest.mark.parametrize(

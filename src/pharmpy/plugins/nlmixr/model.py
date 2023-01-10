@@ -155,8 +155,7 @@ def create_model(cg, model):
                     cg.add(f'{s.symbol.name} <- {printer.doprint(expr)}')
 
         else:
-            eqs = s.to_explicit_system().odes
-            for eq in eqs[:-1]:
+            for eq in s.eqs[:-1]:
                 cg.add(f'{printer.doprint(eq.lhs)} = {printer.doprint(eq.rhs)}')
     cg.dedent()
     cg.add('})')

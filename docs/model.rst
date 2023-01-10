@@ -198,13 +198,6 @@ If the model has a system of ordinary differential equations this will be part o
 
    print(statements.ode_system)
 
-ODE systems can either be described as a compartmental system via :py:class:`pharmpy.statements.CompartmentalSystem` as in the example above or as a system of explicit differential equations using :py:class:`pharmpy.statements.ExplicitODESystem`. Both representations are mathematically equivalent. The compartmental system offers some convenient methods and properties. Get the explicit odes and initial conditions:
-
-.. pharmpy-execute::
-
-   odes = statements.ode_system.to_explicit_system()
-   odes
-
 Get the amounts vector:
 
 .. pharmpy-execute::

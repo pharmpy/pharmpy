@@ -419,13 +419,11 @@ def solve_ode_system(model):
     odes = model.statements.ode_system
     if odes is None:
         return model
-    if isinstance(odes, CompartmentalSystem):
-        odes = odes.to_explicit_system()
     ics = dict(odes.ics)
     ics.popitem()
     # FIXME: Should set assumptions on symbols before solving
     # FIXME: Need a way to handle systems with no explicit solutions
-    sol = sympy.dsolve(odes.odes, ics=ics)
+    sol = sympy.dsolve(odes.eqs, ics=ics)
     new = []
     for s in model.statements:
         if isinstance(s, ODESystem):
@@ -1233,7 +1231,7 @@ def _get_natural_assignments(before_odes):
 def _remap_compartmental_system(sset, natural_assignments):
     # Return compartmental system where rates that are synthetic assignments
     # have been substituted with their full definition (e.g K -> CL/V)
-    cs = sset.ode_system.to_compartmental_system()
+    cs = sset.ode_system
 
     assignments = list(_assignments(sset.before_odes))
     for assignment in reversed(assignments):

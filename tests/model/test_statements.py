@@ -7,7 +7,6 @@ from pharmpy.model import (
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
-    ExplicitODESystem,
     Infusion,
     Statements,
     output,
@@ -236,24 +235,12 @@ def test_full_expression(load_model_for_test, pheno_path):
 
 def test_to_explicit_ode_system(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    exodes = model.statements.ode_system.to_explicit_system()
-    odes, ics = exodes.odes, exodes.ics
+    cs = model.statements.ode_system
+    odes, ics = cs.eqs, cs.ics
     assert len(odes) == 1
     assert len(ics) == 1
 
-    exodes = model.statements.ode_system.to_explicit_system()
-    odes, ics = exodes.odes, exodes.ics
-    assert len(odes) == 1
-    assert len(ics) == 1
-
-    assert exodes.amounts == sympy.Matrix([sympy.Symbol('A_CENTRAL')])
-
-    newstats = model.statements.to_explicit_system()
-    assert isinstance(newstats.ode_system, ExplicitODESystem)
-
-    back = model.statements.to_compartmental_system()
-    assert isinstance(back.ode_system, CompartmentalSystem)
-    assert len(newstats) == len(back)
+    assert cs.amounts == sympy.Matrix([sympy.Symbol('A_CENTRAL')])
 
 
 def test_repr_latex():

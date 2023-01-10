@@ -18,7 +18,6 @@ from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     Distribution,
-    ExplicitODESystem,
     Infusion,
     ODESystem,
     Parameter,
@@ -340,35 +339,31 @@ def insert_omega_record(model: Model, param_str: str, record_number: int, record
     return record
 
 
-def update_ode_system(model: Model, old: Optional[ODESystem], new: ODESystem):
+def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: CompartmentalSystem):
     """Update ODE system
 
-    Handle changes from CompartmentSystem to ExplicitODESystem
+    Handle changes from to CompartmentSystem
     """
     if old is None:
         old = CompartmentalSystem(CompartmentalSystemBuilder())
 
     update_lag_time(model, old, new)
 
-    if isinstance(old, CompartmentalSystem) and isinstance(new, ExplicitODESystem):
+    advan, trans, nonlin = new_advan_trans(model)
+
+    if nonlin:
         to_des(model, new)
-    elif isinstance(old, ExplicitODESystem) and isinstance(new, CompartmentalSystem):
-        # Stay with $DES for now
-        update_des(model, old, new)
-    elif isinstance(old, CompartmentalSystem) and isinstance(new, CompartmentalSystem):
+    else:
         if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.datainfo.names:
             df = model.dataset.drop(columns=['RATE'])
             model.dataset = df
 
-        advan, trans = new_advan_trans(model)
         pk_param_conversion(model, advan=advan, trans=trans)
         add_needed_pk_parameters(model, advan, trans)
         update_subroutines_record(model, advan, trans)
         update_model_record(model, advan)
 
     update_infusion(model, old)
-
-    force_des(model, new)
 
 
 def is_nonlinear_odes(model: Model):
@@ -383,8 +378,6 @@ def update_infusion(model: Model, old: ODESystem):
     statements = model.statements
     new = statements.ode_system
     assert new is not None
-    old = old.to_compartmental_system()
-    new = new.to_compartmental_system()
     if isinstance(new.dosing_compartment.dose, Infusion) and not statements.find_assignment('D1'):
         # Handle direct moving of Infusion dose
         statements.subs({'D2': 'D1'})
@@ -417,46 +410,6 @@ def update_infusion(model: Model, old: ODESystem):
         model.dataset = df
 
 
-def update_des(model: Model, old: ExplicitODESystem, new: ODESystem):
-    """Update where both old and new should be explicit ODE systems"""
-    pass
-
-
-def force_des(model: Model, odes: ODESystem):
-    """Switch to $DES if necessary"""
-    if isinstance(odes, ExplicitODESystem):
-        return
-
-    amounts = {sympy.Function(amt.name)(sympy.Symbol('t')) for amt in odes.amounts}
-    if odes.atoms(sympy.Function) & amounts:
-        explicit_odes(model)
-        new = model.statements.ode_system
-        assert new is not None
-        to_des(model, new)
-
-
-def explicit_odes(model: Model):
-    """Convert model from compartmental system to explicit ODE system
-    or do nothing if it already has an explicit ODE system
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model
-
-    Return
-    ------
-    Model
-        Reference to same model
-    """
-    statements = model.statements
-    odes = statements.ode_system
-    if isinstance(odes, CompartmentalSystem):
-        new = odes.to_explicit_system()
-        model.statements = statements.before_odes + new + statements.after_odes
-    return model
-
-
 def to_des(model: Model, new: ODESystem):
     old_des = model.internals.control_stream.get_records('DES')
     model.internals.control_stream.remove_records(old_des)
@@ -468,8 +421,6 @@ def to_des(model: Model, new: ODESystem):
     solver = step.solver
     if solver:
         advan = solver_to_advan(solver)
-        if not isinstance(new, ExplicitODESystem):
-            new = new.to_explicit_system()
         subs.append_option(advan)
     else:
         subs.append_option('ADVAN13')
@@ -483,7 +434,7 @@ def to_des(model: Model, new: ODESystem):
     )
     mod = model.internals.control_stream.insert_record('$MODEL\n')
     assert isinstance(mod, ModelRecord)
-    for eq, ic in zip(new.odes, list(new.ics.keys())):
+    for eq, ic in zip(new.eqs, list(new.ics.keys())):
         name = eq.lhs.args[0].name[2:]
         if new.ics[ic] != 0:
             dose = True
@@ -515,7 +466,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                 new_solver = model.estimation_steps[0].solver
             else:
                 new_solver = None
-            if isinstance(new_odes, ExplicitODESystem) or new_solver:
+            if new_solver:
                 old_solver = model.internals._old_estimation_steps[0].solver
                 if new_solver != old_solver:
                     advan = solver_to_advan(new_solver)
@@ -552,15 +503,10 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
     rec.is_updated = True
 
 
-def update_lag_time(model: Model, old: ODESystem, new: ODESystem):
-    old = old.to_compartmental_system()
-    new = new.to_compartmental_system()
+def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSystem):
     new_dosing = new.dosing_compartment
     new_lag_time = new_dosing.lag_time
-    try:
-        old_lag_time = old.dosing_compartment.lag_time
-    except ValueError:
-        old_lag_time = 0
+    old_lag_time = old.dosing_compartment.lag_time
     if new_lag_time != old_lag_time and new_lag_time != 0:
         ass = Assignment(sympy.Symbol('ALAG1'), new_lag_time)
         cb = CompartmentalSystemBuilder(new)
@@ -798,7 +744,6 @@ def new_advan_trans(model: Model):
         oldtrans = None
     statements = model.statements
     odes = model.statements.ode_system
-    assert isinstance(odes, CompartmentalSystem)
     nonlin = is_nonlinear_odes(model)
     if nonlin:
         advan = 'ADVAN13'
@@ -858,7 +803,7 @@ def new_advan_trans(model: Model):
     else:
         trans = 'TRANS1'
 
-    return advan, trans
+    return advan, trans, nonlin
 
 
 def update_subroutines_record(model: Model, advan, trans):

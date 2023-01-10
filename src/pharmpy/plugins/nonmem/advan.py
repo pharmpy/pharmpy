@@ -12,10 +12,10 @@ from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     DataInfo,
-    ExplicitODESystem,
     Infusion,
     ModelSyntaxError,
     output,
+    to_compartmental_system,
 )
 
 if TYPE_CHECKING:
@@ -281,6 +281,7 @@ def _compartmental_model(
 
         subs_dict, comp_names = {}, {}
         comps = [c for c, _ in rec_model.compartments()]
+        func_to_name = {}
 
         t = sympy.Symbol('t')
         for i, c in enumerate(comps, 1):
@@ -289,40 +290,26 @@ def _compartmental_model(
             subs_dict[f'DADT ({i})'] = sympy.Derivative(a(t))
             subs_dict[f'A({i})'] = a(t)
             comp_names[f'A({i})'] = a
+            func_to_name[a] = c
 
         sset = des.statements.subs(subs_dict)
 
-        dose = dosing(di, dataset, 1)
+        eqs = [sympy.Eq(s.symbol, s.expression) for s in sset if not s.symbol.is_Symbol]
 
-        ics = {v(0): sympy.Integer(0) for v in comp_names.values()}
-        ics[comp_names['A(1)'](0)] = dose.amount
+        cs = to_compartmental_system(func_to_name, eqs)
+        cb = CompartmentalSystemBuilder(cs)
 
-        dadt_dose = sset.find_assignment(subs_dict['DADT(1)'])
+        for i, comp_name in enumerate(comps, start=1):
+            comp = cs.find_compartment(comp_name)
+            if i == 1:
+                dose = dosing(di, dataset, 1)  # FIXME: ONly one does to 1st compartment
+                cb.set_dose(comp, dose)
+            f = _get_bioavailability(control_stream, i)
+            cb.set_bioavailability(comp, f)
+            alag = _get_alag(control_stream, i)
+            cb.set_lag_time(comp, alag)
 
-        dadt_rest = [
-            sympy.Eq(s.symbol, s.expression)
-            for s in sset
-            if s != dadt_dose and not s.symbol.is_Symbol
-        ]
-
-        if isinstance(dose, Infusion):
-            if dose.duration:
-                rate = dose.amount / dose.duration
-                duration = dose.duration
-            else:
-                rate = dose.rate
-                duration = dose.amount / dose.rate
-
-            dose_symb = dadt_dose.symbol
-            dose_expr = dadt_dose.expression + sympy.Piecewise((rate, duration > t), (0, True))
-            dadt_dose = Assignment(dose_symb, dose_expr)
-            ics[comp_names['A(1)'](0)] = sympy.Integer(0)
-
-        eqs = (sympy.Eq(dadt_dose.symbol, dadt_dose.expression), *dadt_rest)
-
-        ode = ExplicitODESystem(eqs, ics)
-
-        # NOTE Search for DEFOBSERVATION, default to first
+        # Search for DEFOBSERVATION, default to first
         it = iter(rec_model.compartments())
         defobs = (next(it)[0], 1)
         for i, (name, opts) in enumerate(it, start=2):
@@ -330,7 +317,8 @@ def _compartmental_model(
                 defobs = (name, i)
 
         ass = _f_link_assignment(control_stream, sympy.Symbol(f'A_{defobs[0]}'), defobs[1])
-        return ode, ass, None
+        odes = CompartmentalSystem(cb)
+        return odes, ass, None
     else:
         return None
     return CompartmentalSystem(cb), ass, comp_map
