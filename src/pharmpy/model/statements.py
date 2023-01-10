@@ -808,11 +808,12 @@ class CompartmentalSystem(ODESystem):
         >>> odes.get_flow(depot, central)
         KA
         >>> odes.get_flow(central, depot)
+        0
         """
         try:
             rate = self._g.edges[source, destination]['rate']
         except KeyError:
-            rate = None
+            rate = sympy.Integer(0)
         return rate
 
     def get_compartment_outflows(self, compartment):
@@ -993,8 +994,8 @@ class CompartmentalSystem(ODESystem):
         central = self.central_compartment
         oneout = {node for node, out_degree in self._g.out_degree() if out_degree == 1}
         onein = {node for node, in_degree in self._g.in_degree() if in_degree == 1}
-        cout = {comp for comp in oneout if self.get_flow(comp, central) is not None}
-        cin = {comp for comp in onein if self.get_flow(central, comp) is not None}
+        cout = {comp for comp in oneout if self.get_flow(comp, central) != 0}
+        cin = {comp for comp in onein if self.get_flow(central, comp) != 0}
         peripherals = list(cout & cin)
         # Return in deterministic order
         peripherals = sorted(peripherals, key=lambda comp: comp.name)
@@ -1046,7 +1047,7 @@ class CompartmentalSystem(ODESystem):
         # Also not central itself
         central = self.central_compartment
         if len(transits) == 1 and (
-            self.get_flow(transits[0], central) is not None or transits[0] == central
+            self.get_flow(transits[0], central) != 0 or transits[0] == central
         ):
             return []
         else:
@@ -1116,14 +1117,10 @@ class CompartmentalSystem(ODESystem):
             for j in range(0, size):
                 to_comp = nodes[j]
                 rate = self.get_flow(from_comp, to_comp)
-                if rate is None:
-                    rate = sympy.Integer(0)
                 if i != j:
                     f[j, i] = rate
                 diagsum += rate
             outrate = self.get_flow(from_comp, output)
-            if outrate is None:
-                outrate = sympy.Integer(0)
             f[i, i] = -outrate - diagsum
         return f
 

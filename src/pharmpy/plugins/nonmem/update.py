@@ -657,7 +657,7 @@ def pk_param_conversion(model: Model, advan, trans):
                 outind = to_j if to_j != 0 else len(cs)
                 from_comp = cs.find_compartment(reverse_map[to_i])
                 to_comp = cs.find_compartment(reverse_map[outind])
-                if cs.get_flow(from_comp, to_comp) is not None:
+                if cs.get_flow(from_comp, to_comp) != 0:
                     d[sympy.Symbol(f'K{i}{j}')] = sympy.Symbol(f'K{to_i}{to_j}')
                     d[sympy.Symbol(f'K{i}T{j}')] = sympy.Symbol(f'K{to_i}T{to_j}')
         if advan == 'ADVAN3':
@@ -847,7 +847,6 @@ def new_advan_trans(model: Model):
     elif oldtrans is None:
         central = odes.central_compartment
         elimination_rate = odes.get_flow(central, output)
-        assert elimination_rate is not None
         num, den = elimination_rate.as_numer_denom()
         if num.is_Symbol and den.is_Symbol:
             if advan in ['ADVAN1', 'ADVAN2']:
@@ -982,7 +981,7 @@ def add_needed_pk_parameters(model: Model, advan, trans):
                     else:
                         dest_comp = odes.find_compartment(dest)
                     rate = odes.get_flow(source_comp, dest_comp)
-                    if rate is not None:
+                    if rate != 0:
                         assert isinstance(source_comp, Compartment)
                         sn = newmap[source]
                         dn = newmap[dest]
@@ -1007,7 +1006,6 @@ def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
         odes = statements.ode_system
         assert isinstance(odes, CompartmentalSystem)
         rate = odes.get_flow(source, dest)
-        assert rate is not None
         numer, denom = rate.as_numer_denom()
         par1 = Assignment(sympy.Symbol(numpar), numer)
         par2 = Assignment(sympy.Symbol(denompar), denom)

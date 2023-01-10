@@ -131,7 +131,6 @@ def set_first_order_elimination(model: Model):
         central = odes.central_compartment
         v = sympy.Symbol('V')
         rate = odes.get_flow(central, output)
-        assert rate is not None
         if v not in rate.free_symbols:
             v = sympy.Symbol('VC')
         cb = CompartmentalSystemBuilder(odes)
@@ -149,7 +148,6 @@ def set_first_order_elimination(model: Model):
         central = odes.central_compartment
         v = sympy.Symbol('V')
         rate = odes.get_flow(central, output)
-        assert rate is not None
         if v not in rate.free_symbols:
             v = sympy.Symbol('VC')
         cb = CompartmentalSystemBuilder(odes)
@@ -261,7 +259,6 @@ def has_michaelis_menten_elimination(model: Model):
     odes = odes.to_compartmental_system()
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
-    assert rate is not None
     is_nonlinear = odes.t in rate.free_symbols
     is_zero_order = 'POP_KM' in model.parameters and model.parameters['POP_KM'].fix
     could_be_mixed = sympy.Symbol('CL') in rate.free_symbols
@@ -301,7 +298,6 @@ def has_zero_order_elimination(model: Model):
     odes = odes.to_compartmental_system()
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
-    assert rate is not None
     is_nonlinear = odes.t in rate.free_symbols
     is_zero_order = 'POP_KM' in model.parameters and model.parameters['POP_KM'].fix
     could_be_mixed = sympy.Symbol('CL') in rate.free_symbols
@@ -341,7 +337,6 @@ def has_mixed_mm_fo_elimination(model: Model):
     odes = odes.to_compartmental_system()
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
-    assert rate is not None
     is_nonlinear = odes.t in rate.free_symbols
     is_zero_order = 'POP_KM' in model.parameters and model.parameters['POP_KM'].fix
     could_be_mixed = sympy.Symbol('CL') in rate.free_symbols
@@ -378,7 +373,6 @@ def has_first_order_elimination(model: Model):
     odes = odes.to_compartmental_system()
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
-    assert rate is not None
     is_nonlinear = odes.t in rate.free_symbols
     return not is_nonlinear
 
