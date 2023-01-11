@@ -181,49 +181,6 @@ class ODESystem(Statement):
     pass
 
 
-def _bracket(a):
-    """Append a left bracket for an array of lines"""
-    if len(a) == 1:
-        return '{' + a[0]
-    if len(a) == 2:
-        a.append('')
-    if (len(a) % 2) == 0:
-        upper = len(a) // 2 - 1
-    else:
-        upper = len(a) // 2
-    a[0] = '⎧' + a[0]
-    for i in range(1, upper):
-        a[i] = '⎪' + a[i]
-    a[upper] = '⎨' + a[upper]
-    for i in range(upper + 1, len(a) - 1):
-        a[i] = '⎪' + a[i]
-    a[-1] = '⎩' + a[-1]
-    return '\n'.join(a) + '\n'
-
-
-# class ExplicitODESystem(ODESystem):
-#    def __repr__(self):
-#        a = []
-#        for ode in self.odes:
-#            ode_str = sympy.pretty(ode)
-#            a += ode_str.split('\n')
-#        for key, value in self.ics.items():
-#            ics_str = sympy.pretty(sympy.Eq(key, value))
-#            a += ics_str.split('\n')
-#        return _bracket(a)
-#
-#    def _repr_latex_(self):
-#        rows = []
-#        for ode in self.odes:
-#            ode_repr = sympy.latex(ode, mul_symbol='dot')
-#            rows.append(ode_repr)
-#        for k, v in self.ics.items():
-#            ics_eq = sympy.Eq(k, v)
-#            ics_repr = sympy.latex(ics_eq, mul_symbol='dot')
-#            rows.append(ics_repr)
-#        return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
-
-
 class Output:
     def __new__(cls):
         # Singleton class

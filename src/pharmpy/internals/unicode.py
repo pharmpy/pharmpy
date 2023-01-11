@@ -210,3 +210,23 @@ def right_parens(height):
         a.append('⎪')
     a.append('⎭')
     return a
+
+
+def bracket(a):
+    """Append a left bracket for an array of lines"""
+    if len(a) == 1:
+        return '{' + a[0]
+    if len(a) == 2:
+        a.append('')
+    if (len(a) % 2) == 0:
+        upper = len(a) // 2 - 1
+    else:
+        upper = len(a) // 2
+    a[0] = '⎧' + a[0]
+    for i in range(1, upper):
+        a[i] = '⎪' + a[i]
+    a[upper] = '⎨' + a[upper]
+    for i in range(upper + 1, len(a) - 1):
+        a[i] = '⎪' + a[i]
+    a[-1] = '⎩' + a[-1]
+    return '\n'.join(a) + '\n'

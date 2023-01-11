@@ -1,3 +1,11 @@
+next version
+------------
+
+New features
+============
+
+* Add function modeling.display_odes
+
 0.88.0 (2022-12-21)
 -------------------
 

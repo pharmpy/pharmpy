@@ -14,6 +14,7 @@ from pharmpy.modeling import (
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
     cleanup_model,
+    display_odes,
     get_individual_parameters,
     get_individual_prediction_expression,
     get_observation_expression,
@@ -467,3 +468,8 @@ def test_get_rv_parameter_verify_input(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     with pytest.raises(ValueError, match='Could not find random variable: x'):
         get_rv_parameters(model, 'x')
+
+
+def test_display_odes(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    display_odes(model)
