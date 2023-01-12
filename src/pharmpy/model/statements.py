@@ -268,12 +268,12 @@ class CompartmentalSystemBuilder:
 
         Examples
         --------
-        >>> from pharmpy.model import CompartmentalSystemBuilder
+        >>> from pharmpy.model import Compartment, CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
         >>> depot = Compartment("DEPOT")
         >>> cb.add_compartment(depot)
         >>> central = Compartment("CENTRAL")
-        >>> cb.add_compartment("CENTRAL")
+        >>> cb.add_compartment(central)
         >>> cb.add_flow(depot, central, "KA")
         """
         self._g.add_edge(source, destination, rate=parse_expr(rate))
@@ -436,7 +436,8 @@ class CompartmentalSystem(ODESystem):
 
     Examples
     --------
-    >>> from pharmpy.model import Bolus, CompartmentalSystem
+    >>> from pharmpy.model import Bolus, Compartment, output
+    >>> from pharmpy.model import CompartmentalSystemBuilder, CompartmentalSystem
     >>> cb = CompartmentalSystemBuilder()
     >>> dose = Bolus.create("AMT")
     >>> central = Compartment("CENTRAL", dose)
