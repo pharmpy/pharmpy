@@ -108,7 +108,8 @@ jobs:
       - name: Build docs
         run: tox -e docs-build
 
-
+  # This is only needed to test that doctests properly import everything needed
+  # The pytest doctest autoimports the current module
   docs-test:
     strategy:
       matrix:
@@ -126,10 +127,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Test docs
-        run: tox -e docs-test
+        run: |
+          tox -e docs-test
+          tox -e docs-test
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
 
 
   docs-lint:
