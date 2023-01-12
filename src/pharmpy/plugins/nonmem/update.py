@@ -390,7 +390,7 @@ def update_infusion(model: Model, old: ODESystem):
             # FIXME: Not always D1 here!
             ass = Assignment(sympy.Symbol('D1'), dose.duration)
             cb = CompartmentalSystemBuilder(new)
-            cb.set_dose(new.dosing_compartment, Infusion(dose.amount, ass.symbol))
+            cb.set_dose(new.dosing_compartment, Infusion(dose.amount, duration=ass.symbol))
             model.statements = (
                 model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
             )
