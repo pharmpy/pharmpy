@@ -52,6 +52,10 @@ def generate_report(rst_path, results_path):
                     warnings.filterwarnings(
                         "ignore", "nodes.Node.traverse\\(\\) is obsoleted by Node.findall\\(\\)."
                     )
+                    # From Python 3.11
+                    warnings.filterwarnings(
+                        "ignore", "'imghdr' is deprecated and slated for removal in Python 3.13"
+                    )
 
                     app = Sphinx(
                         str(source_path),
