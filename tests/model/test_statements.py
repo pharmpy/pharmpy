@@ -328,9 +328,11 @@ def test_builder():
 
 def test_infusion_repr():
     inf = Infusion('AMT', rate='R1')
-    assert repr(inf) == 'Infusion(AMT, rate=R1)'
+    assert repr(inf) == 'Infusion(AMT, admid=1, rate=R1)'
     inf = Infusion('AMT', duration='D1')
-    assert repr(inf) == 'Infusion(AMT, duration=D1)'
+    assert repr(inf) == 'Infusion(AMT, admid=1, duration=D1)'
+    inf = Infusion('AMT', admid=2, duration='D1')
+    assert repr(inf) == 'Infusion(AMT, admid=2, duration=D1)'
 
 
 def test_infusion_create():

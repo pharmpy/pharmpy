@@ -455,7 +455,7 @@ def load_example_model(name: str):
              ETA(2)
     V = TVV⋅ℯ
     S₁ = V
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘

@@ -104,7 +104,7 @@ def set_first_order_elimination(model: Model):
     >>> set_first_order_elimination(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -183,7 +183,7 @@ def set_zero_order_elimination(model: Model):
     >>> set_zero_order_elimination(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────┐
     │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→
     └───────┘
@@ -392,7 +392,7 @@ def set_michaelis_menten_elimination(model: Model):
     >>> set_michaelis_menten_elimination(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────┐
     │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→
     └───────┘
@@ -450,7 +450,7 @@ def set_mixed_mm_fo_elimination(model: Model):
     >>> set_mixed_mm_fo_elimination(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────┐
     │CENTRAL│──(CL + CLMM*KM/(KM + A_CENTRAL(t)/V))/V→
     └───────┘
@@ -637,7 +637,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
     >>> set_transit_compartments(model, 3)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌────────┐        ┌────────┐        ┌────────┐        ┌───────┐
     │TRANSIT1│──3/MDT→│TRANSIT2│──3/MDT→│TRANSIT3│──3/MDT→│CENTRAL│──CL/V→
     └────────┘        └────────┘        └────────┘        └───────┘
@@ -925,7 +925,7 @@ def set_zero_order_absorption(model: Model):
     >>> set_zero_order_absorption(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Infusion(AMT, duration=2*MAT)
+    Infusion(AMT, admid=1, duration=2*MAT)
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -998,7 +998,7 @@ def set_first_order_absorption(model: Model):
     >>> set_first_order_absorption(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌─────┐        ┌───────┐
     │DEPOT│──1/MAT→│CENTRAL│──CL/V→
     └─────┘        └───────┘
@@ -1063,7 +1063,7 @@ def set_bolus_absorption(model: Model):
     >>> set_bolus_absorption(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -1131,7 +1131,7 @@ def set_seq_zo_fo_absorption(model: Model):
     >>> set_seq_zo_fo_absorption(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Infusion(AMT, duration=2*MDT)
+    Infusion(AMT, admid=1, duration=2*MDT)
     ┌─────┐        ┌───────┐
     │DEPOT│──1/MAT→│CENTRAL│──CL/V→
     └─────┘        └───────┘
@@ -1314,7 +1314,7 @@ def set_peripheral_compartments(model: Model, n: int):
     >>> set_peripheral_compartments(model, 2)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘
@@ -1391,7 +1391,7 @@ def add_peripheral_compartment(model: Model):
     >>> add_peripheral_compartment(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘
@@ -1524,7 +1524,7 @@ def remove_peripheral_compartment(model: Model):
     >>> remove_peripheral_compartment(model)      # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘

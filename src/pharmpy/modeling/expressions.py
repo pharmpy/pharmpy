@@ -409,7 +409,7 @@ def solve_ode_system(model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -568,7 +568,7 @@ def cleanup_model(model):
              ETA(2)
     V = TVV⋅ℯ
     S₁ = V
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -597,7 +597,7 @@ def cleanup_model(model):
     CL = TVCL⋅ℯ
              ETA(2)
     V = TVV⋅ℯ
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -664,7 +664,7 @@ def greekify_model(model, named_subscripts=False):
              ETA(2)
     V = TVV⋅ℯ
     S₁ = V
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -694,7 +694,7 @@ def greekify_model(model, named_subscripts=False):
     CL = TVCL⋅ℯ
              η₂
     V = TVV⋅ℯ
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘

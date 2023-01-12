@@ -568,7 +568,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.subs({'AMT': 'DOSE'})
-        Bolus(DOSE)
+        Bolus(DOSE, admid=1)
         ┌───────┐
         │CENTRAL│──CL/V→
         └───────┘
@@ -692,7 +692,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.get_compartment_inflows(output)
-        [(Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT)), CL/V)]
+        [(Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1)), CL/V)]
         """
         if isinstance(compartment, str):
             compartment = self.find_compartment(compartment)
@@ -721,7 +721,7 @@ class CompartmentalSystem(ODESystem):
         >>> model = load_example_model("pheno")
         >>> central = model.statements.ode_system.find_compartment("CENTRAL")
         >>> central
-        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT))
+        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1))
         """
         for comp in _comps(self._g):
             if comp.name == name:
@@ -770,7 +770,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.dosing_compartment
-        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT))
+        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1))
         """
         for node in _comps(self._g):
             if node.dose is not None:
@@ -794,7 +794,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.central_compartment
-        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT))
+        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1))
         """
         try:
             central = next(self._g.predecessors(output))
@@ -901,7 +901,7 @@ class CompartmentalSystem(ODESystem):
         >>> set_first_order_absorption(model)       # doctest: +ELLIPSIS
         <...>
         >>> model.statements.ode_system.find_depot(model.statements)
-        Compartment(DEPOT, amount=A_DEPOT, dose=Bolus(AMT))
+        Compartment(DEPOT, amount=A_DEPOT, dose=Bolus(AMT, admid=1))
         """
         transits = self.find_transit_compartments(statements)
         depot = self._find_depot()
@@ -1147,7 +1147,7 @@ class Compartment:
     >>> dose = Bolus.create("AMT")
     >>> comp = Compartment.create("DEPOT", dose=dose)
     >>> comp
-    Compartment(DEPOT, amount=A_DEPOT, dose=Bolus(AMT))
+    Compartment(DEPOT, amount=A_DEPOT, dose=Bolus(AMT, admid=1))
     """
 
     def __init__(
@@ -1269,7 +1269,7 @@ class Compartment:
         >>> dose = Bolus.create("AMT")
         >>> comp = Compartment.create("CENTRAL", dose=dose)
         >>> comp.subs({"AMT": "DOSE"})
-        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(DOSE))
+        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(DOSE, admid=1))
         """
         if self.dose is not None:
             dose = self.dose.subs(substitutions)
@@ -1327,30 +1327,39 @@ class Bolus(Dose):
     ----------
     amount : symbol
         Symbolic amount of dose
+    admid : int
+        Administration ID
 
     Examples
     --------
     >>> from pharmpy.model import Bolus
     >>> dose = Bolus.create("AMT")
     >>> dose
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     """
 
-    def __init__(self, amount):
+    def __init__(self, amount, admid=1):
         self._amount = amount
+        self._admid = admid
 
     @classmethod
-    def create(cls, amount):
-        return cls(parse_expr(amount))
+    def create(cls, amount, admid=1):
+        return cls(parse_expr(amount), admid=admid)
 
     def replace(self, **kwargs):
         amount = kwargs.get("amount", self._amount)
-        return Bolus.create(amount=amount)
+        admid = kwargs.get("admid", self._admid)
+        return Bolus.create(amount=amount, admid=admid)
 
     @property
     def amount(self):
         """Symbolic amount of dose"""
         return self._amount
+
+    @property
+    def admid(self):
+        """Administration ID of dose"""
+        return self._admid
 
     @property
     def free_symbols(self):
@@ -1378,15 +1387,19 @@ class Bolus(Dose):
         >>> from pharmpy.model import Bolus
         >>> dose = Bolus.create("AMT")
         >>> dose.subs({'AMT': 'DOSE'})
-        Bolus(DOSE)
+        Bolus(DOSE, admid=1)
         """
-        return Bolus(subs(self.amount, substitutions, simultaneous=True))
+        return Bolus(subs(self.amount, substitutions, simultaneous=True), admid=self._admid)
 
     def __eq__(self, other):
-        return isinstance(other, Bolus) and self.amount == other.amount
+        return (
+            isinstance(other, Bolus)
+            and self._amount == other._amount
+            and self._admid == other._admid
+        )
 
     def __repr__(self):
-        return f'Bolus({self.amount})'
+        return f'Bolus({self.amount}, admid={self._admid})'
 
 
 class Infusion(Dose):
@@ -1396,6 +1409,8 @@ class Infusion(Dose):
     ----------
     amount : expression
         Symbolic amount of dose
+    admid : int
+        Administration ID
     rate : expression
         Symbolic rate. Mutually exclusive with duration
     duration : expression
@@ -1406,19 +1421,20 @@ class Infusion(Dose):
     >>> from pharmpy.model import Infusion
     >>> dose = Infusion("AMT", duration="D1")
     >>> dose
-    Infusion(AMT, duration=D1)
+    Infusion(AMT, admid=1, duration=D1)
     >>> dose = Infusion("AMT", rate="R1")
     >>> dose
-    Infusion(AMT, rate=R1)
+    Infusion(AMT, admid=1, rate=R1)
     """
 
-    def __init__(self, amount, rate=None, duration=None):
+    def __init__(self, amount, admid=1, rate=None, duration=None):
         self._amount = amount
+        self._admid = admid
         self._rate = rate
         self._duration = duration
 
     @classmethod
-    def create(cls, amount, rate=None, duration=None):
+    def create(cls, amount, admid=1, rate=None, duration=None):
         if rate is None and duration is None:
             raise ValueError('Need rate or duration for Infusion')
         if rate is not None and duration is not None:
@@ -1427,18 +1443,24 @@ class Infusion(Dose):
             rate = parse_expr(rate)
         else:
             duration = parse_expr(duration)
-        return cls(parse_expr(amount), rate, duration)
+        return cls(parse_expr(amount), admid=admid, rate=rate, duration=duration)
 
     def replace(self, **kwargs):
         amount = kwargs.get("amount", self._amount)
+        admid = kwargs.get("admid", self._admid)
         rate = kwargs.get("rate", self._rate)
         duration = kwargs.get("duration", self._duration)
-        return Infusion.create(amount=amount, rate=rate, duration=duration)
+        return Infusion.create(amount=amount, admid=admid, rate=rate, duration=duration)
 
     @property
     def amount(self):
         """Symbolic amount of dose"""
         return self._amount
+
+    @property
+    def admid(self):
+        """Administration ID"""
+        return self._admid
 
     @property
     def rate(self):
@@ -1487,7 +1509,7 @@ class Infusion(Dose):
         >>> from pharmpy.model import Infusion
         >>> dose = Infusion.create("AMT", duration="DUR")
         >>> dose.subs({'DUR': 'D1'})
-        Infusion(AMT, duration=D1)
+        Infusion(AMT, admid=1, duration=D1)
         """
         amount = subs(self.amount, substitutions, simultaneous=True)
         if self.rate is not None:
@@ -1496,14 +1518,15 @@ class Infusion(Dose):
         else:
             rate = None
             duration = subs(self.duration, substitutions, simultaneous=True)
-        return Infusion(amount, rate, duration)
+        return Infusion(amount, admid=self._admid, rate=rate, duration=duration)
 
     def __eq__(self, other):
         return (
             isinstance(other, Infusion)
-            and self.rate == other.rate
-            and self.duration == other.duration
-            and self.amount == other.amount
+            and self._admid == other._admid
+            and self._rate == other._rate
+            and self._duration == other._duration
+            and self._amount == other._amount
         )
 
     def __repr__(self):
@@ -1511,7 +1534,7 @@ class Infusion(Dose):
             arg = f'rate={self.rate}'
         else:
             arg = f'duration={self.duration}'
-        return f'Infusion({self.amount}, {arg})'
+        return f'Infusion({self.amount}, admid={self._admid}, {arg})'
 
 
 class Statements(Sequence):
@@ -1599,7 +1622,7 @@ class Statements(Sequence):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system
-        Bolus(AMT)
+        Bolus(AMT, admid=1)
         ┌───────┐
         │CENTRAL│──CL/V→
         └───────┘
