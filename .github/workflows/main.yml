@@ -22,9 +22,6 @@ jobs:
           - tox-env: 'unit'
           - python-version: '3.8'
             tox-env: ${{ github.actor != 'dependabot[bot]' && 'unit-cover' || 'unit' }}
-        exclude:
-          - platform: windows-latest
-            python-version: '3.10'
 
     runs-on: ${{ matrix.platform }}
 
@@ -53,9 +50,6 @@ jobs:
       matrix:
         platform: [ubuntu-22.04, macos-latest, windows-latest]
         python-version: ['3.8', '3.9', '3.10', '3.11']
-        exclude:
-          - platform: windows-latest
-            python-version: '3.10'
 
     runs-on: ${{ matrix.platform }}
 
