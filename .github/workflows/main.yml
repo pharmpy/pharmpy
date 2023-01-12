@@ -126,7 +126,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Test docs
-        run: tox -e py39-docs-test
+        run: tox -e docs-test
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
 
 
   docs-lint:
