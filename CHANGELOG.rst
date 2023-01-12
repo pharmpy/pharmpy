@@ -5,6 +5,7 @@ New features
 ============
 
 * Add function modeling.display_odes
+* Add support for Python 3.11
 
 0.88.0 (2022-12-21)
 -------------------
