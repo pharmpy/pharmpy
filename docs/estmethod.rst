@@ -122,7 +122,7 @@ Settings for evaluation step is the same as for estimation step, with the follow
 
 
 Exhaustive (with update)
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``exhaustive_with_update`` algorithm is similar to the ``exhaustive`` algorithm, but in addition to the candidate
 models that the ``exhaustive`` algorithm create, it will also create a set of candidates that will use the final
