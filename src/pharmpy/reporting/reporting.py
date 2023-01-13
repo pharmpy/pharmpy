@@ -56,6 +56,10 @@ def generate_report(rst_path, results_path):
                     warnings.filterwarnings(
                         "ignore", "'imghdr' is deprecated and slated for removal in Python 3.13"
                     )
+                    warnings.filterwarnings(
+                        "ignore",
+                        "zmq.eventloop.ioloop is deprecated in pyzmq 17.",
+                    )
 
                     app = Sphinx(
                         str(source_path),
