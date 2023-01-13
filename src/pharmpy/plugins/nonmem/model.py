@@ -21,6 +21,7 @@ from .nmtran_parser import NMTranControlStream, NMTranParser
 from .parameters import parameter_translation
 from .parsing import (
     create_name_trans,
+    new_parse_parameters,
     parse_datainfo,
     parse_dataset,
     parse_description,
@@ -62,6 +63,7 @@ class NONMEMModelInternals:
     _old_datainfo: DataInfo
     _dataset_updated: bool
     _compartment_map: Optional[Dict[str, int]]
+    name_map: Dict[str, str]
 
 
 def convert_model(model):
@@ -273,6 +275,8 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         di, _dataset(control_stream, di, dataset), control_stream
     )
 
+    new_parameters, name_map = new_parse_parameters(control_stream, statements)
+
     rvs = parse_random_variables(control_stream)
 
     trans_statements, trans_params = create_name_trans(control_stream, rvs, statements)
@@ -352,6 +356,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         _old_datainfo=_old_datainfo,
         _dataset_updated=False,
         _compartment_map=comp_map,
+        name_map=name_map,
     )
 
     return Model(

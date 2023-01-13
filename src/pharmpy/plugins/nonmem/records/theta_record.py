@@ -98,6 +98,75 @@ class ThetaRecord(Record):
         else:
             return 1
 
+    @property
+    def inits(self):
+        # List of initial estimates for all thetas
+        inits = []
+        for theta in self.root.subtrees('theta'):
+            init = eval_token(theta.subtree('init').leaf('NUMERIC'))
+            n = self._multiple(theta)
+            inits.extend([init] * n)
+        return inits
+
+    @property
+    def fixs(self):
+        # List of fixedness for all thetas
+        fixs = []
+        for theta in self.root.subtrees('theta'):
+            fix = bool(theta.find('FIX'))
+            n = self._multiple(theta)
+            fixs.extend([fix] * n)
+        return fixs
+
+    @property
+    def bounds(self):
+        # List of tuples of lower, upper bounds for all thetas
+        bounds = []
+        for theta in self.root.subtrees('theta'):
+            if theta.find('low'):
+                low = theta.subtree('low')
+                if low.find('NEG_INF'):
+                    lower = min_lower_bound
+                else:
+                    lower = eval_token(next(iter(low.tokens)))
+            else:
+                lower = min_lower_bound
+            if theta.find('up'):
+                up = theta.subtree('up')
+                if up.find('POS_INF'):
+                    upper = max_upper_bound
+                else:
+                    upper = eval_token(next(iter(up.tokens)))
+            else:
+                upper = max_upper_bound
+            n = self._multiple(theta)
+            bounds.extend([(lower, upper)] * n)
+        return bounds
+
+    @property
+    def comment_names(self):
+        # A list of all comment names in the record
+        # None if missing
+        names = []
+        intheta = False
+        n = 0
+        for node in self.root.tree_walk():
+            if node.rule == 'theta':
+                intheta = True
+                if n != 0:
+                    names.extend([None] * n)
+                n = self._multiple(node)
+            if intheta and node.rule == 'COMMENT':
+                m = re.search(r';\s*([a-zA-Z_]\w*)', str(node))
+                if m:
+                    names.append(m.group(1))
+                else:
+                    names.append(None)
+                n -= 1
+                if n == 0:
+                    intheta = False
+        return names
+
     def update(self, parameters, first_theta):
         """From a Parameters update the THETAs in this record
 

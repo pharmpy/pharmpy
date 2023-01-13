@@ -26,6 +26,90 @@ from .record import Record
 
 
 class OmegaRecord(Record):
+    def parse(self):
+        """Parse the omega record
+
+        Return a list with one tuple for each block. Each block will have a list of names,
+        a list of inits, fixedness and same.
+        """
+        block = self.root.find('block')
+        bare_block = self.root.find('bare_block')
+        same = bool(self.root.find('same'))
+        blocks = []
+
+        if not (block or bare_block):
+            for node in self.root.subtrees('diag_item'):
+                init = cast(float, eval_token(node.subtree('init').leaf('NUMERIC')))
+                fixed = bool(node.find('FIX'))
+                sd = bool(node.find('SD'))
+                var = bool(node.find('VAR'))
+                n = cast(int, eval_token(node.subtree('n').leaf('INT'))) if node.find('n') else 1
+                if sd and var:
+                    name = '(anonymous)' if self.name is None else self.name.upper()
+                    raise ModelSyntaxError(
+                        f'Initial estimate for {name} cannot be both'
+                        f' on SD and VAR scale\n{self.root}'
+                    )
+                if init == 0 and not fixed:
+                    name = '(anonymous)' if self.name is None else self.name.upper()
+                    raise ModelSyntaxError(
+                        f'If initial estimate for {name} is 0 it must be set to FIX'
+                    )
+                if sd:
+                    init = init**2
+                name = self._get_name(node)
+                for _ in range(n):
+                    block = ([name], [init], fixed, False)
+                    blocks.append(block)
+        else:
+            inits = []
+            fix, sd, corr, cholesky = self._block_flags()
+            comments = []
+            for node in self.root.subtrees('omega'):
+                init = cast(float, eval_token(node.subtree('init').leaf('NUMERIC')))
+                n = cast(int, eval_token(node.subtree('n').leaf('INT'))) if node.find('n') else 1
+                inits += [init] * n
+                comment = self._get_name(node)
+                comments.append(comment)
+                if n > 1:
+                    comments.extend([None] * (n - 1))
+            if not same:
+                size = cast(int, eval_token(self.root.subtree('block').subtree('size').leaf('INT')))
+                if size != triangular_root(len(inits)):
+                    raise ModelSyntaxError('Wrong number of inits in BLOCK')
+                if not cholesky:
+                    A = flattened_to_symmetric(inits)
+                    if corr:
+                        for i in range(size):
+                            for j in range(size):
+                                if i != j:
+                                    if sd:
+                                        A[i, j] = A[i, i] * A[j, j] * A[i, j]
+                                    else:
+                                        A[i, j] = math.sqrt(A[i, i]) * math.sqrt(A[j, j]) * A[i, j]
+                    if sd:
+                        np.fill_diagonal(A, A.diagonal() ** 2)
+                else:
+                    L = np.zeros((size, size))
+                    inds = np.tril_indices_from(L)
+                    L[inds] = inits
+                    A = L @ L.T
+                label_index = 0
+                names = []
+                inits = []
+                for i in range(size):
+                    for j in range(0, i + 1):
+                        comment = comments[label_index]
+                        init = A[i, j]
+                        names.append(comment)
+                        inits.append(init)
+                        label_index += 1
+                block = (names, inits, fix, False)
+            else:
+                block = (None, None, None, True)
+            blocks.append(block)
+        return blocks
+
     def parameters(self, start_omega, previous_size, seen_labels=None):
         """Get a Parameters for this omega record"""
         row = start_omega

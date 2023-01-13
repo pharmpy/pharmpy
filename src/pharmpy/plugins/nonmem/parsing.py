@@ -17,6 +17,7 @@ from pharmpy.model import (
     EstimationSteps,
     ModelSyntaxError,
     ODESystem,
+    Parameter,
     Parameters,
     RandomVariables,
     Statements,
@@ -27,6 +28,114 @@ from .advan import _compartmental_model
 from .dataset import read_nonmem_dataset
 from .nmtran_parser import NMTranControlStream
 from .parameters import parameter_translation
+
+
+def parse_thetas(control_stream):
+    names = []
+    bounds = []
+    inits = []
+    fixs = []
+    for theta_record in control_stream.get_records('THETA'):
+        bounds.extend(theta_record.bounds)
+        inits.extend(theta_record.inits)
+        fixs.extend(theta_record.fixs)
+        names.extend(theta_record.comment_names)
+    return names, bounds, inits, fixs
+
+
+def parse_omegas_sigmas(control_stream, record_name):
+    blocks = []
+    for record in control_stream.get_records(record_name):
+        curblocks = record.parse()
+        blocks.extend(curblocks)
+    return blocks
+
+
+def parameters_from_blocks(blocks, all_names, record_name):
+    row = 1
+    col = 1
+    prev_size = None
+    parameters = []
+    name_map = {}
+    for names, inits, fix, same in blocks:
+        if same:
+            if prev_size is None:
+                raise ModelSyntaxError(f"First {record_name} block cannot be SAME")
+            row += prev_size
+            col += prev_size
+        else:
+            block_row = row
+            for i, name in enumerate(names):
+                if name in all_names:
+                    duplicated_name = name
+                    name = None
+                else:
+                    duplicated_name = None
+                if name is None:
+                    name = f'{record_name}_{row}_{col}'
+                    while name in all_names:
+                        name += "_"
+                if duplicated_name is not None:
+                    warnings.warn(
+                        f'The parameter name {duplicated_name} is duplicated. '
+                        f'Falling back to using {name} instead.'
+                    )
+                all_names.add(name)
+                nonmem_name = f'{record_name}({row},{col})'
+                name_map[nonmem_name] = name
+                lower = 0 if row == col else None
+                parameter = Parameter.create(name, init=inits[i], lower=lower, upper=None, fix=fix)
+                parameters.append(parameter)
+                if row == col:
+                    row += 1
+                    col = block_row
+                else:
+                    col += 1
+            prev_size = row - block_row + 1
+    return parameters, name_map
+
+
+def new_parse_parameters(control_stream, statements):
+    symbols = statements.free_symbols
+    all_names = {s.name for s in symbols}
+    theta_names, theta_bounds, theta_inits, theta_fixs = parse_thetas(control_stream)
+    theta_parameters = []
+    name_map = {}
+    for i, name in enumerate(theta_names):
+        if name in all_names:
+            duplicated_name = name
+            name = None
+        else:
+            duplicated_name = None
+        if name is None:
+            name = f'THETA_{i + 1}'
+            while name in all_names:
+                name += "_"
+        if duplicated_name is not None:
+            warnings.warn(
+                f'The parameter name {duplicated_name} is duplicated. '
+                f'Falling back to using {name} instead.'
+            )
+        nonmem_name = f'THETA({i + 1})'
+        name_map[nonmem_name] = name
+        all_names.add(name)
+        parameter = Parameter.create(
+            name,
+            init=theta_inits[i],
+            lower=theta_bounds[i][0],
+            upper=theta_bounds[i][1],
+            fix=theta_fixs[i],
+        )
+        theta_parameters.append(parameter)
+
+    omega_blocks = parse_omegas_sigmas(control_stream, "OMEGA")
+    sigma_blocks = parse_omegas_sigmas(control_stream, "SIGMA")
+    omega_parameters, omega_map = parameters_from_blocks(omega_blocks, all_names, 'OMEGA')
+    sigma_parameters, sigma_map = parameters_from_blocks(sigma_blocks, all_names, 'SIGMA')
+    name_map.update(omega_map)
+    name_map.update(sigma_map)
+    parameters = theta_parameters + omega_parameters + sigma_parameters
+    return parameters, name_map
 
 
 def parse_parameters(control_stream) -> Parameters:
