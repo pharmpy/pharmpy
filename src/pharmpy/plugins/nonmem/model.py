@@ -275,7 +275,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         di, _dataset(control_stream, di, dataset), control_stream
     )
 
-    new_parameters, name_map = new_parse_parameters(control_stream, statements)
+    new_parameters, new_rvs, name_map = new_parse_parameters(control_stream, statements)
 
     rvs = parse_random_variables(control_stream)
 

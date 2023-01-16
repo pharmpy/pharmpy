@@ -8,6 +8,7 @@ import pharmpy.plugins.nonmem
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import path_absolute
+from pharmpy.internals.math import triangular_root
 from pharmpy.model import (
     Assignment,
     ColumnInfo,
@@ -15,7 +16,9 @@ from pharmpy.model import (
     DatasetError,
     EstimationStep,
     EstimationSteps,
+    JointNormalDistribution,
     ModelSyntaxError,
+    NormalDistribution,
     ODESystem,
     Parameter,
     Parameters,
@@ -95,6 +98,62 @@ def parameters_from_blocks(blocks, all_names, record_name):
     return parameters, name_map
 
 
+def rvs_from_blocks(blocks, parameters, rvtype):
+    next_same = False
+    parameters_index = 0
+    eta_index = 1
+    rvs = []
+    previous_cov = None
+    for block_index, (_, inits, _, same) in enumerate(blocks):
+        try:
+            next_block = blocks[block_index + 1]
+        except IndexError:
+            next_same = False
+        else:
+            next_same = next_block[3]
+
+        if not same:
+            n = triangular_root(len(inits))
+
+        if rvtype == 'EPS':
+            level = 'ruv'
+        else:
+            if same or next_same:
+                level = 'iov'
+            else:
+                level = 'iiv'
+
+        names = [f'{rvtype}_{eta_index + i}' for i in range(n)]
+
+        if same:
+            cov = previous_cov
+        else:
+            if n == 1:
+                cov = parameters[parameters_index].symbol
+                parameters_index += 1
+            else:
+                cov = sympy.zeros(n)
+                for row in range(n):
+                    for col in range(0, row + 1):
+                        symb = parameters[parameters_index].symbol
+                        parameters_index += 1
+                        cov[row, col] = symb
+                        cov[col, row] = symb
+
+        if n == 1:
+            dist = NormalDistribution.create(names[0], level, 0, cov)
+        else:
+            means = [0] * n
+            dist = JointNormalDistribution.create(names, level, means, cov)
+
+        rvs.append(dist)
+        previous_cov = cov
+
+        eta_index += n
+
+    return RandomVariables.create(rvs)
+
+
 def new_parse_parameters(control_stream, statements):
     symbols = statements.free_symbols
     all_names = {s.name for s in symbols}
@@ -135,7 +194,12 @@ def new_parse_parameters(control_stream, statements):
     name_map.update(omega_map)
     name_map.update(sigma_map)
     parameters = theta_parameters + omega_parameters + sigma_parameters
-    return parameters, name_map
+
+    etas = rvs_from_blocks(omega_blocks, omega_parameters, 'ETA')
+    epsilons = rvs_from_blocks(sigma_blocks, sigma_parameters, 'EPS')
+    rvs = etas + epsilons
+
+    return parameters, rvs, name_map
 
 
 def parse_parameters(control_stream) -> Parameters:
