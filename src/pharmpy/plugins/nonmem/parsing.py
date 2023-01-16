@@ -104,6 +104,7 @@ def rvs_from_blocks(blocks, parameters, rvtype):
     eta_index = 1
     rvs = []
     previous_cov = None
+    name_map = {}
     for block_index, (_, inits, _, same) in enumerate(blocks):
         try:
             next_block = blocks[block_index + 1]
@@ -124,6 +125,8 @@ def rvs_from_blocks(blocks, parameters, rvtype):
                 level = 'iiv'
 
         names = [f'{rvtype}_{eta_index + i}' for i in range(n)]
+        for i, name in enumerate(names):
+            name_map[name] = f'{rvtype}({eta_index + i})'
 
         if same:
             cov = previous_cov
@@ -151,7 +154,7 @@ def rvs_from_blocks(blocks, parameters, rvtype):
 
         eta_index += n
 
-    return RandomVariables.create(rvs)
+    return RandomVariables.create(rvs), name_map
 
 
 def new_parse_parameters(control_stream, statements):
@@ -195,8 +198,10 @@ def new_parse_parameters(control_stream, statements):
     name_map.update(sigma_map)
     parameters = theta_parameters + omega_parameters + sigma_parameters
 
-    etas = rvs_from_blocks(omega_blocks, omega_parameters, 'ETA')
-    epsilons = rvs_from_blocks(sigma_blocks, sigma_parameters, 'EPS')
+    etas, eta_map = rvs_from_blocks(omega_blocks, omega_parameters, 'ETA')
+    epsilons, eps_map = rvs_from_blocks(sigma_blocks, sigma_parameters, 'EPS')
+    name_map.update(eta_map)
+    name_map.update(eps_map)
     rvs = etas + epsilons
 
     return parameters, rvs, name_map
