@@ -98,7 +98,7 @@ def parameters_from_blocks(blocks, all_names, record_name):
     return parameters, name_map
 
 
-def rvs_from_blocks(blocks, parameters, rvtype):
+def rvs_from_blocks(abbr_names, blocks, parameters, rvtype):
     next_same = False
     parameters_index = 0
     eta_index = 1
@@ -124,9 +124,15 @@ def rvs_from_blocks(blocks, parameters, rvtype):
             else:
                 level = 'iiv'
 
-        names = [f'{rvtype}_{eta_index + i}' for i in range(n)]
-        for i, name in enumerate(names):
-            name_map[name] = f'{rvtype}({eta_index + i})'
+        names = []
+        for i in range(n):
+            nonmem_name = f'{rvtype}({eta_index + i})'
+            if nonmem_name in abbr_names:
+                name = abbr_names[nonmem_name]
+            else:
+                name = f'{rvtype}_{eta_index + i}'
+            name_map[name] = nonmem_name
+            names.append(name)
 
         if same:
             cov = previous_cov
@@ -198,8 +204,9 @@ def new_parse_parameters(control_stream, statements):
     name_map.update(sigma_map)
     parameters = theta_parameters + omega_parameters + sigma_parameters
 
-    etas, eta_map = rvs_from_blocks(omega_blocks, omega_parameters, 'ETA')
-    epsilons, eps_map = rvs_from_blocks(sigma_blocks, sigma_parameters, 'EPS')
+    abbr_map = control_stream.abbreviated.translate_to_pharmpy_names()
+    etas, eta_map = rvs_from_blocks(abbr_map, omega_blocks, omega_parameters, 'ETA')
+    epsilons, eps_map = rvs_from_blocks(abbr_map, sigma_blocks, sigma_parameters, 'EPS')
     name_map.update(eta_map)
     name_map.update(eps_map)
     rvs = etas + epsilons
