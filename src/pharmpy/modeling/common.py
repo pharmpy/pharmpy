@@ -52,40 +52,6 @@ def read_model(path: Union[str, Path]):
     return model
 
 
-def read_model_from_database(name, database=None):
-    """Read model from model database
-
-    Parameters
-    ----------
-    name : str
-        Name of model to use as lookup
-    database : Database
-        Database to use. Will use default database if not specified.
-
-    Returns
-    -------
-    Model
-        Read model object
-
-    Examples
-    --------
-    >>> from pharmpy.modeling import read_model_from_database
-    >>> model = read_model_from_database("run1")    # doctest: +SKIP
-
-    See also
-    --------
-    read_model : Read model from file
-    read_model_from_string : Read model from string
-
-    """
-    if database is None:
-        import pharmpy.workflows
-
-        database = pharmpy.workflows.default_model_database()
-    model = database.retrieve_model(name)
-    return model
-
-
 def read_model_from_string(code: str):
     """Read model from the model code in a string
 
