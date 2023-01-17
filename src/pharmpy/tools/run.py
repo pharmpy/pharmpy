@@ -19,6 +19,7 @@ from pharmpy.modeling import (
     check_high_correlations,
     copy_model,
     read_model,
+    read_model_from_database,
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
@@ -69,7 +70,7 @@ def fit(
     for model in models:
         try:
             # FIXME model.database should be removed
-            db_model = retrieve_models(model.database, model.name)[0]
+            db_model = read_model_from_database(model.name, database=model.database)
         except (KeyError, AttributeError):
             db_model = None
         if (
