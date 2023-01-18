@@ -41,7 +41,7 @@ jupyterlab-widgets==3.0.5
 lark==1.1.5
 locket==1.0.0
 lxml==4.9.2
-MarkupSafe==2.1.1
+MarkupSafe==2.1.2
 matplotlib-inline==0.1.6
 mistune==2.0.4
 mpmath==1.2.1
