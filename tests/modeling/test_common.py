@@ -4,7 +4,6 @@ from pathlib import Path
 import pytest
 import sympy
 
-from pharmpy.internals.fs.tmp import TemporaryDirectory
 from pharmpy.modeling import (
     convert_model,
     copy_model,
@@ -15,13 +14,11 @@ from pharmpy.modeling import (
     get_model_covariates,
     load_example_model,
     read_model,
-    read_model_from_database,
     read_model_from_string,
     remove_unused_parameters_and_rvs,
     set_name,
     write_model,
 )
-from pharmpy.workflows import LocalModelDirectoryDatabase
 
 
 def test_get_config_path():
@@ -69,22 +66,6 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     )
     assert model.parameters['THETA(1)'].init == 0.1
-
-
-def test_read_model_from_database(load_example_model_for_test):
-    m1 = load_example_model_for_test('pheno')
-
-    with TemporaryDirectory() as tmpdir:
-        db = LocalModelDirectoryDatabase(tmpdir)
-
-        with pytest.raises(KeyError):
-            read_model_from_database(m1.name, database=db)
-
-        db.store_model(m1)
-
-        m2 = read_model_from_database(m1.name, database=db)
-
-        assert m1 == m2
 
 
 def test_write_model(testdata, load_model_for_test, tmp_path):
