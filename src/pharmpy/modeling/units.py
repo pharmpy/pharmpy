@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, Iterable, Set, Tuple, TypeVar
+from typing import Dict, Iterable, Set, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.expr.tree import prune
 from pharmpy.internals.graph.directed.reachability import reachable_from
-from pharmpy.model import Assignment, ODESystem
+from pharmpy.model import Assignment, Model, ODESystem
 
 T = TypeVar('T')
 
@@ -19,7 +19,7 @@ def _extract_minus(expr):
         return expr
 
 
-def get_unit_of(model, variable):
+def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
     """Derive the physical unit of a variable in the model
 
     Unit information for the dataset needs to be available.

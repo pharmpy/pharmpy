@@ -3,15 +3,16 @@
 """
 
 import re
+from typing import List, Optional, Union
 
 from pharmpy.deps import sympy
-from pharmpy.model import Assignment, Parameter, Parameters
+from pharmpy.model import Assignment, Model, Parameter, Parameters
 from pharmpy.modeling.help_functions import _format_input_list, _get_etas
 
 from .expressions import create_symbol
 
 
-def transform_etas_boxcox(model, list_of_etas=None):
+def transform_etas_boxcox(model: Model, list_of_etas: Optional[Union[List[str], str]] = None):
     """Applies a boxcox transformation to selected etas
 
     Initial estimate for lambda is 0.1 with bounds (-3, 3).
@@ -50,7 +51,7 @@ def transform_etas_boxcox(model, list_of_etas=None):
     return model
 
 
-def transform_etas_tdist(model, list_of_etas=None):
+def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[List[str], str]] = None):
     """Applies a t-distribution transformation to selected etas
 
     Initial estimate for degrees of freedom is 80 with bounds (3, 100).
@@ -89,7 +90,7 @@ def transform_etas_tdist(model, list_of_etas=None):
     return model
 
 
-def transform_etas_john_draper(model, list_of_etas=None):
+def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[List[str], str]] = None):
     """Applies a John Draper transformation [1]_ to spelected etas
 
     Initial estimate for lambda is 0.1 with bounds (-3, 3).

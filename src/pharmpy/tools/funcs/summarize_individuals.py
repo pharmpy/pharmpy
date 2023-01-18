@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import warnings
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -156,7 +156,9 @@ def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) ->
     return df
 
 
-def summarize_individuals_count_table(models=None, df=None):
+def summarize_individuals_count_table(
+    models: Optional[List[Model]] = None, df: pd.DataFrame = None
+):
     r"""Create a count table for individual data
 
     Content of the various columns:

@@ -28,7 +28,7 @@ T = TypeVar('T')
 U = TypeVar('U')
 
 
-def get_observation_expression(model):
+def get_observation_expression(model: Model):
     """Get the full symbolic expression for the observation according to the model
 
     This function currently only support models without ODE systems
@@ -68,7 +68,7 @@ def get_observation_expression(model):
     return y
 
 
-def get_individual_prediction_expression(model):
+def get_individual_prediction_expression(model: Model):
     """Get the full symbolic expression for the modelled individual prediction
 
     This function currently only support models without ODE systems
@@ -101,7 +101,7 @@ def get_individual_prediction_expression(model):
     )
 
 
-def get_population_prediction_expression(model):
+def get_population_prediction_expression(model: Model):
     """Get the full symbolic expression for the modelled population prediction
 
     This function currently only support models without ODE systems
@@ -135,7 +135,7 @@ def get_population_prediction_expression(model):
     )
 
 
-def calculate_eta_gradient_expression(model):
+def calculate_eta_gradient_expression(model: Model):
     """Calculate the symbolic expression for the eta gradient
 
     This function currently only support models without ODE systems
@@ -166,7 +166,7 @@ def calculate_eta_gradient_expression(model):
     return d
 
 
-def calculate_epsilon_gradient_expression(model):
+def calculate_epsilon_gradient_expression(model: Model):
     """Calculate the symbolic expression for the epsilon gradient
 
     This function currently only support models without ODE systems
@@ -198,7 +198,7 @@ def calculate_epsilon_gradient_expression(model):
     return d
 
 
-def create_symbol(model, stem, force_numbering=False):
+def create_symbol(model: Model, stem: str, force_numbering: bool = False):
     """Create a new unique variable symbol given a model
 
     Parameters
@@ -266,7 +266,7 @@ def _find_eta_assignments(model):
     return reversed(leafs)
 
 
-def mu_reference_model(model):
+def mu_reference_model(model: Model):
     r"""Convert model to use mu-referencing
 
     Mu-referencing an eta is to separately define its actual mu (mean) parameter.
@@ -331,7 +331,7 @@ def mu_reference_model(model):
     return model
 
 
-def simplify_expression(model, expr):
+def simplify_expression(model: Model, expr: Union[int, float, str, sympy.Expr]):
     """Simplify expression given constraints in model
 
     Parameters
@@ -387,7 +387,7 @@ def simplify_expression(model, expr):
     return simp
 
 
-def solve_ode_system(model):
+def solve_ode_system(model: Model):
     """Replace ODE system with analytical solution if possible
 
     Warnings
@@ -437,7 +437,7 @@ def solve_ode_system(model):
     return model
 
 
-def make_declarative(model):
+def make_declarative(model: Model):
     """Make the model statments declarative
 
     Each symbol will only be declared once.
@@ -526,7 +526,7 @@ def make_declarative(model):
     return model
 
 
-def cleanup_model(model):
+def cleanup_model(model: Model):
     """Perform various cleanups of a model
 
     This is what is currently done
@@ -630,7 +630,7 @@ def cleanup_model(model):
     return model
 
 
-def greekify_model(model, named_subscripts=False):
+def greekify_model(model: Model, named_subscripts: bool = False):
     """Convert to using greek letters for all population parameters
 
     Parameters

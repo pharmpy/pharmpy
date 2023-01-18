@@ -11,10 +11,12 @@ Currenly contains:
 
 import warnings
 from collections.abc import Mapping
+from typing import Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import round_and_keep_sum
+from pharmpy.model import Model
 
 
 class DatasetIterator:
@@ -100,7 +102,9 @@ class Omit(DatasetIterator):
         return self._combine_dataset(new_df), next_group
 
 
-def omit_data(dataset_or_model, group, name_pattern='omitted_{}'):
+def omit_data(
+    dataset_or_model: Union[pd.DataFrame, Model], group: str, name_pattern: str = 'omitted_{}'
+):
     """Iterate over omissions of a certain group in a dataset. One group is omitted at a time.
 
     Parameters
@@ -241,14 +245,14 @@ class Resample(DatasetIterator):
 
 
 def resample_data(
-    dataset_or_model,
-    group,
-    resamples=1,
-    stratify=None,
-    sample_size=None,
-    replace=False,
-    name_pattern='resample_{}',
-    name=None,
+    dataset_or_model: Union[pd.DataFrame, Model],
+    group: str,
+    resamples: int = 1,
+    stratify: Optional[str] = None,
+    sample_size: Optional[int] = None,
+    replace: bool = False,
+    name_pattern: str = 'resample_{}',
+    name: Optional[str] = None,
 ):
     """Iterate over resamples of a dataset.
 

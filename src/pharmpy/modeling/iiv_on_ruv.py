@@ -2,12 +2,19 @@
 :meta private:
 """
 
+from typing import List, Optional, Union
+
 from pharmpy.deps import sympy
-from pharmpy.model import NormalDistribution, Parameter, Parameters
+from pharmpy.model import Model, NormalDistribution, Parameter, Parameters
 from pharmpy.modeling.help_functions import _format_input_list, _get_epsilons
 
 
-def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
+def set_iiv_on_ruv(
+    model: Model,
+    list_of_eps: Optional[Union[List[str], str]] = None,
+    same_eta: bool = True,
+    eta_names: Optional[Union[List[str], str]] = None,
+):
     """
     Multiplies epsilons with exponential (new) etas.
 

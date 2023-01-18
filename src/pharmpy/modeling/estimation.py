@@ -1,7 +1,9 @@
 import math
+from typing import Dict, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.model import Model
 
 
 class UCPScale:
@@ -16,7 +18,7 @@ class UCPScale:
         return "<UCPScale object>"
 
 
-def calculate_ucp_scale(model):
+def calculate_ucp_scale(model: Model):
     """Calculate a scale for unconstrained parameters for a model
 
     The UCPScale object can be used to calculate unconstrained parameters
@@ -80,14 +82,16 @@ def _scale_matrix(A):
     return m_scale.T
 
 
-def calculate_parameters_from_ucp(model, scale, ucps):
+def calculate_parameters_from_ucp(
+    model: Model, scale: UCPScale, ucps: Union[pd.Series, Dict[str, float]]
+):
     """Scale parameter values from ucp to normal scale
 
     Parameters
     ----------
     model : Model
         Pharmpy model
-    scale : UCPSCale
+    scale : UCPScale
         A parameter scale
     ucps : pd.Series or dict
         Series of parameter values

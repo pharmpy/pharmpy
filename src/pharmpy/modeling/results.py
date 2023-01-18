@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from itertools import chain
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -25,7 +25,12 @@ from .parameter_sampling import create_rng, sample_parameters_from_covariance_ma
 RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic'))
 
 
-def calculate_eta_shrinkage(model, parameter_estimates, individual_estimates, sd=False):
+def calculate_eta_shrinkage(
+    model: Model,
+    parameter_estimates: pd.Series,
+    individual_estimates: pd.DataFrame,
+    sd: bool = False,
+):
     """Calculate eta shrinkage for each eta
 
     Parameters
@@ -79,7 +84,9 @@ def calculate_eta_shrinkage(model, parameter_estimates, individual_estimates, sd
     return shrinkage
 
 
-def calculate_individual_shrinkage(model, parameter_estimates, individual_estimates_covariance):
+def calculate_individual_shrinkage(
+    model: Model, parameter_estimates: pd.Series, individual_estimates_covariance: pd.DataFrame
+):
     """Calculate the individual eta-shrinkage
 
     Definition: ieta_shr = (var(eta) / omega)
@@ -195,10 +202,12 @@ def calculate_individual_shrinkage(model, parameter_estimates, individual_estima
 
 def calculate_individual_parameter_statistics(
     model: Model,
-    expr_or_exprs: str,
+    expr_or_exprs: Union[
+        Iterable[sympy.Eq], Iterable[sympy.Expr], Iterable[str], sympy.Eq, sympy.Expr, str
+    ],
     parameter_estimates: pd.Series,
     covariance_matrix: Optional[pd.DataFrame] = None,
-    rng: Optional[Union[np.random.Generator], int] = None,
+    rng: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Calculate statistics for individual parameters
 
@@ -377,7 +386,10 @@ def calculate_individual_parameter_statistics(
 
 
 def calculate_pk_parameters_statistics(
-    model, parameter_estimates, covariance_matrix=None, rng=None
+    model: Model,
+    parameter_estimates: pd.Series,
+    covariance_matrix: Optional[pd.DataFrame] = None,
+    rng: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Calculate statistics for common pharmacokinetic parameters
 
@@ -515,7 +527,7 @@ def _split_equation(s):
     return name, expr
 
 
-def calculate_aic(model, likelihood):
+def calculate_aic(model: Model, likelihood: float):
     """Calculate AIC
 
     AIC = -2LL + 2*n_estimated_parameters
@@ -546,7 +558,7 @@ def _random_etas(model):
     return model.random_variables.etas[keep]
 
 
-def calculate_bic(model, likelihood, type=None):
+def calculate_bic(model: Model, likelihood: float, type: Optional[str] = None):
     """Calculate BIC
 
     Different variations of the BIC can be calculated:
@@ -667,7 +679,9 @@ def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9)
     return cor.where(high_and_below_diagonal).stack()
 
 
-def check_parameters_near_bounds(model, values, zero_limit=0.001, significant_digits=2):
+def check_parameters_near_bounds(
+    model: Model, values: pd.Series, zero_limit: float = 0.001, significant_digits: int = 2
+):
     """Check if any estimated parameter value is close to its bounds
 
     Parameters
@@ -676,7 +690,7 @@ def check_parameters_near_bounds(model, values, zero_limit=0.001, significant_di
         Pharmpy model object
     values : pd.Series
         Series of values with index a subset of parameter names.
-    zero_limit : number
+    zero_limit : float
         maximum distance to 0 bounds
     significant_digits : int
         maximum distance to non-zero bounds in number of significant digits

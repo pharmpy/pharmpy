@@ -1,14 +1,20 @@
+from typing import List, Optional, Union
+
 from pharmpy.model import Model
 from pharmpy.workflows import Task, Workflow
 
 
-def create_workflow(models=None, n=None, tool=None):
+def create_workflow(
+    models: Optional[Union[List[Model], Model]] = None,
+    n: Optional[int] = None,
+    tool: Optional[str] = None,
+):
     """Run modelfit tool.
 
     Parameters
     ----------
     models : Model
-        A list of models are one single model object
+        A list of models or one single model object
     n : int
         Number of models to fit. This is only used if the tool is going to be combined with other tools.
     tool : str

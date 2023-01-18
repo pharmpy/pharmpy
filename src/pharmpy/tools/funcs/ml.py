@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.model import ModelfitResultsError
+from pharmpy.model import Model, ModelfitResultsError
 from pharmpy.modeling import (
     get_ids,
     get_model_covariates,
@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     get_number_of_observations,
     get_number_of_observations_per_individual,
 )
+from pharmpy.results import ModelfitResults
 
 
 def _all_parameters(model):
@@ -94,7 +95,7 @@ def _create_dataset(model, res):
     return df
 
 
-def predict_outliers(model, results, cutoff=3.0):
+def predict_outliers(model: Model, results: ModelfitResults, cutoff: float = 3.0):
     """Predict outliers for a model using a machine learning model.
 
     See the :ref:`simeval <Individual OFV summary>` documentation for a definition of the `residual`
@@ -197,7 +198,7 @@ def predict_outliers(model, results, cutoff=3.0):
     return df
 
 
-def predict_influential_individuals(model, results, cutoff=3.84):
+def predict_influential_individuals(model: Model, results: ModelfitResults, cutoff: float = 3.84):
     """Predict influential individuals for a model using a machine learning model.
 
     Parameters
@@ -231,7 +232,12 @@ def predict_influential_individuals(model, results, cutoff=3.84):
     return df
 
 
-def predict_influential_outliers(model, results, outlier_cutoff=3, influential_cutoff=3.84):
+def predict_influential_outliers(
+    model: Model,
+    results: ModelfitResults,
+    outlier_cutoff: float = 3.0,
+    influential_cutoff: float = 3.84,
+):
     """Predict influential outliers for a model using a machine learning model.
 
     Parameters

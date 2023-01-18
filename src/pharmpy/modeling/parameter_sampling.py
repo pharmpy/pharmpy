@@ -1,12 +1,14 @@
 import warnings
 from functools import partial
+from typing import List, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import is_posdef, nearest_postive_semidefinite
+from pharmpy.model import Model
 
 
-def create_rng(seed=None):
+def create_rng(seed: Optional[Union[np.random.Generator, int]] = None):
     """Create a new random number generator
 
     Pharmpy functions that use random sampling take a random number generator or seed as input.
@@ -113,7 +115,12 @@ def _sample_from_function(
 
 
 def sample_parameters_uniformly(
-    model, parameter_estimates, fraction=0.1, force_posdef_samples=None, n=1, rng=None
+    model: Model,
+    parameter_estimates: pd.Series,
+    fraction: float = 0.1,
+    force_posdef_samples: Optional[int] = None,
+    n: int = 1,
+    rng: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Sample parameter vectors using uniform sampling
 
@@ -176,13 +183,13 @@ def sample_parameters_uniformly(
 
 
 def sample_parameters_from_covariance_matrix(
-    model,
-    parameter_estimates,
-    covariance_matrix,
-    force_posdef_samples=None,
-    force_posdef_covmatrix=False,
-    n=1,
-    rng=None,
+    model: Model,
+    parameter_estimates: pd.Series,
+    covariance_matrix: pd.DataFrame,
+    force_posdef_samples: Optional[int] = None,
+    force_posdef_covmatrix: bool = False,
+    n: int = 1,
+    rng: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Sample parameter vectors using the covariance matrix
 
@@ -253,12 +260,12 @@ def sample_parameters_from_covariance_matrix(
 
 
 def sample_individual_estimates(
-    model,
-    individual_estimates,
-    individual_estimates_covariance,
-    parameters=None,
-    samples_per_id=100,
-    rng=None,
+    model: Model,
+    individual_estimates: pd.DataFrame,
+    individual_estimates_covariance: pd.DataFrame,
+    parameters: Optional[List[str]] = None,
+    samples_per_id: int = 100,
+    rng: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Sample individual estimates given their covariance.
 

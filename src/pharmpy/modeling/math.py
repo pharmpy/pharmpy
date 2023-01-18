@@ -3,7 +3,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import cov2corr
 
 
-def calculate_se_from_cov(cov):
+def calculate_se_from_cov(cov: pd.DataFrame):
     """Calculate standard errors from a covariance matrix
 
     Parameters
@@ -52,7 +52,7 @@ def calculate_se_from_cov(cov):
     return se
 
 
-def calculate_se_from_inf(information_matrix):
+def calculate_se_from_inf(information_matrix: pd.DataFrame):
     """Calculate standard errors from an information matrix
 
     Parameters
@@ -103,7 +103,7 @@ def calculate_se_from_inf(information_matrix):
     return se
 
 
-def calculate_corr_from_cov(cov):
+def calculate_corr_from_cov(cov: pd.DataFrame):
     """Calculate correlation matrix from a covariance matrix
 
     Parameters
@@ -153,7 +153,7 @@ def calculate_corr_from_cov(cov):
     return corr
 
 
-def calculate_cov_from_inf(information_matrix):
+def calculate_cov_from_inf(information_matrix: pd.DataFrame):
     """Calculate covariance matrix from an information matrix
 
     Parameters
@@ -207,7 +207,7 @@ def calculate_cov_from_inf(information_matrix):
     return cov
 
 
-def calculate_cov_from_corrse(corr, se):
+def calculate_cov_from_corrse(corr: pd.DataFrame, se: pd.Series):
     """Calculate covariance matrix from a correlation matrix and standard errors
 
     Parameters
@@ -262,7 +262,7 @@ def calculate_cov_from_corrse(corr, se):
     return cov_df
 
 
-def calculate_inf_from_cov(cov):
+def calculate_inf_from_cov(cov: pd.DataFrame):
     """Calculate information matrix from a covariance matrix
 
     Parameters
@@ -312,7 +312,7 @@ def calculate_inf_from_cov(cov):
     return Im
 
 
-def calculate_inf_from_corrse(corr, se):
+def calculate_inf_from_corrse(corr: pd.DataFrame, se: pd.Series):
     """Calculate information matrix from a correlation matrix and standard errors
 
     Parameters
@@ -367,7 +367,7 @@ def calculate_inf_from_corrse(corr, se):
     return Im
 
 
-def calculate_corr_from_inf(information_matrix):
+def calculate_corr_from_inf(information_matrix: pd.DataFrame):
     """Calculate correlation matrix from an information matrix
 
     Parameters

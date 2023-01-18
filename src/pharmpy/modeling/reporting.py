@@ -1,4 +1,10 @@
-def create_report(results, path):
+from pathlib import Path
+from typing import Union
+
+from pharmpy.results import Results
+
+
+def create_report(results: Results, path: Union[Path, str]):
     """Create standard report for results
 
     The report will be an html created at specified path.

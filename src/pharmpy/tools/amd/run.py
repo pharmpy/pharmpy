@@ -40,7 +40,7 @@ def run_amd(
     mat_init: float = 0.1,
     search_space: Optional[str] = None,
     lloq: Optional[float] = None,
-    order: Optional[List] = None,
+    order: Optional[List[str]] = None,
     allometric_variable: Optional[Union[str, sympy.Symbol]] = None,
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,
