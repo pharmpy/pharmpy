@@ -68,6 +68,7 @@ def parameters_from_blocks(blocks, all_names, record_name):
             col += prev_size
         else:
             block_row = row
+            col = row
             for i, name in enumerate(names):
                 if name in all_names:
                     duplicated_name = name
