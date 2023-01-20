@@ -110,9 +110,8 @@ def create_workflow(
 
     Parameters
     ----------
-    effects : str | list
-        The list of candidate parameter-covariate effects to try, either as a
-        MFL sentence or in (optionally compact) tuple form.
+    effects : str
+        MFL of covariate effects to try
     p_forward : float
         The p-value to use in the likelihood ratio test for forward steps
     p_backward : float
