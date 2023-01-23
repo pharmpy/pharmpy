@@ -165,7 +165,7 @@ def create_model(cg, model):
 def create_fit(cg, model):
     """Create the call to fit"""
     if [s.evaluation for s in model.estimation_steps._steps][0] == False:
-        cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei")')
+        cg.add(f'fit <- nlmixr2({model.name}, dataset, "posthoc")')
     else:
         cg.add(f'fit <- nlmixr2({model.name}, dataset, "posthoc")')
 
@@ -245,9 +245,13 @@ def execute_model(model, db):
     database = db.model_database
     model = convert_model(model)
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
+    print(path)
     model.internals.path = path
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
+    #TODO this csv file need to have lower case time and amt in order to function
+    # otherwise the model will not run for nlmixr2
+    # This is also true for the model code
     write_csv(model, path=path)
 
     code = model.model_code
@@ -260,10 +264,21 @@ def execute_model(model, db):
     code += f'\n{str(cg)}'
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
+        
+    with open(path / f'{model.name}.R', 'r') as fh:
+        filedata = fh.read()
+    print(filedata)
+    filedata = filedata.replace("AMT", "amt")
+    filedata = filedata.replace("TIME","time")
+    filedata = filedata.replace("ID", "id")
+    print(filedata)
+    with open(path / f'{model.name}.R', 'w') as fh:
+        fh.write(filedata)
 
     from pharmpy.plugins.nlmixr import conf
 
     rpath = conf.rpath / 'bin' / 'Rscript'
+    print(rpath)
     newenv = os.environ
     # Reset environment variables incase started from R
     # and calling other R version.
