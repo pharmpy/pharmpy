@@ -79,6 +79,7 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
 def create_dataset(cg, model, path=None):
     """Create dataset for nlmixr"""
     dataname = f'{model.name}.csv'
+    #TODO lower case for time and amt
     if path is None:
         path = ""
     path = Path(path) / dataname
@@ -163,7 +164,10 @@ def create_model(cg, model):
 
 def create_fit(cg, model):
     """Create the call to fit"""
-    cg.add(f'fit <- nlmixr({model.name}, dataset, "focei")')
+    if [s.evaluation for s in model.estimation_steps._steps][0] == False:
+        cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei")')
+    else:
+        cg.add(f'fit <- nlmixr2({model.name}, dataset, "posthoc")')
 
 
 @dataclass
@@ -178,7 +182,7 @@ class Model(pharmpy.model.Model):
 
     def update_source(self, path=None):
         cg = CodeGenerator()
-        cg.add('library(nlmixr)')
+        cg.add('library(nlmixr2)')
         cg.empty_line()
         create_dataset(cg, self, path)
         cg.empty_line()
