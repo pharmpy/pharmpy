@@ -76,60 +76,10 @@ Arguments
 Effects
 ~~~~~~~
 
-Candidate effects can be described in a variety of ways. The most basic way is
-to give an explicit list of candidate effects to try:
-
-.. pharmpy-code::
-
-    run_covsearch(
-        ...
-        effects=[
-            ['CL', 'SEX', 'CAT', '+'],
-            ['CL', 'WT', 'EXP'],
-            ['V', 'SEX', 'CAT', '+'],
-            ['V', 'WT', 'EXP'],
-        ],
-        ...
-    )
-
-In each candidate, the first item is the name of the parameter (or its
-corresponding IIV ETA), the second item is the name of the covariate, the
-third item is the name of the effect (see
-:py:func:`pharmpy.modeling.add_covariate_effect` for a list of available
-effects), and the fourth item (optional) is the operator used to combine the
-existing parameter expression with the effect (`'*'` (default) or `'+'`).
-
-A more compact way to list candidate effects is through a list of cartesian
-products. For instance the following list of candidate effects
-
-.. pharmpy-code::
-
-    run_covsearch(
-        ...
-        effects=[
-            ['CL', 'AGE', 'EXP'],
-            ['CL', 'WT', 'EXP'],
-            ['V', 'AGE', 'EXP'],
-            ['V', 'WT', 'EXP'],
-        ],
-        ...
-    )
-
-can be simplified to
-
-.. pharmpy-code::
-
-    run_covsearch(
-        ...
-        effects=[
-            [['CL', 'V'], ['AGE', 'WT'], 'EXP'],
-        ],
-        ...
-    )
-
-
-Finally, the candidate effects can be defined through a model feature language
-(:ref:`MFL<mfl>`) sentence. For instance, the example above can be given as
+Candidate effects can be defined through a model feature language (:ref:`MFL<mfl>`)
+sentence. For instance, given we want to add a exponential effects on
+clearance and volume with age and weight as covariates respectively, we can use the
+following MFL specification:
 
 .. pharmpy-code::
 
@@ -138,6 +88,10 @@ Finally, the candidate effects can be defined through a model feature language
         effects='COVARIATE([CL, V], [AGE, WT], EXP)',
         ...
     )
+
+The effect is specified by first writing the parameters, then the covariates of interest,
+which effect, and, optionally, the operation to use for the covariate effect (`'*'`
+(default) or `'+'`). If the operation is omitted, the default operation will be used.
 
 The `MFL` also provides additional features such as automatically- or
 manually-defined symbols. For instance the example above can be rewritten as
