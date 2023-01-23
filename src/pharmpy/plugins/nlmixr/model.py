@@ -79,7 +79,6 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
 def create_dataset(cg, model, path=None):
     """Create dataset for nlmixr"""
     dataname = f'{model.name}.csv'
-    #TODO lower case for time and amt
     if path is None:
         path = ""
     path = Path(path) / dataname
@@ -245,13 +244,13 @@ def execute_model(model, db):
     database = db.model_database
     model = convert_model(model)
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
-    print(path)
     model.internals.path = path
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     #TODO this csv file need to have lower case time and amt in order to function
     # otherwise the model will not run for nlmixr2
     # This is also true for the model code
+    # DONE(poorly)
     write_csv(model, path=path)
 
     code = model.model_code
@@ -260,25 +259,30 @@ def execute_model(model, db):
     cg.add('thetas <- fit$theta')
     cg.add('omega <- fit$omega')
     cg.add('sigma <- fit$sigma')
-    cg.add(f'save(file="{path}/{model.name}.RDATA", ofv, thetas, omega, sigma)')
+    # TODO add the variables from fit holding the predicted values as well
+    # --> Could be in a dataframe with all predicted values and the time / id
+    # FIXME the path variable cannot be handled by R so the code does not work here
+    cg.add(f'save(file="{path}\{model.name}.RDATA", ofv, thetas, omega, sigma)')
     code += f'\n{str(cg)}'
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
-        
-    with open(path / f'{model.name}.R', 'r') as fh:
-        filedata = fh.read()
-    print(filedata)
-    filedata = filedata.replace("AMT", "amt")
-    filedata = filedata.replace("TIME","time")
-    filedata = filedata.replace("ID", "id")
-    print(filedata)
-    with open(path / f'{model.name}.R', 'w') as fh:
-        fh.write(filedata)
+    
+    #TODO if the model in question is a nlmixr then time, amt and id need to
+    # be in lower case
+    # DONE (poorly)
+    if "nlmixr" in str(type(model)):
+        with open(path / f'{model.name}.R', 'r') as fh:
+            filedata = fh.read()
+        filedata = filedata.replace("AMT", "amt")
+        filedata = filedata.replace("TIME","time")
+        filedata = filedata.replace("ID", "id")
+        with open(path / f'{model.name}.R', 'w') as fh:
+            fh.write(filedata)
 
     from pharmpy.plugins.nlmixr import conf
 
     rpath = conf.rpath / 'bin' / 'Rscript'
-    print(rpath)
+    
     newenv = os.environ
     # Reset environment variables incase started from R
     # and calling other R version.
