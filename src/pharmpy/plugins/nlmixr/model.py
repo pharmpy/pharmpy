@@ -262,7 +262,7 @@ def execute_model(model, db):
     # TODO add the variables from fit holding the predicted values as well
     # --> Could be in a dataframe with all predicted values and the time / id
     # FIXME the path variable cannot be handled by R so the code does not work here
-    cg.add(f'save(file="{path}\{model.name}.RDATA", ofv, thetas, omega, sigma)')
+    cg.add(f'save(file="{path}/{model.name}.RDATA", ofv, thetas, omega, sigma)')
     code += f'\n{str(cg)}'
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
