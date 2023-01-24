@@ -164,7 +164,7 @@ def create_model(cg, model):
 def create_fit(cg, model):
     """Create the call to fit"""
     if [s.evaluation for s in model.estimation_steps._steps][0] == False:
-        cg.add(f'fit <- nlmixr2({model.name}, dataset, "posthoc")')
+        cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei")')
     else:
         cg.add(f'fit <- nlmixr2({model.name}, dataset, "posthoc")')
 
@@ -193,7 +193,8 @@ class Model(pharmpy.model.Model):
         cg.add('}')
         cg.empty_line()
         create_fit(cg, self)
-        self.internals.src = str(cg)
+        # Create lowercase id, time and amount symbols
+        self.internals.src = str(cg).replace("AMT", "amt").replace("TIME", "time").replace("ID", "id")
         self.internals.path = None
 
     @property
@@ -214,6 +215,7 @@ def parse_modelfit_results(model, path):
         rdata = pyreadr.read_r(rdata_path)
     except (FileNotFoundError, OSError):
         return None
+    
     ofv = rdata['ofv']['ofv'][0]
     omegas_sigmas = {}
     omega = model.random_variables.etas.covariance_matrix
@@ -224,7 +226,7 @@ def parse_modelfit_results(model, path):
                 omegas_sigmas[symb.name] = rdata['omega'].values[i, j]
     sigma = model.random_variables.epsilons.covariance_matrix
     for i in range(len(sigma)):
-        omegas_sigmas[sigma[i]] = rdata['sigma']['sigma'][i]
+        omegas_sigmas[sigma[i].name] = rdata['sigma']['sigma'][i]
     thetas_index = 0
     pe = {}
     for param in model.parameters:
@@ -235,8 +237,22 @@ def parse_modelfit_results(model, path):
         else:
             pe[param.name] = rdata['thetas']['thetas'][thetas_index]
             thetas_index += 1
+    
+    name = model.name
+    description = model.description
+    estimation_steps = model.estimation_steps
+    parameters = model.parameters
+    etas = model.random_variables.etas
     pe = pd.Series(pe)
-    res = ModelfitResults(ofv=ofv, parameter_estimates=pe)
+    predictions = rdata['pred']
+    
+    
+    res = ModelfitResults(
+        name = name,
+        description = description,    
+        ofv=ofv,
+        parameter_estimates=pe,
+        predictions = predictions)
     return res
 
 
@@ -249,35 +265,39 @@ def execute_model(model, db):
     meta.mkdir(parents=True, exist_ok=True)
     #TODO this csv file need to have lower case time and amt in order to function
     # otherwise the model will not run for nlmixr2
-    # This is also true for the model code
-    # DONE(poorly)
+    # DONE(write_csv)
+    # TODO column with eventID is CRUCIAL for nlmixr, added in write_csv file
+    # if not yet existing
+    # DONE (within write_csv)
     write_csv(model, path=path)
 
     code = model.model_code
     cg = CodeGenerator()
-    cg.add('ofv <- fit$ofv')
-    cg.add('thetas <- fit$theta')
+    #cg.add('ofv <- fit$ofv')
+    #cg.add('ofv <- nlmixr2est::ofv(fit, "focei")')
+    cg.add('ofv <- fit$objDf$OBJF')
+    #cg.add('thetas <- fit$theta')
+    cg.add('thetas <- fit$theta[!as.logical(lapply(names(fit$theta), function(x){grepl("SIGMA",x, fixed = TRUE)}))]')
     cg.add('omega <- fit$omega')
-    cg.add('sigma <- fit$sigma')
+    #cg.add('sigma <- fit$sigma')
+    cg.add('sigma <- fit$theta[as.logical(lapply(names(fit$theta), function(x){grepl("SIGMA",x, fixed = TRUE)}))]')
+    cg.add('log_likelihood <- fit$objDf$`Log-likelihood`')
+    cg.add('runtime_total <- sum(fit$time)')
+    cg.add('pred <- as.data.frame(fit[c("ID", "TIME", "PRED")])')
+    
+    
     # TODO add the variables from fit holding the predicted values as well
     # --> Could be in a dataframe with all predicted values and the time / id
-    # FIXME the path variable cannot be handled by R so the code does not work here
-    cg.add(f'save(file="{path}/{model.name}.RDATA", ofv, thetas, omega, sigma)')
+    # FIXME the path variable cannot be handled by R in windows so the code does not work here
+    cg.add(f'save(file="{path}/{model.name}.RDATA",ofv, thetas, omega, sigma, log_likelihood, runtime_total, pred)')
     code += f'\n{str(cg)}'
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
     
     #TODO if the model in question is a nlmixr then time, amt and id need to
-    # be in lower case
+    # be in lower case.
     # DONE (poorly)
-    if "nlmixr" in str(type(model)):
-        with open(path / f'{model.name}.R', 'r') as fh:
-            filedata = fh.read()
-        filedata = filedata.replace("AMT", "amt")
-        filedata = filedata.replace("TIME","time")
-        filedata = filedata.replace("ID", "id")
-        with open(path / f'{model.name}.R', 'w') as fh:
-            fh.write(filedata)
+    # FIXME This should be done when converting the model!
 
     from pharmpy.plugins.nlmixr import conf
 
@@ -336,3 +356,48 @@ def execute_model(model, db):
     res = parse_modelfit_results(model, path)
     model.modelfit_results = res
     return model
+
+def verification(nonmem_model, db_name, error = 10**-3):
+        
+    # Save results from the nonmem model
+    nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:,[0]]
+    
+    # Update the nonmem model with new estimates
+    # and convert to nlmixr
+    from pharmpy.modeling import update_inits
+    nlmixr_model = convert_model(
+        update_inits(nonmem_model, 
+                     nonmem_model.modelfit_results.parameter_estimates)
+                                 )
+    # Execute the nlmixr model
+    import pharmpy.workflows
+    db = pharmpy.workflows.LocalDirectoryToolDatabase(db_name)
+    nlmixr_model = execute_model(nlmixr_model, db)
+    nlmixr_results = nlmixr_model.modelfit_results.predictions
+    
+    with warnings.catch_warnings():
+        # Supress a numpy deprecation warning
+        warnings.simplefilter("ignore")
+        nonmem_results.rename(columns={"PRED":"PRED_NONMEM"}, inplace = True)
+        nlmixr_results.rename(columns={"PRED":"PRED_NLMIXR"}, inplace = True)
+    
+    #Combine the two based on ID and time
+    combined_result = pd.merge(nonmem_results, 
+                               nlmixr_results, 
+                               left_on=["ID", "TIME"], 
+                               right_on=["ID","TIME"])
+    
+    # Add difference between the models
+    combined_result["DIFF"] = abs(combined_result["PRED_NONMEM"] - combined_result["PRED_NLMIXR"])
+
+    combined_result["PASS/FAIL"] = "PASS"
+    combined_result.loc[combined_result["DIFF"] > error, "PASS/FAIL"] = "FAIL"
+    
+    if all(combined_result["PASS/FAIL"] == "PASS"):
+        return True
+    else:
+        return False
+
+    
+    
+    
