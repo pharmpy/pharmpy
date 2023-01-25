@@ -10,6 +10,9 @@ class Record:
         self.raw_name = raw_name
         self._root = root
 
+    def replace(self, root):
+        return self.__class__(self.name, self.raw_name, root)
+
     @property
     def root(self):
         """Root of the parse tree"""

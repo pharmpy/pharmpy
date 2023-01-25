@@ -1291,7 +1291,8 @@ def update_name_of_tables(control_stream: NMTranControlStream, new_name: str):
             if m:
                 table_stem = m.group(1)
                 new_table_name = f'{table_stem}{n}'
-                table.path = table_path.parent / new_table_name
+                new_table = table.set_path(table_path.parent / new_table_name)
+                control_stream.replace_records([table], [new_table])
 
 
 def update_sizes(model: Model):
