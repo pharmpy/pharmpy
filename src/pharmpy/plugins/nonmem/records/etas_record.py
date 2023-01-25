@@ -12,4 +12,5 @@ class EtasRecord(OptionRecord):
 
     @path.setter
     def path(self, value):
-        self.set_option('FILE', str(value))
+        newrec = self.set_option('FILE', str(value))
+        self.root = newrec.root  # FIXME!

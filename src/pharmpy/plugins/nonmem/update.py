@@ -1421,7 +1421,8 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
         try:
             first_est_record.option_pairs['MCETA']
         except KeyError:
-            first_est_record.set_option('MCETA', '1')
+            newrec = first_est_record.set_option('MCETA', '1')
+            first_est_record.root = newrec.root  # FIXME!
 
 
 def _sort_eta_columns(df: pd.DataFrame):

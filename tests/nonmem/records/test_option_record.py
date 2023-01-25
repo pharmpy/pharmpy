@@ -24,15 +24,15 @@ def test_all_options(parser):
 
 def test_set_option(parser):
     rec = parser.parse('$ETAS FILE=run1.phi').records[0]
-    rec.set_option("FILE", "new.phi")
-    assert rec.option_pairs == {'FILE': 'new.phi'}
-    assert str(rec) == '$ETAS FILE=new.phi'
+    newrec = rec.set_option("FILE", "new.phi")
+    assert newrec.option_pairs == {'FILE': 'new.phi'}
+    assert str(newrec) == '$ETAS FILE=new.phi'
 
     rec = parser.parse('$EST METHOD=1 INTER ; my est\n').records[0]
-    rec.set_option("METHOD", "0")
-    assert str(rec) == '$EST METHOD=0 INTER ; my est\n'
-    rec.set_option("CTYPE", "4")
-    assert str(rec) == '$EST METHOD=0 INTER CTYPE=4 ; my est\n'
+    newrec = rec.set_option("METHOD", "0")
+    assert str(newrec) == '$EST METHOD=0 INTER ; my est\n'
+    newrec2 = newrec.set_option("CTYPE", "4")
+    assert str(newrec2) == '$EST METHOD=0 INTER CTYPE=4 ; my est\n'
 
 
 @pytest.mark.parametrize(

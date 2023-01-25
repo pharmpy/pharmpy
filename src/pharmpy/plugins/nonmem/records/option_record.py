@@ -102,8 +102,8 @@ class OptionRecord(Record):
             if _get_key(node) == key:
                 new_children.append(node.replace_first(AttrToken('VALUE', new_value)))
                 new_children.extend(it)
-                self.root = AttrTree(self.root.rule, tuple(new_children))
-                return
+                newroot = AttrTree(self.root.rule, tuple(new_children))
+                return self.__class__(self.name, self.raw_name, newroot)
 
             new_children.append(node)
 
@@ -113,7 +113,7 @@ class OptionRecord(Record):
         option_node = self._create_option(key, new_value)
         # If no other options add first else add just after last option
         if last_option is None:
-            self.root = AttrTree(
+            newroot = AttrTree(
                 self.root.rule,
                 (
                     ws_token,
@@ -127,7 +127,8 @@ class OptionRecord(Record):
                 new_children.append(node)
                 if node is last_option:
                     new_children += [ws_token, option_node]
-            self.root = AttrTree(self.root.rule, tuple(new_children))
+            newroot = AttrTree(self.root.rule, tuple(new_children))
+        return self.__class__(self.name, self.raw_name, newroot)
 
     def _create_option(self, key: str, value: Optional[str] = None):
         if value is None:
