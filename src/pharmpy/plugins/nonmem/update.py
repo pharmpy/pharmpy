@@ -453,6 +453,7 @@ def to_des(model: Model, new: ODESystem):
         model.internals.control_stream.get_records('MODEL')
     )
     mod = model.internals.control_stream.insert_record('$MODEL\n')
+    old_mod = mod
     assert isinstance(mod, ModelRecord)
     for eq, ic in zip(new.eqs, list(new.ics.keys())):
         name = eq.lhs.args[0].name[2:]
@@ -460,7 +461,8 @@ def to_des(model: Model, new: ODESystem):
             dose = True
         else:
             dose = False
-        mod.add_compartment(name, dosing=dose)
+        mod = mod.add_compartment(name, dosing=dose)
+    model.internals.control_stream.replace_records([old_mod], [mod])
 
 
 def update_statements(model: Model, old: Statements, new: Statements, trans):
@@ -870,6 +872,7 @@ def update_model_record(model: Model, advan):
                 model.internals.control_stream.get_records('MODEL')
             )
             mod = model.internals.control_stream.insert_record('$MODEL\n')
+            old_mod = mod
             assert isinstance(mod, ModelRecord)
             comps = {v: k for k, v in newmap.items()}
             i = 1
@@ -877,10 +880,11 @@ def update_model_record(model: Model, advan):
                 if i not in comps:
                     break
                 if i == 1:
-                    mod.add_compartment(comps[i], dosing=True)
+                    mod = mod.add_compartment(comps[i], dosing=True)
                 else:
-                    mod.add_compartment(comps[i], dosing=False)
+                    mod = mod.add_compartment(comps[i], dosing=False)
                 i += 1
+            model.internals.control_stream.replace_records([old_mod], [mod])
     model.internals._compartment_map = newmap
 
 

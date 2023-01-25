@@ -20,7 +20,7 @@ class ModelRecord(OptionRecord):
     def add_compartment(self, name, dosing=False):
         options = (name, 'DEFDOSE') if dosing else (name,)
         newrec = self.append_option('COMPARTMENT', f'({" ".join(options)})')
-        self.root = newrec.root  # FIXME!
+        return newrec
 
     def prepend_compartment(self, name, dosing=False):
         options = (name, 'DEFDOSE') if dosing else (name,)
