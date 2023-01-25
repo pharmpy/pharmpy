@@ -10,7 +10,6 @@ class EtasRecord(OptionRecord):
         assert file_option is not None
         return Path(file_option)
 
-    @path.setter
-    def path(self, value):
+    def set_path(self, value):
         newrec = self.set_option('FILE', str(value))
-        self.root = newrec.root  # FIXME!
+        return newrec
