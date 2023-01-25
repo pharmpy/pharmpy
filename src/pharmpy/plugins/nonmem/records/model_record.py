@@ -28,12 +28,6 @@ class ModelRecord(OptionRecord):
                 return i + 1
         return None
 
-    def move_dosing_first(self):
-        newrec = self.remove_suboption_for_all('COMPARTMENT', 'DEFDOSE')
-        self.root = newrec.root  # FIXME!
-        newrec = self.add_suboption_for_nth('COMPARTMENT', 0, 'DEFDOSE')
-        self.root = newrec.root  # FIXME!
-
     def compartments(self):
         ncomps = self.ncomps
         if (
