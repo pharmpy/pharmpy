@@ -223,7 +223,8 @@ class OptionRecord(Record):
                     i += 1
             else:
                 new_children.append(node)
-        self.root = AttrTree(self.root.rule, tuple(new_children))
+        newroot = AttrTree(self.root.rule, tuple(new_children))
+        return self.__class__(self.name, self.raw_name, newroot)
 
     def add_suboption_for_nth(self, key, n, suboption):
         """Adds a suboption to the nth option key"""

@@ -36,7 +36,8 @@ class ModelRecord(OptionRecord):
     def remove_compartment(self, name):
         n = self.get_compartment_number(name)
         assert n is not None
-        self.remove_nth_option('COMPARTMENT', n - 1)
+        newrec = self.remove_nth_option('COMPARTMENT', n - 1)
+        self.root = newrec.root  # FIXME!
 
     def set_dosing(self, name):
         n = self.get_compartment_number(name)
