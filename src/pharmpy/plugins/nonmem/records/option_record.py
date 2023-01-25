@@ -266,7 +266,8 @@ class OptionRecord(Record):
 
             new_children.append(node)
 
-        self.root = AttrTree(self.root.rule, tuple(new_children))
+        newroot = AttrTree(self.root.rule, tuple(new_children))
+        return self.__class__(self.name, self.raw_name, newroot)
 
     def remove_option_startswith(self, start):
         """Remove all options that startswith"""
