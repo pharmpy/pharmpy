@@ -17,7 +17,8 @@ class SubroutineRecord(OptionRecord):
     def advan(self, value):
         # FIXME: Need replace_option
         self.remove_option_startswith('ADVAN')
-        self.append_option(value)
+        newrec = self.append_option(value)
+        self.root = newrec.root  # FIXME!
 
     @property
     def trans(self):

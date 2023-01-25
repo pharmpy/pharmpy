@@ -438,11 +438,14 @@ def to_des(model: Model, new: ODESystem):
     solver = step.solver
     if solver:
         advan = solver_to_advan(solver)
-        subs.append_option(advan)
+        newrec = subs.append_option(advan)
+        subs.root = newrec.root  # FIXME!
     else:
-        subs.append_option('ADVAN13')
+        newrec = subs.append_option('ADVAN13')
+        subs.root = newrec.root  # FIXME!
     if not subs.has_option('TOL'):
-        subs.append_option('TOL', '9')
+        newrec = subs.append_option('TOL', '9')
+        subs.root = newrec.root  # FIXME!
     des = model.internals.control_stream.insert_record('$DES\nDUMMY=0\n')
     assert isinstance(des, CodeRecord)
     des.from_odes(new)
@@ -1343,7 +1346,8 @@ def update_input(model: Model):
 
     last_input_record = input_records[-1]
     for ci in model.datainfo[len(colnames) :]:
-        last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
+        newrec = last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
+        last_input_record.root = newrec.root  # FIXME!
 
 
 def get_zero_fix_rvs(model, eta=True):

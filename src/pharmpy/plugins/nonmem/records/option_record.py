@@ -155,7 +155,7 @@ class OptionRecord(Record):
         """
         node = self._create_option(key, value)
         newrec = self.append_option_node(node)
-        self.root = newrec.root  # FIXME!
+        return newrec
 
     def _append_option_args(self) -> Tuple[int, int, AttrToken]:
         children = self.root.children

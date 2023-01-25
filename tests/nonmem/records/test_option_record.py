@@ -142,10 +142,10 @@ def test_match_option(valid, opt, expected):
 
 def test_append_node(parser):
     rec = parser.parse('$ESTIMATION METH=0 MAXEVALS=0').records[0]
-    rec.append_option('INTERACTION')
-    assert str(rec) == '$ESTIMATION METH=0 MAXEVALS=0 INTERACTION'
-    rec.append_option('MCETA', '100')
-    assert str(rec) == '$ESTIMATION METH=0 MAXEVALS=0 INTERACTION MCETA=100'
+    newrec = rec.append_option('INTERACTION')
+    assert str(newrec) == '$ESTIMATION METH=0 MAXEVALS=0 INTERACTION'
+    newrec2 = newrec.append_option('MCETA', '100')
+    assert str(newrec2) == '$ESTIMATION METH=0 MAXEVALS=0 INTERACTION MCETA=100'
 
 
 def test_prepend_node(parser):
