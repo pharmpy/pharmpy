@@ -15,7 +15,8 @@ class SizesRecord(OptionRecord):
     @LTH.setter
     def LTH(self, value):
         if value < 101:
-            self.remove_option('LTH')
+            newrec = self.remove_option('LTH')
+            self.root = newrec.root  # FIXME!
         else:
             self.set_option('LTH', str(value))
 
@@ -35,4 +36,5 @@ class SizesRecord(OptionRecord):
         if value > 30:
             self.set_option('PC', str(value))
         else:
-            self.remove_option('PC')
+            newrec = self.remove_option('PC')
+            self.root = newrec.root  # FIXME!

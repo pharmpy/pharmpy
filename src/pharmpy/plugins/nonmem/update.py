@@ -432,7 +432,8 @@ def to_des(model: Model, new: ODESystem):
     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
     subs.remove_option_startswith('TRANS')
     subs.remove_option_startswith('ADVAN')
-    subs.remove_option('TOL')
+    newrec = subs.remove_option('TOL')
+    subs.root = newrec.root  # FIXME!
     step = model.estimation_steps[0]
     solver = step.solver
     if solver:

@@ -201,7 +201,8 @@ class OptionRecord(Record):
                     new_children.pop()
             else:
                 new_children.append(node)
-        self.root = AttrTree(self.root.rule, tuple(new_children))
+        newroot = AttrTree(self.root.rule, tuple(new_children))
+        return self.__class__(self.name, self.raw_name, newroot)
 
     def remove_nth_option(self, key, n):
         """Remove the nth option key"""
@@ -271,7 +272,7 @@ class OptionRecord(Record):
         """Remove all options that startswith"""
         for key in self.option_pairs:
             if key.startswith(start):
-                self.remove_option(key)
+                self.root = self.remove_option(key).root  # FIXME!
 
     @staticmethod
     def match_option(options: Iterable[str], query: str):
