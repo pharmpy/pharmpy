@@ -59,8 +59,8 @@ def test_remove_option(parser, buf, remove, expected):
 )
 def test_remove_option_startswith(parser, buf, remove, expected):
     rec = parser.parse(buf).records[0]
-    rec.remove_option_startswith(remove)
-    assert str(rec) == expected
+    newrec = rec.remove_option_startswith(remove)
+    assert str(newrec) == expected
 
 
 @pytest.mark.parametrize(

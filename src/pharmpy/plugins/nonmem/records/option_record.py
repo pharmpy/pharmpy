@@ -276,9 +276,11 @@ class OptionRecord(Record):
 
     def remove_option_startswith(self, start):
         """Remove all options that startswith"""
+        rec = self
         for key in self.option_pairs:
             if key.startswith(start):
-                self.root = self.remove_option(key).root  # FIXME!
+                rec = rec.remove_option(key)
+        return rec
 
     @staticmethod
     def match_option(options: Iterable[str], query: str):

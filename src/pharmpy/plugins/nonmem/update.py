@@ -430,9 +430,9 @@ def to_des(model: Model, new: ODESystem):
     old_des = model.internals.control_stream.get_records('DES')
     model.internals.control_stream.remove_records(old_des)
     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
-    subs.remove_option_startswith('TRANS')
-    subs.remove_option_startswith('ADVAN')
-    newrec = subs.remove_option('TOL')
+    newrec = subs.remove_option_startswith('TRANS')
+    newrec = newrec.remove_option_startswith('ADVAN')
+    newrec = newrec.remove_option('TOL')
     subs.root = newrec.root  # FIXME!
     step = model.estimation_steps[0]
     solver = step.solver
@@ -842,10 +842,10 @@ def update_subroutines_record(model: Model, advan, trans):
         subs.root = newsubs.root  # FIXME!
     if trans != oldtrans:
         if trans is None:
-            subs.remove_option_startswith('TRANS')
+            newsubs = subs.remove_option_startswith('TRANS')
         else:
             newsubs = subs.replace_option(oldtrans, trans)
-            subs.root = newsubs.root  # FIXME!
+        subs.root = newsubs.root  # FIXME!
 
 
 def update_model_record(model: Model, advan):
