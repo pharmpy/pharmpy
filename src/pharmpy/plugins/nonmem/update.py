@@ -835,12 +835,14 @@ def update_subroutines_record(model: Model, advan, trans):
     oldtrans = subs.trans
 
     if advan != oldadvan:
-        subs.replace_option(oldadvan, advan)
+        newsubs = subs.replace_option(oldadvan, advan)
+        subs.root = newsubs.root  # FIXME!
     if trans != oldtrans:
         if trans is None:
             subs.remove_option_startswith('TRANS')
         else:
-            subs.replace_option(oldtrans, trans)
+            newsubs = subs.replace_option(oldtrans, trans)
+            subs.root = newsubs.root  # FIXME!
 
 
 def update_model_record(model: Model, advan):

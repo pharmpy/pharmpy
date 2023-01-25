@@ -190,7 +190,8 @@ class OptionRecord(Record):
 
             return node
 
-        self.root = self.root.map(_fn)
+        newroot = self.root.map(_fn)
+        return self.__class__(self.name, self.raw_name, newroot)
 
     def remove_option(self, key):
         """Remove all options key"""
