@@ -8,7 +8,7 @@ class Record:
     def __init__(self, name, raw_name, root):
         self.name = name
         self.raw_name = raw_name
-        self.root = root
+        self._root = root
 
     @property
     def root(self):

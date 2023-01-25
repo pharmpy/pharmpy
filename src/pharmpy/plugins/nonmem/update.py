@@ -46,7 +46,8 @@ from .table import NONMEMTableFile, PhiTable
 def update_description(model: Model):
     if model.description != model.internals._old_description:
         probrec = model.internals.control_stream.get_records('PROBLEM')[0]
-        probrec.title = model.description
+        new = probrec.set_title(model.description)
+        model.internals.control_stream.replace_records([probrec], [new])
 
 
 def reorder_diff(diff, kept_names):
