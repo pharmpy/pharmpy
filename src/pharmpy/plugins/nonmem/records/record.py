@@ -1,15 +1,9 @@
-from typing import Optional
-
-
 class Record:
     """
     Top level class for records.
 
     Create objects only by using the factory function create_record.
     """
-
-    name: Optional[str] = None
-    raw_name: Optional[str] = None
 
     def __init__(self, name, raw_name, root):
         self.name = name
