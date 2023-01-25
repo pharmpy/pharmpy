@@ -22,11 +22,6 @@ class ModelRecord(OptionRecord):
         newrec = self.append_option('COMPARTMENT', f'({" ".join(options)})')
         return newrec
 
-    def prepend_compartment(self, name, dosing=False):
-        options = (name, 'DEFDOSE') if dosing else (name,)
-        newrec = self.prepend_option('COMPARTMENT', f'({" ".join(options)})')
-        self.root = newrec.root  # FIXME!
-
     def get_compartment_number(self, name):
         for i, (curname, _) in enumerate(self.compartments()):
             if name == curname:
