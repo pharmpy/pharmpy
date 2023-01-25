@@ -491,7 +491,8 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                 if new_solver != old_solver:
                     advan = solver_to_advan(new_solver)
                     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
-                    subs.advan = advan
+                    newsubs = subs.set_advan(advan)
+                    model.internals.control_stream.replace_records([subs], [newsubs])
                     update_model_record(model, advan)
 
     main_statements = model.statements.before_odes
