@@ -110,8 +110,8 @@ def test_get_option_lists(parser, buf, expected):
 )
 def test_add_suboption_for_nth(parser, buf, n, subopt, result):
     rec = parser.parse(buf).records[0]
-    rec.add_suboption_for_nth('COMPARTMENT', n, subopt)
-    assert str(rec) == result
+    newrec = rec.add_suboption_for_nth('COMPARTMENT', n, subopt)
+    assert str(newrec) == result
 
 
 @pytest.mark.parametrize(

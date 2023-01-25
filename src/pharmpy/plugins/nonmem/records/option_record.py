@@ -239,8 +239,8 @@ class OptionRecord(Record):
                             s = f'({s} {suboption})'
                         new_children.append(node.replace_first(AttrToken('VALUE', s)))
                         new_children.extend(it)
-                        self.root = AttrTree(self.root.rule, tuple(new_children))
-                        return
+                        newroot = AttrTree(self.root.rule, tuple(new_children))
+                        return self.__class__(self.name, self.raw_name, newroot)
                     i += 1
 
             new_children.append(node)
