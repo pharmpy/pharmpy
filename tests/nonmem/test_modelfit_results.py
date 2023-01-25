@@ -4,10 +4,8 @@ import shutil
 import pandas as pd
 import pytest
 
-import pharmpy.plugins.nonmem as nonmem
-from pharmpy.config import ConfigurationContext
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.plugins.nonmem.results import parse_modelfit_results, simfit_results
+from pharmpy.plugins.nonmem.results import simfit_results
 from pharmpy.results import read_results
 
 
@@ -19,9 +17,7 @@ def test_ofv(pheno):
 def test_special_models(testdata, load_model_for_test):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
     withBayes = load_model_for_test(onePROB / 'multEST' / 'noSIM' / 'withBayes.mod')
-    assert (
-        pytest.approx(withBayes.modelfit_results.standard_errors['THETA(1)'], 1e-13) == 2.51942e00
-    )
+    assert pytest.approx(withBayes.modelfit_results.standard_errors['POP_CL'], 1e-13) == 2.51942e00
     succ1 = withBayes.modelfit_results.minimization_successful_iterations.iloc[0]
     succ2 = withBayes.modelfit_results.minimization_successful_iterations.iloc[1]
     assert succ1 is not None and not succ1
@@ -35,89 +31,48 @@ def test_special_models(testdata, load_model_for_test):
 
 
 def test_covariance(load_model_for_test, pheno_path):
-    with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
-        res = load_model_for_test(pheno_path).modelfit_results
-        cov = res.covariance_matrix
-        assert len(cov) == 6
-        assert pytest.approx(cov.loc['THETA(1)', 'THETA(1)'], 1e-13) == 4.41151e-08
-        assert pytest.approx(cov.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == 7.17184e-05
-    with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
-        res = load_model_for_test(pheno_path).modelfit_results
-        cov = res.covariance_matrix
-        assert len(cov) == 6
-        assert pytest.approx(cov.loc['PTVCL', 'PTVCL'], 1e-13) == 4.41151e-08
-        assert pytest.approx(cov.loc['IVV', 'PTVV'], 1e-13) == 7.17184e-05
+    res = load_model_for_test(pheno_path).modelfit_results
+    cov = res.covariance_matrix
+    assert len(cov) == 6
+    assert pytest.approx(cov.loc['PTVCL', 'PTVCL'], 1e-13) == 4.41151e-08
+    assert pytest.approx(cov.loc['IVV', 'PTVV'], 1e-13) == 7.17184e-05
 
 
 def test_information(load_model_for_test, pheno_path):
-    with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
-        res = load_model_for_test(pheno_path).modelfit_results
-        m = res.information_matrix
-        assert len(m) == 6
-        assert pytest.approx(m.loc['THETA(1)', 'THETA(1)'], 1e-13) == 2.99556e07
-        assert pytest.approx(m.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == -2.80082e03
-    with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
-        res = load_model_for_test(pheno_path).modelfit_results
-        m = res.information_matrix
-        assert len(m) == 6
-        assert pytest.approx(m.loc['PTVCL', 'PTVCL'], 1e-13) == 2.99556e07
-        assert pytest.approx(m.loc['IVV', 'PTVV'], 1e-13) == -2.80082e03
+    res = load_model_for_test(pheno_path).modelfit_results
+    m = res.information_matrix
+    assert len(m) == 6
+    assert pytest.approx(m.loc['PTVCL', 'PTVCL'], 1e-13) == 2.99556e07
+    assert pytest.approx(m.loc['IVV', 'PTVV'], 1e-13) == -2.80082e03
 
 
 def test_correlation(load_model_for_test, pheno_path):
-    with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
-        res = load_model_for_test(pheno_path).modelfit_results
-        corr = res.correlation_matrix
-        assert len(corr) == 6
-        assert corr.loc['THETA(1)', 'THETA(1)'] == 1.0
-        assert pytest.approx(corr.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == 3.56662e-01
-    with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
-        res = load_model_for_test(pheno_path).modelfit_results
-        corr = res.correlation_matrix
-        assert len(corr) == 6
-        assert corr.loc['PTVCL', 'PTVV'] == 0.00709865
-        assert pytest.approx(corr.loc['IVV', 'PTVV'], 1e-13) == 3.56662e-01
+    res = load_model_for_test(pheno_path).modelfit_results
+    corr = res.correlation_matrix
+    assert len(corr) == 6
+    assert corr.loc['PTVCL', 'PTVV'] == 0.00709865
+    assert pytest.approx(corr.loc['IVV', 'PTVV'], 1e-13) == 3.56662e-01
 
 
 def test_standard_errors(load_model_for_test, pheno_path):
-    with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
-        res = load_model_for_test(pheno_path).modelfit_results
-        ses = res.standard_errors
-        assert len(ses) == 6
-        assert pytest.approx(ses['THETA(1)'], 1e-13) == 2.10036e-04
-        ses_sd = res.standard_errors_sdcorr
-        correct = pd.Series(
-            {
-                'THETA(1)': 0.000210036,
-                'THETA(2)': 0.0268952,
-                'THETA(3)': 0.0837623,
-                'OMEGA(1,1)': 0.0391526,
-                'OMEGA(2,2)': 0.0223779,
-                'SIGMA(1,1)': 0.00990444,
-            }
-        )
-        correct.name = 'SE'
-        pd.testing.assert_series_equal(ses_sd, correct)
+    res = load_model_for_test(pheno_path).modelfit_results
+    ses = res.standard_errors
+    assert len(ses) == 6
+    assert pytest.approx(ses['PTVCL'], 1e-13) == 2.10036e-04
 
-    with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
-        res = load_model_for_test(pheno_path).modelfit_results
-        ses = res.standard_errors
-        assert len(ses) == 6
-        assert pytest.approx(ses['PTVCL'], 1e-13) == 2.10036e-04
-
-        ses_sd = res.standard_errors_sdcorr
-        correct = pd.Series(
-            {
-                'PTVCL': 0.000210036,
-                'PTVV': 0.0268952,
-                'THETA(3)': 0.0837623,
-                'IVCL': 0.0391526,
-                'IVV': 0.0223779,
-                'SIGMA(1,1)': 0.00990444,
-            }
-        )
-        correct.name = 'SE'
-        pd.testing.assert_series_equal(ses_sd, correct)
+    ses_sd = res.standard_errors_sdcorr
+    correct = pd.Series(
+        {
+            'PTVCL': 0.000210036,
+            'PTVV': 0.0268952,
+            'THETA_3': 0.0837623,
+            'IVCL': 0.0391526,
+            'IVV': 0.0223779,
+            'SIGMA_1_1': 0.00990444,
+        }
+    )
+    correct.name = 'SE'
+    pd.testing.assert_series_equal(ses_sd, correct)
 
 
 def test_individual_ofv(pheno):
@@ -127,21 +82,21 @@ def test_individual_ofv(pheno):
     assert pytest.approx(iofv[57], 1e-15) == 5.6639479151436394
 
 
-def test_individual_estimates(pheno, pheno_lst):
-    res = nonmem.parse_modelfit_results(pheno, pheno_lst)
+def test_individual_estimates_basic(load_model_for_test, pheno_path):
+    res = load_model_for_test(pheno_path).modelfit_results
     ie = res.individual_estimates
     assert len(ie) == 59
-    assert pytest.approx(ie['ETA(1)'][1], 1e-15) == -0.0438608
-    assert pytest.approx(ie['ETA(2)'][1], 1e-15) == 0.00543031
-    assert pytest.approx(ie['ETA(1)'][28], 1e-15) == 7.75957e-04
-    assert pytest.approx(ie['ETA(2)'][28], 1e-15) == 8.32311e-02
+    assert pytest.approx(ie['ETA_1'][1], 1e-15) == -0.0438608
+    assert pytest.approx(ie['ETA_2'][1], 1e-15) == 0.00543031
+    assert pytest.approx(ie['ETA_1'][28], 1e-15) == 7.75957e-04
+    assert pytest.approx(ie['ETA_2'][28], 1e-15) == 8.32311e-02
 
 
-def test_individual_estimates_covariance(pheno, pheno_lst):
-    res = nonmem.parse_modelfit_results(pheno, pheno_lst)
+def test_individual_estimates_covariance(load_model_for_test, pheno_path):
+    res = load_model_for_test(pheno_path).modelfit_results
     cov = res.individual_estimates_covariance
     assert len(cov) == 59
-    names = ['ETA(1)', 'ETA(2)']
+    names = ['ETA_1', 'ETA_2']
     correct = pd.DataFrame(
         [[2.48833e-02, -2.99920e-03], [-2.99920e-03, 7.15713e-03]], index=names, columns=names
     )
@@ -153,39 +108,17 @@ def test_individual_estimates_covariance(pheno, pheno_lst):
 
 
 def test_parameter_estimates(load_model_for_test, pheno_path):
-    with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
-        res = load_model_for_test(pheno_path).modelfit_results
-        pe = res.parameter_estimates
-        assert len(pe) == 6
-        assert pe['THETA(1)'] == 4.69555e-3
-        assert pe['OMEGA(2,2)'] == 2.7906e-2
-        pe_sd = res.parameter_estimates_sdcorr
-        correct = pd.Series(
-            {
-                'THETA(1)': 0.00469555,
-                'THETA(2)': 0.984258,
-                'THETA(3)': 0.158920,
-                'OMEGA(1,1)': 0.171321,
-                'OMEGA(2,2)': 0.167051,
-                'SIGMA(1,1)': 0.115069,
-            }
-        )
-        correct.name = 'estimates'
-        pd.testing.assert_series_equal(pe_sd, correct)
-
-    with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
-        res = load_model_for_test(pheno_path).modelfit_results
-        pe = res.parameter_estimates
-        assert len(pe) == 6
-        assert pe['PTVCL'] == 4.69555e-3
-        assert pe['IVV'] == 2.7906e-2
+    res = load_model_for_test(pheno_path).modelfit_results
+    pe = res.parameter_estimates
+    assert len(pe) == 6
+    assert pe['PTVCL'] == 4.69555e-3
+    assert pe['IVV'] == 2.7906e-2
 
 
 def test_parameter_estimates_ext_missing_fix(load_model_for_test, pheno_path, testdata):
-    with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
-        model = load_model_for_test(pheno_path)
-        res = parse_modelfit_results(model, testdata / 'nonmem' / 'errors' / 'run_interrupted.mod')
-        assert len(res.parameter_estimates.index.values) == len(model.parameters)
+    model = load_model_for_test(testdata / 'nonmem' / 'errors' / 'run_interrupted.mod')
+    res = model.modelfit_results
+    assert len(res.parameter_estimates.index.values) == len(model.parameters)
 
 
 def test_simfit(testdata, load_model_for_test):

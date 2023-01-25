@@ -28,11 +28,12 @@ def test_psn_options():
 
 def test_cdd_psn(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
-    base_model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    base_model = load_model_for_test(testdata / 'nonmem' / 'cdd' / 'pheno_real.mod')
     cdd_models = [load_model_for_test(p) for p in model_paths(path, 'cdd_*.mod')]
     skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
 
     cdd_bin_id = cdd.calculate_results(base_model, cdd_models, 'ID', skipped_individuals)
+    print(cdd_bin_id)
 
     correct = pd.DataFrame(
         {
@@ -128,7 +129,7 @@ def test_cdd_psn(load_model_for_test, testdata):
 def test_cdd_calculate_results(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
     skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
-    base_model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    base_model = load_model_for_test(testdata / 'nonmem' / 'cdd' / 'pheno_real.mod')
     cdd_model_paths = model_paths(path, 'cdd_*.mod')
 
     cdd_models = [load_model_for_test(p) for p in cdd_model_paths]

@@ -58,7 +58,7 @@ def remove_error_model(model: Model):
     >>> from pharmpy.modeling import remove_error_model, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
-    Y = EPS(1)⋅W + F
+    Y = EPS₁⋅W + F
     >>> remove_error_model(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
@@ -112,7 +112,7 @@ def set_additive_error_model(
     >>> from pharmpy.modeling import set_additive_error_model, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
-    Y = EPS(1)⋅W + F
+    Y = EPS₁⋅W + F
     >>> set_additive_error_model(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
@@ -121,7 +121,7 @@ def set_additive_error_model(
     >>> from pharmpy.modeling import set_additive_error_model, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
-    Y = EPS(1)⋅W + F
+    Y = EPS₁⋅W + F
     >>> set_additive_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
@@ -529,7 +529,7 @@ def use_thetas_for_error_stdev(model: Model):
     >>> use_thetas_for_error_stdev(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y = EPS(1)⋅SD_EPS(1)⋅W + F
+    Y = EPS₁⋅SD_EPS_1⋅W + F
 
     See also
     --------
@@ -699,9 +699,9 @@ def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME')
     >>> set_time_varying_error_model(model, cutoff=1.0)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-        ⎧EPS(1)⋅W⋅time_varying + F  for TIME < 1.0
+        ⎧EPS₁⋅W⋅time_varying + F  for TIME < 1.0
         ⎨
-    Y = ⎩      EPS(1)⋅W + F           otherwise
+    Y = ⎩      EPS₁⋅W + F           otherwise
 
     """
     y = model.statements.find_assignment('Y')

@@ -51,10 +51,10 @@ def test_parcov_inits(load_model_for_test, testdata):
     params = calculate_parcov_inits(model, 2)
     assert params == approx(
         {
-            'OMEGA(3,1)': 0.02560327,
-            'OMEGA(3,2)': -0.001618381,
-            'OMEGA(4,1)': -0.06764814,
-            'OMEGA(4,2)': 0.02350935,
+            'OMEGA_3_1': 0.02560327,
+            'OMEGA_3_2': -0.001618381,
+            'OMEGA_4_1': -0.06764814,
+            'OMEGA_4_2': 0.02350935,
         }
     )
 
@@ -64,8 +64,8 @@ def test_create_model3b(load_model_for_test, testdata):
     model1b = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     model3b = create_model3b(model1b, model3, 2)
     pset = model3b.parameters
-    assert pset['OMEGA(3,1)'].init == approx(0.02560327)
-    assert pset['THETA(1)'].init == 0.00469555
+    assert pset['OMEGA_3_1'].init == approx(0.02560327)
+    assert pset['POP_CL'].init == 0.00469555
     assert model3b.name == 'model_3b'
 
 
@@ -473,7 +473,7 @@ def test_psn_frem_results(testdata):
     assert ofv['model_3b'] == approx(852.803483)
     assert ofv['model_4'] == approx(753.302743)
 
-    correct = """model type		THETA(1)  THETA(2)  OMEGA(1,1)  OMEGA(2,1)  OMEGA(2,2)  OMEGA(3,1)  OMEGA(3,2)  OMEGA(3,3)  OMEGA(4,1)  OMEGA(4,2)  OMEGA(4,3)  OMEGA(4,4)  SIGMA(1,1)
+    correct = """model type		TVCL  TVV  IVCL  OMEGA_2_1  IVV  OMEGA_3_1  OMEGA_3_2  BSV_APGR  OMEGA_4_1  OMEGA_4_2  OMEGA_4_3  BSV_WGT  SIGMA_1_1
 model_1  init      0.004693   1.00916    0.030963         NaN    0.031128         NaN         NaN         NaN         NaN         NaN         NaN         NaN    0.013241
 model_1  estimate  0.005818   1.44555    0.111053         NaN    0.201526         NaN         NaN         NaN         NaN         NaN         NaN         NaN    0.016418
 model_2  init           NaN       NaN         NaN         NaN         NaN         NaN         NaN    1.000000         NaN         NaN    0.244579    1.000000         NaN
@@ -490,11 +490,11 @@ model_4  estimate  0.007084   1.38635    0.220463    0.195326    0.176796    0.0
 
     pc = res.base_parameter_change
     assert len(pc) == 5
-    assert pc['THETA(1)'] == 21.77321763763502
-    assert pc['THETA(2)'] == -4.095327038151563
-    assert pc['OMEGA(1,1)'] == pytest.approx(98.52052623522104, abs=1e-12)
-    assert pc['OMEGA(2,2)'] == -12.271369451088198
-    assert pc['SIGMA(1,1)'] == pytest.approx(-7.110618417927009, abs=1e-12)
+    assert pc['TVCL'] == 21.77321763763502
+    assert pc['TVV'] == -4.095327038151563
+    assert pc['IVCL'] == pytest.approx(98.52052623522104, abs=1e-12)
+    assert pc['IVV'] == -12.271369451088198
+    assert pc['SIGMA_1_1'] == pytest.approx(-7.110618417927009, abs=1e-12)
 
     correct = """,mean,stdev
 APGR,6.42372,2.237640

@@ -12,4 +12,4 @@ def test_aggregate(load_model_for_test, testdata):
     pe = res.parameter_estimates
     assert len(pe) == 2
     assert list(pe.index) == ['pheno', 'pheno']
-    assert list(pe.columns) == ['THETA(1)', 'THETA(2)', 'OMEGA(1,1)', 'OMEGA(2,2)', 'SIGMA(1,1)']
+    assert list(pe.columns) == ['TVCL', 'TVV', 'IVCL', 'IVV', 'SIGMA_1_1']

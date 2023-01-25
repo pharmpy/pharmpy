@@ -10,17 +10,16 @@ from pharmpy.model import EstimationSteps, Model, Parameters, RandomVariables
 from pharmpy.results import ModelfitResults
 from pharmpy.workflows.log import Log
 
-from .config import conf
 from .nmtran_parser import NMTranControlStream
-from .parameters import parameter_translation
-from .random_variables import rv_translation
 from .results_file import NONMEMResultsFile
 from .table import ExtTable, NONMEMTableFile, PhiTable
+from .update import create_name_map
 
 
 def _parse_modelfit_results(
     path: Optional[Union[str, Path]],
     control_stream: NMTranControlStream,
+    name_map,
     model: Model,
     subproblem: Optional[int] = None,
 ):
@@ -65,12 +64,12 @@ def _parse_modelfit_results(
         pe_iterations,
         ses,
         ses_sdcorr,
-    ) = _parse_ext(control_stream, ext_tables, subproblem, parameters)
+    ) = _parse_ext(control_stream, name_map, ext_tables, subproblem, parameters)
 
     table_df = _parse_tables(path, control_stream)
     residuals = _parse_residuals(table_df)
     predictions = _parse_predictions(table_df)
-    iofv, ie, iec = _parse_phi(path, control_stream, etas)
+    iofv, ie, iec = _parse_phi(path, control_stream, name_map, etas)
     rse = _calculate_relative_standard_errors(final_pe, ses)
     (
         runtime_total,
@@ -97,11 +96,11 @@ def _parse_modelfit_results(
     sigdigs_iters = pd.Series(significant_digits, index=eststeps, name='significant_digits')
 
     if covstatus and ses is not None:
-        cov = _parse_matrix(path.with_suffix(".cov"), control_stream, table_numbers)
-        cor = _parse_matrix(path.with_suffix(".cor"), control_stream, table_numbers)
+        cov = _parse_matrix(path.with_suffix(".cov"), control_stream, name_map, table_numbers)
+        cor = _parse_matrix(path.with_suffix(".cor"), control_stream, name_map, table_numbers)
         if cor is not None:
             np.fill_diagonal(cor.values, 1)
-        coi = _parse_matrix(path.with_suffix(".coi"), control_stream, table_numbers)
+        coi = _parse_matrix(path.with_suffix(".coi"), control_stream, name_map, table_numbers)
     else:
         cov, cor, coi = None, None, None
 
@@ -173,6 +172,7 @@ def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
 def _parse_matrix(
     path: Path,
     control_stream: NMTranControlStream,
+    name_map,
     table_numbers,
 ):
     try:
@@ -184,8 +184,7 @@ def _parse_matrix(
     assert last_table is not None
     df = last_table.data_frame
     if df is not None:
-        index = parameter_translation(control_stream)
-        df = df.rename(index=index)
+        df = df.rename(index=name_map)
         df.columns = df.index
     return df
 
@@ -282,7 +281,7 @@ def _get_last_est(estimation_steps: EstimationSteps):
     return len(estimation_steps) - 1
 
 
-def _parse_phi(path: Path, control_stream: NMTranControlStream, etas: RandomVariables):
+def _parse_phi(path: Path, control_stream: NMTranControlStream, name_map, etas: RandomVariables):
     try:
         phi_tables = NONMEMTableFile(path.with_suffix('.phi'))
     except FileNotFoundError:
@@ -294,14 +293,13 @@ def _parse_phi(path: Path, control_stream: NMTranControlStream, etas: RandomVari
 
     assert isinstance(table, PhiTable)
 
-    trans = rv_translation(control_stream)
-    eta_names = set(trans.values())
+    eta_names = set(name_map.values())
     rv_names = list(filter(eta_names.__contains__, etas.names))
     try:
         individual_ofv = table.iofv
-        individual_estimates = table.etas.rename(columns=trans)[rv_names]
+        individual_estimates = table.etas.rename(columns=name_map)[rv_names]
         ids, eta_col_names, matrix_array = table.etc_data()
-        index = {trans[x]: i for i, x in enumerate(eta_col_names)}
+        index = {name_map[x]: i for i, x in enumerate(eta_col_names)}
         indices = tuple(map(index.__getitem__, rv_names))
         selector = np.ix_(indices, indices)
         etc_frames = [
@@ -417,6 +415,7 @@ def _create_failed_parameter_estimates(parameters: Parameters):
 
 def _parse_ext(
     control_stream: NMTranControlStream,
+    name_map,
     ext_tables: NONMEMTableFile,
     subproblem: Optional[int],
     parameters: Parameters,
@@ -426,9 +425,9 @@ def _parse_ext(
 
     final_ofv, ofv_iterations = _parse_ofv(ext_tables, subproblem)
     final_pe, sdcorr, pe_iterations = _parse_parameter_estimates(
-        control_stream, ext_tables, subproblem, parameters
+        control_stream, name_map, ext_tables, subproblem, parameters
     )
-    ses, ses_sdcorr = _parse_standard_errors(control_stream, ext_tables, parameters)
+    ses, ses_sdcorr = _parse_standard_errors(control_stream, name_map, ext_tables, parameters)
     return (
         table_numbers,
         final_ofv,
@@ -493,6 +492,7 @@ def _calculate_relative_standard_errors(pe, se):
 
 def _parse_parameter_estimates(
     control_stream: NMTranControlStream,
+    name_map,
     ext_tables: NONMEMTableFile,
     subproblem: Optional[int],
     parameters: Parameters,
@@ -501,17 +501,16 @@ def _parse_parameter_estimates(
     fixed_param_names = []
     final_table = None
     fix = None
-    pe_translation = parameter_translation(control_stream)
     for i, table in enumerate(ext_tables.tables, start=1):
         if subproblem and table.subproblem != subproblem:
             continue
         df = _get_iter_df(table.data_frame)
         assert isinstance(table, ExtTable)
-        fix = _get_fixed_parameters(table, parameters, pe_translation)
+        fix = _get_fixed_parameters(table, parameters, name_map)
         fixed_param_names = [name for name in list(df.columns)[1:-1] if fix[name]]
         df = df.drop(fixed_param_names + ['OBJ'], axis=1)
         df['step'] = i
-        df = df.rename(columns=pe_translation)
+        df = df.rename(columns=name_map)
         pe = pd.concat([pe, df])
         final_table = table
 
@@ -519,7 +518,7 @@ def _parse_parameter_estimates(
     assert final_table is not None
     final = final_table.final_parameter_estimates
     final = final.drop(fixed_param_names)
-    final = final.rename(index=pe_translation)
+    final = final.rename(index=name_map)
     pe = pe.rename(columns={'ITERATION': 'iteration'}).set_index(['step', 'iteration'])
 
     try:
@@ -527,14 +526,17 @@ def _parse_parameter_estimates(
     except KeyError:
         sdcorr_ests = pd.Series(np.nan, index=pe.index)
     else:
-        sdcorr = sdcorr.rename(index=pe_translation)
+        sdcorr = sdcorr.rename(index=name_map)
         sdcorr_ests = final.copy()
         sdcorr_ests.update(sdcorr)
     return final, sdcorr_ests, pe
 
 
 def _parse_standard_errors(
-    control_stream: NMTranControlStream, ext_tables: NONMEMTableFile, parameters: Parameters
+    control_stream: NMTranControlStream,
+    name_map,
+    ext_tables: NONMEMTableFile,
+    parameters: Parameters,
 ):
     table = ext_tables.tables[-1]
     assert isinstance(table, ExtTable)
@@ -542,16 +544,15 @@ def _parse_standard_errors(
         ses = table.standard_errors
     except KeyError:
         return None, None
-    pe_translation = parameter_translation(control_stream)
 
-    fix = _get_fixed_parameters(table, parameters, pe_translation)
+    fix = _get_fixed_parameters(table, parameters, name_map)
     ses = ses[~fix]
     sdcorr = table.omega_sigma_se_stdcorr[~fix]
-    ses = ses.rename(index=pe_translation)
-    sdcorr = sdcorr.rename(index=pe_translation)
+    ses = ses.rename(index=name_map)
+    sdcorr = sdcorr.rename(index=name_map)
     sdcorr_ses = ses.copy()
     sdcorr_ses.update(sdcorr)
-    sdcorr_ses = sdcorr_ses.rename(index=pe_translation)
+    sdcorr_ses = sdcorr_ses.rename(index=name_map)
     return ses, sdcorr_ses
 
 
@@ -568,9 +569,8 @@ def _get_fixed_parameters(table: ExtTable, parameters: Parameters, pe_translatio
         # NM 7.2 does not have row -1000000006 indicating FIXED status
         ests = table.final_parameter_estimates
         fixed = pd.Series(parameters.fix)
-        if 'comment' in conf.parameter_names:
-            # NOTE parameters in result file haven't been renamed yet
-            fixed = fixed.rename({value: key for key, value in pe_translation.items()})
+        # NOTE parameters in result file haven't been renamed yet
+        fixed = fixed.rename({value: key for key, value in pe_translation.items()})
         return pd.concat([fixed, pd.Series(True, index=ests.index.difference(fixed.index))])
 
 
@@ -610,9 +610,13 @@ def parse_ext(model, path, subproblem):
 def parse_modelfit_results(
     model, path: Optional[Union[str, Path]], subproblem: Optional[int] = None
 ):
-    return _parse_modelfit_results(
+    name_map = create_name_map(model)
+    name_map = {value: key for key, value in name_map.items()}
+    res = _parse_modelfit_results(
         path,
         model.internals.control_stream,
+        name_map,
         model,
         subproblem=subproblem,
     )
+    return res

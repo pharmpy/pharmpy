@@ -26,15 +26,15 @@ def test_str(load_model_for_test, testdata):
     assert len(a) == 2
 
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert 'THETA(2)' in str(model.statements)
-    assert 'THETA(2)' in repr(model.statements)
+    assert 'TVV' in str(model.statements)
+    assert 'TVV' in repr(model.statements)
 
 
 def test_subs(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements
 
-    s2 = statements.subs({'ETA(1)': 'ETAT1'})
+    s2 = statements.subs({'ETA_1': 'ETAT1'})
 
     assert s2[5].expression == S('TVCL') * sympy.exp(S('ETAT1'))
 
@@ -60,7 +60,7 @@ def test_find_assignment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements
 
-    assert str(statements.find_assignment('CL').expression) == 'TVCL*exp(ETA(1))'
+    assert str(statements.find_assignment('CL').expression) == 'TVCL*exp(ETA_1)'
     assert str(statements.find_assignment('S1').expression) == 'V'
 
     statements = statements + Assignment(S('CL'), S('TVCL') + S('V'))
@@ -226,9 +226,7 @@ def test_before_odes(load_model_for_test, pheno_path):
 def test_full_expression(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     expr = model.statements.before_odes.full_expression("CL")
-    assert expr == sympy.Symbol("THETA(1)") * sympy.Symbol("WGT") * sympy.exp(
-        sympy.Symbol("ETA(1)")
-    )
+    assert expr == sympy.Symbol("PTVCL") * sympy.Symbol("WGT") * sympy.exp(sympy.Symbol("ETA_1"))
     with pytest.raises(ValueError):
         model.statements.full_expression("Y")
 
@@ -278,29 +276,29 @@ def test_dependencies(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     depsy = model.statements.dependencies(S('Y'))
     assert depsy == {
-        S('EPS(1)'),
+        S('EPS_1'),
         S('AMT'),
-        S('THETA(1)'),
+        S('PTVCL'),
         S('t'),
-        S('THETA(2)'),
-        S('THETA(3)'),
+        S('PTVV'),
+        S('THETA_3'),
         S('APGR'),
         S('WGT'),
-        S('ETA(2)'),
-        S('ETA(1)'),
+        S('ETA_2'),
+        S('ETA_1'),
     }
     depscl = model.statements.dependencies(S('CL'))
-    assert depscl == {S('THETA(1)'), S('WGT'), S('ETA(1)')}
+    assert depscl == {S('PTVCL'), S('WGT'), S('ETA_1')}
     odes = model.statements.ode_system
     deps_odes = model.statements.dependencies(odes)
     assert deps_odes == {
         S('AMT'),
         S('APGR'),
-        S('ETA(1)'),
-        S('ETA(2)'),
-        S('THETA(1)'),
-        S('THETA(2)'),
-        S('THETA(3)'),
+        S('ETA_1'),
+        S('ETA_2'),
+        S('PTVCL'),
+        S('PTVV'),
+        S('THETA_3'),
         S('WGT'),
         S('t'),
     }

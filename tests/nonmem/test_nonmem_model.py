@@ -53,10 +53,9 @@ def test_update_inits(load_model_for_test, pheno, pheno_path):
     model = pheno.copy()
     update_inits(model, model.modelfit_results.parameter_estimates)
 
-    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-        model = load_model_for_test(pheno_path)
-        update_inits(model, model.modelfit_results.parameter_estimates)
-        model.update_source()
+    model = load_model_for_test(pheno_path)
+    update_inits(model, model.modelfit_results.parameter_estimates)
+    model.update_source()
 
 
 def test_empty_ext_file(load_model_for_test, testdata):
@@ -81,37 +80,33 @@ def test_validate(pheno):
 def test_parameters(pheno):
     params = pheno.parameters
     assert len(params) == 6
-    assert pheno.parameters['THETA(1)'] == Parameter('THETA(1)', 0.00469307, lower=0, upper=1000000)
-    assert pheno.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
-    assert pheno.parameters['THETA(3)'] == Parameter('THETA(3)', 0.1, lower=-0.99, upper=1000000)
-    assert pheno.parameters['OMEGA(1,1)'] == Parameter(
-        'OMEGA(1,1)', 0.0309626, lower=0, upper=sympy.oo
-    )
-    assert pheno.parameters['OMEGA(2,2)'] == Parameter(
-        'OMEGA(2,2)', 0.031128, lower=0, upper=sympy.oo
-    )
-    assert pheno.parameters['SIGMA(1,1)'] == Parameter(
-        'SIGMA(1,1)', 0.013241, lower=0, upper=sympy.oo
+    assert pheno.parameters['PTVCL'] == Parameter('PTVCL', 0.00469307, lower=0, upper=1000000)
+    assert pheno.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=1000000)
+    assert pheno.parameters['THETA_3'] == Parameter('THETA_3', 0.1, lower=-0.99, upper=1000000)
+    assert pheno.parameters['IVCL'] == Parameter('IVCL', 0.0309626, lower=0, upper=sympy.oo)
+    assert pheno.parameters['IVV'] == Parameter('IVV', 0.031128, lower=0, upper=sympy.oo)
+    assert pheno.parameters['SIGMA_1_1'] == Parameter(
+        'SIGMA_1_1', 0.013241, lower=0, upper=sympy.oo
     )
 
 
 def test_set_parameters(pheno):
     model = pheno.copy()
     params = {
-        'THETA(1)': 0.75,
-        'THETA(2)': 0.5,
-        'THETA(3)': 0.25,
-        'OMEGA(1,1)': 0.1,
-        'OMEGA(2,2)': 0.2,
-        'SIGMA(1,1)': 0.3,
+        'PTVCL': 0.75,
+        'PTVV': 0.5,
+        'THETA_3': 0.25,
+        'IVCL': 0.1,
+        'IVV': 0.2,
+        'SIGMA_1_1': 0.3,
     }
     set_initial_estimates(model, params)
-    assert model.parameters['THETA(1)'] == Parameter('THETA(1)', 0.75, lower=0, upper=1000000)
-    assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 0.5, lower=0, upper=1000000)
-    assert model.parameters['THETA(3)'] == Parameter('THETA(3)', 0.25, lower=-0.99, upper=1000000)
-    assert model.parameters['OMEGA(1,1)'] == Parameter('OMEGA(1,1)', 0.1, lower=0, upper=sympy.oo)
-    assert model.parameters['OMEGA(2,2)'] == Parameter('OMEGA(2,2)', 0.2, lower=0, upper=sympy.oo)
-    assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 0.3, lower=0, upper=sympy.oo)
+    assert model.parameters['PTVCL'] == Parameter('PTVCL', 0.75, lower=0, upper=1000000)
+    assert model.parameters['PTVV'] == Parameter('PTVV', 0.5, lower=0, upper=1000000)
+    assert model.parameters['THETA_3'] == Parameter('THETA_3', 0.25, lower=-0.99, upper=1000000)
+    assert model.parameters['IVCL'] == Parameter('IVCL', 0.1, lower=0, upper=sympy.oo)
+    assert model.parameters['IVV'] == Parameter('IVV', 0.2, lower=0, upper=sympy.oo)
+    assert model.parameters['SIGMA_1_1'] == Parameter('SIGMA_1_1', 0.3, lower=0, upper=sympy.oo)
     model.update_source()
     thetas = model.internals.control_stream.get_records('THETA')
     assert str(thetas[0]) == '$THETA (0,0.75) ; PTVCL\n'
@@ -123,16 +118,16 @@ def test_set_parameters(pheno):
     assert str(sigmas[0]) == '$SIGMA 0.3\n'
 
     model = pheno.copy()
-    set_initial_estimates(model, {'THETA(1)': 18})
-    assert model.parameters['THETA(1)'] == Parameter('THETA(1)', 18, lower=0, upper=1000000)
-    assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
+    set_initial_estimates(model, {'PTVCL': 18})
+    assert model.parameters['PTVCL'] == Parameter('PTVCL', 18, lower=0, upper=1000000)
+    assert model.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=1000000)
 
     model = pheno.copy()
     create_joint_distribution(
         model, individual_estimates=model.modelfit_results.individual_estimates
     )
     with pytest.raises(UserWarning, match='Adjusting initial'):
-        set_initial_estimates(model, {'OMEGA(2,2)': 0.000001})
+        set_initial_estimates(model, {'IVV': 0.000001})
 
 
 def test_adjust_iovs(load_model_for_test, testdata):
@@ -350,9 +345,7 @@ def test_minimal(load_model_for_test, datadir):
     path = datadir / 'minimal.mod'
     model = load_model_for_test(path)
     assert len(model.statements) == 1
-    assert model.statements[0].expression == symbol('THETA(1)') + symbol('ETA(1)') + symbol(
-        'EPS(1)'
-    )
+    assert model.statements[0].expression == symbol('THETA_1') + symbol('ETA_1') + symbol('EPS_1')
 
 
 def test_copy(load_model_for_test, datadir):
@@ -360,9 +353,7 @@ def test_copy(load_model_for_test, datadir):
     model = load_model_for_test(path)
     copy = model.copy()
     assert id(model) != id(copy)
-    assert model.statements[0].expression == symbol('THETA(1)') + symbol('ETA(1)') + symbol(
-        'EPS(1)'
-    )
+    assert model.statements[0].expression == symbol('THETA_1') + symbol('ETA_1') + symbol('EPS_1')
 
 
 def test_initial_individual_estimates(load_model_for_test, datadir):
@@ -375,7 +366,7 @@ def test_initial_individual_estimates(load_model_for_test, datadir):
     inits = model.initial_individual_estimates
     assert len(inits) == 59
     assert len(inits.columns) == 2
-    assert inits['ETA(1)'][2] == -0.166321
+    assert inits['ETA_1'][2] == -0.166321
 
 
 @pytest.mark.parametrize(
@@ -423,16 +414,15 @@ def test_deterministic_theta_comments(pheno):
 
 def test_remove_eta(pheno):
     model = pheno.copy()
-    model = remove_iiv(model, 'ETA(1)')
+    model = remove_iiv(model, 'ETA_1')
     assert model.model_code.split('\n')[12] == 'V = TVV*EXP(ETA(1))'
 
 
 def test_symbol_names_in_comment(load_model_for_test, pheno_path):
-    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-        model = load_model_for_test(pheno_path)
-        assert model.statements[2].expression == S('PTVCL') * S('WGT')
+    model = load_model_for_test(pheno_path)
+    assert model.statements[2].expression == S('PTVCL') * S('WGT')
 
-        code = """$PROBLEM base model
+    code = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
 
@@ -445,98 +435,25 @@ $OMEGA 0.01
 $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-        with pytest.warns(UserWarning):
-            model = Model.create_model(StringIO(code))
-            assert model.parameters.names == ['THETA(1)', 'OMEGA(1,1)', 'SIGMA(1,1)']
+    with pytest.warns(UserWarning):
+        model = Model.create_model(StringIO(code))
+        assert model.parameters.names == ['THETA_1', 'OMEGA_1_1', 'SIGMA_1_1']
 
 
 def test_symbol_names_in_abbr(load_model_for_test, testdata):
-    with ConfigurationContext(conf, parameter_names=['abbr', 'basic']):
-        model = load_model_for_test(testdata / 'nonmem' / 'pheno_abbr.mod')
-        pset, rvs = model.parameters, model.random_variables
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_abbr.mod')
+    pset, rvs = model.parameters, model.random_variables
 
-        assert 'THETA_CL' in pset.names
-        assert 'ETA_CL' in rvs.etas.names
-
-
-@pytest.mark.parametrize(
-    'parameter_names, assignments, params, etas',
-    [
-        (
-            ['abbr', 'comment', 'basic'],
-            [
-                Assignment(S('CL'), S('THETA_CL') * sympy.exp(S('ETA_CL'))),
-                Assignment(S('V'), S('TVV') * sympy.exp(S('ETA(2)'))),
-            ],
-            ['THETA_CL', 'TVV', 'IVCL', 'OMEGA(2,2)'],
-            ['ETA_CL', 'ETA(2)'],
-        ),
-        (
-            ['comment', 'abbr', 'basic'],
-            [
-                Assignment(S('CL'), S('TVCL') * sympy.exp(S('ETA_CL'))),
-                Assignment(S('V'), S('TVV') * sympy.exp(S('ETA(2)'))),
-            ],
-            ['TVCL', 'TVV', 'IVCL', 'OMEGA(2,2)'],
-            ['ETA_CL', 'ETA(2)'],
-        ),
-        (
-            ['abbr', 'basic'],
-            [
-                Assignment(S('CL'), S('THETA_CL') * sympy.exp(S('ETA_CL'))),
-                Assignment(S('V'), S('THETA(2)') * sympy.exp(S('ETA(2)'))),
-            ],
-            ['THETA_CL', 'THETA(2)', 'OMEGA(1,1)', 'OMEGA(2,2)'],
-            ['ETA_CL', 'ETA(2)'],
-        ),
-        (
-            ['basic'],
-            [
-                Assignment(S('CL'), S('THETA(1)') * sympy.exp(S('ETA(1)'))),
-                Assignment(S('V'), S('THETA(2)') * sympy.exp(S('ETA(2)'))),
-            ],
-            ['THETA(1)', 'THETA(2)', 'OMEGA(1,1)', 'OMEGA(2,2)'],
-            ['ETA(1)', 'ETA(2)'],
-        ),
-        (
-            ['basic', 'comment'],
-            [
-                Assignment(S('CL'), S('THETA(1)') * sympy.exp(S('ETA(1)'))),
-                Assignment(S('V'), S('THETA(2)') * sympy.exp(S('ETA(2)'))),
-            ],
-            ['THETA(1)', 'THETA(2)', 'OMEGA(1,1)', 'OMEGA(2,2)'],
-            ['ETA(1)', 'ETA(2)'],
-        ),
-        (
-            ['basic', 'abbr'],
-            [
-                Assignment(S('CL'), S('THETA(1)') * sympy.exp(S('ETA(1)'))),
-                Assignment(S('V'), S('THETA(2)') * sympy.exp(S('ETA(2)'))),
-            ],
-            ['THETA(1)', 'THETA(2)', 'OMEGA(1,1)', 'OMEGA(2,2)'],
-            ['ETA(1)', 'ETA(2)'],
-        ),
-    ],
-)
-def test_symbol_names_priority(
-    load_model_for_test, testdata, parameter_names, assignments, params, etas
-):
-    with ConfigurationContext(conf, parameter_names=parameter_names):
-        model = load_model_for_test(testdata / 'nonmem' / 'pheno_abbr_comments.mod')
-        sset, pset, rvs = model.statements, model.parameters, model.random_variables
-
-        assert all(str(a) in [str(s) for s in sset] for a in assignments)
-        assert all(p in pset.names for p in params)
-        assert all(eta in rvs.names for eta in etas)
+    assert 'THETA_CL' in pset.names
+    assert 'ETA_CL' in rvs.etas.names
 
 
 def test_clashing_parameter_names(load_model_for_test, datadir):
-    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-        with pytest.warns(UserWarning):
-            model = load_model_for_test(datadir / 'pheno_clashing_symbols.mod')
-        assert model.parameters.names == ['THETA(1)', 'TVV', 'IVCL', 'OMEGA(2,2)', 'SIGMA(1,1)']
+    with pytest.warns(UserWarning):
+        model = load_model_for_test(datadir / 'pheno_clashing_symbols.mod')
+    assert model.parameters.names == ['THETA_1', 'TVV', 'IVCL', 'OMEGA_2_2', 'SIGMA_1_1']
 
-        code = """$PROBLEM base model
+    code = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
 
@@ -548,11 +465,11 @@ $OMEGA 0.01 ; TV
 $SIGMA 1 ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-        with pytest.warns(UserWarning):
-            model = Model.create_model(StringIO(code))
-            assert model.parameters.names == ['TV', 'OMEGA(1,1)', 'SIGMA(1,1)']
+    with pytest.warns(UserWarning):
+        model = Model.create_model(StringIO(code))
+        assert model.parameters.names == ['TV', 'OMEGA_1_1', 'SIGMA_1_1']
 
-        code = """$PROBLEM base model
+    code = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
 
@@ -563,15 +480,9 @@ $THETA 0.1  ; TV
 $THETA 0.1  ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-        with pytest.warns(UserWarning):
-            model = Model.create_model(StringIO(code))
-            assert model.parameters.names == ['TV', 'THETA(2)']
-
-
-def test_missing_parameter_names_settings(load_model_for_test, pheno_path):
-    with ConfigurationContext(conf, parameter_names=['comment']):
-        with pytest.raises(ValueError):
-            load_model_for_test(pheno_path)
+    with pytest.warns(UserWarning):
+        model = Model.create_model(StringIO(code))
+        assert model.parameters.names == ['TV', 'THETA_2']
 
 
 def test_abbr_write(load_model_for_test, pheno_path):
@@ -590,26 +501,16 @@ def test_abbr_write(load_model_for_test, pheno_path):
         assert 'ETA_S1' in model.random_variables.names
         assert S('ETA_S1') in model.statements.free_symbols
 
-        model = load_model_for_test(pheno_path)
-        add_iiv(model, 'S1', 'add', eta_names='new_name')
-
-        with pytest.warns(UserWarning, match='Not valid format of name new_name'):
-            model.update_source()
-            assert 'ETA(3)' in model.model_code
-
 
 def test_abbr_read_write(load_model_for_test, pheno_path):
-    with ConfigurationContext(
-        conf, parameter_names=['abbr', 'comment', 'basic'], write_etas_in_abbr=True
-    ):
-        model_write = load_model_for_test(pheno_path)
-        add_iiv(model_write, 'S1', 'add')
-        model_read = Model.create_model(StringIO(model_write.model_code))
-        assert model_read.model_code == model_write.model_code
-        assert model_read.statements == model_write.statements
-        assert not (
-            set(model_read.random_variables.names) - set(model_write.random_variables.names)
-        )  # Different order due to renaming in read
+    model_write = load_model_for_test(pheno_path)
+    add_iiv(model_write, 'S1', 'add')
+    model_read = Model.create_model(StringIO(model_write.model_code))
+    assert model_read.model_code == model_write.model_code
+    assert model_read.statements == model_write.statements
+    assert not (
+        set(model_read.random_variables.names) - set(model_write.random_variables.names)
+    )  # Different order due to renaming in read
 
 
 def test_dv_symbol(pheno):
@@ -970,10 +871,9 @@ $COVARIANCE UNCONDITIONAL
 $TABLE      ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
             NOPRINT ONEHEADER FILE=mytab3
 """
-    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-        with pytest.warns(UserWarning):
-            model = Model.create_model(StringIO(code))
-            model.update_source()
+    with pytest.warns(UserWarning):
+        model = Model.create_model(StringIO(code))
+        model.update_source()
 
 
 def test_convert_model(testdata):
@@ -1041,8 +941,8 @@ def test_parse_derivatives(load_model_for_test, testdata):
     model = load_model_for_test(
         testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
     )
-    assert model.estimation_steps[0].eta_derivatives == ('ETA(1)', 'ETA(2)')
-    assert model.estimation_steps[0].epsilon_derivatives == ('EPS(1)',)
+    assert model.estimation_steps[0].eta_derivatives == ('ETA_1', 'ETA_2')
+    assert model.estimation_steps[0].epsilon_derivatives == ('EPS_1',)
 
 
 def test_no_etas_in_model(pheno):
@@ -1221,3 +1121,29 @@ $ESTIMATION METHOD=1 INTERACTION
         model = Model.create_model(StringIO(code))
 
     assert model.datainfo['WGT'].drop
+
+
+def test_abbr_etas():
+    code = '''$PROBLEM
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+$ABBR REPLACE ETA(MY)=ETA(1)
+$PRED
+VAR = ETA(1)
+Y = THETA(1) + VAR + ERR(1)
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+'''
+    model = Model.create_model(StringIO(code))
+    assert model.random_variables.etas.names == ['ETA_MY']
+
+    add_iiv(model, ['Y'], 'exp', '+', eta_names=['ETA_DUMMY'])
+    remove_iiv(model, ['ETA_MY'])
+    add_iiv(model, ['VAR'], 'exp', '+', eta_names=['ETA_MY'])
+    assert model.model_code.split('\n')[3] == '$ABBR REPLACE ETA(DUMMY)=ETA(1)'
+    assert model.model_code.split('\n')[4] == '$ABBR REPLACE ETA(MY)=ETA(2)'
+    assert not model.model_code.split('\n')[5].startswith('$ABBR')
+    remove_iiv(model, ['ETA_DUMMY'])
+    assert model.model_code.split('\n')[3] == '$ABBR REPLACE ETA(MY)=ETA(1)'
+    assert not model.model_code.split('\n')[4].startswith('$ABBR')

@@ -4,7 +4,6 @@ import warnings
 from pathlib import Path
 from typing import Callable, Dict, Optional, Tuple
 
-import pharmpy.plugins.nonmem
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import path_absolute
@@ -30,7 +29,6 @@ from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from .advan import _compartmental_model
 from .dataset import read_nonmem_dataset
 from .nmtran_parser import NMTranControlStream
-from .parameters import parameter_translation
 
 
 def parse_thetas(control_stream):
@@ -132,7 +130,10 @@ def rvs_from_blocks(abbr_names, blocks, parameters, rvtype):
                 name = abbr_names[nonmem_name]
             else:
                 name = f'{rvtype}_{eta_index + i}'
-            name_map[name] = nonmem_name
+            name_map[nonmem_name] = name
+            if rvtype == 'EPS':
+                alt_name = f'ERR({eta_index + i})'
+                name_map[alt_name] = name
             names.append(name)
 
         if same:
@@ -164,13 +165,17 @@ def rvs_from_blocks(abbr_names, blocks, parameters, rvtype):
     return RandomVariables.create(rvs), name_map
 
 
-def new_parse_parameters(control_stream, statements):
+def parse_parameters(control_stream, statements):
     symbols = statements.free_symbols
     all_names = {s.name for s in symbols}
     theta_names, theta_bounds, theta_inits, theta_fixs = parse_thetas(control_stream)
+    abbr_map = control_stream.abbreviated.translate_to_pharmpy_names()
     theta_parameters = []
     name_map = {}
     for i, name in enumerate(theta_names):
+        nonmem_name = f'THETA({i + 1})'
+        if nonmem_name in abbr_map:
+            name = abbr_map[nonmem_name]
         if name in all_names:
             duplicated_name = name
             name = None
@@ -185,7 +190,6 @@ def new_parse_parameters(control_stream, statements):
                 f'The parameter name {duplicated_name} is duplicated. '
                 f'Falling back to using {name} instead.'
             )
-        nonmem_name = f'THETA({i + 1})'
         name_map[nonmem_name] = name
         all_names.add(name)
         parameter = Parameter.create(
@@ -203,64 +207,16 @@ def new_parse_parameters(control_stream, statements):
     sigma_parameters, sigma_map = parameters_from_blocks(sigma_blocks, all_names, 'SIGMA')
     name_map.update(omega_map)
     name_map.update(sigma_map)
-    parameters = theta_parameters + omega_parameters + sigma_parameters
+    parameters = Parameters.create(theta_parameters + omega_parameters + sigma_parameters)
 
-    abbr_map = control_stream.abbreviated.translate_to_pharmpy_names()
     etas, eta_map = rvs_from_blocks(abbr_map, omega_blocks, omega_parameters, 'ETA')
     epsilons, eps_map = rvs_from_blocks(abbr_map, sigma_blocks, sigma_parameters, 'EPS')
     name_map.update(eta_map)
     name_map.update(eps_map)
+
     rvs = etas + epsilons
 
     return parameters, rvs, name_map
-
-
-def parse_parameters(control_stream) -> Parameters:
-    next_theta = 1
-    params = []
-    for theta_record in control_stream.get_records('THETA'):
-        thetas = theta_record.parameters(next_theta, seen_labels={p.name for p in params})
-        params.extend(thetas)
-        next_theta += len(thetas)
-    next_omega = 1
-    previous_size = None
-    for omega_record in control_stream.get_records('OMEGA'):
-        omegas, next_omega, previous_size = omega_record.parameters(
-            next_omega, previous_size, seen_labels={p.name for p in params}
-        )
-        params.extend(omegas)
-    next_sigma = 1
-    previous_size = None
-    for sigma_record in control_stream.get_records('SIGMA'):
-        sigmas, next_sigma, previous_size = sigma_record.parameters(
-            next_sigma, previous_size, seen_labels={p.name for p in params}
-        )
-        params.extend(sigmas)
-    return Parameters.create(params)
-
-
-def parse_random_variables(control_stream) -> RandomVariables:
-    dists = RandomVariables.create(())
-    next_omega = 1
-    prev_start = 1
-    prev_cov = None
-
-    for omega_record in control_stream.get_records('OMEGA'):
-        etas, next_omega, prev_start, prev_cov, _ = omega_record.random_variables(
-            next_omega, prev_start, prev_cov
-        )
-        dists += etas
-    dists = _adjust_iovs(dists)
-    next_sigma = 1
-    prev_start = 1
-    prev_cov = None
-    for sigma_record in control_stream.get_records('SIGMA'):
-        epsilons, next_sigma, prev_start, prev_cov, _ = sigma_record.random_variables(
-            next_sigma, prev_start, prev_cov
-        )
-        dists += epsilons
-    rvs = RandomVariables.create(dists)
-    return rvs
 
 
 def parse_statements(
@@ -293,161 +249,6 @@ def parse_statements(
             statements = statements.subs(trans_amounts)
 
     return statements, comp_map
-
-
-def _adjust_iovs(rvs: RandomVariables) -> RandomVariables:
-    n = len(rvs)
-    if n <= 1:
-        return rvs
-
-    updated = []
-    for i in range(n - 1):
-        dist, next_dist = rvs[i], rvs[i + 1]
-        if dist.level != 'IOV' and next_dist.level == 'IOV':
-            # NOTE The first distribution for an IOV will have been parsed as
-            # IIV since we did not know what came after.
-            new_dist = dist.replace(level='IOV')
-            updated.append(new_dist)
-        else:
-            updated.append(dist)
-
-    updated.append(rvs[-1])  # NOTE The last distribution does not need update
-    return RandomVariables.create(updated)
-
-
-def create_name_trans(control_stream, rvs, statements):
-    conf_functions = {
-        'comment': _name_as_comments(control_stream, statements),
-        'abbr': _name_as_abbr(control_stream, rvs),
-        'basic': _name_as_basic(control_stream),
-    }
-
-    abbr = control_stream.abbreviated.replace
-    pset_current = {
-        **parameter_translation(control_stream, reverse=True),
-        **{rv: rv for rv in rvs.names},
-    }
-    sset_current = {
-        **abbr,
-        **{
-            rv: rv
-            for rv in rvs.names
-            if rv not in abbr.keys() and sympy.Symbol(rv) in statements.free_symbols
-        },
-        **{
-            p: p
-            for p in pset_current.values()
-            if p not in abbr.keys() and sympy.Symbol(p) in statements.free_symbols
-        },
-    }
-
-    trans_sset, trans_pset = {}, {}
-    names_sset_translated, names_pset_translated, names_basic = [], [], []
-    clashing_symbols = set()
-
-    for setting in pharmpy.plugins.nonmem.conf.parameter_names:
-        trans_sset_setting, trans_pset_setting = conf_functions[setting]
-        if setting != 'basic':
-            clashing_symbols.update(
-                _clashing_symbols(statements, {**trans_sset_setting, **trans_pset_setting})
-            )
-        for name_current, name_new in trans_sset_setting.items():
-            name_nonmem = sset_current[name_current]
-
-            if sympy.Symbol(name_new) in clashing_symbols or name_nonmem in names_sset_translated:
-                continue
-
-            name_in_sset_current = {v: k for k, v in sset_current.items()}[name_nonmem]
-            trans_sset[name_in_sset_current] = name_new
-            names_sset_translated.append(name_nonmem)
-
-            if name_nonmem in pset_current.values() and name_new in pset_current.keys():
-                names_pset_translated.append(name_nonmem)
-
-        for name_current, name_new in trans_pset_setting.items():
-            name_nonmem = pset_current[name_current]
-
-            if sympy.Symbol(name_new) in clashing_symbols or name_nonmem in names_pset_translated:
-                continue
-
-            trans_pset[name_current] = name_new
-            names_pset_translated.append(name_nonmem)
-
-        if setting == 'basic':
-            params_left = [k for k in pset_current.keys() if k not in names_pset_translated]
-            params_left += [rv for rv in rvs.names if rv not in names_sset_translated]
-            names_basic = [name for name in params_left if name not in names_sset_translated]
-            break
-
-    if clashing_symbols:
-        warnings.warn(
-            f'The parameter names {clashing_symbols} are also names of variables '
-            f'in the model code. Falling back to the in naming scheme config '
-            f'names for these.'
-        )
-
-    names_nonmem_all = rvs.names + list(parameter_translation(control_stream).keys())
-
-    if set(names_nonmem_all) - set(names_sset_translated + names_pset_translated + names_basic):
-        raise ValueError(
-            'Mismatch in number of parameter names, all have not been accounted for. If basic '
-            'NONMEM-names are desired as fallback, double-check that "basic" is included in '
-            'config-settings for parameter_names.'
-        )
-    return trans_sset, trans_pset
-
-
-def _name_as_comments(control_stream, statements):
-    params_current = parameter_translation(control_stream, remove_idempotent=True)
-    for name_abbr, name_nonmem in control_stream.abbreviated.replace.items():
-        if name_nonmem in params_current.keys():
-            params_current[name_abbr] = params_current.pop(name_nonmem)
-    trans_params = {
-        name_comment: name_comment
-        for name_current, name_comment in params_current.items()
-        if sympy.Symbol(name_current) not in statements.free_symbols
-    }
-    trans_statements = {
-        name_current: name_comment
-        for name_current, name_comment in params_current.items()
-        if sympy.Symbol(name_current) in statements.free_symbols
-    }
-    return trans_statements, trans_params
-
-
-def _name_as_abbr(control_stream, rvs):
-    pharmpy_names = control_stream.abbreviated.translate_to_pharmpy_names()
-    params_current = parameter_translation(control_stream, remove_idempotent=True, reverse=True)
-    trans_params = {
-        name_nonmem: name_abbr
-        for name_nonmem, name_abbr in pharmpy_names.items()
-        if name_nonmem in parameter_translation(control_stream).keys() or name_nonmem in rvs.names
-    }
-    for name_nonmem, name_abbr in params_current.items():
-        if name_abbr in trans_params.keys():
-            trans_params[name_nonmem] = trans_params.pop(name_abbr)
-    trans_statements = {
-        name_abbr: pharmpy_names[name_nonmem]
-        for name_abbr, name_nonmem in control_stream.abbreviated.replace.items()
-    }
-    return trans_statements, trans_params
-
-
-def _name_as_basic(control_stream):
-    trans_params = {
-        name_current: name_nonmem
-        for name_current, name_nonmem in parameter_translation(control_stream, reverse=True).items()
-        if name_current != name_nonmem
-    }
-    trans_statements = control_stream.abbreviated.replace
-    return trans_statements, trans_params
-
-
-def _clashing_symbols(statements, trans_statements):
-    # Find symbols in the statements that are also in parameters
-    parameter_symbols = {sympy.Symbol(symb) for _, symb in trans_statements.items()}
-    clashing_symbols = parameter_symbols & statements.free_symbols
-    return clashing_symbols
 
 
 def parse_value_type(control_stream, statements):
@@ -618,10 +419,12 @@ def parse_solver(control_stream):
     return solver, record.tol, record.atol
 
 
-def parse_initial_individual_estimates(control_stream, rvs, basepath) -> Optional[pd.DataFrame]:
+def parse_initial_individual_estimates(
+    control_stream, name_map, basepath
+) -> Optional[pd.DataFrame]:
     """Initial individual estimates
 
-    These are taken from the $ETAS FILE. 0 FIX ETAs are removed.
+    These are taken from the $ETAS FILE.
     If no $ETAS is present None will be returned.
 
     Setter assumes that all IDs are present
@@ -634,11 +437,10 @@ def parse_initial_individual_estimates(control_stream, rvs, basepath) -> Optiona
                 raise ValueError("Cannot resolve path for $ETAS")
             path = path_absolute(basepath / path)
         phi_tables = NONMEMTableFile(path)
-        rv_names = [rv for rv in rvs.names if rv.startswith('ETA')]
         phitab = phi_tables[0]
         assert isinstance(phitab, PhiTable)
-        names = [name for name in rv_names if name in phitab.etas.columns]
-        return phitab.etas[names]
+        df = phitab.etas.rename(columns=name_map)
+        return df
     else:
         return None
 
@@ -830,29 +632,6 @@ def create_nonmem_datainfo(control_stream, resolved_dataset_path):
 
     di = DataInfo.create(column_info, path=resolved_dataset_path)
     return di
-
-
-def get_zero_fix_rvs(control_stream, eta=True):
-    zero_fix = []
-    if eta:
-        prev_cov = None
-        next_omega = 1
-        prev_start = 1
-        for omega_record in control_stream.get_records('OMEGA'):
-            _, next_omega, prev_start, prev_cov, new_zero_fix = omega_record.random_variables(
-                next_omega, prev_start, prev_cov
-            )
-            zero_fix += new_zero_fix
-    else:
-        prev_cov = None
-        next_sigma = 1
-        prev_start = 1
-        for sigma_record in control_stream.get_records('SIGMA'):
-            _, next_sigma, prev_start, prev_cov, new_zero_fix = sigma_record.random_variables(
-                next_sigma, prev_start, prev_cov
-            )
-            zero_fix += new_zero_fix
-    return zero_fix
 
 
 def replace_synonym_in_filters(filters, replacements):

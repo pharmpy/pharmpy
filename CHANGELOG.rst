@@ -7,6 +7,11 @@ New features
 * Add function modeling.display_odes
 * Add support for Python 3.11
 
+Changes
+=======
+
+* Naming of parameters for NONMEM models reworked. Configuration options removed.
+
 0.88.0 (2022-12-21)
 -------------------
 

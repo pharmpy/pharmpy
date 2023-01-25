@@ -1,9 +1,7 @@
 import pytest
 
 import pharmpy.config as config
-from pharmpy.config import ConfigurationContext
 from pharmpy.model import data
-from pharmpy.plugins.nonmem import conf
 
 
 def test_config_item():
@@ -20,17 +18,3 @@ def test_config_item():
 
 def test_data_config():
     assert data.conf.na_values == [-99]
-
-
-def test_read_config():
-    config.read_configuration()
-    assert len(conf.parameter_names) <= 3
-
-
-def test_str():
-    assert str(conf) == ""
-
-    with ConfigurationContext(conf, parameter_names=['abbr', 'basic']):
-        assert str(conf) == "parameter_names:\t['abbr', 'basic']\n"
-
-    assert str(conf) == "parameter_names:\t['basic']\n"

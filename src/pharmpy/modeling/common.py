@@ -411,14 +411,14 @@ def load_example_model(name: str):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-    TVV = THETA(2)⋅WGT
-          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
     TVV = ⎩       TVV           otherwise
-               ETA(1)
+               ETA₁
     CL = TVCL⋅ℯ
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
     S₁ = V
     Bolus(AMT, admid=1)
@@ -429,7 +429,7 @@ def load_example_model(name: str):
         ─────────
     F =     S₁
     W = F
-    Y = EPS(1)⋅W + F
+    Y = EPS₁⋅W + F
     IPRED = F
     IRES = DV - IPRED
             IRES
@@ -520,11 +520,11 @@ def print_model_symbols(model: Model):
     >>> from pharmpy.modeling import load_example_model, print_model_symbols
     >>> model = load_example_model("pheno")
     >>> print_model_symbols(model)
-    Thetas: THETA(1), THETA(2), THETA(3)
-    Etas: ETA(1), ETA(2)
-    Omegas: OMEGA(1,1), OMEGA(2,2)
-    Epsilons: EPS(1)
-    Sigmas: SIGMA(1,1)
+    Thetas: PTVCL, PTVV, THETA₃
+    Etas: ETA₁, ETA₂
+    Omegas: IVCL, IVV
+    Epsilons: EPS₁
+    Sigmas: SIGMA₁ ₁
     Variables: BTIME, TAD, TVCL, TVV, TVV, CL, V, S₁, F, W, Y, IPRED, IRES, IWRES
     Data columns: ID, TIME, AMT, WGT, APGR, DV, FA1, FA2
 
@@ -659,5 +659,6 @@ def rename_symbols(
     model.parameters = Parameters.create(new)
 
     model.statements = model.statements.subs(d)
+    model.random_variables = model.random_variables.subs(d)
     return model
-    # FIXME: Only handles parameters and statements and no clashes and circular renaming
+    # FIXME: Only handles parameters, statements and random_variables and no clashes and circular renaming

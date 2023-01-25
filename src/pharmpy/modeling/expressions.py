@@ -50,8 +50,8 @@ def get_observation_expression(model: Model):
     >>> model = load_example_model("pheno_linear")
     >>> expr = get_observation_expression(model)
     >>> sympy.pprint(expr)
-    D_EPSETA1_2⋅EPS(1)⋅(ETA(2) - OETA₂) + D_ETA1⋅(ETA(1) - OETA₁) + D_ETA2⋅(ETA(2)
-     - OETA₂) + EPS(1)⋅(D_EPS1 + D_EPSETA1_1⋅(ETA(1) - OETA₁)) + OPRED
+    D_EPSETA1_2⋅EPS₁⋅(ETA₂ - OETA₂) + D_ETA1⋅(ETA₁ - OETA₁) + D_ETA2⋅(ETA₂ - OETA₂
+    ) + EPS₁⋅(D_EPS1 + D_EPSETA1_1⋅(ETA₁ - OETA₁)) + OPRED
     """
     stats = model.statements
     dv = model.dependent_variable
@@ -88,7 +88,7 @@ def get_individual_prediction_expression(model: Model):
     >>> from pharmpy.modeling import load_example_model, get_individual_prediction_expression
     >>> model = load_example_model("pheno_linear")
     >>> get_individual_prediction_expression(model)
-    D_ETA1*(ETA(1) - OETA1) + D_ETA2*(ETA(2) - OETA2) + OPRED
+    D_ETA1*(ETA_1 - OETA1) + D_ETA2*(ETA_2 - OETA2) + OPRED
 
     See Also
     --------
@@ -186,7 +186,7 @@ def calculate_epsilon_gradient_expression(model: Model):
     >>> from pharmpy.modeling import load_example_model, calculate_epsilon_gradient_expression
     >>> model = load_example_model("pheno_linear")
     >>> calculate_epsilon_gradient_expression(model)
-    [D_EPS1 + D_EPSETA1_1*(ETA(1) - OETA1) + D_EPSETA1_2*(ETA(2) - OETA2)]
+    [D_EPS1 + D_EPSETA1_1*(ETA_1 - OETA1) + D_EPSETA1_2*(ETA_2 - OETA2)]
 
     See also
     --------
@@ -293,16 +293,16 @@ def mu_reference_model(model: Model):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-    TVV = THETA(2)⋅WGT
-          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
     TVV = ⎩       TVV           otherwise
     μ₁ = log(TVCL)
-          ETA(1) + μ₁
+          ETA₁ + μ₁
     CL = ℯ
     μ₂ = log(TVV)
-         ETA(2) + μ₂
+         ETA₂ + μ₂
     V = ℯ
     S₁ = V
     """
@@ -461,14 +461,14 @@ def make_declarative(model: Model):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-    TVV = THETA(2)⋅WGT
-          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
     TVV = ⎩       TVV           otherwise
-               ETA(1)
+               ETA₁
     CL = TVCL⋅ℯ
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
     S₁ = V
     >>> make_declarative(model)     # doctest: +ELLIPSIS
@@ -478,13 +478,13 @@ def make_declarative(model: Model):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-          ⎧THETA(2)⋅WGT⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+          ⎧PTVV⋅WGT⋅(THETA₃ + 1)  for APGR < 5
           ⎨
-    TVV = ⎩       THETA(2)⋅WGT           otherwise
-               ETA(1)
+    TVV = ⎩      PTVV⋅WGT          otherwise
+               ETA₁
     CL = TVCL⋅ℯ
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
     S₁ = V
     """
@@ -558,14 +558,14 @@ def cleanup_model(model: Model):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-    TVV = THETA(2)⋅WGT
-          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
     TVV = ⎩       TVV           otherwise
-               ETA(1)
+               ETA₁
     CL = TVCL⋅ℯ
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
     S₁ = V
     Bolus(AMT, admid=1)
@@ -576,7 +576,7 @@ def cleanup_model(model: Model):
         ─────────
     F =     S₁
     W = F
-    Y = EPS(1)⋅W + F
+    Y = EPS₁⋅W + F
     IPRED = F
     IRES = DV - IPRED
             IRES
@@ -589,13 +589,13 @@ def cleanup_model(model: Model):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-          ⎧THETA(2)⋅WGT⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+          ⎧PTVV⋅WGT⋅(THETA₃ + 1)  for APGR < 5
           ⎨
-    TVV = ⎩       THETA(2)⋅WGT           otherwise
-               ETA(1)
+    TVV = ⎩      PTVV⋅WGT           otherwise
+               ETA₁
     CL = TVCL⋅ℯ
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
     Bolus(AMT, admid=1)
     ┌───────┐
@@ -604,7 +604,7 @@ def cleanup_model(model: Model):
         A_CENTRAL
         ─────────
     F =     V
-    Y = EPS(1)⋅F + F
+    Y = EPS₁⋅F + F
     IRES = DV - F
             IRES
             ────
@@ -654,14 +654,14 @@ def greekify_model(model: Model, named_subscripts: bool = False):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-    TVV = THETA(2)⋅WGT
-          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
-    TVV = ⎩       TVV           otherwise
-               ETA(1)
+    TVV = ⎩      TVV           otherwise
+               ETA₁
     CL = TVCL⋅ℯ
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
     S₁ = V
     Bolus(AMT, admid=1)
@@ -672,7 +672,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
         ─────────
     F =     S₁
     W = F
-    Y = EPS(1)⋅W + F
+    Y = EPS₁⋅W + F
     IPRED = F
     IRES = DV - IPRED
             IRES
@@ -904,7 +904,7 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> get_rv_parameters(model, 'ETA(1)')
+    >>> get_rv_parameters(model, 'ETA_1')
     ['CL']
 
     See also

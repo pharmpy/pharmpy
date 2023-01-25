@@ -38,10 +38,10 @@ def s(x):
 def test_get_observation_expression(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real_linbase.mod')
     expr = get_observation_expression(model)
-    assert expr == s('D_EPSETA1_2') * s('EPS(1)') * (s('ETA(2)') - s('OETA2')) + s('D_ETA1') * (
-        s('ETA(1)') - s('OETA1')
-    ) + s('D_ETA2') * (s('ETA(2)') - s('OETA2')) + s('EPS(1)') * (
-        s('D_EPS1') + s('D_EPSETA1_1') * (s('ETA(1)') - s('OETA1'))
+    assert expr == s('D_EPSETA1_2') * s('EPS_1') * (s('ETA_2') - s('OETA2')) + s('D_ETA1') * (
+        s('ETA_1') - s('OETA1')
+    ) + s('D_ETA2') * (s('ETA_2') - s('OETA2')) + s('EPS_1') * (
+        s('D_EPS1') + s('D_EPSETA1_1') * (s('ETA_1') - s('OETA1'))
     ) + s(
         'OPRED'
     )
@@ -50,8 +50,8 @@ def test_get_observation_expression(testdata, load_model_for_test):
 def test_get_individual_prediction_expression(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real_linbase.mod')
     expr = get_individual_prediction_expression(model)
-    assert expr == s('D_ETA1') * (s('ETA(1)') - s('OETA1')) + s('D_ETA2') * (
-        s('ETA(2)') - s('OETA2')
+    assert expr == s('D_ETA1') * (s('ETA_1') - s('OETA1')) + s('D_ETA2') * (
+        s('ETA_2') - s('OETA2')
     ) + s('OPRED')
 
 
@@ -72,8 +72,8 @@ def test_calculate_epsilon_gradient_expression(testdata, load_model_for_test):
     expr = calculate_epsilon_gradient_expression(model)
     assert expr == [
         s('D_EPS1')
-        + s('D_EPSETA1_1') * (s('ETA(1)') - s('OETA1'))
-        + s('D_EPSETA1_2') * (s('ETA(2)') - s('OETA2'))
+        + s('D_EPSETA1_1') * (s('ETA_1') - s('OETA1'))
+        + s('D_EPSETA1_2') * (s('ETA_2') - s('OETA2'))
     ]
 
 
@@ -224,8 +224,8 @@ def test_make_declarative(pheno):
     model = pheno.copy()
     make_declarative(model)
     assert model.statements[3].expression == sympy.Piecewise(
-        (s('WGT') * s('THETA(2)') * (s('THETA(3)') + 1), sympy.Lt(s('APGR'), 5)),
-        (s('WGT') * s('THETA(2)'), True),
+        (s('WGT') * s('PTVV') * (s('THETA_3') + 1), sympy.Lt(s('APGR'), 5)),
+        (s('WGT') * s('PTVV'), True),
     )
 
 
@@ -447,13 +447,13 @@ def test_has_random_effect(load_model_for_test, testdata, model_path, level, exp
 @pytest.mark.parametrize(
     ('model_path', 'rv', 'expected'),
     (
-        ('nonmem/pheno.mod', 'ETA(1)', ['CL']),
-        ('nonmem/pheno_real.mod', 'ETA(1)', ['CL']),
-        ('nonmem/pheno_block.mod', 'ETA(4)', ['MAT']),
-        ('nonmem/qa/iov.mod', 'ETA(1)', ['CL']),
-        ('nonmem/qa/iov.mod', 'ETA(2)', ['V']),
-        ('nonmem/qa/iov.mod', 'ETA(3)', ['CL']),
-        ('nonmem/qa/iov.mod', 'ETA(5)', ['CL']),
+        ('nonmem/pheno.mod', 'ETA_1', ['CL']),
+        ('nonmem/pheno_real.mod', 'ETA_1', ['CL']),
+        ('nonmem/pheno_block.mod', 'ETA_4', ['MAT']),
+        ('nonmem/qa/iov.mod', 'ETA_1', ['CL']),
+        ('nonmem/qa/iov.mod', 'ETA_2', ['V']),
+        ('nonmem/qa/iov.mod', 'ETA_3', ['CL']),
+        ('nonmem/qa/iov.mod', 'ETA_5', ['CL']),
     ),
     ids=repr,
 )

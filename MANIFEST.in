@@ -27,3 +27,9 @@ exclude bumpversion.sh
 
 global-exclude *.py[cod] __pycache__
 global-exclude *.swp
+
+# added by check-manifest
+recursive-include src *.py
+
+# added by check-manifest
+recursive-include src *.py

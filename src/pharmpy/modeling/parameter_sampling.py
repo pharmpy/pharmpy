@@ -155,10 +155,10 @@ def sample_parameters_uniformly(
     >>> rng = create_rng(23)
     >>> pe = model.modelfit_results.parameter_estimates
     >>> sample_parameters_uniformly(model, pe, n=3, rng=rng)
-       THETA(1)  THETA(2)  THETA(3)  OMEGA(1,1)  OMEGA(2,2)  SIGMA(1,1)
-    0  0.004878  0.908216  0.149441    0.029179    0.025472    0.012947
-    1  0.004828  1.014444  0.149958    0.028853    0.027653    0.013348
-    2  0.004347  1.053837  0.165804    0.028465    0.026798    0.013727
+          PTVCL      PTVV   THETA_3      IVCL       IVV  SIGMA_1_1
+    0  0.004878  0.908216  0.149441  0.029179  0.025472   0.012947
+    1  0.004828  1.014444  0.149958  0.028853  0.027653   0.013348
+    2  0.004347  1.053837  0.165804  0.028465  0.026798   0.013727
 
     See also
     --------
@@ -226,10 +226,10 @@ def sample_parameters_from_covariance_matrix(
     >>> cov = model.modelfit_results.covariance_matrix
     >>> pe = model.modelfit_results.parameter_estimates
     >>> sample_parameters_from_covariance_matrix(model, pe, cov, n=3, rng=rng)
-       THETA(1)  THETA(2)  THETA(3)  OMEGA(1,1)  OMEGA(2,2)  SIGMA(1,1)
-    0  0.005069  0.974989  0.204629    0.024756    0.012088    0.012943
-    1  0.004690  0.958431  0.233231    0.038866    0.029000    0.012516
-    2  0.004902  0.950778  0.128388    0.019020    0.023866    0.013413
+          PTVCL      PTVV   THETA_3      IVCL       IVV  SIGMA_1_1
+    0  0.005069  0.974989  0.204629  0.024756  0.012088   0.012943
+    1  0.004690  0.958431  0.233231  0.038866  0.029000   0.012516
+    2  0.004902  0.950778  0.128388  0.019020  0.023866   0.013413
 
     See also
     --------
@@ -297,7 +297,7 @@ def sample_individual_estimates(
     >>> ie = model.modelfit_results.individual_estimates
     >>> iec = model.modelfit_results.individual_estimates_covariance
     >>> sample_individual_estimates(model, ie, iec, samples_per_id=2, rng=rng)
-                 ETA(1)    ETA(2)
+                  ETA_1     ETA_2
     ID sample
     1  0      -0.127941  0.037273
        1      -0.065492 -0.182851

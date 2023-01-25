@@ -1646,14 +1646,14 @@ class Statements(Sequence):
                 ⎨
         BTIME = ⎩ 0     otherwise
         TAD = -BTIME + TIME
-        TVCL = THETA(1)⋅WGT
-        TVV = THETA(2)⋅WGT
-              ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+        TVCL = PTVCL⋅WGT
+        TVV = PTVV⋅WGT
+              ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
               ⎨
         TVV = ⎩       TVV           otherwise
-                   ETA(1)
+                   ETA₁
         CL = TVCL⋅ℯ
-                 ETA(2)
+                 ETA₂
         V = TVV⋅ℯ
         S₁ = V
         """
@@ -1673,7 +1673,7 @@ class Statements(Sequence):
             ─────────
         F =     S₁
         W = F
-        Y = EPS(1)⋅W + F
+        Y = EPS₁⋅W + F
         IPRED = F
         IRES = DV - IPRED
                  IRES
@@ -1696,7 +1696,7 @@ class Statements(Sequence):
             ─────────
         F =     S₁
         W = F
-        Y = EPS(1)⋅W + F
+        Y = EPS₁⋅W + F
         IPRED = F
         IRES = DV - IPRED
                  IRES
@@ -1724,14 +1724,14 @@ class Statements(Sequence):
                 ⎨
         BTIME = ⎩ 0     otherwise
         TAD = -BTIME + TIME
-        TVCL = THETA(1)⋅WT
-        TVV = THETA(2)⋅WT
-              ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+        TVCL = PTVCL⋅WT
+        TVV = PTVV⋅WT
+              ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
               ⎨
         TVV = ⎩       TVV           otherwise
-               ETA(1)
+                   ETA₁
         CL = TVCL⋅ℯ
-             ETA(2)
+                 ETA₂
         V = TVV⋅ℯ
         S₁ = V
         """
@@ -1769,7 +1769,7 @@ class Statements(Sequence):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.find_assignment("CL")
-                   ETA(1)
+                   ETA₁
         CL = TVCL⋅ℯ
         """
         return self._lookup_last_assignment(symbol)[1]
@@ -1870,9 +1870,9 @@ class Statements(Sequence):
         >>> model = load_example_model("pheno")
         >>> odes = model.statements.ode_system
         >>> model.statements.direct_dependencies(odes)
-                   ETA(1)
+                   ETA₁
         CL = TVCL⋅ℯ
-                 ETA(2)
+                 ETA₂
         V = TVV⋅ℯ
         """
         g = self._create_dependency_graph()
@@ -1995,7 +1995,7 @@ class Statements(Sequence):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.before_odes.full_expression("CL")
-        THETA(1)*WGT*exp(ETA(1))
+        PTVCL*WGT*exp(ETA_1)
         """
         if isinstance(expression, str):
             expression = parse_expr(expression)

@@ -22,7 +22,7 @@ def test_iovsearch_github_issues_976(load_model_for_test, testdata):
     )
 
     remove_iov(m, 'ETA_IOV_1_1')
-    assert set(_get_iiv_etas_with_corresponding_iov(m)) == {S('ETA(2)')}
+    assert set(_get_iiv_etas_with_corresponding_iov(m)) == {S('ETA_2')}
 
     remove_iov(m, 'ETA_IOV_2_1')
     assert not m.random_variables.iov

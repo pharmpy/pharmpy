@@ -108,7 +108,7 @@ def test_set_combined_error_model_with_eta_on_ruv(testdata, load_model_for_test)
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     set_iiv_on_ruv(model)
     set_combined_error_model(model)
-    assert model.model_code.split('\n')[11] == 'Y = F + EPS(1)*F*EXP(ETA(3)) + EPS(2)*EXP(ETA(3))'
+    assert model.model_code.split('\n')[12] == 'Y = F + EPS(1)*F*EXP(ETA(3)) + EPS(2)*EXP(ETA(3))'
 
 
 def test_set_combined_error_model_with_time_varying(testdata, load_model_for_test):
@@ -126,11 +126,11 @@ def test_set_combined_error_model_with_time_varying_and_eta_on_ruv(testdata, loa
     set_iiv_on_ruv(model)
     set_combined_error_model(model)
     assert (
-        model.model_code.split('\n')[12]
+        model.model_code.split('\n')[13]
         == '    Y = EPS(1)*F*THETA(3)*EXP(ETA(3)) + EPS(2)*THETA(3)*EXP(ETA(3)) + F'
     )
     assert (
-        model.model_code.split('\n')[14] == '    Y = EPS(1)*F*EXP(ETA(3)) + EPS(2)*EXP(ETA(3)) + F'
+        model.model_code.split('\n')[15] == '    Y = EPS(1)*F*EXP(ETA(3)) + EPS(2)*EXP(ETA(3)) + F'
     )
 
 
@@ -388,7 +388,7 @@ $PRED
 Y = THETA(1) + ETA(1) + EPS(1)*THETA(2)
 
 $THETA 0.1
-$THETA  (0,1.0) ; SD_EPS(1)
+$THETA  (0,1.0) ; SD_EPS_1
 $OMEGA 0.01
 $SIGMA 1 FIX
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
@@ -538,8 +538,8 @@ END IF
 Y = IPRED + EPS(1)*W
 $THETA (0,0.00469307) ; TVCL
 $THETA (0,1.00916) ; TVV
-$THETA  (0,0.11506954418958998) ; SD_EPS(1)
-$THETA  (0,0.11506954418958998) ; SD_EPS(2)
+$THETA  (0,0.11506954418958998) ; SD_EPS_1
+$THETA  (0,0.11506954418958998) ; SD_EPS_2
 $THETA  1 ; tbs_lambda
 $THETA  0.001 ; tbs_zeta
 $OMEGA 0.0309626  ; IVCL

@@ -89,8 +89,8 @@ The functions for fixing/unfixing parameters take either a list of parameter nam
 .. pharmpy-execute::
    :hide-output:
 
-   fix_parameters(model, ['THETA(1)', 'THETA(2)'])
-   unfix_parameters(model, 'THETA(1)')
+   fix_parameters(model, ['TVCL', 'TVV'])
+   unfix_parameters(model, 'TVCL')
 
 It is also possible to fix and unfix the parameters to a specified value or to a list of values. If parameter_names
 is None, all parameters will be transformed.
@@ -98,9 +98,9 @@ is None, all parameters will be transformed.
 .. pharmpy-execute::
    :hide-output:
 
-   fix_parameters_to(model, {'THETA(1)': 0, 'THETA(2)': 1})
-   fix_parameters_to(model, {'THETA(1)': 0, 'THETA(2)': 0})
-   unfix_parameters_to(model, {'THETA(1)': 0})
+   fix_parameters_to(model, {'TVCL': 0, 'TVV': 1})
+   fix_parameters_to(model, {'TVCL': 0, 'TVV': 0})
+   unfix_parameters_to(model, {'TVCL': 0})
 
 
 Add parameter
@@ -434,11 +434,11 @@ To apply a boxcox transformation, input a list of the etas of interest. See
 .. pharmpy-execute::
 
    from pharmpy.modeling import transform_etas_boxcox
-   transform_etas_boxcox(model, ['ETA(1)'])
+   transform_etas_boxcox(model, ['ETA_1'])
    print_model_diff(model_ref, model)
 
 This can be done for one or multiple etas. The new model will have new statements where *ETAB1* is a boxcox
-transformation of *ETA(1)*.
+transformation of *ETA_1*.
 
 If no list is provided, all etas will be updated.
 
@@ -459,7 +459,7 @@ is a list of etas, and if no list is provided all etas will be transformed. See
 
    model = read_model(path / "pheno.mod")
    from pharmpy.modeling import transform_etas_tdist
-   transform_etas_tdist(model, ['ETA(1)'])
+   transform_etas_tdist(model, ['ETA_1'])
    print_model_diff(model_ref, model)
 
 John Draper
@@ -472,7 +472,7 @@ provided all etas will be transformed. See :py:func:`pharmpy.modeling.transform_
 
    model = read_model(path / "pheno.mod")
    from pharmpy.modeling import transform_etas_john_draper
-   transform_etas_john_draper(model, ['ETA(1)'])
+   transform_etas_john_draper(model, ['ETA_1'])
    print_model_diff(model_ref, model)
 
 ~~~~~~~~~~~~~~~
@@ -544,7 +544,7 @@ example, if you want to be able to use the NONMEM name.
 .. pharmpy-execute::
 
    model = read_model(path / "pheno.mod")
-   add_iiv(model, 'S1', 'exp', eta_names='ETA(3)')
+   add_iiv(model, 'S1', 'exp', eta_names='ETA_3')
    model.random_variables
 
 
@@ -569,7 +569,7 @@ Similarly, you can also add IOVs to your model.
    :hide-output:
 
    from pharmpy.modeling import add_iov
-   add_iov(model, 'FA1', ['ETA(1)'])
+   add_iov(model, 'FA1', ['ETA_1'])
 
 In this example, *FA1* is the name of the occasion column, and the etas on which you wish to add the IOV on are
 provided as a list. See :py:class:`pharmpy.modeling.add_iov` for information on how initial estimates are chosen.
@@ -594,7 +594,7 @@ supported.
 
 .. pharmpy-execute::
 
-   add_iov(model, 'FA1', ['CL', 'ETA(2)'])
+   add_iov(model, 'FA1', ['CL', 'ETA_2'])
    print_model_diff(model_ref, model)
 
 .. _add_iov_custom_names:
@@ -619,7 +619,7 @@ the eta_names argument. For example, if you want to be able to use the NONMEM na
 
 .. pharmpy-execute::
 
-   add_iov(model, 'FA1', ['ETA(1)'], eta_names=['ETA(3)', 'ETA(4)'])
+   add_iov(model, 'FA1', ['ETA_1'], eta_names=['ETA_3', 'ETA_4'])
    model.random_variables
 
 
@@ -641,7 +641,7 @@ Etas can also be removed by providing a list of etas and/or name of parameters t
 .. pharmpy-execute::
 
    from pharmpy.modeling import remove_iiv
-   remove_iiv(model, ['ETA(1)', 'V'])
+   remove_iiv(model, ['ETA_1', 'V'])
    print_model_diff(model_ref, model)
 
 If you want to remove all etas, leave argument empty.
@@ -843,7 +843,7 @@ IIVs can be added to RUVs by multiplying epsilons with an exponential new eta.
 
    from pharmpy.modeling import set_iiv_on_ruv
 
-   set_iiv_on_ruv(model, ['EPS(1)'])
+   set_iiv_on_ruv(model, ['EPS_1'])
    print_model_diff(model_ref, model)
 
 Input a list of the epsilons you wish to transform, leave argument empty if all epsilons should be
@@ -862,7 +862,7 @@ Custom eta names are supported the same way as when :ref:`adding IOVs<add_iov_cu
 .. pharmpy-execute::
 
    model = read_model(path / "pheno.mod")
-   set_iiv_on_ruv(model, ['EPS(1)'], eta_names=['ETA(3)'])
+   set_iiv_on_ruv(model, ['EPS_1'], eta_names=['ETA_3'])
    model.random_variables
 
 
@@ -930,7 +930,7 @@ Pharmpy supports the joining of multiple etas into a joint distribution. See
 
    from pharmpy.modeling import create_joint_distribution
 
-   create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])
+   create_joint_distribution(model, ['ETA_1', 'ETA_2'])
    print_model_diff(model_ref, model)
 
 The listed etas will be combined into a new distribution. Valid etas must be IIVs and cannot be
@@ -974,7 +974,7 @@ Provide etas as a list.
 
    from pharmpy.modeling import split_joint_distribution
 
-   split_joint_distribution(model, ['ETA(1)'])
+   split_joint_distribution(model, ['ETA_1'])
    print_model_diff(model_block, model)
 
 If no list of etas is provided, all block structures will be split.

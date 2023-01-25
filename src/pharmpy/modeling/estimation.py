@@ -106,15 +106,15 @@ def calculate_parameters_from_ucp(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> scale = calculate_ucp_scale(model)
-    >>> values = {'THETA(1)': 0.1, 'THETA(2)': 0.1, 'THETA(3)': 0.1, \
-                  'OMEGA(1,1)': 0.1, 'OMEGA(2,2)': 0.1, 'SIGMA(1,1)': 0.1}
+    >>> values = {'PTVCL': 0.1, 'PTVV': 0.1, 'THETA_3': 0.1, \
+                  'IVCL': 0.1, 'IVV': 0.1, 'SIGMA_1_1': 0.1}
     >>> calculate_parameters_from_ucp(model, scale, values)
-    THETA(1)                  0.004693
-    THETA(2)                   1.00916
-    THETA(3)                       0.1
-    OMEGA(1,1)               0.0309626
-    OMEGA(2,2)    0.031127999999999996
-    SIGMA(1,1)    0.013241000000000001
+    PTVCL                    0.004693
+    PTVV                      1.00916
+    THETA_3                       0.1
+    IVCL                    0.0309626
+    IVV          0.031127999999999996
+    SIGMA_1_1    0.013241000000000001
     dtype: object
 
     See also

@@ -16,36 +16,31 @@ from pharmpy.model import NormalDistribution, Parameter, Parameters, RandomVaria
 from pharmpy.model.model import compare_before_after_params, update_datainfo
 from pharmpy.modeling.write_csv import create_dataset_path, write_csv
 
-from .config import conf
 from .nmtran_parser import NMTranControlStream, NMTranParser
-from .parameters import parameter_translation
 from .parsing import (
-    create_name_trans,
-    new_parse_parameters,
     parse_datainfo,
     parse_dataset,
     parse_description,
     parse_estimation_steps,
     parse_initial_individual_estimates,
     parse_parameters,
-    parse_random_variables,
     parse_statements,
     parse_value_type,
 )
-from .random_variables import rv_translation
 from .results import _parse_modelfit_results
 from .update import (
     abbr_translation,
+    create_name_map,
     update_ccontra,
     update_description,
     update_estimation,
     update_initial_individual_estimates,
     update_input,
     update_name_of_tables,
-    update_parameters,
     update_random_variables,
     update_sizes,
     update_statements,
+    update_thetas,
 )
 
 
@@ -144,35 +139,40 @@ class Model(BaseModel):
         nofiles - Set to not write any files (i.e. dataset, phi input etc)
         """
         update_initial_individual_estimates(self, path, nofiles)
-        if hasattr(self, '_random_variables'):
-            # FIXME: better solution would be to have system for handling dummy parameters etc.
-            if not self.random_variables.etas:
-                omega = Parameter('DUMMYOMEGA', init=0, fix=True)
-                eta = NormalDistribution.create('eta_dummy', 'iiv', 0, omega.symbol)
-                statement = Assignment(sympy.Symbol('DUMMYETA'), sympy.Symbol(eta.names[0]))
-                self.statements = statement + self.statements
-                self.random_variables = self.random_variables + eta
-                self.parameters = Parameters.create(list(self.parameters) + [omega])
-            update_random_variables(
-                self, self.internals._old_random_variables, self._random_variables
-            )
-            self.internals._old_random_variables = self._random_variables
-        if hasattr(self, '_parameters'):
-            update_parameters(self, self.internals._old_parameters, self._parameters)
-            self.internals._old_parameters = self._parameters
-        trans = parameter_translation(
-            self.internals.control_stream, reverse=True, remove_idempotent=True, as_symbols=True
+
+        if not self.random_variables.etas:
+            omega = Parameter('DUMMYOMEGA', init=0, fix=True)
+            eta = NormalDistribution.create('eta_dummy', 'iiv', 0, omega.symbol)
+            statement = Assignment(sympy.Symbol('DUMMYETA'), sympy.Symbol(eta.names[0]))
+            self.statements = statement + self.statements
+            self.random_variables = self.random_variables + eta
+            self.parameters = Parameters.create(list(self.parameters) + [omega])
+
+        control_stream = update_random_variables(
+            self, self.internals._old_random_variables, self._random_variables
         )
-        rv_trans = rv_translation(
-            self.internals.control_stream, reverse=True, remove_idempotent=True, as_symbols=True
+
+        control_stream = update_thetas(
+            self, control_stream, self.internals._old_parameters, self._parameters
         )
-        trans.update(rv_trans)
-        if conf.write_etas_in_abbr:
-            abbr = abbr_translation(self, rv_trans)
-            trans.update(abbr)
-        if hasattr(self, '_statements'):
-            update_statements(self, self.internals._old_statements, self._statements, trans)
-            self.internals._old_statements = self._statements
+
+        self.internals._old_parameters = self._parameters
+        self.internals._old_random_variables = self._random_variables
+
+        self.internals.control_stream = control_stream
+        trans = create_name_map(self)
+
+        rv_trans = {}
+        i = 1
+        for dist in self._random_variables.etas:
+            for name in dist.names:
+                rv_trans[name] = f'ETA({i})'
+                i += 1
+        abbr_translation(self, rv_trans)
+
+        trans = {sympy.Symbol(key): sympy.Symbol(value) for key, value in trans.items()}
+        update_statements(self, self.internals._old_statements, self._statements, trans)
+        self.internals._old_statements = self._statements
 
         if (
             self.internals._dataset_updated
@@ -269,46 +269,16 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
 
     dependent_variable = sympy.Symbol('Y')
 
-    parameters = parse_parameters(control_stream)
-
     statements, comp_map = parse_statements(
         di, _dataset(control_stream, di, dataset), control_stream
     )
 
-    new_parameters, new_rvs, name_map = new_parse_parameters(control_stream, statements)
+    parameters, rvs, name_map = parse_parameters(control_stream, statements)
 
-    rvs = parse_random_variables(control_stream)
+    subs_map = {sympy.Symbol(key): sympy.Symbol(val) for key, val in name_map.items()}
+    statements = statements.subs(subs_map)
 
-    trans_statements, trans_params = create_name_trans(control_stream, rvs, statements)
-    for theta in control_stream.get_records('THETA'):
-        theta.update_name_map(trans_params)
-    for omega in control_stream.get_records('OMEGA'):
-        omega.update_name_map(trans_params)
-    for sigma in control_stream.get_records('SIGMA'):
-        sigma.update_name_map(trans_params)
-
-    d_par = {key: value for key, value in trans_params.items() if key in parameters}
-
-    d_rv = {
-        sympy.Symbol(key): value for key, value in trans_params.items() if key not in parameters
-    }
-
-    _old_random_variables = rvs  # FIXME: This has to stay here
-    rvs = rvs.subs(d_rv)
-
-    new = []
-    for p in parameters:
-        if p.name in d_par:
-            newparam = Parameter(
-                name=d_par[p.name], init=p.init, lower=p.lower, upper=p.upper, fix=p.fix
-            )
-        else:
-            newparam = p
-        new.append(newparam)
-    parameters = Parameters.create(new)
-
-    statements = statements.subs(trans_statements)
-
+    # FIXME: Handle by creation of new model object
     if not rvs.validate_parameters(parameters.inits):
         nearest = rvs.nearest_valid_parameters(parameters.inits)
         before, after = compare_before_after_params(parameters.inits, nearest)
@@ -324,7 +294,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
     description = parse_description(control_stream)
 
     init_etas = parse_initial_individual_estimates(
-        control_stream, rvs, None if path is None else path.parent
+        control_stream, name_map, None if path is None else path.parent
     )
 
     value_type = parse_value_type(control_stream, statements)
@@ -332,6 +302,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
     modelfit_results = _parse_modelfit_results(
         path,
         control_stream,
+        name_map,
         BaseModel(  # FIXME This should not be necessary
             name=name,
             description=description,
@@ -350,7 +321,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         _old_estimation_steps=estimation_steps,
         _old_observation_transformation=dependent_variable,
         _old_parameters=parameters,
-        _old_random_variables=_old_random_variables,
+        _old_random_variables=rvs,
         _old_statements=statements,
         _old_initial_individual_estimates=init_etas,
         _old_datainfo=_old_datainfo,

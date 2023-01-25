@@ -118,7 +118,7 @@ def set_first_order_elimination(model: Model):
     if has_first_order_elimination(model):
         pass
     elif has_zero_order_elimination(model) or has_michaelis_menten_elimination(model):
-        rename_symbols(model, {'POP_CLMM': 'POP_CL'})
+        rename_symbols(model, {'POP_CLMM': 'POP_CL', 'IIV_CLMM': 'IIV_CL'})
         ind = model.statements.find_assignment_index('CLMM')
         assert ind is not None
         clmm_assignment = model.statements[ind]

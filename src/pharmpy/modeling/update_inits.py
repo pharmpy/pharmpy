@@ -34,11 +34,11 @@ def update_inits(
     >>> from pharmpy.modeling import load_example_model, update_inits
     >>> model = load_example_model("pheno")   # This model was previously fitted to its data
     >>> model.parameters.inits  # doctest:+ELLIPSIS
-    {'THETA(1)': 0.00469307, 'THETA(2)': 1.00916, 'THETA(3)': 0.1, 'OMEGA(1,1)': 0.0309626...}
+    {'PTVCL': 0.00469307, 'PTVV': 1.00916, 'THETA_3': 0.1, 'IVCL': 0.0309626, 'IVV': 0.031128, 'SIGMA_1_1': 0.013241}
     >>> update_inits(model, model.modelfit_results.parameter_estimates)  # doctest:+ELLIPSIS
     <...>
     >>> model.parameters.inits  # doctest:+ELLIPSIS
-    {'THETA(1)': 0.00469555, 'THETA(2)': 0.984258, 'THETA(3)': 0.15892, 'OMEGA(1,1)': 0.0293508...}
+    {'PTVCL': 0.00469555, 'PTVV': 0.984258, 'THETA_3': 0.15892, 'IVCL': 0.0293508, 'IVV': 0.027906, ...}
 
     """
     if move_est_close_to_bounds:

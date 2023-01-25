@@ -81,7 +81,7 @@ Model parameters are scalar values that are used in the mathematical definition 
 
    from pharmpy.model import Parameter
 
-   par = Parameter('THETA(1)', 0.1, upper=2, fix=False)
+   par = Parameter('THETA_1', 0.1, upper=2, fix=False)
    par
 
 A model parameter must have a name and an inital value and can optionally be constrained to a lower and or upper bound. A parameter can also be fixed meaning that it will be set to its initial value. The parameter attributes can be read out via properties.
@@ -106,7 +106,7 @@ Each parameter can be retrieved using indexing
 
 .. pharmpy-execute::
 
-   parset['THETA(1)']
+   parset['PTVCL']
 
 Operations on multiple parameters are made easier using methods or properties on parameter sets. For example:
 
@@ -131,7 +131,7 @@ The random variables of a model are available through the ``random_variables`` p
 .. pharmpy-execute::
    :hide-output:
 
-   eta1 = rvs['ETA(1)']
+   eta1 = rvs['ETA_1']
 
 Joint distributions are also supported
 
@@ -144,7 +144,7 @@ Joint distributions are also supported
 
 .. pharmpy-execute::
 
-   omega = rvs['ETA(1)'].variance
+   omega = rvs['ETA_1'].variance
    omega
 
 Substitution of numerical values can be done directly from initial values

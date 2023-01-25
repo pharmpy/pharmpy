@@ -21,10 +21,10 @@ def get_thetas(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> get_thetas(model)
-                 value  lower      upper    fix
-    THETA(1)  0.004693   0.00  1000000.0  False
-    THETA(2)  1.009160   0.00  1000000.0  False
-    THETA(3)  0.100000  -0.99  1000000.0  False
+                value  lower      upper    fix
+    PTVCL    0.004693   0.00  1000000.0  False
+    PTVV     1.009160   0.00  1000000.0  False
+    THETA_3  0.100000  -0.99  1000000.0  False
 
     See also
     --------
@@ -54,9 +54,9 @@ def get_omegas(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> get_omegas(model)
-                   value  lower upper    fix
-    OMEGA(1,1)  0.030963    0.0     ∞  False
-    OMEGA(2,2)  0.031128    0.0     ∞  False
+             value  lower upper    fix
+    IVCL  0.030963    0.0     ∞  False
+    IVV   0.031128    0.0     ∞  False
 
     See also
     --------
@@ -85,8 +85,8 @@ def get_sigmas(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> get_sigmas(model)
-                   value  lower upper    fix
-    SIGMA(1,1)  0.013241    0.0     ∞  False
+                  value  lower upper    fix
+    SIGMA_1_1  0.013241    0.0     ∞  False
 
     See also
     --------
@@ -118,10 +118,10 @@ def set_initial_estimates(model: Model, inits: Dict[str, float]):
     --------
     >>> from pharmpy.modeling import load_example_model, set_initial_estimates
     >>> model = load_example_model("pheno")
-    >>> set_initial_estimates(model, {'THETA(1)': 2})   # doctest: +ELLIPSIS
+    >>> set_initial_estimates(model, {'PTVCL': 2})   # doctest: +ELLIPSIS
     <...>
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 2, lower=0.0, upper=1000000.0, fix=False)
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 2, lower=0.0, upper=1000000.0, fix=False)
 
     See also
     --------
@@ -151,10 +151,10 @@ def set_upper_bounds(model: Model, bounds: Dict[str, float]):
     --------
     >>> from pharmpy.modeling import load_example_model, set_upper_bounds
     >>> model = load_example_model("pheno")
-    >>> set_upper_bounds(model, {'THETA(1)': 10})   # doctest: +ELLIPSIS
+    >>> set_upper_bounds(model, {'PTVCL': 10})   # doctest: +ELLIPSIS
     <...>
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=10, fix=False)
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 0.00469307, lower=0.0, upper=10, fix=False)
 
     See also
     --------
@@ -193,10 +193,10 @@ def set_lower_bounds(model: Model, bounds: Dict[str, float]):
     --------
     >>> from pharmpy.modeling import load_example_model, set_lower_bounds
     >>> model = load_example_model("pheno")
-    >>> set_lower_bounds(model, {'THETA(1)': -10})   # doctest: +ELLIPSIS
+    >>> set_lower_bounds(model, {'PTVCL': -10})   # doctest: +ELLIPSIS
     <...>
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=-10, upper=1000000.0, fix=False)
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 0.00469307, lower=-10, upper=1000000.0, fix=False)
 
     See also
     --------
@@ -237,12 +237,12 @@ def fix_parameters(model: Model, parameter_names: Union[List[str], str]):
     -------
     >>> from pharmpy.modeling import fix_parameters, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
-    >>> fix_parameters(model, 'THETA(1)')       # doctest: +ELLIPSIS
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
+    >>> fix_parameters(model, 'PTVCL')       # doctest: +ELLIPSIS
     <...>
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=True)
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=True)
 
     See also
     --------
@@ -288,14 +288,14 @@ def unfix_parameters(model: Model, parameter_names: Union[List[str], str]):
     --------
     >>> from pharmpy.modeling import fix_parameters, unfix_parameters, load_example_model
     >>> model = load_example_model("pheno")
-    >>> fix_parameters(model, ['THETA(1)', 'THETA(2)', 'THETA(3)'])     # doctest: +ELLIPSIS
+    >>> fix_parameters(model, ['PTVCL', 'PTVV', 'THETA_3'])     # doctest: +ELLIPSIS
     <...>
     >>> model.parameters.fix    # doctest: +ELLIPSIS
-    {'THETA(1)': True, 'THETA(2)': True, 'THETA(3)': True, ...}
-    >>> unfix_parameters(model, 'THETA(1)')       # doctest: +ELLIPSIS
+    {'PTVCL': True, 'PTVV': True, 'THETA_3': True, ...}
+    >>> unfix_parameters(model, 'PTVCL')       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters.fix        # doctest: +ELLIPSIS
-    {'THETA(1)': False, 'THETA(2)': True, 'THETA(3)': True, ...}
+    {'PTVCL': False, 'PTVV': True, 'THETA_3': True, ...}
 
     See also
     --------
@@ -342,12 +342,12 @@ def fix_parameters_to(model: Model, inits: Dict[str, float]):
     --------
     >>> from pharmpy.modeling import fix_parameters_to, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
-    >>> fix_parameters_to(model, {'THETA(1)': 0.5})       # doctest: +ELLIPSIS
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
+    >>> fix_parameters_to(model, {'PTVCL': 0.5})       # doctest: +ELLIPSIS
     <...>
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000.0, fix=True)
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 0.5, lower=0.0, upper=1000000.0, fix=True)
 
     See also
     --------
@@ -379,16 +379,16 @@ def unfix_parameters_to(model: Model, inits: Dict[str, float]):
     --------
     >>> from pharmpy.modeling import fix_parameters, unfix_parameters_to, load_example_model
     >>> model = load_example_model("pheno")
-    >>> fix_parameters(model, ['THETA(1)', 'THETA(2)', 'THETA(3)'])     # doctest: +ELLIPSIS
+    >>> fix_parameters(model, ['PTVCL', 'PTVV', 'THETA_3'])     # doctest: +ELLIPSIS
     <...>
     >>> model.parameters.fix    # doctest: +ELLIPSIS
-    {'THETA(1)': True, 'THETA(2)': True, 'THETA(3)': True, ...}
-    >>> unfix_parameters_to(model, {'THETA(1)': 0.5})       # doctest: +ELLIPSIS
+    {'PTVCL': True, 'PTVV': True, 'THETA_3': True, 'IVCL': False, 'IVV': False, 'SIGMA_1_1': False}
+    >>> unfix_parameters_to(model, {'PTVCL': 0.5})       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters.fix        # doctest: +ELLIPSIS
-    {'THETA(1)': False, 'THETA(2)': True, 'THETA(3)': True, ...}
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000.0, fix=False)
+    {'PTVCL': False, 'PTVV': True, 'THETA_3': True, ...}
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 0.5, lower=0.0, upper=1000000.0, fix=False)
 
     Returns
     -------
@@ -424,12 +424,12 @@ def fix_or_unfix_parameters(model: Model, parameters: Dict[str, bool]):
     --------
     >>> from pharmpy.modeling import fix_or_unfix_parameters, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
-    >>> fix_or_unfix_parameters(model, {'THETA(1)': True})       # doctest: +ELLIPSIS
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
+    >>> fix_or_unfix_parameters(model, {'PTVCL': True})       # doctest: +ELLIPSIS
     <...>
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=True)
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=True)
 
     Returns
     -------
@@ -471,12 +471,12 @@ def unconstrain_parameters(model: Model, parameter_names: List[str]):
     --------
     >>> from pharmpy.modeling import unconstrain_parameters, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
-    >>> unconstrain_parameters(model, ['THETA(1)'])       # doctest: +ELLIPSIS
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
+    >>> unconstrain_parameters(model, ['PTVCL'])       # doctest: +ELLIPSIS
     <...>
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=-∞, upper=∞, fix=False)
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 0.00469307, lower=-∞, upper=∞, fix=False)
 
     Returns
     -------
@@ -539,14 +539,14 @@ def add_population_parameter(
     >>> add_population_parameter(model, 'POP_KA', 2)       # doctest: +ELLIPSIS
     <...>
     >>> model.parameters
-                   value lower      upper    fix
-    THETA(1)    0.004693   0.0  1000000.0  False
-    THETA(2)    1.009160   0.0  1000000.0  False
-    THETA(3)    0.100000 -0.99  1000000.0  False
-    OMEGA(1,1)  0.030963   0.0          ∞  False
-    OMEGA(2,2)  0.031128   0.0          ∞  False
-    SIGMA(1,1)  0.013241   0.0          ∞  False
-    POP_KA      2.000000    -∞          ∞  False
+                  value lower      upper    fix
+    PTVCL      0.004693   0.0  1000000.0  False
+    PTVV       1.009160   0.0  1000000.0  False
+    THETA_3    0.100000 -0.99  1000000.0  False
+    IVCL       0.030963   0.0          ∞  False
+    IVV        0.031128   0.0          ∞  False
+    SIGMA_1_1  0.013241   0.0          ∞  False
+    POP_KA     2.000000    -∞          ∞  False
     """
 
     param = Parameter.create(name, init, lower=lower, upper=upper, fix=fix)

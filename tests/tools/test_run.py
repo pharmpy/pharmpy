@@ -308,7 +308,7 @@ def test_summarize_modelfit_results(
     summary_single = summarize_modelfit_results(pheno.modelfit_results)
 
     assert summary_single.loc['pheno_real']['ofv'] == 586.2760562818805
-    assert summary_single['OMEGA(1,1)_estimate'].mean() == 0.0293508
+    assert summary_single['IVCL_estimate'].mean() == 0.0293508
 
     assert len(summary_single.index) == 1
 
@@ -317,8 +317,8 @@ def test_summarize_modelfit_results(
     summary_multiple = summarize_modelfit_results([pheno.modelfit_results, mox.modelfit_results])
 
     assert summary_multiple.loc['mox1']['ofv'] == -624.5229577248352
-    assert summary_multiple['OMEGA(1,1)_estimate'].mean() == 0.2236304
-    assert summary_multiple['OMEGA(2,1)_estimate'].mean() == 0.395647  # One is NaN
+    assert summary_multiple['IIV_CL_estimate'].mean() == 0.41791
+    assert summary_multiple['IIV_CL_V_estimate'].mean() == 0.395647  # One is NaN
 
     assert len(summary_multiple.index) == 2
     assert list(summary_multiple.index) == ['pheno_real', 'mox1']

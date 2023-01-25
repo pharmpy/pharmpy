@@ -61,18 +61,18 @@ def add_allometry(
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-    TVV = THETA(2)⋅WGT
-          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
-    TVV = ⎩       TVV           otherwise
-               ETA(1)
+    TVV = ⎩      TVV           otherwise
+               ETA₁
     CL = TVCL⋅ℯ
                  ALLO_CL
             ⎛WGT⎞
          CL⋅⎜───⎟
     CL =    ⎝ 70⎠
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
                ALLO_V
           ⎛WGT⎞

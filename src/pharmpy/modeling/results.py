@@ -57,12 +57,12 @@ def calculate_eta_shrinkage(
     >>> pe = model.modelfit_results.parameter_estimates
     >>> ie = model.modelfit_results.individual_estimates
     >>> calculate_eta_shrinkage(model, pe, ie)
-    ETA(1)    0.720481
-    ETA(2)    0.240295
+    ETA_1    0.720481
+    ETA_2    0.240295
     dtype: float64
     >>> calculate_eta_shrinkage(model, pe, ie, sd=True)
-    ETA(1)    0.471305
-    ETA(2)    0.128389
+    ETA_1    0.471305
+    ETA_2    0.128389
     dtype: float64
 
     See also
@@ -112,7 +112,7 @@ def calculate_individual_shrinkage(
     >>> pe = model.modelfit_results.parameter_estimates
     >>> covs = model.modelfit_results.individual_estimates_covariance
     >>> calculate_individual_shrinkage(model, pe, covs)
-          ETA(1)    ETA(2)
+           ETA_1     ETA_2
     ID
     1   0.847789  0.256473
     2   0.796643  0.210669
@@ -670,9 +670,9 @@ def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9)
     >>> model = load_example_model("pheno")
     >>> cor = model.modelfit_results.correlation_matrix
     >>> check_high_correlations(model, cor, limit=0.3)
-    THETA(1)  OMEGA(1,1)   -0.388059
-    THETA(2)  THETA(3)     -0.356899
-              OMEGA(2,2)    0.356662
+    PTVCL  IVCL      -0.388059
+    PTVV   THETA_3   -0.356899
+           IVV        0.356662
     dtype: float64
     """
     high_and_below_diagonal = cor.abs().ge(limit) & np.triu(np.ones(cor.shape), k=1).astype(bool)
@@ -705,12 +705,12 @@ def check_parameters_near_bounds(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> check_parameters_near_bounds(model, model.modelfit_results.parameter_estimates)
-    THETA(1)      False
-    THETA(2)      False
-    THETA(3)      False
-    OMEGA(1,1)    False
-    OMEGA(2,2)    False
-    SIGMA(1,1)    False
+    PTVCL        False
+    PTVV         False
+    THETA_3      False
+    IVCL         False
+    IVV          False
+    SIGMA_1_1    False
     dtype: bool
 
     """

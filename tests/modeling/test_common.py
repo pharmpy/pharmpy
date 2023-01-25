@@ -29,13 +29,13 @@ def test_get_config_path():
 def test_read_model_path(testdata):
     path = testdata / 'nonmem' / 'minimal.mod'
     model = read_model(path)
-    assert model.parameters['THETA(1)'].init == 0.1
+    assert model.parameters['THETA_1'].init == 0.1
 
 
 def test_read_model_str(testdata):
     path = str(testdata / 'nonmem' / 'minimal.mod')
     model = read_model(path)
-    assert model.parameters['THETA(1)'].init == 0.1
+    assert model.parameters['THETA_1'].init == 0.1
 
 
 def test_read_model_expanduser(testdata):
@@ -47,7 +47,7 @@ def test_read_model_expanduser(testdata):
         pytest.skip(f'{model_path} is not a descendant of home directory ({Path.home()})')
     path = os.path.join('~', model_path_relative_to_home)
     model = read_model(path)
-    assert model.parameters['THETA(1)'].init == 0.1
+    assert model.parameters['THETA_1'].init == 0.1
 
 
 def test_read_model_from_string():
@@ -65,7 +65,7 @@ $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     )
-    assert model.parameters['THETA(1)'].init == 0.1
+    assert model.parameters['THETA_1'].init == 0.1
 
 
 def test_write_model(testdata, load_model_for_test, tmp_path):
@@ -76,7 +76,7 @@ def test_write_model(testdata, load_model_for_test, tmp_path):
 
 def test_generate_model_code(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    fix_parameters(model, ['THETA(1)'])
+    fix_parameters(model, ['THETA_1'])
     assert generate_model_code(model).split('\n')[7] == '$THETA 0.1 FIX'
 
 
@@ -138,4 +138,4 @@ def test_remove_unused_parameters_and_rvs(pheno):
     i = statements.index(statements.find_assignment('CL'))
     model.statements = model.statements[0:i] + model.statements[i + 1 :]
     remove_unused_parameters_and_rvs(model)
-    assert len(model.random_variables['ETA(2)'].names) == 1
+    assert len(model.random_variables['ETA_2'].names) == 1

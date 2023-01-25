@@ -69,7 +69,7 @@ def test_evaluate_eta_gradient(load_model_for_test, testdata):
 
     dataset = read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV'])
     grad = evaluate_eta_gradient(model, dataset=dataset)
-    pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0], columns=['dF/dETA(1)']))
+    pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0], columns=['dF/dETA_1']))
 
     linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
     linmod = load_model_for_test(linpath)
@@ -84,7 +84,7 @@ def test_evaluate_epsilon_gradient(load_model_for_test, testdata):
 
     dataset = read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV'])
     grad = evaluate_epsilon_gradient(model, dataset=dataset)
-    pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0], columns=['dY/dEPS(1)']))
+    pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0], columns=['dY/dEPS_1']))
 
     linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
     linmod = load_model_for_test(linpath)

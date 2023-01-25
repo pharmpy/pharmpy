@@ -46,7 +46,7 @@ def set_iiv_on_ruv(
     <...>
     >>> model.statements.find_assignment("Y")
                   ETA_RV1
-    Y = EPS(1)⋅W⋅ℯ        + F
+    Y = EPS₁⋅W⋅ℯ        + F
 
     See also
     --------

@@ -236,7 +236,7 @@ def add_covariate_effect(
     >>> add_covariate_effect(model, "CL", "APGR", "exp")    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.before_odes.full_expression("CL")
-    THETA(1)*WGT*exp(ETA(1))*exp(POP_CLAPGR*(APGR - 7.0))
+    PTVCL*WGT*exp(ETA_1)*exp(POP_CLAPGR*(APGR - 7.0))
 
     """
     sset = model.statements

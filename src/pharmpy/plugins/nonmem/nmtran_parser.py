@@ -79,8 +79,11 @@ default_record_order = [
 class NMTranControlStream:
     """Representation of a parsed control stream (model file)"""
 
-    def __init__(self):
-        self.records = []
+    def __init__(self, records=None):
+        if records is None:
+            self.records = []
+        else:
+            self.records = records
         self._active_problem = 0
         self.abbreviated = Abbreviated(self)
 
@@ -164,6 +167,30 @@ class NMTranControlStream:
                     keep.extend(new)
                     first = False
         self.records = keep
+
+    def replace_all(self, name, new):
+        keep = []
+        first = True
+        for rec in self.records:
+            if rec.name == name:
+                if first:
+                    keep.extend(new)
+                    first = False
+            else:
+                keep.append(rec)
+        if first:  # No record to replace. Need to insert
+            index = default_record_order.index(name)
+            after_index = len(keep) - 1
+            for i, rec in enumerate(keep):
+                try:
+                    curindex = default_record_order.index(rec.name)
+                except ValueError:
+                    curindex = 0
+                if curindex > index:
+                    after_index = i
+            keep = keep[0 : after_index + 1] + new + keep[after_index + 1 :]
+
+        return NMTranControlStream(records=keep)
 
     def get_pred_pk_record(self):
         pred = self._get_first_record('PRED')
