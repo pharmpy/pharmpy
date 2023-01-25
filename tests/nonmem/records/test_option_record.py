@@ -150,10 +150,10 @@ def test_append_node(parser):
 
 def test_prepend_node(parser):
     rec = parser.parse('$ESTIMATION METH=0 MAXEVALS=0').records[0]
-    rec.prepend_option('INTERACTION')
-    assert str(rec) == '$ESTIMATION INTERACTION METH=0 MAXEVALS=0'
-    rec.prepend_option('MCETA', '250')
-    assert str(rec) == '$ESTIMATION MCETA=250 INTERACTION METH=0 MAXEVALS=0'
+    newrec = rec.prepend_option('INTERACTION')
+    assert str(newrec) == '$ESTIMATION INTERACTION METH=0 MAXEVALS=0'
+    newrec2 = newrec.prepend_option('MCETA', '250')
+    assert str(newrec2) == '$ESTIMATION MCETA=250 INTERACTION METH=0 MAXEVALS=0'
 
 
 def test_remove_subotion_for_all(parser):

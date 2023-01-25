@@ -139,13 +139,14 @@ class OptionRecord(Record):
     def prepend_option(self, key: str, value: Optional[str] = None):
         """Prepend option"""
         node = self._create_option(key, value)
-        self._prepend_option_node(node)
+        new_root = self._prepend_option_node(node)
+        return self.__class__(self.name, self.raw_name, new_root)
 
     def _prepend_option_node(self, node):
-        """Add a new option as firt option"""
+        """Add a new option as first option"""
         ws_token = AttrToken('WS', ' ')
         new = (node, ws_token)
-        self.root = AttrTree(self.root.rule, self.root.children[:1] + new + self.root.children[1:])
+        return AttrTree(self.root.rule, self.root.children[:1] + new + self.root.children[1:])
 
     def append_option(self, key: str, value: Optional[str] = None):
         """Append option as last option
