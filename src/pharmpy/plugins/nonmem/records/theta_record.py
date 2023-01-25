@@ -11,8 +11,10 @@ min_lower_bound = -1000000
 
 
 class ThetaRecord(Record):
-    def __init__(self, content, parser_class):
-        super().__init__(content, parser_class)
+    def __init__(self, name, raw_name, root):
+        self.name = name
+        self.raw_name = raw_name
+        self.root = root
 
     def _multiple(self, theta: AttrTree) -> int:
         """Return the multiple (xn) of a theta or 1 if no multiple"""
@@ -129,10 +131,7 @@ class ThetaRecord(Record):
             return theta
 
         new_tree = self.root.map(_update_theta)
-        from .factory import create_record
-
-        temp = self.raw_name + str(new_tree)
-        return create_record(temp)  # FIXME: No need to reparse
+        return ThetaRecord(self.name, self.raw_name, new_tree)
 
     def remove(self, inds):
         if not inds:
@@ -148,10 +147,7 @@ class ThetaRecord(Record):
                 keep.append(node)
 
         new_tree = AttrTree(self.root.rule, tuple(keep))
-        from .factory import create_record
-
-        temp = self.raw_name + str(new_tree)
-        return create_record(temp)  # FIXME: No need to reparse
+        return ThetaRecord(self.name, self.raw_name, new_tree)
 
     def __len__(self):
         """Number of thetas in this record"""
