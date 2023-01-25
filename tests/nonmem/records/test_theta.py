@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.model import Parameter, Parameters
+from pharmpy.model import Parameter
 
 
 @pytest.mark.usefixtures('parser')
@@ -87,45 +87,52 @@ def test_parameters(parser, buf, expected):
     assert rec.fixs == correct_fix
 
 
-def test_update(parser):
-    rec = parser.parse('$THETA 1').records[0]
-    pset = Parameters((Parameter('THETA_1', 41),))
-    rec = rec.update(pset)
-    assert str(rec) == '$THETA 41'
-
-    rec = parser.parse('$THETA 1 FIX').records[0]
-    pset = Parameters((Parameter('THETA(1)', 1, fix=False),))
-    rec = rec.update(pset)
-    assert str(rec) == '$THETA 1'
-
-    rec = parser.parse('$THETA (2, 2, 2)  FIX').records[0]
-    pset = Parameters((Parameter('THETA(1)', 2, lower=2, upper=2, fix=False),))
-    rec = rec.update(pset)
-    assert str(rec) == '$THETA (2, 2, 2)'
-
-    rec = parser.parse('$THETA (2, 2, 2 FIX)').records[0]
-    pset = Parameters((Parameter('THETA(1)', 2, lower=2, upper=2, fix=False),))
-    rec = rec.update(pset)
-    assert str(rec) == '$THETA (2, 2, 2)'
-
-    rec = parser.parse('$THETA (2, 2, 2)').records[0]
-    pset = Parameters((Parameter('THETA(1)', 2, lower=2, upper=2, fix=True),))
-    rec = rec.update(pset)
-    assert str(rec) == '$THETA (2, 2, 2) FIX'
-
-    rec = parser.parse('$THETA 1 2 3 ;CMT').records[0]
-    pset = Parameters(
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize(
+    'buf,params,expected',
+    [
+        ('$THETA 1', [Parameter('THETA_1', 41)], '$THETA 41'),
+        ('$THETA 1 FIX', [Parameter('THETA_1', 1, fix=False)], '$THETA 1'),
         (
-            Parameter('THETA(1)', 1, fix=True),
-            Parameter('THETA(2)', 2),
-            Parameter('THETA(3)', 3, fix=True),
-        )
-    )
-    rec = rec.update(pset)
-    assert str(rec) == '$THETA 1 FIX 2 3 FIX ;CMT'
+            '$THETA (2, 2, 2) FIX',
+            [Parameter('THETA_1', 2, lower=2, upper=2, fix=False)],
+            '$THETA (2, 2, 2)',
+        ),
+        (
+            '$THETA (2, 2, 2 FIX)',
+            [Parameter('THETA_1', 2, lower=2, upper=2, fix=False)],
+            '$THETA (2, 2, 2)',
+        ),
+        (
+            '$THETA (2, 2, 2)',
+            [Parameter('THETA_1', 2, lower=2, upper=2, fix=True)],
+            '$THETA (2, 2, 2) FIX',
+        ),
+        (
+            '$THETA 1 2 3 ;CMT',
+            [
+                Parameter('THETA_1', 1, fix=True),
+                Parameter('THETA_2', 2),
+                Parameter('THETA_3', 3, fix=True),
+            ],
+            '$THETA 1 FIX 2 3 FIX ;CMT',
+        ),
+    ],
+)
+def test_update(parser, buf, params, expected):
+    rec = parser.parse(buf).records[0]
+    rec = rec.update(params)
+    assert str(rec) == expected
 
 
-def test_remove_theta(parser):
-    rec = parser.parse('$THETA 1 2 3 ;CMT').records[0]
-    rec = rec.remove([0, 2])
-    assert str(rec) == '$THETA  2  ;CMT'
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize(
+    'buf,remove,expected',
+    [
+        ('$THETA 1 2 3 ;CMT', [0, 2], '$THETA  2  ;CMT'),
+    ],
+)
+def test_remove_theta(parser, buf, remove, expected):
+    rec = parser.parse(buf).records[0]
+    rec = rec.remove(remove)
+    assert str(rec) == expected
