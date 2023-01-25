@@ -154,7 +154,8 @@ class OptionRecord(Record):
         Method applicable to option records with no special grammar
         """
         node = self._create_option(key, value)
-        self.append_option_node(node)
+        newrec = self.append_option_node(node)
+        self.root = newrec.root  # FIXME!
 
     def _append_option_args(self) -> Tuple[int, int, AttrToken]:
         children = self.root.children
@@ -174,7 +175,8 @@ class OptionRecord(Record):
         """Add a new option as last option"""
         i, j, sep = self._append_option_args()
         children = self.root.children
-        self.root = AttrTree(self.root.rule, children[:i] + (sep, node) + children[i:j])
+        newroot = AttrTree(self.root.rule, children[:i] + (sep, node) + children[i:j])
+        return self.__class__(self.name, self.raw_name, newroot)
 
     def replace_option(self, old, new):
         """Replace an option"""
