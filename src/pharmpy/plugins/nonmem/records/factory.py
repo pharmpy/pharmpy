@@ -95,12 +95,11 @@ def create_record(chunk: str):
             record = record_class(name, raw_name, root)
         else:
             record = record_class(content, record_parser_class)
+        if name != 'THETA':
+            record.name = name
+            record.raw_name = raw_name
     else:
-        record = RawRecord(content)
         name = raw_name[1:]
-
-    if name != 'THETA':
-        record.name = name
-        record.raw_name = raw_name
+        record = RawRecord(content, name, raw_name)
 
     return record
