@@ -186,8 +186,6 @@ class OmegaRecord(Record):
 
     def update(self, parameters):
         """From a Parameters update the OMEGAs in this record"""
-        from .factory import create_record
-
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')
         if not (block or bare_block):
@@ -254,7 +252,7 @@ class OmegaRecord(Record):
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
                     i += n
             tree = AttrTree(self.root.rule, tuple(new_nodes))
-            return create_record(self.raw_name + str(tree))  # FIXME: No need to reparse
+            return OmegaRecord(self.name, self.raw_name, tree)
         else:
             same = bool(self.root.find('same'))
             if same:
@@ -327,7 +325,7 @@ class OmegaRecord(Record):
                     )
                 else:
                     tree = remove_token_and_space(tree, 'FIX', recursive=True)
-            return create_record(self.raw_name + str(tree))  # FIXME: No need to reparse
+            return OmegaRecord(self.name, self.raw_name, tree)
 
     def remove(self, inds):
         """Remove some etas from block given eta names
@@ -335,7 +333,6 @@ class OmegaRecord(Record):
         """
         if len(inds) == 0:
             return self
-        from .factory import create_record
 
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')
@@ -354,7 +351,7 @@ class OmegaRecord(Record):
                 if in_keep:
                     keep.append(node)
             tree = AttrTree(self.root.rule, tuple(keep))
-            return create_record(self.raw_name + str(tree))  # FIXME: No need to reparse
+            return OmegaRecord(self.name, self.raw_name, tree)
         elif same and not bare_block:
             indices = {ind for _, ind in inds}
             tree = self.root.replace_first(
@@ -364,7 +361,7 @@ class OmegaRecord(Record):
                     )
                 )
             )
-            return create_record(self.raw_name + str(tree))
+            return OmegaRecord(self.name, self.raw_name, tree)
         elif block:
             fix, sd, corr, cholesky = self._block_flags()
             inits = []
@@ -390,6 +387,8 @@ class OmegaRecord(Record):
                 s += ' '.join(np.atleast_1d(A[row, 0 : (row + 1)]).astype(str)) + '\n'
 
             temp = self.raw_name + s
+            from .factory import create_record
+
             return create_record(temp)  # FIXME: No need to reparse
 
     def __len__(self):
