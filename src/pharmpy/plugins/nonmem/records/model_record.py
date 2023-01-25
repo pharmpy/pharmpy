@@ -28,12 +28,6 @@ class ModelRecord(OptionRecord):
                 return i + 1
         return None
 
-    def set_dosing(self, name):
-        n = self.get_compartment_number(name)
-        assert n is not None
-        newrec = self.add_suboption_for_nth('COMPARTMENT', n - 1, 'DEFDOSE')
-        self.root = newrec.root  # FIXME!
-
     def move_dosing_first(self):
         newrec = self.remove_suboption_for_all('COMPARTMENT', 'DEFDOSE')
         self.root = newrec.root  # FIXME!
