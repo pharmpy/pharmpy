@@ -90,14 +90,8 @@ def create_record(chunk: str):
     if canonical_name:
         name = canonical_name
         record_class, record_parser_class = known_records[name]
-        if name == 'THETA':
-            root = record_parser_class(content).root
-            record = record_class(name, raw_name, root)
-        else:
-            record = record_class(content, record_parser_class)
-        if name != 'THETA':
-            record.name = name
-            record.raw_name = raw_name
+        root = record_parser_class(content).root
+        record = record_class(name, raw_name, root)
     else:
         name = raw_name[1:]
         record = RawRecord(content, name, raw_name)

@@ -11,11 +11,6 @@ min_lower_bound = -1000000
 
 
 class ThetaRecord(Record):
-    def __init__(self, name, raw_name, root):
-        self.name = name
-        self.raw_name = raw_name
-        self.root = root
-
     def _multiple(self, theta: AttrTree) -> int:
         """Return the multiple (xn) of a theta or 1 if no multiple"""
         if theta.find('n'):
