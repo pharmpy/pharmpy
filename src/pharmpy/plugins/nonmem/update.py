@@ -1305,12 +1305,15 @@ def update_sizes(model: Model):
 
     if odes is not None and isinstance(odes, CompartmentalSystem):
         n_compartments = len(odes)
-        sizes.PC = n_compartments
+        sizes = sizes.set_PC(n_compartments)
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
-    sizes.LTH = len(thetas)
+    sizes = sizes.set_LTH(len(thetas))
 
-    if len(all_sizes) == 0 and len(str(sizes)) > 7:
-        model.internals.control_stream.insert_record(str(sizes))
+    if len(str(sizes)) > 7:
+        if len(all_sizes) == 0:
+            model.internals.control_stream.insert_record(str(sizes))
+        else:
+            model.internals.control_stream.replace_records([all_sizes[0]], [sizes])
 
 
 def update_input(model: Model):
