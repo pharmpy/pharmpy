@@ -13,7 +13,9 @@ from pharmpy.deps import sympy, sympy_printing
 from pharmpy.model import Assignment
 from pharmpy.modeling import write_csv
 from pharmpy.results import ModelfitResults
-
+from pharmpy.modeling import update_inits
+from pharmpy.modeling import set_evaluation_step
+import pandas as pd
 
 class CodeGenerator:
     def __init__(self):
@@ -193,7 +195,8 @@ class Model(pharmpy.model.Model):
         cg.add('}')
         cg.empty_line()
         create_fit(cg, self)
-        # Create lowercase id, time and amount symbols
+        # Create lowercase id, time and amount symbols for nlmixr to be able
+        # to run
         self.internals.src = str(cg).replace("AMT", "amt").replace("TIME", "time").replace("ID", "id")
         self.internals.path = None
 
@@ -244,7 +247,8 @@ def parse_modelfit_results(model, path):
     parameters = model.parameters
     etas = model.random_variables.etas
     pe = pd.Series(pe)
-    predictions = rdata['pred']
+    predictions = rdata['pred'].set_index(["ID","TIME"])
+    predictions.index = predictions.index.set_levels(predictions.index.levels[0].astype("float64"), level=0)
     
     
     res = ModelfitResults(
@@ -263,10 +267,9 @@ def execute_model(model, db):
     model.internals.path = path
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
-    #TODO this csv file need to have lower case time and amt in order to function
-    # otherwise the model will not run for nlmixr2
-    # DONE(write_csv)
-    # TODO column with eventID is CRUCIAL for nlmixr, added in write_csv file
+    # This csv file need to have lower case time and amt in order to function
+    # otherwise the model will not run for nlmixr2.
+    # column with eventID is CRUCIAL for nlmixr, added in write_csv file
     # if not yet existing
     # DONE (within write_csv)
     write_csv(model, path=path)
@@ -288,7 +291,7 @@ def execute_model(model, db):
     
     # TODO add the variables from fit holding the predicted values as well
     # --> Could be in a dataframe with all predicted values and the time / id
-    # FIXME the path variable cannot be handled by R in windows so the code does not work here
+    # FIXME the path variable cannot be handled by R in windows
     cg.add(f'save(file="{path}/{model.name}.RDATA",ofv, thetas, omega, sigma, log_likelihood, runtime_total, pred)')
     code += f'\n{str(cg)}'
     with open(path / f'{model.name}.R', 'w') as fh:
@@ -357,14 +360,20 @@ def execute_model(model, db):
     model.modelfit_results = res
     return model
 
-def verification(nonmem_model, db_name, error = 10**-3):
-        
+def verification(model, db_name, error = 10**-3):
+    #TODO add an option to return the computed model and compared predictions
+    
+    nonmem_model = model.copy()
+    
     # Save results from the nonmem model
     nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:,[0]]
     
+    # Check that evaluation step is set to True
+    if [s.evaluation for s in nonmem_model.estimation_steps._steps][0] == False:
+        set_evaluation_step(nonmem_model)
+    
     # Update the nonmem model with new estimates
     # and convert to nlmixr
-    from pharmpy.modeling import update_inits
     nlmixr_model = convert_model(
         update_inits(nonmem_model, 
                      nonmem_model.modelfit_results.parameter_estimates)
@@ -373,6 +382,7 @@ def verification(nonmem_model, db_name, error = 10**-3):
     import pharmpy.workflows
     db = pharmpy.workflows.LocalDirectoryToolDatabase(db_name)
     nlmixr_model = execute_model(nlmixr_model, db)
+        
     nlmixr_results = nlmixr_model.modelfit_results.predictions
     
     with warnings.catch_warnings():
@@ -383,9 +393,10 @@ def verification(nonmem_model, db_name, error = 10**-3):
     
     #Combine the two based on ID and time
     combined_result = pd.merge(nonmem_results, 
-                               nlmixr_results, 
-                               left_on=["ID", "TIME"], 
-                               right_on=["ID","TIME"])
+                               nlmixr_results,
+                               left_index=True,
+                               right_index=True
+                               )
     
     # Add difference between the models
     combined_result["DIFF"] = abs(combined_result["PRED_NONMEM"] - combined_result["PRED_NLMIXR"])
@@ -394,7 +405,7 @@ def verification(nonmem_model, db_name, error = 10**-3):
     combined_result.loc[combined_result["DIFF"] > error, "PASS/FAIL"] = "FAIL"
     
     if all(combined_result["PASS/FAIL"] == "PASS"):
-        return True
+        return True, nlmixr_model
     else:
         return False
 
