@@ -1,16 +1,19 @@
-next version
-------------
+0.89.0 (2023-01-26)
+-------------------
 
 New features
 ============
 
-* Add function modeling.display_odes
+* Add function ``modeling.display_odes``
 * Add support for Python 3.11
 
 Changes
 =======
 
 * Naming of parameters for NONMEM models reworked. Configuration options removed.
+* Only allow MFL as input to ``run_covsearch``
+* Remove ``read_model_from_database`` from ``pharmpy.modeling``
+* Merge ``ExplicitODESystem`` into ``CompartmentalSystem``
 
 0.88.0 (2022-12-21)
 -------------------
