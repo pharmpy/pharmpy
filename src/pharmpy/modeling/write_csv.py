@@ -51,12 +51,6 @@ def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool
         raise FileExistsError(f'File at {path} already exists.')
 
     path = path_absolute(path)
-    if "nlmixr" in str(type(model)):
-        model.dataset.columns = model.dataset.columns.str.lower()
-        if "evid" not in model.dataset.columns:
-            model.dataset["evid"] = [1 if x == 0 else 0 for x in model.dataset["dv"]]
-        model.dataset.to_csv(path, na_rep=data.conf.na_rep, index=False)
-    else: 
-    	model.dataset.to_csv(path, na_rep=data.conf.na_rep, index=False)
+    model.dataset.to_csv(path, na_rep=data.conf.na_rep, index=False)
     model.datainfo = model.datainfo.replace(path=path)
     return path

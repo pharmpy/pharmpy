@@ -15,6 +15,7 @@ from pharmpy.modeling import write_csv
 from pharmpy.results import ModelfitResults
 from pharmpy.modeling import update_inits
 from pharmpy.modeling import set_evaluation_step
+from pharmpy.modeling import get_evid
 import pandas as pd
 
 class CodeGenerator:
@@ -50,6 +51,10 @@ def convert_model(model):
     nlmixr_model.__dict__ = generic_model.__dict__
     nlmixr_model.internals = NLMIXRModelInternals()
     nlmixr_model.filename_extension = '.R'
+    
+    # Update dataset to lowercase and add evid
+    nlmixr_model = modify_dataset(nlmixr_model)
+    
     nlmixr_model.update_source()
     return nlmixr_model
 
@@ -360,8 +365,10 @@ def execute_model(model, db):
     model.modelfit_results = res
     return model
 
-def verification(model, db_name, error = 10**-3):
-    #TODO add an option to return the computed model and compared predictions
+def verification(model, db_name, error = 10**-3, return_comp = False):
+    #TODO add an option to return 
+    # - the computed model (if so, evaluation should be set to false (?))
+    # - the compared predictions
     
     nonmem_model = model.copy()
     
@@ -404,11 +411,15 @@ def verification(model, db_name, error = 10**-3):
     combined_result["PASS/FAIL"] = "PASS"
     combined_result.loc[combined_result["DIFF"] > error, "PASS/FAIL"] = "FAIL"
     
-    if all(combined_result["PASS/FAIL"] == "PASS"):
-        return True, nlmixr_model
+    if if return_comp == True:
+        return combined_result
     else:
-        return False
-
+        if all(combined_result["PASS/FAIL"] == "PASS"):
+            return True
+        else:
+            return False
     
-    
-    
+def modify_dataset(model):
+    temp_model = model.copy()    
+    temp_model.dataset["evid"] = get_evid(temp_model)
+    return temp_model
