@@ -15,7 +15,7 @@ from pharmpy.modeling import write_csv
 from pharmpy.results import ModelfitResults
 from pharmpy.modeling import update_inits
 from pharmpy.modeling import set_evaluation_step
-from pharmpy.modeling import get_evid
+from pharmpy.modeling import get_evid, get_thetas, get_sigmas
 import pandas as pd
 
 class CodeGenerator:
@@ -224,6 +224,9 @@ def parse_modelfit_results(model, path):
     except (FileNotFoundError, OSError):
         return None
     
+    rdata["thetas"] = rdata["thetas"].loc[get_thetas(model).names]
+    rdata["sigma"] = rdata["sigma"].loc[get_sigmas(model).names]
+    
     ofv = rdata['ofv']['ofv'][0]
     omegas_sigmas = {}
     omega = model.random_variables.etas.covariance_matrix
@@ -234,7 +237,7 @@ def parse_modelfit_results(model, path):
                 omegas_sigmas[symb.name] = rdata['omega'].values[i, j]
     sigma = model.random_variables.epsilons.covariance_matrix
     for i in range(len(sigma)):
-        omegas_sigmas[sigma[i].name] = rdata['sigma']['sigma'][i]
+        omegas_sigmas[sigma[i].name] = rdata['sigma']['fit$theta'][i]
     thetas_index = 0
     pe = {}
     for param in model.parameters:
@@ -243,7 +246,7 @@ def parse_modelfit_results(model, path):
         elif param.name in omegas_sigmas:
             pe[param.name] = omegas_sigmas[param.name]
         else:
-            pe[param.name] = rdata['thetas']['thetas'][thetas_index]
+            pe[param.name] = rdata['thetas']['fit$theta'][thetas_index]
             thetas_index += 1
     
     name = model.name
@@ -281,31 +284,18 @@ def execute_model(model, db):
 
     code = model.model_code
     cg = CodeGenerator()
-    #cg.add('ofv <- fit$ofv')
-    #cg.add('ofv <- nlmixr2est::ofv(fit, "focei")')
     cg.add('ofv <- fit$objDf$OBJF')
-    #cg.add('thetas <- fit$theta')
-    cg.add('thetas <- fit$theta[!as.logical(lapply(names(fit$theta), function(x){grepl("SIGMA",x, fixed = TRUE)}))]')
+    cg.add('thetas <- as.data.frame(fit$theta)')
     cg.add('omega <- fit$omega')
-    #cg.add('sigma <- fit$sigma')
-    cg.add('sigma <- fit$theta[as.logical(lapply(names(fit$theta), function(x){grepl("SIGMA",x, fixed = TRUE)}))]')
+    cg.add('sigma <- as.data.frame(fit$theta)')
     cg.add('log_likelihood <- fit$objDf$`Log-likelihood`')
     cg.add('runtime_total <- sum(fit$time)')
     cg.add('pred <- as.data.frame(fit[c("ID", "TIME", "PRED")])')
     
-    
-    # TODO add the variables from fit holding the predicted values as well
-    # --> Could be in a dataframe with all predicted values and the time / id
-    # FIXME the path variable cannot be handled by R in windows
     cg.add(f'save(file="{path}/{model.name}.RDATA",ofv, thetas, omega, sigma, log_likelihood, runtime_total, pred)')
     code += f'\n{str(cg)}'
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
-    
-    #TODO if the model in question is a nlmixr then time, amt and id need to
-    # be in lower case.
-    # DONE (poorly)
-    # FIXME This should be done when converting the model!
 
     from pharmpy.plugins.nlmixr import conf
 
@@ -366,9 +356,6 @@ def execute_model(model, db):
     return model
 
 def verification(model, db_name, error = 10**-3, return_comp = False):
-    #TODO add an option to return 
-    # - the computed model (if so, evaluation should be set to false (?))
-    # - the compared predictions
     
     nonmem_model = model.copy()
     
@@ -411,7 +398,7 @@ def verification(model, db_name, error = 10**-3, return_comp = False):
     combined_result["PASS/FAIL"] = "PASS"
     combined_result.loc[combined_result["DIFF"] > error, "PASS/FAIL"] = "FAIL"
     
-    if if return_comp == True:
+    if return_comp == True:
         return combined_result
     else:
         if all(combined_result["PASS/FAIL"] == "PASS"):
