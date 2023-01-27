@@ -57,7 +57,9 @@ def execute_model(model, db):
 
     # NOTE Write dataset and model files so they can be used by NONMEM.
     write_csv(model, path=dataset_path, force=True)
-    model.internals.dataset_updated = True  # Hack to get update_source to update IGNORE
+    model.internals = model.internals.replace(
+        dataset_updated=True
+    )  # Hack to get update_source to update IGNORE
     write_model(model, path=model_path, force=True)
 
     args = nmfe(
