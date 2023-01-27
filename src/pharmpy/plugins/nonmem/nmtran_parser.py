@@ -166,7 +166,7 @@ class NMTranControlStream:
                 if first:
                     keep.extend(new)
                     first = False
-        self.records = keep
+        return NMTranControlStream(records=keep)
 
     def replace_all(self, name, new):
         keep = []
