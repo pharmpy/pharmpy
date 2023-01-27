@@ -12,6 +12,8 @@ from pharmpy.model import EstimationSteps
 from pharmpy.modeling import write_csv, write_model
 from pharmpy.plugins.nonmem import conf, convert_model, parse_modelfit_results
 
+from .factory import create_record
+
 PARENT_DIR = f'..{os.path.sep}'
 
 
@@ -184,7 +186,8 @@ def evaluate_design(context, model):
     stream = stream.remove_records(estrecs)
 
     design_code = '$DESIGN APPROX=FOCEI MODE=1 NELDER FIMDIAG=0 DATASIM=1 GROUPSIZE=32 OFVTYPE=0'
-    stream.insert_record(design_code)
+    design_record = create_record(design_code)
+    stream = stream.insert_record(design_record)
     model.internals.control_stream = stream
 
     execute_model(model, context)

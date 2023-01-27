@@ -451,14 +451,16 @@ def to_des(model: Model, new: ODESystem):
     model.internals.control_stream = model.internals.control_stream.replace_records(
         [subs], [newrec]
     )
-    des = model.internals.control_stream.insert_record('$DES\nDUMMY=0\n')
+    des = create_record('$DES\nDUMMY=0\n')
+    model.internals.control_stream = model.internals.control_stream.insert_record(des)
     assert isinstance(des, CodeRecord)
     newdes = des.from_odes(new)
     model.internals.control_stream = model.internals.control_stream.replace_records([des], [newdes])
     model.internals.control_stream = model.internals.control_stream.remove_records(
         model.internals.control_stream.get_records('MODEL')
     )
-    mod = model.internals.control_stream.insert_record('$MODEL\n')
+    mod = create_record('$MODEL\n')
+    model.internals.control_stream = model.internals.control_stream.insert_record(mod)
     old_mod = mod
     assert isinstance(mod, ModelRecord)
     for eq, ic in zip(new.eqs, list(new.ics.keys())):
@@ -516,7 +518,8 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
 
     error = model.internals.control_stream.get_error_record()
     if not error and len(error_statements) > 0:
-        model.internals.control_stream.insert_record('$ERROR\n')
+        empty_error = create_record('$ERROR\n')
+        model.internals.control_stream = model.internals.control_stream.insert_record(empty_error)
     if error:
         if (
             len(error_statements) > 0
@@ -845,7 +848,8 @@ def update_subroutines_record(model: Model, advan, trans):
     all_subs = model.internals.control_stream.get_records('SUBROUTINES')
     if not all_subs:
         content = f'$SUBROUTINES {advan} {trans}\n'
-        model.internals.control_stream.insert_record(content)
+        subsrec = create_record(content)
+        model.internals.control_stream = model.internals.control_stream.insert_record(subsrec)
         return
     subs = all_subs[0]
     oldadvan = subs.advan
@@ -885,7 +889,8 @@ def update_model_record(model: Model, advan):
             model.internals.control_stream = model.internals.control_stream.remove_records(
                 model.internals.control_stream.get_records('MODEL')
             )
-            mod = model.internals.control_stream.insert_record('$MODEL\n')
+            mod = create_record('$MODEL\n')
+            model.internals.control_stream = model.internals.control_stream.insert_record(mod)
             old_mod = mod
             assert isinstance(mod, ModelRecord)
             comps = {v: k for k, v in newmap.items()}
@@ -1092,8 +1097,9 @@ def update_abbr_record(model: Model, rv_trans):
             if nonmem_name not in abbr_map:
                 abbr_name = f'ETA({parameter})'
                 trans[rv] = abbr_name
-                abbr_record = f'$ABBR REPLACE {abbr_name}={nonmem_name}\n'
-                control_stream.insert_record(abbr_record)
+                abbr_record_code = f'$ABBR REPLACE {abbr_name}={nonmem_name}\n'
+                abbr_record = create_record(abbr_record_code)
+                control_stream = control_stream.insert_record(abbr_record)
     model.internals.control_stream = control_stream
     return trans
 
@@ -1188,7 +1194,8 @@ def update_estimation(model: Model):
         )
     else:
         for rec in new_records:
-            model.internals.control_stream.insert_record(str(rec))
+            newrec = create_record(str(rec))
+            model.internals.control_stream = model.internals.control_stream.insert_record(newrec)
 
     old_cov = False
     for est in old:
@@ -1200,7 +1207,10 @@ def update_estimation(model: Model):
         # Add $COV
         last_est_rec = model.internals.control_stream.get_records('ESTIMATION')[-1]
         idx_cov = model.internals.control_stream.records.index(last_est_rec)
-        model.internals.control_stream.insert_record('$COVARIANCE\n', at_index=idx_cov + 1)
+        covrec = create_record('$COVARIANCE\n')
+        model.internals.control_stream = model.internals.control_stream.insert_record(
+            covrec, at_index=idx_cov + 1
+        )
     elif old_cov and not new_cov:
         # Remove $COV
         covrecs = model.internals.control_stream.get_records('COVARIANCE')
@@ -1219,7 +1229,8 @@ def update_estimation(model: Model):
         s += f'{" ".join(cols)} FILE=mytab NOAPPEND NOPRINT'
         if any(id_val > 99999 for id_val in get_ids(model)):
             s += ' FORMAT=s1PE16.8'
-        model.internals.control_stream.insert_record(s)
+        tabrec = create_record(s)
+        model.internals.control_stream = model.internals.control_stream.insert_record(tabrec)
     model.internals._old_estimation_steps = new
 
 
@@ -1334,7 +1345,8 @@ def update_sizes(model: Model):
 
     if len(str(sizes)) > 7:
         if len(all_sizes) == 0:
-            model.internals.control_stream.insert_record(str(sizes))
+            sizesrec = create_record(str(sizes))
+            model.internals.control_stream = model.internals.control_stream.insert_record(sizesrec)
         else:
             model.internals.control_stream = model.internals.control_stream.replace_records(
                 [all_sizes[0]], [sizes]
@@ -1445,7 +1457,8 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
         if eta_records:
             record = eta_records[0]
         else:
-            record = model.internals.control_stream.insert_record('$ETAS ')
+            record = create_record('$ETAS ')
+            model.internals.control_stream = model.internals.control_stream.insert_record(record)
         assert isinstance(record, EtasRecord)
         newrecord = record.set_path(phi_path)
         model.internals.control_stream = model.internals.control_stream.replace_records(

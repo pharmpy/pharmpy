@@ -31,6 +31,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
+from pharmpy.plugins.nonmem.records.factory import create_record
 from pharmpy.tools.amd.funcs import create_start_model
 
 
@@ -520,10 +521,12 @@ def test_dv_symbol(pheno):
 
 def test_insert_unknown_record(pheno):
     model = pheno.copy()
-    model.internals.control_stream.insert_record('$TRIREME one')
+    rec = create_record('$TRIREME one')
+    model.internals.control_stream = model.internals.control_stream.insert_record(rec)
     assert model.model_code.split('\n')[-1] == '$TRIREME one'
 
-    model.internals.control_stream.insert_record('\n$OA two')
+    rec = create_record('\n$OA two')
+    model.internals.control_stream = model.internals.control_stream.insert_record(rec)
     assert model.model_code.split('\n')[-1] == '$OA two'
 
 

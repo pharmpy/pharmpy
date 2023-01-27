@@ -35,24 +35,25 @@ class NMTranParser:
     """Parser for NMTran control streams"""
 
     def parse(self, text):
-        stream = NMTranControlStream()
+        records = []
 
         record_strings = re.split(r'^([ \t]*\$)', text, flags=re.MULTILINE)
         first = record_strings.pop(0)  # Empty if nothing before first record
         if first:
-            stream.records.append(RawRecord(first))
+            records.append(RawRecord(first))
 
         for separator, s in zip(record_strings[0::2], record_strings[1::2]):
             record = create_record(separator + s)
-            stream.records.append(record)
+            records.append(record)
 
         in_problem = False
-        for record in stream.records:
+        for record in records:
             if in_problem and record.name == 'SIZES':
                 raise ModelSyntaxError('The SIZES record must come before the first PROBLEM record')
             elif record.name == 'PROBLEM':
                 in_problem = True
 
+        stream = NMTranControlStream(records=records)
         return stream
 
 
@@ -81,9 +82,9 @@ class NMTranControlStream:
 
     def __init__(self, records=None):
         if records is None:
-            self.records = []
+            self.records = ()
         else:
-            self.records = records
+            self.records = tuple(records)
         self._active_problem = 0
         self.abbreviated = Abbreviated(self)
 
@@ -101,7 +102,7 @@ class NMTranControlStream:
     def _get_first_record(self, name):
         return next(iter(self.get_records(name)), None)
 
-    def insert_record(self, content: str, at_index=None):
+    def insert_record(self, record, at_index=None):
         """Create and insert a new record at the correct position
 
         If the record type is already present the new record will be put
@@ -111,13 +112,12 @@ class NMTranControlStream:
         If record type is unknown. Place at the end.
         """
 
-        record = create_record(content)
         name = record.name
         assert isinstance(name, str)
 
         if at_index:
-            self.records.insert(at_index, record)
-            return record
+            newrecs = self.records[0:at_index] + (record,) + self.records[at_index:]
+            return NMTranControlStream(records=newrecs)
 
         current_problem = -1
         index = None
@@ -143,8 +143,8 @@ class NMTranControlStream:
         if index is None:
             index = len(self.records)
 
-        self.records.insert(index + 1, record)
-        return record
+        newrecs = self.records[0 : index + 1] + (record,) + self.records[index + 1 :]
+        return NMTranControlStream(records=newrecs)
 
     def remove_records(self, records):
         keep = [rec for rec in self.records if rec not in records]
