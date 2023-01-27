@@ -19,7 +19,6 @@ from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import (
     EffectLiteral,
     InputSpec,
-    Spec,
     all_covariate_effects,
     parse_spec,
     spec,
