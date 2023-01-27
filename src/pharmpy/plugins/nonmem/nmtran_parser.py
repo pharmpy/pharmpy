@@ -72,6 +72,7 @@ default_record_order = [
     'SIGMA',
     'ESTIMATION',
     'COVARIANCE',
+    'ETAS'
     'TABLE',
 ]
 
