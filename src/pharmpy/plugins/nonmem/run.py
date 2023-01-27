@@ -12,7 +12,7 @@ from pharmpy.model import EstimationSteps
 from pharmpy.modeling import write_csv, write_model
 from pharmpy.plugins.nonmem import conf, convert_model, parse_modelfit_results
 
-from .factory import create_record
+from .records.factory import create_record
 
 PARENT_DIR = f'..{os.path.sep}'
 
