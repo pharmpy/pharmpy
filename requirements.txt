@@ -1,5 +1,5 @@
 alabaster==0.7.13
-altair==4.2.0
+altair==4.2.1
 appdirs==1.4.4
 asttokens==2.2.1
 attrs==22.2.0
