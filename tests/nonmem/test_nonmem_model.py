@@ -336,8 +336,9 @@ def test_add_random_variables_and_statements(pheno):
     model.statements = sset.before_odes + statement_new + sset.ode_system + sset.after_odes
 
     model.update_source()
+    print(model.internals.control_stream.get_pred_pk_record())
     assert str(model.internals.control_stream.get_pred_pk_record()).endswith(
-        'X = 1 + ETA(3) + EPS(2)\n\n'
+        'X = ETA(3) + EPS(2) + 1\n\n'
     )
 
 

@@ -521,9 +521,6 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
             for i, amount in enumerate(amounts, start=1):
                 trans[amount] = sympy.Symbol(f"A({i})")
         error.statements = error_statements.subs(trans)
-        error.is_updated = True
-
-    rec.is_updated = True
 
 
 def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSystem):

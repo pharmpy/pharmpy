@@ -733,6 +733,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     set_transit_compartments(model, 1, keep_depot=False)
 
     assert not re.search(r'K *= *', model.model_code)
+    print(model.model_code)
     assert re.search('KA = 1/MDT', model.model_code)
 
 
@@ -1799,11 +1800,11 @@ def test_transform_etas_tdist(load_model_for_test, pheno_path):
     num_2 = f'5*{eta}**4 + 16*{eta}**2 + 3'
     denom_2 = f'96*{theta}**2'
 
-    num_3 = f'3*{eta}**6 + 19*{eta}**4 + 17*{eta}**2 - 15'
+    num_3 = f'3*{eta}**6 + 17*{eta}**2 + 19*{eta}**4 - 15'
     denom_3 = f'384*{theta}**3'
 
     expression = (
-        f'ETA(1)*(1 + ({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ({num_3})/({denom_3}))'
+        f'ETA(1)*(({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ({num_3})/({denom_3}) + 1)'
     )
 
     rec_ref = (

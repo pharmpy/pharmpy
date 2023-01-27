@@ -14,64 +14,154 @@ from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.parse import AttrTree, NoSuchRuleException
 from pharmpy.internals.parse.tree import Interpreter
 from pharmpy.internals.sequence.lcs import diff
-from pharmpy.model import Assignment, RandomVariables, Statement, Statements
+from pharmpy.model import Assignment, Statement, Statements
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 
 from .record import Record
 
 
-class MyPrinter(sympy_printing.str.StrPrinter):
-    def _print_Add(self, expr):
-        args = expr.args
-        new = []
-        for arg in args:
-            new.append(self._print(arg))
-        return super()._print_Add(sympy.Add(*args, evaluate=False), order='none')
-
-
-class NMTranPrinter(sympy_printing.fortran.FCodePrinter):
-    # Differences from FCodePrinter in sympy
-    # 1. Upper case
-    # 2. Use Fortran 77 names for relationals
-    # 3. Use default kind for reals (which will be translated to double kind by NMTRAN)
-    # All these could be submitted as options to the sympy printer
-    _relationals = {
-        '<=': '.LE.',
-        '>=': '.GE.',
-        '<': '.LT.',
-        '>': '.GT.',
-        '!=': '.NE.',
-        '==': '.EQ.',
-    }
+class NMTranPrinter(sympy_printing.str.StrPrinter):
     _operators = {
-        'and': '.AND.',
-        'or': '.OR.',
-        'xor': '.NEQV.',
-        'equivalent': '.EQV.',
         'not': '.NOT. ',
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, rvs=None, trans=None, **kwargs):
+        self.rvs = rvs
+        self.trans = trans
         super().__init__(**kwargs)
-        self._settings["standard"] = 95
+
+    def _print_Add(self, expr):
+        if self.rvs is None:
+            return super()._print_Add(expr)
+        else:
+            rvs_names = set(self.rvs.names)
+
+            trans_rvs = (
+                {str(v): str(k) for k, v in self.trans.items() if str(k) in rvs_names}
+                if self.trans
+                else None
+            )
+
+            expr_args = expr.args
+            terms_iiv_iov, terms_ruv, terms = [], [], []
+
+            for arg in expr_args:
+                arg_symbs = [s.name for s in arg.free_symbols]
+                rvs_intersect = rvs_names.intersection(arg_symbs)
+
+                if trans_rvs is not None:
+                    trans_intersect = set(trans_rvs.keys()).intersection(arg_symbs)
+                    rvs_intersect.update({trans_rvs[rv] for rv in trans_intersect})
+
+                if rvs_intersect:
+                    if len(rvs_intersect) == 1:
+                        rv_name = list(rvs_intersect)[0]
+                        variability_level = self.rvs[rv_name].level
+                        if variability_level == 'RUV':
+                            terms_ruv.append(arg)
+                            continue
+                    terms_iiv_iov.append(arg)
+                else:
+                    terms.append(arg)
+
+            if not terms_iiv_iov and not terms_ruv:
+                return super()._print_Add(expr)
+            else:
+
+                def arg_len(symb):
+                    return len(symb.args)
+
+                terms_iiv_iov.sort(reverse=True, key=arg_len)
+                terms_ruv.sort(reverse=True, key=arg_len)
+                terms += terms_iiv_iov + terms_ruv
+
+        # Put numeric constant at the end
+        for i, term in enumerate(terms):
+            if term.is_Number:
+                terms = terms[0:i] + terms[i + 1 :] + terms[i : i + 1]
+                break
+
+        return super()._print_Add(sympy.Add(*terms, evaluate=False), order='none')
 
     def _print_Float(self, expr):
         printed = sympy_printing.codeprinter.CodePrinter._print_Float(self, expr)
-        return printed
+        return printed.upper()
+
+    def _print_Integer(self, expr):
+        return str(expr)
+
+    def _print_Function(self, expr):
+        try:
+            name = expr.name
+        except AttributeError:
+            name = expr.__class__.__name__.upper()
+        return f'{name}({super().doprint(expr.args[0])})'
+
+    def _print_Pow(self, expr):
+        if expr.exp == sympy.Rational(1, 2):
+            return f"SQRT({self.doprint(expr.base)})"
+        elif expr.exp == -1:
+            return f"1/{expr.base}"
+        else:
+            return super()._print_Pow(expr)
+
+    def _do_infix(self, expr, op):
+        return super()._print(expr.args[0]) + op + super()._print(expr.args[1])
+
+    def _print_Equality(self, expr):
+        return self._do_infix(expr, ".EQ.")
+
+    def _print_Unequality(self, expr):
+        return self._do_infix(expr, ".NE.")
+
+    def _print_Or(self, expr):
+        return self._do_infix(expr, ".OR.")
+
+    def _print_And(self, expr):
+        return self._do_infix(expr, ".AND.")
+
+    def _print_LessThan(self, expr):
+        return self._do_infix(expr, ".LE.")
+
+    def _print_StrictLessThan(self, expr):
+        return self._do_infix(expr, ".LT.")
+
+    def _print_StrictGreaterThan(self, expr):
+        return self._do_infix(expr, ".GT.")
+
+    def _print_GreaterThan(self, expr):
+        return self._do_infix(expr, ".GE.")
+
+    def _print_Not(self, expr):
+        return f".NOT. ({self._print(expr.args[0])})"
+
+    def _print_Symbol(self, expr):
+        s = str(expr)
+        if s != "NaN":
+            s = s.upper()
+        return s
+
+
+def expression_to_nmtran(expr, rvs=None, trans=None):
+    printer = NMTranPrinter(rvs, trans)
+    expr_str = printer.doprint(expr)
+    return expr_str
 
 
 def nmtran_assignment_string(
     assignment: Assignment, defined_symbols: Set[sympy.Symbol], rvs, trans
 ):
     if isinstance(assignment.expression, sympy.Piecewise):
-        return _translate_sympy_piecewise(assignment, defined_symbols)
+        return _translate_sympy_piecewise(assignment, defined_symbols, rvs, trans)
     elif re.search('sign', str(assignment.expression)):  # FIXME: Don't use re here
         return _translate_sympy_sign(assignment)
     else:
-        return _print_custom(assignment, rvs, trans)
+        return f'{str(assignment.symbol).upper()} = {expression_to_nmtran(assignment.expression, rvs, trans)}'
 
 
-def _translate_sympy_piecewise(statement: Assignment, defined_symbols: Set[sympy.Symbol]):
+def _translate_sympy_piecewise(
+    statement: Assignment, defined_symbols: Set[sympy.Symbol], rvs, trans
+):
     expression = statement.expression.args
     symbol = statement.symbol
     # Did we (possibly) add the default in the piecewise with 0 or symbol?
@@ -89,15 +179,17 @@ def _translate_sympy_piecewise(statement: Assignment, defined_symbols: Set[sympy
         condition = expression[0][1]
         condition_translated = _translate_condition(condition)
 
-        statement_str = f'IF ({condition_translated}) {symbol} = {value}'
+        statement_str = (
+            f'IF ({condition_translated}) {symbol} = {expression_to_nmtran(value, rvs, trans)}'
+        )
         return statement_str
     elif all(len(e.args) == 0 for e in expressions) and not has_else:
-        return _translate_sympy_single(symbol, expression)
+        return _translate_sympy_single(symbol, expression, rvs, trans)
     else:
-        return _translate_sympy_block(symbol, expression)
+        return _translate_sympy_block(symbol, expression, rvs, trans)
 
 
-def _translate_sympy_single(symbol, expression):
+def _translate_sympy_single(symbol, expression, rvs, trans):
     statement_str = ''
     for e in expression:
         value = e[0]
@@ -105,12 +197,14 @@ def _translate_sympy_single(symbol, expression):
 
         condition_translated = _translate_condition(condition)
 
-        statement_str += f'IF ({condition_translated}) {symbol} = {value}\n'
+        statement_str += (
+            f'IF ({condition_translated}) {symbol} = {expression_to_nmtran(value, rvs, trans)}\n'
+        )
 
     return statement_str
 
 
-def _translate_sympy_block(symbol, expression):
+def _translate_sympy_block(symbol, expression, rvs, trans):
     statement_str = ''
     for i, e in enumerate(expression):
         value, condition = e
@@ -119,19 +213,19 @@ def _translate_sympy_block(symbol, expression):
 
         if i == 0:
             statement_str += f'IF ({condition_translated}) THEN\n'
-        elif condition_translated == '.true.':
+        elif condition_translated == 'True':
             statement_str += 'ELSE\n'
         else:
             statement_str += f'ELSE IF ({condition_translated}) THEN\n'
 
-        statement_str += f'    {symbol} = {value}\n'
+        statement_str += f'    {symbol} = {expression_to_nmtran(value, rvs, trans)}\n'
 
     statement_str += 'END IF'
     return statement_str
 
 
 def _translate_condition(c):
-    fprn = NMTranPrinter(settings={'source_format': 'free'})
+    fprn = NMTranPrinter()
     fortran = fprn.doprint(c).replace(' ', '')
     return fortran
 
@@ -146,62 +240,10 @@ def _translate_sympy_sign(s):
             subs_dict[arg] = abs(sign_arg) / sign_arg
 
     s = s.subs(subs_dict)
-    fprn = NMTranPrinter(settings={'source_format': 'free'})
+    fprn = NMTranPrinter()
     fortran = fprn.doprint(s.expression)
     expr_str = f'{s.symbol} = {fortran}'
     return expr_str
-
-
-def _print_custom(assignment: Assignment, rvs: RandomVariables, trans):
-    expr_ordered = _order_terms(assignment, rvs, trans)
-    return f'{assignment.symbol} = {expr_ordered}'
-
-
-def _order_terms(assignment: Assignment, rvs: RandomVariables, trans):
-    """Order terms such that random variables are placed last. Currently only supports
-    additions."""
-    if not isinstance(assignment.expression, sympy.Add) or rvs is None:
-        return assignment.expression
-
-    rvs_names = set(rvs.names)
-
-    trans_rvs = {str(v): str(k) for k, v in trans.items() if str(k) in rvs_names} if trans else None
-
-    expr_args = assignment.expression.args
-    terms_iiv_iov, terms_ruv, terms = [], [], []
-
-    for arg in expr_args:
-        arg_symbs = [s.name for s in arg.free_symbols]
-        rvs_intersect = rvs_names.intersection(arg_symbs)
-
-        if trans_rvs is not None:
-            trans_intersect = set(trans_rvs.keys()).intersection(arg_symbs)
-            rvs_intersect.update({trans_rvs[rv] for rv in trans_intersect})
-
-        if rvs_intersect:
-            if len(rvs_intersect) == 1:
-                rv_name = list(rvs_intersect)[0]
-                variability_level = rvs[rv_name].level
-                if variability_level == 'RUV':
-                    terms_ruv.append(arg)
-                    continue
-            terms_iiv_iov.append(arg)
-        else:
-            terms.append(arg)
-
-    if not terms_iiv_iov and not terms_ruv:
-        return assignment.expression
-
-    def arg_len(symb):
-        return len(symb.args)
-
-    terms_iiv_iov.sort(reverse=True, key=arg_len)
-    terms_ruv.sort(reverse=True, key=arg_len)
-    terms += terms_iiv_iov + terms_ruv
-
-    new_order = sympy.Add(*terms, evaluate=False)
-
-    return MyPrinter().doprint(new_order)
 
 
 class ExpressionInterpreter(Interpreter):
@@ -443,7 +485,6 @@ def _index_statements_diff(
 
 class CodeRecord(Record):
     def __init__(self, name, raw_name, content):
-        self.is_updated = False
         self.rvs, self.trans = None, None
         # NOTE self._index establishes a correspondance between self.root
         # nodes and self.statements statements. self._index consists of
@@ -536,22 +577,6 @@ class CodeRecord(Record):
             expression = subs(ode.rhs, function_map, simultaneous=True)
             statements.append(Assignment(symbol, expression))
         self.statements = statements
-
-    def __str__(self):
-        if self.is_updated:
-            s = str(self.root)
-            newlines = []
-            # FIXME: Workaround for upper casing all code but not comments.
-            # should properly be handled in a custom printer
-            for line in s.split('\n'):
-                parts = line.split(';', 1)
-                modline = parts[0].upper()
-                if len(parts) == 2:
-                    modline += ';' + parts[1]
-                newlines.append(modline)
-            assert self.raw_name is not None
-            return self.raw_name + '\n'.join(newlines)
-        return super(CodeRecord, self).__str__()
 
 
 def _parse_tree(tree: AttrTree):

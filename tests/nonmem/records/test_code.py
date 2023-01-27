@@ -753,7 +753,7 @@ def test_set_block_if(parser):
     statements = rec.statements + s
     rec.statements = statements
     correct = """$PRED
-IF (z.LT.12) THEN
+IF (Z.LT.12) THEN
     X = 23
 ELSE
     X = 5

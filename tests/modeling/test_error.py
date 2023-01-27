@@ -116,8 +116,8 @@ def test_set_combined_error_model_with_time_varying(testdata, load_model_for_tes
     set_time_varying_error_model(model, cutoff=1.0)
     set_combined_error_model(model)
     assert model.model_code.split('\n')[11] == 'IF (TIME.LT.1.0) THEN'
-    assert model.model_code.split('\n')[12] == '    Y = EPS(1)*F*THETA(3) + EPS(2)*THETA(3) + F'
-    assert model.model_code.split('\n')[14] == '    Y = EPS(1)*F + EPS(2) + F'
+    assert model.model_code.split('\n')[12] == '    Y = F + EPS(1)*F*THETA(3) + EPS(2)*THETA(3)'
+    assert model.model_code.split('\n')[14] == '    Y = F + EPS(1)*F + EPS(2)'
 
 
 def test_set_combined_error_model_with_time_varying_and_eta_on_ruv(testdata, load_model_for_test):
@@ -127,10 +127,10 @@ def test_set_combined_error_model_with_time_varying_and_eta_on_ruv(testdata, loa
     set_combined_error_model(model)
     assert (
         model.model_code.split('\n')[13]
-        == '    Y = EPS(1)*F*THETA(3)*EXP(ETA(3)) + EPS(2)*THETA(3)*EXP(ETA(3)) + F'
+        == '    Y = F + EPS(1)*F*THETA(3)*EXP(ETA(3)) + EPS(2)*THETA(3)*EXP(ETA(3))'
     )
     assert (
-        model.model_code.split('\n')[15] == '    Y = EPS(1)*F*EXP(ETA(3)) + EPS(2)*EXP(ETA(3)) + F'
+        model.model_code.split('\n')[15] == '    Y = F + EPS(1)*F*EXP(ETA(3)) + EPS(2)*EXP(ETA(3))'
     )
 
 
@@ -580,9 +580,9 @@ V=THETA(2)*EXP(ETA(2))
 S1=V
 $ERROR
 IF (TIME.LT.1.0) THEN
-    Y = EPS(1)*F*THETA(3) + F
+    Y = F + EPS(1)*F*THETA(3)
 ELSE
-    Y = EPS(1)*F + F
+    Y = F + EPS(1)*F
 END IF
 $THETA (0,0.00469307) ; TVCL
 $THETA (0,1.00916) ; TVV
