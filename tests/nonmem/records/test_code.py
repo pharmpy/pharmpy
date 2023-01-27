@@ -550,12 +550,10 @@ def test_statements_setter_remove(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
     rec_new = parser.parse(buf_new).records[0]
 
-    rec_original.statements = rec_new.statements
+    newrec = rec_original.update_statements(rec_new.statements)
 
-    assert rec_original.statements == rec_new.statements
-    assert tuple(rec_original.root.subtrees('statement')) == tuple(
-        rec_new.root.subtrees('statement')
-    )
+    assert newrec.statements == rec_new.statements
+    assert tuple(newrec.root.subtrees('statement')) == tuple(rec_new.root.subtrees('statement'))
 
 
 @pytest.mark.usefixtures('parser')
@@ -596,11 +594,9 @@ def test_statements_setter_add(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
     rec_new = parser.parse(buf_new).records[0]
 
-    rec_original.statements = rec_new.statements
-    assert rec_original.statements == rec_new.statements
-    assert tuple(rec_original.root.subtrees('statement')) == tuple(
-        rec_new.root.subtrees('statement')
-    )
+    newrec = rec_original.update_statements(rec_new.statements)
+    assert newrec.statements == rec_new.statements
+    assert tuple(newrec.root.subtrees('statement')) == tuple(rec_new.root.subtrees('statement'))
 
 
 @pytest.mark.usefixtures('parser')
@@ -616,13 +612,11 @@ def test_statements_setter_add(parser, buf_original, buf_new):
 def test_statements_setter_change(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
     rec_new = parser.parse(buf_new).records[0]
-    rec_original.statements = rec_new.statements
+    newrec = rec_original.update_statements(rec_new.statements)
 
-    assert rec_original.statements == rec_new.statements
-    assert tuple(rec_original.root.subtrees('statement')) == tuple(
-        rec_new.root.subtrees('statement')
-    )
-    assert str(rec_original) == buf_new
+    assert newrec.statements == rec_new.statements
+    assert tuple(newrec.root.subtrees('statement')) == tuple(rec_new.root.subtrees('statement'))
+    assert str(newrec) == buf_new
 
 
 @pytest.mark.usefixtures('parser')
@@ -648,9 +642,9 @@ def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression,
 
     assignment = Assignment(sym, expression)
     statements = rec_original.statements + [assignment]
-    rec_original.statements = statements
+    newrec = rec_original.update_statements(statements)
 
-    assert str(rec_original) == buf_new
+    assert str(newrec) == buf_new
 
 
 @pytest.mark.usefixtures('parser')
@@ -682,9 +676,9 @@ def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
 
     statements = rec_original.statements + assignment
     statements = statements.subs(nonmem_names)
-    rec_original.statements = statements
+    newrec = rec_original.update_statements(statements)
 
-    assert str(rec_original) == buf_expected
+    assert str(newrec) == buf_expected
 
 
 def test_nested_block_if(parser):
@@ -695,7 +689,7 @@ def test_nested_block_if(parser):
     rec = parser.parse('$PRED' + code).records[0]
 
     s = rec.statements
-    rec.statements = s
+    rec = rec.update_statements(s)
     assert str(rec.root) == code
 
 
@@ -737,8 +731,8 @@ def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
     assert isinstance(rec, CodeRecord)
     s = Assignment(symbol, expression)
     statements = rec.statements + s
-    rec.statements = statements
-    assert str(rec) == buf_original + buf_expected
+    newrec = rec.update_statements(statements)
+    assert str(newrec) == buf_original + buf_expected
 
 
 def test_empty_record(parser):
@@ -751,7 +745,7 @@ def test_set_block_if(parser):
     z = S('z')
     s = Assignment(sympy.Symbol('X'), sympy.Piecewise((23, z < 12), (5, True)))
     statements = rec.statements + s
-    rec.statements = statements
+    rec = rec.update_statements(statements)
     correct = """$PRED
 IF (Z.LT.12) THEN
     X = 23

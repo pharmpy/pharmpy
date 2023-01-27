@@ -484,13 +484,17 @@ def _index_statements_diff(
 
 
 class CodeRecord(Record):
-    def __init__(self, name, raw_name, content):
-        self.rvs, self.trans = None, None
+    def __init__(self, name, raw_name, content, index=None, statements=None):
         # NOTE self._index establishes a correspondance between self.root
         # nodes and self.statements statements. self._index consists of
         # (ni, nj, si, sj) tuples which maps the nodes
         # self.root.children[ni:nj] to the statements self.statements[si:sj]
-        self._index = []
+        if index is None:
+            self._index = []
+        else:
+            self._index = index
+        if statements is not None:
+            self._statements = statements
         super().__init__(name, raw_name, content)
 
     @property
@@ -500,14 +504,13 @@ class CodeRecord(Record):
         self._statements = statements
         return statements
 
-    @statements.setter
-    def statements(self, new: Sequence[Statement]):
+    def update_statements(self, new: Sequence[Statement], rvs=None, trans=None):
         try:
             old = self._statements
         except AttributeError:
             old = self.statements
         if new == old:
-            return
+            return self
         new_children = []
         last_node_index = 0
         new_index = []
@@ -532,7 +535,7 @@ class CodeRecord(Record):
             if op == 1:
                 for s in statements:
                     assert isinstance(s, Assignment)
-                    statement_nodes = self._statement_to_nodes(defined_symbols, s)
+                    statement_nodes = self._statement_to_nodes(defined_symbols, s, rvs, trans)
                     # NOTE We insert the generated nodes just before the next
                     # existing statement node
                     insert_pos = len(new_children)
@@ -553,12 +556,11 @@ class CodeRecord(Record):
             last_node_index = nj
         # NOTE We copy any non-statement nodes that are remaining
         new_children.extend(self.root.children[last_node_index:])
-        self.root = AttrTree(self.root.rule, tuple(new_children))
-        self._index = new_index
-        self._statements = new
+        new_root = AttrTree(self.root.rule, tuple(new_children))
+        return CodeRecord(self.name, self.raw_name, new_root, index=new_index, statements=new)
 
-    def _statement_to_nodes(self, defined_symbols: Set[sympy.Symbol], s: Assignment):
-        statement_str = nmtran_assignment_string(s, defined_symbols, self.rvs, self.trans) + '\n'
+    def _statement_to_nodes(self, defined_symbols: Set[sympy.Symbol], s: Assignment, rvs, trans):
+        statement_str = nmtran_assignment_string(s, defined_symbols, rvs, trans) + '\n'
         node_tree = CodeRecordParser(statement_str).root
         assert node_tree is not None
         statement_nodes = list(node_tree.subtrees('statement'))
@@ -576,7 +578,7 @@ class CodeRecord(Record):
             symbol = sympy.Symbol(f'DADT({i + 1})')
             expression = subs(ode.rhs, function_map, simultaneous=True)
             statements.append(Assignment(symbol, expression))
-        self.statements = statements
+        return self.update_statements(statements)
 
 
 def _parse_tree(tree: AttrTree):

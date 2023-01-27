@@ -448,7 +448,8 @@ def to_des(model: Model, new: ODESystem):
         subs.root = newrec.root  # FIXME!
     des = model.internals.control_stream.insert_record('$DES\nDUMMY=0\n')
     assert isinstance(des, CodeRecord)
-    des.from_odes(new)
+    newdes = des.from_odes(new)
+    model.internals.control_stream.replace_records([des], [newdes])
     model.internals.control_stream.remove_records(
         model.internals.control_stream.get_records('MODEL')
     )
@@ -501,8 +502,8 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
     error_statements = model.statements.after_odes
 
     rec = model.internals.control_stream.get_pred_pk_record()
-    rec.rvs, rec.trans = model.random_variables, trans
-    rec.statements = main_statements.subs(trans)
+    newrec = rec.update_statements(main_statements.subs(trans), model.random_variables, trans)
+    model.internals.control_stream.replace_records([rec], [newrec])
 
     error = model.internals.control_stream.get_error_record()
     if not error and len(error_statements) > 0:
@@ -514,13 +515,15 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
             and s.symbol.name == 'F'
         ):
             error_statements = error_statements[1:]  # Remove the link statement
-        error.rvs, error.trans = model.random_variables, trans
         new_ode_system = new.ode_system
         if new_ode_system is not None:
             amounts = list(new_ode_system.amounts)
             for i, amount in enumerate(amounts, start=1):
                 trans[amount] = sympy.Symbol(f"A({i})")
-        error.statements = error_statements.subs(trans)
+        new_error = error.update_statements(
+            error_statements.subs(trans), model.random_variables, trans
+        )
+        model.internals.control_stream.replace_records([error], [new_error])
 
 
 def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSystem):
