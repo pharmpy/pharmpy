@@ -63,7 +63,7 @@ class Model:
         modelfit_results=None,
         parent_model=None,
         initial_individual_estimates=None,
-        filename_extension=None,
+        filename_extension='',
         value_type='PREDICTION',
         description='',
         internals=None,
@@ -71,8 +71,7 @@ class Model:
         actual_dependent_variable = (
             sympy.Symbol('y') if dependent_variable is None else dependent_variable
         )
-        if name is not None:  # FIXME This conditional should not be necessary
-            self._name = name
+        self._name = name
         if datainfo is not None:  # FIXME This conditional should not be necessary
             self._datainfo = datainfo
         if dataset is not None:  # FIXME This conditional should not be necessary
@@ -82,13 +81,11 @@ class Model:
         self._statements = statements
         self._dependent_variable = actual_dependent_variable
         self._observation_transformation = actual_dependent_variable
-        if estimation_steps is not None:  # FIXME This conditional should not be necessary
-            self._estimation_steps = estimation_steps
+        self._estimation_steps = estimation_steps
         self._modelfit_results = modelfit_results
         self._parent_model = parent_model
         self._initial_individual_estimates = initial_individual_estimates
-        if filename_extension is not None:  # FIXME This conditional should not be necessary
-            self._filename_extension = filename_extension
+        self._filename_extension = filename_extension
         self._value_type = value_type
         self._description = description
         self.internals = internals
