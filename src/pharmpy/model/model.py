@@ -66,6 +66,7 @@ class Model:
         filename_extension=None,
         value_type='PREDICTION',
         description='',
+        internals=None,
     ):
         actual_dependent_variable = (
             sympy.Symbol('y') if dependent_variable is None else dependent_variable
@@ -90,6 +91,41 @@ class Model:
             self._filename_extension = filename_extension
         self._value_type = value_type
         self._description = description
+        self.internals = internals
+
+    def replace(self, **kwargs):
+        dependent_variable = kwargs.get('dependent_variable', self.dependent_variable)
+        parameters = kwargs.get('parameters', self.parameters)
+        random_variables = kwargs.get('random_variables', self.random_variables)
+        statements = kwargs.get('statements', self.statements)
+        dataset = kwargs.get('dataset', self.dataset)
+        datainfo = kwargs.get('datainfo', self.datainfo)
+        estimation_steps = kwargs.get('estimation_steps', self.estimation_steps)
+        modelfit_results = kwargs.get('modelfit_results', self.modelfit_results)
+        parent_model = kwargs.get('parent_model', self.parent_model)
+        initial_individual_estimates = kwargs.get(
+            'initial_individual_estimates', self.initial_individual_estimates
+        )
+        filename_extension = kwargs.get('filename_extension', self.filename_extension)
+        value_type = kwargs.get('value_type', self.value_type)
+        description = kwargs.get('description', self.description)
+        internals = kwargs.get('internals', self.internals)
+        return self.__class__(
+            dependent_variable=dependent_variable,
+            parameters=parameters,
+            random_variables=random_variables,
+            statements=statements,
+            dataset=dataset,
+            datainfo=datainfo,
+            estimation_steps=estimation_steps,
+            modelfit_results=modelfit_results,
+            parent_model=parent_model,
+            initial_individual_estimates=initial_individual_estimates,
+            filename_extension=filename_extension,
+            value_type=value_type,
+            description=description,
+            internals=internals,
+        )
 
     def __eq__(self, other):
         """Compare two models for equality
