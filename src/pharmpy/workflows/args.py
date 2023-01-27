@@ -1,7 +1,9 @@
+from typing import Any, Mapping, Tuple
+
 from pharmpy.internals.fs.path import normalize_user_given_path
 
 
-def split_common_options(d):
+def split_common_options(d) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
     """Split the dict into common options and other options
 
     Parameters

@@ -1,5 +1,5 @@
 from itertools import product
-from typing import Dict, Iterable, List, Tuple, TypeVar, Union
+from typing import Dict, Iterable, List, Sequence, Tuple, TypeVar, Union
 
 from pharmpy.model import Model
 from pharmpy.modeling.covariate_effect import EffectType, OperationType, add_covariate_effect
@@ -21,11 +21,15 @@ T = TypeVar('T')
 
 EffectLiteral = Tuple[str, str, EffectType, OperationType]
 EffectSpecFeature = Union[T, Tuple[T, ...]]
+InputEffectSpecFeature = Union[T, Sequence[T]]
 Spec = Tuple[
     EffectSpecFeature[str],
     EffectSpecFeature[str],
     EffectSpecFeature[EffectType],
     EffectSpecFeature[OperationType],
+]
+InputSpec = Sequence[
+    InputEffectSpecFeature[Union[str, EffectType, OperationType]],
 ]
 
 all_continuous_covariate_effects = (

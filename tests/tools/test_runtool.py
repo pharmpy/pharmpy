@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Optional
 
 import pytest
 
@@ -17,12 +17,12 @@ def test_import_tool():
     assert tool == iivsearch
 
 
-def create_workflow_rename(new_name, model=None):
+def create_workflow_rename(new_name, name=None, model: Optional[Model] = None):
     def rename(m):
         m.name = new_name
         return m
 
-    wf = Workflow([Task('copy', lambda x: x.copy(), model)])
+    wf = Workflow([Task('copy', lambda x: x.copy(), model)], name=name)
     wf.insert_workflow(Workflow([Task('rename', rename)]))
     return wf
 
@@ -33,8 +33,8 @@ def validate_input_rename(model, new_name):
     assert isinstance(model, Model)
 
 
-def create_workflow_generic(model=None):
-    return Workflow([Task('copy', lambda _: Results(), model)])
+def create_workflow_generic(name=None, model: Optional[Model] = None):
+    return Workflow([Task('copy', lambda _: Results(), model)], name=name)
 
 
 @with_same_arguments_as(create_workflow_generic)
@@ -78,5 +78,5 @@ class MockedToolWithInputValidation(MockedTool):
 )
 def test_run_tool_without_input_validation(tmp_path, pheno, name, tool, args, expected):
     with chdir(tmp_path):
-        res = run_tool_with_name(name, tool, *args, pheno)
+        res = run_tool_with_name(name, tool, args, {'name': name, 'model': pheno})
         assert expected(res)

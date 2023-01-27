@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from pharmpy.model import Results
+from pharmpy.model import Model, Results
 from pharmpy.workflows import Task, Workflow
 
 
-def create_workflow(model):
+def create_workflow(model: Model):
     wf = Workflow()
     wf.name = 'evaldesign'
 

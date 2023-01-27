@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass, replace
 from itertools import count
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -18,6 +18,7 @@ from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import (
     EffectLiteral,
+    InputSpec,
     all_covariate_effects,
     parse_spec,
     spec,
@@ -98,7 +99,7 @@ ALGORITHMS = frozenset(['scm-forward', 'scm-forward-then-backward'])
 
 
 def create_workflow(
-    effects: str,
+    effects: Union[str, Sequence[InputSpec]],
     p_forward: float = 0.05,
     p_backward: float = 0.01,
     max_steps: int = -1,

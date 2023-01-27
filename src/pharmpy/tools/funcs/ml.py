@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -13,15 +16,17 @@ from pharmpy.modeling import (
 from pharmpy.results import ModelfitResults
 
 
-def _all_parameters(model):
+def _all_parameters(model: Model, res: ModelfitResults):
     # All parameter estimates including fixed
     # This might warrant a function in modeling
     d = {p.name: p.init for p in model.parameters}
-    d.update(dict(model.modelfit_results.parameter_estimates))
+    parameter_estimates = res.parameter_estimates
+    assert parameter_estimates is not None
+    d.update(dict(parameter_estimates))
     return pd.Series(d)
 
 
-def _create_dataset(model, res):
+def _create_dataset(model: Model, res: ModelfitResults):
     if res is None:
         raise ModelfitResultsError("Need ModelfitResults for model")
     if res.residuals is None:
@@ -36,14 +41,17 @@ def _create_dataset(model, res):
     iofv = res.individual_estimates
     npar = len(model.parameters)
     ofv = res.ofv
+    assert ofv is not None
 
     # Max ratio of abs(ETAi) and omegai
     variance_omegas = [
         model.random_variables[rv].get_variance(rv).name for rv in model.random_variables.etas.names
     ]
-    all_paramvals = _all_parameters(model)
+    all_paramvals = _all_parameters(model, res)
     omega_estimates = np.sqrt(all_paramvals[variance_omegas])
-    abs_ebes = res.individual_estimates.abs()
+    individual_estimates = res.individual_estimates
+    assert individual_estimates is not None
+    abs_ebes = individual_estimates.abs()
     if omega_estimates.empty:  # No etas in model
         max_ebe_ratio = 1.0
     else:
@@ -53,10 +61,11 @@ def _create_dataset(model, res):
 
     # exp(OFVi / nobsi) / exp(OFV / nobs)
     iofv = res.individual_ofv
-    ofv_ratio = np.exp(iofv / nobsi) / np.exp(res.ofv / nobs)
+    ofv_ratio = np.exp(iofv / nobsi) / np.exp(ofv / nobs)
 
     # mean(ETA / OMEGA)
     cov = res.individual_estimates_covariance
+    assert cov is not None
     etc_diag = np.sqrt(pd.DataFrame([np.diag(y) for y in cov], columns=cov.iloc[0].columns))
     if omega_estimates.empty:
         mean_etc_ratio = 1.0
@@ -271,7 +280,7 @@ def predict_influential_outliers(
     return df
 
 
-def _predict_with_tflite(model_path, data):
+def _predict_with_tflite(model_path: Union[str, Path], data: pd.DataFrame):
     import tflite_runtime.interpreter as tflite
 
     interpreter = tflite.Interpreter(str(model_path))

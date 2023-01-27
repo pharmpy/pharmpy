@@ -1,10 +1,11 @@
+from pharmpy.model import Model
 from pharmpy.modeling import resample_data
 from pharmpy.tools.bootstrap.results import calculate_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
-def create_workflow(model, resamples=1):
+def create_workflow(model: Model, resamples=1):
     wf = Workflow()
     wf.name = 'bootstrap'
 

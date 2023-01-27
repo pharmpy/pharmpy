@@ -8,19 +8,28 @@ from contextlib import closing
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import pandas as pd
-from pharmpy.internals.immutable import Immutable
 from pharmpy.model import Model, Results
-from pharmpy.workflows import Log
+
+if TYPE_CHECKING:
+    from pharmpy.workflows import Log
 
 
 def mfr(model: Model) -> ModelfitResults:
     res = model.modelfit_results
     assert isinstance(res, ModelfitResults)
     return res
+
+
+def _df_read_json(obj) -> pd.DataFrame:
+    return pd.read_json(json.dumps(obj), typ='frame', orient='table', precise_float=True)
+
+
+def _multi_index_read_json(obj) -> pd.MultiIndex:
+    return pd.MultiIndex.from_frame(_df_read_json(obj))
 
 
 class ResultsJSONDecoder(json.JSONDecoder):
@@ -49,18 +58,23 @@ class ResultsJSONDecoder(json.JSONDecoder):
 
         if module is None or module.startswith('pandas.'):
             if cls == 'DataFrame':
-                return pd.read_json(json.dumps(obj), orient='table', precise_float=True)
+                return _df_read_json(obj)
             elif cls == 'Series':
-                name = None
-                if '__name__' in obj:
-                    name = obj['__name__']
-                    del obj['__name__']
-                series = pd.read_json(
-                    json.dumps(obj), typ='series', orient='table', precise_float=True
-                )
-                if name is not None:
-                    series.name = name
+                # NOTE Hack to work around poor support of to_json/read_json of
+                # pd.Series with MultiIndex
+                df = _df_read_json(obj)
+                series = df.iloc[:, 0]  # NOTE First and only column.
                 return series
+            elif cls == 'Series[DataFrame]':
+                # NOTE Hack to work around poor support of Series of DataFrame
+                # objects. All subobjects have already been converted.
+                return pd.Series(
+                    obj['data'], index=obj['index'], dtype=obj['dtype'], name=obj['name']
+                )
+            elif cls == 'Index':
+                return _multi_index_read_json(obj).get_level_values(0)
+            elif cls == 'MultiIndex':
+                return _multi_index_read_json(obj)
 
         if module is None:
             if cls == 'vega-lite':
@@ -127,7 +141,7 @@ def read_results(path_or_str: Union[str, Path]):
 
 
 @dataclass(frozen=True)
-class ModelfitResults(Results, Immutable):
+class ModelfitResults(Results):
     """Base class for results from a modelfit operation
 
     Attributes
@@ -212,5 +226,5 @@ class ModelfitResults(Results, Immutable):
     significant_digits: Optional[float] = None
     significant_digits_iterations: Optional[pd.Series] = None
     log_likelihood: Optional[float] = None
-    log: Optional[Log] = None
+    log: Optional['Log'] = None
     evaluation: Optional[pd.Series] = None

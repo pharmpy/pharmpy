@@ -4,6 +4,8 @@ from itertools import count
 from pathlib import Path
 
 from pharmpy.internals.fs.path import path_absolute
+from pharmpy.model import Model
+from pharmpy.results import ModelfitResults
 
 from ..model_database import LocalModelDirectoryDatabase
 from .baseclass import ToolDatabase
@@ -22,8 +24,10 @@ class LocalDirectoryToolDatabase(ToolDatabase):
         Whether to allow using an existing database.
     """
 
-    def __init__(self, toolname, path=None, exist_ok=False):
+    def __init__(self, toolname=None, path=None, exist_ok=False):
         if path is None:
+            if toolname is None:
+                raise ValueError('Must specify toolname when not specifying path')
             for i in count(1):
                 name = f'{toolname}_dir{i}'
                 path = Path(name)
@@ -41,6 +45,9 @@ class LocalDirectoryToolDatabase(ToolDatabase):
 
         modeldb = LocalModelDirectoryDatabase(self.path / 'models')
         self.model_database = modeldb
+
+        if toolname is None:
+            toolname = self.read_metadata()['tool_name']
 
         super().__init__(toolname)
 
@@ -62,10 +69,28 @@ class LocalDirectoryToolDatabase(ToolDatabase):
     def store_metadata(self, metadata):
         path = self.path / 'metadata.json'
         with open(path, 'w') as f:
-            json.dump(metadata, f, indent=4)
+            json.dump(metadata, f, indent=4, cls=MetadataJSONEncoder)
 
     def read_metadata(self):
         path = self.path / 'metadata.json'
         with open(path, 'r') as f:
-            metadata = json.load(f)
-        return metadata
+            return json.load(f, cls=MetadataJSONDecoder)
+
+
+class MetadataJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Model):
+            # NOTE This is only used by modelfit at the moment since we encode
+            # models for other tools upstream.
+            return obj.name
+        if isinstance(obj, ModelfitResults):
+            return obj.to_json()
+        return super().default(obj)
+
+
+class MetadataJSONDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, obj):
+        return obj

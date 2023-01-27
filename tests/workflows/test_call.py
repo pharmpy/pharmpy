@@ -27,7 +27,7 @@ def add(a, b):
     t1 = Task('t1', lambda: a)
     t2 = Task('t2', lambda: b)
     t3 = Task('t3', f)
-    wf = Workflow([t1, t2])
+    wf = Workflow([t1, t2], name='add')
     wf.add_task(t3, predecessors=[t1, t2])
     return wf
 

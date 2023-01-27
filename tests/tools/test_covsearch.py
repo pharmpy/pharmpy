@@ -105,16 +105,17 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
             ValueError,
             'Invalid `effects` because of invalid effect function',
         ),
-        # FIXME: Currently fails on parse, parser should realize this is an operation and
-        #  specify effect operation is not allowed (see issue #1501)
-        # (
-        #     ('nonmem', 'pheno.mod'),
-        #     dict(
-        #         effects='COVARIATE([CL, V], WGT, EXP, -)'
-        #     ),
-        #     TypeError,
-        #     'Invalid `effects`',
-        # ),
+        (
+            ('nonmem', 'pheno.mod'),
+            dict(
+                effects=(
+                    ('CL', 'WGT', 'exp', '*'),
+                    ('V', 'WGT', 'exp', '-'),
+                )
+            ),
+            ValueError,
+            'Invalid `effects`',
+        ),
         (
             None,
             dict(model=1),
