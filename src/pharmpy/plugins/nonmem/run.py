@@ -181,10 +181,11 @@ def evaluate_design(context, model):
     model.estimation_steps = EstimationSteps()
     stream = model.internals.control_stream
     estrecs = stream.get_records('ESTIMATION')
-    stream.remove_records(estrecs)
+    stream = stream.remove_records(estrecs)
 
     design_code = '$DESIGN APPROX=FOCEI MODE=1 NELDER FIMDIAG=0 DATASIM=1 GROUPSIZE=32 OFVTYPE=0'
     stream.insert_record(design_code)
+    model.internals.control_stream = stream
 
     execute_model(model, context)
 

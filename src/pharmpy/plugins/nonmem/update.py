@@ -428,7 +428,7 @@ def update_infusion(model: Model, old: ODESystem):
 
 def to_des(model: Model, new: ODESystem):
     old_des = model.internals.control_stream.get_records('DES')
-    model.internals.control_stream.remove_records(old_des)
+    model.internals.control_stream = model.internals.control_stream.remove_records(old_des)
     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
     newrec = subs.remove_option_startswith('TRANS')
     newrec = newrec.remove_option_startswith('ADVAN')
@@ -449,7 +449,7 @@ def to_des(model: Model, new: ODESystem):
     assert isinstance(des, CodeRecord)
     newdes = des.from_odes(new)
     model.internals.control_stream.replace_records([des], [newdes])
-    model.internals.control_stream.remove_records(
+    model.internals.control_stream = model.internals.control_stream.remove_records(
         model.internals.control_stream.get_records('MODEL')
     )
     mod = model.internals.control_stream.insert_record('$MODEL\n')
@@ -863,12 +863,12 @@ def update_model_record(model: Model, advan):
     newmap = new_compartmental_map(odes, oldmap)
 
     if advan in ['ADVAN1', 'ADVAN2', 'ADVAN3', 'ADVAN4', 'ADVAN10', 'ADVAN11', 'ADVAN12']:
-        model.internals.control_stream.remove_records(
+        model.internals.control_stream = model.internals.control_stream.remove_records(
             model.internals.control_stream.get_records('MODEL')
         )
     else:
         if oldmap != newmap or model.estimation_steps[0].solver:
-            model.internals.control_stream.remove_records(
+            model.internals.control_stream = model.internals.control_stream.remove_records(
                 model.internals.control_stream.get_records('MODEL')
             )
             mod = model.internals.control_stream.insert_record('$MODEL\n')
@@ -1186,7 +1186,7 @@ def update_estimation(model: Model):
     elif old_cov and not new_cov:
         # Remove $COV
         covrecs = model.internals.control_stream.get_records('COVARIANCE')
-        model.internals.control_stream.remove_records(covrecs)
+        model.internals.control_stream = model.internals.control_stream.remove_records(covrecs)
 
     # Update $TABLE
     # Currently only adds if did not exist before

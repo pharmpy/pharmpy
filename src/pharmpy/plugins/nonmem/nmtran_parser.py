@@ -153,8 +153,8 @@ class NMTranControlStream:
         return record
 
     def remove_records(self, records):
-        for rec in records:
-            self.records.remove(rec)
+        keep = [rec for rec in self.records if rec not in records]
+        return NMTranControlStream(records=keep)
 
     def replace_records(self, old, new):
         keep = []
