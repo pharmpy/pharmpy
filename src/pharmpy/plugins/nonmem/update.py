@@ -1445,7 +1445,7 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
         if eta_records:
             record = eta_records[0]
         else:
-            record = model.internals.control_stream.append_record('$ETAS ')
+            record = model.internals.control_stream.insert_record('$ETAS ')
         assert isinstance(record, EtasRecord)
         newrecord = record.set_path(phi_path)
         model.internals.control_stream = model.internals.control_stream.replace_records(

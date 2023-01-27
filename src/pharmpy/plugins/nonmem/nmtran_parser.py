@@ -72,8 +72,7 @@ default_record_order = [
     'SIGMA',
     'ESTIMATION',
     'COVARIANCE',
-    'ETAS'
-    'TABLE',
+    'ETAS' 'TABLE',
 ]
 
 
@@ -101,12 +100,6 @@ class NMTranControlStream:
 
     def _get_first_record(self, name):
         return next(iter(self.get_records(name)), None)
-
-    def append_record(self, content):
-        """Create and append record at the end"""
-        record = create_record(content)
-        self.records.append(record)
-        return record
 
     def insert_record(self, content: str, at_index=None):
         """Create and insert a new record at the correct position
