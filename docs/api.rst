@@ -8,8 +8,8 @@ different transformations and manipulations, and the workflows-module is how dif
 
 .. note::
 
-    `pharmr <https://github.com/pharmpy/pharmr/>`_ only includes functions from :ref:`api_modeling` and
-    :ref:`api_tools`.
+    `pharmr <https://github.com/pharmpy/pharmr/>`_ only includes functions from :doc:`api_modeling` and
+    :doc:`api_tools`.
 
 .. toctree::
    :maxdepth: 1

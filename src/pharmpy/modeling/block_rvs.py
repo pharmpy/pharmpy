@@ -2,9 +2,10 @@
 :meta private:
 """
 import warnings
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.math import corr2cov, nearest_postive_semidefinite
 from pharmpy.model import Model, Parameter, Parameters
@@ -12,7 +13,9 @@ from pharmpy.modeling.help_functions import _get_etas
 
 
 def create_joint_distribution(
-    model: Model, rvs: Optional[List[str]] = None, individual_estimates=None
+    model: Model,
+    rvs: Optional[List[str]] = None,
+    individual_estimates: Optional[pd.DataFrame] = None,
 ):
     """
     Combines some or all etas into a joint distribution.
@@ -42,14 +45,14 @@ def create_joint_distribution(
     >>> from pharmpy.modeling import load_example_model, create_joint_distribution
     >>> model = load_example_model("pheno")
     >>> model.random_variables.etas
-    ETA(1) ~ N(0, OMEGA(1,1))
-    ETA(2) ~ N(0, OMEGA(2,2))
-    >>> create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])      # doctest: +ELLIPSIS
+    ETA₁ ~ N(0, IVCL)
+    ETA₂ ~ N(0, IVV)
+    >>> create_joint_distribution(model, ['ETA_1', 'ETA_2'])      # doctest: +ELLIPSIS
     <...>
     >>> model.random_variables.etas
-    ⎡ETA(1)⎤    ⎧⎡0⎤  ⎡ OMEGA(1,1)   IIV_CL_IIV_V⎤⎫
-    ⎢      ⎥ ~ N⎪⎢ ⎥, ⎢                          ⎥⎪
-    ⎣ETA(2)⎦    ⎩⎣0⎦  ⎣IIV_CL_IIV_V   OMEGA(2,2) ⎦⎭
+    ⎡ETA₁⎤    ⎧⎡0⎤  ⎡    IVCL      IIV_CL_IIV_V⎤⎫
+    ⎢    ⎥ ~ N⎪⎢ ⎥, ⎢                          ⎥⎪
+    ⎣ETA₂⎦    ⎩⎣0⎦  ⎣IIV_CL_IIV_V      IVV     ⎦⎭
 
     See also
     --------
@@ -91,13 +94,13 @@ def create_joint_distribution(
         covariance_init = _choose_param_init(model, individual_estimates, all_rvs, parent1, parent2)
         param_new = Parameter(cov_name, covariance_init)
         pset_new += param_new
-    model.parameters = Parameters(pset_new)
+    model.parameters = Parameters.create(pset_new)
     model.random_variables = all_rvs
 
     return model
 
 
-def split_joint_distribution(model, rvs=None):
+def split_joint_distribution(model: Model, rvs: Optional[Union[List[str], str]] = None):
     """
     Splits etas following a joint distribution into separate distributions.
 
@@ -118,17 +121,17 @@ def split_joint_distribution(model, rvs=None):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])      # doctest: +ELLIPSIS
+    >>> create_joint_distribution(model, ['ETA_1', 'ETA_2'])      # doctest: +ELLIPSIS
     <...>
     >>> model.random_variables.etas
-    ⎡ETA(1)⎤    ⎧⎡0⎤  ⎡ OMEGA(1,1)   IIV_CL_IIV_V⎤⎫
-    ⎢      ⎥ ~ N⎪⎢ ⎥, ⎢                          ⎥⎪
-    ⎣ETA(2)⎦    ⎩⎣0⎦  ⎣IIV_CL_IIV_V   OMEGA(2,2) ⎦⎭
-    >>> split_joint_distribution(model, ['ETA(1)', 'ETA(2)'])       # doctest: +ELLIPSIS
+    ⎡ETA₁⎤    ⎧⎡0⎤  ⎡    IVCL      IIV_CL_IIV_V⎤⎫
+    ⎢    ⎥ ~ N⎪⎢ ⎥, ⎢                          ⎥⎪
+    ⎣ETA₂⎦    ⎩⎣0⎦  ⎣IIV_CL_IIV_V      IVV     ⎦⎭
+    >>> split_joint_distribution(model, ['ETA_1', 'ETA_2'])       # doctest: +ELLIPSIS
     <...>
     >>> model.random_variables.etas
-    ETA(1) ~ N(0, OMEGA(1,1))
-    ETA(2) ~ N(0, OMEGA(2,2))
+    ETA₁ ~ N(0, IVCL)
+    ETA₂ ~ N(0, IVV)
 
     See also
     --------
@@ -144,7 +147,9 @@ def split_joint_distribution(model, rvs=None):
 
     removed_parameters = set(parameters_before) - set(parameters_after)
     model.random_variables = new_rvs
-    model.parameters = Parameters([p for p in model.parameters if p.name not in removed_parameters])
+    model.parameters = Parameters(
+        tuple([p for p in model.parameters if p.name not in removed_parameters])
+    )
     return model
 
 

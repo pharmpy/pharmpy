@@ -89,34 +89,19 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(
-                effects=(
-                    ('CL', 'WGT', 'exp', '*'),
-                    ('VC', 'WGT', 'exp', '*'),
-                )
-            ),
+            dict(effects='COVARIATE([CL, VC], WGT, EXP)'),
             ValueError,
             'Invalid `effects` because of invalid parameter',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(
-                effects=(
-                    ('CL', 'WGT', 'exp', '*'),
-                    ('V', 'SEX', 'exp', '*'),
-                )
-            ),
+            dict(effects='COVARIATE([CL, V], SEX, EXP)'),
             ValueError,
             'Invalid `effects` because of invalid covariate',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(
-                effects=(
-                    ('CL', 'WGT', 'exp', '*'),
-                    ('V', 'WGT', 'abc', '*'),
-                )
-            ),
+            dict(effects='COVARIATE([CL, V], WGT, [EXP, ABC])'),
             ValueError,
             'Invalid `effects` because of invalid effect function',
         ),

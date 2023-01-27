@@ -6,7 +6,7 @@ import re
 import warnings
 from io import StringIO
 from pathlib import Path
-from typing import Union
+from typing import Dict, Optional, Union
 
 import pharmpy.config as config
 from pharmpy.deps import sympy
@@ -23,7 +23,7 @@ from pharmpy.model import (
 )
 
 
-def read_model(path):
+def read_model(path: Union[str, Path]):
     """Read model from file
 
     Parameters
@@ -52,41 +52,7 @@ def read_model(path):
     return model
 
 
-def read_model_from_database(name, database=None):
-    """Read model from model database
-
-    Parameters
-    ----------
-    name : str
-        Name of model to use as lookup
-    database : Database
-        Database to use. Will use default database if not specified.
-
-    Returns
-    -------
-    Model
-        Read model object
-
-    Examples
-    --------
-    >>> from pharmpy.modeling import read_model_from_database
-    >>> model = read_model_from_database("run1")    # doctest: +SKIP
-
-    See also
-    --------
-    read_model : Read model from file
-    read_model_from_string : Read model from string
-
-    """
-    if database is None:
-        import pharmpy.workflows
-
-        database = pharmpy.workflows.default_model_database()
-    model = database.retrieve_model(name)
-    return model
-
-
-def read_model_from_string(code):
+def read_model_from_string(code: str):
     """Read model from the model code in a string
 
     Parameters
@@ -174,7 +140,7 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
     return model
 
 
-def convert_model(model, to_format):
+def convert_model(model: Model, to_format: str):
     """Convert model to other format
 
     Note that the operation is not done inplace.
@@ -240,7 +206,7 @@ def convert_model(model, to_format):
     return new
 
 
-def generate_model_code(model):
+def generate_model_code(model: Model):
     """Get the model code of the underlying model language
 
     Parameters
@@ -263,7 +229,7 @@ def generate_model_code(model):
     return model.model_code
 
 
-def print_model_code(model):
+def print_model_code(model: Model):
     """Print the model code of the underlying model language
 
     Parameters
@@ -314,7 +280,7 @@ def print_model_code(model):
     print(model.model_code)
 
 
-def copy_model(model, name=None):
+def copy_model(model: Model, name: Optional[str] = None):
     """Copies model to a new model object
 
     Parameters
@@ -342,7 +308,7 @@ def copy_model(model, name=None):
     return new
 
 
-def set_name(model, new_name):
+def set_name(model: Model, new_name: str):
     """Set name of model object
 
     Parameters
@@ -373,7 +339,7 @@ def set_name(model, new_name):
     return model
 
 
-def bump_model_number(model, path=None):
+def bump_model_number(model: Model, path: Union[str, Path] = None):
     """If the model name ends in a number increase it
 
     If path is set increase the number until no file exists
@@ -421,7 +387,7 @@ def bump_model_number(model, path=None):
     return model
 
 
-def load_example_model(name):
+def load_example_model(name: str):
     """Load an example model
 
     Load an example model from models built into Pharmpy
@@ -445,25 +411,25 @@ def load_example_model(name):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-    TVV = THETA(2)⋅WGT
-          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
     TVV = ⎩       TVV           otherwise
-               ETA(1)
+               ETA₁
     CL = TVCL⋅ℯ
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
     S₁ = V
-    Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    Bolus(AMT, admid=1)
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
         A_CENTRAL
         ─────────
     F =     S₁
     W = F
-    Y = EPS(1)⋅W + F
+    Y = EPS₁⋅W + F
     IPRED = F
     IRES = DV - IPRED
             IRES
@@ -471,7 +437,7 @@ def load_example_model(name):
     IWRES =  W
 
     """
-    available = ('pheno', 'pheno_linear')
+    available = ('moxo', 'pheno', 'pheno_linear')
     if name not in available:
         raise ValueError(f'Unknown example model {name}. Available examples: {available}')
     path = Path(__file__).resolve().parent / 'example_models' / (name + '.mod')
@@ -479,7 +445,7 @@ def load_example_model(name):
     return model
 
 
-def get_model_covariates(model, strings=False):
+def get_model_covariates(model: Model, strings: bool = False):
     """List of covariates used in model
 
     A covariate in the model is here defined to be a data item
@@ -514,7 +480,6 @@ def get_model_covariates(model, strings=False):
 
     # Consider statements that are dependencies of the ode system and y
     if odes:
-        odes = odes.to_compartmental_system()
         dose_comp = odes.dosing_compartment
         cb = CompartmentalSystemBuilder(odes)
         cb.set_dose(dose_comp, None)
@@ -539,7 +504,7 @@ def get_model_covariates(model, strings=False):
     return covs
 
 
-def print_model_symbols(model):
+def print_model_symbols(model: Model):
     """Print all symbols defined in a model
 
     Symbols will be in one of the categories thetas, etas, omegas, epsilons, sigmas,
@@ -555,11 +520,11 @@ def print_model_symbols(model):
     >>> from pharmpy.modeling import load_example_model, print_model_symbols
     >>> model = load_example_model("pheno")
     >>> print_model_symbols(model)
-    Thetas: THETA(1), THETA(2), THETA(3)
-    Etas: ETA(1), ETA(2)
-    Omegas: OMEGA(1,1), OMEGA(2,2)
-    Epsilons: EPS(1)
-    Sigmas: SIGMA(1,1)
+    Thetas: PTVCL, PTVV, THETA₃
+    Etas: ETA₁, ETA₂
+    Omegas: IVCL, IVV
+    Epsilons: EPS₁
+    Sigmas: SIGMA₁ ₁
     Variables: BTIME, TAD, TVCL, TVV, TVV, CL, V, S₁, F, W, Y, IPRED, IRES, IWRES
     Data columns: ID, TIME, AMT, WGT, APGR, DV, FA1, FA2
 
@@ -613,7 +578,7 @@ def get_config_path():
         return None
 
 
-def remove_unused_parameters_and_rvs(model):
+def remove_unused_parameters_and_rvs(model: Model):
     """Remove any parameters and rvs that are not used in the model statements
 
     Parameters
@@ -657,11 +622,13 @@ def remove_unused_parameters_and_rvs(model):
         symb = p.symbol
         if symb in symbols or symb in new_rvs.free_symbols or (p.fix and p.init == 0):
             new_params.append(p)
-    model.parameters = Parameters(new_params)
+    model.parameters = Parameters.create(new_params)
     return model
 
 
-def rename_symbols(model, new_names):
+def rename_symbols(
+    model: Model, new_names: Dict[Union[str, sympy.Symbol], Union[str, sympy.Symbol]]
+):
     """Rename symbols in the model
 
     Make sure that no name clash occur.
@@ -689,8 +656,9 @@ def rename_symbols(model, new_names):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters(new)
+    model.parameters = Parameters.create(new)
 
     model.statements = model.statements.subs(d)
+    model.random_variables = model.random_variables.subs(d)
     return model
-    # FIXME: Only handles parameters and statements and no clashes and circular renaming
+    # FIXME: Only handles parameters, statements and random_variables and no clashes and circular renaming

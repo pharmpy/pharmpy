@@ -10,6 +10,7 @@ from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.graph.directed.connected_components import strongly_connected_component_of
 from pharmpy.internals.graph.directed.inverse import inverse as graph_inverse
 from pharmpy.internals.graph.directed.reachability import reachable_from
+from pharmpy.internals.unicode import bracket
 from pharmpy.model import (
     Assignment,
     Compartment,
@@ -18,6 +19,7 @@ from pharmpy.model import (
     ODESystem,
     Statement,
     Statements,
+    output,
 )
 
 from .parameters import get_thetas
@@ -26,7 +28,7 @@ T = TypeVar('T')
 U = TypeVar('U')
 
 
-def get_observation_expression(model):
+def get_observation_expression(model: Model):
     """Get the full symbolic expression for the observation according to the model
 
     This function currently only support models without ODE systems
@@ -48,8 +50,8 @@ def get_observation_expression(model):
     >>> model = load_example_model("pheno_linear")
     >>> expr = get_observation_expression(model)
     >>> sympy.pprint(expr)
-    D_EPSETA1_2⋅EPS(1)⋅(ETA(2) - OETA₂) + D_ETA1⋅(ETA(1) - OETA₁) + D_ETA2⋅(ETA(2)
-     - OETA₂) + EPS(1)⋅(D_EPS1 + D_EPSETA1_1⋅(ETA(1) - OETA₁)) + OPRED
+    D_EPSETA1_2⋅EPS₁⋅(ETA₂ - OETA₂) + D_ETA1⋅(ETA₁ - OETA₁) + D_ETA2⋅(ETA₂ - OETA₂
+    ) + EPS₁⋅(D_EPS1 + D_EPSETA1_1⋅(ETA₁ - OETA₁)) + OPRED
     """
     stats = model.statements
     dv = model.dependent_variable
@@ -66,7 +68,7 @@ def get_observation_expression(model):
     return y
 
 
-def get_individual_prediction_expression(model):
+def get_individual_prediction_expression(model: Model):
     """Get the full symbolic expression for the modelled individual prediction
 
     This function currently only support models without ODE systems
@@ -86,7 +88,7 @@ def get_individual_prediction_expression(model):
     >>> from pharmpy.modeling import load_example_model, get_individual_prediction_expression
     >>> model = load_example_model("pheno_linear")
     >>> get_individual_prediction_expression(model)
-    D_ETA1*(ETA(1) - OETA1) + D_ETA2*(ETA(2) - OETA2) + OPRED
+    D_ETA1*(ETA_1 - OETA1) + D_ETA2*(ETA_2 - OETA2) + OPRED
 
     See Also
     --------
@@ -99,7 +101,7 @@ def get_individual_prediction_expression(model):
     )
 
 
-def get_population_prediction_expression(model):
+def get_population_prediction_expression(model: Model):
     """Get the full symbolic expression for the modelled population prediction
 
     This function currently only support models without ODE systems
@@ -133,7 +135,7 @@ def get_population_prediction_expression(model):
     )
 
 
-def calculate_eta_gradient_expression(model):
+def calculate_eta_gradient_expression(model: Model):
     """Calculate the symbolic expression for the eta gradient
 
     This function currently only support models without ODE systems
@@ -164,7 +166,7 @@ def calculate_eta_gradient_expression(model):
     return d
 
 
-def calculate_epsilon_gradient_expression(model):
+def calculate_epsilon_gradient_expression(model: Model):
     """Calculate the symbolic expression for the epsilon gradient
 
     This function currently only support models without ODE systems
@@ -184,7 +186,7 @@ def calculate_epsilon_gradient_expression(model):
     >>> from pharmpy.modeling import load_example_model, calculate_epsilon_gradient_expression
     >>> model = load_example_model("pheno_linear")
     >>> calculate_epsilon_gradient_expression(model)
-    [D_EPS1 + D_EPSETA1_1*(ETA(1) - OETA1) + D_EPSETA1_2*(ETA(2) - OETA2)]
+    [D_EPS1 + D_EPSETA1_1*(ETA_1 - OETA1) + D_EPSETA1_2*(ETA_2 - OETA2)]
 
     See also
     --------
@@ -196,7 +198,7 @@ def calculate_epsilon_gradient_expression(model):
     return d
 
 
-def create_symbol(model, stem, force_numbering=False):
+def create_symbol(model: Model, stem: str, force_numbering: bool = False):
     """Create a new unique variable symbol given a model
 
     Parameters
@@ -264,7 +266,7 @@ def _find_eta_assignments(model):
     return reversed(leafs)
 
 
-def mu_reference_model(model):
+def mu_reference_model(model: Model):
     r"""Convert model to use mu-referencing
 
     Mu-referencing an eta is to separately define its actual mu (mean) parameter.
@@ -291,16 +293,16 @@ def mu_reference_model(model):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-    TVV = THETA(2)⋅WGT
-          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
     TVV = ⎩       TVV           otherwise
     μ₁ = log(TVCL)
-          ETA(1) + μ₁
+          ETA₁ + μ₁
     CL = ℯ
     μ₂ = log(TVV)
-         ETA(2) + μ₂
+         ETA₂ + μ₂
     V = ℯ
     S₁ = V
     """
@@ -329,7 +331,7 @@ def mu_reference_model(model):
     return model
 
 
-def simplify_expression(model, expr):
+def simplify_expression(model: Model, expr: Union[int, float, str, sympy.Expr]):
     """Simplify expression given constraints in model
 
     Parameters
@@ -385,7 +387,7 @@ def simplify_expression(model, expr):
     return simp
 
 
-def solve_ode_system(model):
+def solve_ode_system(model: Model):
     """Replace ODE system with analytical solution if possible
 
     Warnings
@@ -407,10 +409,10 @@ def solve_ode_system(model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.statements.ode_system
-    Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    Bolus(AMT, admid=1)
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
     >>> solve_ode_system(model)        # doctest: +ELLIPSIS
     <...>
 
@@ -418,13 +420,11 @@ def solve_ode_system(model):
     odes = model.statements.ode_system
     if odes is None:
         return model
-    if isinstance(odes, CompartmentalSystem):
-        odes = odes.to_explicit_system()
     ics = dict(odes.ics)
     ics.popitem()
     # FIXME: Should set assumptions on symbols before solving
     # FIXME: Need a way to handle systems with no explicit solutions
-    sol = sympy.dsolve(odes.odes[:-1], ics=ics)
+    sol = sympy.dsolve(odes.eqs, ics=ics)
     new = []
     for s in model.statements:
         if isinstance(s, ODESystem):
@@ -437,7 +437,7 @@ def solve_ode_system(model):
     return model
 
 
-def make_declarative(model):
+def make_declarative(model: Model):
     """Make the model statments declarative
 
     Each symbol will only be declared once.
@@ -461,14 +461,14 @@ def make_declarative(model):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-    TVV = THETA(2)⋅WGT
-          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
     TVV = ⎩       TVV           otherwise
-               ETA(1)
+               ETA₁
     CL = TVCL⋅ℯ
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
     S₁ = V
     >>> make_declarative(model)     # doctest: +ELLIPSIS
@@ -478,13 +478,13 @@ def make_declarative(model):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-          ⎧THETA(2)⋅WGT⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+          ⎧PTVV⋅WGT⋅(THETA₃ + 1)  for APGR < 5
           ⎨
-    TVV = ⎩       THETA(2)⋅WGT           otherwise
-               ETA(1)
+    TVV = ⎩      PTVV⋅WGT          otherwise
+               ETA₁
     CL = TVCL⋅ℯ
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
     S₁ = V
     """
@@ -526,7 +526,7 @@ def make_declarative(model):
     return model
 
 
-def cleanup_model(model):
+def cleanup_model(model: Model):
     """Perform various cleanups of a model
 
     This is what is currently done
@@ -558,25 +558,25 @@ def cleanup_model(model):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-    TVV = THETA(2)⋅WGT
-          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
     TVV = ⎩       TVV           otherwise
-               ETA(1)
+               ETA₁
     CL = TVCL⋅ℯ
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
     S₁ = V
-    Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    Bolus(AMT, admid=1)
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
         A_CENTRAL
         ─────────
     F =     S₁
     W = F
-    Y = EPS(1)⋅W + F
+    Y = EPS₁⋅W + F
     IPRED = F
     IRES = DV - IPRED
             IRES
@@ -589,22 +589,22 @@ def cleanup_model(model):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-          ⎧THETA(2)⋅WGT⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+          ⎧PTVV⋅WGT⋅(THETA₃ + 1)  for APGR < 5
           ⎨
-    TVV = ⎩       THETA(2)⋅WGT           otherwise
-               ETA(1)
+    TVV = ⎩      PTVV⋅WGT           otherwise
+               ETA₁
     CL = TVCL⋅ℯ
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
-    Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    Bolus(AMT, admid=1)
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
         A_CENTRAL
         ─────────
     F =     V
-    Y = EPS(1)⋅F + F
+    Y = EPS₁⋅F + F
     IRES = DV - F
             IRES
             ────
@@ -630,7 +630,7 @@ def cleanup_model(model):
     return model
 
 
-def greekify_model(model, named_subscripts=False):
+def greekify_model(model: Model, named_subscripts: bool = False):
     """Convert to using greek letters for all population parameters
 
     Parameters
@@ -654,25 +654,25 @@ def greekify_model(model, named_subscripts=False):
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = THETA(1)⋅WGT
-    TVV = THETA(2)⋅WGT
-          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
-    TVV = ⎩       TVV           otherwise
-               ETA(1)
+    TVV = ⎩      TVV           otherwise
+               ETA₁
     CL = TVCL⋅ℯ
-             ETA(2)
+             ETA₂
     V = TVV⋅ℯ
     S₁ = V
-    Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    Bolus(AMT, admid=1)
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
         A_CENTRAL
         ─────────
     F =     S₁
     W = F
-    Y = EPS(1)⋅W + F
+    Y = EPS₁⋅W + F
     IPRED = F
     IRES = DV - IPRED
             IRES
@@ -694,10 +694,10 @@ def greekify_model(model, named_subscripts=False):
     CL = TVCL⋅ℯ
              η₂
     V = TVV⋅ℯ
-    Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    Bolus(AMT, admid=1)
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
         A_CENTRAL
         ─────────
     F =     V
@@ -904,7 +904,7 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> get_rv_parameters(model, 'ETA(1)')
+    >>> get_rv_parameters(model, 'ETA_1')
     ['CL']
 
     See also
@@ -1106,7 +1106,7 @@ def _remove_covariate_effect_from_statements_recursive(
 
     if isinstance(expression, sympy.Piecewise):
         if any(map(lambda t: covariate in t[1].free_symbols, expression.args)):
-            # NOTE At least on condition depends on the covariate
+            # NOTE At least one condition depends on the covariate
             if all(
                 map(
                     lambda t: _is_univariate(
@@ -1232,7 +1232,7 @@ def _get_natural_assignments(before_odes):
 def _remap_compartmental_system(sset, natural_assignments):
     # Return compartmental system where rates that are synthetic assignments
     # have been substituted with their full definition (e.g K -> CL/V)
-    cs = sset.ode_system.to_compartmental_system()
+    cs = sset.ode_system
 
     assignments = list(_assignments(sset.before_odes))
     for assignment in reversed(assignments):
@@ -1259,7 +1259,8 @@ def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[sympy.Symbo
         return _pk_free_symbols_from_compartment(cs, cs.central_compartment)
 
     if kind == 'elimination':
-        return _pk_free_symbols_from_compartment(cs, cs.output_compartment)
+        free_symbols = _pk_free_symbols_from_compartment(cs, output)
+        return free_symbols
 
     raise ValueError(f'Cannot handle kind `{kind}`')
 
@@ -1274,7 +1275,6 @@ def _pk_free_symbols_from_compartment(
 
 
 def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Compartment]:
-
     central_component_vertices = strongly_connected_component_of(
         cs.central_compartment,
         lambda u: map(lambda flow: flow[0], cs.get_compartment_outflows(u)),
@@ -1284,11 +1284,7 @@ def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Com
     if compartment == cs.central_compartment:
         return central_component_vertices
 
-    flows = (
-        cs.get_compartment_inflows
-        if compartment == cs.output_compartment
-        else cs.get_compartment_outflows
-    )
+    flows = cs.get_compartment_inflows if compartment == output else cs.get_compartment_outflows
 
     return reachable_from(
         {compartment},
@@ -1302,7 +1298,7 @@ def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Com
 def _get_component_edges(cs: CompartmentalSystem, vertices: Set[Compartment]):
     return (
         ((u, v, rate) for v in vertices for u, rate in cs.get_compartment_inflows(v))
-        if cs.output_compartment in vertices
+        if output in vertices
         else ((u, v, rate) for u in vertices for v, rate in cs.get_compartment_outflows(u))
     )
 
@@ -1333,7 +1329,10 @@ def _get_component_free_symbols(
             yield from rate.free_symbols
 
     for node in vertices:
-        yield from node.free_symbols
+        if node == output:
+            yield from set()
+        else:
+            yield from node.free_symbols
 
 
 def _assignments(sset: Statements):
@@ -1442,3 +1441,70 @@ def _dependency_graph(assignments: Sequence[Assignment]):
                     dependencies[key] = (value - {symbol}) | previous_def
 
     return dependencies
+
+
+class ODEDisplayer:
+    def __init__(self, eqs, ics):
+        self._eqs = eqs
+        self._ics = ics
+
+    def __repr__(self):
+        if self._eqs is None:
+            return ""
+        a = []
+        for ode in self._eqs:
+            ode_str = sympy.pretty(ode)
+            a += ode_str.split('\n')
+        for key, value in self._ics.items():
+            ics_str = sympy.pretty(sympy.Eq(key, value))
+            a += ics_str.split('\n')
+        return bracket(a)
+
+    def _repr_latex_(self):
+        if self._eqs is None:
+            return ""
+        rows = []
+        for ode in self._eqs:
+            ode_repr = sympy.latex(ode, mul_symbol='dot')
+            rows.append(ode_repr)
+        for k, v in self._ics.items():
+            ics_eq = sympy.Eq(k, v)
+            ics_repr = sympy.latex(ics_eq, mul_symbol='dot')
+            rows.append(ics_repr)
+        return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
+
+
+def display_odes(model: Model):
+    """Displays the ordinary differential equation system
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    ODEDisplayer
+        A displayable object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> display_odes(model)
+    ⎧d                  -CL⋅A_CENTRAL(t)
+    ⎨──(A_CENTRAL(t)) = ─────────────────
+    ⎪dt                         V
+    ⎩A_CENTRAL(0) = AMT
+    <BLANKLINE>
+
+    """
+
+    odes = model.statements.ode_system
+    if odes is not None:
+        eqs = odes.eqs
+        ics = odes.ics
+    else:
+        eqs = None
+        ics = None
+    return ODEDisplayer(eqs, ics)

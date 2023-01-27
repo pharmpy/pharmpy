@@ -90,12 +90,10 @@ def create_record(chunk: str):
     if canonical_name:
         name = canonical_name
         record_class, record_parser_class = known_records[name]
-        record = record_class(content, record_parser_class)
+        root = record_parser_class(content).root
+        record = record_class(name, raw_name, root)
     else:
-        record = RawRecord(content)
         name = raw_name[1:]
-
-    record.name = name
-    record.raw_name = raw_name
+        record = RawRecord(content, name, raw_name)
 
     return record

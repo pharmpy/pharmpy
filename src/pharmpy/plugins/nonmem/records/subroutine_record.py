@@ -13,11 +13,9 @@ class SubroutineRecord(OptionRecord):
             advan = self.get_option_startswith('ADVAN')
         return advan
 
-    @advan.setter
-    def advan(self, value):
-        # FIXME: Need replace_option
-        self.remove_option_startswith('ADVAN')
-        self.append_option(value)
+    def set_advan(self, value):
+        newrec = self.remove_option_startswith('ADVAN').append_option(value)
+        return newrec
 
     @property
     def trans(self):

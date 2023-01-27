@@ -15,8 +15,8 @@ def test_add_etas(load_model_for_test, testdata):
     add_etas = load_model_for_test(testdata / 'nonmem' / 'qa' / 'add_etas_linbase.mod')
     res = calculate_results(orig, base, add_etas_model=add_etas, etas_added_to=['CL', 'V'])
     correct = """added,new_sd,orig_sd
-ETA(1),True,0.338974,0.333246
-ETA(2),True,0.449430,0.448917
+ETA_1,True,0.338974,0.333246
+ETA_2,True,0.449430,0.448917
 CL,False,0.010001,NaN
 V,False,0.010000,NaN
 """
@@ -35,9 +35,9 @@ def test_fullblock(load_model_for_test, testdata):
     fb = load_model_for_test(testdata / 'nonmem' / 'qa' / 'fullblock.mod')
     res = calculate_results(orig, base, fullblock_model=fb)
     correct = """,new,old
-"OMEGA(1,1)",0.486600,0.333246
-"OMEGA(2,1)",0.846728,NaN
-"OMEGA(2,2)",0.423262,0.448917
+"IVCL",0.486600,0.333246
+"OMEGA_2_1",0.846728,NaN
+"IVV",0.423262,0.448917
 """
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.fullblock_parameters, correct)
@@ -57,8 +57,8 @@ def test_boxcox(load_model_for_test, testdata):
     bc = load_model_for_test(testdata / 'nonmem' / 'qa' / 'boxcox.mod')
     res = calculate_results(orig, base, boxcox_model=bc)
     correct = """lambda,new_sd,old_sd
-ETA(1),-1.581460,0.296257,0.333246
-ETA(2),0.645817,0.429369,0.448917
+ETA_1,-1.581460,0.296257,0.333246
+ETA_2,0.645817,0.429369,0.448917
 """
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.boxcox_parameters, correct)
@@ -78,8 +78,8 @@ def test_tdist(load_model_for_test, testdata):
     td = load_model_for_test(testdata / 'nonmem' / 'qa' / 'tdist.mod')
     res = calculate_results(orig, base, tdist_model=td)
     correct = """df,new_sd,old_sd
-ETA(1),3.77,0.344951,0.333246
-ETA(2),3.77,0.400863,0.448917
+ETA_1,3.77,0.344951,0.333246
+ETA_2,3.77,0.400863,0.448917
 """
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.tdist_parameters, correct)
@@ -98,8 +98,8 @@ def test_iov(load_model_for_test, testdata):
     iov = load_model_for_test(testdata / 'nonmem' / 'qa' / 'iov.mod')
     res = calculate_results(orig, base, iov_model=iov)
     correct = """new_iiv_sd,orig_iiv_sd,iov_sd
-ETA(1),0.259560,0.333246,0.555607
-ETA(2),0.071481,0.448917,0.400451
+ETA_1,0.259560,0.333246,0.555607
+ETA_2,0.071481,0.448917,0.400451
 """
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.iov_parameters, correct)

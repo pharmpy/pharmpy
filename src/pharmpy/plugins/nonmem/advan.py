@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Callable, Optional, Tuple
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.expr.ode import canonical_ode_rhs
 from pharmpy.model import (
     Assignment,
     Bolus,
@@ -13,9 +12,10 @@ from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     DataInfo,
-    ExplicitODESystem,
     Infusion,
     ModelSyntaxError,
+    output,
+    to_compartmental_system,
 )
 
 if TYPE_CHECKING:
@@ -41,28 +41,33 @@ def _compartmental_model(
     if advan == 'ADVAN1':
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
-        central = Compartment(
-            'CENTRAL', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+        central = Compartment.create(
+            'CENTRAL',
+            dose=dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
-        output = Compartment('OUTPUT')
         cb.add_compartment(central)
-        cb.add_compartment(output)
         cb.add_flow(central, output, _advan1and2_trans(trans))
         ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
     elif advan == 'ADVAN2':
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
-        depot = Compartment(
-            'DEPOT', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+        depot = Compartment.create(
+            'DEPOT',
+            dose=dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
-        central = Compartment(
-            'CENTRAL', None, _get_alag(control_stream, 2), _get_bioavailability(control_stream, 2)
+        central = Compartment.create(
+            'CENTRAL',
+            dose=None,
+            lag_time=_get_alag(control_stream, 2),
+            bioavailability=_get_bioavailability(control_stream, 2),
         )
-        output = Compartment('OUTPUT')
         cb.add_compartment(depot)
         cb.add_compartment(central)
-        cb.add_compartment(output)
         cb.add_flow(central, output, _advan1and2_trans(trans))
         cb.add_flow(depot, central, sympy.Symbol('KA'))
         ass = _f_link_assignment(control_stream, central, 2)
@@ -70,19 +75,20 @@ def _compartmental_model(
     elif advan == 'ADVAN3':
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
-        central = Compartment(
-            'CENTRAL', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+        central = Compartment.create(
+            'CENTRAL',
+            dose=dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
-        peripheral = Compartment(
+        peripheral = Compartment.create(
             'PERIPHERAL',
-            None,
-            _get_alag(control_stream, 2),
-            _get_bioavailability(control_stream, 2),
+            dose=None,
+            lag_time=_get_alag(control_stream, 2),
+            bioavailability=_get_bioavailability(control_stream, 2),
         )
-        output = Compartment('OUTPUT')
         cb.add_compartment(central)
         cb.add_compartment(peripheral)
-        cb.add_compartment(output)
         k, k12, k21 = _advan3_trans(trans)
         cb.add_flow(central, output, k)
         cb.add_flow(central, peripheral, k12)
@@ -92,23 +98,27 @@ def _compartmental_model(
     elif advan == 'ADVAN4':
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
-        depot = Compartment(
-            'DEPOT', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+        depot = Compartment.create(
+            'DEPOT',
+            dose=dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
-        central = Compartment(
-            'CENTRAL', None, _get_alag(control_stream, 2), _get_bioavailability(control_stream, 2)
+        central = Compartment.create(
+            'CENTRAL',
+            dose=None,
+            lag_time=_get_alag(control_stream, 2),
+            bioavailability=_get_bioavailability(control_stream, 2),
         )
-        peripheral = Compartment(
+        peripheral = Compartment.create(
             'PERIPHERAL',
-            None,
-            _get_alag(control_stream, 3),
-            _get_bioavailability(control_stream, 3),
+            dose=None,
+            lag_time=_get_alag(control_stream, 3),
+            bioavailability=_get_bioavailability(control_stream, 3),
         )
-        output = Compartment('OUTPUT')
         cb.add_compartment(depot)
         cb.add_compartment(central)
         cb.add_compartment(peripheral)
-        cb.add_compartment(output)
         k, k23, k32, ka = _advan4_trans(trans)
         cb.add_flow(depot, central, ka)
         cb.add_flow(central, output, k)
@@ -139,7 +149,6 @@ def _compartmental_model(
                 deffirst_dose = (name, i)
             comp_names.append(name)
 
-        comp_names.append('OUTPUT')
         comp_map = {name: i for i, name in enumerate(comp_names, 1)}
 
         if defobs is None:
@@ -159,36 +168,36 @@ def _compartmental_model(
         dose = dosing(di, dataset, defdose[1])
         obscomp = None
         for i, name in enumerate(comp_names):
-            if i == len(comp_names) - 1:
-                output = Compartment(name)
-                cb.add_compartment(output)
-                compartments.append(output)
-                break
             if name == defdose[0]:
                 curdose = dose
             else:
                 curdose = None
-            comp = Compartment(
-                name, curdose, _get_alag(control_stream, i), _get_bioavailability(control_stream, i)
+            comp = Compartment.create(
+                name,
+                dose=curdose,
+                lag_time=_get_alag(control_stream, i),
+                bioavailability=_get_bioavailability(control_stream, i),
             )
             cb.add_compartment(comp)
             compartments.append(comp)
             if name == defobs[0]:
                 obscomp = comp
+        compartments.append(output)
 
         assert obscomp is not None
-        for from_n, to_n, rate in _find_rates(control_stream, len(comp_names)):
+        for from_n, to_n, rate in _find_rates(control_stream, len(compartments)):
             cb.add_flow(compartments[from_n - 1], compartments[to_n - 1], rate)
         ass = _f_link_assignment(control_stream, obscomp, defobs[1])
     elif advan == 'ADVAN10':
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
-        central = Compartment(
-            'CENTRAL', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+        central = Compartment.create(
+            'CENTRAL',
+            dose=dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
-        output = Compartment('OUTPUT')
         cb.add_compartment(central)
-        cb.add_compartment(output)
         vm = sympy.Symbol('VM')
         km = sympy.Symbol('KM')
         t = sympy.Symbol('t')
@@ -198,26 +207,27 @@ def _compartmental_model(
     elif advan == 'ADVAN11':
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
-        central = Compartment(
-            'CENTRAL', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+        central = Compartment.create(
+            'CENTRAL',
+            dose=dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
-        per1 = Compartment(
+        per1 = Compartment.create(
             'PERIPHERAL1',
-            None,
-            _get_alag(control_stream, 2),
-            _get_bioavailability(control_stream, 2),
+            dose=None,
+            lag_time=_get_alag(control_stream, 2),
+            bioavailability=_get_bioavailability(control_stream, 2),
         )
-        per2 = Compartment(
+        per2 = Compartment.create(
             'PERIPHERAL2',
-            None,
-            _get_alag(control_stream, 3),
-            _get_bioavailability(control_stream, 3),
+            dose=None,
+            lag_time=_get_alag(control_stream, 3),
+            bioavailability=_get_bioavailability(control_stream, 3),
         )
-        output = Compartment('OUTPUT')
         cb.add_compartment(central)
         cb.add_compartment(per1)
         cb.add_compartment(per2)
-        cb.add_compartment(output)
         k, k12, k21, k13, k31 = _advan11_trans(trans)
         cb.add_flow(central, output, k)
         cb.add_flow(central, per1, k12)
@@ -229,30 +239,34 @@ def _compartmental_model(
     elif advan == 'ADVAN12':
         dose = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
-        depot = Compartment(
-            'DEPOT', dose, _get_alag(control_stream, 1), _get_bioavailability(control_stream, 1)
+        depot = Compartment.create(
+            'DEPOT',
+            dose=dose,
+            lag_time=_get_alag(control_stream, 1),
+            bioavailability=_get_bioavailability(control_stream, 1),
         )
-        central = Compartment(
-            'CENTRAL', None, _get_alag(control_stream, 2), _get_bioavailability(control_stream, 2)
+        central = Compartment.create(
+            'CENTRAL',
+            dose=None,
+            lag_time=_get_alag(control_stream, 2),
+            bioavailability=_get_bioavailability(control_stream, 2),
         )
-        per1 = Compartment(
+        per1 = Compartment.create(
             'PERIPHERAL1',
-            None,
-            _get_alag(control_stream, 3),
-            _get_bioavailability(control_stream, 3),
+            dose=None,
+            lag_time=_get_alag(control_stream, 3),
+            bioavailability=_get_bioavailability(control_stream, 3),
         )
-        per2 = Compartment(
+        per2 = Compartment.create(
             'PERIPHERAL2',
-            None,
-            _get_alag(control_stream, 4),
-            _get_bioavailability(control_stream, 4),
+            dose=None,
+            lag_time=_get_alag(control_stream, 4),
+            bioavailability=_get_bioavailability(control_stream, 4),
         )
-        output = Compartment('OUTPUT')
         cb.add_compartment(depot)
         cb.add_compartment(central)
         cb.add_compartment(per1)
         cb.add_compartment(per2)
-        cb.add_compartment(output)
         k, k23, k32, k24, k42, ka = _advan12_trans(trans)
         cb.add_flow(depot, central, ka)
         cb.add_flow(central, output, k)
@@ -267,6 +281,7 @@ def _compartmental_model(
 
         subs_dict, comp_names = {}, {}
         comps = [c for c, _ in rec_model.compartments()]
+        func_to_name = {}
 
         t = sympy.Symbol('t')
         for i, c in enumerate(comps, 1):
@@ -275,50 +290,26 @@ def _compartmental_model(
             subs_dict[f'DADT ({i})'] = sympy.Derivative(a(t))
             subs_dict[f'A({i})'] = a(t)
             comp_names[f'A({i})'] = a
+            func_to_name[a] = c
 
         sset = des.statements.subs(subs_dict)
 
-        a_out = sympy.Function('A_OUTPUT')
-        dose = dosing(di, dataset, 1)
+        eqs = [sympy.Eq(s.symbol, s.expression) for s in sset if not s.symbol.is_Symbol]
 
-        ics = {v(0): sympy.Integer(0) for v in comp_names.values()}
-        ics[a_out(0)] = sympy.Integer(0)
-        ics[comp_names['A(1)'](0)] = dose.amount
+        cs = to_compartmental_system(func_to_name, eqs)
+        cb = CompartmentalSystemBuilder(cs)
 
-        dadt_dose = sset.find_assignment(subs_dict['DADT(1)'])
+        for i, comp_name in enumerate(comps, start=1):
+            comp = cs.find_compartment(comp_name)
+            if i == 1:
+                dose = dosing(di, dataset, 1)  # FIXME: ONly one does to 1st compartment
+                cb.set_dose(comp, dose)
+            f = _get_bioavailability(control_stream, i)
+            cb.set_bioavailability(comp, f)
+            alag = _get_alag(control_stream, i)
+            cb.set_lag_time(comp, alag)
 
-        if len(comps) > 1:
-            dadt_rest = [
-                sympy.Eq(s.symbol, s.expression)
-                for s in sset
-                if s != dadt_dose and not s.symbol.is_Symbol
-            ]
-            lhs_sum = dadt_dose.expression
-            for eq in dadt_rest:
-                lhs_sum += eq.rhs
-            dadt_out = sympy.Eq(sympy.Derivative(a_out(t)), canonical_ode_rhs(-lhs_sum))
-            dadt_rest.append(dadt_out)
-        else:
-            dadt_rest = [sympy.Eq(sympy.Derivative(a_out(t)), dadt_dose.expression * -1)]
-
-        if isinstance(dose, Infusion):
-            if dose.duration:
-                rate = dose.amount / dose.duration
-                duration = dose.duration
-            else:
-                rate = dose.rate
-                duration = dose.amount / dose.rate
-
-            dose_symb = dadt_dose.symbol
-            dose_expr = dadt_dose.expression + sympy.Piecewise((rate, duration > t), (0, True))
-            dadt_dose = Assignment(dose_symb, dose_expr)
-            ics[comp_names['A(1)'](0)] = sympy.Integer(0)
-
-        eqs = (sympy.Eq(dadt_dose.symbol, dadt_dose.expression), *dadt_rest)
-
-        ode = ExplicitODESystem(eqs, ics)
-
-        # NOTE Search for DEFOBSERVATION, default to first
+        # Search for DEFOBSERVATION, default to first
         it = iter(rec_model.compartments())
         defobs = (next(it)[0], 1)
         for i, (name, opts) in enumerate(it, start=2):
@@ -326,7 +317,8 @@ def _compartmental_model(
                 defobs = (name, i)
 
         ass = _f_link_assignment(control_stream, sympy.Symbol(f'A_{defobs[0]}'), defobs[1])
-        return ode, ass, None
+        odes = CompartmentalSystem(cb)
+        return odes, ass, None
     else:
         return None
     return CompartmentalSystem(cb), ass, comp_map

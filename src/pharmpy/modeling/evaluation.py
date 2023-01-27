@@ -277,18 +277,18 @@ def evaluate_eta_gradient(
     >>> model = load_example_model("pheno_linear")
     >>> etas = model.modelfit_results.individual_estimates
     >>> evaluate_eta_gradient(model, etas=etas)
-         dF/dETA(1)  dF/dETA(2)
-    0     -0.159537  -17.609116
-    1     -9.325893  -19.562289
-    2     -0.104417  -11.346161
-    3     -4.452951  -16.682310
-    4    -10.838840  -18.981836
-    ..          ...         ...
-    150   -5.424423  -19.973013
-    151  -14.497185  -17.344797
-    152   -0.198714  -22.697161
-    153   -7.987731  -23.941806
-    154  -15.817067  -22.309945
+         dF/dETA_1  dF/dETA_2
+    0     -0.159537 -17.609116
+    1     -9.325893 -19.562289
+    2     -0.104417 -11.346161
+    3     -4.452951 -16.682310
+    4    -10.838840 -18.981836
+    ..          ...        ...
+    150   -5.424423 -19.973013
+    151  -14.497185 -17.344797
+    152   -0.198714 -22.697161
+    153   -7.987731 -23.941806
+    154  -15.817067 -22.309945
     <BLANKLINE>
     [155 rows x 2 columns]
 
@@ -365,7 +365,7 @@ def evaluate_epsilon_gradient(
     >>> model = load_example_model("pheno_linear")
     >>> etas = model.modelfit_results.individual_estimates
     >>> evaluate_epsilon_gradient(model, etas=etas)
-         dY/dEPS(1)
+         dY/dEPS_1
     0     17.771084
     1     28.881859
     2     11.441728

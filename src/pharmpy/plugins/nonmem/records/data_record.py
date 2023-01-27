@@ -103,7 +103,8 @@ class DataRecord(OptionRecord):
                 raise ValueError('Cannot have both " and \' in ignore character.')
             char_node = AttrTree.create('char', [{'CHAR': char}])
             node = AttrTree.create('ignchar', [{'IGNORE': 'IGNORE'}, {'EQUALS': '='}, char_node])
-            self.append_option_node(node)
+            newrec = self.append_option_node(node)
+            self.root = newrec.root  # FIXME!
 
     def ignore_character_from_header(self, label):
         """Set ignore character from a header label

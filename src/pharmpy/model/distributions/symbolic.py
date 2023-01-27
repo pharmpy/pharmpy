@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Collection, Hashable, Sized
 from math import sqrt
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.deps import numpy as np
@@ -19,7 +19,7 @@ from .numeric import NumericDistribution
 
 class Distribution(Sized, Hashable, Immutable):
     @abstractmethod
-    def derive(self, level: Optional[str] = None, **kwargs):
+    def replace(self, **kwargs):
         pass
 
     @property
@@ -121,24 +121,14 @@ class NormalDistribution(Distribution):
             raise ValueError("Variance of normal distribution must be non-negative")
         return cls(name, level, mean, variance)
 
-    def derive(self, name=None, level=None, mean=None, variance=None):
-        if name is None:
-            name = self._name
-        if level is None:
-            level = self._level
-        else:
-            level = level.upper()
-        if mean is None:
-            mean = self._mean
-        else:
-            mean = parse_expr(mean)
-        if variance is None:
-            variance = self._variance
-        else:
-            variance = parse_expr(variance)
-            if sympy.ask(sympy.Q.nonnegative(variance)) is False:
-                raise ValueError("Variance of normal distribution must be non-negative")
-        return NormalDistribution(name, level, mean, variance)
+    def replace(self, **kwargs):
+        """Replace properties and create a new NormalDistribution"""
+        name = kwargs.get('name', self._name)
+        level = kwargs.get('level', self._level)
+        mean = kwargs.get('mean', self._mean)
+        variance = kwargs.get('variance', self._variance)
+        new = NormalDistribution.create(name, level, mean, variance)
+        return new
 
     @property
     def names(self):
@@ -211,7 +201,11 @@ class NormalDistribution(Distribution):
 
         else:
             if isinstance(index, slice):
-                index = range(index.start, index.stop, index.step)
+                index = list(
+                    range(index.start, index.stop, index.step if index.step is not None else 1)
+                )
+                if index != [0]:
+                    raise IndexError(index)
 
             if isinstance(index, Collection):
                 if len(index) != 1 or (self._name not in index and 0 not in index):
@@ -320,28 +314,14 @@ class JointNormalDistribution(Distribution):
             )
         return cls(names, level, mean, variance)
 
-    def derive(self, names=None, level=None, mean=None, variance=None):
-        if names is None:
-            names = self._names
-        else:
-            names = tuple(names)
-        if level is None:
-            level = self._level
-        else:
-            level = level.upper()
-        if mean is None:
-            mean = self._mean
-        else:
-            mean = sympy.ImmutableMatrix(mean)
-        if variance is None:
-            variance = self._variance
-        else:
-            variance = sympy.ImmutableMatrix(variance)
-            if variance.is_positive_semidefinite is False:
-                raise ValueError(
-                    'Covariance matrix of joint normal distribution is not positive semidefinite'
-                )
-        return JointNormalDistribution(names, level, mean, variance)
+    def replace(self, **kwargs):
+        """Replace properties and create a new JointNormalDistribution"""
+        names = kwargs.get('names', self._names)
+        level = kwargs.get('level', self._level)
+        mean = kwargs.get('mean', self._mean)
+        variance = kwargs.get('variance', self._variance)
+        new = JointNormalDistribution.create(names, level, mean, variance)
+        return new
 
     @property
     def names(self):
@@ -421,7 +401,8 @@ class JointNormalDistribution(Distribution):
 
         else:
             if isinstance(index, slice):
-                index = range(index.start, index.stop, index.step)
+                index = range(index.start, index.stop, index.step if index.step is not None else 1)
+                index = [self._names[i] for i in index]
 
             if isinstance(index, Collection):
                 if len(index) == 0 or len(index) > len(self._names):
@@ -451,8 +432,8 @@ class JointNormalDistribution(Distribution):
             else:
                 raise KeyError(index)
 
-        mean = self._mean[index, [0]] if isinstance(index, int) else self._mean[index]
-        variance = self._variance[index][index]
+        mean = self._mean[index, [0]] if isinstance(index, int) else self._mean[index, :]
+        variance = self._variance[index, index]
 
         if len(names) == 1:
             return NormalDistribution(names[0], self._level, mean, variance)

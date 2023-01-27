@@ -1,7 +1,9 @@
 import math
+from typing import Dict, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.model import Model
 
 
 class UCPScale:
@@ -16,7 +18,7 @@ class UCPScale:
         return "<UCPScale object>"
 
 
-def calculate_ucp_scale(model):
+def calculate_ucp_scale(model: Model):
     """Calculate a scale for unconstrained parameters for a model
 
     The UCPScale object can be used to calculate unconstrained parameters
@@ -80,14 +82,16 @@ def _scale_matrix(A):
     return m_scale.T
 
 
-def calculate_parameters_from_ucp(model, scale, ucps):
+def calculate_parameters_from_ucp(
+    model: Model, scale: UCPScale, ucps: Union[pd.Series, Dict[str, float]]
+):
     """Scale parameter values from ucp to normal scale
 
     Parameters
     ----------
     model : Model
         Pharmpy model
-    scale : UCPSCale
+    scale : UCPScale
         A parameter scale
     ucps : pd.Series or dict
         Series of parameter values
@@ -102,15 +106,15 @@ def calculate_parameters_from_ucp(model, scale, ucps):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> scale = calculate_ucp_scale(model)
-    >>> values = {'THETA(1)': 0.1, 'THETA(2)': 0.1, 'THETA(3)': 0.1, \
-                  'OMEGA(1,1)': 0.1, 'OMEGA(2,2)': 0.1, 'SIGMA(1,1)': 0.1}
+    >>> values = {'PTVCL': 0.1, 'PTVV': 0.1, 'THETA_3': 0.1, \
+                  'IVCL': 0.1, 'IVV': 0.1, 'SIGMA_1_1': 0.1}
     >>> calculate_parameters_from_ucp(model, scale, values)
-    THETA(1)                  0.004693
-    THETA(2)                   1.00916
-    THETA(3)                       0.1
-    OMEGA(1,1)               0.0309626
-    OMEGA(2,2)    0.031127999999999996
-    SIGMA(1,1)    0.013241000000000001
+    PTVCL                    0.004693
+    PTVV                      1.00916
+    THETA_3                       0.1
+    IVCL                    0.0309626
+    IVV          0.031127999999999996
+    SIGMA_1_1    0.013241000000000001
     dtype: object
 
     See also

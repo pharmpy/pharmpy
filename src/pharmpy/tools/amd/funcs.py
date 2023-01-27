@@ -18,6 +18,7 @@ from pharmpy.model import (
     Parameters,
     RandomVariables,
     Statements,
+    output,
 )
 from pharmpy.modeling import (
     add_iiv,
@@ -40,7 +41,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     iiv_cl = Parameter('IIV_CL', 0.1)
     iiv_vc = Parameter('IIV_VC', 0.1)
 
-    params = Parameters([pop_cl, pop_vc, iiv_cl, iiv_vc])
+    params = Parameters((pop_cl, pop_vc, iiv_cl, iiv_vc))
 
     eta_cl_name = 'eta_cl'
     eta_cl = NormalDistribution.create(eta_cl_name, 'iiv', 0, iiv_cl.symbol)
@@ -54,10 +55,8 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     vc_ass = Assignment(VC, pop_vc.symbol * sympy.exp(sympy.Symbol(eta_vc_name)))
 
     cb = CompartmentalSystemBuilder()
-    central = Compartment('CENTRAL', dosing(di, lambda: df, 1))
+    central = Compartment.create('CENTRAL', dose=dosing(di, lambda: df, 1))
     cb.add_compartment(central)
-    output = Compartment('OUTPUT')
-    cb.add_compartment(output)
     cb.add_flow(central, output, CL / VC)
 
     ipred = Assignment(sympy.Symbol('IPRED'), central.amount / VC)
@@ -65,14 +64,15 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
 
     stats = Statements([cl_ass, vc_ass, CompartmentalSystem(cb), ipred, y_ass])
 
-    est = EstimationStep(
+    est = EstimationStep.create(
         "FOCE",
         interaction=True,
         maximum_evaluations=99999,
         predictions=['CIPREDI'],
         residuals=['CWRES'],
+        tool_options={'SADDLE_RESET': 1},
     )
-    eststeps = EstimationSteps([est])
+    eststeps = EstimationSteps.create([est])
 
     model = Model()
     model.name = 'start'
@@ -106,31 +106,34 @@ def _create_default_datainfo(path):
     datainfo_path = path.with_suffix('.datainfo')
     if datainfo_path.is_file():
         di = DataInfo.read_json(datainfo_path)
-        di = di.derive(path=path)
+        di = di.replace(path=path)
     else:
         colnames = list(pd.read_csv(path, nrows=0))
         column_info = []
         for colname in colnames:
-            info = ColumnInfo(colname)
             if colname == 'ID' or colname == 'L1':
-                info = ColumnInfo(colname, type='id', scale='nominal', datatype='int32')
+                info = ColumnInfo.create(colname, type='id', scale='nominal', datatype='int32')
             elif colname == 'DV':
-                info = ColumnInfo(colname, type='dv')
+                info = ColumnInfo.create(colname, type='dv')
             elif colname == 'TIME':
                 if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
                     datatype = 'nmtran-time'
                 else:
                     datatype = 'float64'
-                info = ColumnInfo(colname, type='idv', scale='ratio', datatype=datatype)
+                info = ColumnInfo.create(colname, type='idv', scale='ratio', datatype=datatype)
             elif colname == 'EVID':
-                info = ColumnInfo(colname, type='event', scale='nominal')
+                info = ColumnInfo.create(colname, type='event', scale='nominal')
             elif colname == 'MDV':
                 if 'EVID' in colnames:
-                    info = ColumnInfo(colname, type='mdv')
+                    info = ColumnInfo.create(colname, type='mdv')
                 else:
-                    info = ColumnInfo(colname, type='event', scale='nominal', datatype='int32')
+                    info = ColumnInfo.create(
+                        colname, type='event', scale='nominal', datatype='int32'
+                    )
             elif colname == 'AMT':
-                info = ColumnInfo(colname, type='dose', scale='ratio')
+                info = ColumnInfo.create(colname, type='dose', scale='ratio')
+            else:
+                info = ColumnInfo.create(colname)
             column_info.append(info)
-        di = DataInfo(column_info, path=path, separator=',')
+        di = DataInfo.create(column_info, path=path, separator=',')
     return di

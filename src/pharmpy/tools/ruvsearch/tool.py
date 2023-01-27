@@ -246,7 +246,7 @@ def _create_base_model(input_model, current_iteration):
     theta = Parameter('theta', 0.1)
     omega = Parameter('omega', 0.01, lower=0)
     sigma = Parameter('sigma', 1, lower=0)
-    params = Parameters([theta, omega, sigma])
+    params = Parameters((theta, omega, sigma))
     base_model.parameters = params
 
     eta_name = 'eta'
@@ -268,8 +268,8 @@ def _create_base_model(input_model, current_iteration):
     base_model.description = base_model.name
     base_model.dataset = _create_dataset(input_model)
 
-    est = EstimationStep('foce', interaction=True, maximum_evaluations=9999)
-    base_model.estimation_steps = EstimationSteps([est])
+    est = EstimationStep.create('foce', interaction=True, maximum_evaluations=9999)
+    base_model.estimation_steps = EstimationSteps.create([est])
     return base_model
 
 

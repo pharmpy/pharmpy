@@ -41,7 +41,7 @@ class ColumnInfo(Immutable):
         Descriptor (kind) of data
     """
 
-    _all_types = [
+    _all_types = (
         'id',
         'dv',
         'idv',
@@ -55,9 +55,10 @@ class ColumnInfo(Immutable):
         'covariate',
         'mdv',
         'compartment',
-    ]
-    _all_scales = ['nominal', 'ordinal', 'interval', 'ratio']
-    _all_dtypes = [
+        'admid',
+    )
+    _all_scales = ('nominal', 'ordinal', 'interval', 'ratio')
+    _all_dtypes = (
         'int8',
         'int16',
         'int32',
@@ -73,8 +74,8 @@ class ColumnInfo(Immutable):
         'nmtran-time',
         'nmtran-date',
         'str',
-    ]
-    _all_descriptors = [
+    )
+    _all_descriptors = (
         None,
         'age',
         'body weight',
@@ -83,7 +84,7 @@ class ColumnInfo(Immutable):
         'time after dose',
         'plasma concentration',
         'subject identifier',
-    ]
+    )
 
     @staticmethod
     def convert_pd_dtype_to_datatype(dtype):
@@ -138,6 +139,29 @@ class ColumnInfo(Immutable):
         self,
         name,
         type='unknown',
+        unit=sympy.Integer(1),
+        scale='ratio',
+        continuous=None,
+        categories=None,
+        drop=False,
+        datatype="float64",
+        descriptor=None,
+    ):
+        self._name = name
+        self._type = type
+        self._unit = unit
+        self._scale = scale
+        self._continuous = continuous
+        self._categories = categories
+        self._drop = drop
+        self._datatype = datatype
+        self._descriptor = descriptor
+
+    @classmethod
+    def create(
+        cls,
+        name,
+        type='unknown',
         unit=None,
         scale='ratio',
         continuous=None,
@@ -153,41 +177,44 @@ class ColumnInfo(Immutable):
                 continuous = False
         if continuous is None:
             continuous = True
-        self._continuous = continuous
         if not isinstance(name, str):
             raise TypeError("Column name must be a string")
-        self._name = name
         if type not in ColumnInfo._all_types:
             raise TypeError(f"Unknown column type {type}")
-        self._type = type
         if scale not in ColumnInfo._all_scales:
             raise TypeError(
                 f"Unknown scale of measurement {scale}. Only {ColumnInfo._all_scales} are possible."
             )
-        self._unit = sympy.Integer(1) if unit is None else parse_units(unit)
-        self._scale = scale
-        self._continuous = continuous
-        self._categories = categories  # dict from value to descriptive string
-        self._drop = drop
+        unit = sympy.Integer(1) if unit is None else parse_units(unit)
         if datatype not in ColumnInfo._all_dtypes:
             raise ValueError(
                 f"{datatype} is not a valid datatype. Valid datatypes are {ColumnInfo._all_dtypes}"
             )
-        self._datatype = datatype
         if descriptor not in ColumnInfo._all_descriptors:
             raise TypeError(f"Unknown column descriptor {descriptor}")
-        self._descriptor = descriptor
+        return cls(
+            name=name,
+            type=type,
+            unit=unit,
+            scale=scale,
+            continuous=continuous,
+            categories=categories,
+            drop=drop,
+            datatype=datatype,
+            descriptor=descriptor,
+        )
 
-    def derive(self, **kwargs):
-        """Derive a new ColumnInfo with new properties"""
+    def replace(self, **kwargs):
+        """Replace properties and create a new ColumnInfo"""
         d = {key[1:]: value for key, value in self.__dict__.items()}
         d.update(kwargs)
-        new = ColumnInfo(**d)
+        new = ColumnInfo.create(**d)
         return new
 
     def __eq__(self, other):
         return (
-            self._name == other._name
+            isinstance(other, ColumnInfo)
+            and self._name == other._name
             and self._type == other._type
             and self._unit == other._unit
             and self._scale == other._scale
@@ -220,6 +247,7 @@ class ColumnInfo(Immutable):
         ss            Steady state dosing
         event         0 = observation
         mdv           0 = DV is observation value, 1 = DV is missing
+        admid         Administration ID
         compartment   Compartment information (not yet exactly specified)
         unknown       Unkown type. This will be the default for columns that hasn't been
                       assigned a type
@@ -326,10 +354,10 @@ class ColumnInfo(Immutable):
         Examples
         --------
         >>> from pharmpy.model import ColumnInfo
-        >>> col1 = ColumnInfo("WGT", scale='ratio')
+        >>> col1 = ColumnInfo.create("WGT", scale='ratio')
         >>> col1.is_categorical()
         False
-        >>> col2 = ColumnInfo("ID", scale='nominal')
+        >>> col2 = ColumnInfo.create("ID", scale='nominal')
         >>> col2.is_categorical()
         True
 
@@ -351,10 +379,10 @@ class ColumnInfo(Immutable):
         Examples
         --------
         >>> from pharmpy.model import ColumnInfo
-        >>> col1 = ColumnInfo("WGT", scale='ratio')
+        >>> col1 = ColumnInfo.create("WGT", scale='ratio')
         >>> col1.is_numerical()
         True
-        >>> col2 = ColumnInfo("ID", scale='nominal')
+        >>> col2 = ColumnInfo.create("ID", scale='nominal')
         >>> col2.is_numerical()
         False
 
@@ -410,49 +438,63 @@ class DataInfo(Sequence, Immutable):
         separator: str = ',',
         force_absolute_path: bool = True,
     ):
+        self._columns = columns
+        self._path = path
+        self._separator = separator
+        self._force_absolute_path = force_absolute_path
+
+    @classmethod
+    def create(
+        cls,
+        columns: Optional[Union[TypingSequence[ColumnInfo], TypingSequence[str]]] = None,
+        path: Optional[Union[str, Path]] = None,
+        separator: str = ',',
+        force_absolute_path: bool = True,
+    ):
         if columns is None:
-            self._columns: Tuple[ColumnInfo, ...] = ()
+            columns: Tuple[ColumnInfo, ...] = ()
         elif len(columns) > 0 and isinstance(columns[0], str):
-            self._columns = tuple(map(ColumnInfo, columns))
+            columns = tuple(ColumnInfo.create(col) for col in columns)
         else:
-            self._columns = cast(Tuple[ColumnInfo, ...], tuple(columns))
+            columns = cast(Tuple[ColumnInfo, ...], tuple(columns))
         if path is not None:
             path = Path(path)
         assert not force_absolute_path or path is None or path.is_absolute()
-        self._path = path
-        self._separator = separator
+        return cls(columns=columns, path=path, separator=separator)
 
-    def derive(self, **kwargs):
+    def replace(self, **kwargs):
         columns = kwargs.get('columns', self._columns)
         path = kwargs.get('path', self._path)
         separator = kwargs.get('separator', self._separator)
-        return DataInfo(columns=columns, path=path, separator=separator)
+        return DataInfo.create(columns=columns, path=path, separator=separator)
 
     def __add__(self, other):
         if isinstance(other, DataInfo):
-            return DataInfo(
+            return DataInfo.create(
                 columns=self._columns + other._columns, path=self.path, separator=self.separator
             )
         elif isinstance(other, ColumnInfo):
-            return DataInfo(
+            return DataInfo.create(
                 columns=self._columns + (other,), path=self.path, separator=self.separator
             )
         else:
-            return DataInfo(
+            return DataInfo.create(
                 columns=self._columns + tuple(other), path=self.path, separator=self.separator
             )
 
     def __radd__(self, other):
         if isinstance(other, ColumnInfo):
-            return DataInfo(
+            return DataInfo.create(
                 columns=(other,) + self._columns, path=self.path, separator=self.separator
             )
         else:
-            return DataInfo(
+            return DataInfo.create(
                 columns=tuple(other) + self._columns, path=self.path, separator=self.separator
             )
 
     def __eq__(self, other):
+        if not isinstance(other, DataInfo):
+            return False
         if len(self) != len(other):
             return False
         for col1, col2 in zip(self, other):
@@ -488,9 +530,9 @@ class DataInfo(Sequence, Immutable):
             for ind in i:
                 index = self._getindex(ind)
                 cols.append(self._columns[index])
-            return DataInfo(columns=cols)
+            return DataInfo.create(columns=cols)
         if isinstance(i, slice):
-            return DataInfo(self._columns[i], path=self._path, separator=self._separator)
+            return DataInfo.create(self._columns[i], path=self._path, separator=self._separator)
 
         return self._columns[self._getindex(i)]
 
@@ -561,7 +603,7 @@ class DataInfo(Sequence, Immutable):
                 newcols.append(cur)
             else:
                 newcols.append(col)
-        return self.derive(columns=newcols)
+        return self.replace(columns=newcols)
 
     @property
     def id_column(self):
@@ -591,9 +633,9 @@ class DataInfo(Sequence, Immutable):
         else:
             raise IndexError(f"No column {name} in DataInfo")
 
-        newcol = mycol.derive(type=type)
+        newcol = mycol.replace(type=type)
         cols = self._columns[0:ind] + (newcol,) + self._columns[ind + 1 :]
-        return DataInfo(cols, path=self._path, separator=self._separator)
+        return DataInfo.create(cols, path=self._path, separator=self._separator)
 
     def set_id_column(self, name):
         return self._set_column_type(name, 'id')
@@ -672,9 +714,9 @@ class DataInfo(Sequence, Immutable):
             )
         newcols = []
         for v, col in zip(value, self._columns):
-            newcol = col.derive(type=v)
+            newcol = col.replace(type=v)
             newcols.append(newcol)
-        return DataInfo(columns=newcols, path=self._path, separator=self._separator)
+        return DataInfo.create(columns=newcols, path=self._path, separator=self._separator)
 
     def get_dtype_dict(self):
         """Create a dictionary from column names to pandas dtypes
@@ -762,7 +804,7 @@ class DataInfo(Sequence, Immutable):
         d = json.loads(s)
         columns = []
         for col in d['columns']:
-            ci = ColumnInfo(
+            ci = ColumnInfo.create(
                 name=col['name'],
                 type=col.get('type', 'unknown'),
                 scale=col['scale'],
@@ -778,7 +820,7 @@ class DataInfo(Sequence, Immutable):
         if path:
             path = Path(path)
         separator = d.get('separator', ',')
-        di = DataInfo(columns, path=path, separator=separator, force_absolute_path=False)
+        di = DataInfo.create(columns, path=path, separator=separator, force_absolute_path=False)
         return di
 
     @staticmethod
@@ -801,7 +843,7 @@ class DataInfo(Sequence, Immutable):
         return (
             di
             if di.path is None or di.path.is_absolute()
-            else di.derive(path=path_absolute(Path(path).parent / di.path))
+            else di.replace(path=path_absolute(Path(path).parent / di.path))
         )
 
     def __repr__(self):
@@ -838,7 +880,7 @@ class TypeIndexer:
         cols = [col for col in self._obj if col.type == i and not col.drop]
         if not cols:
             raise IndexError(f"No columns of type {i} available")
-        return DataInfo(cols)
+        return DataInfo.create(cols)
 
 
 class DescriptorIndexer:
@@ -849,4 +891,4 @@ class DescriptorIndexer:
         cols = [col for col in self._obj if col.descriptor == i and not col.drop]
         if not cols:
             raise IndexError(f"No columns with descriptor {i} available")
-        return DataInfo(cols)
+        return DataInfo.create(cols)

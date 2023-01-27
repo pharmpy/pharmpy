@@ -20,7 +20,7 @@ def get_lag_times(model: Model):
     d = {}
     for name in names:
         cmt = odes.find_compartment(name)
-        if cmt.lag_time:
+        if cmt.lag_time != 0:
             d[name] = cmt.lag_time
     return d
 

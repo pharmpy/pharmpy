@@ -42,6 +42,24 @@ def generate_report(rst_path, results_path):
                         "Python 3.12. Use setuptools or check PEP 632 for potential alternatives",
                     )
                     warnings.filterwarnings("ignore", "There is no current event loop")
+                    # From jupyter-core 5.1.2
+                    warnings.filterwarnings(
+                        "ignore", "Jupyter is migrating its paths to use standard platformdirs"
+                    )
+                    warnings.filterwarnings(
+                        "ignore", "The alias 'sphinx.util.progress_message' is deprecated"
+                    )
+                    warnings.filterwarnings(
+                        "ignore", "nodes.Node.traverse\\(\\) is obsoleted by Node.findall\\(\\)."
+                    )
+                    # From Python 3.11
+                    warnings.filterwarnings(
+                        "ignore", "'imghdr' is deprecated and slated for removal in Python 3.13"
+                    )
+                    warnings.filterwarnings(
+                        "ignore",
+                        "zmq.eventloop.ioloop is deprecated in pyzmq 17.",
+                    )
 
                     app = Sphinx(
                         str(source_path),

@@ -7,9 +7,9 @@ from pharmpy.model import (
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
-    ExplicitODESystem,
     Infusion,
     Statements,
+    output,
 )
 
 
@@ -26,15 +26,15 @@ def test_str(load_model_for_test, testdata):
     assert len(a) == 2
 
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert 'THETA(2)' in str(model.statements)
-    assert 'THETA(2)' in repr(model.statements)
+    assert 'TVV' in str(model.statements)
+    assert 'TVV' in repr(model.statements)
 
 
 def test_subs(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements
 
-    s2 = statements.subs({'ETA(1)': 'ETAT1'})
+    s2 = statements.subs({'ETA_1': 'ETAT1'})
 
     assert s2[5].expression == S('TVCL') * sympy.exp(S('ETAT1'))
 
@@ -60,7 +60,7 @@ def test_find_assignment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements
 
-    assert str(statements.find_assignment('CL').expression) == 'TVCL*exp(ETA(1))'
+    assert str(statements.find_assignment('CL').expression) == 'TVCL*exp(ETA_1)'
     assert str(statements.find_assignment('S1').expression) == 'V'
 
     statements = statements + Assignment(S('CL'), S('TVCL') + S('V'))
@@ -173,15 +173,6 @@ def test_find_compartment(load_model_for_test, testdata):
     assert comp is None
 
 
-def test_output_compartment(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    cb = CompartmentalSystemBuilder(model.statements.ode_system)
-    cb.add_compartment("NEW")
-    cm = CompartmentalSystem(cb)
-    with pytest.raises(ValueError):
-        cm.output_compartment
-
-
 def test_dosing_compartment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert model.statements.ode_system.dosing_compartment.name == 'CENTRAL'
@@ -235,33 +226,19 @@ def test_before_odes(load_model_for_test, pheno_path):
 def test_full_expression(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     expr = model.statements.before_odes.full_expression("CL")
-    assert expr == sympy.Symbol("THETA(1)") * sympy.Symbol("WGT") * sympy.exp(
-        sympy.Symbol("ETA(1)")
-    )
+    assert expr == sympy.Symbol("PTVCL") * sympy.Symbol("WGT") * sympy.exp(sympy.Symbol("ETA_1"))
     with pytest.raises(ValueError):
         model.statements.full_expression("Y")
 
 
 def test_to_explicit_ode_system(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    exodes = model.statements.ode_system.to_explicit_system(skip_output=True)
-    odes, ics = exodes.odes, exodes.ics
+    cs = model.statements.ode_system
+    odes, ics = cs.eqs, cs.ics
     assert len(odes) == 1
     assert len(ics) == 1
 
-    exodes = model.statements.ode_system.to_explicit_system()
-    odes, ics = exodes.odes, exodes.ics
-    assert len(odes) == 2
-    assert len(ics) == 2
-
-    assert exodes.amounts == sympy.Matrix([sympy.Symbol('A_CENTRAL'), sympy.Symbol('A_OUTPUT')])
-
-    newstats = model.statements.to_explicit_system()
-    assert isinstance(newstats.ode_system, ExplicitODESystem)
-
-    back = model.statements.to_compartmental_system()
-    assert isinstance(back.ode_system, CompartmentalSystem)
-    assert len(newstats) == len(back)
+    assert cs.amounts == sympy.Matrix([sympy.Symbol('A_CENTRAL')])
 
 
 def test_repr_latex():
@@ -278,8 +255,7 @@ def test_repr_html():
 
     cb = CompartmentalSystemBuilder()
     dose = Bolus('AMT')
-    central = Compartment('CENTRAL', dose)
-    output = Compartment('OUTPUT')
+    central = Compartment.create('CENTRAL', dose=dose)
     cb.add_compartment(central)
     cb.add_compartment(output)
     cb.add_flow(central, output, S('K'))
@@ -300,29 +276,29 @@ def test_dependencies(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     depsy = model.statements.dependencies(S('Y'))
     assert depsy == {
-        S('EPS(1)'),
+        S('EPS_1'),
         S('AMT'),
-        S('THETA(1)'),
+        S('PTVCL'),
         S('t'),
-        S('THETA(2)'),
-        S('THETA(3)'),
+        S('PTVV'),
+        S('THETA_3'),
         S('APGR'),
         S('WGT'),
-        S('ETA(2)'),
-        S('ETA(1)'),
+        S('ETA_2'),
+        S('ETA_1'),
     }
     depscl = model.statements.dependencies(S('CL'))
-    assert depscl == {S('THETA(1)'), S('WGT'), S('ETA(1)')}
+    assert depscl == {S('PTVCL'), S('WGT'), S('ETA_1')}
     odes = model.statements.ode_system
     deps_odes = model.statements.dependencies(odes)
     assert deps_odes == {
         S('AMT'),
         S('APGR'),
-        S('ETA(1)'),
-        S('ETA(2)'),
-        S('THETA(1)'),
-        S('THETA(2)'),
-        S('THETA(3)'),
+        S('ETA_1'),
+        S('ETA_2'),
+        S('PTVCL'),
+        S('PTVV'),
+        S('THETA_3'),
         S('WGT'),
         S('t'),
     }
@@ -333,12 +309,10 @@ def test_dependencies(load_model_for_test, pheno_path):
 def test_builder():
     cb = CompartmentalSystemBuilder()
     dose = Bolus('AMT')
-    central = Compartment('CENTRAL', dose)
-    output = Compartment('OUTPUT')
+    central = Compartment.create('CENTRAL', dose=dose)
     cb.add_compartment(central)
-    cb.add_compartment(output)
     cb.add_flow(central, output, S('K'))
-    depot = Compartment('DEPOT')
+    depot = Compartment.create('DEPOT')
     cb.add_compartment(depot)
     cb.add_flow(depot, central, S('KA'))
     cm = CompartmentalSystem(cb)
@@ -352,9 +326,11 @@ def test_builder():
 
 def test_infusion_repr():
     inf = Infusion('AMT', rate='R1')
-    assert repr(inf) == 'Infusion(AMT, rate=R1)'
+    assert repr(inf) == 'Infusion(AMT, admid=1, rate=R1)'
     inf = Infusion('AMT', duration='D1')
-    assert repr(inf) == 'Infusion(AMT, duration=D1)'
+    assert repr(inf) == 'Infusion(AMT, admid=1, duration=D1)'
+    inf = Infusion('AMT', admid=2, duration='D1')
+    assert repr(inf) == 'Infusion(AMT, admid=2, duration=D1)'
 
 
 def test_infusion_create():
@@ -369,10 +345,10 @@ def test_infusion_create():
 
 
 def test_compartment_repr():
-    comp = Compartment("CENTRAL", lag_time='LT')
-    assert repr(comp) == "Compartment(CENTRAL, lag_time=LT)"
+    comp = Compartment.create("CENTRAL", lag_time='LT')
+    assert repr(comp) == "Compartment(CENTRAL, amount=A_CENTRAL, lag_time=LT)"
 
 
 def test_compartment_names(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert model.statements.ode_system.compartment_names == ['CENTRAL', 'OUTPUT']
+    assert model.statements.ode_system.compartment_names == ['CENTRAL']

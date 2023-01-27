@@ -22,6 +22,6 @@ def test_modify_string(parser, buf, title, new_title, new_str):
     assert str(rec) == buf
     assert rec.title == title
     if new_title:
-        rec.title = new_title
-        assert rec.title == new_title
-        assert str(rec) == new_str
+        newrec = rec.set_title(new_title)
+        assert newrec.title == new_title
+        assert str(newrec) == new_str

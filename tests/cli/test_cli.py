@@ -14,7 +14,7 @@ def test_model_print(datadir, capsys):
     args = ['model', 'print', str(datadir / 'pheno.mod')]
     cli.main(args)
     captured = capsys.readouterr()
-    assert 'ETA(1)' in captured.out
+    assert 'ETA₁' in captured.out
 
 
 @pytest.mark.parametrize('operation', ['*', '+'])
@@ -45,7 +45,7 @@ def test_eta_transformation(datadir, transformation, eta, tmp_path):
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
     with chdir(tmp_path):
-        args = ['model', transformation, 'run1.mod', '--etas', 'ETA(1)']
+        args = ['model', transformation, 'run1.mod', '--etas', 'ETA_1']
         cli.main(args)
 
         with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_box:
@@ -86,7 +86,7 @@ def test_add_iov(datadir, options, tmp_path):
 
     with chdir(tmp_path):
 
-        args = ['model', 'add_iov', 'run1.mod', 'FA1', '--etas', 'ETA(1)'] + options
+        args = ['model', 'add_iov', 'run1.mod', 'FA1', '--etas', 'ETA_1'] + options
         cli.main(args)
 
         with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
@@ -118,7 +118,7 @@ def test_results_linearize(datadir, tmp_path):
     assert os.path.exists(tmp_path / 'results.json')
 
 
-@pytest.mark.parametrize('eta_args', [['--etas', 'ETA(1) ETA(2)'], []])
+@pytest.mark.parametrize('eta_args', [['--etas', 'ETA_1 ETA_2'], []])
 def test_create_joint_distribution(datadir, eta_args, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
@@ -139,7 +139,7 @@ def test_create_joint_distribution(datadir, eta_args, tmp_path):
 
 
 @pytest.mark.parametrize(
-    'epsilons_args', [['--eps', 'EPS(1)'], [], ['--same_eta', 'False'], ['--eta_names', 'ETA(3)']]
+    'epsilons_args', [['--eps', 'EPS_1'], [], ['--same_eta', 'False'], ['--eta_names', 'ETA_3']]
 )
 def test_iiv_on_ruv(datadir, epsilons_args, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
@@ -160,7 +160,7 @@ def test_iiv_on_ruv(datadir, epsilons_args, tmp_path):
         assert re.search(r'EXP\(ETA\(3\)\)', mod_cov)
 
 
-@pytest.mark.parametrize('to_remove', [['--to_remove', 'ETA(2)'], []])
+@pytest.mark.parametrize('to_remove', [['--to_remove', 'ETA_2'], []])
 def test_remove_iiv(datadir, to_remove, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
@@ -202,7 +202,7 @@ def test_remove_iov(datadir, tmp_path):
         assert not re.search(r'ETA\(3\)', mod_cov)
 
 
-@pytest.mark.parametrize('epsilons_args', [['--eps', 'EPS(1)'], []])
+@pytest.mark.parametrize('epsilons_args', [['--eps', 'EPS_1'], []])
 def test_power_on_ruv(datadir, epsilons_args, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')

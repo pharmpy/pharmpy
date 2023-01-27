@@ -1,11 +1,14 @@
+from typing import List, Optional
+
 import pharmpy.visualization
 from pharmpy.deps import altair as alt
 from pharmpy.deps import pandas as pd
+from pharmpy.model import Model
 
 from .data import get_observations
 
 
-def plot_iofv_vs_iofv(iofv1, iofv2, name1, name2):
+def plot_iofv_vs_iofv(iofv1: pd.Series, iofv2: pd.Series, name1: str, name2: str):
     """Plot individual OFV of two models against each other
 
     Parameters
@@ -41,7 +44,9 @@ def plot_iofv_vs_iofv(iofv1, iofv2, name1, name2):
     return plot
 
 
-def plot_individual_predictions(model, predictions, individuals=None):
+def plot_individual_predictions(
+    model: Model, predictions: pd.DataFrame, individuals: Optional[List[int]] = None
+):
     """Plot DV and predictions grouped on individuals
 
     Parameters

@@ -17,6 +17,7 @@ To initiate IOVsearch in Python/R:
 
 .. pharmpy-code::
 
+    from pharmpy.modeling import read_model, read_modelfit_results
     from pharmpy.tools import run_iovsearch
 
     start_model = read_model('path/to/model')
@@ -215,8 +216,8 @@ Information about how BIC is calculated can be found in :py:func:`pharmpy.modeli
 Results
 ~~~~~~~
 
-The tool creates various summary tables which can be accessed in the results object,
-as well as files in .csv/.json format.
+The results object contains various summary tables which can be accessed in the results object, as well as files in
+.csv/.json format. The name of the selected best model (based on the input selection criteria) is also included.
 
 Consider a IOVsearch run:
 

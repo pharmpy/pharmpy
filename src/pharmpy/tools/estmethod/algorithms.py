@@ -9,6 +9,21 @@ from pharmpy.workflows import Task, Workflow
 def exhaustive(methods, solvers):
     wf = Workflow()
 
+    task_start = Task('start', start)
+    wf.add_task(task_start)
+
+    candidate_no = 1
+    for method, solver in itertools.product(methods, solvers):
+        wf_estmethod = _create_candidate_model_wf(candidate_no, method, solver, update=False)
+        wf.insert_workflow(wf_estmethod, predecessors=task_start)
+        candidate_no += 1
+
+    return wf, None
+
+
+def exhaustive_with_update(methods, solvers):
+    wf = Workflow()
+
     task_base_model = Task('create_base_model', _create_base_model)
     wf.add_task(task_base_model)
     wf_fit = create_fit_workflow(n=1)
@@ -34,7 +49,7 @@ def exhaustive(methods, solvers):
     return wf, task_base_model_fit
 
 
-def reduced(methods, solvers):
+def exhaustive_only_eval(methods, solvers):
     wf = Workflow()
 
     task_start = Task('start', start)
@@ -42,7 +57,9 @@ def reduced(methods, solvers):
 
     candidate_no = 1
     for method, solver in itertools.product(methods, solvers):
-        wf_estmethod = _create_candidate_model_wf(candidate_no, method, solver, update=False)
+        wf_estmethod = _create_candidate_model_wf(
+            candidate_no, method, solver, update=False, is_eval_candidate=True
+        )
         wf.insert_workflow(wf_estmethod, predecessors=task_start)
         candidate_no += 1
 
@@ -53,7 +70,7 @@ def start(model):
     return model
 
 
-def _create_candidate_model_wf(candidate_no, method, solver, update):
+def _create_candidate_model_wf(candidate_no, method, solver, update, is_eval_candidate=False):
     wf = Workflow()
 
     model_name = f'estmethod_run{candidate_no}'
@@ -66,8 +83,10 @@ def _create_candidate_model_wf(candidate_no, method, solver, update):
         task_prev = task_update_inits
     else:
         task_prev = task_copy
-    task_create_est_model = Task('create_est_model', _create_est_model, method, solver, update)
-    wf.add_task(task_create_est_model, predecessors=task_prev)
+    task_create_candidate = Task(
+        'create_candidate', _create_candidate_model, method, solver, update, is_eval_candidate
+    )
+    wf.add_task(task_create_candidate, predecessors=task_prev)
     return wf
 
 
@@ -81,7 +100,9 @@ def _create_base_model(model):
 
     base_model = copy_model(model, 'base_model')
     est_method, eval_method = est_settings['method'], eval_settings['method']
-    base_model.description = _create_description(est_method, eval_method, solver=None, update=False)
+    base_model.description = _create_description(
+        [est_method, eval_method], solver=None, update=False
+    )
 
     while len(base_model.estimation_steps) > 0:
         remove_estimation_step(base_model, 0)
@@ -91,13 +112,13 @@ def _create_base_model(model):
     return base_model
 
 
-def _create_est_model(method, solver, update, model):
-    est_settings = _create_est_settings(method)
+def _create_candidate_model(method, solver, update, is_eval_candidate, model):
+    est_settings = _create_est_settings(method, is_eval_candidate)
     laplace = True if method == 'LAPLACE' else False
     eval_settings = _create_eval_settings(laplace)
 
     eval_method = eval_settings['method']
-    model.description = _create_description(method, eval_method, solver=None, update=update)
+    model.description = _create_description([method, eval_method], solver=solver, update=update)
 
     while len(model.estimation_steps) > 0:
         remove_estimation_step(model, 0)
@@ -109,12 +130,11 @@ def _create_est_model(method, solver, update, model):
     return model
 
 
-def _create_est_settings(method):
+def _create_est_settings(method, is_eval_candidate=False):
     est_settings = {
         'method': method,
         'interaction': True,
         'laplace': False,
-        'maximum_evaluations': 9999,
         'auto': True,
         'keep_every_nth_iter': 10,
     }
@@ -122,6 +142,11 @@ def _create_est_settings(method):
     if method == 'LAPLACE':
         est_settings['method'] = 'FOCE'
         est_settings['laplace'] = True
+
+    if is_eval_candidate:
+        est_settings['evaluation'] = True
+    else:
+        est_settings['maximum_evaluations'] = 9999
 
     return est_settings
 
@@ -144,8 +169,8 @@ def _create_eval_settings(laplace=False):
     return eval_settings
 
 
-def _create_description(est_method, eval_method, solver, update=False):
-    model_description = f'{est_method},{eval_method}'
+def _create_description(methods, solver, update=False):
+    model_description = ','.join(methods)
     if solver:
         model_description += f';{solver}'
     if update:

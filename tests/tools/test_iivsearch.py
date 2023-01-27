@@ -34,7 +34,7 @@ def test_brute_force_no_of_etas(load_model_for_test, testdata, list_of_parameter
 
 @pytest.mark.parametrize(
     'list_of_parameters, block_structure, no_of_models',
-    [([], [], 4), (['QP1'], [], 14), ([], ['ETA(1)', 'ETA(2)'], 4)],
+    [([], [], 4), (['QP1'], [], 14), ([], ['ETA_1', 'ETA_2'], 4)],
 )
 def test_brute_force_block_structure(
     load_model_for_test, testdata, list_of_parameters, block_structure, no_of_models
@@ -94,7 +94,7 @@ def test_is_rv_block_structure(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     add_iiv(model, ['TVCL', 'TVV'], 'exp')
 
-    etas_block_structure = (('ETA(1)', 'ETA(2)'), ('ETA_TVCL',), ('ETA_TVV',))
+    etas_block_structure = (('ETA_1', 'ETA_2'), ('ETA_TVCL',), ('ETA_TVV',))
     create_joint_distribution(
         model,
         list(etas_block_structure[0]),
@@ -103,16 +103,16 @@ def test_is_rv_block_structure(load_model_for_test, pheno_path):
     etas = model.random_variables.iiv
     assert _is_rv_block_structure(etas, etas_block_structure)
 
-    etas_block_structure = (('ETA(1)',), ('ETA(2)',), ('ETA_TVCL', 'ETA_TVV'))
+    etas_block_structure = (('ETA_1',), ('ETA_2',), ('ETA_TVCL', 'ETA_TVV'))
     assert not _is_rv_block_structure(etas, etas_block_structure)
 
-    etas_block_structure = (('ETA(1)',), ('ETA(2)', 'ETA_TVCL'), ('ETA_TVV',))
+    etas_block_structure = (('ETA_1',), ('ETA_2', 'ETA_TVCL'), ('ETA_TVV',))
     assert not _is_rv_block_structure(etas, etas_block_structure)
 
     create_joint_distribution(
         model, individual_estimates=model.modelfit_results.individual_estimates
     )
-    etas_block_structure = (('ETA(1)', 'ETA(2)', 'ETA_TVCL', 'ETA_TVV'),)
+    etas_block_structure = (('ETA_1', 'ETA_2', 'ETA_TVCL', 'ETA_TVV'),)
     etas = model.random_variables.iiv
     assert _is_rv_block_structure(etas, etas_block_structure)
 
@@ -121,7 +121,7 @@ def test_create_joint_dist(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     add_peripheral_compartment(model)
     add_pk_iiv(model)
-    etas_block_structure = (('ETA(1)', 'ETA(2)'), ('ETA_QP1',), ('ETA_VP1',))
+    etas_block_structure = (('ETA_1', 'ETA_2'), ('ETA_QP1',), ('ETA_VP1',))
     create_eta_blocks(etas_block_structure, model)
     assert len(model.random_variables.iiv) == 4
 
@@ -130,10 +130,10 @@ def test_create_joint_dist(load_model_for_test, testdata):
     add_pk_iiv(model)
     create_joint_distribution(
         model,
-        ['ETA(1)', 'ETA(2)'],
+        ['ETA_1', 'ETA_2'],
         individual_estimates=model.modelfit_results.individual_estimates,
     )
-    etas_block_structure = (('ETA(1)',), ('ETA(2)',), ('ETA(3)', 'ETA_VP1', 'ETA_QP1'))
+    etas_block_structure = (('ETA_1',), ('ETA_2',), ('ETA_3', 'ETA_VP1', 'ETA_QP1'))
     create_eta_blocks(etas_block_structure, model)
     assert len(model.random_variables.iiv) == 3
 
@@ -142,7 +142,7 @@ def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     param_dict = _create_param_dict(model, model.random_variables.iiv)
-    param_dict_ref = {'ETA(1)': 'CL', 'ETA(2)': 'VC', 'ETA(3)': 'MAT'}
+    param_dict_ref = {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_3': 'MAT'}
 
     assert param_dict == param_dict_ref
 

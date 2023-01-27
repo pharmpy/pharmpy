@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Union
+from typing import List, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -8,12 +8,12 @@ from pharmpy.deps import sympy
 from pharmpy.deps.rich import box as rich_box
 from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import table as rich_table
-from pharmpy.model import CompartmentalSystem, DataInfo, DatasetError
+from pharmpy.model import CompartmentalSystem, DataInfo, DatasetError, Model
 
 from .iterators import resample_data
 
 
-def get_ids(model):
+def get_ids(model: Model):
     """Retrieve a list of all subject ids of the dataset
 
     Parameters
@@ -38,7 +38,7 @@ def get_ids(model):
     return ids
 
 
-def get_number_of_individuals(model):
+def get_number_of_individuals(model: Model):
     """Retrieve the number of individuals in the model dataset
 
     Parameters
@@ -73,7 +73,7 @@ def get_number_of_individuals(model):
     return len(get_ids(model))
 
 
-def get_number_of_observations(model):
+def get_number_of_observations(model: Model):
     """Retrieve the total number of observations in the model dataset
 
     Parameters
@@ -108,7 +108,7 @@ def get_number_of_observations(model):
     return len(get_observations(model))
 
 
-def get_number_of_observations_per_individual(model):
+def get_number_of_observations_per_individual(model: Model):
     """Number of observations for each individual
 
     Parameters
@@ -205,7 +205,7 @@ def get_number_of_observations_per_individual(model):
     return ser
 
 
-def get_observations(model):
+def get_observations(model: Model):
     """Get observations from dataset
 
     Parameters
@@ -272,7 +272,7 @@ def get_observations(model):
     return df.squeeze()
 
 
-def get_baselines(model):
+def get_baselines(model: Model):
     """Baselines for each subject.
 
     Baseline is taken to be the first row even if that has a missing value.
@@ -359,7 +359,7 @@ def get_baselines(model):
     return baselines
 
 
-def set_covariates(model, covariates):
+def set_covariates(model: Model, covariates: List[str]):
     """Set columns in the dataset to be covariates in the datainfo
 
     Parameters
@@ -378,15 +378,15 @@ def set_covariates(model, covariates):
     newcols = []
     for col in di:
         if col.name in covariates:
-            newcol = col.derive(type='covariate')
+            newcol = col.replace(type='covariate')
             newcols.append(newcol)
         else:
             newcols.append(col)
-    model.datainfo = di.derive(columns=newcols)
+    model.datainfo = di.replace(columns=newcols)
     return model
 
 
-def get_covariate_baselines(model):
+def get_covariate_baselines(model: Model):
     """Return a dataframe with baselines of all covariates for each id.
 
     Baseline is taken to be the first row even if that has a missing value.
@@ -480,7 +480,7 @@ def get_covariate_baselines(model):
     return df.groupby(idlab).nth(0)
 
 
-def list_time_varying_covariates(model):
+def list_time_varying_covariates(model: Model):
     """Return a list of names of all time varying covariates
 
     Parameters
@@ -518,7 +518,7 @@ def list_time_varying_covariates(model):
         return list(time_var.index[time_var])
 
 
-def get_doses(model):
+def get_doses(model: Model):
     """Get a series of all doses
 
     Indexed with ID and TIME
@@ -572,7 +572,7 @@ def get_doses(model):
     return df.squeeze()
 
 
-def expand_additional_doses(model, flag=False):
+def expand_additional_doses(model: Model, flag: bool = False):
     """Expand additional doses into separate dose records
 
     Parameters
@@ -636,7 +636,7 @@ def expand_additional_doses(model, flag=False):
     return model
 
 
-def get_doseid(model):
+def get_doseid(model: Model):
     """Get a DOSEID series from the dataset with an id of each dose period starting from 1
 
     If a a dose and observation exist at the same time point the observation will be counted
@@ -722,7 +722,7 @@ def get_doseid(model):
     return df['DOSEID'].copy()
 
 
-def get_mdv(model):
+def get_mdv(model: Model):
     """Get MDVs from dataset
 
     Parameters
@@ -753,7 +753,7 @@ def get_mdv(model):
     return series.astype('int32').rename('MDV')
 
 
-def get_evid(model):
+def get_evid(model: Model):
     """Get the evid from model dataset
 
     If an event column is present this will be extracted otherwise
@@ -780,7 +780,7 @@ def get_evid(model):
     return mdv.rename('EVID')
 
 
-def get_cmt(model):
+def get_cmt(model: Model):
     """Get the cmt (compartment) column from the model dataset
 
     If a cmt column is present this will be extracted otherwise
@@ -816,7 +816,7 @@ def get_cmt(model):
     return cmt
 
 
-def add_time_after_dose(model):
+def add_time_after_dose(model: Model):
     """Calculate and add a TAD column to the dataset"
 
     Parameters
@@ -858,8 +858,8 @@ def add_time_after_dose(model):
     else:
         temp.dataset = df
         di = temp.datainfo
-        new_idvcol = di.idv_column.derive(type='unknown')
-        new_timecol = di['_NEWTIME'].derive(type='idv')
+        new_idvcol = di.idv_column.replace(type='unknown')
+        new_timecol = di['_NEWTIME'].replace(type='idv')
         di = di.set_column(new_idvcol).set_column(new_timecol)
         temp.datainfo = di
         expand_additional_doses(temp, flag=True)
@@ -908,12 +908,12 @@ def add_time_after_dose(model):
 
     model.dataset = df  # TAD in datainfo is automatically added here
     di = model.datainfo
-    colinfo = di['TAD'].derive(descriptor='time after dose', unit=di[idv].unit)
+    colinfo = di['TAD'].replace(descriptor='time after dose', unit=di[idv].unit)
     model.datainfo = di.set_column(colinfo)
     return model
 
 
-def get_concentration_parameters_from_data(model):
+def get_concentration_parameters_from_data(model: Model):
     """Create a dataframe with concentration parameters
 
     Note that all values are directly calculated from the dataset
@@ -978,7 +978,7 @@ def get_concentration_parameters_from_data(model):
     return res
 
 
-def drop_dropped_columns(model):
+def drop_dropped_columns(model: Model):
     """Drop columns marked as dropped from the dataset
 
     NM-TRAN date columns will not be dropped by this function
@@ -1020,7 +1020,7 @@ def drop_dropped_columns(model):
     return model
 
 
-def drop_columns(model, column_names, mark=False):
+def drop_columns(model: Model, column_names: Union[List[str], str], mark: bool = False):
     """Drop columns from the dataset or mark as dropped
 
     Parameters
@@ -1058,17 +1058,17 @@ def drop_columns(model, column_names, mark=False):
     for col in di:
         if col.name in column_names:
             if mark:
-                newcol = col.derive(drop=True)
+                newcol = col.replace(drop=True)
                 newcols.append(newcol)
             else:
                 model.dataset = model.dataset.drop(col.name, axis=1)
         else:
             newcols.append(col)
-    model.datainfo = di.derive(columns=newcols)
+    model.datainfo = di.replace(columns=newcols)
     return model
 
 
-def undrop_columns(model, column_names):
+def undrop_columns(model: Model, column_names: Union[List[str], str]):
     """Undrop columns of model
 
     Parameters
@@ -1103,11 +1103,11 @@ def undrop_columns(model, column_names):
     newcols = []
     for col in di:
         if col.name in column_names:
-            newcol = col.derive(drop=False)
+            newcol = col.replace(drop=False)
             newcols.append(newcol)
         else:
             newcols.append(col)
-    model.datainfo = di.derive(columns=newcols)
+    model.datainfo = di.replace(columns=newcols)
     return model
 
 
@@ -1221,7 +1221,7 @@ def _find_time_and_date_columns(model):
     return time, date
 
 
-def translate_nmtran_time(model):
+def translate_nmtran_time(model: Model):
     """Translate NM-TRAN TIME and DATE column into one TIME column
 
     If dataset of model have special NM-TRAN TIME and DATE columns these
@@ -1254,15 +1254,15 @@ def translate_nmtran_time(model):
         assert timecol is not None
         df = _translate_time_and_date_columns(df, timecol.name, datecol.name, idname)
         model = drop_columns(model, datecol.name)
-        timecol = timecol.derive(unit='h')
-    timecol = timecol.derive(datatype='float64')
+        timecol = timecol.replace(unit='h')
+    timecol = timecol.replace(datatype='float64')
     di = di.set_column(timecol)
     model.datainfo = di
     model.dataset = df
     return model
 
 
-def remove_loq_data(model, lloq=None, uloq=None):
+def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[float] = None):
     """Remove loq data records from the dataset
 
     Does nothing if none of the limits is specified.
@@ -1475,7 +1475,7 @@ class Checker:
             console.print(table)
 
 
-def check_dataset(model, dataframe=False, verbose=False):
+def check_dataset(model: Model, dataframe: bool = False, verbose: bool = False):
     """Check dataset for consistency across a set of rules
 
     Parameters
@@ -1554,7 +1554,9 @@ def check_dataset(model, dataframe=False, verbose=False):
         checker.print()
 
 
-def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str], datatype=None):
+def read_dataset_from_datainfo(
+    datainfo: Union[DataInfo, Path, str], datatype: Optional[str] = None
+):
     """Read a dataset given a datainfo object or path to a datainfo file
 
     Parameters
@@ -1598,7 +1600,9 @@ def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str], datatype=No
     return df
 
 
-def deidentify_data(df, id_column='ID', date_columns=None):
+def deidentify_data(
+    df: pd.DataFrame, id_column: str = 'ID', date_columns: Optional[List[str]] = None
+):
     """Deidentify a dataset
 
     Two operations are performed on the dataset:

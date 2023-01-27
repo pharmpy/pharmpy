@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass, replace
 from itertools import count
-from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -112,9 +112,8 @@ def create_workflow(
 
     Parameters
     ----------
-    effects : str | list
-        The list of candidate parameter-covariate effects to try, either as a
-        MFL sentence or in (optionally compact) tuple form.
+    effects : str
+        MFL of covariate effects to try
     p_forward : float
         The p-value to use in the likelihood ratio test for forward steps
     p_backward : float
@@ -139,13 +138,8 @@ def create_workflow(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import run_covsearch  # doctest: +SKIP
-    >>> res = run_covsearch([
-    ...     ('CL', 'WGT', 'exp', '*'),
-    ...     ('CL', 'APGR', 'exp', '*'),
-    ...     ('V', 'WGT', 'exp', '*'),
-    ...     ('V', 'APGR', 'exp', '*'),
-    ... ], model=model, results=model.modelfit_results)      # doctest: +SKIP
-
+    >>> effects = 'COVARIATE([CL, V], [AGE, WT], EXP)'
+    >>> res = run_covsearch(effects, model=model, results=model.modelfit_results)      # doctest: +SKIP
     """
 
     wf = Workflow()
@@ -204,14 +198,14 @@ def init(model: Union[Model, None]):
 
 def task_greedy_forward_search(
     context,
-    effects: Union[str, Sequence[Spec]],
+    effects: str,
     p_forward: float,
     max_steps: int,
     state: SearchState,
 ) -> SearchState:
     candidate = state.best_candidate_so_far
     assert state.all_candidates_so_far == [candidate]
-    effect_spec = spec(candidate.model, mfl_parse(effects)) if isinstance(effects, str) else effects
+    effect_spec = spec(candidate.model, mfl_parse(effects))
     candidate_effects = sorted(set(parse_spec(effect_spec)))
 
     def handle_effects(
@@ -554,26 +548,23 @@ def validate_input(effects, p_forward, p_backward, algorithm, model):
         )
 
     if model is not None:
-        if isinstance(effects, str):
-            try:
-                statements = mfl_parse(effects)
-            except:  # noqa E722
-                raise ValueError(f'Invalid `effects`, could not be parsed: `{effects}`')
+        try:
+            statements = mfl_parse(effects)
+        except:  # noqa E722
+            raise ValueError(f'Invalid `effects`, could not be parsed: `{effects}`')
 
-            bad_statements = list(
-                filter(
-                    lambda statement: not isinstance(statement, covsearch_statement_types),
-                    statements,
-                )
+        bad_statements = list(
+            filter(
+                lambda statement: not isinstance(statement, covsearch_statement_types),
+                statements,
             )
+        )
 
-            if bad_statements:
-                raise ValueError(
-                    f'Invalid `effects`: found unknown statement of type {type(bad_statements[0]).__name__}.'
-                )
-            effect_spec = spec(model, statements)
-        else:
-            effect_spec = effects
+        if bad_statements:
+            raise ValueError(
+                f'Invalid `effects`: found unknown statement of type {type(bad_statements[0]).__name__}.'
+            )
+        effect_spec = spec(model, statements)
 
         candidate_effects = map(lambda x: Effect(*x), sorted(set(parse_spec(effect_spec))))
 

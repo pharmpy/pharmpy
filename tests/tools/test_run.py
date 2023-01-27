@@ -226,13 +226,15 @@ def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
         model_no_header = load_model_for_test('pheno_no_header.mod')
-        model_no_header.datainfo = model_no_header.datainfo.derive(path=tmp_path / 'pheno_data.csv')
+        model_no_header.datainfo = model_no_header.datainfo.replace(
+            path=tmp_path / 'pheno_data.csv'
+        )
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
         model_rounding_error = load_model_for_test('pheno_rounding_error.mod')
-        model_rounding_error.datainfo = model_rounding_error.datainfo.derive(
+        model_rounding_error.datainfo = model_rounding_error.datainfo.replace(
             path=tmp_path / 'pheno_data.csv'
         )
 
@@ -339,7 +341,7 @@ def test_summarize_modelfit_results(
     summary_single = summarize_modelfit_results(pheno.modelfit_results)
 
     assert summary_single.loc['pheno_real']['ofv'] == 586.2760562818805
-    assert summary_single['OMEGA(1,1)_estimate'].mean() == 0.0293508
+    assert summary_single['IVCL_estimate'].mean() == 0.0293508
 
     assert len(summary_single.index) == 1
 
@@ -348,8 +350,8 @@ def test_summarize_modelfit_results(
     summary_multiple = summarize_modelfit_results([pheno.modelfit_results, mox.modelfit_results])
 
     assert summary_multiple.loc['mox1']['ofv'] == -624.5229577248352
-    assert summary_multiple['OMEGA(1,1)_estimate'].mean() == 0.2236304
-    assert summary_multiple['OMEGA(2,1)_estimate'].mean() == 0.395647  # One is NaN
+    assert summary_multiple['IIV_CL_estimate'].mean() == 0.41791
+    assert summary_multiple['IIV_CL_V_estimate'].mean() == 0.395647  # One is NaN
 
     assert len(summary_multiple.index) == 2
     assert list(summary_multiple.index) == ['pheno_real', 'mox1']
@@ -413,13 +415,15 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
         model_no_header = load_model_for_test('pheno_no_header.mod')
-        model_no_header.datainfo = model_no_header.datainfo.derive(path=tmp_path / 'pheno_data.csv')
+        model_no_header.datainfo = model_no_header.datainfo.replace(
+            path=tmp_path / 'pheno_data.csv'
+        )
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
         model_rounding_error = load_model_for_test('pheno_rounding_error.mod')
-        model_rounding_error.datainfo = model_rounding_error.datainfo.derive(
+        model_rounding_error.datainfo = model_rounding_error.datainfo.replace(
             path=tmp_path / 'pheno_data.csv'
         )
 

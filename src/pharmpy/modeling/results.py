@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from itertools import chain
+from typing import Iterable, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -9,7 +10,7 @@ from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
 from pharmpy.internals.math import round_to_n_sigdig
-from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
+from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model, output
 from pharmpy.model.distributions.numeric import ConstantDistribution
 from pharmpy.model.random_variables import (
     eval_expr,
@@ -24,7 +25,12 @@ from .parameter_sampling import create_rng, sample_parameters_from_covariance_ma
 RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic'))
 
 
-def calculate_eta_shrinkage(model, parameter_estimates, individual_estimates, sd=False):
+def calculate_eta_shrinkage(
+    model: Model,
+    parameter_estimates: pd.Series,
+    individual_estimates: pd.DataFrame,
+    sd: bool = False,
+):
     """Calculate eta shrinkage for each eta
 
     Parameters
@@ -51,12 +57,12 @@ def calculate_eta_shrinkage(model, parameter_estimates, individual_estimates, sd
     >>> pe = model.modelfit_results.parameter_estimates
     >>> ie = model.modelfit_results.individual_estimates
     >>> calculate_eta_shrinkage(model, pe, ie)
-    ETA(1)    0.720481
-    ETA(2)    0.240295
+    ETA_1    0.720481
+    ETA_2    0.240295
     dtype: float64
     >>> calculate_eta_shrinkage(model, pe, ie, sd=True)
-    ETA(1)    0.471305
-    ETA(2)    0.128389
+    ETA_1    0.471305
+    ETA_2    0.128389
     dtype: float64
 
     See also
@@ -78,7 +84,9 @@ def calculate_eta_shrinkage(model, parameter_estimates, individual_estimates, sd
     return shrinkage
 
 
-def calculate_individual_shrinkage(model, parameter_estimates, individual_estimates_covariance):
+def calculate_individual_shrinkage(
+    model: Model, parameter_estimates: pd.Series, individual_estimates_covariance: pd.DataFrame
+):
     """Calculate the individual eta-shrinkage
 
     Definition: ieta_shr = (var(eta) / omega)
@@ -104,7 +112,7 @@ def calculate_individual_shrinkage(model, parameter_estimates, individual_estima
     >>> pe = model.modelfit_results.parameter_estimates
     >>> covs = model.modelfit_results.individual_estimates_covariance
     >>> calculate_individual_shrinkage(model, pe, covs)
-          ETA(1)    ETA(2)
+           ETA_1     ETA_2
     ID
     1   0.847789  0.256473
     2   0.796643  0.210669
@@ -193,7 +201,13 @@ def calculate_individual_shrinkage(model, parameter_estimates, individual_estima
 
 
 def calculate_individual_parameter_statistics(
-    model, expr_or_exprs, parameter_estimates, covariance_matrix=None, rng=None
+    model: Model,
+    expr_or_exprs: Union[
+        Iterable[sympy.Eq], Iterable[sympy.Expr], Iterable[str], sympy.Eq, sympy.Expr, str
+    ],
+    parameter_estimates: pd.Series,
+    covariance_matrix: Optional[pd.DataFrame] = None,
+    rng: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Calculate statistics for individual parameters
 
@@ -215,7 +229,8 @@ def calculate_individual_parameter_statistics(
         Parameter estimates
     covariance_matrix : pd.DataFrame
         Parameter uncertainty covariance matrix
-    expr_or_exprs : str, sympy expression or iterable of str or sympy expressions
+    expr_or_exprs : str
+        sympy expression or iterable of str or sympy expressions
         Expressions or equations for parameters of interest. If equations are used
         the names of the left hand sides will be used as the names of the parameters.
     rng : Generator or int
@@ -371,7 +386,10 @@ def calculate_individual_parameter_statistics(
 
 
 def calculate_pk_parameters_statistics(
-    model, parameter_estimates, covariance_matrix=None, rng=None
+    model: Model,
+    parameter_estimates: pd.Series,
+    covariance_matrix: Optional[pd.DataFrame] = None,
+    rng: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Calculate statistics for common pharmacokinetic parameters
 
@@ -419,16 +437,14 @@ def calculate_pk_parameters_statistics(
     statements = model.statements
     odes = statements.ode_system
     central = odes.central_compartment
-    output = odes.output_compartment
     depot = odes.find_depot(statements)
     peripherals = odes.peripheral_compartments
     elimination_rate = odes.get_flow(central, output)
 
     expressions = []  # Eq(name, expr)
     # FO abs + 1comp + FO elimination
-    if len(odes) == 3 and depot and odes.t not in elimination_rate.free_symbols:
-        exodes = odes.to_explicit_system(skip_output=True)
-        ode_list, ics = exodes.odes, exodes.ics
+    if len(odes) == 2 and depot and odes.t not in elimination_rate.free_symbols:
+        ode_list, ics = odes.eqs, odes.ics
         sols = sympy.dsolve(ode_list, ics=ics)
         expr = sols[1].rhs
         d = sympy.diff(expr, odes.t)
@@ -444,13 +460,12 @@ def calculate_pk_parameters_statistics(
     if not peripherals and odes.t not in elimination_rate.free_symbols:
         elimination_system = statements.ode_system
         for name in elimination_system.compartment_names:
-            if name not in (central.name, output.name):  # NOTE keep central and output
+            if name != central.name:  # NOTE keep central
                 cb = CompartmentalSystemBuilder(elimination_system)
                 cb.remove_compartment(elimination_system.find_compartment(name))
                 elimination_system = CompartmentalSystem(cb)
-                exodes = elimination_system.to_explicit_system(skip_output=True)
-                eq = exodes.odes[0]
-                ic = dict(exodes.ics).popitem()[0]
+                eq = elimination_system.eqs[0]
+                ic = dict(elimination_system.ics).popitem()[0]
                 A0 = sympy.Symbol('A0')
                 sols = sympy.dsolve(eq, ics={ic: A0})
                 eq_half = sympy.Eq(sympy.Rational(1, 2) * A0, sols.rhs)
@@ -458,9 +473,8 @@ def calculate_pk_parameters_statistics(
                 expressions.append(sympy.Eq(sympy.Symbol('t_half_elim'), thalf_elim))
 
     # Bolus dose + 2comp + FO elimination
-    if len(peripherals) == 1 and len(odes) == 3 and odes.t not in elimination_rate.free_symbols:
-        exodes = odes.to_explicit_system(skip_output=True)
-        ode_list, ics = exodes.odes, exodes.ics
+    if len(peripherals) == 1 and len(odes) == 2 and odes.t not in elimination_rate.free_symbols:
+        ode_list, ics = odes.eqs, odes.ics
         sols = sympy.dsolve(ode_list, ics=ics)
         A = sympy.Wild('A')
         B = sympy.Wild('B')
@@ -513,7 +527,7 @@ def _split_equation(s):
     return name, expr
 
 
-def calculate_aic(model, likelihood):
+def calculate_aic(model: Model, likelihood: float):
     """Calculate AIC
 
     AIC = -2LL + 2*n_estimated_parameters
@@ -544,7 +558,7 @@ def _random_etas(model):
     return model.random_variables.etas[keep]
 
 
-def calculate_bic(model, likelihood, type=None):
+def calculate_bic(model: Model, likelihood: float, type: Optional[str] = None):
     """Calculate BIC
 
     Different variations of the BIC can be calculated:
@@ -656,16 +670,18 @@ def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9)
     >>> model = load_example_model("pheno")
     >>> cor = model.modelfit_results.correlation_matrix
     >>> check_high_correlations(model, cor, limit=0.3)
-    THETA(1)  OMEGA(1,1)   -0.388059
-    THETA(2)  THETA(3)     -0.356899
-              OMEGA(2,2)    0.356662
+    PTVCL  IVCL      -0.388059
+    PTVV   THETA_3   -0.356899
+           IVV        0.356662
     dtype: float64
     """
     high_and_below_diagonal = cor.abs().ge(limit) & np.triu(np.ones(cor.shape), k=1).astype(bool)
     return cor.where(high_and_below_diagonal).stack()
 
 
-def check_parameters_near_bounds(model, values, zero_limit=0.001, significant_digits=2):
+def check_parameters_near_bounds(
+    model: Model, values: pd.Series, zero_limit: float = 0.001, significant_digits: int = 2
+):
     """Check if any estimated parameter value is close to its bounds
 
     Parameters
@@ -674,7 +690,7 @@ def check_parameters_near_bounds(model, values, zero_limit=0.001, significant_di
         Pharmpy model object
     values : pd.Series
         Series of values with index a subset of parameter names.
-    zero_limit : number
+    zero_limit : float
         maximum distance to 0 bounds
     significant_digits : int
         maximum distance to non-zero bounds in number of significant digits
@@ -689,12 +705,12 @@ def check_parameters_near_bounds(model, values, zero_limit=0.001, significant_di
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> check_parameters_near_bounds(model, model.modelfit_results.parameter_estimates)
-    THETA(1)      False
-    THETA(2)      False
-    THETA(3)      False
-    OMEGA(1,1)    False
-    OMEGA(2,2)    False
-    SIGMA(1,1)    False
+    PTVCL        False
+    PTVV         False
+    THETA_3      False
+    IVCL         False
+    IVV          False
+    SIGMA_1_1    False
     dtype: bool
 
     """

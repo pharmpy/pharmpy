@@ -11,9 +11,9 @@ class TableRecord(OptionRecord):
         assert file_option is not None
         return Path(file_option)
 
-    @path.setter
-    def path(self, value):
-        self.set_option('FILE', str(value))
+    def set_path(self, value):
+        newrec = self.set_option('FILE', str(value))
+        return newrec
 
     @property
     def eta_derivatives(self):

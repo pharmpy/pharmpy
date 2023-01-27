@@ -53,8 +53,8 @@ def set_power_on_ruv(
     >>> set_power_on_ruv(model)   # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-                power₁
-    Y = EPS(1)⋅F       + F
+              power₁
+    Y = EPS₁⋅F       + F
 
     See also
     --------
@@ -107,7 +107,7 @@ def set_power_on_ruv(
         sset = sset.subs({sympy.Symbol(e): ipred ** sympy.Symbol(theta.name) * sympy.Symbol(e)})
         model.statements = sset
 
-    model.parameters = Parameters(pset)
+    model.parameters = Parameters.create(pset)
     model.statements = sset
 
     return model

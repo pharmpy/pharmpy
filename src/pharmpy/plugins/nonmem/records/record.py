@@ -1,8 +1,3 @@
-from typing import Optional
-
-from pharmpy.internals.parse import AttrTree
-
-
 class Record:
     """
     Top level class for records.
@@ -10,11 +5,13 @@ class Record:
     Create objects only by using the factory function create_record.
     """
 
-    name: Optional[str] = None
-    raw_name: Optional[str] = None
+    def __init__(self, name, raw_name, root):
+        self.name = name
+        self.raw_name = raw_name
+        self._root = root
 
-    def __init__(self, content, parser_class):
-        self._root: AttrTree = parser_class(content).root
+    def replace(self, root):
+        return self.__class__(self.name, self.raw_name, root)
 
     @property
     def root(self):

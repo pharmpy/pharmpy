@@ -12,12 +12,12 @@ class SizesRecord(OptionRecord):
         assert lth is not None
         return int(lth)
 
-    @LTH.setter
-    def LTH(self, value):
+    def set_LTH(self, value):
         if value < 101:
-            self.remove_option('LTH')
+            newrec = self.remove_option('LTH')
         else:
-            self.set_option('LTH', str(value))
+            newrec = self.set_option('LTH', str(value))
+        return newrec
 
     @property
     def PC(self):
@@ -25,14 +25,14 @@ class SizesRecord(OptionRecord):
         assert pc is not None
         return int(pc)
 
-    @PC.setter
-    def PC(self, value):
+    def set_PC(self, value):
         if value > 99:
             raise ValueError(
                 f'Model has {value} compartments, but NONMEM only support a maximum of 99 '
                 f'compartments.'
             )
         if value > 30:
-            self.set_option('PC', str(value))
+            newrec = self.set_option('PC', str(value))
         else:
-            self.remove_option('PC')
+            newrec = self.remove_option('PC')
+        return newrec

@@ -39,27 +39,8 @@ def test_ncomps(parser, buf, expected):
 def test_add_compartment(parser, buf, add, kwargs, expected):
     recs = parser.parse(buf)
     rec = recs.records[0]
-    rec.add_compartment(add, **kwargs)
-    assert str(rec) == expected
-
-
-@pytest.mark.parametrize(
-    "buf,remove,expected",
-    [
-        ('$MODEL COMPARTMENT=(CENTRAL)', 'CENTRAL', '$MODEL'),
-        (
-            '$MODEL COMPARTMENT=(CENTRAL) COMPARTMENT=PERIPH COMPARTMENT=P2',
-            'PERIPH',
-            '$MODEL COMPARTMENT=(CENTRAL) COMPARTMENT=P2',
-        ),
-        ('$MODEL COMP=(CENTRAL) COMP=PERIPH COMP=P2', 'PERIPH', '$MODEL COMP=(CENTRAL) COMP=P2'),
-    ],
-)
-def test_remove_compartment(parser, buf, remove, expected):
-    recs = parser.parse(buf)
-    rec = recs.records[0]
-    rec.remove_compartment(remove)
-    assert str(rec) == expected
+    newrec = rec.add_compartment(add, **kwargs)
+    assert str(newrec) == expected
 
 
 @pytest.mark.parametrize(

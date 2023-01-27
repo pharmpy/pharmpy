@@ -22,12 +22,12 @@ def test_calculate_eta_shrinkage(load_model_for_test, testdata):
     ie = pheno.modelfit_results.individual_estimates
     shrinkage = calculate_eta_shrinkage(pheno, pe, ie)
     assert len(shrinkage) == 2
-    assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 7.2048e01 / 100
-    assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 2.4030e01 / 100
+    assert pytest.approx(shrinkage['ETA_1'], 0.0001) == 7.2048e01 / 100
+    assert pytest.approx(shrinkage['ETA_2'], 0.0001) == 2.4030e01 / 100
     shrinkage = calculate_eta_shrinkage(pheno, pe, ie, sd=True)
     assert len(shrinkage) == 2
-    assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 4.7130e01 / 100
-    assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 1.2839e01 / 100
+    assert pytest.approx(shrinkage['ETA_1'], 0.0001) == 4.7130e01 / 100
+    assert pytest.approx(shrinkage['ETA_2'], 0.0001) == 1.2839e01 / 100
 
 
 def test_calculate_individual_shrinkage(load_model_for_test, testdata):
@@ -38,7 +38,7 @@ def test_calculate_individual_shrinkage(load_model_for_test, testdata):
         pheno.modelfit_results.individual_estimates_covariance,
     )
     assert len(ishr) == 59
-    assert pytest.approx(ishr['ETA(1)'][1], 1e-15) == 0.84778949807160287
+    assert pytest.approx(ishr['ETA_1'][1], 1e-15) == 0.84778949807160287
 
 
 def test_calculate_individual_parameter_statistics(load_model_for_test, testdata):
@@ -155,17 +155,17 @@ def test_check_parameters_near_bounds(load_model_for_test, testdata):
     correct = pd.Series(
         [False, True, False, False, False, False, False, False, True, True, False],
         index=[
-            'THETA(1)',
-            'THETA(2)',
-            'THETA(3)',
-            'THETA(4)',
-            'OMEGA(1,1)',
-            'OMEGA(2,1)',
-            'OMEGA(2,2)',
-            'OMEGA(3,3)',
-            'OMEGA(4,4)',
-            'OMEGA(6,6)',
-            'SIGMA(1,1)',
+            'POP_CL',
+            'POP_V',
+            'POP_KA',
+            'LAG',
+            'OMEGA_1_1',
+            'OMEGA_2_1',
+            'IIV_CL_V',
+            'IIV_KA',
+            'IOV_CL',
+            'IOV_KA',
+            'SIGMA_1_1',
         ],
     )
     pd.testing.assert_series_equal(

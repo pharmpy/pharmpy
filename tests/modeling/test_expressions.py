@@ -14,6 +14,7 @@ from pharmpy.modeling import (
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
     cleanup_model,
+    display_odes,
     get_individual_parameters,
     get_individual_prediction_expression,
     get_observation_expression,
@@ -37,10 +38,10 @@ def s(x):
 def test_get_observation_expression(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real_linbase.mod')
     expr = get_observation_expression(model)
-    assert expr == s('D_EPSETA1_2') * s('EPS(1)') * (s('ETA(2)') - s('OETA2')) + s('D_ETA1') * (
-        s('ETA(1)') - s('OETA1')
-    ) + s('D_ETA2') * (s('ETA(2)') - s('OETA2')) + s('EPS(1)') * (
-        s('D_EPS1') + s('D_EPSETA1_1') * (s('ETA(1)') - s('OETA1'))
+    assert expr == s('D_EPSETA1_2') * s('EPS_1') * (s('ETA_2') - s('OETA2')) + s('D_ETA1') * (
+        s('ETA_1') - s('OETA1')
+    ) + s('D_ETA2') * (s('ETA_2') - s('OETA2')) + s('EPS_1') * (
+        s('D_EPS1') + s('D_EPSETA1_1') * (s('ETA_1') - s('OETA1'))
     ) + s(
         'OPRED'
     )
@@ -49,8 +50,8 @@ def test_get_observation_expression(testdata, load_model_for_test):
 def test_get_individual_prediction_expression(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real_linbase.mod')
     expr = get_individual_prediction_expression(model)
-    assert expr == s('D_ETA1') * (s('ETA(1)') - s('OETA1')) + s('D_ETA2') * (
-        s('ETA(2)') - s('OETA2')
+    assert expr == s('D_ETA1') * (s('ETA_1') - s('OETA1')) + s('D_ETA2') * (
+        s('ETA_2') - s('OETA2')
     ) + s('OPRED')
 
 
@@ -71,8 +72,8 @@ def test_calculate_epsilon_gradient_expression(testdata, load_model_for_test):
     expr = calculate_epsilon_gradient_expression(model)
     assert expr == [
         s('D_EPS1')
-        + s('D_EPSETA1_1') * (s('ETA(1)') - s('OETA1'))
-        + s('D_EPSETA1_2') * (s('ETA(2)') - s('OETA2'))
+        + s('D_EPSETA1_1') * (s('ETA_1') - s('OETA1'))
+        + s('D_EPSETA1_2') * (s('ETA_2') - s('OETA2'))
     ]
 
 
@@ -165,7 +166,7 @@ def test_mu_reference_model_generic(statements, correct):
     th1 = Parameter('THETA(1)', 2, lower=1)
     th2 = Parameter('THETA(2)', 2, lower=1)
     th3 = Parameter('THETA(3)', 2, lower=1)
-    params = Parameters([th1, th2, th3])
+    params = Parameters((th1, th2, th3))
     model.parameters = params
     mu_reference_model(model)
     assert model.statements == Statements(correct)
@@ -178,37 +179,37 @@ def test_simplify_expression():
 
     p1 = Parameter('x', 3)
     p2 = Parameter('y', 9, fix=True)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     model.parameters = pset
     assert simplify_expression(model, x * y) == 9.0 * x
 
     p1 = Parameter('x', 3, lower=0.001)
     p2 = Parameter('y', 9)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     model.parameters = pset
     assert simplify_expression(model, abs(x)) == x
 
     p1 = Parameter('x', 3, lower=0)
     p2 = Parameter('y', 9)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     model.parameters = pset
     assert simplify_expression(model, sympy.Piecewise((2, sympy.Ge(x, 0)), (56, True))) == 2
 
     p1 = Parameter('x', -3, upper=-1)
     p2 = Parameter('y', 9)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     model.parameters = pset
     assert simplify_expression(model, abs(x)) == -x
 
     p1 = Parameter('x', -3, upper=0)
     p2 = Parameter('y', 9)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     model.parameters = pset
     assert simplify_expression(model, sympy.Piecewise((2, sympy.Le(x, 0)), (56, True))) == 2
 
     p1 = Parameter('x', 3)
     p2 = Parameter('y', 9)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     model.parameters = pset
     assert simplify_expression(model, x * y) == x * y
 
@@ -223,8 +224,8 @@ def test_make_declarative(pheno):
     model = pheno.copy()
     make_declarative(model)
     assert model.statements[3].expression == sympy.Piecewise(
-        (s('WGT') * s('THETA(2)') * (s('THETA(3)') + 1), sympy.Lt(s('APGR'), 5)),
-        (s('WGT') * s('THETA(2)'), True),
+        (s('WGT') * s('PTVV') * (s('THETA_3') + 1), sympy.Lt(s('APGR'), 5)),
+        (s('WGT') * s('PTVV'), True),
     )
 
 
@@ -446,13 +447,13 @@ def test_has_random_effect(load_model_for_test, testdata, model_path, level, exp
 @pytest.mark.parametrize(
     ('model_path', 'rv', 'expected'),
     (
-        ('nonmem/pheno.mod', 'ETA(1)', ['CL']),
-        ('nonmem/pheno_real.mod', 'ETA(1)', ['CL']),
-        ('nonmem/pheno_block.mod', 'ETA(4)', ['MAT']),
-        ('nonmem/qa/iov.mod', 'ETA(1)', ['CL']),
-        ('nonmem/qa/iov.mod', 'ETA(2)', ['V']),
-        ('nonmem/qa/iov.mod', 'ETA(3)', ['CL']),
-        ('nonmem/qa/iov.mod', 'ETA(5)', ['CL']),
+        ('nonmem/pheno.mod', 'ETA_1', ['CL']),
+        ('nonmem/pheno_real.mod', 'ETA_1', ['CL']),
+        ('nonmem/pheno_block.mod', 'ETA_4', ['MAT']),
+        ('nonmem/qa/iov.mod', 'ETA_1', ['CL']),
+        ('nonmem/qa/iov.mod', 'ETA_2', ['V']),
+        ('nonmem/qa/iov.mod', 'ETA_3', ['CL']),
+        ('nonmem/qa/iov.mod', 'ETA_5', ['CL']),
     ),
     ids=repr,
 )
@@ -467,3 +468,8 @@ def test_get_rv_parameter_verify_input(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     with pytest.raises(ValueError, match='Could not find random variable: x'):
         get_rv_parameters(model, 'x')
+
+
+def test_display_odes(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    display_odes(model)

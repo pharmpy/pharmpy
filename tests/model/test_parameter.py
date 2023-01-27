@@ -49,6 +49,8 @@ def test_illegal_initialization(name, init, lower, upper, fix):
 def test_repr():
     param = Parameter('X', 2, lower=0, upper=23)
     assert repr(param) == 'Parameter("X", 2, lower=0, upper=23, fix=False)'
+    param = Parameter('X', 2)
+    assert repr(param) == 'Parameter("X", 2, lower=-∞, upper=∞, fix=False)'
 
 
 def test_fix():
@@ -62,15 +64,15 @@ def test_add():
     p1 = Parameter.create('x', 2)
     p2 = Parameter.create('y', 3)
     p3 = Parameter.create('z', 4)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     pset2 = pset + p3
     assert len(pset2) == 3
     assert pset2['z'].init == 4
-    pset3 = Parameters([p1])
-    pset4 = pset3 + Parameters([p2, p3])
+    pset3 = Parameters((p1,))
+    pset4 = pset3 + Parameters((p2, p3))
     assert len(pset4) == 3
     assert pset4['z'].init == 4
-    pset5 = Parameters([p1])
+    pset5 = Parameters((p1,))
     pset6 = pset5 + (p2, p3)
     assert len(pset6) == 3
     assert pset6['z'].init == 4
@@ -83,7 +85,7 @@ def test_pset_radd():
     p1 = Parameter.create('Y', 9)
     p2 = Parameter.create('X', 3)
     p3 = Parameter.create('Z', 1)
-    pset1 = Parameters([p1, p2, p3])
+    pset1 = Parameters((p1, p2, p3))
     p4 = Parameter.create('W', 1)
     cat = p4 + pset1
     assert len(cat) == 4
@@ -101,17 +103,20 @@ def test_pset_radd():
 
 def test_pset_init():
     p = Parameter.create('Y', 9)
-    pset = Parameters([p])
-    pset2 = Parameters(pset)
+    pset = Parameters((p,))
+    pset2 = Parameters.create(pset)
     assert len(pset2) == 1
     assert pset2['Y'].init == 9
 
     p2 = Parameter.create('Y', 12)
     with pytest.raises(ValueError):
-        Parameters([p, p2])
+        Parameters.create((p, p2))
 
     with pytest.raises(ValueError):
-        Parameters([23])
+        Parameters.create([23])
+
+    pset3 = Parameters.create()
+    assert len(pset3) == 0
 
 
 def test_pset_getitem():
@@ -148,7 +153,7 @@ def test_pset_nonfixed():
     p1 = Parameter.create('Y', 9, fix=False)
     p2 = Parameter.create('X', 3, fix=True)
     p3 = Parameter.create('Z', 1, fix=False)
-    pset = Parameters([p1, p2, p3])
+    pset = Parameters((p1, p2, p3))
     assert len(pset.nonfixed) == 2
     assert pset.nonfixed['Y'] == Parameter.create('Y', 9)
 
@@ -157,7 +162,7 @@ def test_pset_names():
     p1 = Parameter.create('Y', 9)
     p2 = Parameter.create('X', 3)
     p3 = Parameter.create('Z', 1)
-    pset = Parameters([p1, p2, p3])
+    pset = Parameters((p1, p2, p3))
     assert pset.names == ['Y', 'X', 'Z']
     assert pset.symbols == [symbol('Y'), symbol('X'), symbol('Z')]
 
@@ -165,7 +170,7 @@ def test_pset_names():
 def test_pset_lower_upper():
     p1 = Parameter('X', 0, lower=-1, upper=1)
     p2 = Parameter.create('Y', 1, lower=0)
-    pset = Parameters([p1, p2])
+    pset = Parameters((p1, p2))
     assert pset.lower == {'X': -1, 'Y': 0}
     assert pset.upper == {'X': 1, 'Y': sympy.oo}
 
@@ -174,7 +179,7 @@ def test_pset_nonfixed_inits():
     p1 = Parameter.create('Y', 9)
     p2 = Parameter.create('X', 3)
     p3 = Parameter.create('Z', 1)
-    pset = Parameters([p1, p2, p3])
+    pset = Parameters((p1, p2, p3))
     assert pset.nonfixed.inits == {'Y': 9, 'X': 3, 'Z': 1}
 
 
@@ -182,13 +187,13 @@ def test_pset_fix():
     p1 = Parameter.create('Y', 9, fix=False)
     p2 = Parameter.create('X', 3, fix=True)
     p3 = Parameter.create('Z', 1, fix=False)
-    pset = Parameters([p1, p2, p3])
+    pset = Parameters((p1, p2, p3))
     assert pset.fix == {'Y': False, 'X': True, 'Z': False}
 
 
 def test_pset_repr():
     p1 = Parameter.create('Y', 9, fix=False)
-    pset = Parameters([p1])
+    pset = Parameters((p1,))
     assert type(repr(pset)) == str
     assert type(pset._repr_html_()) == str
     pset = Parameters()
@@ -200,12 +205,22 @@ def test_pset_eq():
     p1 = Parameter.create('Y', 9)
     p2 = Parameter.create('X', 3)
     p3 = Parameter.create('Z', 1)
-    pset1 = Parameters([p1, p2, p3])
-    pset2 = Parameters([p1, p2])
+    pset1 = Parameters((p1, p2, p3))
+    pset2 = Parameters((p1, p2))
     assert pset1 != pset2
-    pset3 = Parameters([p1, p3, p2])
+    pset3 = Parameters((p1, p3, p2))
     assert pset1 != pset3
     assert pset1 == pset1
+    assert pset1 != 23
+
+
+def test_pset_replace():
+    p1 = Parameter.create('Y', 9)
+    p2 = Parameter.create('X', 3)
+    p3 = Parameter.create('Z', 1)
+    pset1 = Parameters((p1, p2, p3))
+    pset2 = pset1.replace(parameters=(p1, p2))
+    assert len(pset2) == 2
 
 
 def test_hash():
@@ -217,7 +232,7 @@ def test_contains():
     p1 = Parameter.create('Y', 9)
     p2 = Parameter.create('X', 3)
     p3 = Parameter.create('Z', 1)
-    pset1 = Parameters([p1, p2, p3])
+    pset1 = Parameters((p1, p2, p3))
     assert 'Y' in pset1
     assert 'Q' not in pset1
 
@@ -226,7 +241,7 @@ def test_set_initial_estimates():
     p1 = Parameter.create('Y', 9)
     p2 = Parameter.create('X', 3)
     p3 = Parameter.create('Z', 1)
-    pset1 = Parameters([p1, p2, p3])
+    pset1 = Parameters((p1, p2, p3))
     pset2 = pset1.set_initial_estimates({'Y': 23, 'Z': 19})
     assert pset2['Y'].init == 23
     assert pset2['X'].init == 3
@@ -240,7 +255,7 @@ def test_set_fix():
     p1 = Parameter.create('Y', 9, fix=True)
     p2 = Parameter.create('X', 3)
     p3 = Parameter.create('Z', 1)
-    pset1 = Parameters([p1, p2, p3])
+    pset1 = Parameters((p1, p2, p3))
     pset2 = pset1.set_fix({'Y': False, 'X': True})
     assert not pset2['Y'].fix
     assert pset2['X'].fix
@@ -254,9 +269,9 @@ def test_fixed_nonfixed():
     p1 = Parameter.create('Y', 9, fix=True)
     p2 = Parameter.create('X', 3)
     p3 = Parameter.create('Z', 1)
-    pset1 = Parameters([p1, p2, p3])
-    pset_fixed = Parameters([p1])
-    pset_nonfixed = Parameters([p2, p3])
+    pset1 = Parameters((p1, p2, p3))
+    pset_fixed = Parameters((p1,))
+    pset_nonfixed = Parameters((p2, p3))
     assert pset1.fixed == pset_fixed
     assert pset1.nonfixed == pset_nonfixed
 
@@ -265,7 +280,7 @@ def test_slice():
     p1 = Parameter.create('Y', 9)
     p2 = Parameter.create('X', 3)
     p3 = Parameter.create('Z', 1)
-    pset1 = Parameters([p1, p2, p3])
+    pset1 = Parameters((p1, p2, p3))
     sl = pset1[1:]
     assert len(sl) == 2
     assert sl['X'].init == 3

@@ -24,15 +24,15 @@ def test_all_options(parser):
 
 def test_set_option(parser):
     rec = parser.parse('$ETAS FILE=run1.phi').records[0]
-    rec.set_option("FILE", "new.phi")
-    assert rec.option_pairs == {'FILE': 'new.phi'}
-    assert str(rec) == '$ETAS FILE=new.phi'
+    newrec = rec.set_option("FILE", "new.phi")
+    assert newrec.option_pairs == {'FILE': 'new.phi'}
+    assert str(newrec) == '$ETAS FILE=new.phi'
 
     rec = parser.parse('$EST METHOD=1 INTER ; my est\n').records[0]
-    rec.set_option("METHOD", "0")
-    assert str(rec) == '$EST METHOD=0 INTER ; my est\n'
-    rec.set_option("CTYPE", "4")
-    assert str(rec) == '$EST METHOD=0 INTER CTYPE=4 ; my est\n'
+    newrec = rec.set_option("METHOD", "0")
+    assert str(newrec) == '$EST METHOD=0 INTER ; my est\n'
+    newrec2 = newrec.set_option("CTYPE", "4")
+    assert str(newrec2) == '$EST METHOD=0 INTER CTYPE=4 ; my est\n'
 
 
 @pytest.mark.parametrize(
@@ -45,8 +45,8 @@ def test_set_option(parser):
 )
 def test_remove_option(parser, buf, remove, expected):
     rec = parser.parse(buf).records[0]
-    rec.remove_option(remove)
-    assert str(rec) == expected
+    newrec = rec.remove_option(remove)
+    assert str(newrec) == expected
 
 
 @pytest.mark.parametrize(
@@ -59,8 +59,8 @@ def test_remove_option(parser, buf, remove, expected):
 )
 def test_remove_option_startswith(parser, buf, remove, expected):
     rec = parser.parse(buf).records[0]
-    rec.remove_option_startswith(remove)
-    assert str(rec) == expected
+    newrec = rec.remove_option_startswith(remove)
+    assert str(newrec) == expected
 
 
 @pytest.mark.parametrize(
@@ -110,8 +110,8 @@ def test_get_option_lists(parser, buf, expected):
 )
 def test_add_suboption_for_nth(parser, buf, n, subopt, result):
     rec = parser.parse(buf).records[0]
-    rec.add_suboption_for_nth('COMPARTMENT', n, subopt)
-    assert str(rec) == result
+    newrec = rec.add_suboption_for_nth('COMPARTMENT', n, subopt)
+    assert str(newrec) == result
 
 
 @pytest.mark.parametrize(
@@ -142,21 +142,21 @@ def test_match_option(valid, opt, expected):
 
 def test_append_node(parser):
     rec = parser.parse('$ESTIMATION METH=0 MAXEVALS=0').records[0]
-    rec.append_option('INTERACTION')
-    assert str(rec) == '$ESTIMATION METH=0 MAXEVALS=0 INTERACTION'
-    rec.append_option('MCETA', '100')
-    assert str(rec) == '$ESTIMATION METH=0 MAXEVALS=0 INTERACTION MCETA=100'
+    newrec = rec.append_option('INTERACTION')
+    assert str(newrec) == '$ESTIMATION METH=0 MAXEVALS=0 INTERACTION'
+    newrec2 = newrec.append_option('MCETA', '100')
+    assert str(newrec2) == '$ESTIMATION METH=0 MAXEVALS=0 INTERACTION MCETA=100'
 
 
 def test_prepend_node(parser):
     rec = parser.parse('$ESTIMATION METH=0 MAXEVALS=0').records[0]
-    rec.prepend_option('INTERACTION')
-    assert str(rec) == '$ESTIMATION INTERACTION METH=0 MAXEVALS=0'
-    rec.prepend_option('MCETA', '250')
-    assert str(rec) == '$ESTIMATION MCETA=250 INTERACTION METH=0 MAXEVALS=0'
+    newrec = rec.prepend_option('INTERACTION')
+    assert str(newrec) == '$ESTIMATION INTERACTION METH=0 MAXEVALS=0'
+    newrec2 = newrec.prepend_option('MCETA', '250')
+    assert str(newrec2) == '$ESTIMATION MCETA=250 INTERACTION METH=0 MAXEVALS=0'
 
 
 def test_remove_subotion_for_all(parser):
     rec = parser.parse('$MODEL COMP=(COMP1 DEFDOSE) COMP=(COMP2)').records[0]
-    rec.remove_suboption_for_all('COMPARTMENT', 'DEFDOSE')
-    assert str(rec) == '$MODEL COMP=(COMP1) COMP=(COMP2)'
+    newrec = rec.remove_suboption_for_all('COMPARTMENT', 'DEFDOSE')
+    assert str(newrec) == '$MODEL COMP=(COMP1) COMP=(COMP2)'

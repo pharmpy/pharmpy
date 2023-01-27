@@ -61,10 +61,6 @@ class VariabilityLevel(Immutable):
             and self._group == other._group
         )
 
-    def __add__(self, other):
-        if isinstance(other, VariabilityHierarchy):
-            return VariabilityHierarchy([self] + other._levels)
-
     @property
     def name(self) -> str:
         """Name of the variability level"""
@@ -87,11 +83,15 @@ class VariabilityLevel(Immutable):
 class VariabilityHierarchy(Immutable):
     """Description of a variability hierarchy"""
 
-    def __init__(self, levels=None):
+    def __init__(self, levels=()):
+        self._levels = levels
+
+    @classmethod
+    def create(cls, levels=None):
         if levels is None:
-            self._levels = []
+            levels = ()
         elif isinstance(levels, VariabilityHierarchy):
-            self._levels = levels._levels
+            levels = levels._levels
         else:
             found_ref = False
             for level in levels:
@@ -104,7 +104,14 @@ class VariabilityHierarchy(Immutable):
                         found_ref = True
             if not found_ref:
                 raise ValueError("A VariabilityHierarchy must have a reference level")
-            self._levels = list(levels)
+            levels = tuple(levels)
+        return VariabilityHierarchy(levels)
+
+    def replace(self, **kwargs):
+        """Replace properties and create a new VariabilityHierarchy object"""
+        levels = kwargs.get('levels', self._levels)
+        new = VariabilityHierarchy.create(levels)
+        return new
 
     def __eq__(self, other):
         if not isinstance(other, VariabilityHierarchy):
@@ -151,15 +158,21 @@ class VariabilityHierarchy(Immutable):
         else:
             return self._lookup(ind)
         new = [self._lookup(level) for level in levels]
-        return VariabilityHierarchy(new)
+        return VariabilityHierarchy.create(new)
 
     def __add__(self, other):
         if isinstance(other, VariabilityLevel):
-            levels = [other]
+            levels = (other,)
+        else:
+            raise ValueError(f"Cannot add {other} to VariabilityHierarchy")
+        new = VariabilityHierarchy.create(self._levels + levels)
+        return new
+
+    def __radd__(self, other):
+        if isinstance(other, VariabilityLevel):
+            return VariabilityHierarchy.create((other,) + self._levels)
         else:
             raise ValueError(f"Cannot add {other} to VariabilityLevel")
-        new = VariabilityHierarchy(self._levels + levels)
-        return new
 
     @property
     def names(self) -> List[str]:
@@ -169,7 +182,9 @@ class VariabilityHierarchy(Immutable):
     def _find_reference(self) -> int:
         # Find numerical level of first level
         # No error checking since having a reference level is an invariant
-        return next((-i for i, level in enumerate(self._levels) if level.reference))
+        return next(  # pragma: no cover
+            (-i for i, level in enumerate(self._levels) if level.reference)
+        )
 
     @property
     def levels(self):
@@ -246,7 +261,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         if eta_levels is None:
             iiv_level = VariabilityLevel('IIV', reference=True, group='ID')
             iov_level = VariabilityLevel('IOV', reference=False, group='OCC')
-            eta_levels = VariabilityHierarchy([iiv_level, iov_level])
+            eta_levels = VariabilityHierarchy((iiv_level, iov_level))
         else:
             if not isinstance(eta_levels, VariabilityHierarchy):
                 raise TypeError(
@@ -255,7 +270,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         if epsilon_levels is None:
             ruv_level = VariabilityLevel('RUV', reference=True)
-            epsilon_levels = VariabilityHierarchy([ruv_level])
+            epsilon_levels = VariabilityHierarchy((ruv_level,))
         else:
             if not isinstance(epsilon_levels, VariabilityHierarchy):
                 raise TypeError(
@@ -264,14 +279,11 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         return cls(dists, eta_levels, epsilon_levels)
 
-    def derive(self, dists=None, eta_levels=None, epsilon_levels=None):
-        if dists is None:
-            dists = self._dists
-        if eta_levels is None:
-            eta_levels = self._eta_levels
-        if epsilon_levels is None:
-            epsilon_levels = self._epsilon_levels
-        return RandomVariables(dists, eta_levels, epsilon_levels)
+    def replace(self, **kwargs):
+        dists = kwargs.get('dists', self._dists)
+        eta_levels = kwargs.get('eta_levels', self._eta_levels)
+        epsilon_levels = kwargs.get('epsilon_levels', self._epsilon_levels)
+        return RandomVariables.create(dists, eta_levels, epsilon_levels)
 
     @property
     def eta_levels(self):
@@ -479,7 +491,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         """
         new_dists = tuple(dist.subs(d) for dist in self._dists)
-        return self.derive(dists=new_dists)
+        return self.replace(dists=new_dists)
 
     def unjoin(self, inds):
         """Remove all covariances the random variables have with other random variables
@@ -773,6 +785,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
 def _sample_from_distributions(distributions, expr, parameters, nsamples, rng):
     random_variable_symbols = expr.free_symbols.difference(parameters.keys())
+    print(random_variable_symbols)
     filtered_distributions = filter_distributions(distributions, random_variable_symbols)
     sampling_rvs = subs_distributions(filtered_distributions, parameters)
     sampled_expr = subs(expr, parameters, simultaneous=True)

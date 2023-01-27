@@ -49,9 +49,9 @@ def test_ofv():
 
 
 def test_aic():
-    run1 = DummyModel("run1", ofv=0, parameters=Parameters([]))
-    run2 = DummyModel("run2", ofv=-1, parameters=Parameters([]))
-    run3 = DummyModel("run3", ofv=-14, parameters=Parameters([]))
+    run1 = DummyModel("run1", ofv=0, parameters=Parameters())
+    run2 = DummyModel("run2", ofv=-1, parameters=Parameters())
+    run3 = DummyModel("run3", ofv=-14, parameters=Parameters())
     res, _ = aic(run1, [run2, run3], cutoff=3.84)
     assert [run3] == res
     res, _ = aic(run1, [run2, run3])

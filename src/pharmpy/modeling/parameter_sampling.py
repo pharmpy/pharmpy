@@ -1,12 +1,14 @@
 import warnings
 from functools import partial
+from typing import List, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import is_posdef, nearest_postive_semidefinite
+from pharmpy.model import Model
 
 
-def create_rng(seed=None):
+def create_rng(seed: Optional[Union[np.random.Generator, int]] = None):
     """Create a new random number generator
 
     Pharmpy functions that use random sampling take a random number generator or seed as input.
@@ -80,7 +82,7 @@ def _sample_from_function(
 
     pe = parameter_estimates.to_numpy()
 
-    parameter_summary = model.parameters.to_dataframe().loc[parameter_estimates.index]
+    parameter_summary = model.parameters.to_dataframe().loc[parameter_estimates.keys()]
     parameter_summary = parameter_summary[~parameter_summary['fix']]
     lower = parameter_summary.lower.astype('float64').to_numpy()
     upper = parameter_summary.upper.astype('float64').to_numpy()
@@ -97,7 +99,7 @@ def _sample_from_function(
     i = 0
     while remaining > 0:
         samples = samplingfn(pe, lower, upper, n=remaining, rng=rng)
-        df = pd.DataFrame(samples, columns=parameter_estimates.index)
+        df = pd.DataFrame(samples, columns=parameter_estimates.keys())
         if not force_posdef:
             selected = df[df.apply(model.random_variables.validate_parameters, axis=1)]
         else:
@@ -113,7 +115,12 @@ def _sample_from_function(
 
 
 def sample_parameters_uniformly(
-    model, parameter_estimates, fraction=0.1, force_posdef_samples=None, n=1, rng=None
+    model: Model,
+    parameter_estimates: pd.Series,
+    fraction: float = 0.1,
+    force_posdef_samples: Optional[int] = None,
+    n: int = 1,
+    rng: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Sample parameter vectors using uniform sampling
 
@@ -148,10 +155,10 @@ def sample_parameters_uniformly(
     >>> rng = create_rng(23)
     >>> pe = model.modelfit_results.parameter_estimates
     >>> sample_parameters_uniformly(model, pe, n=3, rng=rng)
-       THETA(1)  THETA(2)  THETA(3)  OMEGA(1,1)  OMEGA(2,2)  SIGMA(1,1)
-    0  0.004878  0.908216  0.149441    0.029179    0.025472    0.012947
-    1  0.004828  1.014444  0.149958    0.028853    0.027653    0.013348
-    2  0.004347  1.053837  0.165804    0.028465    0.026798    0.013727
+          PTVCL      PTVV   THETA_3      IVCL       IVV  SIGMA_1_1
+    0  0.004878  0.908216  0.149441  0.029179  0.025472   0.012947
+    1  0.004828  1.014444  0.149958  0.028853  0.027653   0.013348
+    2  0.004347  1.053837  0.165804  0.028465  0.026798   0.013727
 
     See also
     --------
@@ -176,13 +183,13 @@ def sample_parameters_uniformly(
 
 
 def sample_parameters_from_covariance_matrix(
-    model,
-    parameter_estimates,
-    covariance_matrix,
-    force_posdef_samples=None,
-    force_posdef_covmatrix=False,
-    n=1,
-    rng=None,
+    model: Model,
+    parameter_estimates: pd.Series,
+    covariance_matrix: pd.DataFrame,
+    force_posdef_samples: Optional[int] = None,
+    force_posdef_covmatrix: bool = False,
+    n: int = 1,
+    rng: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Sample parameter vectors using the covariance matrix
 
@@ -219,10 +226,10 @@ def sample_parameters_from_covariance_matrix(
     >>> cov = model.modelfit_results.covariance_matrix
     >>> pe = model.modelfit_results.parameter_estimates
     >>> sample_parameters_from_covariance_matrix(model, pe, cov, n=3, rng=rng)
-       THETA(1)  THETA(2)  THETA(3)  OMEGA(1,1)  OMEGA(2,2)  SIGMA(1,1)
-    0  0.005069  0.974989  0.204629    0.024756    0.012088    0.012943
-    1  0.004690  0.958431  0.233231    0.038866    0.029000    0.012516
-    2  0.004902  0.950778  0.128388    0.019020    0.023866    0.013413
+          PTVCL      PTVV   THETA_3      IVCL       IVV  SIGMA_1_1
+    0  0.005069  0.974989  0.204629  0.024756  0.012088   0.012943
+    1  0.004690  0.958431  0.233231  0.038866  0.029000   0.012516
+    2  0.004902  0.950778  0.128388  0.019020  0.023866   0.013413
 
     See also
     --------
@@ -230,7 +237,7 @@ def sample_parameters_from_covariance_matrix(
     sample_individual_estimates : Sample individual estiates given their covariance
 
     """
-    sigma = covariance_matrix.loc[parameter_estimates.index, parameter_estimates.index].to_numpy()
+    sigma = covariance_matrix.loc[parameter_estimates.keys(), parameter_estimates.keys()].to_numpy()
     if not is_posdef(sigma):
         if force_posdef_covmatrix:
             old_sigma = sigma
@@ -253,12 +260,12 @@ def sample_parameters_from_covariance_matrix(
 
 
 def sample_individual_estimates(
-    model,
-    individual_estimates,
-    individual_estimates_covariance,
-    parameters=None,
-    samples_per_id=100,
-    rng=None,
+    model: Model,
+    individual_estimates: pd.DataFrame,
+    individual_estimates_covariance: pd.DataFrame,
+    parameters: Optional[List[str]] = None,
+    samples_per_id: int = 100,
+    rng: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Sample individual estimates given their covariance.
 
@@ -290,7 +297,7 @@ def sample_individual_estimates(
     >>> ie = model.modelfit_results.individual_estimates
     >>> iec = model.modelfit_results.individual_estimates_covariance
     >>> sample_individual_estimates(model, ie, iec, samples_per_id=2, rng=rng)
-                 ETA(1)    ETA(2)
+                  ETA_1     ETA_2
     ID sample
     1  0      -0.127941  0.037273
        1      -0.065492 -0.182851

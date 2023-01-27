@@ -19,31 +19,14 @@ class ModelRecord(OptionRecord):
 
     def add_compartment(self, name, dosing=False):
         options = (name, 'DEFDOSE') if dosing else (name,)
-        self.append_option('COMPARTMENT', f'({" ".join(options)})')
-
-    def prepend_compartment(self, name, dosing=False):
-        options = (name, 'DEFDOSE') if dosing else (name,)
-        self.prepend_option('COMPARTMENT', f'({" ".join(options)})')
+        newrec = self.append_option('COMPARTMENT', f'({" ".join(options)})')
+        return newrec
 
     def get_compartment_number(self, name):
         for i, (curname, _) in enumerate(self.compartments()):
             if name == curname:
                 return i + 1
         return None
-
-    def remove_compartment(self, name):
-        n = self.get_compartment_number(name)
-        assert n is not None
-        self.remove_nth_option('COMPARTMENT', n - 1)
-
-    def set_dosing(self, name):
-        n = self.get_compartment_number(name)
-        assert n is not None
-        self.add_suboption_for_nth('COMPARTMENT', n - 1, 'DEFDOSE')
-
-    def move_dosing_first(self):
-        self.remove_suboption_for_all('COMPARTMENT', 'DEFDOSE')
-        self.add_suboption_for_nth('COMPARTMENT', 0, 'DEFDOSE')
 
     def compartments(self):
         ncomps = self.ncomps

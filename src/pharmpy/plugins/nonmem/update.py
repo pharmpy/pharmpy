@@ -18,7 +18,6 @@ from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     Distribution,
-    ExplicitODESystem,
     Infusion,
     ODESystem,
     Parameter,
@@ -26,6 +25,7 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
     data,
+    output,
 )
 from pharmpy.modeling import get_ids, simplify_expression
 
@@ -33,178 +33,221 @@ if TYPE_CHECKING:
     from .model import Model
 
 from .nmtran_parser import NMTranControlStream
-from .parameters import parameter_translation
-from .parsing import get_zero_fix_rvs, parse_column_info
+from .parsing import parse_column_info
 from .records import code_record
 from .records.code_record import CodeRecord
 from .records.etas_record import EtasRecord
 from .records.factory import create_record
 from .records.model_record import ModelRecord
-from .records.omega_record import OmegaRecord
 from .records.sizes_record import SizesRecord
-from .records.theta_record import ThetaRecord
 from .table import NONMEMTableFile, PhiTable
 
 
 def update_description(model: Model):
     if model.description != model.internals._old_description:
         probrec = model.internals.control_stream.get_records('PROBLEM')[0]
-        probrec.title = model.description
+        new = probrec.set_title(model.description)
+        model.internals.control_stream.replace_records([probrec], [new])
 
 
-def update_parameters(model: Model, old: Parameters, new: Parameters):
-    new_names = {p.name for p in new}
-    old_names = {p.name for p in old}
-    removed = old_names - new_names
-    if removed:
-        remove_records = []
-        next_theta = 1
-        for theta_record in model.internals.control_stream.get_records('THETA'):
-            current_names = theta_record.name_map.keys()
-            if removed >= current_names:
-                remove_records.append(theta_record)
-            elif not removed.isdisjoint(current_names):
-                # one or more in the record
-                theta_record.remove(removed & current_names)
-                theta_record.renumber(next_theta)
-                next_theta += len(theta_record)
+def reorder_diff(diff, kept_names):
+    # Reorder diff so that add comes just before the corresponding remove
+    # Allow other remove inbetween
+    new_diff = []
+    diff = list(diff)
+    handled = set()
+    for i, (op, param) in enumerate(diff):
+        if op == -1 and param.name in kept_names:
+            for j in range(i + 1, len(diff)):
+                curop = diff[j][0]
+                curpar = diff[j][1]
+                if curop == 1 and curpar.name == param.name:
+                    new_diff.append((curop, curpar))
+                    new_diff.append((op, param))
+                    handled.add(j)
+                    break
+                elif curop == 0:
+                    new_diff.append((op, param))
+                    break
             else:
-                # keep all
-                theta_record.renumber(next_theta)
-                next_theta += len(theta_record)
-        for sigma_record in model.internals.control_stream.get_records('SIGMA'):
-            current_names = sigma_record.name_map.keys()
-            if removed >= current_names:
-                remove_records.append(sigma_record)
-        model.internals.control_stream.remove_records(remove_records)
+                new_diff.append((op, param))
+        else:
+            if i not in handled:
+                new_diff.append((op, param))
+    return new_diff
 
-    renamed_params_list = []
 
-    for p in new:
-        name = p.name
-        p_renamed = p
-        if name not in old and name not in model.random_variables.parameter_names:
-            # This is a new theta
-            theta_number = get_next_theta(model)
-            if re.match(r'THETA\(\d+\)', name):
-                p_renamed = p.replace(name=f'THETA({theta_number})')
-            record = create_theta_record(model, p_renamed)
-            assert isinstance(record, ThetaRecord)
-            record.add_nonmem_name(p_renamed.name, theta_number)
+def update_thetas(model: Model, control_stream, old: Parameters, new: Parameters):
+    new_thetas = [p for p in new if p.symbol not in model.random_variables.free_symbols]
+    old_thetas = [
+        p for p in old if p.symbol not in model.internals._old_random_variables.free_symbols
+    ]
 
-        renamed_params_list.append(p_renamed)
+    diff_thetas = diff(old_thetas, new_thetas)
+    theta_records = control_stream.get_records('THETA')
+    record_index = 0
+    old_theta_names = {p.name for p in old_thetas}
+    new_theta_names = {p.name for p in new_thetas}
+    kept_theta_names = old_theta_names.intersection(new_theta_names)
 
-    renamed_params = Parameters(renamed_params_list)
+    new_diff = reorder_diff(diff_thetas, kept_theta_names)
 
-    if renamed_params != new:
-        model.parameters = renamed_params
+    new_theta_records = []
+    cur_to_change = []
+    cur_to_remove = []
+    i = 0
 
-    next_theta = 1
-    for theta_record in model.internals.control_stream.get_records('THETA'):
-        theta_record.update(new, next_theta)
-        next_theta += len(theta_record)
+    for op, param in new_diff:
+        if op == 1:
+            if param.name in kept_theta_names:
+                # Changed
+                cur_to_change.append(param)
+                i += 1
+            else:
+                # Added
+                new = create_theta_record(param)
+                new_theta_records.append(new)
+        elif op == -1:
+            if param.name not in kept_theta_names:
+                # Removed
+                cur_to_remove.append(i)
+                i += 1
+            else:
+                # Changed: handled in + case
+                pass
+        else:
+            record = theta_records[record_index]
+            if len(record) == 1:
+                new_theta_records.append(record)
+                record_index += 1
+            else:
+                cur_to_change.append(param)
+                i += 1
+        if record_index < len(theta_records) and len(theta_records[record_index]) == i:
+            if len(cur_to_remove) != len(theta_records[record_index]):
+                # Don't remove all
+                new = theta_records[record_index].remove(cur_to_remove).update(cur_to_change)
+                new_theta_records.append(new)
+            i = 0
+            cur_to_remove = []
+            cur_to_change = []
+            record_index += 1
 
-    next_omega = 1
-    previous_size = None
-    for omega_record in model.internals.control_stream.get_records('OMEGA'):
-        next_omega, previous_size = omega_record.update(new, next_omega, previous_size)
-
-    next_sigma = 1
-    previous_size = None
-    for sigma_record in model.internals.control_stream.get_records('SIGMA'):
-        next_sigma, previous_size = sigma_record.update(new, next_sigma, previous_size)
+    control_stream = control_stream.replace_all('THETA', new_theta_records)
+    return control_stream
 
 
 def update_random_variables(model: Model, old: RandomVariables, new: RandomVariables):
-    if not hasattr(model, '_parameters'):
-        model.parameters
-
-    rec_dict = {}
-    comment_dict = {}
-
-    for omega_record in model.internals.control_stream.get_records(
-        'OMEGA'
-    ) + model.internals.control_stream.get_records('SIGMA'):
-        comment_dict.update(omega_record.comment_map)
-        current_names = omega_record.eta_map.keys()
-        for name in current_names:
-            rec_dict[name] = omega_record
-
     rvs_diff_eta = diff(old.etas, new.etas)
+    new_omegas = update_random_variable_records(model, rvs_diff_eta, 'OMEGA')
+    control_stream = model.internals.control_stream.replace_all('OMEGA', new_omegas)
+
     rvs_diff_eps = diff(old.epsilons, new.epsilons)
-
-    update_random_variable_records(model, rvs_diff_eta, rec_dict, comment_dict)
-    update_random_variable_records(model, rvs_diff_eps, rec_dict, comment_dict)
-
-    next_eta = 1
-    for omega_record in model.internals.control_stream.get_records('OMEGA'):
-        omega_record.renumber(next_eta)
-        next_eta += len(omega_record)
-
-    next_eps = 1
-    for sigma_record in model.internals.control_stream.get_records('SIGMA'):
-        sigma_record.renumber(next_eps)
-        next_eps += len(sigma_record)
+    new_sigmas = update_random_variable_records(model, rvs_diff_eps, 'SIGMA')
+    control_stream = control_stream.replace_all('SIGMA', new_sigmas)
+    return control_stream
 
 
-def update_random_variable_records(model: Model, rvs_diff, rec_dict, comment_dict):
-    removed = []
+def update_random_variable_records(model: Model, rvs_diff, record_type):
+    records = model.internals.control_stream.get_records(record_type)
+    kept = []
+    recindex = 0
+    diag_index = 0  # DIAG(n) counter
+    diag_remove = []
+    diag_change = []
+
+    if record_type == 'OMEGA':
+        old_names = set(model.internals._old_random_variables.etas.parameter_names)
+        new_names = set(model.random_variables.etas.parameter_names)
+    else:
+        old_names = set(model.internals._old_random_variables.epsilons.parameter_names)
+        new_names = set(model.random_variables.epsilons.parameter_names)
+    kept_names = old_names.intersection(new_names)
+
     eta_number = 1
-    number_of_records = 0
 
     rvs_diff = list(rvs_diff)
 
-    rvs_removed = [RandomVariables.create(rvs).names for (op, rvs) in rvs_diff if op == -1]
-    rvs_removed = [rv for sublist in rvs_removed for rv in sublist]
-
+    recindex = 0
     for op, rvs in rvs_diff:
+        in_diag = recindex < len(records) and len(rvs) == 1 and len(records[recindex]) > 1
         if op == 1:
-            if len(rvs) == 1:
-                create_omega_single(model, rvs, eta_number, number_of_records, comment_dict)
+            if rvs in model.internals._old_random_variables and set(rvs.parameter_names).issubset(
+                kept_names
+            ):
+                # Changed
+                if in_diag:
+                    param = model.parameters[rvs.variance.name]
+                    diag_change.append(param)
+                else:
+                    params = []
+                    if len(rvs) > 1:
+                        for row in range(0, len(rvs)):
+                            for col in range(0, row + 1):
+                                param = model.parameters[rvs.variance[row, col].name]
+                                params.append(param)
+                    else:
+                        param = model.parameters[rvs.variance.name]
+                        params.append(param)
+                    newrec = records[recindex].update(params)
+                    kept.append(newrec)
+                    recindex += 1
             else:
-                create_omega_block(model, rvs, eta_number, number_of_records, comment_dict)
+                # Added
+                if len(rvs) == 1:
+                    newrec = create_omega_single(model, rvs, eta_number)
+                else:
+                    newrec = create_omega_block(model, rvs, eta_number)
+                kept.append(newrec)
             eta_number += len(rvs)
-            number_of_records += 1
         elif op == -1:
-            rvs_rec = list({rec_dict[name] for name in rvs.names})
-            recs_to_remove = [rec for rec in rvs_rec if rec not in removed]
-            if recs_to_remove:
-                model.internals.control_stream.remove_records(recs_to_remove)
-                removed += list(recs_to_remove)
+            if not (
+                rvs in model.internals._old_random_variables
+                and set(rvs.parameter_names).issubset(kept_names)
+            ):
+                # Removed
+                if in_diag:
+                    diag_remove.append((diag_index, 0))
+                    diag_index += 1
+                else:
+                    recindex += 1
+            else:
+                # Changed handled in + case
+                pass
         else:
-            diag_rvs = get_diagonal(rvs, rec_dict)
-            # Account for etas in diagonal
-            if diag_rvs:
-                # Create new diagonal record if any in record has been removed
-                if any(rv in rvs_removed for rv in diag_rvs):
-                    create_omega_single(model, rvs, eta_number, number_of_records, comment_dict)
-                # If none has been removed and this rv is not the first one,
-                #   the record index should not increase
-                elif len(diag_rvs) > 1 and rvs != model.random_variables[diag_rvs[0]]:
-                    continue
+            if in_diag:
+                param = model.parameters[rvs.variance.name]
+                diag_change.append(param)
+                diag_index += 1
+            else:
+                params = []
+                if len(rvs) > 1:
+                    for row in range(0, len(rvs)):
+                        for col in range(0, row + 1):
+                            param = model.parameters[rvs.variance[row, col].name]
+                            params.append(param)
+                else:
+                    param = model.parameters[rvs.variance.name]
+                    params.append(param)
+                new = records[recindex].update(params)
+                kept.append(new)
+                recindex += 1
             eta_number += len(rvs)
-            number_of_records += 1
+        if recindex < len(records) and diag_index == len(records[recindex]):
+            if len(diag_remove) != len(records[recindex]):
+                newrec = records[recindex].remove(diag_remove)
+                if diag_change:
+                    newrec = newrec.update(diag_change)
+                kept.append(newrec)
+            diag_index = 0
+            diag_remove = []
+            diag_change = []
+            recindex += 1
+    return kept
 
 
-def get_diagonal(rv: RandomVariables, rec_dict):
-    rv_rec = rec_dict[rv.names[0]]
-    etas_from_same_record = [eta for eta, rec in rec_dict.items() if rec == rv_rec]
-    return etas_from_same_record if len(etas_from_same_record) >= 2 else None
-
-
-def get_next_theta(model: Model):
-    """Find the next available theta number"""
-    next_theta = 1
-
-    for theta_record in model.internals.control_stream.get_records('THETA'):
-        thetas = theta_record.parameters(next_theta)
-        next_theta += len(thetas)
-
-    return next_theta
-
-
-def create_theta_record(model: Model, param: Parameter):
-    param_str = '$THETA  '
+def create_theta_record(param: Parameter):
+    code = '$THETA  '
 
     if param.init == 0.0:
         init = 0
@@ -223,24 +266,23 @@ def create_theta_record(model: Model, param: Parameter):
 
     if upper < 1000000:
         if lower <= -1000000:
-            param_str += f'(-INF,{init},{upper})'
+            code += f'(-INF,{init},{upper})'
         else:
-            param_str += f'({lower},{init},{upper})'
+            code += f'({lower},{init},{upper})'
     else:
         if lower <= -1000000:
-            param_str += f'{init}'
+            code += f'{init}'
         else:
-            param_str += f'({lower},{init})'
+            code += f'({lower},{init})'
     if param.fix:
-        param_str += ' FIX'
-    param_str += '\n'
-    record = model.internals.control_stream.insert_record(param_str)
+        code += ' FIX'
+
+    code += f' ; {param.name}\n'
+    record = create_record(code)
     return record
 
 
-def create_omega_single(
-    model: Model, rv: Distribution, eta_number: int, record_number: int, comment_dict
-):
+def create_omega_single(model: Model, rv: Distribution, eta_number: int):
     rvs, pset = model.random_variables, model.parameters
 
     if rv.level == 'RUV':
@@ -250,124 +292,94 @@ def create_omega_single(
 
     variance_param = pset[rv.parameter_names[0]]
 
+    no_name = False
     if rv.level == 'IOV':
-        param_str = f'${record_type}  BLOCK(1)'
+        code = f'${record_type}  BLOCK(1)'
         first_iov = next(filter(lambda iov: iov.parameter_names == rv.parameter_names, rvs.iov))
         if rv == first_iov:
-            param_str += f'\n{variance_param.init}'
+            code += f'\n{variance_param.init}'
         else:
-            param_str += ' SAME'
+            no_name = True
+            code += ' SAME'
     else:
-        param_str = f'${record_type}  {variance_param.init}'
+        code = f'${record_type}  {variance_param.init}'
 
-    if not re.match(r'(OMEGA|SIGMA)\(\d+,\d+\)', variance_param.name):
-        param_str += f' ; {variance_param.name}'
-    elif comment_dict and variance_param.name in comment_dict.keys():
-        param_str += f' ; {comment_dict[variance_param.name]}'
+    if variance_param.fix:
+        code += " FIX"
 
-    record = insert_omega_record(model, f'{param_str}\n', record_number, record_type)
+    if (
+        not re.match(f'{record_type}_{eta_number}_{eta_number}', variance_param.name)
+        and not no_name
+    ):
+        code += f' ; {variance_param.name}'
 
-    record.comment_map = comment_dict
-    record.eta_map = {rv.names[0]: eta_number}
-    record.name_map = {variance_param.name: (eta_number, eta_number)}
+    code += '\n'
+    record = create_record(code)
+    return record
 
 
-def create_omega_block(
-    model: Model, distribution: Distribution, eta_number: int, record_number: int, comment_dict
-):
+def create_omega_block(model: Model, distribution: Distribution, eta_number: int):
     rvs = RandomVariables.create([distribution])
     cm = rvs.covariance_matrix
-    param_str = f'$OMEGA BLOCK({cm.shape[0]})'
 
     rv = rvs[0]
+
+    if rv.level == 'RUV':
+        record_type = 'SIGMA'
+    else:
+        record_type = 'OMEGA'
+
+    code = f'${record_type} BLOCK({cm.shape[0]})'
 
     if rv.level == 'IOV' and rv != next(
         filter(lambda iov: iov.parameter_names == rv.parameter_names, model.random_variables.iov)
     ):
-        param_str += ' SAME\n'
-
+        code += ' SAME\n'
     else:
-        param_str += '\n'
+        code += '\n'
         for row in range(cm.shape[0]):
             for col in range(row + 1):
                 elem = cm.row(row).col(col)
                 name = str(elem[0])
                 omega = model.parameters[name]
-                param_str += f'{omega.init}'.upper()
+                code += f'{omega.init}'.upper()
 
-                if not re.match(r'OMEGA\(\d+,\d+\)', omega.name):
-                    param_str += f'\t; {omega.name}'
-                elif comment_dict and omega.name in comment_dict:
-                    param_str += f'\t; {comment_dict[omega.name]}'
+                if not re.match(f'{record_type}_{row + eta_number}_{col + eta_number}', omega.name):
+                    code += f'\t; {omega.name}'
 
-                param_str += '\n'
+                code += '\n'
 
-            param_str = f'{param_str.rstrip()}\n'
+            code = f'{code.rstrip()}\n'
 
-    eta_map, name_variance = {}, {}
-
-    for rv_name in rvs.names:
-        variance_param = rvs[rv_name].get_variance(rv_name)
-        eta_map[rv_name] = eta_number
-        name_variance[variance_param.name] = (eta_number, eta_number)
-        eta_number += 1
-
-    rv_combinations = [
-        (rv1, rv2) for idx, rv1 in enumerate(rvs.names) for rv2 in rvs.names[idx + 1 :]
-    ]
-    name_covariance = {
-        rvs.get_covariance(rv1, rv2).name: (eta_map[rv2], eta_map[rv1])
-        for rv1, rv2 in rv_combinations
-    }
-
-    record = insert_omega_record(model, param_str, record_number, 'OMEGA')
-
-    record.comment_map = comment_dict
-    record.eta_map = eta_map
-    record.name_map = {**name_variance, **name_covariance}
-
-
-def insert_omega_record(model: Model, param_str: str, record_number: int, record_type: str):
-    records = model.internals.control_stream.records
-    tprecs = model.internals.control_stream.get_records(record_type)
-    if tprecs:
-        index = records.index(tprecs[0])
-        record = model.internals.control_stream.insert_record(param_str, index + record_number)
-    else:
-        record = model.internals.control_stream.insert_record(param_str)
-    assert isinstance(record, OmegaRecord)
+    record = create_record(code)
     return record
 
 
-def update_ode_system(model: Model, old: Optional[ODESystem], new: ODESystem):
+def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: CompartmentalSystem):
     """Update ODE system
 
-    Handle changes from CompartmentSystem to ExplicitODESystem
+    Handle changes from to CompartmentSystem
     """
     if old is None:
         old = CompartmentalSystem(CompartmentalSystemBuilder())
 
     update_lag_time(model, old, new)
 
-    if isinstance(old, CompartmentalSystem) and isinstance(new, ExplicitODESystem):
+    advan, trans, nonlin = new_advan_trans(model)
+
+    if nonlin:
         to_des(model, new)
-    elif isinstance(old, ExplicitODESystem) and isinstance(new, CompartmentalSystem):
-        # Stay with $DES for now
-        update_des(model, old, new)
-    elif isinstance(old, CompartmentalSystem) and isinstance(new, CompartmentalSystem):
+    else:
         if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.datainfo.names:
             df = model.dataset.drop(columns=['RATE'])
             model.dataset = df
 
-        advan, trans = new_advan_trans(model)
         pk_param_conversion(model, advan=advan, trans=trans)
         add_needed_pk_parameters(model, advan, trans)
         update_subroutines_record(model, advan, trans)
         update_model_record(model, advan)
 
     update_infusion(model, old)
-
-    force_des(model, new)
 
 
 def is_nonlinear_odes(model: Model):
@@ -382,8 +394,6 @@ def update_infusion(model: Model, old: ODESystem):
     statements = model.statements
     new = statements.ode_system
     assert new is not None
-    old = old.to_compartmental_system()
-    new = new.to_compartmental_system()
     if isinstance(new.dosing_compartment.dose, Infusion) and not statements.find_assignment('D1'):
         # Handle direct moving of Infusion dose
         statements.subs({'D2': 'D1'})
@@ -396,7 +406,7 @@ def update_infusion(model: Model, old: ODESystem):
             # FIXME: Not always D1 here!
             ass = Assignment(sympy.Symbol('D1'), dose.duration)
             cb = CompartmentalSystemBuilder(new)
-            cb.set_dose(new.dosing_compartment, Infusion(dose.amount, ass.symbol))
+            cb.set_dose(new.dosing_compartment, Infusion(dose.amount, duration=ass.symbol))
             model.statements = (
                 model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
             )
@@ -416,64 +426,26 @@ def update_infusion(model: Model, old: ODESystem):
         model.dataset = df
 
 
-def update_des(model: Model, old: ExplicitODESystem, new: ODESystem):
-    """Update where both old and new should be explicit ODE systems"""
-    pass
-
-
-def force_des(model: Model, odes: ODESystem):
-    """Switch to $DES if necessary"""
-    if isinstance(odes, ExplicitODESystem):
-        return
-
-    amounts = {sympy.Function(amt.name)(sympy.Symbol('t')) for amt in odes.amounts}
-    if odes.atoms(sympy.Function) & amounts:
-        explicit_odes(model)
-        new = model.statements.ode_system
-        assert new is not None
-        to_des(model, new)
-
-
-def explicit_odes(model: Model):
-    """Convert model from compartmental system to explicit ODE system
-    or do nothing if it already has an explicit ODE system
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model
-
-    Return
-    ------
-    Model
-        Reference to same model
-    """
-    statements = model.statements
-    odes = statements.ode_system
-    if isinstance(odes, CompartmentalSystem):
-        new = odes.to_explicit_system()
-        model.statements = statements.before_odes + new + statements.after_odes
-    return model
-
-
 def to_des(model: Model, new: ODESystem):
     old_des = model.internals.control_stream.get_records('DES')
     model.internals.control_stream.remove_records(old_des)
     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
-    subs.remove_option_startswith('TRANS')
-    subs.remove_option_startswith('ADVAN')
-    subs.remove_option('TOL')
+    newrec = subs.remove_option_startswith('TRANS')
+    newrec = newrec.remove_option_startswith('ADVAN')
+    newrec = newrec.remove_option('TOL')
+    subs.root = newrec.root  # FIXME!
     step = model.estimation_steps[0]
     solver = step.solver
     if solver:
         advan = solver_to_advan(solver)
-        if not isinstance(new, ExplicitODESystem):
-            new = new.to_explicit_system()
-        subs.append_option(advan)
+        newrec = subs.append_option(advan)
+        subs.root = newrec.root  # FIXME!
     else:
-        subs.append_option('ADVAN13')
+        newrec = subs.append_option('ADVAN13')
+        subs.root = newrec.root  # FIXME!
     if not subs.has_option('TOL'):
-        subs.append_option('TOL', '9')
+        newrec = subs.append_option('TOL', '9')
+        subs.root = newrec.root  # FIXME!
     des = model.internals.control_stream.insert_record('$DES\nDUMMY=0\n')
     assert isinstance(des, CodeRecord)
     des.from_odes(new)
@@ -481,14 +453,16 @@ def to_des(model: Model, new: ODESystem):
         model.internals.control_stream.get_records('MODEL')
     )
     mod = model.internals.control_stream.insert_record('$MODEL\n')
+    old_mod = mod
     assert isinstance(mod, ModelRecord)
-    for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
+    for eq, ic in zip(new.eqs, list(new.ics.keys())):
         name = eq.lhs.args[0].name[2:]
         if new.ics[ic] != 0:
             dose = True
         else:
             dose = False
-        mod.add_compartment(name, dosing=dose)
+        mod = mod.add_compartment(name, dosing=dose)
+    model.internals.control_stream.replace_records([old_mod], [mod])
 
 
 def update_statements(model: Model, old: Statements, new: Statements, trans):
@@ -514,12 +488,14 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                 new_solver = model.estimation_steps[0].solver
             else:
                 new_solver = None
-            if isinstance(new_odes, ExplicitODESystem) or new_solver:
+            if new_solver:
                 old_solver = model.internals._old_estimation_steps[0].solver
                 if new_solver != old_solver:
                     advan = solver_to_advan(new_solver)
                     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
-                    subs.advan = advan
+                    newsubs = subs.set_advan(advan)
+                    model.internals.control_stream.replace_records([subs], [newsubs])
+                    update_model_record(model, advan)
 
     main_statements = model.statements.before_odes
     error_statements = model.statements.after_odes
@@ -550,15 +526,10 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
     rec.is_updated = True
 
 
-def update_lag_time(model: Model, old: ODESystem, new: ODESystem):
-    old = old.to_compartmental_system()
-    new = new.to_compartmental_system()
+def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSystem):
     new_dosing = new.dosing_compartment
     new_lag_time = new_dosing.lag_time
-    try:
-        old_lag_time = old.dosing_compartment.lag_time
-    except ValueError:
-        old_lag_time = 0
+    old_lag_time = old.dosing_compartment.lag_time
     if new_lag_time != old_lag_time and new_lag_time != 0:
         ass = Assignment(sympy.Symbol('ALAG1'), new_lag_time)
         cb = CompartmentalSystemBuilder(new)
@@ -627,6 +598,9 @@ def pk_param_conversion(model: Model, advan, trans):
     oldmap = model.internals._compartment_map
     assert oldmap is not None
     newmap = new_compartmental_map(cs, oldmap)
+    newmap['OUTPUT'] = len(newmap) + 1
+    oldmap = oldmap.copy()
+    oldmap['OUTPUT'] = len(oldmap) + 1
     remap = create_compartment_remap(oldmap, newmap)
     d = {}
     for old, new in remap.items():
@@ -652,7 +626,7 @@ def pk_param_conversion(model: Model, advan, trans):
                 outind = to_j if to_j != 0 else len(cs)
                 from_comp = cs.find_compartment(reverse_map[to_i])
                 to_comp = cs.find_compartment(reverse_map[outind])
-                if cs.get_flow(from_comp, to_comp) is not None:
+                if cs.get_flow(from_comp, to_comp) != 0:
                     d[sympy.Symbol(f'K{i}{j}')] = sympy.Symbol(f'K{to_i}{to_j}')
                     d[sympy.Symbol(f'K{i}T{j}')] = sympy.Symbol(f'K{to_i}T{to_j}')
         if advan == 'ADVAN3':
@@ -793,23 +767,22 @@ def new_advan_trans(model: Model):
         oldtrans = None
     statements = model.statements
     odes = model.statements.ode_system
-    assert isinstance(odes, CompartmentalSystem)
     nonlin = is_nonlinear_odes(model)
     if nonlin:
         advan = 'ADVAN13'
-    elif len(odes) > 5 or odes.get_n_connected(odes.central_compartment) != len(odes) - 1:
+    elif len(odes) > 4 or odes.get_n_connected(odes.central_compartment) != len(odes) - 1:
         advan = 'ADVAN5'
-    elif len(odes) == 2:
+    elif len(odes) == 1:
         advan = 'ADVAN1'
-    elif len(odes) == 3 and odes.find_depot(statements):
+    elif len(odes) == 2 and odes.find_depot(statements):
         advan = 'ADVAN2'
-    elif len(odes) == 3:
+    elif len(odes) == 2:
         advan = 'ADVAN3'
-    elif len(odes) == 4 and odes.find_depot(statements):
+    elif len(odes) == 3 and odes.find_depot(statements):
         advan = 'ADVAN4'
-    elif len(odes) == 4:
+    elif len(odes) == 3:
         advan = 'ADVAN11'
-    else:  # len(odes) == 5
+    else:  # len(odes) == 4
         advan = 'ADVAN12'
 
     if nonlin:
@@ -840,10 +813,8 @@ def new_advan_trans(model: Model):
         else:
             trans = 'TRANS1'
     elif oldtrans is None:
-        output = odes.output_compartment
         central = odes.central_compartment
         elimination_rate = odes.get_flow(central, output)
-        assert elimination_rate is not None
         num, den = elimination_rate.as_numer_denom()
         if num.is_Symbol and den.is_Symbol:
             if advan in ['ADVAN1', 'ADVAN2']:
@@ -855,7 +826,7 @@ def new_advan_trans(model: Model):
     else:
         trans = 'TRANS1'
 
-    return advan, trans
+    return advan, trans, nonlin
 
 
 def update_subroutines_record(model: Model, advan, trans):
@@ -870,12 +841,14 @@ def update_subroutines_record(model: Model, advan, trans):
     oldtrans = subs.trans
 
     if advan != oldadvan:
-        subs.replace_option(oldadvan, advan)
+        newsubs = subs.replace_option(oldadvan, advan)
+        subs.root = newsubs.root  # FIXME!
     if trans != oldtrans:
         if trans is None:
-            subs.remove_option_startswith('TRANS')
+            newsubs = subs.remove_option_startswith('TRANS')
         else:
-            subs.replace_option(oldtrans, trans)
+            newsubs = subs.replace_option(oldtrans, trans)
+        subs.root = newsubs.root  # FIXME!
 
 
 def update_model_record(model: Model, advan):
@@ -899,18 +872,19 @@ def update_model_record(model: Model, advan):
                 model.internals.control_stream.get_records('MODEL')
             )
             mod = model.internals.control_stream.insert_record('$MODEL\n')
+            old_mod = mod
             assert isinstance(mod, ModelRecord)
-            output_name = odes.output_compartment.name
-            comps = {v: k for k, v in newmap.items() if k != output_name}
+            comps = {v: k for k, v in newmap.items()}
             i = 1
             while True:
                 if i not in comps:
                     break
                 if i == 1:
-                    mod.add_compartment(comps[i], dosing=True)
+                    mod = mod.add_compartment(comps[i], dosing=True)
                 else:
-                    mod.add_compartment(comps[i], dosing=False)
+                    mod = mod.add_compartment(comps[i], dosing=False)
                 i += 1
+            model.internals.control_stream.replace_records([old_mod], [mod])
     model.internals._compartment_map = newmap
 
 
@@ -931,18 +905,15 @@ def add_needed_pk_parameters(model: Model, advan, trans):
                 )
     if advan in ['ADVAN1', 'ADVAN2'] and trans == 'TRANS2':
         central = odes.central_compartment
-        output = odes.output_compartment
         add_parameters_ratio(model, 'CL', 'V', central, output)
     elif advan == 'ADVAN3' and trans == 'TRANS4':
         central = odes.central_compartment
-        output = odes.output_compartment
         peripheral = odes.peripheral_compartments[0]
         add_parameters_ratio(model, 'CL', 'V1', central, output)
         add_parameters_ratio(model, 'Q', 'V2', peripheral, central)
         add_parameters_ratio(model, 'Q', 'V1', central, peripheral)
     elif advan == 'ADVAN4':
         central = odes.central_compartment
-        output = odes.output_compartment
         peripheral = odes.peripheral_compartments[0]
         if trans == 'TRANS1':
             rate1 = odes.get_flow(central, peripheral)
@@ -954,7 +925,6 @@ def add_needed_pk_parameters(model: Model, advan, trans):
             add_parameters_ratio(model, 'Q', 'V3', peripheral, central)
     elif advan == 'ADVAN12' and trans == 'TRANS4':
         central = odes.central_compartment
-        output = odes.output_compartment
         peripheral1 = odes.peripheral_compartments[0]
         peripheral2 = odes.peripheral_compartments[1]
         add_parameters_ratio(model, 'CL', 'V2', central, output)
@@ -962,7 +932,6 @@ def add_needed_pk_parameters(model: Model, advan, trans):
         add_parameters_ratio(model, 'Q4', 'V4', peripheral2, central)
     elif advan == 'ADVAN11' and trans == 'TRANS4':
         central = odes.central_compartment
-        output = odes.output_compartment
         peripheral1 = odes.peripheral_compartments[0]
         peripheral2 = odes.peripheral_compartments[1]
         add_parameters_ratio(model, 'CL', 'V1', central, output)
@@ -972,17 +941,20 @@ def add_needed_pk_parameters(model: Model, advan, trans):
         oldmap = model.internals._compartment_map
         assert oldmap is not None
         newmap = new_compartmental_map(odes, oldmap)
+        newmap['OUTPUT'] = len(newmap) + 1
         for source in newmap.keys():
-            if source == len(newmap):  # NOTE Skip last
+            if source == 'OUTPUT':
                 continue
             for dest in newmap.keys():
                 if source != dest:  # NOTE Skip same
                     source_comp = odes.find_compartment(source)
-                    dest_comp = odes.find_compartment(dest)
+                    if dest == 'OUTPUT':
+                        dest_comp = output
+                    else:
+                        dest_comp = odes.find_compartment(dest)
                     rate = odes.get_flow(source_comp, dest_comp)
-                    if rate is not None:
+                    if rate != 0:
                         assert isinstance(source_comp, Compartment)
-                        assert isinstance(dest_comp, Compartment)
                         sn = newmap[source]
                         dn = newmap[dest]
                         if len(str(sn)) > 1 or len(str(dn)) > 1:
@@ -1006,7 +978,6 @@ def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
         odes = statements.ode_system
         assert isinstance(odes, CompartmentalSystem)
         rate = odes.get_flow(source, dest)
-        assert rate is not None
         numer, denom = rate.as_numer_denom()
         par1 = Assignment(sympy.Symbol(numpar), numer)
         par2 = Assignment(sympy.Symbol(denompar), denom)
@@ -1081,40 +1052,39 @@ def update_abbr_record(model: Model, rv_trans):
     trans = {}
     if not rv_trans:
         return trans
-    # Remove already abbreviated symbols
-    # FIXME: Doesn't update if name has changed
-    abbr_recs = model.internals.control_stream.get_records('ABBREVIATED')
-    to_delete = set().union(*(rec.replace.values() for rec in abbr_recs))
-    rv_trans = {tk: tv for tk, tv in rv_trans.items() if tv.name not in to_delete}
-    if not rv_trans:
-        return trans
 
+    # Remove not used ABBR
+    abbr_map = model.internals.control_stream.abbreviated.translate_to_pharmpy_names()
+    keep = []
+    if abbr_map:
+        recs = model.internals.control_stream.get_records('ABBREVIATED')
+        for rec in recs:
+            for nmname, ppname in rec.translate_to_pharmpy_names().items():
+                if not (ppname in abbr_map and abbr_map[ppname] == nmname):
+                    break
+            else:
+                keep.append(rec)
+    control_stream = model.internals.control_stream.replace_all('ABBREVIATED', keep)
+    abbr_map = control_stream.abbreviated.translate_to_pharmpy_names()
+
+    # Add new ABBR
     for rv in model.random_variables.names:
-        rv_symb = sympy.Symbol(rv)
-        abbr_pattern = re.match(r'ETA_(\w+)', rv)
+        abbr_pattern = re.match(r'ETA_([A-Za-z]\w*)', rv)
         if abbr_pattern and '_' not in abbr_pattern.group(1):
             parameter = abbr_pattern.group(1)
-            nonmem_name = rv_trans[rv_symb]
-            abbr_name = f'ETA({parameter})'
-            trans[rv_symb] = sympy.Symbol(abbr_name)
-            abbr_record = f'$ABBR REPLACE {abbr_name}={nonmem_name}\n'
-            model.internals.control_stream.insert_record(abbr_record)
-        elif not re.match(r'(ETA|EPS)\([0-9]\)', rv):
-            warnings.warn(
-                f'Not valid format of name {rv}, falling back to NONMEM name. If custom name, '
-                f'follow the format "ETA_X" to get "ETA(X)" in $ABBR.'
-            )
+            nonmem_name = rv_trans[rv]
+            if nonmem_name not in abbr_map:
+                abbr_name = f'ETA({parameter})'
+                trans[rv] = abbr_name
+                abbr_record = f'$ABBR REPLACE {abbr_name}={nonmem_name}\n'
+                control_stream.insert_record(abbr_record)
+    model.internals.control_stream = control_stream
     return trans
 
 
 def update_estimation(model: Model):
     new = model.estimation_steps
     old = model.internals._old_estimation_steps
-    if len(old) == 0 and len(new) > 0:
-        # Automatically add SADDLE_RESET=1 if model started without $EST and one was added
-        # i.e. this will happen if model was created from scratch.
-        if 'SADDLE_RESET' not in new[-1].tool_options:
-            new[-1].tool_options['SADDLE_RESET'] = 1
     if old == new:
         return
 
@@ -1261,9 +1231,8 @@ def update_ccontra(model: Model, path=None, force=False):
     ll = simplify_expression(model, ll)
     ll = ll.subs(sympy.Symbol('y', real=True, positive=True), y)
 
-    tr = parameter_translation(
-        model.internals.control_stream, reverse=True, remove_idempotent=True, as_symbols=True
-    )
+    tr = create_name_map(model)
+    tr = {sympy.Symbol(key): sympy.Symbol(value) for key, value in tr.items()}
     ll = ll.subs(tr)
     h = h.subs(tr)
 
@@ -1327,7 +1296,8 @@ def update_name_of_tables(control_stream: NMTranControlStream, new_name: str):
             if m:
                 table_stem = m.group(1)
                 new_table_name = f'{table_stem}{n}'
-                table.path = table_path.parent / new_table_name
+                new_table = table.set_path(table_path.parent / new_table_name)
+                control_stream.replace_records([table], [new_table])
 
 
 def update_sizes(model: Model):
@@ -1339,12 +1309,15 @@ def update_sizes(model: Model):
 
     if odes is not None and isinstance(odes, CompartmentalSystem):
         n_compartments = len(odes)
-        sizes.PC = n_compartments
+        sizes = sizes.set_PC(n_compartments)
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
-    sizes.LTH = len(thetas)
+    sizes = sizes.set_LTH(len(thetas))
 
-    if len(all_sizes) == 0 and len(str(sizes)) > 7:
-        model.internals.control_stream.insert_record(str(sizes))
+    if len(str(sizes)) > 7:
+        if len(all_sizes) == 0:
+            model.internals.control_stream.insert_record(str(sizes))
+        else:
+            model.internals.control_stream.replace_records([all_sizes[0]], [sizes])
 
 
 def update_input(model: Model):
@@ -1382,7 +1355,27 @@ def update_input(model: Model):
 
     last_input_record = input_records[-1]
     for ci in model.datainfo[len(colnames) :]:
-        last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
+        newrec = last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
+        last_input_record.root = newrec.root  # FIXME!
+
+
+def get_zero_fix_rvs(model, eta=True):
+    zero_fix = []
+
+    if eta:
+        dists = model.random_variables.etas
+    else:
+        dists = model.random_variables.epsilons
+
+        for dist in dists:
+            for parname in dist.parameter_names:
+                param = model.parameters[parname]
+                if not (param.init == 0.0 and param.fix):
+                    break
+            else:
+                zero_fix.extend(dist.names)
+
+    return zero_fix
 
 
 def update_initial_individual_estimates(model: Model, path, nofiles=False):
@@ -1415,7 +1408,7 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
             estimates = _sort_eta_columns(estimates)
 
         etas = estimates
-        zero_fix = get_zero_fix_rvs(model.internals.control_stream, eta=True)
+        zero_fix = get_zero_fix_rvs(model, eta=True)
         if zero_fix:
             for eta in zero_fix:
                 etas[eta] = 0
@@ -1431,13 +1424,15 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
         else:
             record = model.internals.control_stream.append_record('$ETAS ')
         assert isinstance(record, EtasRecord)
-        record.path = phi_path
+        newrecord = record.set_path(phi_path)
+        model.internals.control_stream.replace_records([record], [newrecord])
 
         first_est_record = model.internals.control_stream.get_records('ESTIMATION')[0]
         try:
             first_est_record.option_pairs['MCETA']
         except KeyError:
-            first_est_record.set_option('MCETA', '1')
+            newrec = first_est_record.set_option('MCETA', '1')
+            first_est_record.root = newrec.root  # FIXME!
 
 
 def _sort_eta_columns(df: pd.DataFrame):
@@ -1455,3 +1450,37 @@ def abbr_translation(model: Model, rv_trans):
     }
     abbr_trans.update(abbr_recs)
     return abbr_trans
+
+
+def create_name_map(model):
+    trans = {}
+    thetas = [p for p in model._parameters if p.symbol not in model.random_variables.free_symbols]
+    for i, theta in enumerate(thetas):
+        trans[theta.name] = f'THETA({i + 1})'
+
+    def add_rv_params(rvs, param_name):
+        cov = rvs.covariance_matrix
+        for row in range(0, cov.rows):
+            for col in range(0, row + 1):
+                if cov[row, col] != 0:
+                    nonmem_name = f'{param_name}({row + 1},{col + 1})'
+                    name = cov[row, col].name
+                    if name not in trans:
+                        # Do not add more than once to handle IOV SAME
+                        trans[name] = nonmem_name
+
+        i = 1
+        for dist in rvs:
+            for name in dist.names:
+                prefix = 'ETA' if param_name == 'OMEGA' else 'EPS'
+                nonmem_name = f'{prefix}({i})'
+                trans[name] = nonmem_name
+                if param_name == 'EPS':
+                    nonmem_name = f'ERR({i})'
+                    trans[name] = nonmem_name
+                i += 1
+
+    add_rv_params(model.random_variables.etas, 'OMEGA')
+    add_rv_params(model.random_variables.epsilons, 'SIGMA')
+
+    return trans

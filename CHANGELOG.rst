@@ -1,3 +1,46 @@
+0.89.0 (2023-01-26)
+-------------------
+
+New features
+============
+
+* Add function ``modeling.display_odes``
+* Add support for Python 3.11
+
+Changes
+=======
+
+* Naming of parameters for NONMEM models reworked. Configuration options removed.
+* Only allow MFL as input to ``run_covsearch``
+* Remove ``read_model_from_database`` from ``pharmpy.modeling``
+* Merge ``ExplicitODESystem`` into ``CompartmentalSystem``
+
+0.88.0 (2022-12-21)
+-------------------
+
+New features
+============
+
+* Add algorithm `exhaustive_only_eval` to Estmethod tool
+* Add replace methods to Assignment, Compartment, Bolus and Infusion
+
+Changes
+=======
+
+* Rename algorithms in Estmethod tool: `reduced` -> `exhaustive`. `exhaustive` -> `exhaustive_only_eval`
+* Always add iteration 0 in ofv_iterations and parameter_estimates_iterations for eval models with FO/FOCE
+
+0.87.0 (2022-12-14)
+-------------------
+
+Changes
+=======
+
+* Allometry model will update initial estimates in allometry tool
+* Base model in IIVSearch tool will update initial estimates
+* Do not update initial estimates from model that did not minimize successfully (except rounding errors), this affects all AMD subtools
+* Rename derive to replace in some base classes
+
 0.86.0 (2022-11-30)
 -------------------
 

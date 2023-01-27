@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from dataclasses import dataclass
 from typing import Any, Optional, Sequence, Type, TypeVar
 
@@ -17,19 +16,18 @@ DataFrame = Any  # NOTE should be pd.DataFrame but we want lazy loading
 
 
 def update_initial_estimates(model):
-    def warn():
-        warnings.warn(f'{model.name}: Could not update initial estimates, using original estimates')
-
     if model.modelfit_results is None:
-        warn()
         return model
+    if not model.modelfit_results.minimization_successful:
+        if model.modelfit_results.termination_cause != 'rounding_errors':
+            return model
 
     try:
         update_inits(
             model, model.modelfit_results.parameter_estimates, move_est_close_to_bounds=True
         )
     except (ValueError, np.linalg.LinAlgError):
-        warn()
+        pass
     return model
 
 

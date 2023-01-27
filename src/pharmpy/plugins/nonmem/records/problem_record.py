@@ -10,8 +10,7 @@ class ProblemRecord(Record):
     def title(self):
         return str(self.root.subtree('raw_title'))
 
-    @title.setter
-    def title(self, new_title):
+    def set_title(self, new_title):
         if new_title and new_title[0] in _ws:
             raise ValueError(
                 f'Invalid title "{new_title}". Title cannot start with any of {tuple(map(repr, sorted(_ws)))}.'
@@ -21,7 +20,7 @@ class ProblemRecord(Record):
 
         _, _, after = self.root.partition('raw_title')
 
-        self.root = AttrTree(
+        root = AttrTree(
             self.root.rule,
             (
                 AttrToken('WS', ' '),
@@ -29,3 +28,4 @@ class ProblemRecord(Record):
             )
             + after,
         )
+        return ProblemRecord(self.name, self.raw_name, root)

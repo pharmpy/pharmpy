@@ -12,11 +12,12 @@ from .statements import (
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
-    ExplicitODESystem,
     Infusion,
     ODESystem,
     Statement,
     Statements,
+    output,
+    to_compartmental_system,
 )
 
 __all__ = (
@@ -32,7 +33,6 @@ __all__ = (
     'Distribution',
     'EstimationStep',
     'EstimationSteps',
-    'ExplicitODESystem',
     'Infusion',
     'JointNormalDistribution',
     'Model',
@@ -41,12 +41,14 @@ __all__ = (
     'ModelSyntaxError',
     'NormalDistribution',
     'ODESystem',
+    'output',
     'Parameter',
     'Parameters',
     'RandomVariables',
     'Results',
     'Statement',
     'Statements',
+    'to_compartmental_system',
     'VariabilityHierarchy',
     'VariabilityLevel',
 )

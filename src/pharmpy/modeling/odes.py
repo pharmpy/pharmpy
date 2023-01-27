@@ -18,6 +18,7 @@ from pharmpy.model import (
     Parameter,
     Parameters,
     Statements,
+    output,
 )
 from pharmpy.modeling.help_functions import _as_integer
 
@@ -103,10 +104,10 @@ def set_first_order_elimination(model: Model):
     >>> set_first_order_elimination(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    Bolus(AMT, admid=1)
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
 
     See also
     --------
@@ -117,7 +118,7 @@ def set_first_order_elimination(model: Model):
     if has_first_order_elimination(model):
         pass
     elif has_zero_order_elimination(model) or has_michaelis_menten_elimination(model):
-        rename_symbols(model, {'POP_CLMM': 'POP_CL'})
+        rename_symbols(model, {'POP_CLMM': 'POP_CL', 'IIV_CLMM': 'IIV_CL'})
         ind = model.statements.find_assignment_index('CLMM')
         assert ind is not None
         clmm_assignment = model.statements[ind]
@@ -126,12 +127,9 @@ def set_first_order_elimination(model: Model):
         statements = model.statements[0:ind] + cl_ass + model.statements[ind + 1 :]
         odes = statements.ode_system
         assert odes is not None
-        odes = odes.to_compartmental_system()
         central = odes.central_compartment
-        output = odes.output_compartment
         v = sympy.Symbol('V')
         rate = odes.get_flow(central, output)
-        assert rate is not None
         if v not in rate.free_symbols:
             v = sympy.Symbol('VC')
         cb = CompartmentalSystemBuilder(odes)
@@ -145,12 +143,9 @@ def set_first_order_elimination(model: Model):
     elif has_mixed_mm_fo_elimination(model):
         odes = model.statements.ode_system
         assert odes is not None
-        odes = odes.to_compartmental_system()
         central = odes.central_compartment
-        output = odes.output_compartment
         v = sympy.Symbol('V')
         rate = odes.get_flow(central, output)
-        assert rate is not None
         if v not in rate.free_symbols:
             v = sympy.Symbol('VC')
         cb = CompartmentalSystemBuilder(odes)
@@ -188,10 +183,10 @@ def set_zero_order_elimination(model: Model):
     >>> set_zero_order_elimination(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
-    ┌───────┐                                    ┌──────┐
-    │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→│OUTPUT│
-    └───────┘                                    └──────┘
+    Bolus(AMT, admid=1)
+    ┌───────┐
+    │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→
+    └───────┘
 
     See also
     --------
@@ -207,9 +202,7 @@ def set_zero_order_elimination(model: Model):
         fix_parameters(model, 'POP_KM')
         odes = model.statements.ode_system
         assert odes is not None
-        odes = odes.to_compartmental_system()
         central = odes.central_compartment
-        output = odes.output_compartment
         rate = odes.get_flow(central, output)
         rate = subs(rate, {'CL': 0})
         cb = CompartmentalSystemBuilder(odes)
@@ -260,11 +253,8 @@ def has_michaelis_menten_elimination(model: Model):
     odes = model.statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    odes = odes.to_compartmental_system()
-    output = odes.output_compartment
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
-    assert rate is not None
     is_nonlinear = odes.t in rate.free_symbols
     is_zero_order = 'POP_KM' in model.parameters and model.parameters['POP_KM'].fix
     could_be_mixed = sympy.Symbol('CL') in rate.free_symbols
@@ -301,11 +291,8 @@ def has_zero_order_elimination(model: Model):
     odes = model.statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    odes = odes.to_compartmental_system()
-    output = odes.output_compartment
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
-    assert rate is not None
     is_nonlinear = odes.t in rate.free_symbols
     is_zero_order = 'POP_KM' in model.parameters and model.parameters['POP_KM'].fix
     could_be_mixed = sympy.Symbol('CL') in rate.free_symbols
@@ -342,11 +329,8 @@ def has_mixed_mm_fo_elimination(model: Model):
     odes = model.statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    odes = odes.to_compartmental_system()
-    output = odes.output_compartment
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
-    assert rate is not None
     is_nonlinear = odes.t in rate.free_symbols
     is_zero_order = 'POP_KM' in model.parameters and model.parameters['POP_KM'].fix
     could_be_mixed = sympy.Symbol('CL') in rate.free_symbols
@@ -380,11 +364,8 @@ def has_first_order_elimination(model: Model):
     odes = model.statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    odes = odes.to_compartmental_system()
-    output = odes.output_compartment
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
-    assert rate is not None
     is_nonlinear = odes.t in rate.free_symbols
     return not is_nonlinear
 
@@ -411,10 +392,10 @@ def set_michaelis_menten_elimination(model: Model):
     >>> set_michaelis_menten_elimination(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
-    ┌───────┐                                    ┌──────┐
-    │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→│OUTPUT│
-    └───────┘                                    └──────┘
+    Bolus(AMT, admid=1)
+    ┌───────┐
+    │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→
+    └───────┘
 
     See also
     --------
@@ -429,9 +410,7 @@ def set_michaelis_menten_elimination(model: Model):
     elif has_mixed_mm_fo_elimination(model):
         odes = model.statements.ode_system
         assert odes is not None
-        odes = odes.to_compartmental_system()
         central = odes.central_compartment
-        output = odes.output_compartment
         rate = odes.get_flow(central, output)
         rate = subs(rate, {'CL': 0})
         cb = CompartmentalSystemBuilder(odes)
@@ -471,10 +450,10 @@ def set_mixed_mm_fo_elimination(model: Model):
     >>> set_mixed_mm_fo_elimination(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
-    ┌───────┐                                         ┌──────┐
-    │CENTRAL│──(CL + CLMM*KM/(KM + A_CENTRAL(t)/V))/V→│OUTPUT│
-    └───────┘                                         └──────┘
+    Bolus(AMT, admid=1)
+    ┌───────┐
+    │CENTRAL│──(CL + CLMM*KM/(KM + A_CENTRAL(t)/V))/V→
+    └───────┘
 
     See also
     --------
@@ -489,9 +468,7 @@ def set_mixed_mm_fo_elimination(model: Model):
         unfix_parameters(model, 'POP_KM')
         odes = model.statements.ode_system
         assert odes is not None
-        odes = odes.to_compartmental_system()
         central = odes.central_compartment
-        output = odes.output_compartment
         add_individual_parameter(model, 'CL')
         rate = odes.get_flow(central, output)
         assert rate is not None
@@ -510,12 +487,10 @@ def set_mixed_mm_fo_elimination(model: Model):
 
 
 def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
-    model.statements = model.statements.to_compartmental_system()
     sset = model.statements
     odes = sset.ode_system
     assert isinstance(odes, CompartmentalSystem)
     central = odes.central_compartment
-    output = odes.output_compartment
     old_rate = odes.get_flow(central, output)
     assert old_rate is not None
     numer, denom = old_rate.as_numer_denom()
@@ -612,7 +587,7 @@ def _rename_parameter(model: Model, old_name, new_name):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters(new)
+    model.parameters = Parameters.create(new)
     model.statements = model.statements.subs({old_name: new_name})
 
 
@@ -662,21 +637,20 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
     >>> set_transit_compartments(model, 3)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
-    ┌────────┐        ┌────────┐        ┌────────┐        ┌───────┐       ┌──────┐
-    │TRANSIT1│──3/MDT→│TRANSIT2│──3/MDT→│TRANSIT3│──3/MDT→│CENTRAL│──CL/V→│OUTPUT│
-    └────────┘        └────────┘        └────────┘        └───────┘       └──────┘
+    Bolus(AMT, admid=1)
+    ┌────────┐        ┌────────┐        ┌────────┐        ┌───────┐
+    │TRANSIT1│──3/MDT→│TRANSIT2│──3/MDT→│TRANSIT3│──3/MDT→│CENTRAL│──CL/V→
+    └────────┘        └────────┘        └────────┘        └───────┘
 
     See also
     --------
     add_lag_time
 
     """
-    statements = model.statements.to_compartmental_system()
-    odes = statements.ode_system
-    if odes is None:
+    statements = model.statements
+    cs = statements.ode_system
+    if cs is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    cs = odes.to_compartmental_system()
     transits = cs.find_transit_compartments(statements)
     try:
         n = _as_integer(n)
@@ -721,7 +695,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         remove_unused_parameters_and_rvs(model)
         odes = statements.ode_system
         assert odes is not None
-        cs = odes.to_compartmental_system()
+        cs = odes
 
     if len(transits) == n:
         return model
@@ -739,7 +713,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         comp = dosing_comp
         cb = CompartmentalSystemBuilder(cs)
         while n > 0:
-            new_comp = Compartment(f'TRANSIT{n}')
+            new_comp = Compartment.create(f'TRANSIT{n}')
             cb.add_compartment(new_comp)
             n -= 1
             cb.add_flow(new_comp, comp, rate)
@@ -784,7 +758,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         cb = CompartmentalSystemBuilder(cs)
         cb.remove_flow(last, destination)
         while nadd > 0:
-            new_comp = Compartment(f'TRANSIT{n - nadd + 1}')
+            new_comp = Compartment.create(f'TRANSIT{n - nadd + 1}')
             cb.add_compartment(new_comp)
             cb.add_flow(last, new_comp, rate)
             if rate.is_Symbol:
@@ -815,7 +789,6 @@ def _update_numerators(model: Model):
     statements = model.statements
     odes = statements.ode_system
     assert odes is not None
-    odes = odes.to_compartmental_system()
     transits = odes.find_transit_compartments(statements)
     new_numerator = sympy.Integer(len(transits))
     cb = CompartmentalSystemBuilder(odes)
@@ -867,7 +840,6 @@ def add_lag_time(model: Model):
     odes = model.statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    odes = odes.to_compartmental_system()
     dosing_comp = odes.dosing_compartment
     old_lag_time = dosing_comp.lag_time
     mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
@@ -914,7 +886,6 @@ def remove_lag_time(model: Model):
     odes = model.statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    odes = odes.to_compartmental_system()
     dosing_comp = odes.dosing_compartment
     lag_time = dosing_comp.lag_time
     if lag_time:
@@ -954,10 +925,10 @@ def set_zero_order_absorption(model: Model):
     >>> set_zero_order_absorption(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Infusion(AMT, duration=2*MAT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    Infusion(AMT, admid=1, duration=2*MAT)
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
 
     See also
     --------
@@ -969,7 +940,6 @@ def set_zero_order_absorption(model: Model):
     odes = statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    odes = odes.to_compartmental_system()
     _disallow_infusion(model, odes)
     depot = odes.find_depot(statements)
 
@@ -1001,8 +971,7 @@ def set_zero_order_absorption(model: Model):
     if not has_zero_order_absorption(model):
         odes = model.statements.ode_system
         assert odes is not None
-        cs = odes.to_compartmental_system()
-        _add_zero_order_absorption(model, dose.amount, cs.dosing_compartment, 'MAT', lag_time)
+        _add_zero_order_absorption(model, dose.amount, odes.dosing_compartment, 'MAT', lag_time)
     return model
 
 
@@ -1029,10 +998,10 @@ def set_first_order_absorption(model: Model):
     >>> set_first_order_absorption(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
-    ┌─────┐        ┌───────┐       ┌──────┐
-    │DEPOT│──1/MAT→│CENTRAL│──CL/V→│OUTPUT│
-    └─────┘        └───────┘       └──────┘
+    Bolus(AMT, admid=1)
+    ┌─────┐        ┌───────┐
+    │DEPOT│──1/MAT→│CENTRAL│──CL/V→
+    └─────┘        └───────┘
 
     See also
     --------
@@ -1041,10 +1010,9 @@ def set_first_order_absorption(model: Model):
 
     """
     statements = model.statements
-    odes = statements.ode_system
-    if odes is None:
+    cs = statements.ode_system
+    if cs is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    cs = odes.to_compartmental_system()
     depot = cs.find_depot(statements)
 
     dose_comp = cs.dosing_compartment
@@ -1095,10 +1063,10 @@ def set_bolus_absorption(model: Model):
     >>> set_bolus_absorption(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
-    ┌───────┐       ┌──────┐
-    │CENTRAL│──CL/V→│OUTPUT│
-    └───────┘       └──────┘
+    Bolus(AMT, admid=1)
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
 
     See also
     --------
@@ -1106,7 +1074,7 @@ def set_bolus_absorption(model: Model):
     set_first_order_absorption
 
     """
-    statements = model.statements.to_compartmental_system()
+    statements = model.statements
     cs = statements.ode_system
     if cs is None:
         raise ValueError(f'Model {model.name} has no ODE system')
@@ -1163,10 +1131,10 @@ def set_seq_zo_fo_absorption(model: Model):
     >>> set_seq_zo_fo_absorption(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Infusion(AMT, duration=2*MDT)
-    ┌─────┐        ┌───────┐       ┌──────┐
-    │DEPOT│──1/MAT→│CENTRAL│──CL/V→│OUTPUT│
-    └─────┘        └───────┘       └──────┘
+    Infusion(AMT, admid=1, duration=2*MDT)
+    ┌─────┐        ┌───────┐
+    │DEPOT│──1/MAT→│CENTRAL│──CL/V→
+    └─────┘        └───────┘
 
     See also
     --------
@@ -1176,11 +1144,9 @@ def set_seq_zo_fo_absorption(model: Model):
 
     """
     statements = model.statements
-    odes = statements.ode_system
-    if odes is None:
+    cs = statements.ode_system
+    if cs is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    cs = odes.to_compartmental_system()
-    model.statements = statements.before_odes + cs + statements.after_odes
     _disallow_infusion(model, cs)
     depot = cs.find_depot(statements)
 
@@ -1234,10 +1200,9 @@ def has_zero_order_absorption(model: Model):
     False
 
     """
-    odes = model.statements.ode_system
-    if odes is None:
+    cs = model.statements.ode_system
+    if cs is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    cs = odes.to_compartmental_system()
     dosing = cs.dosing_compartment
     dose = dosing.dose
     if isinstance(dose, Infusion):
@@ -1285,7 +1250,9 @@ def _add_first_order_absorption(model, dose, to_comp, lag_time=None):
     """
     odes = model.statements.ode_system
     cb = CompartmentalSystemBuilder(odes)
-    depot = Compartment('DEPOT', dose, sympy.Integer(0) if lag_time is None else lag_time)
+    depot = Compartment.create(
+        'DEPOT', dose=dose, lag_time=sympy.Integer(0) if lag_time is None else lag_time
+    )
     cb.add_compartment(depot)
     to_comp = cb.set_dose(to_comp, None)
     to_comp = cb.set_lag_time(to_comp, sympy.Integer(0))
@@ -1325,7 +1292,7 @@ def _get_absorption_init(model, param_name) -> float:
     raise NotImplementedError('param_name must be MDT or MAT')
 
 
-def set_peripheral_compartments(model, n):
+def set_peripheral_compartments(model: Model, n: int):
     """Sets the number of peripheral compartments to a specified number.
 
     Parameters
@@ -1347,16 +1314,16 @@ def set_peripheral_compartments(model, n):
     >>> set_peripheral_compartments(model, 2)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘
       ↑      │
     QP1/V QP1/VP1
       │      ↓
-    ┌───────────┐       ┌──────┐
-    │  CENTRAL  │──CL/V→│OUTPUT│
-    └───────────┘       └──────┘
+    ┌───────────┐
+    │  CENTRAL  │──CL/V→
+    └───────────┘
        ↑      │
     QP2/VP2 QP2/V
        │      ↓
@@ -1370,7 +1337,7 @@ def set_peripheral_compartments(model, n):
     remove_peripheral_compartment
 
     """
-    odes = model.statements.ode_system.to_compartmental_system()
+    odes = model.statements.ode_system
 
     try:
         n = _as_integer(n)
@@ -1424,16 +1391,16 @@ def add_peripheral_compartment(model: Model):
     >>> add_peripheral_compartment(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘
       ↑      │
     QP1/V QP1/VP1
       │      ↓
-    ┌───────────┐       ┌──────┐
-    │  CENTRAL  │──CL/V→│OUTPUT│
-    └───────────┘       └──────┘
+    ┌───────────┐
+    │  CENTRAL  │──CL/V→
+    └───────────┘
 
     See also
     --------
@@ -1445,13 +1412,11 @@ def add_peripheral_compartment(model: Model):
     odes = statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    cs = odes.to_compartmental_system()
-    per = cs.peripheral_compartments
+    per = odes.peripheral_compartments
     n = len(per) + 1
 
-    central = cs.central_compartment
-    output = cs.output_compartment
-    elimination_rate = cs.get_flow(central, output)
+    central = odes.central_compartment
+    elimination_rate = odes.get_flow(central, output)
     assert elimination_rate is not None
     cl, vc = elimination_rate.as_numer_denom()
     if cl.is_Symbol and vc == 1:
@@ -1463,7 +1428,7 @@ def add_peripheral_compartment(model: Model):
     if vc.is_Mul:
         vc = vc.args[0]
 
-    cb = CompartmentalSystemBuilder(cs)
+    cb = CompartmentalSystemBuilder(odes)
 
     # NOTE Only used if vc != 1
     qp_init = 0.1
@@ -1494,7 +1459,7 @@ def add_peripheral_compartment(model: Model):
             vp_init = pop_vc_init * 0.05
     elif n == 2:
         per1 = per[0]
-        from_rate = cs.get_flow(per1, central)
+        from_rate = odes.get_flow(per1, central)
         assert from_rate is not None
         qp1, vp1 = from_rate.as_numer_denom()
         full_qp1 = statements.before_odes.full_expression(qp1)
@@ -1514,7 +1479,7 @@ def add_peripheral_compartment(model: Model):
     if vc != 1:
         qp = _add_parameter(model, f'QP{n}', init=qp_init)
         vp = _add_parameter(model, f'VP{n}', init=vp_init)
-        peripheral = Compartment(f'PERIPHERAL{n}')
+        peripheral = Compartment.create(f'PERIPHERAL{n}')
         cb.add_compartment(peripheral)
         cb.add_flow(central, peripheral, qp / vc)
         cb.add_flow(peripheral, central, qp / vp)
@@ -1559,16 +1524,16 @@ def remove_peripheral_compartment(model: Model):
     >>> remove_peripheral_compartment(model)      # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Bolus(AMT)
+    Bolus(AMT, admid=1)
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘
       ↑      │
     QP1/V QP1/VP1
       │      ↓
-    ┌───────────┐       ┌──────┐
-    │  CENTRAL  │──CL/V→│OUTPUT│
-    └───────────┘       └──────┘
+    ┌───────────┐
+    │  CENTRAL  │──CL/V→
+    └───────────┘
 
     See also
     --------
@@ -1580,17 +1545,15 @@ def remove_peripheral_compartment(model: Model):
     odes = statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    cs = odes.to_compartmental_system()
-    peripherals = cs.peripheral_compartments
+    peripherals = odes.peripheral_compartments
     if peripherals:
         last_peripheral = peripherals[-1]
-        central = cs.central_compartment
+        central = odes.central_compartment
         if len(peripherals) == 1:
-            output = cs.output_compartment
-            elimination_rate = cs.get_flow(central, output)
+            elimination_rate = odes.get_flow(central, output)
             assert elimination_rate is not None
             cl, vc = elimination_rate.as_numer_denom()
-            from_rate = cs.get_flow(last_peripheral, central)
+            from_rate = odes.get_flow(last_peripheral, central)
             assert from_rate is not None
             qp1, vp1 = from_rate.as_numer_denom()
             full_cl = statements.before_odes.full_expression(cl)
@@ -1613,10 +1576,10 @@ def remove_peripheral_compartment(model: Model):
             set_initial_estimates(model, {pop_vc.name: new_vc_init})
         elif len(peripherals) == 2:
             first_peripheral = peripherals[0]
-            from1_rate = cs.get_flow(first_peripheral, central)
+            from1_rate = odes.get_flow(first_peripheral, central)
             assert from1_rate is not None
             qp1, vp1 = from1_rate.as_numer_denom()
-            from2_rate = cs.get_flow(last_peripheral, central)
+            from2_rate = odes.get_flow(last_peripheral, central)
             assert from2_rate is not None
             qp2, vp2 = from2_rate.as_numer_denom()
             full_qp2 = statements.before_odes.full_expression(qp2)
@@ -1639,12 +1602,12 @@ def remove_peripheral_compartment(model: Model):
             new_vp1_init = pop_vp1_init + pop_vp2_init
             set_initial_estimates(model, {pop_qp1.name: new_qp1_init, pop_vp1.name: new_vp1_init})
 
-        rate1 = cs.get_flow(central, last_peripheral)
+        rate1 = odes.get_flow(central, last_peripheral)
         assert rate1 is not None
-        rate2 = cs.get_flow(last_peripheral, central)
+        rate2 = odes.get_flow(last_peripheral, central)
         assert rate2 is not None
         symbols = rate1.free_symbols | rate2.free_symbols
-        cb = CompartmentalSystemBuilder(cs)
+        cb = CompartmentalSystemBuilder(odes)
         cb.remove_compartment(last_peripheral)
         model.statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
@@ -1656,7 +1619,7 @@ def remove_peripheral_compartment(model: Model):
     return model
 
 
-def set_ode_solver(model, solver):
+def set_ode_solver(model: Model, solver: str):
     """Sets ODE solver to use for model
 
     Recognized solvers and their corresponding NONMEM advans:
@@ -1699,9 +1662,9 @@ def set_ode_solver(model, solver):
     """
     new_steps = []
     for step in model.estimation_steps:
-        new = step.derive(solver=solver)
+        new = step.replace(solver=solver)
         new_steps.append(new)
-    model.estimation_steps = EstimationSteps(new_steps)
+    model.estimation_steps = EstimationSteps.create(new_steps)
     return model
 
 
@@ -1791,9 +1754,7 @@ def _find_rate(sset: Statements):
     rate_list = []
     odes = sset.ode_system
     assert odes is not None
-    odes = odes.to_compartmental_system()
     central = odes.central_compartment
-    output = odes.output_compartment
     elimination_rate = odes.get_flow(central, output)
     rate_list.append(elimination_rate)
     for periph in odes.peripheral_compartments:

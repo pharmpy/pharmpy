@@ -84,22 +84,30 @@ def _pad_on_sides(n, char=' '):
 
 class Box:
     def __init__(self, text):
-        self.text = text
+        self.text = text.split('\n')
 
     @property
     def minimum_width(self):
-        return len(self.text) + 2
+        max_row_len = max(len(s) for s in self.text)
+        return max_row_len + 2
 
     @property
     def minimum_height(self):
-        return 3
+        return len(self.text) + 2
 
     def lines(self, width):
-        before, after = _pad_on_sides(width - self.minimum_width)
+        lines = []
         upper = '┌' + '─' * (width - 2) + '┐'
-        mid = '│' + before + self.text + after + '│'
+        lines.append(upper)
+
+        for row in self.text:
+            before, after = _pad_on_sides(width - len(row) - 2)
+            mid = '│' + before + row + after + '│'
+            lines.append(mid)
+
         lower = '└' + '─' * (width - 2) + '┘'
-        return [upper, mid, lower]
+        lines.append(lower)
+        return lines
 
 
 class Arrow:
@@ -202,3 +210,23 @@ def right_parens(height):
         a.append('⎪')
     a.append('⎭')
     return a
+
+
+def bracket(a):
+    """Append a left bracket for an array of lines"""
+    if len(a) == 1:
+        return '{' + a[0]
+    if len(a) == 2:
+        a.append('')
+    if (len(a) % 2) == 0:
+        upper = len(a) // 2 - 1
+    else:
+        upper = len(a) // 2
+    a[0] = '⎧' + a[0]
+    for i in range(1, upper):
+        a[i] = '⎪' + a[i]
+    a[upper] = '⎨' + a[upper]
+    for i in range(upper + 1, len(a) - 1):
+        a[i] = '⎪' + a[i]
+    a[-1] = '⎩' + a[-1]
+    return '\n'.join(a) + '\n'

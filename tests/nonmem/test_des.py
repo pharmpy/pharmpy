@@ -1,4 +1,7 @@
+import sympy
+
 from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.model import output
 from pharmpy.modeling import add_peripheral_compartment, set_michaelis_menten_elimination
 
 
@@ -52,8 +55,8 @@ $SIGMA 0.1; RUV_ADD
     pheno = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = create_model_for_test(code)
     model.dataset = pheno.dataset
-    cs = model.statements.ode_system.to_compartmental_system()
-    assert len(cs) == 5
+    cs = model.statements.ode_system
+    assert len(cs) == 4
 
 
 def test_conversion_round_trip(load_example_model_for_test):
@@ -61,11 +64,9 @@ def test_conversion_round_trip(load_example_model_for_test):
     add_peripheral_compartment(model)
     add_peripheral_compartment(model)
     set_michaelis_menten_elimination(model)
-    es = model.statements.ode_system.to_explicit_system()
-    cs = es.to_compartmental_system()
-    central = cs.central_compartment
-    output = cs.output_compartment
-    assert cs.get_flow(central, output) == parse_expr('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
+    odes = model.statements.ode_system
+    central = odes.central_compartment
+    assert odes.get_flow(central, output) == parse_expr('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
 
 
 def test_des_mm(load_example_model_for_test, create_model_for_test):
@@ -73,13 +74,13 @@ def test_des_mm(load_example_model_for_test, create_model_for_test):
     add_peripheral_compartment(model)
     add_peripheral_compartment(model)
     set_michaelis_menten_elimination(model)
-    model.statements.to_explicit_system()
     model.update_source()
     code = model.model_code
     dataset = model.dataset
     model = create_model_for_test(code)
     model.dataset = dataset
-    cs = model.statements.ode_system.to_compartmental_system()
+    cs = model.statements.ode_system
     central = cs.central_compartment
-    output = cs.output_compartment
-    assert cs.get_flow(central, output) == parse_expr('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
+    assert cs.get_flow(central, output) == sympy.simplify(
+        parse_expr('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
+    )

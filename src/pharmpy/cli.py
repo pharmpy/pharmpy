@@ -114,11 +114,9 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 
 
 def run_bootstrap(args):
-    # FIXME Bootstrap does not exist
-    from pharmpy.tools.bootstrap import Bootstrap
+    from pharmpy.tools import run_bootstrap
 
-    method = Bootstrap(args.model, resamples=args.samples)
-    method.run()
+    run_bootstrap(args.model, resamples=args.samples)
 
 
 def run_execute(args):
@@ -232,7 +230,14 @@ def run_estmethod(args):
     except AttributeError:
         solvers = args.solvers
 
-    run_tool('estmethod', methods=methods, solvers=solvers, model=args.model)
+    run_tool(
+        'estmethod',
+        args.algorithm,
+        methods=methods,
+        solvers=solvers,
+        model=args.model,
+        path=args.path,
+    )
 
 
 def run_amd(args):
@@ -528,11 +533,17 @@ def model_peripheral_compartments(args):
 
 
 def model_error(args):
-    # FIXME error_model does not exist
-    from pharmpy.modeling import error_model
+    import pharmpy.modeling as modeling
 
     model = args.model
-    error_model(model, args.error_type)
+    if args.error_type == 'none':
+        model = modeling.remove_error_model(model)
+    elif args.error_model == 'additive':
+        model = modeling.set_additive_error_model(model)
+    elif args.error_model == 'proportional':
+        model = modeling.set_proportional_error_model(model)
+    else:  # args.error_model == 'combined':
+        model = modeling.set_combined_error_model(model)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
@@ -1261,12 +1272,17 @@ parser_definition = [
                         'parents': [args_model_input],
                         'args': [
                             {
+                                'name': 'algorithm',
+                                'type': str,
+                                'help': 'Algorithm to use',
+                            },
+                            {
                                 'name': '--methods',
                                 'type': str,
                                 'default': None,
                                 'help': 'List of methods to try, mark group of methods in single '
                                 'quote separated by spaces. Supported are: FOCE, FO, IMP, '
-                                'IMPMAP, ITS, SAEM, LAPLACE, BAYES. Default is all.',
+                                'IMPMAP, ITS, SAEM, LAPLACE, BAYES, or \'all\'. Default is None.',
                             },
                             {
                                 'name': '--solvers',
@@ -1275,9 +1291,13 @@ parser_definition = [
                                 'help': 'List of solvers to try, mark group of methods in single '
                                 'quote separated by spaces. Supported are: CVODES '
                                 '(ADVAN14), DGEAR (ADVAN8), DVERK (ADVAN6), IDA '
-                                '(ADVAN15), LSODA (ADVAN13) and LSODI (ADVAN9), '
-                                '. To test all write "all". '
-                                'Default is to use the solver of input model.',
+                                '(ADVAN15), LSODA (ADVAN13) and LSODI (ADVAN9), or \'all\'. '
+                                'Default is None.',
+                            },
+                            {
+                                'name': '--path',
+                                'type': Path,
+                                'help': 'Path to output directory',
                             },
                         ],
                     }

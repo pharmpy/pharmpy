@@ -2,10 +2,13 @@
 :meta private:
 """
 
+from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 
 
-def update_inits(model: Model, parameter_estimates, move_est_close_to_bounds=False):
+def update_inits(
+    model: Model, parameter_estimates: pd.Series, move_est_close_to_bounds: bool = False
+):
     """Update initial parameter estimate for a model
 
     Updates initial estimates of population parameters for a model.
@@ -31,11 +34,11 @@ def update_inits(model: Model, parameter_estimates, move_est_close_to_bounds=Fal
     >>> from pharmpy.modeling import load_example_model, update_inits
     >>> model = load_example_model("pheno")   # This model was previously fitted to its data
     >>> model.parameters.inits  # doctest:+ELLIPSIS
-    {'THETA(1)': 0.00469307, 'THETA(2)': 1.00916, 'THETA(3)': 0.1, 'OMEGA(1,1)': 0.0309626...}
+    {'PTVCL': 0.00469307, 'PTVV': 1.00916, 'THETA_3': 0.1, 'IVCL': 0.0309626, 'IVV': 0.031128, 'SIGMA_1_1': 0.013241}
     >>> update_inits(model, model.modelfit_results.parameter_estimates)  # doctest:+ELLIPSIS
     <...>
     >>> model.parameters.inits  # doctest:+ELLIPSIS
-    {'THETA(1)': 0.00469555, 'THETA(2)': 0.984258, 'THETA(3)': 0.15892, 'OMEGA(1,1)': 0.0293508...}
+    {'PTVCL': 0.00469555, 'PTVV': 0.984258, 'THETA_3': 0.15892, 'IVCL': 0.0293508, 'IVV': 0.027906, ...}
 
     """
     if move_est_close_to_bounds:
@@ -79,7 +82,9 @@ def _is_zero_fix(param):
     return param.init == 0 and param.fix
 
 
-def update_initial_individual_estimates(model, individual_estimates, force=True):
+def update_initial_individual_estimates(
+    model: Model, individual_estimates: pd.Series, force: bool = True
+):
     """Update initial individual estimates for a model
 
     Updates initial individual estimates for a model.

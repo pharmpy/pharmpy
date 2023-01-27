@@ -13,6 +13,6 @@ def test_evaldesign(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
 
         model = Model.create_model('pheno_real.mod')
-        model.datainfo = model.datainfo.derive(path=tmp_path / 'pheno.dta')
+        model.datainfo = model.datainfo.replace(path=tmp_path / 'pheno.dta')
         res = run_tool('evaldesign', model)
         assert len(res.individual_ofv) == 59

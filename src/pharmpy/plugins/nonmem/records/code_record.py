@@ -442,7 +442,7 @@ def _index_statements_diff(
 
 
 class CodeRecord(Record):
-    def __init__(self, content, parser_class):
+    def __init__(self, name, raw_name, content):
         self.is_updated = False
         self.rvs, self.trans = None, None
         # NOTE self._index establishes a correspondance between self.root
@@ -450,7 +450,7 @@ class CodeRecord(Record):
         # (ni, nj, si, sj) tuples which maps the nodes
         # self.root.children[ni:nj] to the statements self.statements[si:sj]
         self._index = []
-        super().__init__(content, parser_class)
+        super().__init__(name, raw_name, content)
 
     @property
     def statements(self):
@@ -525,7 +525,7 @@ class CodeRecord(Record):
 
     def from_odes(self, ode_system):
         """Set statements of record given an explicit ode system"""
-        odes = ode_system.odes[:-1]  # Skip last ode as it is for the output compartment
+        odes = ode_system.eqs
         functions = [ode.lhs.args[0] for ode in odes]
         function_map = {f: sympy.Symbol(f'A({i + 1})') for i, f in enumerate(functions)}
         statements = []
