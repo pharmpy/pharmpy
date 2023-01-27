@@ -18,10 +18,6 @@ class Record:
         """Root of the parse tree"""
         return self._root
 
-    @root.setter
-    def root(self, root_new):
-        self._root = root_new
-
     def __str__(self):
         assert self.raw_name is not None
         return self.raw_name + str(self.root)

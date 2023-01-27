@@ -21,8 +21,7 @@ class DataRecord(OptionRecord):
         else:  # 'QFILENAME'
             return str(filename)[1:-1]
 
-    @filename.setter
-    def filename(self, value):
+    def set_filename(self, value):
         if not value:
             # erase and replace by * (for previous subproblem)
             new = [AttrToken('ASTERISK', '*')]
@@ -32,7 +31,7 @@ class DataRecord(OptionRecord):
                     nodes += [child, new.pop()]
                 elif child.rule in TYPES_OF_KEEP:
                     nodes += [child]
-            self.root = AttrTree.create('root', nodes)
+            root = AttrTree.create('root', nodes)
         else:
             # replace only 'filename' rule and quote appropriately if, but only if, needed
             filename = str(value)
@@ -72,7 +71,8 @@ class DataRecord(OptionRecord):
                 else:
                     raise ValueError('Cannot have both " and \' in filename.')
             (pre, _, post) = self.root.partition('filename')
-            self.root = AttrTree(self.root.rule, pre + (node,) + post)
+            root = AttrTree(self.root.rule, pre + (node,) + post)
+        return self.replace(root=root)
 
     @property
     def ignore_character(self):
@@ -88,10 +88,8 @@ class DataRecord(OptionRecord):
 
         return char
 
-    @ignore_character.setter
-    def ignore_character(self, c: str):
+    def set_ignore_character(self, c: str):
         if c != self.ignore_character:
-            self.root = self.root.remove('ignchar')
             char = c if len(c) == 1 else f'"{c}"'
             if len(c) == 1:
                 char = c
@@ -103,19 +101,22 @@ class DataRecord(OptionRecord):
                 raise ValueError('Cannot have both " and \' in ignore character.')
             char_node = AttrTree.create('char', [{'CHAR': char}])
             node = AttrTree.create('ignchar', [{'IGNORE': 'IGNORE'}, {'EQUALS': '='}, char_node])
-            newrec = self.append_option_node(node)
-            self.root = newrec.root  # FIXME!
+            root = self.root.remove('ignchar')
+            newrec = self.replace(root=root).append_option_node(node)
+            return newrec
+        else:
+            return self
 
-    def ignore_character_from_header(self, label):
+    def set_ignore_character_from_header(self, label):
         """Set ignore character from a header label
         If s[0] is a-zA-Z set @
         else set s[0]
         """
         c = label[0]
         if c.isalpha():
-            self.ignore_character = '@'
+            return self.set_ignore_character('@')
         else:
-            self.ignore_character = c
+            return self.set_ignore_character(c)
 
     @property
     def null_value(self):
@@ -139,9 +140,9 @@ class DataRecord(OptionRecord):
                 filters.append(filt)
         return filters
 
-    @ignore.deleter
-    def ignore(self):
-        self.root = self.root.remove('ignore')
+    def remove_ignore(self):
+        newroot = self.root.remove('ignore')
+        return self.replace(root=newroot)
 
     @property
     def accept(self):
@@ -151,6 +152,6 @@ class DataRecord(OptionRecord):
                 filters.append(filt)
         return filters
 
-    @accept.deleter
-    def accept(self):
-        self.root = self.root.remove('accept')
+    def remove_accept(self):
+        newroot = self.root.remove('accept')
+        return self.replace(root=newroot)

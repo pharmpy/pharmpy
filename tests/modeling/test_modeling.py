@@ -1726,7 +1726,6 @@ def test_lag_on_nl_elim(load_model_for_test, testdata):
 def test_zo_abs_on_nl_elim(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     set_zero_order_elimination(model)
-    # model.model_code
     set_zero_order_absorption(model)
     assert 'RATE' in model.model_code
     assert 'D1 =' in model.model_code

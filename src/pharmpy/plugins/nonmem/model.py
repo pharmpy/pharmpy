@@ -195,13 +195,15 @@ class Model(BaseModel):
             data_record = self.internals.control_stream.get_records('DATA')[0]
 
             label = self.datainfo.names[0]
-            data_record.ignore_character_from_header(label)
+            new_data = data_record.set_ignore_character_from_header(label)
+            self.internals.control_stream.replace_records([data_record], [new_data])
+            data_record = new_data
             update_input(self)
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.
-            del data_record.ignore
-            del data_record.accept
+            newdata = data_record.remove_ignore().remove_accept()
+            self.internals.control_stream.replace_records([data_record], [newdata])
             self.internals._dataset_updated = False
             self.internals._old_datainfo = self.datainfo
 
@@ -212,7 +214,8 @@ class Model(BaseModel):
                 ), f'input path change, but no file exists at target {str(datapath)}'
                 data_record = self.internals.control_stream.get_records('DATA')[0]
                 parent_path = Path.cwd() if path is None else path.parent
-                data_record.filename = str(path_relative_to(parent_path, datapath))
+                newdata = data_record.set_filename(str(path_relative_to(parent_path, datapath)))
+                self.internals.control_stream.replace_records([data_record], [newdata])
 
         update_sizes(self)
         update_estimation(self)

@@ -433,19 +433,18 @@ def to_des(model: Model, new: ODESystem):
     newrec = subs.remove_option_startswith('TRANS')
     newrec = newrec.remove_option_startswith('ADVAN')
     newrec = newrec.remove_option('TOL')
-    subs.root = newrec.root  # FIXME!
+    model.internals.control_stream.replace_records([subs], [newrec])
+    subs = newrec
     step = model.estimation_steps[0]
     solver = step.solver
     if solver:
         advan = solver_to_advan(solver)
         newrec = subs.append_option(advan)
-        subs.root = newrec.root  # FIXME!
     else:
         newrec = subs.append_option('ADVAN13')
-        subs.root = newrec.root  # FIXME!
     if not subs.has_option('TOL'):
-        newrec = subs.append_option('TOL', '9')
-        subs.root = newrec.root  # FIXME!
+        newrec = newrec.append_option('TOL', '9')
+    model.internals.control_stream.replace_records([subs], [newrec])
     des = model.internals.control_stream.insert_record('$DES\nDUMMY=0\n')
     assert isinstance(des, CodeRecord)
     newdes = des.from_odes(new)
@@ -842,13 +841,14 @@ def update_subroutines_record(model: Model, advan, trans):
 
     if advan != oldadvan:
         newsubs = subs.replace_option(oldadvan, advan)
-        subs.root = newsubs.root  # FIXME!
+    else:
+        newsubs = subs
     if trans != oldtrans:
         if trans is None:
-            newsubs = subs.remove_option_startswith('TRANS')
+            newsubs = newsubs.remove_option_startswith('TRANS')
         else:
-            newsubs = subs.replace_option(oldtrans, trans)
-        subs.root = newsubs.root  # FIXME!
+            newsubs = newsubs.replace_option(oldtrans, trans)
+    model.internals.control_stream.replace_records([subs], [newsubs])
 
 
 def update_model_record(model: Model, advan):
@@ -1351,12 +1351,12 @@ def update_input(model: Model):
                 keep.append(last_child)
             break
 
-    input_records[0].root = AttrTree(input_records[0].root.rule, tuple(keep))
+    newroot = AttrTree(input_records[0].root.rule, tuple(keep))
+    new_input = input_records[0].replace(root=newroot)
 
-    last_input_record = input_records[-1]
     for ci in model.datainfo[len(colnames) :]:
-        newrec = last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
-        last_input_record.root = newrec.root  # FIXME!
+        new_input = new_input.append_option(ci.name, 'DROP' if ci.drop else None)
+    model.internals.control_stream.replace_records([input_records[0]], [new_input])
 
 
 def get_zero_fix_rvs(model, eta=True):
@@ -1432,7 +1432,7 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
             first_est_record.option_pairs['MCETA']
         except KeyError:
             newrec = first_est_record.set_option('MCETA', '1')
-            first_est_record.root = newrec.root  # FIXME!
+            model.internals.control_stream.replace_records([first_est_record], [newrec])
 
 
 def _sort_eta_columns(df: pd.DataFrame):

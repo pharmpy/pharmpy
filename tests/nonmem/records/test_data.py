@@ -31,12 +31,12 @@ def test_data_filename_set(parser):
     assert str(record) == '$DATA DUMMY ; comment'
 
     # simple replace
-    record.filename = '/new/path/to_file.txt'
+    record = record.set_filename('/new/path/to_file.txt')
     assert record.filename == '/new/path/to_file.txt'
     assert str(record) == '$DATA /new/path/to_file.txt ; comment'
 
     # force quoting
-    record.filename = 'MUST=QUOTE'
+    record = record.set_filename('MUST=QUOTE')
     assert record.filename == 'MUST=QUOTE'
     assert str(record) == "$DATA 'MUST=QUOTE' ; comment"
 
@@ -47,13 +47,13 @@ def test_data_filename_set(parser):
     assert str(record) == text
 
     # more complex replace
-    record.filename = "'IGNORE'"
+    record = record.set_filename("'IGNORE'")
     assert record.filename == "'IGNORE'"
     assert str(record) == text.replace('pheno.dta', '"\'IGNORE\'"')
 
     # *
     record = parser.parse('$DATA DUMMY ; comment').records[0]
-    record.filename = None
+    record = record.set_filename(None)
     assert str(record) == '$DATA * ; comment'
 
 
@@ -65,13 +65,13 @@ def test_option_record(parser):
 def test_ignore_character(parser):
     record = parser.parse('$DATA pheno.dta').records[0]
     assert record.ignore_character is None
-    record.ignore_character = 'I'
+    record = record.set_ignore_character('I')
     assert record.ignore_character == 'I'
 
     record = parser.parse('$DATA pheno.dta IGNORE=@').records[0]
     assert record.filename == 'pheno.dta'
     assert record.ignore_character == '@'
-    record.ignore_character = 'K'
+    record = record.set_ignore_character('K')
     assert record.ignore_character == 'K'
 
     record = parser.parse('$DATA pheno.dta IGNORE="I"').records[0]
@@ -85,7 +85,7 @@ def test_ignore_character(parser):
 
     record = parser.parse('$DATA pheno.dta IGNORE=(DV==3) IGNORE=C').records[0]
     assert record.ignore_character == 'C'
-    record.ignore_character = '@'
+    record = record.set_ignore_character('@')
     assert record.ignore_character == '@'
     assert str(record.ignore[0]) == 'DV==3'
 
@@ -94,7 +94,7 @@ def test_ignore_character(parser):
 
     record = parser.parse('$DATA pheno.dta IGNORE="').records[0]
     assert record.ignore_character == '"'
-    record.ignore_character = '"'
+    record = record.set_ignore_character('"')
     assert record.ignore_character == '"'
     assert str(record) == '$DATA pheno.dta IGNORE="'
 
@@ -109,9 +109,9 @@ def test_ignore_character(parser):
 def test_ignore_character_from_header(parser):
     record = parser.parse('$DATA pheno.dta').records[0]
     assert record.ignore_character is None
-    record.ignore_character_from_header("ID")
+    record = record.set_ignore_character_from_header("ID")
     assert record.ignore_character == '@'
-    record.ignore_character_from_header("_ID")
+    record = record.set_ignore_character_from_header("_ID")
     assert record.ignore_character == '_'
 
 
@@ -126,7 +126,7 @@ def test_ignore_accept(parser):
     record = parser.parse('$DATA pheno.dta IGNORE=(DV.EQ.1)').records[0]
     assert str(record.ignore[0]) == 'DV.EQ.1'
     assert record.accept == []
-    del record.ignore
+    record = record.remove_ignore()
     assert record.ignore == []
     assert record.accept == []
 
@@ -134,15 +134,14 @@ def test_ignore_accept(parser):
     assert str(record.accept[0]) == 'DV.EQ.1'
     assert str(record.accept[1]) == 'MDV.NEN.23'
     assert record.ignore == []
-    del record.accept
+    record = record.remove_accept()
     assert record.ignore == []
     assert record.accept == []
     record = parser.parse('$DATA pheno.dta IGNORE=(WGT  < 1  ,\n  ID\n.EQ."lk")').records[0]
     assert str(record.ignore[0]) == 'WGT  < 1', 'ID\n.EQ."lk"'
 
     record = parser.parse('$DATA      ../pheno.dta IGNORE=@ IGNORE(APGR.GT.23)\n').records[0]
-    del record.ignore
-    del record.accept
+    record = record.remove_ignore().remove_accept()
     assert str(record) == '$DATA      ../pheno.dta IGNORE=@ \n'
 
 
@@ -163,6 +162,5 @@ def test_comment(parser):
 ;         Dataset
 """
     record = parser.parse(contents).records[0]
-    record.ignore_character = "A"
+    record = record.set_ignore_character("A")
     assert str(record) == '$DATA     cpt7.dta \n;         Dataset\nIGNORE=A\n'
-    print(record.root.treeprint())
