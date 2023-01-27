@@ -428,15 +428,14 @@ def update_infusion(model: Model, old: ODESystem):
 
 
 def to_des(model: Model, new: ODESystem):
-    old_des = model.internals.control_stream.get_records('DES')
-    newcs = model.internals.control_stream.remove_records(old_des)
-    model.internals = model.internals.replace(control_stream=newcs)
-    subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
+    cs = model.internals.control_stream
+    old_des = cs.get_records('DES')
+    cs = cs.remove_records(old_des)
+    subs = cs.get_records('SUBROUTINES')[0]
     newrec = subs.remove_option_startswith('TRANS')
     newrec = newrec.remove_option_startswith('ADVAN')
     newrec = newrec.remove_option('TOL')
-    newcs = model.internals.control_stream.replace_records([subs], [newrec])
-    model.internals = model.internals.replace(control_stream=newcs)
+    cs = cs.replace_records([subs], [newrec])
     subs = newrec
     step = model.estimation_steps[0]
     solver = step.solver
@@ -447,22 +446,15 @@ def to_des(model: Model, new: ODESystem):
         newrec = subs.append_option('ADVAN13')
     if not subs.has_option('TOL'):
         newrec = newrec.append_option('TOL', '9')
-    newcs = model.internals.control_stream.replace_records([subs], [newrec])
-    model.internals = model.internals.replace(control_stream=newcs)
+    cs = cs.replace_records([subs], [newrec])
     des = create_record('$DES\nDUMMY=0\n')
-    newcs = model.internals.control_stream.insert_record(des)
-    model.internals = model.internals.replace(control_stream=newcs)
+    cs = cs.insert_record(des)
     assert isinstance(des, CodeRecord)
     newdes = des.from_odes(new)
-    newcs = model.internals.control_stream.replace_records([des], [newdes])
-    model.internals = model.internals.replace(control_stream=newcs)
-    newcs = model.internals.control_stream.remove_records(
-        model.internals.control_stream.get_records('MODEL')
-    )
-    model.internals = model.internals.replace(control_stream=newcs)
+    cs = cs.replace_records([des], [newdes])
+    cs = cs.remove_records(model.internals.control_stream.get_records('MODEL'))
     mod = create_record('$MODEL\n')
-    newcs = model.internals.control_stream.insert_record(mod)
-    model.internals = model.internals.replace(control_stream=newcs)
+    cs = cs.insert_record(mod)
     old_mod = mod
     assert isinstance(mod, ModelRecord)
     for eq, ic in zip(new.eqs, list(new.ics.keys())):
@@ -472,8 +464,8 @@ def to_des(model: Model, new: ODESystem):
         else:
             dose = False
         mod = mod.add_compartment(name, dosing=dose)
-    newcs = model.internals.control_stream.replace_records([old_mod], [mod])
-    model.internals = model.internals.replace(control_stream=newcs)
+    cs = cs.replace_records([old_mod], [mod])
+    model.internals = model.internals.replace(control_stream=cs)
 
 
 def update_statements(model: Model, old: Statements, new: Statements, trans):
