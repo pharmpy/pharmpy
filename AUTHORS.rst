@@ -12,6 +12,7 @@ Development
 * Zhe Huang, zhe.huang@farmaci.uu.se
 * Aurelien Ooms
 * Gunnar Yngman, gunnar.yngman@farmaci.uu.se
+* Johan Borg
 
 Scientific input
 ~~~~~~~~~~~~~~~~
