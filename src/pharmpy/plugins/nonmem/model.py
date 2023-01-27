@@ -48,16 +48,16 @@ from .update import (
 class NONMEMModelInternals:
     control_stream: NMTranControlStream
     old_name: str
-    _old_description: str
-    _old_estimation_steps: EstimationSteps
-    _old_observation_transformation: sympy.Symbol
-    _old_parameters: Parameters
-    _old_random_variables: RandomVariables
-    _old_statements: Statements
-    _old_initial_individual_estimates: Optional[pd.DataFrame]
-    _old_datainfo: DataInfo
-    _dataset_updated: bool
-    _compartment_map: Optional[Dict[str, int]]
+    old_description: str
+    old_estimation_steps: EstimationSteps
+    old_observation_transformation: sympy.Symbol
+    old_parameters: Parameters
+    old_random_variables: RandomVariables
+    old_statements: Statements
+    old_initial_individual_estimates: Optional[pd.DataFrame]
+    old_datainfo: DataInfo
+    dataset_updated: bool
+    compartment_map: Optional[Dict[str, int]]
     name_map: Dict[str, str]
 
 
@@ -88,7 +88,7 @@ def convert_model(model):
     nm_model._datainfo = model.datainfo
     nm_model.random_variables = model.random_variables
     nm_model._parameters = model.parameters
-    nm_model.internals._old_parameters = Parameters()
+    nm_model.internals.old_parameters = Parameters()
     nm_model.statements = model.statements
     if hasattr(model, 'name'):
         nm_model.name = model.name
@@ -106,7 +106,7 @@ def convert_model(model):
     nm_model.description = model.description
     nm_model.update_source()
     if model.statements.ode_system:
-        nm_model.internals._compartment_map = {
+        nm_model.internals.compartment_map = {
             name: i for i, name in enumerate(model.statements.ode_system.compartment_names, start=1)
         }
     return nm_model
@@ -149,15 +149,15 @@ class Model(BaseModel):
             self.parameters = Parameters.create(list(self.parameters) + [omega])
 
         control_stream = update_random_variables(
-            self, self.internals._old_random_variables, self._random_variables
+            self, self.internals.old_random_variables, self._random_variables
         )
 
         control_stream = update_thetas(
-            self, control_stream, self.internals._old_parameters, self._parameters
+            self, control_stream, self.internals.old_parameters, self._parameters
         )
 
-        self.internals._old_parameters = self._parameters
-        self.internals._old_random_variables = self._random_variables
+        self.internals.old_parameters = self._parameters
+        self.internals.old_random_variables = self._random_variables
 
         self.internals.control_stream = control_stream
         trans = create_name_map(self)
@@ -171,18 +171,18 @@ class Model(BaseModel):
         abbr_translation(self, rv_trans)
 
         trans = {sympy.Symbol(key): sympy.Symbol(value) for key, value in trans.items()}
-        update_statements(self, self.internals._old_statements, self._statements, trans)
-        self.internals._old_statements = self._statements
+        update_statements(self, self.internals.old_statements, self._statements, trans)
+        self.internals.old_statements = self._statements
 
         if (
-            self.internals._dataset_updated
-            or self.datainfo != self.internals._old_datainfo
-            or self.datainfo.path != self.internals._old_datainfo.path
+            self.internals.dataset_updated
+            or self.datainfo != self.internals.old_datainfo
+            or self.datainfo.path != self.internals.old_datainfo.path
         ):
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
             if (
                 self.datainfo.path is None
-            ):  # or self.datainfo.path == self.internals._old_datainfo.path:
+            ):  # or self.datainfo.path == self.internals.old_datainfo.path:
                 dir_path = Path(self.name + ".csv") if path is None else path.parent
 
                 if nofiles:
@@ -208,8 +208,8 @@ class Model(BaseModel):
             self.internals.control_stream = self.internals.control_stream.replace_records(
                 [data_record], [newdata]
             )
-            self.internals._dataset_updated = False
-            self.internals._old_datainfo = self.datainfo
+            self.internals.dataset_updated = False
+            self.internals.old_datainfo = self.datainfo
 
             datapath = self.datainfo.path
             if datapath is not None:
@@ -226,7 +226,7 @@ class Model(BaseModel):
         update_sizes(self)
         update_estimation(self)
 
-        if self.observation_transformation != self.internals._old_observation_transformation:
+        if self.observation_transformation != self.internals.old_observation_transformation:
             if not nofiles:
                 update_ccontra(self, path, force)
         update_description(self)
@@ -249,7 +249,7 @@ class Model(BaseModel):
 
     @dataset.setter
     def dataset(self, df):
-        self.internals._dataset_updated = True
+        self.internals.dataset_updated = True
         self._dataset = df
         self.datainfo = self.datainfo.replace(path=None)
         self.update_datainfo()
@@ -271,7 +271,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
 
     control_stream = parser.parse(code)
     di = parse_datainfo(control_stream, path)
-    _old_datainfo = di
+    old_datainfo = di
     # FIXME temporary workaround remove when changing constructor
     # NOTE inputting the dataset is needed for IV models when using convert_model, since it needs to read the
     # RATE column to decide dosing, meaning it needs the dataset before parsing statements
@@ -328,16 +328,16 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
     internals = NONMEMModelInternals(
         control_stream=control_stream,
         old_name=name,
-        _old_description=description,
-        _old_estimation_steps=estimation_steps,
-        _old_observation_transformation=dependent_variable,
-        _old_parameters=parameters,
-        _old_random_variables=rvs,
-        _old_statements=statements,
-        _old_initial_individual_estimates=init_etas,
-        _old_datainfo=_old_datainfo,
-        _dataset_updated=False,
-        _compartment_map=comp_map,
+        old_description=description,
+        old_estimation_steps=estimation_steps,
+        old_observation_transformation=dependent_variable,
+        old_parameters=parameters,
+        old_random_variables=rvs,
+        old_statements=statements,
+        old_initial_individual_estimates=init_etas,
+        old_datainfo=old_datainfo,
+        dataset_updated=False,
+        compartment_map=comp_map,
         name_map=name_map,
     )
 

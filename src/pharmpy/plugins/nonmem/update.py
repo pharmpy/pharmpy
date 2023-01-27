@@ -44,7 +44,7 @@ from .table import NONMEMTableFile, PhiTable
 
 
 def update_description(model: Model):
-    if model.description != model.internals._old_description:
+    if model.description != model.internals.old_description:
         probrec = model.internals.control_stream.get_records('PROBLEM')[0]
         new = probrec.set_title(model.description)
         model.internals.control_stream = model.internals.control_stream.replace_records(
@@ -82,7 +82,7 @@ def reorder_diff(diff, kept_names):
 def update_thetas(model: Model, control_stream, old: Parameters, new: Parameters):
     new_thetas = [p for p in new if p.symbol not in model.random_variables.free_symbols]
     old_thetas = [
-        p for p in old if p.symbol not in model.internals._old_random_variables.free_symbols
+        p for p in old if p.symbol not in model.internals.old_random_variables.free_symbols
     ]
 
     diff_thetas = diff(old_thetas, new_thetas)
@@ -159,10 +159,10 @@ def update_random_variable_records(model: Model, rvs_diff, record_type):
     diag_change = []
 
     if record_type == 'OMEGA':
-        old_names = set(model.internals._old_random_variables.etas.parameter_names)
+        old_names = set(model.internals.old_random_variables.etas.parameter_names)
         new_names = set(model.random_variables.etas.parameter_names)
     else:
-        old_names = set(model.internals._old_random_variables.epsilons.parameter_names)
+        old_names = set(model.internals.old_random_variables.epsilons.parameter_names)
         new_names = set(model.random_variables.epsilons.parameter_names)
     kept_names = old_names.intersection(new_names)
 
@@ -174,7 +174,7 @@ def update_random_variable_records(model: Model, rvs_diff, record_type):
     for op, rvs in rvs_diff:
         in_diag = recindex < len(records) and len(rvs) == 1 and len(records[recindex]) > 1
         if op == 1:
-            if rvs in model.internals._old_random_variables and set(rvs.parameter_names).issubset(
+            if rvs in model.internals.old_random_variables and set(rvs.parameter_names).issubset(
                 kept_names
             ):
                 # Changed
@@ -204,7 +204,7 @@ def update_random_variable_records(model: Model, rvs_diff, record_type):
             eta_number += len(rvs)
         elif op == -1:
             if not (
-                rvs in model.internals._old_random_variables
+                rvs in model.internals.old_random_variables
                 and set(rvs.parameter_names).issubset(kept_names)
             ):
                 # Removed
@@ -499,7 +499,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
             else:
                 new_solver = None
             if new_solver:
-                old_solver = model.internals._old_estimation_steps[0].solver
+                old_solver = model.internals.old_estimation_steps[0].solver
                 if new_solver != old_solver:
                     advan = solver_to_advan(new_solver)
                     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
@@ -609,7 +609,7 @@ def pk_param_conversion(model: Model, advan, trans):
     statements = model.statements
     cs = statements.ode_system
     assert isinstance(cs, CompartmentalSystem)
-    oldmap = model.internals._compartment_map
+    oldmap = model.internals.compartment_map
     assert oldmap is not None
     newmap = new_compartmental_map(cs, oldmap)
     newmap['OUTPUT'] = len(newmap) + 1
@@ -875,7 +875,7 @@ def update_model_record(model: Model, advan):
     if not isinstance(odes, CompartmentalSystem):
         return
 
-    oldmap = model.internals._compartment_map
+    oldmap = model.internals.compartment_map
     if oldmap is None:
         return
     newmap = new_compartmental_map(odes, oldmap)
@@ -906,7 +906,7 @@ def update_model_record(model: Model, advan):
             model.internals.control_stream = model.internals.control_stream.replace_records(
                 [old_mod], [mod]
             )
-    model.internals._compartment_map = newmap
+    model.internals.compartment_map = newmap
 
 
 def add_needed_pk_parameters(model: Model, advan, trans):
@@ -959,7 +959,7 @@ def add_needed_pk_parameters(model: Model, advan, trans):
         add_parameters_ratio(model, 'Q2', 'V2', peripheral1, central)
         add_parameters_ratio(model, 'Q3', 'V3', peripheral2, central)
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
-        oldmap = model.internals._compartment_map
+        oldmap = model.internals.compartment_map
         assert oldmap is not None
         newmap = new_compartmental_map(odes, oldmap)
         newmap['OUTPUT'] = len(newmap) + 1
@@ -1106,7 +1106,7 @@ def update_abbr_record(model: Model, rv_trans):
 
 def update_estimation(model: Model):
     new = model.estimation_steps
-    old = model.internals._old_estimation_steps
+    old = model.internals.old_estimation_steps
     if old == new:
         return
 
@@ -1231,7 +1231,7 @@ def update_estimation(model: Model):
             s += ' FORMAT=s1PE16.8'
         tabrec = create_record(s)
         model.internals.control_stream = model.internals.control_stream.insert_record(tabrec)
-    model.internals._old_estimation_steps = new
+    model.internals.old_estimation_steps = new
 
 
 def solver_to_advan(solver):
@@ -1425,7 +1425,7 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
     phi_path /= f'{model.name}_input.phi'
 
     estimates = model.initial_individual_estimates
-    if estimates is not model.internals._old_initial_individual_estimates:
+    if estimates is not model.internals.old_initial_individual_estimates:
         assert estimates is not None
         rv_names = {rv for rv in model.random_variables.names if rv.startswith('ETA')}
         columns = set(estimates.columns)
