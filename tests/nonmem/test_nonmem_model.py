@@ -522,11 +522,13 @@ def test_dv_symbol(pheno):
 def test_insert_unknown_record(pheno):
     model = pheno.copy()
     rec = create_record('$TRIREME one')
-    model.internals.control_stream = model.internals.control_stream.insert_record(rec)
+    newcs = model.internals.control_stream.insert_record(rec)
+    model.internals = model.internals.replace(control_stream=newcs)
     assert model.model_code.split('\n')[-1] == '$TRIREME one'
 
     rec = create_record('\n$OA two')
-    model.internals.control_stream = model.internals.control_stream.insert_record(rec)
+    newcs = model.internals.control_stream.insert_record(rec)
+    model.internals = model.internals.replace(control_stream=newcs)
     assert model.model_code.split('\n')[-1] == '$OA two'
 
 

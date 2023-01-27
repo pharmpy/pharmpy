@@ -47,9 +47,8 @@ def update_description(model: Model):
     if model.description != model.internals.old_description:
         probrec = model.internals.control_stream.get_records('PROBLEM')[0]
         new = probrec.set_title(model.description)
-        model.internals.control_stream = model.internals.control_stream.replace_records(
-            [probrec], [new]
-        )
+        newcs = model.internals.control_stream.replace_records([probrec], [new])
+        model.internals = model.internals.replace(control_stream=newcs)
 
 
 def reorder_diff(diff, kept_names):
@@ -430,14 +429,14 @@ def update_infusion(model: Model, old: ODESystem):
 
 def to_des(model: Model, new: ODESystem):
     old_des = model.internals.control_stream.get_records('DES')
-    model.internals.control_stream = model.internals.control_stream.remove_records(old_des)
+    newcs = model.internals.control_stream.remove_records(old_des)
+    model.internals = model.internals.replace(control_stream=newcs)
     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
     newrec = subs.remove_option_startswith('TRANS')
     newrec = newrec.remove_option_startswith('ADVAN')
     newrec = newrec.remove_option('TOL')
-    model.internals.control_stream = model.internals.control_stream.replace_records(
-        [subs], [newrec]
-    )
+    newcs = model.internals.control_stream.replace_records([subs], [newrec])
+    model.internals = model.internals.replace(control_stream=newcs)
     subs = newrec
     step = model.estimation_steps[0]
     solver = step.solver
@@ -448,19 +447,22 @@ def to_des(model: Model, new: ODESystem):
         newrec = subs.append_option('ADVAN13')
     if not subs.has_option('TOL'):
         newrec = newrec.append_option('TOL', '9')
-    model.internals.control_stream = model.internals.control_stream.replace_records(
-        [subs], [newrec]
-    )
+    newcs = model.internals.control_stream.replace_records([subs], [newrec])
+    model.internals = model.internals.replace(control_stream=newcs)
     des = create_record('$DES\nDUMMY=0\n')
-    model.internals.control_stream = model.internals.control_stream.insert_record(des)
+    newcs = model.internals.control_stream.insert_record(des)
+    model.internals = model.internals.replace(control_stream=newcs)
     assert isinstance(des, CodeRecord)
     newdes = des.from_odes(new)
-    model.internals.control_stream = model.internals.control_stream.replace_records([des], [newdes])
-    model.internals.control_stream = model.internals.control_stream.remove_records(
+    newcs = model.internals.control_stream.replace_records([des], [newdes])
+    model.internals = model.internals.replace(control_stream=newcs)
+    newcs = model.internals.control_stream.remove_records(
         model.internals.control_stream.get_records('MODEL')
     )
+    model.internals = model.internals.replace(control_stream=newcs)
     mod = create_record('$MODEL\n')
-    model.internals.control_stream = model.internals.control_stream.insert_record(mod)
+    newcs = model.internals.control_stream.insert_record(mod)
+    model.internals = model.internals.replace(control_stream=newcs)
     old_mod = mod
     assert isinstance(mod, ModelRecord)
     for eq, ic in zip(new.eqs, list(new.ics.keys())):
@@ -470,9 +472,8 @@ def to_des(model: Model, new: ODESystem):
         else:
             dose = False
         mod = mod.add_compartment(name, dosing=dose)
-    model.internals.control_stream = model.internals.control_stream.replace_records(
-        [old_mod], [mod]
-    )
+    newcs = model.internals.control_stream.replace_records([old_mod], [mod])
+    model.internals = model.internals.replace(control_stream=newcs)
 
 
 def update_statements(model: Model, old: Statements, new: Statements, trans):
@@ -504,9 +505,8 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                     advan = solver_to_advan(new_solver)
                     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
                     newsubs = subs.set_advan(advan)
-                    model.internals.control_stream = model.internals.control_stream.replace_records(
-                        [subs], [newsubs]
-                    )
+                    newcs = model.internals.control_stream.replace_records([subs], [newsubs])
+                    model.internals = model.internals.replace(control_stream=newcs)
                     update_model_record(model, advan)
 
     main_statements = model.statements.before_odes
@@ -514,12 +514,14 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
 
     rec = model.internals.control_stream.get_pred_pk_record()
     newrec = rec.update_statements(main_statements.subs(trans), model.random_variables, trans)
-    model.internals.control_stream = model.internals.control_stream.replace_records([rec], [newrec])
+    newcs = model.internals.control_stream.replace_records([rec], [newrec])
+    model.internals = model.internals.replace(control_stream=newcs)
 
     error = model.internals.control_stream.get_error_record()
     if not error and len(error_statements) > 0:
         empty_error = create_record('$ERROR\n')
-        model.internals.control_stream = model.internals.control_stream.insert_record(empty_error)
+        newcs = model.internals.control_stream.insert_record(empty_error)
+        model.internals = model.internals.replace(control_stream=newcs)
     if error:
         if (
             len(error_statements) > 0
@@ -535,9 +537,8 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         new_error = error.update_statements(
             error_statements.subs(trans), model.random_variables, trans
         )
-        model.internals.control_stream = model.internals.control_stream.replace_records(
-            [error], [new_error]
-        )
+        newcs = model.internals.control_stream.replace_records([error], [new_error])
+        model.internals = model.internals.replace(control_stream=newcs)
 
 
 def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSystem):
@@ -864,9 +865,8 @@ def update_subroutines_record(model: Model, advan, trans):
             newsubs = newsubs.remove_option_startswith('TRANS')
         else:
             newsubs = newsubs.replace_option(oldtrans, trans)
-    model.internals.control_stream = model.internals.control_stream.replace_records(
-        [subs], [newsubs]
-    )
+    newcs = model.internals.control_stream.replace_records([subs], [newsubs])
+    model.internals = model.internals.replace(control_stream=newcs)
 
 
 def update_model_record(model: Model, advan):
@@ -881,16 +881,16 @@ def update_model_record(model: Model, advan):
     newmap = new_compartmental_map(odes, oldmap)
 
     if advan in ['ADVAN1', 'ADVAN2', 'ADVAN3', 'ADVAN4', 'ADVAN10', 'ADVAN11', 'ADVAN12']:
-        model.internals.control_stream = model.internals.control_stream.remove_records(
+        newcs = model.internals.control_stream.remove_records(
             model.internals.control_stream.get_records('MODEL')
         )
     else:
         if oldmap != newmap or model.estimation_steps[0].solver:
-            model.internals.control_stream = model.internals.control_stream.remove_records(
+            newcs = model.internals.control_stream.remove_records(
                 model.internals.control_stream.get_records('MODEL')
             )
             mod = create_record('$MODEL\n')
-            model.internals.control_stream = model.internals.control_stream.insert_record(mod)
+            newcs = newcs.insert_record(mod)
             old_mod = mod
             assert isinstance(mod, ModelRecord)
             comps = {v: k for k, v in newmap.items()}
@@ -903,10 +903,8 @@ def update_model_record(model: Model, advan):
                 else:
                     mod = mod.add_compartment(comps[i], dosing=False)
                 i += 1
-            model.internals.control_stream = model.internals.control_stream.replace_records(
-                [old_mod], [mod]
-            )
-    model.internals.compartment_map = newmap
+            newcs = newcs.replace_records([old_mod], [mod])
+    model.internals = model.internals.replace(control_stream=newcs, compartment_map=newmap)
 
 
 def add_needed_pk_parameters(model: Model, advan, trans):
@@ -1100,7 +1098,7 @@ def update_abbr_record(model: Model, rv_trans):
                 abbr_record_code = f'$ABBR REPLACE {abbr_name}={nonmem_name}\n'
                 abbr_record = create_record(abbr_record_code)
                 control_stream = control_stream.insert_record(abbr_record)
-    model.internals.control_stream = control_stream
+    model.internals = model.internals.replace(control_stream=control_stream)
     return trans
 
 
@@ -1189,13 +1187,13 @@ def update_estimation(model: Model):
         prev = (op, est)
 
     if old_records:
-        model.internals.control_stream = model.internals.control_stream.replace_records(
-            old_records, new_records
-        )
+        newcs = model.internals.control_stream.replace_records(old_records, new_records)
+        model.internals = model.internals.replace(control_stream=newcs)
     else:
         for rec in new_records:
             newrec = create_record(str(rec))
-            model.internals.control_stream = model.internals.control_stream.insert_record(newrec)
+            newcs = model.internals.control_stream.insert_record(newrec)
+            model.internals = model.internals.replace(control_stream=newcs)
 
     old_cov = False
     for est in old:
@@ -1208,13 +1206,12 @@ def update_estimation(model: Model):
         last_est_rec = model.internals.control_stream.get_records('ESTIMATION')[-1]
         idx_cov = model.internals.control_stream.records.index(last_est_rec)
         covrec = create_record('$COVARIANCE\n')
-        model.internals.control_stream = model.internals.control_stream.insert_record(
-            covrec, at_index=idx_cov + 1
-        )
+        newcs = model.internals.control_stream.insert_record(covrec, at_index=idx_cov + 1)
     elif old_cov and not new_cov:
         # Remove $COV
         covrecs = model.internals.control_stream.get_records('COVARIANCE')
-        model.internals.control_stream = model.internals.control_stream.remove_records(covrecs)
+        newcs = model.internals.control_stream.remove_records(covrecs)
+    model.internals = model.internals.replace(control_stream=newcs)
 
     # Update $TABLE
     # Currently only adds if did not exist before
@@ -1230,8 +1227,9 @@ def update_estimation(model: Model):
         if any(id_val > 99999 for id_val in get_ids(model)):
             s += ' FORMAT=s1PE16.8'
         tabrec = create_record(s)
-        model.internals.control_stream = model.internals.control_stream.insert_record(tabrec)
-    model.internals.old_estimation_steps = new
+        newcs = model.internals.control_stream.insert_record(tabrec)
+        model.internals = model.internals.replace(control_stream=newcs)
+    model.internals = model.internals.replace(old_estimation_steps=new)
 
 
 def solver_to_advan(solver):
@@ -1389,9 +1387,8 @@ def update_input(model: Model):
 
     for ci in model.datainfo[len(colnames) :]:
         new_input = new_input.append_option(ci.name, 'DROP' if ci.drop else None)
-    model.internals.control_stream = model.internals.control_stream.replace_records(
-        [input_records[0]], [new_input]
-    )
+    newcs = model.internals.control_stream.replace_records([input_records[0]], [new_input])
+    model.internals = model.internals.replace(control_stream=newcs)
 
 
 def get_zero_fix_rvs(model, eta=True):
@@ -1458,21 +1455,20 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
             record = eta_records[0]
         else:
             record = create_record('$ETAS ')
-            model.internals.control_stream = model.internals.control_stream.insert_record(record)
+            newcs = model.internals.control_stream.insert_record(record)
+            model.internals = model.internals.replace(control_stream=newcs)
         assert isinstance(record, EtasRecord)
         newrecord = record.set_path(phi_path)
-        model.internals.control_stream = model.internals.control_stream.replace_records(
-            [record], [newrecord]
-        )
+        newcs = model.internals.control_stream.replace_records([record], [newrecord])
+        model.internals = model.internals.replace(control_stream=newcs)
 
         first_est_record = model.internals.control_stream.get_records('ESTIMATION')[0]
         try:
             first_est_record.option_pairs['MCETA']
         except KeyError:
             newrec = first_est_record.set_option('MCETA', '1')
-            model.internals.control_stream = model.internals.control_stream.replace_records(
-                [first_est_record], [newrec]
-            )
+            newcs = model.internals.control_stream.replace_records([first_est_record], [newrec])
+            model.internals = model.internals.replace(control_stream=newcs)
 
 
 def _sort_eta_columns(df: pd.DataFrame):

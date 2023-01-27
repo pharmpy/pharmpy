@@ -516,7 +516,6 @@ $OMEGA 0.0309626  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    print(model.parameters)
     assert model.model_code == correct
 
 

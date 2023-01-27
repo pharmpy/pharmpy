@@ -1,6 +1,7 @@
 # The NONMEM Model class
 from __future__ import annotations
 
+import dataclasses
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -44,7 +45,7 @@ from .update import (
 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class NONMEMModelInternals:
     control_stream: NMTranControlStream
     old_name: str
@@ -59,6 +60,9 @@ class NONMEMModelInternals:
     dataset_updated: bool
     compartment_map: Optional[Dict[str, int]]
     name_map: Dict[str, str]
+
+    def replace(self, **kwargs):
+        return dataclasses.replace(self, **kwargs)
 
 
 def convert_model(model):
@@ -88,7 +92,7 @@ def convert_model(model):
     nm_model._datainfo = model.datainfo
     nm_model.random_variables = model.random_variables
     nm_model._parameters = model.parameters
-    nm_model.internals.old_parameters = Parameters()
+    nm_model.internals = nm_model.internals.replace(old_parameters=Parameters())
     nm_model.statements = model.statements
     if hasattr(model, 'name'):
         nm_model.name = model.name
@@ -106,9 +110,12 @@ def convert_model(model):
     nm_model.description = model.description
     nm_model.update_source()
     if model.statements.ode_system:
-        nm_model.internals.compartment_map = {
-            name: i for i, name in enumerate(model.statements.ode_system.compartment_names, start=1)
-        }
+        nm_model.internals = nm_model.internals.replace(
+            compartment_map={
+                name: i
+                for i, name in enumerate(model.statements.ode_system.compartment_names, start=1)
+            }
+        )
     return nm_model
 
 
@@ -156,10 +163,12 @@ class Model(BaseModel):
             self, control_stream, self.internals.old_parameters, self._parameters
         )
 
-        self.internals.old_parameters = self._parameters
-        self.internals.old_random_variables = self._random_variables
+        self.internals = self.internals.replace(
+            old_parameters=self._parameters,
+            old_random_variables=self._random_variables,
+            control_stream=control_stream,
+        )
 
-        self.internals.control_stream = control_stream
         trans = create_name_map(self)
 
         rv_trans = {}
@@ -172,7 +181,7 @@ class Model(BaseModel):
 
         trans = {sympy.Symbol(key): sympy.Symbol(value) for key, value in trans.items()}
         update_statements(self, self.internals.old_statements, self._statements, trans)
-        self.internals.old_statements = self._statements
+        self.internals = self.internals.replace(old_statements=self._statements)
 
         if (
             self.internals.dataset_updated
@@ -196,20 +205,18 @@ class Model(BaseModel):
 
             label = self.datainfo.names[0]
             new_data = data_record.set_ignore_character_from_header(label)
-            self.internals.control_stream = self.internals.control_stream.replace_records(
-                [data_record], [new_data]
-            )
+            newcs = self.internals.control_stream.replace_records([data_record], [new_data])
+            self.internals = self.internals.replace(control_stream=newcs)
             data_record = new_data
             update_input(self)
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.
             newdata = data_record.remove_ignore().remove_accept()
-            self.internals.control_stream = self.internals.control_stream.replace_records(
-                [data_record], [newdata]
+            newcs = self.internals.control_stream.replace_records([data_record], [newdata])
+            self.internals = self.internals.replace(
+                control_stream=newcs, dataset_updated=False, old_datainfo=self.datainfo
             )
-            self.internals.dataset_updated = False
-            self.internals.old_datainfo = self.datainfo
 
             datapath = self.datainfo.path
             if datapath is not None:
@@ -219,9 +226,8 @@ class Model(BaseModel):
                 data_record = self.internals.control_stream.get_records('DATA')[0]
                 parent_path = Path.cwd() if path is None else path.parent
                 newdata = data_record.set_filename(str(path_relative_to(parent_path, datapath)))
-                self.internals.control_stream = self.internals.control_stream.replace_records(
-                    [data_record], [newdata]
-                )
+                newcs = self.internals.control_stream.replace_records([data_record], [newdata])
+                self.internals = self.internals.replace(control_stream=newcs)
 
         update_sizes(self)
         update_estimation(self)
@@ -232,9 +238,8 @@ class Model(BaseModel):
         update_description(self)
 
         if self._name != self.internals.old_name:
-            self.internals.control_stream = update_name_of_tables(
-                self.internals.control_stream, self._name
-            )
+            newcs = update_name_of_tables(self.internals.control_stream, self._name)
+            self.internals = self.internals.replace(control_stream=newcs)
 
     @property
     def model_code(self):
@@ -249,7 +254,7 @@ class Model(BaseModel):
 
     @dataset.setter
     def dataset(self, df):
-        self.internals.dataset_updated = True
+        self.internals = self.internals.replace(dataset_updated=True)
         self._dataset = df
         self.datainfo = self.datainfo.replace(path=None)
         self.update_datainfo()
