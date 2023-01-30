@@ -113,9 +113,17 @@ class Model:
         parameters = kwargs.get('parameters', self.parameters)
         random_variables = kwargs.get('random_variables', self.random_variables)
         statements = kwargs.get('statements', self.statements)
-        dataset = kwargs.get('dataset', self.dataset)
-        datainfo = kwargs.get('datainfo', self.datainfo)
+        if hasattr(self, '_dataset'):
+            dataset = kwargs.get('dataset', self.dataset)
+        else:
+            dataset = None
+        if hasattr(self, '_datainfo'):
+            datainfo = kwargs.get('datainfo', self.datainfo)
+        else:
+            datainfo = None
         estimation_steps = kwargs.get('estimation_steps', self.estimation_steps)
+        if not isinstance(estimation_steps, EstimationSteps):
+            raise TypeError("model.estimation_steps must be of EstimationSteps type")
         modelfit_results = kwargs.get('modelfit_results', self.modelfit_results)
         parent_model = kwargs.get('parent_model', self.parent_model)
         initial_individual_estimates = kwargs.get(
@@ -328,12 +336,6 @@ class Model:
         See :class:`pharmpy.EstimationSteps`
         """
         return self._estimation_steps
-
-    @estimation_steps.setter
-    def estimation_steps(self, value):
-        if not isinstance(value, EstimationSteps):
-            raise TypeError("model.estimation_steps must be of EstimationSteps type")
-        self._estimation_steps = value
 
     @property
     def datainfo(self):

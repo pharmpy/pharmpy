@@ -74,7 +74,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     )
     eststeps = EstimationSteps.create([est])
 
-    model = Model()
+    model = Model(estimation_steps=eststeps)
     model.name = 'start'
     model.description = 'Start model'
     model.parameters = params
@@ -83,7 +83,6 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     model.dependent_variable = y_ass.symbol
     model.dataset = df
     model.datainfo = di
-    model.estimation_steps = eststeps
     model.filename_extension = '.mod'  # Should this really be needed?
 
     set_proportional_error_model(model)

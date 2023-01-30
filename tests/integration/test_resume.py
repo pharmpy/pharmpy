@@ -162,7 +162,7 @@ def test_resume_tool_ruvsearch(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
 
         model = Model.create_model('pheno_real.mod')
-        model.datainfo = model.datainfo.derive(path=tmp_path / 'pheno.dta')
+        model.datainfo = model.datainfo.replace(path=tmp_path / 'pheno.dta')
         path = 'x'
         run_tool_res = run_tool(
             'ruvsearch',

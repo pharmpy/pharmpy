@@ -105,10 +105,10 @@ def _create_base_model(model):
     )
 
     while len(base_model.estimation_steps) > 0:
-        remove_estimation_step(base_model, 0)
+        base_model = remove_estimation_step(base_model, 0)
 
-    add_estimation_step(base_model, **est_settings)
-    add_estimation_step(base_model, **eval_settings)
+    base_model = add_estimation_step(base_model, **est_settings)
+    base_model = add_estimation_step(base_model, **eval_settings)
     return base_model
 
 
@@ -121,10 +121,10 @@ def _create_candidate_model(method, solver, update, is_eval_candidate, model):
     model.description = _create_description([method, eval_method], solver=solver, update=update)
 
     while len(model.estimation_steps) > 0:
-        remove_estimation_step(model, 0)
+        model = remove_estimation_step(model, 0)
 
-    add_estimation_step(model, **est_settings)
-    add_estimation_step(model, **eval_settings)
+    model = add_estimation_step(model, **est_settings)
+    model = add_estimation_step(model, **eval_settings)
     if solver:
         model = set_ode_solver(model, solver)
     return model

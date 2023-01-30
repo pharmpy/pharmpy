@@ -31,8 +31,7 @@ def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> opts = {'NITER': 1000, 'ISAMPLE': 100}
-    >>> set_estimation_step(model, "IMP", evaluation=True, tool_options=opts)   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_estimation_step(model, "IMP", evaluation=True, tool_options=opts)
     >>> model.estimation_steps[0]   # doctest: +ELLIPSIS
     EstimationStep("IMP", interaction=True, cov=True, evaluation=True, ..., tool_options=...
 
@@ -55,7 +54,8 @@ def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
     d['method'] = method
     steps = model.estimation_steps
     newstep = steps[idx].replace(**d)
-    model.estimation_steps = steps[0:idx] + newstep + steps[idx + 1 :]
+    newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
+    model = model.replace(estimation_steps=newsteps)
     return model
 
 
@@ -86,8 +86,7 @@ def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> opts = {'NITER': 1000, 'ISAMPLE': 100}
-    >>> add_estimation_step(model, "IMP", tool_options=opts)   # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_estimation_step(model, "IMP", tool_options=opts)
     >>> ests = model.estimation_steps
     >>> len(ests)
     2
@@ -112,9 +111,10 @@ def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **
         except TypeError:
             raise TypeError(f'Index must be integer: {idx}')
         steps = model.estimation_steps
-        model.estimation_steps = steps[0:idx] + meth + steps[idx:]
+        newsteps = steps[0:idx] + meth + steps[idx:]
     else:
-        model.estimation_steps = model.estimation_steps + meth
+        newsteps = model.estimation_steps + meth
+    model = model.replace(estimation_steps=newsteps)
 
     return model
 
@@ -138,8 +138,7 @@ def remove_estimation_step(model: Model, idx: int):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> remove_estimation_step(model, 0)      # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_estimation_step(model, 0)
     >>> ests = model.estimation_steps
     >>> len(ests)
     0
@@ -160,7 +159,8 @@ def remove_estimation_step(model: Model, idx: int):
         raise TypeError(f'Index must be integer: {idx}')
 
     steps = model.estimation_steps
-    model.estimation_steps = steps[0:idx] + steps[idx + 1 :]
+    newsteps = steps[0:idx] + steps[idx + 1 :]
+    model = model.replace(estimation_steps=newsteps)
     return model
 
 
@@ -188,8 +188,7 @@ def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], i
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> opts = {'NITER': 1000, 'ISAMPLE': 100}
-    >>> append_estimation_step_options(model, tool_options=opts, idx=0)   # doctest: +ELLIPSIS
-    <...>
+    >>> model = append_estimation_step_options(model, tool_options=opts, idx=0)
     >>> est = model.estimation_steps[0]
     >>> len(est.tool_options)
     2
@@ -213,7 +212,8 @@ def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], i
     toolopts = dict(steps[idx].tool_options)
     toolopts.update(tool_options)
     newstep = steps[idx].replace(tool_options=toolopts)
-    model.estimation_steps = steps[0:idx] + newstep + steps[idx + 1 :]
+    newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
+    model = model.replace(estimation_steps=newsteps)
     return model
 
 
@@ -234,10 +234,8 @@ def add_covariance_step(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_estimation_step(model, 'FOCE', cov=False)      # doctest: +ELLIPSIS
-    <...>
-    >>> add_covariance_step(model)      # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_estimation_step(model, 'FOCE', cov=False)
+    >>> model = add_covariance_step(model)
     >>> ests = model.estimation_steps
     >>> ests[0]   # doctest: +ELLIPSIS
     EstimationStep("FOCE", interaction=True, cov=True, ...)
@@ -254,7 +252,8 @@ def add_covariance_step(model: Model):
     """
     steps = model.estimation_steps
     newstep = steps[-1].replace(cov=True)
-    model.estimation_steps = steps[0:-1] + newstep
+    newsteps = steps[0:-1] + newstep
+    model = model.replace(estimation_steps=newsteps)
     return model
 
 
@@ -275,8 +274,7 @@ def remove_covariance_step(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> remove_covariance_step(model)      # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_covariance_step(model)
     >>> ests = model.estimation_steps
     >>> ests[0]   # doctest: +ELLIPSIS
     EstimationStep("FOCE", interaction=True, cov=False, ...)
@@ -293,7 +291,8 @@ def remove_covariance_step(model: Model):
     """
     steps = model.estimation_steps
     newstep = steps[-1].replace(cov=False)
-    model.estimation_steps = steps[:-1] + newstep
+    newsteps = steps[:-1] + newstep
+    model = model.replace(estimation_steps=newsteps)
     return model
 
 
@@ -319,8 +318,7 @@ def set_evaluation_step(model: Model, idx: int = -1):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_evaluation_step(model)   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_evaluation_step(model)
     >>> model.estimation_steps[0]   # doctest: +ELLIPSIS
     EstimationStep("FOCE", interaction=True, cov=True, evaluation=True, ...
 
@@ -342,7 +340,8 @@ def set_evaluation_step(model: Model, idx: int = -1):
     steps = model.estimation_steps
     newstep = steps[idx].replace(evaluation=True)
     if idx != -1:
-        model.estimation_steps = steps[0:idx] + newstep + steps[idx + 1 :]
+        newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
     else:
-        model.estimation_steps = steps[0:-1] + newstep
+        newsteps = steps[0:-1] + newstep
+    model = model.replace(estimation_steps=newsteps)
     return model

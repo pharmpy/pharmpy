@@ -66,5 +66,5 @@ def create_linearized_model(model):
     linbase.name = 'linbase'
 
     est = EstimationStep.create('foce', interaction=True)
-    linbase.estimation_steps = EstimationSteps.create([est])
+    linbase = linbase.replace(estimation_steps=EstimationSteps.create([est]))
     return linbase

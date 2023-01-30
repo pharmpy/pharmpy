@@ -1664,7 +1664,8 @@ def set_ode_solver(model: Model, solver: str):
     for step in model.estimation_steps:
         new = step.replace(solver=solver)
         new_steps.append(new)
-    model.estimation_steps = EstimationSteps.create(new_steps)
+    newsteps = EstimationSteps.create(new_steps)
+    model = model.replace(estimation_steps=newsteps)
     return model
 
 

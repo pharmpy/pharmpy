@@ -25,10 +25,10 @@ def test_ruvsearch(tmp_path, testdata):
         assert best_model.model_code.split('\n')[12] == 'IF (TAD.LT.6.08) THEN'
         assert (
             best_model.model_code.split('\n')[13]
-            == '    Y = A(2)*EPS(1)*THETA(4)*EXP(ETA(4))/VC + A(2)/VC'
+            == '    Y = A(2)/VC + A(2)*EPS(1)*THETA(4)*EXP(ETA(4))/VC'
         )
         assert (
-            best_model.model_code.split('\n')[15] == '    Y = A(2)*EPS(1)*EXP(ETA(4))/VC + A(2)/VC'
+            best_model.model_code.split('\n')[15] == '    Y = A(2)/VC + A(2)*EPS(1)*EXP(ETA(4))/VC'
         )
         assert best_model.model_code.split('\n')[20] == '$THETA  1.15573 ; time_varying'
         assert best_model.model_code.split('\n')[26] == '$OMEGA  0.0396751 ; IIV_RUV1'

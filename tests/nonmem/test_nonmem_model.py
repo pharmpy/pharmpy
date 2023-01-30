@@ -743,7 +743,7 @@ $ESTIMATION METHOD=1 SADDLE_RESET=1
 def test_estimation_steps_setter(estcode, kwargs, rec_ref):
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
-$DATA file.csv IGNORE=@
+$DATA tests/testdata/nonmem/file.csv IGNORE=@
 $PRED
 Y = THETA(1) + ETA(1) + ERR(1)
 $THETA 0.1
@@ -754,7 +754,7 @@ $SIGMA 1
     model = Model.create_model(StringIO(code))
     steps = model.estimation_steps
     newstep = steps[0].replace(**kwargs)
-    model.estimation_steps = newstep + steps[1:]
+    model = model.replace(estimation_steps=newstep + steps[1:])
     assert model.model_code.split('\n')[-2] == rec_ref
 
 
@@ -776,7 +776,7 @@ $SIGMA 1
 def test_set_estimation_steps_option_clash(estcode, kwargs, error_msg):
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
-$DATA file.csv IGNORE=@
+$DATA tests/testdata/nonmem/file.csv IGNORE=@
 $PRED
 Y = THETA(1) + ETA(1) + ERR(1)
 $THETA 0.1
@@ -788,7 +788,8 @@ $SIGMA 1
 
     steps = model.estimation_steps
     newstep = steps[0].replace(**kwargs)
-    model.estimation_steps = newstep + steps[1:]
+    newsteps = newstep + steps[1:]
+    model = model.replace(estimation_steps=newsteps)
 
     with pytest.raises(ValueError) as excinfo:
         model.update_source(nofiles=True)
@@ -798,7 +799,7 @@ $SIGMA 1
 def test_add_estimation_step():
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
-$DATA file.csv IGNORE=@
+$DATA tests/testdata/nonmem/file.csv IGNORE=@
 $PRED
 Y = THETA(1) + ETA(1) + ERR(1)
 $THETA 0.1
@@ -808,23 +809,23 @@ $EST METH=COND INTER
 '''
     model = Model.create_model(StringIO(code))
     est_new = EstimationStep.create('IMP', interaction=True, tool_options={'saddle_reset': 1})
-    model.estimation_steps = model.estimation_steps + est_new
+    model = model.replace(estimation_steps=model.estimation_steps + est_new)
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
     est_new = EstimationStep.create('SAEM', interaction=True)
-    model.estimation_steps = est_new + model.estimation_steps
+    model = model.replace(estimation_steps=est_new + model.estimation_steps)
     assert model.model_code.split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
     est_new = EstimationStep.create('FO', evaluation=True)
-    model.estimation_steps = model.estimation_steps + est_new
+    model = model.replace(estimation_steps=model.estimation_steps + est_new)
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
     est_new = EstimationStep.create('IMP', evaluation=True)
-    model.estimation_steps = model.estimation_steps + est_new
+    model = model.replace(estimation_steps=model.estimation_steps + est_new)
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP EONLY=1'
 
 
 def test_remove_estimation_step():
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
-$DATA file.csv IGNORE=@
+$DATA tests/testdata/nonmem/file.csv IGNORE=@
 $PRED
 Y = THETA(1) + ETA(1) + ERR(1)
 $THETA 0.1
@@ -833,7 +834,7 @@ $SIGMA 1
 $EST METH=COND INTER
 '''
     model = Model.create_model(StringIO(code))
-    model.estimation_steps = model.estimation_steps[1:]
+    model = model.replace(estimation_steps=model.estimation_steps[1:])
     assert not model.estimation_steps
     model.update_source()
     assert model.model_code.split('\n')[-2] == '$SIGMA 1'
@@ -931,7 +932,7 @@ def test_table_long_ids(testdata):
     dataset_new = model.dataset.copy()
     dataset_new['ID'] = dataset_new['ID'] * 10000
     model.dataset = dataset_new
-    set_estimation_step(model, 'FO', residuals=['CWRES'])
+    model = set_estimation_step(model, 'FO', residuals=['CWRES'])
     assert 'FORMAT=' in model.model_code
 
 

@@ -174,12 +174,14 @@ def convert_model(model: Model, to_format: str):
         new.random_variables = model.random_variables
         new.statements = model.statements
         new.dataset = model.dataset
-        new.estimation_steps = model.estimation_steps
         new.datainfo = model.datainfo
         new.name = model.name
         new.description = model.description
         new.dependent_variable = model.dependent_variable
-        new = new.replace(observation_transformation=model.observation_transformation)
+        new = new.replace(
+            estimation_steps=model.estimation_steps,
+            observation_transformation=model.observation_transformation,
+        )
         new.parent_model = model.name
         try:
             new.filename_extension = model.filename_extension

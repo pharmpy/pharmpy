@@ -268,14 +268,14 @@ def _create_base_model(input_model, current_iteration):
     base_model.dataset = _create_dataset(input_model)
 
     est = EstimationStep.create('foce', interaction=True, maximum_evaluations=9999)
-    base_model.estimation_steps = EstimationSteps.create([est])
+    base_model = base_model.replace(estimation_steps=EstimationSteps.create([est]))
     return base_model
 
 
 def _create_iiv_on_ruv_model(input_model, current_iteration):
     base_model = input_model
     model = base_model.copy()
-    set_iiv_on_ruv(model)
+    model = set_iiv_on_ruv(model)
     model.name = f'IIV_on_RUV_{current_iteration}'
     model.description = model.name
     return model
