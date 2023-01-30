@@ -90,7 +90,21 @@ class Model:
         self._description = description
         self.internals = internals
 
+    def _canonicalize_value_type(self, value):
+        allowed_strings = ('PREDICTION', 'LIKELIHOOD', '-2LL')
+        if isinstance(value, str):
+            if value.upper() not in allowed_strings:
+                raise ValueError(
+                    f"Cannot set value_type to {value}. Must be one of {allowed_strings} "
+                    f"or a symbol"
+                )
+            value = value.upper()
+        elif not isinstance(value, sympy.Symbol):
+            raise ValueError("Can only set value_type to one of {allowed_strings} or a symbol")
+        return value
+
     def replace(self, **kwargs):
+        name = kwargs.get('name', self.name)
         dependent_variable = kwargs.get('dependent_variable', self.dependent_variable)
         parameters = kwargs.get('parameters', self.parameters)
         random_variables = kwargs.get('random_variables', self.random_variables)
@@ -104,10 +118,14 @@ class Model:
             'initial_individual_estimates', self.initial_individual_estimates
         )
         filename_extension = kwargs.get('filename_extension', self.filename_extension)
-        value_type = kwargs.get('value_type', self.value_type)
+        if 'value_type' in kwargs:
+            value_type = self._canonicalize_value_type(kwargs['value_type'])
+        else:
+            value_type = self.value_type
         description = kwargs.get('description', self.description)
         internals = kwargs.get('internals', self.internals)
         return self.__class__(
+            name=name,
             dependent_variable=dependent_variable,
             parameters=parameters,
             random_variables=random_variables,
@@ -235,20 +253,6 @@ class Model:
         a prediction value, 1 for likelihood and 2 for -2ll.
         """
         return self._value_type
-
-    @value_type.setter
-    def value_type(self, value):
-        allowed_strings = ['PREDICTION', 'LIKELIHOOD', '-2LL']
-        if isinstance(value, str):
-            if value.upper() not in allowed_strings:
-                raise ValueError(
-                    f"Cannot set value_type to {value}. Must be one of {allowed_strings} "
-                    f"or a symbol"
-                )
-            value = value.upper()
-        elif not isinstance(value, sympy.Symbol):
-            raise ValueError("Can only set value_type to one of {allowed_strings} or a symbol")
-        self._value_type = value
 
     @property
     def observation_transformation(self):

@@ -98,7 +98,7 @@ def convert_model(model):
         nm_model.name = model.name
     # FIXME: No handling of other DVs
     nm_model.dependent_variable = sympy.Symbol('Y')
-    nm_model.value_type = model.value_type
+    nm_model = nm_model.replace(value_type=model.value_type)
     nm_model._dataset = model.dataset
     nm_model._estimation_steps = model.estimation_steps
     nm_model._initial_individual_estimates = model.initial_individual_estimates
