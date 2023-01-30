@@ -263,7 +263,6 @@ def _create_base_model(input_model, current_iteration):
     base_model.statements = statements
 
     base_model.dependent_variable = y.symbol
-    base_model.observation_transformation = y.symbol
     base_model.name = f'base_{current_iteration}'
     base_model.description = base_model.name
     base_model.dataset = _create_dataset(input_model)

@@ -59,6 +59,7 @@ class Model:
         dataset=None,
         datainfo=None,
         dependent_variable=None,
+        observation_transformation=None,
         estimation_steps=None,
         modelfit_results=None,
         parent_model=None,
@@ -80,7 +81,10 @@ class Model:
         self._parameters = parameters
         self._statements = statements
         self._dependent_variable = actual_dependent_variable
-        self._observation_transformation = actual_dependent_variable
+        if observation_transformation is None:
+            self._observation_transformation = actual_dependent_variable
+        else:
+            self._observation_transformation = observation_transformation
         self._estimation_steps = estimation_steps
         self._modelfit_results = modelfit_results
         self._parent_model = parent_model
@@ -123,6 +127,9 @@ class Model:
         else:
             value_type = self.value_type
         description = kwargs.get('description', self.description)
+        observation_transformation = kwargs.get(
+            'observation_transformation', self.observation_transformation
+        )
         internals = kwargs.get('internals', self.internals)
         return self.__class__(
             name=name,
@@ -140,6 +147,7 @@ class Model:
             value_type=value_type,
             description=description,
             internals=internals,
+            observation_transformation=observation_transformation,
         )
 
     def __eq__(self, other):
@@ -258,10 +266,6 @@ class Model:
     def observation_transformation(self):
         """Transformation to be applied to the observation data"""
         return self._observation_transformation
-
-    @observation_transformation.setter
-    def observation_transformation(self, value):
-        self._observation_transformation = value
 
     @property
     def parameters(self):

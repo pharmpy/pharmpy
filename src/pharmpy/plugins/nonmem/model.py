@@ -98,14 +98,16 @@ def convert_model(model):
         nm_model.name = model.name
     # FIXME: No handling of other DVs
     nm_model.dependent_variable = sympy.Symbol('Y')
-    nm_model = nm_model.replace(value_type=model.value_type)
     nm_model._dataset = model.dataset
     nm_model._estimation_steps = model.estimation_steps
     nm_model._initial_individual_estimates = model.initial_individual_estimates
-    nm_model.observation_transformation = subs(
+    new_obs_trans = subs(
         model.observation_transformation,
         {model.dependent_variable: nm_model.dependent_variable},
         simultaneous=True,
+    )
+    nm_model = nm_model.replace(
+        value_type=model.value_type, observation_transformation=new_obs_trans
     )
     nm_model.description = model.description
     nm_model.update_source()

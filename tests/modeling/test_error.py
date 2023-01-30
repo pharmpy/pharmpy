@@ -485,10 +485,10 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_set_dtbs_error_model(tmp_path):
+def test_set_dtbs_error_model(tmp_path, create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
+$DATA run1.csv IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
 CL=THETA(1)*EXP(ETA(1))
@@ -504,9 +504,9 @@ $SIGMA 0.013241
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = read_model_from_string(code)
+    model = create_model_for_test(code, dataset='pheno')
     model.name = 'run1'
-    set_dtbs_error_model(model)
+    model = set_dtbs_error_model(model)
 
     with chdir(tmp_path):
         model.update_source()
@@ -516,8 +516,8 @@ $ESTIMATION METHOD=1 INTERACTION
             assert fh.readline().startswith('      subroutine ccontr')
 
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
+$DATA run1.csv IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
 CL=THETA(1)*EXP(ETA(1))
