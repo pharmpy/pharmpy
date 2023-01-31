@@ -5,7 +5,7 @@ New features
 ============
 
 * Add function ``modeling.has_odes``
-
+* Add function ``modeling.has_linear_odes``
 
 0.89.0 (2023-01-26)
 -------------------

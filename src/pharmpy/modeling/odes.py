@@ -1798,6 +1798,10 @@ def has_odes(model: Model) -> bool:
     bool
         True if model has an ODE system
 
+    See also
+    --------
+    has_linear_odes
+
     Examples
     --------
     >>> from pharmpy.modeling import has_odes, load_example_model
@@ -1808,3 +1812,36 @@ def has_odes(model: Model) -> bool:
 
     odes = model.statements.ode_system
     return bool(odes)
+
+
+def has_linear_odes(model: Model) -> bool:
+    """Check if model has a linear ODE system
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    bool
+        True if model has an ODE system that is linear
+
+    See also
+    --------
+    has_odes
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import has_linear_odes, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> has_linear_odes(model)
+    True
+    """
+
+    if not has_odes(model):
+        return False
+
+    odes = model.statements.ode_system
+    M = odes.compartmental_matrix
+    return odes.t not in M.free_symbols
