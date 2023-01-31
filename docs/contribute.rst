@@ -137,7 +137,7 @@ Build a usable virtual environment
 
 To build a usable virtual environment without having to run all tests::
 
-    tox -e run -- pharmpy --version
+    tox -e plain -- pharmpy --version
 
 This will create a plain virtual environment in the ``.tox/run`` directory that can be used for using Pharmpy.
 
