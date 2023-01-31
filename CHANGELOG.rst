@@ -6,6 +6,7 @@ New features
 
 * Add function ``modeling.has_odes``
 * Add function ``modeling.has_linear_odes``
+* Add function ``modeling.has_linear_odes_with_real_eigenvalues``
 * Add function ``modeling.is_real``
 
 0.89.0 (2023-01-26)

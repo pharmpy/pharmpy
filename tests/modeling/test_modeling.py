@@ -20,6 +20,7 @@ from pharmpy.modeling import (
     fix_parameters_to,
     has_first_order_elimination,
     has_linear_odes,
+    has_linear_odes_with_real_eigenvalues,
     has_michaelis_menten_elimination,
     has_mixed_mm_fo_elimination,
     has_odes,
@@ -3547,3 +3548,15 @@ def test_has_linear_odes(load_example_model_for_test, datadir, load_model_for_te
     path = datadir / 'minimal.mod'
     model = load_model_for_test(path)
     assert not has_linear_odes(model)
+
+
+def test_has_linear_odes_with_real_eigenvalues(
+    load_example_model_for_test, datadir, load_model_for_test
+):
+    model = load_example_model_for_test('pheno')
+    assert has_linear_odes_with_real_eigenvalues(model)
+    model = set_michaelis_menten_elimination(model)
+    assert not has_linear_odes_with_real_eigenvalues(model)
+    path = datadir / 'minimal.mod'
+    model = load_model_for_test(path)
+    assert not has_linear_odes_with_real_eigenvalues(model)

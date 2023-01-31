@@ -24,7 +24,7 @@ from pharmpy.modeling.help_functions import _as_integer
 
 from .common import remove_unused_parameters_and_rvs, rename_symbols
 from .data import get_observations
-from .expressions import create_symbol
+from .expressions import create_symbol, is_real
 from .parameters import (
     add_population_parameter,
     fix_parameters,
@@ -1801,6 +1801,7 @@ def has_odes(model: Model) -> bool:
     See also
     --------
     has_linear_odes
+        has_linear_odes_with_real_eigenvalues
 
     Examples
     --------
@@ -1830,6 +1831,7 @@ def has_linear_odes(model: Model) -> bool:
     See also
     --------
     has_odes
+        has_linear_odes_with_real_eigenvalues
 
     Examples
     --------
@@ -1845,3 +1847,43 @@ def has_linear_odes(model: Model) -> bool:
     odes = model.statements.ode_system
     M = odes.compartmental_matrix
     return odes.t not in M.free_symbols
+
+
+def has_linear_odes_with_real_eigenvalues(model: Model):
+    """Check if model has a linear ode system with real eigenvalues
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    bool
+        True if model has an ODE system that is linear
+
+    See also
+    --------
+    has_odes
+        has_linear_odes
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import has_linear_odes_with_real_eigenvalues, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> has_linear_odes_with_real_eigenvalues(model)
+    True
+    """
+
+    if not has_odes(model):
+        return False
+    if not has_linear_odes(model):
+        return False
+    odes = model.statements.ode_system
+    M = odes.compartmental_matrix
+    eigs = M.eigenvals().keys()
+    for eig in eigs:
+        real = is_real(model, eig)
+        if real is None or not real:
+            return real
+    return True

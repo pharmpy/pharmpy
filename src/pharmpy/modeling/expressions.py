@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union, Optional
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.assumptions import assume_all
