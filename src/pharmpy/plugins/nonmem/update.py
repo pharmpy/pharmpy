@@ -27,7 +27,7 @@ from pharmpy.model import (
     data,
     output,
 )
-from pharmpy.modeling import get_ids, simplify_expression
+from pharmpy.modeling import get_ids, has_linear_odes_with_real_eigenvalues, simplify_expression
 
 if TYPE_CHECKING:
     from .model import Model
@@ -386,7 +386,6 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
 def is_nonlinear_odes(model: Model):
     """Check if ode system is nonlinear"""
     odes = model.statements.ode_system
-    assert isinstance(odes, CompartmentalSystem)
     M = odes.compartmental_matrix
     return odes.t in M.free_symbols
 
@@ -778,7 +777,10 @@ def new_advan_trans(model: Model):
     if nonlin:
         advan = 'ADVAN13'
     elif len(odes) > 4 or odes.get_n_connected(odes.central_compartment) != len(odes) - 1:
-        advan = 'ADVAN5'
+        if has_linear_odes_with_real_eigenvalues(model):
+            advan = 'ADVAN7'
+        else:
+            advan = 'ADVAN5'
     elif len(odes) == 1:
         advan = 'ADVAN1'
     elif len(odes) == 2 and odes.find_depot(statements):
