@@ -251,15 +251,18 @@ def get_observations(model: Model):
             try:
                 label = model.datainfo.typeix['dose'][0].name
             except IndexError:
-                raise DatasetError('Could not identify observation rows in dataset')
+                label = None  # All data records are observations
 
     idcol = model.datainfo.id_column.name
     idvcol = model.datainfo.idv_column.name
-    df = model.dataset.query(f'{label} == 0')
 
-    if df.empty:
-        df = model.dataset.astype({label: 'float'})
-        df = df.query(f'{label} == 0')
+    if label:
+        df = model.dataset.query(f'{label} == 0')
+        if df.empty:
+            df = model.dataset.astype({label: 'float'})
+            df = df.query(f'{label} == 0')
+    else:
+        df = model.dataset
 
     df = df[[idcol, idvcol, model.datainfo.dv_column.name]]
     try:
