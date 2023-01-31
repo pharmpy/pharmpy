@@ -1783,3 +1783,28 @@ def _get_dependent_assignments(sset, assignment):
             (sset.find_assignment(symb) for symb in assignment.expression.free_symbols),
         )
     )
+
+
+def has_odes(model: Model) -> bool:
+    """Check if model has an ODE system
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    bool
+        True if model has an ODE system
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import has_odes, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> has_odes(model)
+    True
+    """
+
+    odes = model.statements.ode_system
+    return bool(odes)
