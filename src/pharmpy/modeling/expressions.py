@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
+from typing import Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union, Optional
 
 from pharmpy.deps import sympy
+from pharmpy.internals.expr.assumptions import assume_all
+from pharmpy.internals.expr.leaves import free_images_and_symbols
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.graph.directed.connected_components import strongly_connected_component_of
@@ -1508,3 +1510,31 @@ def display_odes(model: Model):
         eqs = None
         ics = None
     return ODEDisplayer(eqs, ics)
+
+
+def is_real(model: Model, expr: Union[str, sympy.Expr]) -> Optional[bool]:
+    """Determine if an expression is real valued given constraints of a model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    expr : str or expression
+        Expression to test
+
+    Return
+    ------
+    bool or None
+        True if expression is real, False if not and None if unknown
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, is_real
+    >>> import sympy
+    >>> model = load_example_model("pheno")
+    >>> is_real(model, "CL")
+    True
+
+    """
+    expr = sympy.sympify(expr)
+    return sympy.ask(sympy.Q.real(expr), assume_all(sympy.Q.real, free_images_and_symbols(expr)))

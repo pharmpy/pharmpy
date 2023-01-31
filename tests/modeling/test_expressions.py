@@ -23,6 +23,7 @@ from pharmpy.modeling import (
     get_rv_parameters,
     greekify_model,
     has_random_effect,
+    is_real,
     make_declarative,
     mu_reference_model,
     read_model_from_string,
@@ -473,3 +474,10 @@ def test_get_rv_parameter_verify_input(load_model_for_test, pheno_path):
 def test_display_odes(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     display_odes(model)
+
+
+def test_is_real(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    assert is_real(model, "CL")
+    assert not is_real(model, "I*CL")
+    assert is_real(model, "sqrt(CL)") is None
