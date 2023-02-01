@@ -182,7 +182,7 @@ def create_fit(cg, model):
     if [s.evaluation for s in model.estimation_steps._steps][0] is False:
         cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei")')
     else:
-        cg.add(f'fit <- nlmixr2({model.name}, dataset, "posthoc")')
+        cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei",control=foceiControl(maxOuterIterations=0))')
 
 
 @dataclass
