@@ -254,10 +254,6 @@ class Model:
         """The model dependent variable, i.e. y"""
         return self._dependent_variable
 
-    @dependent_variable.setter
-    def dependent_variable(self, value):
-        self._dependent_variable = value
-
     @property
     def value_type(self):
         """The type of the model value (dependent variable)

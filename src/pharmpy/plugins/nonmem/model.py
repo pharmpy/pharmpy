@@ -96,8 +96,6 @@ def convert_model(model):
     nm_model.statements = model.statements
     if hasattr(model, 'name'):
         nm_model.name = model.name
-    # FIXME: No handling of other DVs
-    nm_model.dependent_variable = sympy.Symbol('Y')
     nm_model._dataset = model.dataset
     nm_model._estimation_steps = model.estimation_steps
     nm_model._initial_individual_estimates = model.initial_individual_estimates
@@ -107,7 +105,9 @@ def convert_model(model):
         simultaneous=True,
     )
     nm_model = nm_model.replace(
-        value_type=model.value_type, observation_transformation=new_obs_trans
+        value_type=model.value_type,
+        observation_transformation=new_obs_trans,
+        dependent_variable=sympy.Symbol('Y'),
     )
     nm_model.description = model.description
     nm_model.update_source()
