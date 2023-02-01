@@ -167,7 +167,12 @@ def create_model(cg, model):
 
         else:
             for eq in s.eqs:
-                cg.add(f'{printer.doprint(eq.lhs)} = {printer.doprint(eq.rhs)}')
+                if "Piecewise" in printer.doprint(eq):
+                    lhs = convert_piecewise(printer.doprint(eq.lhs))
+                    rhs = convert_piecewise(printer.doprint(eq.rhs))
+                    cg.add(f'{lhs} = {rhs}')
+                else:
+                    cg.add(f'{printer.doprint(eq.lhs)} = {printer.doprint(eq.rhs)}')
     cg.dedent()
     cg.add('})')
 
@@ -411,3 +416,70 @@ def modify_dataset(model):
     temp_model = model.copy()
     temp_model.dataset["evid"] = get_evid(temp_model)
     return temp_model
+
+def convert_piecewise(expr: str):
+    """
+    Return a string where each piecewise expression has been changed to if
+    elseif else statements in R
+    """
+    all_piecewise = find_piecewise(expr)
+    
+    #Go into each piecewise found
+    for p in all_piecewise:
+        
+        #Find start point for all arguments
+        p_d = find_parentheses(p)
+        p_start = [list(p_d.keys())[0]]
+        for start in p_d:
+            if start > p_d[p_start[-1]]:
+                p_start.append(start)
+        
+        #go through all arguments
+        #Add the first condition as an if statement
+        p_arg = p[p_start[0]+1:p_d[p_start[0]]].split(",")
+        elseif = f'if ({p_arg[1].strip()}) {{{p_arg[0].strip()}}}'
+        
+        for start in p_start[1:]:
+            p_arg = p[start+1:p_d[start]]
+            p_arg = p_arg.split(",")
+            # Add all others as else if
+            elseif += f'else if({p_arg[1].strip()}) {{{p_arg[0].strip()}}}'
+        
+        # Replace the piecewise in the expression
+        expr = piecewise_replace(expr, p, elseif)
+        expr = expr.replace("True", "TRUE")
+        
+    return expr
+
+def piecewise_replace(expr, piecewise, elseif):
+    return expr.replace(f'Piecewise({piecewise})', elseif)
+    
+def find_piecewise(expr):
+    
+    d = find_parentheses(expr)
+        
+    import re
+    piecewise_start = [m.start() + len("Piecewise") for m in re.finditer("Piecewise", expr)]
+    
+    all_piecewise = []
+    for p in piecewise_start:
+        if p in d:
+            all_piecewise.append(expr[p+1:d[p]])
+    return all_piecewise
+
+def find_parentheses(s):
+    start = [] # all opening parentheses
+    d = {}
+    
+    for i, c in enumerate(s):
+        if c == '(':
+             start.append(i)
+        if c == ')':
+            try:
+                d[start.pop()] = i
+            except IndexError:
+                print('Too many closing parentheses')
+    if start:  # check if stack is empty afterwards
+        print('Too many opening parentheses')
+        
+    return d
