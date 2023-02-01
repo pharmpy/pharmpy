@@ -159,10 +159,9 @@ def create_model(cg, model):
                 # FIXME: Needs to be generalized
                 if has_additive_error_model(model):
                     # Find the term with NO EPS in it
-                    
-                    # TODO: Implement special case if not additive but
-                    # sigma is 1 with a scaling theta factor
-                    pass
+                    expr, error = find_term(model, s.expression)
+                    cg.add(f'{s.symbol.name} <- {expr}')
+                    cg.add(f'{s.symbol.name} ~ add({name_mangle(sigma.name)})')
                 elif has_proportional_error_model(model):
                     # Find the term with NO EPS in it
                     expr, error = find_term(model, s.expression)
@@ -172,6 +171,8 @@ def create_model(cg, model):
                     # Find the termwith NO EPS in it
                     pass
                 else:
+                    # TODO: Implement special case if not additive but
+                    # sigma is 1 with a scaling theta factor
                     raise ValueError("Error model cannot be handled by nlmixr")
             else:
                 expr = s.expression
@@ -543,13 +544,13 @@ def find_term(model, expr):
                     first_error = False
                     error_term = True
                 else:
-                    error += f'+ {term}'
+                    error = error + term
                     error_term = True
         if not error_term:
             if first_res:
                 res = term
                 first_res = False
             else:
-                res += f'+ {term}'
+                res = res + term
             
     return res, error
