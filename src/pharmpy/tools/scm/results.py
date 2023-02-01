@@ -84,12 +84,17 @@ def ofv_summary_dataframe(steps, final_included=True, iterations=True):
             if steps['is_backward'].iloc[-1]:
                 # all rows from last step where selected is False
                 last_stepnum = steps.index[-1][steps.index.names.index('step')]
-                final = steps[~steps['selected']].loc[last_stepnum, :, :, :].copy()
+                try:
+                    final = steps[~steps['selected']].loc[last_stepnum, :, :, :].copy()
+                except KeyError:
+                    # No final
+                    final = None
             else:
                 # all selected rows without ofv info
                 final = pd.DataFrame(columns=steps.columns, index=steps[steps['selected']].index)
-            final['is_backward'] = 'Final included'
-            df = pd.concat([df, final])
+            if final is not None:
+                final['is_backward'] = 'Final included'
+                df = pd.concat([df, final])
         df.rename(columns={'is_backward': 'direction'}, inplace=True)
         columns = ['direction', 'reduced_ofv', 'extended_ofv', 'ofv_drop']
         if 'pvalue' in steps.columns:
