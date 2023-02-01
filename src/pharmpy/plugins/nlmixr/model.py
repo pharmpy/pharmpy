@@ -19,6 +19,7 @@ from pharmpy.modeling import (
     set_evaluation_step,
     update_inits,
     write_csv,
+    translate_nmtran_time,
 )
 from pharmpy.results import ModelfitResults
 
@@ -59,6 +60,9 @@ def convert_model(model):
 
     # Update dataset to lowercase and add evid
     nlmixr_model = modify_dataset(nlmixr_model)
+    
+    # Update dataset
+    translate_nmtran_time(nlmixr_model)
 
     nlmixr_model.update_source()
     return nlmixr_model
