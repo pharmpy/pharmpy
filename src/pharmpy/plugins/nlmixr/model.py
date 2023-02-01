@@ -6,6 +6,7 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+import re
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
@@ -151,6 +152,8 @@ def create_model(cg, model):
                     first = True
                     for value, cond in expr.args:
                         if cond is not sympy.S.true:
+                            if cond.atoms(sympy.Eq):
+                                cond = convert_eq(cond)
                             if first:
                                 cg.add(f'if ({cond}) {{')
                                 first = False
@@ -483,3 +486,11 @@ def find_parentheses(s):
         print('Too many opening parentheses')
         
     return d
+
+def convert_eq(cond):
+    cond = sympy.pretty(cond)
+    cond = cond.replace("=", "==")
+    cond = cond.replace("∧", "&")
+    cond = cond.replace("∨", "|")
+    cond = re.sub(r'(ID\s*==\s*)(\d+)', r"\1'\2'", cond)
+    return cond
