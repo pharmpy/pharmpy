@@ -21,6 +21,9 @@ from pharmpy.modeling import (
     write_csv,
     translate_nmtran_time,
     drop_dropped_columns,
+    has_additive_error_model,
+    has_proportional_error_model,
+    has_combined_error_model,
 )
 from pharmpy.results import ModelfitResults
 
@@ -151,9 +154,25 @@ def create_model(cg, model):
                 for dist in model.random_variables.epsilons:
                     sigma = dist.variance
                 assert sigma is not None
+                #cg.add('Y <- F')
+                #cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')
                 # FIXME: Needs to be generalized
-                cg.add('Y <- F')
-                cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')
+                if has_additive_error_model(model):
+                    # Find the term with NO EPS in it
+                    
+                    # TODO: Implement special case if not additive but
+                    # sigma is 1 with a scaling theta factor
+                    pass
+                elif has_proportional_error_model(model):
+                    # Find the term with NO EPS in it
+                    expr, error = find_term(model, s.expression)
+                    cg.add(f'{s.symbol.name} <- {expr}')
+                    cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')
+                elif has_combined_error_model(model):
+                    # Find the termwith NO EPS in it
+                    pass
+                else:
+                    raise ValueError("Error model cannot be handled by nlmixr")
             else:
                 expr = s.expression
                 if expr.is_Piecewise:
@@ -385,7 +404,7 @@ def verification(model, db_name, error=10**-3, return_comp=False):
 
     # Check that evaluation step is set to True
     if [s.evaluation for s in nonmem_model.estimation_steps._steps][0] is False:
-        set_evaluation_step(nonmem_model)
+        nonmem_model = set_evaluation_step(nonmem_model)
 
     # Update the nonmem model with new estimates
     # and convert to nlmixr
@@ -509,3 +528,28 @@ def convert_eq(cond):
     cond = cond.replace("∨", "|")
     cond = re.sub(r'(ID\s*==\s*)(\d+)', r"\1'\2'", cond)
     return cond
+
+def find_term(model, expr):
+    first_error = True
+    first_res = True
+    
+    terms = sympy.Add.make_args(expr)
+    for term in terms:
+        error_term = False
+        for symbol in term.free_symbols:
+            if str(symbol) in model.random_variables.epsilons.names:
+                if first_error:
+                    error = term
+                    first_error = False
+                    error_term = True
+                else:
+                    error += f'+ {term}'
+                    error_term = True
+        if not error_term:
+            if first_res:
+                res = term
+                first_res = False
+            else:
+                res += f'+ {term}'
+            
+    return res, error
