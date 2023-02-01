@@ -117,7 +117,7 @@ def create_ini(cg, model):
                 for col in range(row + 1):
                     inits.append(model.parameters[omega[row, col].name].init)
             cg.add(
-                f'{" + ".join([name_mangle(name) for name in dist.names])} ~ c({", ".join(inits)})'
+                f'{" + ".join([name_mangle(name) for name in dist.names])} ~ c({", ".join([str(x) for x in inits)})'
             )
 
     for dist in model.random_variables.epsilons:
