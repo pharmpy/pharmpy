@@ -178,7 +178,8 @@ def create_model(cg, model):
 
         else:
             for eq in s.eqs:
-                if "Piecewise" in printer.doprint(eq):
+                # Should remove piecewise from these equations in nlmixr
+                if eq.atoms(sympy.Piecewise):
                     lhs = convert_piecewise(printer.doprint(eq.lhs))
                     rhs = convert_piecewise(printer.doprint(eq.rhs))
                     cg.add(f'{lhs} = {rhs}')
@@ -255,7 +256,7 @@ def parse_modelfit_results(model, path):
     for i in range(0, omega.rows):
         for j in range(0, omega.cols):
             symb = omega.row(i)[j]
-            if symb != 0:
+            if symb != 0: 
                 omegas_sigmas[symb.name] = rdata['omega'].values[i, j]
     sigma = model.random_variables.epsilons.covariance_matrix
     for i in range(len(sigma)):
@@ -428,7 +429,7 @@ def modify_dataset(model):
     temp_model.dataset["evid"] = get_evid(temp_model)
     return temp_model
 
-def convert_piecewise(expr: str):
+def convert_piecewise(expr: str, if_statement = False):
     """
     Return a string where each piecewise expression has been changed to if
     elseif else statements in R
@@ -438,38 +439,44 @@ def convert_piecewise(expr: str):
     #Go into each piecewise found
     for p in all_piecewise:
         
-        #Find start point for all arguments
-        p_d = find_parentheses(p)
-        p_start = [list(p_d.keys())[0]]
-        for start in p_d:
-            if start > p_d[p_start[-1]]:
-                p_start.append(start)
-        
-        #go through all arguments
-        #Add the first condition as an if statement
-        p_arg = p[p_start[0]+1:p_d[p_start[0]]].split(",")
-        elseif = f'if ({p_arg[1].strip()}) {{{p_arg[0].strip()}}}'
-        
-        for start in p_start[1:]:
-            p_arg = p[start+1:p_d[start]]
-            p_arg = p_arg.split(",")
-            # Add all others as else if
-            elseif += f'else if({p_arg[1].strip()}) {{{p_arg[0].strip()}}}'
-        
-        # Replace the piecewise in the expression
-        expr = piecewise_replace(expr, p, elseif)
-        expr = expr.replace("True", "TRUE")
+        if if_statement is False:
+            expr = piecewise_replace(expr, p, "")
+        else:
+            #Find start point for all arguments
+            p_d = find_parentheses(p)
+            p_start = [list(p_d.keys())[0]]
+            for start in p_d:
+                if start > p_d[p_start[-1]]:
+                    p_start.append(start)
+            
+            #go through all arguments
+            #Add the first condition as an if statement
+            p_arg = p[p_start[0]+1:p_d[p_start[0]]].split(",")
+            elseif = f'if ({p_arg[1].strip()}) {{{p_arg[0].strip()}}}'
+            
+            for start in p_start[1:]:
+                p_arg = p[start+1:p_d[start]]
+                p_arg = p_arg.split(",")
+                # Add all others as else if
+                elseif += f'else if({p_arg[1].strip()}) {{{p_arg[0].strip()}}}'
+            
+            # Replace the piecewise in the expression
+            expr = piecewise_replace(expr, p, elseif)
+            expr = expr.replace("True", "TRUE")
         
     return expr
 
-def piecewise_replace(expr, piecewise, elseif):
-    return expr.replace(f'Piecewise({piecewise})', elseif)
+def piecewise_replace(expr, piecewise, s):
+    if s == "":
+        expr = re.sub(r'([\+\-\/\*]\s*)(Piecewise)', r'\2', expr)
+        return expr.replace(f'Piecewise({piecewise})', s)
+    else:
+        return expr.replace(f'Piecewise({piecewise})', s)
     
 def find_piecewise(expr):
     
     d = find_parentheses(expr)
         
-    import re
     piecewise_start = [m.start() + len("Piecewise") for m in re.finditer("Piecewise", expr)]
     
     all_piecewise = []
