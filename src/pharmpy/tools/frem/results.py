@@ -957,12 +957,15 @@ def psn_reorder_base_model_inits(model, path):
         order = sorted(replacements, key=sortfunc)
         values = [replacements[i] for i in order]
         i = 0
+        d = {}
         for p in model.parameters:
             if i == len(values):
                 break
             if p.name in model.random_variables.parameter_names:
-                p.init = values[i]
+                d[p.name] = values[i]
                 i += 1
+        newparams = model.parameters.set_initial_estimates(d)
+        model.parameters = newparams
 
 
 def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=500, method=None):
