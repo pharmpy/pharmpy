@@ -70,6 +70,7 @@ def convert_model(model):
 
     # Update dataset
     translate_nmtran_time(nlmixr_model)
+    nlmixr_model.datainfo = nlmixr_model.datainfo.replace(path = None)
 
     nlmixr_model.update_source()
     return nlmixr_model
@@ -142,8 +143,9 @@ def create_ini(cg, model):
 
 def create_model(cg, model):
     """Create the nlmixr model section code"""
-    amounts = [am.name for am in list(model.statements.ode_system.amounts)]
-    printer = ExpressionPrinter(amounts)
+    if model.statements.ode_system:
+        amounts = [am.name for am in list(model.statements.ode_system.amounts)]
+        printer = ExpressionPrinter(amounts)
 
     cg.add('model({')
     cg.indent()
@@ -173,6 +175,8 @@ def create_model(cg, model):
                 else:
                     # TODO: Implement special case if not additive but
                     # sigma is 1 with a scaling theta factor
+                    if model.parameters[sigma.name].init == 1:
+                        raise Warning("In its current state the error model cannot be handled")
                     raise ValueError("Error model cannot be handled by nlmixr")
             else:
                 expr = s.expression
@@ -190,11 +194,11 @@ def create_model(cg, model):
                         else:
                             cg.add('} else {')
                         cg.indent()
-                        cg.add(f'{s.symbol.name} <- {printer.doprint(value)}')
+                        cg.add(f'{s.symbol.name} <- {value}')
                         cg.dedent()
                     cg.add('}')
                 else:
-                    cg.add(f'{s.symbol.name} <- {printer.doprint(expr)}')
+                    cg.add(f'{s.symbol.name} <- {expr}')
 
         else:
             for eq in s.eqs:
