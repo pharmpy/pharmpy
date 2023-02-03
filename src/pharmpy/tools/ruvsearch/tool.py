@@ -262,13 +262,14 @@ def _create_base_model(input_model, current_iteration):
     statements = Statements([y])
     base_model.statements = statements
 
-    base_model.dependent_variable = y.symbol
     base_model.name = f'base_{current_iteration}'
     base_model.description = base_model.name
     base_model.dataset = _create_dataset(input_model)
 
     est = EstimationStep.create('foce', interaction=True, maximum_evaluations=9999)
-    base_model = base_model.replace(estimation_steps=EstimationSteps.create([est]))
+    base_model = base_model.replace(
+        estimation_steps=EstimationSteps.create([est]), dependent_variable=y.symbol
+    )
     return base_model
 
 
