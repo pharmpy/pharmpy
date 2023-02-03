@@ -44,6 +44,7 @@ class ColumnInfo(Immutable):
     _all_types = (
         'id',
         'dv',
+        'dvid',
         'idv',
         'unknown',
         'dose',
@@ -238,7 +239,8 @@ class ColumnInfo(Immutable):
         ============  =============
         id            Individual identifier. Max one per DataFrame. All values have to be unique
         idv           Independent variable. Max one per DataFrame.
-        dv            Dependent variable
+        dv            Observations of the dependent variable
+        dvid          Dependent variable ID
         covariate     Covariate
         dose          Dose amount
         rate          Rate of infusion
