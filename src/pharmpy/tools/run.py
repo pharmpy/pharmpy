@@ -966,16 +966,12 @@ def _summarize_step(res, i):
 
     if i == -1:
         i = max(res.ofv_iterations.index.get_level_values(0)) - 1
-    ofv = res.ofv_iterations[
-        i + 1,
-    ].iloc[-1]
+    ofv = res.ofv_iterations[i + 1,].iloc[-1]
     summary_dict['ofv'] = ofv
     summary_dict['runtime_total'] = res.runtime_total
     summary_dict['estimation_runtime'] = res.estimation_runtime_iterations.iloc[i]
 
-    pe = res.parameter_estimates_iterations.loc[
-        i + 1,
-    ].iloc[-1]
+    pe = res.parameter_estimates_iterations.loc[i + 1,].iloc[-1]
     ses = res.standard_errors
     rses = res.relative_standard_errors
 
