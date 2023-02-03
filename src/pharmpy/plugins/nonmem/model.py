@@ -219,6 +219,8 @@ class Model(BaseModel):
             newcs = update_name_of_tables(self.internals.control_stream, self._name)
             self.internals = self.internals.replace(control_stream=newcs)
 
+        return self
+
     def write_files(self, path=None, force=False):
         self.update_source()
 
@@ -226,23 +228,30 @@ class Model(BaseModel):
         if etas_record and str(etas_record[0].path) == 'DUMMYPATH':
             update_initial_individual_estimates(self, path)
 
+        replace_dict = {}
+
         data_record = self.internals.control_stream.get_records('DATA')[0]
         if data_record.filename == 'DUMMYPATH' or force:
             datapath = self.datainfo.path
             if datapath is None:
                 dir_path = Path(self.name + ".csv") if path is None else path.parent
                 datapath = write_csv(self, path=dir_path, force=force)
-                self.datainfo = self.datainfo.replace(path=datapath)
+                replace_dict['datainfo'] = self.datainfo.replace(path=datapath)
             assert (
                 not datapath.exists() or datapath.is_file()
             ), f'input path change, but no file exists at target {str(datapath)}'
             parent_path = Path.cwd() if path is None else path.parent
             newdata = data_record.set_filename(str(path_relative_to(parent_path, datapath)))
             newcs = self.internals.control_stream.replace_records([data_record], [newdata])
-            self.internals = self.internals.replace(control_stream=newcs)
+            replace_dict['internals'] = self.internals.replace(control_stream=newcs)
 
         if self.observation_transformation != self.internals.old_observation_transformation:
             update_ccontra(self, path, force)
+
+        if replace_dict:
+            return self.replace(**replace_dict)
+        else:
+            return self
 
     @property
     def model_code(self):

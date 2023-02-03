@@ -2719,7 +2719,7 @@ def test_update_inits(load_model_for_test, testdata, etas_file, force, file_exis
         update_initial_individual_estimates(
             model, model.modelfit_results.individual_estimates, force=force
         )
-        model.write_files()
+        model = model.write_files()
 
         assert ('$ETAS FILE=run1_input.phi' in model.model_code) is file_exists
         assert (os.path.isfile('run1_input.phi')) is file_exists
