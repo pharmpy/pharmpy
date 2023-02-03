@@ -1388,9 +1388,9 @@ parser_definition = [
                     }
                 },
             ],
-            'help': 'Run a method',
+            'help': 'Run a tool',
             'title': 'Pharmpy commands for running tools',
-            'metavar': 'METHOD',
+            'metavar': 'TOOL',
         }
     },
     {
