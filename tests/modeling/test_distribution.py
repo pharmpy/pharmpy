@@ -28,7 +28,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN3 TRANS4
 $PK
@@ -82,7 +82,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN4 TRANS4
 $PK
@@ -134,7 +134,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN4 TRANS1
 $PK
@@ -189,7 +189,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN11 TRANS4
 $PK
@@ -250,7 +250,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN12 TRANS4
 $PK
@@ -307,7 +307,7 @@ $ESTIMATION METHOD=1 INTERACTION
     add_peripheral_compartment(model)
     model.model_code
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN11 TRANS4
 $PK
@@ -388,7 +388,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
@@ -438,7 +438,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 $PK
@@ -494,7 +494,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN3 TRANS4
 $PK
@@ -555,7 +555,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN4 TRANS4
 $PK
@@ -617,7 +617,7 @@ $ESTIMATION METHOD=1 INTERACTION
     remove_peripheral_compartment(model)
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
@@ -668,7 +668,7 @@ $ESTIMATION METHOD=1 INTERACTION
     add_peripheral_compartment(model)
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN4 TRANS4
 $PK
@@ -730,7 +730,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     set_peripheral_compartments(model, 0)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK

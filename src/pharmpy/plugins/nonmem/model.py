@@ -15,7 +15,7 @@ from pharmpy.model import Assignment, DataInfo, EstimationSteps
 from pharmpy.model import Model as BaseModel
 from pharmpy.model import NormalDistribution, Parameter, Parameters, RandomVariables, Statements
 from pharmpy.model.model import compare_before_after_params, update_datainfo
-from pharmpy.modeling.write_csv import create_dataset_path, write_csv
+from pharmpy.modeling.write_csv import write_csv
 
 from .nmtran_parser import NMTranControlStream, NMTranParser
 from .parsing import (
@@ -141,13 +141,13 @@ class Model(BaseModel):
         assert isinstance(internals, NONMEMModelInternals)
         self.internals = internals
 
-    def update_source(self, path=None, force=False, nofiles=False):
+    def update_source(self):
         """Update the source
 
         path - path to modelfile
         nofiles - Set to not write any files (i.e. dataset, phi input etc)
         """
-        update_initial_individual_estimates(self, path, nofiles)
+        update_initial_individual_estimates(self, path=None, nofiles=True)
 
         if not self.random_variables.etas:
             omega = Parameter('DUMMYOMEGA', init=0, fix=True)
@@ -190,62 +190,57 @@ class Model(BaseModel):
             or self.datainfo != self.internals.old_datainfo
             or self.datainfo.path != self.internals.old_datainfo.path
         ):
-            # FIXME: If no name set use the model name. Set that when setting dataset to input!
-            if (
-                self.datainfo.path is None
-            ):  # or self.datainfo.path == self.internals.old_datainfo.path:
-                dir_path = Path(self.name + ".csv") if path is None else path.parent
-
-                if nofiles:
-                    datapath = create_dataset_path(self, path=dir_path)
-                else:
-                    datapath = write_csv(self, path=dir_path, force=force)
-
-                self.datainfo = self.datainfo.replace(path=datapath)
-
             data_record = self.internals.control_stream.get_records('DATA')[0]
-
             label = self.datainfo.names[0]
-            new_data = data_record.set_ignore_character_from_header(label)
-            newcs = self.internals.control_stream.replace_records([data_record], [new_data])
-            self.internals = self.internals.replace(control_stream=newcs)
-            data_record = new_data
+            newdata = data_record.set_ignore_character_from_header(label)
             update_input(self)
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.
-            newdata = data_record.remove_ignore().remove_accept()
+            newdata = newdata.remove_ignore().remove_accept()
+            if self.datainfo.path is None or self.internals.dataset_updated:
+                newdata = newdata.set_filename('DUMMYPATH')
+
             newcs = self.internals.control_stream.replace_records([data_record], [newdata])
+
             self.internals = self.internals.replace(
                 control_stream=newcs, dataset_updated=False, old_datainfo=self.datainfo
             )
 
-            datapath = self.datainfo.path
-            if datapath is not None:
-                assert (
-                    not datapath.exists() or datapath.is_file()
-                ), f'input path change, but no file exists at target {str(datapath)}'
-                data_record = self.internals.control_stream.get_records('DATA')[0]
-                parent_path = Path.cwd() if path is None else path.parent
-                newdata = data_record.set_filename(str(path_relative_to(parent_path, datapath)))
-                newcs = self.internals.control_stream.replace_records([data_record], [newdata])
-                self.internals = self.internals.replace(control_stream=newcs)
-
         update_sizes(self)
         update_estimation(self)
-
-        if self.observation_transformation != self.internals.old_observation_transformation:
-            if not nofiles:
-                update_ccontra(self, path, force)
         update_description(self)
 
         if self._name != self.internals.old_name:
             newcs = update_name_of_tables(self.internals.control_stream, self._name)
             self.internals = self.internals.replace(control_stream=newcs)
 
+    def write_files(self, path=None, force=False):
+        self.update_source()
+
+        update_initial_individual_estimates(self, path)
+
+        data_record = self.internals.control_stream.get_records('DATA')[0]
+        if data_record.filename == 'DUMMYPATH' or force:
+            datapath = self.datainfo.path
+            if datapath is None:
+                dir_path = Path(self.name + ".csv") if path is None else path.parent
+                datapath = write_csv(self, path=dir_path, force=force)
+                self.datainfo = self.datainfo.replace(path=datapath)
+            assert (
+                not datapath.exists() or datapath.is_file()
+            ), f'input path change, but no file exists at target {str(datapath)}'
+            parent_path = Path.cwd() if path is None else path.parent
+            newdata = data_record.set_filename(str(path_relative_to(parent_path, datapath)))
+            newcs = self.internals.control_stream.replace_records([data_record], [newdata])
+            self.internals = self.internals.replace(control_stream=newcs)
+
+        if self.observation_transformation != self.internals.old_observation_transformation:
+            update_ccontra(self, path, force)
+
     @property
     def model_code(self):
-        self.update_source(nofiles=True)
+        self.update_source()
         return str(self.internals.control_stream)
 
     @property
@@ -256,7 +251,8 @@ class Model(BaseModel):
 
     @dataset.setter
     def dataset(self, df):
-        self.internals = self.internals.replace(dataset_updated=True)
+        if hasattr(self, '_dataset'):
+            self.internals = self.internals.replace(dataset_updated=True)
         self._dataset = df
         self.datainfo = self.datainfo.replace(path=None)
         self.update_datainfo()

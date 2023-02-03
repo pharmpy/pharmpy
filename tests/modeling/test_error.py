@@ -195,7 +195,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     set_additive_error_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
@@ -509,7 +509,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = set_dtbs_error_model(model)
 
     with chdir(tmp_path):
-        model.update_source()
+        model.write_files()
         with open('run1_contr.f90') as fh:
             assert fh.readline().startswith('      subroutine contr')
         with open('run1_ccontra.f90') as fh:

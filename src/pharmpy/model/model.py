@@ -477,6 +477,17 @@ class Model:
         # Set filename extension?
         return model
 
+    def update_source(self):
+        """Update source code of the model. If any paths need to be changed or added (e.g. for a
+        NONMEM model with an updated dataset) they will be replaced with DUMMYPATH"""
+        pass
+
+    def write_files(self, path=None, force=False):
+        """Write necessary files of the model. If any paths need to be changed or added (e.g. for a
+        NONMEM model with an updated dataset) they will be replaced with the correct path. update_source()
+        will be called first."""
+        pass
+
 
 def compare_before_after_params(old, new):
     # FIXME Move this to the right module

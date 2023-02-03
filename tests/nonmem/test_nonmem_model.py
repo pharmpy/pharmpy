@@ -637,7 +637,7 @@ def test_cmt_warning(load_model_for_test, testdata):
     set_zero_order_absorption(model)
 
     with pytest.raises(UserWarning, match='Compartment structure has been updated'):
-        model.update_source(nofiles=True)
+        model.update_source()
 
 
 @pytest.mark.parametrize(
@@ -792,7 +792,7 @@ $SIGMA 1
     model = model.replace(estimation_steps=newsteps)
 
     with pytest.raises(ValueError) as excinfo:
-        model.update_source(nofiles=True)
+        model.update_source()
     assert error_msg == str(excinfo.value)
 
 

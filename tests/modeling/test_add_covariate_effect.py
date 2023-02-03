@@ -18,7 +18,7 @@ def test_nan_add_covariate_effect(load_model_for_test, pheno_path):
     model.dataset = data
 
     add_covariate_effect(model, 'CL', 'new_col', 'cat')
-    model.update_source(nofiles=True)
+    model.update_source()
 
     assert not re.search('NaN', model.model_code)
     assert re.search(r'NEW_COL\.EQ\.-99', model.model_code)
@@ -413,7 +413,6 @@ def test_add_covariate_effect(
         assert f'POP_{effect[0]}{effect[1]}' in model.model_code
 
     if not allow_nested:
-
         for effect in effects:
             remove_covariate_effect(model, effect[0], effect[1])
 

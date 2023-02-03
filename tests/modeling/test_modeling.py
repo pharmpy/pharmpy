@@ -296,7 +296,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -337,7 +337,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -383,7 +383,7 @@ $ESTIMATION METHOD=1 INTERACTION
     set_mixed_mm_fo_elimination(model)
     assert has_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -411,7 +411,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
     set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -451,7 +451,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -479,7 +479,7 @@ $ESTIMATION METHOD=1 INTERACTION
     set_zero_order_elimination(model)
     set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -736,7 +736,6 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     set_transit_compartments(model, 1, keep_depot=False)
 
     assert not re.search(r'K *= *', model.model_code)
-    print(model.model_code)
     assert re.search('KA = 1/MDT', model.model_code)
 
 
@@ -1038,7 +1037,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
     set_zero_order_absorption(model)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno_advan1.csv IGNORE=@
+$DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN1 TRANS2
 
@@ -1117,7 +1116,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     set_first_order_absorption(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1289,22 +1288,22 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     # 0-order to Bolus
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     set_bolus_absorption(model)
-    model.update_source(nofiles=True)
+    model.update_source()
     assert model.model_code.split('\n')[2:] == advan1_before.split('\n')[2:]
 
     # 1st order to 1st order
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     advan2_before = model.model_code
     set_first_order_absorption(model)
-    model.update_source(nofiles=True)
+    model.update_source()
     assert model.model_code == advan2_before
 
     # 0-order to 1st order
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     set_first_order_absorption(model)
-    model.update_source(nofiles=True)
+    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno_advan1_zero_order.csv IGNORE=@
+$DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1346,7 +1345,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     # Bolus to 1st order
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     set_first_order_absorption(model)
-    model.update_source(nofiles=True)
+    model.update_source()
     assert model.model_code.split('\n')[2:] == correct.split('\n')[2:]
 
     # Bolus to 0-order
@@ -1357,8 +1356,9 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     shutil.copy(datadir.parent / 'pheno.dta', tmp_path)
     model = load_model_for_test(tmp_path / 'abs' / 'pheno_advan1.mod')
     set_zero_order_absorption(model)
+    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno_advan1.csv IGNORE=@
+$DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN1 TRANS2
 
@@ -1398,7 +1398,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     assert model.model_code == correct
 
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno_advan2.csv IGNORE=@
+$DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN1 TRANS2
 
@@ -1439,16 +1439,16 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     # 1st to 0-order
     model = load_model_for_test(tmp_path / 'abs' / 'pheno_advan2.mod')
     set_zero_order_absorption(model)
-    model.update_source(nofiles=True)
+    model.update_source()
     assert model.model_code == correct
 
 
 def test_seq_to_FO(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
     set_first_order_absorption(model)
-    model.update_source(nofiles=True)
+    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno_advan2_seq.csv IGNORE=@
+$DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1490,7 +1490,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 def test_seq_to_ZO(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
     set_zero_order_absorption(model)
-    model.update_source(nofiles=True)
+    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@
 $INPUT ID TIME AMT RATE WGT APGR DV FA1 FA2
@@ -1534,9 +1534,9 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 def test_bolus_to_seq(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     set_seq_zo_fo_absorption(model)
-    model.update_source(nofiles=True)
+    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno_advan1.csv IGNORE=@
+$DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1582,7 +1582,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 def test_ZO_to_seq(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     set_seq_zo_fo_absorption(model)
-    model.update_source(nofiles=True)
+    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@
 $INPUT ID TIME AMT RATE WGT APGR DV FA1 FA2
@@ -1629,9 +1629,9 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 def test_FO_to_seq(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     set_seq_zo_fo_absorption(model)
-    model.update_source(nofiles=True)
+    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno_advan2.csv IGNORE=@
+$DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -2510,7 +2510,6 @@ def test_remove_iov_no_iovs(load_model_for_test, testdata):
 
 
 def test_remove_iov_github_issues_538_and_561_1(load_model_for_test, testdata):
-
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
 
     remove_iov(m)
@@ -2519,7 +2518,6 @@ def test_remove_iov_github_issues_538_and_561_1(load_model_for_test, testdata):
 
 
 def test_remove_iov_github_issues_538_and_561_2(load_model_for_test, testdata):
-
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
 
     remove_iov(m, 'ETA_4')
@@ -2721,7 +2719,7 @@ def test_update_inits(load_model_for_test, testdata, etas_file, force, file_exis
         update_initial_individual_estimates(
             model, model.modelfit_results.individual_estimates, force=force
         )
-        model.update_source()
+        model.write_files()
 
         assert ('$ETAS FILE=run1_input.phi' in model.model_code) is file_exists
         assert (os.path.isfile('run1_input.phi')) is file_exists

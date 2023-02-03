@@ -132,7 +132,7 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
         raise FileExistsError(f'File {path} already exists.')
     if new_name:
         model.name = new_name
-    model.update_source(path=path, force=force)
+    model.write_files(path=path, force=force)
     if not force and path.exists():
         raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
     with open(path, 'w', encoding='latin-1') as fp:
