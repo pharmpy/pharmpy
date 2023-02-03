@@ -810,7 +810,6 @@ def filter_distributions(
 def subs_distributions(
     distributions: Iterable[Distribution], parameters: Dict[sympy.Symbol, float]
 ) -> Iterable[Tuple[Tuple[sympy.Symbol, ...], NumericDistribution]]:
-
     for dist in distributions:
         rvs_symbols = tuple(map(sympy.Symbol, dist.names))
         numeric_distribution = dist.evalf(parameters)

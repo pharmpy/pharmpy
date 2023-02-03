@@ -5,7 +5,6 @@ U = TypeVar('U')
 
 
 def inverse(g: Dict[T, Set[U]]) -> Dict[U, Set[T]]:
-
     h = {}
 
     for left, deps in g.items():

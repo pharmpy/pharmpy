@@ -122,7 +122,6 @@ def task_brute_force_search(
     distribution: str,
     model: Model,
 ):
-
     # NOTE Default is to try all IIV ETAs.
     if list_of_parameters is None:
         iiv = model.random_variables.iiv
@@ -302,7 +301,6 @@ def validate_input(
     rank_type,
     distribution,
 ):
-
     if rank_type not in RANK_TYPES:
         raise ValueError(
             f'Invalid `rank_type`: got `{rank_type}`, must be one of {sorted(RANK_TYPES)}.'
@@ -315,7 +313,6 @@ def validate_input(
         )
 
     if model is not None:
-
         if column not in model.datainfo.names:
             raise ValueError(
                 f'Invalid `column`: got `{column}`,'

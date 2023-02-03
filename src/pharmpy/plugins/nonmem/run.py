@@ -110,7 +110,6 @@ def execute_model(model, db):
     }
 
     with database.transaction(model) as txn:
-
         txn.store_model()
 
         if (

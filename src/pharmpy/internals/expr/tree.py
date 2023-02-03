@@ -51,7 +51,6 @@ def prune(predicate: Callable[[sympy.Expr], bool], expr: sympy.Expr):
     output = [[], []]
 
     while stack:
-
         e = stack[-1]
         old_args = e.args
 

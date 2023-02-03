@@ -11,7 +11,6 @@ from pharmpy.workflows import Workflow
 
 
 def test_iovsearch_github_issues_976(load_model_for_test, testdata):
-
     m = load_model_for_test(testdata / 'nonmem' / 'pheno_multivariate_piecewise.mod')
     assert not m.random_variables.iov
     assert set(_get_iiv_etas_with_corresponding_iov(m)) == set()
@@ -95,7 +94,6 @@ def test_validate_input_raises(
     exception,
     match,
 ):
-
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
     kwargs = {'model': model, **arguments}

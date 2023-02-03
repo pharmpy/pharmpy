@@ -422,7 +422,6 @@ def _subfunc_iov(amd_start_model, occasion, path) -> SubFunc:
         )
 
     def _run_iov(model):
-
         if occasion not in model.dataset:
             warnings.warn(f'Skipping IOVsearch because dataset is missing column "{occasion}".')
             return None

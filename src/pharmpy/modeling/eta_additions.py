@@ -254,7 +254,6 @@ def add_iov(
         etas_set = set(etas[0])
         etas = []
         for dist in model.random_variables:
-
             intersection = list(filter(etas_set.__contains__, dist.names))
 
             if not intersection:
@@ -365,7 +364,6 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
 
 
 def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
-
     _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name)
 
     for i in indices:
@@ -375,7 +373,6 @@ def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name,
 
 
 def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
-
     _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name)
 
     # NOTE Declare off-diagonal OMEGAs

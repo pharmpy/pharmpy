@@ -12,7 +12,6 @@ T = TypeVar('T')
 
 
 def run(workflow: Workflow[T]) -> T:
-
     # NOTE We change to a new temporary directory so that all files generated
     # by the workflow end-up in the same root directory. Each task of a
     # workflow has the responsibility to avoid collisions on the file system

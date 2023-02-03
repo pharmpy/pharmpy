@@ -166,7 +166,6 @@ def validate_parameters(model: Model, parameters: Optional[Iterable[Union[str, s
 
 
 def results(start_model, allometry_model):
-
     allometry_model_failed = allometry_model.modelfit_results is None
     best_model = start_model if allometry_model_failed else allometry_model
 

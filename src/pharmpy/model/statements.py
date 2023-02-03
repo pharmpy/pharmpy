@@ -537,7 +537,7 @@ class CompartmentalSystem(ODESystem):
         {AMT, CL, V, t}
         """
         free = {sympy.Symbol('t')}
-        for (_, _, rate) in self._g.edges.data('rate'):
+        for _, _, rate in self._g.edges.data('rate'):
             free |= rate.free_symbols
         for node in _comps(self._g):
             free |= node.free_symbols
@@ -575,7 +575,7 @@ class CompartmentalSystem(ODESystem):
         └───────┘
         """
         cb = CompartmentalSystemBuilder(self)
-        for (u, v, rate) in cb._g.edges.data('rate'):
+        for u, v, rate in cb._g.edges.data('rate'):
             rate_sub = subs(rate, substitutions, simultaneous=True)
             cb._g.edges[u, v]['rate'] = rate_sub
         mapping = {comp: comp.subs(substitutions) for comp in _comps(self._g)}
@@ -599,7 +599,7 @@ class CompartmentalSystem(ODESystem):
             Set of symbolic atoms
         """
         atoms = set()
-        for (_, _, rate) in self._g.edges.data('rate'):
+        for _, _, rate in self._g.edges.data('rate'):
             atoms |= rate.atoms(cls)
         return atoms
 

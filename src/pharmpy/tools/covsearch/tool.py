@@ -159,7 +159,6 @@ def create_workflow(
     search_output = wf.output_tasks
 
     if algorithm == 'scm-forward-then-backward':
-
         backward_search_task = Task(
             'backward-search',
             task_greedy_backward_search,
@@ -210,7 +209,6 @@ def task_greedy_forward_search(
     def handle_effects(
         step: int, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
     ):
-
         wf = wf_effects_addition(parent.model, parent, candidate_effects, index_offset)
         new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_addition-{step}', context)
 
@@ -237,7 +235,6 @@ def task_greedy_backward_search(
     def handle_effects(
         step: int, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
     ):
-
         wf = wf_effects_removal(state.start_model, parent, candidate_effects, index_offset)
         new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}', context)
 
@@ -266,7 +263,6 @@ def _greedy_search(
     alpha: float,
     max_steps: int,
 ) -> SearchState:
-
     best_candidate_so_far = state.best_candidate_so_far
     all_candidates_so_far = list(state.all_candidates_so_far)  # NOTE this includes start model
 

@@ -93,7 +93,6 @@ def test_errors(testdata):
 def test_nonmemtablefile_notitle_github_issues_1251(tmp_path):
     filename = 'tab'
     with chdir(tmp_path):
-
         with open(filename, 'w') as fd:
             fd.write(
                 ' ID          TIME        CWRES       CIPREDI     VC\n'

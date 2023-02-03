@@ -130,7 +130,6 @@ def validate_input(
     rank_type,
     model,
 ):
-
     if not hasattr(algorithms, algorithm):
         raise ValueError(
             f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(dir(algorithms))}.'

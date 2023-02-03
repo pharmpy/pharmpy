@@ -453,7 +453,6 @@ def validate_input(model, groups, p_value, skip):
         raise ValueError(f'Invalid `skip`: got `{skip}`, must be None/NULL or a subset of {SKIP}.')
 
     if model is not None:
-
         if model.modelfit_results is None:
             raise ValueError(f'Invalid `model`: {model} is missing modelfit results.')
 

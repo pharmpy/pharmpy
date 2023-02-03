@@ -437,7 +437,6 @@ def _index_statements_diff(
     index_index = 0
 
     while True:
-
         try:
             op, s = next(it)
         except StopIteration:
@@ -460,7 +459,6 @@ def _index_statements_diff(
         # NOTE We retrieve all statements for this index entry, as well as
         # interleaved insertion statements
         while expected > 0:
-
             op, s = next(it)  # NOTE We do not expect this to raise
 
             operations.append(op)

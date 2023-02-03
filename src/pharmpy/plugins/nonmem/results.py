@@ -420,7 +420,6 @@ def _parse_ext(
     subproblem: Optional[int],
     parameters: Parameters,
 ):
-
     table_numbers = _parse_table_numbers(ext_tables, subproblem)
 
     final_ofv, ofv_iterations = _parse_ofv(ext_tables, subproblem)

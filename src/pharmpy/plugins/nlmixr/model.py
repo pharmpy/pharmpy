@@ -338,7 +338,6 @@ def execute_model(model, db):
     }
 
     with database.transaction(model) as txn:
-
         txn.store_local_file(path / f'{model.name}.R')
         txn.store_local_file(rdata_path)
 
@@ -360,7 +359,6 @@ def execute_model(model, db):
 
 
 def verification(model, db_name, error=10**-3, return_comp=False):
-
     nonmem_model = model.copy()
 
     # Save results from the nonmem model

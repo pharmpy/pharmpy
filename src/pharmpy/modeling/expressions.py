@@ -934,7 +934,6 @@ class AssignmentGraphNode:
 
 
 def _make_assignments_graph(statements: Statements) -> Dict[sympy.Symbol, AssignmentGraphNode]:
-
     last_assignments: Dict[sympy.Symbol, AssignmentGraphNode] = {}
 
     for i, statement in enumerate(statements):
@@ -959,7 +958,6 @@ def _make_assignments_graph(statements: Statements) -> Dict[sympy.Symbol, Assign
 def remove_covariate_effect_from_statements(
     model: Model, before_odes: Statements, parameter: str, covariate: str
 ) -> Iterable[Statement]:
-
     assignments = _make_assignments_graph(before_odes)
 
     thetas = _theta_symbols(model)
@@ -1246,7 +1244,6 @@ def _remap_compartmental_system(sset, natural_assignments):
 
 
 def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[sympy.Symbol]:
-
     if kind == 'all':
         return cs.free_symbols
 
@@ -1310,8 +1307,7 @@ def _get_component_free_symbols(
     vertices: Set[Compartment],
     edges: Iterable[Tuple[Compartment, Compartment, sympy.Expr]],
 ) -> Iterable[sympy.Symbol]:
-
-    for (u, v, rate) in edges:
+    for u, v, rate in edges:
         # NOTE These must not necessarily be outgoing edges
         assert u in vertices or v in vertices
 
@@ -1346,7 +1342,6 @@ def _filter_symbols(
     roots: Set[sympy.Symbol],
     leaves: Union[Set[sympy.Symbol], None] = None,
 ) -> Set[sympy.Symbol]:
-
     dependents = graph_inverse(dependency_graph)
 
     free_symbols = reachable_from(roots, lambda x: dependency_graph.get(x, []))
@@ -1366,14 +1361,12 @@ def _filter_symbols(
 
 
 def _classify_assignments(assignments: Sequence[Assignment]):
-
     dependencies = _dependency_graph(assignments)
 
     # Keep all symbols that have dependencies (e.g. remove constants X=1)
     symbols = set(filter(dependencies.__getitem__, dependencies.keys()))
 
     for assignment in assignments:
-
         symbol = assignment.symbol
         expression = assignment.expression
         fs = expression.free_symbols
@@ -1396,7 +1389,6 @@ def _classify_assignments(assignments: Sequence[Assignment]):
 
 
 def _remove_synthetic_assignments(classified_assignments: List[Tuple[str, Assignment]]):
-
     assignments = []
     last_defined = {}
 
@@ -1424,11 +1416,9 @@ def _remove_synthetic_assignments(classified_assignments: List[Tuple[str, Assign
 
 
 def _dependency_graph(assignments: Sequence[Assignment]):
-
     dependencies = {}
 
     for assignment in assignments:
-
         symbol = assignment.symbol
         fs = assignment.expression.free_symbols
 

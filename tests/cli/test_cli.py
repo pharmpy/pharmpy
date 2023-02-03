@@ -85,7 +85,6 @@ def test_add_iov(datadir, options, tmp_path):
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
     with chdir(tmp_path):
-
         args = ['model', 'add_iov', 'run1.mod', 'FA1', '--etas', 'ETA_1'] + options
         cli.main(args)
 
@@ -124,7 +123,6 @@ def test_create_joint_distribution(datadir, eta_args, tmp_path):
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
     with chdir(tmp_path):
-
         args = ['model', 'create_joint_distribution', 'run1.mod'] + eta_args
         cli.main(args)
 
@@ -146,7 +144,6 @@ def test_iiv_on_ruv(datadir, epsilons_args, tmp_path):
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
     with chdir(tmp_path):
-
         args = ['model', 'iiv_on_ruv', 'run1.mod'] + epsilons_args
         cli.main(args)
 
@@ -166,7 +163,6 @@ def test_remove_iiv(datadir, to_remove, tmp_path):
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
     with chdir(tmp_path):
-
         args = ['model', 'remove_iiv', 'run1.mod'] + to_remove
         cli.main(args)
 
@@ -185,7 +181,6 @@ def test_remove_iov(datadir, tmp_path):
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
     with chdir(tmp_path):
-
         args = ['model', 'remove_iov', 'run1.mod']
         cli.main(args)
 
@@ -208,7 +203,6 @@ def test_power_on_ruv(datadir, epsilons_args, tmp_path):
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
     with chdir(tmp_path):
-
         args = ['model', 'power_on_ruv', 'run1.mod'] + epsilons_args
         cli.main(args)
 
@@ -229,7 +223,6 @@ def test_update_inits(datadir, tmp_path):
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
     with chdir(tmp_path):
-
         args = ['model', 'update_inits', 'run1.mod']
         cli.main(args)
 
@@ -243,7 +236,6 @@ def test_model_sample(datadir, tmp_path):
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
     with chdir(tmp_path):
-
         args = ['model', 'sample', 'run1.mod', '--seed=24']
         cli.main(args)
 

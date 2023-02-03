@@ -125,7 +125,6 @@ def test_validate_input_raises(
     exception,
     match,
 ):
-
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
     kwargs = {'model': model, **arguments}

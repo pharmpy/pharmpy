@@ -103,7 +103,6 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
 def _filter_equations(
     equations: Iterable[sympy.Expr], symbol: sympy.Symbol
 ) -> Iterable[sympy.Expr]:
-
     # NOTE This has the side-effect of deduplicating equations
     fs = {eq: eq.free_symbols for eq in equations}
 
