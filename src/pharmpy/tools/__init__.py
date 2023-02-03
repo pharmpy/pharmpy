@@ -15,6 +15,7 @@ __all__ = (
     'retrieve_models',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_allometry',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_amd',  # pyright: ignore [reportUnsupportedDunderAll]
+    'run_bootstrap',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_covsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_estmethod',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_iivsearch',  # pyright: ignore [reportUnsupportedDunderAll]

@@ -5,7 +5,32 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
-def create_workflow(model: Model, resamples=1):
+def create_workflow(model: Model, results, resamples=1):
+    """Run bootstrap tool
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    results : ModelfitResults
+        Results for model
+    resamples : int
+        Number of bootstrap resamples
+
+    Returns
+    -------
+    BootstrapResults
+        Bootstrap tool result object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> from pharmpy.tools import run_bootstrap # doctest: +SKIP
+    >>> res = model.modelfit_results
+    >>> run_bootstrap(model, res, resamples=500) # doctest: +SKIP
+    """
+
     wf = Workflow()
     wf.name = 'bootstrap'
 

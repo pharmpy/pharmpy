@@ -116,7 +116,7 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 def run_bootstrap(args):
     from pharmpy.tools import run_bootstrap
 
-    run_bootstrap(args.model, resamples=args.samples)
+    run_bootstrap(args.model, args.model.modelfit_results, resamples=args.samples)
 
 
 def run_execute(args):
