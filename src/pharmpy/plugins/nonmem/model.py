@@ -147,7 +147,11 @@ class Model(BaseModel):
         path - path to modelfile
         nofiles - Set to not write any files (i.e. dataset, phi input etc)
         """
-        update_initial_individual_estimates(self, path=None, nofiles=True)
+        if self.initial_individual_estimates is not self.internals.old_initial_individual_estimates:
+            update_initial_individual_estimates(self, path='DUMMYPATH', nofiles=True)
+            self.internals = self.internals.replace(
+                old_initial_individual_estimates=self.initial_individual_estimates
+            )
 
         if not self.random_variables.etas:
             omega = Parameter('DUMMYOMEGA', init=0, fix=True)
@@ -218,7 +222,9 @@ class Model(BaseModel):
     def write_files(self, path=None, force=False):
         self.update_source()
 
-        update_initial_individual_estimates(self, path)
+        etas_record = self.internals.control_stream.get_records('ETAS')
+        if etas_record and str(etas_record[0].path) == 'DUMMYPATH':
+            update_initial_individual_estimates(self, path)
 
         data_record = self.internals.control_stream.get_records('DATA')[0]
         if data_record.filename == 'DUMMYPATH' or force:

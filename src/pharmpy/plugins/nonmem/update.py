@@ -1409,60 +1409,62 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
 
     Could have 0 FIX in model. Need to read these
     """
-    if path is None:  # What to do here?
-        phi_path = Path('.')
+    if path == 'DUMMYPATH':
+        phi_path = path
     else:
-        phi_path = path.parent
-    phi_path /= f'{model.name}_input.phi'
+        if path is None:  # What to do here?
+            phi_path = Path('.')
+        else:
+            phi_path = path.parent
+        phi_path /= f'{model.name}_input.phi'
 
     estimates = model.initial_individual_estimates
-    if estimates is not model.internals.old_initial_individual_estimates:
-        assert estimates is not None
-        rv_names = {rv for rv in model.random_variables.names if rv.startswith('ETA')}
-        columns = set(estimates.columns)
-        if columns < rv_names:
-            raise ValueError(
-                f'Cannot set initial estimate for random variable not in the model:'
-                f' {rv_names - columns}'
-            )
-        diff = columns - rv_names
-        # If not setting all etas automatically set remaining to 0 for all individuals
-        if len(diff) > 0:
-            for name in diff:
-                estimates = estimates.copy(deep=True)
-                estimates[name] = 0
-            estimates = _sort_eta_columns(estimates)
+    assert estimates is not None
+    rv_names = {rv for rv in model.random_variables.names if rv.startswith('ETA')}
+    columns = set(estimates.columns)
+    if columns < rv_names:
+        raise ValueError(
+            f'Cannot set initial estimate for random variable not in the model:'
+            f' {rv_names - columns}'
+        )
+    diff = columns - rv_names
+    # If not setting all etas automatically set remaining to 0 for all individuals
+    if len(diff) > 0:
+        for name in diff:
+            estimates = estimates.copy(deep=True)
+            estimates[name] = 0
+        estimates = _sort_eta_columns(estimates)
 
-        etas = estimates
-        zero_fix = get_zero_fix_rvs(model, eta=True)
-        if zero_fix:
-            for eta in zero_fix:
-                etas[eta] = 0
-        etas = _sort_eta_columns(etas)
-        if not nofiles:
-            phi = PhiTable(df=etas)
-            table_file = NONMEMTableFile(tables=[phi])
-            table_file.write(phi_path)
-        # FIXME: This is a common operation
-        eta_records = model.internals.control_stream.get_records('ETAS')
-        if eta_records:
-            record = eta_records[0]
-        else:
-            record = create_record('$ETAS ')
-            newcs = model.internals.control_stream.insert_record(record)
-            model.internals = model.internals.replace(control_stream=newcs)
-        assert isinstance(record, EtasRecord)
-        newrecord = record.set_path(phi_path)
-        newcs = model.internals.control_stream.replace_records([record], [newrecord])
+    etas = estimates
+    zero_fix = get_zero_fix_rvs(model, eta=True)
+    if zero_fix:
+        for eta in zero_fix:
+            etas[eta] = 0
+    etas = _sort_eta_columns(etas)
+    if not nofiles:
+        phi = PhiTable(df=etas)
+        table_file = NONMEMTableFile(tables=[phi])
+        table_file.write(phi_path)
+    # FIXME: This is a common operation
+    eta_records = model.internals.control_stream.get_records('ETAS')
+    if eta_records:
+        record = eta_records[0]
+    else:
+        record = create_record('$ETAS ')
+        newcs = model.internals.control_stream.insert_record(record)
         model.internals = model.internals.replace(control_stream=newcs)
+    assert isinstance(record, EtasRecord)
+    newrecord = record.set_path(phi_path)
+    newcs = model.internals.control_stream.replace_records([record], [newrecord])
+    model.internals = model.internals.replace(control_stream=newcs)
 
-        first_est_record = model.internals.control_stream.get_records('ESTIMATION')[0]
-        try:
-            first_est_record.option_pairs['MCETA']
-        except KeyError:
-            newrec = first_est_record.set_option('MCETA', '1')
-            newcs = model.internals.control_stream.replace_records([first_est_record], [newrec])
-            model.internals = model.internals.replace(control_stream=newcs)
+    first_est_record = model.internals.control_stream.get_records('ESTIMATION')[0]
+    try:
+        first_est_record.option_pairs['MCETA']
+    except KeyError:
+        newrec = first_est_record.set_option('MCETA', '1')
+        newcs = model.internals.control_stream.replace_records([first_est_record], [newrec])
+        model.internals = model.internals.replace(control_stream=newcs)
 
 
 def _sort_eta_columns(df: pd.DataFrame):
