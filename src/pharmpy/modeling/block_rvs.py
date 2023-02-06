@@ -97,7 +97,7 @@ def create_joint_distribution(
     model.parameters = Parameters.create(pset_new)
     model.random_variables = all_rvs
 
-    return model
+    return model.update_source()
 
 
 def split_joint_distribution(model: Model, rvs: Optional[Union[List[str], str]] = None):
@@ -150,7 +150,7 @@ def split_joint_distribution(model: Model, rvs: Optional[Union[List[str], str]] 
     model.parameters = Parameters(
         tuple([p for p in model.parameters if p.name not in removed_parameters])
     )
-    return model
+    return model.update_source()
 
 
 def _choose_param_init(model, individual_estimates, rvs, parent1, parent2):

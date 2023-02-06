@@ -2079,7 +2079,6 @@ def test_create_joint_distribution_plain(load_model_for_test, testdata, etas, pk
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
     model = create_joint_distribution(model, etas, individual_estimates=None)
-    model.update_source()
     assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
     rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
@@ -2155,9 +2154,7 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, p
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
     create_joint_distribution(model, etas[0], individual_estimates=None)
-    model.update_source()
     create_joint_distribution(model, etas[1], individual_estimates=None)
-    model.update_source()
 
     assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
@@ -2261,10 +2258,8 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, p
 def test_split_joint_distribution(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
     create_joint_distribution(model)
-    model.update_source()
 
     split_joint_distribution(model, etas)
-    model.update_source()
 
     assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 

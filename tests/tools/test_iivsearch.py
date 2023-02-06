@@ -92,9 +92,9 @@ def test_rv_block_structures_5_etas(load_model_for_test, pheno_path):
 
 def test_is_rv_block_structure(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    add_iiv(model, ['TVCL', 'TVV'], 'exp')
+    add_iiv(model, ['TAD', 'S1'], 'exp')
 
-    etas_block_structure = (('ETA_1', 'ETA_2'), ('ETA_TVCL',), ('ETA_TVV',))
+    etas_block_structure = (('ETA_1', 'ETA_2'), ('ETA_TAD',), ('ETA_S1',))
     create_joint_distribution(
         model,
         list(etas_block_structure[0]),
@@ -103,16 +103,16 @@ def test_is_rv_block_structure(load_model_for_test, pheno_path):
     etas = model.random_variables.iiv
     assert _is_rv_block_structure(etas, etas_block_structure)
 
-    etas_block_structure = (('ETA_1',), ('ETA_2',), ('ETA_TVCL', 'ETA_TVV'))
+    etas_block_structure = (('ETA_1',), ('ETA_2',), ('ETA_TAD', 'ETA_S1'))
     assert not _is_rv_block_structure(etas, etas_block_structure)
 
-    etas_block_structure = (('ETA_1',), ('ETA_2', 'ETA_TVCL'), ('ETA_TVV',))
+    etas_block_structure = (('ETA_1',), ('ETA_2', 'ETA_TAD'), ('ETA_S1',))
     assert not _is_rv_block_structure(etas, etas_block_structure)
 
     create_joint_distribution(
         model, individual_estimates=model.modelfit_results.individual_estimates
     )
-    etas_block_structure = (('ETA_1', 'ETA_2', 'ETA_TVCL', 'ETA_TVV'),)
+    etas_block_structure = (('ETA_1', 'ETA_2', 'ETA_TAD', 'ETA_S1'),)
     etas = model.random_variables.iiv
     assert _is_rv_block_structure(etas, etas_block_structure)
 
