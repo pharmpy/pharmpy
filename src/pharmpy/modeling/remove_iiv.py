@@ -62,4 +62,4 @@ def remove_iiv(model: Model, to_remove: Optional[Union[List[str], str]] = None):
     model.statements = sset
 
     remove_unused_parameters_and_rvs(model)
-    return model
+    return model.update_source()

@@ -2455,7 +2455,6 @@ def test_set_iiv_on_ruv(
 def test_remove_iiv(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
     remove_iiv(model, etas)
-    model.update_source()
 
     assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
@@ -2476,7 +2475,6 @@ def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
     model = create_model_for_test(model_with_iov)
 
     remove_iov(model)
-    model.update_source()
 
     assert (
         str(model.internals.control_stream.get_pred_pk_record()) == '$PK\n'

@@ -56,7 +56,7 @@ def remove_iov(model: Model, to_remove: Optional[Union[List[str], str]] = None):
 
     remove_unused_parameters_and_rvs(model)
     model.update_source()
-    return model
+    return model.update_source()
 
 
 def _get_iov_etas(model: Model, list_of_etas):
