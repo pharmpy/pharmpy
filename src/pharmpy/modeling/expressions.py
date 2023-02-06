@@ -330,7 +330,7 @@ def mu_reference_model(model: Model):
         )
         offset += 1  # NOTE We need this offset because we replace one
         # statement by two statements
-    return model
+    return model.update_source()
 
 
 def simplify_expression(model: Model, expr: Union[int, float, str, sympy.Expr]):
@@ -436,7 +436,7 @@ def solve_ode_system(model: Model):
         else:
             new.append(s)
     model.statements = Statements(new)
-    return model
+    return model.update_source()
 
 
 def make_declarative(model: Model):
@@ -525,7 +525,7 @@ def make_declarative(model: Model):
             newstats.append(ass)
 
     model.statements = Statements(newstats)
-    return model
+    return model.update_source()
 
 
 def cleanup_model(model: Model):
@@ -629,7 +629,7 @@ def cleanup_model(model: Model):
                 newstats.append(s)
 
     model.statements = Statements(newstats)
-    return model
+    return model.update_source()
 
 
 def greekify_model(model: Model, named_subscripts: bool = False):
@@ -759,7 +759,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
         subscript = get_subscript(epsilon, i, named_subscripts)
         subs[sympy.Symbol(epsilon)] = sympy.Symbol(f"epsilon_{subscript}")
     model.statements = model.statements.subs(subs)
-    return model
+    return model.update_source()
 
 
 def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
