@@ -56,7 +56,7 @@ def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
     newstep = steps[idx].replace(**d)
     newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
     model = model.replace(estimation_steps=newsteps)
-    return model
+    return model.update_source()
 
 
 def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **kwargs):
@@ -116,7 +116,7 @@ def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **
         newsteps = model.estimation_steps + meth
     model = model.replace(estimation_steps=newsteps)
 
-    return model
+    return model.update_source()
 
 
 def remove_estimation_step(model: Model, idx: int):
@@ -161,7 +161,7 @@ def remove_estimation_step(model: Model, idx: int):
     steps = model.estimation_steps
     newsteps = steps[0:idx] + steps[idx + 1 :]
     model = model.replace(estimation_steps=newsteps)
-    return model
+    return model.update_source()
 
 
 def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], idx: int):
@@ -214,7 +214,7 @@ def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], i
     newstep = steps[idx].replace(tool_options=toolopts)
     newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
     model = model.replace(estimation_steps=newsteps)
-    return model
+    return model.update_source()
 
 
 def add_covariance_step(model: Model):
@@ -293,7 +293,7 @@ def remove_covariance_step(model: Model):
     newstep = steps[-1].replace(cov=False)
     newsteps = steps[:-1] + newstep
     model = model.replace(estimation_steps=newsteps)
-    return model
+    return model.update_source()
 
 
 def set_evaluation_step(model: Model, idx: int = -1):
@@ -344,4 +344,4 @@ def set_evaluation_step(model: Model, idx: int = -1):
     else:
         newsteps = steps[0:-1] + newstep
     model = model.replace(estimation_steps=newsteps)
-    return model
+    return model.update_source()
