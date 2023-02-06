@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 import sympy
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import (
     convert_model,
     copy_model,
@@ -70,8 +71,9 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 
 def test_write_model(testdata, load_model_for_test, tmp_path):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    write_model(model, tmp_path / 'run1.mod')
-    assert Path(tmp_path / 'run1.mod').is_file()
+    with chdir(tmp_path):
+        write_model(model, tmp_path / 'run1.mod')
+        assert Path(tmp_path / 'run1.mod').is_file()
 
 
 def test_generate_model_code(testdata, load_model_for_test):
