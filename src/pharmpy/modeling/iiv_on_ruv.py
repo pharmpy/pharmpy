@@ -84,7 +84,7 @@ def set_iiv_on_ruv(
     model.parameters = Parameters.create(pset)
     model.statements = sset
 
-    return model
+    return model.update_source()
 
 
 def _create_eta(pset, number, eta_names):

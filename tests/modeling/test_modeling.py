@@ -2347,7 +2347,6 @@ def test_set_iiv_on_ruv(
     model = create_model_for_test(model_sigma)
 
     set_iiv_on_ruv(model, epsilons, same_eta, eta_names)
-    model.update_source()
 
     assert eta_names is None or eta_names[0] in model.random_variables.etas.names
 
