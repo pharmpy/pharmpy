@@ -1767,7 +1767,6 @@ def test_transform_etas_boxcox(load_model_for_test, pheno_path, etas, etab, buf_
     model = load_model_for_test(pheno_path)
 
     transform_etas_boxcox(model, etas)
-    model.update_source()
 
     rec_ref = (
         f'$PK\n'
@@ -1789,7 +1788,6 @@ def test_transform_etas_tdist(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
 
     transform_etas_tdist(model, ['ETA_1'])
-    model.update_source()
 
     symbol = 'ETAT1'
 
@@ -1845,7 +1843,6 @@ def test_transform_etas_john_draper(load_model_for_test, pheno_path, etas, etad,
     model = load_model_for_test(pheno_path)
 
     transform_etas_john_draper(model, etas)
-    model.update_source()
 
     rec_ref = (
         f'$PK\n'

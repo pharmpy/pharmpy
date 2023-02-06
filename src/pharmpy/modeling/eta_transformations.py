@@ -48,7 +48,7 @@ def transform_etas_boxcox(model: Model, list_of_etas: Optional[Union[List[str], 
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.boxcox(len(etas))
     _transform_etas(model, eta_transformation, etas)
-    return model
+    return model.update_source()
 
 
 def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[List[str], str]] = None):
@@ -87,7 +87,7 @@ def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[List[str], s
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.tdist(len(etas))
     _transform_etas(model, eta_transformation, etas)
-    return model
+    return model.update_source()
 
 
 def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[List[str], str]] = None):
@@ -130,7 +130,7 @@ def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[List[s
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.john_draper(len(etas))
     _transform_etas(model, eta_transformation, etas)
-    return model
+    return model.update_source()
 
 
 def _transform_etas(model, transformation, etas):
