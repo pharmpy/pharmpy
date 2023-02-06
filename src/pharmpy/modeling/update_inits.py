@@ -46,7 +46,7 @@ def update_inits(
 
     model.parameters = model.parameters.set_initial_estimates(parameter_estimates)
 
-    return model
+    return model.update_source()
 
 
 def _move_est_close_to_bounds(model: Model, pe):
@@ -114,4 +114,4 @@ def update_initial_individual_estimates(
         return model
 
     model.initial_individual_estimates = individual_estimates
-    return model
+    return model.update_source()
