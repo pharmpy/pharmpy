@@ -99,7 +99,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
         (p for p in model.parameters if p.symbol in kept_parameters)
     )
 
-    return model
+    return model.update_source()
 
 
 def add_covariate_effect(
@@ -293,7 +293,7 @@ def add_covariate_effect(
         insertion_index -= 1
 
     model.statements = sset[0:insertion_index] + statements + sset[insertion_index:]
-    return model
+    return model.update_source()
 
 
 def natural_order(string, _nsre=re.compile(r'([0-9]+)')):

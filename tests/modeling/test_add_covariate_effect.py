@@ -396,7 +396,6 @@ def test_add_covariate_effect(
     for effect in effects:
         assert has_covariate_effect(model, effect[0], effect[1])
 
-    model.update_source()
     error_record_after = ''.join(map(str, model.internals.control_stream.get_records('ERROR')))
 
     original_model = load_model_for_test(testdata.joinpath(*model_path))
@@ -419,7 +418,6 @@ def test_add_covariate_effect(
         for effect in effects:
             assert not has_covariate_effect(model, effect[0], effect[1])
 
-        model.update_source()
         assert (
             diff(
                 original_model.internals.control_stream.get_pred_pk_record(),
