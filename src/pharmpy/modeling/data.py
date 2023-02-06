@@ -386,7 +386,7 @@ def set_covariates(model: Model, covariates: List[str]):
         else:
             newcols.append(col)
     model.datainfo = di.replace(columns=newcols)
-    return model
+    return model.update_source()
 
 
 def get_covariate_baselines(model: Model):
@@ -636,7 +636,7 @@ def expand_additional_doses(model: Model, flag: bool = False):
     else:
         df.drop([addl, ii, '_EXPANDED'], axis=1, inplace=True)
     model.dataset = df.reset_index(drop=True)
-    return model
+    return model.update_source()
 
 
 def get_doseid(model: Model):
@@ -913,7 +913,7 @@ def add_time_after_dose(model: Model):
     di = model.datainfo
     colinfo = di['TAD'].replace(descriptor='time after dose', unit=di[idv].unit)
     model.datainfo = di.set_column(colinfo)
-    return model
+    return model.update_source()
 
 
 def get_concentration_parameters_from_data(model: Model):
@@ -1020,7 +1020,7 @@ def drop_dropped_columns(model: Model):
     ]
     todrop += list(set(model.dataset.columns) - set(datainfo.names))
     model = drop_columns(model, todrop)
-    return model
+    return model.update_source()
 
 
 def drop_columns(model: Model, column_names: Union[List[str], str], mark: bool = False):
@@ -1068,7 +1068,7 @@ def drop_columns(model: Model, column_names: Union[List[str], str], mark: bool =
         else:
             newcols.append(col)
     model.datainfo = di.replace(columns=newcols)
-    return model
+    return model.update_source()
 
 
 def undrop_columns(model: Model, column_names: Union[List[str], str]):
@@ -1111,7 +1111,7 @@ def undrop_columns(model: Model, column_names: Union[List[str], str]):
         else:
             newcols.append(col)
     model.datainfo = di.replace(columns=newcols)
-    return model
+    return model.update_source()
 
 
 def _translate_nonmem_time_value(time):
@@ -1262,7 +1262,7 @@ def translate_nmtran_time(model: Model):
     di = di.set_column(timecol)
     model.datainfo = di
     model.dataset = df
-    return model
+    return model.update_source()
 
 
 def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[float] = None):
@@ -1302,7 +1302,7 @@ def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[f
     if uloq:
         keep &= (df[dv] <= uloq) | mdv
     model.dataset = df[keep]
-    return model
+    return model.update_source()
 
 
 class Checker:
