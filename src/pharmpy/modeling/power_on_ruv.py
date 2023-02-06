@@ -110,7 +110,7 @@ def set_power_on_ruv(
     model.parameters = Parameters.create(pset)
     model.statements = sset
 
-    return model
+    return model.update_source()
 
 
 def get_ipred(model):

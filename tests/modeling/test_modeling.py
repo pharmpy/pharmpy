@@ -2834,7 +2834,6 @@ def test_set_power_on_ruv(
         model.dataset = model_pheno.dataset
 
         set_power_on_ruv(model, epsilons, zero_protection=True)
-        model.update_source()
 
         rec_err = str(model.internals.control_stream.get_records('ERROR')[0])
         correct = f'$ERROR\n' f'W=F\n' f'{err_ref}\n' f'IWRES=IRES/W\n\n'
