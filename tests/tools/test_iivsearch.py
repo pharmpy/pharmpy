@@ -55,7 +55,7 @@ def test_brute_force_block_structure(
 
 def test_rv_block_structures_4_etas(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    add_iiv(model, ['TVCL', 'TVV'], 'exp')
+    add_iiv(model, ['TAD', 'S1'], 'exp')
 
     block_structures = list(_rv_block_structures(model.random_variables.iiv))
 
@@ -73,7 +73,7 @@ def test_rv_block_structures_4_etas(load_model_for_test, pheno_path):
 
 def test_rv_block_structures_5_etas(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    add_iiv(model, ['TVCL', 'TVV', 'TAD'], 'exp')
+    add_iiv(model, ['TVCL', 'TAD', 'S1'], 'exp')
 
     block_structures = list(_rv_block_structures(model.random_variables.iiv))
     assert len(block_structures) == 52

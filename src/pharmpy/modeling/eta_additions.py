@@ -132,7 +132,7 @@ def add_iiv(
     model.parameters = Parameters.create(pset)
     model.statements = sset
 
-    return model
+    return model.update_source()
 
 
 ADD_IOV_DISTRIBUTION = frozenset(('disjoint', 'joint', 'explicit', 'same-as-iiv'))
@@ -284,7 +284,7 @@ def add_iov(
 
     model.random_variables, model.parameters, model.statements = rvs, Parameters.create(pset), iovs
 
-    return model
+    return model.update_source()
 
 
 def _add_iov_explicit(model, occ, etas, categories, iov_name, etai_name, eta_name, omega_iov_name):
@@ -447,7 +447,7 @@ def add_pk_iiv(model: Model, initial_estimate: float = 0.09):
     if params_to_add_etas:
         add_iiv(model, params_to_add_etas, 'exp', initial_estimate=initial_estimate)
 
-    return model
+    return model.update_source()
 
 
 def _create_template(expression, operation):

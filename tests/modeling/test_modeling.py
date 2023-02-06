@@ -1916,8 +1916,6 @@ def test_add_iiv(
 
     assert eta_name is None or set(eta_name).intersection(etas) or eta_name in etas
 
-    model.update_source()
-
     rec_ref = (
         f'$PK\n'
         f'IF(AMT.GT.0) BTIME=TIME\n'
@@ -3221,7 +3219,6 @@ def test_add_iov(
 ):
     model = load_model_for_test(testdata / path)
     add_iov(model, occ, etas, eta_names, distribution=distribution)
-    model.update_source()
 
     model_etas = set(model.random_variables.etas.names)
     assert eta_names is None or model_etas.issuperset(eta_names)
@@ -3242,13 +3239,10 @@ def test_add_iov(
 def test_add_iov_compose(load_model_for_test, pheno_path):
     model1 = load_model_for_test(pheno_path)
     add_iov(model1, 'FA1', ['ETA_1', 'ETA_2'])
-    model1.update_source()
 
     model2 = load_model_for_test(pheno_path)
     add_iov(model2, 'FA1', 'ETA_1')
-    model2.update_source()
     add_iov(model2, 'FA1', 'ETA_2')
-    model2.update_source()
 
     assert set(model1.random_variables.etas.names) == set(model2.random_variables.etas.names)
     # FIXME find better way to assert models are equivalent
