@@ -72,7 +72,7 @@ def remove_error_model(model: Model):
     stats, y, f = _preparations(model)
     model.statements = stats.reassign(y, f)
     remove_unused_parameters_and_rvs(model)
-    return model
+    return model.update_source()
 
 
 def set_additive_error_model(
@@ -157,7 +157,7 @@ def set_additive_error_model(
 
     eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
     model.random_variables = model.random_variables + eps
-    return model
+    return model.update_source()
 
 
 def _get_prop_init(model):
@@ -278,7 +278,7 @@ def set_proportional_error_model(
 
     eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
     model.random_variables = model.random_variables + eps
-    return model
+    return model.update_source()
 
 
 def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy.Expr]] = None):
@@ -393,7 +393,7 @@ def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy
     eps_prop = NormalDistribution.create(ruv_prop.name, 'RUV', 0, sigma_prop)
     eps_add = NormalDistribution.create(ruv_add.name, 'RUV', 0, sigma_add)
     model.random_variables = model.random_variables + [eps_prop, eps_add]
-    return model
+    return model.update_source()
 
 
 def has_additive_error_model(model: Model):
@@ -551,7 +551,7 @@ def use_thetas_for_error_stdev(model: Model):
         add_population_parameter(model, sdsymb.name, theta_init, lower=0)
         symb = sympy.Symbol(eps.names[0])
         model.statements = model.statements.subs({symb: sdsymb * symb})
-    return model
+    return model.update_source()
 
 
 def set_weighted_error_model(model: Model):
@@ -601,7 +601,7 @@ def set_weighted_error_model(model: Model):
         y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].names[0])
     )
     remove_unused_parameters_and_rvs(model)
-    return model
+    return model.update_source()
 
 
 def _index_of_first_assignment(statements: Statements, symbol: sympy.Symbol) -> int:
@@ -672,7 +672,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     )
     model = model.replace(observation_transformation=obs)
 
-    return model
+    return model.update_source()
 
 
 def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME'):
@@ -723,4 +723,4 @@ def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME')
 
     add_population_parameter(model, theta.name, 0.1)
 
-    return model
+    return model.update_source()
