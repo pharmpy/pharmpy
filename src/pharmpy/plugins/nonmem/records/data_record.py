@@ -63,6 +63,9 @@ class DataRecord(OptionRecord):
             ]
             if not any(x in filename for x in quoted):
                 node = AttrTree.create('filename', {'FILENAME': filename})
+            # NOTE filename in $DATA may be max 80 characters
+            elif len(filename) > 80:
+                raise ValueError(f'Filename for data record too long (>80 characters): {filename}')
             else:
                 if "'" not in filename:
                     node = AttrTree.create('filename', {'QFILENAME': f"'{filename}'"})
@@ -71,7 +74,9 @@ class DataRecord(OptionRecord):
                 else:
                     raise ValueError('Cannot have both " and \' in filename.')
             (pre, _, post) = self.root.partition('filename')
+            print(filename)
             root = AttrTree(self.root.rule, pre + (node,) + post)
+        print(type(root))
         return self.replace(root=root)
 
     @property

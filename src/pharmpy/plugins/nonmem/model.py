@@ -10,7 +10,7 @@ from typing import Dict, Optional, Tuple
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
-from pharmpy.internals.fs.path import path_relative_to
+from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.model import Assignment, DataInfo, EstimationSteps
 from pharmpy.model import Model as BaseModel
 from pharmpy.model import NormalDistribution, Parameter, Parameters, RandomVariables, Statements
@@ -241,7 +241,14 @@ class Model(BaseModel):
                 not datapath.exists() or datapath.is_file()
             ), f'input path change, but no file exists at target {str(datapath)}'
             parent_path = Path.cwd() if path is None else path.parent
-            newdata = data_record.set_filename(str(path_relative_to(parent_path, datapath)))
+            try:
+                filename = str(path_relative_to(parent_path, datapath))
+            except ValueError:
+                # NOTE if parent path and datapath are in different drives absolute path
+                # needs to be used
+                filename = str(path_absolute(datapath))
+                warnings.warn('Cannot resolve relative path, falling back to absolute path')
+            newdata = data_record.set_filename(filename)
             newcs = self.internals.control_stream.replace_records([data_record], [newdata])
             replace_dict['internals'] = self.internals.replace(control_stream=newcs)
 
