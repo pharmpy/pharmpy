@@ -74,9 +74,7 @@ class DataRecord(OptionRecord):
                 else:
                     raise ValueError('Cannot have both " and \' in filename.')
             (pre, _, post) = self.root.partition('filename')
-            print(filename)
             root = AttrTree(self.root.rule, pre + (node,) + post)
-        print(type(root))
         return self.replace(root=root)
 
     @property

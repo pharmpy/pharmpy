@@ -68,6 +68,8 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     assert model.parameters['THETA_1'].init == 0.1
 
 
+# NOTE will warn on GHA for Windows due to different drives
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_write_model(testdata, load_model_for_test, tmp_path):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     write_model(model, tmp_path / 'run1.mod')
