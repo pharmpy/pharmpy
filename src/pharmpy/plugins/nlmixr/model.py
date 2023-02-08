@@ -26,6 +26,7 @@ from pharmpy.modeling import (
     has_combined_error_model,
 )
 from pharmpy.results import ModelfitResults
+from pharmpy.tools import fit
 
 
 class CodeGenerator:
@@ -152,32 +153,33 @@ def create_model(cg, model):
     for s in model.statements:
         if isinstance(s, Assignment):
             if s.symbol == model.dependent_variable:
+                # FIXME : Find another way to assert that a sigma exist
                 sigma = None
                 for dist in model.random_variables.epsilons:
                     sigma = dist.variance
                 assert sigma is not None
-                #cg.add('Y <- F')
-                #cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')
-                # FIXME: Needs to be generalized
+                
                 if has_additive_error_model(model):
-                    # Find the term with NO EPS in it
                     expr, error = find_term(model, s.expression)
-                    cg.add(f'{s.symbol.name} <- {expr}')
-                    cg.add(f'{s.symbol.name} ~ add({name_mangle(sigma.name)})')
+                    add_error_model(cg, expr, error, s.symbol.name, force_add = True)
+                    add_error_relation(cg, error, s.symbol)
                 elif has_proportional_error_model(model):
-                    # Find the term with NO EPS in it
                     expr, error = find_term(model, s.expression)
-                    cg.add(f'{s.symbol.name} <- {expr}')
-                    cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')
+                    add_error_model(cg, expr, error, s.symbol.name, force_prop = True)
+                    add_error_relation(cg, error, s.symbol)
                 elif has_combined_error_model(model):
-                    # Find the termwith NO EPS in it
                     pass
                 else:
-                    # TODO: Implement special case if not additive but
-                    # sigma is 1 with a scaling theta factor
-                    if model.parameters[sigma.name].init == 1:
-                        raise Warning("In its current state the error model cannot be handled")
-                    raise ValueError("Error model cannot be handled by nlmixr")
+                    print("WARNING : Format of error model is unknown. Will try to translate either way")
+                    if s.expression.is_Piecewise:
+                        # Convert eps to sigma name
+                        #piecewise = convert_eps_to_sigma(s, model)
+                        convert_piecewise(s, cg, model)
+                    else:         
+                        expr, error = find_term(model, s.expression)
+                        add_error_model(cg, expr, error, s.symbol.name)
+                        add_error_relation(cg, error, s.symbol)
+                    
             else:
                 expr = s.expression
                 if expr.is_Piecewise:
@@ -204,8 +206,9 @@ def create_model(cg, model):
             for eq in s.eqs:
                 # Should remove piecewise from these equations in nlmixr
                 if eq.atoms(sympy.Piecewise):
-                    lhs = convert_piecewise(printer.doprint(eq.lhs))
-                    rhs = convert_piecewise(printer.doprint(eq.rhs))
+                    lhs = remove_piecewise(printer.doprint(eq.lhs))
+                    rhs = remove_piecewise(printer.doprint(eq.rhs))
+                    
                     cg.add(f'{lhs} = {rhs}')
                 else:
                     cg.add(f'{printer.doprint(eq.lhs)} = {printer.doprint(eq.rhs)}')
@@ -284,7 +287,8 @@ def parse_modelfit_results(model, path):
                 omegas_sigmas[symb.name] = rdata['omega'].values[i, j]
     sigma = model.random_variables.epsilons.covariance_matrix
     for i in range(len(sigma)):
-        omegas_sigmas[sigma[i].name] = rdata['sigma']['fit$theta'][i]
+        if sigma[i] != 0:
+            omegas_sigmas[sigma[i].name] = rdata['sigma']['fit$theta'][sigma[i].name]
     thetas_index = 0
     pe = {}
     for param in model.parameters:
@@ -317,11 +321,6 @@ def execute_model(model, db):
     model.internals.path = path
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
-    # This csv file need to have lower case time and amt in order to function
-    # otherwise the model will not run for nlmixr2.
-    # column with eventID is CRUCIAL for nlmixr, added in write_csv file
-    # if not yet existing
-    # DONE (within write_csv)
     write_csv(model, path=path)
 
     code = model.model_code
@@ -405,8 +404,12 @@ def verification(model, db_name, error=10**-3, return_comp=False):
     nonmem_model = model.copy()
 
     # Save results from the nonmem model
-    nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:, [0]]
-
+    if nonmem_model.modelfit_results is None:
+        nonmem_model.modelfit_results = fit(nonmem_model)
+        nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:, [0]]
+    else:
+        nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:, [0]]
+        
     # Check that evaluation step is set to True
     if [s.evaluation for s in nonmem_model.estimation_steps._steps][0] is False:
         nonmem_model = set_evaluation_step(nonmem_model)
@@ -427,7 +430,7 @@ def verification(model, db_name, error=10**-3, return_comp=False):
     with warnings.catch_warnings():
         # Supress a numpy deprecation warning
         warnings.simplefilter("ignore")
-        nonmem_results.rename(columns={"PRED": "PRED_NONMEM"}, inplace=True)
+        nonmem_results.rename(columns={nonmem_results.columns[0]: "PRED_NONMEM"}, inplace=True)
         nlmixr_results.rename(columns={"PRED": "PRED_NLMIXR"}, inplace=True)
 
     # Combine the two based on ID and time
@@ -453,42 +456,32 @@ def modify_dataset(model):
     temp_model.dataset["evid"] = get_evid(temp_model)
     return temp_model
 
-def convert_piecewise(expr: str, if_statement = False):
+def convert_piecewise(piecewise, cg, model):
     """
     Return a string where each piecewise expression has been changed to if
     elseif else statements in R
     """
-    all_piecewise = find_piecewise(expr)
-    
-    #Go into each piecewise found
-    for p in all_piecewise:
-        
-        if if_statement is False:
-            expr = piecewise_replace(expr, p, "")
+    first = True
+    for expr, cond in piecewise.expression.args:
+        if first:
+            cg.add(f'if ({cond}){{')
+            expr, error = find_term(model, expr)
+            add_error_model(cg, expr, error, piecewise.symbol)
+            cg.add('}')
+            first = False
         else:
-            #Find start point for all arguments
-            p_d = find_parentheses(p)
-            p_start = [list(p_d.keys())[0]]
-            for start in p_d:
-                if start > p_d[p_start[-1]]:
-                    p_start.append(start)
-            
-            #go through all arguments
-            #Add the first condition as an if statement
-            p_arg = p[p_start[0]+1:p_d[p_start[0]]].split(",")
-            elseif = f'if ({p_arg[1].strip()}) {{{p_arg[0].strip()}}}'
-            
-            for start in p_start[1:]:
-                p_arg = p[start+1:p_d[start]]
-                p_arg = p_arg.split(",")
-                # Add all others as else if
-                elseif += f'else if({p_arg[1].strip()}) {{{p_arg[0].strip()}}}'
-            
-            # Replace the piecewise in the expression
-            expr = piecewise_replace(expr, p, elseif)
-            expr = expr.replace("True", "TRUE")
-        
-    return expr
+            if cond is not sympy.S.true:
+                cg.add(f'else if ({cond}){{')
+                expr, error = find_term(model, expr)
+                add_error_model(cg, expr, error, piecewise.symbol)
+                cg.add('}')
+            else:
+                cg.add('else {')
+                expr, error = find_term(model, expr)
+                add_error_model(cg, expr, error, piecewise.symbol)
+                cg.add('}')
+    
+    add_error_relation(cg, error, piecewise.symbol)
 
 def piecewise_replace(expr, piecewise, s):
     if s == "":
@@ -496,6 +489,13 @@ def piecewise_replace(expr, piecewise, s):
         return expr.replace(f'Piecewise({piecewise})', s)
     else:
         return expr.replace(f'Piecewise({piecewise})', s)
+
+def remove_piecewise(expr:str):
+    all_piecewise = find_piecewise(expr)
+    #Go into each piecewise found
+    for p in all_piecewise:
+        expr = piecewise_replace(expr, p, "")
+    return expr
     
 def find_piecewise(expr):
     
@@ -534,27 +534,95 @@ def convert_eq(cond):
     cond = re.sub(r'(ID\s*==\s*)(\d+)', r"\1'\2'", cond)
     return cond
 
-def find_term(model, expr):
-    first_error = True
-    first_res = True
+def find_term(model, expr):    
+    errors = []
     
     terms = sympy.Add.make_args(expr)
     for term in terms:
         error_term = False
         for symbol in term.free_symbols:
             if str(symbol) in model.random_variables.epsilons.names:
-                if first_error:
-                    error = term
-                    first_error = False
-                    error_term = True
-                else:
-                    error = error + term
-                    error_term = True
-        if not error_term:
-            if first_res:
-                res = term
-                first_res = False
-            else:
-                res = res + term
+                error_term = True
             
-    return res, error
+        if error_term:
+            errors.append(term)
+        else:
+            res = term
+    
+    errors_add_prop = {"add": None, "prop": None}
+    
+    resulting_symbols = [p for p in model.statements.after_odes.free_symbols if p not in model.random_variables.free_symbols and p not in model.parameters.symbols]
+    prop = False
+    for term in errors:
+        for symbol in term.free_symbols:
+            if symbol in resulting_symbols:
+                prop = True
+            
+        
+        if prop:
+            if errors_add_prop["prop"] is None:
+                errors_add_prop["prop"] = term    
+            else:
+                raise ValueError("Proportional term already added. Check format of error model")
+        else:
+            if errors_add_prop["add"] is None:
+                errors_add_prop["add"] = term
+            else:
+                raise ValueError("Additive term already added. Check format of error model")
+    
+    
+    for pair in errors_add_prop.items():
+        key = pair[0]
+        term = pair[1]
+        if term != None:
+            term = convert_eps_to_sigma(term, model)
+        errors_add_prop[key] = term    
+        
+    return res, errors_add_prop
+
+def convert_eps_to_sigma(expr, model):
+    eps_to_sigma = {sympy.Symbol(eps.names[0]): sympy.Symbol(str(eps.variance)) for eps in model.random_variables.epsilons}
+    return expr.subs(eps_to_sigma)
+
+def add_error_model(cg, expr, error, symbol, force_add = False, force_prop = False, force_comb = False):
+    cg.add(f'{symbol} <- {expr}')
+    
+    if force_add:
+        if error["add"]:
+            cg.add(f'add_error <- {error["add"]}')
+        else:
+            if error["prop"]:
+                cg.add(f'add_error <- {error["prop"]}')
+            else:
+                raise ValueError("Model should have additive error but no error was found")
+    elif force_prop:
+        if error["prop"]:
+            cg.add(f'add_error <- {error["prop"]}')
+        else:
+            if error["add"]:
+                cg.add(f'add_error <- {error["add"]}')
+            else:
+                raise ValueError("Model should have additive error but no error was found")
+    elif force_comb:
+        pass
+    else:
+        # Add term for the additive and proportional error (if exist)
+        # as solution for nlmixr error model handling
+        if error["add"]:
+            cg.add(f'add_error <- {error["add"]}')
+        else:
+            cg.add(f'add_error <- 0')
+        if error["prop"]:
+            cg.add(f'prop_error <- {error["prop"]}')
+        else:
+            cg.add(f'prop_error <- 0')
+        
+def add_error_relation(cg, error, symbol):
+    # Add the actual error model depedent on the previously
+    # defined variable add_error and prop_error
+    if error["add"] and error["prop"]:
+        cg.add(f'{symbol} ~ add(add_error) + prop(prop_error)')
+    elif error["add"] and not error["prop"]:
+        cg.add(f'{symbol} ~ add(add_error)')
+    elif not error["add"] and error["prop"]:
+        cg.add(f'{symbol} ~ prop(prop_error)')
