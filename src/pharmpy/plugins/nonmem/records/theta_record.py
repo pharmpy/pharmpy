@@ -121,6 +121,19 @@ class ThetaRecord(Record):
                 else:
                     theta = remove_token_and_space(theta, 'FIX')
 
+            up = theta.find('up')
+            if up != param.upper:
+                if up is None and param.upper < 1000000:
+                    comma = AttrToken('COMMA', ',')
+                    upper = AttrToken('NUMERIC', param.upper)
+                    up_node = AttrTree('up', (upper,))
+                    keep = []
+                    for node in theta.children:
+                        keep.append(node)
+                        if node.rule == 'init':
+                            keep.extend((comma, up_node))
+                    theta = AttrTree(theta.rule, tuple(keep))
+
             i += self._multiple(theta)
 
             return theta

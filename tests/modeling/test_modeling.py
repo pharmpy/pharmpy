@@ -146,9 +146,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
-    set_zero_order_elimination(model)
+    model = set_zero_order_elimination(model)
     assert model.model_code == correct
-    set_michaelis_menten_elimination(model)
+    model = set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -177,8 +177,8 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    set_mixed_mm_fo_elimination(model)
-    set_zero_order_elimination(model)
+    model = set_mixed_mm_fo_elimination(model)
+    model = set_zero_order_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -3346,7 +3346,6 @@ def test_add_iov_raises(
     load_model_for_test, pheno_path, occ, params, new_eta_names, distribution, error, message
 ):
     model = load_model_for_test(pheno_path)
-    print(message)
     with pytest.raises(error, match=re.escape(message)):
         add_iov(model, occ, params, eta_names=new_eta_names, distribution=distribution)
 
@@ -3506,9 +3505,9 @@ def test_find_volume_parameters_github_issues_1044_and_1053(load_example_model_f
 
 def test_find_volume_parameters_github_issues_1053_and_1062_bis(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
-    add_peripheral_compartment(model)
-    add_peripheral_compartment(model)
-    set_michaelis_menten_elimination(model)
+    model = add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
+    model = set_michaelis_menten_elimination(model)
     assert find_volume_parameters(model) == _symbols(['V', 'VP1', 'VP2'])
 
 
