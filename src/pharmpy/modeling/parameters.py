@@ -456,6 +456,7 @@ def fix_or_unfix_parameters(model: Model, parameters: Dict[str, bool]):
             new_param = p
         new.append(new_param)
     model.parameters = Parameters(tuple(new))
+    model = model.update_source()
     return model
 
 
