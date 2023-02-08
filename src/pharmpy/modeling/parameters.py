@@ -501,6 +501,7 @@ def unconstrain_parameters(model: Model, parameter_names: List[str]):
             newparam = p
         new.append(newparam)
     model.parameters = Parameters(tuple(new))
+    model = model.update_source()
     return model
 
 
