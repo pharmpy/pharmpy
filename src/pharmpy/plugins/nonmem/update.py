@@ -380,6 +380,9 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
         update_subroutines_record(model, advan, trans)
         update_model_record(model, advan)
 
+        if not is_nonlinear_odes(model):
+            from_des(model, advan)
+
     update_infusion(model, old)
 
 
@@ -424,6 +427,53 @@ def update_infusion(model: Model, old: ODESystem):
         # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
         # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
         model.dataset = df
+
+
+def from_des(model, advan):
+    cs = model.internals.control_stream
+    old_des = cs.get_records('DES')
+    newcs = cs.remove_records(old_des)
+
+    subs = cs.get_records('SUBROUTINES')[0]
+    newrec = subs.remove_option('TOL')
+
+    trans = None
+
+    odes = model.statements.ode_system
+
+    output_rate = odes.get_flow(odes.central_compartment, output)
+
+    if isinstance(output_rate, sympy.Symbol):
+        trans = 'TRANS1'
+    else:
+        if advan in ('ADVAN1', 'ADVAN2'):
+            trans = 'TRANS2'
+        if advan in ('ADVAN3', 'ADVAN11'):
+            rates = []
+            for cmt in odes.compartment_names:
+                outflows = odes.get_compartment_outflows(cmt)
+                rates.extend([rate[1] for rate in outflows])
+
+            def _is_symb_quotient(expr):
+                numer, denom = expr.as_numer_denom()
+                return isinstance(numer, sympy.Symbol) and isinstance(denom, sympy.Symbol)
+
+            def _is_symb_expr_quotient(expr):
+                numer, denom = expr.as_numer_denom()
+                return isinstance(numer, sympy.Symbol) and isinstance(denom, sympy.Expr)
+
+            if all(_is_symb_quotient(rate) for rate in rates):
+                trans = 'TRANS4'
+            elif advan == 'ADVAN3':
+                if all(_is_symb_quotient(rate) or _is_symb_expr_quotient(rate) for rate in rates):
+                    trans = 'TRANS3'
+
+    if trans is not None:
+        newrec = newrec.remove_option_startswith('TRANS')
+        newrec = newrec.append_option(trans)
+
+    newcs = newcs.replace_records([subs], [newrec])
+    model.internals = model.internals.replace(control_stream=newcs)
 
 
 def to_des(model: Model, new: ODESystem):
@@ -844,7 +894,8 @@ def update_subroutines_record(model: Model, advan, trans):
     if not all_subs:
         content = f'$SUBROUTINES {advan} {trans}\n'
         subsrec = create_record(content)
-        model.internals.control_stream = model.internals.control_stream.insert_record(subsrec)
+        newcs = model.internals.control_stream.insert_record(subsrec)
+        model.internals = model.internals.replace(control_stream=newcs)
         return
     subs = all_subs[0]
     oldadvan = subs.advan
