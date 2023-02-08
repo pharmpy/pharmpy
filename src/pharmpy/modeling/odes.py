@@ -481,6 +481,7 @@ def set_mixed_mm_fo_elimination(model: Model):
         model.statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
+        model = model.update_source()
     else:
         _do_michaelis_menten_elimination(model, combined=True)
     return model
