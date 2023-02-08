@@ -319,6 +319,7 @@ def unfix_parameters(model: Model, parameter_names: Union[List[str], str]):
             new_param = p
         new.append(new_param)
     model.parameters = Parameters(tuple(new))
+    model = model.update_source()
     return model
 
 
