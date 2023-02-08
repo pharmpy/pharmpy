@@ -852,7 +852,9 @@ def add_lag_time(model: Model):
         model.statements = model.statements.remove_symbol_definitions(
             old_lag_time.free_symbols, odes
         )
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
+    else:
+        model = model.update_source()
     return model
 
 
