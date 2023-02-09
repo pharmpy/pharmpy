@@ -61,9 +61,9 @@ $SIGMA 0.1; RUV_ADD
 
 def test_conversion_round_trip(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
-    add_peripheral_compartment(model)
-    add_peripheral_compartment(model)
-    set_michaelis_menten_elimination(model)
+    model = add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
+    model = set_michaelis_menten_elimination(model)
     odes = model.statements.ode_system
     central = odes.central_compartment
     assert odes.get_flow(central, output) == parse_expr('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
@@ -71,9 +71,9 @@ def test_conversion_round_trip(load_example_model_for_test):
 
 def test_des_mm(load_example_model_for_test, create_model_for_test):
     model = load_example_model_for_test('pheno')
-    add_peripheral_compartment(model)
-    add_peripheral_compartment(model)
-    set_michaelis_menten_elimination(model)
+    model = add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
+    model = set_michaelis_menten_elimination(model)
     model.update_source()
     code = model.model_code
     dataset = model.dataset

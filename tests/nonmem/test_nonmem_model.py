@@ -620,7 +620,7 @@ $ESTIMATION METHOD=1 MAXEVAL=9999 NONINFETA=1 MCETA=1
 )
 def test_des(load_model_for_test, testdata, model_path, transformation):
     model_ref = load_model_for_test(testdata / model_path)
-    transformation(model_ref)
+    model_ref = transformation(model_ref)
 
     model_des = Model.create_model(StringIO(model_ref.model_code))
 

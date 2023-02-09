@@ -546,7 +546,9 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
 
 
 def _rename_parameter(model: Model, old_name, new_name):
-    a = model.statements.find_assignment(old_name)
+    statements = model.statements
+    rvs = model.random_variables
+    a = statements.find_assignment(old_name)
     assert a is not None
     d = {}
     for s in a.rhs_symbols:
@@ -554,10 +556,10 @@ def _rename_parameter(model: Model, old_name, new_name):
             old_par = s
             d[model.parameters[s].symbol] = f'POP_{new_name}'
             new_par = sympy.Symbol(f'POP_{new_name}')
-            model.statements = model.statements.subs({old_par: new_par})
+            statements = statements.subs({old_par: new_par})
             break
     for s in a.rhs_symbols:
-        iivs = model.random_variables.iiv
+        iivs = rvs.iiv
         if s.name in iivs.names:
             cov = iivs.covariance_matrix
             ind = iivs.names.index(s.name)
@@ -574,7 +576,7 @@ def _rename_parameter(model: Model, old_name, new_name):
                         except AttributeError:
                             symb = p
                         d[symb] = p.name.replace(f'IIV_{old_name}', f'IIV_{new_name}')
-            model.random_variables = model.random_variables.subs(d)
+            rvs = rvs.subs(d)
             break
     new = []
     for p in model.parameters:
@@ -585,8 +587,9 @@ def _rename_parameter(model: Model, old_name, new_name):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters.create(new)
-    model.statements = model.statements.subs({old_name: new_name})
+    parameters = Parameters.create(new)
+    statements = statements.subs({old_name: new_name})
+    model = model.replace(statements=statements, parameters=parameters, random_variables=rvs)
     return model
 
 
