@@ -1288,7 +1288,6 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     # 0-order to Bolus
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     model = set_bolus_absorption(model)
-    model.update_source()
     assert model.model_code.split('\n')[2:] == advan1_before.split('\n')[2:]
 
     # 1st order to 1st order
@@ -1356,7 +1355,6 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     shutil.copy(datadir.parent / 'pheno.dta', tmp_path)
     model = load_model_for_test(tmp_path / 'abs' / 'pheno_advan1.mod')
     model = set_zero_order_absorption(model)
-    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
@@ -1439,7 +1437,6 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     # 1st to 0-order
     model = load_model_for_test(tmp_path / 'abs' / 'pheno_advan2.mod')
     model = set_zero_order_absorption(model)
-    model.update_source()
     assert model.model_code == correct
 
 
@@ -1490,7 +1487,6 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 def test_seq_to_ZO(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
     model = set_zero_order_absorption(model)
-    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@
 $INPUT ID TIME AMT RATE WGT APGR DV FA1 FA2
@@ -1534,7 +1530,6 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 def test_bolus_to_seq(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     model = set_seq_zo_fo_absorption(model)
-    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
@@ -1582,7 +1577,6 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 def test_ZO_to_seq(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     model = set_seq_zo_fo_absorption(model)
-    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@
 $INPUT ID TIME AMT RATE WGT APGR DV FA1 FA2
@@ -1629,7 +1623,6 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 def test_FO_to_seq(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     model = set_seq_zo_fo_absorption(model)
-    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
@@ -2854,7 +2847,6 @@ def test_nested_update_source(load_model_for_test, pheno_path):
         model, individual_estimates=model.modelfit_results.individual_estimates
     )
     model = model.update_source()
-    model = model.update_source()
 
     assert 'IIV_CL_IIV_V' in model.model_code
 
@@ -2862,7 +2854,6 @@ def test_nested_update_source(load_model_for_test, pheno_path):
 
     model = remove_iiv(model, 'CL')
 
-    model = model.update_source()
     model = model.update_source()
 
     assert '0.031128' in model.model_code
@@ -2872,7 +2863,6 @@ def test_nested_update_source(load_model_for_test, pheno_path):
 
     model = remove_iiv(model, 'V')
 
-    model = model.update_source()
     model = model.update_source()
 
     assert '0.0309626' in model.model_code
