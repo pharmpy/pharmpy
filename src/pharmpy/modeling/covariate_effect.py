@@ -74,7 +74,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     >>> model = load_example_model("pheno")
     >>> has_covariate_effect(model, "CL", "WGT")
     True
-    >>> remove_covariate_effect(model, "CL", "WGT")
+    >>> model = remove_covariate_effect(model, "CL", "WGT")
     >>> has_covariate_effect(model, "CL", "WGT")
     False
 

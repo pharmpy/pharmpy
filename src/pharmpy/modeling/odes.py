@@ -1528,11 +1528,11 @@ def remove_peripheral_compartment(model: Model):
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘
-      ↑      │
-    QP1/V QP1/VP1
-      │      ↓
+      ↑       │
+    Q/V1     Q/V2
+      │       ↓
     ┌───────────┐
-    │  CENTRAL  │──CL/V→
+    │  CENTRAL  │──CL/V1→
     └───────────┘
 
     See also
