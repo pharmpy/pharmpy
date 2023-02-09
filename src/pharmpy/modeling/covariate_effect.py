@@ -74,8 +74,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     >>> model = load_example_model("pheno")
     >>> has_covariate_effect(model, "CL", "WGT")
     True
-    >>> remove_covariate_effect(model, "CL", "WGT") # doctest: +ELLIPSIS
-    <...>
+    >>> remove_covariate_effect(model, "CL", "WGT")
     >>> has_covariate_effect(model, "CL", "WGT")
     False
 
@@ -91,13 +90,12 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
         [] if model.statements.ode_system is None else [model.statements.ode_system]
     )
     after_odes = list(model.statements.after_odes)
-    model.statements = Statements(before_odes + ode_system + after_odes)
+    statements = Statements(before_odes + ode_system + after_odes)
     kept_parameters = model.random_variables.free_symbols.union(
         kept_thetas, model.statements.after_odes.free_symbols
     )
-    model.parameters = Parameters.create(
-        (p for p in model.parameters if p.symbol in kept_parameters)
-    )
+    parameters = Parameters.create((p for p in model.parameters if p.symbol in kept_parameters))
+    model = model.replace(statements=statements, parameters=parameters)
 
     return model.update_source()
 

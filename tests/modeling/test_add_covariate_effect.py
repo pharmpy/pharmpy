@@ -17,7 +17,7 @@ def test_nan_add_covariate_effect(load_model_for_test, pheno_path):
     data['new_col'] = new_col
     model.dataset = data
 
-    add_covariate_effect(model, 'CL', 'new_col', 'cat')
+    model = add_covariate_effect(model, 'CL', 'new_col', 'cat')
     model.update_source()
 
     assert not re.search('NaN', model.model_code)
@@ -28,7 +28,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
     model_path = testdata / 'nonmem' / 'pheno.mod'
     model = load_model_for_test(model_path)
 
-    add_covariate_effect(model, 'CL', 'WGT', 'exp')
+    model = add_covariate_effect(model, 'CL', 'WGT', 'exp')
     assert has_covariate_effect(model, 'CL', 'WGT')
 
     with pytest.warns(UserWarning, match='Covariate effect of WGT on CL already exists'):
@@ -38,10 +38,10 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
 
     model = load_model_for_test(model_path)
 
-    add_covariate_effect(model, 'CL', 'WGT', 'exp')
+    model = add_covariate_effect(model, 'CL', 'WGT', 'exp')
     assert has_covariate_effect(model, 'CL', 'WGT')
     assert not has_covariate_effect(model, 'CL', 'APGR')
-    add_covariate_effect(model, 'CL', 'APGR', 'exp')
+    model = add_covariate_effect(model, 'CL', 'APGR', 'exp')
     assert has_covariate_effect(model, 'CL', 'WGT')
     assert has_covariate_effect(model, 'CL', 'APGR')
 
@@ -391,7 +391,7 @@ def test_add_covariate_effect(
             assert not has_covariate_effect(model, effect[0], effect[1])
 
     for effect in effects:
-        add_covariate_effect(model, *effect, allow_nested=allow_nested)
+        model = add_covariate_effect(model, *effect, allow_nested=allow_nested)
 
     for effect in effects:
         assert has_covariate_effect(model, effect[0], effect[1])
@@ -413,7 +413,7 @@ def test_add_covariate_effect(
 
     if not allow_nested:
         for effect in effects:
-            remove_covariate_effect(model, effect[0], effect[1])
+            model = remove_covariate_effect(model, effect[0], effect[1])
 
         for effect in effects:
             assert not has_covariate_effect(model, effect[0], effect[1])
