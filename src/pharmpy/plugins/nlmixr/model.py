@@ -53,6 +53,7 @@ class CodeGenerator:
 def convert_model(model):
     """Convert any model into an nlmixr model"""
     if isinstance(model, Model):
+        print("yeye")
         return model.copy()
 
     nlmixr_model = Model()
@@ -73,7 +74,7 @@ def convert_model(model):
     translate_nmtran_time(nlmixr_model)
     nlmixr_model.datainfo = nlmixr_model.datainfo.replace(path = None)
 
-    nlmixr_model.update_source()
+    #nlmixr_model.update_source()
     return nlmixr_model
 
 
@@ -322,7 +323,7 @@ def execute_model(model, db):
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     write_csv(model, path=path)
-
+    
     code = model.model_code
     cg = CodeGenerator()
     cg.add('ofv <- fit$objDf$OBJF')
@@ -332,7 +333,7 @@ def execute_model(model, db):
     cg.add('log_likelihood <- fit$objDf$`Log-likelihood`')
     cg.add('runtime_total <- sum(fit$time)')
     cg.add('pred <- as.data.frame(fit[c("ID", "TIME", "PRED")])')
-
+    
     cg.add(
         f'save(file="{path}/{model.name}.RDATA",ofv, thetas, omega, sigma, log_likelihood, runtime_total, pred)'
     )
@@ -393,7 +394,7 @@ def execute_model(model, db):
 
         txn.store_metadata(metadata)
         txn.store_modelfit_results()
-
+    
     res = parse_modelfit_results(model, path)
     model.modelfit_results = res
     return model
@@ -409,22 +410,25 @@ def verification(model, db_name, error=10**-3, return_comp=False):
         nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:, [0]]
     else:
         nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:, [0]]
-        
+    
+    print("FÖRSTA")
     # Check that evaluation step is set to True
     if [s.evaluation for s in nonmem_model.estimation_steps._steps][0] is False:
         nonmem_model = set_evaluation_step(nonmem_model)
-
+    
+    print("ANDRA")
     # Update the nonmem model with new estimates
     # and convert to nlmixr
     nlmixr_model = convert_model(
         update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
     )
+    print("TREDJE")
     # Execute the nlmixr model
     import pharmpy.workflows
 
     db = pharmpy.workflows.LocalDirectoryToolDatabase(db_name)
     nlmixr_model = execute_model(nlmixr_model, db)
-
+    print("FJÄRDE")
     nlmixr_results = nlmixr_model.modelfit_results.predictions
 
     with warnings.catch_warnings():
