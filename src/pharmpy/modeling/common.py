@@ -661,5 +661,5 @@ def rename_symbols(
 
     model.statements = model.statements.subs(d)
     model.random_variables = model.random_variables.subs(d)
-    return model
+    return model.update_source()
     # FIXME: Only handles parameters, statements and random_variables and no clashes and circular renaming
