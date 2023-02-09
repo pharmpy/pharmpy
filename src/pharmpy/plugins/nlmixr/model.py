@@ -21,6 +21,7 @@ from pharmpy.modeling import (
     write_csv,
     translate_nmtran_time,
     drop_dropped_columns,
+    drop_columns,
     has_additive_error_model,
     has_proportional_error_model,
     has_combined_error_model,
@@ -64,10 +65,13 @@ def convert_model(model):
     nlmixr_model.filename_extension = '.R'
 
     # Update dataset to lowercase and add evid
-    nlmixr_model = modify_dataset(nlmixr_model)
+    if "evid" not in nlmixr_model.dataset.columns.str.lower():
+        nlmixr_model = modify_dataset(nlmixr_model)
     
     # Drop all dropped columns so it does not interfere with nlmixr
     drop_dropped_columns(nlmixr_model)
+    if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
+        nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
 
     # Update dataset
     translate_nmtran_time(nlmixr_model)
@@ -170,7 +174,7 @@ def create_model(cg, model):
                 elif has_combined_error_model(model):
                     pass
                 else:
-                    print("---\nWARNING : Format of error model is unknown. Will try to translate either way\n---")
+                    print("-------\nWARNING : \nFormat of error model is unknown. Will try to translate either way\n-------")
                     if s.expression.is_Piecewise:
                         # Convert eps to sigma name
                         #piecewise = convert_eps_to_sigma(s, model)
@@ -433,7 +437,13 @@ def verification(model, db_name, error=10**-3, return_comp=False):
         nlmixr_results.rename(columns={"PRED": "PRED_NLMIXR"}, inplace=True)
 
     # Combine the two based on ID and time
-    combined_result = pd.merge(nonmem_results, nlmixr_results, left_index=True, right_index=True)
+    if "evid" not in nonmem_model.dataset.columns.str.lower():
+        nonmem_model = modify_dataset(nonmem_model)
+    nonmem_results = nonmem_results.reset_index()
+    nonmem_results = nonmem_results.drop(nonmem_model.dataset[nonmem_model.dataset["evid"] != 0].index.to_list())
+    nonmem_results = nonmem_results.set_index(["ID","TIME"])
+    combined_result = nonmem_results
+    combined_result["PRED_NLMIXR"] = nlmixr_results["PRED_NLMIXR"].to_list()
 
     # Add difference between the models
     combined_result["DIFF"] = abs(combined_result["PRED_NONMEM"] - combined_result["PRED_NLMIXR"])
@@ -452,7 +462,15 @@ def verification(model, db_name, error=10**-3, return_comp=False):
 
 def modify_dataset(model):
     temp_model = model.copy()
-    temp_model.dataset["evid"] = get_evid(temp_model)
+    if "evid" not in temp_model.dataset.columns.str.lower():
+        if "EVID" in temp_model.dataset.columns:
+            temp_model.dataset.rename(columns={"EVID": "evid"}, inplace=True)
+        else:
+            temp_model.dataset["evid"] = get_evid(temp_model)
+    if "TIME" in temp_model.dataset.columns:
+        temp_model.dataset.rename(columns={"TIME": "time"}, inplace=True)
+    if "AMT" in temp_model.dataset.columns:
+        temp_model.dataset.rename(columns={"AMT": "amt"}, inplace=True)
     return temp_model
 
 def convert_piecewise(piecewise, cg, model):
@@ -559,7 +577,9 @@ def find_term(model, expr):
                 if ali in res_alias:
                     prop = True
                     # Remove the symbol that was found
+                    # and substitute res to that symbol to avoid confusion
                     term = term.subs(symbol,1)
+                    res = symbol
             
         if prop:
             if errors_add_prop["prop"] is None:
