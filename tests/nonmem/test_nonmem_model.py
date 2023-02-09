@@ -634,10 +634,8 @@ def test_cmt_warning(load_model_for_test, testdata):
     model = Model.create_model(StringIO(model_str))
     model.datainfo = model.datainfo.replace(path=model_original.datainfo.path)
 
-    set_zero_order_absorption(model)
-
     with pytest.raises(UserWarning, match='Compartment structure has been updated'):
-        model.update_source()
+        set_zero_order_absorption(model)
 
 
 @pytest.mark.parametrize(

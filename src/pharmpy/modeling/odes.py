@@ -976,6 +976,7 @@ def set_zero_order_absorption(model: Model):
         odes = model.statements.ode_system
         assert odes is not None
         _add_zero_order_absorption(model, dose.amount, odes.dosing_compartment, 'MAT', lag_time)
+        model = model.update_source()
     return model
 
 
