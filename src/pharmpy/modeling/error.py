@@ -199,8 +199,7 @@ def set_proportional_error_model(
     --------
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
-    >>> set_proportional_error_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_proportional_error_model(model)
     >>> model.statements.after_odes
         A_CENTRAL
         ─────────
@@ -218,11 +217,10 @@ def set_proportional_error_model(
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
-    >>> set_proportional_error_model(
+    >>> model = set_proportional_error_model(
     ...     model,
     ...     data_trans="log(Y)"
-    ... )    # doctest: +ELLIPSIS
-    <...>
+    ... )
     >>> model.statements.after_odes
         A_CENTRAL
         ─────────
@@ -267,14 +265,14 @@ def set_proportional_error_model(
         ind = stats.find_assignment_index(y)
         statements = statements[0:ind] + guard_assignment + statements[ind:]
 
-    model.statements = statements.reassign(y, expr)
-    remove_unused_parameters_and_rvs(model)
+    model = model.replace(statements=statements.reassign(y, expr))
+    model = remove_unused_parameters_and_rvs(model)
 
     sigma = create_symbol(model, 'sigma')
-    add_population_parameter(model, sigma.name, 0.09)
+    model = add_population_parameter(model, sigma.name, 0.09)
 
     eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
-    model.random_variables = model.random_variables + eps
+    model = model.replace(random_variables=model.random_variables + eps)
     model = model.update_source()
     return model
 
