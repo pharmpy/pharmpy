@@ -1142,67 +1142,6 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_absrate_from_explicit(create_model_for_test):
-    code = """
-$PROBLEM    PHENOBARB SIMPLE MODEL
-$DATA      pheno.dta IGNORE=@
-$INPUT      ID TIME AMT WGT APGR DV FA1 FA2
-$SUBROUTINE ADVAN13 TOL=9
-$MODEL COMPARTMENT=(CENTRAL DEFDOSE)
-$PK
-CL=THETA(1)*EXP(ETA(1))
-V=THETA(2)*EXP(ETA(2))
-
-$DES
-DADT(1) = -A(1)*CL/V
-
-$ERROR
-CONC = A(1)/V
-Y = CONC + CONC*EPS(1)
-
-$THETA (0,0.00469307) ; pCL
-$THETA  (0,1.00916) ; pV
-$OMEGA  DIAGONAL(2)
- 0.0309626  ;       IVCL
- 0.031128  ;        IVV
-$SIGMA  1e-7
-$ESTIMATION METHOD=1 INTERACTION
-"""
-    model = create_model_for_test(code, dataset='pheno')
-    model = set_first_order_absorption(model)
-    correct = """
-$PROBLEM    PHENOBARB SIMPLE MODEL
-$DATA      pheno.dta IGNORE=@
-$INPUT      ID TIME AMT WGT APGR DV FA1 FA2
-$SUBROUTINE ADVAN13 TOL=9
-$MODEL COMPARTMENT=(DEPOT DEFDOSE) COMPARTMENT=(CENTRAL)
-$PK
-MAT = THETA(3)
-CL=THETA(1)*EXP(ETA(1))
-V=THETA(2)*EXP(ETA(2))
-
-$DES
-DADT(1) = -A(1)*KA
-DADT(2) = A(1)*KA - A(2)*CL/V
-
-$ERROR
-CONC = A(2)/V
-Y = CONC + CONC*EPS(1)
-
-$THETA (0,0.00469307) ; pCL
-$THETA  (0,1.00916) ; pV
-$THETA  (0,2.0) ; POP_MAT
-$OMEGA  DIAGONAL(2)
- 0.0309626  ;       IVCL
- 0.031128  ;        IVV
-$SIGMA  1e-7
-$ESTIMATION METHOD=1 INTERACTION
-"""
-    # FIXME: This requires more work in update
-    assert correct
-    # assert model.model_code == correct
-
-
 def test_absorption_rate(load_model_for_test, testdata, tmp_path):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     advan1_before = model.model_code

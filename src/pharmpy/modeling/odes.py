@@ -1042,6 +1042,7 @@ def set_first_order_absorption(model: Model):
     remove_unused_parameters_and_rvs(model)
     if not depot:
         _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time)
+        model = model.update_source()
     return model
 
 
