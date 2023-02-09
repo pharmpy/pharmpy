@@ -119,14 +119,12 @@ def split_joint_distribution(model: Model, rvs: Optional[Union[List[str], str]] 
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> create_joint_distribution(model, ['ETA_1', 'ETA_2'])      # doctest: +ELLIPSIS
-    <...>
+    >>> model = create_joint_distribution(model, ['ETA_1', 'ETA_2'])
     >>> model.random_variables.etas
     ⎡ETA₁⎤    ⎧⎡0⎤  ⎡    IVCL      IIV_CL_IIV_V⎤⎫
     ⎢    ⎥ ~ N⎪⎢ ⎥, ⎢                          ⎥⎪
     ⎣ETA₂⎦    ⎩⎣0⎦  ⎣IIV_CL_IIV_V      IVV     ⎦⎭
-    >>> split_joint_distribution(model, ['ETA_1', 'ETA_2'])       # doctest: +ELLIPSIS
-    <...>
+    >>> model = split_joint_distribution(model, ['ETA_1', 'ETA_2'])
     >>> model.random_variables.etas
     ETA₁ ~ N(0, IVCL)
     ETA₂ ~ N(0, IVV)
@@ -144,11 +142,11 @@ def split_joint_distribution(model: Model, rvs: Optional[Union[List[str], str]] 
     parameters_after = new_rvs.parameter_names
 
     removed_parameters = set(parameters_before) - set(parameters_after)
-    model.random_variables = new_rvs
-    model.parameters = Parameters(
+    new_params = Parameters(
         tuple([p for p in model.parameters if p.name not in removed_parameters])
     )
-    return model.update_source()
+    model = model.replace(random_variables=new_rvs, parameters=new_params).update_source()
+    return model
 
 
 def _choose_param_init(model, individual_estimates, rvs, parent1, parent2):
