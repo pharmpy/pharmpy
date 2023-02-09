@@ -53,7 +53,6 @@ class CodeGenerator:
 def convert_model(model):
     """Convert any model into an nlmixr model"""
     if isinstance(model, Model):
-        print("yeye")
         return model.copy()
 
     nlmixr_model = Model()
@@ -171,7 +170,7 @@ def create_model(cg, model):
                 elif has_combined_error_model(model):
                     pass
                 else:
-                    print("WARNING : Format of error model is unknown. Will try to translate either way")
+                    print("---\nWARNING : Format of error model is unknown. Will try to translate either way\n---")
                     if s.expression.is_Piecewise:
                         # Convert eps to sigma name
                         #piecewise = convert_eps_to_sigma(s, model)
@@ -411,24 +410,20 @@ def verification(model, db_name, error=10**-3, return_comp=False):
     else:
         nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:, [0]]
     
-    print("FÖRSTA")
     # Check that evaluation step is set to True
     if [s.evaluation for s in nonmem_model.estimation_steps._steps][0] is False:
         nonmem_model = set_evaluation_step(nonmem_model)
     
-    print("ANDRA")
     # Update the nonmem model with new estimates
     # and convert to nlmixr
     nlmixr_model = convert_model(
         update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
     )
-    print("TREDJE")
     # Execute the nlmixr model
     import pharmpy.workflows
 
     db = pharmpy.workflows.LocalDirectoryToolDatabase(db_name)
     nlmixr_model = execute_model(nlmixr_model, db)
-    print("FJÄRDE")
     nlmixr_results = nlmixr_model.modelfit_results.predictions
 
     with warnings.catch_warnings():
@@ -555,14 +550,17 @@ def find_term(model, expr):
     
     errors_add_prop = {"add": None, "prop": None}
     
-    resulting_symbols = [p for p in model.statements.after_odes.free_symbols if p not in model.random_variables.free_symbols and p not in model.parameters.symbols]
+    #FIXME
     prop = False
+    res_alias = find_aliases(res, model)
     for term in errors:
         for symbol in term.free_symbols:
-            if symbol in resulting_symbols:
-                prop = True
+            for ali in find_aliases(symbol, model):
+                if ali in res_alias:
+                    prop = True
+                    # Remove the symbol that was found
+                    term = term.subs(symbol,1)
             
-        
         if prop:
             if errors_add_prop["prop"] is None:
                 errors_add_prop["prop"] = term    
@@ -573,7 +571,6 @@ def find_term(model, expr):
                 errors_add_prop["add"] = term
             else:
                 raise ValueError("Additive term already added. Check format of error model")
-    
     
     for pair in errors_add_prop.items():
         key = pair[0]
@@ -601,10 +598,10 @@ def add_error_model(cg, expr, error, symbol, force_add = False, force_prop = Fal
                 raise ValueError("Model should have additive error but no error was found")
     elif force_prop:
         if error["prop"]:
-            cg.add(f'add_error <- {error["prop"]}')
+            cg.add(f'prop_error <- {error["prop"]}')
         else:
             if error["add"]:
-                cg.add(f'add_error <- {error["add"]}')
+                cg.add(f'prop_error <- {error["add"]}')
             else:
                 raise ValueError("Model should have additive error but no error was found")
     elif force_comb:
@@ -615,11 +612,11 @@ def add_error_model(cg, expr, error, symbol, force_add = False, force_prop = Fal
         if error["add"]:
             cg.add(f'add_error <- {error["add"]}')
         else:
-            cg.add(f'add_error <- 0')
+            cg.add('add_error <- 0')
         if error["prop"]:
             cg.add(f'prop_error <- {error["prop"]}')
         else:
-            cg.add(f'prop_error <- 0')
+            cg.add('prop_error <- 0')
         
 def add_error_relation(cg, error, symbol):
     # Add the actual error model depedent on the previously
@@ -630,3 +627,14 @@ def add_error_relation(cg, error, symbol):
         cg.add(f'{symbol} ~ add(add_error)')
     elif not error["add"] and error["prop"]:
         cg.add(f'{symbol} ~ prop(prop_error)')
+        
+def find_aliases(symbol:str, model):
+    aliases = [symbol]
+    for expr in model.statements.after_odes:
+        if symbol == expr.symbol and isinstance(expr.expression, sympy.Symbol):
+            aliases.append(expr.expression)
+        if symbol == expr.symbol and expr.expression.is_Piecewise:
+            for e, c in expr.expression.args:
+                if isinstance(e, sympy.Symbol):
+                    aliases.append(e)
+    return aliases
