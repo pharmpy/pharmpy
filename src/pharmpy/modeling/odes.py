@@ -135,9 +135,10 @@ def set_first_order_elimination(model: Model):
         cb.remove_flow(central, output)
         cb.add_flow(central, output, sympy.Symbol('CL') / v)
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        model.statements = statements.remove_symbol_definitions(
+        statements = statements.remove_symbol_definitions(
             {sympy.Symbol('KM')}, statements.ode_system
         )
+        model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     elif has_mixed_mm_fo_elimination(model):
         odes = model.statements.ode_system
@@ -150,12 +151,13 @@ def set_first_order_elimination(model: Model):
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, sympy.Symbol('CL') / v)
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
-        model.statements = model.statements.remove_symbol_definitions(
-            {sympy.Symbol('KM'), sympy.Symbol('CLMM')}, model.statements.ode_system
+        statements = statements.remove_symbol_definitions(
+            {sympy.Symbol('KM'), sympy.Symbol('CLMM')}, statements.ode_system
         )
+        model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     return model
 
@@ -206,12 +208,13 @@ def set_zero_order_elimination(model: Model):
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, rate)
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
-        model.statements = model.statements.remove_symbol_definitions(
-            {sympy.Symbol('CL')}, model.statements.ode_system
+        statements = statements.remove_symbol_definitions(
+            {sympy.Symbol('CL')}, statements.ode_system
         )
+        model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     else:
         model = _do_michaelis_menten_elimination(model)
@@ -413,9 +416,10 @@ def set_michaelis_menten_elimination(model: Model):
         statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
-        model.statements = statements.remove_symbol_definitions(
+        statements = statements.remove_symbol_definitions(
             {sympy.Symbol('CL')}, statements.ode_system
         )
+        model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     else:
         model = _do_michaelis_menten_elimination(model)
@@ -462,7 +466,7 @@ def set_mixed_mm_fo_elimination(model: Model):
         odes = model.statements.ode_system
         assert odes is not None
         central = odes.central_compartment
-        add_individual_parameter(model, 'CL')
+        model = add_individual_parameter(model, 'CL')
         rate = odes.get_flow(central, output)
         assert rate is not None
         cb = CompartmentalSystemBuilder(odes)
@@ -471,9 +475,10 @@ def set_mixed_mm_fo_elimination(model: Model):
         if v not in rate.free_symbols:
             v = sympy.Symbol('VC')
         cb.add_flow(central, output, sympy.Symbol('CL') / v + rate)
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
+        model = model.replace(statements=statements)
         model = model.update_source()
     else:
         model = _do_michaelis_menten_elimination(model, combined=True)
@@ -531,12 +536,11 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
     rate = (clmm * km / (km + amount / vc) + cl) / vc
     cb = CompartmentalSystemBuilder(odes)
     cb.add_flow(central, output, rate)
-    model.statements = (
+    statements = (
         model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
     )
-    model.statements = model.statements.remove_symbol_definitions(
-        numer.free_symbols, model.statements.ode_system
-    )
+    statements = statements.remove_symbol_definitions(numer.free_symbols, statements.ode_system)
+    model = model.replace(statements=statements)
     model = remove_unused_parameters_and_rvs(model)
     return model
 
