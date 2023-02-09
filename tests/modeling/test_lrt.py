@@ -64,7 +64,7 @@ def test_degrees_of_freedom(
     child = parent.copy()
 
     for effect in effects:
-        add_covariate_effect(child, *effect, allow_nested=allow_nested)
+        child = add_covariate_effect(child, *effect, allow_nested=allow_nested)
 
     assert degrees_of_freedom(parent, child) == expected
 
@@ -75,7 +75,7 @@ def test_cutoff(load_model_for_test, testdata):
 
     child = parent.copy()
 
-    add_allometry(
+    child = add_allometry(
         child,
         allometric_variable='WGT',
         reference_value=70,

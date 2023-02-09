@@ -7,7 +7,7 @@ from pharmpy.modeling import add_allometry, add_peripheral_compartment
 def test_allometry(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     ref_model = model.copy()
-    add_allometry(
+    model = add_allometry(
         model,
         allometric_variable='WGT',
         reference_value=70,
