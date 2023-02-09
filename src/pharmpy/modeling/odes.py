@@ -65,8 +65,7 @@ def add_individual_parameter(model: Model, name: str):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> add_individual_parameter(model, "KA")   # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_individual_parameter(model, "KA")
     >>> model.statements.find_assignment("KA")
     KA = POP_KA
 
@@ -102,8 +101,7 @@ def set_first_order_elimination(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_first_order_elimination(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_first_order_elimination(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────┐
@@ -181,8 +179,7 @@ def set_zero_order_elimination(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_zero_order_elimination(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_zero_order_elimination(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────┐
@@ -246,8 +243,7 @@ def has_michaelis_menten_elimination(model: Model):
     >>> model = load_example_model("pheno")
     >>> has_michaelis_menten_elimination(model)
     False
-    >>> set_michaelis_menten_elimination(model)   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_michaelis_menten_elimination(model)
     >>> has_michaelis_menten_elimination(model)
     True
     """
@@ -284,8 +280,7 @@ def has_zero_order_elimination(model: Model):
     >>> model = load_example_model("pheno")
     >>> has_zero_order_elimination(model)
     False
-    >>> set_zero_order_elimination(model)   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_zero_order_elimination(model)
     >>> has_zero_order_elimination(model)
     True
     """
@@ -322,8 +317,7 @@ def has_mixed_mm_fo_elimination(model: Model):
     >>> model = load_example_model("pheno")
     >>> has_mixed_mm_fo_elimination(model)
     False
-    >>> set_mixed_mm_fo_elimination(model)   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_mixed_mm_fo_elimination(model)
     >>> has_mixed_mm_fo_elimination(model)
     True
     """
@@ -390,8 +384,7 @@ def set_michaelis_menten_elimination(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_michaelis_menten_elimination(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_michaelis_menten_elimination(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────┐
@@ -448,8 +441,7 @@ def set_mixed_mm_fo_elimination(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_mixed_mm_fo_elimination(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_mixed_mm_fo_elimination(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────┐
@@ -636,8 +628,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_transit_compartments(model, 3)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_transit_compartments(model, 3)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌────────┐        ┌────────┐        ┌────────┐        ┌───────┐
@@ -830,8 +821,7 @@ def add_lag_time(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> add_lag_time(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_lag_time(model)
 
     See also
     --------
@@ -877,8 +867,7 @@ def remove_lag_time(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> remove_lag_time(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_lag_time(model)
 
     See also
     --------
@@ -926,8 +915,7 @@ def set_zero_order_absorption(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_zero_order_absorption(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_zero_order_absorption(model)
     >>> model.statements.ode_system
     Infusion(AMT, admid=1, duration=D1)
     ┌───────┐
@@ -1000,8 +988,7 @@ def set_first_order_absorption(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_first_order_absorption(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_first_order_absorption(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌─────┐        ┌───────┐
@@ -1065,8 +1052,7 @@ def set_bolus_absorption(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_bolus_absorption(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_bolus_absorption(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────┐
@@ -1133,8 +1119,7 @@ def set_seq_zo_fo_absorption(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_seq_zo_fo_absorption(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_seq_zo_fo_absorption(model)
     >>> model.statements.ode_system
     Infusion(AMT, admid=1, duration=D1)
     ┌─────┐     ┌───────┐
@@ -1317,8 +1302,7 @@ def set_peripheral_compartments(model: Model, n: int):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_peripheral_compartments(model, 2)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_peripheral_compartments(model, 2)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────────┐
@@ -1394,8 +1378,7 @@ def add_peripheral_compartment(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> add_peripheral_compartment(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_peripheral_compartment(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────────┐
@@ -1525,10 +1508,8 @@ def remove_peripheral_compartment(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_peripheral_compartments(model, 2)     # doctest: +ELLIPSIS
-    <...>
-    >>> remove_peripheral_compartment(model)      # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_peripheral_compartments(model, 2)
+    >>> model = remove_peripheral_compartment(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────────┐
@@ -1662,8 +1643,7 @@ def set_ode_solver(model: Model, solver: str):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_ode_solver(model, 'LSODA')    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_ode_solver(model, 'LSODA')
 
     """
     new_steps = []
@@ -1690,10 +1670,10 @@ def find_clearance_parameters(model: Model):
 
     Examples
     --------
-     >>> from pharmpy.modeling import *
-     >>> model = load_example_model("pheno")
-     >>> find_clearance_parameters(model)
-     [CL]
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> find_clearance_parameters(model)
+    [CL]
     """
     cls = set()
     sset = model.statements
@@ -1731,10 +1711,10 @@ def find_volume_parameters(model: Model):
 
     Examples
     --------
-     >>> from pharmpy.modeling import *
-     >>> model = load_example_model("pheno")
-     >>> find_volume_parameters(model)
-     [V]
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> find_volume_parameters(model)
+    [V]
     """
     vcs = set()
     sset = model.statements
