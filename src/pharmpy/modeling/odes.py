@@ -77,7 +77,7 @@ def add_individual_parameter(model: Model, name: str):
 
 def _add_parameter(model: Model, name: str, init: float = 0.1):
     pops = create_symbol(model, f'POP_{name}')
-    add_population_parameter(model, pops.name, init, lower=0)
+    model = add_population_parameter(model, pops.name, init, lower=0)
     symb = create_symbol(model, name)
     ass = Assignment(symb, pops)
     model.statements = ass + model.statements
@@ -117,7 +117,7 @@ def set_first_order_elimination(model: Model):
     if has_first_order_elimination(model):
         pass
     elif has_zero_order_elimination(model) or has_michaelis_menten_elimination(model):
-        rename_symbols(model, {'POP_CLMM': 'POP_CL', 'IIV_CLMM': 'IIV_CL'})
+        model = rename_symbols(model, {'POP_CLMM': 'POP_CL', 'IIV_CLMM': 'IIV_CL'})
         ind = model.statements.find_assignment_index('CLMM')
         assert ind is not None
         clmm_assignment = model.statements[ind]
@@ -138,7 +138,7 @@ def set_first_order_elimination(model: Model):
         model.statements = statements.remove_symbol_definitions(
             {sympy.Symbol('KM')}, statements.ode_system
         )
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
     elif has_mixed_mm_fo_elimination(model):
         odes = model.statements.ode_system
         assert odes is not None
@@ -156,7 +156,7 @@ def set_first_order_elimination(model: Model):
         model.statements = model.statements.remove_symbol_definitions(
             {sympy.Symbol('KM'), sympy.Symbol('CLMM')}, model.statements.ode_system
         )
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -195,9 +195,9 @@ def set_zero_order_elimination(model: Model):
     if has_zero_order_elimination(model):
         pass
     elif has_michaelis_menten_elimination(model):
-        fix_parameters(model, 'POP_KM')
+        model = fix_parameters(model, 'POP_KM')
     elif has_mixed_mm_fo_elimination(model):
-        fix_parameters(model, 'POP_KM')
+        model = fix_parameters(model, 'POP_KM')
         odes = model.statements.ode_system
         assert odes is not None
         central = odes.central_compartment
@@ -212,12 +212,12 @@ def set_zero_order_elimination(model: Model):
         model.statements = model.statements.remove_symbol_definitions(
             {sympy.Symbol('CL')}, model.statements.ode_system
         )
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
     else:
-        _do_michaelis_menten_elimination(model)
+        model = _do_michaelis_menten_elimination(model)
         obs = get_observations(model)
         init = obs.min() / 100  # 1% of smallest observation
-        fix_parameters_to(model, {'POP_KM': init})
+        model = fix_parameters_to(model, {'POP_KM': init})
     return model
 
 
@@ -400,7 +400,7 @@ def set_michaelis_menten_elimination(model: Model):
     if has_michaelis_menten_elimination(model):
         pass
     elif has_zero_order_elimination(model):
-        unfix_parameters(model, 'POP_KM')  # model.parameters['POP_KM'].fix = False
+        model = unfix_parameters(model, 'POP_KM')
     elif has_mixed_mm_fo_elimination(model):
         odes = model.statements.ode_system
         assert odes is not None
@@ -416,9 +416,9 @@ def set_michaelis_menten_elimination(model: Model):
         model.statements = statements.remove_symbol_definitions(
             {sympy.Symbol('CL')}, statements.ode_system
         )
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
     else:
-        _do_michaelis_menten_elimination(model)
+        model = _do_michaelis_menten_elimination(model)
     return model
 
 
@@ -458,7 +458,7 @@ def set_mixed_mm_fo_elimination(model: Model):
     if has_mixed_mm_fo_elimination(model):
         pass
     elif has_michaelis_menten_elimination(model) or has_zero_order_elimination(model):
-        unfix_parameters(model, 'POP_KM')
+        model = unfix_parameters(model, 'POP_KM')
         odes = model.statements.ode_system
         assert odes is not None
         central = odes.central_compartment
@@ -476,7 +476,7 @@ def set_mixed_mm_fo_elimination(model: Model):
         )
         model = model.update_source()
     else:
-        _do_michaelis_menten_elimination(model, combined=True)
+        model = _do_michaelis_menten_elimination(model, combined=True)
     return model
 
 
@@ -492,14 +492,14 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
     km_init, clmm_init = _get_mm_inits(model, numer, combined)
 
     km = _add_parameter(model, 'KM', init=km_init)
-    set_upper_bounds(model, {'POP_KM': 20 * get_observations(model).max()})
+    model = set_upper_bounds(model, {'POP_KM': 20 * get_observations(model).max()})
 
     if denom != 1:
         if combined:
             cl = numer
             clmm = _add_parameter(model, 'CLMM', init=clmm_init)
         else:
-            _rename_parameter(model, 'CL', 'CLMM')
+            model = _rename_parameter(model, 'CL', 'CLMM')
             clmm = sympy.Symbol('CLMM')
             cl = 0
         vc = denom
@@ -520,7 +520,7 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
         else:
             vc = _add_parameter(model, 'VC')  # FIXME: decide better initial estimate
         if not combined and model.statements.find_assignment('CL'):
-            _rename_parameter(model, 'CL', 'CLMM')
+            model = _rename_parameter(model, 'CL', 'CLMM')
             assignment = model.statements.find_assignment('CLMM')
             assert assignment is not None
             clmm = assignment.symbol
@@ -537,7 +537,7 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
     model.statements = model.statements.remove_symbol_definitions(
         numer.free_symbols, model.statements.ode_system
     )
-    remove_unused_parameters_and_rvs(model)
+    model = remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -583,6 +583,7 @@ def _rename_parameter(model: Model, old_name, new_name):
         new.append(newparam)
     model.parameters = Parameters.create(new)
     model.statements = model.statements.subs({old_name: new_name})
+    return model
 
 
 def _get_mm_inits(model: Model, rate_numer, combined):
@@ -676,7 +677,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         else:
             cb.set_dose(central, depot.dose)
         if statements.find_assignment('MAT'):
-            _rename_parameter(model, 'MAT', 'MDT')
+            model = _rename_parameter(model, 'MAT', 'MDT')
             statements = model.statements
             mdt_assign = statements.find_assignment('MDT')
         cb.remove_compartment(depot)
@@ -740,11 +741,11 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         model.statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
-        _update_numerators(model)
+        model = _update_numerators(model)
         model.statements = model.statements.remove_symbol_definitions(
             removed_symbols, model.statements.ode_system
         )
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
     else:
         nadd = n - len(transits)
         last, destination, rate = _find_last_transit(cs, set(transits))
@@ -764,7 +765,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         model.statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
-        _update_numerators(model)
+        model = _update_numerators(model)
     return model
 
 
@@ -799,6 +800,7 @@ def _update_numerators(model: Model):
                     new_rate = new_numerator / ass_denom
                     statements = statements.reassign(numer, new_rate)
     model.statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+    return model
 
 
 def add_lag_time(model: Model):
@@ -885,13 +887,12 @@ def remove_lag_time(model: Model):
         symbols = lag_time.free_symbols
         cb = CompartmentalSystemBuilder(odes)
         cb.set_lag_time(dosing_comp, sympy.Integer(0))
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
-        model.statements = model.statements.remove_symbol_definitions(
-            symbols, model.statements.ode_system
-        )
-        remove_unused_parameters_and_rvs(model)
+        statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
+        model = model.replace(statements=statements)
+        model = remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -959,11 +960,13 @@ def set_zero_order_absorption(model: Model):
 
     model.statements = new_statements
 
-    remove_unused_parameters_and_rvs(model)
+    model = remove_unused_parameters_and_rvs(model)
     if not has_zero_order_absorption(model):
         odes = model.statements.ode_system
         assert odes is not None
-        _add_zero_order_absorption(model, dose.amount, odes.dosing_compartment, 'MAT', lag_time)
+        model = _add_zero_order_absorption(
+            model, dose.amount, odes.dosing_compartment, 'MAT', lag_time
+        )
         model = model.update_source()
     return model
 
@@ -1079,7 +1082,7 @@ def set_bolus_absorption(model: Model):
         symbols = ka.free_symbols
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         model.statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
     if has_zero_order_absorption(model):
         dose_comp = cs.dosing_compartment
         old_symbols = dose_comp.free_symbols
@@ -1091,7 +1094,7 @@ def set_bolus_absorption(model: Model):
         model.statements = statements.remove_symbol_definitions(
             unneeded_symbols, statements.ode_system
         )
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -1143,13 +1146,13 @@ def set_seq_zo_fo_absorption(model: Model):
     dose_comp = cs.dosing_compartment
     have_ZO = has_zero_order_absorption(model)
     if depot and not have_ZO:
-        _add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
+        model = _add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
     elif not depot and have_ZO:
         _add_first_order_absorption(model, dose_comp.dose, dose_comp)
     elif not depot and not have_ZO:
         amount = dose_comp.dose.amount
         depot = _add_first_order_absorption(model, Bolus(amount), dose_comp)
-        _add_zero_order_absorption(model, amount, depot, 'MDT')
+        model = _add_zero_order_absorption(model, amount, depot, 'MDT')
     model = model.update_source()
     return model
 
@@ -1233,6 +1236,7 @@ def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=
     model.statements = (
         model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
     )
+    return model
 
 
 def _add_first_order_absorption(model, dose, to_comp, lag_time=None):
@@ -1337,10 +1341,10 @@ def set_peripheral_compartments(model: Model, n: int):
     per = len(odes.peripheral_compartments)
     if per < n:
         for _ in range(n - per):
-            add_peripheral_compartment(model)
+            model = add_peripheral_compartment(model)
     elif per > n:
         for _ in range(per - n):
-            remove_peripheral_compartment(model)
+            model = remove_peripheral_compartment(model)
     return model
 
 
