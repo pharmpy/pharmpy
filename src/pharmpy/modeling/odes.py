@@ -696,7 +696,9 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         remove_unused_parameters_and_rvs(model)
         odes = statements.ode_system
         assert odes is not None
-        cs = odes
+        # Since update_source() is used after removing the depot and statements are immutable, we need to
+        # reset to get the correct rate names
+        cs = model.statements.ode_system
 
     if len(transits) == n:
         return model

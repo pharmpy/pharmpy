@@ -925,10 +925,13 @@ def update_model_record(model: Model, advan):
         return
     newmap = new_compartmental_map(odes, oldmap)
 
+    replace_dict = {'compartment_map': newmap}
+
     if advan in ['ADVAN1', 'ADVAN2', 'ADVAN3', 'ADVAN4', 'ADVAN10', 'ADVAN11', 'ADVAN12']:
         newcs = model.internals.control_stream.remove_records(
             model.internals.control_stream.get_records('MODEL')
         )
+        replace_dict['control_stream'] = newcs
     else:
         if oldmap != newmap or model.estimation_steps[0].solver:
             newcs = model.internals.control_stream.remove_records(
@@ -949,7 +952,8 @@ def update_model_record(model: Model, advan):
                     mod = mod.add_compartment(comps[i], dosing=False)
                 i += 1
             newcs = newcs.replace_records([old_mod], [mod])
-    model.internals = model.internals.replace(control_stream=newcs, compartment_map=newmap)
+            replace_dict['control_stream'] = newcs
+    model.internals = model.internals.replace(**replace_dict)
 
 
 def add_needed_pk_parameters(model: Model, advan, trans):
