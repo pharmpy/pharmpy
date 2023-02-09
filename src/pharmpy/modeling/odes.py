@@ -72,6 +72,7 @@ def add_individual_parameter(model: Model, name: str):
 
     """
     _add_parameter(model, name)
+    model = model.update_source()
     return model
 
 
