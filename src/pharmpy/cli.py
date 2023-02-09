@@ -346,10 +346,10 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
 
             if path:
                 if not path.is_dir():
-                    bump_model_number(model, path)
+                    model = bump_model_number(model, path)
                 write_model(model, path=path, force=force)
             else:
-                bump_model_number(model, path='.')
+                model = bump_model_number(model, path='.')
                 write_model(model, force=force)
         except FileExistsError as e:
             error(FileExistsError(f'{e.args[0]} Use -f or --force to ' 'force an overwrite'))

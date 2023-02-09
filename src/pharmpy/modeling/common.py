@@ -365,8 +365,7 @@ def bump_model_number(model: Model, path: Union[str, Path] = None):
     >>> from pharmpy.modeling import bump_model_number, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.name = "run2"
-    >>> bump_model_number(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = bump_model_number(model)
     >>> model.name
     'run3'
     """
@@ -385,7 +384,7 @@ def bump_model_number(model: Model, path: Union[str, Path] = None):
                 new_path = (path / new_name).with_suffix(model.filename_extension)
                 if not new_path.exists():
                     break
-        model.name = new_name
+        model = model.replace(name=new_name)
     return model
 
 
