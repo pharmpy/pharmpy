@@ -112,8 +112,7 @@ def set_additive_error_model(
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
     Y = EPS₁⋅W + F
-    >>> set_additive_error_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_additive_error_model(model)
     >>> model.statements.find_assignment("Y")
     Y = F + εₐ
 
@@ -121,8 +120,7 @@ def set_additive_error_model(
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
     Y = EPS₁⋅W + F
-    >>> set_additive_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_additive_error_model(model, data_trans="log(Y)")
     >>> model.statements.find_assignment("Y")
                  εₐ
         log(F) + ──
@@ -148,14 +146,14 @@ def set_additive_error_model(
             .removeO()
         )
 
-    model.statements = stats.reassign(y, expr)
-    remove_unused_parameters_and_rvs(model)
+    model = model.replace(statements=stats.reassign(y, expr))
+    model = remove_unused_parameters_and_rvs(model)
 
     sigma = create_symbol(model, 'sigma')
-    add_population_parameter(model, sigma.name, _get_prop_init(model))
+    model = add_population_parameter(model, sigma.name, _get_prop_init(model))
 
     eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
-    model.random_variables = model.random_variables + eps
+    model = model.replace(random_variables=model.random_variables + eps)
     return model.update_source()
 
 
