@@ -55,11 +55,11 @@ from pharmpy.modeling.odes import find_clearance_parameters, find_volume_paramet
 def test_set_first_order_elimination(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     correct = model.model_code
-    set_first_order_elimination(model)
+    model = set_first_order_elimination(model)
     assert model.model_code == correct
     assert has_first_order_elimination(model)
-    set_zero_order_elimination(model)
-    set_first_order_elimination(model)
+    model = set_zero_order_elimination(model)
+    model = set_first_order_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -82,11 +82,11 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
-    set_michaelis_menten_elimination(model)
-    set_first_order_elimination(model)
+    model = set_michaelis_menten_elimination(model)
+    model = set_first_order_elimination(model)
     assert model.model_code == correct
-    set_mixed_mm_fo_elimination(model)
-    set_first_order_elimination(model)
+    model = set_mixed_mm_fo_elimination(model)
+    model = set_first_order_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -210,7 +210,7 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_set_michaelis_menten_elimination(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert not has_michaelis_menten_elimination(model)
-    set_michaelis_menten_elimination(model)
+    model = set_michaelis_menten_elimination(model)
     assert has_michaelis_menten_elimination(model)
     assert not has_zero_order_elimination(model)
     assert not has_first_order_elimination(model)
@@ -242,10 +242,10 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
-    set_michaelis_menten_elimination(model)
+    model = set_michaelis_menten_elimination(model)
     assert model.model_code == correct
 
-    set_zero_order_elimination(model)
+    model = set_zero_order_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -294,7 +294,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    set_michaelis_menten_elimination(model)
+    model = set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -335,7 +335,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    set_michaelis_menten_elimination(model)
+    model = set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -380,7 +380,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
     assert not has_mixed_mm_fo_elimination(model)
-    set_mixed_mm_fo_elimination(model)
+    model = set_mixed_mm_fo_elimination(model)
     assert has_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -407,9 +407,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
-    set_mixed_mm_fo_elimination(model)
+    model = set_mixed_mm_fo_elimination(model)
     assert model.model_code == correct
-    set_michaelis_menten_elimination(model)
+    model = set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -449,7 +449,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    set_mixed_mm_fo_elimination(model)
+    model = set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -476,8 +476,8 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
     model = create_model_for_test(code, dataset='pheno')
-    set_zero_order_elimination(model)
-    set_mixed_mm_fo_elimination(model)
+    model = set_zero_order_elimination(model)
+    model = set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -506,11 +506,11 @@ $ESTIMATION METHOD=1 INTERACTION
 
 def test_transit_compartments(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
-    set_transit_compartments(model, 0)
+    model = set_transit_compartments(model, 0)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 0
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
-    set_transit_compartments(model, 1)
+    model = set_transit_compartments(model, 1)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 1
     correct = (
@@ -562,7 +562,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     )
     assert model.model_code == correct
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
-    set_transit_compartments(model, 4)
+    model = set_transit_compartments(model, 4)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 4
     correct = (
@@ -617,7 +617,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     )
     assert model.model_code == correct
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    set_transit_compartments(model, 1)
+    model = set_transit_compartments(model, 1)
 
     assert not re.search(r'K *= *', model.model_code)
     assert re.search('K30 = CL/V', model.model_code)
@@ -680,7 +680,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     assert model.model_code == correct
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
-    set_transit_compartments(model, 4, keep_depot=False)
+    model = set_transit_compartments(model, 4, keep_depot=False)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 4
     correct = (
@@ -733,7 +733,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     )
     assert model.model_code == correct
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    set_transit_compartments(model, 1, keep_depot=False)
+    model = set_transit_compartments(model, 1, keep_depot=False)
 
     assert not re.search(r'K *= *', model.model_code)
     assert re.search('KA = 1/MDT', model.model_code)
@@ -741,7 +741,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_transit_compartments_added_mdt(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
-    set_transit_compartments(model, 2)
+    model = set_transit_compartments(model, 2)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 2
     correct = (
@@ -849,8 +849,8 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_transit_compartments_change_number(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    set_transit_compartments(model, 3)
-    set_transit_compartments(model, 2)
+    model = set_transit_compartments(model, 3)
+    model = set_transit_compartments(model, 2)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -881,8 +881,8 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    set_transit_compartments(model, 2)
-    set_transit_compartments(model, 3)
+    model = set_transit_compartments(model, 2)
+    model = set_transit_compartments(model, 3)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -916,25 +916,25 @@ $ESTIMATION METHOD=1 INTERACTION
 
 def test_transits_non_linear_elim_with_update(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    set_transit_compartments(model, 3)
+    model = set_transit_compartments(model, 3)
     model.model_code
-    set_zero_order_elimination(model)
+    model = set_zero_order_elimination(model)
     assert 'VC1 =' not in model.model_code
     assert 'CLMM = THETA(1)*EXP(ETA(1))' in model.model_code
     assert 'CL =' not in model.model_code
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    set_transit_compartments(model, 3)
+    model = set_transit_compartments(model, 3)
     model.model_code
-    set_michaelis_menten_elimination(model)
+    model = set_michaelis_menten_elimination(model)
     assert 'VC1 =' not in model.model_code
     assert 'CLMM = THETA(1)*EXP(ETA(1))' in model.model_code
     assert 'CL =' not in model.model_code
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    set_transit_compartments(model, 3)
+    model = set_transit_compartments(model, 3)
     model.model_code
-    set_mixed_mm_fo_elimination(model)
+    model = set_mixed_mm_fo_elimination(model)
     assert 'VC1 =' not in model.model_code
     assert 'CLMM = THETA(6)' in model.model_code
     assert 'CL = THETA(1) * EXP(ETA(1))' in model.model_code
@@ -943,7 +943,7 @@ def test_transits_non_linear_elim_with_update(load_model_for_test, testdata):
 def test_lag_time(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     before = model.model_code
-    add_lag_time(model)
+    model = add_lag_time(model)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -984,14 +984,14 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 '''
     assert model.model_code == correct
 
-    remove_lag_time(model)
+    model = remove_lag_time(model)
     assert model.model_code == before
 
 
 def test_add_lag_time_updated_dose(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
-    add_lag_time(model)
-    set_first_order_absorption(model)
+    model = add_lag_time(model)
+    model = set_first_order_absorption(model)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -1035,7 +1035,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 '''
     assert model.model_code == correct
 
-    set_zero_order_absorption(model)
+    model = set_zero_order_absorption(model)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
@@ -1082,13 +1082,13 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_nested_transit_peripherals(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    set_transit_compartments(model, 1)
+    model = set_transit_compartments(model, 1)
     model.model_code
-    set_michaelis_menten_elimination(model)
+    model = set_michaelis_menten_elimination(model)
     model.model_code
-    set_peripheral_compartments(model, 1)
+    model = set_peripheral_compartments(model, 1)
     model.model_code
-    set_peripheral_compartments(model, 2)
+    model = set_peripheral_compartments(model, 2)
 
 
 def test_add_depot(create_model_for_test):
@@ -1114,7 +1114,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    set_first_order_absorption(model)
+    model = set_first_order_absorption(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -1169,7 +1169,7 @@ $SIGMA  1e-7
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    set_first_order_absorption(model)
+    model = set_first_order_absorption(model)
     correct = """
 $PROBLEM    PHENOBARB SIMPLE MODEL
 $DATA      pheno.dta IGNORE=@
@@ -1206,38 +1206,38 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_absorption_rate(load_model_for_test, testdata, tmp_path):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     advan1_before = model.model_code
-    set_bolus_absorption(model)
+    model = set_bolus_absorption(model)
     assert advan1_before == model.model_code
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    set_bolus_absorption(model)
+    model = set_bolus_absorption(model)
     assert model.model_code == advan1_before
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan3.mod')
     advan3_before = model.model_code
-    set_bolus_absorption(model)
+    model = set_bolus_absorption(model)
     assert model.model_code == advan3_before
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan4.mod')
-    set_bolus_absorption(model)
+    model = set_bolus_absorption(model)
     assert model.model_code == advan3_before
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan11.mod')
     advan11_before = model.model_code
-    set_bolus_absorption(model)
+    model = set_bolus_absorption(model)
     assert model.model_code == advan11_before
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan12.mod')
-    set_bolus_absorption(model)
+    model = set_bolus_absorption(model)
     assert model.model_code == advan11_before
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
     advan5_nodepot_before = model.model_code
-    set_bolus_absorption(model)
+    model = set_bolus_absorption(model)
     assert model.model_code == advan5_nodepot_before
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
-    set_bolus_absorption(model)
+    model = set_bolus_absorption(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -1282,25 +1282,25 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     # 0-order to 0-order
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     advan1_zero_order_before = model.model_code
-    set_zero_order_absorption(model)
+    model = set_zero_order_absorption(model)
     assert model.model_code == advan1_zero_order_before
 
     # 0-order to Bolus
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
-    set_bolus_absorption(model)
+    model = set_bolus_absorption(model)
     model.update_source()
     assert model.model_code.split('\n')[2:] == advan1_before.split('\n')[2:]
 
     # 1st order to 1st order
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     advan2_before = model.model_code
-    set_first_order_absorption(model)
+    model = set_first_order_absorption(model)
     model.update_source()
     assert model.model_code == advan2_before
 
     # 0-order to 1st order
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
-    set_first_order_absorption(model)
+    model = set_first_order_absorption(model)
     model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA DUMMYPATH IGNORE=@
@@ -1344,7 +1344,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
     # Bolus to 1st order
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
-    set_first_order_absorption(model)
+    model = set_first_order_absorption(model)
     model.update_source()
     assert model.model_code.split('\n')[2:] == correct.split('\n')[2:]
 
@@ -1355,7 +1355,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     shutil.copy(datadir / 'pheno_advan2.mod', tmp_path / 'abs')
     shutil.copy(datadir.parent / 'pheno.dta', tmp_path)
     model = load_model_for_test(tmp_path / 'abs' / 'pheno_advan1.mod')
-    set_zero_order_absorption(model)
+    model = set_zero_order_absorption(model)
     model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA DUMMYPATH IGNORE=@
@@ -1438,14 +1438,14 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
     # 1st to 0-order
     model = load_model_for_test(tmp_path / 'abs' / 'pheno_advan2.mod')
-    set_zero_order_absorption(model)
+    model = set_zero_order_absorption(model)
     model.update_source()
     assert model.model_code == correct
 
 
 def test_seq_to_FO(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
-    set_first_order_absorption(model)
+    model = set_first_order_absorption(model)
     model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA DUMMYPATH IGNORE=@
@@ -1489,7 +1489,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_seq_to_ZO(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
-    set_zero_order_absorption(model)
+    model = set_zero_order_absorption(model)
     model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@
@@ -1533,7 +1533,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_bolus_to_seq(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
-    set_seq_zo_fo_absorption(model)
+    model = set_seq_zo_fo_absorption(model)
     model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA DUMMYPATH IGNORE=@
@@ -1581,7 +1581,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_ZO_to_seq(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
-    set_seq_zo_fo_absorption(model)
+    model = set_seq_zo_fo_absorption(model)
     model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@
@@ -1628,7 +1628,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_FO_to_seq(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    set_seq_zo_fo_absorption(model)
+    model = set_seq_zo_fo_absorption(model)
     model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA DUMMYPATH IGNORE=@
@@ -1676,22 +1676,22 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 def test_absorption_keep_mat(load_model_for_test, testdata):
     # FO to ZO (start model with MAT-eta)
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    set_zero_order_absorption(model)
+    model = set_zero_order_absorption(model)
     assert 'MAT = THETA(3) * EXP(ETA(3))' in model.model_code
     assert 'KA =' not in model.model_code
     assert 'D1 =' in model.model_code
 
     # FO to seq-ZO-FO
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    set_seq_zo_fo_absorption(model)
+    model = set_seq_zo_fo_absorption(model)
     assert 'MAT = THETA(3) * EXP(ETA(3))' in model.model_code
     assert 'KA =' in model.model_code
     assert 'D1 =' in model.model_code
 
     # ZO to seq-ZO-FO
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    set_zero_order_absorption(model)
-    set_seq_zo_fo_absorption(model)
+    model = set_zero_order_absorption(model)
+    model = set_seq_zo_fo_absorption(model)
     assert 'MAT = THETA(3) * EXP(ETA(3))' in model.model_code
     assert 'KA =' in model.model_code
     assert 'D1 =' in model.model_code
@@ -1699,37 +1699,37 @@ def test_absorption_keep_mat(load_model_for_test, testdata):
 
     # ZO to FO
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    set_zero_order_absorption(model)
-    set_first_order_absorption(model)
+    model = set_zero_order_absorption(model)
+    model = set_first_order_absorption(model)
     assert 'MAT = THETA(3) * EXP(ETA(3))' in model.model_code
     assert 'KA =' in model.model_code
     assert 'D1 =' not in model.model_code
 
     # Transit without keeping depot
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    set_transit_compartments(model, 3, keep_depot=False)
+    model = set_transit_compartments(model, 3, keep_depot=False)
     assert 'MDT = THETA(3)*EXP(ETA(3))' in model.model_code
 
 
 def test_has_zero_order_absorption(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     assert not has_zero_order_absorption(model)
-    set_zero_order_absorption(model)
+    model = set_zero_order_absorption(model)
     assert has_zero_order_absorption(model)
 
 
 def test_lag_on_nl_elim(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    set_zero_order_elimination(model)
+    model = set_zero_order_elimination(model)
     model.model_code
-    add_lag_time(model)
+    model = add_lag_time(model)
     assert 'ALAG' in model.model_code
 
 
 def test_zo_abs_on_nl_elim(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    set_zero_order_elimination(model)
-    set_zero_order_absorption(model)
+    model = set_zero_order_elimination(model)
+    model = set_zero_order_absorption(model)
     assert 'RATE' in model.model_code
     assert 'D1 =' in model.model_code
     assert 'CONC = A(1)/VC' in model.model_code
@@ -1766,7 +1766,7 @@ def test_zo_abs_on_nl_elim(load_model_for_test, testdata):
 def test_transform_etas_boxcox(load_model_for_test, pheno_path, etas, etab, buf_new):
     model = load_model_for_test(pheno_path)
 
-    transform_etas_boxcox(model, etas)
+    model = transform_etas_boxcox(model, etas)
 
     rec_ref = (
         f'$PK\n'
@@ -1787,7 +1787,7 @@ def test_transform_etas_boxcox(load_model_for_test, pheno_path, etas, etab, buf_
 def test_transform_etas_tdist(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
 
-    transform_etas_tdist(model, ['ETA_1'])
+    model = transform_etas_tdist(model, ['ETA_1'])
 
     symbol = 'ETAT1'
 
@@ -1842,7 +1842,7 @@ def test_transform_etas_tdist(load_model_for_test, pheno_path):
 def test_transform_etas_john_draper(load_model_for_test, pheno_path, etas, etad, buf_new):
     model = load_model_for_test(pheno_path)
 
-    transform_etas_john_draper(model, etas)
+    model = transform_etas_john_draper(model, etas)
 
     rec_ref = (
         f'$PK\n'
@@ -1901,7 +1901,7 @@ def test_add_iiv(
 ):
     model = load_model_for_test(pheno_path)
 
-    add_iiv(
+    model = add_iiv(
         model,
         list_of_parameters=parameter,
         expression=expression,
@@ -2148,8 +2148,8 @@ def test_create_joint_distribution_plain(load_model_for_test, testdata, etas, pk
 def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
-    create_joint_distribution(model, etas[0], individual_estimates=None)
-    create_joint_distribution(model, etas[1], individual_estimates=None)
+    model = create_joint_distribution(model, etas[0], individual_estimates=None)
+    model = create_joint_distribution(model, etas[1], individual_estimates=None)
 
     assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
@@ -2252,9 +2252,9 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, p
 )
 def test_split_joint_distribution(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
-    create_joint_distribution(model)
+    model = create_joint_distribution(model)
 
-    split_joint_distribution(model, etas)
+    model = split_joint_distribution(model, etas)
 
     assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
@@ -2346,7 +2346,7 @@ def test_set_iiv_on_ruv(
     )
     model = create_model_for_test(model_sigma)
 
-    set_iiv_on_ruv(model, epsilons, same_eta, eta_names)
+    model = set_iiv_on_ruv(model, epsilons, same_eta, eta_names)
 
     assert eta_names is None or eta_names[0] in model.random_variables.etas.names
 
@@ -2454,7 +2454,7 @@ def test_set_iiv_on_ruv(
 )
 def test_remove_iiv(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
-    remove_iiv(model, etas)
+    model = remove_iiv(model, etas)
 
     assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
 
@@ -2474,7 +2474,7 @@ def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
 
     model = create_model_for_test(model_with_iov)
 
-    remove_iov(model)
+    model = remove_iov(model)
 
     assert (
         str(model.internals.control_stream.get_pred_pk_record()) == '$PK\n'
@@ -2499,7 +2499,7 @@ def test_remove_iov_no_iovs(load_model_for_test, testdata):
 def test_remove_iov_github_issues_538_and_561_1(load_model_for_test, testdata):
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
 
-    remove_iov(m)
+    m = remove_iov(m)
 
     assert not m.random_variables.iov
 
@@ -2507,7 +2507,7 @@ def test_remove_iov_github_issues_538_and_561_1(load_model_for_test, testdata):
 def test_remove_iov_github_issues_538_and_561_2(load_model_for_test, testdata):
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
 
-    remove_iov(m, 'ETA_4')
+    m = remove_iov(m, 'ETA_4')
 
     assert set(m.random_variables.iov.names) == {
         'ETA_12',
@@ -2547,7 +2547,7 @@ $ESTIMATION METHOD=1 INTERACTION
 '''
     )
 
-    remove_iov(model)
+    model = remove_iov(model)
 
     assert (
         '''$OMEGA DIAGONAL(2)
@@ -2682,7 +2682,7 @@ def test_remove_iov_with_options(
         start_model = add_iov(model, occ=occ, distribution=distribution)
         model_with_some_iovs_removed = start_model.copy()
 
-        remove_iov(model_with_some_iovs_removed, to_remove=to_remove)
+        model_with_some_iovs_removed = remove_iov(model_with_some_iovs_removed, to_remove=to_remove)
 
         assert cases in model_with_some_iovs_removed.model_code
         assert set(model_with_some_iovs_removed.random_variables.iov.names) == set(rest)
@@ -2703,7 +2703,7 @@ def test_update_inits(load_model_for_test, testdata, etas_file, force, file_exis
             f.write(etas_file)
 
         model = load_model_for_test('run1.mod')
-        update_initial_individual_estimates(
+        model = update_initial_individual_estimates(
             model, model.modelfit_results.individual_estimates, force=force
         )
         model = model.write_files()
@@ -2716,14 +2716,14 @@ def test_update_inits_move_est(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     res = model.modelfit_results
 
-    create_joint_distribution(model, individual_estimates=res.individual_estimates)
-    add_iiv(model, 'S1', 'add')
+    model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
+    model = add_iiv(model, 'S1', 'add')
 
     param_est = res.parameter_estimates.copy()
     param_est['IIV_CL_IIV_V'] = 0.0285  # Correlation > 0.99
     param_est['IIV_S1'] = 0.0005
 
-    update_inits(model, param_est, move_est_close_to_bounds=True)
+    model = update_inits(model, param_est, move_est_close_to_bounds=True)
 
     assert model.parameters['IVCL'].init == param_est['IVCL']
     assert model.parameters['IIV_S1'].init == 0.01
@@ -2736,16 +2736,16 @@ def test_update_inits_zero_fix(load_model_for_test, pheno_path):
     fix_parameters_to(model, d)
     res = model.modelfit_results
     param_est = res.parameter_estimates.drop(index=['IVCL'])
-    update_inits(model, param_est)
+    model = update_inits(model, param_est)
     assert model.parameters['IVCL'].init == 0
     assert model.parameters['IVCL'].fix
 
     model = load_model_for_test(pheno_path)
     d = {name: 0 for name in model.random_variables.iiv.parameter_names}
-    fix_parameters_to(model, d)
+    model = fix_parameters_to(model, d)
     res = model.modelfit_results
     param_est = res.parameter_estimates.drop(index=['IVCL'])
-    update_inits(model, param_est, move_est_close_to_bounds=True)
+    model = update_inits(model, param_est, move_est_close_to_bounds=True)
     assert model.parameters['IVCL'].init == 0
     assert model.parameters['IVCL'].fix
 
@@ -2831,7 +2831,7 @@ def test_set_power_on_ruv(
         model = create_model_for_test(model_more_eps)
         model.dataset = model_pheno.dataset
 
-        set_power_on_ruv(model, epsilons, zero_protection=True)
+        model = set_power_on_ruv(model, epsilons, zero_protection=True)
 
         rec_err = str(model.internals.control_stream.get_records('ERROR')[0])
         correct = f'$ERROR\n' f'W=F\n' f'{err_ref}\n' f'IWRES=IRES/W\n\n'
@@ -2850,30 +2850,30 @@ def test_set_power_on_ruv(
 def test_nested_update_source(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
 
-    create_joint_distribution(
+    model = create_joint_distribution(
         model, individual_estimates=model.modelfit_results.individual_estimates
     )
-    model.update_source()
-    model.update_source()
+    model = model.update_source()
+    model = model.update_source()
 
     assert 'IIV_CL_IIV_V' in model.model_code
 
     model = load_model_for_test(pheno_path)
 
-    remove_iiv(model, 'CL')
+    model = remove_iiv(model, 'CL')
 
-    model.update_source()
-    model.update_source()
+    model = model.update_source()
+    model = model.update_source()
 
     assert '0.031128' in model.model_code
     assert '0.0309626' not in model.model_code
 
     model = load_model_for_test(pheno_path)
 
-    remove_iiv(model, 'V')
+    model = remove_iiv(model, 'V')
 
-    model.update_source()
-    model.update_source()
+    model = model.update_source()
+    model = model.update_source()
 
     assert '0.0309626' in model.model_code
     assert '0.031128' not in model.model_code
@@ -3211,7 +3211,7 @@ def test_add_iov(
     distribution,
 ):
     model = load_model_for_test(testdata / path)
-    add_iov(model, occ, etas, eta_names, distribution=distribution)
+    model = add_iov(model, occ, etas, eta_names, distribution=distribution)
 
     model_etas = set(model.random_variables.etas.names)
     assert eta_names is None or model_etas.issuperset(eta_names)
@@ -3231,11 +3231,11 @@ def test_add_iov(
 
 def test_add_iov_compose(load_model_for_test, pheno_path):
     model1 = load_model_for_test(pheno_path)
-    add_iov(model1, 'FA1', ['ETA_1', 'ETA_2'])
+    model1 = add_iov(model1, 'FA1', ['ETA_1', 'ETA_2'])
 
     model2 = load_model_for_test(pheno_path)
-    add_iov(model2, 'FA1', 'ETA_1')
-    add_iov(model2, 'FA1', 'ETA_2')
+    model2 = add_iov(model2, 'FA1', 'ETA_1')
+    model2 = add_iov(model2, 'FA1', 'ETA_2')
 
     assert set(model1.random_variables.etas.names) == set(model2.random_variables.etas.names)
     # FIXME find better way to assert models are equivalent
@@ -3380,54 +3380,54 @@ def test_set_ode_solver(load_model_for_test, pheno_path):
 
 def test_add_pk_iiv_1(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    set_zero_order_elimination(model)
-    add_pk_iiv(model)
+    model = set_zero_order_elimination(model)
+    model = add_pk_iiv(model)
     iivs = set(model.random_variables.iiv.names)
     assert iivs == {'ETA_1', 'ETA_2', 'ETA_KM'}
-    add_peripheral_compartment(model)
-    add_pk_iiv(model)
+    model = add_peripheral_compartment(model)
+    model = add_pk_iiv(model)
     iivs = set(model.random_variables.iiv.names)
     assert iivs == {'ETA_1', 'ETA_2', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
 
 
 def test_add_pk_iiv_2(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    set_zero_order_elimination(model)
-    add_peripheral_compartment(model)
-    add_pk_iiv(model)
+    model = set_zero_order_elimination(model)
+    model = add_peripheral_compartment(model)
+    model = add_pk_iiv(model)
     iivs = set(model.random_variables.iiv.names)
     assert iivs == {'ETA_1', 'ETA_2', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
 
 
 def test_add_pk_iiv_nested_params(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    set_transit_compartments(model, 3)
-    add_pk_iiv(model)
+    model = set_transit_compartments(model, 3)
+    model = add_pk_iiv(model)
     iivs = set(model.random_variables.iiv.names)
     assert iivs == {'ETA_1', 'ETA_2', 'ETA_MDT'}
 
     model = load_model_for_test(pheno_path)
-    set_first_order_absorption(model)
-    add_pk_iiv(model)
+    model = set_first_order_absorption(model)
+    model = add_pk_iiv(model)
     iivs = set(model.random_variables.iiv.names)
     assert iivs == {'ETA_1', 'ETA_2', 'ETA_MAT'}
 
     model = load_model_for_test(pheno_path)
-    set_transit_compartments(model, 3)
-    add_pk_iiv(model, initial_estimate=0.01)
+    model = set_transit_compartments(model, 3)
+    model = add_pk_iiv(model, initial_estimate=0.01)
     assert model.parameters['IIV_MDT'].init == 0.01
 
 
 def test_mm_then_periph(pheno):
     model = pheno.copy()
-    set_michaelis_menten_elimination(model)
-    add_peripheral_compartment(model)
+    model = set_michaelis_menten_elimination(model)
+    model = add_peripheral_compartment(model)
     odes = model.statements.ode_system
     central = odes.central_compartment
     periph = odes.peripheral_compartments[0]
     assert odes.get_flow(central, periph) == sympy.Symbol('QP1') / sympy.Symbol('V')
     assert odes.get_flow(periph, central) == sympy.Symbol('QP1') / sympy.Symbol('VP1')
-    add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     odes = model.statements.ode_system
     newperiph = odes.peripheral_compartments[1]
     central = odes.central_compartment
@@ -3444,12 +3444,12 @@ def test_find_clearance_parameters(pheno):
     cl_origin = find_clearance_parameters(model)
     assert cl_origin == _symbols(['CL'])
 
-    add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     cl_p1 = find_clearance_parameters(model)
     model.update_source()
     assert cl_p1 == _symbols(['CL', 'QP1'])
 
-    add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     cl_p2 = find_clearance_parameters(model)
     model.update_source()
     assert cl_p2 == _symbols(['CL', 'QP1', 'QP2'])
@@ -3457,21 +3457,21 @@ def test_find_clearance_parameters(pheno):
 
 def test_find_clearance_parameters_github_issues_1053_and_1062(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
-    set_michaelis_menten_elimination(model)
+    model = set_michaelis_menten_elimination(model)
     assert find_clearance_parameters(model) == _symbols(['CLMM'])
 
 
 def test_find_clearance_parameters_github_issues_1044_and_1053(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
-    set_transit_compartments(model, 10)
+    model = set_transit_compartments(model, 10)
     assert find_clearance_parameters(model) == _symbols(['CL'])
 
 
 def test_find_clearance_parameters_github_issues_1053_and_1062_bis(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
-    add_peripheral_compartment(model)
-    add_peripheral_compartment(model)
-    set_michaelis_menten_elimination(model)
+    model = add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
+    model = set_michaelis_menten_elimination(model)
     assert find_clearance_parameters(model) == _symbols(['CLMM', 'QP1', 'QP2'])
 
 
@@ -3480,12 +3480,12 @@ def test_find_volume_parameters(pheno):
     v_origin = find_volume_parameters(model)
     assert v_origin == _symbols(['V'])
 
-    add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     model.update_source()
     v_p1 = find_volume_parameters(model)
     assert v_p1 == _symbols(['V1', 'VP1'])
 
-    add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     model.update_source()
     v_p2 = find_volume_parameters(model)
     assert v_p2 == _symbols(['V1', 'VP1', 'VP2'])
@@ -3493,13 +3493,13 @@ def test_find_volume_parameters(pheno):
 
 def test_find_volume_parameters_github_issues_1053_and_1062(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
-    set_michaelis_menten_elimination(model)
+    model = set_michaelis_menten_elimination(model)
     assert find_volume_parameters(model) == _symbols(['V'])
 
 
 def test_find_volume_parameters_github_issues_1044_and_1053(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
-    set_transit_compartments(model, 10)
+    model = set_transit_compartments(model, 10)
     assert find_volume_parameters(model) == _symbols(['V'])
 
 
