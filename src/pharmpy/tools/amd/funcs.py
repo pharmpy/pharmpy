@@ -84,8 +84,8 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     model.datainfo = di
     model.filename_extension = '.mod'  # Should this really be needed?
 
-    set_proportional_error_model(model)
-    create_joint_distribution(
+    model = set_proportional_error_model(model)
+    model = create_joint_distribution(
         model,
         [eta_cl_name, eta_vc_name],
         individual_estimates=model.modelfit_results.individual_estimates
@@ -93,9 +93,9 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
         else None,
     )
     if modeltype == 'pk_oral':
-        set_first_order_absorption(model)
-        set_initial_estimates(model, {'POP_MAT': mat_init})
-        add_iiv(model, list_of_parameters='MAT', expression='exp', initial_estimate=0.1)
+        model = set_first_order_absorption(model)
+        model = set_initial_estimates(model, {'POP_MAT': mat_init})
+        model = add_iiv(model, list_of_parameters='MAT', expression='exp', initial_estimate=0.1)
     return model
 
 

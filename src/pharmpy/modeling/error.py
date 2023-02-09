@@ -278,7 +278,8 @@ def set_proportional_error_model(
 
     eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
     model.random_variables = model.random_variables + eps
-    return model.update_source()
+    model = model.update_source()
+    return model
 
 
 def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy.Expr]] = None):

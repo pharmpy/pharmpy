@@ -92,10 +92,10 @@ def test_rv_block_structures_5_etas(load_model_for_test, pheno_path):
 
 def test_is_rv_block_structure(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    add_iiv(model, ['TAD', 'S1'], 'exp')
+    model = add_iiv(model, ['TAD', 'S1'], 'exp')
 
     etas_block_structure = (('ETA_1', 'ETA_2'), ('ETA_TAD',), ('ETA_S1',))
-    create_joint_distribution(
+    model = create_joint_distribution(
         model,
         list(etas_block_structure[0]),
         individual_estimates=model.modelfit_results.individual_estimates,
@@ -109,7 +109,7 @@ def test_is_rv_block_structure(load_model_for_test, pheno_path):
     etas_block_structure = (('ETA_1',), ('ETA_2', 'ETA_TAD'), ('ETA_S1',))
     assert not _is_rv_block_structure(etas, etas_block_structure)
 
-    create_joint_distribution(
+    model = create_joint_distribution(
         model, individual_estimates=model.modelfit_results.individual_estimates
     )
     etas_block_structure = (('ETA_1', 'ETA_2', 'ETA_TAD', 'ETA_S1'),)
@@ -119,22 +119,22 @@ def test_is_rv_block_structure(load_model_for_test, pheno_path):
 
 def test_create_joint_dist(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    add_peripheral_compartment(model)
-    add_pk_iiv(model)
+    model = add_peripheral_compartment(model)
+    model = add_pk_iiv(model)
     etas_block_structure = (('ETA_1', 'ETA_2'), ('ETA_QP1',), ('ETA_VP1',))
-    create_eta_blocks(etas_block_structure, model)
+    model = create_eta_blocks(etas_block_structure, model)
     assert len(model.random_variables.iiv) == 4
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    add_peripheral_compartment(model)
-    add_pk_iiv(model)
-    create_joint_distribution(
+    model = add_peripheral_compartment(model)
+    model = add_pk_iiv(model)
+    model = create_joint_distribution(
         model,
         ['ETA_1', 'ETA_2'],
         individual_estimates=model.modelfit_results.individual_estimates,
     )
     etas_block_structure = (('ETA_1',), ('ETA_2',), ('ETA_3', 'ETA_VP1', 'ETA_QP1'))
-    create_eta_blocks(etas_block_structure, model)
+    model = create_eta_blocks(etas_block_structure, model)
     assert len(model.random_variables.iiv) == 3
 
 

@@ -124,7 +124,7 @@ def test_set_parameters(pheno):
     assert model.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=1000000)
 
     model = pheno.copy()
-    create_joint_distribution(
+    model = create_joint_distribution(
         model, individual_estimates=model.modelfit_results.individual_estimates
     )
     with pytest.raises(UserWarning, match='Adjusting initial'):

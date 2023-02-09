@@ -128,7 +128,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 '''
     )
-    create_joint_distribution(
+    model = create_joint_distribution(
         model,
         model.random_variables.names,
         individual_estimates=model.modelfit_results.individual_estimates

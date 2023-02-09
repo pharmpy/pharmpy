@@ -47,8 +47,7 @@ def create_joint_distribution(
     >>> model.random_variables.etas
     ETA₁ ~ N(0, IVCL)
     ETA₂ ~ N(0, IVV)
-    >>> create_joint_distribution(model, ['ETA_1', 'ETA_2'])      # doctest: +ELLIPSIS
-    <...>
+    >>> model = create_joint_distribution(model, ['ETA_1', 'ETA_2'])
     >>> model.random_variables.etas
     ⎡ETA₁⎤    ⎧⎡0⎤  ⎡    IVCL      IIV_CL_IIV_V⎤⎫
     ⎢    ⎥ ~ N⎪⎢ ⎥, ⎢                          ⎥⎪
@@ -94,8 +93,7 @@ def create_joint_distribution(
         covariance_init = _choose_param_init(model, individual_estimates, all_rvs, parent1, parent2)
         param_new = Parameter(cov_name, covariance_init)
         pset_new += param_new
-    model.parameters = Parameters.create(pset_new)
-    model.random_variables = all_rvs
+    model = model.replace(parameters=Parameters.create(pset_new), random_variables=all_rvs)
 
     return model.update_source()
 

@@ -636,7 +636,7 @@ def create_joint_distribution(args):
     except AttributeError:
         etas = args.etas
 
-    create_joint_distribution(
+    model = create_joint_distribution(
         model,
         etas,
         individual_estimates=model.modelfit_results.individual_estimates

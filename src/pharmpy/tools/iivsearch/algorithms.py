@@ -133,9 +133,9 @@ def remove_eta(etas, model):
 def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model):
     for part in partition:
         if len(part) == 1:
-            split_joint_distribution(model, part)
+            model = split_joint_distribution(model, part)
         else:
-            create_joint_distribution(
+            model = create_joint_distribution(
                 model, list(part), individual_estimates=mfr(model).individual_estimates
             )
     return model
