@@ -19,23 +19,23 @@ from pharmpy.modeling.error import _get_prop_init, set_time_varying_error_model
 
 def test_remove_error_model(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    remove_error_model(model)
+    model = remove_error_model(model)
     assert model.model_code.split('\n')[11] == 'Y = F'
 
 
 def test_set_additive_error_model(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    set_additive_error_model(model)
+    model = set_additive_error_model(model)
     assert model.model_code.split('\n')[11] == 'Y = F + EPS(1)'
     assert model.model_code.split('\n')[17] == '$SIGMA  11.2225 ; sigma'
     before = model.model_code
-    set_additive_error_model(model)  # One more time and nothing should change
+    model = set_additive_error_model(model)  # One more time and nothing should change
     assert before == model.model_code
 
 
 def test_set_additive_error_model_logdv(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    set_additive_error_model(model, data_trans="log(Y)")
+    model = set_additive_error_model(model, data_trans="log(Y)")
     assert model.model_code.split('\n')[11] == 'Y = LOG(F) + EPS(1)/F'
     assert model.model_code.split('\n')[17] == '$SIGMA  11.2225 ; sigma'
 
@@ -43,12 +43,12 @@ def test_set_additive_error_model_logdv(testdata, load_model_for_test):
 def test_set_proportional_error_model_nolog(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model.statements = model.statements[0:5] + Assignment.create('Y', 'F') + model.statements[6:]
-    set_proportional_error_model(model)
+    model = set_proportional_error_model(model)
     assert model.model_code.split('\n')[16] == 'Y = F + EPS(1)*IPREDADJ'
     assert model.model_code.split('\n')[22] == '$SIGMA  0.09 ; sigma'
 
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    set_proportional_error_model(model, zero_protection=False)
+    model = set_proportional_error_model(model, zero_protection=False)
     assert model.model_code.split('\n')[11] == 'Y=F+F*EPS(1)'
     assert model.model_code.split('\n')[17] == '$SIGMA 0.013241'
 
@@ -56,7 +56,7 @@ def test_set_proportional_error_model_nolog(load_model_for_test, testdata):
 def test_set_proportional_error_model_log(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model.statements = model.statements[0:5] + Assignment.create('Y', 'F') + model.statements[6:]
-    set_proportional_error_model(model, data_trans='log(Y)')
+    model = set_proportional_error_model(model, data_trans='log(Y)')
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -87,18 +87,18 @@ $ESTIMATION METHOD=1 INTERACTION
 
 def test_set_combined_error_model(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    set_combined_error_model(model)
+    model = set_combined_error_model(model)
     assert model.model_code.split('\n')[11] == 'Y = F + EPS(1)*F + EPS(2)'
     assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
     assert model.model_code.split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
     before = model.model_code
-    set_combined_error_model(model)  # One more time and nothing should change
+    model = set_combined_error_model(model)  # One more time and nothing should change
     assert before == model.model_code
 
 
 def test_set_combined_error_model_log(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    set_combined_error_model(model, data_trans='log(Y)')
+    model = set_combined_error_model(model, data_trans='log(Y)')
     assert model.model_code.split('\n')[11] == 'Y = LOG(F) + EPS(2)/F + EPS(1)'
     assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
     assert model.model_code.split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
@@ -106,15 +106,15 @@ def test_set_combined_error_model_log(testdata, load_model_for_test):
 
 def test_set_combined_error_model_with_eta_on_ruv(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    set_iiv_on_ruv(model)
-    set_combined_error_model(model)
+    model = set_iiv_on_ruv(model)
+    model = set_combined_error_model(model)
     assert model.model_code.split('\n')[12] == 'Y = F + EPS(1)*F*EXP(ETA(3)) + EPS(2)*EXP(ETA(3))'
 
 
 def test_set_combined_error_model_with_time_varying(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    set_time_varying_error_model(model, cutoff=1.0)
-    set_combined_error_model(model)
+    model = set_time_varying_error_model(model, cutoff=1.0)
+    model = set_combined_error_model(model)
     assert model.model_code.split('\n')[11] == 'IF (TIME.LT.1.0) THEN'
     assert model.model_code.split('\n')[12] == '    Y = F + EPS(1)*F*THETA(3) + EPS(2)*THETA(3)'
     assert model.model_code.split('\n')[14] == '    Y = F + EPS(1)*F + EPS(2)'
@@ -122,9 +122,9 @@ def test_set_combined_error_model_with_time_varying(testdata, load_model_for_tes
 
 def test_set_combined_error_model_with_time_varying_and_eta_on_ruv(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    set_time_varying_error_model(model, cutoff=1.0)
-    set_iiv_on_ruv(model)
-    set_combined_error_model(model)
+    model = set_time_varying_error_model(model, cutoff=1.0)
+    model = set_iiv_on_ruv(model)
+    model = set_combined_error_model(model)
     assert (
         model.model_code.split('\n')[13]
         == '    Y = F + EPS(1)*F*THETA(3)*EXP(ETA(3)) + EPS(2)*THETA(3)*EXP(ETA(3))'
@@ -153,7 +153,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code)
-    remove_error_model(model)
+    model = remove_error_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -193,7 +193,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    set_additive_error_model(model)
+    model = set_additive_error_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -569,7 +569,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = read_model_from_string(code)
-    set_time_varying_error_model(model, cutoff=1.0)
+    model = set_time_varying_error_model(model, cutoff=1.0)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV

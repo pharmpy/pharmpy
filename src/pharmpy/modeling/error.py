@@ -59,8 +59,7 @@ def remove_error_model(model: Model):
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
     Y = EPS₁⋅W + F
-    >>> remove_error_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_error_model(model)
     >>> model.statements.find_assignment("Y")
     Y = F
 
@@ -70,8 +69,8 @@ def remove_error_model(model: Model):
 
     """
     stats, y, f = _preparations(model)
-    model.statements = stats.reassign(y, f)
-    remove_unused_parameters_and_rvs(model)
+    model = model.replace(statements=stats.reassign(y, f))
+    model = remove_unused_parameters_and_rvs(model)
     return model.update_source()
 
 
