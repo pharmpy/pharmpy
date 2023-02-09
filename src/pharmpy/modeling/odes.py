@@ -929,7 +929,7 @@ def set_zero_order_absorption(model: Model):
     >>> set_zero_order_absorption(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Infusion(AMT, admid=1, duration=2*MAT)
+    Infusion(AMT, admid=1, duration=D1)
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -1136,10 +1136,10 @@ def set_seq_zo_fo_absorption(model: Model):
     >>> set_seq_zo_fo_absorption(model)     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.ode_system
-    Infusion(AMT, admid=1, duration=2*MDT)
-    ┌─────┐        ┌───────┐
-    │DEPOT│──1/MAT→│CENTRAL│──CL/V→
-    └─────┘        └───────┘
+    Infusion(AMT, admid=1, duration=D1)
+    ┌─────┐     ┌───────┐
+    │DEPOT│──KA→│CENTRAL│──CL/V→
+    └─────┘     └───────┘
 
     See also
     --------

@@ -1016,14 +1016,14 @@ class CompartmentalSystem(ODESystem):
         >>> model = load_example_model("pheno")
         >>> sympy.pprint(model.statements.ode_system.zero_order_inputs)
         [0]
-        >>> set_zero_order_absorption(model)    # doctest: +ELLIPSIS
-        <...>
+        >>> model = set_zero_order_absorption(model)    # doctest: +ELLIPSIS
         >>> sympy.pprint(model.statements.ode_system.zero_order_inputs)
-        ⎡⎧ AMT                ⎤
-        ⎢⎪─────  for t < 2⋅MAT⎥
-        ⎢⎨2⋅MAT               ⎥
-        ⎢⎪                    ⎥
-        ⎣⎩  0      otherwise  ⎦
+                ⎡⎧AMT            ⎤
+                ⎢⎪───  for D₁ > t⎥
+                ⎢⎨ D₁            ⎥
+                ⎢⎪               ⎥
+                ⎣⎩ 0   otherwise ⎦
+
         """
         inputs = []
         for node in self._order_compartments():  # self._g.nodes:
