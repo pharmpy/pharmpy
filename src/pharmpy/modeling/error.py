@@ -689,8 +689,7 @@ def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME')
     --------
     >>> from pharmpy.modeling import load_example_model, set_time_varying_error_model
     >>> model = load_example_model("pheno")
-    >>> set_time_varying_error_model(model, cutoff=1.0)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_time_varying_error_model(model, cutoff=1.0)
     >>> model.statements.find_assignment("Y")
         ⎧EPS₁⋅W⋅time_varying + F  for TIME < 1.0
         ⎨
@@ -712,8 +711,6 @@ def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME')
         ),
         (y.expression, True),
     )
-    model.statements = model.statements.reassign(y.symbol, expr)
-
-    add_population_parameter(model, theta.name, 0.1)
-
+    model = model.replace(statements=model.statements.reassign(y.symbol, expr))
+    model = add_population_parameter(model, theta.name, 0.1)
     return model.update_source()
