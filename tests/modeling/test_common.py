@@ -105,7 +105,7 @@ def test_get_model_covariates(pheno, testdata, load_model_for_test):
 
 def test_set_name(pheno):
     model = pheno.copy()
-    set_name(model, "run1")
+    model = set_name(model, "run1")
     assert model.name == "run1"
 
 

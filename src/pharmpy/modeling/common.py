@@ -331,13 +331,12 @@ def set_name(model: Model, new_name: str):
     >>> model = load_example_model("pheno")
     >>> model.name
     'pheno'
-    >>> set_name(model, "run2")  # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_name(model, "run2")
     >>> model.name
     'run2'
 
     """
-    model.name = new_name
+    model = model.replace(name=new_name)
     return model
 
 
