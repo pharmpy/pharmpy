@@ -751,7 +751,8 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     for i, epsilon in enumerate(model.random_variables.epsilons.names, start=1):
         subscript = get_subscript(epsilon, i, named_subscripts)
         subs[sympy.Symbol(epsilon)] = sympy.Symbol(f"epsilon_{subscript}")
-    model.statements = model.statements.subs(subs)
+    statements = model.statements.subs(subs)
+    model = model.replace(statements=statements)
     return model.update_source()
 
 
