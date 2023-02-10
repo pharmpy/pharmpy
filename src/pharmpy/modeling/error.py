@@ -520,8 +520,7 @@ def use_thetas_for_error_stdev(model: Model):
     --------
     >>> from pharmpy.modeling import load_example_model, use_thetas_for_error_stdev
     >>> model = load_example_model("pheno")
-    >>> use_thetas_for_error_stdev(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = use_thetas_for_error_stdev(model)
     >>> model.statements.find_assignment("Y")
     Y = EPS₁⋅SD_EPS_1⋅W + F
 
@@ -538,13 +537,13 @@ def use_thetas_for_error_stdev(model: Model):
 
         param = model.parameters[sigma]
         theta_init = param.init**0.5
-        fix_parameters(model, [sigma])
-        set_initial_estimates(model, {sigma: 1})
+        model = fix_parameters(model, [sigma])
+        model = set_initial_estimates(model, {sigma: 1})
 
         sdsymb = create_symbol(model, f'SD_{eps.names[0]}')
-        add_population_parameter(model, sdsymb.name, theta_init, lower=0)
+        model = add_population_parameter(model, sdsymb.name, theta_init, lower=0)
         symb = sympy.Symbol(eps.names[0])
-        model.statements = model.statements.subs({symb: sdsymb * symb})
+        model = model.replace(statements=model.statements.subs({symb: sdsymb * symb}))
     return model.update_source()
 
 
@@ -627,8 +626,8 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     <...>
 
     """
-    use_thetas_for_error_stdev(model)
-    set_weighted_error_model(model)
+    model = use_thetas_for_error_stdev(model)
+    model = set_weighted_error_model(model)
     stats, y, f = _preparations(model)
     lam = create_symbol(model, 'tbs_lambda')
     zeta = create_symbol(model, 'tbs_zeta')

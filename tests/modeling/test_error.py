@@ -379,7 +379,7 @@ $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     model = read_model_from_string(code)
-    use_thetas_for_error_stdev(model)
+    model = use_thetas_for_error_stdev(model)
     correct = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
