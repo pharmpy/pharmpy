@@ -557,4 +557,4 @@ def add_population_parameter(
     param = Parameter.create(name, init, lower=lower, upper=upper, fix=fix)
     params = model.parameters + param
     model.parameters = params
-    return model
+    return model.update_source()
