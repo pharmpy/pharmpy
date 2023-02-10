@@ -290,7 +290,8 @@ def mu_reference_model(model: Model):
     -------
     >>> from pharmpy.modeling import load_example_model, mu_reference_model
     >>> model = load_example_model("pheno")
-    >>> mu_reference_model(model).statements.before_odes
+    >>> model = mu_reference_model(model)
+    >>> model.statements.before_odes
             ⎧TIME  for AMT > 0
             ⎨
     BTIME = ⎩ 0     otherwise
@@ -313,6 +314,7 @@ def mu_reference_model(model: Model):
 
     offset = 0
 
+    statements = model.statements
     for old_ind, assignment in _find_eta_assignments(model):
         # NOTE The sequence of old_ind must be increasing
         eta = next(iter(etas.intersection(assignment.expression.free_symbols)))
@@ -322,15 +324,16 @@ def mu_reference_model(model: Model):
         new_def = subs(dep, {eta: mu + eta})
         mu_expr = sympy.solve(old_def - new_def, mu)[0]
         insertion_ind = offset + old_ind
-        model.statements = (
-            model.statements[0:insertion_ind]
+        statements = (
+            statements[0:insertion_ind]
             + Assignment(mu, mu_expr)
             + Assignment(assignment.symbol, new_def)
-            + model.statements[insertion_ind + 1 :]
+            + statements[insertion_ind + 1 :]
         )
         offset += 1  # NOTE We need this offset because we replace one
         # statement by two statements
-    return model.update_source()
+    model = model.replace(statements=statements).update_source()
+    return model
 
 
 def simplify_expression(model: Model, expr: Union[int, float, str, sympy.Expr]):

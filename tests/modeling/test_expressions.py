@@ -100,7 +100,7 @@ $SIGMA 0.013241 ;sigma
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = read_model_from_string(code)
-    mu_reference_model(model)
+    model = mu_reference_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -169,7 +169,7 @@ def test_mu_reference_model_generic(statements, correct):
     th3 = Parameter('THETA(3)', 2, lower=1)
     params = Parameters((th1, th2, th3))
     model.parameters = params
-    mu_reference_model(model)
+    model = mu_reference_model(model)
     assert model.statements == Statements(correct)
 
 
