@@ -171,7 +171,7 @@ def set_upper_bounds(model: Model, bounds: Dict[str, float]):
             newparam = p
         new.append(newparam)
     model.parameters = Parameters(tuple(new))
-    return model
+    return model.update_source()
 
 
 def set_lower_bounds(model: Model, bounds: Dict[str, float]):
