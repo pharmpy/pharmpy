@@ -30,14 +30,12 @@ def remove_iiv(model: Model, to_remove: Optional[Union[List[str], str]] = None):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> remove_iiv(model)  # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_iiv(model)
     >>> model.statements.find_assignment("CL")
     CL = TVCL
 
     >>> model = load_example_model("pheno")
-    >>> remove_iiv(model, "V")  # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_iiv(model, "V")
     >>> model.statements.find_assignment("V")
     V = TVV
 
@@ -57,9 +55,8 @@ def remove_iiv(model: Model, to_remove: Optional[Union[List[str], str]] = None):
         sset = sset.subs({sympy.Symbol(eta): 0})
 
     keep = [name for name in model.random_variables.names if name not in etas]
+    model = model.replace(random_variables=rvs[keep], statements=sset)
 
-    model.random_variables = rvs[keep]
-    model.statements = sset
-
-    remove_unused_parameters_and_rvs(model)
-    return model.update_source()
+    model = remove_unused_parameters_and_rvs(model)
+    model = model.update_source()
+    return model

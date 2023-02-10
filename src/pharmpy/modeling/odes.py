@@ -1003,9 +1003,9 @@ def set_first_order_absorption(model: Model):
     >>> model = set_first_order_absorption(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
-    ┌─────┐        ┌───────┐
-    │DEPOT│──1/MAT→│CENTRAL│──CL/V→
-    └─────┘        └───────┘
+    ┌─────┐     ┌───────┐
+    │DEPOT│──KA→│CENTRAL│──CL/V→
+    └─────┘     └───────┘
 
     See also
     --------

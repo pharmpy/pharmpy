@@ -69,10 +69,8 @@ def add_iiv(
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> remove_iiv(model, "CL") # doctest: +ELLIPSIS
-    <...>
-    >>> add_iiv(model, "CL", "add")  # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_iiv(model, "CL")
+    >>> model = add_iiv(model, "CL", "add")
     >>> model.statements.find_assignment("CL")
     CL = ETA_CL + TVCL
 

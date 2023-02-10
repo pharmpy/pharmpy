@@ -951,7 +951,7 @@ def test_parse_derivatives(load_model_for_test, testdata):
 
 
 def test_no_etas_in_model(pheno):
-    remove_iiv(pheno)
+    pheno = remove_iiv(pheno)
     assert 'DUMMYETA' in pheno.model_code
     assert 'ETA(1)' in pheno.model_code
 
@@ -1143,12 +1143,12 @@ $SIGMA 1
     model = Model.create_model(StringIO(code))
     assert model.random_variables.etas.names == ['ETA_MY']
 
-    add_iiv(model, ['Y'], 'exp', '+', eta_names=['ETA_DUMMY'])
-    remove_iiv(model, ['ETA_MY'])
-    add_iiv(model, ['VAR'], 'exp', '+', eta_names=['ETA_MY'])
+    model = add_iiv(model, ['Y'], 'exp', '+', eta_names=['ETA_DUMMY'])
+    model = remove_iiv(model, ['ETA_MY'])
+    model = add_iiv(model, ['VAR'], 'exp', '+', eta_names=['ETA_MY'])
     assert model.model_code.split('\n')[3] == '$ABBR REPLACE ETA(DUMMY)=ETA(1)'
     assert model.model_code.split('\n')[4] == '$ABBR REPLACE ETA(MY)=ETA(2)'
     assert not model.model_code.split('\n')[5].startswith('$ABBR')
-    remove_iiv(model, ['ETA_DUMMY'])
+    model = remove_iiv(model, ['ETA_DUMMY'])
     assert model.model_code.split('\n')[3] == '$ABBR REPLACE ETA(MY)=ETA(1)'
     assert not model.model_code.split('\n')[4].startswith('$ABBR')

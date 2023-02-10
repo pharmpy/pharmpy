@@ -679,7 +679,7 @@ def remove_iiv(args):
     except AttributeError:
         to_remove = args.to_remove
 
-    remove_iiv(model, to_remove)
+    model = remove_iiv(model, to_remove)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
