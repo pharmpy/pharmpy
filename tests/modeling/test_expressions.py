@@ -232,14 +232,14 @@ def test_make_declarative(pheno):
 
 def test_cleanup_model(pheno):
     model = pheno.copy()
-    cleanup_model(model)
+    model = cleanup_model(model)
     assert model.statements.after_odes[1].symbol != s('W')
 
 
 def test_greekify_model(pheno):
     model = pheno.copy()
-    cleanup_model(model)
-    greekify_model(model)
+    model = cleanup_model(model)
+    model = greekify_model(model)
     assert s('theta_1') in model.statements[2].free_symbols
 
 

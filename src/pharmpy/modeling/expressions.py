@@ -584,8 +584,7 @@ def cleanup_model(model: Model):
             IRES
             ────
     IWRES =  W
-    >>> cleanup_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = cleanup_model(model)
     >>> model.statements
             ⎧TIME  for AMT > 0
             ⎨
@@ -612,7 +611,7 @@ def cleanup_model(model: Model):
             ────
     IWRES =  F
     """
-    make_declarative(model)
+    model = make_declarative(model)
 
     current = {}
     newstats = []
@@ -620,15 +619,10 @@ def cleanup_model(model: Model):
         if isinstance(s, Assignment) and s.expression.is_Symbol:
             current[s.symbol] = s.expression
         else:
-            # FIXME: Update when other Statements have been made immutable
-            if isinstance(s, Assignment):
-                n = s.subs(current)
-                newstats.append(n)
-            else:
-                s.subs(current)
-                newstats.append(s)
+            n = s.subs(current)
+            newstats.append(n)
 
-    model.statements = Statements(newstats)
+    model = model.replace(statements=Statements(newstats))
     return model.update_source()
 
 
@@ -681,8 +675,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
             ────
     IWRES =  W
 
-    >>> greekify_model(cleanup_model(model))    # doctest: +ELLIPSIS
-    <...>
+    >>> model = greekify_model(cleanup_model(model))
     >>> model.statements
             ⎧TIME  for AMT > 0
             ⎨
