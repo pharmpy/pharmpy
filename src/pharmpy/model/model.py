@@ -60,7 +60,7 @@ class Model:
         datainfo=None,
         dependent_variable=None,
         observation_transformation=None,
-        estimation_steps=None,
+        estimation_steps=EstimationSteps(),
         modelfit_results=None,
         parent_model=None,
         initial_individual_estimates=None,
