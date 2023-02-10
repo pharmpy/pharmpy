@@ -623,8 +623,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     --------
     >>> from pharmpy.modeling import load_example_model, set_dtbs_error_model
     >>> model = load_example_model("pheno")
-    >>> set_dtbs_error_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_dtbs_error_model(model)
 
     """
     model = use_thetas_for_error_stdev(model)
@@ -633,11 +632,11 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     lam = create_symbol(model, 'tbs_lambda')
     zeta = create_symbol(model, 'tbs_zeta')
     if fix_to_log:
-        add_population_parameter(model, lam.name, 0, fix=True)
-        add_population_parameter(model, zeta.name, 0, fix=True)
+        model = add_population_parameter(model, lam.name, 0, fix=True)
+        model = add_population_parameter(model, zeta.name, 0, fix=True)
     else:
-        add_population_parameter(model, lam.name, 1)
-        add_population_parameter(model, zeta.name, 0.001)
+        model = add_population_parameter(model, lam.name, 1)
+        model = add_population_parameter(model, zeta.name, 0.001)
 
     i = _index_of_first_assignment(stats, sympy.Symbol('W'))
 
@@ -652,7 +651,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     yexpr_ind = stats.find_assignment_index(y.name)
     yexpr = stats[yexpr_ind].subs({f: sympy.Symbol('IPRED')})
 
-    model.statements = (
+    statements = (
         stats[0 : i + 1]
         + wass
         + ipredass
@@ -664,7 +663,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     obs = sympy.Piecewise(
         (sympy.log(y), sympy.Eq(lam, 0)), ((y**lam - 1) / lam, sympy.Ne(lam, 0))
     )
-    model = model.replace(observation_transformation=obs)
+    model = model.replace(observation_transformation=obs, statements=statements)
 
     return model.update_source()
 
