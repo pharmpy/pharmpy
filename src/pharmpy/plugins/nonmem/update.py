@@ -807,9 +807,12 @@ def pk_param_conversion(model: Model, advan, trans):
                         sympy.Symbol('K42'): sympy.Symbol('K31'),
                     }
                 )
-    if advan == 'ADVAN5' or advan == 'ADVAN7' and from_advan not in ('ADVAN5', 'ADVAN7'):
-        n = len(newmap)
-        d[sympy.Symbol('K')] = sympy.Symbol(f'K{n-1}0')
+    if advan == 'ADVAN5' or advan == 'ADVAN7':
+        if from_advan not in ('ADVAN5', 'ADVAN7'):
+            n = len(newmap)
+            d[sympy.Symbol('K')] = sympy.Symbol(f'K{n-1}0')
+        else:
+            d[sympy.Symbol(f'K{len(oldmap)-1}0')] = sympy.Symbol(f'K{len(newmap)-1}0')
     model.statements = statements.subs(d)
 
 
@@ -1090,12 +1093,20 @@ def define_parameter(
                 )
             return False
     new_ass = Assignment(sympy.Symbol(name), value)
-    model.statements = (
-        model.statements.before_odes
-        + new_ass
-        + model.statements.ode_system
-        + model.statements.after_odes
-    )
+    # Put new rate before output rate in statements
+    central = model.statements.ode_system.central_compartment
+    output_rate = model.statements.ode_system.get_flow(central, output)
+    out_ind = model.statements.find_assignment_index(output_rate)
+    if out_ind:
+        before_odes = (
+            model.statements.before_odes[:out_ind]
+            + new_ass
+            + model.statements.before_odes[out_ind:]
+        )
+    else:
+        before_odes = model.statements.before_odes + new_ass
+
+    model.statements = before_odes + model.statements.ode_system + model.statements.after_odes
     return True
 
 

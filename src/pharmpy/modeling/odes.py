@@ -725,6 +725,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         model.statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
+        model = model.update_source()
     elif len(transits) > n:
         nremove = len(transits) - n
         removed_symbols = set()
@@ -775,6 +776,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
         model = _update_numerators(model)
+        model = model.update_source()
     return model
 
 
