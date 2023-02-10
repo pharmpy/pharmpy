@@ -417,7 +417,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = read_model_from_string(code)
-    set_weighted_error_model(model)
+    model = set_weighted_error_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -460,7 +460,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = read_model_from_string(code)
-    set_weighted_error_model(model)
+    model = set_weighted_error_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV

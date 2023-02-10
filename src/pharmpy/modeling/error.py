@@ -564,8 +564,7 @@ def set_weighted_error_model(model: Model):
     --------
     >>> from pharmpy.modeling import load_example_model, set_weighted_error_model
     >>> model = load_example_model("pheno")
-    >>> set_weighted_error_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_weighted_error_model(model)
 
     See also
     --------
@@ -589,11 +588,13 @@ def set_weighted_error_model(model: Model):
 
     i = _index_of_first_assignment(stats, y)
 
-    model.statements = stats[0:i] + Assignment(sympy.Symbol('W'), w) + stats[i:]
-    model.statements = model.statements.reassign(
-        y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].names[0])
+    model = model.replace(statements=stats[0:i] + Assignment(sympy.Symbol('W'), w) + stats[i:])
+    model = model.replace(
+        statements=model.statements.reassign(
+            y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].names[0])
+        )
     )
-    remove_unused_parameters_and_rvs(model)
+    model = remove_unused_parameters_and_rvs(model)
     return model.update_source()
 
 
