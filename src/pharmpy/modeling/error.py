@@ -308,15 +308,13 @@ def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy
     --------
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
-    >>> set_combined_error_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_combined_error_model(model)
     >>> model.statements.find_assignment("Y")
     Y = F⋅εₚ + F + εₐ
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
-    >>> set_combined_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_combined_error_model(model, data_trans="log(Y)")
     >>> model.statements.find_assignment("Y")
                      εₐ
        εₚ + log(F) + ──
@@ -378,17 +376,17 @@ def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
 
-    model.statements = stats.reassign(y, expr_combined)
-    remove_unused_parameters_and_rvs(model)
+    model = model.replace(statements=stats.reassign(y, expr_combined))
+    model = remove_unused_parameters_and_rvs(model)
 
     sigma_prop = create_symbol(model, 'sigma_prop')
-    add_population_parameter(model, sigma_prop.name, 0.09)
+    model = add_population_parameter(model, sigma_prop.name, 0.09)
     sigma_add = create_symbol(model, 'sigma_add')
-    add_population_parameter(model, sigma_add.name, _get_prop_init(model))
+    model = add_population_parameter(model, sigma_add.name, _get_prop_init(model))
 
     eps_prop = NormalDistribution.create(ruv_prop.name, 'RUV', 0, sigma_prop)
     eps_add = NormalDistribution.create(ruv_add.name, 'RUV', 0, sigma_add)
-    model.random_variables = model.random_variables + [eps_prop, eps_add]
+    model = model.replace(random_variables=model.random_variables + [eps_prop, eps_add])
     return model.update_source()
 
 
