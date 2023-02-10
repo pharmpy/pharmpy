@@ -223,7 +223,7 @@ def test_solve_ode_system(pheno):
 
 def test_make_declarative(pheno):
     model = pheno.copy()
-    make_declarative(model)
+    model = make_declarative(model)
     assert model.statements[3].expression == sympy.Piecewise(
         (s('WGT') * s('PTVV') * (s('THETA_3') + 1), sympy.Lt(s('APGR'), 5)),
         (s('WGT') * s('PTVV'), True),

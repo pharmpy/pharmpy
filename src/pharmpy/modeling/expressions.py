@@ -473,8 +473,7 @@ def make_declarative(model: Model):
              ETA₂
     V = TVV⋅ℯ
     S₁ = V
-    >>> make_declarative(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = make_declarative(model)
     >>> model.statements.before_odes
             ⎧TIME  for AMT > 0
             ⎨
@@ -507,8 +506,8 @@ def make_declarative(model: Model):
     newstats = []
     for i, s in enumerate(model.statements):
         if not isinstance(s, Assignment):
-            s.subs(current)
-            newstats.append(s)  # FIXME: No copy method
+            s = s.subs(current)
+            newstats.append(s)
         elif s.symbol in duplicated_symbols:
             if i not in duplicated_symbols[s.symbol]:
                 current[s.symbol] = s.expression
@@ -524,7 +523,7 @@ def make_declarative(model: Model):
             ass = Assignment(s.symbol, subs(s.expression, current))
             newstats.append(ass)
 
-    model.statements = Statements(newstats)
+    model = model.replace(statements=Statements(newstats))
     return model.update_source()
 
 
