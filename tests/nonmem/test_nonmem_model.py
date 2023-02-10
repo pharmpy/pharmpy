@@ -490,8 +490,7 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 def test_abbr_write(load_model_for_test, pheno_path):
     with ConfigurationContext(conf, write_etas_in_abbr=True):
         model = load_model_for_test(pheno_path)
-        add_iiv(model, 'S1', 'add')
-        model.update_source()
+        model = add_iiv(model, 'S1', 'add')
 
         assert 'ETA(S1)' in model.model_code
         assert 'ETA_S1' in model.random_variables.names
@@ -506,7 +505,7 @@ def test_abbr_write(load_model_for_test, pheno_path):
 
 def test_abbr_read_write(load_model_for_test, pheno_path):
     model_write = load_model_for_test(pheno_path)
-    add_iiv(model_write, 'S1', 'add')
+    model_write = add_iiv(model_write, 'S1', 'add')
     model_read = Model.create_model(StringIO(model_write.model_code))
     assert model_read.model_code == model_write.model_code
     assert model_read.statements == model_write.statements

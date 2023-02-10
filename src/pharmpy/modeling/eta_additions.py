@@ -126,9 +126,7 @@ def add_iiv(
             sset[0:index] + Assignment(statement.symbol, eta_addition.template) + sset[index + 1 :]
         )
 
-    model.random_variables = rvs
-    model.parameters = Parameters.create(pset)
-    model.statements = sset
+    model = model.replace(random_variables=rvs, parameters=Parameters.create(pset), statements=sset)
 
     return model.update_source()
 
@@ -420,12 +418,10 @@ def add_pk_iiv(model: Model, initial_estimate: float = 0.09):
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_first_order_absorption(model) # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_first_order_absorption(model)
     >>> model.statements.find_assignment("MAT")
     MAT = POP_MAT
-    >>> add_pk_iiv(model) # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_pk_iiv(model)
     >>> model.statements.find_assignment("MAT")
                    ETA_MAT
     MAT = POP_MAT⋅ℯ
@@ -443,7 +439,7 @@ def add_pk_iiv(model: Model, initial_estimate: float = 0.09):
     ]
 
     if params_to_add_etas:
-        add_iiv(model, params_to_add_etas, 'exp', initial_estimate=initial_estimate)
+        model = add_iiv(model, params_to_add_etas, 'exp', initial_estimate=initial_estimate)
 
     return model.update_source()
 

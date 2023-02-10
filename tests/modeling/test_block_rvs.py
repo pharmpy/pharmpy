@@ -52,7 +52,7 @@ def test_choose_param_init(load_model_for_test, pheno_path):
 
     # If one eta doesn't have individual estimates
     model = load_model_for_test(pheno_path)
-    add_iiv(model, 'S1', 'add')
+    model = add_iiv(model, 'S1', 'add')
     params = (model.parameters['IVCL'], model.parameters['IIV_S1'])
     rvs = model.random_variables[('ETA_1', 'ETA_S1')]
     init = _choose_param_init(model, model.modelfit_results.individual_estimates, rvs, *params)

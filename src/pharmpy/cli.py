@@ -594,7 +594,7 @@ def add_iiv(args):
     from pharmpy.modeling import add_iiv
 
     model = args.model
-    add_iiv(
+    model = add_iiv(
         model,
         list_of_parameters=args.param,
         expression=args.expression,

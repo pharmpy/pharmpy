@@ -305,13 +305,13 @@ def _add_iiv_to_func(iiv_strategy, model):
     sset, rvs = model.statements, model.random_variables
     if iiv_strategy == 'add_diagonal' or iiv_strategy == 'fullblock':
         try:
-            add_pk_iiv(model, initial_estimate=0.01)
+            model = add_pk_iiv(model, initial_estimate=0.01)
         except ValueError as e:
             if str(e) == 'New parameter inits are not valid':
                 raise ValueError(f'{model.name}: {e} (add_pk_iiv, parent: {model.parent_model})')
         if iiv_strategy == 'fullblock':
             try:
-                create_joint_distribution(
+                model = create_joint_distribution(
                     model, individual_estimates=model.modelfit_results.individual_estimates
                 )
             except ValueError as e:
@@ -325,6 +325,6 @@ def _add_iiv_to_func(iiv_strategy, model):
         assert iiv_strategy == 'absorption_delay'
         mdt = sset.find_assignment('MDT')
         if mdt and not mdt.expression.free_symbols.intersection(rvs.free_symbols):
-            add_iiv(model, 'MDT', 'exp', initial_estimate=0.01)
+            model = add_iiv(model, 'MDT', 'exp', initial_estimate=0.01)
 
     return model
