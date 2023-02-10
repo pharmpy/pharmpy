@@ -1095,7 +1095,9 @@ def set_bolus_absorption(model: Model):
         cb.remove_compartment(depot)
         symbols = ka.free_symbols
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        model.statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
+        model = model.replace(
+            statements=statements.remove_symbol_definitions(symbols, statements.ode_system)
+        )
         model = remove_unused_parameters_and_rvs(model)
     if has_zero_order_absorption(model):
         dose_comp = cs.dosing_compartment
@@ -1105,8 +1107,8 @@ def set_bolus_absorption(model: Model):
         cb.set_dose(dose_comp, new_dose)
         unneeded_symbols = old_symbols - new_dose.free_symbols
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        model.statements = statements.remove_symbol_definitions(
-            unneeded_symbols, statements.ode_system
+        model = model.replace(
+            statements=statements.remove_symbol_definitions(unneeded_symbols, statements.ode_system)
         )
         model = remove_unused_parameters_and_rvs(model)
     return model
