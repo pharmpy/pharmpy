@@ -305,7 +305,6 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model_for_test(code, dataset='pheno')
     add_peripheral_compartment(model)
     add_peripheral_compartment(model)
-    model.model_code
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2

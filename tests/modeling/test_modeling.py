@@ -917,7 +917,6 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_transits_non_linear_elim_with_update(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = set_transit_compartments(model, 3)
-    model.model_code
     model = set_zero_order_elimination(model)
     assert 'VC1 =' not in model.model_code
     assert 'CLMM = THETA(1)*EXP(ETA(1))' in model.model_code
@@ -925,7 +924,6 @@ def test_transits_non_linear_elim_with_update(load_model_for_test, testdata):
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = set_transit_compartments(model, 3)
-    model.model_code
     model = set_michaelis_menten_elimination(model)
     assert 'VC1 =' not in model.model_code
     assert 'CLMM = THETA(1)*EXP(ETA(1))' in model.model_code
@@ -933,7 +931,6 @@ def test_transits_non_linear_elim_with_update(load_model_for_test, testdata):
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = set_transit_compartments(model, 3)
-    model.model_code
     model = set_mixed_mm_fo_elimination(model)
     assert 'VC1 =' not in model.model_code
     assert 'CLMM = THETA(6)' in model.model_code
@@ -1083,11 +1080,8 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 def test_nested_transit_peripherals(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = set_transit_compartments(model, 1)
-    model.model_code
     model = set_michaelis_menten_elimination(model)
-    model.model_code
     model = set_peripheral_compartments(model, 1)
-    model.model_code
     model = set_peripheral_compartments(model, 2)
 
 
@@ -1233,13 +1227,11 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     advan2_before = model.model_code
     model = set_first_order_absorption(model)
-    model.update_source()
     assert model.model_code == advan2_before
 
     # 0-order to 1st order
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     model = set_first_order_absorption(model)
-    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -1283,7 +1275,6 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     # Bolus to 1st order
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     model = set_first_order_absorption(model)
-    model.update_source()
     assert model.model_code.split('\n')[2:] == correct.split('\n')[2:]
 
     # Bolus to 0-order
@@ -1382,7 +1373,6 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 def test_seq_to_FO(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
     model = set_first_order_absorption(model)
-    model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA DUMMYPATH IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -1653,7 +1643,6 @@ def test_has_zero_order_absorption(load_model_for_test, pheno_path):
 def test_lag_on_nl_elim(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = set_zero_order_elimination(model)
-    model.model_code
     model = add_lag_time(model)
     assert 'ALAG' in model.model_code
 
@@ -3375,12 +3364,10 @@ def test_find_clearance_parameters(pheno):
 
     model = add_peripheral_compartment(model)
     cl_p1 = find_clearance_parameters(model)
-    model.update_source()
     assert cl_p1 == _symbols(['CL', 'QP1'])
 
     model = add_peripheral_compartment(model)
     cl_p2 = find_clearance_parameters(model)
-    model.update_source()
     assert cl_p2 == _symbols(['CL', 'QP1', 'QP2'])
 
 
@@ -3410,12 +3397,10 @@ def test_find_volume_parameters(pheno):
     assert v_origin == _symbols(['V'])
 
     model = add_peripheral_compartment(model)
-    model.update_source()
     v_p1 = find_volume_parameters(model)
     assert v_p1 == _symbols(['V1', 'VP1'])
 
     model = add_peripheral_compartment(model)
-    model.update_source()
     v_p2 = find_volume_parameters(model)
     assert v_p2 == _symbols(['V1', 'VP1', 'VP2'])
 

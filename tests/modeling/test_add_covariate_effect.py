@@ -18,7 +18,6 @@ def test_nan_add_covariate_effect(load_model_for_test, pheno_path):
     model.dataset = data
 
     model = add_covariate_effect(model, 'CL', 'new_col', 'cat')
-    model.update_source()
 
     assert not re.search('NaN', model.model_code)
     assert re.search(r'NEW_COL\.EQ\.-99', model.model_code)
