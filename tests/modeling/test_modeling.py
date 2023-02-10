@@ -3437,7 +3437,7 @@ def test_find_volume_parameters_github_issues_1053_and_1062_bis(load_example_mod
     model = add_peripheral_compartment(model)
     model = add_peripheral_compartment(model)
     model = set_michaelis_menten_elimination(model)
-    assert find_volume_parameters(model) == _symbols(['V', 'VP1', 'VP2'])
+    assert find_volume_parameters(model) == _symbols(['V1', 'VP1', 'VP2'])
 
 
 def test_has_odes(load_example_model_for_test, datadir, load_model_for_test):

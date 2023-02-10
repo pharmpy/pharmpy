@@ -94,7 +94,7 @@ def test_allometry(load_model_for_test, testdata):
     assert model.statements[1] == Assignment.create('VP1', 'VP1*(WGT/70)**ALLO_VP1')
     assert model.statements[3] == Assignment.create('QP1', 'QP1*(WGT/70)**ALLO_QP1')
     assert model.statements[5] == Assignment.create('CL', 'CL*(WGT/70)**ALLO_CL')
-    assert model.statements[7] == Assignment.create('V1', 'V1*(WGT/70)**ALLO_V')
+    assert model.statements[7] == Assignment.create('V1', 'V1*(WGT/70)**ALLO_V1')
     assert model.parameters['ALLO_VP1'].init == 1.0
     assert model.parameters['ALLO_QP1'].init == 0.75
     model = add_peripheral_compartment(model)

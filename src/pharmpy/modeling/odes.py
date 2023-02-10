@@ -1493,7 +1493,7 @@ def add_peripheral_compartment(model: Model):
         model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
     )
 
-    return model
+    return model.update_source()
 
 
 def remove_peripheral_compartment(model: Model):

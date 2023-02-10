@@ -66,7 +66,7 @@ def test_conversion_round_trip(load_example_model_for_test):
     model = set_michaelis_menten_elimination(model)
     odes = model.statements.ode_system
     central = odes.central_compartment
-    assert odes.get_flow(central, output) == parse_expr('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
+    assert odes.get_flow(central, output) == parse_expr('CLMM*KM/(V1*(KM + A_CENTRAL(t)/V1))')
 
 
 def test_des_mm(load_example_model_for_test, create_model_for_test):
@@ -82,5 +82,5 @@ def test_des_mm(load_example_model_for_test, create_model_for_test):
     cs = model.statements.ode_system
     central = cs.central_compartment
     assert cs.get_flow(central, output) == sympy.simplify(
-        parse_expr('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
+        parse_expr('CLMM*KM/(V1*(KM + A_CENTRAL(t)/V1))')
     )
