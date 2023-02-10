@@ -385,7 +385,7 @@ def set_covariates(model: Model, covariates: List[str]):
             newcols.append(newcol)
         else:
             newcols.append(col)
-    model.datainfo = di.replace(columns=newcols)
+    model = model.replace(datainfo=di.replace(columns=newcols))
     return model.update_source()
 
 
