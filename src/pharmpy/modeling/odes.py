@@ -639,9 +639,9 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
     >>> model = set_transit_compartments(model, 3)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
-    ┌────────┐        ┌────────┐        ┌────────┐        ┌───────┐
-    │TRANSIT1│──3/MDT→│TRANSIT2│──3/MDT→│TRANSIT3│──3/MDT→│CENTRAL│──CL/V→
-    └────────┘        └────────┘        └────────┘        └───────┘
+    ┌────────┐      ┌────────┐      ┌────────┐      ┌───────┐
+    │TRANSIT1│──K12→│TRANSIT2│──K23→│TRANSIT3│──K34→│CENTRAL│──K40→
+    └────────┘      └────────┘      └────────┘      └───────┘
 
     See also
     --------
@@ -1329,13 +1329,13 @@ def set_peripheral_compartments(model: Model, n: int):
     │PERIPHERAL1│
     └───────────┘
       ↑      │
-    QP1/V QP1/VP1
+    Q2/V1  Q2/V2
       │      ↓
     ┌───────────┐
-    │  CENTRAL  │──CL/V→
+    │  CENTRAL  │──CL/V1→
     └───────────┘
        ↑      │
-    QP2/VP2 QP2/V
+     Q3/V3  Q3/V1
        │      ↓
     ┌───────────┐
     │PERIPHERAL2│
@@ -1405,10 +1405,10 @@ def add_peripheral_compartment(model: Model):
     │PERIPHERAL1│
     └───────────┘
       ↑      │
-    QP1/V QP1/VP1
+     Q/V1   Q/V2
       │      ↓
     ┌───────────┐
-    │  CENTRAL  │──CL/V→
+    │  CENTRAL  │──CL/V1→
     └───────────┘
 
     See also
