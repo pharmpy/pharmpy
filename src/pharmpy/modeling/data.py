@@ -1288,8 +1288,7 @@ def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[f
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> remove_loq_data(model, lloq=10, uloq=40)        # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_loq_data(model, lloq=10, uloq=40)
     >>> len(model.dataset)
     736
     """
@@ -1301,7 +1300,7 @@ def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[f
         keep &= (df[dv] >= lloq) | mdv
     if uloq:
         keep &= (df[dv] <= uloq) | mdv
-    model.dataset = df[keep]
+    model = model.replace(dataset=df[keep])
     return model.update_source()
 
 

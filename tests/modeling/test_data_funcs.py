@@ -257,7 +257,7 @@ def test_undrop_columns(load_example_model_for_test):
 
 def test_remove_loq_data(load_example_model_for_test):
     m = load_example_model_for_test('pheno')
-    remove_loq_data(m, lloq=10, uloq=40)
+    m = remove_loq_data(m, lloq=10, uloq=40)
     assert len(m.dataset) == 736
 
 
