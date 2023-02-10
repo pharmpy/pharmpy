@@ -415,8 +415,7 @@ def solve_ode_system(model: Model):
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
-    >>> solve_ode_system(model)        # doctest: +ELLIPSIS
-    <...>
+    >>> model = solve_ode_system(model)
 
     """
     odes = model.statements.ode_system
@@ -435,8 +434,8 @@ def solve_ode_system(model: Model):
                 new.append(ass)
         else:
             new.append(s)
-    model.statements = Statements(new)
-    return model.update_source()
+    model = model.replace(statements=Statements(new)).update_source()
+    return model
 
 
 def make_declarative(model: Model):

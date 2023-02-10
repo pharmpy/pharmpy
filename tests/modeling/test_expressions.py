@@ -217,7 +217,7 @@ def test_simplify_expression():
 
 def test_solve_ode_system(pheno):
     model = pheno.copy()
-    solve_ode_system(model)
+    model = solve_ode_system(model)
     assert sympy.Symbol('t') in model.statements[8].free_symbols
 
 
