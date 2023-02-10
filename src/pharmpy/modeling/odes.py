@@ -850,12 +850,14 @@ def add_lag_time(model: Model):
     mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
     cb = CompartmentalSystemBuilder(odes)
     cb.set_lag_time(dosing_comp, mdt_symb)
-    model.statements = (
-        model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+    model = model.replace(
+        statements=(
+            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+        )
     )
     if old_lag_time:
-        model.statements = model.statements.remove_symbol_definitions(
-            old_lag_time.free_symbols, odes
+        model = model.replace(
+            statements=model.statements.remove_symbol_definitions(old_lag_time.free_symbols, odes)
         )
         model = remove_unused_parameters_and_rvs(model)
     else:
