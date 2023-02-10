@@ -129,7 +129,7 @@ def set_initial_estimates(model: Model, inits: Dict[str, float]):
     unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
     """
     model.parameters = model.parameters.set_initial_estimates(inits)
-    return model
+    return model.update_source()
 
 
 def set_upper_bounds(model: Model, bounds: Dict[str, float]):
