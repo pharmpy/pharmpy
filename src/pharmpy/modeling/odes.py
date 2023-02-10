@@ -1580,7 +1580,7 @@ def remove_peripheral_compartment(model: Model):
             pop_qp1_init = model.parameters[pop_qp1].init
             pop_vp1_init = model.parameters[pop_vp1].init
             new_vc_init = pop_vc_init + pop_qp1_init / pop_cl_init * pop_vp1_init
-            set_initial_estimates(model, {pop_vc.name: new_vc_init})
+            model = set_initial_estimates(model, {pop_vc.name: new_vc_init})
         elif len(peripherals) == 2:
             first_peripheral = peripherals[0]
             from1_rate = odes.get_flow(first_peripheral, central)
@@ -1607,7 +1607,9 @@ def remove_peripheral_compartment(model: Model):
             pop_vp1_init = model.parameters[pop_vp1].init
             new_qp1_init = (pop_qp1_init + pop_qp2_init) / 2
             new_vp1_init = pop_vp1_init + pop_vp2_init
-            set_initial_estimates(model, {pop_qp1.name: new_qp1_init, pop_vp1.name: new_vp1_init})
+            model = set_initial_estimates(
+                model, {pop_qp1.name: new_qp1_init, pop_vp1.name: new_vp1_init}
+            )
 
         rate1 = odes.get_flow(central, last_peripheral)
         assert rate1 is not None
@@ -1616,13 +1618,17 @@ def remove_peripheral_compartment(model: Model):
         symbols = rate1.free_symbols | rate2.free_symbols
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_compartment(last_peripheral)
-        model.statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+        model = model.replace(
+            statements=(
+                model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+            )
         )
-        model.statements = model.statements.remove_symbol_definitions(
-            symbols, model.statements.ode_system
+        model = model.replace(
+            statements=model.statements.remove_symbol_definitions(
+                symbols, model.statements.ode_system
+            )
         )
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
     return model
 
 

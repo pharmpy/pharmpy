@@ -357,7 +357,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code)
-    remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     assert model.model_code == code
 
 
@@ -386,7 +386,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -436,7 +436,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -492,7 +492,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -553,7 +553,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -614,8 +614,8 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    remove_peripheral_compartment(model)
-    remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -728,7 +728,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    set_peripheral_compartments(model, 0)
+    model = set_peripheral_compartments(model, 0)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
