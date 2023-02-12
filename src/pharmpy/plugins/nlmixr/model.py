@@ -56,6 +56,10 @@ def convert_model(model):
     if isinstance(model, Model):
         return model.copy()
 
+    # Check data structure of doses
+    if not check_doses(model):
+        raise Warning("The connected model data contains mixed dosages. Nlmixr cannot handle this")
+
     nlmixr_model = Model()
     from pharmpy.modeling import convert_model
 
@@ -63,7 +67,7 @@ def convert_model(model):
     nlmixr_model.__dict__ = generic_model.__dict__
     nlmixr_model.internals = NLMIXRModelInternals()
     nlmixr_model.filename_extension = '.R'
-
+    
     # Update dataset to lowercase and add evid
     if "evid" not in nlmixr_model.dataset.columns.str.lower():
         nlmixr_model = modify_dataset(nlmixr_model)
@@ -658,3 +662,12 @@ def find_aliases(symbol:str, model):
                 if isinstance(e, sympy.Symbol):
                     aliases.append(e)
     return aliases
+
+def check_doses(model):
+    dataset = model.dataset
+    if "RATE" in dataset.columns:
+        no_bolus = len(dataset[(dataset["RATE"] == 0) & (dataset["EVID"] != 0)])
+        if no_bolus != 0:
+            return False
+    else:
+        return True
