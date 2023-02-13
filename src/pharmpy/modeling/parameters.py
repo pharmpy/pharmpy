@@ -407,7 +407,6 @@ def unfix_parameters_to(model: Model, inits: Dict[str, float]):
     """
     model = unfix_parameters(model, inits.keys())
     model = set_initial_estimates(model, inits)
-    model = model.update_source()
     return model
 
 
