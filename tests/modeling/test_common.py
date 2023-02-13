@@ -78,7 +78,7 @@ def test_write_model(testdata, load_model_for_test, tmp_path):
 
 def test_generate_model_code(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    fix_parameters(model, ['THETA_1'])
+    model = fix_parameters(model, ['THETA_1'])
     assert generate_model_code(model).split('\n')[7] == '$THETA 0.1 FIX'
 
 

@@ -240,8 +240,7 @@ def fix_parameters(model: Model, parameter_names: Union[List[str], str]):
     >>> model = load_example_model("pheno")
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
-    >>> fix_parameters(model, 'PTVCL')       # doctest: +ELLIPSIS
-    <...>
+    >>> model = fix_parameters(model, 'PTVCL')
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=True)
 
@@ -264,7 +263,7 @@ def fix_parameters(model: Model, parameter_names: Union[List[str], str]):
         else:
             new_param = p
         new.append(new_param)
-    model.parameters = Parameters(tuple(new))
+    model = model.replace(parameters=Parameters(tuple(new)))
     return model.update_source()
 
 
@@ -289,12 +288,10 @@ def unfix_parameters(model: Model, parameter_names: Union[List[str], str]):
     --------
     >>> from pharmpy.modeling import fix_parameters, unfix_parameters, load_example_model
     >>> model = load_example_model("pheno")
-    >>> fix_parameters(model, ['PTVCL', 'PTVV', 'THETA_3'])     # doctest: +ELLIPSIS
-    <...>
+    >>> model = fix_parameters(model, ['PTVCL', 'PTVV', 'THETA_3'])
     >>> model.parameters.fix    # doctest: +ELLIPSIS
     {'PTVCL': True, 'PTVV': True, 'THETA_3': True, ...}
-    >>> unfix_parameters(model, 'PTVCL')       # doctest: +ELLIPSIS
-    <...>
+    >>> model = unfix_parameters(model, 'PTVCL')
     >>> model.parameters.fix        # doctest: +ELLIPSIS
     {'PTVCL': False, 'PTVV': True, 'THETA_3': True, ...}
 
@@ -318,7 +315,7 @@ def unfix_parameters(model: Model, parameter_names: Union[List[str], str]):
         else:
             new_param = p
         new.append(new_param)
-    model.parameters = Parameters(tuple(new))
+    model = model.replace(parameters=Parameters(tuple(new)))
     model = model.update_source()
     return model
 
@@ -346,8 +343,7 @@ def fix_parameters_to(model: Model, inits: Dict[str, float]):
     >>> model = load_example_model("pheno")
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
-    >>> fix_parameters_to(model, {'PTVCL': 0.5})       # doctest: +ELLIPSIS
-    <...>
+    >>> model = fix_parameters_to(model, {'PTVCL': 0.5})
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.5, lower=0.0, upper=1000000.0, fix=True)
 
@@ -381,12 +377,10 @@ def unfix_parameters_to(model: Model, inits: Dict[str, float]):
     --------
     >>> from pharmpy.modeling import fix_parameters, unfix_parameters_to, load_example_model
     >>> model = load_example_model("pheno")
-    >>> fix_parameters(model, ['PTVCL', 'PTVV', 'THETA_3'])     # doctest: +ELLIPSIS
-    <...>
+    >>> model = fix_parameters(model, ['PTVCL', 'PTVV', 'THETA_3'])
     >>> model.parameters.fix    # doctest: +ELLIPSIS
     {'PTVCL': True, 'PTVV': True, 'THETA_3': True, 'IVCL': False, 'IVV': False, 'SIGMA_1_1': False}
-    >>> unfix_parameters_to(model, {'PTVCL': 0.5})       # doctest: +ELLIPSIS
-    <...>
+    >>> model = unfix_parameters_to(model, {'PTVCL': 0.5})
     >>> model.parameters.fix        # doctest: +ELLIPSIS
     {'PTVCL': False, 'PTVV': True, 'THETA_3': True, ...}
     >>> model.parameters['PTVCL']
@@ -428,8 +422,7 @@ def fix_or_unfix_parameters(model: Model, parameters: Dict[str, bool]):
     >>> model = load_example_model("pheno")
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
-    >>> fix_or_unfix_parameters(model, {'PTVCL': True})       # doctest: +ELLIPSIS
-    <...>
+    >>> model = fix_or_unfix_parameters(model, {'PTVCL': True})
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=True)
 
@@ -455,7 +448,7 @@ def fix_or_unfix_parameters(model: Model, parameters: Dict[str, bool]):
         else:
             new_param = p
         new.append(new_param)
-    model.parameters = Parameters(tuple(new))
+    model = model.replace(parameters=Parameters(tuple(new)))
     model = model.update_source()
     return model
 
@@ -476,8 +469,7 @@ def unconstrain_parameters(model: Model, parameter_names: List[str]):
     >>> model = load_example_model("pheno")
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
-    >>> unconstrain_parameters(model, ['PTVCL'])       # doctest: +ELLIPSIS
-    <...>
+    >>> model = unconstrain_parameters(model, ['PTVCL'])
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=-∞, upper=∞, fix=False)
 
@@ -501,7 +493,7 @@ def unconstrain_parameters(model: Model, parameter_names: List[str]):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters(tuple(new))
+    model = model.replace(parameters=Parameters(tuple(new)))
     model = model.update_source()
     return model
 

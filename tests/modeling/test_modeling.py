@@ -2654,7 +2654,7 @@ def test_update_inits_move_est(load_model_for_test, pheno_path):
 def test_update_inits_zero_fix(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     d = {name: 0 for name in model.random_variables.iiv.parameter_names}
-    fix_parameters_to(model, d)
+    model = fix_parameters_to(model, d)
     res = model.modelfit_results
     param_est = res.parameter_estimates.drop(index=['IVCL'])
     model = update_inits(model, param_est)
