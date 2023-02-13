@@ -283,7 +283,7 @@ def test_nmtran_time(load_example_model_for_test):
 
 def test_expand_additional_doses(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
-    expand_additional_doses(model)
+    model = expand_additional_doses(model)
     df = model.dataset
     assert len(df) == 1494
     assert len(df.columns) == 5
@@ -299,7 +299,7 @@ def test_expand_additional_doses(load_model_for_test, testdata):
     assert df.loc[4, 'TIME'] == 48.0
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
-    expand_additional_doses(model, flag=True)
+    model = expand_additional_doses(model, flag=True)
     df = model.dataset
     assert len(df) == 1494
     assert len(df.columns) == 8

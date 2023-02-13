@@ -635,7 +635,7 @@ def expand_additional_doses(model: Model, flag: bool = False):
         df.rename(columns={'_EXPANDED': 'EXPANDED'}, inplace=True)
     else:
         df.drop([addl, ii, '_EXPANDED'], axis=1, inplace=True)
-    model.dataset = df.reset_index(drop=True)
+    model = model.replace(dataset=df.reset_index(drop=True))
     return model.update_source()
 
 
@@ -865,7 +865,7 @@ def add_time_after_dose(model: Model):
         new_timecol = di['_NEWTIME'].replace(type='idv')
         di = di.set_column(new_idvcol).set_column(new_timecol)
         temp.datainfo = di
-        expand_additional_doses(temp, flag=True)
+        temp = expand_additional_doses(temp, flag=True)
         df = temp.dataset
 
     df['_DOSEID'] = get_doseid(temp)
