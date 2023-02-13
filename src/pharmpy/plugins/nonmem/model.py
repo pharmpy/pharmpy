@@ -262,7 +262,6 @@ class Model(BaseModel):
 
     @property
     def model_code(self):
-        self.update_source()
         return str(self.internals.control_stream)
 
     @property

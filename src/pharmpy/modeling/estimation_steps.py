@@ -254,7 +254,7 @@ def add_covariance_step(model: Model):
     newstep = steps[-1].replace(cov=True)
     newsteps = steps[0:-1] + newstep
     model = model.replace(estimation_steps=newsteps)
-    return model
+    return model.update_source()
 
 
 def remove_covariance_step(model: Model):

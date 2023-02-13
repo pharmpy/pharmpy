@@ -752,6 +752,7 @@ $SIGMA 1
     steps = model.estimation_steps
     newstep = steps[0].replace(**kwargs)
     model = model.replace(estimation_steps=newstep + steps[1:])
+    model = model.update_source()
     assert model.model_code.split('\n')[-2] == rec_ref
 
 
@@ -807,15 +808,19 @@ $EST METH=COND INTER
     model = Model.create_model(StringIO(code))
     est_new = EstimationStep.create('IMP', interaction=True, tool_options={'saddle_reset': 1})
     model = model.replace(estimation_steps=model.estimation_steps + est_new)
+    model = model.update_source()
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
     est_new = EstimationStep.create('SAEM', interaction=True)
     model = model.replace(estimation_steps=est_new + model.estimation_steps)
+    model = model.update_source()
     assert model.model_code.split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
     est_new = EstimationStep.create('FO', evaluation=True)
     model = model.replace(estimation_steps=model.estimation_steps + est_new)
+    model = model.update_source()
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
     est_new = EstimationStep.create('IMP', evaluation=True)
     model = model.replace(estimation_steps=model.estimation_steps + est_new)
+    model = model.update_source()
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP EONLY=1'
 
 
