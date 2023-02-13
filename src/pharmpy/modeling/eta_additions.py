@@ -172,8 +172,7 @@ def add_iov(
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> add_iov(model, "TIME", "CL")  # doctest: +SKIP
-    <...>
+    >>> model = add_iov(model, "TIME", "CL")
     >>> model.statements.find_assignment("CL")  # doctest: +SKIP
     CL = ETA_CL + TVCL
 
@@ -278,8 +277,7 @@ def add_iov(
         model, occ, etas, categories, iov_name, etai_name, eta_name, omega_iov_name
     )
 
-    model.random_variables, model.parameters, model.statements = rvs, Parameters.create(pset), iovs
-
+    model = model.replace(random_variables=rvs, parameters=Parameters.create(pset), statements=iovs)
     return model.update_source()
 
 

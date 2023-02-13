@@ -15,7 +15,7 @@ def test_iovsearch_github_issues_976(load_model_for_test, testdata):
     assert not m.random_variables.iov
     assert set(_get_iiv_etas_with_corresponding_iov(m)) == set()
 
-    add_iov(m, 'FA1', distribution='same-as-iiv')
+    m = add_iov(m, 'FA1', distribution='same-as-iiv')
     assert set(_get_iiv_etas_with_corresponding_iov(m)) == set(
         map(lambda rv: S(rv), m.random_variables.iiv.names)
     )

@@ -620,7 +620,7 @@ def add_iov(args):
     except AttributeError:
         eta_names = args.eta_names
 
-    add_iov(model, args.occ, etas, eta_names)
+    model = add_iov(model, args.occ, etas, eta_names)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
