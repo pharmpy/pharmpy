@@ -69,8 +69,7 @@ def convert_model(model):
     nlmixr_model.filename_extension = '.R'
     
     # Update dataset to lowercase and add evid
-    if "evid" not in nlmixr_model.dataset.columns.str.lower():
-        nlmixr_model = modify_dataset(nlmixr_model)
+    nlmixr_model = modify_dataset(nlmixr_model)
     
     # Drop all dropped columns so it does not interfere with nlmixr
     drop_dropped_columns(nlmixr_model)
@@ -466,15 +465,8 @@ def verification(model, db_name, error=10**-3, return_comp=False):
 
 def modify_dataset(model):
     temp_model = model.copy()
-    if "evid" not in temp_model.dataset.columns.str.lower():
-        if "EVID" in temp_model.dataset.columns:
-            temp_model.dataset.rename(columns={"EVID": "evid"}, inplace=True)
-        else:
-            temp_model.dataset["evid"] = get_evid(temp_model)
-    if "TIME" in temp_model.dataset.columns:
-        temp_model.dataset.rename(columns={"TIME": "time"}, inplace=True)
-    if "AMT" in temp_model.dataset.columns:
-        temp_model.dataset.rename(columns={"AMT": "amt"}, inplace=True)
+    if "EVID" not in temp_model.dataset.columns:
+        temp_model.dataset["EVID"] = get_evid(temp_model)
     return temp_model
 
 def convert_piecewise(piecewise, cg, model):
@@ -669,5 +661,7 @@ def check_doses(model):
         no_bolus = len(dataset[(dataset["RATE"] == 0) & (dataset["EVID"] != 0)])
         if no_bolus != 0:
             return False
+        else:
+            return True
     else:
         return True
