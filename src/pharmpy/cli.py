@@ -663,7 +663,7 @@ def iiv_on_ruv(args):
     except AttributeError:
         eta_names = args.eta_names
 
-    set_iiv_on_ruv(model, eps, args.same_eta, eta_names)
+    model = set_iiv_on_ruv(model, eps, args.same_eta, eta_names)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 

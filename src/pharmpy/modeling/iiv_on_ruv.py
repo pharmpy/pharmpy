@@ -42,8 +42,7 @@ def set_iiv_on_ruv(
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_iiv_on_ruv(model)   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_iiv_on_ruv(model)
     >>> model.statements.find_assignment("Y")
                   ETA_RV1
     Y = EPS₁⋅W⋅ℯ        + F
@@ -80,10 +79,7 @@ def set_iiv_on_ruv(
             }
         )
 
-    model.random_variables = rvs
-    model.parameters = Parameters.create(pset)
-    model.statements = sset
-
+    model = model.replace(random_variables=rvs, parameters=Parameters.create(pset), statements=sset)
     return model.update_source()
 
 
