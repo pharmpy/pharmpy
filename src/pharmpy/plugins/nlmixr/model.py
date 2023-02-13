@@ -58,7 +58,7 @@ def convert_model(model):
 
     # Check data structure of doses
     if not check_doses(model):
-        raise Warning("The connected model data contains mixed dosages. Nlmixr cannot handle this")
+        print("\n-------\nWARNING : \nThe connected model data contains mixed dosage types. Nlmixr cannot handle this \nConverted model will not run on associated data\n-------")
 
     nlmixr_model = Model()
     from pharmpy.modeling import convert_model
@@ -77,7 +77,7 @@ def convert_model(model):
         nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
 
     # Update dataset
-    translate_nmtran_time(nlmixr_model)
+    nlmixr_model = translate_nmtran_time(nlmixr_model)
     nlmixr_model.datainfo = nlmixr_model.datainfo.replace(path = None)
 
     #nlmixr_model.update_source()
@@ -443,7 +443,7 @@ def verification(model, db_name, error=10**-3, return_comp=False):
     if "evid" not in nonmem_model.dataset.columns.str.lower():
         nonmem_model = modify_dataset(nonmem_model)
     nonmem_results = nonmem_results.reset_index()
-    nonmem_results = nonmem_results.drop(nonmem_model.dataset[nonmem_model.dataset["evid"] != 0].index.to_list())
+    nonmem_results = nonmem_results.drop(nonmem_model.dataset[nonmem_model.dataset["EVID"] != 0].index.to_list())
     nonmem_results = nonmem_results.set_index(["ID","TIME"])
     combined_result = nonmem_results
     combined_result["PRED_NLMIXR"] = nlmixr_results["PRED_NLMIXR"].to_list()
