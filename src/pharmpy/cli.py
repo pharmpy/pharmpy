@@ -557,7 +557,7 @@ def boxcox(args):
     except AttributeError:
         etas = args.etas
 
-    transform_etas_boxcox(model, etas)
+    model = transform_etas_boxcox(model, etas)
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 
@@ -571,7 +571,7 @@ def tdist(args):
     except AttributeError:
         etas = args.etas
 
-    transform_etas_tdist(model, etas)
+    model = transform_etas_tdist(model, etas)
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 
@@ -585,7 +585,7 @@ def john_draper(args):
     except AttributeError:
         etas = args.etas
 
-    transform_etas_john_draper(model, etas)
+    model = transform_etas_john_draper(model, etas)
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 

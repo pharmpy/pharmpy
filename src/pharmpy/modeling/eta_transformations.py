@@ -47,7 +47,7 @@ def transform_etas_boxcox(model: Model, list_of_etas: Optional[Union[List[str], 
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.boxcox(len(etas))
-    _transform_etas(model, eta_transformation, etas)
+    model = _transform_etas(model, eta_transformation, etas)
     return model.update_source()
 
 
@@ -86,7 +86,7 @@ def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[List[str], s
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.tdist(len(etas))
-    _transform_etas(model, eta_transformation, etas)
+    model = _transform_etas(model, eta_transformation, etas)
     return model.update_source()
 
 
@@ -129,7 +129,7 @@ def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[List[s
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.john_draper(len(etas))
-    _transform_etas(model, eta_transformation, etas)
+    model = _transform_etas(model, eta_transformation, etas)
     return model.update_source()
 
 
@@ -138,10 +138,9 @@ def _transform_etas(model, transformation, etas):
     thetas = _create_new_thetas(model, transformation.theta_type, len(etas))
     transformation.apply(etas_assignment, thetas)
     statements_new = transformation.assignments
-    sset = model.statements
-    sset = sset.subs(etas_subs)
-
-    model.statements = statements_new + sset
+    sset = model.statements.subs(etas_subs)
+    model = model.replace(statements=statements_new + sset)
+    return model
 
 
 def _create_new_etas(etas_original, transformation):

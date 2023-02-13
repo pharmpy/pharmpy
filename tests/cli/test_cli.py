@@ -54,6 +54,8 @@ def test_eta_transformation(datadir, transformation, eta, tmp_path):
 
         assert mod_ori != mod_box
 
+        print(mod_box)
+
         assert not re.search(eta, mod_ori)
         assert re.search(eta, mod_box)
 
