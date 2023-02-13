@@ -689,7 +689,7 @@ def remove_iov(args):
     from pharmpy.modeling import remove_iov
 
     model = args.model
-    remove_iov(model)
+    model = remove_iov(model)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 

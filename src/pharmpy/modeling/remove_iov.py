@@ -31,8 +31,7 @@ def remove_iov(model: Model, to_remove: Optional[Union[List[str], str]] = None):
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> remove_iov(model)       # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_iov(model)
 
     See also
     --------
@@ -49,13 +48,10 @@ def remove_iov(model: Model, to_remove: Optional[Union[List[str], str]] = None):
         return model
 
     keep = [name for name in rvs.names if name not in etas]
-    model.random_variables = rvs[keep]
-
     d = {sympy.Symbol(name): 0 for name in etas}
-    model.statements = sset.subs(d)
 
-    remove_unused_parameters_and_rvs(model)
-    model.update_source()
+    model = model.replace(statements=sset.subs(d), random_variables=rvs[keep])
+    model = remove_unused_parameters_and_rvs(model)
     return model.update_source()
 
 
