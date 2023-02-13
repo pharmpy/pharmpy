@@ -74,7 +74,6 @@ def test_des_mm(load_example_model_for_test, create_model_for_test):
     model = add_peripheral_compartment(model)
     model = add_peripheral_compartment(model)
     model = set_michaelis_menten_elimination(model)
-    model.update_source()
     code = model.model_code
     dataset = model.dataset
     model = create_model_for_test(code)
