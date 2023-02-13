@@ -101,14 +101,14 @@ def test_set_parameters(pheno):
         'IVV': 0.2,
         'SIGMA_1_1': 0.3,
     }
-    set_initial_estimates(model, params)
+    model = set_initial_estimates(model, params)
     assert model.parameters['PTVCL'] == Parameter('PTVCL', 0.75, lower=0, upper=1000000)
     assert model.parameters['PTVV'] == Parameter('PTVV', 0.5, lower=0, upper=1000000)
     assert model.parameters['THETA_3'] == Parameter('THETA_3', 0.25, lower=-0.99, upper=1000000)
     assert model.parameters['IVCL'] == Parameter('IVCL', 0.1, lower=0, upper=sympy.oo)
     assert model.parameters['IVV'] == Parameter('IVV', 0.2, lower=0, upper=sympy.oo)
     assert model.parameters['SIGMA_1_1'] == Parameter('SIGMA_1_1', 0.3, lower=0, upper=sympy.oo)
-    model.update_source()
+    model = model.update_source()
     thetas = model.internals.control_stream.get_records('THETA')
     assert str(thetas[0]) == '$THETA (0,0.75) ; PTVCL\n'
     assert str(thetas[1]) == '$THETA (0,0.5) ; PTVV\n'
@@ -119,7 +119,7 @@ def test_set_parameters(pheno):
     assert str(sigmas[0]) == '$SIGMA 0.3\n'
 
     model = pheno.copy()
-    set_initial_estimates(model, {'PTVCL': 18})
+    model = set_initial_estimates(model, {'PTVCL': 18})
     assert model.parameters['PTVCL'] == Parameter('PTVCL', 18, lower=0, upper=1000000)
     assert model.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=1000000)
 
@@ -191,8 +191,8 @@ def test_add_two_parameters(pheno):
 
     assert len(model.parameters) == 6
 
-    add_population_parameter(model, 'COVEFF1', 0.2)
-    add_population_parameter(model, 'COVEFF2', 0.1)
+    model = add_population_parameter(model, 'COVEFF1', 0.2)
+    model = add_population_parameter(model, 'COVEFF2', 0.1)
 
     assert len(model.parameters) == 8
     assert model.parameters['COVEFF1'].init == 0.2
@@ -255,7 +255,7 @@ def test_add_statements(pheno, statement_new, buf_new):
 def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new):
     model = pheno.copy()
 
-    add_population_parameter(model, param_new.name, param_new.init)
+    model = add_population_parameter(model, param_new.name, param_new.init)
 
     sset = model.statements
 
@@ -266,8 +266,8 @@ def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new)
             new_sset.append(statement_new)
         new_sset.append(s)
 
-    model.statements = Statements(new_sset)
-    model.update_source()
+    model = model.replace(statements=Statements(new_sset))
+    model = model.update_source()
 
     rec = (
         f'$PK\n'
@@ -292,10 +292,10 @@ def test_add_random_variables(pheno, rv_new, buf_new):
 
     eta = NormalDistribution.create('eta_new', 'iiv', 0, S(rv_new.name))
 
-    add_population_parameter(model, rv_new.name, rv_new.init)
-    model.random_variables = rvs + eta
+    model = add_population_parameter(model, rv_new.name, rv_new.init)
+    model = model.replace(random_variables=rvs + eta)
 
-    model.update_source()
+    model = model.update_source()
 
     rec_ref = (
         f'$OMEGA DIAGONAL(2)\n'
@@ -323,20 +323,20 @@ def test_add_random_variables_and_statements(pheno):
 
     eta = NormalDistribution.create('ETA_NEW', 'iiv', 0, S('omega'))
     rvs = rvs + eta
-    add_population_parameter(model, 'omega', 0.1)
+    model = add_population_parameter(model, 'omega', 0.1)
 
     eps = NormalDistribution.create('EPS_NEW', 'ruv', 0, S('sigma'))
     rvs = rvs + eps
-    add_population_parameter(model, 'sigma', 0.1)
-
-    model.random_variables = rvs
+    model = add_population_parameter(model, 'sigma', 0.1)
 
     sset = model.statements
-
     statement_new = Assignment(S('X'), 1 + S(eps.names[0]) + S(eta.names[0]))
-    model.statements = sset.before_odes + statement_new + sset.ode_system + sset.after_odes
+    model = model.replace(
+        statements=sset.before_odes + statement_new + sset.ode_system + sset.after_odes,
+        random_variables=rvs,
+    )
 
-    model.update_source()
+    model = model.update_source()
     print(model.internals.control_stream.get_pred_pk_record())
     assert str(model.internals.control_stream.get_pred_pk_record()).endswith(
         'X = ETA(3) + EPS(2) + 1\n\n'

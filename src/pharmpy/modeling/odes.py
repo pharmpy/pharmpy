@@ -70,7 +70,7 @@ def add_individual_parameter(model: Model, name: str):
     KA = POP_KA
 
     """
-    _add_parameter(model, name)
+    model, _ = _add_parameter(model, name)
     model = model.update_source()
     return model
 
@@ -80,8 +80,8 @@ def _add_parameter(model: Model, name: str, init: float = 0.1):
     model = add_population_parameter(model, pops.name, init, lower=0)
     symb = create_symbol(model, name)
     ass = Assignment(symb, pops)
-    model.statements = ass + model.statements
-    return symb
+    model = model.replace(statements=ass + model.statements)
+    return model, symb
 
 
 def set_first_order_elimination(model: Model):
@@ -496,13 +496,13 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
 
     km_init, clmm_init = _get_mm_inits(model, numer, combined)
 
-    km = _add_parameter(model, 'KM', init=km_init)
+    model, km = _add_parameter(model, 'KM', init=km_init)
     model = set_upper_bounds(model, {'POP_KM': 20 * get_observations(model).max()})
 
     if denom != 1:
         if combined:
             cl = numer
-            clmm = _add_parameter(model, 'CLMM', init=clmm_init)
+            model, clmm = _add_parameter(model, 'CLMM', init=clmm_init)
         else:
             model = _rename_parameter(model, 'CL', 'CLMM')
             clmm = sympy.Symbol('CLMM')
@@ -515,7 +515,7 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
                 assert assignment is not None
                 cl = assignment.symbol
             else:
-                cl = _add_parameter(model, 'CL', clmm_init)
+                model, cl = _add_parameter(model, 'CL', clmm_init)
         else:
             cl = 0
         if model.statements.find_assignment('VC'):
@@ -523,14 +523,14 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
             assert assignment is not None
             vc = assignment.symbol
         else:
-            vc = _add_parameter(model, 'VC')  # FIXME: decide better initial estimate
+            model, vc = _add_parameter(model, 'VC')  # FIXME: decide better initial estimate
         if not combined and model.statements.find_assignment('CL'):
             model = _rename_parameter(model, 'CL', 'CLMM')
             assignment = model.statements.find_assignment('CLMM')
             assert assignment is not None
             clmm = assignment.symbol
         else:
-            clmm = _add_parameter(model, 'CLMM', init=clmm_init)
+            model, clmm = _add_parameter(model, 'CLMM', init=clmm_init)
 
     amount = sympy.Function(central.amount.name)(sympy.Symbol('t'))
     rate = (clmm * km / (km + amount / vc) + cl) / vc
@@ -710,7 +710,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
                 init = mdt_init
             else:
                 init = _get_absorption_init(model, 'MDT')
-            mdt_symb = _add_parameter(model, 'MDT', init=init)
+            model, mdt_symb = _add_parameter(model, 'MDT', init=init)
         rate = n / mdt_symb
         dosing_comp = cs.dosing_compartment
         comp = dosing_comp
@@ -847,7 +847,7 @@ def add_lag_time(model: Model):
         raise ValueError(f'Model {model.name} has no ODE system')
     dosing_comp = odes.dosing_compartment
     old_lag_time = dosing_comp.lag_time
-    mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
+    model, mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
     cb = CompartmentalSystemBuilder(odes)
     cb.set_lag_time(dosing_comp, mdt_symb)
     model = model.replace(
@@ -1043,9 +1043,9 @@ def set_first_order_absorption(model: Model):
 
     model.statements = new_statements
 
-    remove_unused_parameters_and_rvs(model)
+    model = remove_unused_parameters_and_rvs(model)
     if not depot:
-        _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time)
+        model, _ = _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time)
         model = model.update_source()
     return model
 
@@ -1164,10 +1164,10 @@ def set_seq_zo_fo_absorption(model: Model):
     if depot and not have_ZO:
         model = _add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
     elif not depot and have_ZO:
-        _add_first_order_absorption(model, dose_comp.dose, dose_comp)
+        model, _ = _add_first_order_absorption(model, dose_comp.dose, dose_comp)
     elif not depot and not have_ZO:
         amount = dose_comp.dose.amount
-        depot = _add_first_order_absorption(model, Bolus(amount), dose_comp)
+        model, depot = _add_first_order_absorption(model, Bolus(amount), dose_comp)
         model = _add_zero_order_absorption(model, amount, depot, 'MDT')
     model = model.update_source()
     return model
@@ -1241,7 +1241,7 @@ def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=
     if mat_assign:
         mat_symb = mat_assign.symbol
     else:
-        mat_symb = _add_parameter(
+        model, mat_symb = _add_parameter(
             model, parameter_name, init=_get_absorption_init(model, parameter_name)
         )
     new_dose = Infusion(amount, duration=mat_symb * 2)
@@ -1272,12 +1272,14 @@ def _add_first_order_absorption(model, dose, to_comp, lag_time=None):
     if mat_assign:
         mat_symb = mat_assign.symbol
     else:
-        mat_symb = _add_parameter(model, 'MAT', _get_absorption_init(model, 'MAT'))
+        model, mat_symb = _add_parameter(model, 'MAT', _get_absorption_init(model, 'MAT'))
     cb.add_flow(depot, to_comp, 1 / mat_symb)
-    model.statements = (
-        model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+    model = model.replace(
+        statements=model.statements.before_odes
+        + CompartmentalSystem(cb)
+        + model.statements.after_odes
     )
-    return depot
+    return model, depot
 
 
 def _get_absorption_init(model, param_name) -> float:
@@ -1445,9 +1447,10 @@ def add_peripheral_compartment(model: Model):
 
     if n == 1:
         if vc == 1:
-            kpc = _add_parameter(model, f'KPC{n}', init=0.1)
-            kcp = _add_parameter(model, f'KCP{n}', init=0.1)
+            model, kpc = _add_parameter(model, f'KPC{n}', init=0.1)
+            model, kcp = _add_parameter(model, f'KCP{n}', init=0.1)
             peripheral = cb.add_compartment(f'PERIPHERAL{n}')
+            central = model.statements.ode_system.central_compartment
             cb.add_flow(central, peripheral, kcp)
             cb.add_flow(peripheral, central, kpc)
         else:
@@ -1481,20 +1484,23 @@ def add_peripheral_compartment(model: Model):
         pop_vp1 = pop_vp1_candidates.pop()
         pop_qp1_init = model.parameters[pop_qp1].init
         pop_vp1_init = model.parameters[pop_vp1].init
-        set_initial_estimates(model, {pop_qp1.name: pop_qp1_init * 0.10})
+        model = set_initial_estimates(model, {pop_qp1.name: pop_qp1_init * 0.10})
         qp_init = pop_qp1_init * 0.90
         vp_init = pop_vp1_init
 
     if vc != 1:
-        qp = _add_parameter(model, f'QP{n}', init=qp_init)
-        vp = _add_parameter(model, f'VP{n}', init=vp_init)
+        model, qp = _add_parameter(model, f'QP{n}', init=qp_init)
+        model, vp = _add_parameter(model, f'VP{n}', init=vp_init)
         peripheral = Compartment.create(f'PERIPHERAL{n}')
         cb.add_compartment(peripheral)
+        central = model.statements.ode_system.central_compartment
         cb.add_flow(central, peripheral, qp / vc)
         cb.add_flow(peripheral, central, qp / vp)
 
-    model.statements = Statements(
-        model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+    model = model.replace(
+        statements=Statements(
+            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+        )
     )
 
     return model.update_source()

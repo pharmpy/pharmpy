@@ -899,8 +899,7 @@ class CompartmentalSystem(ODESystem):
         --------
         >>> from pharmpy.modeling import load_example_model, set_first_order_absorption
         >>> model = load_example_model("pheno")
-        >>> set_first_order_absorption(model)       # doctest: +ELLIPSIS
-        <...>
+        >>> model = set_first_order_absorption(model)
         >>> model.statements.ode_system.find_depot(model.statements)
         Compartment(DEPOT, amount=A_DEPOT, dose=Bolus(AMT, admid=1))
         """

@@ -24,7 +24,7 @@ from pharmpy.workflows import Workflow
 )
 def test_brute_force_no_of_etas(load_model_for_test, testdata, list_of_parameters, no_of_models):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     model = add_iiv(model, list_of_parameters, 'add')
     wf = brute_force_no_of_etas(model)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
@@ -40,10 +40,10 @@ def test_brute_force_block_structure(
     load_model_for_test, testdata, list_of_parameters, block_structure, no_of_models
 ):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     model = add_iiv(model, list_of_parameters, 'add')
     if block_structure:
-        create_joint_distribution(
+        model = create_joint_distribution(
             model, block_structure, individual_estimates=model.modelfit_results.individual_estimates
         )
 

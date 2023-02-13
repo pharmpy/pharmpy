@@ -107,11 +107,26 @@ class Model:
             raise ValueError("Can only set value_type to one of {allowed_strings} or a symbol")
         return value
 
+    @staticmethod
+    def _canonicalize_parameter_estimates(params, rvs):
+        inits = params.inits
+        if not rvs.validate_parameters(inits):
+            nearest = rvs.nearest_valid_parameters(inits)
+            before, after = compare_before_after_params(inits, nearest)
+            warnings.warn(
+                f"Adjusting initial estimates to create positive semidefinite "
+                f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
+                f"After adjusting: {after}"
+            )
+            params = params.set_initial_estimates(nearest)
+        return params
+
     def replace(self, **kwargs):
         name = kwargs.get('name', self.name)
         dependent_variable = kwargs.get('dependent_variable', self.dependent_variable)
         parameters = kwargs.get('parameters', self.parameters)
         random_variables = kwargs.get('random_variables', self.random_variables)
+        parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
         statements = kwargs.get('statements', self.statements)
         if hasattr(self, '_dataset'):
             dataset = kwargs.get('dataset', self.dataset)
