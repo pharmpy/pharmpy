@@ -1260,8 +1260,7 @@ def translate_nmtran_time(model: Model):
         timecol = timecol.replace(unit='h')
     timecol = timecol.replace(datatype='float64')
     di = di.set_column(timecol)
-    model.datainfo = di
-    model.dataset = df
+    model = model.replace(datainfo=di, dataset=df)
     return model.update_source()
 
 
