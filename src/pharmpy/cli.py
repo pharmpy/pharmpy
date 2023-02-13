@@ -705,7 +705,7 @@ def power_on_ruv(args):
     except AttributeError:
         eps = args.eps
 
-    set_power_on_ruv(model, eps)
+    model = set_power_on_ruv(model, eps)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
