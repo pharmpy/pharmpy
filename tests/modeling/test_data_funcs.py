@@ -249,8 +249,8 @@ def test_drop_dropped_columns(load_example_model_for_test):
 
 def test_undrop_columns(load_example_model_for_test):
     m = load_example_model_for_test('pheno')
-    drop_columns(m, ["APGR", "WGT"], mark=True)
-    undrop_columns(m, "WGT")
+    m = drop_columns(m, ["APGR", "WGT"], mark=True)
+    m = undrop_columns(m, "WGT")
     assert not m.datainfo["WGT"].drop
     assert m.datainfo["APGR"].drop
 

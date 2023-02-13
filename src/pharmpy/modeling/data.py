@@ -1057,17 +1057,21 @@ def drop_columns(model: Model, column_names: Union[List[str], str], mark: bool =
     if isinstance(column_names, str):
         column_names = [column_names]
     di = model.datainfo
-    newcols = []
+    newcols, to_drop = [], []
     for col in di:
         if col.name in column_names:
             if mark:
                 newcol = col.replace(drop=True)
                 newcols.append(newcol)
             else:
-                model.dataset = model.dataset.drop(col.name, axis=1)
+                to_drop.append(col.name)
         else:
             newcols.append(col)
-    model.datainfo = di.replace(columns=newcols)
+    replace_dict = {'datainfo': di.replace(columns=newcols)}
+    if to_drop:
+        df = model.dataset.copy()
+        replace_dict['dataset'] = df.drop(to_drop, axis=1)
+    model = model.replace(**replace_dict)
     return model.update_source()
 
 
