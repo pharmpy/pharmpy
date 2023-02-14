@@ -125,8 +125,7 @@ def create_ini(cg, model):
 
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
     for theta in thetas:
-        theta_name = name_mangle(theta.name)
-        cg.add(f'{theta_name} <- c({theta.lower}, {theta.init}, {theta.upper})')
+        add_theta(cg, theta)
 
     for dist in model.random_variables.etas:
         omega = dist.variance
@@ -668,3 +667,15 @@ def check_doses(model):
             return True
     else:
         return True
+    
+def add_theta(cg, theta):
+    theta_name = name_mangle(theta.name)
+    limit = 1000000.0
+    if theta.lower > -limit and theta.upper < limit:
+        cg.add(f'{theta_name} <- c({theta.lower}, {theta.init}, {theta.upper})')
+    elif theta.lower == -limit and theta.upper < limit:
+        cg.add(f'{theta_name} <- c(-Inf, {theta.init}, {theta.upper})')
+    elif theta.lower > -limit and theta.upper == limit:
+        cg.add(f'{theta_name} <- c({theta.lower}, {theta.init}, Inf)')
+    else:
+        cg.add(f'{theta_name} <- {theta.init}')
