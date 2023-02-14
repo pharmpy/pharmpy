@@ -466,7 +466,7 @@ def add_covariate_effect(args):
     from pharmpy.modeling import add_covariate_effect
 
     model = args.model
-    add_covariate_effect(model, args.param, args.covariate, args.effect, args.operation)
+    model = add_covariate_effect(model, args.param, args.covariate, args.effect, args.operation)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 

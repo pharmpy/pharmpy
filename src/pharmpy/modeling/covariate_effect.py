@@ -231,8 +231,7 @@ def add_covariate_effect(
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> add_covariate_effect(model, "CL", "APGR", "exp")    # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_covariate_effect(model, "CL", "APGR", "exp")
     >>> model.statements.before_odes.full_expression("CL")
     PTVCL*WGT*exp(ETA_1)*exp(POP_CLAPGR*(APGR - 7.0))
 
@@ -249,7 +248,7 @@ def add_covariate_effect(
     statistics['std'] = _calculate_std(model, covariate)
 
     covariate_effect = _create_template(effect, model, covariate)
-    thetas = _create_thetas(model, parameter, effect, covariate, covariate_effect.template)
+    pset, thetas = _create_thetas(model, parameter, effect, covariate, covariate_effect.template)
     covariate_effect.apply(parameter, covariate, thetas, statistics)
     # NOTE We hoist the statistic statements to avoid referencing variables
     # before declaring them. We also avoid duplicate statements.
@@ -290,7 +289,8 @@ def add_covariate_effect(
         sset = sset[0 : insertion_index - 1] + sset[insertion_index:]
         insertion_index -= 1
 
-    model.statements = sset[0:insertion_index] + statements + sset[insertion_index:]
+    sset = sset[0:insertion_index] + statements + sset[insertion_index:]
+    model = model.replace(parameters=pset, statements=sset)
     return model.update_source()
 
 
@@ -328,9 +328,7 @@ def _create_thetas(model, parameter, effect, covariate, template, _ctre=re.compi
             )
             theta_names[new_theta] = theta_name
 
-    model.parameters = pset
-
-    return theta_names
+    return pset, theta_names
 
 
 def _count_categorical(model, covariate):
