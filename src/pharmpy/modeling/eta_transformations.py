@@ -33,8 +33,7 @@ def transform_etas_boxcox(model: Model, list_of_etas: Optional[Union[List[str], 
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> transform_etas_boxcox(model, ["ETA_1"])    # doctest: +ELLIPSIS
-    <...>
+    >>> model = transform_etas_boxcox(model, ["ETA_1"])
     >>> model.statements.before_odes.full_expression("CL")
     PTVCL*WGT*exp((exp(ETA_1)**lambda1 - 1)/lambda1)
 
@@ -72,8 +71,7 @@ def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[List[str], s
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> transform_etas_tdist(model, ["ETA_1"])    # doctest: +ELLIPSIS
-    <...>
+    >>> model = transform_etas_tdist(model, ["ETA_1"])
     >>> model.statements.before_odes.full_expression("CL")    # doctest: +ELLIPSIS
     PTVCL*WGT*exp(ETA_1*(1 + (ETA_1**2 + 1)/(4*df1) + (5*ETA_1**4 + 16*ETA_1**2 + 3)/(96*...
 
@@ -115,8 +113,7 @@ def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[List[s
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> transform_etas_john_draper(model, ["ETA_1"])    # doctest: +ELLIPSIS
-    <...>
+    >>> model = transform_etas_john_draper(model, ["ETA_1"])
     >>> model.statements.before_odes.full_expression("CL")
     PTVCL*WGT*exp(((Abs(ETA_1) + 1)**lambda1 - 1)*sign(ETA_1)/lambda1)
 

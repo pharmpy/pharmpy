@@ -1044,8 +1044,7 @@ def drop_columns(model: Model, column_names: Union[List[str], str], mark: bool =
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> drop_columns(model, ['WGT', 'APGR'])    # doctest: +ELLIPSIS
-    <...>
+    >>> model = drop_columns(model, ['WGT', 'APGR'])
     >>> list(model.dataset.columns)
     ['ID', 'TIME', 'AMT', 'DV', 'FA1', 'FA2']
 
