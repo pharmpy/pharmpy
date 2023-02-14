@@ -1003,8 +1003,7 @@ def drop_dropped_columns(model: Model):
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> drop_dropped_columns(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = drop_dropped_columns(model)
     >>> list(model.dataset.columns)
     ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
 
@@ -1093,10 +1092,8 @@ def undrop_columns(model: Model, column_names: Union[List[str], str]):
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> drop_columns(model, ['WGT', 'APGR'], mark=True)    # doctest: +ELLIPSIS
-    <...>
-    >>> undrop_columns(model, 'WGT')    # doctest: +ELLIPSIS
-    <...>
+    >>> model = drop_columns(model, ['WGT', 'APGR'], mark=True)
+    >>> model = undrop_columns(model, 'WGT')
 
     See also
     --------
