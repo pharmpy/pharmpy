@@ -607,7 +607,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             raise KeyError("Cannot join non-existing random variable")
         joined_rvs = self[inds]
         assert isinstance(joined_rvs, RandomVariables)
-        means, M, names, _ = joined_rvs._calc_covariance_matrix()
+        means, M, names = joined_rvs._calc_covariance_matrix()
         cov_to_params = {}
         if fill != 0:
             for row, col in product(range(M.rows), range(M.cols)):
@@ -697,29 +697,40 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     def _calc_covariance_matrix(self):
-        non_altered = []
         means = []
-        blocks = []
         names = []
+        n = 0
         for dist in self._dists:
             names.extend(dist.names)
+            n += len(dist)
+
+        M = sympy.zeros(n)
+
+        if not names:
+            return means, M, names
+
+        row = 0
+        col = 0
+        for dist in self._dists:
             if isinstance(dist, NormalDistribution):
                 means.append(dist.mean)
-                blocks.append(sympy.Matrix([dist.variance]))
+                M[row, col] = dist.variance
+                row += 1
+                col += 1
             else:  # isinstance(dist, JointNormalDistribution):
                 means.extend(dist.mean)
-                blocks.append(dist.variance)
-        if names:
-            M = sympy.BlockDiagMatrix(*blocks)
-            M = sympy.Matrix(M)
-        else:
-            M = sympy.Matrix()
-        return means, M, names, non_altered
+                var = dist.variance
+                for i in range(var.rows):
+                    for j in range(var.cols):
+                        M[row + i, col + j] = var[i, j]
+                row += var.rows
+                col += var.cols
+        return means, M, names
 
     @property
     def covariance_matrix(self):
         """Covariance matrix of all random variables"""
-        _, M, _, _ = self._calc_covariance_matrix()
+        _, M, _ = self._calc_covariance_matrix()
         return M
 
     def __repr__(self):
