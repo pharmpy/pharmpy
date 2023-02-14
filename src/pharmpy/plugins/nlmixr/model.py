@@ -80,7 +80,8 @@ def convert_model(model):
     nlmixr_model = translate_nmtran_time(nlmixr_model)
     nlmixr_model.datainfo = nlmixr_model.datainfo.replace(path = None)
 
-    #nlmixr_model.update_source()
+    # FIXME : Redundant?? Seem to be produced during NLMIXRModeInternals()
+    nlmixr_model.update_source()
     return nlmixr_model
 
 
@@ -125,7 +126,7 @@ def create_ini(cg, model):
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
     for theta in thetas:
         theta_name = name_mangle(theta.name)
-        cg.add(f'{theta_name} <- {theta.init}')
+        cg.add(f'{theta_name} <- c({theta.lower}, {theta.init}, {theta.upper})')
 
     for dist in model.random_variables.etas:
         omega = dist.variance
@@ -144,7 +145,7 @@ def create_ini(cg, model):
     for dist in model.random_variables.epsilons:
         sigma = dist.variance
         cg.add(f'{name_mangle(sigma.name)} <- {model.parameters[sigma.name].init}')
-
+        
     cg.dedent()
     cg.add('})')
 
@@ -171,7 +172,10 @@ def create_model(cg, model):
                     add_error_model(cg, expr, error, s.symbol.name, force_add = True)
                     add_error_relation(cg, error, s.symbol)
                 elif has_proportional_error_model(model):
-                    expr, error = find_term(model, s.expression)
+                    if len(sympy.Add.make_args(s.expression)) == 1:
+                        expr, error = find_term(model, sympy.expand(s.expression))
+                    else:
+                        expr, error = find_term(model, s.expression)
                     add_error_model(cg, expr, error, s.symbol.name, force_prop = True)
                     add_error_relation(cg, error, s.symbol)
                 elif has_combined_error_model(model):
@@ -258,7 +262,7 @@ class Model(pharmpy.model.Model):
         # Create lowercase id, time and amount symbols for nlmixr to be able
         # to run
         self.internals.src = (
-            str(cg).replace("AMT", "amt").replace("TIME", "time").replace("ID", "id")
+            str(cg).replace("AMT", "amt").replace("TIME", "time")
         )
         self.internals.path = None
 
@@ -564,7 +568,6 @@ def find_term(model, expr):
     
     errors_add_prop = {"add": None, "prop": None}
     
-    #FIXME
     prop = False
     res_alias = find_aliases(res, model)
     for term in errors:
