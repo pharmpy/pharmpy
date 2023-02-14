@@ -113,5 +113,5 @@ def update_initial_individual_estimates(
     if not force and model.initial_individual_estimates is None:
         return model
 
-    model.initial_individual_estimates = individual_estimates
+    model = model.replace(initial_individual_estimates=individual_estimates)
     return model.update_source()
