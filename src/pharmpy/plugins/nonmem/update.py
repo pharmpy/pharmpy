@@ -375,7 +375,7 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
             df = model.dataset.drop(columns=['RATE'])
             model.dataset = df
 
-        pk_param_conversion(model, advan=advan, trans=trans)
+        model = pk_param_conversion(model, advan=advan, trans=trans)
         model = add_needed_pk_parameters(model, advan, trans)
         model = update_subroutines_record(model, advan, trans)
         model = update_model_record(model, advan)
@@ -645,7 +645,7 @@ def pk_param_conversion(model: Model, advan, trans):
     """Conversion map for pk parameters for removed or added compartment"""
     all_subs = model.internals.control_stream.get_records('SUBROUTINES')
     if not all_subs:
-        return
+        return model
     subs = all_subs[0]
     from_advan = subs.advan
     statements = model.statements
@@ -813,7 +813,8 @@ def pk_param_conversion(model: Model, advan, trans):
             d[sympy.Symbol('K')] = sympy.Symbol(f'K{n-1}0')
         else:
             d[sympy.Symbol(f'K{len(oldmap)-1}0')] = sympy.Symbol(f'K{len(newmap)-1}0')
-    model.statements = statements.subs(d)
+    model = model.replace(statements=statements.subs(d))
+    return model
 
 
 def new_advan_trans(model: Model):
@@ -979,7 +980,7 @@ def add_needed_pk_parameters(model: Model, advan, trans):
                     + CompartmentalSystem(cb)
                     + statements.after_odes
                 )
-                statments = model.statements
+                statements = model.statements
                 odes = statements.ode_system
     if advan in ['ADVAN1', 'ADVAN2'] and trans == 'TRANS2':
         central = odes.central_compartment
