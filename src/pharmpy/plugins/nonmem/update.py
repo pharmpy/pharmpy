@@ -364,7 +364,7 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
     if old is None:
         old = CompartmentalSystem(CompartmentalSystemBuilder())
 
-    update_lag_time(model, old, new)
+    model = update_lag_time(model, old, new)
 
     advan, trans, nonlin = new_advan_trans(model)
 
@@ -591,12 +591,13 @@ def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSy
         ass = Assignment(sympy.Symbol('ALAG1'), new_lag_time)
         cb = CompartmentalSystemBuilder(new)
         cb.set_lag_time(new_dosing, ass.symbol)
-        model.statements = (
-            model.statements.before_odes
+        model = model.replace(
+            statements=model.statements.before_odes
             + ass
             + CompartmentalSystem(cb)
             + model.statements.after_odes
         )
+    return model
 
 
 def new_compartmental_map(cs: CompartmentalSystem, oldmap: Mapping[str, int]):
