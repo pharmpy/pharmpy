@@ -211,8 +211,8 @@ class Model(BaseModel):
                 control_stream=newcs, dataset_updated=False, old_datainfo=self.datainfo
             )
 
-        update_sizes(self)
         cs = self.internals.control_stream
+        cs = update_sizes(cs, self)
         cs = update_estimation(cs, self)
         cs = update_description(cs, self.internals.old_description, self.description)
 

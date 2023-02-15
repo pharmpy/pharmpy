@@ -1384,9 +1384,9 @@ def update_name_of_tables(control_stream: NMTranControlStream, new_name: str):
     return control_stream
 
 
-def update_sizes(model: Model):
+def update_sizes(control_stream, model: Model):
     """Update $SIZES if needed"""
-    all_sizes = model.internals.control_stream.get_records('SIZES')
+    all_sizes = control_stream.get_records('SIZES')
     sizes = all_sizes[0] if all_sizes else create_record('$SIZES ')
     assert isinstance(sizes, SizesRecord)
     odes = model.statements.ode_system
@@ -1400,11 +1400,12 @@ def update_sizes(model: Model):
     if len(str(sizes)) > 7:
         if len(all_sizes) == 0:
             sizesrec = create_record(str(sizes))
-            model.internals.control_stream = model.internals.control_stream.insert_record(sizesrec)
+            control_stream = control_stream.insert_record(sizesrec)
         else:
-            model.internals.control_stream = model.internals.control_stream.replace_records(
+            control_stream = control_stream.replace_records(
                 [all_sizes[0]], [sizes]
             )
+    return control_stream
 
 
 def update_input(model: Model):
