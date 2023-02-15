@@ -1162,14 +1162,14 @@ def update_abbr_record(model: Model, rv_trans):
     return trans
 
 
-def update_estimation(model: Model):
-    new = model.estimation_steps
+def update_estimation(control_stream, model):
     old = model.internals.old_estimation_steps
+    new = model.estimation_steps
     if old == new:
-        return
+        return control_stream
 
     delta = code_record.diff(old, new)
-    old_records = model.internals.control_stream.get_records('ESTIMATION')
+    old_records = control_stream.get_records('ESTIMATION')
     i = 0
     new_records = []
 
@@ -1247,13 +1247,11 @@ def update_estimation(model: Model):
         prev = (op, est)
 
     if old_records:
-        newcs = model.internals.control_stream.replace_records(old_records, new_records)
-        model.internals = model.internals.replace(control_stream=newcs)
+        control_stream = control_stream.replace_records(old_records, new_records)
     else:
         for rec in new_records:
             newrec = create_record(str(rec))
-            newcs = model.internals.control_stream.insert_record(newrec)
-            model.internals = model.internals.replace(control_stream=newcs)
+            control_stream = control_stream.insert_record(newrec)
 
     old_cov = False
     for est in old:
@@ -1263,15 +1261,14 @@ def update_estimation(model: Model):
         new_cov |= est.cov
     if not old_cov and new_cov:
         # Add $COV
-        last_est_rec = model.internals.control_stream.get_records('ESTIMATION')[-1]
-        idx_cov = model.internals.control_stream.records.index(last_est_rec)
+        last_est_rec = control_stream.get_records('ESTIMATION')[-1]
+        idx_cov = control_stream.records.index(last_est_rec)
         covrec = create_record('$COVARIANCE\n')
-        newcs = model.internals.control_stream.insert_record(covrec, at_index=idx_cov + 1)
+        control_stream = control_stream.insert_record(covrec, at_index=idx_cov + 1)
     elif old_cov and not new_cov:
         # Remove $COV
-        covrecs = model.internals.control_stream.get_records('COVARIANCE')
-        newcs = model.internals.control_stream.remove_records(covrecs)
-    model.internals = model.internals.replace(control_stream=newcs)
+        covrecs = control_stream.get_records('COVARIANCE')
+        control_stream = control_stream.remove_records(covrecs)
 
     # Update $TABLE
     # Currently only adds if did not exist before
@@ -1279,7 +1276,7 @@ def update_estimation(model: Model):
     for estep in new:
         cols.update(estep.predictions)
         cols.update(estep.residuals)
-    tables = model.internals.control_stream.get_records('TABLE')
+    tables = control_stream.get_records('TABLE')
     if not tables and cols:
         s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
         s += f'{model.datainfo.dv_column.name} '
@@ -1287,9 +1284,8 @@ def update_estimation(model: Model):
         if any(id_val > 99999 for id_val in get_ids(model)):
             s += ' FORMAT=s1PE16.8'
         tabrec = create_record(s)
-        newcs = model.internals.control_stream.insert_record(tabrec)
-        model.internals = model.internals.replace(control_stream=newcs)
-    model.internals = model.internals.replace(old_estimation_steps=new)
+        control_stream = control_stream.insert_record(tabrec)
+    return control_stream
 
 
 def solver_to_advan(solver):

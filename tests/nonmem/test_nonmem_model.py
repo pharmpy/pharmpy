@@ -838,7 +838,7 @@ $EST METH=COND INTER
     model = Model.create_model(StringIO(code))
     model = model.replace(estimation_steps=model.estimation_steps[1:])
     assert not model.estimation_steps
-    model.update_source()
+    model = model.update_source()
     assert model.model_code.split('\n')[-2] == '$SIGMA 1'
 
 
@@ -933,7 +933,7 @@ def test_table_long_ids(testdata):
     model = Model.create_model(StringIO(code))
     dataset_new = model.dataset.copy()
     dataset_new['ID'] = dataset_new['ID'] * 10000
-    model.dataset = dataset_new
+    model = model.replace(dataset=dataset_new)
     model = set_estimation_step(model, 'FO', residuals=['CWRES'])
     assert 'FORMAT=' in model.model_code
 

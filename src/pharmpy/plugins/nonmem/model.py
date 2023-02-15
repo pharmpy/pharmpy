@@ -212,14 +212,14 @@ class Model(BaseModel):
             )
 
         update_sizes(self)
-        update_estimation(self)
         cs = self.internals.control_stream
+        cs = update_estimation(cs, self)
         cs = update_description(cs, self.internals.old_description, self.description)
 
         if self._name != self.internals.old_name:
             cs = update_name_of_tables(control_stream, self._name)
 
-        new_internals = self.internals.replace(control_stream=cs)
+        new_internals = self.internals.replace(control_stream=cs, old_description=self.description, old_estimation_steps=self.estimation_steps)
         new_model = self.replace(internals=new_internals)
 
         return new_model
