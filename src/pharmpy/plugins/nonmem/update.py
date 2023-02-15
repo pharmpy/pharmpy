@@ -369,7 +369,7 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
     advan, trans, nonlin = new_advan_trans(model)
 
     if nonlin:
-        to_des(model, new)
+        model = to_des(model, new)
     else:
         if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.datainfo.names:
             df = model.dataset.copy().drop(columns=['RATE'])
@@ -512,7 +512,8 @@ def to_des(model: Model, new: ODESystem):
             dose = False
         mod = mod.add_compartment(name, dosing=dose)
     cs = cs.replace_records([old_mod], [mod])
-    model.internals = model.internals.replace(control_stream=cs)
+    model = model.replace(internals=model.internals.replace(control_stream=cs))
+    return model
 
 
 def update_statements(model: Model, old: Statements, new: Statements, trans):
