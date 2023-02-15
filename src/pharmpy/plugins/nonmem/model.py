@@ -213,9 +213,9 @@ class Model(BaseModel):
 
         update_sizes(self)
         update_estimation(self)
-        update_description(self)
-
         cs = self.internals.control_stream
+        cs = update_description(cs, self.internals.old_description, self.description)
+
         if self._name != self.internals.old_name:
             cs = update_name_of_tables(control_stream, self._name)
 

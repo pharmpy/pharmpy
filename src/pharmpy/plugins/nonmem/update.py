@@ -43,12 +43,12 @@ from .records.sizes_record import SizesRecord
 from .table import NONMEMTableFile, PhiTable
 
 
-def update_description(model: Model):
-    if model.description != model.internals.old_description:
-        probrec = model.internals.control_stream.get_records('PROBLEM')[0]
-        new = probrec.set_title(model.description)
-        newcs = model.internals.control_stream.replace_records([probrec], [new])
-        model.internals = model.internals.replace(control_stream=newcs)
+def update_description(control_stream, old, new):
+    if new != old:
+        probrec = control_stream.get_records('PROBLEM')[0]
+        new = probrec.set_title(new)
+        control_stream = control_stream.replace_records([probrec], [new])
+    return control_stream
 
 
 def reorder_diff(diff, kept_names):
