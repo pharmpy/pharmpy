@@ -349,7 +349,7 @@ def _create_dataset(input_model):
     mdv = mdv.reset_index(drop=True)
     label_id = input_model.datainfo.id_column.name
     input_id = input_model.dataset[label_id].astype('int64').squeeze().reset_index(drop=True)
-    add_time_after_dose(input_model)
+    input_model = add_time_after_dose(input_model)
     tad_label = input_model.datainfo.descriptorix['time after dose'][0].name
     tad = input_model.dataset[tad_label].squeeze().reset_index(drop=True)
     df = pd.concat([mdv, input_id, tad, ipred], axis=1)
@@ -362,7 +362,7 @@ def _time_after_dose(model):
     if 'TAD' in model.dataset:
         pass
     else:
-        add_time_after_dose(model)
+        model = add_time_after_dose(model)
     return model
 
 

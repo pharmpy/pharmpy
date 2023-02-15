@@ -79,7 +79,7 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             assert line == f'$DATA ..{sep}.datasets{sep}pheno_real.csv IGNORE=@\n'
 
         run2 = copy_model(model, name="run2")
-        add_time_after_dose(run2)
+        run2 = add_time_after_dose(run2)
         db.store_model(run2)
 
         with open("database/.datasets/run2.csv", "r") as fh:

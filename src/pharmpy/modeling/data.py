@@ -9,6 +9,7 @@ from pharmpy.deps.rich import box as rich_box
 from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import table as rich_table
 from pharmpy.model import CompartmentalSystem, DataInfo, DatasetError, Model
+from pharmpy.model.model import update_datainfo
 
 from .iterators import resample_data
 
@@ -836,8 +837,7 @@ def add_time_after_dose(model: Model):
     --------
     >>> from pharmpy.modeling import load_example_model, add_time_after_dose
     >>> model = load_example_model("pheno")
-    >>> add_time_after_dose(model)  # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_time_after_dose(model)
 
     """
     try:
@@ -847,8 +847,7 @@ def add_time_after_dose(model: Model):
     else:
         # Already have time after dose
         return model
-    temp = model.copy()
-    translate_nmtran_time(temp)
+    temp = translate_nmtran_time(model)
     idv = temp.datainfo.idv_column.name
     idlab = temp.datainfo.id_column.name
     df = model.dataset.copy()
@@ -859,12 +858,12 @@ def add_time_after_dose(model: Model):
     except IndexError:
         addl = None
     else:
-        temp.dataset = df
-        di = temp.datainfo
+        # FIXME: temp workaround, should be canonicalized in Model.replace
+        di = update_datainfo(temp.datainfo, df)
         new_idvcol = di.idv_column.replace(type='unknown')
         new_timecol = di['_NEWTIME'].replace(type='idv')
         di = di.set_column(new_idvcol).set_column(new_timecol)
-        temp.datainfo = di
+        temp = temp.replace(datainfo=di, dataset=df)
         temp = expand_additional_doses(temp, flag=True)
         df = temp.dataset
 
@@ -909,10 +908,10 @@ def add_time_after_dose(model: Model):
 
     df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
 
-    model.dataset = df  # TAD in datainfo is automatically added here
-    di = model.datainfo
+    # FIXME: temp workaround, should be canonicalized in Model.replace
+    di = update_datainfo(model.datainfo, df)
     colinfo = di['TAD'].replace(descriptor='time after dose', unit=di[idv].unit)
-    model.datainfo = di.set_column(colinfo)
+    model = model.replace(datainfo=di.set_column(colinfo), dataset=df)
     return model.update_source()
 
 
@@ -953,7 +952,7 @@ def get_concentration_parameters_from_data(model: Model):
     [589 rows x 4 columns]
     """
     model = model.copy()
-    add_time_after_dose(model)
+    model = add_time_after_dose(model)
     doseid = get_doseid(model)
     df = model.dataset.copy()
     df['DOSEID'] = doseid

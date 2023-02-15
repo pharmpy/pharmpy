@@ -176,14 +176,14 @@ def test_get_cmt(load_example_model_for_test):
 
 def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, testdata):
     m = load_example_model_for_test("pheno")
-    add_time_after_dose(m)
+    m = add_time_after_dose(m)
     tad = m.dataset['TAD']
     assert tad[0] == 0.0
     assert tad[1] == 2.0
     assert tad[743] == 2.0
 
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
-    add_time_after_dose(m)
+    m = add_time_after_dose(m)
     tad = list(m.dataset['TAD'].iloc[0:21])
     assert tad == [
         0.0,
@@ -212,7 +212,7 @@ def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, t
     assert m.dataset.loc[104, 'TAD'] == pytest.approx(1.17)
 
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
-    add_time_after_dose(m)
+    m = add_time_after_dose(m)
     tad = list(m.dataset['TAD'].iloc[0:16])
     assert tad == [0.0, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0, 0.0, 12.0, 0.5, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0]
 
