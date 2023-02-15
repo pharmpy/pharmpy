@@ -376,7 +376,7 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
             model.dataset = df
 
         pk_param_conversion(model, advan=advan, trans=trans)
-        add_needed_pk_parameters(model, advan, trans)
+        model = add_needed_pk_parameters(model, advan, trans)
         model = update_subroutines_record(model, advan, trans)
         model = update_model_record(model, advan)
 
@@ -973,43 +973,48 @@ def add_needed_pk_parameters(model: Model, advan, trans):
             if rate != ass.symbol:
                 cb = CompartmentalSystemBuilder(odes)
                 cb.add_flow(odes.find_depot(statements), comp, ass.symbol)
-                model.statements = (
-                    statements.before_odes + ass + CompartmentalSystem(cb) + statements.after_odes
+                model = model.replace(
+                    statements=statements.before_odes
+                    + ass
+                    + CompartmentalSystem(cb)
+                    + statements.after_odes
                 )
+                statments = model.statements
+                odes = statements.ode_system
     if advan in ['ADVAN1', 'ADVAN2'] and trans == 'TRANS2':
         central = odes.central_compartment
-        add_parameters_ratio(model, 'CL', 'V', central, output)
+        model = add_parameters_ratio(model, 'CL', 'V', central, output)
     elif advan == 'ADVAN3' and trans == 'TRANS4':
         central = odes.central_compartment
         peripheral = odes.peripheral_compartments[0]
-        add_parameters_ratio(model, 'CL', 'V1', central, output)
-        add_parameters_ratio(model, 'Q', 'V2', peripheral, central)
-        add_parameters_ratio(model, 'Q', 'V1', central, peripheral)
+        model = add_parameters_ratio(model, 'CL', 'V1', central, output)
+        model = add_parameters_ratio(model, 'Q', 'V2', peripheral, central)
+        model = add_parameters_ratio(model, 'Q', 'V1', central, peripheral)
     elif advan == 'ADVAN4':
         central = odes.central_compartment
         peripheral = odes.peripheral_compartments[0]
         if trans == 'TRANS1':
             rate1 = odes.get_flow(central, peripheral)
-            add_rate_assignment_if_missing(model, 'K23', rate1, central, peripheral)
+            model = add_rate_assignment_if_missing(model, 'K23', rate1, central, peripheral)
             rate2 = odes.get_flow(peripheral, central)
-            add_rate_assignment_if_missing(model, 'K32', rate2, peripheral, central)
+            model = add_rate_assignment_if_missing(model, 'K32', rate2, peripheral, central)
         if trans == 'TRANS4':
-            add_parameters_ratio(model, 'CL', 'V2', central, output)
-            add_parameters_ratio(model, 'Q', 'V3', peripheral, central)
+            model = add_parameters_ratio(model, 'CL', 'V2', central, output)
+            model = add_parameters_ratio(model, 'Q', 'V3', peripheral, central)
     elif advan == 'ADVAN12' and trans == 'TRANS4':
         central = odes.central_compartment
         peripheral1 = odes.peripheral_compartments[0]
         peripheral2 = odes.peripheral_compartments[1]
-        add_parameters_ratio(model, 'CL', 'V2', central, output)
-        add_parameters_ratio(model, 'Q3', 'V3', peripheral1, central)
-        add_parameters_ratio(model, 'Q4', 'V4', peripheral2, central)
+        model = add_parameters_ratio(model, 'CL', 'V2', central, output)
+        model = add_parameters_ratio(model, 'Q3', 'V3', peripheral1, central)
+        model = add_parameters_ratio(model, 'Q4', 'V4', peripheral2, central)
     elif advan == 'ADVAN11' and trans == 'TRANS4':
         central = odes.central_compartment
         peripheral1 = odes.peripheral_compartments[0]
         peripheral2 = odes.peripheral_compartments[1]
-        add_parameters_ratio(model, 'CL', 'V1', central, output)
-        add_parameters_ratio(model, 'Q2', 'V2', peripheral1, central)
-        add_parameters_ratio(model, 'Q3', 'V3', peripheral2, central)
+        model = add_parameters_ratio(model, 'CL', 'V1', central, output)
+        model = add_parameters_ratio(model, 'Q2', 'V2', peripheral1, central)
+        model = add_parameters_ratio(model, 'Q3', 'V3', peripheral2, central)
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         oldmap = model.internals.compartment_map
         assert oldmap is not None
@@ -1040,9 +1045,10 @@ def add_needed_pk_parameters(model: Model, advan, trans):
                             param = f'K{sn}{t}{0}'
                         else:
                             param = f'K{sn}{t}{dn}'
-                        add_rate_assignment_if_missing(
+                        model = add_rate_assignment_if_missing(
                             model, param, rate, source_comp, dest_comp, synonyms=names
                         )
+    return model
 
 
 def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
@@ -1065,13 +1071,16 @@ def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
                 new_statement2 = par2
         cb = CompartmentalSystemBuilder(odes)
         cb.add_flow(source, dest, par1.symbol / par2.symbol)
-        model.statements = (
-            statements.before_odes
-            + new_statement1
-            + new_statement2
-            + CompartmentalSystem(cb)
-            + statements.after_odes
+        model = model.replace(
+            statements=(
+                statements.before_odes
+                + new_statement1
+                + new_statement2
+                + CompartmentalSystem(cb)
+                + statements.after_odes
+            )
         )
+    return model
 
 
 def define_parameter(
@@ -1124,9 +1133,12 @@ def add_rate_assignment_if_missing(
     if added:
         cb = CompartmentalSystemBuilder(model.statements.ode_system)
         cb.add_flow(source, dest, sympy.Symbol(name))
-        model.statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+        model = model.replace(
+            statements=model.statements.before_odes
+            + CompartmentalSystem(cb)
+            + model.statements.after_odes
         )
+    return model
 
 
 def update_abbr_record(model: Model, rv_trans):
