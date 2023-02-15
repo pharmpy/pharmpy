@@ -1402,16 +1402,14 @@ def update_sizes(control_stream, model: Model):
             sizesrec = create_record(str(sizes))
             control_stream = control_stream.insert_record(sizesrec)
         else:
-            control_stream = control_stream.replace_records(
-                [all_sizes[0]], [sizes]
-            )
+            control_stream = control_stream.replace_records([all_sizes[0]], [sizes])
     return control_stream
 
 
-def update_input(model: Model):
+def update_input(control_stream, model: Model):
     """Update $INPUT"""
-    input_records = model.internals.control_stream.get_records("INPUT")
-    _, drop, _, colnames = parse_column_info(model.internals.control_stream)
+    input_records = control_stream.get_records("INPUT")
+    _, drop, _, colnames = parse_column_info(control_stream)
     keep = []
     i = 0
     for child in input_records[0].root.children:
@@ -1444,8 +1442,8 @@ def update_input(model: Model):
 
     for ci in model.datainfo[len(colnames) :]:
         new_input = new_input.append_option(ci.name, 'DROP' if ci.drop else None)
-    newcs = model.internals.control_stream.replace_records([input_records[0]], [new_input])
-    model.internals = model.internals.replace(control_stream=newcs)
+    control_stream = control_stream.replace_records([input_records[0]], [new_input])
+    return control_stream
 
 
 def get_zero_fix_rvs(model, eta=True):

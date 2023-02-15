@@ -189,15 +189,16 @@ class Model(BaseModel):
         update_statements(self, self.internals.old_statements, self._statements, trans)
         self.internals = self.internals.replace(old_statements=self._statements)
 
+        cs = self.internals.control_stream
         if (
             self.internals.dataset_updated
             or self.datainfo != self.internals.old_datainfo
             or self.datainfo.path != self.internals.old_datainfo.path
         ):
-            data_record = self.internals.control_stream.get_records('DATA')[0]
+            data_record = control_stream.get_records('DATA')[0]
             label = self.datainfo.names[0]
             newdata = data_record.set_ignore_character_from_header(label)
-            update_input(self)
+            cs = update_input(cs, self)
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.
@@ -205,13 +206,8 @@ class Model(BaseModel):
             if self.datainfo.path is None or self.internals.dataset_updated:
                 newdata = newdata.set_filename('DUMMYPATH')
 
-            newcs = self.internals.control_stream.replace_records([data_record], [newdata])
+            cs = cs.replace_records([data_record], [newdata])
 
-            self.internals = self.internals.replace(
-                control_stream=newcs, dataset_updated=False, old_datainfo=self.datainfo
-            )
-
-        cs = self.internals.control_stream
         cs = update_sizes(cs, self)
         cs = update_estimation(cs, self)
         cs = update_description(cs, self.internals.old_description, self.description)
@@ -219,7 +215,13 @@ class Model(BaseModel):
         if self._name != self.internals.old_name:
             cs = update_name_of_tables(control_stream, self._name)
 
-        new_internals = self.internals.replace(control_stream=cs, old_description=self.description, old_estimation_steps=self.estimation_steps)
+        new_internals = self.internals.replace(
+            control_stream=cs,
+            old_description=self.description,
+            old_estimation_steps=self.estimation_steps,
+            old_datainfo=self.datainfo,
+            dataset_updated=False,
+        )
         new_model = self.replace(internals=new_internals)
 
         return new_model
