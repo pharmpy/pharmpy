@@ -55,7 +55,7 @@ A new or updated dataset can be set to a model
    import numpy as np
 
    df['DV'] = np.log(df['DV'], where=(df['DV'] != 0))
-   model.dataset = df
+   model = model.replace(dataset=df)
 
 ~~~~~~~~
 Subjects
@@ -145,7 +145,7 @@ Add a column for time after dose (TAD)
 .. pharmpy-execute::
 
     from pharmpy.modeling import add_time_after_dose
-    add_time_after_dose(model)
+    model = add_time_after_dose(model)
     model.dataset['TAD']
 
 Concentration parameters
