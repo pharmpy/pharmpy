@@ -381,7 +381,7 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
         update_model_record(model, advan)
 
         if not is_nonlinear_odes(model):
-            from_des(model, advan)
+            model = from_des(model, advan)
 
     model, updated_dataset = update_infusion(model, old)
     return model, updated_dataset
@@ -470,7 +470,8 @@ def from_des(model, advan):
         newrec = newrec.append_option(trans)
 
     newcs = newcs.replace_records([subs], [newrec])
-    model.internals = model.internals.replace(control_stream=newcs)
+    model = model.replace(internals=model.internals.replace(control_stream=newcs))
+    return model
 
 
 def to_des(model: Model, new: ODESystem):
