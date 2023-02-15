@@ -692,7 +692,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         statements = statements.remove_symbol_definitions(rate.free_symbols, statements.ode_system)
         if mdt_assign:
             statements = mdt_assign + statements
-        model.statements = statements
+        model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
         odes = statements.ode_system
         assert odes is not None
@@ -722,9 +722,10 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             cb.add_flow(new_comp, comp, rate)
             comp = new_comp
         cb.move_dose(dosing_comp, comp)
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
+        model = model.replace(statements=statements)
         model = model.update_source()
     elif len(transits) > n:
         nremove = len(transits) - n
@@ -748,13 +749,15 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             dose = cs.dosing_compartment.dose
             cb.set_dose(destination, dose)
 
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
+        model = model.replace(statements=statements)
         model = _update_numerators(model)
-        model.statements = model.statements.remove_symbol_definitions(
+        statements = model.statements.remove_symbol_definitions(
             removed_symbols, model.statements.ode_system
         )
+        model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     else:
         nadd = n - len(transits)
@@ -772,9 +775,10 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             last = new_comp
             nadd -= 1
         cb.add_flow(last, destination, rate)
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
+        model = model.replace(statements=statements)
         model = _update_numerators(model)
         model = model.update_source()
     return model
@@ -810,7 +814,9 @@ def _update_numerators(model: Model):
                 if ass_numer.is_Integer and ass_numer != new_numerator:
                     new_rate = new_numerator / ass_denom
                     statements = statements.reassign(numer, new_rate)
-    model.statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+    model = model.replace(
+        statements=statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+    )
     return model
 
 
@@ -963,7 +969,7 @@ def set_zero_order_absorption(model: Model):
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         symbols = ka.free_symbols
     else:
-        to_comp = dose_comp
+        to_comp = dose_comp  #
 
     new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
     mat_idx = statements.find_assignment_index('MAT')
@@ -971,7 +977,7 @@ def set_zero_order_absorption(model: Model):
         mat_assign = statements[mat_idx]
         new_statements = new_statements[0:mat_idx] + mat_assign + new_statements[mat_idx:]
 
-    model.statements = new_statements
+    model = model.replace(statements=new_statements)
 
     model = remove_unused_parameters_and_rvs(model)
     if not has_zero_order_absorption(model):
@@ -1249,8 +1255,10 @@ def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=
     cb.set_dose(to_comp, new_dose)
     if lag_time is not None and lag_time != 0:
         cb.set_lag_time(model.statements.ode_system.dosing_compartment, lag_time)
-    model.statements = (
-        model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+    model = model.replace(
+        statements=model.statements.before_odes
+        + CompartmentalSystem(cb)
+        + model.statements.after_odes
     )
     return model
 
