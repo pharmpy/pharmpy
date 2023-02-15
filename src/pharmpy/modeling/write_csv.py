@@ -33,15 +33,14 @@ def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool
 
     Returns
     -------
-    Path
-       path to the written file.
+    Model
+       Updated model object
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, write_csv
     >>> model = load_example_model("pheno")
-    >>> write_csv(model, path="newdataset.csv")    # doctest: +SKIP
-    newdataset.csv
+    >>> model = write_csv(model, path="newdataset.csv")    # doctest: +SKIP
 
     """
     from pharmpy.model import data
@@ -52,5 +51,5 @@ def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool
 
     path = path_absolute(path)
     model.dataset.to_csv(path, na_rep=data.conf.na_rep, index=False)
-    model.datainfo = model.datainfo.replace(path=path)
-    return path
+    model = model.replace(datainfo=model.datainfo.replace(path=path))
+    return model
