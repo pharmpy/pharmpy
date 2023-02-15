@@ -218,8 +218,8 @@ def test_add_statements(pheno, statement_new, buf_new):
             new_sset.append(statement_new)
         new_sset.append(s)
 
-    model.statements = Statements(new_sset)
-    model.update_source()
+    model = model.replace(statements=Statements(new_sset))
+    model = model.update_source()
 
     assert len(model.statements) == 16
 

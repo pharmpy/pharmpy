@@ -547,7 +547,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
                     newsubs = subs.set_advan(advan)
                     newcs = model.internals.control_stream.replace_records([subs], [newsubs])
-                    model.internals = model.internals.replace(control_stream=newcs)
+                    model = model.replace(internals=model.internals.replace(control_stream=newcs))
                     model = update_model_record(model, advan)
 
     main_statements = model.statements.before_odes
@@ -556,13 +556,13 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
     rec = model.internals.control_stream.get_pred_pk_record()
     newrec = rec.update_statements(main_statements.subs(trans), model.random_variables, trans)
     newcs = model.internals.control_stream.replace_records([rec], [newrec])
-    model.internals = model.internals.replace(control_stream=newcs)
+    model = model.replace(internals=model.internals.replace(control_stream=newcs))
 
     error = model.internals.control_stream.get_error_record()
     if not error and len(error_statements) > 0:
         empty_error = create_record('$ERROR\n')
         newcs = model.internals.control_stream.insert_record(empty_error)
-        model.internals = model.internals.replace(control_stream=newcs)
+        model = model.replace(internals=model.internals.replace(control_stream=newcs))
     if error:
         if (
             len(error_statements) > 0
@@ -579,7 +579,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
             error_statements.subs(trans), model.random_variables, trans
         )
         newcs = model.internals.control_stream.replace_records([error], [new_error])
-        model.internals = model.internals.replace(control_stream=newcs)
+        model = model.replace(internals=model.internals.replace(control_stream=newcs))
     return model, updated_dataset
 
 
