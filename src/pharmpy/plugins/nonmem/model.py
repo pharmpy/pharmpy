@@ -186,45 +186,48 @@ class Model(BaseModel):
         abbr_translation(self, rv_trans)
 
         trans = {sympy.Symbol(key): sympy.Symbol(value) for key, value in trans.items()}
-        update_statements(self, self.internals.old_statements, self._statements, trans)
+        model, updated_dataset = update_statements(
+            self, self.internals.old_statements, self._statements, trans
+        )
 
-        cs = self.internals.control_stream
+        cs = model.internals.control_stream
         if (
-            self.internals.dataset_updated
-            or self.datainfo != self.internals.old_datainfo
-            or self.datainfo.path != self.internals.old_datainfo.path
+            updated_dataset
+            or model.internals.dataset_updated
+            or model.datainfo != model.internals.old_datainfo
+            or model.datainfo.path != model.internals.old_datainfo.path
         ):
             data_record = control_stream.get_records('DATA')[0]
-            label = self.datainfo.names[0]
+            label = model.datainfo.names[0]
             newdata = data_record.set_ignore_character_from_header(label)
-            cs = update_input(cs, self)
+            cs = update_input(cs, model)
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.
             newdata = newdata.remove_ignore().remove_accept()
-            if self.datainfo.path is None or self.internals.dataset_updated:
+            if model.datainfo.path is None or model.internals.dataset_updated or updated_dataset:
                 newdata = newdata.set_filename('DUMMYPATH')
 
             cs = cs.replace_records([data_record], [newdata])
 
-        cs = update_sizes(cs, self)
-        cs = update_estimation(cs, self)
-        cs = update_description(cs, self.internals.old_description, self.description)
+        cs = update_sizes(cs, model)
+        cs = update_estimation(cs, model)
+        cs = update_description(cs, model.internals.old_description, model.description)
 
-        if self._name != self.internals.old_name:
-            cs = update_name_of_tables(control_stream, self._name)
+        if model._name != model.internals.old_name:
+            cs = update_name_of_tables(control_stream, model._name)
 
-        new_internals = self.internals.replace(
+        new_internals = model.internals.replace(
             control_stream=cs,
-            old_description=self._description,
-            old_estimation_steps=self._estimation_steps,
-            old_datainfo=self._datainfo,
-            old_statements=self._statements,
+            old_description=model._description,
+            old_estimation_steps=model._estimation_steps,
+            old_datainfo=model._datainfo,
+            old_statements=model._statements,
             dataset_updated=False,
         )
-        new_model = self.replace(internals=new_internals)
+        model = model.replace(internals=new_internals)
 
-        return new_model
+        return model
 
     def write_files(self, path=None, force=False):
         self.update_source()

@@ -383,7 +383,8 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
         if not is_nonlinear_odes(model):
             from_des(model, advan)
 
-    update_infusion(model, old)
+    model, updated_dataset = update_infusion(model, old)
+    return model, updated_dataset
 
 
 def is_nonlinear_odes(model: Model):
@@ -399,7 +400,7 @@ def update_infusion(model: Model, old: ODESystem):
     assert new is not None
     if isinstance(new.dosing_compartment.dose, Infusion) and not statements.find_assignment('D1'):
         # Handle direct moving of Infusion dose
-        statements.subs({'D2': 'D1'})
+        statements = statements.subs({'D2': 'D1'})
 
     if isinstance(new.dosing_compartment.dose, Infusion) and isinstance(
         old.dosing_compartment.dose, Bolus
@@ -410,23 +411,19 @@ def update_infusion(model: Model, old: ODESystem):
             ass = Assignment(sympy.Symbol('D1'), dose.duration)
             cb = CompartmentalSystemBuilder(new)
             cb.set_dose(new.dosing_compartment, Infusion(dose.amount, duration=ass.symbol))
-            model.statements = (
-                model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-            )
+            statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")
-        model.statements = (
-            model.statements.before_odes
-            + ass
-            + model.statements.ode_system
-            + model.statements.after_odes
-        )
-        df = model.dataset.copy()
-        rate = np.where(df['AMT'] == 0, 0.0, -2.0)
-        df['RATE'] = rate
-        # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
-        # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
-        model.dataset = df
+        statements = statements.before_odes + ass + statements.ode_system + statements.after_odes
+        dataset = model.dataset.copy()
+        rate = np.where(dataset['AMT'] == 0, 0.0, -2.0)
+        dataset['RATE'] = rate
+        updated_dataset = True
+        model = model.replace(dataset=dataset)
+    else:
+        updated_dataset = False
+    model = model.replace(statements=statements)
+    return model, updated_dataset
 
 
 def from_des(model, advan):
@@ -523,6 +520,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
     error_statements = Statements()
 
     new_odes = new.ode_system
+    updated_dataset = False
     if new_odes is not None:
         old_odes = old.ode_system
         if new_odes != old_odes:
@@ -534,7 +532,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                     'in dataset might not be relevant anymore. Check '
                     'CMT-column or drop column'
                 )
-            update_ode_system(model, old_odes, new_odes)
+            model, updated_dataset = update_ode_system(model, old_odes, new_odes)
         else:
             if len(model.estimation_steps) > 0:
                 new_solver = model.estimation_steps[0].solver
@@ -580,6 +578,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         )
         newcs = model.internals.control_stream.replace_records([error], [new_error])
         model.internals = model.internals.replace(control_stream=newcs)
+    return model, updated_dataset
 
 
 def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSystem):

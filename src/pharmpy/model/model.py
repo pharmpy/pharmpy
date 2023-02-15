@@ -129,13 +129,23 @@ class Model:
         parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
         statements = kwargs.get('statements', self.statements)
         if hasattr(self, '_dataset'):
-            dataset = kwargs.get('dataset', self.dataset)
+            if 'dataset' in kwargs:
+                dataset = kwargs['dataset']
+                new_dataset = True
+            else:
+                dataset = self._dataset
+                new_dataset = False
         else:
             dataset = None
+            new_dataset = False
         if hasattr(self, '_datainfo'):
             datainfo = kwargs.get('datainfo', self.datainfo)
         else:
             datainfo = None
+        if new_dataset:
+            if datainfo is None:
+                datainfo = DataInfo.create()
+            datainfo = update_datainfo(datainfo, dataset)
         estimation_steps = kwargs.get('estimation_steps', self.estimation_steps)
         if not isinstance(estimation_steps, EstimationSteps):
             raise TypeError("model.estimation_steps must be of EstimationSteps type")
