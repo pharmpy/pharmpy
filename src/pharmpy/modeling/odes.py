@@ -693,7 +693,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         if mdt_assign:
             statements = mdt_assign + statements
         model.statements = statements
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
         odes = statements.ode_system
         assert odes is not None
         # Since update_source() is used after removing the depot and statements are immutable, we need to

@@ -615,14 +615,14 @@ def remove_unused_parameters_and_rvs(model: Model):
             new_dists.append(dist)
 
     new_rvs = RandomVariables(tuple(new_dists), rvs._eta_levels, rvs._epsilon_levels)
-    model.random_variables = new_rvs
 
     new_params = []
     for p in model.parameters:
         symb = p.symbol
         if symb in symbols or symb in new_rvs.free_symbols or (p.fix and p.init == 0):
             new_params.append(p)
-    model.parameters = Parameters.create(new_params)
+
+    model = model.replace(random_variables=new_rvs, parameters=Parameters.create(new_params))
     return model.update_source()
 
 
