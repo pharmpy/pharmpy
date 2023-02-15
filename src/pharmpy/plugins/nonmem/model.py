@@ -187,7 +187,6 @@ class Model(BaseModel):
 
         trans = {sympy.Symbol(key): sympy.Symbol(value) for key, value in trans.items()}
         update_statements(self, self.internals.old_statements, self._statements, trans)
-        self.internals = self.internals.replace(old_statements=self._statements)
 
         cs = self.internals.control_stream
         if (
@@ -217,9 +216,10 @@ class Model(BaseModel):
 
         new_internals = self.internals.replace(
             control_stream=cs,
-            old_description=self.description,
-            old_estimation_steps=self.estimation_steps,
-            old_datainfo=self.datainfo,
+            old_description=self._description,
+            old_estimation_steps=self._estimation_steps,
+            old_datainfo=self._datainfo,
+            old_statements=self._statements,
             dataset_updated=False,
         )
         new_model = self.replace(internals=new_internals)
