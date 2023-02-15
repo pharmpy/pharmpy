@@ -215,11 +215,14 @@ class Model(BaseModel):
         update_estimation(self)
         update_description(self)
 
+        cs = self.internals.control_stream
         if self._name != self.internals.old_name:
-            newcs = update_name_of_tables(self.internals.control_stream, self._name)
-            self.internals = self.internals.replace(control_stream=newcs)
+            cs = update_name_of_tables(control_stream, self._name)
 
-        return self
+        new_internals = self.internals.replace(control_stream=cs)
+        new_model = self.replace(internals=new_internals)
+
+        return new_model
 
     def write_files(self, path=None, force=False):
         self.update_source()
