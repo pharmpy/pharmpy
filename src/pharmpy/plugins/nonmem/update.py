@@ -378,7 +378,7 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
         pk_param_conversion(model, advan=advan, trans=trans)
         add_needed_pk_parameters(model, advan, trans)
         update_subroutines_record(model, advan, trans)
-        update_model_record(model, advan)
+        model = update_model_record(model, advan)
 
         if not is_nonlinear_odes(model):
             model = from_des(model, advan)
@@ -547,7 +547,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                     newsubs = subs.set_advan(advan)
                     newcs = model.internals.control_stream.replace_records([subs], [newsubs])
                     model.internals = model.internals.replace(control_stream=newcs)
-                    update_model_record(model, advan)
+                    model = update_model_record(model, advan)
 
     main_statements = model.statements.before_odes
     error_statements = model.statements.after_odes
@@ -956,7 +956,8 @@ def update_model_record(model: Model, advan):
                 i += 1
             newcs = newcs.replace_records([old_mod], [mod])
             replace_dict['control_stream'] = newcs
-    model.internals = model.internals.replace(**replace_dict)
+    model = model.replace(internals=model.internals.replace(**replace_dict))
+    return model
 
 
 def add_needed_pk_parameters(model: Model, advan, trans):
