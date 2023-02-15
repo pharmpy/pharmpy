@@ -1041,7 +1041,7 @@ def set_first_order_absorption(model: Model):
         mat_assign = statements[mat_idx]
         new_statements = new_statements[0:mat_idx] + mat_assign + new_statements[mat_idx:]
 
-    model.statements = new_statements
+    model = model.replace(statements=new_statements)
 
     model = remove_unused_parameters_and_rvs(model)
     if not depot:
