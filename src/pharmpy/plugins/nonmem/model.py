@@ -183,11 +183,11 @@ class Model(BaseModel):
             for name in dist.names:
                 rv_trans[name] = f'ETA({i})'
                 i += 1
-        abbr_translation(self, rv_trans)
+        model, _ = abbr_translation(self, rv_trans)
 
         trans = {sympy.Symbol(key): sympy.Symbol(value) for key, value in trans.items()}
         model, updated_dataset = update_statements(
-            self, self.internals.old_statements, self._statements, trans
+            model, model.internals.old_statements, model._statements, trans
         )
 
         cs = model.internals.control_stream

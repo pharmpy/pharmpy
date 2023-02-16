@@ -1147,7 +1147,7 @@ def add_rate_assignment_if_missing(
 def update_abbr_record(model: Model, rv_trans):
     trans = {}
     if not rv_trans:
-        return trans
+        return model, trans
 
     # Remove not used ABBR
     abbr_map = model.internals.control_stream.abbreviated.translate_to_pharmpy_names()
@@ -1175,8 +1175,8 @@ def update_abbr_record(model: Model, rv_trans):
                 abbr_record_code = f'$ABBR REPLACE {abbr_name}={nonmem_name}\n'
                 abbr_record = create_record(abbr_record_code)
                 control_stream = control_stream.insert_record(abbr_record)
-    model.internals = model.internals.replace(control_stream=control_stream)
-    return trans
+    model = model.replace(internals=model.internals.replace(control_stream=control_stream))
+    return model, trans
 
 
 def update_estimation(control_stream, model):
@@ -1552,14 +1552,14 @@ def _sort_eta_columns(df: pd.DataFrame):
 def abbr_translation(model: Model, rv_trans):
     abbr_pharmpy = model.internals.control_stream.abbreviated.translate_to_pharmpy_names()
     abbr_replace = model.internals.control_stream.abbreviated.replace
-    abbr_trans = update_abbr_record(model, rv_trans)
+    model, abbr_trans = update_abbr_record(model, rv_trans)
     abbr_recs = {
         sympy.Symbol(abbr_pharmpy[value]): sympy.Symbol(key)
         for key, value in abbr_replace.items()
         if value in abbr_pharmpy.keys()
     }
     abbr_trans.update(abbr_recs)
-    return abbr_trans
+    return model, abbr_trans
 
 
 def create_name_map(model):
