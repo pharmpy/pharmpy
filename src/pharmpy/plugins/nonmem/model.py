@@ -90,7 +90,6 @@ def convert_model(model):
     nm_model = parse_code(code, dataset=model.dataset)
     assert isinstance(nm_model, Model)
     nm_model._datainfo = model.datainfo
-    nm_model.random_variables = model.random_variables
     nm_model._parameters = model.parameters
     nm_model.internals = nm_model.internals.replace(old_parameters=Parameters())
     nm_model.statements = model.statements
@@ -108,9 +107,10 @@ def convert_model(model):
         value_type=model.value_type,
         observation_transformation=new_obs_trans,
         dependent_variable=sympy.Symbol('Y'),
+        random_variables=model.random_variables,
     )
     nm_model.description = model.description
-    nm_model.update_source()
+    nm_model = nm_model.update_source()
     if model.statements.ode_system:
         nm_model.internals = nm_model.internals.replace(
             compartment_map={

@@ -121,11 +121,20 @@ class Model:
             params = params.set_initial_estimates(nearest)
         return params
 
+    @staticmethod
+    def _canonicalize_random_variables(rvs):
+        if not isinstance(rvs, RandomVariables):
+            raise TypeError("model.random_variables must be of RandomVariables type")
+
     def replace(self, **kwargs):
         name = kwargs.get('name', self.name)
         dependent_variable = kwargs.get('dependent_variable', self.dependent_variable)
         parameters = kwargs.get('parameters', self.parameters)
-        random_variables = kwargs.get('random_variables', self.random_variables)
+        if 'random_variables' in kwargs:
+            random_variables = kwargs['random_variables']
+            Model._canonicalize_random_variables(random_variables)
+        else:
+            random_variables = self.random_variables
         parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
         statements = kwargs.get('statements', self.statements)
         if hasattr(self, '_dataset'):
@@ -329,12 +338,6 @@ class Model:
         See :class:`pharmpy.RandomVariables`
         """
         return self._random_variables
-
-    @random_variables.setter
-    def random_variables(self, value):
-        if not isinstance(value, RandomVariables):
-            raise TypeError("model.random_variables must be of RandomVariables type")
-        self._random_variables = value
 
     @property
     def statements(self):

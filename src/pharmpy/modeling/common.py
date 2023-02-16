@@ -171,13 +171,13 @@ def convert_model(model: Model, to_format: str):
     if to_format == 'generic':
         new = Model.create_model()
         new.parameters = model.parameters
-        new.random_variables = model.random_variables
         new.statements = model.statements
         new.dataset = model.dataset
         new.datainfo = model.datainfo
         new.name = model.name
         new.description = model.description
         new = new.replace(
+            random_variables=model.random_variables,
             estimation_steps=model.estimation_steps,
             dependent_variable=model.dependent_variable,
             observation_transformation=model.observation_transformation,

@@ -74,11 +74,10 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     )
     eststeps = EstimationSteps.create([est])
 
-    model = Model(estimation_steps=eststeps, dependent_variable=y_ass.symbol)
+    model = Model(estimation_steps=eststeps, dependent_variable=y_ass.symbol, random_variables=rvs)
     model.name = 'start'
     model.description = 'Start model'
     model.parameters = params
-    model.random_variables = rvs
     model.statements = stats
     model.dataset = df
     model.datainfo = di
