@@ -147,13 +147,18 @@ class Model(BaseModel):
         path - path to modelfile
         nofiles - Set to not write any files (i.e. dataset, phi input etc)
         """
-        if self.initial_individual_estimates is not self.internals.old_initial_individual_estimates:
-            update_initial_individual_estimates(self, path='DUMMYPATH', nofiles=True)
-            self.internals = self.internals.replace(
-                old_initial_individual_estimates=self.initial_individual_estimates
+        model = self
+        if (
+            model.initial_individual_estimates
+            is not model.internals.old_initial_individual_estimates
+        ):
+            update_initial_individual_estimates(model, path='DUMMYPATH', nofiles=True)
+            model = model.replace(
+                internals=model.internals.replace(
+                    old_initial_individual_estimates=model.initial_individual_estimates
+                )
             )
 
-        model = self
         if not model.random_variables.etas:
             omega = Parameter('DUMMYOMEGA', init=0, fix=True)
             eta = NormalDistribution.create('eta_dummy', 'iiv', 0, omega.symbol)
