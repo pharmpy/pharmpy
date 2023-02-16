@@ -169,21 +169,23 @@ class Model(BaseModel):
             self, control_stream, self.internals.old_parameters, self._parameters
         )
 
-        self.internals = self.internals.replace(
-            old_parameters=self._parameters,
-            old_random_variables=self._random_variables,
-            control_stream=control_stream,
+        model = self.replace(
+            internals=self.internals.replace(
+                old_parameters=self._parameters,
+                old_random_variables=self._random_variables,
+                control_stream=control_stream,
+            )
         )
 
-        trans = create_name_map(self)
+        trans = create_name_map(model)
 
         rv_trans = {}
         i = 1
-        for dist in self._random_variables.etas:
+        for dist in model._random_variables.etas:
             for name in dist.names:
                 rv_trans[name] = f'ETA({i})'
                 i += 1
-        model, _ = abbr_translation(self, rv_trans)
+        model, _ = abbr_translation(model, rv_trans)
 
         trans = {sympy.Symbol(key): sympy.Symbol(value) for key, value in trans.items()}
         model, updated_dataset = update_statements(
