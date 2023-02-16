@@ -126,7 +126,10 @@ def create_ini(cg, model):
 
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
     for theta in thetas:
-        add_theta(cg, theta)
+        if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
+            add_theta(cg, theta, boundary = True)
+        else:
+            add_theta(cg, theta)
 
     for dist in model.random_variables.etas:
         omega = dist.variance
@@ -229,10 +232,18 @@ def create_model(cg, model):
 
 def create_fit(cg, model):
     """Create the call to fit"""
-    if [s.evaluation for s in model.estimation_steps._steps][0] is False:
-        cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei")')
-    else:
+    if [s.evaluation for s in model.estimation_steps._steps][0] is True:
         cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei",control=foceiControl(maxOuterIterations=0))')
+    else:
+        estimation_steps = model.estimation_steps[0]
+        method = estimation_steps.method
+        max_eval = estimation_steps.maximum_evaluations
+            
+        if method == "FOCE":
+            if max_eval != None:
+                cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei", control=foceiControl(maxOuterIterations={max_eval}))')
+            else:
+                cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei")')
 
 
 @dataclass
@@ -672,15 +683,18 @@ def check_doses(model):
     else:
         return True
     
-def add_theta(cg, theta):
+def add_theta(cg, theta, boundary = False):
     theta_name = name_mangle(theta.name)
     limit = 1000000.0
-    if theta.lower > -limit and theta.upper < limit:
-        cg.add(f'{theta_name} <- c({theta.lower}, {theta.init}, {theta.upper})')
-    elif theta.lower == -limit and theta.upper < limit:
-        cg.add(f'{theta_name} <- c(-Inf, {theta.init}, {theta.upper})')
-    elif theta.lower > -limit and theta.upper == limit:
-        cg.add(f'{theta_name} <- c({theta.lower}, {theta.init}, Inf)')
+    if boundary:
+        if theta.lower > -limit and theta.upper < limit:
+            cg.add(f'{theta_name} <- c({theta.lower}, {theta.init}, {theta.upper})')
+        elif theta.lower == -limit and theta.upper < limit:
+            cg.add(f'{theta_name} <- c(-Inf, {theta.init}, {theta.upper})')
+        elif theta.lower > -limit and theta.upper == limit:
+            cg.add(f'{theta_name} <- c({theta.lower}, {theta.init}, Inf)')
+        else:
+            cg.add(f'{theta_name} <- {theta.init}')
     else:
         cg.add(f'{theta_name} <- {theta.init}')
         
