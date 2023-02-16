@@ -403,10 +403,6 @@ class Model:
         """Name of parent model"""
         return self._parent_model
 
-    @parent_model.setter
-    def parent_model(self, value):
-        self._parent_model = value
-
     def has_same_dataset_as(self, other):
         """Check if this model has the same dataset as another model
 
@@ -449,7 +445,7 @@ class Model:
         """Create a deepcopy of the model object"""
         model_copy = copy.deepcopy(self)
         try:
-            model_copy.parent_model = self.name
+            model_copy = model_copy.replace(parent_model=self.name)
         except AttributeError:
             # NOTE Name could be absent.
             pass

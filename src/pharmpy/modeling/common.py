@@ -181,8 +181,8 @@ def convert_model(model: Model, to_format: str):
             dependent_variable=model.dependent_variable,
             observation_transformation=model.observation_transformation,
             description=model.description,
+            parent_model=model.name,
         )
-        new.parent_model = model.name
         try:
             new.filename_extension = model.filename_extension
         except AttributeError:
@@ -306,7 +306,7 @@ def copy_model(model: Model, name: Optional[str] = None):
     """
     new = model.copy()
     if name is not None:
-        new.name = name
+        new = new.replace(name=name)
     return new
 
 

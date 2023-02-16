@@ -4,6 +4,7 @@
 # purposes.
 
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 from pharmpy.deps import pandas as pd
@@ -19,16 +20,22 @@ def detect_model(src, *args, **kwargs):
         return None
 
 
+@dataclass
+class FCONInternals:
+    code: str = None
+    path: Path = None
+
+
 class Model(BaseModel):
-    def __init__(self, code, path, **_):
-        super().__init__()
-        self.code = code
-        self.path = path
+    def __init__(self, **kwargs):
+        super().__init__(
+            **kwargs,
+        )
 
     def _parse_labels_and_formats(self):
         in_labl = False
         labels = []
-        lines = iter(self.code.split('\n'))
+        lines = iter(self.internals.code.split('\n'))
         for line in lines:
             if line.startswith('LABL'):
                 in_labl = True
@@ -57,9 +64,12 @@ class Model(BaseModel):
             if not m:
                 raise ModelSyntaxError(f"Unrecognized Data format in FORM: {fmt}")
             widths += [int(m.group(2))] * int(m.group(1))
-        df = pd.read_fwf(self.path.parent / 'FDATA', widths=widths, header=None, names=labels)
+        df = pd.read_fwf(
+            self.internals.path.parent / 'FDATA', widths=widths, header=None, names=labels
+        )
         return df
 
 
 def parse_code(code: str, path: Path, **kwargs):
-    return Model(code, path, **kwargs)
+    internals = FCONInternals(code=code, path=path)
+    return Model(internals=internals, **kwargs)
