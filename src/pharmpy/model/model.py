@@ -126,17 +126,30 @@ class Model:
         if not isinstance(rvs, RandomVariables):
             raise TypeError("model.random_variables must be of RandomVariables type")
 
+    @staticmethod
+    def _canonicalize_statements(statements):
+        if not isinstance(statements, Statements):
+            raise TypeError("model.statements must be of Statements type")
+
     def replace(self, **kwargs):
         name = kwargs.get('name', self.name)
         dependent_variable = kwargs.get('dependent_variable', self.dependent_variable)
         parameters = kwargs.get('parameters', self.parameters)
+
         if 'random_variables' in kwargs:
             random_variables = kwargs['random_variables']
             Model._canonicalize_random_variables(random_variables)
         else:
             random_variables = self.random_variables
+
         parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
-        statements = kwargs.get('statements', self.statements)
+
+        if 'statements' in kwargs:
+            statements = kwargs['statements']
+            Model._canonicalize_statements(statements)
+        else:
+            statements = self.statements
+
         if hasattr(self, '_dataset'):
             if 'dataset' in kwargs:
                 dataset = kwargs['dataset']
@@ -346,12 +359,6 @@ class Model:
         See :class:`pharmpy.Statements`
         """
         return self._statements
-
-    @statements.setter
-    def statements(self, value):
-        if not isinstance(value, Statements):
-            raise TypeError("model.statements must be of Statements type")
-        self._statements = value
 
     @property
     def estimation_steps(self):

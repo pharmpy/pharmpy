@@ -159,7 +159,7 @@ $ESTIMATION METHOD=1 INTERACTION
 )
 def test_mu_reference_model_generic(statements, correct):
     model = Model()
-    model.statements = Statements(statements)
+    model = model.replace(statements=Statements(statements))
     eta1 = NormalDistribution.create('ETA(1)', 'iiv', 0, s('omega1'))
     eta2 = NormalDistribution.create('ETA(2)', 'iiv', 0, s('omega2'))
     rvs = RandomVariables.create([eta1, eta2])

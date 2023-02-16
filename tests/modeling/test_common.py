@@ -132,12 +132,12 @@ def test_convert_model():
 
 def test_remove_unused_parameters_and_rvs(pheno):
     model = pheno.copy()
-    remove_unused_parameters_and_rvs(model)
-    create_joint_distribution(
+    model = remove_unused_parameters_and_rvs(model)
+    model = create_joint_distribution(
         model, individual_estimates=model.modelfit_results.individual_estimates
     )
     statements = model.statements
     i = statements.index(statements.find_assignment('CL'))
-    model.statements = model.statements[0:i] + model.statements[i + 1 :]
-    remove_unused_parameters_and_rvs(model)
+    model = model.replace(statements=model.statements[0:i] + model.statements[i + 1 :])
+    model = remove_unused_parameters_and_rvs(model)
     assert len(model.random_variables['ETA_2'].names) == 1

@@ -1102,10 +1102,10 @@ def define_parameter(
             assert isinstance(ass, Assignment)
             if value != ass.expression and value != sympy.Symbol(name):
                 replacement_ass = Assignment(ass.symbol, value)
-                model.statements = (
-                    model.statements[:i] + replacement_ass + model.statements[i + 1 :]
+                model = model.replace(
+                    statements=model.statements[:i] + replacement_ass + model.statements[i + 1 :]
                 )
-            return False
+            return model, False
     new_ass = Assignment(sympy.Symbol(name), value)
     # Put new rate before output rate in statements
     central = model.statements.ode_system.central_compartment
@@ -1120,8 +1120,10 @@ def define_parameter(
     else:
         before_odes = model.statements.before_odes + new_ass
 
-    model.statements = before_odes + model.statements.ode_system + model.statements.after_odes
-    return True
+    model = model.replace(
+        statements=before_odes + model.statements.ode_system + model.statements.after_odes
+    )
+    return model, True
 
 
 def add_rate_assignment_if_missing(
@@ -1132,7 +1134,7 @@ def add_rate_assignment_if_missing(
     dest: Compartment,
     synonyms: Optional[List[str]] = None,
 ):
-    added = define_parameter(model, name, value, synonyms=synonyms)
+    model, added = define_parameter(model, name, value, synonyms=synonyms)
     if added:
         cb = CompartmentalSystemBuilder(model.statements.ode_system)
         cb.add_flow(source, dest, sympy.Symbol(name))

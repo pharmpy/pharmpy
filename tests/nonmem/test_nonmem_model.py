@@ -400,7 +400,7 @@ def test_statements_setter(pheno, buf_new, len_expected):
     assert len(model.statements) == 15
     assert len(statements_new) == len_expected
 
-    model.statements = statements_new
+    model = model.replace(statements=statements_new)
 
     assert len(model.statements) == len_expected
     assert model.statements == statements_new

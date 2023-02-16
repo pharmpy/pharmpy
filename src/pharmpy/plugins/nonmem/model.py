@@ -92,7 +92,6 @@ def convert_model(model):
     nm_model._datainfo = model.datainfo
     nm_model._parameters = model.parameters
     nm_model.internals = nm_model.internals.replace(old_parameters=Parameters())
-    nm_model.statements = model.statements
     if hasattr(model, 'name'):
         nm_model.name = model.name
     nm_model._dataset = model.dataset
@@ -108,6 +107,7 @@ def convert_model(model):
         observation_transformation=new_obs_trans,
         dependent_variable=sympy.Symbol('Y'),
         random_variables=model.random_variables,
+        statements=model.statements,
     )
     nm_model.description = model.description
     nm_model = nm_model.update_source()
