@@ -112,7 +112,7 @@ def _add_allometry_on_model(
 ):
     model = input_model.copy()
     model = update_initial_estimates(model)
-    add_allometry(
+    model = add_allometry(
         model,
         allometric_variable=allometric_variable,
         reference_value=reference_value,
@@ -123,8 +123,7 @@ def _add_allometry_on_model(
         fixed=fixed,
     )
 
-    model.name = "scaled_model"
-    model.description = "Allometry model"
+    model = model.replace(name="scaled_model", description="Allometry model")
     return model
 
 
