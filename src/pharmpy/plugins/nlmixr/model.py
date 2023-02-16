@@ -70,8 +70,9 @@ def convert_model(model):
     # Check data structure of doses
     if not check_doses(nlmixr_model):
         print_warning("The connected model data contains mixed dosage types. Nlmixr cannot handle this \nConverted model will not run on associated data")
-
-    
+    if not has_additive_error_model(model) or has_combined_error_model(model) or has_proportional_error_model(model):
+        print_warning("Format of error model is unknown. Will try to translate either way")
+         
     # Drop all dropped columns so it does not interfere with nlmixr
     drop_dropped_columns(nlmixr_model)
     if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
@@ -187,7 +188,6 @@ def create_model(cg, model):
                 elif has_combined_error_model(model):
                     pass
                 else:
-                    print_warning("Format of error model is unknown. Will try to translate either way")
                     if s.expression.is_Piecewise:
                         # Convert eps to sigma name
                         #piecewise = convert_eps_to_sigma(s, model)
@@ -647,12 +647,8 @@ def add_error_model(cg, expr, error, symbol, force_add = False, force_prop = Fal
         # as solution for nlmixr error model handling
         if error["add"]:
             cg.add(f'add_error <- {error["add"]}')
-        #else:
-        #    cg.add('add_error <- 0')
         if error["prop"]:
             cg.add(f'prop_error <- {error["prop"]}')
-        #else:
-        #    cg.add('prop_error <- 0')
         
 def add_error_relation(cg, error, symbol):
     # Add the actual error model depedent on the previously
