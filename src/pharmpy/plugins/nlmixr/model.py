@@ -127,9 +127,9 @@ def create_ini(cg, model):
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
     for theta in thetas:
         if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
-            add_theta(cg, theta, boundary = True)
+            add_ini_parameter(cg, theta, boundary = True)
         else:
-            add_theta(cg, theta)
+            add_ini_parameter(cg, theta)
 
     for dist in model.random_variables.etas:
         omega = dist.variance
@@ -144,10 +144,13 @@ def create_ini(cg, model):
             cg.add(
                 f'{" + ".join([name_mangle(name) for name in dist.names])} ~ c({", ".join([str(x) for x in inits])})'
             )
+            
+    for sigma in get_sigmas(model):
+        if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
+            add_ini_parameter(cg, sigma, boundary = True)
+        else:
+            add_ini_parameter(cg, sigma)
 
-    for dist in model.random_variables.epsilons:
-        sigma = dist.variance
-        cg.add(f'{name_mangle(sigma.name)} <- {model.parameters[sigma.name].init}')
         
     cg.dedent()
     cg.add('})')
@@ -644,12 +647,12 @@ def add_error_model(cg, expr, error, symbol, force_add = False, force_prop = Fal
         # as solution for nlmixr error model handling
         if error["add"]:
             cg.add(f'add_error <- {error["add"]}')
-        else:
-            cg.add('add_error <- 0')
+        #else:
+        #    cg.add('add_error <- 0')
         if error["prop"]:
             cg.add(f'prop_error <- {error["prop"]}')
-        else:
-            cg.add('prop_error <- 0')
+        #else:
+        #    cg.add('prop_error <- 0')
         
 def add_error_relation(cg, error, symbol):
     # Add the actual error model depedent on the previously
@@ -683,20 +686,23 @@ def check_doses(model):
     else:
         return True
     
-def add_theta(cg, theta, boundary = False):
-    theta_name = name_mangle(theta.name)
-    limit = 1000000.0
-    if boundary:
-        if theta.lower > -limit and theta.upper < limit:
-            cg.add(f'{theta_name} <- c({theta.lower}, {theta.init}, {theta.upper})')
-        elif theta.lower == -limit and theta.upper < limit:
-            cg.add(f'{theta_name} <- c(-Inf, {theta.init}, {theta.upper})')
-        elif theta.lower > -limit and theta.upper == limit:
-            cg.add(f'{theta_name} <- c({theta.lower}, {theta.init}, Inf)')
-        else:
-            cg.add(f'{theta_name} <- {theta.init}')
+def add_ini_parameter(cg, parameter, boundary = False):
+    parameter_name = name_mangle(parameter.name)
+    if parameter.fix:
+        cg.add(f'{parameter_name} <- fixed({parameter.init})')
     else:
-        cg.add(f'{theta_name} <- {theta.init}')
+        limit = 1000000.0
+        if boundary:
+            if parameter.lower > -limit and parameter.upper < limit:
+                cg.add(f'{parameter_name} <- c({parameter.lower}, {parameter.init}, {parameter.upper})')
+            elif parameter.lower == -limit and parameter.upper < limit:
+                cg.add(f'{parameter_name} <- c(-Inf, {parameter.init}, {parameter.upper})')
+            elif parameter.lower > -limit and parameter.upper == limit:
+                cg.add(f'{parameter_name} <- c({parameter.lower}, {parameter.init}, Inf)')
+            else:
+                cg.add(f'{parameter_name} <- {parameter.init}')
+        else:
+            cg.add(f'{parameter_name} <- {parameter.init}')
         
 def print_warning(warning):
     print(f'-------\nWARNING : \n{warning}\n-------')
