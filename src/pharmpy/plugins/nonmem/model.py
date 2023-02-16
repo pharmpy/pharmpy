@@ -153,26 +153,29 @@ class Model(BaseModel):
                 old_initial_individual_estimates=self.initial_individual_estimates
             )
 
-        if not self.random_variables.etas:
+        model = self
+        if not model.random_variables.etas:
             omega = Parameter('DUMMYOMEGA', init=0, fix=True)
             eta = NormalDistribution.create('eta_dummy', 'iiv', 0, omega.symbol)
             statement = Assignment(sympy.Symbol('DUMMYETA'), sympy.Symbol(eta.names[0]))
-            self.statements = statement + self.statements
-            self.random_variables = self.random_variables + eta
-            self.parameters = Parameters.create(list(self.parameters) + [omega])
+            model = model.replace(
+                statements=statement + model.statements,
+                random_variables=model.random_variables + eta,
+                parameters=Parameters.create(list(model.parameters) + [omega]),
+            )
 
         control_stream = update_random_variables(
-            self, self.internals.old_random_variables, self._random_variables
+            model, model.internals.old_random_variables, model._random_variables
         )
 
         control_stream = update_thetas(
-            self, control_stream, self.internals.old_parameters, self._parameters
+            model, control_stream, model.internals.old_parameters, model._parameters
         )
 
-        model = self.replace(
-            internals=self.internals.replace(
-                old_parameters=self._parameters,
-                old_random_variables=self._random_variables,
+        model = model.replace(
+            internals=model.internals.replace(
+                old_parameters=model._parameters,
+                old_random_variables=model._random_variables,
                 control_stream=control_stream,
             )
         )
