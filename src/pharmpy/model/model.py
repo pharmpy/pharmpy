@@ -326,24 +326,6 @@ class Model:
         """
         return self._parameters
 
-    @parameters.setter
-    def parameters(self, value):
-        inits = value.inits
-        if inits and not self.random_variables.validate_parameters(inits):
-            nearest = self.random_variables.nearest_valid_parameters(inits)
-            if nearest != inits:
-                before, after = compare_before_after_params(inits, nearest)
-                warnings.warn(
-                    f"Adjusting initial estimates to create positive semidefinite "
-                    f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
-                    f"After adjusting: {after}"
-                )
-                value = value.set_initial_estimates(nearest)
-            else:
-                raise ValueError("New parameter inits are not valid")
-
-        self._parameters = value
-
     @property
     def random_variables(self):
         """Definitions of random variables

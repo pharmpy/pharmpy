@@ -170,12 +170,12 @@ def convert_model(model: Model, to_format: str):
     # FIXME: Use code that can discover plugins below
     if to_format == 'generic':
         new = Model.create_model()
-        new.parameters = model.parameters
         new.dataset = model.dataset
         new.datainfo = model.datainfo
         new.name = model.name
         new.description = model.description
         new = new.replace(
+            parameters=model.parameters,
             statements=model.statements,
             random_variables=model.random_variables,
             estimation_steps=model.estimation_steps,

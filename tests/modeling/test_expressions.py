@@ -159,16 +159,16 @@ $ESTIMATION METHOD=1 INTERACTION
 )
 def test_mu_reference_model_generic(statements, correct):
     model = Model()
-    model = model.replace(statements=Statements(statements))
     eta1 = NormalDistribution.create('ETA(1)', 'iiv', 0, s('omega1'))
     eta2 = NormalDistribution.create('ETA(2)', 'iiv', 0, s('omega2'))
     rvs = RandomVariables.create([eta1, eta2])
-    model = model.replace(random_variables=rvs)
     th1 = Parameter('THETA(1)', 2, lower=1)
     th2 = Parameter('THETA(2)', 2, lower=1)
     th3 = Parameter('THETA(3)', 2, lower=1)
     params = Parameters((th1, th2, th3))
-    model.parameters = params
+    model = model.replace(
+        statements=Statements(statements), parameters=params, random_variables=rvs
+    )
     model = mu_reference_model(model)
     assert model.statements == Statements(correct)
 
@@ -181,37 +181,37 @@ def test_simplify_expression():
     p1 = Parameter('x', 3)
     p2 = Parameter('y', 9, fix=True)
     pset = Parameters((p1, p2))
-    model.parameters = pset
+    model = model.replace(parameters=pset)
     assert simplify_expression(model, x * y) == 9.0 * x
 
     p1 = Parameter('x', 3, lower=0.001)
     p2 = Parameter('y', 9)
     pset = Parameters((p1, p2))
-    model.parameters = pset
+    model = model.replace(parameters=pset)
     assert simplify_expression(model, abs(x)) == x
 
     p1 = Parameter('x', 3, lower=0)
     p2 = Parameter('y', 9)
     pset = Parameters((p1, p2))
-    model.parameters = pset
+    model = model.replace(parameters=pset)
     assert simplify_expression(model, sympy.Piecewise((2, sympy.Ge(x, 0)), (56, True))) == 2
 
     p1 = Parameter('x', -3, upper=-1)
     p2 = Parameter('y', 9)
     pset = Parameters((p1, p2))
-    model.parameters = pset
+    model = model.replace(parameters=pset)
     assert simplify_expression(model, abs(x)) == -x
 
     p1 = Parameter('x', -3, upper=0)
     p2 = Parameter('y', 9)
     pset = Parameters((p1, p2))
-    model.parameters = pset
+    model = model.replace(parameters=pset)
     assert simplify_expression(model, sympy.Piecewise((2, sympy.Le(x, 0)), (56, True))) == 2
 
     p1 = Parameter('x', 3)
     p2 = Parameter('y', 9)
     pset = Parameters((p1, p2))
-    model.parameters = pset
+    model = model.replace(parameters=pset)
     assert simplify_expression(model, x * y) == x * y
 
 

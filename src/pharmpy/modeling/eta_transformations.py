@@ -132,11 +132,11 @@ def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[List[s
 
 def _transform_etas(model, transformation, etas):
     etas_assignment, etas_subs = _create_new_etas(etas, transformation.name)
-    thetas = _create_new_thetas(model, transformation.theta_type, len(etas))
+    parameters, thetas = _create_new_thetas(model, transformation.theta_type, len(etas))
     transformation.apply(etas_assignment, thetas)
     statements_new = transformation.assignments
     sset = model.statements.subs(etas_subs)
-    model = model.replace(statements=statements_new + sset)
+    model = model.replace(parameters=parameters, statements=statements_new + sset)
     return model
 
 
@@ -177,9 +177,7 @@ def _create_new_thetas(model, transformation, no_of_thetas):
             thetas[f'theta{i}'] = theta_name
             theta_name = f'{transformation}{theta_no + i}'
 
-    model.parameters = Parameters.create(pset)
-
-    return thetas
+    return Parameters.create(pset), thetas
 
 
 class EtaTransformation:
