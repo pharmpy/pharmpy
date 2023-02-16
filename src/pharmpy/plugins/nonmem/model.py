@@ -108,8 +108,8 @@ def convert_model(model):
         dependent_variable=sympy.Symbol('Y'),
         random_variables=model.random_variables,
         statements=model.statements,
+        description=model.description,
     )
-    nm_model.description = model.description
     nm_model = nm_model.update_source()
     if model.statements.ode_system:
         nm_model.internals = nm_model.internals.replace(

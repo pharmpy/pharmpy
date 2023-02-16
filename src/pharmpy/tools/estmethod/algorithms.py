@@ -100,8 +100,8 @@ def _create_base_model(model):
 
     base_model = copy_model(model, 'base_model')
     est_method, eval_method = est_settings['method'], eval_settings['method']
-    base_model.description = _create_description(
-        [est_method, eval_method], solver=None, update=False
+    base_model = base_model.replace(
+        description=_create_description([est_method, eval_method], solver=None, update=False)
     )
 
     while len(base_model.estimation_steps) > 0:
@@ -118,7 +118,9 @@ def _create_candidate_model(method, solver, update, is_eval_candidate, model):
     eval_settings = _create_eval_settings(laplace)
 
     eval_method = eval_settings['method']
-    model.description = _create_description([method, eval_method], solver=solver, update=update)
+    model = model.replace(
+        description=_create_description([method, eval_method], solver=solver, update=update)
+    )
 
     while len(model.estimation_steps) > 0:
         model = remove_estimation_step(model, 0)

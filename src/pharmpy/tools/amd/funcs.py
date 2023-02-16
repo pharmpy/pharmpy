@@ -80,9 +80,9 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
         dependent_variable=y_ass.symbol,
         random_variables=rvs,
         parameters=params,
+        description='Start model',
     )
     model.name = 'start'
-    model.description = 'Start model'
     model.dataset = df
     model.datainfo = di
     model.filename_extension = '.mod'  # Should this really be needed?

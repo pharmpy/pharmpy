@@ -436,10 +436,6 @@ class Model:
         """A free text discription of the model"""
         return self._description
 
-    @description.setter
-    def description(self, value):
-        self._description = value
-
     def update_datainfo(self):
         """Update model.datainfo for a new dataset"""
         try:

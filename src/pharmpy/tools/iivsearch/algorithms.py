@@ -16,7 +16,7 @@ from pharmpy.workflows import Task, Workflow
 def brute_force_no_of_etas(base_model, index_offset=0):
     wf = Workflow()
 
-    base_model.description = create_description(base_model)
+    base_model = base_model.replace(description=create_description(base_model))
 
     iivs = base_model.random_variables.iiv
 
@@ -42,7 +42,7 @@ def brute_force_no_of_etas(base_model, index_offset=0):
 def brute_force_block_structure(base_model, index_offset=0):
     wf = Workflow()
 
-    base_model.description = create_description(base_model)
+    base_model = base_model.replace(description=create_description(base_model))
 
     iivs = base_model.random_variables.iiv
     model_no = 1 + index_offset

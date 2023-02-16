@@ -173,7 +173,6 @@ def convert_model(model: Model, to_format: str):
         new.dataset = model.dataset
         new.datainfo = model.datainfo
         new.name = model.name
-        new.description = model.description
         new = new.replace(
             parameters=model.parameters,
             statements=model.statements,
@@ -181,6 +180,7 @@ def convert_model(model: Model, to_format: str):
             estimation_steps=model.estimation_steps,
             dependent_variable=model.dependent_variable,
             observation_transformation=model.observation_transformation,
+            description=model.description,
         )
         new.parent_model = model.name
         try:
