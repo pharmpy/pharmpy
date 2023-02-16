@@ -522,12 +522,12 @@ def test_insert_unknown_record(pheno):
     model = pheno.copy()
     rec = create_record('$TRIREME one')
     newcs = model.internals.control_stream.insert_record(rec)
-    model.internals = model.internals.replace(control_stream=newcs)
+    model = model.replace(internals=model.internals.replace(control_stream=newcs))
     assert model.model_code.split('\n')[-1] == '$TRIREME one'
 
     rec = create_record('\n$OA two')
     newcs = model.internals.control_stream.insert_record(rec)
-    model.internals = model.internals.replace(control_stream=newcs)
+    model = model.replace(internals=model.internals.replace(control_stream=newcs))
     assert model.model_code.split('\n')[-1] == '$OA two'
 
 

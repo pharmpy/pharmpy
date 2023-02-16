@@ -92,7 +92,7 @@ class Model:
         self._filename_extension = filename_extension
         self._value_type = value_type
         self._description = description
-        self.internals = internals
+        self._internals = internals
 
     def _canonicalize_value_type(self, value):
         allowed_strings = ('PREDICTION', 'LIKELIHOOD', '-2LL')
@@ -185,7 +185,7 @@ class Model:
         observation_transformation = kwargs.get(
             'observation_transformation', self.observation_transformation
         )
-        internals = kwargs.get('internals', self.internals)
+        internals = kwargs.get('internals', self._internals)
         return self.__class__(
             name=name,
             dependent_variable=dependent_variable,
@@ -378,6 +378,11 @@ class Model:
     def initial_individual_estimates(self):
         """Initial estimates for individual parameters"""
         return self._initial_individual_estimates
+
+    @property
+    def internals(self):
+        """Internal data for tool specific part of model"""
+        return self._internals
 
     @initial_individual_estimates.setter
     def initial_individual_estimates(self, value):

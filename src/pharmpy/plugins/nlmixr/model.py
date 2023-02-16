@@ -3,7 +3,7 @@ import os
 import subprocess
 import uuid
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Optional
 
@@ -46,20 +46,26 @@ class CodeGenerator:
 def convert_model(model):
     """Convert any model into an nlmixr model"""
     if isinstance(model, Model):
-        return model.copy()
+        return model
 
-    nlmixr_model = Model()
-    from pharmpy.modeling import convert_model
-
-    generic_model = convert_model(model, 'generic')
-    nlmixr_model.__dict__ = generic_model.__dict__
-    nlmixr_model.internals = NLMIXRModelInternals()
-    nlmixr_model.filename_extension = '.R'
+    nlmixr_model = Model(
+        internals=NLMIXRModelInternals(),
+        parameters=model.parameters,
+        random_variables=model.random_variables,
+        statements=model.statements,
+        dependent_variable=model.dependent_variable,
+        estimation_steps=model.estimation_steps,
+        filename_extension='.R',
+        datainfo=model.datainfo,
+        dataset=model.dataset,
+        name=model.name,
+        description=model.description,
+    )
 
     # Update dataset to lowercase and add evid
     nlmixr_model = modify_dataset(nlmixr_model)
 
-    nlmixr_model.update_source()
+    nlmixr_model = nlmixr_model.update_source()
     return nlmixr_model
 
 
@@ -187,8 +193,10 @@ class NLMIXRModelInternals:
 
 
 class Model(pharmpy.model.Model):
-    def __init__(self):
-        self.internals = NLMIXRModelInternals()
+    def __init__(self, **kwargs):
+        super().__init__(
+            **kwargs,
+        )
 
     def update_source(self, path=None):
         cg = CodeGenerator()
@@ -206,10 +214,10 @@ class Model(pharmpy.model.Model):
         create_fit(cg, self)
         # Create lowercase id, time and amount symbols for nlmixr to be able
         # to run
-        self.internals.src = (
-            str(cg).replace("AMT", "amt").replace("TIME", "time").replace("ID", "id")
-        )
-        self.internals.path = None
+        code = str(cg).replace("AMT", "amt").replace("TIME", "time").replace("ID", "id")
+        internals = replace(self.internals, src=code, path=None)
+        model = self.replace(internals=internals)
+        return model
 
     @property
     def model_code(self):

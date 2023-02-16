@@ -91,7 +91,6 @@ def convert_model(model):
     assert isinstance(nm_model, Model)
     nm_model._datainfo = model.datainfo
     nm_model._parameters = model.parameters
-    nm_model.internals = nm_model.internals.replace(old_parameters=Parameters())
     if hasattr(model, 'name'):
         nm_model.name = model.name
     nm_model._dataset = model.dataset
@@ -102,6 +101,7 @@ def convert_model(model):
         {model.dependent_variable: nm_model.dependent_variable},
         simultaneous=True,
     )
+    internals = nm_model.internals.replace(old_parameters=Parameters())
     nm_model = nm_model.replace(
         value_type=model.value_type,
         observation_transformation=new_obs_trans,
@@ -109,14 +109,17 @@ def convert_model(model):
         random_variables=model.random_variables,
         statements=model.statements,
         description=model.description,
+        internals=internals,
     )
     nm_model = nm_model.update_source()
     if model.statements.ode_system:
-        nm_model.internals = nm_model.internals.replace(
-            compartment_map={
-                name: i
-                for i, name in enumerate(model.statements.ode_system.compartment_names, start=1)
-            }
+        nm_model = nm_model.replace(
+            internals=nm_model.internals.replace(
+                compartment_map={
+                    name: i
+                    for i, name in enumerate(model.statements.ode_system.compartment_names, start=1)
+                }
+            )
         )
     return nm_model
 
@@ -139,7 +142,7 @@ class Model(BaseModel):
             **kwargs,
         )
         assert isinstance(internals, NONMEMModelInternals)
-        self.internals = internals
+        self._internals = internals
 
     def update_source(self):
         """Update the source
@@ -297,7 +300,8 @@ class Model(BaseModel):
     @dataset.setter
     def dataset(self, df):
         if hasattr(self, '_dataset'):
-            self.internals = self.internals.replace(dataset_updated=True)
+            # FIXME
+            self._internals = self.internals.replace(dataset_updated=True)
         self._dataset = df
         self.datainfo = self.datainfo.replace(path=None)
         self.update_datainfo()
