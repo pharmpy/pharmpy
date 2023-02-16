@@ -56,10 +56,6 @@ def convert_model(model):
     if isinstance(model, Model):
         return model.copy()
 
-    # Check data structure of doses
-    if not check_doses(model):
-        print("\n-------\nWARNING : \nThe connected model data contains mixed dosage types. Nlmixr cannot handle this \nConverted model will not run on associated data\n-------")
-
     nlmixr_model = Model()
     from pharmpy.modeling import convert_model
 
@@ -70,6 +66,11 @@ def convert_model(model):
     
     # Update dataset to lowercase and add evid
     nlmixr_model = modify_dataset(nlmixr_model)
+    
+    # Check data structure of doses
+    if not check_doses(nlmixr_model):
+        print_warning("The connected model data contains mixed dosage types. Nlmixr cannot handle this \nConverted model will not run on associated data")
+
     
     # Drop all dropped columns so it does not interfere with nlmixr
     drop_dropped_columns(nlmixr_model)
@@ -180,7 +181,7 @@ def create_model(cg, model):
                 elif has_combined_error_model(model):
                     pass
                 else:
-                    print("-------\nWARNING : \nFormat of error model is unknown. Will try to translate either way\n-------")
+                    print_warning("Format of error model is unknown. Will try to translate either way")
                     if s.expression.is_Piecewise:
                         # Convert eps to sigma name
                         #piecewise = convert_eps_to_sigma(s, model)
@@ -563,7 +564,10 @@ def find_term(model, expr):
         if error_term:
             errors.append(term)
         else:
-            res = term
+            if "res"  not in locals():
+                res = term
+            else:
+                res = res + term
     
     errors_add_prop = {"add": None, "prop": None}
     
@@ -679,3 +683,6 @@ def add_theta(cg, theta):
         cg.add(f'{theta_name} <- c({theta.lower}, {theta.init}, Inf)')
     else:
         cg.add(f'{theta_name} <- {theta.init}')
+        
+def print_warning(warning):
+    print(f'-------\nWARNING : \n{warning}\n-------')
