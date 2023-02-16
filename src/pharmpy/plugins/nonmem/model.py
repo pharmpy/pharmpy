@@ -152,10 +152,11 @@ class Model(BaseModel):
             model.initial_individual_estimates
             is not model.internals.old_initial_individual_estimates
         ):
-            update_initial_individual_estimates(model, path='DUMMYPATH', nofiles=True)
+            cs = update_initial_individual_estimates(model, path='DUMMYPATH', nofiles=True)
             model = model.replace(
                 internals=model.internals.replace(
-                    old_initial_individual_estimates=model.initial_individual_estimates
+                    control_stream=cs,
+                    old_initial_individual_estimates=model.initial_individual_estimates,
                 )
             )
 
@@ -240,21 +241,26 @@ class Model(BaseModel):
         return model
 
     def write_files(self, path=None, force=False):
-        self.update_source()
+        model = self.update_source()
 
-        etas_record = self.internals.control_stream.get_records('ETAS')
+        etas_record = model.internals.control_stream.get_records('ETAS')
         if etas_record and str(etas_record[0].path) == 'DUMMYPATH':
-            update_initial_individual_estimates(self, path)
+            cs = update_initial_individual_estimates(model, path)
+            model = model.replace(
+                internals=model.internals.replace(
+                    control_stream=cs,
+                )
+            )
 
         replace_dict = {}
 
-        data_record = self.internals.control_stream.get_records('DATA')[0]
+        data_record = model.internals.control_stream.get_records('DATA')[0]
         if data_record.filename == 'DUMMYPATH' or force:
-            datapath = self.datainfo.path
+            datapath = model.datainfo.path
             if datapath is None:
-                dir_path = Path(self.name + ".csv") if path is None else path.parent
-                datapath = write_csv(self, path=dir_path, force=force)
-                replace_dict['datainfo'] = self.datainfo.replace(path=datapath)
+                dir_path = Path(model.name + ".csv") if path is None else path.parent
+                datapath = write_csv(model, path=dir_path, force=force)
+                replace_dict['datainfo'] = model.datainfo.replace(path=datapath)
             assert (
                 not datapath.exists() or datapath.is_file()
             ), f'input path change, but no file exists at target {str(datapath)}'
@@ -267,16 +273,16 @@ class Model(BaseModel):
                 filename = str(path_absolute(datapath))
                 warnings.warn('Cannot resolve relative path, falling back to absolute path')
             newdata = data_record.set_filename(filename)
-            newcs = self.internals.control_stream.replace_records([data_record], [newdata])
-            replace_dict['internals'] = self.internals.replace(control_stream=newcs)
+            newcs = model.internals.control_stream.replace_records([data_record], [newdata])
+            replace_dict['internals'] = model.internals.replace(control_stream=newcs)
 
-        if self.observation_transformation != self.internals.old_observation_transformation:
-            update_ccontra(self, path, force)
+        if model.observation_transformation != model.internals.old_observation_transformation:
+            update_ccontra(model, path, force)
 
         if replace_dict:
-            return self.replace(**replace_dict)
+            return model.replace(**replace_dict)
         else:
-            return self
+            return model
 
     @property
     def model_code(self):

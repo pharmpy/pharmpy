@@ -1523,26 +1523,24 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
         phi = PhiTable(df=etas)
         table_file = NONMEMTableFile(tables=[phi])
         table_file.write(phi_path)
-    # FIXME: This is a common operation
-    eta_records = model.internals.control_stream.get_records('ETAS')
+    control_stream = model.internals.control_stream
+    eta_records = control_stream.get_records('ETAS')
     if eta_records:
         record = eta_records[0]
     else:
         record = create_record('$ETAS ')
-        newcs = model.internals.control_stream.insert_record(record)
-        model.internals = model.internals.replace(control_stream=newcs)
+        control_stream = control_stream.insert_record(record)
     assert isinstance(record, EtasRecord)
     newrecord = record.set_path(phi_path)
-    newcs = model.internals.control_stream.replace_records([record], [newrecord])
-    model.internals = model.internals.replace(control_stream=newcs)
+    control_stream = control_stream.replace_records([record], [newrecord])
 
-    first_est_record = model.internals.control_stream.get_records('ESTIMATION')[0]
+    first_est_record = control_stream.get_records('ESTIMATION')[0]
     try:
         first_est_record.option_pairs['MCETA']
     except KeyError:
         newrec = first_est_record.set_option('MCETA', '1')
-        newcs = model.internals.control_stream.replace_records([first_est_record], [newrec])
-        model.internals = model.internals.replace(control_stream=newcs)
+        control_stream = control_stream.replace_records([first_est_record], [newrec])
+    return control_stream
 
 
 def _sort_eta_columns(df: pd.DataFrame):
