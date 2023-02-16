@@ -384,10 +384,6 @@ class Model:
         """Internal data for tool specific part of model"""
         return self._internals
 
-    @initial_individual_estimates.setter
-    def initial_individual_estimates(self, value):
-        self._initial_individual_estimates = value
-
     @property
     def modelfit_results(self):
         """Modelfit results for this model"""
