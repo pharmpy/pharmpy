@@ -235,18 +235,37 @@ def create_model(cg, model):
 
 def create_fit(cg, model):
     """Create the call to fit"""
+    # FIXME : rasie error if the method does not match when evaluating
+    estimation_steps = model.estimation_steps[0]
+    
     if [s.evaluation for s in model.estimation_steps._steps][0] is True:
-        cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei",control=foceiControl(maxOuterIterations=0))')
+        max_eval = 0
     else:
-        estimation_steps = model.estimation_steps[0]
-        method = estimation_steps.method
         max_eval = estimation_steps.maximum_evaluations
-            
-        if method == "FOCE":
-            if max_eval != None:
-                cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei", control=foceiControl(maxOuterIterations={max_eval}))')
-            else:
-                cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei")')
+    
+    method = estimation_steps.method
+    interaction = estimation_steps.interaction
+    
+    nonmem_method_to_nlmixr = {
+        "FOCE" : "foce",
+        "FO" : "fo",
+        "SAEM": "saem"
+        }
+    
+    nlmixr_method = nonmem_method_to_nlmixr[method]
+    if interaction and nlmixr_method != "saem":
+        nlmixr_method += "i"
+
+    if max_eval != None:
+        cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", control=foceiControl(maxOuterIterations={max_eval}))')
+    else:
+        cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}")')
+                
+def modify_dataset(model):
+    temp_model = model.copy()
+    if "EVID" not in temp_model.dataset.columns:
+        temp_model.dataset["EVID"] = get_evid(temp_model)
+    return temp_model
 
 
 @dataclass
@@ -424,8 +443,32 @@ def execute_model(model, db):
     return model
 
 
-def verification(model, db_name, error=10**-3, return_comp=False):
+def verification(model: Model, db_name: str, error: float = 10**-3, return_comp : bool = False) -> bool or pd.DataFrame:
+    """
+    Verify that a model inputet in NONMEM format can be correctly translated to 
+    nlmixr as well as verify that the predictions of the two models are the same 
+    given a user specified error margin (defailt is 0.001).
+    If return_comp = True, return a table of comparisons and differences in 
+    predictions instead of a boolean indicating if they are the same or not
 
+    Parameters
+    ----------
+    model : Model
+        pharmpy Model object in NONMEM format
+    db_name : str
+        a string with given name of database folder for created files
+    error : float, optional
+        Allowed error margins for predictions. The default is 10**-3.
+    return_comp : bool, optional
+        Choose to return table of predictions. The default is False.
+
+    Returns
+    -------
+    bool or pd.DataFrame
+        Boolean indicating likeness or table of predictions from the two models.
+
+    """
+ 
     nonmem_model = model.copy()
 
     # Save results from the nonmem model
@@ -479,13 +522,6 @@ def verification(model, db_name, error=10**-3, return_comp=False):
             return True
         else:
             return False
-
-
-def modify_dataset(model):
-    temp_model = model.copy()
-    if "EVID" not in temp_model.dataset.columns:
-        temp_model.dataset["EVID"] = get_evid(temp_model)
-    return temp_model
 
 def convert_piecewise(piecewise, cg, model):
     """
@@ -601,12 +637,12 @@ def find_term(model, expr):
             if errors_add_prop["prop"] is None:
                 errors_add_prop["prop"] = term    
             else:
-                raise ValueError("Proportional term already added. Check format of error model")
+                raise ValueError("Multiple proportional error terms found. Check format of error model")
         else:
             if errors_add_prop["add"] is None:
                 errors_add_prop["add"] = term
             else:
-                raise ValueError("Additive term already added. Check format of error model")
+                raise ValueError("Multiple additive error term found. Check format of error model")
     
     for pair in errors_add_prop.items():
         key = pair[0]
