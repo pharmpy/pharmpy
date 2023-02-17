@@ -28,28 +28,18 @@ from pharmpy.modeling import (
 )
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import fit
-
-
-class CodeGenerator:
-    def __init__(self):
-        self.indent_level = 0
-        self.lines = []
-
-    def indent(self):
-        self.indent_level += 4
-
-    def dedent(self):
-        self.indent_level -= 4
-
-    def add(self, line):
-        self.lines.append(f'{" " * self.indent_level}{line}')
-
-    def empty_line(self):
-        self.lines.append('')
-
-    def __str__(self):
-        return '\n'.join(self.lines)
-
+from .sanity_checks import check_model
+from .modify_code import (
+    CodeGenerator,
+    name_mangle,
+    add_ini_parameter,
+    find_term,
+    add_error_model,
+    add_error_relation,
+    remove_piecewise,
+    convert_piecewise,
+    convert_eq,
+    )
 
 def convert_model(model):
     """Convert any model into an nlmixr model"""
@@ -68,10 +58,7 @@ def convert_model(model):
     nlmixr_model = modify_dataset(nlmixr_model)
     
     # Check data structure of doses
-    if not check_doses(nlmixr_model):
-        print_warning("The connected model data contains mixed dosage types. Nlmixr cannot handle this \nConverted model will not run on associated data")
-    if not has_additive_error_model(model) or has_combined_error_model(model) or has_proportional_error_model(model):
-        print_warning("Format of error model is unknown. Will try to translate either way")
+    check_model(nlmixr_model)
          
     # Drop all dropped columns so it does not interfere with nlmixr
     drop_dropped_columns(nlmixr_model)
@@ -85,10 +72,6 @@ def convert_model(model):
     # FIXME : Redundant?? Seem to be produced during NLMIXRModeInternals()
     nlmixr_model.update_source()
     return nlmixr_model
-
-
-def name_mangle(s):
-    return s.replace('(', '').replace(')', '').replace(',', '_')
 
 
 class ExpressionPrinter(sympy_printing.str.StrPrinter):
@@ -186,7 +169,10 @@ def create_model(cg, model):
                     add_error_model(cg, expr, error, s.symbol.name, force_prop = True)
                     add_error_relation(cg, error, s.symbol)
                 elif has_combined_error_model(model):
-                    pass
+                    # FIXME : Combine with the unknown case
+                    expr, error = find_term(model, s.expression)
+                    add_error_model(cg, expr, error, s.symbol.name, force_comb = True)
+                    add_error_relation(cg, error, s.symbol)
                 else:
                     if s.expression.is_Piecewise:
                         # Convert eps to sigma name
@@ -522,219 +508,9 @@ def verification(model: Model, db_name: str, error: float = 10**-3, return_comp 
             return True
         else:
             return False
-
-def convert_piecewise(piecewise, cg, model):
-    """
-    Return a string where each piecewise expression has been changed to if
-    elseif else statements in R
-    """
-    first = True
-    for expr, cond in piecewise.expression.args:
-        if first:
-            cg.add(f'if ({cond}){{')
-            expr, error = find_term(model, expr)
-            add_error_model(cg, expr, error, piecewise.symbol)
-            cg.add('}')
-            first = False
-        else:
-            if cond is not sympy.S.true:
-                cg.add(f'else if ({cond}){{')
-                expr, error = find_term(model, expr)
-                add_error_model(cg, expr, error, piecewise.symbol)
-                cg.add('}')
-            else:
-                cg.add('else {')
-                expr, error = find_term(model, expr)
-                add_error_model(cg, expr, error, piecewise.symbol)
-                cg.add('}')
-    
-    add_error_relation(cg, error, piecewise.symbol)
-
-def piecewise_replace(expr, piecewise, s):
-    if s == "":
-        expr = re.sub(r'([\+\-\/\*]\s*)(Piecewise)', r'\2', expr)
-        return expr.replace(f'Piecewise({piecewise})', s)
-    else:
-        return expr.replace(f'Piecewise({piecewise})', s)
-
-def remove_piecewise(expr:str):
-    all_piecewise = find_piecewise(expr)
-    #Go into each piecewise found
-    for p in all_piecewise:
-        expr = piecewise_replace(expr, p, "")
-    return expr
-    
-def find_piecewise(expr):
-    
-    d = find_parentheses(expr)
-        
-    piecewise_start = [m.start() + len("Piecewise") for m in re.finditer("Piecewise", expr)]
-    
-    all_piecewise = []
-    for p in piecewise_start:
-        if p in d:
-            all_piecewise.append(expr[p+1:d[p]])
-    return all_piecewise
-
-def find_parentheses(s):
-    start = [] # all opening parentheses
-    d = {}
-    
-    for i, c in enumerate(s):
-        if c == '(':
-             start.append(i)
-        if c == ')':
-            try:
-                d[start.pop()] = i
-            except IndexError:
-                print('Too many closing parentheses')
-    if start:  # check if stack is empty afterwards
-        print('Too many opening parentheses')
-        
-    return d
-
-def convert_eq(cond):
-    cond = sympy.pretty(cond)
-    cond = cond.replace("=", "==")
-    cond = cond.replace("∧", "&")
-    cond = cond.replace("∨", "|")
-    cond = re.sub(r'(ID\s*==\s*)(\d+)', r"\1'\2'", cond)
-    return cond
-
-def find_term(model, expr):    
-    errors = []
-    
-    terms = sympy.Add.make_args(expr)
-    for term in terms:
-        error_term = False
-        for symbol in term.free_symbols:
-            if str(symbol) in model.random_variables.epsilons.names:
-                error_term = True
             
-        if error_term:
-            errors.append(term)
-        else:
-            if "res"  not in locals():
-                res = term
-            else:
-                res = res + term
-    
-    errors_add_prop = {"add": None, "prop": None}
-    
-    prop = False
-    res_alias = find_aliases(res, model)
-    for term in errors:
-        for symbol in term.free_symbols:
-            for ali in find_aliases(symbol, model):
-                if ali in res_alias:
-                    prop = True
-                    # Remove the symbol that was found
-                    # and substitute res to that symbol to avoid confusion
-                    term = term.subs(symbol,1)
-                    res = symbol
             
-        if prop:
-            if errors_add_prop["prop"] is None:
-                errors_add_prop["prop"] = term    
-            else:
-                raise ValueError("Multiple proportional error terms found. Check format of error model")
-        else:
-            if errors_add_prop["add"] is None:
-                errors_add_prop["add"] = term
-            else:
-                raise ValueError("Multiple additive error term found. Check format of error model")
-    
-    for pair in errors_add_prop.items():
-        key = pair[0]
-        term = pair[1]
-        if term != None:
-            term = convert_eps_to_sigma(term, model)
-        errors_add_prop[key] = term    
-        
-    return res, errors_add_prop
-
-def convert_eps_to_sigma(expr, model):
-    eps_to_sigma = {sympy.Symbol(eps.names[0]): sympy.Symbol(str(eps.variance)) for eps in model.random_variables.epsilons}
-    return expr.subs(eps_to_sigma)
-
-def add_error_model(cg, expr, error, symbol, force_add = False, force_prop = False, force_comb = False):
-    cg.add(f'{symbol} <- {expr}')
-    
-    if force_add:
-        if error["add"]:
-            cg.add(f'add_error <- {error["add"]}')
-        else:
-            if error["prop"]:
-                cg.add(f'add_error <- {error["prop"]}')
-            else:
-                raise ValueError("Model should have additive error but no error was found")
-    elif force_prop:
-        if error["prop"]:
-            cg.add(f'prop_error <- {error["prop"]}')
-        else:
-            if error["add"]:
-                cg.add(f'prop_error <- {error["add"]}')
-            else:
-                raise ValueError("Model should have additive error but no error was found")
-    elif force_comb:
-        pass
-    else:
-        # Add term for the additive and proportional error (if exist)
-        # as solution for nlmixr error model handling
-        if error["add"]:
-            cg.add(f'add_error <- {error["add"]}')
-        if error["prop"]:
-            cg.add(f'prop_error <- {error["prop"]}')
-        
-def add_error_relation(cg, error, symbol):
-    # Add the actual error model depedent on the previously
-    # defined variable add_error and prop_error
-    if error["add"] and error["prop"]:
-        cg.add(f'{symbol} ~ add(add_error) + prop(prop_error)')
-    elif error["add"] and not error["prop"]:
-        cg.add(f'{symbol} ~ add(add_error)')
-    elif not error["add"] and error["prop"]:
-        cg.add(f'{symbol} ~ prop(prop_error)')
-        
-def find_aliases(symbol:str, model):
-    aliases = [symbol]
-    for expr in model.statements.after_odes:
-        if symbol == expr.symbol and isinstance(expr.expression, sympy.Symbol):
-            aliases.append(expr.expression)
-        if symbol == expr.symbol and expr.expression.is_Piecewise:
-            for e, c in expr.expression.args:
-                if isinstance(e, sympy.Symbol):
-                    aliases.append(e)
-    return aliases
-
-def check_doses(model):
-    dataset = model.dataset
-    if "RATE" in dataset.columns:
-        no_bolus = len(dataset[(dataset["RATE"] == 0) & (dataset["EVID"] != 0)])
-        if no_bolus != 0:
-            return False
-        else:
-            return True
-    else:
-        return True
-    
-def add_ini_parameter(cg, parameter, boundary = False):
-    parameter_name = name_mangle(parameter.name)
-    if parameter.fix:
-        cg.add(f'{parameter_name} <- fixed({parameter.init})')
-    else:
-        limit = 1000000.0
-        if boundary:
-            if parameter.lower > -limit and parameter.upper < limit:
-                cg.add(f'{parameter_name} <- c({parameter.lower}, {parameter.init}, {parameter.upper})')
-            elif parameter.lower == -limit and parameter.upper < limit:
-                cg.add(f'{parameter_name} <- c(-Inf, {parameter.init}, {parameter.upper})')
-            elif parameter.lower > -limit and parameter.upper == limit:
-                cg.add(f'{parameter_name} <- c({parameter.lower}, {parameter.init}, Inf)')
-            else:
-                cg.add(f'{parameter_name} <- {parameter.init}')
-        else:
-            cg.add(f'{parameter_name} <- {parameter.init}')
-        
-def print_warning(warning):
-    print(f'-------\nWARNING : \n{warning}\n-------')
+            
+            
+            
+            
