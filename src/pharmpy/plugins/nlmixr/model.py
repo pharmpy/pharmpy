@@ -318,7 +318,11 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
         nlmixr_method += "i"
 
     if max_eval != None:
-        cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", control=foceiControl(maxOuterIterations={max_eval}))')
+        if max_eval == 0 and nlmixr_method not in ["fo", "foi", "foce", "focei"]:
+            nlmixr_method = "posthoc"
+            cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}"')
+        else:
+            cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", control=foceiControl(maxOuterIterations={max_eval}))')
     else:
         cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}")')
                 
