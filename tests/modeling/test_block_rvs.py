@@ -34,7 +34,7 @@ def test_choose_param_init(load_model_for_test, pheno_path):
     assert init == 0.0118179
 
     model = load_model_for_test(pheno_path)
-    model.modelfit_results = None
+    model = model.replace(modelfit_results=None)
     init = _choose_param_init(model, None, rvs, *params)
     assert init == 0.0031045
 
@@ -44,9 +44,10 @@ def test_choose_param_init(load_model_for_test, pheno_path):
     res = model.modelfit_results
     ie = res.individual_estimates.copy()
     ie['ETA_3'] = ie['ETA_1']
-    model.modelfit_results = ModelfitResults(
+    modelfit_results = ModelfitResults(
         parameter_estimates=res.parameter_estimates, individual_estimates=ie
     )
+    model = model.replace(modelfit_results=modelfit_results)
     init = _choose_param_init(model, res.individual_estimates, rvs, *params)
     assert init == 0.0118179
 
@@ -63,9 +64,10 @@ def test_choose_param_init(load_model_for_test, pheno_path):
     res = model.modelfit_results
     ie = res.individual_estimates.copy()
     ie['ETA_1'] = 0
-    model.modelfit_results = ModelfitResults(
+    modelfit_results = ModelfitResults(
         parameter_estimates=res.parameter_estimates, individual_estimates=ie
     )
+    model = model.replace(modelfit_results=modelfit_results)
     params = (model.parameters['IVCL'], model.parameters['IVV'])
     rvs = model.random_variables[('ETA_1', 'ETA_2')]
     with pytest.warns(UserWarning, match='Correlation of individual estimates'):

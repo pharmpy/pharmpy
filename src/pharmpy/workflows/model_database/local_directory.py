@@ -43,7 +43,8 @@ def get_modelfit_results(model, path):
         assert isinstance(model, nlmixr.Model)
         res = nlmixr.parse_modelfit_results(model, path)
 
-    model.modelfit_results = res
+    model = model.replace(modelfit_results=res)
+    return model
 
 
 class LocalDirectoryDatabase(NonTransactionalModelDatabase):
@@ -104,7 +105,7 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
             model = Model.create_model(path)
         except FileNotFoundError:
             raise KeyError('Model cannot be found in database')
-        get_modelfit_results(model, self.path)
+        model = get_modelfit_results(model, self.path)
         return model
 
     def retrieve_modelfit_results(self, name):
@@ -314,7 +315,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
                 f' Looked up {", ".join(map(lambda e: f"`{e.filename}`", errors))}.'
             )
 
-        get_modelfit_results(model, path)
+        model = get_modelfit_results(model, path)
         return model
 
     def retrieve_modelfit_results(self):

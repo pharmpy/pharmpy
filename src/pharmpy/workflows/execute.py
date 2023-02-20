@@ -79,11 +79,13 @@ def execute_workflow(
 
             create_report(res, database.path)
     elif isinstance(res, Model):
-        original_input_models[0].modelfit_results = res.modelfit_results
+        # original_input_models[0].modelfit_results = res.modelfit_results
+        pass
     elif isinstance(res, list) or isinstance(res, tuple):
-        index = {model.name: model for model in res}
-        for original_model in original_input_models:
-            if (model := index.get(original_model.name, None)) is not None:
-                original_model.modelfit_results = model.modelfit_results
+        # index = {model.name: model for model in res}
+        # for original_model in original_input_models:
+        #    if (model := index.get(original_model.name, None)) is not None:
+        #        original_model.modelfit_results = model.modelfit_results
+        pass
 
     return res

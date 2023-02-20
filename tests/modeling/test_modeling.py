@@ -2681,12 +2681,13 @@ def test_update_inits_no_res(load_model_for_test, testdata, tmp_path):
 
         model = load_model_for_test('run1.mod')
 
-        model.modelfit_results = replace(
+        modelfit_results = replace(
             model.modelfit_results,
             parameter_estimates=pd.Series(
                 np.nan, name='estimates', index=list(model.parameters.nonfixed.inits.keys())
             ),
         )
+        model = model.replace(modelfit_results=modelfit_results)
 
         with pytest.raises(ValueError):
             update_inits(model, model.modelfit_results.parameter_estimates)

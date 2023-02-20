@@ -382,10 +382,6 @@ class Model:
         """Modelfit results for this model"""
         return self._modelfit_results
 
-    @modelfit_results.setter
-    def modelfit_results(self, value):
-        self._modelfit_results = value
-
     @property
     def model_code(self):
         """Model type specific code"""

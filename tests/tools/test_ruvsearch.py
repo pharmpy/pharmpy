@@ -135,7 +135,7 @@ def test_validate_input_raises(
 
 def test_validate_input_raises_modelfit_results(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    model.modelfit_results = None
+    model = model.replace(modelfit_results=None)
 
     with pytest.raises(ValueError, match="missing modelfit results"):
         validate_input(model=model)
@@ -145,7 +145,8 @@ def test_validate_input_raises_cwres(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     remove_covariance_step(model)
     mfr = model.modelfit_results
-    model.modelfit_results = replace(mfr, residuals=mfr.residuals.drop(columns=['CWRES']))
+    modelfit_results = replace(mfr, residuals=mfr.residuals.drop(columns=['CWRES']))
+    model = model.replace(modelfit_results=modelfit_results)
 
     with pytest.raises(ValueError, match="CWRES"):
         validate_input(model=model)
@@ -155,7 +156,8 @@ def test_validate_input_raises_cipredi(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     remove_covariance_step(model)
     mfr = model.modelfit_results
-    model.modelfit_results = replace(mfr, predictions=mfr.predictions.drop(columns=['CIPREDI']))
+    modelfit_results = replace(mfr, predictions=mfr.predictions.drop(columns=['CIPREDI']))
+    model = model.replace(modelfit_results=modelfit_results)
 
     with pytest.raises(ValueError, match="IPRED"):
         validate_input(model=model)
@@ -163,9 +165,10 @@ def test_validate_input_raises_cipredi(load_model_for_test, testdata):
 
 def test_validate_input_raises_ipred(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    remove_covariance_step(model)
+    model = remove_covariance_step(model)
     mfr = model.modelfit_results
-    model.modelfit_results = replace(mfr, predictions=mfr.predictions.drop(columns=['IPRED']))
+    modelfit_results = replace(mfr, predictions=mfr.predictions.drop(columns=['IPRED']))
+    model = model.replace(modelfit_results=modelfit_results)
 
     with pytest.raises(ValueError, match="IPRED"):
         validate_input(model=model)
