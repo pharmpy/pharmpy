@@ -66,8 +66,7 @@ class DatasetIterator:
         except AttributeError:
             return df
         else:
-            model.dataset = df
-            model.name = df.name
+            model = model.replace(name=df.name, dataset=df)
             return model
 
     def __iter__(self):
