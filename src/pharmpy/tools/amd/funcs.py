@@ -82,10 +82,10 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
         random_variables=rvs,
         parameters=params,
         description='Start model',
+        filename_extension='.mod',  # Should this really be needed?
     )
     model.dataset = df
     model.datainfo = di
-    model.filename_extension = '.mod'  # Should this really be needed?
 
     model = set_proportional_error_model(model)
     model = create_joint_distribution(

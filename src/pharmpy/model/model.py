@@ -135,6 +135,7 @@ class Model:
         name = kwargs.get('name', self.name)
         if not isinstance(name, str):
             raise TypeError("Name of a model has to be of string type")
+
         dependent_variable = kwargs.get('dependent_variable', self.dependent_variable)
         parameters = kwargs.get('parameters', self.parameters)
 
@@ -179,6 +180,8 @@ class Model:
             'initial_individual_estimates', self.initial_individual_estimates
         )
         filename_extension = kwargs.get('filename_extension', self.filename_extension)
+        if not isinstance(filename_extension, str):
+            raise TypeError("Filename extension has to be of string type")
         if 'value_type' in kwargs:
             value_type = self._canonicalize_value_type(kwargs['value_type'])
         else:
@@ -285,12 +288,6 @@ class Model:
     def filename_extension(self):
         """Filename extension of model file"""
         return self._filename_extension
-
-    @filename_extension.setter
-    def filename_extension(self, value):
-        if not isinstance(value, str):
-            raise TypeError("Filename extension has to be of string type")
-        self._filename_extension = value
 
     @property
     def dependent_variable(self):
