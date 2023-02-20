@@ -223,7 +223,8 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
                 df = read_dataset_from_datainfo(curdi)
                 if df.equals(model.dataset):
                     # NOTE Update datainfo path
-                    model.datainfo = model.datainfo.replace(path=curdi.path)
+                    datainfo = model.datainfo.replace(path=curdi.path)
+                    model = model.replace(datainfo=datainfo)
                     break
         else:
             model_filename = model.name + '.csv'
@@ -233,9 +234,9 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             index_path.touch()
 
             data_path = path_absolute(datasets_path / model_filename)
-            model.datainfo = model.datainfo.replace(path=data_path)
-
-            write_csv(model, path=data_path, force=True)
+            datainfo = model.datainfo.replace(path=data_path)
+            model = model.replace(datainfo=datainfo)
+            model = write_csv(model, path=data_path, force=True)
 
             # NOTE Write datainfo last so that we are "sure" dataset is there
             # if datainfo is there
@@ -245,6 +246,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
         model_path = self.db.path / model.name
         model_path.mkdir(exist_ok=True)
         write_model(model, str(model_path / (model.name + model.filename_extension)), force=True)
+        return model
 
     def store_local_file(self, path, new_filename=None):
         if Path(path).is_file():

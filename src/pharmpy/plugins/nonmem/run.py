@@ -22,7 +22,7 @@ def execute_model(model, db):
     database = db.model_database
     parent_model = model.parent_model
     model = convert_model(model)
-    model.parent_model = parent_model
+    model = model.replace(parent_model=parent_model)
     path = Path.cwd() / f'NONMEM_run_{model.name}-{uuid.uuid1()}'
 
     # NOTE This deduplicates the dataset before running NONMEM so we know which
@@ -57,11 +57,12 @@ def execute_model(model, db):
     datasets_path.mkdir(parents=True, exist_ok=True)
 
     # NOTE Write dataset and model files so they can be used by NONMEM.
-    write_csv(model, path=dataset_path, force=True)
-    model.internals = model.internals.replace(
+    model = write_csv(model, path=dataset_path, force=True)
+    internals = model.internals.replace(
         dataset_updated=True
     )  # Hack to get update_source to update IGNORE
-    write_model(model, path=model_path, force=True)
+    model = model.replace(internals=internals)
+    model = write_model(model, path=model_path, force=True)
 
     args = nmfe(
         model.name + model.filename_extension,
