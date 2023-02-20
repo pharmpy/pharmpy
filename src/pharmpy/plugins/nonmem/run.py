@@ -1,6 +1,7 @@
 import json
 import os
 import os.path
+import shutil
 import subprocess
 import time
 import uuid
@@ -154,13 +155,24 @@ def nmfe_path():
     path = conf.default_nonmem_path
     if path != Path(''):
         path /= 'run'
-    for nmfe in nmfe_candidates:
-        candidate_path = path / nmfe
-        if candidate_path.is_file():
-            path = candidate_path
-            break
+        for nmfe in nmfe_candidates:
+            candidate_path = path / nmfe
+            if candidate_path.is_file():
+                path = candidate_path
+                break
+        else:
+            raise FileNotFoundError(f'Cannot find nmfe script for NONMEM ({path})')
     else:
-        raise FileNotFoundError(f'Cannot find nmfe script for NONMEM ({path})')
+        # Not in configuration file
+        for nmfe in nmfe_candidates:
+            candidate_path = shutil.which(nmfe)
+            if candidate_path is not None:
+                path = candidate_path
+                break
+        else:
+            raise FileNotFoundError(
+                'No path to NONMEM configured in pharmpy.conf and nmfe not in PATH'
+            )
     return str(path)
 
 
