@@ -62,10 +62,8 @@ def create_linearized_model(model):
     y = model.dependent_variable
     Assignment(y, ipred.symbol + error_terms.symbol)
 
-    linbase.name = 'linbase'
-
     est = EstimationStep.create('foce', interaction=True)
     linbase = linbase.replace(
-        statements=Statements(ms), estimation_steps=EstimationSteps.create([est])
+        name='linbase', statements=Statements(ms), estimation_steps=EstimationSteps.create([est])
     )
     return linbase

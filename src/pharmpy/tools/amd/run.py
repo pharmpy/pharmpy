@@ -108,7 +108,7 @@ def run_amd(
         model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
     elif type(input) is nonmem.model.Model:
         model = input
-        model.name = 'start'
+        model = model.replace(name='start')
     else:
         raise TypeError(
             f'Invalid input: got `{input}` of type {type(input)},'

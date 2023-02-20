@@ -357,7 +357,7 @@ def test_summarize_modelfit_results(
     assert list(summary_multiple.index) == ['pheno_real', 'mox1']
 
     pheno_no_res = create_model_for_test(pheno.model_code)
-    pheno_no_res.name = 'pheno_no_res'
+    pheno_no_res = pheno_no_res.replace(name='pheno_no_res')
 
     summary_no_res = summarize_modelfit_results(
         [pheno.modelfit_results, pheno_no_res.modelfit_results]
@@ -394,7 +394,7 @@ def test_summarize_modelfit_results(
     assert not summary_multest_full.loc['pheno_multEST', 1]['minimization_successful']
 
     pheno_multest_no_res = create_model_for_test(pheno_multest.model_code)
-    pheno_multest_no_res.name = 'pheno_multest_no_res'
+    pheno_multest_no_res = pheno_multest_no_res.replace(name='pheno_multest_no_res')
 
     summary_multest_full_no_res = summarize_modelfit_results(
         [pheno_multest_no_res.modelfit_results, mox.modelfit_results],

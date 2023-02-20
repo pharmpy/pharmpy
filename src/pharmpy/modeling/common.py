@@ -131,7 +131,7 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
     if not force and path.exists():
         raise FileExistsError(f'File {path} already exists.')
     if new_name:
-        model.name = new_name
+        model = model.replace(name=new_name)
     model = model.write_files(path=path, force=force)
     if not force and path.exists():
         raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
@@ -172,8 +172,8 @@ def convert_model(model: Model, to_format: str):
         new = Model.create_model()
         new.dataset = model.dataset
         new.datainfo = model.datainfo
-        new.name = model.name
         new = new.replace(
+            name=model.name,
             parameters=model.parameters,
             statements=model.statements,
             random_variables=model.random_variables,
@@ -363,7 +363,7 @@ def bump_model_number(model: Model, path: Union[str, Path] = None):
     --------
     >>> from pharmpy.modeling import bump_model_number, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model.name = "run2"
+    >>> model = model.replace(name="run2")
     >>> model = bump_model_number(model)
     >>> model.name
     'run3'

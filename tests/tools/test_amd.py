@@ -198,7 +198,7 @@ def _load_model(testdata: Path, with_datainfo: bool = False):
     shutil.copy2(models / 'mox2.phi', '.')
 
     model = Model.create_model('mox2.mod')
-    model.name = 'start'
+    model = model.replace(name='start')
 
     # NOTE Load results directly in DB to skip fitting
     db_tool = default_tool_database(toolname='amd', path='amd_dir1')

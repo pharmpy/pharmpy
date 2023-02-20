@@ -457,7 +457,7 @@ def model_sample(args):
         from pharmpy.modeling import set_initial_estimates, write_model
 
         set_initial_estimates(model, params)
-        model.name = f'sample_{row + 1}'
+        model = model.replace(name=f'sample_{row + 1}')
         write_model(model)
 
 

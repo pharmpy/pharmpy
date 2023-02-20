@@ -52,7 +52,7 @@ class Model:
 
     def __init__(
         self,
-        name=None,
+        name='',
         parameters=Parameters(),
         random_variables=RandomVariables.create(()),
         statements=Statements(),
@@ -133,6 +133,8 @@ class Model:
 
     def replace(self, **kwargs):
         name = kwargs.get('name', self.name)
+        if not isinstance(name, str):
+            raise TypeError("Name of a model has to be of string type")
         dependent_variable = kwargs.get('dependent_variable', self.dependent_variable)
         parameters = kwargs.get('parameters', self.parameters)
 
@@ -235,8 +237,8 @@ class Model:
         >>> b = load_example_model("pheno")
         >>> b == a
         True
-        >>> a.name = 'a'
-        >>> b.name = 'b'
+        >>> a = a.replace(name='a')
+        >>> b = b.replace(name='b')
         >>> a == b
         True
         """
@@ -278,12 +280,6 @@ class Model:
     def name(self):
         """Name of the model"""
         return self._name
-
-    @name.setter
-    def name(self, value):
-        if not isinstance(value, str):
-            raise TypeError("Name of a model has to be of string type")
-        self._name = value
 
     @property
     def filename_extension(self):

@@ -91,8 +91,6 @@ def convert_model(model):
     assert isinstance(nm_model, Model)
     nm_model._datainfo = model.datainfo
     nm_model._parameters = model.parameters
-    if hasattr(model, 'name'):
-        nm_model.name = model.name
     nm_model._dataset = model.dataset
     nm_model._estimation_steps = model.estimation_steps
     nm_model._initial_individual_estimates = model.initial_individual_estimates
@@ -103,6 +101,7 @@ def convert_model(model):
     )
     internals = nm_model.internals.replace(old_parameters=Parameters())
     nm_model = nm_model.replace(
+        name=model.name,
         value_type=model.value_type,
         observation_transformation=new_obs_trans,
         dependent_variable=sympy.Symbol('Y'),

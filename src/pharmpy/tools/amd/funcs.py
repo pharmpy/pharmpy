@@ -75,6 +75,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     eststeps = EstimationSteps.create([est])
 
     model = Model(
+        name='start',
         statements=stats,
         estimation_steps=eststeps,
         dependent_variable=y_ass.symbol,
@@ -82,7 +83,6 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
         parameters=params,
         description='Start model',
     )
-    model.name = 'start'
     model.dataset = df
     model.datainfo = di
     model.filename_extension = '.mod'  # Should this really be needed?

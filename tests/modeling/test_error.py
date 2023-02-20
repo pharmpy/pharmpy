@@ -509,7 +509,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    model.name = 'run1'
+    model = model.replace(name='run1')
     model = set_dtbs_error_model(model)
 
     with chdir(tmp_path):
