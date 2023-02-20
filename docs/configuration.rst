@@ -22,11 +22,9 @@ configured. For example:
 .. code-block::
 
    [pharmpy.plugins.nonmem]
-   parameter_names=abbr,comment,basic
+   default_nonmem_path=/opt/nmfe751
 
-will set the configuration item `parameter_names` to `comment` in the nonmem module. Names must be available to all
-parameters, so if $ABBR and comments are not available for all parameters 'basic also needs to be set for a NONMEM name
-fallback.
+will set the path to nonmem.
 
 ~~~~~~~~~~~~~~~~~~~~~
 Environment variables
