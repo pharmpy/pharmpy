@@ -481,7 +481,7 @@ def execute_model(model, db):
             }
         ],
     }
-
+    
     with database.transaction(model) as txn:
 
         txn.store_local_file(path / f'{model.name}.R')
@@ -489,6 +489,8 @@ def execute_model(model, db):
 
         txn.store_local_file(stdout)
         txn.store_local_file(stderr)
+        
+        txn.store_local_file(model.datainfo.path)
 
         plugin_path = path / 'nlmixr.json'
         with open(plugin_path, 'w') as f:
@@ -504,7 +506,7 @@ def execute_model(model, db):
     return model
 
 
-def verification(model: Model, db_name: str, error: float = 10**-3, return_comp : bool = False) -> bool or pd.DataFrame:
+def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, return_comp : bool = False) -> bool or pd.DataFrame:
     """
     Verify that a model inputet in NONMEM format can be correctly translated to 
     nlmixr as well as verify that the predictions of the two models are the same 
@@ -562,7 +564,10 @@ def verification(model: Model, db_name: str, error: float = 10**-3, return_comp 
         nlmixr_results.rename(columns={"PRED": "PRED_NLMIXR"}, inplace=True)
 
     # Combine the two based on ID and time
-    if "evid" not in nonmem_model.dataset.columns.str.lower():
+    
+    nonmem_model.dataset = nonmem_model.dataset.reset_index()
+    
+    if "EVID" not in nonmem_model.dataset.columns:
         nonmem_model = modify_dataset(nonmem_model)
     nonmem_results = nonmem_results.reset_index()
     nonmem_results = nonmem_results.drop(nonmem_model.dataset[nonmem_model.dataset["EVID"] != 0].index.to_list())
