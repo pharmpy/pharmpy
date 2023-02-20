@@ -41,8 +41,22 @@ from .modify_code import (
     convert_eq,
     )
 
-def convert_model(model):
-    """Convert any model into an nlmixr model"""
+def convert_model(model: pharmpy.model) -> pharmpy.model:
+    """
+    Convert any model into an nlmixr model
+
+    Parameters
+    ----------
+    model : pharmpy.model
+        A pharmpy model object.
+
+    Returns
+    -------
+    pharmpy.model
+        A model converted to nlmixr format.
+
+    """
+    
     if isinstance(model, Model):
         return model.copy()
 
@@ -69,7 +83,6 @@ def convert_model(model):
     nlmixr_model = translate_nmtran_time(nlmixr_model)
     nlmixr_model.datainfo = nlmixr_model.datainfo.replace(path = None)
 
-    # FIXME : Redundant?? Seem to be produced during NLMIXRModeInternals()
     nlmixr_model.update_source()
     return nlmixr_model
 
@@ -94,8 +107,25 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
 
-def create_dataset(cg, model, path=None):
-    """Create dataset for nlmixr"""
+def create_dataset(cg: CodeGenerator, model: pharmpy.model, path=None) -> None:
+    """
+    Create dataset for nlmixr
+
+    Parameters
+    ----------
+    cg : CodeGenerator
+        A code object associated with the model.
+    model : pharmpy.model
+        A pharmpy.model object.
+    path : TYPE, optional
+        Path to add file to. The default is None.
+
+    Returns
+    -------
+    None
+        Modification of code object and creation of files.
+
+    """
     dataname = f'{model.name}.csv'
     if path is None:
         path = ""
@@ -103,8 +133,23 @@ def create_dataset(cg, model, path=None):
     cg.add(f'dataset <- read.csv("{path}")')
 
 
-def create_ini(cg, model):
-    """Create the nlmixr ini section code"""
+def create_ini(cg: CodeGenerator, model: pharmpy.model) -> None:
+    """
+    Create the nlmixr ini section code
+
+    Parameters
+    ----------
+    cg : CodeGenerator
+        A code object associated with the model.
+    model : pharmpy.model
+        A pharmpy.model object.
+
+    Returns
+    -------
+    None
+        Modification of code object.
+
+    """
     cg.add('ini({')
     cg.indent()
 
@@ -140,8 +185,23 @@ def create_ini(cg, model):
     cg.add('})')
 
 
-def create_model(cg, model):
-    """Create the nlmixr model section code"""
+def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
+    """
+    Create the nlmixr model section code
+
+    Parameters
+    ----------
+    cg : CodeGenerator
+        A code object associated with the model.
+    model : pharmpy.model
+        A pharmpy.model object.
+
+    Returns
+    -------
+    None
+        Modification of code object.
+
+    """
     if model.statements.ode_system:
         amounts = [am.name for am in list(model.statements.ode_system.amounts)]
         printer = ExpressionPrinter(amounts)
@@ -219,8 +279,23 @@ def create_model(cg, model):
     cg.add('})')
 
 
-def create_fit(cg, model):
-    """Create the call to fit"""
+def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
+    """
+    Create the call to fit
+
+    Parameters
+    ----------
+    cg : CodeGenerator
+        A code object associated with the model.
+    model : pharmpy.model
+        A pharmpy.model object.
+
+    Returns
+    -------
+    None
+        Modification of code object.
+
+    """
     # FIXME : rasie error if the method does not match when evaluating
     estimation_steps = model.estimation_steps[0]
     
@@ -293,7 +368,7 @@ class Model(pharmpy.model.Model):
         return code
 
 
-def parse_modelfit_results(model, path):
+def parse_modelfit_results(model: pharmpy.model, path):
     rdata_path = path / (model.name + '.RDATA')
     with warnings.catch_warnings():
         # Supress a numpy deprecation warning
