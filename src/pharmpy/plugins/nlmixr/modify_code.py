@@ -294,7 +294,6 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
         key = pair[0]
         term = pair[1]
         if term != None:
-            print(type(term))
             term = convert_eps_to_sigma(term, model)
         errors_add_prop[key] = term
         
