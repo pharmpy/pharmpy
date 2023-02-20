@@ -19,7 +19,7 @@ def create_dataset_path(model: Model, path: Optional[Union[str, Path]] = None) -
     return path / filename
 
 
-def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool = False) -> Path:
+def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool = False) -> Model:
     """Write dataset to a csv file and updates the datainfo path
 
     Parameters
