@@ -57,7 +57,6 @@ class NONMEMModelInternals:
     old_statements: Statements
     old_initial_individual_estimates: Optional[pd.DataFrame]
     old_datainfo: DataInfo
-    dataset_updated: bool
     compartment_map: Optional[Dict[str, int]]
     name_map: Dict[str, str]
 
@@ -121,14 +120,6 @@ def convert_model(model):
             )
         )
     return nm_model
-
-
-def _dataset(control_stream: NMTranControlStream, di: DataInfo, df: Optional[pd.DataFrame]):
-    # FIXME Use lambda: model.dataset instead
-    if df is None:
-        return lambda: parse_dataset(di, control_stream, raw=False)
-    else:
-        return lambda: df
 
 
 class Model(BaseModel):
@@ -206,7 +197,7 @@ class Model(BaseModel):
         cs = model.internals.control_stream
         if (
             updated_dataset
-            or model.internals.dataset_updated
+            or (model.datainfo.path is None and model.dataset is not None)
             or model.datainfo != model.internals.old_datainfo
             or model.datainfo.path != model.internals.old_datainfo.path
         ):
@@ -218,7 +209,11 @@ class Model(BaseModel):
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.
             newdata = newdata.remove_ignore().remove_accept()
-            if model.datainfo.path is None or model.internals.dataset_updated or updated_dataset:
+            if (
+                model.datainfo.path is None
+                or (model.datainfo.path is None and model.dataset is not None)
+                or updated_dataset
+            ):
                 newdata = newdata.set_filename('DUMMYPATH')
 
             cs = cs.replace_records([data_record], [newdata])
@@ -236,7 +231,6 @@ class Model(BaseModel):
             old_estimation_steps=model._estimation_steps,
             old_datainfo=model._datainfo,
             old_statements=model._statements,
-            dataset_updated=False,
         )
         model = model.replace(internals=new_internals)
 
@@ -290,21 +284,6 @@ class Model(BaseModel):
     def model_code(self):
         return str(self.internals.control_stream)
 
-    @property
-    def dataset(self):
-        if not hasattr(self, '_dataset'):
-            self._dataset = parse_dataset(self.datainfo, self.internals.control_stream, raw=False)
-        return self._dataset
-
-    @dataset.setter
-    def dataset(self, df):
-        if hasattr(self, '_dataset'):
-            # FIXME
-            self._internals = self.internals.replace(dataset_updated=True)
-        self._dataset = df
-        self.datainfo = self.datainfo.replace(path=None)
-        self.update_datainfo()
-
     def read_raw_dataset(self, parse_columns: Tuple[str, ...] = ()):
         return parse_dataset(
             self.datainfo, self.internals.control_stream, raw=True, parse_columns=parse_columns
@@ -331,9 +310,12 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
 
     dependent_variable = sympy.Symbol('Y')
 
-    statements, comp_map = parse_statements(
-        di, _dataset(control_stream, di, dataset), control_stream
-    )
+    try:
+        dataset = parse_dataset(di, control_stream, raw=False)
+    except FileNotFoundError:
+        datset = None
+
+    statements, comp_map = parse_statements(di, dataset, control_stream)
 
     parameters, rvs, name_map = parse_parameters(control_stream, statements)
 
@@ -387,7 +369,6 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         old_statements=statements,
         old_initial_individual_estimates=init_etas,
         old_datainfo=old_datainfo,
-        dataset_updated=False,
         compartment_map=comp_map,
         name_map=name_map,
     )

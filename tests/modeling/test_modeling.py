@@ -2598,7 +2598,9 @@ def test_remove_iov_with_options(
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model = load_model_for_test('mox2.mod')
-        model.datainfo = model.datainfo.replace(path=tmp_path / 'mox_simulated_normal.csv')
+        model = model.replace(
+            datainfo=model.datainfo.replace(path=tmp_path / 'mox_simulated_normal.csv')
+        )
 
         start_model = add_iov(model, occ=occ, distribution=distribution)
         model_with_some_iovs_removed = start_model.copy()
@@ -2751,7 +2753,7 @@ def test_set_power_on_ruv(
             model_more_eps,
         )
         model = create_model_for_test(model_more_eps)
-        model.dataset = model_pheno.dataset
+        model = model.replace(dataset=model_pheno.dataset)
 
         model = set_power_on_ruv(model, epsilons, zero_protection=True)
 

@@ -156,8 +156,10 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 '''
     model = create_model_for_test(model_code)
-    model.datainfo = model.datainfo.replace(
-        path=testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv'
+    model = model.replace(
+        datainfo=model.datainfo.replace(
+            path=testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv'
+        )
     )
 
     with pytest.raises(ValueError, match='Invalid `model`'):

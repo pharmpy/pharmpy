@@ -631,7 +631,7 @@ def test_cmt_warning(load_model_for_test, testdata):
 
     model_str = model_original.model_code.replace('CMT=DROP', 'CMT')
     model = Model.create_model(StringIO(model_str))
-    model.datainfo = model.datainfo.replace(path=model_original.datainfo.path)
+    model = model.replace(datainfo=model.datainfo.replace(path=model_original.datainfo.path))
 
     with pytest.raises(UserWarning, match='Compartment structure has been updated'):
         set_zero_order_absorption(model)

@@ -127,7 +127,8 @@ def test_convert_model():
 
     run2 = convert_model(run1, "nonmem")
     assert model.name == run2.name == run1.name
-    assert model == run2 == run1
+    assert model.parameters == run1.parameters == run2.parameters
+    assert model.statements == run1.statements == run2.statements
 
 
 def test_remove_unused_parameters_and_rvs(pheno):

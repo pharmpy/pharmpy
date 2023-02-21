@@ -114,13 +114,10 @@ def test_skip_covsearch(tmp_path, testdata):
                 path=db.path,
                 resume=True,
             )
-
         _validate_record(
             record,
             [
                 'COVsearch will most likely be skipped',
-                'NONMEM .mod and dataset .datainfo disagree on DROP',
-                'NONMEM .mod and dataset .datainfo disagree on DROP',
                 'Skipping COVsearch',
                 'AMDResults.summary_models is None',
                 'AMDResults.summary_individuals_count is None',

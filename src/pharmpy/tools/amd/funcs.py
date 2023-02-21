@@ -55,7 +55,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     vc_ass = Assignment(VC, pop_vc.symbol * sympy.exp(sympy.Symbol(eta_vc_name)))
 
     cb = CompartmentalSystemBuilder()
-    central = Compartment.create('CENTRAL', dose=dosing(di, lambda: df, 1))
+    central = Compartment.create('CENTRAL', dose=dosing(di, df, 1))
     cb.add_compartment(central)
     cb.add_flow(central, output, CL / VC)
 
@@ -83,9 +83,9 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
         parameters=params,
         description='Start model',
         filename_extension='.mod',  # Should this really be needed?
+        dataset=df,
+        datainfo=di,
     )
-    model.dataset = df
-    model.datainfo = di
 
     model = set_proportional_error_model(model)
     model = create_joint_distribution(

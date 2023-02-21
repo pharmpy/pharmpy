@@ -28,7 +28,7 @@ def test_check_covariates(load_model_for_test, testdata):
     assert newcov == ['APGR', 'WGT']
     data = model.dataset
     data['NEW'] = data['WGT']
-    model.dataset = data
+    model = model.replace(dataset=data)
     with pytest.warns(UserWarning):
         newcov = check_covariates(model, ['APGR', 'WGT', 'NEW'])
     assert newcov == ['APGR', 'WGT']
@@ -437,7 +437,7 @@ def test_get_params(load_model_for_test, create_model_for_test, testdata):
     )
 
     model = create_model_for_test(model_multiple_etas)
-    model.dataset = model_frem.dataset
+    model = model.replace(dataset=model_frem.dataset)
     dist = model.random_variables.etas[-1]
     rvs = list(dist.names)
     npars = 3
@@ -452,7 +452,7 @@ def test_get_params(load_model_for_test, create_model_for_test, testdata):
     )
 
     model = create_model_for_test(model_separate_declare)
-    model.dataset = model_frem.dataset
+    model = model.replace(dataset=model_frem.dataset)
     dist = model.random_variables.etas[-1]
     rvs = list(dist.names)
     npars = 2

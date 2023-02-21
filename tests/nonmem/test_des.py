@@ -54,7 +54,7 @@ $SIGMA 0.1; RUV_ADD
 """
     pheno = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = create_model_for_test(code)
-    model.dataset = pheno.dataset
+    model = model.replace(dataset=pheno.dataset)
     cs = model.statements.ode_system
     assert len(cs) == 4
 
@@ -77,7 +77,7 @@ def test_des_mm(load_example_model_for_test, create_model_for_test):
     code = model.model_code
     dataset = model.dataset
     model = create_model_for_test(code)
-    model.dataset = dataset
+    model = model.replace(dataset=dataset)
     cs = model.statements.ode_system
     central = cs.central_compartment
     assert cs.get_flow(central, output) == sympy.simplify(

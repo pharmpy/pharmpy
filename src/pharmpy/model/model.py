@@ -57,7 +57,7 @@ class Model:
         random_variables=RandomVariables.create(()),
         statements=Statements(),
         dataset=None,
-        datainfo=None,
+        datainfo=DataInfo(),
         dependent_variable=None,
         observation_transformation=None,
         estimation_steps=EstimationSteps(),
@@ -73,10 +73,8 @@ class Model:
             sympy.Symbol('y') if dependent_variable is None else dependent_variable
         )
         self._name = name
-        if datainfo is not None:  # FIXME This conditional should not be necessary
-            self._datainfo = datainfo
-        if dataset is not None:  # FIXME This conditional should not be necessary
-            self._dataset = dataset
+        self._datainfo = datainfo
+        self._dataset = dataset
         self._random_variables = random_variables
         self._parameters = parameters
         self._statements = statements
@@ -153,15 +151,11 @@ class Model:
         else:
             statements = self.statements
 
-        if hasattr(self, '_dataset'):
-            if 'dataset' in kwargs:
-                dataset = kwargs['dataset']
-                new_dataset = True
-            else:
-                dataset = self._dataset
-                new_dataset = False
+        if 'dataset' in kwargs:
+            dataset = kwargs['dataset']
+            new_dataset = True
         else:
-            dataset = None
+            dataset = self._dataset
             new_dataset = False
         if hasattr(self, '_datainfo'):
             datainfo = kwargs.get('datainfo', self.datainfo)
@@ -171,6 +165,10 @@ class Model:
             if datainfo is None:
                 datainfo = DataInfo.create()
             datainfo = update_datainfo(datainfo, dataset)
+
+        if not isinstance(datainfo, DataInfo):
+            raise TypeError("model.datainfo must be of DataInfo type")
+
         estimation_steps = kwargs.get('estimation_steps', self.estimation_steps)
         if not isinstance(estimation_steps, EstimationSteps):
             raise TypeError("model.estimation_steps must be of EstimationSteps type")
@@ -351,21 +349,10 @@ class Model:
         """
         return self._datainfo
 
-    @datainfo.setter
-    def datainfo(self, value):
-        if not isinstance(value, DataInfo):
-            raise TypeError("model.datainfo must be of DataInfo type")
-        self._datainfo = value
-
     @property
     def dataset(self):
         """Dataset connected to model"""
         return self._dataset
-
-    @dataset.setter
-    def dataset(self, value):
-        self._dataset = value
-        self.update_datainfo()
 
     @property
     def initial_individual_estimates(self):
@@ -421,14 +408,6 @@ class Model:
     def description(self):
         """A free text discription of the model"""
         return self._description
-
-    def update_datainfo(self):
-        """Update model.datainfo for a new dataset"""
-        try:
-            curdi = self.datainfo
-        except AttributeError:
-            curdi = DataInfo.create()
-        self.datainfo = update_datainfo(curdi, self.dataset)
 
     def copy(self):
         """Create a deepcopy of the model object"""

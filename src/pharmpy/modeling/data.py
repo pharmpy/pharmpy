@@ -1109,7 +1109,7 @@ def undrop_columns(model: Model, column_names: Union[List[str], str]):
             newcols.append(newcol)
         else:
             newcols.append(col)
-    model.datainfo = di.replace(columns=newcols)
+    model = model.replace(datainfo=di.replace(columns=newcols))
     return model.update_source()
 
 

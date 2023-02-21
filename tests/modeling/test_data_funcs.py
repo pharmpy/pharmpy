@@ -130,7 +130,7 @@ def test_number_of_observations(load_example_model_for_test):
 def test_covariate_baselines(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
     covs = model.datainfo[['WGT', 'APGR']].set_types('covariate')
-    model.datainfo = model.datainfo[0:3] + covs + model.datainfo[5:]
+    model = model.replace(datainfo=model.datainfo[0:3] + covs + model.datainfo[5:])
     df = get_covariate_baselines(model)
     assert len(df) == 59
     assert list(df.columns) == ['WGT', 'APGR']

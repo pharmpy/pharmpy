@@ -102,8 +102,10 @@ def create_model_for_test(load_example_model_for_test):
         datapath = model.datainfo.path
         if dataset is not None:
             # NOTE This yields a copy of the dataset through Model#copy
-            model.dataset = load_example_model_for_test(dataset).dataset
-            model.datainfo = model.datainfo.replace(path=datapath)
+            model = model.replace(
+                dataset=load_example_model_for_test(dataset).dataset,
+                datainfo=model.datainfo.replace(path=datapath),
+            )
         return model
 
     return _create
