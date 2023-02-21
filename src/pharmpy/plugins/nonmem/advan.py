@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Callable, Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
-from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import (
     Assignment,

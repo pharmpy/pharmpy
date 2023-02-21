@@ -311,7 +311,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
     try:
         dataset = parse_dataset(di, control_stream, raw=False)
     except FileNotFoundError:
-        datset = None
+        pass
 
     statements, comp_map = parse_statements(di, dataset, control_stream)
 
