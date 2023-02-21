@@ -68,11 +68,11 @@ def convert_model(model: pharmpy.model) -> pharmpy.model:
     nlmixr_model.internals = NLMIXRModelInternals()
     nlmixr_model.filename_extension = '.R'
     
-    # Update dataset to lowercase and add evid
-    nlmixr_model = modify_dataset(nlmixr_model)
+    # Add evid
+    nlmixr_model = add_evid(nlmixr_model)
     
-    # Check data structure of doses
-    check_model(nlmixr_model)
+    # Check model for warnings regarding data structure or model contents
+    nlmixr_model = check_model(nlmixr_model)
          
     # Drop all dropped columns so it does not interfere with nlmixr
     drop_dropped_columns(nlmixr_model)
@@ -326,7 +326,7 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
     else:
         cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}")')
                 
-def modify_dataset(model):
+def add_evid(model):
     temp_model = model.copy()
     if "EVID" not in temp_model.dataset.columns:
         temp_model.dataset["EVID"] = get_evid(temp_model)
@@ -572,7 +572,7 @@ def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, retu
     nonmem_model.dataset = nonmem_model.dataset.reset_index()
     
     if "EVID" not in nonmem_model.dataset.columns:
-        nonmem_model = modify_dataset(nonmem_model)
+        nonmem_model = add_evid(nonmem_model)
     nonmem_results = nonmem_results.reset_index()
     nonmem_results = nonmem_results.drop(nonmem_model.dataset[nonmem_model.dataset["EVID"] != 0].index.to_list())
     nonmem_results = nonmem_results.set_index(["ID","TIME"])

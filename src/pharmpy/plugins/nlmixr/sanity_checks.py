@@ -12,8 +12,9 @@ from pharmpy.modeling import (
     has_proportional_error_model,
     has_combined_error_model,
     )
+from .modify_code import change_same_time
 
-def check_model(model: pharmpy.model.Model) -> None:
+def check_model(model: pharmpy.model) -> pharmpy.model:
     """
     Perform all neccessary checks to see if there are any issues with the input 
     model. Such as if the error model is unknown, or if there are other limitations 
@@ -21,19 +22,24 @@ def check_model(model: pharmpy.model.Model) -> None:
 
     Parameters
     ----------
-    model : pharmpy.model.Model
+    model : pharmpy.model
         pharmpy model object
 
     Returns
     -------
-    None
-        Issues will be printed to the terminal and nothing is returned
+    pharmpy.model
+        Issues will be printed to the terminal and model is returned.
 
     """
     if not mixed_dose_types(model):
-        print_warning("The connected model data contains mixed dosage types. Nlmixr cannot handle this \nConverted model will not run on associated data")
+        print_warning("The connected model data contains mixed dosage types. Nlmixr cannot handle this currently \nConverted model will not run on associated data")
     if not known_error_model(model):
-        print_warning("Format of error model is unknown. Will try to translate either way")
+        print_warning("Format of error model cannot be determined. Will try to translate either way")
+    if same_time(model):
+        print_warning("Observation and bolus dose at the same time in the data. Modified for nlmixr model")
+        model = change_same_time(model)
+        
+    return model
 
 def mixed_dose_types(model: pharmpy.model.Model) -> bool:
     """
@@ -84,6 +90,19 @@ def known_error_model(model: pharmpy.model.Model) -> bool:
     return (has_additive_error_model(model) or 
             has_combined_error_model(model) or 
             has_proportional_error_model(model))
+
+def same_time(model: pharmpy.model) -> bool:
+    temp_model = model.copy()
+    temp_model.dataset = temp_model.dataset.reset_index()
+    dataset = temp_model.dataset
+    for index, row in dataset.iterrows():
+        if index != 0:
+            if (row["ID"] == dataset.loc[index-1]["ID"] and
+                row["TIME"] == dataset.loc[index-1]["TIME"] and
+                row["EVID"] not in [0,3] and 
+                dataset.loc[index-1]["EVID"] == 0):
+                return True
+    return False
 
 def print_warning(warning: str) -> None:
     """

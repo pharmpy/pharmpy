@@ -513,3 +513,36 @@ def add_ini_parameter(cg: CodeGenerator, parameter: sympy.Symbol, boundary: bool
                 cg.add(f'{parameter_name} <- {parameter.init}')
         else:
             cg.add(f'{parameter_name} <- {parameter.init}')
+            
+def change_same_time(model: pharmpy.model) -> pharmpy.model:
+    """
+    Force dosing to happen after observation, if bolus dose is given at the
+    exact same time.
+
+    Parameters
+    ----------
+    model : pharmpy.model
+        A pharmpy.model object
+
+    Returns
+    -------
+    model : TYPE
+        The same model with a changed dataset.
+
+    """
+    dataset = model.dataset
+    time = dataset["TIME"]
+    for index, row in dataset.iterrows():
+        if index != 0:
+            if (row["ID"] == dataset.loc[index-1]["ID"] and
+                row["TIME"] == dataset.loc[index-1]["TIME"] and
+                row["EVID"] not in [0,3] and 
+                dataset.loc[index-1]["EVID"] == 0):
+                time[index] = row["TIME"] + 10**-6
+    model.dataset["TIME"] = time
+    return model
+                
+                
+                
+                
+                
