@@ -67,10 +67,8 @@ class NONMEMModelInternals:
 def convert_model(model):
     """Convert any model into a NONMEM model"""
     if isinstance(model, Model):
-        return model.copy()
-    from pharmpy.modeling import convert_model
+        return model
 
-    model = convert_model(model, 'generic')
     code = '$PROBLEM\n'
     code += (
         '$INPUT '
