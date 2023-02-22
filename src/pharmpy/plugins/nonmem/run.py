@@ -139,7 +139,9 @@ def execute_model(model, db):
             txn.store_modelfit_results()
 
             # Read in results for the server side
-            model.modelfit_results = parse_modelfit_results(model, model_path / basename)
+            model = model.replace(
+                modelfit_results=parse_modelfit_results(model, model_path / basename)
+            )
 
     return model
 
