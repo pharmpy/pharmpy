@@ -13,13 +13,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import Model, Results
-from pharmpy.modeling import (
-    calculate_aic,
-    calculate_bic,
-    check_high_correlations,
-    copy_model,
-    read_model,
-)
+from pharmpy.modeling import calculate_aic, calculate_bic, check_high_correlations, read_model
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.results import ModelfitResults, mfr
@@ -320,9 +314,10 @@ def _parse_tool_options_from_json_metadata(
 
         db: ModelDatabase = tool_database.model_database
         try:
-            model = copy_model(db.retrieve_model(db_name), model_name)
+            model = db.retrieve_model(db_name)
+            model = model.replace(name=model_name)
             res = db.retrieve_modelfit_results(db_name)
-            model.modelfit_results = res
+            model = model.replace(modelfit_results=res)
         except KeyError:
             raise ValueError(
                 f'Cannot resume run because model argument "{model_key}" ({model_name}) cannot be restored.'
@@ -460,7 +455,7 @@ def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
 
 
 def _store_input_model(db: ModelDatabase, model: Model, name: str):
-    model_copy = copy_model(model, name)
+    model_copy = model.replace(name=name)
     with db.transaction(model_copy) as txn:
         txn.store_model()
         txn.store_modelfit_results()
