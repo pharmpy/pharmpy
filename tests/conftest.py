@@ -63,7 +63,7 @@ def load_model_for_test(tmp_path_factory):
         if key not in _cache:
             _cache[key] = _parse_model()
 
-        return _cache[key].copy()
+        return _cache[key]
 
     return _load
 
@@ -86,7 +86,7 @@ def load_example_model_for_test():
         if key not in _cache:
             _cache[key] = _parse_model()
 
-        return _cache[key].copy()
+        return _cache[key]
 
     return _load
 

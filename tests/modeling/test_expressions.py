@@ -216,14 +216,12 @@ def test_simplify_expression():
 
 
 def test_solve_ode_system(pheno):
-    model = pheno.copy()
-    model = solve_ode_system(model)
+    model = solve_ode_system(pheno)
     assert sympy.Symbol('t') in model.statements[8].free_symbols
 
 
 def test_make_declarative(pheno):
-    model = pheno.copy()
-    model = make_declarative(model)
+    model = make_declarative(pheno)
     assert model.statements[3].expression == sympy.Piecewise(
         (s('WGT') * s('PTVV') * (s('THETA_3') + 1), sympy.Lt(s('APGR'), 5)),
         (s('WGT') * s('PTVV'), True),
@@ -231,14 +229,12 @@ def test_make_declarative(pheno):
 
 
 def test_cleanup_model(pheno):
-    model = pheno.copy()
-    model = cleanup_model(model)
+    model = cleanup_model(pheno)
     assert model.statements.after_odes[1].symbol != s('W')
 
 
 def test_greekify_model(pheno):
-    model = pheno.copy()
-    model = cleanup_model(model)
+    model = cleanup_model(pheno)
     model = greekify_model(model)
     assert s('theta_1') in model.statements[2].free_symbols
 

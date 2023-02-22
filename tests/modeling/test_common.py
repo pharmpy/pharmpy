@@ -103,8 +103,7 @@ def test_get_model_covariates(pheno, testdata, load_model_for_test):
 
 
 def test_set_name(pheno):
-    model = pheno.copy()
-    model = set_name(model, "run1")
+    model = set_name(pheno, "run1")
     assert model.name == "run1"
 
 
@@ -120,8 +119,7 @@ def test_convert_model():
 
 
 def test_remove_unused_parameters_and_rvs(pheno):
-    model = pheno.copy()
-    model = remove_unused_parameters_and_rvs(model)
+    model = remove_unused_parameters_and_rvs(pheno)
     model = create_joint_distribution(
         model, individual_estimates=model.modelfit_results.individual_estimates
     )

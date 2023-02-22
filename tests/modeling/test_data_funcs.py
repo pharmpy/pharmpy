@@ -41,7 +41,9 @@ def test_get_doseid(load_example_model_for_test):
     assert doseid[743] == 13
 
     # Same timepoint for dose and observation
-    model.dataset.loc[742, 'TIME'] = model.dataset.loc[743, 'TIME']
+    df = model.dataset.copy()
+    df.loc[742, 'TIME'] = df.loc[743, 'TIME']
+    model = model.replace(dataset=df)
     doseid = get_doseid(model)
     assert len(doseid) == 744
     assert doseid[743] == 12
@@ -178,6 +180,7 @@ def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, t
     m = load_example_model_for_test("pheno")
     m = add_time_after_dose(m)
     tad = m.dataset['TAD']
+
     assert tad[0] == 0.0
     assert tad[1] == 2.0
     assert tad[743] == 2.0

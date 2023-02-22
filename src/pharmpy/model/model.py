@@ -12,13 +12,13 @@ Definitions
 """
 from __future__ import annotations
 
-import copy
 import warnings
 from io import IOBase
 from pathlib import Path
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
+from pharmpy.internals.immutable import Immutable
 from pharmpy.plugins.utils import detect_model
 
 from .datainfo import ColumnInfo, DataInfo
@@ -47,7 +47,7 @@ class ModelfitResultsError(ModelError):
     pass
 
 
-class Model:
+class Model(Immutable):
     """The Pharmpy model class"""
 
     def __init__(
@@ -408,16 +408,6 @@ class Model:
     def description(self):
         """A free text discription of the model"""
         return self._description
-
-    def copy(self):
-        """Create a deepcopy of the model object"""
-        model_copy = copy.deepcopy(self)
-        try:
-            model_copy = model_copy.replace(parent_model=self.name)
-        except AttributeError:
-            # NOTE Name could be absent.
-            pass
-        return model_copy
 
     @staticmethod
     def create_model(obj=None, **kwargs):

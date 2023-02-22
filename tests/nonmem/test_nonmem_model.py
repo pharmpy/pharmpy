@@ -51,12 +51,10 @@ def test_source(pheno):
 def test_update_inits(load_model_for_test, pheno, pheno_path):
     from pharmpy.modeling import update_inits
 
-    model = pheno.copy()
-    update_inits(model, model.modelfit_results.parameter_estimates)
+    model = update_inits(pheno, pheno.modelfit_results.parameter_estimates)
 
     model = load_model_for_test(pheno_path)
-    update_inits(model, model.modelfit_results.parameter_estimates)
-    model.update_source()
+    model = update_inits(model, model.modelfit_results.parameter_estimates)
 
 
 def test_empty_ext_file(load_model_for_test, testdata):
@@ -92,7 +90,6 @@ def test_parameters(pheno):
 
 
 def test_set_parameters(pheno):
-    model = pheno.copy()
     params = {
         'PTVCL': 0.75,
         'PTVV': 0.5,
@@ -101,7 +98,7 @@ def test_set_parameters(pheno):
         'IVV': 0.2,
         'SIGMA_1_1': 0.3,
     }
-    model = set_initial_estimates(model, params)
+    model = set_initial_estimates(pheno, params)
     assert model.parameters['PTVCL'] == Parameter('PTVCL', 0.75, lower=0, upper=1000000)
     assert model.parameters['PTVV'] == Parameter('PTVV', 0.5, lower=0, upper=1000000)
     assert model.parameters['THETA_3'] == Parameter('THETA_3', 0.25, lower=-0.99, upper=1000000)
@@ -118,14 +115,12 @@ def test_set_parameters(pheno):
     sigmas = model.internals.control_stream.get_records('SIGMA')
     assert str(sigmas[0]) == '$SIGMA 0.3\n'
 
-    model = pheno.copy()
-    model = set_initial_estimates(model, {'PTVCL': 18})
+    model = set_initial_estimates(pheno, {'PTVCL': 18})
     assert model.parameters['PTVCL'] == Parameter('PTVCL', 18, lower=0, upper=1000000)
     assert model.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=1000000)
 
-    model = pheno.copy()
     model = create_joint_distribution(
-        model, individual_estimates=model.modelfit_results.individual_estimates
+        pheno, individual_estimates=model.modelfit_results.individual_estimates
     )
     with pytest.raises(UserWarning, match='Adjusting initial'):
         set_initial_estimates(model, {'IVV': 0.000001})
@@ -160,13 +155,12 @@ def test_adjust_iovs(load_model_for_test, testdata):
     ],
 )
 def test_add_parameters(pheno, param_new, init_expected, buf_new):
-    model = pheno.copy()
-    pset = [p for p in model.parameters]
+    pset = [p for p in pheno.parameters]
 
     assert len(pset) == 6
 
     pset.append(param_new)
-    model = model.replace(parameters=Parameters.create(pset))
+    model = pheno.replace(parameters=Parameters.create(pset))
 
     assert len(pset) == 7
     assert model.parameters[param_new.name].init == init_expected
@@ -187,11 +181,9 @@ def test_add_parameters(pheno, param_new, init_expected, buf_new):
 
 
 def test_add_two_parameters(pheno):
-    model = pheno.copy()
+    assert len(pheno.parameters) == 6
 
-    assert len(model.parameters) == 6
-
-    model = add_population_parameter(model, 'COVEFF1', 0.2)
+    model = add_population_parameter(pheno, 'COVEFF1', 0.2)
     model = add_population_parameter(model, 'COVEFF2', 0.1)
 
     assert len(model.parameters) == 8
@@ -207,8 +199,7 @@ def test_add_two_parameters(pheno):
     ],
 )
 def test_add_statements(pheno, statement_new, buf_new):
-    model = pheno.copy()
-    sset = model.statements
+    sset = pheno.statements
     assert len(sset) == 15
 
     # Insert new statement before ODE system.
@@ -218,7 +209,7 @@ def test_add_statements(pheno, statement_new, buf_new):
             new_sset.append(statement_new)
         new_sset.append(s)
 
-    model = model.replace(statements=Statements(new_sset))
+    model = pheno.replace(statements=Statements(new_sset))
     model = model.update_source()
 
     assert len(model.statements) == 16
@@ -253,9 +244,7 @@ def test_add_statements(pheno, statement_new, buf_new):
     ],
 )
 def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new):
-    model = pheno.copy()
-
-    model = add_population_parameter(model, param_new.name, param_new.init)
+    model = add_population_parameter(pheno, param_new.name, param_new.init)
 
     sset = model.statements
 
@@ -287,12 +276,11 @@ def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new)
 
 @pytest.mark.parametrize('rv_new, buf_new', [(Parameter('omega', 0.1), '$OMEGA  0.1')])
 def test_add_random_variables(pheno, rv_new, buf_new):
-    model = pheno.copy()
-    rvs = model.random_variables
+    rvs = pheno.random_variables
 
     eta = NormalDistribution.create('eta_new', 'iiv', 0, S(rv_new.name))
 
-    model = add_population_parameter(model, rv_new.name, rv_new.init)
+    model = add_population_parameter(pheno, rv_new.name, rv_new.init)
     model = model.replace(random_variables=rvs + eta)
 
     model = model.update_source()
@@ -317,13 +305,11 @@ def test_add_random_variables(pheno, rv_new, buf_new):
 
 
 def test_add_random_variables_and_statements(pheno):
-    model = pheno.copy()
-
-    rvs = model.random_variables
+    rvs = pheno.random_variables
 
     eta = NormalDistribution.create('ETA_NEW', 'iiv', 0, S('omega'))
     rvs = rvs + eta
-    model = add_population_parameter(model, 'omega', 0.1)
+    model = add_population_parameter(pheno, 'omega', 0.1)
 
     eps = NormalDistribution.create('EPS_NEW', 'ruv', 0, S('sigma'))
     rvs = rvs + eps
@@ -347,14 +333,6 @@ def test_minimal(load_model_for_test, datadir):
     path = datadir / 'minimal.mod'
     model = load_model_for_test(path)
     assert len(model.statements) == 1
-    assert model.statements[0].expression == symbol('THETA_1') + symbol('ETA_1') + symbol('EPS_1')
-
-
-def test_copy(load_model_for_test, datadir):
-    path = datadir / 'minimal.mod'
-    model = load_model_for_test(path)
-    copy = model.copy()
-    assert id(model) != id(copy)
     assert model.statements[0].expression == symbol('THETA_1') + symbol('ETA_1') + symbol('EPS_1')
 
 
@@ -391,16 +369,14 @@ def test_initial_individual_estimates(load_model_for_test, datadir):
     ],
 )
 def test_statements_setter(pheno, buf_new, len_expected):
-    model = pheno.copy()
-
     parser = NMTranParser()
     buf_new = _ensure_trailing_newline(buf_new)
     statements_new = parser.parse(f'$PRED\n{buf_new}').records[0].statements
 
-    assert len(model.statements) == 15
+    assert len(pheno.statements) == 15
     assert len(statements_new) == len_expected
 
-    model = model.replace(statements=statements_new)
+    model = pheno.replace(statements=statements_new)
 
     assert len(model.statements) == len_expected
     assert model.statements == statements_new
@@ -415,8 +391,7 @@ def test_deterministic_theta_comments(pheno):
 
 
 def test_remove_eta(pheno):
-    model = pheno.copy()
-    model = remove_iiv(model, 'ETA_1')
+    model = remove_iiv(pheno, 'ETA_1')
     assert model.model_code.split('\n')[12] == 'V = TVV*EXP(ETA(1))'
 
 
@@ -519,10 +494,9 @@ def test_dv_symbol(pheno):
 
 
 def test_insert_unknown_record(pheno):
-    model = pheno.copy()
     rec = create_record('$TRIREME one')
-    newcs = model.internals.control_stream.insert_record(rec)
-    model = model.replace(internals=model.internals.replace(control_stream=newcs))
+    newcs = pheno.internals.control_stream.insert_record(rec)
+    model = pheno.replace(internals=pheno.internals.replace(control_stream=newcs))
     assert model.model_code.split('\n')[-1] == '$TRIREME one'
 
     rec = create_record('\n$OA two')

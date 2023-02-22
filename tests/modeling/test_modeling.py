@@ -2603,9 +2603,8 @@ def test_remove_iov_with_options(
         )
 
         start_model = add_iov(model, occ=occ, distribution=distribution)
-        model_with_some_iovs_removed = start_model.copy()
 
-        model_with_some_iovs_removed = remove_iov(model_with_some_iovs_removed, to_remove=to_remove)
+        model_with_some_iovs_removed = remove_iov(start_model, to_remove=to_remove)
 
         assert cases in model_with_some_iovs_removed.model_code
         assert set(model_with_some_iovs_removed.random_variables.iov.names) == set(rest)
@@ -3172,7 +3171,9 @@ def test_add_iov_compose(load_model_for_test, pheno_path):
 
 def test_add_iov_only_one_level(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    model.dataset['FA1'] = 1
+    df = model.dataset.copy()
+    df['FA1'] = 1
+    model = model.replace(dataset=df)
 
     with pytest.raises(ValueError, match='Only one value in FA1 column.'):
         add_iov(model, 'FA1', ['ETA_1'])
@@ -3340,8 +3341,7 @@ def test_add_pk_iiv_nested_params(load_model_for_test, pheno_path):
 
 
 def test_mm_then_periph(pheno):
-    model = pheno.copy()
-    model = set_michaelis_menten_elimination(model)
+    model = set_michaelis_menten_elimination(pheno)
     model = add_peripheral_compartment(model)
     odes = model.statements.ode_system
     central = odes.central_compartment
@@ -3361,11 +3361,10 @@ def _symbols(names: Iterable[str]):
 
 
 def test_find_clearance_parameters(pheno):
-    model = pheno.copy()
-    cl_origin = find_clearance_parameters(model)
+    cl_origin = find_clearance_parameters(pheno)
     assert cl_origin == _symbols(['CL'])
 
-    model = add_peripheral_compartment(model)
+    model = add_peripheral_compartment(pheno)
     cl_p1 = find_clearance_parameters(model)
     assert cl_p1 == _symbols(['CL', 'QP1'])
 
@@ -3395,11 +3394,10 @@ def test_find_clearance_parameters_github_issues_1053_and_1062_bis(load_example_
 
 
 def test_find_volume_parameters(pheno):
-    model = pheno.copy()
-    v_origin = find_volume_parameters(model)
+    v_origin = find_volume_parameters(pheno)
     assert v_origin == _symbols(['V'])
 
-    model = add_peripheral_compartment(model)
+    model = add_peripheral_compartment(pheno)
     v_p1 = find_volume_parameters(model)
     assert v_p1 == _symbols(['V1', 'VP1'])
 

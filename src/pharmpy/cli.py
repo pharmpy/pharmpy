@@ -340,7 +340,7 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
         # Is a model
         model = model_or_dataset
         if new_df is not None and new_df is not model.dataset:
-            model.dataset = new_df
+            model = model.replace(dataset=new_df)
         try:
             from pharmpy.modeling import bump_model_number, write_model
 

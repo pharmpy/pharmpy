@@ -22,7 +22,7 @@ def create_workflow_rename(new_name, name=None, model: Optional[Model] = None):
         m = m.replace(name=new_name)
         return m
 
-    wf = Workflow([Task('copy', lambda x: x.copy(), model)], name=name)
+    wf = Workflow([Task('copy', lambda x: x, model)], name=name)
     wf.insert_workflow(Workflow([Task('rename', rename)]))
     return wf
 

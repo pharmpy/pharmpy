@@ -71,7 +71,7 @@ def test_execute_workflow_set_bolus_absorption(load_model_for_test, testdata, tm
     model2 = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     advan1_before = model1.model_code
 
-    t1 = Task('init', lambda x: x.copy(), model2)
+    t1 = Task('init', lambda x: x, model2)
     t2 = Task('update', set_bolus_absorption)
     t3 = Task('postprocess', lambda x: x)
     wf = Workflow([t1], name='test-workflow')
@@ -96,7 +96,7 @@ def test_execute_workflow_fit_mock(load_model_for_test, testdata, tmp_path):
         m = m.replace(modelfit_results=ModelfitResults(ofv=ofv))
         return m
 
-    init = map(lambda i: Task(f'init_{i}', lambda x: x.copy(), models[i]), indices)
+    init = map(lambda i: Task(f'init_{i}', lambda x: x, models[i]), indices)
     process = map(lambda i: Task(f'fit{i}', fit, ofvs[i]), indices)
     wf = Workflow(init, name='test-workflow')
     wf.insert_workflow(Workflow(process))

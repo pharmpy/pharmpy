@@ -5,10 +5,10 @@ from pharmpy.modeling import add_allometry, add_peripheral_compartment
 
 
 def test_allometry(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    ref_model = model.copy()
+    ref_model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+
     model = add_allometry(
-        model,
+        ref_model,
         allometric_variable='WGT',
         reference_value=70,
         parameters=['CL'],
@@ -60,10 +60,8 @@ def test_allometry(load_model_for_test, testdata):
     with pytest.raises(ValueError):
         add_allometry(model, allometric_variable='WGT', reference_value=70, parameters=[])
 
-    model = ref_model.copy()
-
     model = add_allometry(
-        model,
+        ref_model,
         allometric_variable='WGT',
         reference_value=70,
         parameters=['CL', 'V'],
@@ -76,20 +74,17 @@ def test_allometry(load_model_for_test, testdata):
     assert model.statements[3] == Assignment.create('V', 'V*(WGT/70)**ALLO_V')
     assert model.parameters['ALLO_V'].init == 0.8
 
-    model = ref_model.copy()
     model = add_allometry(
-        model, allometric_variable='WGT', reference_value=70, parameters=['CL', 'V']
+        ref_model, allometric_variable='WGT', reference_value=70, parameters=['CL', 'V']
     )
     assert model.parameters['ALLO_CL'].init == 0.75
     assert model.parameters['ALLO_V'].init == 1
 
-    model = ref_model.copy()
-    model = add_allometry(model, allometric_variable='WGT', reference_value=70)
+    model = add_allometry(ref_model, allometric_variable='WGT', reference_value=70)
     assert model.parameters['ALLO_CL'].init == 0.75
     assert model.parameters['ALLO_V'].init == 1
 
-    model = ref_model.copy()
-    model = add_peripheral_compartment(model)
+    model = add_peripheral_compartment(ref_model)
     model = add_allometry(model, allometric_variable='WGT', reference_value=70)
     assert model.statements[1] == Assignment.create('VP1', 'VP1*(WGT/70)**ALLO_VP1')
     assert model.statements[3] == Assignment.create('QP1', 'QP1*(WGT/70)**ALLO_QP1')

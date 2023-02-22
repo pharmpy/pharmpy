@@ -242,33 +242,35 @@ def post_process(context, start_model, *models, cutoff, current_iteration):
 
 
 def _create_base_model(input_model, current_iteration):
-    base_model = Model()
     theta = Parameter('theta', 0.1)
     omega = Parameter('omega', 0.01, lower=0)
     sigma = Parameter('sigma', 1, lower=0)
     params = Parameters((theta, omega, sigma))
-    base_model.parameters = params
 
     eta_name = 'eta'
     eta = NormalDistribution.create(eta_name, 'iiv', 0, omega.symbol)
     sigma_name = 'epsilon'
     sigma = NormalDistribution.create(sigma_name, 'ruv', 0, sigma.symbol)
     rvs = RandomVariables.create([eta, sigma])
-    base_model.random_variables = rvs
 
     y = Assignment(
         sympy.Symbol('Y'), theta.symbol + sympy.Symbol(eta_name) + sympy.Symbol(sigma_name)
     )
     statements = Statements([y])
-    base_model.statements = statements
 
-    base_model.name = f'base_{current_iteration}'
-    base_model.description = base_model.name
-    base_model.dataset = _create_dataset(input_model)
+    name = f'base_{current_iteration}'
 
     est = EstimationStep.create('foce', interaction=True, maximum_evaluations=9999)
-    base_model = base_model.replace(
-        estimation_steps=EstimationSteps.create([est]), dependent_variable=y.symbol
+
+    base_model = Model(
+        parameters=params,
+        random_variables=rvs,
+        statements=statements,
+        name=name,
+        description=name,
+        dataset=_create_dataset(input_model),
+        estimation_steps=EstimationSteps.create([est]),
+        dependent_variable=y.symbol,
     )
     return base_model
 

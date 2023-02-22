@@ -61,7 +61,7 @@ def test_degrees_of_freedom(
     load_model_for_test, testdata, model_path, effects, expected, allow_nested
 ):
     parent = load_model_for_test(testdata.joinpath(*model_path))
-    child = parent.copy()
+    child = parent
 
     for effect in effects:
         child = add_covariate_effect(child, *effect, allow_nested=allow_nested)
@@ -73,10 +73,8 @@ def test_cutoff(load_model_for_test, testdata):
     parent = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert cutoff(parent, parent, 0.05) == 0
 
-    child = parent.copy()
-
     child = add_allometry(
-        child,
+        parent,
         allometric_variable='WGT',
         reference_value=70,
         parameters=['CL'],

@@ -39,27 +39,22 @@ def test_regression_code_record(load_model_for_test, testdata, eta_iov_1, eta_io
     """
 
     model_no_iov = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    model = model_no_iov.copy()
-    add_iov(model, occ="VISI")
+    model = add_iov(model_no_iov, occ="VISI")
 
     # remove the first IOV, can reproduce the same issue
-    model_r1 = model.copy()
-    remove_iov(model_r1, to_remove=[eta_iov_1])
+    model_r1 = remove_iov(model, to_remove=[eta_iov_1])
 
     # remove the second IOV, can reproduce the same issue
-    model_r1r2 = model_r1.copy()
-    remove_iov(model_r1r2, to_remove=[eta_iov_2])
+    model_r1r2 = remove_iov(model_r1, to_remove=[eta_iov_2])
 
     # remove the first and second IOV
-    model_r12 = model.copy()
-    remove_iov(model_r12, to_remove=[eta_iov_1, eta_iov_2])
+    model_r12 = remove_iov(model, to_remove=[eta_iov_1, eta_iov_2])
 
     assert model_r12 == model_r1r2
     assert model_r12.model_code == model_r1r2.model_code
 
-    model_r2r1 = model.copy()
-    remove_iov(model_r2r1, to_remove=[eta_iov_2])
-    remove_iov(model_r2r1, to_remove=[eta_iov_1])
+    model_r2r1 = remove_iov(model, to_remove=[eta_iov_2])
+    model_r2r1 = remove_iov(model_r2r1, to_remove=[eta_iov_1])
 
     assert model_r1r2 == model_r2r1
     assert model_r1r2.model_code == model_r2r1.model_code
