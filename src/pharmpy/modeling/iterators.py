@@ -61,13 +61,10 @@ class DatasetIterator:
         """If we are working with a model set the dataset and return model
         else simply pass the dataset through
         """
-        try:
-            model = self._model.copy()  # pyright: ignore [reportOptionalMemberAccess]
-        except AttributeError:
+        if self._model is None:
             return df
         else:
-            model = model.replace(name=df.name, dataset=df)
-            return model
+            return self._model.replace(name=df.name, dataset=df)
 
     def __iter__(self):
         return self
