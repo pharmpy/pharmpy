@@ -181,18 +181,12 @@ class ODESystem(Statement):
     pass
 
 
-class Output:
+class Output(Immutable):
     def __new__(cls):
         # Singleton class
         if not hasattr(cls, 'instance'):
             cls.instance = super(Output, cls).__new__(cls)
         return cls.instance
-
-    def __copy_(self):
-        return self
-
-    def __deepcopy__(self, memo):
-        return self
 
     def __repr__(self):
         return "Output()"
@@ -1537,7 +1531,7 @@ class Infusion(Dose):
         return f'Infusion({self.amount}, admid={self._admid}, {arg})'
 
 
-class Statements(Sequence):
+class Statements(Sequence, Immutable):
     """A sequence of symbolic statements describing the model
 
     Two types of statements are supported: Assignment and ODESystem.
