@@ -6,7 +6,6 @@ import sympy
 
 from pharmpy.modeling import (
     convert_model,
-    copy_model,
     create_joint_distribution,
     fix_parameters,
     generate_model_code,
@@ -107,15 +106,6 @@ def test_set_name(pheno):
     model = pheno.copy()
     model = set_name(model, "run1")
     assert model.name == "run1"
-
-
-def test_copy_model(pheno):
-    run1 = copy_model(pheno)
-    assert id(pheno) != id(run1)
-    assert id(pheno.parameters) == id(run1.parameters)
-    run2 = copy_model(run1, "run2")
-    assert run2.name == "run2"
-    assert run2.parent_model == "pheno_real"
 
 
 def test_convert_model():

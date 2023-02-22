@@ -6,7 +6,7 @@ import re
 import warnings
 from io import StringIO
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 import pharmpy.config as config
 from pharmpy.deps import sympy
@@ -269,34 +269,6 @@ def print_model_code(model: Model):
            NOPRINT ONEHEADER FILE=pheno.tab
     """
     print(model.model_code)
-
-
-def copy_model(model: Model, name: Optional[str] = None):
-    """Copies model to a new model object
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model
-    name : str
-        Optional new name of model
-
-    Returns
-    -------
-    Model
-        A copy of the input model
-
-    Example
-    -------
-    >>> from pharmpy.modeling import copy_model, load_example_model
-    >>> model = load_example_model("pheno")
-    >>> model_copy = copy_model(model, "pheno2")
-
-    """
-    new = model.copy()
-    if name is not None:
-        new = new.replace(name=name)
-    return new
 
 
 def set_name(model: Model, new_name: str):

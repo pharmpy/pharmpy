@@ -9,6 +9,11 @@ New features
 * Add function ``modeling.has_linear_odes_with_real_eigenvalues``
 * Add function ``modeling.is_real``
 
+Changes
+=======
+
+* Remove modeling.copy_model
+
 0.89.0 (2023-01-26)
 -------------------
 

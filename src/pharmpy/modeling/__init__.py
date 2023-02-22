@@ -2,7 +2,6 @@ from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_di
 from pharmpy.modeling.common import (
     bump_model_number,
     convert_model,
-    copy_model,
     generate_model_code,
     get_config_path,
     get_model_covariates,
@@ -227,7 +226,6 @@ __all__ = [
     'check_parameters_near_bounds',
     'cleanup_model',
     'convert_model',
-    'copy_model',
     'create_joint_distribution',
     'create_report',
     'create_rng',
