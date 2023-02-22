@@ -7,6 +7,7 @@ are to be used during conversion of NONMEM models to nlmixr2.
 from pharmpy.deps import sympy, sympy_printing
 import pharmpy.model
 import re
+import warnings
 
 class CodeGenerator:
     def __init__(self):
@@ -531,6 +532,7 @@ def change_same_time(model: pharmpy.model) -> pharmpy.model:
 
     """
     dataset = model.dataset
+    dataset = dataset.reset_index()
     time = dataset["TIME"]
     for index, row in dataset.iterrows():
         if index != 0:
@@ -538,7 +540,9 @@ def change_same_time(model: pharmpy.model) -> pharmpy.model:
                 row["TIME"] == dataset.loc[index-1]["TIME"] and
                 row["EVID"] not in [0,3] and 
                 dataset.loc[index-1]["EVID"] == 0):
-                time[index] = row["TIME"] + 10**-6
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    time[index] = row["TIME"] + 10**-6
     model.dataset["TIME"] = time
     return model
                 
