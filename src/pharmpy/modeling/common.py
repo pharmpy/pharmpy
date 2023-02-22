@@ -185,10 +185,6 @@ def convert_model(model: Model, to_format: str):
             filename_extension=model.filename_extension,
             initial_individual_estimates=model.initial_individual_estimates,
         )
-        try:
-            new.database = model.database
-        except AttributeError:
-            pass
         return new
     elif to_format == 'nlmixr':
         import pharmpy.plugins.nlmixr.model as nlmixr
