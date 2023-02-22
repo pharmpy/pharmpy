@@ -110,8 +110,7 @@ def _add_allometry_on_model(
     upper_bounds,
     fixed,
 ):
-    model = input_model.copy()
-    model = update_initial_estimates(model)
+    model = update_initial_estimates(input_model)
     model = add_allometry(
         model,
         allometric_variable=allometric_variable,
