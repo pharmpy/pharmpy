@@ -203,7 +203,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
     def store_model(self):
         from pharmpy.modeling import read_dataset_from_datainfo, write_csv, write_model
 
-        model = self.model.copy()
+        model = self.model
         datasets_path = self.db.path / DIRECTORY_DATASETS
 
         # NOTE Get the hash of the dataset and list filenames with contents

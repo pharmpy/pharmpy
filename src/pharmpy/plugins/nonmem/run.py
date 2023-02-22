@@ -191,10 +191,7 @@ def nmfe(*args):
 
 def evaluate_design(context, model):
     # Prepare and run model for design evaluation
-    model = model.copy()
-    model.name = '_design_model'
-
-    model = model.replace(estimation_steps=EstimationSteps())
+    model = model.replace(estimation_steps=EstimationSteps(), name='_design_model')
     stream = model.internals.control_stream
     estrecs = stream.get_records('ESTIMATION')
     stream = stream.remove_records(estrecs)
