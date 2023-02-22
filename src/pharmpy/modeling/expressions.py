@@ -1015,7 +1015,7 @@ def simplify_model(
     model: Model, old_statements: Iterable[Statement], statements: Iterable[Statement]
 ):
     odes = model.statements.ode_system
-    fs = odes.free_symbols.copy() if odes is not None else set()
+    fs = odes.free_symbols if odes is not None else set()
     old_fs = fs.copy()
 
     kept_statements_reversed = []
