@@ -10,7 +10,7 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_subsets
 from pharmpy.model import Assignment, Model
-from pharmpy.modeling import add_iov, copy_model, get_pk_parameters, remove_iiv, remove_iov
+from pharmpy.modeling import add_iov, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
@@ -136,7 +136,7 @@ def task_brute_force_search(
         return step_mapping, [model]
 
     # NOTE Add IOVs on given parameters or all parameters with IIVs.
-    model_with_iov = copy_model(model, name='iovsearch_run1')
+    model_with_iov = model.replace(name='iovsearch_run1')
     model_with_iov.parent_model = model.name
     update_initial_estimates(model_with_iov)
     # TODO should we exclude already present IOVs?
@@ -205,7 +205,7 @@ def _create_description(model):
 def task_remove_etas_subset(
     remove: Callable[[Model, List[str]], None], model: Model, subset: List[str], n: int
 ):
-    model_with_some_etas_removed = copy_model(model, name=f'iovsearch_run{n}')
+    model_with_some_etas_removed = model.replace(name=f'iovsearch_run{n}')
     model_with_some_etas_removed.parent_model = model.name
     update_initial_estimates(model_with_some_etas_removed)
     remove(model_with_some_etas_removed, subset)

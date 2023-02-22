@@ -9,7 +9,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import add_pk_iiv, calculate_bic, copy_model, create_joint_distribution
+from pharmpy.modeling import add_pk_iiv, calculate_bic, create_joint_distribution
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
@@ -109,7 +109,7 @@ def create_algorithm_workflow(input_model, base_model, state, iiv_strategy, rank
 
 def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
     if iiv_strategy != 'no_add':
-        model_iiv = copy_model(input_model, 'base_model')
+        model_iiv = input_model.replace(name='base_model')
         update_initial_estimates(model_iiv)
         _add_iiv(iiv_strategy, model_iiv)
         base_model = model_iiv

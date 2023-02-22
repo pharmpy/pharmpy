@@ -44,8 +44,7 @@ def create_model3b(model1b, model3, ncovs):
     * Set FIX pattern back from model1b
     * Use initial etas from model3
     """
-    model3b = model3.copy()
-    model3b = model3b.replace(name='model_3b')
+    model3b = model3.replace(name='model_3b')
     parcov_inits = calculate_parcov_inits(model3, ncovs)
     model3b = set_initial_estimates(model3b, parcov_inits)
     model3b = set_initial_estimates(

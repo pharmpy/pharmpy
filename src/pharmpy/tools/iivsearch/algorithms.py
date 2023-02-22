@@ -5,7 +5,7 @@ from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.set.partitions import partitions
 from pharmpy.internals.set.subsets import non_empty_subsets
 from pharmpy.model import Model, RandomVariables
-from pharmpy.modeling import copy_model, remove_iiv
+from pharmpy.modeling import remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.results import mfr
@@ -142,7 +142,7 @@ def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model):
 
 
 def copy(name, model):
-    model_copy = copy_model(model, name)
+    model_copy = model.replace(name=name)
     return model_copy
 
 
