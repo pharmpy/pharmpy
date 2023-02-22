@@ -534,15 +534,31 @@ def change_same_time(model: pharmpy.model) -> pharmpy.model:
     dataset = model.dataset
     dataset = dataset.reset_index()
     time = dataset["TIME"]
+    
+    if "RATE" in dataset.columns:
+        rate = True 
+    else:
+        rate = False
+        
     for index, row in dataset.iterrows():
         if index != 0:
-            if (row["ID"] == dataset.loc[index-1]["ID"] and
-                row["TIME"] == dataset.loc[index-1]["TIME"] and
-                row["EVID"] not in [0,3] and 
-                dataset.loc[index-1]["EVID"] == 0):
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    time[index] = row["TIME"] + 10**-6
+            if rate:
+                if (row["ID"] == dataset.loc[index-1]["ID"] and
+                    row["TIME"] == dataset.loc[index-1]["TIME"] and
+                    row["EVID"] not in [0,3] and 
+                    dataset.loc[index-1]["EVID"] == 0 and
+                    row["RATE"] == 0):
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        time[index] = row["TIME"] + 10**-6
+            else:
+                if (row["ID"] == dataset.loc[index-1]["ID"] and
+                    row["TIME"] == dataset.loc[index-1]["TIME"] and
+                    row["EVID"] not in [0,3] and 
+                    dataset.loc[index-1]["EVID"] == 0):
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        time[index] = row["TIME"] + 10**-6
     model.dataset["TIME"] = time
     return model
                 

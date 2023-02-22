@@ -25,6 +25,7 @@ from pharmpy.modeling import (
     has_additive_error_model,
     has_proportional_error_model,
     has_combined_error_model,
+    append_estimation_step_options,
 )
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import fit
@@ -41,7 +42,7 @@ from .modify_code import (
     convert_eq,
     )
 
-def convert_model(model: pharmpy.model) -> pharmpy.model:
+def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.model:
     """
     Convert any model into an nlmixr model
 
@@ -71,6 +72,10 @@ def convert_model(model: pharmpy.model) -> pharmpy.model:
     # Add evid
     nlmixr_model = add_evid(nlmixr_model)
     
+    # Update dataset
+    nlmixr_model = translate_nmtran_time(nlmixr_model)
+    nlmixr_model.datainfo = nlmixr_model.datainfo.replace(path = None)
+    
     # Check model for warnings regarding data structure or model contents
     nlmixr_model = check_model(nlmixr_model)
          
@@ -79,11 +84,13 @@ def convert_model(model: pharmpy.model) -> pharmpy.model:
     if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
         nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
 
-    # Update dataset
-    nlmixr_model = translate_nmtran_time(nlmixr_model)
-    nlmixr_model.datainfo = nlmixr_model.datainfo.replace(path = None)
-
     nlmixr_model.update_source()
+    
+    if keep_etas == True:
+        nlmixr_model.modelfit_results = ModelfitResults(
+            individual_estimates = model.modelfit_results.individual_estimates
+        )
+    
     return nlmixr_model
 
 
@@ -279,7 +286,7 @@ def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
     cg.add('})')
 
 
-def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
+def create_fit(cg: CodeGenerator, model: pharmpy.model, path=None) -> None:
     """
     Create the call to fit
 
@@ -298,6 +305,10 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
     """
     # FIXME : rasie error if the method does not match when evaluating
     estimation_steps = model.estimation_steps[0]
+    if "fix_eta" in estimation_steps.tool_options:
+        fix_eta = True
+    else:
+        fix_eta = False
     
     if [s.evaluation for s in model.estimation_steps._steps][0] is True:
         max_eval = 0
@@ -322,7 +333,15 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
             nlmixr_method = "posthoc"
             cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}"')
         else:
-            cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", control=foceiControl(maxOuterIterations={max_eval}))')
+            if fix_eta:
+                eta_file = 'fix_eta.csv'
+                if path is None:
+                    path = ""
+                path = Path(path) / eta_file
+                cg.add(f'etas <- as.matrix(read.csv("{path}"))')
+                cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", control=foceiControl(maxOuterIterations={max_eval}, maxInnerIterations=0, etaMat = etas))')
+            else:
+                cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", control=foceiControl(maxOuterIterations={max_eval}))')
     else:
         cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}")')
                 
@@ -356,7 +375,7 @@ class Model(pharmpy.model.Model):
         cg.dedent()
         cg.add('}')
         cg.empty_line()
-        create_fit(cg, self)
+        create_fit(cg, self, path)
         # Create lowercase id, time and amount symbols for nlmixr to be able
         # to run
         self.internals.src = (
@@ -431,6 +450,7 @@ def execute_model(model, db):
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     write_csv(model, path=path)
+    write_fix_eta(model, path=path)
     
     code = model.model_code
     cg = CodeGenerator()
@@ -510,7 +530,7 @@ def execute_model(model, db):
     return model
 
 
-def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, return_comp : bool = False) -> bool or pd.DataFrame:
+def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, return_comp : bool = False, fix_eta = True) -> bool or pd.DataFrame:
     """
     Verify that a model inputet in NONMEM format can be correctly translated to 
     nlmixr as well as verify that the predictions of the two models are the same 
@@ -548,12 +568,18 @@ def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, retu
     # Check that evaluation step is set to True
     if [s.evaluation for s in nonmem_model.estimation_steps._steps][0] is False:
         nonmem_model = set_evaluation_step(nonmem_model)
+        
+    # Set a tool option to fix theta values when running nlmixr
+    if fix_eta:
+        nonmem_model = fixate_eta(nonmem_model)
     
     # Update the nonmem model with new estimates
     # and convert to nlmixr
     nlmixr_model = convert_model(
-        update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
+        update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates),
+        keep_etas = True
     )
+    
     # Execute the nlmixr model
     import pharmpy.workflows
 
@@ -592,8 +618,25 @@ def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, retu
             return True
         else:
             return False
+        
+def fixate_eta(model):
+    opts = {"fix_eta": True}
+    model = append_estimation_step_options(model, tool_options = opts, idx=0)
+    return model
             
-            
+def write_fix_eta(model, path=None, force = True):
+    from pharmpy.model import data
+    from pharmpy.internals.fs.path import path_absolute
+    
+    filename = "fix_eta.csv"
+    path = path / filename
+    if not force and path.exists():
+        raise FileExistsError(f'File at {path} already exists.')
+        
+    path = path_absolute(path)
+    model.modelfit_results.individual_estimates.to_csv(path, na_rep=data.conf.na_rep, index=False)
+    model.datainfo = model.datainfo.replace(path=path)
+    return path
             
             
             
