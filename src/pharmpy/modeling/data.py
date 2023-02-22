@@ -263,7 +263,7 @@ def get_observations(model: Model):
             df = model.dataset.astype({label: 'float'})
             df = df.query(f'{label} == 0')
     else:
-        df = model.dataset
+        df = model.dataset.copy()
 
     df = df[[idcol, idvcol, model.datainfo.dv_column.name]]
     try:

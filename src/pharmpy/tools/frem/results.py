@@ -555,7 +555,6 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     ]
     parvecs.loc['estimates'] = frem_model.modelfit_results.parameter_estimates.loc[parameters]
 
-    df = frem_model.dataset
     covariates = continuous + categorical
     frem_model = set_covariates(frem_model, covariates)
     covariate_baselines = get_covariate_baselines(frem_model)

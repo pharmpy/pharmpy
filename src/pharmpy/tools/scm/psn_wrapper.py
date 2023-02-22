@@ -44,9 +44,6 @@ def run_scm(model, relations, continuous=None, categorical=None, path=None):
     with open(config_path, 'w') as fh:
         fh.write(config)
 
-    model.internals = model.internals.replace(
-        dataset_updated=True
-    )  # Hack to get update_source to update IGNORE
     write_csv(model, path=path)
     write_model(model, path=path)
 
