@@ -367,7 +367,7 @@ def execute_model(model, db):
 
 
 def verification(model, db_name, error=10**-3, return_comp=False):
-    nonmem_model = model.copy()
+    nonmem_model = model
 
     # Save results from the nonmem model
     nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:, [0]]
@@ -414,6 +414,7 @@ def verification(model, db_name, error=10**-3, return_comp=False):
 
 
 def modify_dataset(model):
-    temp_model = model.copy()
-    temp_model.dataset["evid"] = get_evid(temp_model)
+    df = model.dataset.copy()
+    df["evid"] = get_evid(model)
+    temp_model = model.replace(dataset=df)
     return temp_model

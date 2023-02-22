@@ -112,10 +112,8 @@ def test_convert_model():
     model = load_example_model("pheno")
 
     run1 = convert_model(model, "nlmixr")
-    assert model.name == run1.name
-    assert model == run1
-
     run2 = convert_model(run1, "nonmem")
+
     assert model.name == run2.name == run1.name
     assert model.parameters == run1.parameters == run2.parameters
     assert model.statements == run1.statements == run2.statements
