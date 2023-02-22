@@ -182,16 +182,9 @@ def convert_model(model: Model, to_format: str):
             observation_transformation=model.observation_transformation,
             description=model.description,
             parent_model=model.name,
+            filename_extension=model.filename_extension,
+            initial_individual_estimates=model.initial_individual_estimates,
         )
-        try:
-            new.filename_extension = model.filename_extension
-        except AttributeError:
-            pass
-        try:
-            if model.initial_individual_estimates is not None:
-                new.initial_individual_estimates = model.initial_individual_estimates.copy()
-        except AttributeError:
-            pass
         try:
             new.database = model.database
         except AttributeError:
