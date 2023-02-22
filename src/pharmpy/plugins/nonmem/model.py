@@ -221,7 +221,7 @@ class Model(BaseModel):
         cs = update_description(cs, model.internals.old_description, model.description)
 
         if model._name != model.internals.old_name:
-            cs = update_name_of_tables(control_stream, model._name)
+            cs = update_name_of_tables(cs, model._name)
 
         new_internals = model.internals.replace(
             control_stream=cs,
