@@ -10,7 +10,7 @@ from ..lib import diff
 
 def test_nan_add_covariate_effect(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    data = model.dataset
+    data = model.dataset.copy()
 
     new_col = [np.nan] * 10 + ([1.0] * (len(data.index) - 10))
 
