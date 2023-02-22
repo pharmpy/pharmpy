@@ -1,13 +1,7 @@
 from typing import Any, List
 
 from pharmpy.model import Model
-from pharmpy.modeling import (
-    add_iiv,
-    add_pk_iiv,
-    copy_model,
-    create_joint_distribution,
-    set_upper_bounds,
-)
+from pharmpy.modeling import add_iiv, add_pk_iiv, create_joint_distribution, set_upper_bounds
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
@@ -292,12 +286,12 @@ def _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements):
 
 
 def _copy(name, features, model):
-    model_copy = copy_model(model, name)
     features_str = ';'.join(map(key_to_str, features))
     if not model.description or model.parent_model == model.name:
-        model_copy.description = features_str
+        description = features_str
     else:
-        model_copy.description = f'{model.description};{features_str}'
+        description = f'{model.description};{features_str}'
+    model_copy = model.replace(name=name, description=description)
     return model_copy
 
 
