@@ -8,7 +8,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import add_covariate_effect, copy_model, get_pk_parameters
+from pharmpy.modeling import add_covariate_effect, get_pk_parameters
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
@@ -340,7 +340,7 @@ def wf_effects_addition(
 def task_add_covariate_effect(
     model: Model, candidate: Candidate, effect: EffectLiteral, effect_index: int
 ):
-    model_with_added_effect = copy_model(model, name=f'covsearch_run{effect_index}')
+    model_with_added_effect = model.replace(name=f'covsearch_run{effect_index}')
     model_with_added_effect.description = _create_description(effect, candidate.steps)
     model_with_added_effect.parent_model = model.name
     update_initial_estimates(model_with_added_effect)
@@ -404,7 +404,7 @@ def task_remove_covariate_effect(
     base_model: Model, candidate: Candidate, effect: EffectLiteral, effect_index: int
 ):
     model = candidate.model
-    model_with_removed_effect = copy_model(base_model, name=f'covsearch_run{effect_index}')
+    model_with_removed_effect = base_model.replace(name=f'covsearch_run{effect_index}')
     model_with_removed_effect.description = _create_description(
         effect, candidate.steps, forward=False
     )
