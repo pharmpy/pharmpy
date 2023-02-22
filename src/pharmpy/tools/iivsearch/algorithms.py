@@ -126,7 +126,7 @@ def create_description(model: Model, iov: bool = False) -> str:
 
 
 def remove_eta(etas, model):
-    remove_iiv(model, etas)
+    model = remove_iiv(model, etas)
     return model
 
 
@@ -148,5 +148,5 @@ def copy(name, model):
 
 def update_description(model):
     description = create_description(model)
-    model.description = description
+    model = model.replace(description=description)
     return model

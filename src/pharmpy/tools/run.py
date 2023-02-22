@@ -72,12 +72,12 @@ def fit(
             and db_model == model
             and model.has_same_dataset_as(db_model)
         ):
-            model.modelfit_results = db_model.modelfit_results
+            model = model.replace(modelfit_results=db_model.modelfit_results)
         else:
             kept.append(model)
 
     if kept:
-        run_tool('modelfit', kept, tool=tool)
+        models = run_tool('modelfit', kept, tool=tool)
 
     return mfr(models[0]) if single else list(map(mfr, models))
 

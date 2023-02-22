@@ -110,9 +110,8 @@ def create_algorithm_workflow(input_model, base_model, state, iiv_strategy, rank
 def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
     if iiv_strategy != 'no_add':
         model_iiv = input_model.replace(name='base_model')
-        update_initial_estimates(model_iiv)
-        _add_iiv(iiv_strategy, model_iiv)
-        base_model = model_iiv
+        model_iiv = update_initial_estimates(model_iiv)
+        base_model = _add_iiv(iiv_strategy, model_iiv)
     else:
         base_model = input_model
 
@@ -203,15 +202,15 @@ def _results(res):
 
 
 def _start_algorithm(model):
-    model.parent_model = model.name
+    model = model.replace(parent_model=model.name)
     return model
 
 
 def _add_iiv(iiv_strategy, model):
     assert iiv_strategy in ['add_diagonal', 'fullblock']
-    add_pk_iiv(model)
+    model = add_pk_iiv(model)
     if iiv_strategy == 'fullblock':
-        create_joint_distribution(
+        model = create_joint_distribution(
             model, individual_estimates=model.modelfit_results.individual_estimates
         )
     return model
