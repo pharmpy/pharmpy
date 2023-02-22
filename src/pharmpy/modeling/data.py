@@ -951,7 +951,6 @@ def get_concentration_parameters_from_data(model: Model):
     <BLANKLINE>
     [589 rows x 4 columns]
     """
-    model = model.copy()
     model = add_time_after_dose(model)
     doseid = get_doseid(model)
     df = model.dataset.copy()
