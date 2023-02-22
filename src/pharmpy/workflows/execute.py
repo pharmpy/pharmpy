@@ -56,8 +56,7 @@ def execute_workflow(
             if isinstance(inp, Model):
                 original_input_models.append(inp)
                 inp.modelfit_results  # To read in the results
-                new_model = inp.copy()
-                new_model = new_model.replace(parent_model=new_model.name)
+                new_model = inp.replace(parent_model=inp.name)
                 new_model.dataset
                 new_inp.append(new_model)
                 input_models.append(new_model)
