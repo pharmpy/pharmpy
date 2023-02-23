@@ -609,6 +609,8 @@ def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, retu
 
     combined_result["PASS/FAIL"] = "PASS"
     combined_result.loc[combined_result["DIFF"] > error, "PASS/FAIL"] = "FAIL"
+    
+    print(combined_result["DIFF"].describe()[["mean", "75%", "max"]].to_string(), end ="\n\n")
 
     if return_comp is True:
         return combined_result
