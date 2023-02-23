@@ -1,5 +1,6 @@
 import shutil
 
+import pandas as pd
 import pytest
 
 import pharmpy.modeling as modeling
@@ -36,13 +37,16 @@ def test_fit_multiple(tmp_path, model_count, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path / 'pheno_1.mod')
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno_1.dta')
         model_1 = Model.create_model('pheno_1.mod')
-        model_1 = model_1.replace(datainfo=model_1.datainfo.replace(path=tmp_path / 'pheno_1.dta'))
-        model_1 = model_1.update_source()
+        df = pd.read_table(tmp_path / 'pheno_1.dta', sep=r'\s+', header=0)
+        model_1 = model_1.replace(
+            dataset=df, datainfo=model_1.datainfo.replace(path=tmp_path / 'pheno_1.dta')
+        )
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path / 'pheno_2.mod')
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno_2.dta')
         model_2 = Model.create_model('pheno_2.mod')
-        model_2 = model_2.replace(datainfo=model_2.datainfo.replace(path=tmp_path / 'pheno_2.dta'))
-        model_2 = model_2.update_source()
+        model_2 = model_2.replace(
+            dataset=df, datainfo=model_2.datainfo.replace(path=tmp_path / 'pheno_2.dta')
+        )
         res1, res2 = fit([model_1, model_2])
         rundir = tmp_path / 'modelfit_dir1'
         assert res1.ofv == pytest.approx(730.8947268137308)
