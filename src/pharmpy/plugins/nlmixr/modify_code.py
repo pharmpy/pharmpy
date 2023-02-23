@@ -506,9 +506,9 @@ def add_ini_parameter(cg: CodeGenerator, parameter: sympy.Symbol, boundary: bool
         if boundary:
             if parameter.lower > -limit and parameter.upper < limit:
                 cg.add(f'{parameter_name} <- c({parameter.lower}, {parameter.init}, {parameter.upper})')
-            elif parameter.lower == -limit and parameter.upper < limit:
+            elif parameter.lower <= -limit and parameter.upper < limit:
                 cg.add(f'{parameter_name} <- c(-Inf, {parameter.init}, {parameter.upper})')
-            elif parameter.lower > -limit and parameter.upper == limit:
+            elif parameter.lower > -limit and parameter.upper >= limit:
                 cg.add(f'{parameter_name} <- c({parameter.lower}, {parameter.init}, Inf)')
             else:
                 cg.add(f'{parameter_name} <- {parameter.init}')
