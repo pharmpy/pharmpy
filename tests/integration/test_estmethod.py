@@ -23,7 +23,9 @@ def test_estmethod(
             shutil.copy2(path, tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         model_start = Model.create_model('pheno_real.mod')
-        model_start = model_start.replace(datainfo=model_start.datainfo.replace(path=tmp_path / 'pheno.dta'))
+        model_start = model_start.replace(
+            datainfo=model_start.datainfo.replace(path=tmp_path / 'pheno.dta')
+        )
         model_start = set_zero_order_elimination(model_start)
 
         res = run_estmethod(algorithm, methods=methods, solvers=solvers, model=model_start)
