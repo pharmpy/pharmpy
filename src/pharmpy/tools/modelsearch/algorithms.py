@@ -222,7 +222,7 @@ def _create_model_workflow(model_name, feat, func, iiv_strategy):
 
 def _apply_transformation(feat, func, model):
     old_params = set(model.parameters)
-    func(model)
+    model = func(model)
     if feat[0] == 'PERIPHERALS':
         new_params = set(model.parameters)
         diff = new_params - old_params
@@ -231,7 +231,7 @@ def _apply_transformation(feat, func, model):
             for param in diff
             if param.name.startswith('POP_Q') or param.name.startswith('POP_V')
         }
-        set_upper_bounds(model, peripheral_params)
+        model = set_upper_bounds(model, peripheral_params)
     return model
 
 
@@ -291,7 +291,7 @@ def _copy(name, features, model):
         description = features_str
     else:
         description = f'{model.description};{features_str}'
-    model_copy = model.replace(name=name, description=description)
+    model_copy = model.replace(name=name, description=description, parent_model=model.name)
     return model_copy
 
 
