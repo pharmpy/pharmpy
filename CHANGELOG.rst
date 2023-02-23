@@ -1,5 +1,5 @@
-next version
-------------
+0.90.0 (2023-02-23)
+-------------------
 
 New features
 ============
@@ -8,11 +8,16 @@ New features
 * Add function ``modeling.has_linear_odes``
 * Add function ``modeling.has_linear_odes_with_real_eigenvalues``
 * Add function ``modeling.is_real``
+* Support for more types of models in the nlmixr plugin
+* Automatic selection between ADVAN5 and ADVAN7 for NONMEM models
 
 Changes
 =======
 
 * Remove modeling.copy_model
+* Support nlmixr2 instead of nlmixr for the nlmixr plugin
+* The Model class is now immutable
+* update_source is run by all transformation functions
 
 0.89.0 (2023-01-26)
 -------------------
