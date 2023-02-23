@@ -225,7 +225,9 @@ def test_get_prop_init(testdata, load_model_for_test):
     init = _get_prop_init(model)
     assert init == 11.2225
 
-    model.dataset['DV'].values[:] = 0.0
+    df = model.dataset.copy()
+    df['DV'].values[:] = 0.0
+    model = model.replace(dataset=df)
     init = _get_prop_init(model)
     assert init == 0.01
 

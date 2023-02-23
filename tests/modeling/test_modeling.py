@@ -60,8 +60,6 @@ def test_set_first_order_elimination(load_model_for_test, testdata):
     assert has_first_order_elimination(model)
     model = set_zero_order_elimination(model)
     model = set_first_order_elimination(model)
-    print(model.dataset)
-    print(model.datainfo)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
