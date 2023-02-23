@@ -93,15 +93,6 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
 
-def create_dataset(cg, model, path=None):
-    """Create dataset for nlmixr"""
-    dataname = f'{model.name}.csv'
-    if path is None:
-        path = ""
-    path = Path(path) / dataname
-    cg.add(f'dataset <- read.csv("{path}")')
-
-
 def create_ini(cg, model):
     """Create the nlmixr ini section code"""
     cg.add('ini({')
@@ -198,12 +189,8 @@ class Model(pharmpy.model.Model):
             **kwargs,
         )
 
-    def update_source(self, path=None):
+    def update_source(self):
         cg = CodeGenerator()
-        cg.add('library(nlmixr2)')
-        cg.empty_line()
-        create_dataset(cg, self, path)
-        cg.empty_line()
         cg.add(f'{self.name} <- function() {{')
         cg.indent()
         create_ini(cg, self)
@@ -215,14 +202,14 @@ class Model(pharmpy.model.Model):
         # Create lowercase id, time and amount symbols for nlmixr to be able
         # to run
         code = str(cg).replace("AMT", "amt").replace("TIME", "time").replace("ID", "id")
-        internals = replace(self.internals, src=code, path=None)
+        internals = replace(self.internals, src=code)
         model = self.replace(internals=internals)
         return model
 
     @property
     def model_code(self):
-        self.update_source(path=self.internals.path)
-        code = self.internals.src
+        model = self.update_source()
+        code = model.internals.src
         assert code is not None
         return code
 
@@ -291,7 +278,10 @@ def execute_model(model, db):
     # DONE (within write_csv)
     write_csv(model, path=path)
 
-    code = model.model_code
+    dataname = f'{model.name}.csv'
+    pre = f'library(nlmixr2)\n\ndataset <- read.csv("{path / dataname}")\n\n'
+
+    code = pre + model.model_code
     cg = CodeGenerator()
     cg.add('ofv <- fit$objDf$OBJF')
     cg.add('thetas <- as.data.frame(fit$theta)')
@@ -362,7 +352,7 @@ def execute_model(model, db):
         txn.store_modelfit_results()
 
     res = parse_modelfit_results(model, path)
-    model.modelfit_results = res
+    model = model.replace(modelfit_results=res)
     return model
 
 

@@ -91,5 +91,5 @@ def test_fit_nlmixr(tmp_path, testdata):
         model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
         model = modeling.convert_model(model, 'nlmixr')
         res = fit(model, tool='nlmixr')
-        assert res.ofv == pytest.approx(732.58737)
-        assert res.parameter_estimates['TVCL'] == pytest.approx(0.005863, abs=1e-6)
+        assert res.ofv == pytest.approx(732.58928)
+        assert res.parameter_estimates['TVCL'] == pytest.approx(0.0058614, abs=1e-6)
