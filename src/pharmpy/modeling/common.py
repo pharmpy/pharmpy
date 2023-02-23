@@ -105,7 +105,7 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Example
     -------
@@ -284,7 +284,7 @@ def set_name(model: Model, new_name: str):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Example
     -------
@@ -318,7 +318,7 @@ def bump_model_number(model: Model, path: Union[str, Path] = None):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -550,7 +550,7 @@ def remove_unused_parameters_and_rvs(model: Model):
     Returns
     -------
     Model
-        Reference to same model object
+        Pharmpy model object
     """
     symbols = model.statements.free_symbols
 
@@ -604,7 +604,7 @@ def rename_symbols(
     Returns
     -------
     Model
-        Reference to same model object
+        Pharmpy model object
     """
     d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in new_names.items()}
 

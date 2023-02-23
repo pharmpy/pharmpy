@@ -27,7 +27,7 @@ def transform_etas_boxcox(model: Model, list_of_etas: Optional[Union[List[str], 
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -65,7 +65,7 @@ def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[List[str], s
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -107,7 +107,7 @@ def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[List[s
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------

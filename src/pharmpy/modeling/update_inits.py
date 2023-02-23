@@ -27,7 +27,7 @@ def update_inits(
     Returns
     -------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Example
     -------
@@ -100,7 +100,7 @@ def update_initial_individual_estimates(
     Returns
     -------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Example
     -------

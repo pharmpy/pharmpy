@@ -38,7 +38,7 @@ def create_joint_distribution(
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -113,7 +113,7 @@ def split_joint_distribution(model: Model, rvs: Optional[Union[List[str], str]] 
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------

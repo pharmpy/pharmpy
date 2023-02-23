@@ -284,7 +284,7 @@ def mu_reference_model(model: Model):
     Returns
     -------
     Model
-        Reference to same object
+        Pharmpy model object
 
     Example
     -------
@@ -407,7 +407,7 @@ def solve_ode_system(model: Model):
     Returns
     -------
     Model
-        Reference to the same pharmpy model object
+        Pharmpy model object
 
     Example
     -------
@@ -454,7 +454,7 @@ def make_declarative(model: Model):
     Results
     -------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -545,7 +545,7 @@ def cleanup_model(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model
+        Pharmpy model object
 
     Returns
     -------
@@ -640,7 +640,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     Returns
     -------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------

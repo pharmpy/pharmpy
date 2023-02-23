@@ -44,7 +44,7 @@ def set_power_on_ruv(
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------

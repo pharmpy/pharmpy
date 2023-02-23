@@ -22,10 +22,11 @@ def remove_iov(model: Model, to_remove: Optional[Union[List[str], str]] = None):
     to_remove : str, list
         Name/names of IOV etas to remove, e.g. 'ETA_IOV_1_1'.
         If None, all etas that are IOVs will be removed. None is default.
+
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Example
     -------

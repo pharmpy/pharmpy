@@ -51,7 +51,7 @@ def remove_error_model(model: Model):
     Return
     ------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -104,7 +104,7 @@ def set_additive_error_model(
     Return
     ------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -193,7 +193,7 @@ def set_proportional_error_model(
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -302,7 +302,7 @@ def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -514,7 +514,7 @@ def use_thetas_for_error_stdev(model: Model):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -558,7 +558,7 @@ def set_weighted_error_model(model: Model):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -617,7 +617,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -683,7 +683,7 @@ def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME')
     Return
     ------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------

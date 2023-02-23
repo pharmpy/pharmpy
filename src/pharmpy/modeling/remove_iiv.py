@@ -24,7 +24,7 @@ def remove_iiv(model: Model, to_remove: Optional[Union[List[str], str]] = None):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------

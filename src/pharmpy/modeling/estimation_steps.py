@@ -24,7 +24,7 @@ def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -79,7 +79,7 @@ def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -132,7 +132,7 @@ def remove_estimation_step(model: Model, idx: int):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -181,7 +181,7 @@ def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], i
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -228,7 +228,7 @@ def add_covariance_step(model: Model):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -268,7 +268,7 @@ def remove_covariance_step(model: Model):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -312,7 +312,7 @@ def set_evaluation_step(model: Model, idx: int = -1):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------

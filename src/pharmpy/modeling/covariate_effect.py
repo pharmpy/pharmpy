@@ -66,7 +66,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -225,7 +225,7 @@ def add_covariate_effect(
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------

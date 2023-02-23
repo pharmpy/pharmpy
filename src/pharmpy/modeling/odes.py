@@ -59,7 +59,7 @@ def add_individual_parameter(model: Model, name: str):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
@@ -95,7 +95,7 @@ def set_first_order_elimination(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
@@ -175,7 +175,7 @@ def set_zero_order_elimination(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
@@ -381,7 +381,7 @@ def set_michaelis_menten_elimination(model: Model):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -439,7 +439,7 @@ def set_mixed_mm_fo_elimination(model: Model):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -630,7 +630,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
@@ -834,7 +834,7 @@ def add_lag_time(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
@@ -882,7 +882,7 @@ def remove_lag_time(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
@@ -929,7 +929,7 @@ def set_zero_order_absorption(model: Model):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -1004,7 +1004,7 @@ def set_first_order_absorption(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
@@ -1069,7 +1069,7 @@ def set_bolus_absorption(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
@@ -1138,7 +1138,7 @@ def set_seq_zo_fo_absorption(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
@@ -1326,7 +1326,7 @@ def set_peripheral_compartments(model: Model, n: int):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
@@ -1402,7 +1402,7 @@ def add_peripheral_compartment(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
@@ -1536,7 +1536,7 @@ def remove_peripheral_compartment(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
@@ -1677,7 +1677,7 @@ def set_ode_solver(model: Model, solver: str):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------

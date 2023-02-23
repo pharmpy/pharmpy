@@ -36,7 +36,7 @@ def set_iiv_on_ruv(
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------

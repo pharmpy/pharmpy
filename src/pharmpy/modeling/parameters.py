@@ -112,7 +112,7 @@ def set_initial_estimates(model: Model, inits: Dict[str, float]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -145,7 +145,7 @@ def set_upper_bounds(model: Model, bounds: Dict[str, float]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -186,7 +186,7 @@ def set_lower_bounds(model: Model, bounds: Dict[str, float]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -230,7 +230,7 @@ def fix_parameters(model: Model, parameter_names: Union[List[str], str]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Example
     -------
@@ -280,7 +280,7 @@ def unfix_parameters(model: Model, parameter_names: Union[List[str], str]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -333,7 +333,7 @@ def fix_parameters_to(model: Model, inits: Dict[str, float]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -387,7 +387,7 @@ def unfix_parameters_to(model: Model, inits: Dict[str, float]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     See also
     --------
@@ -427,7 +427,7 @@ def fix_or_unfix_parameters(model: Model, parameters: Dict[str, bool]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     See also
     --------
@@ -474,7 +474,7 @@ def unconstrain_parameters(model: Model, parameter_names: List[str]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     See also
     --------
@@ -524,7 +524,7 @@ def add_population_parameter(
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------

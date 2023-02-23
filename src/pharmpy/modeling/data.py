@@ -376,7 +376,7 @@ def set_covariates(model: Model, covariates: List[str]):
     Returns
     -------
     Model
-        Reference to the same Pharmpy model object
+        Pharmpy model object
     """
     di = model.datainfo
     newcols = []
@@ -591,7 +591,7 @@ def expand_additional_doses(model: Model, flag: bool = False):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
     """
     try:
         addl = model.datainfo.typeix['additional'][0].name
@@ -831,7 +831,7 @@ def add_time_after_dose(model: Model):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -995,7 +995,7 @@ def drop_dropped_columns(model: Model):
     Returns
     -------
     Model
-        Reference to same model object
+        Pharmpy model object
 
     Example
     -------
@@ -1035,7 +1035,7 @@ def drop_columns(model: Model, column_names: Union[List[str], str], mark: bool =
     Returns
     -------
     Model
-        Reference to same model object
+        Pharmpy model object
 
     Example
     -------
@@ -1084,7 +1084,7 @@ def undrop_columns(model: Model, column_names: Union[List[str], str]):
     Returns
     -------
     Model
-        Reference to same model object
+        Pharmpy model object
 
     Example
     -------
@@ -1240,7 +1240,7 @@ def translate_nmtran_time(model: Model):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
     """
     timecol, datecol = _find_time_and_date_columns(model)
     df = model.dataset.copy()
@@ -1279,7 +1279,7 @@ def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[f
     Results
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------

@@ -63,7 +63,7 @@ def add_iiv(
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Example
     -------
@@ -166,7 +166,7 @@ def add_iov(
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Example
     -------
@@ -410,7 +410,7 @@ def add_pk_iiv(model: Model, initial_estimate: float = 0.09):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Example
     -------
