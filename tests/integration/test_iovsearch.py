@@ -30,8 +30,9 @@ def test_default_mox1(tmp_path, model_count, testdata):
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_log.csv', tmp_path)
     with chdir(tmp_path):
         start_model = Model.create_model('mox1.mod')
-        fit(start_model)
-        res = run_iovsearch('VISI', results=start_model.modelfit_results, model=start_model)
+        start_res = fit(start_model)
+        start_model = start_model.replace(modelfit_results=start_res)
+        res = run_iovsearch('VISI', results=start_res, model=start_model)
         rundir = tmp_path / 'iovsearch_dir1'
         assert model_count(rundir) == 7
 
