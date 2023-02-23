@@ -112,6 +112,7 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
         model_iiv = input_model.replace(name='base_model')
         model_iiv = update_initial_estimates(model_iiv)
         base_model = _add_iiv(iiv_strategy, model_iiv)
+        base_model = algorithms.update_description(base_model)
     else:
         base_model = input_model
 
@@ -229,6 +230,11 @@ def post_process(state, rank_type, cutoff, input_model, base_model_name, *models
 
     if not base_model:
         raise ValueError('Error in workflow: No base model')
+
+    # In order to have the IIV structure of the input model in the description column
+    # in the result summaries
+    if input_model.name == base_model.name:
+        base_model = algorithms.update_description(base_model)
 
     res = create_results(
         IIVSearchResults, input_model, base_model, res_models, rank_type, cutoff, bic_type='iiv'
