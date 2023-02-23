@@ -435,7 +435,7 @@ class DataInfo(Sequence, Immutable):
 
     def __init__(
         self,
-        columns: Optional[Union[TypingSequence[ColumnInfo], TypingSequence[str]]] = None,
+        columns: Optional[Union[TypingSequence[ColumnInfo], TypingSequence[str]]] = (),
         path: Optional[Union[str, Path]] = None,
         separator: str = ',',
         force_absolute_path: bool = True,
