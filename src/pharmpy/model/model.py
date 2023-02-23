@@ -157,17 +157,16 @@ class Model(Immutable):
         else:
             dataset = self._dataset
             new_dataset = False
-        if hasattr(self, '_datainfo'):
-            datainfo = kwargs.get('datainfo', self.datainfo)
-        else:
-            datainfo = None
-        if new_dataset:
-            if datainfo is None:
-                datainfo = DataInfo.create()
-            datainfo = update_datainfo(datainfo, dataset)
 
-        if not isinstance(datainfo, DataInfo):
-            raise TypeError("model.datainfo must be of DataInfo type")
+        if 'datainfo' in kwargs:
+            datainfo = kwargs['datainfo']
+            if not isinstance(datainfo, DataInfo):
+                raise TypeError("model.datainfo must be of DataInfo type")
+        else:
+            datainfo = self._datainfo
+
+        if new_dataset:
+            datainfo = update_datainfo(datainfo, dataset)
 
         estimation_steps = kwargs.get('estimation_steps', self.estimation_steps)
         if not isinstance(estimation_steps, EstimationSteps):
