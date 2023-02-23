@@ -69,27 +69,25 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
     nlmixr_model.internals = NLMIXRModelInternals()
     nlmixr_model.filename_extension = '.R'
     
-    # Add evid
-    nlmixr_model = add_evid(nlmixr_model)
-    
     # Update dataset
-    nlmixr_model = translate_nmtran_time(nlmixr_model)
-    nlmixr_model.datainfo = nlmixr_model.datainfo.replace(path = None)
-    
-    # Check model for warnings regarding data structure or model contents
-    nlmixr_model = check_model(nlmixr_model)
-         
-    # Drop all dropped columns so it does not interfere with nlmixr
-    drop_dropped_columns(nlmixr_model)
-    if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
-        nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
-
-    nlmixr_model.update_source()
-    
     if keep_etas == True:
         nlmixr_model.modelfit_results = ModelfitResults(
             individual_estimates = model.modelfit_results.individual_estimates
         )
+    nlmixr_model = translate_nmtran_time(nlmixr_model)
+    drop_dropped_columns(nlmixr_model)
+    if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
+        nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
+    nlmixr_model.datainfo = nlmixr_model.datainfo.replace(path = None)
+    nlmixr_model.dataset = nlmixr_model.dataset.reset_index(drop=True)
+    
+    # Add evid
+    nlmixr_model = add_evid(nlmixr_model)
+    
+    # Check model for warnings regarding data structure or model contents
+    nlmixr_model = check_model(nlmixr_model)
+
+    nlmixr_model.update_source()
     
     return nlmixr_model
 
@@ -450,7 +448,8 @@ def execute_model(model, db):
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     write_csv(model, path=path)
-    write_fix_eta(model, path=path)
+    if "fix_eta" in model.estimation_steps[0].tool_options:
+        write_fix_eta(model, path=path)
     
     code = model.model_code
     cg = CodeGenerator()
