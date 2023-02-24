@@ -559,6 +559,7 @@ def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, retu
 
     # Save results from the nonmem model
     if nonmem_model.modelfit_results is None:
+        print_step("Calculating NONMEM predictions... (this might take a while)")
         nonmem_model.modelfit_results = fit(nonmem_model)
         nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:, [0]]
     else:
@@ -570,16 +571,19 @@ def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, retu
         
     # Set a tool option to fix theta values when running nlmixr
     if fix_eta:
+        print_step("Creating .csv file with fixed ETAs...")
         nonmem_model = fixate_eta(nonmem_model)
     
     # Update the nonmem model with new estimates
     # and convert to nlmixr
+    print_step("Converting NONMEM model to nlmixr2...")
     nlmixr_model = convert_model(
         update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates),
         keep_etas = True
     )
     
     # Execute the nlmixr model
+    print_step("Executing nlmixr2 model... (this might take a while)")
     import pharmpy.workflows
 
     db = pharmpy.workflows.LocalDirectoryToolDatabase(db_name)
@@ -593,7 +597,7 @@ def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, retu
         nlmixr_results.rename(columns={"PRED": "PRED_NLMIXR"}, inplace=True)
 
     # Combine the two based on ID and time
-    
+    print_step("Creating result comparison table...")
     nonmem_model.dataset = nonmem_model.dataset.reset_index()
     
     if "EVID" not in nonmem_model.dataset.columns:
@@ -610,8 +614,10 @@ def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, retu
     combined_result["PASS/FAIL"] = "PASS"
     combined_result.loc[combined_result["DIFF"] > error, "PASS/FAIL"] = "FAIL"
     
+    print("Differences in predicted values")
     print(combined_result["DIFF"].describe()[["mean", "75%", "max"]].to_string(), end ="\n\n")
-
+    
+    print_step("DONE")
     if return_comp is True:
         return combined_result
     else:
@@ -619,7 +625,10 @@ def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, retu
             return True
         else:
             return False
-        
+
+def print_step(s):
+    print("***** ", s, " *****")
+
 def fixate_eta(model):
     opts = {"fix_eta": True}
     model = append_estimation_step_options(model, tool_options = opts, idx=0)
