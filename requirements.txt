@@ -22,7 +22,7 @@ distributed==2023.2.0
 docutils==0.19.0
 entrypoints==0.4
 executing==1.2.0
-fastjsonschema==2.16.2
+fastjsonschema==2.16.3
 fsspec==2023.1.0
 HeapDict==1.0.1
 idna==3.4
