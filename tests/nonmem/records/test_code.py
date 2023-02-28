@@ -1,6 +1,7 @@
 import pytest
 import sympy
 
+from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment
 from pharmpy.plugins.nonmem.records.code_record import CodeRecord
 
@@ -129,7 +130,7 @@ def S(x):
         ('$PRED CL = MOD(1, 2)', S('CL'), sympy.Mod(1, 2)),
         ('$PRED CL = DMOD(1, 2)', S('CL'), sympy.Mod(1, 2)),
         ('$PRED CL = GAMLN(2 + X)   ;COMMENT', S('CL'), sympy.loggamma(S('X') + 2)),
-        ('$PRED C02 = PHI(2 + X)', S('C02'), (1 + sympy.erf(2 + S('X')) / sympy.sqrt(2)) / 2),
+        ('$PRED C02 = PHI(2 + X)', S('C02'), PHI(S('X') + 2)),
         ('$PRED IF (X.EQ.2) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)), (0, True))),
         ('$PRED IF (X.EQ.2)CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)), (0, True))),
         ('$PRED IF(X.EQ.2)CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)), (0, True))),
@@ -656,33 +657,34 @@ def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression,
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize(
-    'buf_original,assignment,nonmem_names,buf_expected',
+    'buf_original,assignment,buf_expected',
     [
         (
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
-            Assignment(S('Z'), S('X')),
-            {S('X'): S('THETA(2)')},
+            Assignment(S('Z'), S('THETA(2)')),
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nZ = THETA(2)\n',
         ),
         (
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\n',
-            Assignment(S('Z'), S('X')),
-            {S('X'): S('THETA(2)')},
+            Assignment(S('Z'), S('THETA(2)')),
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\nZ = THETA(2)\n',
         ),
         (
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
             Assignment(S('YWGT'), sympy.Piecewise((1, sympy.Eq(S('WGT'), S('NaN'))))),
-            {S('X'): S('THETA(2)')},
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n' 'IF (NaN.EQ.WGT) YWGT = 1\n',
+        ),
+        (
+            '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
+            Assignment(S('Z'), PHI(S('A') + S('B'))),
+            '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n' 'Z = PHI(A + B)\n',
         ),
     ],
 )
-def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
+def test_update(parser, buf_original, assignment, buf_expected):
     rec_original = parser.parse(buf_original).records[0]
 
     statements = rec_original.statements + assignment
-    statements = statements.subs(nonmem_names)
     newrec = rec_original.update_statements(statements)
 
     assert str(newrec) == buf_expected

@@ -10,6 +10,20 @@ from typing import Iterator, Literal, Sequence, Set, Tuple
 
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.ds.ordered_set import OrderedSet
+from pharmpy.internals.expr.funcs import (
+    INT,
+    LOG10,
+    PDZ,
+    PEXP,
+    PHE,
+    PHI,
+    PLOG,
+    PLOG10,
+    PNG,
+    PNP,
+    PSQRT,
+    PZR,
+)
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.parse import AttrTree, NoSuchRuleException
 from pharmpy.internals.parse.tree import Interpreter
@@ -682,56 +696,3 @@ def _parse_tree(tree: AttrTree):
                 new_index.append((child_index, child_index + 1, len(s) - len(symbols), len(s)))
 
     return new_index, Statements(s)
-
-
-# NOTE Follows: functions that can be used in .mod files.
-
-_smallz = 2.8e-103
-
-
-def PEXP(x):
-    return sympy.Piecewise((sympy.exp(100), x > 100), (sympy.exp(x), True))
-
-
-def PLOG(x):
-    return sympy.Piecewise((sympy.log(_smallz), x < _smallz), (sympy.log(x), True))
-
-
-def LOG10(x):
-    return sympy.log(x, 10)
-
-
-def PLOG10(x):
-    return sympy.Piecewise((sympy.log(_smallz, 10), x < _smallz), (sympy.log(x, 10), True))
-
-
-def PSQRT(x):
-    return sympy.Piecewise((0, x < 0), (sympy.sqrt(x), True))
-
-
-def INT(x):
-    return sympy.sign(x) * sympy.floor(sympy.Abs(x))
-
-
-def PDZ(x):
-    return sympy.Piecewise((1 / _smallz, abs(x) < _smallz), (1 / x, True))
-
-
-def PZR(x):
-    return sympy.Piecewise((_smallz, abs(x) < _smallz), (x, True))
-
-
-def PNP(x):
-    return sympy.Piecewise((_smallz, x < _smallz), (x, True))
-
-
-def PHE(x):
-    return sympy.Piecewise((100, x > 100), (x, True))
-
-
-def PNG(x):
-    return sympy.Piecewise((0, x < 0), (x, True))
-
-
-def PHI(x):
-    return (1 + sympy.erf(x) / sympy.sqrt(2)) / 2
