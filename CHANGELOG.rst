@@ -1,3 +1,11 @@
+next version
+------------
+
+New features
+============
+
+* Add function ``modeling.create_basic_pk_model``
+
 0.90.0 (2023-02-24)
 -------------------
 

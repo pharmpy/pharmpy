@@ -1,3 +1,4 @@
+from .basic_models import create_basic_pk_model
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.common import (
     bump_model_number,
@@ -226,6 +227,7 @@ __all__ = [
     'check_parameters_near_bounds',
     'cleanup_model',
     'convert_model',
+    'create_basic_pk_model',
     'create_joint_distribution',
     'create_report',
     'create_rng',
