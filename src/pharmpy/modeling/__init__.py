@@ -1,4 +1,3 @@
-from .basic_models import create_basic_pk_model
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.common import (
     bump_model_number,
@@ -100,6 +99,7 @@ from pharmpy.modeling.remove_iov import remove_iov
 from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
+from .basic_models import create_basic_pk_model
 from .compartments import get_bioavailability, get_lag_times
 from .data import (
     add_time_after_dose,

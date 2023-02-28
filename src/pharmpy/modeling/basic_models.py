@@ -1,17 +1,42 @@
 """
 :meta private:
 """
-import sympy
+from pathlib import Path
 
-from pharmpy.model import Model, Parameter, Parameters, NormalDistribution, RandomVariables, Assignment, CompartmentalSystemBuilder, Compartment, DataInfo, Bolus, Infusion, output, Statements, CompartmentalSystem, EstimationStep, EstimationSteps
-from .error import set_proportional_error_model
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
+from pharmpy.internals.fs.path import path_absolute
+from pharmpy.model import (
+    Assignment,
+    Bolus,
+    ColumnInfo,
+    Compartment,
+    CompartmentalSystem,
+    CompartmentalSystemBuilder,
+    DataInfo,
+    EstimationStep,
+    EstimationSteps,
+    Infusion,
+    Model,
+    NormalDistribution,
+    Parameter,
+    Parameters,
+    RandomVariables,
+    Statements,
+    output,
+)
+
 from .block_rvs import create_joint_distribution
+from .data import read_dataset_from_datainfo
+from .error import set_proportional_error_model
+from .eta_additions import add_iiv
 from .odes import set_first_order_absorption
 from .parameters import set_initial_estimates
-from .eta_additions import add_iiv
 
 
-def create_basic_pk_model(modeltype: str, dataset_path=None, cl_init=0.01, vc_init=1.0, mat_init=0.1) -> Model:
+def create_basic_pk_model(
+    modeltype: str, dataset_path=None, cl_init=0.01, vc_init=1.0, mat_init=0.1
+) -> Model:
     """
     Creates a basic pk model of given type
 
