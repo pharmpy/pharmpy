@@ -459,7 +459,7 @@ def execute_model(model, db):
     cg.add('sigma <- as.data.frame(fit$theta)')
     cg.add('log_likelihood <- fit$objDf$`Log-likelihood`')
     cg.add('runtime_total <- sum(fit$time)')
-    cg.add('pred <- as.data.frame(fit[c("ID", "TIME", "PRED")])')
+    cg.add('pred <- as.data.frame(fit[c("ID", "TIME", "PRED", "IPRED")])')
     
     cg.add(
         f'save(file="{path}/{model.name}.RDATA",ofv, thetas, omega, sigma, log_likelihood, runtime_total, pred)'
@@ -529,7 +529,13 @@ def execute_model(model, db):
     return model
 
 
-def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, return_comp : bool = False, fix_eta = True) -> bool or pd.DataFrame:
+def verification(model: pharmpy.model,
+                 db_name: str,
+                 error: float = 10**-3,
+                 return_comp : bool = False,
+                 fix_eta = True,
+                 ipred = True
+                 ) -> bool or pd.DataFrame:
     """
     Verify that a model inputet in NONMEM format can be correctly translated to 
     nlmixr as well as verify that the predictions of the two models are the same 
@@ -561,9 +567,9 @@ def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, retu
     if nonmem_model.modelfit_results is None:
         print_step("Calculating NONMEM predictions... (this might take a while)")
         nonmem_model.modelfit_results = fit(nonmem_model)
-        nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:, [0]]
+        nonmem_results = nonmem_model.modelfit_results.predictions
     else:
-        nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:, [0]]
+        nonmem_results = nonmem_model.modelfit_results.predictions
     
     # Check that evaluation step is set to True
     if [s.evaluation for s in nonmem_model.estimation_steps._steps][0] is False:
@@ -589,13 +595,17 @@ def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, retu
     db = pharmpy.workflows.LocalDirectoryToolDatabase(db_name)
     nlmixr_model = execute_model(nlmixr_model, db)
     nlmixr_results = nlmixr_model.modelfit_results.predictions
-
+    
+    if ipred == True:
+        pred = "IPRED"
+    else:
+        pred = "PRED"
+    
     with warnings.catch_warnings():
         # Supress a numpy deprecation warning
         warnings.simplefilter("ignore")
-        nonmem_results.rename(columns={nonmem_results.columns[0]: "PRED_NONMEM"}, inplace=True)
-        nlmixr_results.rename(columns={"PRED": "PRED_NLMIXR"}, inplace=True)
-
+        nonmem_results.rename(columns={pred: f'{pred}_NONMEM'}, inplace=True)
+        nlmixr_results.rename(columns={pred: f'{pred}_NLMIXR'}, inplace=True)
     # Combine the two based on ID and time
     print_step("Creating result comparison table...")
     nonmem_model.dataset = nonmem_model.dataset.reset_index()
@@ -606,16 +616,16 @@ def verification(model: pharmpy.model, db_name: str, error: float = 10**-3, retu
     nonmem_results = nonmem_results.drop(nonmem_model.dataset[nonmem_model.dataset["EVID"] != 0].index.to_list())
     nonmem_results = nonmem_results.set_index(["ID","TIME"])
     combined_result = nonmem_results
-    combined_result["PRED_NLMIXR"] = nlmixr_results["PRED_NLMIXR"].to_list()
+    combined_result[f'{pred}_NLMIXR'] = nlmixr_results[f'{pred}_NLMIXR'].to_list()
 
     # Add difference between the models
-    combined_result["DIFF"] = abs(combined_result["PRED_NONMEM"] - combined_result["PRED_NLMIXR"])
+    combined_result[f'{pred}_DIFF'] = abs(combined_result[f'{pred}_NONMEM'] - combined_result[f'{pred}_NLMIXR'])
 
     combined_result["PASS/FAIL"] = "PASS"
-    combined_result.loc[combined_result["DIFF"] > error, "PASS/FAIL"] = "FAIL"
+    combined_result.loc[combined_result[f'{pred}_DIFF'] > error, "PASS/FAIL"] = "FAIL"
     
-    print("Differences in predicted values")
-    print(combined_result["DIFF"].describe()[["mean", "75%", "max"]].to_string(), end ="\n\n")
+    print("Differences in population predicted values")
+    print(combined_result[f'{pred}_DIFF'].describe()[["mean", "75%", "max"]].to_string(), end ="\n\n")
     
     print_step("DONE")
     if return_comp is True:
