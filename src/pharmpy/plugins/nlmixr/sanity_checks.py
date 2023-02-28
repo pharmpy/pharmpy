@@ -95,13 +95,25 @@ def same_time(model: pharmpy.model) -> bool:
     temp_model = model.copy()
     temp_model.dataset = temp_model.dataset.reset_index()
     dataset = temp_model.dataset
+    
+    if "RATE" in dataset.columns:
+        rate = True 
+    else:
+        rate = False
+        
     for index, row in dataset.iterrows():
         if index != 0:
-            if (row["ID"] == dataset.loc[index-1]["ID"] and
-                row["TIME"] == dataset.loc[index-1]["TIME"] and
-                row["EVID"] not in [0,3] and 
-                dataset.loc[index-1]["EVID"] == 0):
-                return True
+            if row["ID"] == dataset.loc[index-1]["ID"]:
+                if row["TIME"] == dataset.loc[index-1]["TIME"]:
+                    temp = index-1
+                    while dataset.loc[temp]["TIME"] == row["TIME"]:
+                        if dataset.loc[temp]["EVID"] not in [0,3]:
+                            if rate:
+                                if dataset.loc[temp]["RATE"] == 0:
+                                    True
+                            else:
+                                return True
+                        temp += 1
     return False
 
 def print_warning(warning: str) -> None:
