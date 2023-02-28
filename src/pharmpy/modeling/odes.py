@@ -1300,10 +1300,14 @@ def _get_absorption_init(model, param_name) -> float:
     except (AttributeError, KeyError):
         pass
 
-    time_label = model.datainfo.idv_column.name
-    obs = get_observations(model)
-    time = obs.index.get_level_values(level=time_label)
-    time_min = time[time != 0].min()
+    try:
+        time_label = model.datainfo.idv_column.name
+    except IndexError:
+        time_min = 1.0
+    else:
+        obs = get_observations(model)
+        time = obs.index.get_level_values(level=time_label)
+        time_min = time[time != 0].min()
 
     if param_name == 'MDT':
         return float(time_min) / 2
