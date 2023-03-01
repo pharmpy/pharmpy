@@ -3,7 +3,7 @@ altair==4.2.2
 appdirs==1.4.4
 asttokens==2.2.1
 attrs==22.2.0
-Babel==2.11.0
+Babel==2.12.1
 backcall==0.2.0
 beautifulsoup4==4.11.2
 bleach==6.0.0
