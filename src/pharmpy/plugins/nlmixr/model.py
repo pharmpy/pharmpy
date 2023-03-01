@@ -534,7 +534,7 @@ def verification(model: pharmpy.model,
                  error: float = 10**-3,
                  return_comp : bool = False,
                  fix_eta = True,
-                 ipred = True
+                 ipred = False
                  ) -> bool or pd.DataFrame:
     """
     Verify that a model inputet in NONMEM format can be correctly translated to 
@@ -564,12 +564,13 @@ def verification(model: pharmpy.model,
     nonmem_model = model.copy()
 
     # Save results from the nonmem model
-    if nonmem_model.modelfit_results.predictions is None:
+    # FIXME : check only if predictions does not exist
+    if nonmem_model.modelfit_results is None:
         print_step("Calculating NONMEM predictions... (this might take a while)")
         nonmem_model.modelfit_results = fit(nonmem_model)
-        nonmem_results = nonmem_model.modelfit_results.predictions
+        nonmem_results = nonmem_model.modelfit_results.predictions.copy()
     else:
-        nonmem_results = nonmem_model.modelfit_results.predictions
+        nonmem_results = nonmem_model.modelfit_results.predictions.copy()
     
     # Check that evaluation step is set to True
     if [s.evaluation for s in nonmem_model.estimation_steps._steps][0] is False:
@@ -600,12 +601,13 @@ def verification(model: pharmpy.model,
         pred = "IPRED"
     else:
         pred = "PRED"
-    
+
     with warnings.catch_warnings():
         # Supress a numpy deprecation warning
         warnings.simplefilter("ignore")
         nonmem_results.rename(columns={pred: f'{pred}_NONMEM'}, inplace=True)
         nlmixr_results.rename(columns={pred: f'{pred}_NLMIXR'}, inplace=True)
+
     # Combine the two based on ID and time
     print_step("Creating result comparison table...")
     nonmem_model.dataset = nonmem_model.dataset.reset_index()
