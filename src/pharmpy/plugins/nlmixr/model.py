@@ -564,7 +564,7 @@ def verification(model: pharmpy.model,
     nonmem_model = model.copy()
 
     # Save results from the nonmem model
-    if nonmem_model.modelfit_results is None:
+    if nonmem_model.modelfit_results.predictions is None:
         print_step("Calculating NONMEM predictions... (this might take a while)")
         nonmem_model.modelfit_results = fit(nonmem_model)
         nonmem_results = nonmem_model.modelfit_results.predictions
