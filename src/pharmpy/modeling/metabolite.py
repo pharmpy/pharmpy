@@ -1,7 +1,7 @@
 """
 :meta private:
 """
-from pharmpy.internals.deps import sympy
+from pharmpy.deps import sympy
 from pharmpy.model import (
     Compartment,
     CompartmentalSystem,
