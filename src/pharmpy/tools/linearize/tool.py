@@ -59,7 +59,8 @@ def create_linearized_model(model):
     error_terms = Assignment(sympy.Symbol('ERROR_TERMS'), err_terms_sum)
     ms.append(error_terms)
 
-    y = model.dependent_variable
+    # FIXME: handle other DVs?
+    y = list(model.dependent_variables.keys())[0]
     Assignment(y, ipred.symbol + error_terms.symbol)
 
     est = EstimationStep.create('foce', interaction=True)

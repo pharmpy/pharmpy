@@ -58,7 +58,7 @@ class Model(Immutable):
         statements=Statements(),
         dataset=None,
         datainfo=DataInfo(),
-        dependent_variable=None,
+        dependent_variables=None,
         observation_transformation=None,
         estimation_steps=EstimationSteps(),
         modelfit_results=None,
@@ -69,8 +69,8 @@ class Model(Immutable):
         description='',
         internals=None,
     ):
-        actual_dependent_variable = (
-            sympy.Symbol('y') if dependent_variable is None else dependent_variable
+        actual_dependent_variables = (
+            {sympy.Symbol('y'): 1} if dependent_variables is None else dependent_variables
         )
         self._name = name
         self._datainfo = datainfo
@@ -78,9 +78,10 @@ class Model(Immutable):
         self._random_variables = random_variables
         self._parameters = parameters
         self._statements = statements
-        self._dependent_variable = actual_dependent_variable
+        self._dependent_variables = actual_dependent_variables
         if observation_transformation is None:
-            self._observation_transformation = actual_dependent_variable
+            # FIXME: Support transformation for multiple DVs?
+            self._observation_transformation = list(actual_dependent_variables.keys())[0]
         else:
             self._observation_transformation = observation_transformation
         self._estimation_steps = estimation_steps
@@ -134,7 +135,7 @@ class Model(Immutable):
         if not isinstance(name, str):
             raise TypeError("Name of a model has to be of string type")
 
-        dependent_variable = kwargs.get('dependent_variable', self.dependent_variable)
+        dependent_variables = kwargs.get('dependent_variables', self.dependent_variables)
         parameters = kwargs.get('parameters', self.parameters)
 
         if 'random_variables' in kwargs:
@@ -190,7 +191,7 @@ class Model(Immutable):
         internals = kwargs.get('internals', self._internals)
         return self.__class__(
             name=name,
-            dependent_variable=dependent_variable,
+            dependent_variables=dependent_variables,
             parameters=parameters,
             random_variables=random_variables,
             statements=statements,
@@ -253,7 +254,7 @@ class Model(Immutable):
             return False
         if self.statements != other.statements:
             return False
-        if self.dependent_variable != other.dependent_variable:
+        if self.dependent_variables != other.dependent_variables:
             return False
         if self.observation_transformation != other.observation_transformation:
             return False
@@ -287,13 +288,13 @@ class Model(Immutable):
         return self._filename_extension
 
     @property
-    def dependent_variable(self):
-        """The model dependent variable, i.e. y"""
-        return self._dependent_variable
+    def dependent_variables(self):
+        """The dependent variables of the model mapped to the corresponding DVIDs"""
+        return self._dependent_variables
 
     @property
     def value_type(self):
-        """The type of the model value (dependent variable)
+        """The type of the model value (dependent variables)
 
         By default this is set to 'PREDICTION' to mean that the model outputs a prediction.
         It could optionally be set to 'LIKELIHOOD' or '-2LL' to let the model output the likelihood

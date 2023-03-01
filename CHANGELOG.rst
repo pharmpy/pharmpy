@@ -6,6 +6,11 @@ New features
 
 * Add function ``modeling.create_basic_pk_model``
 
+Changes
+=======
+
+* ``model.dependent_variable`` becomes ``model.dependent_variables``
+
 0.90.0 (2023-02-24)
 -------------------
 

@@ -53,7 +53,7 @@ def convert_model(model):
         parameters=model.parameters,
         random_variables=model.random_variables,
         statements=model.statements,
-        dependent_variable=model.dependent_variable,
+        dependent_variables=model.dependent_variables,
         estimation_steps=model.estimation_steps,
         filename_extension='.R',
         datainfo=model.datainfo,
@@ -127,6 +127,8 @@ def create_ini(cg, model):
 
 def create_model(cg, model):
     """Create the nlmixr model section code"""
+    # FIXME: handle other DVs?
+    dv = list(model.dependent_variables.keys())[0]
     amounts = [am.name for am in list(model.statements.ode_system.amounts)]
     printer = ExpressionPrinter(amounts)
 
@@ -134,7 +136,7 @@ def create_model(cg, model):
     cg.indent()
     for s in model.statements:
         if isinstance(s, Assignment):
-            if s.symbol == model.dependent_variable:
+            if s.symbol == dv:
                 sigma = None
                 for dist in model.random_variables.epsilons:
                     sigma = dist.variance

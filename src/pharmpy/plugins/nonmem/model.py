@@ -93,7 +93,8 @@ def convert_model(model):
     nm_model._initial_individual_estimates = model.initial_individual_estimates
     new_obs_trans = subs(
         model.observation_transformation,
-        {model.dependent_variable: nm_model.dependent_variable},
+        # FIXME: Currently only handling one DV
+        {list(model.dependent_variables.keys())[0]: sympy.Symbol('Y')},
         simultaneous=True,
     )
     internals = nm_model.internals.replace(old_parameters=Parameters())
@@ -101,7 +102,7 @@ def convert_model(model):
         name=model.name,
         value_type=model.value_type,
         observation_transformation=new_obs_trans,
-        dependent_variable=sympy.Symbol('Y'),
+        dependent_variables={sympy.Symbol('Y'): 1},
         random_variables=model.random_variables,
         statements=model.statements,
         description=model.description,
@@ -306,7 +307,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
     if dataset is not None:
         di = update_datainfo(di.replace(path=None), dataset)
 
-    dependent_variable = sympy.Symbol('Y')
+    dependent_variables = {sympy.Symbol('Y'): 1}
 
     try:
         dataset = parse_dataset(di, control_stream, raw=False)
@@ -351,7 +352,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
             parameters=parameters,
             random_variables=rvs,
             statements=statements,
-            dependent_variable=dependent_variable,
+            dependent_variables=dependent_variables,
             estimation_steps=estimation_steps,
         ),
     )
@@ -361,7 +362,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         old_name=name,
         old_description=description,
         old_estimation_steps=estimation_steps,
-        old_observation_transformation=dependent_variable,
+        old_observation_transformation=dependent_variables,
         old_parameters=parameters,
         old_random_variables=rvs,
         old_statements=statements,
@@ -378,7 +379,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         statements=statements,
         dataset=dataset,
         datainfo=di,
-        dependent_variable=dependent_variable,
+        dependent_variables=dependent_variables,
         estimation_steps=estimation_steps,
         modelfit_results=modelfit_results,
         parent_model=None,

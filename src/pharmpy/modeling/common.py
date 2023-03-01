@@ -178,7 +178,7 @@ def convert_model(model: Model, to_format: str):
             statements=model.statements,
             random_variables=model.random_variables,
             estimation_steps=model.estimation_steps,
-            dependent_variable=model.dependent_variable,
+            dependent_variables=model.dependent_variables,
             observation_transformation=model.observation_transformation,
             description=model.description,
             parent_model=model.name,
@@ -450,7 +450,9 @@ def get_model_covariates(model: Model, strings: bool = False):
     else:
         ode_deps = set()
 
-    y = model.statements.find_assignment(model.dependent_variable)
+    # FIXME: This should be handled for all DVs
+    first_dv = list(model.dependent_variables.keys())[0]
+    y = model.statements.find_assignment(first_dv)
     y_deps = model.statements.error.dependencies(y)
 
     covs = datasymbs.intersection(ode_deps | y_deps)

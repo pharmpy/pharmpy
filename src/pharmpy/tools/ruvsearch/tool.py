@@ -269,7 +269,7 @@ def _create_base_model(input_model, current_iteration):
         name=name,
         description=name,
         estimation_steps=EstimationSteps.create([est]),
-        dependent_variable=y.symbol,
+        dependent_variable={y.symbol: 1},
     )
     base_model = base_model.replace(dataset=_create_dataset(input_model))
     return base_model

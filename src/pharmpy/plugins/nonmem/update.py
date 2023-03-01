@@ -1326,7 +1326,9 @@ def solver_to_advan(solver):
 
 def update_ccontra(model: Model, path=None, force=False):
     h = model.observation_transformation
-    y = model.dependent_variable
+
+    # FIXME: handle other DVs?
+    y = list(model.dependent_variables.keys())[0]
     dhdy = sympy.diff(h, y)
     ll = -2 * sympy.log(dhdy)
     ll = ll.subs(y, sympy.Symbol('y', real=True, positive=True))

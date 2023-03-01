@@ -112,7 +112,9 @@ def set_power_on_ruv(
 
 
 def get_ipred(model):
-    expr = model.statements.after_odes.full_expression(model.dependent_variable)
+    # FIXME: handle other DVs?
+    dv = list(model.dependent_variables.keys())[0]
+    expr = model.statements.after_odes.full_expression(dv)
     ipred = subs(
         expr, {sympy.Symbol(rv): 0 for rv in model.random_variables.names}, simultaneous=True
     )

@@ -18,7 +18,8 @@ from .parameters import add_population_parameter, fix_parameters, set_initial_es
 
 def _preparations(model):
     stats = model.statements
-    y = model.dependent_variable
+    # FIXME: handle other DVs?
+    y = list(model.dependent_variables.keys())[0]
     f = subs(
         model.statements.find_assignment(y.name).expression,
         {sympy.Symbol(eps): 0 for eps in model.random_variables.epsilons.names},
@@ -28,14 +29,16 @@ def _preparations(model):
 
 
 def _canonicalize_data_transformation(model, value):
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
     if value is None:
-        value = model.dependent_variable
+        value = dv
     else:
         value = parse_expr(value)
-        if value.free_symbols != {model.dependent_variable}:
+        if value.free_symbols != {dv}:
             raise ValueError(
                 f"Expression for data transformation must contain the dependent variable "
-                f"{model.dependent_variable} and no other variables"
+                f"{dv} and no other variables"
             )
     return value
 
@@ -139,12 +142,10 @@ def set_additive_error_model(
 
     data_trans = _canonicalize_data_transformation(model, data_trans)
     expr = f + ruv
-    if data_trans != model.dependent_variable:
-        expr = (
-            subs(data_trans, {model.dependent_variable: expr}, simultaneous=True)
-            .series(ruv, n=series_terms)
-            .removeO()
-        )
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
+    if data_trans != dv:
+        expr = subs(data_trans, {dv: expr}, simultaneous=True).series(ruv, n=series_terms).removeO()
 
     model = model.replace(statements=stats.reassign(y, expr))
     model = remove_unused_parameters_and_rvs(model)
@@ -251,9 +252,11 @@ def set_proportional_error_model(
     data_trans = _canonicalize_data_transformation(model, data_trans)
     ipred = create_symbol(model, 'IPREDADJ') if zero_protection else f
 
-    if data_trans == sympy.log(model.dependent_variable):
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
+    if data_trans == sympy.log(dv):
         expr = sympy.log(ipred) + ruv
-    elif data_trans == model.dependent_variable:
+    elif data_trans == dv:
         expr = f + ipred * ruv
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
@@ -339,9 +342,12 @@ def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy
     theta_time = sympy.Symbol('time_varying')
 
     data_trans = _canonicalize_data_transformation(model, data_trans)
-    if data_trans == sympy.log(model.dependent_variable):
+
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
+    if data_trans == sympy.log(dv):
         expr_combined = sympy.log(f) + ruv_prop + ruv_add / f
-    elif data_trans == model.dependent_variable:
+    elif data_trans == dv:
         if isinstance(expr, sympy.Piecewise):
             expr_0 = expr.args[0][0]
             expr_1 = expr.args[1][0]
@@ -415,7 +421,8 @@ def has_additive_error_model(model: Model):
     has_proportional_error_model : Check if a model has a proportional error model
     has_combined_error_model : Check if a model has a combined error model
     """
-    y = model.dependent_variable
+    # FIXME: handle other DVs
+    y = list(model.dependent_variables.keys())[0]
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
@@ -450,7 +457,8 @@ def has_proportional_error_model(model: Model):
     has_additive_error_model : Check if a model has an additive error model
     has_combined_error_model : Check if a model has a combined error model
     """
-    y = model.dependent_variable
+    # FIXME: handle other DVs
+    y = list(model.dependent_variables.keys())[0]
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
@@ -485,7 +493,8 @@ def has_combined_error_model(model: Model):
     has_additive_error_model : Check if a model has an additive error model
     has_proportional_error_model : Check if a model has a proportional error model
     """
-    y = model.dependent_variable
+    # FIXME: handle other DVs
+    y = list(model.dependent_variables.keys())[0]
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}

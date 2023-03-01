@@ -59,7 +59,8 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
     if variable in di.names:
         return di[variable].unit
 
-    y = model.dependent_variable
+    # FIXME: handle other DVs?
+    y = list(model.dependent_variables.keys())[0]
     input_units = {sympy.Symbol(col.name): col.unit for col in di}
     pruned_nodes = {sympy.exp}
 

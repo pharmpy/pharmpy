@@ -119,7 +119,7 @@ def create_basic_pk_model(
         name='start',
         statements=stats,
         estimation_steps=eststeps,
-        dependent_variable=y_ass.symbol,
+        dependent_variables={y_ass.symbol: 1},
         random_variables=rvs,
         parameters=params,
         description='Start model',

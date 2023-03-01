@@ -490,7 +490,7 @@ def test_abbr_read_write(load_model_for_test, pheno_path):
 
 
 def test_dv_symbol(pheno):
-    assert pheno.dependent_variable.name == 'Y'
+    assert list(pheno.dependent_variables.keys())[0].name == 'Y'
 
 
 def test_insert_unknown_record(pheno):

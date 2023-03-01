@@ -56,7 +56,8 @@ def get_observation_expression(model: Model):
     ) + EPS₁⋅(D_EPS1 + D_EPSETA1_1⋅(ETA₁ - OETA₁)) + OPRED
     """
     stats = model.statements
-    dv = model.dependent_variable
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
     for i, s in enumerate(stats):
         if s.symbol == dv:
             y = s.expression
@@ -233,7 +234,9 @@ def create_symbol(model: Model, stem: str, force_numbering: bool = False):
     params = [param.name for param in model.parameters]
     rvs = model.random_variables.names
     dataset_col = model.datainfo.names
-    misc = [model.dependent_variable]
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
+    misc = [dv]
 
     all_names = symbols + params + rvs + dataset_col + misc
 

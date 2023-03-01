@@ -78,7 +78,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
         name='start',
         statements=stats,
         estimation_steps=eststeps,
-        dependent_variable=y_ass.symbol,
+        dependent_variables={y_ass.symbol: 1},
         random_variables=rvs,
         parameters=params,
         description='Start model',
