@@ -158,6 +158,7 @@ from .expressions import (
     solve_ode_system,
 )
 from .iterators import omit_data, resample_data
+from .metabolite import add_metabolite
 from .parameters import (
     add_population_parameter,
     fix_or_unfix_parameters,
@@ -198,6 +199,7 @@ __all__ = [
     'add_individual_parameter',
     'add_iov',
     'add_lag_time',
+    'add_metabolite',
     'add_peripheral_compartment',
     'add_pk_iiv',
     'add_population_parameter',
