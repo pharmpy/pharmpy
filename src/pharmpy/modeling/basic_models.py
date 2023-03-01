@@ -2,6 +2,7 @@
 :meta private:
 """
 from pathlib import Path
+from typing import Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -35,7 +36,11 @@ from .parameters import set_initial_estimates
 
 
 def create_basic_pk_model(
-    modeltype: str, dataset_path=None, cl_init=0.01, vc_init=1.0, mat_init=0.1
+    modeltype: str,
+    dataset_path: Optional[str] = None,
+    cl_init: float = 0.01,
+    vc_init: float = 1.0,
+    mat_init: float = 0.1,
 ) -> Model:
     """
     Creates a basic pk model of given type
@@ -44,6 +49,14 @@ def create_basic_pk_model(
     ----------
     modeltype : str
         Type of PK model to create. Supported are 'oral' and 'iv'
+    dataset_path : str
+        Optional path to a dataset
+    cl_init : float
+        Initial estimate of the clearance parameter
+    vc_init : float
+        Initial estimate of the central volume parameter
+    mat_init : float
+        Initial estimate of the mean absorption time parameter (if applicable)
 
     Return
     ------
