@@ -1097,14 +1097,14 @@ class CompartmentalSystem(ODESystem):
             else:
                 break
 
-        nrows = comp_height * 2 - 1
+        noutput = len(self.get_compartment_inflows(output))
+        nrows = comp_height * 2 - 1 + (1 if noutput > 1 else 0)
         ncols = comp_width * 2
-        print(nrows, ncols)
         grid = unicode.Grid(nrows, ncols)
 
         current = self.dosing_compartment
         col = 0
-        if nrows == 1:
+        if nrows == 1 or nrows == 2:
             main_row = 0
         else:
             main_row = 2
@@ -1149,6 +1149,10 @@ class CompartmentalSystem(ODESystem):
                 rate = self.get_flow(current, output)
             arrow = unicode.Arrow(str(rate))
             grid.set(main_row, col + 1, arrow)
+            if next_comp and noutput > 1:
+                rate = self.get_flow(current, output)
+                arrow = unicode.VerticalArrow(str(rate))
+                grid.set(main_row + 1, col, arrow)
             col += 2
             current = next_comp
             if not current:
