@@ -420,6 +420,7 @@ def has_additive_error_model(model: Model):
     --------
     has_proportional_error_model : Check if a model has a proportional error model
     has_combined_error_model : Check if a model has a combined error model
+    has_weighted_error_model : Check if a model has a weighted error model
     """
     # FIXME: handle other DVs
     y = list(model.dependent_variables.keys())[0]
@@ -456,6 +457,7 @@ def has_proportional_error_model(model: Model):
     --------
     has_additive_error_model : Check if a model has an additive error model
     has_combined_error_model : Check if a model has a combined error model
+    has_weighted_error_model : Check if a model has a weighted error model
     """
     # FIXME: handle other DVs
     y = list(model.dependent_variables.keys())[0]
@@ -492,6 +494,7 @@ def has_combined_error_model(model: Model):
     --------
     has_additive_error_model : Check if a model has an additive error model
     has_proportional_error_model : Check if a model has a proportional error model
+    has_weighted_error_model : Check if a model has a weighted error model
     """
     # FIXME: handle other DVs
     y = list(model.dependent_variables.keys())[0]
@@ -605,6 +608,55 @@ def set_weighted_error_model(model: Model):
     )
     model = remove_unused_parameters_and_rvs(model)
     return model.update_source()
+
+
+def has_weighted_error_model(model: Model):
+    """Check if a model has a weighted error model
+
+    Parameters
+    ----------
+    model : Model
+        The model to check
+
+    Return
+    ------
+    bool
+        True if the model has a weighted error model and False otherwise
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, has_weighted_error_model
+    >>> model = load_example_model("pheno")
+    >>> has_weighted_error_model(model)
+    True
+
+    See Also
+    --------
+    has_additive_error_model : Check if a model has an additive error model
+    has_combined_error_model : Check if a model has a combined error model
+    has_proportional_error_model : Check if a model has a proportional error model
+    """
+    stats, y, f = _preparations(model)
+    y_expr = stats.error.find_assignment(y).expression
+    rvs = model.random_variables.epsilons
+    rvs_in_y = {
+        sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in y_expr.free_symbols
+    }
+
+    if len(rvs_in_y) > 1:
+        return False
+    eps_expr = {arg for arg in y_expr.args if arg.free_symbols.intersection(rvs_in_y)}
+    if not eps_expr:
+        return False
+
+    # FIXME: this only covers the simple case of e.g. Y=CONC+W*EPS(1)
+    eps_expr = eps_expr.pop()
+    if len(eps_expr.args) == 2 and eps_expr.func is sympy.Mul:
+        a, b = eps_expr.args
+        w_cand = a if a not in rvs_in_y else b
+        if w_cand not in y_expr.args:
+            return True
+    return False
 
 
 def _index_of_first_assignment(statements: Statements, symbol: sympy.Symbol) -> int:
