@@ -504,9 +504,10 @@ def to_des(model: Model, new: ODESystem):
     cs = cs.insert_record(mod)
     old_mod = mod
     assert isinstance(mod, ModelRecord)
-    for eq, ic in zip(new.eqs, list(new.ics.keys())):
+    dosecmt_name = new.dosing_compartment.name
+    for eq in new.eqs:
         name = eq.lhs.args[0].name[2:]
-        if new.ics[ic] != 0:
+        if name == dosecmt_name:
             dose = True
         else:
             dose = False
