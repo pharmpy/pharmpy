@@ -697,6 +697,35 @@ class CompartmentalSystem(ODESystem):
             flows.append((node, flow))
         return flows
 
+    def get_bidirectionals(self, compartment):
+        """Get list of all compartments with bidirectional flow from/to a compartment
+
+        Parameters
+        ----------
+        compartment : Compartment or str
+            Compartment of interest
+
+        Returns
+        -------
+        list
+            Compartments with bidirectional flow
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> central = model.statements.ode_system.central_compartment
+        >>> model.statements.ode_system.get_bidirectionals(central)
+        []
+        """
+        if isinstance(compartment, str):
+            compartment = self.find_compartment(compartment)
+        comps = []
+        for node in self._g.predecessors(compartment):
+            if self._g.has_edge(compartment, node):
+                comps.append(node)
+        return comps
+
     def find_compartment(self, name):
         """Find a compartment using its name
 
@@ -1052,61 +1081,78 @@ class CompartmentalSystem(ODESystem):
         def comp_string(comp):
             return comp.name + lag_string(comp) + f_string(comp)
 
-        central = self.central_compartment
-        central_box = unicode.Box(comp_string(central))
-        depot = self._find_depot()
         current = self.dosing_compartment
-        if depot:
-            comp = depot
-        else:
-            comp = central
-        transits = []
-        while current != comp:
-            transits.append(current)
-            current = self.get_compartment_outflows(current)[0][0]
-        periphs = self.peripheral_compartments
-        nrows = 1 + 2 * len(periphs)
-        ncols = 2 * len(transits) + (2 if depot else 0) + 2
+        comp_height = 0
+        comp_width = 0
+
+        while True:
+            bidirects = self.get_bidirectionals(current)
+            outflows = self.get_compartment_outflows(current)
+            comp_height = max(comp_height, len(bidirects) + 1)
+            comp_width += 1
+            for comp, rate in outflows:
+                if comp not in bidirects and comp != output:
+                    current = comp
+                    break
+            else:
+                break
+
+        nrows = comp_height * 2 - 1
+        ncols = comp_width * 2
+        print(nrows, ncols)
         grid = unicode.Grid(nrows, ncols)
+
+        current = self.dosing_compartment
+        col = 0
         if nrows == 1:
             main_row = 0
         else:
             main_row = 2
-        col = 0
-        for transit in transits:
-            grid.set(main_row, col, unicode.Box(comp_string(transit)))
-            col += 1
-            grid.set(
-                main_row, col, unicode.Arrow(str(self.get_compartment_outflows(transit)[0][1]))
-            )
-            col += 1
-        if depot:
-            grid.set(main_row, col, unicode.Box(comp_string(depot)))
-            col += 1
-            grid.set(main_row, col, unicode.Arrow(str(self.get_compartment_outflows(depot)[0][1])))
-            col += 1
-        central_col = col
-        grid.set(main_row, col, central_box)
-        col += 1
-        grid.set(main_row, col, unicode.Arrow(str(self.get_flow(central, output))))
-        if periphs:
-            grid.set(0, central_col, unicode.Box(comp_string(periphs[0])))
-            grid.set(
-                1,
-                central_col,
-                unicode.DualVerticalArrows(
-                    str(self.get_flow(central, periphs[0])), str(self.get_flow(periphs[0], central))
-                ),
-            )
-        if len(periphs) > 1:
-            grid.set(4, central_col, unicode.Box(comp_string(periphs[1])))
-            grid.set(
-                3,
-                central_col,
-                unicode.DualVerticalArrows(
-                    str(self.get_flow(periphs[1], central)), str(self.get_flow(central, periphs[1]))
-                ),
-            )
+
+        while True:
+            bidirects = self.get_bidirectionals(current)
+            outflows = self.get_compartment_outflows(current)
+            comp_box = unicode.Box(comp_string(current))
+            grid.set(main_row, col, comp_box)
+
+            if bidirects:
+                grid.set(0, col, unicode.Box(comp_string(bidirects[0])))
+                grid.set(
+                    1,
+                    col,
+                    unicode.DualVerticalArrows(
+                        str(self.get_flow(current, bidirects[0])),
+                        str(self.get_flow(bidirects[0], current)),
+                    ),
+                )
+            if len(bidirects) > 1:
+                grid.set(4, col, unicode.Box(comp_string(bidirects[1])))
+                grid.set(
+                    3,
+                    col,
+                    unicode.DualVerticalArrows(
+                        str(self.get_flow(bidirects[1], current)),
+                        str(self.get_flow(current, bidirects[1])),
+                    ),
+                )
+
+            for comp, rate in outflows:
+                if comp not in bidirects and comp != output:
+                    next_comp = comp
+                    break
+            else:
+                next_comp = None
+
+            if next_comp:
+                rate = self.get_flow(current, next_comp)
+            else:
+                rate = self.get_flow(current, output)
+            arrow = unicode.Arrow(str(rate))
+            grid.set(main_row, col + 1, arrow)
+            col += 2
+            current = next_comp
+            if not current:
+                break
 
         dose = self.dosing_compartment.dose
         s = str(dose) + '\n' + str(grid).rstrip()
