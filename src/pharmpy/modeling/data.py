@@ -8,7 +8,7 @@ from pharmpy.deps import sympy
 from pharmpy.deps.rich import box as rich_box
 from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import table as rich_table
-from pharmpy.model import CompartmentalSystem, DataInfo, DatasetError, Model
+from pharmpy.model import ColumnInfo, CompartmentalSystem, DataInfo, DatasetError, Model
 from pharmpy.model.model import update_datainfo
 
 from .iterators import resample_data
@@ -387,6 +387,67 @@ def set_covariates(model: Model, covariates: List[str]):
         else:
             newcols.append(col)
     model = model.replace(datainfo=di.replace(columns=newcols))
+    return model.update_source()
+
+
+def set_dvid(model: Model, name: str):
+    """Set a column to act as DVID. Replace DVID if one is already set.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    name : str
+        Name of DVID column
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+    """
+    di = model.datainfo
+    col = di[name]
+    if col.type == 'dvid':
+        return model
+
+    try:
+        curdvid = di.typeix['dvid'][0]
+    except IndexError:
+        pass
+    else:
+        curdvid = curdvid.replace(type='unknown')
+        di = di.set_column(curdvid)
+
+    col = col.replace(
+        type='dvid',
+        unit=1,
+        scale='nominal',
+        continuous=False,
+        drop=False,
+        descriptor='observation identifier',
+    )
+    df = model.dataset
+    if not col.is_integer():
+        ser = df[name]
+        converted = pd.to_numeric(ser, downcast='integer')
+        if not pd.api.types.is_integer_dtype(converted):
+            raise ValueError(
+                f"Could not use column {name} as DVID because it contains non-itegral values"
+            )
+        df = df.assign(**{name: converted})
+        col = col.replace(datatype=ColumnInfo.convert_pd_dtype_to_datatype(converted.dtype))
+        new_dataset = True
+    else:
+        new_dataset = False
+
+    col = col.replace(categories=sorted(df[name].unique()))
+
+    di = di.set_column(col)
+
+    if new_dataset:
+        model = model.replace(datainfo=di, dataset=df)
+    else:
+        model = model.replace(datainfo=di)
     return model.update_source()
 
 

@@ -23,6 +23,7 @@ from pharmpy.modeling import (
     get_observations,
     list_time_varying_covariates,
     remove_loq_data,
+    set_dvid,
     translate_nmtran_time,
     undrop_columns,
 )
@@ -343,3 +344,19 @@ def test_deidentify_data():
     )
     pd.testing.assert_series_equal(df['DATE'], correct_date)
     pd.testing.assert_series_equal(df['BIRTH'], correct_birth)
+
+
+def test_set_dvid(load_example_model_for_test):
+    m = load_example_model_for_test('pheno')
+    m = set_dvid(m, 'FA1')
+    col = m.datainfo['FA1']
+    assert col.type == 'dvid'
+    assert col.scale == 'nominal'
+    assert col.categories == [0, 1]
+    m = set_dvid(m, 'FA1')
+    assert m.datainfo['FA1'].type == 'dvid'
+    m = set_dvid(m, 'FA2')
+    assert m.datainfo['FA1'].type == 'unknown'
+    assert m.datainfo['FA2'].type == 'dvid'
+    with pytest.raises(ValueError):
+        set_dvid(m, 'WGT')

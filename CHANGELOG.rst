@@ -6,6 +6,7 @@ New features
 
 * Add function ``modeling.create_basic_pk_model``
 * Add function ``modeling.add_metabolite``
+* Add function ``modeling.set_dvid``
 
 Changes
 =======

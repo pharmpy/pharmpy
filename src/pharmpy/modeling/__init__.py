@@ -125,6 +125,7 @@ from .data import (
     read_dataset_from_datainfo,
     remove_loq_data,
     set_covariates,
+    set_dvid,
     translate_nmtran_time,
     undrop_columns,
 )
@@ -325,6 +326,7 @@ __all__ = [
     'set_combined_error_model',
     'set_covariates',
     'set_dtbs_error_model',
+    'set_dvid',
     'set_estimation_step',
     'set_evaluation_step',
     'set_first_order_absorption',
