@@ -92,8 +92,8 @@ def known_error_model(model: pharmpy.model.Model) -> bool:
             has_proportional_error_model(model))
 
 def same_time(model: pharmpy.model) -> bool:
-    temp_model = model.copy()
-    temp_model.dataset = temp_model.dataset.reset_index()
+    temp_model = model
+    temp_model = temp_model.replace(dataset = temp_model.dataset.reset_index())
     dataset = temp_model.dataset
     
     if "RATE" in dataset.columns:

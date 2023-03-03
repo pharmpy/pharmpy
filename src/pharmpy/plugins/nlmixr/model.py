@@ -74,11 +74,6 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
         name=model.name,
         description=model.description,
     )
-
-    generic_model = convert_model(model, 'generic')
-    nlmixr_model.__dict__ = generic_model.__dict__
-    nlmixr_model.internals = NLMIXRModelInternals()
-    nlmixr_model.filename_extension = '.R'
     
     # Update dataset
     if keep_etas == True:
@@ -89,8 +84,10 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
     drop_dropped_columns(nlmixr_model)
     if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
         nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
-    nlmixr_model.datainfo = nlmixr_model.datainfo.replace(path = None)
-    nlmixr_model.dataset = nlmixr_model.dataset.reset_index(drop=True)
+    nlmixr_model = nlmixr_model.replace(
+        datainfo = nlmixr_model.datainfo.replace(path = None),
+        dataset = nlmixr_model.dataset.reset_index(drop=True)
+        )
     
     # Add evid
     nlmixr_model = add_evid(nlmixr_model)
@@ -228,7 +225,7 @@ def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
     cg.indent()
     for s in model.statements:
         if isinstance(s, Assignment):
-            if s.symbol == model.dependent_variable:
+            if s.symbol == dv:
                 # FIXME : Find another way to assert that a sigma exist
                 sigma = None
                 for dist in model.random_variables.epsilons:
@@ -297,7 +294,7 @@ def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
     cg.add('})')
 
 
-def create_fit(cg: CodeGenerator, model: pharmpy.model, path=None) -> None:
+def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
     """
     Create the call to fit
 
@@ -345,11 +342,6 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model, path=None) -> None:
             cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}"')
         else:
             if fix_eta:
-                eta_file = 'fix_eta.csv'
-                if path is None:
-                    path = ""
-                path = Path(path) / eta_file
-                cg.add(f'etas <- as.matrix(read.csv("{path}"))')
                 cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", control=foceiControl(maxOuterIterations={max_eval}, maxInnerIterations=0, etaMat = etas))')
             else:
                 cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", control=foceiControl(maxOuterIterations={max_eval}))')
@@ -357,7 +349,7 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model, path=None) -> None:
         cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}")')
                 
 def add_evid(model):
-    temp_model = model.copy()
+    temp_model = model
     if "EVID" not in temp_model.dataset.columns:
         temp_model.dataset["EVID"] = get_evid(temp_model)
     return temp_model
@@ -384,7 +376,7 @@ class Model(pharmpy.model.Model):
         cg.dedent()
         cg.add('}')
         cg.empty_line()
-        create_fit(cg, self, path)
+        create_fit(cg, self)
         # Create lowercase id, time and amount symbols for nlmixr to be able
         # to run
         self.internals.src = (
@@ -463,11 +455,14 @@ def execute_model(model, db):
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     write_csv(model, path=path)
-    if "fix_eta" in model.estimation_steps[0].tool_options:
-        write_fix_eta(model, path=path)
     
     dataname = f'{model.name}.csv'
-    pre = f'library(nlmixr2)\n\ndataset <- read.csv("{path / dataname}")\n\n'
+    pre = f'library(nlmixr2)\n\ndataset <- read.csv("{path / dataname}")\n'    
+
+    if "fix_eta" in model.estimation_steps[0].tool_options:
+        write_fix_eta(model, path=path)
+        pre += f'etas <- as.matrix(read.csv("{path}"))'
+    pre+="\n"
 
     code = pre + model.model_code
     cg = CodeGenerator()
