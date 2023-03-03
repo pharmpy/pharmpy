@@ -1,5 +1,5 @@
-next version
-------------
+0.91.0 (2023-03-03)
+-------------------
 
 New features
 ============
@@ -7,11 +7,18 @@ New features
 * Add function ``modeling.create_basic_pk_model``
 * Add function ``modeling.add_metabolite``
 * Add function ``modeling.set_dvid``
+* Add function ``modeling.has_weighted_error_model``
 
 Changes
 =======
 
 * ``model.dependent_variable`` becomes ``model.dependent_variables``
+
+Bugfixes
+========
+
+* Fix regression causing DEFDOSE to sometimes be put on the wrong compartment
+* Fix ruvsearch crashing in case of bad modelfit_results (#1551)
 
 0.90.0 (2023-02-24)
 -------------------
