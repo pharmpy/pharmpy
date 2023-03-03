@@ -112,14 +112,13 @@ def set_initial_estimates(model: Model, inits: Dict[str, float]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, set_initial_estimates
     >>> model = load_example_model("pheno")
-    >>> set_initial_estimates(model, {'PTVCL': 2})   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_initial_estimates(model, {'PTVCL': 2})
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 2, lower=0.0, upper=1000000.0, fix=False)
 
@@ -128,8 +127,9 @@ def set_initial_estimates(model: Model, inits: Dict[str, float]):
     fix_parameters_to : Fixing and setting parameter initial estimates in the same function
     unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
     """
-    model.parameters = model.parameters.set_initial_estimates(inits)
-    return model
+    new = model.parameters.set_initial_estimates(inits)
+    model = model.replace(parameters=new)
+    return model.update_source()
 
 
 def set_upper_bounds(model: Model, bounds: Dict[str, float]):
@@ -145,14 +145,13 @@ def set_upper_bounds(model: Model, bounds: Dict[str, float]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, set_upper_bounds
     >>> model = load_example_model("pheno")
-    >>> set_upper_bounds(model, {'PTVCL': 10})   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_upper_bounds(model, {'PTVCL': 10})
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=10, fix=False)
 
@@ -170,8 +169,8 @@ def set_upper_bounds(model: Model, bounds: Dict[str, float]):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters(tuple(new))
-    return model
+    model = model.replace(parameters=Parameters(tuple(new)))
+    return model.update_source()
 
 
 def set_lower_bounds(model: Model, bounds: Dict[str, float]):
@@ -187,14 +186,13 @@ def set_lower_bounds(model: Model, bounds: Dict[str, float]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, set_lower_bounds
     >>> model = load_example_model("pheno")
-    >>> set_lower_bounds(model, {'PTVCL': -10})   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_lower_bounds(model, {'PTVCL': -10})
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=-10, upper=1000000.0, fix=False)
 
@@ -212,7 +210,8 @@ def set_lower_bounds(model: Model, bounds: Dict[str, float]):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters(tuple(new))
+    model = model.replace(parameters=Parameters(tuple(new)))
+    model = model.update_source()
     return model
 
 
@@ -231,7 +230,7 @@ def fix_parameters(model: Model, parameter_names: Union[List[str], str]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Example
     -------
@@ -239,8 +238,7 @@ def fix_parameters(model: Model, parameter_names: Union[List[str], str]):
     >>> model = load_example_model("pheno")
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
-    >>> fix_parameters(model, 'PTVCL')       # doctest: +ELLIPSIS
-    <...>
+    >>> model = fix_parameters(model, 'PTVCL')
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=True)
 
@@ -263,8 +261,8 @@ def fix_parameters(model: Model, parameter_names: Union[List[str], str]):
         else:
             new_param = p
         new.append(new_param)
-    model.parameters = Parameters(tuple(new))
-    return model
+    model = model.replace(parameters=Parameters(tuple(new)))
+    return model.update_source()
 
 
 def unfix_parameters(model: Model, parameter_names: Union[List[str], str]):
@@ -282,18 +280,16 @@ def unfix_parameters(model: Model, parameter_names: Union[List[str], str]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import fix_parameters, unfix_parameters, load_example_model
     >>> model = load_example_model("pheno")
-    >>> fix_parameters(model, ['PTVCL', 'PTVV', 'THETA_3'])     # doctest: +ELLIPSIS
-    <...>
+    >>> model = fix_parameters(model, ['PTVCL', 'PTVV', 'THETA_3'])
     >>> model.parameters.fix    # doctest: +ELLIPSIS
     {'PTVCL': True, 'PTVV': True, 'THETA_3': True, ...}
-    >>> unfix_parameters(model, 'PTVCL')       # doctest: +ELLIPSIS
-    <...>
+    >>> model = unfix_parameters(model, 'PTVCL')
     >>> model.parameters.fix        # doctest: +ELLIPSIS
     {'PTVCL': False, 'PTVV': True, 'THETA_3': True, ...}
 
@@ -317,7 +313,8 @@ def unfix_parameters(model: Model, parameter_names: Union[List[str], str]):
         else:
             new_param = p
         new.append(new_param)
-    model.parameters = Parameters(tuple(new))
+    model = model.replace(parameters=Parameters(tuple(new)))
+    model = model.update_source()
     return model
 
 
@@ -336,7 +333,7 @@ def fix_parameters_to(model: Model, inits: Dict[str, float]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -344,8 +341,7 @@ def fix_parameters_to(model: Model, inits: Dict[str, float]):
     >>> model = load_example_model("pheno")
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
-    >>> fix_parameters_to(model, {'PTVCL': 0.5})       # doctest: +ELLIPSIS
-    <...>
+    >>> model = fix_parameters_to(model, {'PTVCL': 0.5})
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.5, lower=0.0, upper=1000000.0, fix=True)
 
@@ -358,8 +354,8 @@ def fix_parameters_to(model: Model, inits: Dict[str, float]):
         function
 
     """
-    fix_parameters(model, inits.keys())
-    set_initial_estimates(model, inits)
+    model = fix_parameters(model, inits.keys())
+    model = set_initial_estimates(model, inits)
     return model
 
 
@@ -379,12 +375,10 @@ def unfix_parameters_to(model: Model, inits: Dict[str, float]):
     --------
     >>> from pharmpy.modeling import fix_parameters, unfix_parameters_to, load_example_model
     >>> model = load_example_model("pheno")
-    >>> fix_parameters(model, ['PTVCL', 'PTVV', 'THETA_3'])     # doctest: +ELLIPSIS
-    <...>
+    >>> model = fix_parameters(model, ['PTVCL', 'PTVV', 'THETA_3'])
     >>> model.parameters.fix    # doctest: +ELLIPSIS
     {'PTVCL': True, 'PTVV': True, 'THETA_3': True, 'IVCL': False, 'IVV': False, 'SIGMA_1_1': False}
-    >>> unfix_parameters_to(model, {'PTVCL': 0.5})       # doctest: +ELLIPSIS
-    <...>
+    >>> model = unfix_parameters_to(model, {'PTVCL': 0.5})
     >>> model.parameters.fix        # doctest: +ELLIPSIS
     {'PTVCL': False, 'PTVV': True, 'THETA_3': True, ...}
     >>> model.parameters['PTVCL']
@@ -393,7 +387,7 @@ def unfix_parameters_to(model: Model, inits: Dict[str, float]):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     See also
     --------
@@ -403,8 +397,8 @@ def unfix_parameters_to(model: Model, inits: Dict[str, float]):
     fix_paramaters_to : Fixing parameters and setting a new initial estimate in the same
         function
     """
-    unfix_parameters(model, inits.keys())
-    set_initial_estimates(model, inits)
+    model = unfix_parameters(model, inits.keys())
+    model = set_initial_estimates(model, inits)
     return model
 
 
@@ -426,15 +420,14 @@ def fix_or_unfix_parameters(model: Model, parameters: Dict[str, bool]):
     >>> model = load_example_model("pheno")
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
-    >>> fix_or_unfix_parameters(model, {'PTVCL': True})       # doctest: +ELLIPSIS
-    <...>
+    >>> model = fix_or_unfix_parameters(model, {'PTVCL': True})
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=True)
 
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     See also
     --------
@@ -453,7 +446,8 @@ def fix_or_unfix_parameters(model: Model, parameters: Dict[str, bool]):
         else:
             new_param = p
         new.append(new_param)
-    model.parameters = Parameters(tuple(new))
+    model = model.replace(parameters=Parameters(tuple(new)))
+    model = model.update_source()
     return model
 
 
@@ -473,15 +467,14 @@ def unconstrain_parameters(model: Model, parameter_names: List[str]):
     >>> model = load_example_model("pheno")
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=0.0, upper=1000000.0, fix=False)
-    >>> unconstrain_parameters(model, ['PTVCL'])       # doctest: +ELLIPSIS
-    <...>
+    >>> model = unconstrain_parameters(model, ['PTVCL'])
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 0.00469307, lower=-∞, upper=∞, fix=False)
 
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     See also
     --------
@@ -498,7 +491,8 @@ def unconstrain_parameters(model: Model, parameter_names: List[str]):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters(tuple(new))
+    model = model.replace(parameters=Parameters(tuple(new)))
+    model = model.update_source()
     return model
 
 
@@ -530,14 +524,13 @@ def add_population_parameter(
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import add_population_parameter, load_example_model
     >>> model = load_example_model("pheno")
-    >>> add_population_parameter(model, 'POP_KA', 2)       # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_population_parameter(model, 'POP_KA', 2)
     >>> model.parameters
                   value lower      upper    fix
     PTVCL      0.004693   0.0  1000000.0  False
@@ -551,5 +544,5 @@ def add_population_parameter(
 
     param = Parameter.create(name, init, lower=lower, upper=upper, fix=fix)
     params = model.parameters + param
-    model.parameters = params
-    return model
+    model = model.replace(parameters=params)
+    return model.update_source()

@@ -226,16 +226,16 @@ def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
         model_no_header = load_model_for_test('pheno_no_header.mod')
-        model_no_header.datainfo = model_no_header.datainfo.replace(
-            path=tmp_path / 'pheno_data.csv'
+        model_no_header = model_no_header.replace(
+            datainfo=model_no_header.datainfo.replace(path=tmp_path / 'pheno_data.csv')
         )
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
         model_rounding_error = load_model_for_test('pheno_rounding_error.mod')
-        model_rounding_error.datainfo = model_rounding_error.datainfo.replace(
-            path=tmp_path / 'pheno_data.csv'
+        model_rounding_error = model_rounding_error.replace(
+            datainfo=model_rounding_error.datainfo.replace(path=tmp_path / 'pheno_data.csv')
         )
 
         models = [model, model_no_header, model_rounding_error]
@@ -357,7 +357,7 @@ def test_summarize_modelfit_results(
     assert list(summary_multiple.index) == ['pheno_real', 'mox1']
 
     pheno_no_res = create_model_for_test(pheno.model_code)
-    pheno_no_res.name = 'pheno_no_res'
+    pheno_no_res = pheno_no_res.replace(name='pheno_no_res')
 
     summary_no_res = summarize_modelfit_results(
         [pheno.modelfit_results, pheno_no_res.modelfit_results]
@@ -394,7 +394,7 @@ def test_summarize_modelfit_results(
     assert not summary_multest_full.loc['pheno_multEST', 1]['minimization_successful']
 
     pheno_multest_no_res = create_model_for_test(pheno_multest.model_code)
-    pheno_multest_no_res.name = 'pheno_multest_no_res'
+    pheno_multest_no_res = pheno_multest_no_res.replace(name='pheno_multest_no_res')
 
     summary_multest_full_no_res = summarize_modelfit_results(
         [pheno_multest_no_res.modelfit_results, mox.modelfit_results],
@@ -415,16 +415,16 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
         model_no_header = load_model_for_test('pheno_no_header.mod')
-        model_no_header.datainfo = model_no_header.datainfo.replace(
-            path=tmp_path / 'pheno_data.csv'
+        model_no_header = model_no_header.replace(
+            datainfo=model_no_header.datainfo.replace(path=tmp_path / 'pheno_data.csv')
         )
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
         model_rounding_error = load_model_for_test('pheno_rounding_error.mod')
-        model_rounding_error.datainfo = model_rounding_error.datainfo.replace(
-            path=tmp_path / 'pheno_data.csv'
+        model_rounding_error = model_rounding_error.replace(
+            datainfo=model_rounding_error.datainfo.replace(path=tmp_path / 'pheno_data.csv')
         )
 
         results = [

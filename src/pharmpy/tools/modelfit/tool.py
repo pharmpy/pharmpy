@@ -98,7 +98,7 @@ def retrieve_from_database_or_execute_model_with_tool(tool):
             # if db_model == model and model.has_same_dataset_as(db_model):
             if db_model and model.has_same_dataset_as(db_model):
                 # NOTE Inputs are identical so we can reuse the results
-                model.modelfit_results = db_results
+                model = model.replace(modelfit_results=db_results)
                 return model
 
         # NOTE Fallback to executing the model

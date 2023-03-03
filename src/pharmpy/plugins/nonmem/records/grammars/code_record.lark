@@ -179,20 +179,20 @@ _fn1: exp | pexp
 
 exp: "EXP"i | "DEXP"i
 pexp: "PEXP"i
-log: "LOG"i
+log: "LOG"i | "DLOG"i | "ALOG"i
 plog: "PLOG"i
-log10: "LOG10"i
+log10: "LOG10"i | "DLOG10"i | "ALOG10"i
 plog10: "PLOG10"i
-sqrt: "SQRT"i
+sqrt: "SQRT"i | "DSQRT"i
 psqrt: "PSQRT"i
-sin: "SIN"i
-cos: "COS"i
-tan: "TAN"i | "PTAN"i
+sin: "SIN"i | "DSIN"i
+cos: "COS"i | "DCOS"i
+tan: "TAN"i | "DTAN"i | "PTAN"i
 asin: "ASIN"i | "PASIN"i
 acos: "ACOS"i | "PACOS"i
 atan: "ATAN"i | "PATAN"i
-abs: "ABS"i
-int: "INT"i
+abs: "ABS"i | "DABS"i
+int: "INT"i | "DINT"i
 loggamma: "GAMLN"i
 pdz: "PDZ"i
 pzr: "PZR"i
@@ -211,7 +211,7 @@ phi: PHI
 PHI.2: "PHI"i FOLLOWED_BY_A_PARENTHESIS_LOOKAHEAD
 
 _fn2: mod
-mod: "MOD"i
+mod: "MOD"i | "DMOD"i
 
 assignable: vector
           | name

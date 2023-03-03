@@ -23,7 +23,7 @@ def update_initial_estimates(model):
             return model
 
     try:
-        update_inits(
+        model = update_inits(
             model, model.modelfit_results.parameter_estimates, move_est_close_to_bounds=True
         )
     except (ValueError, np.linalg.LinAlgError):

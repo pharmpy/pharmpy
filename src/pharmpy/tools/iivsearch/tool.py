@@ -9,7 +9,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import add_pk_iiv, calculate_bic, copy_model, create_joint_distribution
+from pharmpy.modeling import add_pk_iiv, calculate_bic, create_joint_distribution
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
@@ -109,10 +109,10 @@ def create_algorithm_workflow(input_model, base_model, state, iiv_strategy, rank
 
 def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff):
     if iiv_strategy != 'no_add':
-        model_iiv = copy_model(input_model, 'base_model')
-        update_initial_estimates(model_iiv)
-        _add_iiv(iiv_strategy, model_iiv)
-        base_model = model_iiv
+        model_iiv = input_model.replace(name='base_model')
+        model_iiv = update_initial_estimates(model_iiv)
+        base_model = _add_iiv(iiv_strategy, model_iiv)
+        base_model = algorithms.update_description(base_model)
     else:
         base_model = input_model
 
@@ -203,15 +203,15 @@ def _results(res):
 
 
 def _start_algorithm(model):
-    model.parent_model = model.name
+    model = model.replace(parent_model=model.name)
     return model
 
 
 def _add_iiv(iiv_strategy, model):
     assert iiv_strategy in ['add_diagonal', 'fullblock']
-    add_pk_iiv(model)
+    model = add_pk_iiv(model)
     if iiv_strategy == 'fullblock':
-        create_joint_distribution(
+        model = create_joint_distribution(
             model, individual_estimates=model.modelfit_results.individual_estimates
         )
     return model
@@ -230,6 +230,11 @@ def post_process(state, rank_type, cutoff, input_model, base_model_name, *models
 
     if not base_model:
         raise ValueError('Error in workflow: No base model')
+
+    # In order to have the IIV structure of the input model in the description column
+    # in the result summaries
+    if input_model.name == base_model.name:
+        base_model = algorithms.update_description(base_model)
 
     res = create_results(
         IIVSearchResults, input_model, base_model, res_models, rank_type, cutoff, bic_type='iiv'

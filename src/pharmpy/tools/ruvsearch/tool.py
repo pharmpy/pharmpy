@@ -228,112 +228,107 @@ def post_process(context, start_model, *models, cutoff, current_iteration):
     if best_model_unfitted is not None:
         fit_wf = create_fit_workflow(models=[best_model_unfitted])
         best_model = call_workflow(fit_wf, f'fit{current_iteration}', context)
-        best_model_check = [
-            best_model.modelfit_results.ofv,
-            best_model.modelfit_results.residuals,
-            best_model.modelfit_results.predictions,
-        ]
-        if all(check is not None for check in best_model_check):
-            delta_ofv = start_model.modelfit_results.ofv - best_model.modelfit_results.ofv
-            if delta_ofv > cutoff:
-                return (res, best_model, selected_model_name)
+        if best_model.modelfit_results is not None:
+            best_model_check = [
+                best_model.modelfit_results.ofv,
+                best_model.modelfit_results.residuals,
+                best_model.modelfit_results.predictions,
+            ]
+            if all(check is not None for check in best_model_check):
+                delta_ofv = start_model.modelfit_results.ofv - best_model.modelfit_results.ofv
+                if delta_ofv > cutoff:
+                    return (res, best_model, selected_model_name)
 
     return (res, start_model, f"base_{current_iteration}")
 
 
 def _create_base_model(input_model, current_iteration):
-    base_model = Model()
     theta = Parameter('theta', 0.1)
     omega = Parameter('omega', 0.01, lower=0)
     sigma = Parameter('sigma', 1, lower=0)
     params = Parameters((theta, omega, sigma))
-    base_model.parameters = params
 
     eta_name = 'eta'
     eta = NormalDistribution.create(eta_name, 'iiv', 0, omega.symbol)
     sigma_name = 'epsilon'
     sigma = NormalDistribution.create(sigma_name, 'ruv', 0, sigma.symbol)
     rvs = RandomVariables.create([eta, sigma])
-    base_model.random_variables = rvs
 
     y = Assignment(
         sympy.Symbol('Y'), theta.symbol + sympy.Symbol(eta_name) + sympy.Symbol(sigma_name)
     )
     statements = Statements([y])
-    base_model.statements = statements
 
-    base_model.dependent_variable = y.symbol
-    base_model.name = f'base_{current_iteration}'
-    base_model.description = base_model.name
-    base_model.dataset = _create_dataset(input_model)
+    name = f'base_{current_iteration}'
 
     est = EstimationStep.create('foce', interaction=True, maximum_evaluations=9999)
-    base_model = base_model.replace(estimation_steps=EstimationSteps.create([est]))
+
+    base_model = Model(
+        parameters=params,
+        random_variables=rvs,
+        statements=statements,
+        name=name,
+        description=name,
+        estimation_steps=EstimationSteps.create([est]),
+        dependent_variables={y.symbol: 1},
+    )
+    base_model = base_model.replace(dataset=_create_dataset(input_model))
     return base_model
 
 
 def _create_iiv_on_ruv_model(input_model, current_iteration):
-    base_model = input_model
-    model = base_model.copy()
-    model = set_iiv_on_ruv(model)
-    model.name = f'IIV_on_RUV_{current_iteration}'
-    model.description = model.name
+    model = set_iiv_on_ruv(input_model)
+    name = f'IIV_on_RUV_{current_iteration}'
+    model = model.replace(name=name, description=name)
     return model
 
 
 def _create_power_model(input_model, current_iteration):
-    base_model = input_model
-    model = base_model.copy()
-    set_power_on_ruv(model, ipred='IPRED', lower_limit=None, zero_protection=True)
-    model.name = f'power_{current_iteration}'
-    model.description = model.name
+    model = set_power_on_ruv(input_model, ipred='IPRED', lower_limit=None, zero_protection=True)
+    name = f'power_{current_iteration}'
+    model = model.replace(name=name, description=name)
     return model
 
 
 def _create_time_varying_model(input_model, groups, i, current_iteration):
-    base_model = input_model
-    model = base_model.copy()
     quantile = i / groups
-    cutoff = model.dataset['TAD'].quantile(q=quantile)
-    set_time_varying_error_model(model, cutoff=cutoff, idv='TAD')
-    model.name = f"time_varying{i}_{current_iteration}"
-    model.description = model.name
+    cutoff = input_model.dataset['TAD'].quantile(q=quantile)
+    model = set_time_varying_error_model(input_model, cutoff=cutoff, idv='TAD')
+    name = f"time_varying{i}_{current_iteration}"
+    model = model.replace(name=name, description=name)
     return model
 
 
 def _create_combined_model(input_model, current_iteration):
-    base_model = input_model
-    model = base_model.copy()
-    remove_error_model(model)
+    model = remove_error_model(input_model)
     sset = model.statements
     s = sset[0]
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
     ipred = sympy.Symbol('IPRED')
     s = Assignment(s.symbol, s.expression + ruv_prop + ruv_add / ipred)
-    model.statements = s + sset[1:]
+    model = model.replace(statements=s + sset[1:])
 
     prop_name = 'sigma_prop'
-    add_population_parameter(model, prop_name, 1, lower=0)
+    model = add_population_parameter(model, prop_name, 1, lower=0)
     df = model.dataset.copy()
     df['IPRED'].replace(0, 2.225e-307, inplace=True)
-    model.dataset = df
+    model = model.replace(dataset=df)
     ipred_min = model.dataset['IPRED'].min()
     sigma_add_init = ipred_min / 2
     add_name = 'sigma_add'
-    add_population_parameter(model, add_name, sigma_add_init, lower=0)
+    model = add_population_parameter(model, add_name, sigma_add_init, lower=0)
 
     eps_prop = NormalDistribution.create(ruv_prop.name, 'ruv', 0, sympy.Symbol(prop_name))
     eps_add = NormalDistribution.create(ruv_add.name, 'ruv', 0, sympy.Symbol(add_name))
-    model.random_variables = model.random_variables + [eps_prop, eps_add]
-
-    model.name = f'combined_{current_iteration}'
-    model.description = model.name
+    name = f'combined_{current_iteration}'
+    model = model.replace(
+        random_variables=model.random_variables + [eps_prop, eps_add], name=name, description=name
+    )
     return model
 
 
 def _create_dataset(input_model):
-    input_model = input_model.copy()
     residuals = input_model.modelfit_results.residuals
     cwres = residuals['CWRES'].reset_index(drop=True)
     predictions = input_model.modelfit_results.predictions
@@ -348,7 +343,7 @@ def _create_dataset(input_model):
     mdv = mdv.reset_index(drop=True)
     label_id = input_model.datainfo.id_column.name
     input_id = input_model.dataset[label_id].astype('int64').squeeze().reset_index(drop=True)
-    add_time_after_dose(input_model)
+    input_model = add_time_after_dose(input_model)
     tad_label = input_model.datainfo.descriptorix['time after dose'][0].name
     tad = input_model.dataset[tad_label].squeeze().reset_index(drop=True)
     df = pd.concat([mdv, input_id, tad, ipred], axis=1)
@@ -361,15 +356,13 @@ def _time_after_dose(model):
     if 'TAD' in model.dataset:
         pass
     else:
-        add_time_after_dose(model)
+        model = add_time_after_dose(model)
     return model
 
 
 def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
     if not res.cwres_models.empty and any(res.cwres_models['dofv'] > cutoff):
-        model = model.copy()
-        update_initial_estimates(model)
-        model.name = f'best_ruvsearch_{current_iteration}'
+        model = update_initial_estimates(model)
         selected_model_name = f'base_{current_iteration}'
         idx = res.cwres_models['dofv'].idxmax()
         name = idx[0]
@@ -378,11 +371,13 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             base_description = ''
         else:
             base_description = model.description + '+'
-        model.description = base_description + name
+        model = model.replace(
+            name=f'best_ruvsearch_{current_iteration}', description=base_description + name
+        )
 
         if name.startswith('power'):
-            set_power_on_ruv(model)
-            set_initial_estimates(
+            model = set_power_on_ruv(model)
+            model = set_initial_estimates(
                 model,
                 {
                     'power1': res.cwres_models['parameters']
@@ -392,8 +387,8 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
                 },
             )
         elif name.startswith('IIV_on_RUV'):
-            set_iiv_on_ruv(model)
-            set_initial_estimates(
+            model = set_iiv_on_ruv(model)
+            model = set_initial_estimates(
                 model,
                 {
                     'IIV_RUV1': res.cwres_models['parameters']
@@ -402,14 +397,14 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
                 },
             )
         elif name.startswith('time_varying'):
-            _time_after_dose(model)
+            model = _time_after_dose(model)
             i = int(name[-1])
             quantile = i / groups
             df = _create_dataset(model)
             tad = df['TAD']
             cutoff_tvar = tad.quantile(q=quantile)
-            set_time_varying_error_model(model, cutoff=cutoff_tvar, idv='TAD')
-            set_initial_estimates(
+            model = set_time_varying_error_model(model, cutoff=cutoff_tvar, idv='TAD')
+            model = set_initial_estimates(
                 model,
                 {
                     'time_varying': res.cwres_models['parameters']
@@ -418,8 +413,8 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
                 },
             )
         else:
-            set_combined_error_model(model)
-            set_initial_estimates(
+            model = set_combined_error_model(model)
+            model = set_initial_estimates(
                 model,
                 {
                     'sigma_prop': res.cwres_models['parameters']
@@ -432,7 +427,6 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             )
 
         selected_model_name = name
-        model.update_source()
     else:
         model = None
         selected_model_name = None
@@ -452,7 +446,6 @@ def validate_input(model, groups, p_value, skip):
         raise ValueError(f'Invalid `skip`: got `{skip}`, must be None/NULL or a subset of {SKIP}.')
 
     if model is not None:
-
         if model.modelfit_results is None:
             raise ValueError(f'Invalid `model`: {model} is missing modelfit results.')
 

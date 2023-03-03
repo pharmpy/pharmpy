@@ -10,15 +10,14 @@ from ..lib import diff
 
 def test_nan_add_covariate_effect(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    data = model.dataset
+    data = model.dataset.copy()
 
     new_col = [np.nan] * 10 + ([1.0] * (len(data.index) - 10))
 
     data['new_col'] = new_col
-    model.dataset = data
+    model = model.replace(dataset=data)
 
-    add_covariate_effect(model, 'CL', 'new_col', 'cat')
-    model.update_source(nofiles=True)
+    model = add_covariate_effect(model, 'CL', 'new_col', 'cat')
 
     assert not re.search('NaN', model.model_code)
     assert re.search(r'NEW_COL\.EQ\.-99', model.model_code)
@@ -28,7 +27,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
     model_path = testdata / 'nonmem' / 'pheno.mod'
     model = load_model_for_test(model_path)
 
-    add_covariate_effect(model, 'CL', 'WGT', 'exp')
+    model = add_covariate_effect(model, 'CL', 'WGT', 'exp')
     assert has_covariate_effect(model, 'CL', 'WGT')
 
     with pytest.warns(UserWarning, match='Covariate effect of WGT on CL already exists'):
@@ -38,10 +37,10 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
 
     model = load_model_for_test(model_path)
 
-    add_covariate_effect(model, 'CL', 'WGT', 'exp')
+    model = add_covariate_effect(model, 'CL', 'WGT', 'exp')
     assert has_covariate_effect(model, 'CL', 'WGT')
     assert not has_covariate_effect(model, 'CL', 'APGR')
-    add_covariate_effect(model, 'CL', 'APGR', 'exp')
+    model = add_covariate_effect(model, 'CL', 'APGR', 'exp')
     assert has_covariate_effect(model, 'CL', 'WGT')
     assert has_covariate_effect(model, 'CL', 'APGR')
 
@@ -391,12 +390,11 @@ def test_add_covariate_effect(
             assert not has_covariate_effect(model, effect[0], effect[1])
 
     for effect in effects:
-        add_covariate_effect(model, *effect, allow_nested=allow_nested)
+        model = add_covariate_effect(model, *effect, allow_nested=allow_nested)
 
     for effect in effects:
         assert has_covariate_effect(model, effect[0], effect[1])
 
-    model.update_source()
     error_record_after = ''.join(map(str, model.internals.control_stream.get_records('ERROR')))
 
     original_model = load_model_for_test(testdata.joinpath(*model_path))
@@ -413,14 +411,12 @@ def test_add_covariate_effect(
         assert f'POP_{effect[0]}{effect[1]}' in model.model_code
 
     if not allow_nested:
-
         for effect in effects:
-            remove_covariate_effect(model, effect[0], effect[1])
+            model = remove_covariate_effect(model, effect[0], effect[1])
 
         for effect in effects:
             assert not has_covariate_effect(model, effect[0], effect[1])
 
-        model.update_source()
         assert (
             diff(
                 original_model.internals.control_stream.get_pred_pk_record(),

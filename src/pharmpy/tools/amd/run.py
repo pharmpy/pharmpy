@@ -108,7 +108,7 @@ def run_amd(
         model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
     elif type(input) is nonmem.model.Model:
         model = input
-        model.name = 'start'
+        model = model.replace(name='start')
     else:
         raise TypeError(
             f'Invalid input: got `{input}` of type {type(input)},'
@@ -190,7 +190,7 @@ def run_amd(
                 f"Unrecognized section {section} in order. Must be one of {default_order}"
             )
 
-    run_tool('modelfit', model, path=db.path / 'modelfit', resume=resume)
+    model = run_tool('modelfit', model, path=db.path / 'modelfit', resume=resume)
     next_model = model
     sum_subtools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
     sum_subtools.append(_create_sum_subtool('start', model))
@@ -422,7 +422,6 @@ def _subfunc_iov(amd_start_model, occasion, path) -> SubFunc:
         )
 
     def _run_iov(model):
-
         if occasion not in model.dataset:
             warnings.warn(f'Skipping IOVsearch because dataset is missing column "{occasion}".')
             return None

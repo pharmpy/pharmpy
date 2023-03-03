@@ -27,7 +27,6 @@ def pheno(load_model_for_test, pheno_path):
 
 @pytest.fixture(scope='session')
 def load_model_for_test(tmp_path_factory):
-
     from pharmpy.model import Model
 
     _cache: Dict[Hashable, Model] = {}
@@ -64,14 +63,13 @@ def load_model_for_test(tmp_path_factory):
         if key not in _cache:
             _cache[key] = _parse_model()
 
-        return _cache[key].copy()
+        return _cache[key]
 
     return _load
 
 
 @pytest.fixture(scope='session')
 def load_example_model_for_test():
-
     from pharmpy.model import Model
     from pharmpy.modeling import load_example_model
 
@@ -88,23 +86,26 @@ def load_example_model_for_test():
         if key not in _cache:
             _cache[key] = _parse_model()
 
-        return _cache[key].copy()
+        return _cache[key]
 
     return _load
 
 
 @pytest.fixture(scope='session')
 def create_model_for_test(load_example_model_for_test):
-
     from io import StringIO
 
     from pharmpy.model import Model
 
     def _create(code: str, dataset: Optional[str] = None) -> Model:
         model = Model.create_model(StringIO(code))
+        datapath = model.datainfo.path
         if dataset is not None:
             # NOTE This yields a copy of the dataset through Model#copy
-            model.dataset = load_example_model_for_test(dataset).dataset
+            model = model.replace(
+                dataset=load_example_model_for_test(dataset).dataset,
+                datainfo=model.datainfo.replace(path=datapath),
+            )
         return model
 
     return _create

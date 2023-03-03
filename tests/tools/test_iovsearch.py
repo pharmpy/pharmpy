@@ -11,20 +11,19 @@ from pharmpy.workflows import Workflow
 
 
 def test_iovsearch_github_issues_976(load_model_for_test, testdata):
-
     m = load_model_for_test(testdata / 'nonmem' / 'pheno_multivariate_piecewise.mod')
     assert not m.random_variables.iov
     assert set(_get_iiv_etas_with_corresponding_iov(m)) == set()
 
-    add_iov(m, 'FA1', distribution='same-as-iiv')
+    m = add_iov(m, 'FA1', distribution='same-as-iiv')
     assert set(_get_iiv_etas_with_corresponding_iov(m)) == set(
         map(lambda rv: S(rv), m.random_variables.iiv.names)
     )
 
-    remove_iov(m, 'ETA_IOV_1_1')
+    m = remove_iov(m, 'ETA_IOV_1_1')
     assert set(_get_iiv_etas_with_corresponding_iov(m)) == {S('ETA_2')}
 
-    remove_iov(m, 'ETA_IOV_2_1')
+    m = remove_iov(m, 'ETA_IOV_2_1')
     assert not m.random_variables.iov
     assert set(_get_iiv_etas_with_corresponding_iov(m)) == set()
 
@@ -95,7 +94,6 @@ def test_validate_input_raises(
     exception,
     match,
 ):
-
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
     kwargs = {'model': model, **arguments}

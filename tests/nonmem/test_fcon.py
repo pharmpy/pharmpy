@@ -1,6 +1,6 @@
 def test_dataset(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'fcon' / 'FCON')
-    assert model.code.startswith('FILE')
+    assert model.internals.code.startswith('FILE')
 
     df = model.dataset
 

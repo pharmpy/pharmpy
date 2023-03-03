@@ -1,6 +1,7 @@
 import pytest
 import sympy
 
+from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment
 from pharmpy.plugins.nonmem.records.code_record import CodeRecord
 
@@ -64,6 +65,7 @@ def S(x):
                 (sympy.log(S('THETA(1)'), 10), True),
             ),
         ),
+        ('$PRED CL = ABS(X)', S('CL'), abs(S('X'))),
         ('$PRED CL = EXP(2)', S('CL'), sympy.exp(2)),
         ('$PRED CL = PEXP(2)', S('CL'), sympy.exp(2)),
         ('$PRED CL = PEXP(101)', S('CL'), sympy.exp(100)),
@@ -96,10 +98,13 @@ def S(x):
             sympy.Piecewise((0, S('ETA(1)') < 0), (S('ETA(1)'), True)),
         ),
         ('$PRED CL = LOG(V + 1)', S('CL'), sympy.log(S('V') + 1)),
+        ('$PRED CL = DLOG(V + 1)', S('CL'), sympy.log(S('V') + 1)),
         ('$PRED CL = LOG10(3.5 + THETA(1))', S('CL'), sympy.log(3.5 + S('THETA(1)'), 10)),
         ('$PRED CL = (SIN(X) + COS(X))', S('CL'), sympy.sin(S('X')) + sympy.cos(S('X'))),
+        ('$PRED CL = (DSIN(X) + DCOS(X))', S('CL'), sympy.sin(S('X')) + sympy.cos(S('X'))),
         ('$PRED S22 = ABS(1 + 2 + SIN(X))', S('S22'), sympy.Abs(3 + sympy.sin(S('X')))),
         ('$PRED CL = TAN(X) * EXP(Y)', S('CL'), sympy.tan(S('X')) * sympy.exp(S('Y'))),
+        ('$PRED CL = DTAN(X) * DEXP(Y)', S('CL'), sympy.tan(S('X')) * sympy.exp(S('Y'))),
         ('$PRED CL = PTAN(X) * EXP(Y)', S('CL'), sympy.tan(S('X')) * sympy.exp(S('Y'))),
         (
             '$PRED K_ = ATAN(1) - ASIN(X)/ACOS(X)',
@@ -112,17 +117,20 @@ def S(x):
             sympy.atan(1) - sympy.asin(S('X')) / sympy.acos(S('X')),
         ),
         ('$PRED CL = INT(-2.2)', S('CL'), -2),
+        ('$PRED CL = DINT(-2.2)', S('CL'), -2),
         ('$PRED cl = int(-2.2)', S('CL'), -2),
         ('$PRED CL = INT(0.2)', S('CL'), 0),
         ('$PRED CL = SQRT(X)', S('CL'), sympy.sqrt(S('X'))),
+        ('$PRED CL = DSQRT(X)', S('CL'), sympy.sqrt(S('X'))),
         (
             '$PRED CL = PSQRT(X)',
             S('CL'),
             sympy.Piecewise((0, S('X') < 0), (sympy.sqrt(S('X')), True)),
         ),
         ('$PRED CL = MOD(1, 2)', S('CL'), sympy.Mod(1, 2)),
+        ('$PRED CL = DMOD(1, 2)', S('CL'), sympy.Mod(1, 2)),
         ('$PRED CL = GAMLN(2 + X)   ;COMMENT', S('CL'), sympy.loggamma(S('X') + 2)),
-        ('$PRED C02 = PHI(2 + X)', S('C02'), (1 + sympy.erf(2 + S('X')) / sympy.sqrt(2)) / 2),
+        ('$PRED C02 = PHI(2 + X)', S('C02'), PHI(S('X') + 2)),
         ('$PRED IF (X.EQ.2) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)), (0, True))),
         ('$PRED IF (X.EQ.2)CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)), (0, True))),
         ('$PRED IF(X.EQ.2)CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)), (0, True))),
@@ -649,33 +657,34 @@ def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression,
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize(
-    'buf_original,assignment,nonmem_names,buf_expected',
+    'buf_original,assignment,buf_expected',
     [
         (
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
-            Assignment(S('Z'), S('X')),
-            {S('X'): S('THETA(2)')},
+            Assignment(S('Z'), S('THETA(2)')),
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nZ = THETA(2)\n',
         ),
         (
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\n',
-            Assignment(S('Z'), S('X')),
-            {S('X'): S('THETA(2)')},
+            Assignment(S('Z'), S('THETA(2)')),
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\nZ = THETA(2)\n',
         ),
         (
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
             Assignment(S('YWGT'), sympy.Piecewise((1, sympy.Eq(S('WGT'), S('NaN'))))),
-            {S('X'): S('THETA(2)')},
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n' 'IF (NaN.EQ.WGT) YWGT = 1\n',
+        ),
+        (
+            '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
+            Assignment(S('Z'), PHI(S('A') + S('B'))),
+            '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n' 'Z = PHI(A + B)\n',
         ),
     ],
 )
-def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
+def test_update(parser, buf_original, assignment, buf_expected):
     rec_original = parser.parse(buf_original).records[0]
 
     statements = rec_original.statements + assignment
-    statements = statements.subs(nonmem_names)
     newrec = rec_original.update_statements(statements)
 
     assert str(newrec) == buf_expected

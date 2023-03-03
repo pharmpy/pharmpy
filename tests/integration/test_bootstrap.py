@@ -12,7 +12,6 @@ def test_bootstrap(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.ext', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.lst', tmp_path)
         model = Model.create_model('pheno.mod')
-        model.datainfo = model.datainfo.replace(path=tmp_path / 'pheno.dta')
-        model.modelfit_results.ofv  # Read in results
+        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
         res = run_tool('bootstrap', model, resamples=3)
         assert len(res.parameter_estimates) == 3

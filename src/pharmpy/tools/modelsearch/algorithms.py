@@ -1,13 +1,7 @@
 from typing import Any, List
 
 from pharmpy.model import Model
-from pharmpy.modeling import (
-    add_iiv,
-    add_pk_iiv,
-    copy_model,
-    create_joint_distribution,
-    set_upper_bounds,
-)
+from pharmpy.modeling import add_iiv, add_pk_iiv, create_joint_distribution, set_upper_bounds
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
@@ -228,7 +222,7 @@ def _create_model_workflow(model_name, feat, func, iiv_strategy):
 
 def _apply_transformation(feat, func, model):
     old_params = set(model.parameters)
-    func(model)
+    model = func(model)
     if feat[0] == 'PERIPHERALS':
         new_params = set(model.parameters)
         diff = new_params - old_params
@@ -237,7 +231,7 @@ def _apply_transformation(feat, func, model):
             for param in diff
             if param.name.startswith('POP_Q') or param.name.startswith('POP_V')
         }
-        set_upper_bounds(model, peripheral_params)
+        model = set_upper_bounds(model, peripheral_params)
     return model
 
 
@@ -292,12 +286,12 @@ def _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements):
 
 
 def _copy(name, features, model):
-    model_copy = copy_model(model, name)
     features_str = ';'.join(map(key_to_str, features))
     if not model.description or model.parent_model == model.name:
-        model_copy.description = features_str
+        description = features_str
     else:
-        model_copy.description = f'{model.description};{features_str}'
+        description = f'{model.description};{features_str}'
+    model_copy = model.replace(name=name, description=description, parent_model=model.name)
     return model_copy
 
 
@@ -305,13 +299,13 @@ def _add_iiv_to_func(iiv_strategy, model):
     sset, rvs = model.statements, model.random_variables
     if iiv_strategy == 'add_diagonal' or iiv_strategy == 'fullblock':
         try:
-            add_pk_iiv(model, initial_estimate=0.01)
+            model = add_pk_iiv(model, initial_estimate=0.01)
         except ValueError as e:
             if str(e) == 'New parameter inits are not valid':
                 raise ValueError(f'{model.name}: {e} (add_pk_iiv, parent: {model.parent_model})')
         if iiv_strategy == 'fullblock':
             try:
-                create_joint_distribution(
+                model = create_joint_distribution(
                     model, individual_estimates=model.modelfit_results.individual_estimates
                 )
             except ValueError as e:
@@ -325,6 +319,6 @@ def _add_iiv_to_func(iiv_strategy, model):
         assert iiv_strategy == 'absorption_delay'
         mdt = sset.find_assignment('MDT')
         if mdt and not mdt.expression.free_symbols.intersection(rvs.free_symbols):
-            add_iiv(model, 'MDT', 'exp', initial_estimate=0.01)
+            model = add_iiv(model, 'MDT', 'exp', initial_estimate=0.01)
 
     return model

@@ -211,7 +211,6 @@ def test_runtime_different_formats(
     shutil.copy(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_real.ext')
 
     with chdir(tmp_path):
-
         with open('pheno_real.lst', 'a') as f:
             f.write(lst_file_repl)
 

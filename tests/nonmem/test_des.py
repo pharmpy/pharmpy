@@ -54,33 +54,32 @@ $SIGMA 0.1; RUV_ADD
 """
     pheno = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = create_model_for_test(code)
-    model.dataset = pheno.dataset
+    model = model.replace(dataset=pheno.dataset)
     cs = model.statements.ode_system
     assert len(cs) == 4
 
 
 def test_conversion_round_trip(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
-    add_peripheral_compartment(model)
-    add_peripheral_compartment(model)
-    set_michaelis_menten_elimination(model)
+    model = add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
+    model = set_michaelis_menten_elimination(model)
     odes = model.statements.ode_system
     central = odes.central_compartment
-    assert odes.get_flow(central, output) == parse_expr('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
+    assert odes.get_flow(central, output) == parse_expr('CLMM*KM/(V1*(KM + A_CENTRAL(t)/V1))')
 
 
 def test_des_mm(load_example_model_for_test, create_model_for_test):
     model = load_example_model_for_test('pheno')
-    add_peripheral_compartment(model)
-    add_peripheral_compartment(model)
-    set_michaelis_menten_elimination(model)
-    model.update_source()
+    model = add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
+    model = set_michaelis_menten_elimination(model)
     code = model.model_code
     dataset = model.dataset
     model = create_model_for_test(code)
-    model.dataset = dataset
+    model = model.replace(dataset=dataset)
     cs = model.statements.ode_system
     central = cs.central_compartment
     assert cs.get_flow(central, output) == sympy.simplify(
-        parse_expr('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
+        parse_expr('CLMM*KM/(V1*(KM + A_CENTRAL(t)/V1))')
     )

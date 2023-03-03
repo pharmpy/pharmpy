@@ -89,8 +89,8 @@ The functions for fixing/unfixing parameters take either a list of parameter nam
 .. pharmpy-execute::
    :hide-output:
 
-   fix_parameters(model, ['TVCL', 'TVV'])
-   unfix_parameters(model, 'TVCL')
+   model = fix_parameters(model, ['TVCL', 'TVV'])
+   model = unfix_parameters(model, 'TVCL')
 
 It is also possible to fix and unfix the parameters to a specified value or to a list of values. If parameter_names
 is None, all parameters will be transformed.
@@ -98,9 +98,9 @@ is None, all parameters will be transformed.
 .. pharmpy-execute::
    :hide-output:
 
-   fix_parameters_to(model, {'TVCL': 0, 'TVV': 1})
-   fix_parameters_to(model, {'TVCL': 0, 'TVV': 0})
-   unfix_parameters_to(model, {'TVCL': 0})
+   model = fix_parameters_to(model, {'TVCL': 0, 'TVV': 1})
+   model = fix_parameters_to(model, {'TVCL': 0, 'TVV': 0})
+   model = unfix_parameters_to(model, {'TVCL': 0})
 
 
 Add parameter
@@ -111,7 +111,7 @@ A new parameter can be added by using the name of the new parameter.
 .. pharmpy-execute::
 
    model = read_model(path / 'pheno.mod')
-   add_individual_parameter(model, 'MAT')
+   model = add_individual_parameter(model, 'MAT')
    print_model_diff(model_ref, model)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -147,7 +147,7 @@ This type of absorption can be created with:
 
 .. pharmpy-execute::
 
-    set_bolus_absorption(model)
+    model = set_bolus_absorption(model)
     print_model_diff(model_ref, model)
 
 
@@ -172,7 +172,7 @@ See :py:func:`pharmpy.modeling.set_zero_order_absorption`.
 .. pharmpy-execute::
 
    from pharmpy.modeling import set_zero_order_absorption
-   set_zero_order_absorption(model)
+   model = set_zero_order_absorption(model)
    print_model_diff(model_ref, model)
 
 First order
@@ -197,7 +197,7 @@ See :py:func:`pharmpy.modeling.set_first_order_absorption`.
 .. pharmpy-execute::
 
    from pharmpy.modeling import set_first_order_absorption
-   set_first_order_absorption(model)
+   model = set_first_order_absorption(model)
    print_model_diff(model_ref, model)
 
 Sequential zero-order then first-order
@@ -222,7 +222,7 @@ See :py:func:`pharmpy.modeling.set_seq_zo_fo_absorption`.
 .. pharmpy-execute::
 
    from pharmpy.modeling import set_seq_zo_fo_absorption
-   set_seq_zo_fo_absorption(model)
+   model = set_seq_zo_fo_absorption(model)
    print_model_diff(model_ref, model)
 
 Absorption delay
@@ -238,7 +238,7 @@ Transit compartments can be added or removed using the :py:func:`pharmpy.modelin
    model = read_model(path / "pheno.mod")
    from pharmpy.modeling import set_transit_compartments
 
-   set_transit_compartments(model, 4)
+   model = set_transit_compartments(model, 4)
    print_model_diff(model_ref, model)
 
 
@@ -255,7 +255,7 @@ Lag time may be added to a dose compartment of a model.
 .. pharmpy-execute::
 
    from pharmpy.modeling import add_lag_time
-   add_lag_time(model)
+   model = add_lag_time(model)
    print_model_diff(model_ref, model)
 
 Similarly, to remove lag time:
@@ -263,7 +263,7 @@ Similarly, to remove lag time:
 .. pharmpy-execute::
 
    from pharmpy.modeling import remove_lag_time
-   remove_lag_time(model)
+   model = remove_lag_time(model)
    print_model_diff(model_ref, model)
 
 Elimination rate
@@ -279,7 +279,7 @@ First-order elimination
 
    from pharmpy.modeling import set_first_order_elimination
    model = read_model(path / "pheno.mod")
-   set_first_order_elimination(model)
+   model = set_first_order_elimination(model)
    print_model_diff(model_ref, model)
 
 See :py:func:`pharmpy.modeling.set_first_order_elimination`.
@@ -291,7 +291,7 @@ Zero-order elimination
 
    from pharmpy.modeling import set_zero_order_elimination
    model = read_model(path / "pheno.mod")
-   set_zero_order_elimination(model)
+   model = set_zero_order_elimination(model)
    print_model_diff(model_ref, model)
 
 See :py:func:`pharmpy.modeling.set_zero_order_elimination`.
@@ -303,7 +303,7 @@ Michaelis-Menten elimination
 
    from pharmpy.modeling import set_michaelis_menten_elimination
    model = read_model(path / "pheno.mod")
-   set_michaelis_menten_elimination(model)
+   model = set_michaelis_menten_elimination(model)
    print_model_diff(model_ref, model)
 
 See :py:func:`pharmpy.modeling.set_michaelis_menten_elimination`.
@@ -315,7 +315,7 @@ Mixed Michaelis-Menten + First-Order elimination
 
    from pharmpy.modeling import set_mixed_mm_fo_elimination
    model = read_model(path / "pheno.mod")
-   set_mixed_mm_fo_elimination(model)
+   model = set_mixed_mm_fo_elimination(model)
    print_model_diff(model_ref, model)
 
 See :py:func:`pharmpy.modeling.set_mixed_mm_fo_elimination`.
@@ -336,7 +336,7 @@ Adding a peripheral compartment.
 .. pharmpy-execute::
 
    from pharmpy.modeling import add_peripheral_compartment
-   add_peripheral_compartment(model)
+   model = add_peripheral_compartment(model)
    print_model_diff(model_ref, model)
 
 
@@ -348,9 +348,7 @@ Removing a peripheral compartment.
 .. pharmpy-execute::
 
    from pharmpy.modeling import remove_peripheral_compartment
-   remove_peripheral_compartment(model)
-   remove_ref = model.copy()
-   print_model_diff(remove_ref, model)
+   model = remove_peripheral_compartment(model)
 
 .. _cov_effects:
 
@@ -363,9 +361,7 @@ As an alternative to adding or removing one peripheral compartment a certain num
 .. pharmpy-execute::
 
    from pharmpy.modeling import set_peripheral_compartments
-   set_peripheral_compartments(model, 2)
-   remove_ref = model.copy()
-   print_model_diff(remove_ref, model)
+   model = set_peripheral_compartments(model, 2)
 
 
 
@@ -384,7 +380,7 @@ Covariate effects may be applied to a model.
    :hide-output:
 
    from pharmpy.modeling import add_covariate_effect
-   add_covariate_effect(model, 'CL', 'WGT', 'pow', operation='*')
+   model = add_covariate_effect(model, 'CL', 'WGT', 'pow', operation='*')
 
 Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the name of the
 covariate, and *pow* (power function) is the effect you want to apply. The effect can be either
@@ -406,7 +402,7 @@ Pharmpy also supports user formatted covariate effects.
 
    model = read_model(path / "pheno.mod")
    user_effect = '((cov/std) - median) * theta'
-   add_covariate_effect(model, 'CL', 'WGT', user_effect, operation='*')
+   model = add_covariate_effect(model, 'CL', 'WGT', user_effect, operation='*')
 
 The covariate is denoted as *cov*, the theta as *theta* (or, if multiple thetas: *theta1*, *theta2* etc.), and the mean,
 median, and standard deviation as *mean*, *median*, and *std* respectively. This is in order for
@@ -434,7 +430,7 @@ To apply a boxcox transformation, input a list of the etas of interest. See
 .. pharmpy-execute::
 
    from pharmpy.modeling import transform_etas_boxcox
-   transform_etas_boxcox(model, ['ETA_1'])
+   model = transform_etas_boxcox(model, ['ETA_1'])
    print_model_diff(model_ref, model)
 
 This can be done for one or multiple etas. The new model will have new statements where *ETAB1* is a boxcox
@@ -445,7 +441,7 @@ If no list is provided, all etas will be updated.
 .. pharmpy-execute::
 
    model = read_model(path / "pheno.mod")
-   transform_etas_boxcox(model)
+   model = transform_etas_boxcox(model)
    print_model_diff(model_ref, model)
 
 Approximate t-distribution
@@ -459,7 +455,7 @@ is a list of etas, and if no list is provided all etas will be transformed. See
 
    model = read_model(path / "pheno.mod")
    from pharmpy.modeling import transform_etas_tdist
-   transform_etas_tdist(model, ['ETA_1'])
+   model = transform_etas_tdist(model, ['ETA_1'])
    print_model_diff(model_ref, model)
 
 John Draper
@@ -472,7 +468,7 @@ provided all etas will be transformed. See :py:func:`pharmpy.modeling.transform_
 
    model = read_model(path / "pheno.mod")
    from pharmpy.modeling import transform_etas_john_draper
-   transform_etas_john_draper(model, ['ETA_1'])
+   model = transform_etas_john_draper(model, ['ETA_1'])
    print_model_diff(model_ref, model)
 
 ~~~~~~~~~~~~~~~
@@ -493,7 +489,7 @@ IIVs may be added to a model.
    :hide-output:
 
    from pharmpy.modeling import add_iiv
-   add_iiv(model, 'S1', 'exp', operation='*')
+   model = add_iiv(model, 'S1', 'exp', operation='*')
 
 In this example, *S1* is the parameter to add the IIV to, *exp* is the effect on the new eta (see
 :py:class:`pharmpy.modeling.add_iiv` for available templates and how initial estimates are chosen). The
@@ -509,7 +505,7 @@ already defined by the effect.
 .. pharmpy-execute::
 
    model = read_model(path / "pheno.mod")
-   add_iiv(model, 'S1', 'prop')
+   model = add_iiv(model, 'S1', 'prop')
    print_model_diff(model_ref, model)
 
 A list of parameter names can also be used as input. In that case, the effect and the operation (if not omitted) must
@@ -518,7 +514,7 @@ be either a string (in that case, all new IIVs will have those settings) or be a
 .. pharmpy-execute::
 
    model = read_model(path / "pheno.mod")
-   add_iiv(model, ['V', 'S1'], 'exp')
+   model = add_iiv(model, ['V', 'S1'], 'exp')
    print_model_diff(model_ref, model)
 
 
@@ -530,7 +526,7 @@ specified effects.
 
    model = read_model(path / "pheno.mod")
    user_effect = 'eta_new**2'
-   add_iiv(model, 'S1', user_effect, operation='*')
+   model = add_iiv(model, 'S1', user_effect, operation='*')
 
 The new etas need to be denoted as *eta_new*.
 
@@ -544,7 +540,7 @@ example, if you want to be able to use the NONMEM name.
 .. pharmpy-execute::
 
    model = read_model(path / "pheno.mod")
-   add_iiv(model, 'S1', 'exp', eta_names='ETA_3')
+   model = add_iiv(model, 'S1', 'exp', eta_names='ETA_3')
    model.random_variables
 
 
@@ -561,7 +557,9 @@ Adding IOVs
    :hide-code:
 
    import numpy as np
-   model.dataset['FA1'] = np.random.randint(0, 2, len(model.dataset.index))
+   df = model.dataset.copy()
+   df['FA1'] = np.random.randint(0, 2, len(model.dataset.index))
+   model = model.replace(dataset=df)
 
 Similarly, you can also add IOVs to your model.
 
@@ -569,7 +567,7 @@ Similarly, you can also add IOVs to your model.
    :hide-output:
 
    from pharmpy.modeling import add_iov
-   add_iov(model, 'FA1', ['ETA_1'])
+   model = add_iov(model, 'FA1', ['ETA_1'])
 
 In this example, *FA1* is the name of the occasion column, and the etas on which you wish to add the IOV on are
 provided as a list. See :py:class:`pharmpy.modeling.add_iov` for information on how initial estimates are chosen.
@@ -590,11 +588,12 @@ supported.
    :hide-output:
    :hide-code:
 
-   model.dataset['FA1'] = np.random.randint(0, 2, len(model.dataset.index))
+   df['FA1'] = np.random.randint(0, 2, len(model.dataset.index))
+   model = model.replace(dataset=df)
 
 .. pharmpy-execute::
 
-   add_iov(model, 'FA1', ['CL', 'ETA_2'])
+   model = add_iov(model, 'FA1', ['CL', 'ETA_2'])
    print_model_diff(model_ref, model)
 
 .. _add_iov_custom_names:
@@ -615,11 +614,13 @@ the eta_names argument. For example, if you want to be able to use the NONMEM na
    :hide-output:
    :hide-code:
 
-   model.dataset['FA1'] = np.random.randint(0, 2, len(model.dataset.index))
+   df = model.dataset.copy()
+   df['FA1'] = np.random.randint(0, 2, len(model.dataset.index))
+   model = model.replace(dataset=df)
 
 .. pharmpy-execute::
 
-   add_iov(model, 'FA1', ['ETA_1'], eta_names=['ETA_3', 'ETA_4'])
+   model = add_iov(model, 'FA1', ['ETA_1'], eta_names=['ETA_3', 'ETA_4'])
    model.random_variables
 
 
@@ -641,7 +642,7 @@ Etas can also be removed by providing a list of etas and/or name of parameters t
 .. pharmpy-execute::
 
    from pharmpy.modeling import remove_iiv
-   remove_iiv(model, ['ETA_1', 'V'])
+   model = remove_iiv(model, ['ETA_1', 'V'])
    print_model_diff(model_ref, model)
 
 If you want to remove all etas, leave argument empty.
@@ -650,7 +651,7 @@ If you want to remove all etas, leave argument empty.
 
    model = read_model(path / "pheno.mod")
    from pharmpy.modeling import remove_iiv
-   remove_iiv(model)
+   model = remove_iiv(model)
    print_model_diff(model_ref, model)
 
 Remove IOVs
@@ -671,7 +672,7 @@ You can remove IOVs as well, however all IOV omegas will be removed. See
 
    model = read_model(path / "pheno.mod")
    from pharmpy.modeling import remove_iov
-   remove_iov(model)
+   model = remove_iov(model)
 
 ~~~~~~~~~~~~~~~
 The error model
@@ -694,7 +695,7 @@ The error model can be removed.
 
    from pharmpy.modeling import remove_error_model
 
-   remove_error_model(model)
+   model = remove_error_model(model)
    print_model_diff(model_ref, model)
 
 Setting an additive error model
@@ -721,7 +722,7 @@ To set an additive error model:
 
    from pharmpy.modeling import set_additive_error_model
 
-   set_additive_error_model(model)
+   model = set_additive_error_model(model)
    model.statements.find_assignment('Y')
 
 .. pharmpy-execute::
@@ -736,7 +737,7 @@ To set an additive error model with log transformed data:
    from pharmpy.modeling import set_additive_error_model
 
    model = read_model(path / "pheno.mod")
-   set_additive_error_model(model, data_trans='log(Y)')
+   model = set_additive_error_model(model, data_trans='log(Y)')
    print_model_diff(model_ref, model)
 
 or set the `data_transformation` attribute on the model.
@@ -766,7 +767,7 @@ To set a proportional error model:
 
    from pharmpy.modeling import set_proportional_error_model
 
-   set_proportional_error_model(model)
+   model = set_proportional_error_model(model)
    model.statements.find_assignment('Y')
 
 .. pharmpy-execute::
@@ -780,7 +781,7 @@ To set a proportional error model with log transformed data:
    from pharmpy.modeling import set_proportional_error_model
 
    model = read_model(path / "pheno.mod")
-   set_proportional_error_model(model, data_trans='log(Y)')
+   model = set_proportional_error_model(model, data_trans='log(Y)')
    print_model_diff(model_ref, model)
 
 
@@ -809,7 +810,7 @@ To set a combined error model:
 
    from pharmpy.modeling import set_combined_error_model
 
-   set_combined_error_model(model)
+   model = set_combined_error_model(model)
    model.statements.find_assignment('Y')
 
 .. pharmpy-execute::
@@ -823,7 +824,7 @@ To set a combined error model with log transformed data:
    from pharmpy.modeling import set_combined_error_model
 
    model = read_model(path / "pheno.mod")
-   set_combined_error_model(model, data_trans='log(Y)')
+   model = set_combined_error_model(model, data_trans='log(Y)')
    print_model_diff(model_ref, model)
 
 
@@ -843,7 +844,7 @@ IIVs can be added to RUVs by multiplying epsilons with an exponential new eta.
 
    from pharmpy.modeling import set_iiv_on_ruv
 
-   set_iiv_on_ruv(model, ['EPS_1'])
+   model = set_iiv_on_ruv(model, ['EPS_1'])
    print_model_diff(model_ref, model)
 
 Input a list of the epsilons you wish to transform, leave argument empty if all epsilons should be
@@ -852,7 +853,7 @@ transformed.
 .. pharmpy-execute::
 
    model = read_model(path / "pheno.mod")
-   set_iiv_on_ruv(model)
+   model = set_iiv_on_ruv(model)
    print_model_diff(model_ref, model)
 
 See :py:func:`pharmpy.modeling.set_iiv_on_ruv`.
@@ -862,7 +863,7 @@ Custom eta names are supported the same way as when :ref:`adding IOVs<add_iov_cu
 .. pharmpy-execute::
 
    model = read_model(path / "pheno.mod")
-   set_iiv_on_ruv(model, ['EPS_1'], eta_names=['ETA_3'])
+   model = set_iiv_on_ruv(model, ['EPS_1'], eta_names=['ETA_3'])
    model.random_variables
 
 
@@ -873,7 +874,7 @@ Power effects on RUVs
 
    from pharmpy.modeling import set_power_on_ruv
    model = read_model(path / "pheno.mod")
-   set_power_on_ruv(model, ['EPS(1)'])
+   model = set_power_on_ruv(model, ['EPS(1)'])
    print_model_diff(model_ref, model)
 
 A power effect will be applied to all provided epsilons, leave argument empty if all
@@ -891,7 +892,7 @@ correspondng epsilon with a theta. This way the theta will represent the standar
 
     from pharmpy.modeling import use_thetas_for_error_stdev
     model = read_model(path / "pheno.mod")
-    use_thetas_for_error_stdev(model)
+    model = use_thetas_for_error_stdev(model)
     print_model_diff(model_ref, model)
 
 Weighted error model
@@ -901,7 +902,7 @@ Weighted error model
 
     from pharmpy.modeling import set_weighted_error_model
     model = read_model(path / "pheno.mod")
-    set_weighted_error_model(model)
+    model = set_weighted_error_model(model)
     print_model_diff(model_ref, model)
 
 dTBS error model
@@ -962,11 +963,10 @@ the model:
 
 .. pharmpy-execute::
 
-   from pharmpy.modeling import copy_model, create_joint_distribution
+   from pharmpy.modeling import create_joint_distribution
 
-   create_joint_distribution(model)
-   model_block = copy_model(model)
-   print(model)
+   model_block = create_joint_distribution(model)
+   print(model_block)
 
 Provide etas as a list.
 
@@ -974,7 +974,7 @@ Provide etas as a list.
 
    from pharmpy.modeling import split_joint_distribution
 
-   split_joint_distribution(model, ['ETA_1'])
+   model = split_joint_distribution(model, ['ETA_1'])
    print_model_diff(model_block, model)
 
 If no list of etas is provided, all block structures will be split.

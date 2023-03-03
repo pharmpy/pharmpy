@@ -19,7 +19,7 @@ def test_run_tool_ruvsearch_resume_flag(tmp_path, testdata):
         # FIXME: temporary workaround so that read in parameter estimates use the Pharmpy name
         with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
             model = Model.create_model('pheno_real.mod')
-            model.datainfo = model.datainfo.replace(path=tmp_path / 'pheno.dta')
+            model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
             path = 'x'
             for i, resume in enumerate([False, False, True]):
                 try:
@@ -49,10 +49,12 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
         # FIXME: temporary workaround so that read in parameter estimates use the Pharmpy name
         with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
             model_start = Model.create_model('mox2.mod')
-            model_start.datainfo = model_start.datainfo.replace(
-                path=tmp_path / 'mox_simulated_normal.csv'
+            model_start = model_start.replace(
+                datainfo=model_start.datainfo.replace(path=tmp_path / 'mox_simulated_normal.csv')
             )
-            fit(model_start)
+            start_res = fit(model_start)
+            # FIXME: Remove
+            model_start = model_start.replace(modelfit_results=start_res)
 
             path = 'x'
             for i, resume in enumerate([False, False, True]):
@@ -101,11 +103,12 @@ def test_run_tool_modelsearch_resume_flag(
     with chdir(tmp_path):
         with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
             model_start = Model.create_model('mox2.mod')
-            model_start.datainfo = model_start.datainfo.replace(
-                path=tmp_path / 'mox_simulated_normal.csv'
+            model_start = model_start.replace(
+                datainfo=model_start.datainfo.replace(path=tmp_path / 'mox_simulated_normal.csv')
             )
 
-            fit(model_start)
+            start_res = fit(model_start)
+            model_start = model_start.replace(modelfit_results=start_res)
 
             path = 'x'
             for i, resume in enumerate([False, False, True]):
@@ -162,7 +165,7 @@ def test_resume_tool_ruvsearch(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
 
         model = Model.create_model('pheno_real.mod')
-        model.datainfo = model.datainfo.replace(path=tmp_path / 'pheno.dta')
+        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
         path = 'x'
         run_tool_res = run_tool(
             'ruvsearch',

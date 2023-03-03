@@ -1,10 +1,15 @@
+"""
+:meta private:
+"""
 from pathlib import Path
+from typing import Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import (
     Assignment,
+    Bolus,
     ColumnInfo,
     Compartment,
     CompartmentalSystem,
@@ -12,6 +17,7 @@ from pharmpy.model import (
     DataInfo,
     EstimationStep,
     EstimationSteps,
+    Infusion,
     Model,
     NormalDistribution,
     Parameter,
@@ -20,21 +26,56 @@ from pharmpy.model import (
     Statements,
     output,
 )
-from pharmpy.modeling import (
-    add_iiv,
-    create_joint_distribution,
-    set_first_order_absorption,
-    set_initial_estimates,
-    set_proportional_error_model,
-)
-from pharmpy.modeling.data import read_dataset_from_datainfo
-from pharmpy.plugins.nonmem.advan import dosing
+
+from .block_rvs import create_joint_distribution
+from .data import read_dataset_from_datainfo
+from .error import set_proportional_error_model
+from .eta_additions import add_iiv
+from .odes import set_first_order_absorption
+from .parameters import set_initial_estimates
 
 
-def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=1.0, mat_init=0.1):
-    dataset_path = Path(dataset_path)
-    di = _create_default_datainfo(dataset_path)
-    df = read_dataset_from_datainfo(di, datatype='nonmem')
+def create_basic_pk_model(
+    modeltype: str,
+    dataset_path: Optional[str] = None,
+    cl_init: float = 0.01,
+    vc_init: float = 1.0,
+    mat_init: float = 0.1,
+) -> Model:
+    """
+    Creates a basic pk model of given type
+
+    Parameters
+    ----------
+    modeltype : str
+        Type of PK model to create. Supported are 'oral' and 'iv'
+    dataset_path : str
+        Optional path to a dataset
+    cl_init : float
+        Initial estimate of the clearance parameter
+    vc_init : float
+        Initial estimate of the central volume parameter
+    mat_init : float
+        Initial estimate of the mean absorption time parameter (if applicable)
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = create_basic_pk_model('oral')
+
+    """
+    if dataset_path is not None:
+        dataset_path = Path(dataset_path)
+        di = _create_default_datainfo(dataset_path)
+        df = read_dataset_from_datainfo(di, datatype='nonmem')
+    else:
+        di = DataInfo()
+        df = None
 
     pop_cl = Parameter('POP_CL', cl_init, lower=0)
     pop_vc = Parameter('POP_VC', vc_init, lower=0)
@@ -95,10 +136,11 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
         if model.modelfit_results is not None
         else None,
     )
-    if modeltype == 'pk_oral':
+    if modeltype == 'oral':
         model = set_first_order_absorption(model)
         model = set_initial_estimates(model, {'POP_MAT': mat_init})
         model = add_iiv(model, list_of_parameters='MAT', expression='exp', initial_estimate=0.1)
+
     return model
 
 
@@ -138,3 +180,22 @@ def _create_default_datainfo(path):
             column_info.append(info)
         di = DataInfo.create(column_info, path=path, separator=',')
     return di
+
+
+def dosing(di: DataInfo, dataset, dose_comp: int):
+    # FIXME: Copied from plugins.nonmem.advan
+    if di is None:
+        return Bolus(sympy.Symbol('AMT'))
+
+    if 'RATE' not in di.names or di['RATE'].drop:
+        return Bolus(sympy.Symbol('AMT'))
+
+    df = dataset
+    if (df['RATE'] == 0).all():
+        return Bolus(sympy.Symbol('AMT'))
+    elif (df['RATE'] == -1).any():
+        return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol(f'R{dose_comp}'))
+    elif (df['RATE'] == -2).any():
+        return Infusion(sympy.Symbol('AMT'), duration=sympy.Symbol(f'D{dose_comp}'))
+    else:
+        return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol('RATE'))

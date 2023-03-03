@@ -30,7 +30,7 @@ def test_ignore_with_synonym(create_model_for_test, pheno_data):
     )
     di = model.datainfo
     col = di['DV'].replace(name='CONC')
-    model.datainfo = di[0:5] + col + di[6:]
+    model = model.replace(datainfo=di[0:5] + col + di[6:])
     df = model.dataset
     assert len(df) == 155
     model = create_model_for_test(
@@ -40,7 +40,7 @@ def test_ignore_with_synonym(create_model_for_test, pheno_data):
     )
     di = model.datainfo
     col = di['DV'].replace(name='CONC')
-    model.datainfo = di[0:5] + col + di[6:]
+    model = model.replace(datainfo=di[0:5] + col + di[6:])
     df = model.dataset
     assert len(df) == 155
 
@@ -53,5 +53,4 @@ def test_idv_with_synonym(create_model_for_test, pheno_data):
     )
     di = model.datainfo
     col = di['TIME'].replace(name='TAD')
-    model.datainfo = di[0:1] + col + di[2:]
-    model.dataset
+    model = model.replace(datainfo=di[0:1] + col + di[2:])

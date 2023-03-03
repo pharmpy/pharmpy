@@ -6,7 +6,7 @@ import re
 import warnings
 from io import StringIO
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 import pharmpy.config as config
 from pharmpy.deps import sympy
@@ -105,7 +105,7 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Example
     -------
@@ -131,8 +131,8 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
     if not force and path.exists():
         raise FileExistsError(f'File {path} already exists.')
     if new_name:
-        model.name = new_name
-    model.update_source(path=path, force=force)
+        model = model.replace(name=new_name)
+    model = model.write_files(path=path, force=force)
     if not force and path.exists():
         raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
     with open(path, 'w', encoding='latin-1') as fp:
@@ -170,32 +170,21 @@ def convert_model(model: Model, to_format: str):
     # FIXME: Use code that can discover plugins below
     if to_format == 'generic':
         new = Model.create_model()
-        new.parameters = model.parameters
-        new.random_variables = model.random_variables
-        new.statements = model.statements
-        new.dataset = model.dataset
-        new.datainfo = model.datainfo
-        new.name = model.name
-        new.description = model.description
         new = new.replace(
+            dataset=model.dataset,
+            datainfo=model.datainfo,
+            name=model.name,
+            parameters=model.parameters,
+            statements=model.statements,
+            random_variables=model.random_variables,
             estimation_steps=model.estimation_steps,
-            dependent_variable=model.dependent_variable,
+            dependent_variables=model.dependent_variables,
             observation_transformation=model.observation_transformation,
+            description=model.description,
+            parent_model=model.name,
+            filename_extension=model.filename_extension,
+            initial_individual_estimates=model.initial_individual_estimates,
         )
-        new.parent_model = model.name
-        try:
-            new.filename_extension = model.filename_extension
-        except AttributeError:
-            pass
-        try:
-            if model.initial_individual_estimates is not None:
-                new.initial_individual_estimates = model.initial_individual_estimates.copy()
-        except AttributeError:
-            pass
-        try:
-            new.database = model.database
-        except AttributeError:
-            pass
         return new
     elif to_format == 'nlmixr':
         import pharmpy.plugins.nlmixr.model as nlmixr
@@ -282,34 +271,6 @@ def print_model_code(model: Model):
     print(model.model_code)
 
 
-def copy_model(model: Model, name: Optional[str] = None):
-    """Copies model to a new model object
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model
-    name : str
-        Optional new name of model
-
-    Returns
-    -------
-    Model
-        A copy of the input model
-
-    Example
-    -------
-    >>> from pharmpy.modeling import copy_model, load_example_model
-    >>> model = load_example_model("pheno")
-    >>> model_copy = copy_model(model, "pheno2")
-
-    """
-    new = model.copy()
-    if name is not None:
-        new.name = name
-    return new
-
-
 def set_name(model: Model, new_name: str):
     """Set name of model object
 
@@ -323,7 +284,7 @@ def set_name(model: Model, new_name: str):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Example
     -------
@@ -331,13 +292,12 @@ def set_name(model: Model, new_name: str):
     >>> model = load_example_model("pheno")
     >>> model.name
     'pheno'
-    >>> set_name(model, "run2")  # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_name(model, "run2")
     >>> model.name
     'run2'
 
     """
-    model.name = new_name
+    model = model.replace(name=new_name)
     return model
 
 
@@ -358,15 +318,14 @@ def bump_model_number(model: Model, path: Union[str, Path] = None):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import bump_model_number, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model.name = "run2"
-    >>> bump_model_number(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = model.replace(name="run2")
+    >>> model = bump_model_number(model)
     >>> model.name
     'run3'
     """
@@ -385,7 +344,7 @@ def bump_model_number(model: Model, path: Union[str, Path] = None):
                 new_path = (path / new_name).with_suffix(model.filename_extension)
                 if not new_path.exists():
                     break
-        model.name = new_name
+        model = model.replace(name=new_name)
     return model
 
 
@@ -491,7 +450,9 @@ def get_model_covariates(model: Model, strings: bool = False):
     else:
         ode_deps = set()
 
-    y = model.statements.find_assignment(model.dependent_variable)
+    # FIXME: This should be handled for all DVs
+    first_dv = list(model.dependent_variables.keys())[0]
+    y = model.statements.find_assignment(first_dv)
     y_deps = model.statements.error.dependencies(y)
 
     covs = datasymbs.intersection(ode_deps | y_deps)
@@ -591,7 +552,7 @@ def remove_unused_parameters_and_rvs(model: Model):
     Returns
     -------
     Model
-        Reference to same model object
+        Pharmpy model object
     """
     symbols = model.statements.free_symbols
 
@@ -617,15 +578,15 @@ def remove_unused_parameters_and_rvs(model: Model):
             new_dists.append(dist)
 
     new_rvs = RandomVariables(tuple(new_dists), rvs._eta_levels, rvs._epsilon_levels)
-    model.random_variables = new_rvs
 
     new_params = []
     for p in model.parameters:
         symb = p.symbol
         if symb in symbols or symb in new_rvs.free_symbols or (p.fix and p.init == 0):
             new_params.append(p)
-    model.parameters = Parameters.create(new_params)
-    return model
+
+    model = model.replace(random_variables=new_rvs, parameters=Parameters.create(new_params))
+    return model.update_source()
 
 
 def rename_symbols(
@@ -645,7 +606,7 @@ def rename_symbols(
     Returns
     -------
     Model
-        Reference to same model object
+        Pharmpy model object
     """
     d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in new_names.items()}
 
@@ -658,9 +619,11 @@ def rename_symbols(
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters.create(new)
 
-    model.statements = model.statements.subs(d)
-    model.random_variables = model.random_variables.subs(d)
-    return model
+    model = model.replace(
+        parameters=Parameters.create(new),
+        statements=model.statements.subs(d),
+        random_variables=model.random_variables.subs(d),
+    )
+    return model.update_source()
     # FIXME: Only handles parameters, statements and random_variables and no clashes and circular renaming

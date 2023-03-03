@@ -622,7 +622,9 @@ def calculate_bic(model: Model, likelihood: float, type: Optional[str] = None):
                         symbols = {p.symbol for p in parameters if p.symbol in expr.free_symbols}
                         random_thetas.update(symbols)
                         break
-        yexpr = model.statements.after_odes.full_expression(model.dependent_variable)
+        # FIXME: handle other DVs?
+        dv = list(model.dependent_variables.keys())[0]
+        yexpr = model.statements.after_odes.full_expression(dv)
         for eta in _random_etas(model).names:
             if sympy.Symbol(eta) in yexpr.free_symbols:
                 symbols = {p.symbol for p in parameters if p.symbol in yexpr.free_symbols}

@@ -659,6 +659,8 @@ def parse_dataset(
     parse_columns: Tuple[str, ...] = (),
 ):
     data_records = control_stream.get_records('DATA')
+    if not data_records:
+        return None
     ignore_character = data_records[0].ignore_character
     null_value = data_records[0].null_value
     (colnames, drop, replacements, _) = parse_column_info(control_stream)

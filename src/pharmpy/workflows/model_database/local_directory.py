@@ -43,7 +43,8 @@ def get_modelfit_results(model, path):
         assert isinstance(model, nlmixr.Model)
         res = nlmixr.parse_modelfit_results(model, path)
 
-    model.modelfit_results = res
+    model = model.replace(modelfit_results=res)
+    return model
 
 
 class LocalDirectoryDatabase(NonTransactionalModelDatabase):
@@ -104,7 +105,7 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
             model = Model.create_model(path)
         except FileNotFoundError:
             raise KeyError('Model cannot be found in database')
-        get_modelfit_results(model, self.path)
+        model = get_modelfit_results(model, self.path)
         return model
 
     def retrieve_modelfit_results(self, name):
@@ -202,8 +203,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
     def store_model(self):
         from pharmpy.modeling import read_dataset_from_datainfo, write_csv, write_model
 
-        model = self.model.copy()
-        model.update_datainfo()
+        model = self.model
         datasets_path = self.db.path / DIRECTORY_DATASETS
 
         # NOTE Get the hash of the dataset and list filenames with contents
@@ -223,7 +223,8 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
                 df = read_dataset_from_datainfo(curdi)
                 if df.equals(model.dataset):
                     # NOTE Update datainfo path
-                    model.datainfo = model.datainfo.replace(path=curdi.path)
+                    datainfo = model.datainfo.replace(path=curdi.path)
+                    model = model.replace(datainfo=datainfo)
                     break
         else:
             model_filename = model.name + '.csv'
@@ -233,9 +234,9 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             index_path.touch()
 
             data_path = path_absolute(datasets_path / model_filename)
-            model.datainfo = model.datainfo.replace(path=data_path)
-
-            write_csv(model, path=data_path, force=True)
+            datainfo = model.datainfo.replace(path=data_path)
+            model = model.replace(datainfo=datainfo)
+            model = write_csv(model, path=data_path, force=True)
 
             # NOTE Write datainfo last so that we are "sure" dataset is there
             # if datainfo is there
@@ -245,6 +246,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
         model_path = self.db.path / model.name
         model_path.mkdir(exist_ok=True)
         write_model(model, str(model_path / (model.name + model.filename_extension)), force=True)
+        return model
 
     def store_local_file(self, path, new_filename=None):
         if Path(path).is_file():
@@ -312,7 +314,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
                 f' Looked up {", ".join(map(lambda e: f"`{e.filename}`", errors))}.'
             )
 
-        get_modelfit_results(model, path)
+        model = get_modelfit_results(model, path)
         return model
 
     def retrieve_modelfit_results(self):

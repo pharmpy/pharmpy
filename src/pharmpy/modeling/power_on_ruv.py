@@ -44,14 +44,13 @@ def set_power_on_ruv(
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_power_on_ruv(model)   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_power_on_ruv(model)
     >>> model.statements.find_assignment("Y")
               power₁
     Y = EPS₁⋅F       + F
@@ -105,16 +104,17 @@ def set_power_on_ruv(
         if alternative:  # To avoid getting W*EPS*F**THETA
             sset = sset.subs({sympy.Symbol(e) * alternative: sympy.Symbol(e)})
         sset = sset.subs({sympy.Symbol(e): ipred ** sympy.Symbol(theta.name) * sympy.Symbol(e)})
-        model.statements = sset
+        model = model.replace(statements=sset)
 
-    model.parameters = Parameters.create(pset)
-    model.statements = sset
+    model = model.replace(parameters=Parameters.create(pset), statements=sset)
 
-    return model
+    return model.update_source()
 
 
 def get_ipred(model):
-    expr = model.statements.after_odes.full_expression(model.dependent_variable)
+    # FIXME: handle other DVs?
+    dv = list(model.dependent_variables.keys())[0]
+    expr = model.statements.after_odes.full_expression(dv)
     ipred = subs(
         expr, {sympy.Symbol(rv): 0 for rv in model.random_variables.names}, simultaneous=True
     )

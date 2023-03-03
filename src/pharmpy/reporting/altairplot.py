@@ -295,7 +295,6 @@ def builder_inited(app):
 
 
 def setup(app):
-
     # These default URLs can be changed in conf.py; see setup() below.
     VEGA_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega@{}".format(alt.VEGA_VERSION)
     VEGALITE_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega-lite@{}".format(

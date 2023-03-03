@@ -349,12 +349,11 @@ def test_remove_covariate_effect(load_model_for_test, testdata, model_path, effe
         assert has_covariate_effect(model, effect[0], effect[1])
 
     for effect in effects:
-        remove_covariate_effect(model, *effect)
+        model = remove_covariate_effect(model, *effect)
 
     for effect in effects:
         assert not has_covariate_effect(model, effect[0], effect[1])
 
-    model.update_source()
     error_record_after = ''.join(map(str, model.internals.control_stream.get_records('ERROR')))
 
     original_model = load_model_for_test(testdata.joinpath(*model_path))

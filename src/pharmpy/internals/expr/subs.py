@@ -58,7 +58,6 @@ def _subs_atoms_simultaneously(
     output = [[], []]
 
     while stack:
-
         e = stack[-1]
         old_args = e.args
 

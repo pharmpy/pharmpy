@@ -5,7 +5,7 @@ from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.set.partitions import partitions
 from pharmpy.internals.set.subsets import non_empty_subsets
 from pharmpy.model import Model, RandomVariables
-from pharmpy.modeling import copy_model, remove_iiv
+from pharmpy.modeling import remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.results import mfr
@@ -16,7 +16,7 @@ from pharmpy.workflows import Task, Workflow
 def brute_force_no_of_etas(base_model, index_offset=0):
     wf = Workflow()
 
-    base_model.description = create_description(base_model)
+    base_model = base_model.replace(description=create_description(base_model))
 
     iivs = base_model.random_variables.iiv
 
@@ -42,7 +42,7 @@ def brute_force_no_of_etas(base_model, index_offset=0):
 def brute_force_block_structure(base_model, index_offset=0):
     wf = Workflow()
 
-    base_model.description = create_description(base_model)
+    base_model = base_model.replace(description=create_description(base_model))
 
     iivs = base_model.random_variables.iiv
     model_no = 1 + index_offset
@@ -126,27 +126,27 @@ def create_description(model: Model, iov: bool = False) -> str:
 
 
 def remove_eta(etas, model):
-    remove_iiv(model, etas)
+    model = remove_iiv(model, etas)
     return model
 
 
 def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model):
     for part in partition:
         if len(part) == 1:
-            split_joint_distribution(model, part)
+            model = split_joint_distribution(model, part)
         else:
-            create_joint_distribution(
+            model = create_joint_distribution(
                 model, list(part), individual_estimates=mfr(model).individual_estimates
             )
     return model
 
 
 def copy(name, model):
-    model_copy = copy_model(model, name)
+    model_copy = model.replace(name=name)
     return model_copy
 
 
 def update_description(model):
     description = create_description(model)
-    model.description = description
+    model = model.replace(description=description)
     return model

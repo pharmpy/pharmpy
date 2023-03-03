@@ -10,7 +10,7 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_subsets
 from pharmpy.model import Assignment, Model
-from pharmpy.modeling import add_iov, copy_model, get_pk_parameters, remove_iiv, remove_iov
+from pharmpy.modeling import add_iov, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
@@ -122,7 +122,6 @@ def task_brute_force_search(
     distribution: str,
     model: Model,
 ):
-
     # NOTE Default is to try all IIV ETAs.
     if list_of_parameters is None:
         iiv = model.random_variables.iiv
@@ -137,12 +136,12 @@ def task_brute_force_search(
         return step_mapping, [model]
 
     # NOTE Add IOVs on given parameters or all parameters with IIVs.
-    model_with_iov = copy_model(model, name='iovsearch_run1')
-    model_with_iov.parent_model = model.name
-    update_initial_estimates(model_with_iov)
+    name = 'iovsearch_run1'
+    model_with_iov = model.replace(name=name, parent_model=model.name)
+    model_with_iov = update_initial_estimates(model_with_iov)
     # TODO should we exclude already present IOVs?
-    add_iov(model_with_iov, occ, list_of_parameters, distribution=distribution)
-    model_with_iov.description = _create_description(model_with_iov)
+    model_with_iov = add_iov(model_with_iov, occ, list_of_parameters, distribution=distribution)
+    model_with_iov = model_with_iov.replace(description=_create_description(model_with_iov))
     # NOTE Fit the new model.
     wf = create_fit_workflow(models=[model_with_iov])
     model_with_iov = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs', context)
@@ -206,11 +205,12 @@ def _create_description(model):
 def task_remove_etas_subset(
     remove: Callable[[Model, List[str]], None], model: Model, subset: List[str], n: int
 ):
-    model_with_some_etas_removed = copy_model(model, name=f'iovsearch_run{n}')
-    model_with_some_etas_removed.parent_model = model.name
-    update_initial_estimates(model_with_some_etas_removed)
-    remove(model_with_some_etas_removed, subset)
-    model_with_some_etas_removed.description = _create_description(model_with_some_etas_removed)
+    model_with_some_etas_removed = model.replace(name=f'iovsearch_run{n}', parent_model=model.name)
+    model_with_some_etas_removed = update_initial_estimates(model_with_some_etas_removed)
+    model_with_some_etas_removed = remove(model_with_some_etas_removed, subset)
+    model_with_some_etas_removed = model_with_some_etas_removed.replace(
+        description=_create_description(model_with_some_etas_removed)
+    )
     return model_with_some_etas_removed
 
 
@@ -302,7 +302,6 @@ def validate_input(
     rank_type,
     distribution,
 ):
-
     if rank_type not in RANK_TYPES:
         raise ValueError(
             f'Invalid `rank_type`: got `{rank_type}`, must be one of {sorted(RANK_TYPES)}.'
@@ -315,7 +314,6 @@ def validate_input(
         )
 
     if model is not None:
-
         if column not in model.datainfo.names:
             raise ValueError(
                 f'Invalid `column`: got `{column}`,'

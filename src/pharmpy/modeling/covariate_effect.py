@@ -66,7 +66,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -74,8 +74,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     >>> model = load_example_model("pheno")
     >>> has_covariate_effect(model, "CL", "WGT")
     True
-    >>> remove_covariate_effect(model, "CL", "WGT") # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_covariate_effect(model, "CL", "WGT")
     >>> has_covariate_effect(model, "CL", "WGT")
     False
 
@@ -91,15 +90,14 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
         [] if model.statements.ode_system is None else [model.statements.ode_system]
     )
     after_odes = list(model.statements.after_odes)
-    model.statements = Statements(before_odes + ode_system + after_odes)
+    statements = Statements(before_odes + ode_system + after_odes)
     kept_parameters = model.random_variables.free_symbols.union(
         kept_thetas, model.statements.after_odes.free_symbols
     )
-    model.parameters = Parameters.create(
-        (p for p in model.parameters if p.symbol in kept_parameters)
-    )
+    parameters = Parameters.create((p for p in model.parameters if p.symbol in kept_parameters))
+    model = model.replace(statements=statements, parameters=parameters)
 
-    return model
+    return model.update_source()
 
 
 def add_covariate_effect(
@@ -227,14 +225,13 @@ def add_covariate_effect(
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> add_covariate_effect(model, "CL", "APGR", "exp")    # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_covariate_effect(model, "CL", "APGR", "exp")
     >>> model.statements.before_odes.full_expression("CL")
     PTVCL*WGT*exp(ETA_1)*exp(POP_CLAPGR*(APGR - 7.0))
 
@@ -251,7 +248,7 @@ def add_covariate_effect(
     statistics['std'] = _calculate_std(model, covariate)
 
     covariate_effect = _create_template(effect, model, covariate)
-    thetas = _create_thetas(model, parameter, effect, covariate, covariate_effect.template)
+    pset, thetas = _create_thetas(model, parameter, effect, covariate, covariate_effect.template)
     covariate_effect.apply(parameter, covariate, thetas, statistics)
     # NOTE We hoist the statistic statements to avoid referencing variables
     # before declaring them. We also avoid duplicate statements.
@@ -292,8 +289,9 @@ def add_covariate_effect(
         sset = sset[0 : insertion_index - 1] + sset[insertion_index:]
         insertion_index -= 1
 
-    model.statements = sset[0:insertion_index] + statements + sset[insertion_index:]
-    return model
+    sset = sset[0:insertion_index] + statements + sset[insertion_index:]
+    model = model.replace(parameters=pset, statements=sset)
+    return model.update_source()
 
 
 def natural_order(string, _nsre=re.compile(r'([0-9]+)')):
@@ -330,9 +328,7 @@ def _create_thetas(model, parameter, effect, covariate, template, _ctre=re.compi
             )
             theta_names[new_theta] = theta_name
 
-    model.parameters = pset
-
-    return theta_names
+    return pset, theta_names
 
 
 def _count_categorical(model, covariate):

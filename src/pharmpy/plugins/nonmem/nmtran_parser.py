@@ -73,7 +73,8 @@ default_record_order = [
     'SIGMA',
     'ESTIMATION',
     'COVARIANCE',
-    'ETAS' 'TABLE',
+    'ETAS',
+    'TABLE',
 ]
 
 
@@ -180,7 +181,7 @@ class NMTranControlStream:
                     curindex = default_record_order.index(rec.name)
                 except ValueError:
                     curindex = 0
-                if curindex > index:
+                if curindex < index:
                     after_index = i
             keep = keep[0 : after_index + 1] + new + keep[after_index + 1 :]
 

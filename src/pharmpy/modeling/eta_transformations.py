@@ -27,14 +27,13 @@ def transform_etas_boxcox(model: Model, list_of_etas: Optional[Union[List[str], 
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> transform_etas_boxcox(model, ["ETA_1"])    # doctest: +ELLIPSIS
-    <...>
+    >>> model = transform_etas_boxcox(model, ["ETA_1"])
     >>> model.statements.before_odes.full_expression("CL")
     PTVCL*WGT*exp((exp(ETA_1)**lambda1 - 1)/lambda1)
 
@@ -47,8 +46,8 @@ def transform_etas_boxcox(model: Model, list_of_etas: Optional[Union[List[str], 
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.boxcox(len(etas))
-    _transform_etas(model, eta_transformation, etas)
-    return model
+    model = _transform_etas(model, eta_transformation, etas)
+    return model.update_source()
 
 
 def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[List[str], str]] = None):
@@ -66,14 +65,13 @@ def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[List[str], s
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> transform_etas_tdist(model, ["ETA_1"])    # doctest: +ELLIPSIS
-    <...>
+    >>> model = transform_etas_tdist(model, ["ETA_1"])
     >>> model.statements.before_odes.full_expression("CL")    # doctest: +ELLIPSIS
     PTVCL*WGT*exp(ETA_1*(1 + (ETA_1**2 + 1)/(4*df1) + (5*ETA_1**4 + 16*ETA_1**2 + 3)/(96*...
 
@@ -86,8 +84,8 @@ def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[List[str], s
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.tdist(len(etas))
-    _transform_etas(model, eta_transformation, etas)
-    return model
+    model = _transform_etas(model, eta_transformation, etas)
+    return model.update_source()
 
 
 def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[List[str], str]] = None):
@@ -109,14 +107,13 @@ def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[List[s
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> transform_etas_john_draper(model, ["ETA_1"])    # doctest: +ELLIPSIS
-    <...>
+    >>> model = transform_etas_john_draper(model, ["ETA_1"])
     >>> model.statements.before_odes.full_expression("CL")
     PTVCL*WGT*exp(((Abs(ETA_1) + 1)**lambda1 - 1)*sign(ETA_1)/lambda1)
 
@@ -129,19 +126,18 @@ def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[List[s
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.john_draper(len(etas))
-    _transform_etas(model, eta_transformation, etas)
-    return model
+    model = _transform_etas(model, eta_transformation, etas)
+    return model.update_source()
 
 
 def _transform_etas(model, transformation, etas):
     etas_assignment, etas_subs = _create_new_etas(etas, transformation.name)
-    thetas = _create_new_thetas(model, transformation.theta_type, len(etas))
+    parameters, thetas = _create_new_thetas(model, transformation.theta_type, len(etas))
     transformation.apply(etas_assignment, thetas)
     statements_new = transformation.assignments
-    sset = model.statements
-    sset = sset.subs(etas_subs)
-
-    model.statements = statements_new + sset
+    sset = model.statements.subs(etas_subs)
+    model = model.replace(parameters=parameters, statements=statements_new + sset)
+    return model
 
 
 def _create_new_etas(etas_original, transformation):
@@ -181,9 +177,7 @@ def _create_new_thetas(model, transformation, no_of_thetas):
             thetas[f'theta{i}'] = theta_name
             theta_name = f'{transformation}{theta_no + i}'
 
-    model.parameters = Parameters.create(pset)
-
-    return thetas
+    return Parameters.create(pset), thetas
 
 
 class EtaTransformation:

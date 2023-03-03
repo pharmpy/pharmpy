@@ -8,7 +8,8 @@ from pharmpy.deps import sympy
 from pharmpy.deps.rich import box as rich_box
 from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import table as rich_table
-from pharmpy.model import CompartmentalSystem, DataInfo, DatasetError, Model
+from pharmpy.model import ColumnInfo, CompartmentalSystem, DataInfo, DatasetError, Model
+from pharmpy.model.model import update_datainfo
 
 from .iterators import resample_data
 
@@ -262,7 +263,7 @@ def get_observations(model: Model):
             df = model.dataset.astype({label: 'float'})
             df = df.query(f'{label} == 0')
     else:
-        df = model.dataset
+        df = model.dataset.copy()
 
     df = df[[idcol, idvcol, model.datainfo.dv_column.name]]
     try:
@@ -375,7 +376,7 @@ def set_covariates(model: Model, covariates: List[str]):
     Returns
     -------
     Model
-        Reference to the same Pharmpy model object
+        Pharmpy model object
     """
     di = model.datainfo
     newcols = []
@@ -385,8 +386,69 @@ def set_covariates(model: Model, covariates: List[str]):
             newcols.append(newcol)
         else:
             newcols.append(col)
-    model.datainfo = di.replace(columns=newcols)
-    return model
+    model = model.replace(datainfo=di.replace(columns=newcols))
+    return model.update_source()
+
+
+def set_dvid(model: Model, name: str):
+    """Set a column to act as DVID. Replace DVID if one is already set.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    name : str
+        Name of DVID column
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+    """
+    di = model.datainfo
+    col = di[name]
+    if col.type == 'dvid':
+        return model
+
+    try:
+        curdvid = di.typeix['dvid'][0]
+    except IndexError:
+        pass
+    else:
+        curdvid = curdvid.replace(type='unknown')
+        di = di.set_column(curdvid)
+
+    col = col.replace(
+        type='dvid',
+        unit=1,
+        scale='nominal',
+        continuous=False,
+        drop=False,
+        descriptor='observation identifier',
+    )
+    df = model.dataset
+    if not col.is_integer():
+        ser = df[name]
+        converted = pd.to_numeric(ser, downcast='integer')
+        if not pd.api.types.is_integer_dtype(converted):
+            raise ValueError(
+                f"Could not use column {name} as DVID because it contains non-itegral values"
+            )
+        df = df.assign(**{name: converted})
+        col = col.replace(datatype=ColumnInfo.convert_pd_dtype_to_datatype(converted.dtype))
+        new_dataset = True
+    else:
+        new_dataset = False
+
+    col = col.replace(categories=sorted(df[name].unique()))
+
+    di = di.set_column(col)
+
+    if new_dataset:
+        model = model.replace(datainfo=di, dataset=df)
+    else:
+        model = model.replace(datainfo=di)
+    return model.update_source()
 
 
 def get_covariate_baselines(model: Model):
@@ -590,7 +652,7 @@ def expand_additional_doses(model: Model, flag: bool = False):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
     """
     try:
         addl = model.datainfo.typeix['additional'][0].name
@@ -635,8 +697,8 @@ def expand_additional_doses(model: Model, flag: bool = False):
         df.rename(columns={'_EXPANDED': 'EXPANDED'}, inplace=True)
     else:
         df.drop([addl, ii, '_EXPANDED'], axis=1, inplace=True)
-    model.dataset = df.reset_index(drop=True)
-    return model
+    model = model.replace(dataset=df.reset_index(drop=True))
+    return model.update_source()
 
 
 def get_doseid(model: Model):
@@ -830,14 +892,13 @@ def add_time_after_dose(model: Model):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, add_time_after_dose
     >>> model = load_example_model("pheno")
-    >>> add_time_after_dose(model)  # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_time_after_dose(model)
 
     """
     try:
@@ -847,8 +908,7 @@ def add_time_after_dose(model: Model):
     else:
         # Already have time after dose
         return model
-    temp = model.copy()
-    translate_nmtran_time(temp)
+    temp = translate_nmtran_time(model)
     idv = temp.datainfo.idv_column.name
     idlab = temp.datainfo.id_column.name
     df = model.dataset.copy()
@@ -859,13 +919,13 @@ def add_time_after_dose(model: Model):
     except IndexError:
         addl = None
     else:
-        temp.dataset = df
-        di = temp.datainfo
+        # FIXME: temp workaround, should be canonicalized in Model.replace
+        di = update_datainfo(temp.datainfo, df)
         new_idvcol = di.idv_column.replace(type='unknown')
         new_timecol = di['_NEWTIME'].replace(type='idv')
         di = di.set_column(new_idvcol).set_column(new_timecol)
-        temp.datainfo = di
-        expand_additional_doses(temp, flag=True)
+        temp = temp.replace(datainfo=di, dataset=df)
+        temp = expand_additional_doses(temp, flag=True)
         df = temp.dataset
 
     df['_DOSEID'] = get_doseid(temp)
@@ -909,11 +969,11 @@ def add_time_after_dose(model: Model):
 
     df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
 
-    model.dataset = df  # TAD in datainfo is automatically added here
-    di = model.datainfo
+    # FIXME: temp workaround, should be canonicalized in Model.replace
+    di = update_datainfo(model.datainfo, df)
     colinfo = di['TAD'].replace(descriptor='time after dose', unit=di[idv].unit)
-    model.datainfo = di.set_column(colinfo)
-    return model
+    model = model.replace(datainfo=di.set_column(colinfo), dataset=df)
+    return model.update_source()
 
 
 def get_concentration_parameters_from_data(model: Model):
@@ -952,8 +1012,7 @@ def get_concentration_parameters_from_data(model: Model):
     <BLANKLINE>
     [589 rows x 4 columns]
     """
-    model = model.copy()
-    add_time_after_dose(model)
+    model = add_time_after_dose(model)
     doseid = get_doseid(model)
     df = model.dataset.copy()
     df['DOSEID'] = doseid
@@ -997,14 +1056,13 @@ def drop_dropped_columns(model: Model):
     Returns
     -------
     Model
-        Reference to same model object
+        Pharmpy model object
 
     Example
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> drop_dropped_columns(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = drop_dropped_columns(model)
     >>> list(model.dataset.columns)
     ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
 
@@ -1020,7 +1078,7 @@ def drop_dropped_columns(model: Model):
     ]
     todrop += list(set(model.dataset.columns) - set(datainfo.names))
     model = drop_columns(model, todrop)
-    return model
+    return model.update_source()
 
 
 def drop_columns(model: Model, column_names: Union[List[str], str], mark: bool = False):
@@ -1038,14 +1096,13 @@ def drop_columns(model: Model, column_names: Union[List[str], str], mark: bool =
     Returns
     -------
     Model
-        Reference to same model object
+        Pharmpy model object
 
     Example
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> drop_columns(model, ['WGT', 'APGR'])    # doctest: +ELLIPSIS
-    <...>
+    >>> model = drop_columns(model, ['WGT', 'APGR'])
     >>> list(model.dataset.columns)
     ['ID', 'TIME', 'AMT', 'DV', 'FA1', 'FA2']
 
@@ -1057,18 +1114,22 @@ def drop_columns(model: Model, column_names: Union[List[str], str], mark: bool =
     if isinstance(column_names, str):
         column_names = [column_names]
     di = model.datainfo
-    newcols = []
+    newcols, to_drop = [], []
     for col in di:
         if col.name in column_names:
             if mark:
                 newcol = col.replace(drop=True)
                 newcols.append(newcol)
             else:
-                model.dataset = model.dataset.drop(col.name, axis=1)
+                to_drop.append(col.name)
         else:
             newcols.append(col)
-    model.datainfo = di.replace(columns=newcols)
-    return model
+    replace_dict = {'datainfo': di.replace(columns=newcols)}
+    if to_drop:
+        df = model.dataset.copy()
+        replace_dict['dataset'] = df.drop(to_drop, axis=1)
+    model = model.replace(**replace_dict)
+    return model.update_source()
 
 
 def undrop_columns(model: Model, column_names: Union[List[str], str]):
@@ -1084,16 +1145,14 @@ def undrop_columns(model: Model, column_names: Union[List[str], str]):
     Returns
     -------
     Model
-        Reference to same model object
+        Pharmpy model object
 
     Example
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> drop_columns(model, ['WGT', 'APGR'], mark=True)    # doctest: +ELLIPSIS
-    <...>
-    >>> undrop_columns(model, 'WGT')    # doctest: +ELLIPSIS
-    <...>
+    >>> model = drop_columns(model, ['WGT', 'APGR'], mark=True)
+    >>> model = undrop_columns(model, 'WGT')
 
     See also
     --------
@@ -1110,8 +1169,8 @@ def undrop_columns(model: Model, column_names: Union[List[str], str]):
             newcols.append(newcol)
         else:
             newcols.append(col)
-    model.datainfo = di.replace(columns=newcols)
-    return model
+    model = model.replace(datainfo=di.replace(columns=newcols))
+    return model.update_source()
 
 
 def _translate_nonmem_time_value(time):
@@ -1242,7 +1301,7 @@ def translate_nmtran_time(model: Model):
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
     """
     timecol, datecol = _find_time_and_date_columns(model)
     df = model.dataset.copy()
@@ -1260,9 +1319,8 @@ def translate_nmtran_time(model: Model):
         timecol = timecol.replace(unit='h')
     timecol = timecol.replace(datatype='float64')
     di = di.set_column(timecol)
-    model.datainfo = di
-    model.dataset = df
-    return model
+    model = model.replace(datainfo=di, dataset=df)
+    return model.update_source()
 
 
 def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[float] = None):
@@ -1282,14 +1340,13 @@ def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[f
     Results
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> remove_loq_data(model, lloq=10, uloq=40)        # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_loq_data(model, lloq=10, uloq=40)
     >>> len(model.dataset)
     736
     """
@@ -1301,8 +1358,8 @@ def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[f
         keep &= (df[dv] >= lloq) | mdv
     if uloq:
         keep &= (df[dv] <= uloq) | mdv
-    model.dataset = df[keep]
-    return model
+    model = model.replace(dataset=df[keep])
+    return model.update_source()
 
 
 class Checker:

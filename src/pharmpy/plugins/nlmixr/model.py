@@ -3,7 +3,7 @@ import os
 import subprocess
 import uuid
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Optional
 import re
@@ -59,10 +59,21 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
     """
     
     if isinstance(model, Model):
-        return model.copy()
+        return model
 
-    nlmixr_model = Model()
-    from pharmpy.modeling import convert_model
+    nlmixr_model = Model(
+        internals=NLMIXRModelInternals(),
+        parameters=model.parameters,
+        random_variables=model.random_variables,
+        statements=model.statements,
+        dependent_variables=model.dependent_variables,
+        estimation_steps=model.estimation_steps,
+        filename_extension='.R',
+        datainfo=model.datainfo,
+        dataset=model.dataset,
+        name=model.name,
+        description=model.description,
+    )
 
     generic_model = convert_model(model, 'generic')
     nlmixr_model.__dict__ = generic_model.__dict__
@@ -207,6 +218,8 @@ def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
         Modification of code object.
 
     """
+     # FIXME: handle other DVs?
+    dv = list(model.dependent_variables.keys())[0]
     if model.statements.ode_system:
         amounts = [am.name for am in list(model.statements.ode_system.amounts)]
         printer = ExpressionPrinter(amounts)
@@ -357,15 +370,13 @@ class NLMIXRModelInternals:
 
 
 class Model(pharmpy.model.Model):
-    def __init__(self):
-        self.internals = NLMIXRModelInternals()
+    def __init__(self, **kwargs):
+        super().__init__(
+            **kwargs,
+        )
 
-    def update_source(self, path=None):
+    def update_source(self):
         cg = CodeGenerator()
-        cg.add('library(nlmixr2)')
-        cg.empty_line()
-        create_dataset(cg, self, path)
-        cg.empty_line()
         cg.add(f'{self.name} <- function() {{')
         cg.indent()
         create_ini(cg, self)
@@ -380,11 +391,15 @@ class Model(pharmpy.model.Model):
             str(cg).replace("AMT", "amt").replace("TIME", "time")
         )
         self.internals.path = None
+        code = str(cg).replace("AMT", "amt").replace("TIME", "time").replace("ID", "id")
+        internals = replace(self.internals, src=code)
+        model = self.replace(internals=internals)
+        return model
 
     @property
     def model_code(self):
-        self.update_source(path=self.internals.path)
-        code = self.internals.src
+        model = self.update_source()
+        code = model.internals.src
         assert code is not None
         return code
 
@@ -451,7 +466,10 @@ def execute_model(model, db):
     if "fix_eta" in model.estimation_steps[0].tool_options:
         write_fix_eta(model, path=path)
     
-    code = model.model_code
+    dataname = f'{model.name}.csv'
+    pre = f'library(nlmixr2)\n\ndataset <- read.csv("{path / dataname}")\n\n'
+
+    code = pre + model.model_code
     cg = CodeGenerator()
     cg.add('ofv <- fit$objDf$OBJF')
     cg.add('thetas <- as.data.frame(fit$theta)')
@@ -506,7 +524,6 @@ def execute_model(model, db):
     }
     
     with database.transaction(model) as txn:
-
         txn.store_local_file(path / f'{model.name}.R')
         txn.store_local_file(rdata_path)
 
@@ -525,7 +542,7 @@ def execute_model(model, db):
         txn.store_modelfit_results()
     
     res = parse_modelfit_results(model, path)
-    model.modelfit_results = res
+    model = model.replace(modelfit_results=res)
     return model
 
 

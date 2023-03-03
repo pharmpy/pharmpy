@@ -12,7 +12,6 @@ _unit_subs_cache = None
 
 
 def _unit_subs():
-
     global _unit_subs_cache
     if _unit_subs_cache is None:
         subs = {}

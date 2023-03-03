@@ -114,13 +114,10 @@ def test_skip_covsearch(tmp_path, testdata):
                 path=db.path,
                 resume=True,
             )
-
         _validate_record(
             record,
             [
                 'COVsearch will most likely be skipped',
-                'NONMEM .mod and dataset .datainfo disagree on DROP',
-                'NONMEM .mod and dataset .datainfo disagree on DROP',
                 'Skipping COVsearch',
                 'AMDResults.summary_models is None',
                 'AMDResults.summary_individuals_count is None',
@@ -198,7 +195,7 @@ def _load_model(testdata: Path, with_datainfo: bool = False):
     shutil.copy2(models / 'mox2.phi', '.')
 
     model = Model.create_model('mox2.mod')
-    model.name = 'start'
+    model = model.replace(name='start')
 
     # NOTE Load results directly in DB to skip fitting
     db_tool = default_tool_database(toolname='amd', path='amd_dir1')

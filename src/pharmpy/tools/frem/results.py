@@ -555,7 +555,6 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     ]
     parvecs.loc['estimates'] = frem_model.modelfit_results.parameter_estimates.loc[parameters]
 
-    df = frem_model.dataset
     covariates = continuous + categorical
     frem_model = set_covariates(frem_model, covariates)
     covariate_baselines = get_covariate_baselines(frem_model)
@@ -957,12 +956,16 @@ def psn_reorder_base_model_inits(model, path):
         order = sorted(replacements, key=sortfunc)
         values = [replacements[i] for i in order]
         i = 0
+        d = {}
         for p in model.parameters:
             if i == len(values):
                 break
             if p.name in model.random_variables.parameter_names:
-                p.init = values[i]
+                d[p.name] = values[i]
                 i += 1
+        newparams = model.parameters.set_initial_estimates(d)
+        model = model.replace(parameters=newparams)
+    return model
 
 
 def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=500, method=None):
@@ -1021,7 +1024,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     if logtransformed_covariates:
         for lncov in logtransformed_covariates:
             df = df.copy()[f'LN{lncov}'] = np.log(df[lncov])
-        model_4.dataset = df
+        model_4 = model_4.replace(dataset=df)
 
     nunique = get_baselines(model_4)[all_covariates].nunique()
     continuous = list(nunique.index[nunique != 2])
@@ -1037,10 +1040,11 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
 
     model1b = Model.create_model(path / 'm1' / 'model_1b.mod')
     model1 = intmods[0]
-    model1b.modelfit_results = replace(
+    modelfit_results = replace(
         model1.modelfit_results, parameter_estimates=pd.Series(model1b.parameters.nonfixed.inits)
     )
-    psn_reorder_base_model_inits(model1b, path)
+    model1b = model1b.replace(modelfit_results=modelfit_results)
+    model1b = psn_reorder_base_model_inits(model1b, path)
 
     res = calculate_results(
         model_4,

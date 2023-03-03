@@ -116,7 +116,7 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 def run_bootstrap(args):
     from pharmpy.tools import run_bootstrap
 
-    run_bootstrap(args.model, resamples=args.samples)
+    run_bootstrap(args.model, args.model.modelfit_results, resamples=args.samples)
 
 
 def run_execute(args):
@@ -340,16 +340,16 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
         # Is a model
         model = model_or_dataset
         if new_df is not None and new_df is not model.dataset:
-            model.dataset = new_df
+            model = model.replace(dataset=new_df)
         try:
             from pharmpy.modeling import bump_model_number, write_model
 
             if path:
                 if not path.is_dir():
-                    bump_model_number(model, path)
+                    model = bump_model_number(model, path)
                 write_model(model, path=path, force=force)
             else:
-                bump_model_number(model, path='.')
+                model = bump_model_number(model, path='.')
                 write_model(model, force=force)
         except FileExistsError as e:
             error(FileExistsError(f'{e.args[0]} Use -f or --force to ' 'force an overwrite'))
@@ -457,7 +457,7 @@ def model_sample(args):
         from pharmpy.modeling import set_initial_estimates, write_model
 
         set_initial_estimates(model, params)
-        model.name = f'sample_{row + 1}'
+        model = model.replace(name=f'sample_{row + 1}')
         write_model(model)
 
 
@@ -466,7 +466,7 @@ def add_covariate_effect(args):
     from pharmpy.modeling import add_covariate_effect
 
     model = args.model
-    add_covariate_effect(model, args.param, args.covariate, args.effect, args.operation)
+    model = add_covariate_effect(model, args.param, args.covariate, args.effect, args.operation)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -557,7 +557,7 @@ def boxcox(args):
     except AttributeError:
         etas = args.etas
 
-    transform_etas_boxcox(model, etas)
+    model = transform_etas_boxcox(model, etas)
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 
@@ -571,7 +571,7 @@ def tdist(args):
     except AttributeError:
         etas = args.etas
 
-    transform_etas_tdist(model, etas)
+    model = transform_etas_tdist(model, etas)
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 
@@ -585,7 +585,7 @@ def john_draper(args):
     except AttributeError:
         etas = args.etas
 
-    transform_etas_john_draper(model, etas)
+    model = transform_etas_john_draper(model, etas)
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 
@@ -594,7 +594,7 @@ def add_iiv(args):
     from pharmpy.modeling import add_iiv
 
     model = args.model
-    add_iiv(
+    model = add_iiv(
         model,
         list_of_parameters=args.param,
         expression=args.expression,
@@ -620,7 +620,7 @@ def add_iov(args):
     except AttributeError:
         eta_names = args.eta_names
 
-    add_iov(model, args.occ, etas, eta_names)
+    model = add_iov(model, args.occ, etas, eta_names)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -636,7 +636,7 @@ def create_joint_distribution(args):
     except AttributeError:
         etas = args.etas
 
-    create_joint_distribution(
+    model = create_joint_distribution(
         model,
         etas,
         individual_estimates=model.modelfit_results.individual_estimates
@@ -663,7 +663,7 @@ def iiv_on_ruv(args):
     except AttributeError:
         eta_names = args.eta_names
 
-    set_iiv_on_ruv(model, eps, args.same_eta, eta_names)
+    model = set_iiv_on_ruv(model, eps, args.same_eta, eta_names)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -679,7 +679,7 @@ def remove_iiv(args):
     except AttributeError:
         to_remove = args.to_remove
 
-    remove_iiv(model, to_remove)
+    model = remove_iiv(model, to_remove)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -689,7 +689,7 @@ def remove_iov(args):
     from pharmpy.modeling import remove_iov
 
     model = args.model
-    remove_iov(model)
+    model = remove_iov(model)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -705,7 +705,7 @@ def power_on_ruv(args):
     except AttributeError:
         eps = args.eps
 
-    set_power_on_ruv(model, eps)
+    model = set_power_on_ruv(model, eps)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -1388,9 +1388,9 @@ parser_definition = [
                     }
                 },
             ],
-            'help': 'Run a method',
+            'help': 'Run a tool',
             'title': 'Pharmpy commands for running tools',
-            'metavar': 'METHOD',
+            'metavar': 'TOOL',
         }
     },
     {

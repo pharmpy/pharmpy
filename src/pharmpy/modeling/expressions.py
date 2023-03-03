@@ -56,7 +56,8 @@ def get_observation_expression(model: Model):
     ) + EPS₁⋅(D_EPS1 + D_EPSETA1_1⋅(ETA₁ - OETA₁)) + OPRED
     """
     stats = model.statements
-    dv = model.dependent_variable
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
     for i, s in enumerate(stats):
         if s.symbol == dv:
             y = s.expression
@@ -233,7 +234,9 @@ def create_symbol(model: Model, stem: str, force_numbering: bool = False):
     params = [param.name for param in model.parameters]
     rvs = model.random_variables.names
     dataset_col = model.datainfo.names
-    misc = [model.dependent_variable]
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
+    misc = [dv]
 
     all_names = symbols + params + rvs + dataset_col + misc
 
@@ -284,13 +287,14 @@ def mu_reference_model(model: Model):
     Returns
     -------
     Model
-        Reference to same object
+        Pharmpy model object
 
     Example
     -------
     >>> from pharmpy.modeling import load_example_model, mu_reference_model
     >>> model = load_example_model("pheno")
-    >>> mu_reference_model(model).statements.before_odes
+    >>> model = mu_reference_model(model)
+    >>> model.statements.before_odes
             ⎧TIME  for AMT > 0
             ⎨
     BTIME = ⎩ 0     otherwise
@@ -313,6 +317,7 @@ def mu_reference_model(model: Model):
 
     offset = 0
 
+    statements = model.statements
     for old_ind, assignment in _find_eta_assignments(model):
         # NOTE The sequence of old_ind must be increasing
         eta = next(iter(etas.intersection(assignment.expression.free_symbols)))
@@ -322,14 +327,15 @@ def mu_reference_model(model: Model):
         new_def = subs(dep, {eta: mu + eta})
         mu_expr = sympy.solve(old_def - new_def, mu)[0]
         insertion_ind = offset + old_ind
-        model.statements = (
-            model.statements[0:insertion_ind]
+        statements = (
+            statements[0:insertion_ind]
             + Assignment(mu, mu_expr)
             + Assignment(assignment.symbol, new_def)
-            + model.statements[insertion_ind + 1 :]
+            + statements[insertion_ind + 1 :]
         )
         offset += 1  # NOTE We need this offset because we replace one
         # statement by two statements
+    model = model.replace(statements=statements).update_source()
     return model
 
 
@@ -404,7 +410,7 @@ def solve_ode_system(model: Model):
     Returns
     -------
     Model
-        Reference to the same pharmpy model object
+        Pharmpy model object
 
     Example
     -------
@@ -415,8 +421,7 @@ def solve_ode_system(model: Model):
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
-    >>> solve_ode_system(model)        # doctest: +ELLIPSIS
-    <...>
+    >>> model = solve_ode_system(model)
 
     """
     odes = model.statements.ode_system
@@ -435,7 +440,7 @@ def solve_ode_system(model: Model):
                 new.append(ass)
         else:
             new.append(s)
-    model.statements = Statements(new)
+    model = model.replace(statements=Statements(new)).update_source()
     return model
 
 
@@ -452,7 +457,7 @@ def make_declarative(model: Model):
     Results
     -------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -473,8 +478,7 @@ def make_declarative(model: Model):
              ETA₂
     V = TVV⋅ℯ
     S₁ = V
-    >>> make_declarative(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = make_declarative(model)
     >>> model.statements.before_odes
             ⎧TIME  for AMT > 0
             ⎨
@@ -507,8 +511,8 @@ def make_declarative(model: Model):
     newstats = []
     for i, s in enumerate(model.statements):
         if not isinstance(s, Assignment):
-            s.subs(current)
-            newstats.append(s)  # FIXME: No copy method
+            s = s.subs(current)
+            newstats.append(s)
         elif s.symbol in duplicated_symbols:
             if i not in duplicated_symbols[s.symbol]:
                 current[s.symbol] = s.expression
@@ -524,8 +528,8 @@ def make_declarative(model: Model):
             ass = Assignment(s.symbol, subs(s.expression, current))
             newstats.append(ass)
 
-    model.statements = Statements(newstats)
-    return model
+    model = model.replace(statements=Statements(newstats))
+    return model.update_source()
 
 
 def cleanup_model(model: Model):
@@ -544,7 +548,7 @@ def cleanup_model(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model
+        Pharmpy model object
 
     Returns
     -------
@@ -584,8 +588,7 @@ def cleanup_model(model: Model):
             IRES
             ────
     IWRES =  W
-    >>> cleanup_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = cleanup_model(model)
     >>> model.statements
             ⎧TIME  for AMT > 0
             ⎨
@@ -612,7 +615,7 @@ def cleanup_model(model: Model):
             ────
     IWRES =  F
     """
-    make_declarative(model)
+    model = make_declarative(model)
 
     current = {}
     newstats = []
@@ -620,16 +623,11 @@ def cleanup_model(model: Model):
         if isinstance(s, Assignment) and s.expression.is_Symbol:
             current[s.symbol] = s.expression
         else:
-            # FIXME: Update when other Statements have been made immutable
-            if isinstance(s, Assignment):
-                n = s.subs(current)
-                newstats.append(n)
-            else:
-                s.subs(current)
-                newstats.append(s)
+            n = s.subs(current)
+            newstats.append(n)
 
-    model.statements = Statements(newstats)
-    return model
+    model = model.replace(statements=Statements(newstats))
+    return model.update_source()
 
 
 def greekify_model(model: Model, named_subscripts: bool = False):
@@ -645,7 +643,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     Returns
     -------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
@@ -681,8 +679,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
             ────
     IWRES =  W
 
-    >>> greekify_model(cleanup_model(model))    # doctest: +ELLIPSIS
-    <...>
+    >>> model = greekify_model(cleanup_model(model))
     >>> model.statements
             ⎧TIME  for AMT > 0
             ⎨
@@ -758,8 +755,9 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     for i, epsilon in enumerate(model.random_variables.epsilons.names, start=1):
         subscript = get_subscript(epsilon, i, named_subscripts)
         subs[sympy.Symbol(epsilon)] = sympy.Symbol(f"epsilon_{subscript}")
-    model.statements = model.statements.subs(subs)
-    return model
+    statements = model.statements.subs(subs)
+    model = model.replace(statements=statements)
+    return model.update_source()
 
 
 def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
@@ -934,7 +932,6 @@ class AssignmentGraphNode:
 
 
 def _make_assignments_graph(statements: Statements) -> Dict[sympy.Symbol, AssignmentGraphNode]:
-
     last_assignments: Dict[sympy.Symbol, AssignmentGraphNode] = {}
 
     for i, statement in enumerate(statements):
@@ -959,7 +956,6 @@ def _make_assignments_graph(statements: Statements) -> Dict[sympy.Symbol, Assign
 def remove_covariate_effect_from_statements(
     model: Model, before_odes: Statements, parameter: str, covariate: str
 ) -> Iterable[Statement]:
-
     assignments = _make_assignments_graph(before_odes)
 
     thetas = _theta_symbols(model)
@@ -1022,7 +1018,7 @@ def simplify_model(
     model: Model, old_statements: Iterable[Statement], statements: Iterable[Statement]
 ):
     odes = model.statements.ode_system
-    fs = odes.free_symbols.copy() if odes is not None else set()
+    fs = odes.free_symbols if odes is not None else set()
     old_fs = fs.copy()
 
     kept_statements_reversed = []
@@ -1246,7 +1242,6 @@ def _remap_compartmental_system(sset, natural_assignments):
 
 
 def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[sympy.Symbol]:
-
     if kind == 'all':
         return cs.free_symbols
 
@@ -1310,8 +1305,7 @@ def _get_component_free_symbols(
     vertices: Set[Compartment],
     edges: Iterable[Tuple[Compartment, Compartment, sympy.Expr]],
 ) -> Iterable[sympy.Symbol]:
-
-    for (u, v, rate) in edges:
+    for u, v, rate in edges:
         # NOTE These must not necessarily be outgoing edges
         assert u in vertices or v in vertices
 
@@ -1346,7 +1340,6 @@ def _filter_symbols(
     roots: Set[sympy.Symbol],
     leaves: Union[Set[sympy.Symbol], None] = None,
 ) -> Set[sympy.Symbol]:
-
     dependents = graph_inverse(dependency_graph)
 
     free_symbols = reachable_from(roots, lambda x: dependency_graph.get(x, []))
@@ -1366,14 +1359,12 @@ def _filter_symbols(
 
 
 def _classify_assignments(assignments: Sequence[Assignment]):
-
     dependencies = _dependency_graph(assignments)
 
     # Keep all symbols that have dependencies (e.g. remove constants X=1)
     symbols = set(filter(dependencies.__getitem__, dependencies.keys()))
 
     for assignment in assignments:
-
         symbol = assignment.symbol
         expression = assignment.expression
         fs = expression.free_symbols
@@ -1396,7 +1387,6 @@ def _classify_assignments(assignments: Sequence[Assignment]):
 
 
 def _remove_synthetic_assignments(classified_assignments: List[Tuple[str, Assignment]]):
-
     assignments = []
     last_defined = {}
 
@@ -1424,11 +1414,9 @@ def _remove_synthetic_assignments(classified_assignments: List[Tuple[str, Assign
 
 
 def _dependency_graph(assignments: Sequence[Assignment]):
-
     dependencies = {}
 
     for assignment in assignments:
-
         symbol = assignment.symbol
         fs = assignment.expression.free_symbols
 

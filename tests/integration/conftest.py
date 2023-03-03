@@ -16,10 +16,12 @@ def start_model(testdata):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tempdir)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tempdir)
         model_start = Model.create_model('mox2.mod')
-        model_start.datainfo = model_start.datainfo.replace(
-            path=tempdir / 'mox_simulated_normal.csv'
+        model_start = model_start.replace(
+            datainfo=model_start.datainfo.replace(path=tempdir / 'mox_simulated_normal.csv')
         )
-        fit(model_start)
+        modelfit_results = fit(model_start)
+        # FIXME: Remove
+        model_start = model_start.replace(modelfit_results=modelfit_results)
     return model_start
 
 

@@ -44,6 +44,7 @@ class ColumnInfo(Immutable):
     _all_types = (
         'id',
         'dv',
+        'dvid',
         'idv',
         'unknown',
         'dose',
@@ -84,6 +85,7 @@ class ColumnInfo(Immutable):
         'time after dose',
         'plasma concentration',
         'subject identifier',
+        'observation identifier',
     )
 
     @staticmethod
@@ -238,7 +240,8 @@ class ColumnInfo(Immutable):
         ============  =============
         id            Individual identifier. Max one per DataFrame. All values have to be unique
         idv           Independent variable. Max one per DataFrame.
-        dv            Dependent variable
+        dv            Observations of the dependent variable
+        dvid          Dependent variable ID
         covariate     Covariate
         dose          Dose amount
         rate          Rate of infusion
@@ -259,17 +262,18 @@ class ColumnInfo(Immutable):
     def descriptor(self):
         """Kind of data
 
-        ==================== ==========================================
-        descriptor           Description
-        ==================== ==========================================
-        age                  Age (since birth)
-        body weight          Human body weight
-        lean body mass       Lean body mass
-        fat free mass        Fat free mass
-        time after dose      Time after dose
-        plasma concentration Concentration of substance in blood plasma
-        subject identifier   Unique integer identifier for a subject
-        ==================== ==========================================
+        ====================== ============================================
+        descriptor             Description
+        ====================== ============================================
+        age                    Age (since birth)
+        body weight            Human body weight
+        lean body mass         Lean body mass
+        fat free mass          Fat free mass
+        time after dose        Time after dose
+        plasma concentration   Concentration of substance in blood plasma
+        subject identifier     Unique integer identifier for a subject
+        observation identifier Unique integer identifier for an observation
+        ====================== ============================================
         """
         return self._descriptor
 
@@ -389,6 +393,36 @@ class ColumnInfo(Immutable):
         """
         return self.scale in ['interval', 'ratio']
 
+    def is_integer(self):
+        """Check if the column datatype is integral
+
+        Returns
+        -------
+        bool
+            True if of integral datatype
+
+        See also
+        --------
+        is_categorical : Check if the column data is categorical
+
+        Examples
+        --------
+        >>> from pharmpy.model import ColumnInfo
+        >>> col1 = ColumnInfo.create("WGT", scale='ratio')
+        >>> col1.is_integer()
+        False
+        """
+        return self.datatype in [
+            'int8',
+            'int16',
+            'int32',
+            'int64',
+            'uint8',
+            'uint16',
+            'uint32',
+            'uint64',
+        ]
+
     def __repr__(self):
         ser = pd.Series(
             [
@@ -433,7 +467,7 @@ class DataInfo(Sequence, Immutable):
 
     def __init__(
         self,
-        columns: Optional[Union[TypingSequence[ColumnInfo], TypingSequence[str]]] = None,
+        columns: Optional[Union[TypingSequence[ColumnInfo], TypingSequence[str]]] = (),
         path: Optional[Union[str, Path]] = None,
         separator: str = ',',
         force_absolute_path: bool = True,

@@ -93,7 +93,6 @@ def lock_rest(is_locked, is_done, path, shared, blocking):
     ids=repr,
 )
 def test_non_blocking(tmp_path, parallelization, exception, shared):
-
     if os.name == 'nt' and 'processes' in repr(parallelization):
         pytest.skip("TODO Processes-based tests randomly fail on Windows.")
 
@@ -101,7 +100,6 @@ def test_non_blocking(tmp_path, parallelization, exception, shared):
     assert not shared[0] or not shared[-1]
 
     with lock(tmp_path) as path:
-
         n = len(shared)
         nb = 1 + (
             1
@@ -153,7 +151,6 @@ def test_non_blocking_processes_and_threads(tmp_path, n_blocking):
         pytest.skip("TODO Processes-based tests randomly fail on Windows.")
 
     with lock(tmp_path) as path:
-
         with processes(2) as (executor, m):
             is_locked = m.Barrier(2 + n_blocking)
             is_done = m.Barrier(2)
@@ -188,22 +185,18 @@ def lock_exclusive(are_locked, q, path, i):
 
 @pytest.mark.parametrize('parallelization', (threads, processes))
 def test_many_shared_one_exclusive_blocking(tmp_path, parallelization):
-
     if os.name == 'nt' and 'processes' in repr(parallelization):
         pytest.skip("TODO Processes-based tests randomly fail on Windows.")
 
     with lock(tmp_path) as path:
-
         n = 10
 
         with parallelization(n) as [executor, m]:
-
             results_queue = m.Queue()
 
             # NOTE We run the test twice to reuse workers to catch errors where
             # some workers are left in a locked state.
             for _ in range(2):
-
                 are_locked = m.Barrier(n)
 
                 for i in range(1, n):
@@ -233,7 +226,6 @@ def test_non_reentrant_dead_lock(tmp_path, acquire_lock, shared):
 @pytest.mark.parametrize('shared', (True, False))
 def test_reentrant(tmp_path, shared):
     with lock(tmp_path) as path:
-
         with path_lock(path, shared=shared, reentrant=False):
             with path_lock(path, shared=shared, reentrant=True):
                 pass
@@ -299,7 +291,6 @@ def test_many_exclusive_threads_and_processes_rw(tmp_path):
         pytest.skip("TODO Processes-based tests randomly fail on Windows.")
 
     with lock(tmp_path) as path:
-
         m = 10
         n = m**2
         items = list(range(n))
@@ -334,7 +325,6 @@ def test_many_exclusive(tmp_path, parallelization, n):
         pytest.skip("TODO Processes-based tests randomly fail on Windows.")
 
     with lock(tmp_path) as path:
-
         items = list(range(n))
 
         with parallelization(n) as [executor, _]:
@@ -370,22 +360,18 @@ def lock_shared_chained(path, first_is_locked, recvp, send, recvn, results, n, i
 
 @pytest.mark.parametrize('parallelization', (threads, processes))
 def test_chained_shared_one_exclusive_blocking(tmp_path, parallelization):
-
     if os.name == 'nt' and 'processes' in repr(parallelization):
         pytest.skip("TODO Processes-based tests randomly fail on Windows.")
 
     with lock(tmp_path) as path:
-
         n = 10
 
         with parallelization(n) as [executor, m]:
-
             results_queue = m.Queue()
 
             # NOTE We run the test twice to reuse workers to catch errors where
             # some workers are left in a locked state.
             for _ in range(2):
-
                 first_is_locked = m.Barrier(2)
                 queues = [m.Queue() for _ in range(n + 1)]
 
@@ -446,12 +432,10 @@ def sync_write(path, filename, q, i):
 
 @pytest.mark.parametrize('parallelization', (threads, processes))
 def test_synchronized_reads_blocking(tmp_path, parallelization):
-
     if os.name == 'nt' and 'processes' in repr(parallelization):
         pytest.skip("TODO Processes-based tests randomly fail on Windows.")
 
     with lock(tmp_path) as path:
-
         filename = 'rw'
 
         with open(filename, 'w') as fp:

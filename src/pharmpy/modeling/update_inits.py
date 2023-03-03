@@ -27,7 +27,7 @@ def update_inits(
     Returns
     -------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Example
     -------
@@ -35,8 +35,7 @@ def update_inits(
     >>> model = load_example_model("pheno")   # This model was previously fitted to its data
     >>> model.parameters.inits  # doctest:+ELLIPSIS
     {'PTVCL': 0.00469307, 'PTVV': 1.00916, 'THETA_3': 0.1, 'IVCL': 0.0309626, 'IVV': 0.031128, 'SIGMA_1_1': 0.013241}
-    >>> update_inits(model, model.modelfit_results.parameter_estimates)  # doctest:+ELLIPSIS
-    <...>
+    >>> model = update_inits(model, model.modelfit_results.parameter_estimates)
     >>> model.parameters.inits  # doctest:+ELLIPSIS
     {'PTVCL': 0.00469555, 'PTVV': 0.984258, 'THETA_3': 0.15892, 'IVCL': 0.0293508, 'IVV': 0.027906, ...}
 
@@ -44,9 +43,9 @@ def update_inits(
     if move_est_close_to_bounds:
         parameter_estimates = _move_est_close_to_bounds(model, parameter_estimates)
 
-    model.parameters = model.parameters.set_initial_estimates(parameter_estimates)
+    model = model.replace(parameters=model.parameters.set_initial_estimates(parameter_estimates))
 
-    return model
+    return model.update_source()
 
 
 def _move_est_close_to_bounds(model: Model, pe):
@@ -101,7 +100,7 @@ def update_initial_individual_estimates(
     Returns
     -------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Example
     -------
@@ -113,5 +112,5 @@ def update_initial_individual_estimates(
     if not force and model.initial_individual_estimates is None:
         return model
 
-    model.initial_individual_estimates = individual_estimates
-    return model
+    model = model.replace(initial_individual_estimates=individual_estimates)
+    return model.update_source()

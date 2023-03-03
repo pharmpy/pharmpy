@@ -43,12 +43,12 @@ from .records.sizes_record import SizesRecord
 from .table import NONMEMTableFile, PhiTable
 
 
-def update_description(model: Model):
-    if model.description != model.internals.old_description:
-        probrec = model.internals.control_stream.get_records('PROBLEM')[0]
-        new = probrec.set_title(model.description)
-        newcs = model.internals.control_stream.replace_records([probrec], [new])
-        model.internals = model.internals.replace(control_stream=newcs)
+def update_description(control_stream, old, new):
+    if new != old:
+        probrec = control_stream.get_records('PROBLEM')[0]
+        new = probrec.set_title(new)
+        control_stream = control_stream.replace_records([probrec], [new])
+    return control_stream
 
 
 def reorder_diff(diff, kept_names):
@@ -364,23 +364,27 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
     if old is None:
         old = CompartmentalSystem(CompartmentalSystemBuilder())
 
-    update_lag_time(model, old, new)
+    model = update_lag_time(model, old, new)
 
     advan, trans, nonlin = new_advan_trans(model)
 
     if nonlin:
-        to_des(model, new)
+        model = to_des(model, new)
     else:
         if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.datainfo.names:
             df = model.dataset.drop(columns=['RATE'])
-            model.dataset = df
+            model = model.replace(dataset=df)
 
-        pk_param_conversion(model, advan=advan, trans=trans)
-        add_needed_pk_parameters(model, advan, trans)
-        update_subroutines_record(model, advan, trans)
-        update_model_record(model, advan)
+        model = pk_param_conversion(model, advan=advan, trans=trans)
+        model = add_needed_pk_parameters(model, advan, trans)
+        model = update_subroutines_record(model, advan, trans)
+        model = update_model_record(model, advan)
 
-    update_infusion(model, old)
+        if not is_nonlinear_odes(model):
+            model = from_des(model, advan)
+
+    model, updated_dataset = update_infusion(model, old)
+    return model, updated_dataset
 
 
 def is_nonlinear_odes(model: Model):
@@ -396,7 +400,7 @@ def update_infusion(model: Model, old: ODESystem):
     assert new is not None
     if isinstance(new.dosing_compartment.dose, Infusion) and not statements.find_assignment('D1'):
         # Handle direct moving of Infusion dose
-        statements.subs({'D2': 'D1'})
+        statements = statements.subs({'D2': 'D1'})
 
     if isinstance(new.dosing_compartment.dose, Infusion) and isinstance(
         old.dosing_compartment.dose, Bolus
@@ -407,23 +411,67 @@ def update_infusion(model: Model, old: ODESystem):
             ass = Assignment(sympy.Symbol('D1'), dose.duration)
             cb = CompartmentalSystemBuilder(new)
             cb.set_dose(new.dosing_compartment, Infusion(dose.amount, duration=ass.symbol))
-            model.statements = (
-                model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-            )
+            statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")
-        model.statements = (
-            model.statements.before_odes
-            + ass
-            + model.statements.ode_system
-            + model.statements.after_odes
-        )
-        df = model.dataset.copy()
-        rate = np.where(df['AMT'] == 0, 0.0, -2.0)
-        df['RATE'] = rate
-        # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
-        # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
-        model.dataset = df
+        statements = statements.before_odes + ass + statements.ode_system + statements.after_odes
+        dataset = model.dataset.copy()
+        rate = np.where(dataset['AMT'] == 0, 0.0, -2.0)
+        dataset['RATE'] = rate
+        updated_dataset = True
+        model = model.replace(dataset=dataset)
+    else:
+        updated_dataset = False
+    model = model.replace(statements=statements)
+    return model, updated_dataset
+
+
+def from_des(model, advan):
+    cs = model.internals.control_stream
+    old_des = cs.get_records('DES')
+    newcs = cs.remove_records(old_des)
+
+    subs = cs.get_records('SUBROUTINES')[0]
+    newrec = subs.remove_option('TOL')
+
+    trans = None
+
+    odes = model.statements.ode_system
+
+    output_rate = odes.get_flow(odes.central_compartment, output)
+
+    if isinstance(output_rate, sympy.Symbol):
+        trans = 'TRANS1'
+    else:
+        if advan in ('ADVAN1', 'ADVAN2'):
+            trans = 'TRANS2'
+        if advan in ('ADVAN3', 'ADVAN11'):
+            rates = []
+            for cmt in odes.compartment_names:
+                outflows = odes.get_compartment_outflows(cmt)
+                rates.extend([rate[1] for rate in outflows])
+
+            def _is_symb_quotient(expr):
+                numer, denom = expr.as_numer_denom()
+                return isinstance(numer, sympy.Symbol) and isinstance(denom, sympy.Symbol)
+
+            def _is_symb_expr_quotient(expr):
+                numer, denom = expr.as_numer_denom()
+                return isinstance(numer, sympy.Symbol) and isinstance(denom, sympy.Expr)
+
+            if all(_is_symb_quotient(rate) for rate in rates):
+                trans = 'TRANS4'
+            elif advan == 'ADVAN3':
+                if all(_is_symb_quotient(rate) or _is_symb_expr_quotient(rate) for rate in rates):
+                    trans = 'TRANS3'
+
+    if trans is not None:
+        newrec = newrec.remove_option_startswith('TRANS')
+        newrec = newrec.append_option(trans)
+
+    newcs = newcs.replace_records([subs], [newrec])
+    model = model.replace(internals=model.internals.replace(control_stream=newcs))
+    return model
 
 
 def to_des(model: Model, new: ODESystem):
@@ -456,15 +504,17 @@ def to_des(model: Model, new: ODESystem):
     cs = cs.insert_record(mod)
     old_mod = mod
     assert isinstance(mod, ModelRecord)
-    for eq, ic in zip(new.eqs, list(new.ics.keys())):
+    dosecmt_name = new.dosing_compartment.name
+    for eq in new.eqs:
         name = eq.lhs.args[0].name[2:]
-        if new.ics[ic] != 0:
+        if name == dosecmt_name:
             dose = True
         else:
             dose = False
         mod = mod.add_compartment(name, dosing=dose)
     cs = cs.replace_records([old_mod], [mod])
-    model.internals = model.internals.replace(control_stream=cs)
+    model = model.replace(internals=model.internals.replace(control_stream=cs))
+    return model
 
 
 def update_statements(model: Model, old: Statements, new: Statements, trans):
@@ -473,6 +523,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
     error_statements = Statements()
 
     new_odes = new.ode_system
+    updated_dataset = False
     if new_odes is not None:
         old_odes = old.ode_system
         if new_odes != old_odes:
@@ -484,7 +535,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                     'in dataset might not be relevant anymore. Check '
                     'CMT-column or drop column'
                 )
-            update_ode_system(model, old_odes, new_odes)
+            model, updated_dataset = update_ode_system(model, old_odes, new_odes)
         else:
             if len(model.estimation_steps) > 0:
                 new_solver = model.estimation_steps[0].solver
@@ -497,8 +548,8 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
                     newsubs = subs.set_advan(advan)
                     newcs = model.internals.control_stream.replace_records([subs], [newsubs])
-                    model.internals = model.internals.replace(control_stream=newcs)
-                    update_model_record(model, advan)
+                    model = model.replace(internals=model.internals.replace(control_stream=newcs))
+                    model = update_model_record(model, advan)
 
     main_statements = model.statements.before_odes
     error_statements = model.statements.after_odes
@@ -506,13 +557,13 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
     rec = model.internals.control_stream.get_pred_pk_record()
     newrec = rec.update_statements(main_statements.subs(trans), model.random_variables, trans)
     newcs = model.internals.control_stream.replace_records([rec], [newrec])
-    model.internals = model.internals.replace(control_stream=newcs)
+    model = model.replace(internals=model.internals.replace(control_stream=newcs))
 
     error = model.internals.control_stream.get_error_record()
     if not error and len(error_statements) > 0:
         empty_error = create_record('$ERROR\n')
         newcs = model.internals.control_stream.insert_record(empty_error)
-        model.internals = model.internals.replace(control_stream=newcs)
+        model = model.replace(internals=model.internals.replace(control_stream=newcs))
     if error:
         if (
             len(error_statements) > 0
@@ -529,7 +580,8 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
             error_statements.subs(trans), model.random_variables, trans
         )
         newcs = model.internals.control_stream.replace_records([error], [new_error])
-        model.internals = model.internals.replace(control_stream=newcs)
+        model = model.replace(internals=model.internals.replace(control_stream=newcs))
+    return model, updated_dataset
 
 
 def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSystem):
@@ -540,12 +592,13 @@ def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSy
         ass = Assignment(sympy.Symbol('ALAG1'), new_lag_time)
         cb = CompartmentalSystemBuilder(new)
         cb.set_lag_time(new_dosing, ass.symbol)
-        model.statements = (
-            model.statements.before_odes
+        model = model.replace(
+            statements=model.statements.before_odes
             + ass
             + CompartmentalSystem(cb)
             + model.statements.after_odes
         )
+    return model
 
 
 def new_compartmental_map(cs: CompartmentalSystem, oldmap: Mapping[str, int]):
@@ -595,7 +648,7 @@ def pk_param_conversion(model: Model, advan, trans):
     """Conversion map for pk parameters for removed or added compartment"""
     all_subs = model.internals.control_stream.get_records('SUBROUTINES')
     if not all_subs:
-        return
+        return model
     subs = all_subs[0]
     from_advan = subs.advan
     statements = model.statements
@@ -757,10 +810,14 @@ def pk_param_conversion(model: Model, advan, trans):
                         sympy.Symbol('K42'): sympy.Symbol('K31'),
                     }
                 )
-    if advan == 'ADVAN5' or advan == 'ADVAN7' and from_advan not in ('ADVAN5', 'ADVAN7'):
-        n = len(newmap)
-        d[sympy.Symbol('K')] = sympy.Symbol(f'K{n-1}0')
-    model.statements = statements.subs(d)
+    if advan == 'ADVAN5' or advan == 'ADVAN7':
+        if from_advan not in ('ADVAN5', 'ADVAN7'):
+            n = len(newmap)
+            d[sympy.Symbol('K')] = sympy.Symbol(f'K{n-1}0')
+        else:
+            d[sympy.Symbol(f'K{len(oldmap)-1}0')] = sympy.Symbol(f'K{len(newmap)-1}0')
+    model = model.replace(statements=statements.subs(d))
+    return model
 
 
 def new_advan_trans(model: Model):
@@ -844,8 +901,9 @@ def update_subroutines_record(model: Model, advan, trans):
     if not all_subs:
         content = f'$SUBROUTINES {advan} {trans}\n'
         subsrec = create_record(content)
-        model.internals.control_stream = model.internals.control_stream.insert_record(subsrec)
-        return
+        newcs = model.internals.control_stream.insert_record(subsrec)
+        model = model.replace(internals=model.internals.replace(control_stream=newcs))
+        return model
     subs = all_subs[0]
     oldadvan = subs.advan
     oldtrans = subs.trans
@@ -860,7 +918,8 @@ def update_subroutines_record(model: Model, advan, trans):
         else:
             newsubs = newsubs.replace_option(oldtrans, trans)
     newcs = model.internals.control_stream.replace_records([subs], [newsubs])
-    model.internals = model.internals.replace(control_stream=newcs)
+    model = model.replace(internals=model.internals.replace(control_stream=newcs))
+    return model
 
 
 def update_model_record(model: Model, advan):
@@ -874,10 +933,13 @@ def update_model_record(model: Model, advan):
         return
     newmap = new_compartmental_map(odes, oldmap)
 
+    replace_dict = {'compartment_map': newmap}
+
     if advan in ['ADVAN1', 'ADVAN2', 'ADVAN3', 'ADVAN4', 'ADVAN10', 'ADVAN11', 'ADVAN12']:
         newcs = model.internals.control_stream.remove_records(
             model.internals.control_stream.get_records('MODEL')
         )
+        replace_dict['control_stream'] = newcs
     else:
         if oldmap != newmap or model.estimation_steps[0].solver:
             newcs = model.internals.control_stream.remove_records(
@@ -898,7 +960,9 @@ def update_model_record(model: Model, advan):
                     mod = mod.add_compartment(comps[i], dosing=False)
                 i += 1
             newcs = newcs.replace_records([old_mod], [mod])
-    model.internals = model.internals.replace(control_stream=newcs, compartment_map=newmap)
+            replace_dict['control_stream'] = newcs
+    model = model.replace(internals=model.internals.replace(**replace_dict))
+    return model
 
 
 def add_needed_pk_parameters(model: Model, advan, trans):
@@ -913,43 +977,48 @@ def add_needed_pk_parameters(model: Model, advan, trans):
             if rate != ass.symbol:
                 cb = CompartmentalSystemBuilder(odes)
                 cb.add_flow(odes.find_depot(statements), comp, ass.symbol)
-                model.statements = (
-                    statements.before_odes + ass + CompartmentalSystem(cb) + statements.after_odes
+                model = model.replace(
+                    statements=statements.before_odes
+                    + ass
+                    + CompartmentalSystem(cb)
+                    + statements.after_odes
                 )
+                statements = model.statements
+                odes = statements.ode_system
     if advan in ['ADVAN1', 'ADVAN2'] and trans == 'TRANS2':
         central = odes.central_compartment
-        add_parameters_ratio(model, 'CL', 'V', central, output)
+        model = add_parameters_ratio(model, 'CL', 'V', central, output)
     elif advan == 'ADVAN3' and trans == 'TRANS4':
         central = odes.central_compartment
         peripheral = odes.peripheral_compartments[0]
-        add_parameters_ratio(model, 'CL', 'V1', central, output)
-        add_parameters_ratio(model, 'Q', 'V2', peripheral, central)
-        add_parameters_ratio(model, 'Q', 'V1', central, peripheral)
+        model = add_parameters_ratio(model, 'CL', 'V1', central, output)
+        model = add_parameters_ratio(model, 'Q', 'V2', peripheral, central)
+        model = add_parameters_ratio(model, 'Q', 'V1', central, peripheral)
     elif advan == 'ADVAN4':
         central = odes.central_compartment
         peripheral = odes.peripheral_compartments[0]
         if trans == 'TRANS1':
             rate1 = odes.get_flow(central, peripheral)
-            add_rate_assignment_if_missing(model, 'K23', rate1, central, peripheral)
+            model = add_rate_assignment_if_missing(model, 'K23', rate1, central, peripheral)
             rate2 = odes.get_flow(peripheral, central)
-            add_rate_assignment_if_missing(model, 'K32', rate2, peripheral, central)
+            model = add_rate_assignment_if_missing(model, 'K32', rate2, peripheral, central)
         if trans == 'TRANS4':
-            add_parameters_ratio(model, 'CL', 'V2', central, output)
-            add_parameters_ratio(model, 'Q', 'V3', peripheral, central)
+            model = add_parameters_ratio(model, 'CL', 'V2', central, output)
+            model = add_parameters_ratio(model, 'Q', 'V3', peripheral, central)
     elif advan == 'ADVAN12' and trans == 'TRANS4':
         central = odes.central_compartment
         peripheral1 = odes.peripheral_compartments[0]
         peripheral2 = odes.peripheral_compartments[1]
-        add_parameters_ratio(model, 'CL', 'V2', central, output)
-        add_parameters_ratio(model, 'Q3', 'V3', peripheral1, central)
-        add_parameters_ratio(model, 'Q4', 'V4', peripheral2, central)
+        model = add_parameters_ratio(model, 'CL', 'V2', central, output)
+        model = add_parameters_ratio(model, 'Q3', 'V3', peripheral1, central)
+        model = add_parameters_ratio(model, 'Q4', 'V4', peripheral2, central)
     elif advan == 'ADVAN11' and trans == 'TRANS4':
         central = odes.central_compartment
         peripheral1 = odes.peripheral_compartments[0]
         peripheral2 = odes.peripheral_compartments[1]
-        add_parameters_ratio(model, 'CL', 'V1', central, output)
-        add_parameters_ratio(model, 'Q2', 'V2', peripheral1, central)
-        add_parameters_ratio(model, 'Q3', 'V3', peripheral2, central)
+        model = add_parameters_ratio(model, 'CL', 'V1', central, output)
+        model = add_parameters_ratio(model, 'Q2', 'V2', peripheral1, central)
+        model = add_parameters_ratio(model, 'Q3', 'V3', peripheral2, central)
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         oldmap = model.internals.compartment_map
         assert oldmap is not None
@@ -980,9 +1049,10 @@ def add_needed_pk_parameters(model: Model, advan, trans):
                             param = f'K{sn}{t}{0}'
                         else:
                             param = f'K{sn}{t}{dn}'
-                        add_rate_assignment_if_missing(
+                        model = add_rate_assignment_if_missing(
                             model, param, rate, source_comp, dest_comp, synonyms=names
                         )
+    return model
 
 
 def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
@@ -1005,13 +1075,16 @@ def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
                 new_statement2 = par2
         cb = CompartmentalSystemBuilder(odes)
         cb.add_flow(source, dest, par1.symbol / par2.symbol)
-        model.statements = (
-            statements.before_odes
-            + new_statement1
-            + new_statement2
-            + CompartmentalSystem(cb)
-            + statements.after_odes
+        model = model.replace(
+            statements=(
+                statements.before_odes
+                + new_statement1
+                + new_statement2
+                + CompartmentalSystem(cb)
+                + statements.after_odes
+            )
         )
+    return model
 
 
 def define_parameter(
@@ -1030,18 +1103,28 @@ def define_parameter(
             assert isinstance(ass, Assignment)
             if value != ass.expression and value != sympy.Symbol(name):
                 replacement_ass = Assignment(ass.symbol, value)
-                model.statements = (
-                    model.statements[:i] + replacement_ass + model.statements[i + 1 :]
+                model = model.replace(
+                    statements=model.statements[:i] + replacement_ass + model.statements[i + 1 :]
                 )
-            return False
+            return model, False
     new_ass = Assignment(sympy.Symbol(name), value)
-    model.statements = (
-        model.statements.before_odes
-        + new_ass
-        + model.statements.ode_system
-        + model.statements.after_odes
+    # Put new rate before output rate in statements
+    central = model.statements.ode_system.central_compartment
+    output_rate = model.statements.ode_system.get_flow(central, output)
+    out_ind = model.statements.find_assignment_index(output_rate)
+    if out_ind:
+        before_odes = (
+            model.statements.before_odes[:out_ind]
+            + new_ass
+            + model.statements.before_odes[out_ind:]
+        )
+    else:
+        before_odes = model.statements.before_odes + new_ass
+
+    model = model.replace(
+        statements=before_odes + model.statements.ode_system + model.statements.after_odes
     )
-    return True
+    return model, True
 
 
 def add_rate_assignment_if_missing(
@@ -1052,19 +1135,22 @@ def add_rate_assignment_if_missing(
     dest: Compartment,
     synonyms: Optional[List[str]] = None,
 ):
-    added = define_parameter(model, name, value, synonyms=synonyms)
+    model, added = define_parameter(model, name, value, synonyms=synonyms)
     if added:
         cb = CompartmentalSystemBuilder(model.statements.ode_system)
         cb.add_flow(source, dest, sympy.Symbol(name))
-        model.statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+        model = model.replace(
+            statements=model.statements.before_odes
+            + CompartmentalSystem(cb)
+            + model.statements.after_odes
         )
+    return model
 
 
 def update_abbr_record(model: Model, rv_trans):
     trans = {}
     if not rv_trans:
-        return trans
+        return model, trans
 
     # Remove not used ABBR
     abbr_map = model.internals.control_stream.abbreviated.translate_to_pharmpy_names()
@@ -1092,18 +1178,18 @@ def update_abbr_record(model: Model, rv_trans):
                 abbr_record_code = f'$ABBR REPLACE {abbr_name}={nonmem_name}\n'
                 abbr_record = create_record(abbr_record_code)
                 control_stream = control_stream.insert_record(abbr_record)
-    model.internals = model.internals.replace(control_stream=control_stream)
-    return trans
+    model = model.replace(internals=model.internals.replace(control_stream=control_stream))
+    return model, trans
 
 
-def update_estimation(model: Model):
-    new = model.estimation_steps
+def update_estimation(control_stream, model):
     old = model.internals.old_estimation_steps
+    new = model.estimation_steps
     if old == new:
-        return
+        return control_stream
 
     delta = code_record.diff(old, new)
-    old_records = model.internals.control_stream.get_records('ESTIMATION')
+    old_records = control_stream.get_records('ESTIMATION')
     i = 0
     new_records = []
 
@@ -1181,13 +1267,11 @@ def update_estimation(model: Model):
         prev = (op, est)
 
     if old_records:
-        newcs = model.internals.control_stream.replace_records(old_records, new_records)
-        model.internals = model.internals.replace(control_stream=newcs)
+        control_stream = control_stream.replace_records(old_records, new_records)
     else:
         for rec in new_records:
             newrec = create_record(str(rec))
-            newcs = model.internals.control_stream.insert_record(newrec)
-            model.internals = model.internals.replace(control_stream=newcs)
+            control_stream = control_stream.insert_record(newrec)
 
     old_cov = False
     for est in old:
@@ -1197,15 +1281,14 @@ def update_estimation(model: Model):
         new_cov |= est.cov
     if not old_cov and new_cov:
         # Add $COV
-        last_est_rec = model.internals.control_stream.get_records('ESTIMATION')[-1]
-        idx_cov = model.internals.control_stream.records.index(last_est_rec)
+        last_est_rec = control_stream.get_records('ESTIMATION')[-1]
+        idx_cov = control_stream.records.index(last_est_rec)
         covrec = create_record('$COVARIANCE\n')
-        newcs = model.internals.control_stream.insert_record(covrec, at_index=idx_cov + 1)
+        control_stream = control_stream.insert_record(covrec, at_index=idx_cov + 1)
     elif old_cov and not new_cov:
         # Remove $COV
-        covrecs = model.internals.control_stream.get_records('COVARIANCE')
-        newcs = model.internals.control_stream.remove_records(covrecs)
-    model.internals = model.internals.replace(control_stream=newcs)
+        covrecs = control_stream.get_records('COVARIANCE')
+        control_stream = control_stream.remove_records(covrecs)
 
     # Update $TABLE
     # Currently only adds if did not exist before
@@ -1213,7 +1296,7 @@ def update_estimation(model: Model):
     for estep in new:
         cols.update(estep.predictions)
         cols.update(estep.residuals)
-    tables = model.internals.control_stream.get_records('TABLE')
+    tables = control_stream.get_records('TABLE')
     if not tables and cols:
         s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
         s += f'{model.datainfo.dv_column.name} '
@@ -1221,9 +1304,8 @@ def update_estimation(model: Model):
         if any(id_val > 99999 for id_val in get_ids(model)):
             s += ' FORMAT=s1PE16.8'
         tabrec = create_record(s)
-        newcs = model.internals.control_stream.insert_record(tabrec)
-        model.internals = model.internals.replace(control_stream=newcs)
-    model.internals = model.internals.replace(old_estimation_steps=new)
+        control_stream = control_stream.insert_record(tabrec)
+    return control_stream
 
 
 def solver_to_advan(solver):
@@ -1245,7 +1327,9 @@ def solver_to_advan(solver):
 
 def update_ccontra(model: Model, path=None, force=False):
     h = model.observation_transformation
-    y = model.dependent_variable
+
+    # FIXME: handle other DVs?
+    y = list(model.dependent_variables.keys())[0]
     dhdy = sympy.diff(h, y)
     ll = -2 * sympy.log(dhdy)
     ll = ll.subs(y, sympy.Symbol('y', real=True, positive=True))
@@ -1322,9 +1406,9 @@ def update_name_of_tables(control_stream: NMTranControlStream, new_name: str):
     return control_stream
 
 
-def update_sizes(model: Model):
+def update_sizes(control_stream, model: Model):
     """Update $SIZES if needed"""
-    all_sizes = model.internals.control_stream.get_records('SIZES')
+    all_sizes = control_stream.get_records('SIZES')
     sizes = all_sizes[0] if all_sizes else create_record('$SIZES ')
     assert isinstance(sizes, SizesRecord)
     odes = model.statements.ode_system
@@ -1338,17 +1422,16 @@ def update_sizes(model: Model):
     if len(str(sizes)) > 7:
         if len(all_sizes) == 0:
             sizesrec = create_record(str(sizes))
-            model.internals.control_stream = model.internals.control_stream.insert_record(sizesrec)
+            control_stream = control_stream.insert_record(sizesrec)
         else:
-            model.internals.control_stream = model.internals.control_stream.replace_records(
-                [all_sizes[0]], [sizes]
-            )
+            control_stream = control_stream.replace_records([all_sizes[0]], [sizes])
+    return control_stream
 
 
-def update_input(model: Model):
+def update_input(control_stream, model: Model):
     """Update $INPUT"""
-    input_records = model.internals.control_stream.get_records("INPUT")
-    _, drop, _, colnames = parse_column_info(model.internals.control_stream)
+    input_records = control_stream.get_records("INPUT")
+    _, drop, _, colnames = parse_column_info(control_stream)
     keep = []
     i = 0
     for child in input_records[0].root.children:
@@ -1381,8 +1464,8 @@ def update_input(model: Model):
 
     for ci in model.datainfo[len(colnames) :]:
         new_input = new_input.append_option(ci.name, 'DROP' if ci.drop else None)
-    newcs = model.internals.control_stream.replace_records([input_records[0]], [new_input])
-    model.internals = model.internals.replace(control_stream=newcs)
+    control_stream = control_stream.replace_records([input_records[0]], [new_input])
+    return control_stream
 
 
 def get_zero_fix_rvs(model, eta=True):
@@ -1409,60 +1492,60 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
 
     Could have 0 FIX in model. Need to read these
     """
-    if path is None:  # What to do here?
-        phi_path = Path('.')
+    if path == 'DUMMYPATH':
+        phi_path = path
     else:
-        phi_path = path.parent
-    phi_path /= f'{model.name}_input.phi'
+        if path is None:  # What to do here?
+            phi_path = Path('.')
+        else:
+            phi_path = path.parent
+        phi_path /= f'{model.name}_input.phi'
 
     estimates = model.initial_individual_estimates
-    if estimates is not model.internals.old_initial_individual_estimates:
-        assert estimates is not None
-        rv_names = {rv for rv in model.random_variables.names if rv.startswith('ETA')}
-        columns = set(estimates.columns)
-        if columns < rv_names:
-            raise ValueError(
-                f'Cannot set initial estimate for random variable not in the model:'
-                f' {rv_names - columns}'
-            )
-        diff = columns - rv_names
-        # If not setting all etas automatically set remaining to 0 for all individuals
-        if len(diff) > 0:
-            for name in diff:
-                estimates = estimates.copy(deep=True)
-                estimates[name] = 0
-            estimates = _sort_eta_columns(estimates)
+    assert estimates is not None
+    rv_names = {rv for rv in model.random_variables.names if rv.startswith('ETA')}
+    columns = set(estimates.columns)
+    if columns < rv_names:
+        raise ValueError(
+            f'Cannot set initial estimate for random variable not in the model:'
+            f' {rv_names - columns}'
+        )
+    diff = columns - rv_names
+    # If not setting all etas automatically set remaining to 0 for all individuals
+    if len(diff) > 0:
+        for name in diff:
+            estimates = estimates.copy(deep=True)
+            estimates[name] = 0
+        estimates = _sort_eta_columns(estimates)
 
-        etas = estimates
-        zero_fix = get_zero_fix_rvs(model, eta=True)
-        if zero_fix:
-            for eta in zero_fix:
-                etas[eta] = 0
-        etas = _sort_eta_columns(etas)
-        if not nofiles:
-            phi = PhiTable(df=etas)
-            table_file = NONMEMTableFile(tables=[phi])
-            table_file.write(phi_path)
-        # FIXME: This is a common operation
-        eta_records = model.internals.control_stream.get_records('ETAS')
-        if eta_records:
-            record = eta_records[0]
-        else:
-            record = create_record('$ETAS ')
-            newcs = model.internals.control_stream.insert_record(record)
-            model.internals = model.internals.replace(control_stream=newcs)
-        assert isinstance(record, EtasRecord)
-        newrecord = record.set_path(phi_path)
-        newcs = model.internals.control_stream.replace_records([record], [newrecord])
-        model.internals = model.internals.replace(control_stream=newcs)
+    etas = estimates
+    zero_fix = get_zero_fix_rvs(model, eta=True)
+    if zero_fix:
+        for eta in zero_fix:
+            etas[eta] = 0
+    etas = _sort_eta_columns(etas)
+    if not nofiles:
+        phi = PhiTable(df=etas)
+        table_file = NONMEMTableFile(tables=[phi])
+        table_file.write(phi_path)
+    control_stream = model.internals.control_stream
+    eta_records = control_stream.get_records('ETAS')
+    if eta_records:
+        record = eta_records[0]
+    else:
+        record = create_record('$ETAS ')
+        control_stream = control_stream.insert_record(record)
+    assert isinstance(record, EtasRecord)
+    newrecord = record.set_path(phi_path)
+    control_stream = control_stream.replace_records([record], [newrecord])
 
-        first_est_record = model.internals.control_stream.get_records('ESTIMATION')[0]
-        try:
-            first_est_record.option_pairs['MCETA']
-        except KeyError:
-            newrec = first_est_record.set_option('MCETA', '1')
-            newcs = model.internals.control_stream.replace_records([first_est_record], [newrec])
-            model.internals = model.internals.replace(control_stream=newcs)
+    first_est_record = control_stream.get_records('ESTIMATION')[0]
+    try:
+        first_est_record.option_pairs['MCETA']
+    except KeyError:
+        newrec = first_est_record.set_option('MCETA', '1')
+        control_stream = control_stream.replace_records([first_est_record], [newrec])
+    return control_stream
 
 
 def _sort_eta_columns(df: pd.DataFrame):
@@ -1472,14 +1555,14 @@ def _sort_eta_columns(df: pd.DataFrame):
 def abbr_translation(model: Model, rv_trans):
     abbr_pharmpy = model.internals.control_stream.abbreviated.translate_to_pharmpy_names()
     abbr_replace = model.internals.control_stream.abbreviated.replace
-    abbr_trans = update_abbr_record(model, rv_trans)
+    model, abbr_trans = update_abbr_record(model, rv_trans)
     abbr_recs = {
         sympy.Symbol(abbr_pharmpy[value]): sympy.Symbol(key)
         for key, value in abbr_replace.items()
         if value in abbr_pharmpy.keys()
     }
     abbr_trans.update(abbr_recs)
-    return abbr_trans
+    return model, abbr_trans
 
 
 def create_name_map(model):

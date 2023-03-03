@@ -110,7 +110,6 @@ from pharmpy.modeling import has_covariate_effect
     ids=repr,
 )
 def test_has_covariate_effect(load_model_for_test, testdata, model_path, effect, has):
-
     model = load_model_for_test(testdata.joinpath(*model_path))
 
     assert has_covariate_effect(model, *effect) is has

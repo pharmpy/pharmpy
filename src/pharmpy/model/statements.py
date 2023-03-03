@@ -181,18 +181,12 @@ class ODESystem(Statement):
     pass
 
 
-class Output:
+class Output(Immutable):
     def __new__(cls):
         # Singleton class
         if not hasattr(cls, 'instance'):
             cls.instance = super(Output, cls).__new__(cls)
         return cls.instance
-
-    def __copy_(self):
-        return self
-
-    def __deepcopy__(self, memo):
-        return self
 
     def __repr__(self):
         return "Output()"
@@ -537,7 +531,7 @@ class CompartmentalSystem(ODESystem):
         {AMT, CL, V, t}
         """
         free = {sympy.Symbol('t')}
-        for (_, _, rate) in self._g.edges.data('rate'):
+        for _, _, rate in self._g.edges.data('rate'):
             free |= rate.free_symbols
         for node in _comps(self._g):
             free |= node.free_symbols
@@ -575,7 +569,7 @@ class CompartmentalSystem(ODESystem):
         └───────┘
         """
         cb = CompartmentalSystemBuilder(self)
-        for (u, v, rate) in cb._g.edges.data('rate'):
+        for u, v, rate in cb._g.edges.data('rate'):
             rate_sub = subs(rate, substitutions, simultaneous=True)
             cb._g.edges[u, v]['rate'] = rate_sub
         mapping = {comp: comp.subs(substitutions) for comp in _comps(self._g)}
@@ -599,7 +593,7 @@ class CompartmentalSystem(ODESystem):
             Set of symbolic atoms
         """
         atoms = set()
-        for (_, _, rate) in self._g.edges.data('rate'):
+        for _, _, rate in self._g.edges.data('rate'):
             atoms |= rate.atoms(cls)
         return atoms
 
@@ -702,6 +696,35 @@ class CompartmentalSystem(ODESystem):
             flow = self.get_flow(node, compartment)
             flows.append((node, flow))
         return flows
+
+    def get_bidirectionals(self, compartment):
+        """Get list of all compartments with bidirectional flow from/to a compartment
+
+        Parameters
+        ----------
+        compartment : Compartment or str
+            Compartment of interest
+
+        Returns
+        -------
+        list
+            Compartments with bidirectional flow
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> central = model.statements.ode_system.central_compartment
+        >>> model.statements.ode_system.get_bidirectionals(central)
+        []
+        """
+        if isinstance(compartment, str):
+            compartment = self.find_compartment(compartment)
+        comps = []
+        for node in self._g.predecessors(compartment):
+            if self._g.has_edge(compartment, node):
+                comps.append(node)
+        return comps
 
     def find_compartment(self, name):
         """Find a compartment using its name
@@ -899,8 +922,7 @@ class CompartmentalSystem(ODESystem):
         --------
         >>> from pharmpy.modeling import load_example_model, set_first_order_absorption
         >>> model = load_example_model("pheno")
-        >>> set_first_order_absorption(model)       # doctest: +ELLIPSIS
-        <...>
+        >>> model = set_first_order_absorption(model)
         >>> model.statements.ode_system.find_depot(model.statements)
         Compartment(DEPOT, amount=A_DEPOT, dose=Bolus(AMT, admid=1))
         """
@@ -1016,14 +1038,14 @@ class CompartmentalSystem(ODESystem):
         >>> model = load_example_model("pheno")
         >>> sympy.pprint(model.statements.ode_system.zero_order_inputs)
         [0]
-        >>> set_zero_order_absorption(model)    # doctest: +ELLIPSIS
-        <...>
+        >>> model = set_zero_order_absorption(model)    # doctest: +ELLIPSIS
         >>> sympy.pprint(model.statements.ode_system.zero_order_inputs)
-        ⎡⎧ AMT                ⎤
-        ⎢⎪─────  for t < 2⋅MAT⎥
-        ⎢⎨2⋅MAT               ⎥
-        ⎢⎪                    ⎥
-        ⎣⎩  0      otherwise  ⎦
+                ⎡⎧AMT            ⎤
+                ⎢⎪───  for D₁ > t⎥
+                ⎢⎨ D₁            ⎥
+                ⎢⎪               ⎥
+                ⎣⎩ 0   otherwise ⎦
+
         """
         inputs = []
         for node in self._order_compartments():  # self._g.nodes:
@@ -1059,61 +1081,82 @@ class CompartmentalSystem(ODESystem):
         def comp_string(comp):
             return comp.name + lag_string(comp) + f_string(comp)
 
-        central = self.central_compartment
-        central_box = unicode.Box(comp_string(central))
-        depot = self._find_depot()
         current = self.dosing_compartment
-        if depot:
-            comp = depot
-        else:
-            comp = central
-        transits = []
-        while current != comp:
-            transits.append(current)
-            current = self.get_compartment_outflows(current)[0][0]
-        periphs = self.peripheral_compartments
-        nrows = 1 + 2 * len(periphs)
-        ncols = 2 * len(transits) + (2 if depot else 0) + 2
+        comp_height = 0
+        comp_width = 0
+
+        while True:
+            bidirects = self.get_bidirectionals(current)
+            outflows = self.get_compartment_outflows(current)
+            comp_height = max(comp_height, len(bidirects) + 1)
+            comp_width += 1
+            for comp, rate in outflows:
+                if comp not in bidirects and comp != output:
+                    current = comp
+                    break
+            else:
+                break
+
+        noutput = len(self.get_compartment_inflows(output))
+        nrows = comp_height * 2 - 1 + (1 if noutput > 1 else 0)
+        ncols = comp_width * 2
         grid = unicode.Grid(nrows, ncols)
-        if nrows == 1:
+
+        current = self.dosing_compartment
+        col = 0
+        if nrows == 1 or nrows == 2:
             main_row = 0
         else:
             main_row = 2
-        col = 0
-        for transit in transits:
-            grid.set(main_row, col, unicode.Box(comp_string(transit)))
-            col += 1
-            grid.set(
-                main_row, col, unicode.Arrow(str(self.get_compartment_outflows(transit)[0][1]))
-            )
-            col += 1
-        if depot:
-            grid.set(main_row, col, unicode.Box(comp_string(depot)))
-            col += 1
-            grid.set(main_row, col, unicode.Arrow(str(self.get_compartment_outflows(depot)[0][1])))
-            col += 1
-        central_col = col
-        grid.set(main_row, col, central_box)
-        col += 1
-        grid.set(main_row, col, unicode.Arrow(str(self.get_flow(central, output))))
-        if periphs:
-            grid.set(0, central_col, unicode.Box(comp_string(periphs[0])))
-            grid.set(
-                1,
-                central_col,
-                unicode.DualVerticalArrows(
-                    str(self.get_flow(central, periphs[0])), str(self.get_flow(periphs[0], central))
-                ),
-            )
-        if len(periphs) > 1:
-            grid.set(4, central_col, unicode.Box(comp_string(periphs[1])))
-            grid.set(
-                3,
-                central_col,
-                unicode.DualVerticalArrows(
-                    str(self.get_flow(periphs[1], central)), str(self.get_flow(central, periphs[1]))
-                ),
-            )
+
+        while True:
+            bidirects = self.get_bidirectionals(current)
+            outflows = self.get_compartment_outflows(current)
+            comp_box = unicode.Box(comp_string(current))
+            grid.set(main_row, col, comp_box)
+
+            if bidirects:
+                grid.set(0, col, unicode.Box(comp_string(bidirects[0])))
+                grid.set(
+                    1,
+                    col,
+                    unicode.DualVerticalArrows(
+                        str(self.get_flow(current, bidirects[0])),
+                        str(self.get_flow(bidirects[0], current)),
+                    ),
+                )
+            if len(bidirects) > 1:
+                grid.set(4, col, unicode.Box(comp_string(bidirects[1])))
+                grid.set(
+                    3,
+                    col,
+                    unicode.DualVerticalArrows(
+                        str(self.get_flow(bidirects[1], current)),
+                        str(self.get_flow(current, bidirects[1])),
+                    ),
+                )
+
+            for comp, rate in outflows:
+                if comp not in bidirects and comp != output:
+                    next_comp = comp
+                    break
+            else:
+                next_comp = None
+
+            if next_comp:
+                rate = self.get_flow(current, next_comp)
+            else:
+                rate = self.get_flow(current, output)
+            arrow = unicode.Arrow(str(rate))
+            grid.set(main_row, col + 1, arrow)
+            if next_comp and noutput > 1:
+                rate = self.get_flow(current, output)
+                arrow = unicode.VerticalArrow(str(rate))
+                grid.set(main_row + 1, col, arrow)
+            col += 2
+            current = next_comp
+            if not current:
+                break
 
         dose = self.dosing_compartment.dose
         s = str(dose) + '\n' + str(grid).rstrip()
@@ -1538,7 +1581,7 @@ class Infusion(Dose):
         return f'Infusion({self.amount}, admid={self._admid}, {arg})'
 
 
-class Statements(Sequence):
+class Statements(Sequence, Immutable):
     """A sequence of symbolic statements describing the model
 
     Two types of statements are supported: Assignment and ODESystem.

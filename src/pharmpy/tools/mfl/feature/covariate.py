@@ -28,9 +28,7 @@ Spec = Tuple[
     EffectSpecFeature[EffectType],
     EffectSpecFeature[OperationType],
 ]
-InputSpec = Sequence[
-    InputEffectSpecFeature[Union[str, EffectType, OperationType]],
-]
+InputSpec = Sequence[InputEffectSpecFeature[Union[str, EffectType, OperationType]],]
 
 all_continuous_covariate_effects = (
     'lin',

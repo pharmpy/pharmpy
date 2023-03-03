@@ -23,6 +23,7 @@ from pharmpy.modeling import (
     get_observations,
     list_time_varying_covariates,
     remove_loq_data,
+    set_dvid,
     translate_nmtran_time,
     undrop_columns,
 )
@@ -41,7 +42,9 @@ def test_get_doseid(load_example_model_for_test):
     assert doseid[743] == 13
 
     # Same timepoint for dose and observation
-    model.dataset.loc[742, 'TIME'] = model.dataset.loc[743, 'TIME']
+    df = model.dataset.copy()
+    df.loc[742, 'TIME'] = df.loc[743, 'TIME']
+    model = model.replace(dataset=df)
     doseid = get_doseid(model)
     assert len(doseid) == 744
     assert doseid[743] == 12
@@ -130,7 +133,7 @@ def test_number_of_observations(load_example_model_for_test):
 def test_covariate_baselines(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
     covs = model.datainfo[['WGT', 'APGR']].set_types('covariate')
-    model.datainfo = model.datainfo[0:3] + covs + model.datainfo[5:]
+    model = model.replace(datainfo=model.datainfo[0:3] + covs + model.datainfo[5:])
     df = get_covariate_baselines(model)
     assert len(df) == 59
     assert list(df.columns) == ['WGT', 'APGR']
@@ -176,14 +179,15 @@ def test_get_cmt(load_example_model_for_test):
 
 def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, testdata):
     m = load_example_model_for_test("pheno")
-    add_time_after_dose(m)
+    m = add_time_after_dose(m)
     tad = m.dataset['TAD']
+
     assert tad[0] == 0.0
     assert tad[1] == 2.0
     assert tad[743] == 2.0
 
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
-    add_time_after_dose(m)
+    m = add_time_after_dose(m)
     tad = list(m.dataset['TAD'].iloc[0:21])
     assert tad == [
         0.0,
@@ -212,7 +216,7 @@ def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, t
     assert m.dataset.loc[104, 'TAD'] == pytest.approx(1.17)
 
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
-    add_time_after_dose(m)
+    m = add_time_after_dose(m)
     tad = list(m.dataset['TAD'].iloc[0:16])
     assert tad == [0.0, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0, 0.0, 12.0, 0.5, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0]
 
@@ -249,15 +253,15 @@ def test_drop_dropped_columns(load_example_model_for_test):
 
 def test_undrop_columns(load_example_model_for_test):
     m = load_example_model_for_test('pheno')
-    drop_columns(m, ["APGR", "WGT"], mark=True)
-    undrop_columns(m, "WGT")
+    m = drop_columns(m, ["APGR", "WGT"], mark=True)
+    m = undrop_columns(m, "WGT")
     assert not m.datainfo["WGT"].drop
     assert m.datainfo["APGR"].drop
 
 
 def test_remove_loq_data(load_example_model_for_test):
     m = load_example_model_for_test('pheno')
-    remove_loq_data(m, lloq=10, uloq=40)
+    m = remove_loq_data(m, lloq=10, uloq=40)
     assert len(m.dataset) == 736
 
 
@@ -270,7 +274,9 @@ def test_check_dataset(load_example_model_for_test):
     assert df[df['code'] == 'A1']['result'].iloc[0] == 'OK'
     assert df[df['code'] == 'A4']['result'].iloc[0] == 'SKIP'
 
-    m.dataset.loc[743, 'WGT'] = -1
+    df = m.dataset.copy()
+    df.loc[743, 'WGT'] = -1
+    m = m.replace(dataset=df)
     df = check_dataset(m, verbose=True, dataframe=True)
     assert df is not None
     assert df[df['code'] == 'A3']['result'].iloc[0] == 'FAIL'
@@ -283,7 +289,7 @@ def test_nmtran_time(load_example_model_for_test):
 
 def test_expand_additional_doses(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
-    expand_additional_doses(model)
+    model = expand_additional_doses(model)
     df = model.dataset
     assert len(df) == 1494
     assert len(df.columns) == 5
@@ -299,7 +305,7 @@ def test_expand_additional_doses(load_model_for_test, testdata):
     assert df.loc[4, 'TIME'] == 48.0
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
-    expand_additional_doses(model, flag=True)
+    model = expand_additional_doses(model, flag=True)
     df = model.dataset
     assert len(df) == 1494
     assert len(df.columns) == 8
@@ -338,3 +344,19 @@ def test_deidentify_data():
     )
     pd.testing.assert_series_equal(df['DATE'], correct_date)
     pd.testing.assert_series_equal(df['BIRTH'], correct_birth)
+
+
+def test_set_dvid(load_example_model_for_test):
+    m = load_example_model_for_test('pheno')
+    m = set_dvid(m, 'FA1')
+    col = m.datainfo['FA1']
+    assert col.type == 'dvid'
+    assert col.scale == 'nominal'
+    assert col.categories == [0, 1]
+    m = set_dvid(m, 'FA1')
+    assert m.datainfo['FA1'].type == 'dvid'
+    m = set_dvid(m, 'FA2')
+    assert m.datainfo['FA1'].type == 'unknown'
+    assert m.datainfo['FA2'].type == 'dvid'
+    with pytest.raises(ValueError):
+        set_dvid(m, 'WGT')

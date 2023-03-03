@@ -20,7 +20,7 @@ jobs:
         python-version: ['3.8', '3.9', '3.10', '3.11']
         include:
           - tox-env: 'unit'
-          - python-version: '3.8'
+          - python-version: '3.9'
             tox-env: ${{ github.actor != 'dependabot[bot]' && 'unit-cover' || 'unit' }}
 
     runs-on: ${{ matrix.platform }}

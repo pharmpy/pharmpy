@@ -18,7 +18,8 @@ from .parameters import add_population_parameter, fix_parameters, set_initial_es
 
 def _preparations(model):
     stats = model.statements
-    y = model.dependent_variable
+    # FIXME: handle other DVs?
+    y = list(model.dependent_variables.keys())[0]
     f = subs(
         model.statements.find_assignment(y.name).expression,
         {sympy.Symbol(eps): 0 for eps in model.random_variables.epsilons.names},
@@ -28,14 +29,16 @@ def _preparations(model):
 
 
 def _canonicalize_data_transformation(model, value):
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
     if value is None:
-        value = model.dependent_variable
+        value = dv
     else:
         value = parse_expr(value)
-        if value.free_symbols != {model.dependent_variable}:
+        if value.free_symbols != {dv}:
             raise ValueError(
                 f"Expression for data transformation must contain the dependent variable "
-                f"{model.dependent_variable} and no other variables"
+                f"{dv} and no other variables"
             )
     return value
 
@@ -51,7 +54,7 @@ def remove_error_model(model: Model):
     Return
     ------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -59,8 +62,7 @@ def remove_error_model(model: Model):
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
     Y = EPS₁⋅W + F
-    >>> remove_error_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_error_model(model)
     >>> model.statements.find_assignment("Y")
     Y = F
 
@@ -70,9 +72,9 @@ def remove_error_model(model: Model):
 
     """
     stats, y, f = _preparations(model)
-    model.statements = stats.reassign(y, f)
-    remove_unused_parameters_and_rvs(model)
-    return model
+    model = model.replace(statements=stats.reassign(y, f))
+    model = remove_unused_parameters_and_rvs(model)
+    return model.update_source()
 
 
 def set_additive_error_model(
@@ -105,7 +107,7 @@ def set_additive_error_model(
     Return
     ------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
@@ -113,8 +115,7 @@ def set_additive_error_model(
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
     Y = EPS₁⋅W + F
-    >>> set_additive_error_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_additive_error_model(model)
     >>> model.statements.find_assignment("Y")
     Y = F + εₐ
 
@@ -122,8 +123,7 @@ def set_additive_error_model(
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
     Y = EPS₁⋅W + F
-    >>> set_additive_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_additive_error_model(model, data_trans="log(Y)")
     >>> model.statements.find_assignment("Y")
                  εₐ
         log(F) + ──
@@ -142,22 +142,20 @@ def set_additive_error_model(
 
     data_trans = _canonicalize_data_transformation(model, data_trans)
     expr = f + ruv
-    if data_trans != model.dependent_variable:
-        expr = (
-            subs(data_trans, {model.dependent_variable: expr}, simultaneous=True)
-            .series(ruv, n=series_terms)
-            .removeO()
-        )
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
+    if data_trans != dv:
+        expr = subs(data_trans, {dv: expr}, simultaneous=True).series(ruv, n=series_terms).removeO()
 
-    model.statements = stats.reassign(y, expr)
-    remove_unused_parameters_and_rvs(model)
+    model = model.replace(statements=stats.reassign(y, expr))
+    model = remove_unused_parameters_and_rvs(model)
 
     sigma = create_symbol(model, 'sigma')
-    add_population_parameter(model, sigma.name, _get_prop_init(model))
+    model = add_population_parameter(model, sigma.name, _get_prop_init(model))
 
     eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
-    model.random_variables = model.random_variables + eps
-    return model
+    model = model.replace(random_variables=model.random_variables + eps)
+    return model.update_source()
 
 
 def _get_prop_init(model):
@@ -196,14 +194,13 @@ def set_proportional_error_model(
     Returns
     -------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
-    >>> set_proportional_error_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_proportional_error_model(model)
     >>> model.statements.after_odes
         A_CENTRAL
         ─────────
@@ -221,11 +218,10 @@ def set_proportional_error_model(
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
-    >>> set_proportional_error_model(
+    >>> model = set_proportional_error_model(
     ...     model,
     ...     data_trans="log(Y)"
-    ... )    # doctest: +ELLIPSIS
-    <...>
+    ... )
     >>> model.statements.after_odes
         A_CENTRAL
         ─────────
@@ -256,9 +252,11 @@ def set_proportional_error_model(
     data_trans = _canonicalize_data_transformation(model, data_trans)
     ipred = create_symbol(model, 'IPREDADJ') if zero_protection else f
 
-    if data_trans == sympy.log(model.dependent_variable):
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
+    if data_trans == sympy.log(dv):
         expr = sympy.log(ipred) + ruv
-    elif data_trans == model.dependent_variable:
+    elif data_trans == dv:
         expr = f + ipred * ruv
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
@@ -270,14 +268,15 @@ def set_proportional_error_model(
         ind = stats.find_assignment_index(y)
         statements = statements[0:ind] + guard_assignment + statements[ind:]
 
-    model.statements = statements.reassign(y, expr)
-    remove_unused_parameters_and_rvs(model)
+    model = model.replace(statements=statements.reassign(y, expr))
+    model = remove_unused_parameters_and_rvs(model)
 
     sigma = create_symbol(model, 'sigma')
-    add_population_parameter(model, sigma.name, 0.09)
+    model = add_population_parameter(model, sigma.name, 0.09)
 
     eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
-    model.random_variables = model.random_variables + eps
+    model = model.replace(random_variables=model.random_variables + eps)
+    model = model.update_source()
     return model
 
 
@@ -306,21 +305,19 @@ def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
-    >>> set_combined_error_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_combined_error_model(model)
     >>> model.statements.find_assignment("Y")
     Y = F⋅εₚ + F + εₐ
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
-    >>> set_combined_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_combined_error_model(model, data_trans="log(Y)")
     >>> model.statements.find_assignment("Y")
                      εₐ
        εₚ + log(F) + ──
@@ -345,9 +342,12 @@ def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy
     theta_time = sympy.Symbol('time_varying')
 
     data_trans = _canonicalize_data_transformation(model, data_trans)
-    if data_trans == sympy.log(model.dependent_variable):
+
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
+    if data_trans == sympy.log(dv):
         expr_combined = sympy.log(f) + ruv_prop + ruv_add / f
-    elif data_trans == model.dependent_variable:
+    elif data_trans == dv:
         if isinstance(expr, sympy.Piecewise):
             expr_0 = expr.args[0][0]
             expr_1 = expr.args[1][0]
@@ -382,18 +382,18 @@ def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
 
-    model.statements = stats.reassign(y, expr_combined)
-    remove_unused_parameters_and_rvs(model)
+    model = model.replace(statements=stats.reassign(y, expr_combined))
+    model = remove_unused_parameters_and_rvs(model)
 
     sigma_prop = create_symbol(model, 'sigma_prop')
-    add_population_parameter(model, sigma_prop.name, 0.09)
+    model = add_population_parameter(model, sigma_prop.name, 0.09)
     sigma_add = create_symbol(model, 'sigma_add')
-    add_population_parameter(model, sigma_add.name, _get_prop_init(model))
+    model = add_population_parameter(model, sigma_add.name, _get_prop_init(model))
 
     eps_prop = NormalDistribution.create(ruv_prop.name, 'RUV', 0, sigma_prop)
     eps_add = NormalDistribution.create(ruv_add.name, 'RUV', 0, sigma_add)
-    model.random_variables = model.random_variables + [eps_prop, eps_add]
-    return model
+    model = model.replace(random_variables=model.random_variables + [eps_prop, eps_add])
+    return model.update_source()
 
 
 def has_additive_error_model(model: Model):
@@ -420,8 +420,10 @@ def has_additive_error_model(model: Model):
     --------
     has_proportional_error_model : Check if a model has a proportional error model
     has_combined_error_model : Check if a model has a combined error model
+    has_weighted_error_model : Check if a model has a weighted error model
     """
-    y = model.dependent_variable
+    # FIXME: handle other DVs
+    y = list(model.dependent_variables.keys())[0]
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
@@ -455,8 +457,10 @@ def has_proportional_error_model(model: Model):
     --------
     has_additive_error_model : Check if a model has an additive error model
     has_combined_error_model : Check if a model has a combined error model
+    has_weighted_error_model : Check if a model has a weighted error model
     """
-    y = model.dependent_variable
+    # FIXME: handle other DVs
+    y = list(model.dependent_variables.keys())[0]
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
@@ -490,8 +494,10 @@ def has_combined_error_model(model: Model):
     --------
     has_additive_error_model : Check if a model has an additive error model
     has_proportional_error_model : Check if a model has a proportional error model
+    has_weighted_error_model : Check if a model has a weighted error model
     """
-    y = model.dependent_variable
+    # FIXME: handle other DVs
+    y = list(model.dependent_variables.keys())[0]
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
@@ -520,14 +526,13 @@ def use_thetas_for_error_stdev(model: Model):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, use_thetas_for_error_stdev
     >>> model = load_example_model("pheno")
-    >>> use_thetas_for_error_stdev(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = use_thetas_for_error_stdev(model)
     >>> model.statements.find_assignment("Y")
     Y = EPS₁⋅SD_EPS_1⋅W + F
 
@@ -544,14 +549,14 @@ def use_thetas_for_error_stdev(model: Model):
 
         param = model.parameters[sigma]
         theta_init = param.init**0.5
-        fix_parameters(model, [sigma])
-        set_initial_estimates(model, {sigma: 1})
+        model = fix_parameters(model, [sigma])
+        model = set_initial_estimates(model, {sigma: 1})
 
         sdsymb = create_symbol(model, f'SD_{eps.names[0]}')
-        add_population_parameter(model, sdsymb.name, theta_init, lower=0)
+        model = add_population_parameter(model, sdsymb.name, theta_init, lower=0)
         symb = sympy.Symbol(eps.names[0])
-        model.statements = model.statements.subs({symb: sdsymb * symb})
-    return model
+        model = model.replace(statements=model.statements.subs({symb: sdsymb * symb}))
+    return model.update_source()
 
 
 def set_weighted_error_model(model: Model):
@@ -565,14 +570,13 @@ def set_weighted_error_model(model: Model):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, set_weighted_error_model
     >>> model = load_example_model("pheno")
-    >>> set_weighted_error_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_weighted_error_model(model)
 
     See also
     --------
@@ -596,12 +600,63 @@ def set_weighted_error_model(model: Model):
 
     i = _index_of_first_assignment(stats, y)
 
-    model.statements = stats[0:i] + Assignment(sympy.Symbol('W'), w) + stats[i:]
-    model.statements = model.statements.reassign(
-        y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].names[0])
+    model = model.replace(statements=stats[0:i] + Assignment(sympy.Symbol('W'), w) + stats[i:])
+    model = model.replace(
+        statements=model.statements.reassign(
+            y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].names[0])
+        )
     )
-    remove_unused_parameters_and_rvs(model)
-    return model
+    model = remove_unused_parameters_and_rvs(model)
+    return model.update_source()
+
+
+def has_weighted_error_model(model: Model):
+    """Check if a model has a weighted error model
+
+    Parameters
+    ----------
+    model : Model
+        The model to check
+
+    Return
+    ------
+    bool
+        True if the model has a weighted error model and False otherwise
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, has_weighted_error_model
+    >>> model = load_example_model("pheno")
+    >>> has_weighted_error_model(model)
+    True
+
+    See Also
+    --------
+    has_additive_error_model : Check if a model has an additive error model
+    has_combined_error_model : Check if a model has a combined error model
+    has_proportional_error_model : Check if a model has a proportional error model
+    """
+    stats, y, f = _preparations(model)
+    y_expr = stats.error.find_assignment(y).expression
+    rvs = model.random_variables.epsilons
+    rvs_in_y = {
+        sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in y_expr.free_symbols
+    }
+
+    if len(rvs_in_y) > 1:
+        return False
+    eps_expr = {arg for arg in y_expr.args if arg.free_symbols.intersection(rvs_in_y)}
+    if not eps_expr:
+        return False
+
+    # FIXME: this only covers the simple case of e.g. Y=CONC+W*EPS(1)
+    eps_expr = eps_expr.pop()
+    if len(eps_expr.args) == 2 and eps_expr.func is sympy.Mul:
+        a, b = eps_expr.args
+        w_cand = a if a not in rvs_in_y else b
+        if w_cand not in y_expr.args:
+            return True
+    return False
 
 
 def _index_of_first_assignment(statements: Statements, symbol: sympy.Symbol) -> int:
@@ -623,27 +678,26 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, set_dtbs_error_model
     >>> model = load_example_model("pheno")
-    >>> set_dtbs_error_model(model)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_dtbs_error_model(model)
 
     """
-    use_thetas_for_error_stdev(model)
-    set_weighted_error_model(model)
+    model = use_thetas_for_error_stdev(model)
+    model = set_weighted_error_model(model)
     stats, y, f = _preparations(model)
     lam = create_symbol(model, 'tbs_lambda')
     zeta = create_symbol(model, 'tbs_zeta')
     if fix_to_log:
-        add_population_parameter(model, lam.name, 0, fix=True)
-        add_population_parameter(model, zeta.name, 0, fix=True)
+        model = add_population_parameter(model, lam.name, 0, fix=True)
+        model = add_population_parameter(model, zeta.name, 0, fix=True)
     else:
-        add_population_parameter(model, lam.name, 1)
-        add_population_parameter(model, zeta.name, 0.001)
+        model = add_population_parameter(model, lam.name, 1)
+        model = add_population_parameter(model, zeta.name, 0.001)
 
     i = _index_of_first_assignment(stats, sympy.Symbol('W'))
 
@@ -658,7 +712,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     yexpr_ind = stats.find_assignment_index(y.name)
     yexpr = stats[yexpr_ind].subs({f: sympy.Symbol('IPRED')})
 
-    model.statements = (
+    statements = (
         stats[0 : i + 1]
         + wass
         + ipredass
@@ -670,9 +724,9 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     obs = sympy.Piecewise(
         (sympy.log(y), sympy.Eq(lam, 0)), ((y**lam - 1) / lam, sympy.Ne(lam, 0))
     )
-    model = model.replace(observation_transformation=obs)
+    model = model.replace(observation_transformation=obs, statements=statements)
 
-    return model
+    return model.update_source()
 
 
 def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME'):
@@ -690,14 +744,13 @@ def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME')
     Return
     ------
     Model
-        Reference to the same model object
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, set_time_varying_error_model
     >>> model = load_example_model("pheno")
-    >>> set_time_varying_error_model(model, cutoff=1.0)    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_time_varying_error_model(model, cutoff=1.0)
     >>> model.statements.find_assignment("Y")
         ⎧EPS₁⋅W⋅time_varying + F  for TIME < 1.0
         ⎨
@@ -719,8 +772,6 @@ def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME')
         ),
         (y.expression, True),
     )
-    model.statements = model.statements.reassign(y.symbol, expr)
-
-    add_population_parameter(model, theta.name, 0.1)
-
-    return model
+    model = model.replace(statements=model.statements.reassign(y.symbol, expr))
+    model = add_population_parameter(model, theta.name, 0.1)
+    return model.update_source()

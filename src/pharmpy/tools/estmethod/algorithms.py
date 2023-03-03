@@ -1,6 +1,6 @@
 import itertools
 
-from pharmpy.modeling import add_estimation_step, copy_model, remove_estimation_step, set_ode_solver
+from pharmpy.modeling import add_estimation_step, remove_estimation_step, set_ode_solver
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
@@ -91,17 +91,17 @@ def _create_candidate_model_wf(candidate_no, method, solver, update, is_eval_can
 
 
 def _copy_model(name, model):
-    return copy_model(model, name)
+    return model.replace(name=name)
 
 
 def _create_base_model(model):
     est_settings = _create_est_settings('FOCE')
     eval_settings = _create_eval_settings()
 
-    base_model = copy_model(model, 'base_model')
+    base_model = model.replace(name='base_model')
     est_method, eval_method = est_settings['method'], eval_settings['method']
-    base_model.description = _create_description(
-        [est_method, eval_method], solver=None, update=False
+    base_model = base_model.replace(
+        description=_create_description([est_method, eval_method], solver=None, update=False)
     )
 
     while len(base_model.estimation_steps) > 0:
@@ -118,7 +118,9 @@ def _create_candidate_model(method, solver, update, is_eval_candidate, model):
     eval_settings = _create_eval_settings(laplace)
 
     eval_method = eval_settings['method']
-    model.description = _create_description([method, eval_method], solver=solver, update=update)
+    model = model.replace(
+        description=_create_description([method, eval_method], solver=solver, update=update)
+    )
 
     while len(model.estimation_steps) > 0:
         model = remove_estimation_step(model, 0)

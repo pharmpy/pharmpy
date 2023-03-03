@@ -210,6 +210,17 @@ Get the compartmental matrix:
 
    statements.ode_system.compartmental_matrix
 
+
+~~~~~~~~~~~~~~~~~~~
+Dependent variables
+~~~~~~~~~~~~~~~~~~~
+
+A model can describe one or more dependent variables (output variables). Each dependent variable is defined in the ``dependent_variables`` attribute. This is a dictionary of each dependent variable symbol to the corresponding ``DVID``. If there is only one dependent variable the ``DVID`` column in the dataset is not needed and its value in this definition is unimportant. The expressions of the dependent variables are all found in the statements.
+
+.. pharmpy-execute::
+
+    model.dependent_variables
+
 ~~~~~~~~~~~~~~~~
 Modelfit results
 ~~~~~~~~~~~~~~~~

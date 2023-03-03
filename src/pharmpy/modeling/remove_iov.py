@@ -22,17 +22,17 @@ def remove_iov(model: Model, to_remove: Optional[Union[List[str], str]] = None):
     to_remove : str, list
         Name/names of IOV etas to remove, e.g. 'ETA_IOV_1_1'.
         If None, all etas that are IOVs will be removed. None is default.
+
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Example
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> remove_iov(model)       # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_iov(model)
 
     See also
     --------
@@ -49,14 +49,11 @@ def remove_iov(model: Model, to_remove: Optional[Union[List[str], str]] = None):
         return model
 
     keep = [name for name in rvs.names if name not in etas]
-    model.random_variables = rvs[keep]
-
     d = {sympy.Symbol(name): 0 for name in etas}
-    model.statements = sset.subs(d)
 
-    remove_unused_parameters_and_rvs(model)
-    model.update_source()
-    return model
+    model = model.replace(statements=sset.subs(d), random_variables=rvs[keep])
+    model = remove_unused_parameters_and_rvs(model)
+    return model.update_source()
 
 
 def _get_iov_etas(model: Model, list_of_etas):

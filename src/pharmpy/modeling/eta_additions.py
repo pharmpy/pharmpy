@@ -63,16 +63,14 @@ def add_iiv(
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Example
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> remove_iiv(model, "CL") # doctest: +ELLIPSIS
-    <...>
-    >>> add_iiv(model, "CL", "add")  # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_iiv(model, "CL")
+    >>> model = add_iiv(model, "CL", "add")
     >>> model.statements.find_assignment("CL")
     CL = ETA_CL + TVCL
 
@@ -128,11 +126,9 @@ def add_iiv(
             sset[0:index] + Assignment(statement.symbol, eta_addition.template) + sset[index + 1 :]
         )
 
-    model.random_variables = rvs
-    model.parameters = Parameters.create(pset)
-    model.statements = sset
+    model = model.replace(random_variables=rvs, parameters=Parameters.create(pset), statements=sset)
 
-    return model
+    return model.update_source()
 
 
 ADD_IOV_DISTRIBUTION = frozenset(('disjoint', 'joint', 'explicit', 'same-as-iiv'))
@@ -170,14 +166,13 @@ def add_iov(
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Example
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> add_iov(model, "TIME", "CL")  # doctest: +SKIP
-    <...>
+    >>> model = add_iov(model, "TIME", "CL")
     >>> model.statements.find_assignment("CL")  # doctest: +SKIP
     CL = ETA_CL + TVCL
 
@@ -254,7 +249,6 @@ def add_iov(
         etas_set = set(etas[0])
         etas = []
         for dist in model.random_variables:
-
             intersection = list(filter(etas_set.__contains__, dist.names))
 
             if not intersection:
@@ -283,9 +277,8 @@ def add_iov(
         model, occ, etas, categories, iov_name, etai_name, eta_name, omega_iov_name
     )
 
-    model.random_variables, model.parameters, model.statements = rvs, Parameters.create(pset), iovs
-
-    return model
+    model = model.replace(random_variables=rvs, parameters=Parameters.create(pset), statements=iovs)
+    return model.update_source()
 
 
 def _add_iov_explicit(model, occ, etas, categories, iov_name, etai_name, eta_name, omega_iov_name):
@@ -365,7 +358,6 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
 
 
 def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
-
     _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name)
 
     for i in indices:
@@ -375,7 +367,6 @@ def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name,
 
 
 def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
-
     _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name)
 
     # NOTE Declare off-diagonal OMEGAs
@@ -419,18 +410,16 @@ def add_pk_iiv(model: Model, initial_estimate: float = 0.09):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Example
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_first_order_absorption(model) # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_first_order_absorption(model)
     >>> model.statements.find_assignment("MAT")
     MAT = POP_MAT
-    >>> add_pk_iiv(model) # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_pk_iiv(model)
     >>> model.statements.find_assignment("MAT")
                    ETA_MAT
     MAT = POP_MAT⋅ℯ
@@ -448,9 +437,9 @@ def add_pk_iiv(model: Model, initial_estimate: float = 0.09):
     ]
 
     if params_to_add_etas:
-        add_iiv(model, params_to_add_etas, 'exp', initial_estimate=initial_estimate)
+        model = add_iiv(model, params_to_add_etas, 'exp', initial_estimate=initial_estimate)
 
-    return model
+    return model.update_source()
 
 
 def _create_template(expression, operation):

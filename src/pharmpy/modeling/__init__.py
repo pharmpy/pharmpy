@@ -2,7 +2,6 @@ from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_di
 from pharmpy.modeling.common import (
     bump_model_number,
     convert_model,
-    copy_model,
     generate_model_code,
     get_config_path,
     get_model_covariates,
@@ -25,6 +24,7 @@ from pharmpy.modeling.error import (
     has_additive_error_model,
     has_combined_error_model,
     has_proportional_error_model,
+    has_weighted_error_model,
     remove_error_model,
     set_additive_error_model,
     set_combined_error_model,
@@ -100,6 +100,7 @@ from pharmpy.modeling.remove_iov import remove_iov
 from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
+from .basic_models import create_basic_pk_model
 from .compartments import get_bioavailability, get_lag_times
 from .data import (
     add_time_after_dose,
@@ -125,6 +126,7 @@ from .data import (
     read_dataset_from_datainfo,
     remove_loq_data,
     set_covariates,
+    set_dvid,
     translate_nmtran_time,
     undrop_columns,
 )
@@ -158,6 +160,7 @@ from .expressions import (
     solve_ode_system,
 )
 from .iterators import omit_data, resample_data
+from .metabolite import add_metabolite
 from .parameters import (
     add_population_parameter,
     fix_or_unfix_parameters,
@@ -198,6 +201,7 @@ __all__ = [
     'add_individual_parameter',
     'add_iov',
     'add_lag_time',
+    'add_metabolite',
     'add_peripheral_compartment',
     'add_pk_iiv',
     'add_population_parameter',
@@ -227,7 +231,7 @@ __all__ = [
     'check_parameters_near_bounds',
     'cleanup_model',
     'convert_model',
-    'copy_model',
+    'create_basic_pk_model',
     'create_joint_distribution',
     'create_report',
     'create_rng',
@@ -290,6 +294,7 @@ __all__ = [
     'has_random_effect',
     'has_zero_order_absorption',
     'has_zero_order_elimination',
+    'has_weighted_error_model',
     'is_real',
     'list_time_varying_covariates',
     'load_example_model',
@@ -323,6 +328,7 @@ __all__ = [
     'set_combined_error_model',
     'set_covariates',
     'set_dtbs_error_model',
+    'set_dvid',
     'set_estimation_step',
     'set_evaluation_step',
     'set_first_order_absorption',

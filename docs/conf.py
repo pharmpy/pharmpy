@@ -33,7 +33,7 @@ project = 'Pharmpy'
 year = '2018-2023'
 authors = ['the Pharmpy development team']
 copyright = '{0}; {1}'.format(year, ', '.join(authors))
-version = release = '0.89.0'
+version = release = '0.91.0'
 html_show_sourcelink = False
 
 pygments_style = 'trac'
@@ -83,3 +83,5 @@ import pandas as pd
 pd.set_option('display.width', 1000)
 pd.set_option('display.max_columns', 1000)
 '''
+
+linkcheck_ignore = [r'https://doi.org/10.1002/psp4.12741']

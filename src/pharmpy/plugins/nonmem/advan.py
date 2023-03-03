@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Callable, Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
-from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import (
     Assignment,
@@ -27,12 +26,12 @@ from .nmtran_parser import NMTranControlStream
 def compartmental_model(model: Model, advan: str, trans, des=None):
     di = model.datainfo
     control_stream = model.internals.control_stream
-    return _compartmental_model(di, lambda: model.dataset, control_stream, advan, trans, des)
+    return _compartmental_model(di, model.dataset, control_stream, advan, trans, des)
 
 
 def _compartmental_model(
     di: DataInfo,
-    dataset: Callable[[], pd.DataFrame],
+    dataset,
     control_stream: NMTranControlStream,
     advan: str,
     trans,
@@ -302,7 +301,7 @@ def _compartmental_model(
         for i, comp_name in enumerate(comps, start=1):
             comp = cs.find_compartment(comp_name)
             if i == 1:
-                dose = dosing(di, dataset, 1)  # FIXME: ONly one does to 1st compartment
+                dose = dosing(di, dataset, 1)  # FIXME: Only one dose to 1st compartment
                 cb.set_dose(comp, dose)
             f = _get_bioavailability(control_stream, i)
             cb.set_bioavailability(comp, f)
@@ -550,11 +549,11 @@ def _advan12_trans(trans: str):
         )
 
 
-def dosing(di: DataInfo, dataset: Callable[[], pd.DataFrame], dose_comp: int):
+def dosing(di: DataInfo, dataset, dose_comp: int):
     if 'RATE' not in di.names or di['RATE'].drop:
         return Bolus(sympy.Symbol('AMT'))
 
-    df = dataset()
+    df = dataset
     if (df['RATE'] == 0).all():
         return Bolus(sympy.Symbol('AMT'))
     elif (df['RATE'] == -1).any():

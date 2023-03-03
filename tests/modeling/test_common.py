@@ -6,7 +6,6 @@ import sympy
 
 from pharmpy.modeling import (
     convert_model,
-    copy_model,
     create_joint_distribution,
     fix_parameters,
     generate_model_code,
@@ -68,6 +67,8 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     assert model.parameters['THETA_1'].init == 0.1
 
 
+# NOTE will warn on GHA for Windows due to different drives
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_write_model(testdata, load_model_for_test, tmp_path):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     write_model(model, tmp_path / 'run1.mod')
@@ -76,7 +77,7 @@ def test_write_model(testdata, load_model_for_test, tmp_path):
 
 def test_generate_model_code(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    fix_parameters(model, ['THETA_1'])
+    model = fix_parameters(model, ['THETA_1'])
     assert generate_model_code(model).split('\n')[7] == '$THETA 0.1 FIX'
 
 
@@ -102,40 +103,28 @@ def test_get_model_covariates(pheno, testdata, load_model_for_test):
 
 
 def test_set_name(pheno):
-    model = pheno.copy()
-    set_name(model, "run1")
+    model = set_name(pheno, "run1")
     assert model.name == "run1"
-
-
-def test_copy_model(pheno):
-    run1 = copy_model(pheno)
-    assert id(pheno) != id(run1)
-    assert id(pheno.parameters) == id(run1.parameters)
-    run2 = copy_model(run1, "run2")
-    assert run2.name == "run2"
-    assert run2.parent_model == "pheno_real"
 
 
 def test_convert_model():
     model = load_example_model("pheno")
 
     run1 = convert_model(model, "nlmixr")
-    assert model.name == run1.name
-    assert model == run1
-
     run2 = convert_model(run1, "nonmem")
+
     assert model.name == run2.name == run1.name
-    assert model == run2 == run1
+    assert model.parameters == run1.parameters == run2.parameters
+    assert model.statements == run1.statements == run2.statements
 
 
 def test_remove_unused_parameters_and_rvs(pheno):
-    model = pheno.copy()
-    remove_unused_parameters_and_rvs(model)
-    create_joint_distribution(
+    model = remove_unused_parameters_and_rvs(pheno)
+    model = create_joint_distribution(
         model, individual_estimates=model.modelfit_results.individual_estimates
     )
     statements = model.statements
     i = statements.index(statements.find_assignment('CL'))
-    model.statements = model.statements[0:i] + model.statements[i + 1 :]
-    remove_unused_parameters_and_rvs(model)
+    model = model.replace(statements=model.statements[0:i] + model.statements[i + 1 :])
+    model = remove_unused_parameters_and_rvs(model)
     assert len(model.random_variables['ETA_2'].names) == 1

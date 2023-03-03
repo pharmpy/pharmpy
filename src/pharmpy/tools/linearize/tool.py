@@ -22,9 +22,9 @@ def start_linearize(model):
 
 
 def create_linearized_model(model):
-    linbase = pharmpy.model.Model()
-    linbase.parameters = model.parameters
-    linbase.random_variables = model.random_variables
+    linbase = pharmpy.model.Model(
+        parameters=model.parameters, random_variables=model.random_variables
+    )
 
     ms = []
     base_terms_sum = 0
@@ -59,12 +59,12 @@ def create_linearized_model(model):
     error_terms = Assignment(sympy.Symbol('ERROR_TERMS'), err_terms_sum)
     ms.append(error_terms)
 
-    y = model.dependent_variable
+    # FIXME: handle other DVs?
+    y = list(model.dependent_variables.keys())[0]
     Assignment(y, ipred.symbol + error_terms.symbol)
-    linbase.statements = Statements(ms)
-
-    linbase.name = 'linbase'
 
     est = EstimationStep.create('foce', interaction=True)
-    linbase = linbase.replace(estimation_steps=EstimationSteps.create([est]))
+    linbase = linbase.replace(
+        name='linbase', statements=Statements(ms), estimation_steps=EstimationSteps.create([est])
+    )
     return linbase

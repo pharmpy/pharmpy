@@ -13,13 +13,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import Model, Results
-from pharmpy.modeling import (
-    calculate_aic,
-    calculate_bic,
-    check_high_correlations,
-    copy_model,
-    read_model,
-)
+from pharmpy.modeling import calculate_aic, calculate_bic, check_high_correlations, read_model
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.results import ModelfitResults, mfr
@@ -78,12 +72,12 @@ def fit(
             and db_model == model
             and model.has_same_dataset_as(db_model)
         ):
-            model.modelfit_results = db_model.modelfit_results
+            model = model.replace(modelfit_results=db_model.modelfit_results)
         else:
             kept.append(model)
 
     if kept:
-        run_tool('modelfit', kept, tool=tool)
+        models = run_tool('modelfit', kept, tool=tool)
 
     return mfr(models[0]) if single else list(map(mfr, models))
 
@@ -231,7 +225,6 @@ def _create_metadata(
     tool_options: Mapping[str, Any],
     common_options: Mapping[str, Any],
 ):
-
     tool_metadata = _create_metadata_tool(
         database, tool_name, tool_params, tool_param_types, args, tool_options
     )
@@ -321,9 +314,10 @@ def _parse_tool_options_from_json_metadata(
 
         db: ModelDatabase = tool_database.model_database
         try:
-            model = copy_model(db.retrieve_model(db_name), model_name)
+            model = db.retrieve_model(db_name)
+            model = model.replace(name=model_name)
             res = db.retrieve_modelfit_results(db_name)
-            model.modelfit_results = res
+            model = model.replace(modelfit_results=res)
         except KeyError:
             raise ValueError(
                 f'Cannot resume run because model argument "{model_key}" ({model_name}) cannot be restored.'
@@ -461,7 +455,7 @@ def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
 
 
 def _store_input_model(db: ModelDatabase, model: Model, name: str):
-    model_copy = copy_model(model, name)
+    model_copy = model.replace(name=name)
     with db.transaction(model_copy) as txn:
         txn.store_model()
         txn.store_modelfit_results()
@@ -967,16 +961,12 @@ def _summarize_step(res, i):
 
     if i == -1:
         i = max(res.ofv_iterations.index.get_level_values(0)) - 1
-    ofv = res.ofv_iterations[
-        i + 1,
-    ].iloc[-1]
+    ofv = res.ofv_iterations[i + 1,].iloc[-1]
     summary_dict['ofv'] = ofv
     summary_dict['runtime_total'] = res.runtime_total
     summary_dict['estimation_runtime'] = res.estimation_runtime_iterations.iloc[i]
 
-    pe = res.parameter_estimates_iterations.loc[
-        i + 1,
-    ].iloc[-1]
+    pe = res.parameter_estimates_iterations.loc[i + 1,].iloc[-1]
     ses = res.standard_errors
     rses = res.relative_standard_errors
 

@@ -1,6 +1,7 @@
 import json
 import os
 import os.path
+import shutil
 import subprocess
 import time
 import uuid
@@ -21,7 +22,7 @@ def execute_model(model, db):
     database = db.model_database
     parent_model = model.parent_model
     model = convert_model(model)
-    model.parent_model = parent_model
+    model = model.replace(parent_model=parent_model)
     path = Path.cwd() / f'NONMEM_run_{model.name}-{uuid.uuid1()}'
 
     # NOTE This deduplicates the dataset before running NONMEM so we know which
@@ -56,11 +57,8 @@ def execute_model(model, db):
     datasets_path.mkdir(parents=True, exist_ok=True)
 
     # NOTE Write dataset and model files so they can be used by NONMEM.
-    write_csv(model, path=dataset_path, force=True)
-    model.internals = model.internals.replace(
-        dataset_updated=True
-    )  # Hack to get update_source to update IGNORE
-    write_model(model, path=model_path, force=True)
+    model = write_csv(model, path=dataset_path, force=True)
+    model = write_model(model, path=model_path, force=True)
 
     args = nmfe(
         model.name + model.filename_extension,
@@ -110,7 +108,6 @@ def execute_model(model, db):
     }
 
     with database.transaction(model) as txn:
-
         txn.store_model()
 
         if (
@@ -142,7 +139,9 @@ def execute_model(model, db):
             txn.store_modelfit_results()
 
             # Read in results for the server side
-            model.modelfit_results = parse_modelfit_results(model, model_path / basename)
+            model = model.replace(
+                modelfit_results=parse_modelfit_results(model, model_path / basename)
+            )
 
     return model
 
@@ -155,13 +154,24 @@ def nmfe_path():
     path = conf.default_nonmem_path
     if path != Path(''):
         path /= 'run'
-    for nmfe in nmfe_candidates:
-        candidate_path = path / nmfe
-        if candidate_path.is_file():
-            path = candidate_path
-            break
+        for nmfe in nmfe_candidates:
+            candidate_path = path / nmfe
+            if candidate_path.is_file():
+                path = candidate_path
+                break
+        else:
+            raise FileNotFoundError(f'Cannot find nmfe script for NONMEM ({path})')
     else:
-        raise FileNotFoundError(f'Cannot find nmfe script for NONMEM ({path})')
+        # Not in configuration file
+        for nmfe in nmfe_candidates:
+            candidate_path = shutil.which(nmfe)
+            if candidate_path is not None:
+                path = candidate_path
+                break
+        else:
+            raise FileNotFoundError(
+                'No path to NONMEM configured in pharmpy.conf and nmfe not in PATH'
+            )
     return str(path)
 
 
@@ -179,10 +189,7 @@ def nmfe(*args):
 
 def evaluate_design(context, model):
     # Prepare and run model for design evaluation
-    model = model.copy()
-    model.name = '_design_model'
-
-    model = model.replace(estimation_steps=EstimationSteps())
+    model = model.replace(estimation_steps=EstimationSteps(), name='_design_model')
     stream = model.internals.control_stream
     estrecs = stream.get_records('ESTIMATION')
     stream = stream.remove_records(estrecs)

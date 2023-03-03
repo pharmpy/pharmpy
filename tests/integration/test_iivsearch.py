@@ -130,12 +130,10 @@ def test_brute_force(tmp_path, model_count, start_model):
 )
 def test_no_of_etas_iiv_strategies(tmp_path, model_count, start_model, iiv_strategy):
     with chdir(tmp_path):
-        start_model = start_model.copy()
-        start_model.name = 'moxo2_copy'
-        start_model.modelfit_results = None
-
-        set_seq_zo_fo_absorption(start_model)
-        fit(start_model)
+        start_model = start_model.replace(name='moxo2_copy', modelfit_results=None)
+        start_model = set_seq_zo_fo_absorption(start_model)
+        start_res = fit(start_model)
+        start_model = start_model.replace(modelfit_results=start_res)
 
         res = run_iivsearch(
             'brute_force_no_of_etas',

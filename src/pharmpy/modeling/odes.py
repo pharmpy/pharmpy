@@ -59,29 +59,29 @@ def add_individual_parameter(model: Model, name: str):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> add_individual_parameter(model, "KA")   # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_individual_parameter(model, "KA")
     >>> model.statements.find_assignment("KA")
     KA = POP_KA
 
     """
-    _add_parameter(model, name)
+    model, _ = _add_parameter(model, name)
+    model = model.update_source()
     return model
 
 
 def _add_parameter(model: Model, name: str, init: float = 0.1):
     pops = create_symbol(model, f'POP_{name}')
-    add_population_parameter(model, pops.name, init, lower=0)
+    model = add_population_parameter(model, pops.name, init, lower=0)
     symb = create_symbol(model, name)
     ass = Assignment(symb, pops)
-    model.statements = ass + model.statements
-    return symb
+    model = model.replace(statements=ass + model.statements)
+    return model, symb
 
 
 def set_first_order_elimination(model: Model):
@@ -95,14 +95,13 @@ def set_first_order_elimination(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_first_order_elimination(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_first_order_elimination(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────┐
@@ -118,7 +117,7 @@ def set_first_order_elimination(model: Model):
     if has_first_order_elimination(model):
         pass
     elif has_zero_order_elimination(model) or has_michaelis_menten_elimination(model):
-        rename_symbols(model, {'POP_CLMM': 'POP_CL', 'IIV_CLMM': 'IIV_CL'})
+        model = rename_symbols(model, {'POP_CLMM': 'POP_CL', 'IIV_CLMM': 'IIV_CL'})
         ind = model.statements.find_assignment_index('CLMM')
         assert ind is not None
         clmm_assignment = model.statements[ind]
@@ -136,10 +135,11 @@ def set_first_order_elimination(model: Model):
         cb.remove_flow(central, output)
         cb.add_flow(central, output, sympy.Symbol('CL') / v)
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        model.statements = statements.remove_symbol_definitions(
+        statements = statements.remove_symbol_definitions(
             {sympy.Symbol('KM')}, statements.ode_system
         )
-        remove_unused_parameters_and_rvs(model)
+        model = model.replace(statements=statements)
+        model = remove_unused_parameters_and_rvs(model)
     elif has_mixed_mm_fo_elimination(model):
         odes = model.statements.ode_system
         assert odes is not None
@@ -151,13 +151,14 @@ def set_first_order_elimination(model: Model):
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, sympy.Symbol('CL') / v)
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
-        model.statements = model.statements.remove_symbol_definitions(
-            {sympy.Symbol('KM'), sympy.Symbol('CLMM')}, model.statements.ode_system
+        statements = statements.remove_symbol_definitions(
+            {sympy.Symbol('KM'), sympy.Symbol('CLMM')}, statements.ode_system
         )
-        remove_unused_parameters_and_rvs(model)
+        model = model.replace(statements=statements)
+        model = remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -174,14 +175,13 @@ def set_zero_order_elimination(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_zero_order_elimination(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_zero_order_elimination(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────┐
@@ -197,9 +197,9 @@ def set_zero_order_elimination(model: Model):
     if has_zero_order_elimination(model):
         pass
     elif has_michaelis_menten_elimination(model):
-        fix_parameters(model, 'POP_KM')
+        model = fix_parameters(model, 'POP_KM')
     elif has_mixed_mm_fo_elimination(model):
-        fix_parameters(model, 'POP_KM')
+        model = fix_parameters(model, 'POP_KM')
         odes = model.statements.ode_system
         assert odes is not None
         central = odes.central_compartment
@@ -208,18 +208,19 @@ def set_zero_order_elimination(model: Model):
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, rate)
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
-        model.statements = model.statements.remove_symbol_definitions(
-            {sympy.Symbol('CL')}, model.statements.ode_system
+        statements = statements.remove_symbol_definitions(
+            {sympy.Symbol('CL')}, statements.ode_system
         )
-        remove_unused_parameters_and_rvs(model)
+        model = model.replace(statements=statements)
+        model = remove_unused_parameters_and_rvs(model)
     else:
-        _do_michaelis_menten_elimination(model)
+        model = _do_michaelis_menten_elimination(model)
         obs = get_observations(model)
         init = obs.min() / 100  # 1% of smallest observation
-        fix_parameters_to(model, {'POP_KM': init})
+        model = fix_parameters_to(model, {'POP_KM': init})
     return model
 
 
@@ -245,8 +246,7 @@ def has_michaelis_menten_elimination(model: Model):
     >>> model = load_example_model("pheno")
     >>> has_michaelis_menten_elimination(model)
     False
-    >>> set_michaelis_menten_elimination(model)   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_michaelis_menten_elimination(model)
     >>> has_michaelis_menten_elimination(model)
     True
     """
@@ -283,8 +283,7 @@ def has_zero_order_elimination(model: Model):
     >>> model = load_example_model("pheno")
     >>> has_zero_order_elimination(model)
     False
-    >>> set_zero_order_elimination(model)   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_zero_order_elimination(model)
     >>> has_zero_order_elimination(model)
     True
     """
@@ -321,8 +320,7 @@ def has_mixed_mm_fo_elimination(model: Model):
     >>> model = load_example_model("pheno")
     >>> has_mixed_mm_fo_elimination(model)
     False
-    >>> set_mixed_mm_fo_elimination(model)   # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_mixed_mm_fo_elimination(model)
     >>> has_mixed_mm_fo_elimination(model)
     True
     """
@@ -383,14 +381,13 @@ def set_michaelis_menten_elimination(model: Model):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_michaelis_menten_elimination(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_michaelis_menten_elimination(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────┐
@@ -406,7 +403,7 @@ def set_michaelis_menten_elimination(model: Model):
     if has_michaelis_menten_elimination(model):
         pass
     elif has_zero_order_elimination(model):
-        unfix_parameters(model, 'POP_KM')  # model.parameters['POP_KM'].fix = False
+        model = unfix_parameters(model, 'POP_KM')
     elif has_mixed_mm_fo_elimination(model):
         odes = model.statements.ode_system
         assert odes is not None
@@ -419,12 +416,13 @@ def set_michaelis_menten_elimination(model: Model):
         statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
-        model.statements = statements.remove_symbol_definitions(
+        statements = statements.remove_symbol_definitions(
             {sympy.Symbol('CL')}, statements.ode_system
         )
-        remove_unused_parameters_and_rvs(model)
+        model = model.replace(statements=statements)
+        model = remove_unused_parameters_and_rvs(model)
     else:
-        _do_michaelis_menten_elimination(model)
+        model = _do_michaelis_menten_elimination(model)
     return model
 
 
@@ -441,14 +439,13 @@ def set_mixed_mm_fo_elimination(model: Model):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_mixed_mm_fo_elimination(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_mixed_mm_fo_elimination(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────┐
@@ -465,11 +462,11 @@ def set_mixed_mm_fo_elimination(model: Model):
     if has_mixed_mm_fo_elimination(model):
         pass
     elif has_michaelis_menten_elimination(model) or has_zero_order_elimination(model):
-        unfix_parameters(model, 'POP_KM')
+        model = unfix_parameters(model, 'POP_KM')
         odes = model.statements.ode_system
         assert odes is not None
         central = odes.central_compartment
-        add_individual_parameter(model, 'CL')
+        model = add_individual_parameter(model, 'CL')
         rate = odes.get_flow(central, output)
         assert rate is not None
         cb = CompartmentalSystemBuilder(odes)
@@ -478,11 +475,13 @@ def set_mixed_mm_fo_elimination(model: Model):
         if v not in rate.free_symbols:
             v = sympy.Symbol('VC')
         cb.add_flow(central, output, sympy.Symbol('CL') / v + rate)
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
+        model = model.replace(statements=statements)
+        model = model.update_source()
     else:
-        _do_michaelis_menten_elimination(model, combined=True)
+        model = _do_michaelis_menten_elimination(model, combined=True)
     return model
 
 
@@ -497,15 +496,15 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
 
     km_init, clmm_init = _get_mm_inits(model, numer, combined)
 
-    km = _add_parameter(model, 'KM', init=km_init)
-    set_upper_bounds(model, {'POP_KM': 20 * get_observations(model).max()})
+    model, km = _add_parameter(model, 'KM', init=km_init)
+    model = set_upper_bounds(model, {'POP_KM': 20 * get_observations(model).max()})
 
     if denom != 1:
         if combined:
             cl = numer
-            clmm = _add_parameter(model, 'CLMM', init=clmm_init)
+            model, clmm = _add_parameter(model, 'CLMM', init=clmm_init)
         else:
-            _rename_parameter(model, 'CL', 'CLMM')
+            model = _rename_parameter(model, 'CL', 'CLMM')
             clmm = sympy.Symbol('CLMM')
             cl = 0
         vc = denom
@@ -516,7 +515,7 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
                 assert assignment is not None
                 cl = assignment.symbol
             else:
-                cl = _add_parameter(model, 'CL', clmm_init)
+                model, cl = _add_parameter(model, 'CL', clmm_init)
         else:
             cl = 0
         if model.statements.find_assignment('VC'):
@@ -524,31 +523,32 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
             assert assignment is not None
             vc = assignment.symbol
         else:
-            vc = _add_parameter(model, 'VC')  # FIXME: decide better initial estimate
+            model, vc = _add_parameter(model, 'VC')  # FIXME: decide better initial estimate
         if not combined and model.statements.find_assignment('CL'):
-            _rename_parameter(model, 'CL', 'CLMM')
+            model = _rename_parameter(model, 'CL', 'CLMM')
             assignment = model.statements.find_assignment('CLMM')
             assert assignment is not None
             clmm = assignment.symbol
         else:
-            clmm = _add_parameter(model, 'CLMM', init=clmm_init)
+            model, clmm = _add_parameter(model, 'CLMM', init=clmm_init)
 
     amount = sympy.Function(central.amount.name)(sympy.Symbol('t'))
     rate = (clmm * km / (km + amount / vc) + cl) / vc
     cb = CompartmentalSystemBuilder(odes)
     cb.add_flow(central, output, rate)
-    model.statements = (
+    statements = (
         model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
     )
-    model.statements = model.statements.remove_symbol_definitions(
-        numer.free_symbols, model.statements.ode_system
-    )
-    remove_unused_parameters_and_rvs(model)
+    statements = statements.remove_symbol_definitions(numer.free_symbols, statements.ode_system)
+    model = model.replace(statements=statements)
+    model = remove_unused_parameters_and_rvs(model)
     return model
 
 
 def _rename_parameter(model: Model, old_name, new_name):
-    a = model.statements.find_assignment(old_name)
+    statements = model.statements
+    rvs = model.random_variables
+    a = statements.find_assignment(old_name)
     assert a is not None
     d = {}
     for s in a.rhs_symbols:
@@ -556,10 +556,10 @@ def _rename_parameter(model: Model, old_name, new_name):
             old_par = s
             d[model.parameters[s].symbol] = f'POP_{new_name}'
             new_par = sympy.Symbol(f'POP_{new_name}')
-            model.statements = model.statements.subs({old_par: new_par})
+            statements = statements.subs({old_par: new_par})
             break
     for s in a.rhs_symbols:
-        iivs = model.random_variables.iiv
+        iivs = rvs.iiv
         if s.name in iivs.names:
             cov = iivs.covariance_matrix
             ind = iivs.names.index(s.name)
@@ -576,7 +576,7 @@ def _rename_parameter(model: Model, old_name, new_name):
                         except AttributeError:
                             symb = p
                         d[symb] = p.name.replace(f'IIV_{old_name}', f'IIV_{new_name}')
-            model.random_variables = model.random_variables.subs(d)
+            rvs = rvs.subs(d)
             break
     new = []
     for p in model.parameters:
@@ -587,8 +587,10 @@ def _rename_parameter(model: Model, old_name, new_name):
         else:
             newparam = p
         new.append(newparam)
-    model.parameters = Parameters.create(new)
-    model.statements = model.statements.subs({old_name: new_name})
+    parameters = Parameters.create(new)
+    statements = statements.subs({old_name: new_name})
+    model = model.replace(statements=statements, parameters=parameters, random_variables=rvs)
+    return model
 
 
 def _get_mm_inits(model: Model, rate_numer, combined):
@@ -628,19 +630,18 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_transit_compartments(model, 3)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_transit_compartments(model, 3)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
-    ┌────────┐        ┌────────┐        ┌────────┐        ┌───────┐
-    │TRANSIT1│──3/MDT→│TRANSIT2│──3/MDT→│TRANSIT3│──3/MDT→│CENTRAL│──CL/V→
-    └────────┘        └────────┘        └────────┘        └───────┘
+    ┌────────┐      ┌────────┐      ┌────────┐      ┌───────┐
+    │TRANSIT1│──K12→│TRANSIT2│──K23→│TRANSIT3│──K34→│CENTRAL│──K40→
+    └────────┘      └────────┘      └────────┘      └───────┘
 
     See also
     --------
@@ -683,7 +684,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         else:
             cb.set_dose(central, depot.dose)
         if statements.find_assignment('MAT'):
-            _rename_parameter(model, 'MAT', 'MDT')
+            model = _rename_parameter(model, 'MAT', 'MDT')
             statements = model.statements
             mdt_assign = statements.find_assignment('MDT')
         cb.remove_compartment(depot)
@@ -691,11 +692,13 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         statements = statements.remove_symbol_definitions(rate.free_symbols, statements.ode_system)
         if mdt_assign:
             statements = mdt_assign + statements
-        model.statements = statements
-        remove_unused_parameters_and_rvs(model)
+        model = model.replace(statements=statements)
+        model = remove_unused_parameters_and_rvs(model)
         odes = statements.ode_system
         assert odes is not None
-        cs = odes
+        # Since update_source() is used after removing the depot and statements are immutable, we need to
+        # reset to get the correct rate names
+        cs = model.statements.ode_system
 
     if len(transits) == n:
         return model
@@ -707,7 +710,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
                 init = mdt_init
             else:
                 init = _get_absorption_init(model, 'MDT')
-            mdt_symb = _add_parameter(model, 'MDT', init=init)
+            model, mdt_symb = _add_parameter(model, 'MDT', init=init)
         rate = n / mdt_symb
         dosing_comp = cs.dosing_compartment
         comp = dosing_comp
@@ -719,9 +722,11 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             cb.add_flow(new_comp, comp, rate)
             comp = new_comp
         cb.move_dose(dosing_comp, comp)
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
+        model = model.replace(statements=statements)
+        model = model.update_source()
     elif len(transits) > n:
         nremove = len(transits) - n
         removed_symbols = set()
@@ -744,14 +749,16 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             dose = cs.dosing_compartment.dose
             cb.set_dose(destination, dose)
 
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
-        _update_numerators(model)
-        model.statements = model.statements.remove_symbol_definitions(
+        model = model.replace(statements=statements)
+        model = _update_numerators(model)
+        statements = model.statements.remove_symbol_definitions(
             removed_symbols, model.statements.ode_system
         )
-        remove_unused_parameters_and_rvs(model)
+        model = model.replace(statements=statements)
+        model = remove_unused_parameters_and_rvs(model)
     else:
         nadd = n - len(transits)
         last, destination, rate = _find_last_transit(cs, set(transits))
@@ -768,10 +775,12 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             last = new_comp
             nadd -= 1
         cb.add_flow(last, destination, rate)
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
-        _update_numerators(model)
+        model = model.replace(statements=statements)
+        model = _update_numerators(model)
+        model = model.update_source()
     return model
 
 
@@ -805,7 +814,10 @@ def _update_numerators(model: Model):
                 if ass_numer.is_Integer and ass_numer != new_numerator:
                     new_rate = new_numerator / ass_denom
                     statements = statements.reassign(numer, new_rate)
-    model.statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+    model = model.replace(
+        statements=statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+    )
+    return model
 
 
 def add_lag_time(model: Model):
@@ -822,14 +834,13 @@ def add_lag_time(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> add_lag_time(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_lag_time(model)
 
     See also
     --------
@@ -842,17 +853,21 @@ def add_lag_time(model: Model):
         raise ValueError(f'Model {model.name} has no ODE system')
     dosing_comp = odes.dosing_compartment
     old_lag_time = dosing_comp.lag_time
-    mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
+    model, mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
     cb = CompartmentalSystemBuilder(odes)
     cb.set_lag_time(dosing_comp, mdt_symb)
-    model.statements = (
-        model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+    model = model.replace(
+        statements=(
+            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+        )
     )
     if old_lag_time:
-        model.statements = model.statements.remove_symbol_definitions(
-            old_lag_time.free_symbols, odes
+        model = model.replace(
+            statements=model.statements.remove_symbol_definitions(old_lag_time.free_symbols, odes)
         )
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
+    else:
+        model = model.update_source()
     return model
 
 
@@ -867,14 +882,13 @@ def remove_lag_time(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> remove_lag_time(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = remove_lag_time(model)
 
     See also
     --------
@@ -892,13 +906,12 @@ def remove_lag_time(model: Model):
         symbols = lag_time.free_symbols
         cb = CompartmentalSystemBuilder(odes)
         cb.set_lag_time(dosing_comp, sympy.Integer(0))
-        model.statements = (
+        statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
-        model.statements = model.statements.remove_symbol_definitions(
-            symbols, model.statements.ode_system
-        )
-        remove_unused_parameters_and_rvs(model)
+        statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
+        model = model.replace(statements=statements)
+        model = remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -916,16 +929,15 @@ def set_zero_order_absorption(model: Model):
     Return
     ------
     Model
-        Reference to the same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_zero_order_absorption(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_zero_order_absorption(model)
     >>> model.statements.ode_system
-    Infusion(AMT, admid=1, duration=2*MAT)
+    Infusion(AMT, admid=1, duration=D1)
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -957,7 +969,7 @@ def set_zero_order_absorption(model: Model):
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         symbols = ka.free_symbols
     else:
-        to_comp = dose_comp
+        to_comp = dose_comp  #
 
     new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
     mat_idx = statements.find_assignment_index('MAT')
@@ -965,13 +977,16 @@ def set_zero_order_absorption(model: Model):
         mat_assign = statements[mat_idx]
         new_statements = new_statements[0:mat_idx] + mat_assign + new_statements[mat_idx:]
 
-    model.statements = new_statements
+    model = model.replace(statements=new_statements)
 
-    remove_unused_parameters_and_rvs(model)
+    model = remove_unused_parameters_and_rvs(model)
     if not has_zero_order_absorption(model):
         odes = model.statements.ode_system
         assert odes is not None
-        _add_zero_order_absorption(model, dose.amount, odes.dosing_compartment, 'MAT', lag_time)
+        model = _add_zero_order_absorption(
+            model, dose.amount, odes.dosing_compartment, 'MAT', lag_time
+        )
+        model = model.update_source()
     return model
 
 
@@ -989,19 +1004,18 @@ def set_first_order_absorption(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_first_order_absorption(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_first_order_absorption(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
-    ┌─────┐        ┌───────┐
-    │DEPOT│──1/MAT→│CENTRAL│──CL/V→
-    └─────┘        └───────┘
+    ┌─────┐     ┌───────┐
+    │DEPOT│──KA→│CENTRAL│──CL/V→
+    └─────┘     └───────┘
 
     See also
     --------
@@ -1033,11 +1047,12 @@ def set_first_order_absorption(model: Model):
         mat_assign = statements[mat_idx]
         new_statements = new_statements[0:mat_idx] + mat_assign + new_statements[mat_idx:]
 
-    model.statements = new_statements
+    model = model.replace(statements=new_statements)
 
-    remove_unused_parameters_and_rvs(model)
+    model = remove_unused_parameters_and_rvs(model)
     if not depot:
-        _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time)
+        model, _ = _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time)
+        model = model.update_source()
     return model
 
 
@@ -1054,14 +1069,13 @@ def set_bolus_absorption(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_bolus_absorption(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_bolus_absorption(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────┐
@@ -1087,8 +1101,10 @@ def set_bolus_absorption(model: Model):
         cb.remove_compartment(depot)
         symbols = ka.free_symbols
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        model.statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
-        remove_unused_parameters_and_rvs(model)
+        model = model.replace(
+            statements=statements.remove_symbol_definitions(symbols, statements.ode_system)
+        )
+        model = remove_unused_parameters_and_rvs(model)
     if has_zero_order_absorption(model):
         dose_comp = cs.dosing_compartment
         old_symbols = dose_comp.free_symbols
@@ -1097,10 +1113,10 @@ def set_bolus_absorption(model: Model):
         cb.set_dose(dose_comp, new_dose)
         unneeded_symbols = old_symbols - new_dose.free_symbols
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        model.statements = statements.remove_symbol_definitions(
-            unneeded_symbols, statements.ode_system
+        model = model.replace(
+            statements=statements.remove_symbol_definitions(unneeded_symbols, statements.ode_system)
         )
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -1122,19 +1138,18 @@ def set_seq_zo_fo_absorption(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_seq_zo_fo_absorption(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_seq_zo_fo_absorption(model)
     >>> model.statements.ode_system
-    Infusion(AMT, admid=1, duration=2*MDT)
-    ┌─────┐        ┌───────┐
-    │DEPOT│──1/MAT→│CENTRAL│──CL/V→
-    └─────┘        └───────┘
+    Infusion(AMT, admid=1, duration=D1)
+    ┌─────┐     ┌───────┐
+    │DEPOT│──KA→│CENTRAL│──CL/V→
+    └─────┘     └───────┘
 
     See also
     --------
@@ -1153,13 +1168,14 @@ def set_seq_zo_fo_absorption(model: Model):
     dose_comp = cs.dosing_compartment
     have_ZO = has_zero_order_absorption(model)
     if depot and not have_ZO:
-        _add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
+        model = _add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
     elif not depot and have_ZO:
-        _add_first_order_absorption(model, dose_comp.dose, dose_comp)
+        model, _ = _add_first_order_absorption(model, dose_comp.dose, dose_comp)
     elif not depot and not have_ZO:
         amount = dose_comp.dose.amount
-        depot = _add_first_order_absorption(model, Bolus(amount), dose_comp)
-        _add_zero_order_absorption(model, amount, depot, 'MDT')
+        model, depot = _add_first_order_absorption(model, Bolus(amount), dose_comp)
+        model = _add_zero_order_absorption(model, amount, depot, 'MDT')
+    model = model.update_source()
     return model
 
 
@@ -1231,7 +1247,7 @@ def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=
     if mat_assign:
         mat_symb = mat_assign.symbol
     else:
-        mat_symb = _add_parameter(
+        model, mat_symb = _add_parameter(
             model, parameter_name, init=_get_absorption_init(model, parameter_name)
         )
     new_dose = Infusion(amount, duration=mat_symb * 2)
@@ -1239,9 +1255,12 @@ def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=
     cb.set_dose(to_comp, new_dose)
     if lag_time is not None and lag_time != 0:
         cb.set_lag_time(model.statements.ode_system.dosing_compartment, lag_time)
-    model.statements = (
-        model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+    model = model.replace(
+        statements=model.statements.before_odes
+        + CompartmentalSystem(cb)
+        + model.statements.after_odes
     )
+    return model
 
 
 def _add_first_order_absorption(model, dose, to_comp, lag_time=None):
@@ -1261,12 +1280,14 @@ def _add_first_order_absorption(model, dose, to_comp, lag_time=None):
     if mat_assign:
         mat_symb = mat_assign.symbol
     else:
-        mat_symb = _add_parameter(model, 'MAT', _get_absorption_init(model, 'MAT'))
+        model, mat_symb = _add_parameter(model, 'MAT', _get_absorption_init(model, 'MAT'))
     cb.add_flow(depot, to_comp, 1 / mat_symb)
-    model.statements = (
-        model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+    model = model.replace(
+        statements=model.statements.before_odes
+        + CompartmentalSystem(cb)
+        + model.statements.after_odes
     )
-    return depot
+    return model, depot
 
 
 def _get_absorption_init(model, param_name) -> float:
@@ -1279,10 +1300,14 @@ def _get_absorption_init(model, param_name) -> float:
     except (AttributeError, KeyError):
         pass
 
-    time_label = model.datainfo.idv_column.name
-    obs = get_observations(model)
-    time = obs.index.get_level_values(level=time_label)
-    time_min = time[time != 0].min()
+    try:
+        time_label = model.datainfo.idv_column.name
+    except IndexError:
+        time_min = 1.0
+    else:
+        obs = get_observations(model)
+        time = obs.index.get_level_values(level=time_label)
+        time_min = time[time != 0].min()
 
     if param_name == 'MDT':
         return float(time_min) / 2
@@ -1305,27 +1330,26 @@ def set_peripheral_compartments(model: Model, n: int):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_peripheral_compartments(model, 2)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_peripheral_compartments(model, 2)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘
       ↑      │
-    QP1/V QP1/VP1
+    Q2/V1  Q2/V2
       │      ↓
     ┌───────────┐
-    │  CENTRAL  │──CL/V→
+    │  CENTRAL  │──CL/V1→
     └───────────┘
        ↑      │
-    QP2/VP2 QP2/V
+     Q3/V3  Q3/V1
        │      ↓
     ┌───────────┐
     │PERIPHERAL2│
@@ -1347,10 +1371,10 @@ def set_peripheral_compartments(model: Model, n: int):
     per = len(odes.peripheral_compartments)
     if per < n:
         for _ in range(n - per):
-            add_peripheral_compartment(model)
+            model = add_peripheral_compartment(model)
     elif per > n:
         for _ in range(per - n):
-            remove_peripheral_compartment(model)
+            model = remove_peripheral_compartment(model)
     return model
 
 
@@ -1382,24 +1406,23 @@ def add_peripheral_compartment(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> add_peripheral_compartment(model)     # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_peripheral_compartment(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘
       ↑      │
-    QP1/V QP1/VP1
+     Q/V1   Q/V2
       │      ↓
     ┌───────────┐
-    │  CENTRAL  │──CL/V→
+    │  CENTRAL  │──CL/V1→
     └───────────┘
 
     See also
@@ -1436,9 +1459,10 @@ def add_peripheral_compartment(model: Model):
 
     if n == 1:
         if vc == 1:
-            kpc = _add_parameter(model, f'KPC{n}', init=0.1)
-            kcp = _add_parameter(model, f'KCP{n}', init=0.1)
+            model, kpc = _add_parameter(model, f'KPC{n}', init=0.1)
+            model, kcp = _add_parameter(model, f'KCP{n}', init=0.1)
             peripheral = cb.add_compartment(f'PERIPHERAL{n}')
+            central = model.statements.ode_system.central_compartment
             cb.add_flow(central, peripheral, kcp)
             cb.add_flow(peripheral, central, kpc)
         else:
@@ -1472,23 +1496,26 @@ def add_peripheral_compartment(model: Model):
         pop_vp1 = pop_vp1_candidates.pop()
         pop_qp1_init = model.parameters[pop_qp1].init
         pop_vp1_init = model.parameters[pop_vp1].init
-        set_initial_estimates(model, {pop_qp1.name: pop_qp1_init * 0.10})
+        model = set_initial_estimates(model, {pop_qp1.name: pop_qp1_init * 0.10})
         qp_init = pop_qp1_init * 0.90
         vp_init = pop_vp1_init
 
     if vc != 1:
-        qp = _add_parameter(model, f'QP{n}', init=qp_init)
-        vp = _add_parameter(model, f'VP{n}', init=vp_init)
+        model, qp = _add_parameter(model, f'QP{n}', init=qp_init)
+        model, vp = _add_parameter(model, f'VP{n}', init=vp_init)
         peripheral = Compartment.create(f'PERIPHERAL{n}')
         cb.add_compartment(peripheral)
+        central = model.statements.ode_system.central_compartment
         cb.add_flow(central, peripheral, qp / vc)
         cb.add_flow(peripheral, central, qp / vp)
 
-    model.statements = Statements(
-        model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+    model = model.replace(
+        statements=Statements(
+            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+        )
     )
 
-    return model
+    return model.update_source()
 
 
 def remove_peripheral_compartment(model: Model):
@@ -1513,26 +1540,24 @@ def remove_peripheral_compartment(model: Model):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_peripheral_compartments(model, 2)     # doctest: +ELLIPSIS
-    <...>
-    >>> remove_peripheral_compartment(model)      # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_peripheral_compartments(model, 2)
+    >>> model = remove_peripheral_compartment(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1)
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘
-      ↑      │
-    QP1/V QP1/VP1
-      │      ↓
+      ↑       │
+    Q/V1     Q/V2
+      │       ↓
     ┌───────────┐
-    │  CENTRAL  │──CL/V→
+    │  CENTRAL  │──CL/V1→
     └───────────┘
 
     See also
@@ -1573,7 +1598,7 @@ def remove_peripheral_compartment(model: Model):
             pop_qp1_init = model.parameters[pop_qp1].init
             pop_vp1_init = model.parameters[pop_vp1].init
             new_vc_init = pop_vc_init + pop_qp1_init / pop_cl_init * pop_vp1_init
-            set_initial_estimates(model, {pop_vc.name: new_vc_init})
+            model = set_initial_estimates(model, {pop_vc.name: new_vc_init})
         elif len(peripherals) == 2:
             first_peripheral = peripherals[0]
             from1_rate = odes.get_flow(first_peripheral, central)
@@ -1600,7 +1625,9 @@ def remove_peripheral_compartment(model: Model):
             pop_vp1_init = model.parameters[pop_vp1].init
             new_qp1_init = (pop_qp1_init + pop_qp2_init) / 2
             new_vp1_init = pop_vp1_init + pop_vp2_init
-            set_initial_estimates(model, {pop_qp1.name: new_qp1_init, pop_vp1.name: new_vp1_init})
+            model = set_initial_estimates(
+                model, {pop_qp1.name: new_qp1_init, pop_vp1.name: new_vp1_init}
+            )
 
         rate1 = odes.get_flow(central, last_peripheral)
         assert rate1 is not None
@@ -1609,13 +1636,17 @@ def remove_peripheral_compartment(model: Model):
         symbols = rate1.free_symbols | rate2.free_symbols
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_compartment(last_peripheral)
-        model.statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+        model = model.replace(
+            statements=(
+                model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+            )
         )
-        model.statements = model.statements.remove_symbol_definitions(
-            symbols, model.statements.ode_system
+        model = model.replace(
+            statements=model.statements.remove_symbol_definitions(
+                symbols, model.statements.ode_system
+            )
         )
-        remove_unused_parameters_and_rvs(model)
+        model = remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -1650,14 +1681,13 @@ def set_ode_solver(model: Model, solver: str):
     Return
     ------
     Model
-        Reference to same model
+        Pharmpy model object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_ode_solver(model, 'LSODA')    # doctest: +ELLIPSIS
-    <...>
+    >>> model = set_ode_solver(model, 'LSODA')
 
     """
     new_steps = []
@@ -1665,7 +1695,7 @@ def set_ode_solver(model: Model, solver: str):
         new = step.replace(solver=solver)
         new_steps.append(new)
     newsteps = EstimationSteps.create(new_steps)
-    model = model.replace(estimation_steps=newsteps)
+    model = model.replace(estimation_steps=newsteps).update_source()
     return model
 
 
@@ -1684,10 +1714,10 @@ def find_clearance_parameters(model: Model):
 
     Examples
     --------
-     >>> from pharmpy.modeling import *
-     >>> model = load_example_model("pheno")
-     >>> find_clearance_parameters(model)
-     [CL]
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> find_clearance_parameters(model)
+    [CL]
     """
     cls = set()
     sset = model.statements
@@ -1725,10 +1755,10 @@ def find_volume_parameters(model: Model):
 
     Examples
     --------
-     >>> from pharmpy.modeling import *
-     >>> model = load_example_model("pheno")
-     >>> find_volume_parameters(model)
-     [V]
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> find_volume_parameters(model)
+    [V]
     """
     vcs = set()
     sset = model.statements

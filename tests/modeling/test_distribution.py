@@ -26,9 +26,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN3 TRANS4
 $PK
@@ -80,9 +80,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN4 TRANS4
 $PK
@@ -132,9 +132,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN4 TRANS1
 $PK
@@ -144,9 +144,9 @@ CL=THETA(1)*EXP(ETA(1))
 VC=THETA(2)*EXP(ETA(2))
 MAT=THETA(3)*EXP(ETA(3))
 KA=1/MAT
-K=CL/VC
 K23 = QP1/VC
 K32 = QP1/VP1
+K=CL/VC
 $ERROR
 Y=F+F*EPS(1)
 $THETA (0,0.00469307) ; POP_CL
@@ -187,9 +187,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN11 TRANS4
 $PK
@@ -248,9 +248,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN12 TRANS4
 $PK
@@ -303,11 +303,10 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    add_peripheral_compartment(model)
-    add_peripheral_compartment(model)
-    model.model_code
+    model = add_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN11 TRANS4
 $PK
@@ -357,7 +356,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code)
-    remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     assert model.model_code == code
 
 
@@ -386,9 +385,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
@@ -436,9 +435,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 $PK
@@ -492,9 +491,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN3 TRANS4
 $PK
@@ -553,9 +552,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN4 TRANS4
 $PK
@@ -614,10 +613,10 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    remove_peripheral_compartment(model)
-    remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
@@ -665,10 +664,10 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    add_peripheral_compartment(model)
-    remove_peripheral_compartment(model)
+    model = add_peripheral_compartment(model)
+    model = remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN4 TRANS4
 $PK
@@ -728,9 +727,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = create_model_for_test(code, dataset='pheno')
-    set_peripheral_compartments(model, 0)
+    model = set_peripheral_compartments(model, 0)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA run1.csv IGNORE=@
+$DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK

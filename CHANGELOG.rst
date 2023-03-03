@@ -1,5 +1,27 @@
-next version
-------------
+0.91.0 (2023-03-03)
+-------------------
+
+New features
+============
+
+* Add function ``modeling.create_basic_pk_model``
+* Add function ``modeling.add_metabolite``
+* Add function ``modeling.set_dvid``
+* Add function ``modeling.has_weighted_error_model``
+
+Changes
+=======
+
+* ``model.dependent_variable`` becomes ``model.dependent_variables``
+
+Bugfixes
+========
+
+* Fix regression causing DEFDOSE to sometimes be put on the wrong compartment
+* Fix ruvsearch crashing in case of bad modelfit_results (#1551)
+
+0.90.0 (2023-02-24)
+-------------------
 
 New features
 ============
@@ -8,6 +30,16 @@ New features
 * Add function ``modeling.has_linear_odes``
 * Add function ``modeling.has_linear_odes_with_real_eigenvalues``
 * Add function ``modeling.is_real``
+* Support for more types of models in the nlmixr plugin
+* Automatic selection between ADVAN5 and ADVAN7 for NONMEM models
+
+Changes
+=======
+
+* Remove modeling.copy_model
+* Support nlmixr2 instead of nlmixr for the nlmixr plugin
+* The Model class is now immutable
+* update_source is run by all transformation functions
 
 0.89.0 (2023-01-26)
 -------------------

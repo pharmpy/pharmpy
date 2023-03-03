@@ -19,7 +19,6 @@ def with_same_arguments_as(ref: Callable):
             return ref_defaults[key]
 
     def _with_same_arguments(fn: Callable):
-
         fn_args, fn_defaults = _signature_map(signature(fn))
 
         assert set(fn_args) <= ref_args_set
@@ -27,7 +26,6 @@ def with_same_arguments_as(ref: Callable):
 
         @wraps(fn)
         def _wrapped(*args, **kwargs):
-
             if len(args) > len(ref_args):
                 raise TypeError(
                     f'{fn.__name__}() takes {len(ref_args)} but {len(args)} where given'

@@ -54,8 +54,7 @@ def add_allometry(
     --------
     >>> from pharmpy.modeling import load_example_model, add_allometry
     >>> model = load_example_model("pheno")
-    >>> add_allometry(model, allometric_variable='WGT')     # doctest: +ELLIPSIS
-    <...>
+    >>> model = add_allometry(model, allometric_variable='WGT')
     >>> model.statements.before_odes
             ⎧TIME  for AMT > 0
             ⎨
@@ -124,7 +123,10 @@ def add_allometry(
         expr = p * (variable / reference) ** param.symbol
         new_ass = Assignment(p, expr)
         ind = model.statements.find_assignment_index(p)
-        model.statements = model.statements[0 : ind + 1] + new_ass + model.statements[ind + 1 :]
-    model.parameters = Parameters.create(params)
+        statements = model.statements[0 : ind + 1] + new_ass + model.statements[ind + 1 :]
+        model = model.replace(statements=statements)
+    parameters = Parameters.create(params)
+    model = model.replace(parameters=parameters)
+    model = model.update_source()
 
     return model

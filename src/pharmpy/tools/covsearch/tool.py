@@ -8,7 +8,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import add_covariate_effect, copy_model, get_pk_parameters
+from pharmpy.modeling import add_covariate_effect, get_pk_parameters
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
@@ -159,7 +159,6 @@ def create_workflow(
     search_output = wf.output_tasks
 
     if algorithm == 'scm-forward-then-backward':
-
         backward_search_task = Task(
             'backward-search',
             task_greedy_backward_search,
@@ -210,7 +209,6 @@ def task_greedy_forward_search(
     def handle_effects(
         step: int, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
     ):
-
         wf = wf_effects_addition(parent.model, parent, candidate_effects, index_offset)
         new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_addition-{step}', context)
 
@@ -237,7 +235,6 @@ def task_greedy_backward_search(
     def handle_effects(
         step: int, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
     ):
-
         wf = wf_effects_removal(state.start_model, parent, candidate_effects, index_offset)
         new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}', context)
 
@@ -266,7 +263,6 @@ def _greedy_search(
     alpha: float,
     max_steps: int,
 ) -> SearchState:
-
     best_candidate_so_far = state.best_candidate_so_far
     all_candidates_so_far = list(state.all_candidates_so_far)  # NOTE this includes start model
 
@@ -344,11 +340,13 @@ def wf_effects_addition(
 def task_add_covariate_effect(
     model: Model, candidate: Candidate, effect: EffectLiteral, effect_index: int
 ):
-    model_with_added_effect = copy_model(model, name=f'covsearch_run{effect_index}')
-    model_with_added_effect.description = _create_description(effect, candidate.steps)
-    model_with_added_effect.parent_model = model.name
-    update_initial_estimates(model_with_added_effect)
-    add_covariate_effect(model_with_added_effect, *effect, allow_nested=True)
+    name = f'covsearch_run{effect_index}'
+    description = _create_description(effect, candidate.steps)
+    model_with_added_effect = model.replace(name=name, description=description, parent_model=name)
+    model_with_added_effect = update_initial_estimates(model_with_added_effect)
+    model_with_added_effect = add_covariate_effect(
+        model_with_added_effect, *effect, allow_nested=True
+    )
     return model_with_added_effect
 
 
@@ -408,16 +406,18 @@ def task_remove_covariate_effect(
     base_model: Model, candidate: Candidate, effect: EffectLiteral, effect_index: int
 ):
     model = candidate.model
-    model_with_removed_effect = copy_model(base_model, name=f'covsearch_run{effect_index}')
-    model_with_removed_effect.description = _create_description(
-        effect, candidate.steps, forward=False
+    name = f'covsearch_run{effect_index}'
+    description = _create_description(effect, candidate.steps, forward=False)
+    model_with_removed_effect = base_model.replace(
+        name=name, description=description, parent_model=model.name
     )
-    model_with_removed_effect.parent_model = model.name
 
     for kept_effect in _added_effects((*candidate.steps, BackwardStep(-1, RemoveEffect(*effect)))):
-        add_covariate_effect(model_with_removed_effect, *astuple(kept_effect), allow_nested=True)
+        model_with_removed_effect = add_covariate_effect(
+            model_with_removed_effect, *astuple(kept_effect), allow_nested=True
+        )
 
-    update_initial_estimates(model_with_removed_effect)
+    model_with_removed_effect = update_initial_estimates(model_with_removed_effect)
     return model_with_removed_effect
 
 

@@ -7,6 +7,7 @@ import pytest
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import read_model
 from pharmpy.tools import fit, run_modelsearch
+from pharmpy.workflows import ModelDatabase
 
 
 def test_exhaustive(tmp_path, model_count, start_model):
@@ -34,19 +35,21 @@ def test_exhaustive(tmp_path, model_count, start_model):
 
 
 @pytest.mark.parametrize(
-    'search_space, no_of_models, last_model_parent_name, model_with_error',
+    'search_space, no_of_models, last_model_parent_name, model_with_error, ref',
     [
         (
             'ABSORPTION(ZO);PERIPHERALS(1)',
             4,
             'modelsearch_run2',
             'modelsearch_run3',
+            ('modelsearch_run2', ['PERIPHERALS(1)', 'VP1 = ']),
         ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
             7,
             'modelsearch_run3',
             'modelsearch_run5',
+            ('modelsearch_run3', ['PERIPHERALS(1)', 'VP1 = ']),
         ),
     ],
 )
@@ -58,6 +61,7 @@ def test_exhaustive_stepwise_basic(
     no_of_models,
     last_model_parent_name,
     model_with_error,
+    ref,
 ):
     with chdir(tmp_path):
         res = run_modelsearch(
@@ -94,6 +98,13 @@ def test_exhaustive_stepwise_basic(
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
+
+        db: ModelDatabase = res.tool_database.model_database
+        model_name, code_ref = ref
+        path = db.retrieve_file(model_name, f'{model_name}.mod')
+        with open(path, 'r') as fh:
+            model_code = fh.read()
+            assert all(code in model_code for code in code_ref)
 
 
 @pytest.mark.parametrize(
@@ -183,7 +194,8 @@ def test_summary_individuals(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         m = read_model('pheno_real.mod')
-        fit(m)
+        start_res = fit(m)
+        m = m.replace(modelfit_results=start_res)
         res = run_modelsearch(
             model=m,
             results=m.modelfit_results,

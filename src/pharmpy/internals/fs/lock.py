@@ -308,7 +308,6 @@ class ShareableThreadLock:
             yield
 
         finally:
-
             self._condition.acquire(blocking=True)
             try:
                 self._acquired_by[thread_id] -= 1

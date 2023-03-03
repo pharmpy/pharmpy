@@ -62,15 +62,13 @@ def test_dofv_parent_model_is_none(pheno_path):
 
 def test_dofv_modelfit_results_is_none(pheno_path):
     parent_model = read_model(pheno_path)
-    candidate_model = parent_model.copy()
-    candidate_model.modelfit_results = None
+    candidate_model = parent_model.replace(modelfit_results=None)
     res = dofv(parent_model, candidate_model)
     assert res.isna().all()
 
 
 def test_dofv_individual_ofv_is_none(pheno_path):
     parent_model = read_model(pheno_path)
-    candidate_model = parent_model.copy()
-    candidate_model.modelfit_results = ModelfitResults()
+    candidate_model = parent_model.replace(modelfit_results=ModelfitResults())
     res = dofv(parent_model, candidate_model)
     assert res.isna().all()

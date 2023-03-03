@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.modeling import add_time_after_dose, copy_model
+from pharmpy.modeling import add_time_after_dose
 from pharmpy.workflows import (
     LocalDirectoryDatabase,
     LocalModelDirectoryDatabase,
@@ -67,7 +67,7 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             line = fh.readline()
             assert line == f'$DATA ..{sep}.datasets{sep}pheno_real.csv IGNORE=@\n'
 
-        run1 = copy_model(model, name="run1")
+        run1 = model.replace(name="run1")
         db.store_model(run1)
 
         assert not (Path("database") / ".datasets" / "run1.csv").is_file()
@@ -78,8 +78,8 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             line = fh.readline()
             assert line == f'$DATA ..{sep}.datasets{sep}pheno_real.csv IGNORE=@\n'
 
-        run2 = copy_model(model, name="run2")
-        add_time_after_dose(run2)
+        run2 = model.replace(name="run2")
+        run2 = add_time_after_dose(run2)
         db.store_model(run2)
 
         with open("database/.datasets/run2.csv", "r") as fh:

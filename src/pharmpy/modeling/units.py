@@ -59,7 +59,8 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
     if variable in di.names:
         return di[variable].unit
 
-    y = model.dependent_variable
+    # FIXME: handle other DVs?
+    y = list(model.dependent_variables.keys())[0]
     input_units = {sympy.Symbol(col.name): col.unit for col in di}
     pruned_nodes = {sympy.exp}
 
@@ -103,7 +104,6 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
 def _filter_equations(
     equations: Iterable[sympy.Expr], symbol: sympy.Symbol
 ) -> Iterable[sympy.Expr]:
-
     # NOTE This has the side-effect of deduplicating equations
     fs = {eq: eq.free_symbols for eq in equations}
 
