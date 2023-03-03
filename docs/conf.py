@@ -83,3 +83,5 @@ import pandas as pd
 pd.set_option('display.width', 1000)
 pd.set_option('display.max_columns', 1000)
 '''
+
+linkcheck_ignore = [r'https://doi.org/10.1002/psp4.12741']
