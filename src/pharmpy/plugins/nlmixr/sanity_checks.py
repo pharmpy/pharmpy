@@ -110,10 +110,11 @@ def same_time(model: pharmpy.model) -> bool:
                         if dataset.loc[temp]["EVID"] not in [0,3]:
                             if rate:
                                 if dataset.loc[temp]["RATE"] == 0:
-                                    True
+                                    return True
                             else:
                                 return True
                         temp += 1
+
     return False
 
 def print_warning(warning: str) -> None:

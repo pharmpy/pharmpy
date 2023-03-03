@@ -77,9 +77,10 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
     
     # Update dataset
     if keep_etas == True:
-        nlmixr_model.modelfit_results = ModelfitResults(
+        nlmixr_model = nlmixr_model.replace(modelfit_results = ModelfitResults(
             individual_estimates = model.modelfit_results.individual_estimates
-        )
+            )
+            )
     nlmixr_model = translate_nmtran_time(nlmixr_model)
     drop_dropped_columns(nlmixr_model)
     if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
@@ -455,13 +456,14 @@ def execute_model(model, db):
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     write_csv(model, path=path)
+    model = model.replace(datainfo = model.datainfo.replace(path = path))
     
     dataname = f'{model.name}.csv'
     pre = f'library(nlmixr2)\n\ndataset <- read.csv("{path / dataname}")\n'    
 
     if "fix_eta" in model.estimation_steps[0].tool_options:
         write_fix_eta(model, path=path)
-        pre += f'etas <- as.matrix(read.csv("{path}"))'
+        pre += f'etas <- as.matrix(read.csv("{path}/fix_eta.csv"))'
     pre+="\n"
 
     code = pre + model.model_code
@@ -573,7 +575,7 @@ def verification(model: pharmpy.model,
 
     """
  
-    nonmem_model = model.copy()
+    nonmem_model = model
 
     # Save results from the nonmem model
     # FIXME : check only if predictions does not exist
@@ -584,22 +586,26 @@ def verification(model: pharmpy.model,
     else:
         nonmem_results = nonmem_model.modelfit_results.predictions.copy()
     
+    # Set a tool option to fix theta values when running nlmixr
+    if fix_eta:
+        nonmem_model = fixate_eta(nonmem_model)
+    
     # Check that evaluation step is set to True
     if [s.evaluation for s in nonmem_model.estimation_steps._steps][0] is False:
         nonmem_model = set_evaluation_step(nonmem_model)
-        
-    # Set a tool option to fix theta values when running nlmixr
-    if fix_eta:
-        print_step("Creating .csv file with fixed ETAs...")
-        nonmem_model = fixate_eta(nonmem_model)
     
     # Update the nonmem model with new estimates
     # and convert to nlmixr
     print_step("Converting NONMEM model to nlmixr2...")
-    nlmixr_model = convert_model(
-        update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates),
-        keep_etas = True
-    )
+    if fix_eta == True:
+        nlmixr_model = convert_model(
+            update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates),
+            keep_etas = True
+        )
+    else:
+        nlmixr_model = convert_model(
+            update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
+        )
     
     # Execute the nlmixr model
     print_step("Executing nlmixr2 model... (this might take a while)")
@@ -622,7 +628,7 @@ def verification(model: pharmpy.model,
 
     # Combine the two based on ID and time
     print_step("Creating result comparison table...")
-    nonmem_model.dataset = nonmem_model.dataset.reset_index()
+    nonmem_model = nonmem_model.replace(dataset = nonmem_model.dataset.reset_index())
     
     if "EVID" not in nonmem_model.dataset.columns:
         nonmem_model = add_evid(nonmem_model)
@@ -669,7 +675,6 @@ def write_fix_eta(model, path=None, force = True):
         
     path = path_absolute(path)
     model.modelfit_results.individual_estimates.to_csv(path, na_rep=data.conf.na_rep, index=False)
-    model.datainfo = model.datainfo.replace(path=path)
     return path
             
             
