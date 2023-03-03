@@ -403,6 +403,71 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 
     assert model.model_code == correct
 
+    model = read_model_from_string(code)
+    model = set_weighted_error_model(model)
+    model = use_thetas_for_error_stdev(model)
+
+    correct = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+W = THETA(2)
+Y = THETA(1) + ETA(1) + EPS(1)*W
+
+$THETA 0.1
+$THETA  (0,1.0) ; SD_EPS_1
+$OMEGA 0.01
+$SIGMA 1 FIX
+$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+    assert model.model_code == correct
+
+    code = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+$ERROR
+PRED=A(1)/V
+CONC=PRED
+Y=CONC+CONC*EPS(1)
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    model = read_model_from_string(code)
+    model = set_weighted_error_model(model)
+    model = use_thetas_for_error_stdev(model)
+
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+$ERROR
+PRED=A(1)/V
+CONC=PRED
+W = CONC*THETA(3)
+Y = CONC + EPS(1)*W
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$THETA  (0,0.11506954418958998) ; SD_EPS_1
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 1 FIX
+$ESTIMATION METHOD=1 INTERACTION
+"""
+
+    assert model.model_code == correct
+
 
 def test_set_weighted_error_model():
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
