@@ -384,7 +384,7 @@ class Model(pharmpy.model.Model):
             str(cg).replace("AMT", "amt").replace("TIME", "time")
         )
         self.internals.path = None
-        code = str(cg).replace("AMT", "amt").replace("TIME", "time").replace("ID", "id")
+        code = str(cg).replace("AMT", "amt").replace("TIME", "time")
         internals = replace(self.internals, src=code)
         model = self.replace(internals=internals)
         return model
@@ -581,10 +581,15 @@ def verification(model: pharmpy.model,
     # FIXME : check only if predictions does not exist
     if nonmem_model.modelfit_results is None:
         print_step("Calculating NONMEM predictions... (this might take a while)")
-        nonmem_model.modelfit_results = fit(nonmem_model)
+        nonmem_model = nonmem_model.replace(modelfit_results = fit(nonmem_model))
         nonmem_results = nonmem_model.modelfit_results.predictions.copy()
     else:
-        nonmem_results = nonmem_model.modelfit_results.predictions.copy()
+        if nonmem_model.modelfit_results.predictions == None:
+            print_step("Calculating NONMEM predictions... (this might take a while)")
+            nonmem_model = nonmem_model.replace(modelfit_results = fit(nonmem_model))
+            nonmem_results = nonmem_model.modelfit_results.predictions.copy()
+        else:
+            nonmem_results = nonmem_model.modelfit_results.predictions.copy()
     
     # Set a tool option to fix theta values when running nlmixr
     if fix_eta:
