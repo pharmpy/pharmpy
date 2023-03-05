@@ -82,6 +82,7 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
             )
             )
     nlmixr_model = translate_nmtran_time(nlmixr_model)
+    # FIXME: dropping columns runs update source which becomes redundant.
     drop_dropped_columns(nlmixr_model)
     if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
         nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
@@ -274,6 +275,19 @@ def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
                                 cg.add(f'}} else if ({cond}) {{')
                         else:
                             cg.add('} else {')
+                            if "NEWIND" in [t.name for t in expr.free_symbols] and value == 0:
+                                largest_value = expr.args[0].expr
+                                largest_cond = expr.args[0].cond
+                                for value, cond in expr.args[1:]:
+                                    if cond is not sympy.S.true:
+                                        if cond.rhs > largest_cond.rhs:
+                                            largest_value = value
+                                            largest_cond = cond
+                                        elif cond.rhs == largest_cond.rhs:
+                                            if not isinstance(cond, sympy.LessThan) and isinstance(largest_cond, sympy.LessThan):
+                                                largest_value = value
+                                                largest_cond = cond
+                                value = largest_value
                         cg.indent()
                         cg.add(f'{s.symbol.name} <- {value}')
                         cg.dedent()
@@ -548,7 +562,7 @@ def verification(model: pharmpy.model,
                  error: float = 10**-3,
                  return_comp : bool = False,
                  fix_eta = True,
-                 ipred = False
+                 ipred_diff = False
                  ) -> bool or pd.DataFrame:
     """
     Verify that a model inputet in NONMEM format can be correctly translated to 
@@ -584,7 +598,7 @@ def verification(model: pharmpy.model,
         nonmem_model = nonmem_model.replace(modelfit_results = fit(nonmem_model))
         nonmem_results = nonmem_model.modelfit_results.predictions.copy()
     else:
-        if nonmem_model.modelfit_results.predictions == None:
+        if nonmem_model.modelfit_results.predictions is None:
             print_step("Calculating NONMEM predictions... (this might take a while)")
             nonmem_model = nonmem_model.replace(modelfit_results = fit(nonmem_model))
             nonmem_results = nonmem_model.modelfit_results.predictions.copy()
@@ -620,16 +634,23 @@ def verification(model: pharmpy.model,
     nlmixr_model = execute_model(nlmixr_model, db)
     nlmixr_results = nlmixr_model.modelfit_results.predictions
     
-    if ipred == True:
-        pred = "IPRED"
-    else:
-        pred = "PRED"
-
-    with warnings.catch_warnings():
-        # Supress a numpy deprecation warning
-        warnings.simplefilter("ignore")
-        nonmem_results.rename(columns={pred: f'{pred}_NONMEM'}, inplace=True)
-        nlmixr_results.rename(columns={pred: f'{pred}_NLMIXR'}, inplace=True)
+    pred = False
+    ipred = False
+    for p in nonmem_model.modelfit_results.predictions.columns:
+        if p == "PRED":
+            pred = True
+            nonmem_results.rename(columns={p: 'PRED_NONMEM'}, inplace=True)
+            nlmixr_results.rename(columns={p: 'PRED_NLMIXR'}, inplace=True)
+        elif p == "IPRED":
+            ipred = True
+            nonmem_results.rename(columns={p: 'IPRED_NONMEM'}, inplace=True)
+            nlmixr_results.rename(columns={p: 'IPRED_NLMIXR'}, inplace=True)
+        else:
+            print(f"Unknown prediction value {p}. Currently only 'PRED' and 'IPRED' are supported and this is ignored")
+            
+    if not (pred or ipred):
+        print("No known prediction value was found. Please use 'PRED' or 'IPRED")
+        return False
 
     # Combine the two based on ID and time
     print_step("Creating result comparison table...")
@@ -640,17 +661,30 @@ def verification(model: pharmpy.model,
     nonmem_results = nonmem_results.reset_index()
     nonmem_results = nonmem_results.drop(nonmem_model.dataset[nonmem_model.dataset["EVID"] != 0].index.to_list())
     nonmem_results = nonmem_results.set_index(["ID","TIME"])
+    
     combined_result = nonmem_results
-    combined_result[f'{pred}_NLMIXR'] = nlmixr_results[f'{pred}_NLMIXR'].to_list()
-
-    # Add difference between the models
-    combined_result[f'{pred}_DIFF'] = abs(combined_result[f'{pred}_NONMEM'] - combined_result[f'{pred}_NLMIXR'])
+    if pred:
+        combined_result['PRED_NLMIXR'] = nlmixr_results['PRED_NLMIXR'].to_list()
+        # Add difference between the models
+        combined_result['PRED_DIFF'] = abs(combined_result['PRED_NONMEM'] - combined_result['PRED_NLMIXR'])
+    if ipred:
+        combined_result['IPRED_NLMIXR'] = nlmixr_results['IPRED_NLMIXR'].to_list()
+        combined_result['IPRED_DIFF'] = abs(combined_result['IPRED_NONMEM'] - combined_result['IPRED_NLMIXR'])
 
     combined_result["PASS/FAIL"] = "PASS"
-    combined_result.loc[combined_result[f'{pred}_DIFF'] > error, "PASS/FAIL"] = "FAIL"
-    
     print("Differences in population predicted values")
-    print(combined_result[f'{pred}_DIFF'].describe()[["mean", "75%", "max"]].to_string(), end ="\n\n")
+    if (pred and ipred) or (pred and not ipred):
+        if ipred_diff:
+            print("Using PRED values for final comparison")
+            final = "IPRED"
+        else:
+            print("Using PRED values for final comparison")    
+            final = "PRED"
+    elif ipred and not pred:
+        print("Using IPRED values for final comparison")
+        final = "IPRED"
+    combined_result.loc[combined_result[f'{final}_DIFF'] > error, "PASS/FAIL"] = "FAIL"
+    print(combined_result[f'{final}_DIFF'].describe()[["mean", "75%", "max"]].to_string(), end ="\n\n")
     
     print_step("DONE")
     if return_comp is True:
