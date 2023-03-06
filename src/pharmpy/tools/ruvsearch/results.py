@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.tools.common import ToolResults
 
@@ -114,7 +115,8 @@ def psn_resmod_results(path):
     for rowind, row in df.iterrows():
         d = {}
         for i in range(4, len(row)):
-            if row[i] is not None:
+            if row[i] is not None and row[i] is not np.nan:
+                print(row[i])
                 a = row[i].split('=')
                 d[a[0]] = float(a[1])
         parameters[rowind] = d
