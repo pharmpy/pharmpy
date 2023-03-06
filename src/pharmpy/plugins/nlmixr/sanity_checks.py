@@ -105,15 +105,15 @@ def same_time(model: pharmpy.model) -> bool:
         if index != 0:
             if row["ID"] == dataset.loc[index-1]["ID"]:
                 if row["TIME"] == dataset.loc[index-1]["TIME"]:
-                    temp = index-1
-                    while dataset.loc[temp]["TIME"] == row["TIME"]:
-                        if dataset.loc[temp]["EVID"] not in [0,3]:
-                            if rate:
-                                if dataset.loc[temp]["RATE"] == 0:
-                                    return True
-                            else:
+                    ID = row["ID"]
+                    TIME = row["TIME"]
+                    subset = dataset[(dataset["ID"] == 111) & (dataset["TIME"] == 3936.0)]
+                    if any([x not in [0,3] for x in subset["EVID"].unique()]) and any([x in [0,3] for x in subset["EVID"].unique()]):
+                        if rate:
+                            if any([x != 0 for x in subset["RATE"].unique()]) and any([x == 0 for x in subset["RATE"].unique()]):
                                 return True
-                        temp += 1
+                        else:
+                            return True
 
     return False
 

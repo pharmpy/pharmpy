@@ -83,7 +83,7 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
             )
     nlmixr_model = translate_nmtran_time(nlmixr_model)
     # FIXME: dropping columns runs update source which becomes redundant.
-    drop_dropped_columns(nlmixr_model)
+    #drop_dropped_columns(nlmixr_model)
     if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
         nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
     nlmixr_model = nlmixr_model.replace(
@@ -96,7 +96,7 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
     
     # Check model for warnings regarding data structure or model contents
     nlmixr_model = check_model(nlmixr_model)
-
+    
     nlmixr_model.update_source()
     
     return nlmixr_model
@@ -344,7 +344,8 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
     nonmem_method_to_nlmixr = {
         "FOCE" : "foce",
         "FO" : "fo",
-        "SAEM": "saem"
+        "SAEM": "saem",
+        "IMP": "saem"
         }
     
     nlmixr_method = nonmem_method_to_nlmixr[method]
