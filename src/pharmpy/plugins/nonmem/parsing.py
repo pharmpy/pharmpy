@@ -713,3 +713,76 @@ def filter_observations(df, col_names):
     all_ids = set(df['ID'].unique())
     ids_to_remove = all_ids - have_obs
     return df[~df['ID'].isin(ids_to_remove)]
+
+
+def parse_table_columns(control_stream):
+    # Handle synonyms and appended columns
+    options = {
+        'PRINT',
+        'NOPRINT',
+        'FILE',
+        'NOHEADER',
+        'ONEHEADER',
+        'ONEHEADERALL',
+        'NOTITLE',
+        'NOLABEL',
+        'FIRSTONLY',
+        'LASTONLY',
+        'FIRSTLASTONLY',
+        'NOFORWARD',
+        'FORWARD',
+        'APPEND',
+        'NOAPPEND',
+        'FORMAT',
+        'LFORMAT',
+        'RFORMAT',
+        'IDFORMAT',
+        'NOSUB',
+        'EXCLUDE_BY',
+        'PARAFILE',
+        'ESAMPLE',
+        'WRESCHOL',
+        'SEED',
+        'CLOCKSEED',
+        'RANMETHOD',
+        'VARCALC',
+        'FIXEDETAS',
+        'NPDTYPE',
+        'UNCONDITIONAL',
+        'CONDITIONAL',
+        'OMITTED',
+    }
+
+    reserved = {'PRED', 'IPRED', 'CIPREDI'}
+    synonyms = dict()
+    all_columns = []
+
+    noappend = False
+    for table_record in control_stream.get_records('TABLE'):
+        columns = []
+        for key, value in table_record.all_options:
+            if key == 'NOAPPEND':
+                noappend = True
+            elif key not in options:
+                if value is None:
+                    if key in synonyms:
+                        columns.append(synonyms[key])
+                    else:
+                        columns.append(key)
+                else:
+                    if key in reserved:
+                        columns.append(key)
+                        synonyms[value] = key
+                    elif value in reserved:
+                        columns.append(value)
+                        synonyms[key] = value
+                    else:
+                        # FIXME: Fallback since we don't know all reserved names
+                        columns.append(key)
+
+        if not noappend:
+            columns.extend(['DV', 'PRED', 'RES', 'WRES'])
+
+        all_columns.append(columns)
+
+    return all_columns

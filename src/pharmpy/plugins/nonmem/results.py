@@ -11,6 +11,7 @@ from pharmpy.results import ModelfitResults
 from pharmpy.workflows.log import Log
 
 from .nmtran_parser import NMTranControlStream
+from .parsing import parse_table_columns
 from .results_file import NONMEMResultsFile
 from .table import ExtTable, NONMEMTableFile, PhiTable
 from .update import create_name_map
@@ -328,21 +329,17 @@ def _parse_tables(path: Path, control_stream: NMTranControlStream) -> pd.DataFra
     }
 
     table_recs = control_stream.get_records('TABLE')
+    colnames_list = parse_table_columns(control_stream)
     found = set()
     df = pd.DataFrame()
-    for table_rec in table_recs:
+    for table_rec, colnames in zip(table_recs, colnames_list):
         columns_in_table = []
-        for key, value in table_rec.all_options:
-            if key in interesting_columns and key not in found and value is None:
-                # FIXME: Cannot handle synonyms here
-                colname = key
-            elif value in interesting_columns and value not in found:
-                colname = value
-            else:
-                continue
-
-            found.add(colname)
-            columns_in_table.append(colname)
+        colnames_in_table = []
+        for i, name in enumerate(colnames):
+            if name in interesting_columns and name not in found:
+                found.add(name)
+                colnames_in_table.append(name)
+                columns_in_table.append(i)
 
         noheader = table_rec.has_option("NOHEADER")
         notitle = table_rec.has_option("NOTITLE") or noheader
@@ -354,7 +351,7 @@ def _parse_tables(path: Path, control_stream: NMTranControlStream) -> pd.DataFra
             continue
         table = table_file.tables[0]
 
-        df[columns_in_table] = table.data_frame[columns_in_table]
+        df[colnames_in_table] = table.data_frame.iloc[:, columns_in_table]
 
     if 'ID' in df.columns:
         df['ID'] = df['ID'].convert_dtypes()
