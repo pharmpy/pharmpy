@@ -114,6 +114,7 @@ def calculate_results(
                     base_model.modelfit_results.covariance_matrix,
                 ),
                 index=cdd_estimates.index,
+                dtype=np.float64,
             )
         )
 
@@ -145,7 +146,7 @@ def calculate_results(
                 base_model.modelfit_results.predictions[['PRED', 'CIPREDI']],
                 individuals=infl_list,
             )
-        except ValueError:
+        except Exception:
             iplot = None
     else:
         iplot = None
