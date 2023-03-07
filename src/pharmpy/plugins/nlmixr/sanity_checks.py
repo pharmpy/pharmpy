@@ -12,7 +12,6 @@ from pharmpy.modeling import (
     has_proportional_error_model,
     has_combined_error_model,
     )
-from .modify_code import change_same_time
 
 def check_model(model: pharmpy.model) -> pharmpy.model:
     """
@@ -116,6 +115,47 @@ def same_time(model: pharmpy.model) -> bool:
                             return True
 
     return False
+
+def change_same_time(model: pharmpy.model) -> pharmpy.model:
+    """
+    Force dosing to happen after observation, if bolus dose is given at the
+    exact same time.
+
+    Parameters
+    ----------
+    model : pharmpy.model
+        A pharmpy.model object
+
+    Returns
+    -------
+    model : TYPE
+        The same model with a changed dataset.
+
+    """
+    dataset = model.dataset.copy()
+    dataset = dataset.reset_index()
+    time = dataset["TIME"]
+    
+    if "RATE" in dataset.columns:
+        rate = True 
+    else:
+        rate = False
+        
+    for index, row in dataset.iterrows():
+        if index != 0:
+            if row["ID"] == dataset.loc[index-1]["ID"]:
+                if row["TIME"] == dataset.loc[index-1]["TIME"]:
+                    temp = index-1
+                    while dataset.loc[temp]["TIME"] == row["TIME"]:
+                        if dataset.loc[temp]["EVID"] not in [0,3]:
+                            if rate:
+                                if dataset.loc[temp]["RATE"] == 0:
+                                    time[temp] = time[temp] + 10**-6
+                            else:
+                                time[temp] = time[temp] + 10**-6
+                        temp += 1
+    model.dataset["TIME"] = time
+    return model
 
 def print_warning(warning: str) -> None:
     """

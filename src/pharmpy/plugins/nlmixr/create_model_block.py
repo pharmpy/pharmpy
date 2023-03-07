@@ -14,22 +14,38 @@ from .error_model import (
     find_term,
     add_error_model,
     add_error_relation,
-    remove_piecewise,
     convert_piecewise,
-    convert_eq,
     )
 
+class ExpressionPrinter(sympy_printing.str.StrPrinter):
+    def __init__(self, amounts):
+        self.amounts = amounts
+        super().__init__()
+
+    def _print_Symbol(self, expr):
+        return name_mangle(expr.name)
+
+    def _print_Derivative(self, expr):
+        fn = expr.args[0]
+        return f'd/dt({fn.name})'
+
+    def _print_Function(self, expr):
+        name = expr.func.__name__
+        if name in self.amounts:
+            return expr.func.__name__
+        else:
+            return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
 def add_statement(model: pharmpy.model.Model, cg, before_ode):
     if before_ode is True:
         statements = model.statements.before_odes
     else:
-        statements = model.statements.afterwards
+        statements = model.statements.after_odes
     
     # FIXME: handle other DVs?
     dv = list(model.dependent_variables.keys())[0]
     
-    for s in model.statements.before_odes:
+    for s in statements:
         if isinstance(s, Assignment):
             if s.symbol == dv:
                 # FIXME : Find another way to assert that a sigma exist
@@ -104,35 +120,15 @@ def add_ode(model, cg):
         amounts = [am.name for am in list(model.statements.ode_system.amounts)]
         printer = ExpressionPrinter(amounts)
         
-    for s in model.statements.ode_system:
-        for eq in s.eqs:
-            # Should remove piecewise from these equations in nlmixr
-            if eq.atoms(sympy.Piecewise):
-                lhs = remove_piecewise(printer.doprint(eq.lhs))
-                rhs = remove_piecewise(printer.doprint(eq.rhs))
-                
-                cg.add(f'{lhs} = {rhs}')
-            else:
-                cg.add(f'{printer.doprint(eq.lhs)} = {printer.doprint(eq.rhs)}')
-
-class ExpressionPrinter(sympy_printing.str.StrPrinter):
-    def __init__(self, amounts):
-        self.amounts = amounts
-        super().__init__()
-
-    def _print_Symbol(self, expr):
-        return name_mangle(expr.name)
-
-    def _print_Derivative(self, expr):
-        fn = expr.args[0]
-        return f'd/dt({fn.name})'
-
-    def _print_Function(self, expr):
-        name = expr.func.__name__
-        if name in self.amounts:
-            return expr.func.__name__
+    for eq in model.statements.ode_system.eqs:
+        # Should remove piecewise from these equations in nlmixr
+        if eq.atoms(sympy.Piecewise):
+            lhs = remove_piecewise(printer.doprint(eq.lhs))
+            rhs = remove_piecewise(printer.doprint(eq.rhs))
+            
+            cg.add(f'{lhs} = {rhs}')
         else:
-            return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
+            cg.add(f'{printer.doprint(eq.lhs)} = {printer.doprint(eq.rhs)}')
 
 def remove_piecewise(expr:str) -> str:
     """

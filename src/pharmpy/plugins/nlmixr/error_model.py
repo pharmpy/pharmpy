@@ -64,7 +64,7 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
             
         if prop:
             if errors_add_prop["prop"] is None:
-                errors_add_prop["prop"] = term    f
+                errors_add_prop["prop"] = term
             else:
                 raise ValueError("Multiple proportional error terms found. Check format of error model")
         else:
@@ -259,3 +259,46 @@ def convert_eps_to_sigma(expr: sympy.Symbol or sympy.Mul, model: pharmpy.model) 
     """
     eps_to_sigma = {sympy.Symbol(eps.names[0]): sympy.Symbol(str(eps.variance)) for eps in model.random_variables.epsilons}
     return expr.subs(eps_to_sigma)
+
+def convert_piecewise(piecewise: sympy.Piecewise, cg: CodeGenerator, model: pharmpy.model) -> None:
+    """
+    For an expression of the dependent variable contating a piecewise statement 
+    this function will convert the expression to an if/else if/else statement 
+    compatible with nlmixr.
+
+    Parameters
+    ----------
+    piecewise : sympy.Piecewise
+        A sympy expression contining made up of a Piecewise statement
+    cg : CodeGenerator
+        CodeGenerator class object for creating code
+    model : pharmpy.Model
+        Pharmpy model object
+
+    Returns
+    -------
+    None
+        CodeGenerator object is modified. Nothing is returned
+
+    """
+    first = True
+    for expr, cond in piecewise.expression.args:
+        if first:
+            cg.add(f'if ({cond}){{')
+            expr, error = find_term(model, expr)
+            add_error_model(cg, expr, error, piecewise.symbol)
+            cg.add('}')
+            first = False
+        else:
+            if cond is not sympy.S.true:
+                cg.add(f'else if ({cond}){{')
+                expr, error = find_term(model, expr)
+                add_error_model(cg, expr, error, piecewise.symbol)
+                cg.add('}')
+            else:
+                cg.add('else {')
+                expr, error = find_term(model, expr)
+                add_error_model(cg, expr, error, piecewise.symbol)
+                cg.add('}')
+    
+    add_error_relation(cg, error, piecewise.symbol)
