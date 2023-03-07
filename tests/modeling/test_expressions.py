@@ -23,6 +23,7 @@ from pharmpy.modeling import (
     get_rv_parameters,
     greekify_model,
     has_random_effect,
+    is_linearized,
     is_real,
     make_declarative,
     mu_reference_model,
@@ -477,3 +478,10 @@ def test_is_real(load_model_for_test, pheno_path):
     assert is_real(model, "CL")
     assert not is_real(model, "I*CL")
     assert is_real(model, "sqrt(CL)") is None
+
+
+def test_is_linearized(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    assert not is_linearized(model)
+    model = load_example_model_for_test("pheno_linear")
+    assert is_linearized(model)

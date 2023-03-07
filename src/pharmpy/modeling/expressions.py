@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from itertools import filterfalse
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple, TypeVar, Union
@@ -1526,3 +1527,54 @@ def is_real(model: Model, expr: Union[str, sympy.Expr]) -> Optional[bool]:
     """
     expr = sympy.sympify(expr)
     return sympy.ask(sympy.Q.real(expr), assume_all(sympy.Q.real, free_images_and_symbols(expr)))
+
+
+def is_linearized(model: Model):
+    """Determine if a model is linearized
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    bool
+        True if model has been linearized and False otherwise
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, is_real
+    >>> model1 = load_example_model("pheno")
+    >>> is_linearized(model1)
+    False
+    >>> model2 = load_example_model("pheno_linear")
+    >>> is_linearized(model2)
+    True
+
+    """
+    statements = model.statements
+    if statements.ode_system is not None:
+        return False
+    lhs = set()
+    rhs = set()
+    for s in statements:
+        name = s.symbol.name
+        lhs.add(name)
+        rhs_names = {symb.name for symb in s.expression.free_symbols}
+        rhs.update(rhs_names)
+
+    for name in lhs:
+        m = re.match(r'BASE|BSUM|BASE_TERMS|IPRED|ERR|ESUM|ERROR_TERMS|Y', name)
+        if not m:
+            return False
+
+    for name in rhs:
+        m = re.match(
+            r'D_ETA|ETA|OETA|BASE|BSUM|BASE_TERMS|OPRED|EPS|D_EPS|D_EPSETA|ERR|ESUM|ERROR_TERMS|IPRED',
+            name,
+        )
+        if not m:
+            return False
+
+    return True

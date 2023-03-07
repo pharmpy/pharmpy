@@ -1,3 +1,11 @@
+next version
+------------
+
+New features
+============
+
+* Add function ``modeling.is_linearized``
+
 0.91.0 (2023-03-03)
 -------------------
 
