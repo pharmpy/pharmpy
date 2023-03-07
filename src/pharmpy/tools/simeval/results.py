@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Optional
 
 from pharmpy.deps import pandas as pd
@@ -50,7 +51,7 @@ def calculate_results(original_model, simfit_results):
         try:
             id_plot = plot_individual_predictions(
                 original_model,
-                original_model.modelfit_results.predictions[['CIPREDI', 'PRED']],
+                original_model.modelfit_results.predictions[['IPRED', 'PRED']],
                 individuals=ids,
             )
         except Exception:
@@ -65,6 +66,7 @@ def calculate_results(original_model, simfit_results):
 
 
 def psn_simeval_results(path):
+    path = Path(path)
     simfit_paths = (path / 'm1').glob('sim-*.mod')
     simfit_results = psn_simfit_results(simfit_paths)
     original = Model.create_model(path / 'm1' / 'original.mod')
