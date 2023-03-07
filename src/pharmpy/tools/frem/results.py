@@ -1043,8 +1043,9 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     modelfit_results = replace(
         model1.modelfit_results, parameter_estimates=pd.Series(model1b.parameters.nonfixed.inits)
     )
-    model1b = model1b.replace(modelfit_results=modelfit_results)
-    model1b = psn_reorder_base_model_inits(model1b, path)
+    model1 = model1.replace(modelfit_results=modelfit_results)
+    model1 = psn_reorder_base_model_inits(model1, path)
+    intmods[0] = model1
 
     res = calculate_results(
         model_4,
