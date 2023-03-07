@@ -7,6 +7,7 @@ that are found in the conversion software
 """
 
 import pharmpy.model
+import warnings
 from pharmpy.modeling import (
     has_additive_error_model,
     has_proportional_error_model,
@@ -106,7 +107,7 @@ def same_time(model: pharmpy.model) -> bool:
                 if row["TIME"] == dataset.loc[index-1]["TIME"]:
                     ID = row["ID"]
                     TIME = row["TIME"]
-                    subset = dataset[(dataset["ID"] == 111) & (dataset["TIME"] == 3936.0)]
+                    subset = dataset[(dataset["ID"] == ID) & (dataset["TIME"] == TIME)]
                     if any([x not in [0,3] for x in subset["EVID"].unique()]) and any([x in [0,3] for x in subset["EVID"].unique()]):
                         if rate:
                             if any([x != 0 for x in subset["RATE"].unique()]) and any([x == 0 for x in subset["RATE"].unique()]):
@@ -140,20 +141,22 @@ def change_same_time(model: pharmpy.model) -> pharmpy.model:
         rate = True 
     else:
         rate = False
-        
-    for index, row in dataset.iterrows():
-        if index != 0:
-            if row["ID"] == dataset.loc[index-1]["ID"]:
-                if row["TIME"] == dataset.loc[index-1]["TIME"]:
-                    temp = index-1
-                    while dataset.loc[temp]["TIME"] == row["TIME"]:
-                        if dataset.loc[temp]["EVID"] not in [0,3]:
-                            if rate:
-                                if dataset.loc[temp]["RATE"] == 0:
+    with warnings.catch_warnings():
+        # Supress a numpy deprecation warning
+        warnings.simplefilter("ignore")
+        for index, row in dataset.iterrows():
+            if index != 0:
+                if row["ID"] == dataset.loc[index-1]["ID"]:
+                    if row["TIME"] == dataset.loc[index-1]["TIME"]:
+                        temp = index-1
+                        while dataset.loc[temp]["TIME"] == row["TIME"]:
+                            if dataset.loc[temp]["EVID"] not in [0,3]:
+                                if rate:
+                                    if dataset.loc[temp]["RATE"] == 0:
+                                        time[temp] = time[temp] + 10**-6
+                                else:
                                     time[temp] = time[temp] + 10**-6
-                            else:
-                                time[temp] = time[temp] + 10**-6
-                        temp += 1
+                            temp += 1
     model.dataset["TIME"] = time
     return model
 

@@ -196,8 +196,8 @@ def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
     cg.indent()
     
     add_statement(model, cg, before_ode = True)
-    
-    add_ode(model, cg)
+    if model.statements.ode_system:
+        add_ode(model, cg)
     
     add_statement(model, cg, before_ode = False)
     

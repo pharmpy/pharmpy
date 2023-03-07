@@ -116,9 +116,9 @@ def add_statement(model: pharmpy.model.Model, cg, before_ode):
                     cg.add(f'{s.symbol.name} <- {expr}')
                 
 def add_ode(model, cg):
-    if model.statements.ode_system:
-        amounts = [am.name for am in list(model.statements.ode_system.amounts)]
-        printer = ExpressionPrinter(amounts)
+    
+    amounts = [am.name for am in list(model.statements.ode_system.amounts)]
+    printer = ExpressionPrinter(amounts)
         
     for eq in model.statements.ode_system.eqs:
         # Should remove piecewise from these equations in nlmixr
