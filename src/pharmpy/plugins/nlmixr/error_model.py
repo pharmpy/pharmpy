@@ -67,12 +67,13 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
             if errors_add_prop["prop"] is None:
                 errors_add_prop["prop"] = term
             else:
-                raise ValueError("Multiple proportional error terms found. Check format of error model")
+                print("Multiple proportional error terms found. nlmixr2 cannot handle this.\nError model NOT added")
+                errors_add_prop["prop"] = None
         else:
             if errors_add_prop["add"] is None:
                 errors_add_prop["add"] = term
             else:
-                raise ValueError("Multiple additive error term found. Check format of error model")
+                print("Multiple additive error term found. nlmixr2 cannot handle this.\nError model NOT added")
                 
     for pair in errors_add_prop.items():
         key = pair[0]

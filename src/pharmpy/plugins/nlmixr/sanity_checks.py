@@ -214,7 +214,9 @@ def change_same_sigma(model):
         param = model.parameters[sigmas_to_add[s]].replace(name = s.name)
         params = params + param
     model = model.replace(parameters = params)
-
+    
+    # Add newline after all updated sigma values have been printed´
+    print()
     return model
         
 def print_warning(warning: str) -> None:
