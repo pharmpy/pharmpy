@@ -93,7 +93,7 @@ def parameters_from_blocks(blocks, all_names, record_name):
                     col = block_row
                 else:
                     col += 1
-            prev_size = row - block_row + 1
+            prev_size = row - block_row
     return parameters, name_map
 
 
