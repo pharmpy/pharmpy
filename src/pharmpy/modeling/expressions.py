@@ -1544,7 +1544,7 @@ def is_linearized(model: Model):
 
     Example
     -------
-    >>> from pharmpy.modeling import load_example_model, is_real
+    >>> from pharmpy.modeling import load_example_model, is_linearized
     >>> model1 = load_example_model("pheno")
     >>> is_linearized(model1)
     False
