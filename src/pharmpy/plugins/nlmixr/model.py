@@ -198,7 +198,7 @@ def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
     add_statement(model, cg, before_ode = True)
     
     add_ode(model, cg)
-    print(cg)
+    
     add_statement(model, cg, before_ode = False)
     
     cg.dedent()
