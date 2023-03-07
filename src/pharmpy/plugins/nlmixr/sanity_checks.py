@@ -8,10 +8,12 @@ that are found in the conversion software
 
 import pharmpy.model
 import warnings
+from pharmpy.deps import sympy
 from pharmpy.modeling import (
     has_additive_error_model,
     has_proportional_error_model,
     has_combined_error_model,
+    remove_iiv
     )
 
 def check_model(model: pharmpy.model) -> pharmpy.model:
@@ -38,6 +40,9 @@ def check_model(model: pharmpy.model) -> pharmpy.model:
     if same_time(model):
         print_warning("Observation and bolus dose at the same time in the data. Modified for nlmixr model")
         model = change_same_time(model)
+    if same_sigma(model):
+        print_warning("Sigma with value same not supported. Updated as follows.")
+        model = change_same_sigma(model)
         
     return model
 
@@ -160,6 +165,58 @@ def change_same_time(model: pharmpy.model) -> pharmpy.model:
     model.dataset["TIME"] = time
     return model
 
+def same_sigma(model):
+    sigmas = []
+    for eps in model.random_variables.epsilons:
+        sigma = eps.variance
+        if sigma in sigmas:
+            return True
+        else:
+            sigmas.append(sigma)
+    return False
+
+def change_same_sigma(model):
+    
+    sigmas = []
+    sigmas_to_add = {}
+    eps_and_sigma = {}
+    for eps in model.random_variables.epsilons:
+        sigma = eps.variance
+        if sigma in sigmas:
+            n = 1
+            new_sigma = sympy.Symbol(sigma.name + "_" + f'{n}')
+            while new_sigma in sigmas:
+                n += 1
+                new_sigma = sympy.Symbol(sigma.name + "_" + f'{n}')
+            
+            sigmas_to_add[new_sigma] = sigma
+            
+            sigmas.append(new_sigma)
+            
+            eps_and_sigma[eps.names] = new_sigma
+            print(eps, " : ", new_sigma)
+        else:
+            sigmas.append(sigma)
+    
+    for rv in model.random_variables.epsilons:
+        if rv.names in eps_and_sigma:
+            new_eps = rv.replace(variance = eps_and_sigma[rv.names])
+            
+            rvs = model.random_variables
+            keep = [name for name in model.random_variables.names if name not in [rv.names[0]]]
+            
+            model = model.replace(random_variables = rvs[keep])
+            model = model.replace(random_variables = model.random_variables + new_eps)
+            
+            
+    params = model.parameters
+    for s in sigmas_to_add:
+        param = model.parameters[sigmas_to_add[s]].replace(name = s.name)
+        params = params + param
+    model = model.replace(parameters = params)
+
+    return model
+        
 def print_warning(warning: str) -> None:
     """
     Help function for printing warning messages to the console

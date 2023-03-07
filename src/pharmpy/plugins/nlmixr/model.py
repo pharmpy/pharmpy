@@ -53,6 +53,11 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
         A model converted to nlmixr format.
 
     """
+    from pharmpy.modeling import (
+    has_additive_error_model,
+    has_proportional_error_model,
+    has_combined_error_model,
+    )
     
     if isinstance(model, Model):
         return model

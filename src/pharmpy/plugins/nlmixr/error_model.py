@@ -34,6 +34,7 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
     errors = []
     
     terms = sympy.Add.make_args(expr)
+    
     for term in terms:
         error_term = False
         for symbol in term.free_symbols:
@@ -49,7 +50,7 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
                 res = res + term
     
     errors_add_prop = {"add": None, "prop": None}
-    
+
     prop = False
     res_alias = find_aliases(res, model)
     for term in errors:
@@ -71,9 +72,8 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
             if errors_add_prop["add"] is None:
                 errors_add_prop["add"] = term
             else:
-                pass
-                #raise ValueError("Multiple additive error term found. Check format of error model")
-    
+                raise ValueError("Multiple additive error term found. Check format of error model")
+                
     for pair in errors_add_prop.items():
         key = pair[0]
         term = pair[1]
