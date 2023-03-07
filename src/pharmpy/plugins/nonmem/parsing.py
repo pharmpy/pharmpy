@@ -436,7 +436,10 @@ def parse_initial_individual_estimates(
             if basepath is None:
                 raise ValueError("Cannot resolve path for $ETAS")
             path = path_absolute(basepath / path)
-        phi_tables = NONMEMTableFile(path)
+        try:
+            phi_tables = NONMEMTableFile(path)
+        except FileNotFoundError:
+            return None
         phitab = phi_tables[0]
         assert isinstance(phitab, PhiTable)
         df = phitab.etas.rename(columns=name_map)
