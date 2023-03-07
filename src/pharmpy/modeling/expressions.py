@@ -1560,12 +1560,14 @@ def is_linearized(model: Model):
     rhs = set()
     for s in statements:
         name = s.symbol.name
+        if name == 'Y':  # To support linearized frem models
+            break
         lhs.add(name)
         rhs_names = {symb.name for symb in s.expression.free_symbols}
         rhs.update(rhs_names)
 
     for name in lhs:
-        m = re.match(r'BASE|BSUM|BASE_TERMS|IPRED|ERR|ESUM|ERROR_TERMS|Y', name)
+        m = re.match(r'BASE|BSUM|BASE_TERMS|IPRED|ERR|ESUM|ERROR_TERMS', name)
         if not m:
             return False
 
