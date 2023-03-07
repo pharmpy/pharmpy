@@ -20,6 +20,7 @@ from pharmpy.modeling import (
     create_rng,
     get_baselines,
     get_covariate_baselines,
+    is_linearized,
     sample_individual_estimates,
     sample_parameters_from_covariance_matrix,
     set_covariates,
@@ -830,6 +831,11 @@ def get_params(frem_model, rvs, npars):
     for i, s in enumerate(symbs):
         if s in duplicates:
             symbs[i] = rename_duplicate(symbs, s)
+
+    # Special case for linearized models to not get "ERR_n"
+    if is_linearized(frem_model):
+        nums = [int(s[3:]) for s in symbs]
+        symbs = [f'ETA_{n}' for n in nums]
 
     return symbs
 
