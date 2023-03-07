@@ -6,7 +6,6 @@ import warnings
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Optional
-import re
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
@@ -22,24 +21,21 @@ from pharmpy.modeling import (
     translate_nmtran_time,
     drop_dropped_columns,
     drop_columns,
-    has_additive_error_model,
-    has_proportional_error_model,
-    has_combined_error_model,
     append_estimation_step_options,
 )
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import fit
 from .sanity_checks import check_model
-from .modify_code import (
-    CodeGenerator,
-    name_mangle,
-    add_ini_parameter,
-    find_term,
-    add_error_model,
-    add_error_relation,
-    remove_piecewise,
-    convert_piecewise,
-    convert_eq,
+from .create_ini import (
+    add_theta,
+    add_eta,
+    add_sigma
+    )
+from .CodeGenerator import CodeGenerator
+from .name_mangle import name_mangle
+from .create_model_block import (
+    add_statement,
+    add_ode
     )
 
 def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.model:
@@ -60,7 +56,7 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
     
     if isinstance(model, Model):
         return model
-
+    
     nlmixr_model = Model(
         internals=NLMIXRModelInternals(),
         parameters=model.parameters,
@@ -168,33 +164,11 @@ def create_ini(cg: CodeGenerator, model: pharmpy.model) -> None:
     cg.add('ini({')
     cg.indent()
 
-    thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
-    for theta in thetas:
-        if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
-            add_ini_parameter(cg, theta, boundary = True)
-        else:
-            add_ini_parameter(cg, theta)
+    add_theta(model, cg)
 
-    for dist in model.random_variables.etas:
-        omega = dist.variance
-        if len(dist.names) == 1:
-            init = model.parameters[omega.name].init
-            cg.add(f'{name_mangle(dist.names[0])} ~ {init}')
-        else:
-            inits = []
-            for row in range(omega.rows):
-                for col in range(row + 1):
-                    inits.append(model.parameters[omega[row, col].name].init)
-            cg.add(
-                f'{" + ".join([name_mangle(name) for name in dist.names])} ~ c({", ".join([str(x) for x in inits])})'
-            )
-            
-    for sigma in get_sigmas(model):
-        if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
-            add_ini_parameter(cg, sigma, boundary = True)
-        else:
-            add_ini_parameter(cg, sigma)
-
+    add_eta(model, cg)
+    
+    add_sigma(model, cg)
         
     cg.dedent()
     cg.add('})')
@@ -217,94 +191,16 @@ def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
         Modification of code object.
 
     """
-     # FIXME: handle other DVs?
-    dv = list(model.dependent_variables.keys())[0]
-    if model.statements.ode_system:
-        amounts = [am.name for am in list(model.statements.ode_system.amounts)]
-        printer = ExpressionPrinter(amounts)
 
     cg.add('model({')
     cg.indent()
-    for s in model.statements:
-        if isinstance(s, Assignment):
-            if s.symbol == dv:
-                # FIXME : Find another way to assert that a sigma exist
-                sigma = None
-                for dist in model.random_variables.epsilons:
-                    sigma = dist.variance
-                assert sigma is not None
-                
-                if has_additive_error_model(model):
-                    expr, error = find_term(model, s.expression)
-                    add_error_model(cg, expr, error, s.symbol.name, force_add = True)
-                    add_error_relation(cg, error, s.symbol)
-                elif has_proportional_error_model(model):
-                    if len(sympy.Add.make_args(s.expression)) == 1:
-                        expr, error = find_term(model, sympy.expand(s.expression))
-                    else:
-                        expr, error = find_term(model, s.expression)
-                    add_error_model(cg, expr, error, s.symbol.name, force_prop = True)
-                    add_error_relation(cg, error, s.symbol)
-                elif has_combined_error_model(model):
-                    # FIXME : Combine with the unknown case
-                    expr, error = find_term(model, s.expression)
-                    add_error_model(cg, expr, error, s.symbol.name, force_comb = True)
-                    add_error_relation(cg, error, s.symbol)
-                else:
-                    if s.expression.is_Piecewise:
-                        # Convert eps to sigma name
-                        #piecewise = convert_eps_to_sigma(s, model)
-                        convert_piecewise(s, cg, model)
-                    else:         
-                        expr, error = find_term(model, s.expression)
-                        add_error_model(cg, expr, error, s.symbol.name)
-                        add_error_relation(cg, error, s.symbol)
-                    
-            else:
-                expr = s.expression
-                if expr.is_Piecewise:
-                    first = True
-                    for value, cond in expr.args:
-                        if cond is not sympy.S.true:
-                            if cond.atoms(sympy.Eq):
-                                cond = convert_eq(cond)
-                            if first:
-                                cg.add(f'if ({cond}) {{')
-                                first = False
-                            else:
-                                cg.add(f'}} else if ({cond}) {{')
-                        else:
-                            cg.add('} else {')
-                            if "NEWIND" in [t.name for t in expr.free_symbols] and value == 0:
-                                largest_value = expr.args[0].expr
-                                largest_cond = expr.args[0].cond
-                                for value, cond in expr.args[1:]:
-                                    if cond is not sympy.S.true:
-                                        if cond.rhs > largest_cond.rhs:
-                                            largest_value = value
-                                            largest_cond = cond
-                                        elif cond.rhs == largest_cond.rhs:
-                                            if not isinstance(cond, sympy.LessThan) and isinstance(largest_cond, sympy.LessThan):
-                                                largest_value = value
-                                                largest_cond = cond
-                                value = largest_value
-                        cg.indent()
-                        cg.add(f'{s.symbol.name} <- {value}')
-                        cg.dedent()
-                    cg.add('}')
-                else:
-                    cg.add(f'{s.symbol.name} <- {expr}')
-
-        else:
-            for eq in s.eqs:
-                # Should remove piecewise from these equations in nlmixr
-                if eq.atoms(sympy.Piecewise):
-                    lhs = remove_piecewise(printer.doprint(eq.lhs))
-                    rhs = remove_piecewise(printer.doprint(eq.rhs))
-                    
-                    cg.add(f'{lhs} = {rhs}')
-                else:
-                    cg.add(f'{printer.doprint(eq.lhs)} = {printer.doprint(eq.rhs)}')
+    
+    add_statement(model, cg, before_ode = True)
+    
+    add_ode(model, cg)
+    
+    add_statement(model,cg, before_ode = False)
+    
     cg.dedent()
     cg.add('})')
 
