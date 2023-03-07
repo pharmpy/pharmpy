@@ -558,8 +558,8 @@ def use_thetas_for_error_stdev(model: Model):
         if has_weighted_error_model(model) and (
             has_additive_error_model(model) or has_proportional_error_model(model)
         ):
-            _, _, w_cand = _preparations_weighted_error(model)
-            w_ass = model.statements.find_assignment(w_cand)
+            w = _get_weighted_error_model_weight(model)
+            w_ass = model.statements.find_assignment(w)
             model = model.replace(
                 statements=model.statements.reassign(w_ass.symbol, w_ass.expression * sdsymb)
             )
@@ -645,36 +645,39 @@ def has_weighted_error_model(model: Model):
     has_combined_error_model : Check if a model has a combined error model
     has_proportional_error_model : Check if a model has a proportional error model
     """
-    rvs_in_y, eps_expr, w_cand = _preparations_weighted_error(model)
-    stats, y, _ = _preparations(model)
-    y_expr = stats.error.find_assignment(y).expression
+    w = _get_weighted_error_model_weight(model)
 
-    if len(rvs_in_y) > 1:
-        return False
-    if not eps_expr:
-        return False
-    if w_cand and w_cand not in y_expr.args:
+    if w:
         return True
     return False
 
 
-def _preparations_weighted_error(model: Model):
+def _get_weighted_error_model_weight(model: Model):
+    # Defines weighted error model as e.g.: Y = F + EPS(1)*W
     stats, y, f = _preparations(model)
+    # FIXME: handle multiple DVs? Handle piecewise?
     y_expr = stats.error.find_assignment(y).expression
     rvs = model.random_variables.epsilons
     rvs_in_y = {
         sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in y_expr.free_symbols
     }
+
+    if len(rvs_in_y) > 1:
+        return None
+
+    f = y_expr.subs({rv: 0 for rv in rvs_in_y})
+    w = None
     eps_expr = {arg for arg in y_expr.args if arg.free_symbols.intersection(rvs_in_y)}
 
-    w_cand = None
     if len(eps_expr) == 1:
         eps_expr = eps_expr.pop()
         if len(eps_expr.args) == 2 and eps_expr.func is sympy.Mul:
             a, b = eps_expr.args
             w_cand = a if a not in rvs_in_y else b
+            if w_cand != f:
+                w = w_cand
 
-    return rvs_in_y, eps_expr, w_cand
+    return w
 
 
 def _index_of_first_assignment(statements: Statements, symbol: sympy.Symbol) -> int:
