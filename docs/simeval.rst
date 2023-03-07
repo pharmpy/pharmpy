@@ -26,12 +26,12 @@ The ``sampled_iofv`` table contains the evaluated individual OFVs for each sampl
 Individual OFV summary
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``iofv_summary`` table contain the iOFVs from the orginal model, the median and standard deviation of the sampled iOFVs, the residual and a
+The ``iofv_summary`` table contain the iOFVs from the orginal model, the mean and standard deviation of the sampled iOFVs, the residual and a
 residual outlier flag. The residual for each sample and ID is the distance from the observed iOFV to the simulated iOFV expressed in standard deviations of the simulated values.
 
 .. math::
 
-    \mathrm{res} = \frac{\mathrm{obs} - \operatorname{median}(\mathrm{sim})}{\operatorname{sd}(\mathrm{sim})}
+    \mathrm{res} = \frac{\mathrm{obs} - \operatorname{mean}(\mathrm{sim})}{\operatorname{sd}(\mathrm{sim})}
 
 An individual is defined as an outlier if the corresponding residual is 3 or higher.
 

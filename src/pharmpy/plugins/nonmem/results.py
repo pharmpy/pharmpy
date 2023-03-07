@@ -70,7 +70,7 @@ def _parse_modelfit_results(
     table_df = _parse_tables(path, control_stream)
     residuals = _parse_residuals(table_df)
     predictions = _parse_predictions(table_df)
-    iofv, ie, iec = _parse_phi(path, control_stream, name_map, etas)
+    iofv, ie, iec = _parse_phi(path, control_stream, name_map, etas, subproblem)
     rse = _calculate_relative_standard_errors(final_pe, ses)
     (
         runtime_total,
@@ -282,12 +282,21 @@ def _get_last_est(estimation_steps: EstimationSteps):
     return len(estimation_steps) - 1
 
 
-def _parse_phi(path: Path, control_stream: NMTranControlStream, name_map, etas: RandomVariables):
+def _parse_phi(
+    path: Path,
+    control_stream: NMTranControlStream,
+    name_map,
+    etas: RandomVariables,
+    subproblem=None,
+):
     try:
         phi_tables = NONMEMTableFile(path.with_suffix('.phi'))
     except FileNotFoundError:
         return None, None, None
-    table = phi_tables.tables[-1]
+    if subproblem is None:
+        table = phi_tables.tables[-1]
+    else:
+        table = phi_tables.tables[subproblem - 1]
 
     if table is None:
         return None, None, None

@@ -30,12 +30,12 @@ def calculate_results(original_model, simfit_results):
     iofv_summary = pd.DataFrame(
         {
             'original': origiofv,
-            'sampled_median': sampled_iofv.T.median(),
+            'sampled_mean': sampled_iofv.T.mean(),
             'sampled_stdev': sampled_iofv.T.std(),
         }
     )
     iofv_summary['residual'] = (
-        iofv_summary['original'] - iofv_summary['sampled_median']
+        iofv_summary['original'] - iofv_summary['sampled_mean']
     ) / iofv_summary['sampled_stdev']
     iofv_summary['residual_q1'] = (
         iofv_summary['original'] - sampled_iofv.T.quantile(0.25)
