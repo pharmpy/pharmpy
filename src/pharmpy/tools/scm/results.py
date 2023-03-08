@@ -214,11 +214,28 @@ def model_name_series_to_dataframe(modelname, parcov_dictionary, is_backward, in
         {'model': modelname, 'parameter': None, 'covariate': None, 'extended_state': state}
     )
     if parcov_dictionary:
-        temp = pd.DataFrame(
-            [parcov_dictionary[m] for m in subdf.parcov], columns=('parameter', 'covariate')
-        )
-        result.parameter = temp.parameter
-        result.covariate = temp.covariate
+        # Handling of binarized covariates
+        parameter = []
+        covariate = []
+        for name in subdf.parcov:
+            a = name.rsplit('_', maxsplit=1)
+            if len(a) == 1:
+                n = None
+            else:
+                try:
+                    n = int(a[1])
+                except ValueError:
+                    n = None
+
+            if n is None:
+                parameter.append(parcov_dictionary[name][0])
+                covariate.append(parcov_dictionary[name][1])
+            else:
+                parameter.append(parcov_dictionary[a[0]][0])
+                covariate.append(parcov_dictionary[a[0]][1] + '_' + str(n))
+
+        result.parameter = parameter
+        result.covariate = covariate
     return result
 
 
