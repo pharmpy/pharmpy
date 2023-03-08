@@ -35,8 +35,6 @@ def check_model(model: pharmpy.model) -> pharmpy.model:
     """
     # Checks for the dataset
     if model.dataset is not None or len(model.dataset) != 0:
-        if not mixed_dose_types(model):
-            print_warning("The connected model data contains mixed dosage types. Nlmixr cannot handle this currently \nConverted model will not run on associated data")
         if "TIME" in model.dataset.columns:
             if same_time(model):
                 print_warning("Observation and bolus dose at the same time in the data. Modified for nlmixr model")
@@ -55,33 +53,6 @@ def check_model(model: pharmpy.model) -> pharmpy.model:
         model = change_rvs_same(model, omega = True)
         
     return model
-
-def mixed_dose_types(model: pharmpy.model.Model) -> bool:
-    """
-    Check if there are both infusions and bolus doses in the dataset. If this 
-    is the case, nlmixr might have issues running associated model on specified
-    data.
-
-    Parameters
-    ----------
-    model : pharmpy.model.Model
-        pharmpy model object
-
-    Returns
-    -------
-    bool
-        True if contains mixed doses. False otherwise
-
-    """
-    dataset = model.dataset
-    if "RATE" in dataset.columns:
-        no_bolus = len(dataset[(dataset["RATE"] == 0) & (dataset["EVID"] != 0)])
-        if no_bolus != 0:
-            return False
-        else:
-            return True
-    else:
-        return True
 
 def known_error_model(model: pharmpy.model.Model) -> bool:
     """
