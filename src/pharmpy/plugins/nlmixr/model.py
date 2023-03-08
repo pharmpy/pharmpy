@@ -86,7 +86,7 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
                 individual_estimates = model.modelfit_results.individual_estimates
                 )
                 )
-        nlmixr_model = translate_nmtran_time(nlmixr_model)
+        #nlmixr_model = translate_nmtran_time(nlmixr_model)
         # FIXME: dropping columns runs update source which becomes redundant.
         #drop_dropped_columns(nlmixr_model)
         if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
@@ -102,7 +102,7 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
     nlmixr_model = add_evid(nlmixr_model)
     
     # Check model for warnings regarding data structure or model contents
-    nlmixr_model = check_model(nlmixr_model)
+    #nlmixr_model = check_model(nlmixr_model)
     
     nlmixr_model.update_source()
     
@@ -307,6 +307,9 @@ class Model(pharmpy.model.Model):
         )
         self.internals.path = None
         code = str(cg).replace("AMT", "amt").replace("TIME", "time")
+        #Replace all instances of EPS with sigma instead
+        for eps in self.random_variables.epsilons:
+            code = code.replace(eps.names[0], eps.variance.name)
         internals = replace(self.internals, src=code)
         model = self.replace(internals=internals)
         return model
