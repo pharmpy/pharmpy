@@ -119,7 +119,7 @@ def add_ode(model, cg):
     
     amounts = [am.name for am in list(model.statements.ode_system.amounts)]
     printer = ExpressionPrinter(amounts)
-        
+    
     for eq in model.statements.ode_system.eqs:
         # Should remove piecewise from these equations in nlmixr
         if eq.atoms(sympy.Piecewise):

@@ -40,9 +40,12 @@ def check_model(model: pharmpy.model) -> pharmpy.model:
     if same_time(model):
         print_warning("Observation and bolus dose at the same time in the data. Modified for nlmixr model")
         model = change_same_time(model)
-    if same_sigma(model):
+    if rvs_same(model, sigma = True):
         print_warning("Sigma with value same not supported. Updated as follows.")
-        model = change_same_sigma(model)
+        model = change_rvs_same(model, sigma = True)
+    if rvs_same(model, omega = True):
+        print_warning("Omega with value same not supported. Updated as follows.")
+        model = change_rvs_same(model, omega = True)
         
     return model
 
@@ -105,7 +108,9 @@ def same_time(model: pharmpy.model) -> bool:
         rate = True 
     else:
         rate = False
-        
+    
+    evid_ignore = [0,3,4]
+    
     for index, row in dataset.iterrows():
         if index != 0:
             if row["ID"] == dataset.loc[index-1]["ID"]:
@@ -113,7 +118,7 @@ def same_time(model: pharmpy.model) -> bool:
                     ID = row["ID"]
                     TIME = row["TIME"]
                     subset = dataset[(dataset["ID"] == ID) & (dataset["TIME"] == TIME)]
-                    if any([x not in [0,3] for x in subset["EVID"].unique()]) and any([x in [0,3] for x in subset["EVID"].unique()]):
+                    if any([x not in evid_ignore for x in subset["EVID"].unique()]) and any([x in evid_ignore for x in subset["EVID"].unique()]):
                         if rate:
                             if any([x != 0 for x in subset["RATE"].unique()]) and any([x == 0 for x in subset["RATE"].unique()]):
                                 return True
@@ -146,6 +151,26 @@ def change_same_time(model: pharmpy.model) -> pharmpy.model:
         rate = True 
     else:
         rate = False
+    
+    evid_ignore = [0,3,4]
+    
+    for index, row in dataset.iterrows():
+        if index != 0:
+            if row["ID"] == dataset.loc[index-1]["ID"]:
+                if row["TIME"] == dataset.loc[index-1]["TIME"]:
+                    ID = row["ID"]
+                    TIME = row["TIME"]
+                    subset = dataset[(dataset["ID"] == ID) & (dataset["TIME"] == TIME)]
+                    if any([x not in evid_ignore for x in subset["EVID"].unique()]) and any([x in evid_ignore for x in subset["EVID"].unique()]):
+                        if rate:
+                            if any([x != 0 for x in subset["RATE"].unique()]) and any([x == 0 for x in subset["RATE"].unique()]):
+                                dataset.loc[(dataset["ID"] == ID) &
+                                             (dataset["TIME"] == TIME) &
+                                             (dataset["RATE"] == 0) &
+                                             (~dataset["EVID"].isin(evid_ignore)), "TIME"] += 0.000001
+                        else:
+                            return True
+                        
     with warnings.catch_warnings():
         # Supress a numpy deprecation warning
         warnings.simplefilter("ignore")
@@ -165,57 +190,65 @@ def change_same_time(model: pharmpy.model) -> pharmpy.model:
     model.dataset["TIME"] = time
     return model
 
-def same_sigma(model):
-    sigmas = []
-    for eps in model.random_variables.epsilons:
-        sigma = eps.variance
-        if sigma in sigmas:
+def rvs_same(model, sigma = False, omega = False):
+    if sigma:
+        rvs = model.random_variables.epsilons
+    elif omega:
+        rvs = model.random_variables.etas
+    
+    checked_variance = []
+    for rv in rvs:
+        var = rv.variance
+        if var in checked_variance:
             return True
         else:
-            sigmas.append(sigma)
+            checked_variance.append(var)
     return False
 
-def change_same_sigma(model):
+def change_rvs_same(model, sigma = False, omega = False):
+    if sigma:
+        rvs = model.random_variables.epsilons
+    elif omega:
+        rvs = model.random_variables.etas
     
-    sigmas = []
-    sigmas_to_add = {}
-    eps_and_sigma = {}
-    for eps in model.random_variables.epsilons:
-        sigma = eps.variance
-        if sigma in sigmas:
+    checked_variance = []
+    var_to_add = {}
+    rvs_and_var = {}
+    for rv in rvs:
+        var = rv.variance
+        if var in checked_variance:
             n = 1
-            new_sigma = sympy.Symbol(sigma.name + "_" + f'{n}')
-            while new_sigma in sigmas:
+            new_var = sympy.Symbol(var.name + "_" + f'{n}')
+            while new_var in checked_variance:
                 n += 1
-                new_sigma = sympy.Symbol(sigma.name + "_" + f'{n}')
+                new_var = sympy.Symbol(var.name + "_" + f'{n}')
+                
+            var_to_add[new_var] = var
             
-            sigmas_to_add[new_sigma] = sigma
+            checked_variance.append(new_var)
             
-            sigmas.append(new_sigma)
-            
-            eps_and_sigma[eps.names] = new_sigma
-            print(eps, " : ", new_sigma)
+            rvs_and_var[rv.names] = new_var
+            print(rv, " : ", new_var)
         else:
-            sigmas.append(sigma)
+            checked_variance.append(var)
+                
+    for rv in rvs:
+        if rv.names in rvs_and_var:
+            new_rv = rv.replace(variance = rvs_and_var[rv.names])
+            
+            all_rvs = model.random_variables
+            keep = [name for name in all_rvs.names if name not in [rv.names[0]]]
+            
+            model = model.replace(random_variables = all_rvs[keep])
+            model = model.replace(random_variables = model.random_variables + new_rv)
     
-    for rv in model.random_variables.epsilons:
-        if rv.names in eps_and_sigma:
-            new_eps = rv.replace(variance = eps_and_sigma[rv.names])
-            
-            rvs = model.random_variables
-            keep = [name for name in model.random_variables.names if name not in [rv.names[0]]]
-            
-            model = model.replace(random_variables = rvs[keep])
-            model = model.replace(random_variables = model.random_variables + new_eps)
-            
-            
     params = model.parameters
-    for s in sigmas_to_add:
-        param = model.parameters[sigmas_to_add[s]].replace(name = s.name)
+    for s in var_to_add:
+        param = model.parameters[var_to_add[s]].replace(name = s.name)
         params = params + param
     model = model.replace(parameters = params)
     
-    # Add newline after all updated sigma values have been printed´
+    # Add newline after all updated sigma values have been printed
     print()
     return model
         
