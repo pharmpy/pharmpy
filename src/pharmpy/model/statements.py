@@ -1789,7 +1789,7 @@ class Statements(Sequence, Immutable):
         assignment = None
         for i, statement in enumerate(self):
             if isinstance(statement, Assignment):
-                if statement.symbol == symbol:
+                if statement.symbol.name == symbol.name:  # Threadsafe and faster to compare names
                     ind = i
                     assignment = statement
         return ind, assignment

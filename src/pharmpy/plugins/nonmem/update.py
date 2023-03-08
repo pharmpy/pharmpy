@@ -1111,7 +1111,10 @@ def define_parameter(
     # Put new rate before output rate in statements
     central = model.statements.ode_system.central_compartment
     output_rate = model.statements.ode_system.get_flow(central, output)
-    out_ind = model.statements.find_assignment_index(output_rate)
+    if isinstance(output_rate, sympy.Symbol):
+        out_ind = model.statements.find_assignment_index(output_rate)
+    else:
+        out_ind = None
     if out_ind:
         before_odes = (
             model.statements.before_odes[:out_ind]
