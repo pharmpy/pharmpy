@@ -25,7 +25,10 @@ from pharmpy.modeling import (
 )
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import fit
-from .sanity_checks import check_model
+from .sanity_checks import (
+    check_model,
+    print_warning
+    )
 from .create_ini import (
     add_theta,
     add_eta,
@@ -77,20 +80,23 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
     )
     
     # Update dataset
-    if keep_etas == True:
-        nlmixr_model = nlmixr_model.replace(modelfit_results = ModelfitResults(
-            individual_estimates = model.modelfit_results.individual_estimates
+    if model.dataset is None or len(model.dataset) != 0:
+        if keep_etas == True:
+            nlmixr_model = nlmixr_model.replace(modelfit_results = ModelfitResults(
+                individual_estimates = model.modelfit_results.individual_estimates
+                )
+                )
+        nlmixr_model = translate_nmtran_time(nlmixr_model)
+        # FIXME: dropping columns runs update source which becomes redundant.
+        #drop_dropped_columns(nlmixr_model)
+        if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
+            nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
+        nlmixr_model = nlmixr_model.replace(
+            datainfo = nlmixr_model.datainfo.replace(path = None),
+            dataset = nlmixr_model.dataset.reset_index(drop=True)
             )
-            )
-    nlmixr_model = translate_nmtran_time(nlmixr_model)
-    # FIXME: dropping columns runs update source which becomes redundant.
-    #drop_dropped_columns(nlmixr_model)
-    if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
-        nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
-    nlmixr_model = nlmixr_model.replace(
-        datainfo = nlmixr_model.datainfo.replace(path = None),
-        dataset = nlmixr_model.dataset.reset_index(drop=True)
-        )
+    else:
+        print_warning("No connected dataset or dataset is empty")
     
     # Add evid
     nlmixr_model = add_evid(nlmixr_model)
