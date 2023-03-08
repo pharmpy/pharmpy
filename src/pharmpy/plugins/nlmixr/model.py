@@ -80,7 +80,7 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
     )
     
     # Update dataset
-    if model.dataset is None or len(model.dataset) != 0:
+    if model.dataset is not None or len(model.dataset) != 0:
         if keep_etas == True:
             nlmixr_model = nlmixr_model.replace(modelfit_results = ModelfitResults(
                 individual_estimates = model.modelfit_results.individual_estimates
