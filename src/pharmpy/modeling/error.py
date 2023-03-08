@@ -558,7 +558,7 @@ def use_thetas_for_error_stdev(model: Model):
         if has_weighted_error_model(model) and (
             has_additive_error_model(model) or has_proportional_error_model(model)
         ):
-            w = _get_weighted_error_model_weight(model)
+            w = get_weighted_error_model_weight(model)
             w_ass = model.statements.find_assignment(w)
             model = model.replace(
                 statements=model.statements.reassign(w_ass.symbol, w_ass.expression * sdsymb)
@@ -645,14 +645,14 @@ def has_weighted_error_model(model: Model):
     has_combined_error_model : Check if a model has a combined error model
     has_proportional_error_model : Check if a model has a proportional error model
     """
-    w = _get_weighted_error_model_weight(model)
+    w = get_weighted_error_model_weight(model)
 
     if w:
         return True
     return False
 
 
-def _get_weighted_error_model_weight(model: Model):
+def get_weighted_error_model_weight(model: Model):
     # Defines weighted error model as e.g.: Y = F + EPS(1)*W
     stats, y, f = _preparations(model)
     # FIXME: handle multiple DVs? Handle piecewise?
