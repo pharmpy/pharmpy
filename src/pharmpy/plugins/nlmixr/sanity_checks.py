@@ -33,13 +33,20 @@ def check_model(model: pharmpy.model) -> pharmpy.model:
         Issues will be printed to the terminal and model is returned.
 
     """
-    if not mixed_dose_types(model):
-        print_warning("The connected model data contains mixed dosage types. Nlmixr cannot handle this currently \nConverted model will not run on associated data")
+    # Checks for the dataset
+    if model.dataset is not None or len(model.dataset) != 0:
+        if not mixed_dose_types(model):
+            print_warning("The connected model data contains mixed dosage types. Nlmixr cannot handle this currently \nConverted model will not run on associated data")
+        if "TIME" in model.dataset.columns:
+            if same_time(model):
+                print_warning("Observation and bolus dose at the same time in the data. Modified for nlmixr model")
+                model = change_same_time(model)
+    
+    #Checks regarding error model
     if not known_error_model(model):
         print_warning("Format of error model cannot be determined. Will try to translate either way")
-    if same_time(model):
-        print_warning("Observation and bolus dose at the same time in the data. Modified for nlmixr model")
-        model = change_same_time(model)
+    
+    # Checks regarding random variables
     if rvs_same(model, sigma = True):
         print_warning("Sigma with value same not supported. Updated as follows.")
         model = change_rvs_same(model, sigma = True)
