@@ -18,36 +18,50 @@ from pharmpy.modeling import (
     set_evaluation_step,
     update_inits,
     write_csv,
+    translate_nmtran_time,
+    drop_dropped_columns,
+    drop_columns,
+    append_estimation_step_options,
 )
 from pharmpy.results import ModelfitResults
+from pharmpy.tools import fit
+from .sanity_checks import check_model
+from .create_ini import (
+    add_theta,
+    add_eta,
+    add_sigma
+    )
+from .CodeGenerator import CodeGenerator
+from .name_mangle import name_mangle
+from .create_model_block import (
+    add_statement,
+    add_ode
+    )
 
+def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.model:
+    """
+    Convert any model into an nlmixr model
 
-class CodeGenerator:
-    def __init__(self):
-        self.indent_level = 0
-        self.lines = []
+    Parameters
+    ----------
+    model : pharmpy.model
+        A pharmpy model object.
 
-    def indent(self):
-        self.indent_level += 4
+    Returns
+    -------
+    pharmpy.model
+        A model converted to nlmixr format.
 
-    def dedent(self):
-        self.indent_level -= 4
-
-    def add(self, line):
-        self.lines.append(f'{" " * self.indent_level}{line}')
-
-    def empty_line(self):
-        self.lines.append('')
-
-    def __str__(self):
-        return '\n'.join(self.lines)
-
-
-def convert_model(model):
-    """Convert any model into an nlmixr model"""
+    """
+    from pharmpy.modeling import (
+    has_additive_error_model,
+    has_proportional_error_model,
+    has_combined_error_model,
+    )
+    
     if isinstance(model, Model):
         return model
-
+    
     nlmixr_model = Model(
         internals=NLMIXRModelInternals(),
         parameters=model.parameters,
@@ -61,16 +75,32 @@ def convert_model(model):
         name=model.name,
         description=model.description,
     )
-
-    # Update dataset to lowercase and add evid
-    nlmixr_model = modify_dataset(nlmixr_model)
-
-    nlmixr_model = nlmixr_model.update_source()
+    
+    # Update dataset
+    if keep_etas == True:
+        nlmixr_model = nlmixr_model.replace(modelfit_results = ModelfitResults(
+            individual_estimates = model.modelfit_results.individual_estimates
+            )
+            )
+    nlmixr_model = translate_nmtran_time(nlmixr_model)
+    # FIXME: dropping columns runs update source which becomes redundant.
+    #drop_dropped_columns(nlmixr_model)
+    if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
+        nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
+    nlmixr_model = nlmixr_model.replace(
+        datainfo = nlmixr_model.datainfo.replace(path = None),
+        dataset = nlmixr_model.dataset.reset_index(drop=True)
+        )
+    
+    # Add evid
+    nlmixr_model = add_evid(nlmixr_model)
+    
+    # Check model for warnings regarding data structure or model contents
+    nlmixr_model = check_model(nlmixr_model)
+    
+    nlmixr_model.update_source()
+    
     return nlmixr_model
-
-
-def name_mangle(s):
-    return s.replace('(', '').replace(')', '').replace(',', '_')
 
 
 class ExpressionPrinter(sympy_printing.str.StrPrinter):
@@ -93,90 +123,153 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
 
-def create_ini(cg, model):
-    """Create the nlmixr ini section code"""
+def create_dataset(cg: CodeGenerator, model: pharmpy.model, path=None) -> None:
+    """
+    Create dataset for nlmixr
+
+    Parameters
+    ----------
+    cg : CodeGenerator
+        A code object associated with the model.
+    model : pharmpy.model
+        A pharmpy.model object.
+    path : TYPE, optional
+        Path to add file to. The default is None.
+
+    Returns
+    -------
+    None
+        Modification of code object and creation of files.
+
+    """
+    dataname = f'{model.name}.csv'
+    if path is None:
+        path = ""
+    path = Path(path) / dataname
+    cg.add(f'dataset <- read.csv("{path}")')
+
+
+def create_ini(cg: CodeGenerator, model: pharmpy.model) -> None:
+    """
+    Create the nlmixr ini section code
+
+    Parameters
+    ----------
+    cg : CodeGenerator
+        A code object associated with the model.
+    model : pharmpy.model
+        A pharmpy.model object.
+
+    Returns
+    -------
+    None
+        Modification of code object.
+
+    """
     cg.add('ini({')
     cg.indent()
 
-    thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
-    for theta in thetas:
-        theta_name = name_mangle(theta.name)
-        cg.add(f'{theta_name} <- {theta.init}')
+    add_theta(model, cg)
 
-    for dist in model.random_variables.etas:
-        omega = dist.variance
-        if len(dist.names) == 1:
-            init = model.parameters[omega.name].init
-            cg.add(f'{name_mangle(dist.names[0])} ~ {init}')
-        else:
-            inits = []
-            for row in range(omega.rows):
-                for col in range(row + 1):
-                    inits.append(model.parameters[omega[row, col].name].init)
-            cg.add(
-                f'{" + ".join([name_mangle(name) for name in dist.names])} ~ c({", ".join(inits)})'
-            )
-
-    for dist in model.random_variables.epsilons:
-        sigma = dist.variance
-        cg.add(f'{name_mangle(sigma.name)} <- {model.parameters[sigma.name].init}')
-
+    add_eta(model, cg)
+    
+    add_sigma(model, cg)
+        
     cg.dedent()
     cg.add('})')
 
 
-def create_model(cg, model):
-    """Create the nlmixr model section code"""
-    # FIXME: handle other DVs?
-    dv = list(model.dependent_variables.keys())[0]
-    amounts = [am.name for am in list(model.statements.ode_system.amounts)]
-    printer = ExpressionPrinter(amounts)
+def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
+    """
+    Create the nlmixr model section code
+
+    Parameters
+    ----------
+    cg : CodeGenerator
+        A code object associated with the model.
+    model : pharmpy.model
+        A pharmpy.model object.
+
+    Returns
+    -------
+    None
+        Modification of code object.
+
+    """
 
     cg.add('model({')
     cg.indent()
-    for s in model.statements:
-        if isinstance(s, Assignment):
-            if s.symbol == dv:
-                sigma = None
-                for dist in model.random_variables.epsilons:
-                    sigma = dist.variance
-                assert sigma is not None
-                # FIXME: Needs to be generalized
-                cg.add('Y <- F')
-                cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')
-            else:
-                expr = s.expression
-                if expr.is_Piecewise:
-                    first = True
-                    for value, cond in expr.args:
-                        if cond is not sympy.S.true:
-                            if first:
-                                cg.add(f'if ({cond}) {{')
-                                first = False
-                            else:
-                                cg.add(f'}} else if ({cond}) {{')
-                        else:
-                            cg.add('} else {')
-                        cg.indent()
-                        cg.add(f'{s.symbol.name} <- {printer.doprint(value)}')
-                        cg.dedent()
-                    cg.add('}')
-                else:
-                    cg.add(f'{s.symbol.name} <- {printer.doprint(expr)}')
-
-        else:
-            for eq in s.eqs:
-                cg.add(f'{printer.doprint(eq.lhs)} = {printer.doprint(eq.rhs)}')
+    
+    add_statement(model, cg, before_ode = True)
+    if model.statements.ode_system:
+        add_ode(model, cg)
+    
+    add_statement(model, cg, before_ode = False)
+    
     cg.dedent()
     cg.add('})')
 
 
-def create_fit(cg, model):
-    """Create the call to fit"""
-    if [s.evaluation for s in model.estimation_steps._steps][0] is False:
-        cg.add(f'fit <- nlmixr2({model.name}, dataset, "focei")')
+def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
+    """
+    Create the call to fit
+
+    Parameters
+    ----------
+    cg : CodeGenerator
+        A code object associated with the model.
+    model : pharmpy.model
+        A pharmpy.model object.
+
+    Returns
+    -------
+    None
+        Modification of code object.
+
+    """
+    # FIXME : rasie error if the method does not match when evaluating
+    estimation_steps = model.estimation_steps[0]
+    if "fix_eta" in estimation_steps.tool_options:
+        fix_eta = True
     else:
-        cg.add(f'fit <- nlmixr2({model.name}, dataset, "posthoc")')
+        fix_eta = False
+    
+    if [s.evaluation for s in model.estimation_steps._steps][0] is True:
+        max_eval = 0
+    else:
+        max_eval = estimation_steps.maximum_evaluations
+    
+    method = estimation_steps.method
+    interaction = estimation_steps.interaction
+    
+    nonmem_method_to_nlmixr = {
+        "FOCE" : "foce",
+        "FO" : "fo",
+        "SAEM": "saem",
+        "IMP": "saem"
+        }
+    
+    nlmixr_method = nonmem_method_to_nlmixr[method]
+    if interaction and nlmixr_method != "saem":
+        nlmixr_method += "i"
+
+    if max_eval != None:
+        if max_eval == 0 and nlmixr_method not in ["fo", "foi", "foce", "focei"]:
+            nlmixr_method = "posthoc"
+            cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}"')
+        else:
+            if fix_eta:
+                cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", control=foceiControl(maxOuterIterations={max_eval}, maxInnerIterations=0, etaMat = etas))')
+            else:
+                cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", control=foceiControl(maxOuterIterations={max_eval}))')
+    else:
+        cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}")')
+                
+def add_evid(model):
+    temp_model = model
+    if "EVID" not in temp_model.dataset.columns:
+        temp_model.dataset["EVID"] = get_evid(temp_model)
+    return temp_model
 
 
 @dataclass
@@ -203,7 +296,11 @@ class Model(pharmpy.model.Model):
         create_fit(cg, self)
         # Create lowercase id, time and amount symbols for nlmixr to be able
         # to run
-        code = str(cg).replace("AMT", "amt").replace("TIME", "time").replace("ID", "id")
+        self.internals.src = (
+            str(cg).replace("AMT", "amt").replace("TIME", "time")
+        )
+        self.internals.path = None
+        code = str(cg).replace("AMT", "amt").replace("TIME", "time")
         internals = replace(self.internals, src=code)
         model = self.replace(internals=internals)
         return model
@@ -216,7 +313,7 @@ class Model(pharmpy.model.Model):
         return code
 
 
-def parse_modelfit_results(model, path):
+def parse_modelfit_results(model: pharmpy.model, path):
     rdata_path = path / (model.name + '.RDATA')
     with warnings.catch_warnings():
         # Supress a numpy deprecation warning
@@ -236,11 +333,12 @@ def parse_modelfit_results(model, path):
     for i in range(0, omega.rows):
         for j in range(0, omega.cols):
             symb = omega.row(i)[j]
-            if symb != 0:
+            if symb != 0: 
                 omegas_sigmas[symb.name] = rdata['omega'].values[i, j]
     sigma = model.random_variables.epsilons.covariance_matrix
     for i in range(len(sigma)):
-        omegas_sigmas[sigma[i].name] = rdata['sigma']['fit$theta'][i]
+        if sigma[i] != 0:
+            omegas_sigmas[sigma[i].name] = rdata['sigma']['fit$theta'][sigma[i].name]
     thetas_index = 0
     pe = {}
     for param in model.parameters:
@@ -273,15 +371,16 @@ def execute_model(model, db):
     model.internals.path = path
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
-    # This csv file need to have lower case time and amt in order to function
-    # otherwise the model will not run for nlmixr2.
-    # column with eventID is CRUCIAL for nlmixr, added in write_csv file
-    # if not yet existing
-    # DONE (within write_csv)
     write_csv(model, path=path)
-
+    model = model.replace(datainfo = model.datainfo.replace(path = path))
+    
     dataname = f'{model.name}.csv'
-    pre = f'library(nlmixr2)\n\ndataset <- read.csv("{path / dataname}")\n\n'
+    pre = f'library(nlmixr2)\n\ndataset <- read.csv("{path / dataname}")\n'    
+
+    if "fix_eta" in model.estimation_steps[0].tool_options:
+        write_fix_eta(model, path=path)
+        pre += f'etas <- as.matrix(read.csv("{path}/fix_eta.csv"))'
+    pre+="\n"
 
     code = pre + model.model_code
     cg = CodeGenerator()
@@ -291,8 +390,8 @@ def execute_model(model, db):
     cg.add('sigma <- as.data.frame(fit$theta)')
     cg.add('log_likelihood <- fit$objDf$`Log-likelihood`')
     cg.add('runtime_total <- sum(fit$time)')
-    cg.add('pred <- as.data.frame(fit[c("ID", "TIME", "PRED")])')
-
+    cg.add('pred <- as.data.frame(fit[c("ID", "TIME", "PRED", "IPRED")])')
+    
     cg.add(
         f'save(file="{path}/{model.name}.RDATA",ofv, thetas, omega, sigma, log_likelihood, runtime_total, pred)'
     )
@@ -336,13 +435,15 @@ def execute_model(model, db):
             }
         ],
     }
-
+    
     with database.transaction(model) as txn:
         txn.store_local_file(path / f'{model.name}.R')
         txn.store_local_file(rdata_path)
 
         txn.store_local_file(stdout)
         txn.store_local_file(stderr)
+        
+        txn.store_local_file(model.datainfo.path)
 
         plugin_path = path / 'nlmixr.json'
         with open(plugin_path, 'w') as f:
@@ -352,50 +453,142 @@ def execute_model(model, db):
 
         txn.store_metadata(metadata)
         txn.store_modelfit_results()
-
+    
     res = parse_modelfit_results(model, path)
     model = model.replace(modelfit_results=res)
     return model
 
 
-def verification(model, db_name, error=10**-3, return_comp=False):
+def verification(model: pharmpy.model,
+                 db_name: str,
+                 error: float = 10**-3,
+                 return_comp : bool = False,
+                 fix_eta = True,
+                 ipred_diff = False
+                 ) -> bool or pd.DataFrame:
+    """
+    Verify that a model inputet in NONMEM format can be correctly translated to 
+    nlmixr as well as verify that the predictions of the two models are the same 
+    given a user specified error margin (defailt is 0.001).
+    If return_comp = True, return a table of comparisons and differences in 
+    predictions instead of a boolean indicating if they are the same or not
+
+    Parameters
+    ----------
+    model : Model
+        pharmpy Model object in NONMEM format
+    db_name : str
+        a string with given name of database folder for created files
+    error : float, optional
+        Allowed error margins for predictions. The default is 10**-3.
+    return_comp : bool, optional
+        Choose to return table of predictions. The default is False.
+
+    Returns
+    -------
+    bool or pd.DataFrame
+        Boolean indicating likeness or table of predictions from the two models.
+
+    """
+ 
     nonmem_model = model
 
     # Save results from the nonmem model
-    nonmem_results = nonmem_model.modelfit_results.predictions.iloc[:, [0]]
-
+    # FIXME : check only if predictions does not exist
+    if nonmem_model.modelfit_results is None:
+        print_step("Calculating NONMEM predictions... (this might take a while)")
+        nonmem_model = nonmem_model.replace(modelfit_results = fit(nonmem_model))
+        nonmem_results = nonmem_model.modelfit_results.predictions.copy()
+    else:
+        if nonmem_model.modelfit_results.predictions is None:
+            print_step("Calculating NONMEM predictions... (this might take a while)")
+            nonmem_model = nonmem_model.replace(modelfit_results = fit(nonmem_model))
+            nonmem_results = nonmem_model.modelfit_results.predictions.copy()
+        else:
+            nonmem_results = nonmem_model.modelfit_results.predictions.copy()
+    
+    # Set a tool option to fix theta values when running nlmixr
+    if fix_eta:
+        nonmem_model = fixate_eta(nonmem_model)
+    
     # Check that evaluation step is set to True
     if [s.evaluation for s in nonmem_model.estimation_steps._steps][0] is False:
-        set_evaluation_step(nonmem_model)
-
+        nonmem_model = set_evaluation_step(nonmem_model)
+    
     # Update the nonmem model with new estimates
     # and convert to nlmixr
-    nlmixr_model = convert_model(
-        update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
-    )
+    print_step("Converting NONMEM model to nlmixr2...")
+    if fix_eta == True:
+        nlmixr_model = convert_model(
+            update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates),
+            keep_etas = True
+        )
+    else:
+        nlmixr_model = convert_model(
+            update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
+        )
+    
     # Execute the nlmixr model
+    print_step("Executing nlmixr2 model... (this might take a while)")
     import pharmpy.workflows
 
     db = pharmpy.workflows.LocalDirectoryToolDatabase(db_name)
     nlmixr_model = execute_model(nlmixr_model, db)
-
     nlmixr_results = nlmixr_model.modelfit_results.predictions
-
-    with warnings.catch_warnings():
-        # Supress a numpy deprecation warning
-        warnings.simplefilter("ignore")
-        nonmem_results.rename(columns={"PRED": "PRED_NONMEM"}, inplace=True)
-        nlmixr_results.rename(columns={"PRED": "PRED_NLMIXR"}, inplace=True)
+    
+    pred = False
+    ipred = False
+    for p in nonmem_model.modelfit_results.predictions.columns:
+        if p == "PRED":
+            pred = True
+            nonmem_results.rename(columns={p: 'PRED_NONMEM'}, inplace=True)
+            nlmixr_results.rename(columns={p: 'PRED_NLMIXR'}, inplace=True)
+        elif p == "IPRED":
+            ipred = True
+            nonmem_results.rename(columns={p: 'IPRED_NONMEM'}, inplace=True)
+            nlmixr_results.rename(columns={p: 'IPRED_NLMIXR'}, inplace=True)
+        else:
+            print(f"Unknown prediction value {p}. Currently only 'PRED' and 'IPRED' are supported and this is ignored")
+            
+    if not (pred or ipred):
+        print("No known prediction value was found. Please use 'PRED' or 'IPRED")
+        return False
 
     # Combine the two based on ID and time
-    combined_result = pd.merge(nonmem_results, nlmixr_results, left_index=True, right_index=True)
-
-    # Add difference between the models
-    combined_result["DIFF"] = abs(combined_result["PRED_NONMEM"] - combined_result["PRED_NLMIXR"])
+    print_step("Creating result comparison table...")
+    nonmem_model = nonmem_model.replace(dataset = nonmem_model.dataset.reset_index())
+    
+    if "EVID" not in nonmem_model.dataset.columns:
+        nonmem_model = add_evid(nonmem_model)
+    nonmem_results = nonmem_results.reset_index()
+    nonmem_results = nonmem_results.drop(nonmem_model.dataset[nonmem_model.dataset["EVID"] != 0].index.to_list())
+    nonmem_results = nonmem_results.set_index(["ID","TIME"])
+    
+    combined_result = nonmem_results
+    if pred:
+        combined_result['PRED_NLMIXR'] = nlmixr_results['PRED_NLMIXR'].to_list()
+        # Add difference between the models
+        combined_result['PRED_DIFF'] = abs(combined_result['PRED_NONMEM'] - combined_result['PRED_NLMIXR'])
+    if ipred:
+        combined_result['IPRED_NLMIXR'] = nlmixr_results['IPRED_NLMIXR'].to_list()
+        combined_result['IPRED_DIFF'] = abs(combined_result['IPRED_NONMEM'] - combined_result['IPRED_NLMIXR'])
 
     combined_result["PASS/FAIL"] = "PASS"
-    combined_result.loc[combined_result["DIFF"] > error, "PASS/FAIL"] = "FAIL"
-
+    print("Differences in population predicted values")
+    if (pred and ipred) or (pred and not ipred):
+        if ipred_diff:
+            print("Using PRED values for final comparison")
+            final = "IPRED"
+        else:
+            print("Using PRED values for final comparison")    
+            final = "PRED"
+    elif ipred and not pred:
+        print("Using IPRED values for final comparison")
+        final = "IPRED"
+    combined_result.loc[combined_result[f'{final}_DIFF'] > error, "PASS/FAIL"] = "FAIL"
+    print(combined_result[f'{final}_DIFF'].describe()[["mean", "75%", "max"]].to_string(), end ="\n\n")
+    
+    print_step("DONE")
     if return_comp is True:
         return combined_result
     else:
@@ -404,9 +597,27 @@ def verification(model, db_name, error=10**-3, return_comp=False):
         else:
             return False
 
+def print_step(s):
+    print("***** ", s, " *****")
 
-def modify_dataset(model):
-    df = model.dataset.copy()
-    df["evid"] = get_evid(model)
-    temp_model = model.replace(dataset=df)
-    return temp_model
+def fixate_eta(model):
+    opts = {"fix_eta": True}
+    model = append_estimation_step_options(model, tool_options = opts, idx=0)
+    return model
+            
+def write_fix_eta(model, path=None, force = True):
+    from pharmpy.model import data
+    from pharmpy.internals.fs.path import path_absolute
+    
+    filename = "fix_eta.csv"
+    path = path / filename
+    if not force and path.exists():
+        raise FileExistsError(f'File at {path} already exists.')
+        
+    path = path_absolute(path)
+    model.modelfit_results.individual_estimates.to_csv(path, na_rep=data.conf.na_rep, index=False)
+    return path
+            
+            
+            
+            
