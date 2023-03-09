@@ -690,9 +690,21 @@ def _parse_tree(tree: AttrTree):
                         )
                         pairs.append((else_val, True))
 
-                    pw = sympy.Piecewise(*pairs)
-                    ass = Assignment(symbol, pw)
+                    if len(pairs) == 1:
+                        expr = pairs[0][0]
+                        ass = Assignment(symbol, expr)
+                    else:
+                        pw = sympy.Piecewise(*pairs)
+                        ass = Assignment(symbol, pw)
                     s.append(ass)
+
+                s = _reorder_block_statements(s)
                 new_index.append((child_index, child_index + 1, len(s) - len(symbols), len(s)))
 
     return new_index, Statements(s)
+
+
+def _reorder_block_statements(s):
+    piecewise = [ass for ass in s if isinstance(ass.expression, sympy.Piecewise)]
+    assignments = [ass for ass in s if ass not in piecewise]
+    return assignments + piecewise
