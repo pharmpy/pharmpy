@@ -533,8 +533,10 @@ def use_thetas_for_error_stdev(model: Model):
     >>> from pharmpy.modeling import load_example_model, use_thetas_for_error_stdev
     >>> model = load_example_model("pheno")
     >>> model = use_thetas_for_error_stdev(model)
+    >>> model.statements.find_assignment("W")
+    W = F⋅SD_EPS_1
     >>> model.statements.find_assignment("Y")
-    Y = EPS₁⋅SD_EPS_1⋅W + F
+    Y = EPS₁⋅W + F
 
     See also
     --------
