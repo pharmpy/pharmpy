@@ -37,7 +37,7 @@ from .create_ini import (
 from .CodeGenerator import CodeGenerator
 from .name_mangle import name_mangle
 from .create_model_block import (
-    add_statement,
+    add_statements,
     add_ode
     )
 
@@ -56,17 +56,12 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
         A model converted to nlmixr format.
 
     """
-    from pharmpy.modeling import (
-    has_additive_error_model,
-    has_proportional_error_model,
-    has_combined_error_model,
-    )
     
     if isinstance(model, Model):
         return model
     
     nlmixr_model = Model(
-        internals=NLMIXRModelInternals(),
+        internals=NLMIXRModelInternals(nonmem_control_stream = model.internals.control_stream),
         parameters=model.parameters,
         random_variables=model.random_variables,
         statements=model.statements,
@@ -206,11 +201,11 @@ def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
     cg.add('model({')
     cg.indent()
     
-    add_statement(model, cg, before_ode = True)
+    add_statements(model, cg, model.statements.before_odes)
     if model.statements.ode_system:
         add_ode(model, cg)
     
-    add_statement(model, cg, before_ode = False)
+    add_statements(model, cg, model.statements.after_odes)
     
     cg.dedent()
     cg.add('})')
@@ -285,6 +280,7 @@ def add_evid(model):
 class NLMIXRModelInternals:
     src: Optional[str] = None
     path: Optional[Path] = None
+    nonmem_control_stream: Optional = None
 
 
 class Model(pharmpy.model.Model):

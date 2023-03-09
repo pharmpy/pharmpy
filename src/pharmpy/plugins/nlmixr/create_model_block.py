@@ -36,11 +36,7 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
         else:
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
-def add_statement(model: pharmpy.model.Model, cg, before_ode):
-    if before_ode is True:
-        statements = model.statements.before_odes
-    else:
-        statements = model.statements.after_odes
+def add_statements(model: pharmpy.model.Model, cg, statements):
     
     # FIXME: handle other DVs?
     dv = list(model.dependent_variables.keys())[0]
@@ -119,6 +115,15 @@ def add_ode(model, cg):
     
     amounts = [am.name for am in list(model.statements.ode_system.amounts)]
     printer = ExpressionPrinter(amounts)
+    
+    des = model.internals.nonmem_control_stream.get_records("DES")
+    statements = []
+    if des[0]:
+        pattern = re.compile("DADT\(\d*\)")
+        for s in des[0].statements:
+            if not pattern.match(s.symbol.name):
+                statements.append(s)
+        add_statements(model, cg, statements)
     
     for eq in model.statements.ode_system.eqs:
         # Should remove piecewise from these equations in nlmixr
