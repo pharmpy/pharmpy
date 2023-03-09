@@ -38,19 +38,17 @@ def transform_blq(model: Model, lloq: float):
 
     is_above_lloq = sympy.GreaterThan(symb_dv, symb_lloq)
 
+    lloq = Assignment(symb_lloq, sympy.Float(lloq))
+    cumd = Assignment(symb_cumd, PHI((symb_lloq - ipred) / w))
+    cumdz = Assignment(symb_cumdz, PHI(-ipred / w))
     fflag = Assignment(symb_fflag, sympy.Piecewise((0, is_above_lloq), (1, True)))
-    cumd = Assignment(
-        symb_cumd, sympy.Piecewise((0, is_above_lloq), (PHI((symb_lloq - ipred) / w), True))
-    )
-    cumdz = Assignment(symb_cumdz, sympy.Piecewise((0, is_above_lloq), (PHI(-ipred / w), True)))
     y_below_lloq = (symb_cumd - symb_cumdz) / (1 - symb_cumdz)
     y_new = Assignment(
         y.symbol, sympy.Piecewise((y.expression, is_above_lloq), (y_below_lloq, True))
     )
-    lloq = Assignment(symb_lloq, sympy.Float(lloq))
 
     y_idx = sset.find_assignment_index(y.symbol)
-    sset_new = sset[:y_idx] + [lloq, fflag, cumd, cumdz, y_new] + sset[y_idx + 1 :]
+    sset_new = sset[:y_idx] + [lloq, cumd, cumdz, fflag, y_new] + sset[y_idx + 1 :]
     model = model.replace(statements=sset_new)
 
     return model.update_source()
