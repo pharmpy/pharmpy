@@ -81,7 +81,7 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
                 individual_estimates = model.modelfit_results.individual_estimates
                 )
                 )
-        #nlmixr_model = translate_nmtran_time(nlmixr_model)
+        nlmixr_model = translate_nmtran_time(nlmixr_model)
         # FIXME: dropping columns runs update source which becomes redundant.
         #drop_dropped_columns(nlmixr_model)
         if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
@@ -97,7 +97,7 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
     nlmixr_model = add_evid(nlmixr_model)
     
     # Check model for warnings regarding data structure or model contents
-    #nlmixr_model = check_model(nlmixr_model)
+    nlmixr_model = check_model(nlmixr_model)
     
     nlmixr_model.update_source()
     

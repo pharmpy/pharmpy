@@ -118,7 +118,7 @@ def add_ode(model, cg):
     
     des = model.internals.nonmem_control_stream.get_records("DES")
     statements = []
-    if des[0]:
+    if des and des[0]:
         pattern = re.compile("DADT\(\d*\)")
         for s in des[0].statements:
             if not pattern.match(s.symbol.name):
