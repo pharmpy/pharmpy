@@ -629,6 +629,10 @@ def create_nonmem_datainfo(control_stream, resolved_dataset_path):
             info = ColumnInfo.create(colname, drop=coldrop, type='compartment', scale='nominal')
         elif colname == 'RATE' and have_pk:
             info = ColumnInfo.create(colname, drop=coldrop, type='rate')
+        elif colname == 'BLQ':
+            info = ColumnInfo.create(colname, drop=coldrop, type='blq', scale='nominal')
+        elif colname == 'LLOQ':
+            info = ColumnInfo.create(colname, drop=coldrop, type='lloq')
         else:
             info = ColumnInfo.create(colname, drop=coldrop)
         column_info.append(info)

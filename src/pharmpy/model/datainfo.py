@@ -57,6 +57,8 @@ class ColumnInfo(Immutable):
         'mdv',
         'compartment',
         'admid',
+        'lloq',
+        'blq',
     )
     _all_scales = ('nominal', 'ordinal', 'interval', 'ratio')
     _all_dtypes = (
@@ -252,6 +254,8 @@ class ColumnInfo(Immutable):
         mdv           0 = DV is observation value, 1 = DV is missing
         admid         Administration ID
         compartment   Compartment information (not yet exactly specified)
+        lloq          Lower limit of quantification
+        blq           Below limit of quantification
         unknown       Unkown type. This will be the default for columns that hasn't been
                       assigned a type
         ============  =============
