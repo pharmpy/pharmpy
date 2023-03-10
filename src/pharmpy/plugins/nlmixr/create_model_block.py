@@ -49,32 +49,14 @@ def add_statements(model: pharmpy.model.Model, cg, statements):
                 for dist in model.random_variables.epsilons:
                     sigma = dist.variance
                 assert sigma is not None
-                
-                if has_additive_error_model(model):
+                if s.expression.is_Piecewise:
+                    # Convert eps to sigma name
+                    #piecewise = convert_eps_to_sigma(s, model)
+                    convert_piecewise(s, cg, model)
+                else:         
                     expr, error = find_term(model, s.expression)
-                    add_error_model(cg, expr, error, s.symbol.name, force_add = True)
+                    add_error_model(cg, expr, error, s.symbol.name)
                     add_error_relation(cg, error, s.symbol)
-                elif has_proportional_error_model(model):
-                    if len(sympy.Add.make_args(s.expression)) == 1:
-                        expr, error = find_term(model, sympy.expand(s.expression))
-                    else:
-                        expr, error = find_term(model, s.expression)
-                    add_error_model(cg, expr, error, s.symbol.name, force_prop = True)
-                    add_error_relation(cg, error, s.symbol)
-                elif has_combined_error_model(model):
-                    # FIXME : Combine with the unknown case
-                    expr, error = find_term(model, s.expression)
-                    add_error_model(cg, expr, error, s.symbol.name, force_comb = True)
-                    add_error_relation(cg, error, s.symbol)
-                else:
-                    if s.expression.is_Piecewise:
-                        # Convert eps to sigma name
-                        #piecewise = convert_eps_to_sigma(s, model)
-                        convert_piecewise(s, cg, model)
-                    else:         
-                        expr, error = find_term(model, s.expression)
-                        add_error_model(cg, expr, error, s.symbol.name)
-                        add_error_relation(cg, error, s.symbol)
                     
             else:
                 expr = s.expression
