@@ -41,7 +41,7 @@ from .create_model_block import (
     add_ode
     )
 
-def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.model:
+def convert_model(model: pharmpy.model, keep_etas: bool = False, skip_check = False) -> pharmpy.model:
     """
     Convert any model into an nlmixr model
 
@@ -97,7 +97,8 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False) -> pharmpy.mode
     nlmixr_model = add_evid(nlmixr_model)
     
     # Check model for warnings regarding data structure or model contents
-    nlmixr_model = check_model(nlmixr_model)
+    if not skip_check:
+        nlmixr_model = check_model(nlmixr_model)
     
     nlmixr_model.update_source()
     
@@ -175,7 +176,7 @@ def create_ini(cg: CodeGenerator, model: pharmpy.model) -> None:
     add_eta(model, cg)
     
     add_sigma(model, cg)
-        
+
     cg.dedent()
     cg.add('})')
 
@@ -202,6 +203,7 @@ def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
     cg.indent()
     
     add_statements(model, cg, model.statements.before_odes)
+    
     if model.statements.ode_system:
         add_ode(model, cg)
     

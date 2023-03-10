@@ -2,6 +2,8 @@ import pharmpy.model
 from pharmpy.deps import sympy
 from .CodeGenerator import CodeGenerator
 
+from .sanity_checks import print_warning
+
 def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sympy.Add, dict]:
     """
     For a given expression for the dependent variable, find the terms 
