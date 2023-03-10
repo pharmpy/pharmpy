@@ -49,11 +49,11 @@ def add_statements(model: pharmpy.model.Model, cg, statements):
                 for dist in model.random_variables.epsilons:
                     sigma = dist.variance
                 assert sigma is not None
+                
                 if s.expression.is_Piecewise:
                     # Convert eps to sigma name
-                    #piecewise = convert_eps_to_sigma(s, model)
                     convert_piecewise(s, cg, model)
-                else:         
+                else:
                     expr, error = find_term(model, s.expression)
                     add_error_model(cg, expr, error, s.symbol.name)
                     add_error_relation(cg, error, s.symbol)
