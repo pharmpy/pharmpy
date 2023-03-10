@@ -432,7 +432,7 @@ def set_dvid(model: Model, name: str):
         converted = pd.to_numeric(ser, downcast='integer')
         if not pd.api.types.is_integer_dtype(converted):
             raise ValueError(
-                f"Could not use column {name} as DVID because it contains non-itegral values"
+                f"Could not use column {name} as DVID because it contains non-integral values"
             )
         df = df.assign(**{name: converted})
         col = col.replace(datatype=ColumnInfo.convert_pd_dtype_to_datatype(converted.dtype))
