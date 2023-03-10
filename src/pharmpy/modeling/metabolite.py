@@ -14,7 +14,7 @@ from pharmpy.model import (
 from .odes import add_individual_parameter
 
 
-def add_metabolite(model: Model, drug_dvid=1):
+def add_metabolite(model: Model, drug_dvid: int = 1):
     """Adds a metabolite compartment to a model
 
     The flow from the central compartment to the metabolite compartment
