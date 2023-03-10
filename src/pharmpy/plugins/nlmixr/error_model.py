@@ -54,7 +54,13 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
     errors_add_prop = {"add": None, "prop": None}
 
     prop = False
-    res_alias = find_aliases(res, model)
+    res_alias = []
+    for s in res.free_symbols:
+        all_a = find_aliases(s, model)
+        for a in all_a:
+            if a not in res_alias:
+                res_alias.append(a)
+    
     for term in errors:
         for symbol in term.free_symbols:
             for ali in find_aliases(symbol, model):
@@ -83,7 +89,7 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
         if term != None:
             term = convert_eps_to_sigma(term, model)
         errors_add_prop[key] = term
-        
+    
     return res, errors_add_prop
 
 def add_error_model(cg: CodeGenerator,
