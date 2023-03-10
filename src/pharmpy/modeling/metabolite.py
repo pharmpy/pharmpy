@@ -3,6 +3,7 @@
 """
 from pharmpy.deps import sympy
 from pharmpy.model import (
+    Assignment,
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
@@ -13,7 +14,7 @@ from pharmpy.model import (
 from .odes import add_individual_parameter
 
 
-def add_metabolite(model: Model):
+def add_metabolite(model: Model, drug_dvid=1):
     """Adds a metabolite compartment to a model
 
     The flow from the central compartment to the metabolite compartment
@@ -23,6 +24,8 @@ def add_metabolite(model: Model):
     ----------
     model : Model
         Pharmpy model
+    drug_dvid : int
+        DVID for drug (assuming all other DVIDs being for metabolites)
 
     Return
     ------
@@ -53,6 +56,16 @@ def add_metabolite(model: Model):
     cb.add_flow(central, metacomp, qm1 / vc)
     cb.add_flow(metacomp, output, clm1 / vm1)
     cs = CompartmentalSystem(cb)
-    statements = model.statements.before_odes + cs + model.statements.after_odes
+
+    # dvid_col = model.datainfo.typeix['dvid'][0]
+    # dvids = dvid_col.categories
+
+    conc = Assignment(sympy.Symbol('CONC_M1'), metacomp.amount / vm1)
+    y = Assignment(
+        sympy.Symbol('Y_M1'), conc.symbol + sympy.Symbol(model.random_variables.epsilons.names[0])
+    )
+    error = conc + model.statements.after_odes + y
+
+    statements = model.statements.before_odes + cs + error
     model = model.replace(statements=statements)
-    return model
+    return model  # .update_source()
