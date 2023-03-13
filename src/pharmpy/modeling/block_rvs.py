@@ -62,7 +62,7 @@ def create_joint_distribution(
         rvs = []
         iiv_rvs = model.random_variables.iiv
         for rv in iiv_rvs:
-            for name in iiv_rvs.parameter_names:
+            for name in rv.parameter_names:
                 if model.parameters[name].fix:
                     break
             else:
