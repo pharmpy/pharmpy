@@ -38,13 +38,14 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
     terms = sympy.Add.make_args(expr)
     
     for term in terms:
+        full_term = full_expression(term, model)
         error_term = False
-        for symbol in term.free_symbols:
+        for symbol in full_term.free_symbols:
             if str(symbol) in model.random_variables.epsilons.names:
                 error_term = True
             
         if error_term:
-            errors.append(term)
+            errors.append((term, full_term))
         else:
             if "res"  not in locals():
                 res = term
@@ -61,28 +62,25 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
             if a not in res_alias:
                 res_alias.append(a)
     
-    for term in errors:
-        for symbol in term.free_symbols:
+    for t in errors:
+        term = t[0]
+        full_term = t[1]
+        for symbol in full_term.free_symbols:
             for ali in find_aliases(symbol, model):
                 if ali in res_alias:
-                    #FIXME : or dependent on a variable that is in RES by multiplication
                     prop = True
-                    # Remove the symbol that was found
-                    # and substitute res to that symbol to avoid confusion
+                    # Remove the resulting symbol from the error term
                     term = term.subs(symbol,1)
-                    res = symbol
             
         if prop:
             if errors_add_prop["prop"] is None:
                 errors_add_prop["prop"] = term
             else:
-                #print("Multiple proportional error terms found. nlmixr2 cannot handle this.\nError model NOT added")
                 errors_add_prop["prop"] = errors_add_prop["prop"] + term
         else:
             if errors_add_prop["add"] is None:
                 errors_add_prop["add"] = term
             else:
-                #print("Multiple additive error term found. nlmixr2 cannot handle this.\nError model NOT added")
                 errors_add_prop["add"] = errors_add_prop["add"] + term
                 
     for pair in errors_add_prop.items():
@@ -147,10 +145,13 @@ def add_error_model(cg: CodeGenerator,
     
     # Add term for the additive and proportional error (if exist)
     # as solution for nlmixr error model handling
+    print(error)
     if error["add"]:
         if not isinstance(error["add"], sympy.Symbol):
             n = 0
-            for term in error["add"].args:
+            args = error_args(error["add"])
+                
+            for term in args:
                 if n == 0:
                     cg.add(f'add_error <- {term}')
                 else:
@@ -160,7 +161,9 @@ def add_error_model(cg: CodeGenerator,
     if error["prop"]:
         if not isinstance(error["prop"], sympy.Symbol):
             n = 0
-            for term in error["prop"].args:
+            args = error_args(error["prop"])
+            
+            for term in args:
                 if n == 0:
                     cg.add(f'prop_error <- {term}')
                 else:
@@ -201,7 +204,7 @@ def add_error_relation(cg: CodeGenerator, error: dict, symbol: str) -> None:
                 error_relation += " + "+add_error
         else:
             n = 0
-            last = len(error["add"].args) - 1
+            last = len(error_args(error["add"])) - 1
             for n in range(last+1):
                 if n == 0:
                     error_relation += "add(add_error)"
@@ -222,7 +225,7 @@ def add_error_relation(cg: CodeGenerator, error: dict, symbol: str) -> None:
                 error_relation += " + "+prop_error
         else:
             n = 0
-            last = len(error["prop"].args) - 1
+            last = len(error_args(error["prop"])) - 1
             for n in range(last+1):                
                 if n == 0:
                     error_relation += "prop(prop_error)"
@@ -238,7 +241,22 @@ def add_error_relation(cg: CodeGenerator, error: dict, symbol: str) -> None:
         cg.add("FAKE_ERROR <- 0.0")
         error_relation += "FAKE_ERROR"
         
-    cg.add(f'{symbol} ~ add({error_relation})')
+    cg.add(f'{symbol} ~ {error_relation}')
+    
+def error_args(s):
+    if isinstance(s, sympy.Add):
+        args = s.args
+    else:
+        args = [s]
+    return args
+
+def full_expression(expression, model):
+    from pharmpy.internals.expr.subs import subs
+    for statement in reversed(model.statements.after_odes):
+        expression = subs(
+                expression, {statement.symbol: statement.expression}, simultaneous=True
+                )
+    return expression
         
 def find_aliases(symbol:str, model: pharmpy.model) -> list:
     """
