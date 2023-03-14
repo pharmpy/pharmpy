@@ -1,7 +1,7 @@
 import pharmpy.model
 from pharmpy.deps import sympy
-from .CodeGenerator import CodeGenerator
 
+from .CodeGenerator import CodeGenerator
 from .sanity_checks import print_warning
 
 
@@ -87,7 +87,7 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
     for pair in errors_add_prop.items():
         key = pair[0]
         term = pair[1]
-        if term != None:
+        if term is not None:
             term = convert_eps_to_sigma(term, model)
         errors_add_prop[key] = term
 
@@ -148,6 +148,7 @@ def add_error_model(
 
     # Add term for the additive and proportional error (if exist)
     # as solution for nlmixr error model handling
+    print(error)
     if error["add"]:
         if not isinstance(error["add"], sympy.Symbol):
             n = 0
@@ -197,14 +198,14 @@ def add_error_relation(cg: CodeGenerator, error: dict, symbol: str) -> None:
     error_relation = ""
 
     first = True
-    if error["add"] != None:
+    if error["add"] is not None:
         if isinstance(error["add"], sympy.Symbol):
             add_error = error["add"]
             if first:
-                error_relation += f'add({add_error})'
+                error_relation += add_error
                 first = False
             else:
-                error_relation += " + " + f'add({add_error})'
+                error_relation += " + " + add_error
         else:
             n = 0
             last = len(error_args(error["add"])) - 1
@@ -218,14 +219,14 @@ def add_error_relation(cg: CodeGenerator, error: dict, symbol: str) -> None:
                     if n != last:
                         error_relation += " + "
 
-    if error["prop"] != None:
+    if error["prop"] is not None:
         if isinstance(error["prop"], sympy.Symbol):
             prop_error = error["prop"]
             if first:
-                error_relation += f'prop({prop_error})'
+                error_relation += prop_error
                 first = False
             else:
-                error_relation += " + " + f'prop({prop_error})'
+                error_relation += " + " + prop_error
         else:
             n = 0
             last = len(error_args(error["prop"])) - 1
@@ -241,7 +242,9 @@ def add_error_relation(cg: CodeGenerator, error: dict, symbol: str) -> None:
 
     if error_relation == "":
         print_warning(
-            "Error model could not be determined. Note that conditional error models cannot be converted.\nWill add fake error term."
+            "Error model could not be determined. \
+                      Note that conditional error models cannot be converted.\
+                          \nWill add fake error term."
         )
         cg.add("FAKE_ERROR <- 0.0")
         error_relation += "FAKE_ERROR"

@@ -1,19 +1,19 @@
 """
-This module contain functions for checking the format of an nlmixr model conversion 
+This module contain functions for checking the format of an nlmixr model conversion
 in order to inform the users of any errors or mistakes that can could be made.
 
-It serves purpose in catching known errors that are not yet solved, or limitations 
+It serves purpose in catching known errors that are not yet solved, or limitations
 that are found in the conversion software
 """
 
-import pharmpy.model
 import warnings
+
+import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.modeling import (
     has_additive_error_model,
-    has_proportional_error_model,
     has_combined_error_model,
-    remove_iiv,
+    has_proportional_error_model,
 )
 
 

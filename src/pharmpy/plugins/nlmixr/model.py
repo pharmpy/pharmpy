@@ -9,27 +9,26 @@ from typing import Optional
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy, sympy_printing
-from pharmpy.model import Assignment
+from pharmpy.deps import sympy_printing
 from pharmpy.modeling import (
+    append_estimation_step_options,
+    drop_columns,
     get_evid,
     get_sigmas,
     get_thetas,
     set_evaluation_step,
+    translate_nmtran_time,
     update_inits,
     write_csv,
-    translate_nmtran_time,
-    drop_dropped_columns,
-    drop_columns,
-    append_estimation_step_options,
 )
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import fit
-from .sanity_checks import check_model, print_warning
-from .create_ini import add_theta, add_eta, add_sigma
+
 from .CodeGenerator import CodeGenerator
+from .create_ini import add_eta, add_sigma, add_theta
+from .create_model_block import add_ode, add_statements
 from .name_mangle import name_mangle
-from .create_model_block import add_statements, add_ode
+from .sanity_checks import check_model, print_warning
 
 
 def convert_model(model: pharmpy.model, keep_etas: bool = False, skip_check=False) -> pharmpy.model:
@@ -67,7 +66,7 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False, skip_check=Fals
 
     # Update dataset
     if model.dataset is not None or len(model.dataset) != 0:
-        if keep_etas == True:
+        if keep_etas is True:
             nlmixr_model = nlmixr_model.replace(
                 modelfit_results=ModelfitResults(
                     individual_estimates=model.modelfit_results.individual_estimates
@@ -239,28 +238,35 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
 
     nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
 
-    try:
-        nlmixr_method = nonmem_method_to_nlmixr[method]
-    except:
+    if method not in nonmem_method_to_nlmixr.keus():
         print_warning(
             f"Estimation method {method} unknown to nlmixr2. Using 'FOCEI' as placeholder"
         )
         nlmixr_method = "focei"
+    else:
+        nlmixr_method = nonmem_method_to_nlmixr[method]
+
     if interaction and nlmixr_method != "saem":
         nlmixr_method += "i"
 
-    if max_eval != None:
+    if max_eval is not None:
         if max_eval == 0 and nlmixr_method not in ["fo", "foi", "foce", "focei"]:
             nlmixr_method = "posthoc"
             cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}"')
         else:
             if fix_eta:
                 cg.add(
-                    f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", control=foceiControl(maxOuterIterations={max_eval}, maxInnerIterations=0, etaMat = etas))'
+                    rf'fit <- nlmixr2({model.name},\
+                        dataset, \
+                        est = "{nlmixr_method}", \
+                        control=foceiControl(maxOuterIterations={max_eval}, \
+                        maxInnerIterations=0, etaMat = etas))'
                 )
             else:
                 cg.add(
-                    f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", control=foceiControl(maxOuterIterations={max_eval}))'
+                    rf'fit <- nlmixr2({model.name}, \
+                    dataset, \ est = "{nlmixr_method}", \
+                    control=foceiControl(maxOuterIterations={max_eval}))'
                 )
     else:
         cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}")')
@@ -521,7 +527,7 @@ def verification(
     # Update the nonmem model with new estimates
     # and convert to nlmixr
     print_step("Converting NONMEM model to nlmixr2...")
-    if fix_eta == True:
+    if fix_eta is True:
         nlmixr_model = convert_model(
             update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates),
             keep_etas=True,
@@ -622,8 +628,8 @@ def fixate_eta(model):
 
 
 def write_fix_eta(model, path=None, force=True):
-    from pharmpy.model import data
     from pharmpy.internals.fs.path import path_absolute
+    from pharmpy.model import data
 
     filename = "fix_eta.csv"
     path = path / filename

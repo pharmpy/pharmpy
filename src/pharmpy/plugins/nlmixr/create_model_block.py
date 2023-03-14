@@ -1,21 +1,11 @@
+import re
+
 import pharmpy.model
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.model import Assignment
-from pharmpy.modeling import (
-    has_additive_error_model,
-    has_proportional_error_model,
-    has_combined_error_model,
-)
 
-import re
-
+from .error_model import add_error_model, add_error_relation, convert_piecewise, find_term
 from .name_mangle import name_mangle
-from .error_model import (
-    find_term,
-    add_error_model,
-    add_error_relation,
-    convert_piecewise,
-)
 
 
 class ExpressionPrinter(sympy_printing.str.StrPrinter):
@@ -113,12 +103,11 @@ def add_ode(model, cg):
     des = model.internals.nonmem_control_stream.get_records("DES")
     statements = []
     if des and des[0]:
-        pattern = re.compile("DADT\(\d*\)")
+        pattern = re.compile(r"DADT\(\d*\)")
         for s in des[0].statements:
             if not pattern.match(s.symbol.name):
                 statements.append(s)
         add_statements(model, cg, statements)
-
     for eq in model.statements.ode_system.eqs:
         # Should remove piecewise from these equations in nlmixr
         if eq.atoms(sympy.Piecewise):
