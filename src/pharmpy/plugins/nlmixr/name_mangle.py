@@ -1,6 +1,4 @@
-
-
-def name_mangle(s:str) -> str:
+def name_mangle(s: str) -> str:
     """
     Changes the format of parameter name to avoid using parenthesis
 
@@ -13,7 +11,7 @@ def name_mangle(s:str) -> str:
     -------
     str
         Parameter name with parenthesis removed
-    
+
     Example
     -------
     name_mangle("ETA(1)")

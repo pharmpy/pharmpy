@@ -5,7 +5,7 @@ from pharmpy.modeling import (
     has_additive_error_model,
     has_proportional_error_model,
     has_combined_error_model,
-    )
+)
 
 import re
 
@@ -15,7 +15,8 @@ from .error_model import (
     add_error_model,
     add_error_relation,
     convert_piecewise,
-    )
+)
+
 
 class ExpressionPrinter(sympy_printing.str.StrPrinter):
     def __init__(self, amounts):
@@ -36,34 +37,33 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
         else:
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
+
 def add_statements(model: pharmpy.model.Model, cg, statements):
-    
     # FIXME: handle other DVs?
     dv = list(model.dependent_variables.keys())[0]
-    
+
     error_model_found = False
     dv_found = False
-    
+
     for s in statements:
         if isinstance(s, Assignment):
             if s.symbol == dv:
-                
                 dv_found = True
-                
+
                 # FIXME : Find another way to assert that a sigma exist
                 sigma = None
                 for dist in model.random_variables.epsilons:
                     sigma = dist.variance
                 assert sigma is not None
-                
-                if s.expression.is_Piecewise:                
+
+                if s.expression.is_Piecewise:
                     convert_piecewise(s, cg, model)
                 else:
                     expr, error = find_term(model, s.expression)
                     add_error_model(cg, expr, error, s.symbol.name)
                     add_error_relation(cg, error, s.symbol)
                     error_model_found = True
-                    
+
             else:
                 expr = s.expression
                 if expr.is_Piecewise:
@@ -88,7 +88,9 @@ def add_statements(model: pharmpy.model.Model, cg, statements):
                                             largest_value = value
                                             largest_cond = cond
                                         elif cond.rhs == largest_cond.rhs:
-                                            if not isinstance(cond, sympy.LessThan) and isinstance(largest_cond, sympy.LessThan):
+                                            if not isinstance(cond, sympy.LessThan) and isinstance(
+                                                largest_cond, sympy.LessThan
+                                            ):
                                                 largest_value = value
                                                 largest_cond = cond
                                 value = largest_value
@@ -98,16 +100,16 @@ def add_statements(model: pharmpy.model.Model, cg, statements):
                     cg.add('}')
                 else:
                     cg.add(f'{s.symbol.name} <- {expr}')
-        
+
     if dv_found and not error_model_found:
         error = {"add": None, "prop": None}
         add_error_relation(cg, error, dv)
-                
+
+
 def add_ode(model, cg):
-    
     amounts = [am.name for am in list(model.statements.ode_system.amounts)]
     printer = ExpressionPrinter(amounts)
-    
+
     des = model.internals.nonmem_control_stream.get_records("DES")
     statements = []
     if des and des[0]:
@@ -116,18 +118,19 @@ def add_ode(model, cg):
             if not pattern.match(s.symbol.name):
                 statements.append(s)
         add_statements(model, cg, statements)
-    
+
     for eq in model.statements.ode_system.eqs:
         # Should remove piecewise from these equations in nlmixr
         if eq.atoms(sympy.Piecewise):
             lhs = remove_piecewise(printer.doprint(eq.lhs))
             rhs = remove_piecewise(printer.doprint(eq.rhs))
-            
+
             cg.add(f'{lhs} = {rhs}')
         else:
             cg.add(f'{printer.doprint(eq.lhs)} = {printer.doprint(eq.rhs)}')
 
-def remove_piecewise(expr:str) -> str:
+
+def remove_piecewise(expr: str) -> str:
     """
     Return an expression without Piecewise statements
 
@@ -143,10 +146,11 @@ def remove_piecewise(expr:str) -> str:
 
     """
     all_piecewise = find_piecewise(expr)
-    #Go into each piecewise found
+    # Go into each piecewise found
     for p in all_piecewise:
         expr = piecewise_replace(expr, p, "")
     return expr
+
 
 def find_piecewise(expr: str) -> list:
     """
@@ -164,14 +168,15 @@ def find_piecewise(expr: str) -> list:
 
     """
     d = find_parentheses(expr)
-        
+
     piecewise_start = [m.start() + len("Piecewise") for m in re.finditer("Piecewise", expr)]
-    
+
     all_piecewise = []
     for p in piecewise_start:
         if p in d:
-            all_piecewise.append(expr[p+1:d[p]])
+            all_piecewise.append(expr[p + 1 : d[p]])
     return all_piecewise
+
 
 def find_parentheses(s: str) -> dict:
     """
@@ -185,16 +190,16 @@ def find_parentheses(s: str) -> dict:
     Returns
     -------
     dict
-        A dictionary with keys corresponding to positions of the opening 
+        A dictionary with keys corresponding to positions of the opening
         parenthesis and value being the position of the closing parenthesis.
 
     """
-    start = [] # all opening parentheses
+    start = []  # all opening parentheses
     d = {}
-    
+
     for i, c in enumerate(s):
         if c == '(':
-             start.append(i)
+            start.append(i)
         if c == ')':
             try:
                 d[start.pop()] = i
@@ -202,8 +207,9 @@ def find_parentheses(s: str) -> dict:
                 print('Too many closing parentheses')
     if start:  # check if stack is empty afterwards
         print('Too many opening parentheses')
-        
+
     return d
+
 
 def piecewise_replace(expr: str, piecewise: sympy.Piecewise, s: str) -> str:
     """
@@ -229,7 +235,8 @@ def piecewise_replace(expr: str, piecewise: sympy.Piecewise, s: str) -> str:
         return expr.replace(f'Piecewise({piecewise})', s)
     else:
         return expr.replace(f'Piecewise({piecewise})', s)
-    
+
+
 def convert_eq(cond: sympy.Eq) -> str:
     """
     Convert a sympy equal statement to R syntax
@@ -251,6 +258,3 @@ def convert_eq(cond: sympy.Eq) -> str:
     cond = cond.replace("∨", "|")
     cond = re.sub(r'(ID\s*==\s*)(\d+)', r"\1'\2'", cond)
     return cond
-            
-            
-            
