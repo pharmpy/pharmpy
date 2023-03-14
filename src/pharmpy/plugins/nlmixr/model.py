@@ -504,7 +504,6 @@ def verification(model: pharmpy.model,
     nonmem_model = model
 
     # Save results from the nonmem model
-    # FIXME : check only if predictions does not exist
     if nonmem_model.modelfit_results is None:
         print_step("Calculating NONMEM predictions... (this might take a while)")
         nonmem_model = nonmem_model.replace(modelfit_results = fit(nonmem_model))

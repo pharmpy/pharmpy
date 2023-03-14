@@ -41,22 +41,28 @@ def add_statements(model: pharmpy.model.Model, cg, statements):
     # FIXME: handle other DVs?
     dv = list(model.dependent_variables.keys())[0]
     
+    error_model_found = False
+    dv_found = False
+    
     for s in statements:
         if isinstance(s, Assignment):
             if s.symbol == dv:
+                
+                dv_found = True
+                
                 # FIXME : Find another way to assert that a sigma exist
                 sigma = None
                 for dist in model.random_variables.epsilons:
                     sigma = dist.variance
                 assert sigma is not None
                 
-                if s.expression.is_Piecewise:
-                    # Convert eps to sigma name
+                if s.expression.is_Piecewise:                
                     convert_piecewise(s, cg, model)
                 else:
                     expr, error = find_term(model, s.expression)
                     add_error_model(cg, expr, error, s.symbol.name)
                     add_error_relation(cg, error, s.symbol)
+                    error_model_found = True
                     
             else:
                 expr = s.expression
@@ -92,6 +98,10 @@ def add_statements(model: pharmpy.model.Model, cg, statements):
                     cg.add('}')
                 else:
                     cg.add(f'{s.symbol.name} <- {expr}')
+        
+    if dv_found and not error_model_found:
+        error = {"add": None, "prop": None}
+        add_error_relation(cg, error, dv)
                 
 def add_ode(model, cg):
     

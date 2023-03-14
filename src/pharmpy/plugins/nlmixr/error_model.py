@@ -38,13 +38,14 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
     terms = sympy.Add.make_args(expr)
     
     for term in terms:
+        full_term = full_expression(term, model)
         error_term = False
-        for symbol in term.free_symbols:
+        for symbol in full_term.free_symbols:
             if str(symbol) in model.random_variables.epsilons.names:
                 error_term = True
             
         if error_term:
-            errors.append(term)
+            errors.append((term, full_term))
         else:
             if "res"  not in locals():
                 res = term
@@ -54,28 +55,33 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
     errors_add_prop = {"add": None, "prop": None}
 
     prop = False
-    res_alias = find_aliases(res, model)
-    for term in errors:
-        for symbol in term.free_symbols:
+    res_alias = []
+    for s in res.free_symbols:
+        all_a = find_aliases(s, model)
+        for a in all_a:
+            if a not in res_alias:
+                res_alias.append(a)
+    
+    for t in errors:
+        term = t[0]
+        full_term = t[1]
+        for symbol in full_term.free_symbols:
             for ali in find_aliases(symbol, model):
                 if ali in res_alias:
                     prop = True
-                    # Remove the symbol that was found
-                    # and substitute res to that symbol to avoid confusion
+                    # Remove the resulting symbol from the error term
                     term = term.subs(symbol,1)
-                    res = symbol
             
         if prop:
             if errors_add_prop["prop"] is None:
                 errors_add_prop["prop"] = term
             else:
-                print("Multiple proportional error terms found. nlmixr2 cannot handle this.\nError model NOT added")
-                errors_add_prop["prop"] = None
+                errors_add_prop["prop"] = errors_add_prop["prop"] + term
         else:
             if errors_add_prop["add"] is None:
                 errors_add_prop["add"] = term
             else:
-                print("Multiple additive error term found. nlmixr2 cannot handle this.\nError model NOT added")
+                errors_add_prop["add"] = errors_add_prop["add"] + term
                 
     for pair in errors_add_prop.items():
         key = pair[0]
@@ -83,7 +89,7 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
         if term != None:
             term = convert_eps_to_sigma(term, model)
         errors_add_prop[key] = term
-        
+    
     return res, errors_add_prop
 
 def add_error_model(cg: CodeGenerator,
@@ -137,45 +143,32 @@ def add_error_model(cg: CodeGenerator,
     """
     cg.add(f'{symbol} <- {expr}')
     
-    if force_add:
-        assert error["prop"] is None
-        
-        if error["add"]:
-            if not isinstance(error["add"], sympy.Symbol):
-                cg.add(f'add_error <- {error["add"]}')
-        else:
-            raise ValueError("Model should have additive error but no such error was found.")
-    elif force_prop:
-        assert error["add"] is None
-        
-        if error["prop"]:
-            if not isinstance(error["prop"], sympy.Symbol):
-                cg.add(f'prop_error <- {error["prop"]}')
-        else:
-            raise ValueError("Model should have proportional error but no such error was found.")
-    elif force_comb:
-        assert error["add"] is not None and error["prop"] is not None
-        
-        if error["add"]:
-            if not isinstance(error["add"], sympy.Symbol):
-                cg.add(f'add_error <- {error["add"]}')
-        else:
-            raise ValueError("Model should have additive error but no such error was found.")
+    # Add term for the additive and proportional error (if exist)
+    # as solution for nlmixr error model handling
+    print(error)
+    if error["add"]:
+        if not isinstance(error["add"], sympy.Symbol):
+            n = 0
+            args = error_args(error["add"])
+                
+            for term in args:
+                if n == 0:
+                    cg.add(f'add_error <- {term}')
+                else:
+                    cg.add(f'add_error_{n} <- {term}')
+                n += 1
+                    
+    if error["prop"]:
+        if not isinstance(error["prop"], sympy.Symbol):
+            n = 0
+            args = error_args(error["prop"])
             
-        if error["prop"]:
-            if not isinstance(error["prop"], sympy.Symbol):
-                cg.add(f'prop_error <- {error["prop"]}')
-        else:
-            raise ValueError("Model should have proportional error but no such error was found.")
-    else:
-        # Add term for the additive and proportional error (if exist)
-        # as solution for nlmixr error model handling
-        if error["add"]:
-            if not isinstance(error["add"], sympy.Symbol):
-                cg.add(f'add_error <- {error["add"]}')
-        if error["prop"]:
-            if not isinstance(error["prop"], sympy.Symbol):
-                cg.add(f'prop_error <- {error["prop"]}')
+            for term in args:
+                if n == 0:
+                    cg.add(f'prop_error <- {term}')
+                else:
+                    cg.add(f'prop_error_{n} <- {term}')
+                n += 1
         
 def add_error_relation(cg: CodeGenerator, error: dict, symbol: str) -> None:
     """
@@ -198,22 +191,72 @@ def add_error_relation(cg: CodeGenerator, error: dict, symbol: str) -> None:
     """
     # Add the actual error model depedent on the previously
     # defined variable add_error and prop_error
-    if isinstance(error["add"], sympy.Symbol):
-        add_error = error["add"]
-    else:
-        add_error = "add_error"
-    if isinstance(error["prop"], sympy.Symbol):
-        prop_error = error["prop"]
-    else:
-        prop_error = "prop_error"
+    error_relation = ""
     
+    first = True
+    if error["add"] != None:
+        if isinstance(error["add"], sympy.Symbol):
+            add_error = error["add"]
+            if first:
+                error_relation += add_error
+                first = False
+            else:
+                error_relation += " + "+add_error
+        else:
+            n = 0
+            last = len(error_args(error["add"])) - 1
+            for n in range(last+1):
+                if n == 0:
+                    error_relation += "add(add_error)"
+                    if n != last:
+                        error_relation += " + "
+                else:
+                    error_relation += f"add(add_error_{n})"
+                    if n != last:
+                        error_relation += " + "
+    
+    if error["prop"] != None:
+        if isinstance(error["prop"], sympy.Symbol):
+            prop_error = error["prop"]
+            if first:
+                error_relation += prop_error
+                first = False
+            else:
+                error_relation += " + "+prop_error
+        else:
+            n = 0
+            last = len(error_args(error["prop"])) - 1
+            for n in range(last+1):                
+                if n == 0:
+                    error_relation += "prop(prop_error)"
+                    if n != last:
+                        error_relation += " + "
+                else:
+                    error_relation += f"prop(prop_error_{n})"
+                    if n != last:
+                        error_relation += " + "
+    
+    if error_relation == "":
+        print_warning("Error model could not be determined. Note that conditional error models cannot be converted.\nWill add fake error term.")
+        cg.add("FAKE_ERROR <- 0.0")
+        error_relation += "FAKE_ERROR"
         
-    if error["add"] and error["prop"]:
-        cg.add(f'{symbol} ~ add({add_error}) + prop({prop_error})')
-    elif error["add"] and not error["prop"]:
-        cg.add(f'{symbol} ~ add({add_error})')
-    elif not error["add"] and error["prop"]:
-        cg.add(f'{symbol} ~ prop({prop_error})')
+    cg.add(f'{symbol} ~ {error_relation}')
+    
+def error_args(s):
+    if isinstance(s, sympy.Add):
+        args = s.args
+    else:
+        args = [s]
+    return args
+
+def full_expression(expression, model):
+    from pharmpy.internals.expr.subs import subs
+    for statement in reversed(model.statements.after_odes):
+        expression = subs(
+                expression, {statement.symbol: statement.expression}, simultaneous=True
+                )
+    return expression
         
 def find_aliases(symbol:str, model: pharmpy.model) -> list:
     """
@@ -289,19 +332,19 @@ def convert_piecewise(piecewise: sympy.Piecewise, cg: CodeGenerator, model: phar
         if first:
             cg.add(f'if ({cond}){{')
             expr, error = find_term(model, expr)
-            add_error_model(cg, expr, error, piecewise.symbol)
+            cg.add(f'{piecewise.symbol} <- {expr}')
             cg.add('}')
             first = False
         else:
             if cond is not sympy.S.true:
                 cg.add(f'else if ({cond}){{')
                 expr, error = find_term(model, expr)
-                add_error_model(cg, expr, error, piecewise.symbol)
+                cg.add(f'{piecewise.symbol} <- {expr}')
                 cg.add('}')
             else:
                 cg.add('else {')
                 expr, error = find_term(model, expr)
-                add_error_model(cg, expr, error, piecewise.symbol)
+                cg.add(f'{piecewise.symbol} <- {expr}')
                 cg.add('}')
     
-    add_error_relation(cg, error, piecewise.symbol)
+    #add_error_relation(cg, error, piecewise.symbol)
