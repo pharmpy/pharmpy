@@ -5,6 +5,7 @@ from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment, EstimationSteps, Model
 from pharmpy.modeling import (
     has_weighted_error_model,
+    remove_loq_data,
     set_weighted_error_model,
     use_thetas_for_error_stdev,
 )
@@ -12,8 +13,30 @@ from pharmpy.modeling import (
 from .error import get_weighted_error_model_weight
 from .expressions import create_symbol
 
+SUPPORTED_METHODS = frozenset(['m1', 'm4'])
 
-def transform_blq(model: Model, lloq: Optional[float] = None):
+
+def transform_blq(model: Model, lloq: Optional[float] = None, method: str = 'm4'):
+    if method not in SUPPORTED_METHODS:
+        raise ValueError(
+            f'Invalid `method`: got `{method}`,' f' must be one of {sorted(SUPPORTED_METHODS)}.'
+        )
+    if method == 'm1' and not isinstance(lloq, float):
+        raise ValueError('Invalid type of `lloq` when combined with m1 method, must be float')
+
+    if method == 'm1':
+        model = _m1_method(model, lloq)
+    if method == 'm4':
+        model = _m4_method(model, lloq)
+
+    return model
+
+
+def _m1_method(model, lloq):
+    return remove_loq_data(model, lloq)
+
+
+def _m4_method(model, lloq):
     if not has_weighted_error_model(model):
         model = set_weighted_error_model(model)
     model = use_thetas_for_error_stdev(model)
