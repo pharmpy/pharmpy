@@ -12,9 +12,9 @@ The configuration file
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Pharmpy can use a configuration file called :code:`pharmpy.conf` that should be placed in the `Pharmpy` configuration
-directory. The placement of this directory is dependent on the operating system. As Pharmpy is using the appdirs
-package to find the placement of configuration files in your system please check the appdirs package web page:
-https://pypi.org/project/appdirs/ for more information.
+directory. The placement of this directory is dependent on the operating system. Use the `get_config_path` in `modeling` to
+find out the configuration file path. It is also possible to override the default path by using the `PHARMPYCONFIGPATH` environment
+variable (see below).
 
 The format of the configuration file is a plain .ini file where each section is the name of the module being
 configured. For example:
