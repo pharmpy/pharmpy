@@ -148,7 +148,6 @@ def add_error_model(
 
     # Add term for the additive and proportional error (if exist)
     # as solution for nlmixr error model handling
-    print(error)
     if error["add"]:
         if not isinstance(error["add"], sympy.Symbol):
             n = 0
