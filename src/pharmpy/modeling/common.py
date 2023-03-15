@@ -530,12 +530,16 @@ def get_config_path():
     >>> get_config_path()  # doctest: +SKIP
     """
     if config.user_config_file_enabled():
-        config_path = config.user_config_path()
-        if config_path.exists():
-            return str(config_path)
+        env_path = config.env_config_path()
+        if env_path is not None:
+            return str(env_path)
         else:
-            warnings.warn(f'Cannot find config path {config_path}')
-            return None
+            config_path = config.user_config_path()
+            if config_path.exists():
+                return str(config_path)
+            else:
+                warnings.warn(f'Cannot find config path {config_path}')
+                return None
     else:
         warnings.warn('User config file is disabled')
         return None
