@@ -16,12 +16,12 @@ def user_config_file_enabled():
     return not int(os.getenv('PHARMPYNOCONFIGFILE', 0))
 
 
-def user_config_dir():
+def user_config_path():
     user_path = Path(appdirs.user_config_dir(appname)) / configuration_filename
     return user_path
 
 
-def site_config_dir():
+def site_config_path():
     site_path = Path(appdirs.site_config_dir(appname)) / configuration_filename
     return site_path
 
@@ -38,11 +38,11 @@ def read_configuration():
             )
         config.read(env_path)
     else:
-        user_path = user_config_dir()
+        user_path = user_config_path()
         if user_path.is_file():
             config.read(user_path)
         else:
-            site_path = site_config_dir()
+            site_path = site_config_path()
             if site_path.is_file():
                 config.read(site_path)
     return config

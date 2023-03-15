@@ -530,7 +530,7 @@ def get_config_path():
     >>> get_config_path()  # doctest: +SKIP
     """
     if config.user_config_file_enabled():
-        config_path = config.user_config_dir()
+        config_path = config.user_config_path()
         if config_path.exists():
             return str(config_path)
         else:

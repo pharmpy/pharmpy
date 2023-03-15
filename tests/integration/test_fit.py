@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 import pharmpy.modeling as modeling
-from pharmpy.config import site_config_dir, user_config_dir
+from pharmpy.config import site_config_dir, user_config_path
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.plugins.nonmem import conf
@@ -12,7 +12,7 @@ from pharmpy.tools import fit
 
 
 def test_configuration():
-    print("User config dir:", user_config_dir())
+    print("User config dir:", user_config_path())
     print("Site config dir:", site_config_dir())
     print("Default NONMEM path:", conf.default_nonmem_path)
     assert (conf.default_nonmem_path / 'license' / 'nonmem.lic').is_file()
