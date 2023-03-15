@@ -61,7 +61,7 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
         all_a = find_aliases(s, model)
         for a in all_a:
             if a not in res_alias:
-                res_alias.append(a)          
+                res_alias.append(a)
     for t in errors:
         term = t[0]
         full_term = t[1]
