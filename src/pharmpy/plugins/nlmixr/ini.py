@@ -49,7 +49,10 @@ def add_eta(model: pharmpy.model.Model, cg: CodeGenerator, as_list=False) -> Non
             inits = []
             for row in range(omega.rows):
                 for col in range(row + 1):
-                    inits.append(model.parameters[omega[row, col].name].init)
+                    if col == 0 and row != 0:
+                        inits.append(f'\n{model.parameters[omega[row, col].name].init}')
+                    else:
+                        inits.append(model.parameters[omega[row, col].name].init)
             cg.add(
                 f'{" + ".join([name_mangle(name) for name in dist.names])} ~ c({", ".join([str(x) for x in inits])})'
             )
