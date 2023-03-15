@@ -788,7 +788,14 @@ def parse_table_columns(control_stream):
                         columns.append(key)
 
         if not noappend:
-            columns.extend(['DV', 'PRED', 'RES', 'WRES'])
+            if 'DV' not in columns:
+                columns.append('DV')
+            if 'PRED' not in columns:
+                columns.append('PRED')
+            if 'RES' not in columns:
+                columns.append('RES')
+            if 'WRES' not in columns:
+                columns.append('WRES')
 
         all_columns.append(columns)
 
