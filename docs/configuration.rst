@@ -26,6 +26,8 @@ configured. For example:
 
 will set the path to nonmem.
 
+It is possible to create an empty template configuration file using the `create_default_config` function.
+
 ~~~~~~~~~~~~~~~~~~~~~
 Environment variables
 ~~~~~~~~~~~~~~~~~~~~~

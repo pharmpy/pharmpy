@@ -545,6 +545,31 @@ def get_config_path():
         return None
 
 
+def create_config_template():
+    r"""Create a basic config file template
+
+    If a configuration file already exists it will not be overwritten
+
+    Example
+    -------
+    >>> from pharmpy.modeling import create_config_template
+    >>> create_config_template()  # doctest: +SKIP
+    """
+    template = r"""[pharmpy.plugins.nonmem]
+;default_nonmem_path="""
+
+    if config.user_config_file_enabled():
+        path = config.user_config_path()
+        if path is not None:
+            if not path.exists():
+                with open(path, 'w') as fp:
+                    print(template, file=fp)
+            else:
+                warnings.warn('Config file already exists')
+    else:
+        warnings.warn('User config file is disabled')
+
+
 def remove_unused_parameters_and_rvs(model: Model):
     """Remove any parameters and rvs that are not used in the model statements
 
