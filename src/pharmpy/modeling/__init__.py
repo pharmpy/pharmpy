@@ -177,7 +177,11 @@ from .parameters import (
     unfix_parameters,
     unfix_parameters_to,
 )
-from .plots import plot_individual_predictions, plot_iofv_vs_iofv
+from .plots import (
+    plot_individual_predictions,
+    plot_iofv_vs_iofv,
+    plot_transformed_eta_distributions,
+)
 from .reporting import create_report
 from .results import (
     calculate_aic,
@@ -305,6 +309,7 @@ __all__ = [
     'omit_data',
     'plot_individual_predictions',
     'plot_iofv_vs_iofv',
+    'plot_transformed_eta_distributions',
     'print_model_code',
     'print_model_symbols',
     'read_dataset_from_datainfo',

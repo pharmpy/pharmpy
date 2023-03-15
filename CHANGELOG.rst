@@ -5,6 +5,7 @@ New features
 ============
 
 * Add function ``modeling.is_linearized``
+* Add function ``modeling.plot_transformed_eta_distributions``
 
 0.91.0 (2023-03-03)
 -------------------
