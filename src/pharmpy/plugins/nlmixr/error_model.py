@@ -61,17 +61,16 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
         all_a = find_aliases(s, model)
         for a in all_a:
             if a not in res_alias:
-                res_alias.append(a)
-
+                res_alias.append(a)          
     for t in errors:
         term = t[0]
         full_term = t[1]
         for symbol in full_term.free_symbols:
-            for ali in find_aliases(symbol, model):
+            for ali in find_aliases(symbol, model) + list(term.free_symbols):
                 if ali in res_alias:
                     prop = True
                     # Remove the resulting symbol from the error term
-                    term = term.subs(symbol, 1)
+                    term = term.subs(ali, 1)
 
         if prop:
             if errors_add_prop["prop"] is None:
@@ -292,6 +291,8 @@ def find_aliases(symbol: str, model: pharmpy.model) -> list:
             for e, c in expr.expression.args:
                 if isinstance(e, sympy.Symbol):
                     aliases.append(e)
+        if symbol == expr.expression:
+            aliases.append(expr.symbol)
     return aliases
 
 
