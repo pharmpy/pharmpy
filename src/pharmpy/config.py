@@ -26,8 +26,7 @@ def site_config_path():
     return site_path
 
 
-def read_configuration():
-    config = configparser.ConfigParser()
+def env_config_path():
     env_path = os.getenv('PHARMPYCONFIGPATH')
     if env_path is not None:
         env_path = Path(env_path) / configuration_filename
@@ -36,6 +35,13 @@ def read_configuration():
                 'Environment variable PHARMPYCONFIGPATH is set but directory does '
                 'not contain a configuration file'
             )
+    return env_path
+
+
+def read_configuration():
+    config = configparser.ConfigParser()
+    env_path = env_config_path()
+    if env_path is not None:
         config.read(env_path)
     else:
         user_path = user_config_path()
