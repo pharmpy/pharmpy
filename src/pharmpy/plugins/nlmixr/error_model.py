@@ -201,10 +201,10 @@ def add_error_relation(cg: CodeGenerator, error: dict, symbol: str) -> None:
         if isinstance(error["add"], sympy.Symbol):
             add_error = error["add"]
             if first:
-                error_relation += add_error
+                error_relation += f'add({add_error})'
                 first = False
             else:
-                error_relation += " + " + add_error
+                error_relation += " + " + f'add({add_error})'
         else:
             n = 0
             last = len(error_args(error["add"])) - 1
@@ -222,10 +222,10 @@ def add_error_relation(cg: CodeGenerator, error: dict, symbol: str) -> None:
         if isinstance(error["prop"], sympy.Symbol):
             prop_error = error["prop"]
             if first:
-                error_relation += prop_error
+                error_relation += f'prop({prop_error})'
                 first = False
             else:
-                error_relation += " + " + prop_error
+                error_relation += " + " + f'prop({prop_error})'
         else:
             n = 0
             last = len(error_args(error["prop"])) - 1

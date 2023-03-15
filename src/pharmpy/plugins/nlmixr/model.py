@@ -254,20 +254,12 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
             nlmixr_method = "posthoc"
             cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}"')
         else:
+            f = f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", '
             if fix_eta:
-                cg.add(
-                    rf'fit <- nlmixr2({model.name},\
-                        dataset, \
-                        est = "{nlmixr_method}", \
-                        control=foceiControl(maxOuterIterations={max_eval}, \
-                        maxInnerIterations=0, etaMat = etas))'
-                )
+                f += f'control=foceiControl(maxOuterIterations={max_eval}, maxInnerIterations=0, etaMat = etas))'
             else:
-                cg.add(
-                    rf'fit <- nlmixr2({model.name}, \
-                    dataset, \ est = "{nlmixr_method}", \
-                    control=foceiControl(maxOuterIterations={max_eval}))'
-                )
+                f += f'control=foceiControl(maxOuterIterations={max_eval}))'
+            cg.add(f)
     else:
         cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}")')
 
