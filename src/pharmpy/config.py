@@ -38,19 +38,26 @@ def env_config_path():
     return env_path
 
 
-def read_configuration():
-    config = configparser.ConfigParser()
+def config_path():
     env_path = env_config_path()
     if env_path is not None:
-        config.read(env_path)
+        return env_path
     else:
         user_path = user_config_path()
         if user_path.is_file():
-            config.read(user_path)
+            return user_path
         else:
             site_path = site_config_path()
             if site_path.is_file():
-                config.read(site_path)
+                return site_path
+    return None
+
+
+def read_configuration():
+    config = configparser.ConfigParser()
+    path = config_path()
+    if path is not None:
+        config.read(path)
     return config
 
 
