@@ -7,6 +7,8 @@ from pharmpy.model import Assignment
 from .error_model import add_error_model, add_error_relation, convert_piecewise, find_term
 from .name_mangle import name_mangle
 
+from .CodeGenerator import CodeGenerator
+
 
 class ExpressionPrinter(sympy_printing.str.StrPrinter):
     def __init__(self, amounts):
@@ -28,7 +30,26 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
 
-def add_statements(model: pharmpy.model.Model, cg, statements):
+def add_statements(model: pharmpy.model.Model, cg: CodeGenerator, statements: pharmpy.model.statements) -> None:
+    """
+    Add statements to generated code generator. The statements should be before
+    or after the ODEs.
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        A pharmpy model object to add statements to.
+    cg : CodeGenerator
+        Codegenerator object holding the code to be added to.
+    statements : pharmpy.model.statements
+        Statements to be added to the code generator.
+
+    Returns
+    -------
+    None
+        Modifies the given CodeGenerator object. Returns nothing
+
+    """
     # FIXME: handle other DVs?
     dv = list(model.dependent_variables.keys())[0]
 
@@ -96,7 +117,23 @@ def add_statements(model: pharmpy.model.Model, cg, statements):
         add_error_relation(cg, error, dv)
 
 
-def add_ode(model, cg):
+def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
+    """
+    Add the ODEs from a model to a code generator
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        A pharmpy model object to add ODEs to.
+    cg : CodeGenerator
+        Codegenerator object holding the code to be added to.
+
+    Returns
+    -------
+    None
+        Modifies the given CodeGenerator object. Returns nothing
+
+    """
     amounts = [am.name for am in list(model.statements.ode_system.amounts)]
     printer = ExpressionPrinter(amounts)
 
@@ -215,8 +252,8 @@ def piecewise_replace(expr: str, piecewise: sympy.Piecewise, s: str) -> str:
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
+    str
+        Expression with replaced piecewise expressions.
 
     """
     if s == "":

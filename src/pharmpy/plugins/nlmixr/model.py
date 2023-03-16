@@ -4,8 +4,8 @@ import subprocess
 import uuid
 import warnings
 from dataclasses import dataclass, replace
-from pathlib import Path
-from typing import Optional
+from pathlib import Path, PosixPath
+from typing import Optional, Union
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
@@ -31,14 +31,18 @@ from .name_mangle import name_mangle
 from .sanity_checks import check_model, print_warning
 
 
-def convert_model(model: pharmpy.model, keep_etas: bool = False, skip_check=False) -> pharmpy.model:
+def convert_model(model: pharmpy.model.Model, keep_etas: bool = False, skip_check: bool = False) -> pharmpy.model.Model:
     """
-    Convert any model into an nlmixr model
+    Convert a NONMEM model into an nlmixr model
 
     Parameters
     ----------
-    model : pharmpy.model
-        A pharmpy model object.
+    model : pharmpy.model.Model
+        A NONMEM pharmpy model object
+    keep_etas : bool, optional
+        Decide if NONMEM estimated thetas are to be used. The default is False.
+    skip_check : bool, optional
+        Skip determination of error model type. Could speed up conversion. The default is False.
 
     Returns
     -------
@@ -88,8 +92,7 @@ def convert_model(model: pharmpy.model, keep_etas: bool = False, skip_check=Fals
     nlmixr_model = add_evid(nlmixr_model)
 
     # Check model for warnings regarding data structure or model contents
-    if not skip_check:
-        nlmixr_model = check_model(nlmixr_model)
+    nlmixr_model = check_model(nlmixr_model, skip_error_model_check = skip_check)
 
     nlmixr_model.update_source()
 
@@ -116,7 +119,7 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
 
-def create_dataset(cg: CodeGenerator, model: pharmpy.model, path=None) -> None:
+def create_dataset(cg: CodeGenerator, model: pharmpy.model.Model, path = None) -> None:
     """
     Create dataset for nlmixr
 
@@ -124,7 +127,7 @@ def create_dataset(cg: CodeGenerator, model: pharmpy.model, path=None) -> None:
     ----------
     cg : CodeGenerator
         A code object associated with the model.
-    model : pharmpy.model
+    model : pharmpy.model.Model
         A pharmpy.model object.
     path : TYPE, optional
         Path to add file to. The default is None.
@@ -142,15 +145,15 @@ def create_dataset(cg: CodeGenerator, model: pharmpy.model, path=None) -> None:
     cg.add(f'dataset <- read.csv("{path}")')
 
 
-def create_ini(cg: CodeGenerator, model: pharmpy.model) -> None:
+def create_ini(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     """
-    Create the nlmixr ini section code
+    Create the nlmixr ini block code
 
     Parameters
     ----------
     cg : CodeGenerator
         A code object associated with the model.
-    model : pharmpy.model
+    model : pharmpy.model.Model
         A pharmpy.model object.
 
     Returns
@@ -172,15 +175,15 @@ def create_ini(cg: CodeGenerator, model: pharmpy.model) -> None:
     cg.add('})')
 
 
-def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
+def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     """
-    Create the nlmixr model section code
+    Create the nlmixr model block code
 
     Parameters
     ----------
     cg : CodeGenerator
         A code object associated with the model.
-    model : pharmpy.model
+    model : pharmpy.model.Model
         A pharmpy.model object.
 
     Returns
@@ -204,16 +207,16 @@ def create_model(cg: CodeGenerator, model: pharmpy.model) -> None:
     cg.add('})')
 
 
-def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
+def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     """
-    Create the call to fit
+    Create the call to fit for the nlmixr model with appropriate methods and datasets
 
     Parameters
     ----------
     cg : CodeGenerator
         A code object associated with the model.
     model : pharmpy.model
-        A pharmpy.model object.
+        A pharmpy.model.Model object.
 
     Returns
     -------
@@ -264,7 +267,7 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model) -> None:
         cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}")')
 
 
-def add_evid(model):
+def add_evid(model: pharmpy.model.Model) -> pharmpy.model.Model:
     temp_model = model
     if "EVID" not in temp_model.dataset.columns:
         temp_model.dataset["EVID"] = get_evid(temp_model)
@@ -314,7 +317,23 @@ class Model(pharmpy.model.Model):
         return code
 
 
-def parse_modelfit_results(model: pharmpy.model, path):
+def parse_modelfit_results(model: pharmpy.model.Model, path: PosixPath) -> Union[None, ModelfitResults]:
+    """
+    Create ModelfitResults object for given model object taken from values saved in executed Rdata file
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        An nlmixr pharmpy model object.
+    path : PosixPath
+        A path to folder with model and data files.
+
+    Returns
+    -------
+    Union[None, ModelfitResults]
+        Either return ModelfitResult object or None if Rdata file not found.
+
+    """
     rdata_path = path / (model.name + '.RDATA')
     with warnings.catch_warnings():
         # Supress a numpy deprecation warning
@@ -365,7 +384,23 @@ def parse_modelfit_results(model: pharmpy.model, path):
     return res
 
 
-def execute_model(model, db):
+def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
+    """
+    Executes a model using nlmixr2 estimation.
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        An pharmpy model object.
+    db : str
+        Name of folder in home directory to store resulting files in.
+
+    Returns
+    -------
+    model : pharmpy.model.Model
+        Model with accompanied results.
+
+    """
     database = db.model_database
     model = convert_model(model)
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
@@ -454,42 +489,48 @@ def execute_model(model, db):
 
         txn.store_metadata(metadata)
         txn.store_modelfit_results()
-
+        
     res = parse_modelfit_results(model, path)
     model = model.replace(modelfit_results=res)
     return model
 
 
 def verification(
-    model: pharmpy.model,
+    model: pharmpy.model.Model,
     db_name: str,
     error: float = 10**-3,
     return_comp: bool = False,
-    fix_eta=True,
-    ipred_diff=False,
-) -> bool or pd.DataFrame:
+    fix_eta: bool = True,
+    ipred_diff: bool = False,
+) -> Union[bool, pd.DataFrame]: 
     """
     Verify that a model inputet in NONMEM format can be correctly translated to
     nlmixr as well as verify that the predictions of the two models are the same
     given a user specified error margin (defailt is 0.001).
-    If return_comp = True, return a table of comparisons and differences in
-    predictions instead of a boolean indicating if they are the same or not
+    
+    Comparison will be done on PRED values as default unless only IPRED values
+    are present or if ipred_diff is set to True.
 
     Parameters
     ----------
-    model : Model
-        pharmpy Model object in NONMEM format
+    model : pharmpy.model.Model
+        pharmpy Model object in NONMEM format.
     db_name : str
-        a string with given name of database folder for created files
+        a string with given name of database folder for created files.
     error : float, optional
         Allowed error margins for predictions. The default is 10**-3.
     return_comp : bool, optional
         Choose to return table of predictions. The default is False.
+    fix_eta : bool, optional
+        Decide if NONMEM estimated ETAs are to be used. The default is True.
+    ipred_diff : bool, optional
+        Force to use IPRED for calculating differences instead of PRED. The default is False.
 
     Returns
     -------
-    bool or pd.DataFrame
-        Boolean indicating likeness or table of predictions from the two models.
+    Union[bool, pd.Dataframe]
+        If return_comp = True, return a table of comparisons and differences in
+        predictions instead of a boolean indicating if they are the same or not
 
     """
 
@@ -609,17 +650,78 @@ def verification(
             return False
 
 
-def print_step(s):
+def print_step(s: str) -> None:
+    """
+    Print step currently being performed. Used during verification
+
+    Parameters
+    ----------
+    s : str
+        Information to print.
+
+    Returns
+    -------
+    None
+        Prints information to console.
+    
+    See also
+    --------
+    verification : verify conversion of model to nlmixr2
+
+    """
     print("***** ", s, " *****")
 
 
-def fixate_eta(model):
+def fixate_eta(model: pharmpy.model.Model) -> pharmpy.model.Model:
+    """
+    Used during verification to give information to model to fixate etas to
+    NONMEM estimates. Add the information to the models tool_options
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        An nlmixr2 pharmpy model object to fixate etas for.
+
+    Returns
+    -------
+    model : TYPE
+        Model with modified tool options to fixate etas during verification.
+    
+    See also
+    --------
+    verification : verify conversion of model to nlmixr2
+    
+    """
     opts = {"fix_eta": True}
     model = append_estimation_step_options(model, tool_options=opts, idx=0)
     return model
 
 
-def write_fix_eta(model, path=None, force=True):
+def write_fix_eta(model: pharmpy.model.Model, path = None, force = True) -> str:
+    """
+    Writes ETAs to be fixated during verification to a csv file to be read by
+    nlmixr2
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        A pharmpy model object.
+    path : TYPE, optional
+        Path to write csv file to. The default is None.
+    force : TYPE, optional
+        Force overwrite the file if exist. The default is True.
+
+    Raises
+    ------
+    FileExistsError
+        If csv file exist and force is False, raise error.
+
+    Returns
+    -------
+    str
+        Return the path to fixated ETAs csv file.
+
+    """
     from pharmpy.internals.fs.path import path_absolute
     from pharmpy.model import data
 

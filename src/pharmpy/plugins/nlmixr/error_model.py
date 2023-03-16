@@ -1,11 +1,13 @@
 import pharmpy.model
 from pharmpy.deps import sympy
+from pharmpy.internals.expr.subs import subs
+from typing import Dict, Union, Tuple, Iterable
 
 from .CodeGenerator import CodeGenerator
 from .sanity_checks import print_warning
 
 
-def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sympy.Add, dict]:
+def find_term(model: pharmpy.model.Model, expr: sympy.Add) -> Tuple[Union[sympy.Symbol, sympy.Add], Dict]:
     """
     For a given expression for the dependent variable, find the terms
     connected to the actual result and the terms connected to the error model.
@@ -25,10 +27,10 @@ def find_term(model: pharmpy.model, expr: sympy.Add) -> tuple[sympy.Symbol or sy
 
     Returns
     -------
-    res : sympy.Symbol or sympy.Add
+    res : Union[sympy.Symbol, sympy.Add]
         will return a sympy statement. Either a symbol or Add depending on the
         state of the res
-    errors_add_prop : dict
+    errors_add_prop : Dict
         A dictionary with two keys. One called "add" containing the additative
         error term (if found, otherwise None) and one called "prop" containing the
         proportional error term (if found, otherwise None)
@@ -98,12 +100,9 @@ def add_error_model(
     expr: sympy.Symbol or sympy.Add,
     error: dict,
     symbol: str,
-    force_add: bool = False,
-    force_prop: bool = False,
-    force_comb: bool = False,
 ) -> None:
     """
-    Adds an error parameter to the model code if needed. This is only needed if
+    Adds one or multiple error variables to the model code if needed. This is only needed if
     the error model follows non-convential syntax. If the error model follows
     convential format. Nothing is added
 
@@ -117,15 +116,6 @@ def add_error_model(
         Dictionary with additive and proportional error terms.
     symbol : str
         Symbol of dependent variable.
-    force_add : bool, optional
-        If known error model, this can be set to force the error model to be
-        an additive one. The default is False.
-    force_prop : bool, optional
-        If known error model, this can be set to force the error model to be
-        an proportional one. The default is False.
-    force_comb : bool, optional
-        If known error model, this can be set to force the error model to be
-        an combination based. The default is False.
 
     Raises
     ------
@@ -172,9 +162,9 @@ def add_error_model(
                 n += 1
 
 
-def add_error_relation(cg: CodeGenerator, error: dict, symbol: str) -> None:
+def add_error_relation(cg: CodeGenerator, error: Dict, symbol: str) -> None:
     """
-    Add a code line in nlmixr2 deciding the error model of the dependent variable
+    Add a code line in nlmixr2 deciding the error model of the resulting prediction
 
     Parameters
     ----------
@@ -250,7 +240,22 @@ def add_error_relation(cg: CodeGenerator, error: dict, symbol: str) -> None:
     cg.add(f'{symbol} ~ {error_relation}')
 
 
-def error_args(s):
+def error_args(s: Union[sympy.Add, sympy.Symbol, sympy.Mul]) -> list:
+    """
+    Find all additive terms in a given expression and return all terms in an
+    iterable list
+
+    Parameters
+    ----------
+    s : Union[sympy.Add, sympy.symbol, sympy.Mul]
+        Expression to extract terms from.
+
+    Returns
+    -------
+    args : list
+        List with all terms from the given expression.
+
+    """
     if isinstance(s, sympy.Add):
         args = s.args
     else:
@@ -258,9 +263,23 @@ def error_args(s):
     return args
 
 
-def full_expression(expression, model):
-    from pharmpy.internals.expr.subs import subs
+def full_expression(expression: sympy.Expr, model: pharmpy.model.Model) -> sympy.Expr:
+    """
+    Return the full expression of an expression (used for model statements)
 
+    Parameters
+    ----------
+    expression : sympy.Expr
+        Expression to be expanded.
+    model : pharmpy.model.Model
+        A pharmpy mode object with the expression as a statement.
+
+    Returns
+    -------
+    expression : sympy.Expr
+        The fully expanded expression
+
+    """
     for statement in reversed(model.statements.after_odes):
         expression = subs(expression, {statement.symbol: statement.expression}, simultaneous=True)
     return expression
@@ -279,7 +298,7 @@ def find_aliases(symbol: str, model: pharmpy.model) -> list:
 
     Returns
     -------
-    list
+    aliases: list
         A list of aliases for the symbol.
 
     """
@@ -297,22 +316,22 @@ def find_aliases(symbol: str, model: pharmpy.model) -> list:
 
 
 def convert_eps_to_sigma(
-    expr: sympy.Symbol or sympy.Mul, model: pharmpy.model
-) -> sympy.Symbol or sympy.Mul:
+    expr: Union[sympy.Symbol,sympy.Mul], model: pharmpy.model.Model
+) -> Union[sympy.Symbol, sympy.Mul]:
     """
     Change the use of epsilon names to sigma names instead. Mostly used for
     converting NONMEM format to nlmxir2
 
     Parameters
     ----------
-    expr : sympy.Symbol or sympy.Mul
+    expr : Union[sympy.Symbol,sympy.Mul]
         A sympy term to change a variable name in
     model : pharmpy.Model
         A pharmpy model object
 
     Returns
     -------
-    TYPE : sympy.Symbol or sympy.Mul
+    Union[sympy.Symbol,sympy.Mul]
         Same expression as inputed, but with epsilon names changed to sigma.
 
     """
@@ -323,11 +342,12 @@ def convert_eps_to_sigma(
     return expr.subs(eps_to_sigma)
 
 
-def convert_piecewise(piecewise: sympy.Piecewise, cg: CodeGenerator, model: pharmpy.model) -> None:
+def convert_piecewise(piecewise: sympy.Piecewise, cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     """
     For an expression of the dependent variable contating a piecewise statement
     this function will convert the expression to an if/else if/else statement
     compatible with nlmixr.
+    NOTE(!) nlmixr2 conversion cannot handle conditional error models, which are ignored.
 
     Parameters
     ----------
@@ -363,5 +383,6 @@ def convert_piecewise(piecewise: sympy.Piecewise, cg: CodeGenerator, model: phar
                 expr, error = find_term(model, expr)
                 cg.add(f'{piecewise.symbol} <- {expr}')
                 cg.add('}')
-
-    # add_error_relation(cg, error, piecewise.symbol)
+    
+    # FIXME : Add error relation where the error model is conditional
+    #add_error_relation(cg, error, piecewise.symbol)

@@ -17,20 +17,24 @@ from pharmpy.modeling import (
 )
 
 
-def check_model(model: pharmpy.model) -> pharmpy.model:
+def check_model(model: pharmpy.model.Model, skip_error_model_check: bool = False) -> pharmpy.model.Model:
     """
     Perform all neccessary checks to see if there are any issues with the input
     model. Such as if the error model is unknown, or if there are other limitations
     in the handling of the model.
+    Skipping checking the error model has no effect on the translation.
 
     Parameters
     ----------
-    model : pharmpy.model
+    model : pharmpy.model.Model
         pharmpy model object
+    skip_error_model_check : bool
+        Can choose to skip checking which error model the model has since this
+        can improve runtime.
 
     Returns
     -------
-    pharmpy.model
+    pharmpy.model.Model
         Issues will be printed to the terminal and model is returned.
 
     """
@@ -44,10 +48,11 @@ def check_model(model: pharmpy.model) -> pharmpy.model:
                 model = change_same_time(model)
 
     # Checks regarding error model
-    if not known_error_model(model):
-        print_warning(
-            "Format of error model cannot be determined. Will try to translate either way"
-        )
+    if not skip_error_model_check:
+        if not known_error_model(model):
+            print_warning(
+                "Format of error model cannot be determined."
+            )
 
     # Checks regarding random variables
     if rvs_same(model, sigma=True):
@@ -86,7 +91,23 @@ def known_error_model(model: pharmpy.model.Model) -> bool:
     )
 
 
-def same_time(model: pharmpy.model) -> bool:
+def same_time(model: pharmpy.model.Model) -> bool:
+    """
+    Check if a dataset to connected model has bolus doses and observations at the
+    exact same time. This causes issues in nlmixr2 as the dose always comes before
+    the observation, increasing its value´
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        A pharmpy model objects.
+
+    Returns
+    -------
+    bool
+        True if bolus and observation at the exact same time, for any datapoints.
+
+    """
     temp_model = model
     temp_model = temp_model.replace(dataset=temp_model.dataset.reset_index())
     dataset = temp_model.dataset
@@ -122,7 +143,7 @@ def same_time(model: pharmpy.model) -> bool:
 def change_same_time(model: pharmpy.model) -> pharmpy.model:
     """
     Force dosing to happen after observation, if bolus dose is given at the
-    exact same time.
+    exact same time. Done by adding 0.000001 to the time of the bolus dose
 
     Parameters
     ----------
@@ -190,7 +211,30 @@ def change_same_time(model: pharmpy.model) -> pharmpy.model:
     return model
 
 
-def rvs_same(model, sigma=False, omega=False):
+def rvs_same(model: pharmpy.model.Model,
+             sigma: bool = False,
+             omega: bool = False) -> bool:
+    """
+    Check if there are random variables that are referencing the same
+    distribution value.
+    Comes from NONMEM format 
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        A pharmpy model object.
+    sigma : bool, optional
+        Check for same sigma values. The default is False.
+    omega : bool, optional
+        Check for same omega values. The default is False.
+
+    Returns
+    -------
+    bool
+        True if there are random variables referenceing the same distribution
+        value. Otherwise False.
+
+    """
     if sigma:
         rvs = model.random_variables.epsilons
     elif omega:
@@ -206,7 +250,29 @@ def rvs_same(model, sigma=False, omega=False):
     return False
 
 
-def change_rvs_same(model, sigma=False, omega=False):
+def change_rvs_same(model: pharmpy.model.Model,
+                    sigma: bool = False,
+                    omega: bool = False) -> pharmpy.model.Model:
+    """
+    Add more distribution parameters if mutiple random variables are referencing
+    the same distribution. Done for sigma and omega values.
+    Prints conversion to console.
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        A pharmpy model object.
+    sigma : bool, optional
+        Check for same sigma values. The default is False.
+    omega : bool, optional
+        Check for same omega values. The default is False.
+
+    Returns
+    -------
+    model : TYPE
+        Return model with added distribution values.
+
+    """
     if sigma:
         rvs = model.random_variables.epsilons
     elif omega:

@@ -1,11 +1,28 @@
 from pharmpy.deps import sympy
 from pharmpy.modeling import get_sigmas
+import pharmpy.model
 
 from .CodeGenerator import CodeGenerator
 from .name_mangle import name_mangle
 
 
-def add_theta(model, cg):
+def add_theta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
+    """
+    Add THETAs to code generator when converting a model
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        Pharmpy model object.
+    cg : CodeGenerator
+        Code generator to add code upon.
+
+    Returns
+    -------
+    None
+        Modification to code generator object.
+
+    """
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
     for theta in thetas:
         if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
@@ -14,7 +31,23 @@ def add_theta(model, cg):
             add_ini_parameter(cg, theta)
 
 
-def add_eta(model, cg):
+def add_eta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
+    """
+    Add ETAs to code generator when converting a model
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        Pharmpy model object.
+    cg : CodeGenerator
+        Code generator to add code upon.
+
+    Returns
+    -------
+    None
+        Modification to code generator object.
+
+    """
     for dist in model.random_variables.etas:
         omega = dist.variance
         if len(dist.names) == 1:
@@ -30,7 +63,23 @@ def add_eta(model, cg):
             )
 
 
-def add_sigma(model, cg):
+def add_sigma(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
+    """
+    Add SIGMAs to code generator when converting a model.
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        Pharmpy model object.
+    cg : CodeGenerator
+        Code generator to add code upon.
+
+    Returns
+    -------
+    None
+        Modification to code generator object.
+
+    """
     for sigma in get_sigmas(model):
         if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
             add_ini_parameter(cg, sigma, boundary=True)
