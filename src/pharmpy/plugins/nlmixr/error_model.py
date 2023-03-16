@@ -1,13 +1,16 @@
+from typing import Dict, Tuple, Union
+
 import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
-from typing import Dict, Union, Tuple, Iterable
 
 from .CodeGenerator import CodeGenerator
 from .sanity_checks import print_warning
 
 
-def find_term(model: pharmpy.model.Model, expr: sympy.Add) -> Tuple[Union[sympy.Symbol, sympy.Add], Dict]:
+def find_term(
+    model: pharmpy.model.Model, expr: sympy.Add
+) -> Tuple[Union[sympy.Symbol, sympy.Add], Dict]:
     """
     For a given expression for the dependent variable, find the terms
     connected to the actual result and the terms connected to the error model.
@@ -316,7 +319,7 @@ def find_aliases(symbol: str, model: pharmpy.model) -> list:
 
 
 def convert_eps_to_sigma(
-    expr: Union[sympy.Symbol,sympy.Mul], model: pharmpy.model.Model
+    expr: Union[sympy.Symbol, sympy.Mul], model: pharmpy.model.Model
 ) -> Union[sympy.Symbol, sympy.Mul]:
     """
     Change the use of epsilon names to sigma names instead. Mostly used for
@@ -342,7 +345,9 @@ def convert_eps_to_sigma(
     return expr.subs(eps_to_sigma)
 
 
-def convert_piecewise(piecewise: sympy.Piecewise, cg: CodeGenerator, model: pharmpy.model.Model) -> None:
+def convert_piecewise(
+    piecewise: sympy.Piecewise, cg: CodeGenerator, model: pharmpy.model.Model
+) -> None:
     """
     For an expression of the dependent variable contating a piecewise statement
     this function will convert the expression to an if/else if/else statement
@@ -383,6 +388,6 @@ def convert_piecewise(piecewise: sympy.Piecewise, cg: CodeGenerator, model: phar
                 expr, error = find_term(model, expr)
                 cg.add(f'{piecewise.symbol} <- {expr}')
                 cg.add('}')
-    
+
     # FIXME : Add error relation where the error model is conditional
-    #add_error_relation(cg, error, piecewise.symbol)
+    # add_error_relation(cg, error, piecewise.symbol)

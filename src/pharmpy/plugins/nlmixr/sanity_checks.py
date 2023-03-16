@@ -17,7 +17,9 @@ from pharmpy.modeling import (
 )
 
 
-def check_model(model: pharmpy.model.Model, skip_error_model_check: bool = False) -> pharmpy.model.Model:
+def check_model(
+    model: pharmpy.model.Model, skip_error_model_check: bool = False
+) -> pharmpy.model.Model:
     """
     Perform all neccessary checks to see if there are any issues with the input
     model. Such as if the error model is unknown, or if there are other limitations
@@ -50,9 +52,7 @@ def check_model(model: pharmpy.model.Model, skip_error_model_check: bool = False
     # Checks regarding error model
     if not skip_error_model_check:
         if not known_error_model(model):
-            print_warning(
-                "Format of error model cannot be determined."
-            )
+            print_warning("Format of error model cannot be determined.")
 
     # Checks regarding random variables
     if rvs_same(model, sigma=True):
@@ -211,13 +211,11 @@ def change_same_time(model: pharmpy.model) -> pharmpy.model:
     return model
 
 
-def rvs_same(model: pharmpy.model.Model,
-             sigma: bool = False,
-             omega: bool = False) -> bool:
+def rvs_same(model: pharmpy.model.Model, sigma: bool = False, omega: bool = False) -> bool:
     """
     Check if there are random variables that are referencing the same
     distribution value.
-    Comes from NONMEM format 
+    Comes from NONMEM format
 
     Parameters
     ----------
@@ -250,9 +248,9 @@ def rvs_same(model: pharmpy.model.Model,
     return False
 
 
-def change_rvs_same(model: pharmpy.model.Model,
-                    sigma: bool = False,
-                    omega: bool = False) -> pharmpy.model.Model:
+def change_rvs_same(
+    model: pharmpy.model.Model, sigma: bool = False, omega: bool = False
+) -> pharmpy.model.Model:
     """
     Add more distribution parameters if mutiple random variables are referencing
     the same distribution. Done for sigma and omega values.

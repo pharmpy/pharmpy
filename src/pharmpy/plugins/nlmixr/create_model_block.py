@@ -4,10 +4,9 @@ import pharmpy.model
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.model import Assignment
 
+from .CodeGenerator import CodeGenerator
 from .error_model import add_error_model, add_error_relation, convert_piecewise, find_term
 from .name_mangle import name_mangle
-
-from .CodeGenerator import CodeGenerator
 
 
 class ExpressionPrinter(sympy_printing.str.StrPrinter):
@@ -30,7 +29,9 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
 
-def add_statements(model: pharmpy.model.Model, cg: CodeGenerator, statements: pharmpy.model.statements) -> None:
+def add_statements(
+    model: pharmpy.model.Model, cg: CodeGenerator, statements: pharmpy.model.statements
+) -> None:
     """
     Add statements to generated code generator. The statements should be before
     or after the ODEs.

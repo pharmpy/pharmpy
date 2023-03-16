@@ -1,6 +1,6 @@
+import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.modeling import get_sigmas
-import pharmpy.model
 
 from .CodeGenerator import CodeGenerator
 from .name_mangle import name_mangle

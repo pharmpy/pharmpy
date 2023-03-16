@@ -31,7 +31,9 @@ from .name_mangle import name_mangle
 from .sanity_checks import check_model, print_warning
 
 
-def convert_model(model: pharmpy.model.Model, keep_etas: bool = False, skip_check: bool = False) -> pharmpy.model.Model:
+def convert_model(
+    model: pharmpy.model.Model, keep_etas: bool = False, skip_check: bool = False
+) -> pharmpy.model.Model:
     """
     Convert a NONMEM model into an nlmixr model
 
@@ -92,7 +94,7 @@ def convert_model(model: pharmpy.model.Model, keep_etas: bool = False, skip_chec
     nlmixr_model = add_evid(nlmixr_model)
 
     # Check model for warnings regarding data structure or model contents
-    nlmixr_model = check_model(nlmixr_model, skip_error_model_check = skip_check)
+    nlmixr_model = check_model(nlmixr_model, skip_error_model_check=skip_check)
 
     nlmixr_model.update_source()
 
@@ -119,7 +121,7 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
 
-def create_dataset(cg: CodeGenerator, model: pharmpy.model.Model, path = None) -> None:
+def create_dataset(cg: CodeGenerator, model: pharmpy.model.Model, path=None) -> None:
     """
     Create dataset for nlmixr
 
@@ -317,7 +319,9 @@ class Model(pharmpy.model.Model):
         return code
 
 
-def parse_modelfit_results(model: pharmpy.model.Model, path: PosixPath) -> Union[None, ModelfitResults]:
+def parse_modelfit_results(
+    model: pharmpy.model.Model, path: PosixPath
+) -> Union[None, ModelfitResults]:
     """
     Create ModelfitResults object for given model object taken from values saved in executed Rdata file
 
@@ -489,7 +493,7 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
 
         txn.store_metadata(metadata)
         txn.store_modelfit_results()
-        
+
     res = parse_modelfit_results(model, path)
     model = model.replace(modelfit_results=res)
     return model
@@ -502,12 +506,12 @@ def verification(
     return_comp: bool = False,
     fix_eta: bool = True,
     ipred_diff: bool = False,
-) -> Union[bool, pd.DataFrame]: 
+) -> Union[bool, pd.DataFrame]:
     """
     Verify that a model inputet in NONMEM format can be correctly translated to
     nlmixr as well as verify that the predictions of the two models are the same
     given a user specified error margin (defailt is 0.001).
-    
+
     Comparison will be done on PRED values as default unless only IPRED values
     are present or if ipred_diff is set to True.
 
@@ -663,7 +667,7 @@ def print_step(s: str) -> None:
     -------
     None
         Prints information to console.
-    
+
     See also
     --------
     verification : verify conversion of model to nlmixr2
@@ -686,18 +690,18 @@ def fixate_eta(model: pharmpy.model.Model) -> pharmpy.model.Model:
     -------
     model : TYPE
         Model with modified tool options to fixate etas during verification.
-    
+
     See also
     --------
     verification : verify conversion of model to nlmixr2
-    
+
     """
     opts = {"fix_eta": True}
     model = append_estimation_step_options(model, tool_options=opts, idx=0)
     return model
 
 
-def write_fix_eta(model: pharmpy.model.Model, path = None, force = True) -> str:
+def write_fix_eta(model: pharmpy.model.Model, path=None, force=True) -> str:
     """
     Writes ETAs to be fixated during verification to a csv file to be read by
     nlmixr2
