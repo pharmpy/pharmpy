@@ -429,7 +429,6 @@ def solve_ode_system(model: Model):
     if odes is None:
         return model
     ics = dict(odes.ics)
-    ics.popitem()
     # FIXME: Should set assumptions on symbols before solving
     # FIXME: Need a way to handle systems with no explicit solutions
     sol = sympy.dsolve(odes.eqs, ics=ics)
