@@ -562,6 +562,7 @@ def create_config_template():
         path = config.user_config_path()
         if path is not None:
             if not path.exists():
+                path.parent.mkdir(parents=True)
                 with open(path, 'w') as fp:
                     print(template, file=fp)
             else:
