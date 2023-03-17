@@ -19,6 +19,7 @@ from pharmpy.modeling.write_csv import write_csv
 
 from .nmtran_parser import NMTranControlStream, NMTranParser
 from .parsing import (
+    convert_dvs,
     parse_datainfo,
     parse_dataset,
     parse_description,
@@ -307,14 +308,13 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
     if dataset is not None:
         di = update_datainfo(di.replace(path=None), dataset)
 
-    dependent_variables = {sympy.Symbol('Y'): 1}
-
     try:
         dataset = parse_dataset(di, control_stream, raw=False)
     except FileNotFoundError:
         pass
 
     statements, comp_map = parse_statements(di, dataset, control_stream)
+    statements, dependent_variables = convert_dvs(statements)
 
     parameters, rvs, name_map = parse_parameters(control_stream, statements)
 

@@ -251,6 +251,30 @@ def parse_statements(
     return statements, comp_map
 
 
+def convert_dvs(statements):
+    after = statements.error
+    kept = []
+    dvs = {sympy.Symbol('Y'): 1}
+    for s in after:
+        expr = s.expression
+        if isinstance(expr, sympy.Piecewise):
+            cond = expr.args[0][1]
+            if cond.lhs == sympy.Symbol("DVID") and cond.rhs == 1:
+                ass1 = s.replace(symbol=sympy.Symbol('Y_1'), expression=expr.args[0][0])
+                ass2 = s.replace(symbol=sympy.Symbol('Y_2'), expression=expr.args[1][0])
+                kept.append(ass1)
+                kept.append(ass2)
+                dvs = {sympy.Symbol('Y_1'): 1, sympy.Symbol('Y_2'): 2}
+                continue
+        kept.append(s)
+    after = Statements(tuple(kept))
+    if statements.ode_system is not None:
+        statements = statements.before_odes + statements.ode_system + after
+    else:
+        statements = after
+    return statements, dvs
+
+
 def parse_value_type(control_stream, statements):
     ests = control_stream.get_records('ESTIMATION')
     # Assuming that a model cannot be fully likelihood or fully prediction

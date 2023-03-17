@@ -1130,3 +1130,8 @@ $SIGMA 1
     model = remove_iiv(model, ['ETA_DUMMY'])
     assert model.model_code.split('\n')[3] == '$ABBR REPLACE ETA(MY)=ETA(1)'
     assert not model.model_code.split('\n')[4].startswith('$ABBR')
+
+
+def test_parse_dvid(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
+    assert model.statements
