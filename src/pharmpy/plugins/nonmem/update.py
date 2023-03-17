@@ -1276,17 +1276,16 @@ def update_abbr_record(model: Model, rv_trans):
     if not rv_trans:
         return model, trans
 
-    # Remove not used ABBR
-    abbr_map = model.internals.control_stream.abbreviated.translate_to_pharmpy_names()
+    # Remove not used ABBR, keep ABBR that are not REPLACE
     keep = []
-    if abbr_map:
-        recs = model.internals.control_stream.get_records('ABBREVIATED')
-        for rec in recs:
-            for nmname, ppname in rec.translate_to_pharmpy_names().items():
-                if not (ppname in abbr_map and abbr_map[ppname] == nmname):
-                    break
-            else:
-                keep.append(rec)
+    recs = model.internals.control_stream.get_records('ABBREVIATED')
+    for rec in recs:
+        rec_map = rec.translate_to_pharmpy_names()
+        for nmname, ppname in rec_map.items():
+            if not (ppname in rec_map and rec_map[ppname] == nmname):
+                break
+        else:
+            keep.append(rec)
     control_stream = model.internals.control_stream.replace_all('ABBREVIATED', keep)
     abbr_map = control_stream.abbreviated.translate_to_pharmpy_names()
 

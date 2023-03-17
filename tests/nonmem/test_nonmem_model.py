@@ -1132,6 +1132,23 @@ $SIGMA 1
     assert not model.model_code.split('\n')[4].startswith('$ABBR')
 
 
+def test_abbr_not_replace():
+    code = '''$PROBLEM
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+$ABBR PROTECT DERIV2=NO
+$PRED
+VAR = ETA(1)
+Y = THETA(1) + VAR + ERR(1)
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+'''
+    model = Model.create_model(StringIO(code))
+    model = add_iiv(model, ['Y'], 'exp', '+', eta_names=['ETA_DUMMY'])
+    assert model.model_code.split('\n')[3] == '$ABBR PROTECT DERIV2=NO'
+
+
 def test_parse_dvid(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
     model = model.update_source()
