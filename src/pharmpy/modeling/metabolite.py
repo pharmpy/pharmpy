@@ -61,11 +61,12 @@ def add_metabolite(model: Model, drug_dvid: int = 1):
     # dvids = dvid_col.categories
 
     conc = Assignment(sympy.Symbol('CONC_M1'), metacomp.amount / vm1)
-    y = Assignment(
-        sympy.Symbol('Y_M1'), conc.symbol + sympy.Symbol(model.random_variables.epsilons.names[0])
-    )
+    y_m1 = sympy.Symbol('Y_M1')
+    y = Assignment(y_m1, conc.symbol + sympy.Symbol(model.random_variables.epsilons.names[0]))
     error = conc + model.statements.after_odes + y
 
+    dvs = model.dependent_variables.copy()
+    dvs[y_m1] = 2  # FIXME: Should be next DVID in categories
     statements = model.statements.before_odes + cs + error
-    model = model.replace(statements=statements)
+    model = model.replace(statements=statements, dependent_variables=dvs)
     return model  # .update_source()
