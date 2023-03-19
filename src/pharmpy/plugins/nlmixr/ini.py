@@ -2,7 +2,7 @@ import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.modeling import get_sigmas
 
-from .CodeGenerator import CodeGenerator
+from pharmpy.internals.code_generator import CodeGenerator
 from .name_mangle import name_mangle
 
 
@@ -16,12 +16,6 @@ def add_theta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
         Pharmpy model object.
     cg : CodeGenerator
         Code generator to add code upon.
-
-    Returns
-    -------
-    None
-        Modification to code generator object.
-
     """
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
     for theta in thetas:
@@ -41,12 +35,6 @@ def add_eta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
         Pharmpy model object.
     cg : CodeGenerator
         Code generator to add code upon.
-
-    Returns
-    -------
-    None
-        Modification to code generator object.
-
     """
     for dist in model.random_variables.etas:
         omega = dist.variance
@@ -73,12 +61,6 @@ def add_sigma(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
         Pharmpy model object.
     cg : CodeGenerator
         Code generator to add code upon.
-
-    Returns
-    -------
-    None
-        Modification to code generator object.
-
     """
     for sigma in get_sigmas(model):
         if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
@@ -101,12 +83,6 @@ def add_ini_parameter(cg: CodeGenerator, parameter: sympy.Symbol, boundary: bool
     boundary : bool, optional
         Decide if the parameter should be added with or without parameter
         boundries. The default is False.
-
-    Returns
-    -------
-    None
-        Modifies the given CodeGenerator object. Returns nothing
-
     """
     parameter_name = name_mangle(parameter.name)
     if parameter.fix:

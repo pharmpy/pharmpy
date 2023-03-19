@@ -4,7 +4,7 @@ import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
 
-from .CodeGenerator import CodeGenerator
+from pharmpy.internals.code_generator import CodeGenerator
 from .sanity_checks import print_warning
 
 
@@ -125,16 +125,6 @@ def add_error_model(
     ValueError
         Will raise ValueError if model has defined error model that does not
         match the format of the found error terms.
-
-    Returns
-    -------
-    None
-        Modifies the given CodeGenerator object. Returns nothing
-
-    Example
-    -------
-    TODO
-
     """
     cg.add(f'{symbol} <- {expr}')
 
@@ -177,12 +167,6 @@ def add_error_relation(cg: CodeGenerator, error: Dict, symbol: str) -> None:
         Dictionary with additive and proportional error terms.
     symbol : str
         Symbol of dependent variable.
-
-    Returns
-    -------
-    None
-        Modifies the given CodeGenerator object. Returns nothing
-
     """
     # Add the actual error model depedent on the previously
     # defined variable add_error and prop_error
@@ -362,11 +346,6 @@ def convert_piecewise(
         CodeGenerator class object for creating code
     model : pharmpy.Model
         Pharmpy model object
-
-    Returns
-    -------
-    None
-        CodeGenerator object is modified. Nothing is returned
 
     """
     first = True

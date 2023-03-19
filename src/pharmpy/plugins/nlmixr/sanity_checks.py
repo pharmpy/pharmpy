@@ -140,19 +140,19 @@ def same_time(model: pharmpy.model.Model) -> bool:
     return False
 
 
-def change_same_time(model: pharmpy.model) -> pharmpy.model:
+def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
     """
     Force dosing to happen after observation, if bolus dose is given at the
     exact same time. Done by adding 0.000001 to the time of the bolus dose
 
     Parameters
     ----------
-    model : pharmpy.model
-        A pharmpy.model object
+    model : pharmpy.model.Model
+        A pharmpy model object
 
     Returns
     -------
-    model : TYPE
+    model : pharmpy.model.Model
         The same model with a changed dataset.
 
     """
