@@ -9,6 +9,7 @@ from typing import Optional, Union
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.modeling import (
     append_estimation_step_options,
     drop_columns,
@@ -23,7 +24,6 @@ from pharmpy.modeling import (
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import fit
 
-from pharmpy.internals.code_generator import CodeGenerator
 from .ini import add_eta, add_sigma, add_theta
 from .model_block import add_ode, add_statements
 from .sanity_checks import check_model, print_warning
@@ -53,12 +53,12 @@ def convert_model(
 
     if isinstance(model, Model):
         return model
-    
+
     if model.internals.control_stream.get_records("DES"):
         des = model.internals.control_stream.get_records("DES")[0]
     else:
         des = None
-            
+
     nlmixr_model = Model(
         internals=NLMIXRModelInternals(DES=des),
         parameters=model.parameters,
@@ -100,7 +100,6 @@ def convert_model(
     nlmixr_model.update_source()
 
     return nlmixr_model
-
 
 
 def create_dataset(cg: CodeGenerator, model: pharmpy.model.Model, path=None) -> None:

@@ -2,9 +2,9 @@ from typing import Dict, Tuple, Union
 
 import pharmpy.model
 from pharmpy.deps import sympy
+from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.internals.expr.subs import subs
 
-from pharmpy.internals.code_generator import CodeGenerator
 from .sanity_checks import print_warning
 
 

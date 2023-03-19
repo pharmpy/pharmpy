@@ -2,9 +2,9 @@ import re
 
 import pharmpy.model
 from pharmpy.deps import sympy, sympy_printing
+from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model import Assignment
 
-from pharmpy.internals.code_generator import CodeGenerator
 from .error_model import add_error_model, add_error_relation, convert_piecewise, find_term
 from .name_mangle import name_mangle
 
