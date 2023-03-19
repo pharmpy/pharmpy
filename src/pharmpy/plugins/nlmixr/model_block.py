@@ -2,9 +2,9 @@ import re
 
 import pharmpy.model
 from pharmpy.deps import sympy, sympy_printing
+from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model import Assignment
 
-from .CodeGenerator import CodeGenerator
 from .error_model import add_error_model, add_error_relation, convert_piecewise, find_term
 from .name_mangle import name_mangle
 
@@ -44,12 +44,6 @@ def add_statements(
         Codegenerator object holding the code to be added to.
     statements : pharmpy.model.statements
         Statements to be added to the code generator.
-
-    Returns
-    -------
-    None
-        Modifies the given CodeGenerator object. Returns nothing
-
     """
     # FIXME: handle other DVs?
     dv = list(model.dependent_variables.keys())[0]
@@ -128,21 +122,15 @@ def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
         A pharmpy model object to add ODEs to.
     cg : CodeGenerator
         Codegenerator object holding the code to be added to.
-
-    Returns
-    -------
-    None
-        Modifies the given CodeGenerator object. Returns nothing
-
     """
     amounts = [am.name for am in list(model.statements.ode_system.amounts)]
     printer = ExpressionPrinter(amounts)
 
-    des = model.internals.nonmem_control_stream.get_records("DES")
+    des = model.internals.DES
     statements = []
-    if des and des[0]:
+    if des:
         pattern = re.compile(r"DADT\(\d*\)")
-        for s in des[0].statements:
+        for s in des.statements:
             if not pattern.match(s.symbol.name):
                 statements.append(s)
         add_statements(model, cg, statements)

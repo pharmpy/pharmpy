@@ -9,7 +9,7 @@ from typing import Optional, Union
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy_printing
+from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.modeling import (
     append_estimation_step_options,
     drop_columns,
@@ -24,10 +24,8 @@ from pharmpy.modeling import (
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import fit
 
-from .CodeGenerator import CodeGenerator
-from .create_ini import add_eta, add_sigma, add_theta
-from .create_model_block import add_ode, add_statements
-from .name_mangle import name_mangle
+from .ini import add_eta, add_sigma, add_theta
+from .model_block import add_ode, add_statements
 from .sanity_checks import check_model, print_warning
 
 
@@ -48,7 +46,7 @@ def convert_model(
 
     Returns
     -------
-    pharmpy.model
+    pharmpy.model.Model
         A model converted to nlmixr format.
 
     """
@@ -56,8 +54,13 @@ def convert_model(
     if isinstance(model, Model):
         return model
 
+    if model.internals.control_stream.get_records("DES"):
+        des = model.internals.control_stream.get_records("DES")[0]
+    else:
+        des = None
+
     nlmixr_model = Model(
-        internals=NLMIXRModelInternals(nonmem_control_stream=model.internals.control_stream),
+        internals=NLMIXRModelInternals(DES=des),
         parameters=model.parameters,
         random_variables=model.random_variables,
         statements=model.statements,
@@ -87,8 +90,6 @@ def convert_model(
             datainfo=nlmixr_model.datainfo.replace(path=None),
             dataset=nlmixr_model.dataset.reset_index(drop=True),
         )
-    else:
-        print_warning("No connected dataset or dataset is empty")
 
     # Add evid
     nlmixr_model = add_evid(nlmixr_model)
@@ -99,26 +100,6 @@ def convert_model(
     nlmixr_model.update_source()
 
     return nlmixr_model
-
-
-class ExpressionPrinter(sympy_printing.str.StrPrinter):
-    def __init__(self, amounts):
-        self.amounts = amounts
-        super().__init__()
-
-    def _print_Symbol(self, expr):
-        return name_mangle(expr.name)
-
-    def _print_Derivative(self, expr):
-        fn = expr.args[0]
-        return f'd/dt({fn.name})'
-
-    def _print_Function(self, expr):
-        name = expr.func.__name__
-        if name in self.amounts:
-            return expr.func.__name__
-        else:
-            return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
 
 def create_dataset(cg: CodeGenerator, model: pharmpy.model.Model, path=None) -> None:
@@ -133,11 +114,6 @@ def create_dataset(cg: CodeGenerator, model: pharmpy.model.Model, path=None) -> 
         A pharmpy.model object.
     path : TYPE, optional
         Path to add file to. The default is None.
-
-    Returns
-    -------
-    None
-        Modification of code object and creation of files.
 
     """
     dataname = f'{model.name}.csv'
@@ -157,11 +133,6 @@ def create_ini(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         A code object associated with the model.
     model : pharmpy.model.Model
         A pharmpy.model object.
-
-    Returns
-    -------
-    None
-        Modification of code object.
 
     """
     cg.add('ini({')
@@ -187,11 +158,6 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         A code object associated with the model.
     model : pharmpy.model.Model
         A pharmpy.model object.
-
-    Returns
-    -------
-    None
-        Modification of code object.
 
     """
 
@@ -219,11 +185,6 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         A code object associated with the model.
     model : pharmpy.model
         A pharmpy.model.Model object.
-
-    Returns
-    -------
-    None
-        Modification of code object.
 
     """
     # FIXME : rasie error if the method does not match when evaluating
@@ -280,7 +241,7 @@ def add_evid(model: pharmpy.model.Model) -> pharmpy.model.Model:
 class NLMIXRModelInternals:
     src: Optional[str] = None
     path: Optional[Path] = None
-    nonmem_control_stream: Optional = None
+    DES: Optional = None
 
 
 class Model(pharmpy.model.Model):
@@ -662,11 +623,6 @@ def print_step(s: str) -> None:
     ----------
     s : str
         Information to print.
-
-    Returns
-    -------
-    None
-        Prints information to console.
 
     See also
     --------
