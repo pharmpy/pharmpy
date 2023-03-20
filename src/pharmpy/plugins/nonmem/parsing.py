@@ -257,7 +257,7 @@ def convert_dvs(statements):
     dvs = {sympy.Symbol('Y'): 1}
     for s in after:
         expr = s.expression
-        if isinstance(expr, sympy.Piecewise):
+        if isinstance(expr, sympy.Piecewise) and sympy.Symbol("DVID") in expr.free_symbols:
             cond = expr.args[0][1]
             if cond.lhs == sympy.Symbol("DVID") and cond.rhs == 1:
                 ass1 = s.replace(symbol=sympy.Symbol('Y_1'), expression=expr.args[0][0])
