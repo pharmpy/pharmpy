@@ -1,3 +1,5 @@
+import pytest
+
 from dataclasses import dataclass, replace
 from typing import Optional
 
@@ -6,9 +8,10 @@ from pharmpy.model import Results
 from pharmpy.modeling import set_bolus_absorption
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import read_results
-from pharmpy.workflows import Task, ToolDatabase, Workflow, execute_workflow
+from pharmpy.workflows import Task, ToolDatabase, Workflow, execute_workflow, local_dask
 
 
+@pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_constant(tmp_path):
     a = lambda: 1  # noqa E731
     t1 = Task('t1', a)
@@ -20,6 +23,7 @@ def test_execute_workflow_constant(tmp_path):
     assert res == a()
 
 
+@pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_unary(tmp_path):
     a = lambda: 2  # noqa E731
     f = lambda x: x**2  # noqa E731
@@ -34,6 +38,7 @@ def test_execute_workflow_unary(tmp_path):
     assert res == f(a())
 
 
+@pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_binary(tmp_path):
     a = lambda: 1  # noqa E731
     b = lambda: 2  # noqa E731
@@ -50,6 +55,7 @@ def test_execute_workflow_binary(tmp_path):
     assert res == f(a(), b())
 
 
+@pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_map_reduce(tmp_path):
     n = 10
     f = lambda x: x**2  # noqa E731
@@ -66,6 +72,7 @@ def test_execute_workflow_map_reduce(tmp_path):
     assert res == sum(map(f, range(n)))
 
 
+@pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_set_bolus_absorption(load_model_for_test, testdata, tmp_path):
     model1 = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     model2 = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
@@ -84,6 +91,7 @@ def test_execute_workflow_set_bolus_absorption(load_model_for_test, testdata, tm
     assert res.model_code == advan1_before
 
 
+@pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_fit_mock(load_model_for_test, testdata, tmp_path):
     models = (
         load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod'),
@@ -114,6 +122,7 @@ def test_execute_workflow_fit_mock(load_model_for_test, testdata, tmp_path):
     #    assert orig.modelfit_results == fitted.modelfit_results
 
 
+@pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_results(tmp_path):
     ofv = 3
     mfr = ModelfitResults(ofv=ofv)
@@ -133,6 +142,7 @@ class MyResults(Results):
     tool_database: Optional[ToolDatabase] = None
 
 
+@pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_results_with_tool_database(tmp_path):
     ofv = 3
     mfr = MyResults(ofv=ofv)
@@ -146,6 +156,7 @@ def test_execute_workflow_results_with_tool_database(tmp_path):
     assert res.ofv == ofv
 
 
+@pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_results_with_report(testdata, tmp_path):
     mfr = replace(read_results(testdata / 'frem' / 'results.json'), tool_database=None)
 
@@ -156,3 +167,9 @@ def test_execute_workflow_results_with_report(testdata, tmp_path):
         html = res.tool_database.path / 'results.html'
         assert html.is_file()
         assert html.stat().st_size > 500000
+
+@pytest.mark.xdist_group(name="workflow")
+def test_local_dispatcher():
+    wf = Workflow([Task('results', lambda x: x, 'input')])
+    res = local_dask.run(wf)
+    assert res == 'input'

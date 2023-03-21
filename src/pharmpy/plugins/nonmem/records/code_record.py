@@ -538,7 +538,9 @@ class CodeRecord(Record):
                 else len(self.root.children)  # NOTE start insertion after all blanks
             )
         )
-
+        print(old)
+        print("QQQQQQQQ")
+        print(new)
         for op, statements, ni, nj in _index_statements_diff(
             first_statement_index, self._index, diff(old, new)
         ):
@@ -699,7 +701,8 @@ def _parse_tree(tree: AttrTree):
                     s.append(ass)
 
                 s = _reorder_block_statements(s)
-                new_index.append((child_index, child_index + 1, len(s) - len(symbols), len(s)))
+                curind = (child_index, child_index + 1, len(s) - len(symbols), len(s))
+                new_index.append(curind)
 
     return new_index, Statements(s)
 
