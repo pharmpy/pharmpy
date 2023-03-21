@@ -30,6 +30,10 @@ class AbbreviatedRecordParser(RecordParser):
 @install_grammar
 class SimulationRecordParser(RecordParser):
     grammar_filename = 'simulation_record.lark'
+    grammar_options = dict(
+        propagate_positions=True,
+    )
+    post_process = (with_ignored_tokens,)
 
 
 @install_grammar
