@@ -10,6 +10,11 @@ from pharmpy.results import ModelfitResults
 from pharmpy.tools import read_results
 from pharmpy.workflows import Task, ToolDatabase, Workflow, execute_workflow, local_dask
 
+# All workflow tests are run by the same xdist test worker
+# This is to limit the number of sporadic failures on GHA on Windows
+# The failures seem like races in dask distributed because the tmp-dir takes to long to create
+# on C: (main drive is D:).
+
 
 @pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_constant(tmp_path):
