@@ -1,7 +1,7 @@
-import pytest
-
 from dataclasses import dataclass, replace
 from typing import Optional
+
+import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Results
@@ -167,6 +167,7 @@ def test_execute_workflow_results_with_report(testdata, tmp_path):
         html = res.tool_database.path / 'results.html'
         assert html.is_file()
         assert html.stat().st_size > 500000
+
 
 @pytest.mark.xdist_group(name="workflow")
 def test_local_dispatcher():
