@@ -538,9 +538,6 @@ class CodeRecord(Record):
                 else len(self.root.children)  # NOTE start insertion after all blanks
             )
         )
-        print(old)
-        print("QQQQQQQQ")
-        print(new)
         for op, statements, ni, nj in _index_statements_diff(
             first_statement_index, self._index, diff(old, new)
         ):
