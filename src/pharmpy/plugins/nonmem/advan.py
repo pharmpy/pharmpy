@@ -300,6 +300,8 @@ def _compartmental_model(
 
         for i, comp_name in enumerate(comps, start=1):
             comp = cs.find_compartment(comp_name)
+            if comp is None:  # Compartments can be in $MODEL but not used in $DES
+                continue
             if i == 1:
                 dose = dosing(di, dataset, 1)  # FIXME: Only one dose to 1st compartment
                 cb.set_dose(comp, dose)
