@@ -554,7 +554,9 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
         return Bolus(sympy.Symbol('AMT'))
 
     df = dataset
-    if (df['RATE'] == 0).all():
+    if df is None:
+        return Bolus(sympy.Symbol('AMT'))
+    elif (df['RATE'] == 0).all():
         return Bolus(sympy.Symbol('AMT'))
     elif (df['RATE'] == -1).any():
         return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol(f'R{dose_comp}'))
