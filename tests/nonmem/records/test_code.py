@@ -191,6 +191,7 @@ def S(x):
             ),
         ),
         ('$PRED\nCL=-KA', S('CL'), -S('KA')),
+        ('$PRED\nIFST=-KA', S('IFST'), -S('KA')),
         ('$PRED\nCL=-KA+2', S('CL'), -S('KA') + 2),
         ('$PRED\nCL=-2*X*2', S('CL'), -4 * S('X')),
         ('$PRED\nCL=-(-X)', S('CL'), S('X')),

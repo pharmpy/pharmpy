@@ -60,7 +60,7 @@ DOWHILE.9: "DO WHILE"i
          | "DOWHILE"i
 ENDDO.9  : "END DO"i
          | "ENDDO"i
-IF.9     : "IF"i
+IF.9     : "IF"i FOLLOWED_BY_A_PARENTHESIS_LOOKAHEAD
 THEN.9   : "THEN"i
 ELSE.9   : "ELSE"i
 ELSEIF.9 : "ELSE IF"i
