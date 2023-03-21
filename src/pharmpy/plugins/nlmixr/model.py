@@ -205,9 +205,6 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
 
     if method not in nonmem_method_to_nlmixr.keys():
-        print_warning(
-            f"Estimation method {method} unknown to nlmixr2. Using 'FOCEI' as placeholder"
-        )
         nlmixr_method = "focei"
     else:
         nlmixr_method = nonmem_method_to_nlmixr[method]

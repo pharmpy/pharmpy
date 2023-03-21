@@ -40,26 +40,32 @@ def find_term(
 
     """
     errors = []
+    
+    dv = list(model.dependent_variables.keys())[0]
 
     terms = sympy.Add.make_args(expr)
-
     for term in terms:
-        full_term = full_expression(term, model)
-        error_term = False
-        for symbol in full_term.free_symbols:
-            if str(symbol) in model.random_variables.epsilons.names:
-                error_term = True
-
-        if error_term:
-            errors.append((term, full_term))
-        else:
+        if term == dv:
             if "res" not in locals():
                 res = term
             else:
                 res = res + term
+        else:
+            full_term = full_expression(term, model)
+            error_term = False
+            for symbol in full_term.free_symbols:
+                if str(symbol) in model.random_variables.epsilons.names:
+                    error_term = True
+    
+            if error_term:
+                errors.append((term, full_term))
+            else:
+                if "res" not in locals():
+                    res = term
+                else:
+                    res = res + term
 
     errors_add_prop = {"add": None, "prop": None}
-
     prop = False
     res_alias = []
     for s in res.free_symbols:
@@ -216,11 +222,9 @@ def add_error_relation(cg: CodeGenerator, error: Dict, symbol: str) -> None:
                         error_relation += " + "
 
     if error_relation == "":
-        print_warning(
-            "Error model could not be determined. \
-                      Note that conditional error models cannot be converted.\
-                          \nWill add fake error term."
-        )
+        cg.add("")
+        cg.add("# Fake error term since error model could not be determined")
+        cg.add('# Note that conditional error models cannot be converted')
         cg.add("FAKE_ERROR <- 0.0")
         error_relation += "FAKE_ERROR"
 

@@ -61,9 +61,22 @@ def check_model(
     if rvs_same(model, omega=True):
         print_warning("Omega with value same not supported. Updated as follows.")
         model = change_rvs_same(model, omega=True)
-
+    
+    # Checks regarding esimation method
+    if method := known_estimation_method(model):
+        print_warning(
+            f"Estimation method {method} unknown to nlmixr2. Using 'FOCEI' as placeholder"
+        )
+    
     return model
 
+def known_estimation_method(model):
+    nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
+    method = model.estimation_steps[0].method
+    if method not in nonmem_method_to_nlmixr.keys():
+        return method
+    else:
+        return None
 
 def known_error_model(model: pharmpy.model.Model) -> bool:
     """
