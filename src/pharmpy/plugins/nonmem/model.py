@@ -314,7 +314,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         pass
 
     statements, comp_map = parse_statements(di, dataset, control_stream)
-    statements, dependent_variables = convert_dvs(statements)
+    statements, dependent_variables = convert_dvs(statements, control_stream)
 
     parameters, rvs, name_map = parse_parameters(control_stream, statements)
 

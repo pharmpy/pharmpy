@@ -251,10 +251,13 @@ def parse_statements(
     return statements, comp_map
 
 
-def convert_dvs(statements):
+def convert_dvs(statements, control_stream):
+    # Conversion of IF (DVID.EQ.n) THEN to non-piecewise
+    # could partly be done in code_record
     after = statements.error
     kept = []
     dvs = {sympy.Symbol('Y'): 1}
+    change = False
     for s in after:
         expr = s.expression
         if isinstance(expr, sympy.Piecewise) and sympy.Symbol("DVID") in expr.free_symbols:
@@ -265,13 +268,20 @@ def convert_dvs(statements):
                 kept.append(ass1)
                 kept.append(ass2)
                 dvs = {sympy.Symbol('Y_1'): 1, sympy.Symbol('Y_2'): 2}
+                change = True
                 continue
         kept.append(s)
     after = Statements(tuple(kept))
     if statements.ode_system is not None:
         statements = statements.before_odes + statements.ode_system + after
+        if change:  # $ERROR
+            rec = control_stream.get_records('ERROR')[0]
+            rec._statements = after[1:]
     else:
         statements = after
+        if change:  # $PRED
+            rec = control_stream.get_records('PRED')[0]
+            rec._statements = after[1:]
     return statements, dvs
 
 
