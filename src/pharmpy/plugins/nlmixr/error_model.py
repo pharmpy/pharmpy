@@ -137,7 +137,6 @@ def var_3_check(error: dict, res, model: pharmpy.model.Model) -> dict:
                 
                 error["add"] = new_add
                 error["prop"] = new_prop
-                print(error)
                 return error
     else:
         return error
@@ -155,7 +154,6 @@ def var_3_check_find_term(expr, res, model):
                 
         if prop == True and new_prop is None:
             for symbol in term.free_symbols:
-                print(symbol)
                 if symbol != res:        
                     new_prop = symbol
         else:
