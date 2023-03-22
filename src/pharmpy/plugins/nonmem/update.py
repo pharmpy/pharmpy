@@ -4,7 +4,7 @@ import re
 import warnings
 from itertools import product
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Mapping, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -601,33 +601,11 @@ def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSy
     return model
 
 
-def new_compartmental_map(cs: CompartmentalSystem, oldmap: Mapping[str, int]):
+def new_compartmental_map(cs: CompartmentalSystem):
     """Create compartmental map for updated model
     cs - new compartmental system
-    old - old compartmental map
-
-    Can handle compartments from dosing to central, peripherals and output
     """
-    comp = cs.dosing_compartment
-    central = cs.central_compartment
-    i = 1
-    compmap = {}
-    while True:
-        compmap[comp.name] = i
-        i += 1
-        if comp == central:
-            break
-        comp, _ = cs.get_compartment_outflows(comp)[0]
-
-    peripherals = cs.peripheral_compartments
-    for p in peripherals:
-        compmap[p.name] = i
-        i += 1
-
-    diff = len(cs) - len(oldmap)
-    for name in cs.compartment_names:
-        if name not in compmap.keys():
-            compmap[name] = oldmap[name] + diff
+    compmap = {name: i for i, name in enumerate(cs.compartment_names, start=1)}
     return compmap
 
 
@@ -656,7 +634,7 @@ def pk_param_conversion(model: Model, advan, trans):
     assert isinstance(cs, CompartmentalSystem)
     oldmap = model.internals.compartment_map
     assert oldmap is not None
-    newmap = new_compartmental_map(cs, oldmap)
+    newmap = new_compartmental_map(cs)
     newmap['OUTPUT'] = len(newmap) + 1
     oldmap = oldmap.copy()
     oldmap['OUTPUT'] = len(oldmap) + 1
@@ -931,7 +909,7 @@ def update_model_record(model: Model, advan):
     oldmap = model.internals.compartment_map
     if oldmap is None:
         return
-    newmap = new_compartmental_map(odes, oldmap)
+    newmap = new_compartmental_map(odes)
 
     replace_dict = {'compartment_map': newmap}
 
@@ -1022,7 +1000,7 @@ def add_needed_pk_parameters(model: Model, advan, trans):
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         oldmap = model.internals.compartment_map
         assert oldmap is not None
-        newmap = new_compartmental_map(odes, oldmap)
+        newmap = new_compartmental_map(odes)
         newmap['OUTPUT'] = len(newmap) + 1
         for source in newmap.keys():
             if source == 'OUTPUT':
