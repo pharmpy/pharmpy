@@ -213,7 +213,10 @@ def add_error_relation(cg: CodeGenerator, error: Dict, symbol: str) -> None:
             last = len(error_args(error["prop"])) - 1
             for n in range(last + 1):
                 if n == 0:
-                    error_relation += "prop(prop_error)"
+                    if first:
+                        error_relation += "prop(prop_error)"
+                    else:
+                        error_relation += " + " + 'prop(prop_error)'
                     if n != last:
                         error_relation += " + "
                 else:
