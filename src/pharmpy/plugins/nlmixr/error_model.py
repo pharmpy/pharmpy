@@ -100,6 +100,7 @@ def find_term(
             term = convert_eps_to_sigma(term, model)
         errors_add_prop[key] = term
     
+    print(errors_add_prop)
     # Check if error is on the form Y = F + W * EPS(1)
     errors_add_prop = var_3_check(errors_add_prop, res, model)
     
@@ -123,7 +124,9 @@ def var_3_check(error: dict, res, model: pharmpy.model.Model) -> dict:
                 #   if s.symbol == w:
                 #        w_full = s.expression
                 #        break
-                w_full = full_expression(w, model)    
+                w_full = full_expression(w, model)
+                if isinstance(w_full, sympy.Symbol):
+                    return error
             
                 if w_full.is_Piecewise:
                     for expr, cond in w_full.args:
