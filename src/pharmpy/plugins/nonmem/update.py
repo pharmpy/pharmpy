@@ -888,7 +888,6 @@ def new_advan_trans(model: Model):
         oldtrans = subs.get_option_startswith('TRANS')
     else:
         oldtrans = None
-    statements = model.statements
     odes = model.statements.ode_system
     nonlin = is_nonlinear_odes(model)
     if nonlin:
