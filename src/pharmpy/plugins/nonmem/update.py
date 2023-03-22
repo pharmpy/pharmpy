@@ -798,6 +798,88 @@ def pk_param_conversion(model: Model, advan, trans):
     return model
 
 
+def match_advan1(odes):
+    return len(odes) == 1
+
+
+def match_advan2(odes):
+    if len(odes) != 2:
+        return False
+    dosing = odes.dosing_compartment
+    outflows = odes.get_compartment_outflows(dosing)
+    if len(outflows) != 1:
+        return False
+    central = outflows[0][0]
+    central_outflows = odes.get_compartment_outflows(central)
+    if len(central_outflows) != 1:
+        return False
+    return True
+
+
+def match_advan3(odes):
+    if len(odes) != 2:
+        return False
+    central = odes.dosing_compartment
+    bidir = odes.get_bidirectionals(central)
+    if len(bidir) != 1:
+        return False
+    if odes.get_flow(bidir[0], output) != 0:
+        return False
+    return True
+
+
+def match_advan4(odes):
+    if len(odes) != 3:
+        return False
+    dosing = odes.dosing_compartment
+    outflows = odes.get_compartment_outflows(dosing)
+    if len(outflows) != 1:
+        return False
+    central = outflows[0][0]
+    bidir = odes.get_bidirectionals(central)
+    if len(bidir) != 1:
+        return False
+    if odes.get_flow(bidir[0], output) != 0 or odes.get_flow(bidir[0], dosing) != 0:
+        return False
+    return True
+
+
+def match_advan11(odes):
+    if len(odes) != 3:
+        return False
+    central = odes.dosing_compartment
+    bidir = odes.get_bidirectionals(central)
+    if len(bidir) != 2:
+        return False
+    if (
+        odes.get_flow(bidir[0], output) != 0
+        or odes.get_flow(bidir[1], output) != 0
+        or odes.get_flow(bidir[0], bidir[1]) != 0
+    ):
+        return False
+    return True
+
+
+def match_advan12(odes):
+    if len(odes) != 4:
+        return False
+    dosing = odes.dosing_compartment
+    outflows = odes.get_compartment_outflows(dosing)
+    if len(outflows) != 1:
+        return False
+    central = outflows[0][0]
+    bidir = odes.get_bidirectionals(central)
+    if len(bidir) != 2:
+        return False
+    if (
+        odes.get_flow(bidir[0], output) != 0
+        or odes.get_flow(bidir[1], output) != 0
+        or odes.get_flow(bidir[0], bidir[1]) != 0
+    ):
+        return False
+    return True
+
+
 def new_advan_trans(model: Model):
     """Decide which new advan and trans to be used"""
     all_subs = model.internals.control_stream.get_records('SUBROUTINES')
@@ -811,23 +893,23 @@ def new_advan_trans(model: Model):
     nonlin = is_nonlinear_odes(model)
     if nonlin:
         advan = 'ADVAN13'
-    elif len(odes) > 4 or odes.get_n_connected(odes.central_compartment) != len(odes) - 1:
+    elif match_advan1(odes):
+        advan = 'ADVAN1'
+    elif match_advan2(odes):
+        advan = 'ADVAN2'
+    elif match_advan3(odes):
+        advan = 'ADVAN3'
+    elif match_advan4(odes):
+        advan = 'ADVAN4'
+    elif match_advan11(odes):
+        advan = 'ADVAN11'
+    elif match_advan12(odes):
+        advan = 'ADVAN12'
+    else:  # General linear
         if has_linear_odes_with_real_eigenvalues(model):
             advan = 'ADVAN7'
         else:
             advan = 'ADVAN5'
-    elif len(odes) == 1:
-        advan = 'ADVAN1'
-    elif len(odes) == 2 and odes.find_depot(statements):
-        advan = 'ADVAN2'
-    elif len(odes) == 2:
-        advan = 'ADVAN3'
-    elif len(odes) == 3 and odes.find_depot(statements):
-        advan = 'ADVAN4'
-    elif len(odes) == 3:
-        advan = 'ADVAN11'
-    else:  # len(odes) == 4
-        advan = 'ADVAN12'
 
     if nonlin:
         trans = None
