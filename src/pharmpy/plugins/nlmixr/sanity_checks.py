@@ -191,16 +191,13 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
                         [x in evid_ignore for x in subset["EVID"].unique()]
                     ):
                         if rate:
-                            if any([x != 0 for x in subset["RATE"].unique()]) and any(
-                                [x == 0 for x in subset["RATE"].unique()]
-                            ):
-                                dataset.loc[
-                                    (dataset["ID"] == ID)
-                                    & (dataset["TIME"] == TIME)
-                                    & (dataset["RATE"] == 0)
-                                    & (~dataset["EVID"].isin(evid_ignore)),
-                                    "TIME",
-                                ] += 0.000001
+                            dataset.loc[
+                                (dataset["ID"] == ID)
+                                & (dataset["TIME"] == TIME)
+                                & (dataset["RATE"] == 0)
+                                & (~dataset["EVID"].isin(evid_ignore)),
+                                "TIME",
+                            ] += 0.000001
                         else:
                             dataset.loc[
                                 (dataset["ID"] == ID)
@@ -208,7 +205,7 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
                                 & (~dataset["EVID"].isin(evid_ignore)),
                                 "TIME",
                             ] += 0.000001
-
+                            
     model = model.replace(dataset = dataset)
     return model
 

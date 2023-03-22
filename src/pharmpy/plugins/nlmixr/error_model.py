@@ -41,7 +41,7 @@ def find_term(
     errors = []
     
     dv = list(model.dependent_variables.keys())[0]
-
+    expr = sympy.expand(expr)
     terms = sympy.Add.make_args(expr)
     for term in terms:
         if term == dv:
@@ -100,7 +100,6 @@ def find_term(
             term = convert_eps_to_sigma(term, model)
         errors_add_prop[key] = term
     
-    print(errors_add_prop)
     # Check if error is on the form Y = F + W * EPS(1)
     errors_add_prop = var_3_check(errors_add_prop, res, model)
     
