@@ -40,6 +40,7 @@ def check_model(
         Issues will be printed to the terminal and model is returned.
 
     """
+
     # Checks for the dataset
     if model.dataset is not None or len(model.dataset) != 0:
         if "TIME" in model.dataset.columns:
@@ -48,7 +49,7 @@ def check_model(
                     "Observation and bolus dose at the same time in the data. Modified for nlmixr model"
                 )
                 model = change_same_time(model)
-
+    
     # Checks regarding error model
     if not skip_error_model_check:
         if not known_error_model(model):
@@ -170,8 +171,7 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
 
     """
     dataset = model.dataset.copy()
-    dataset = dataset.reset_index()
-    time = dataset["TIME"]
+    dataset = dataset.reset_index(drop=True)
 
     if "RATE" in dataset.columns:
         rate = True
@@ -202,27 +202,15 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
                                     "TIME",
                                 ] += 0.000001
                         else:
-                            return True
+                            dataset.loc[
+                                (dataset["ID"] == ID)
+                                & (dataset["TIME"] == TIME)
+                                & (~dataset["EVID"].isin(evid_ignore)),
+                                "TIME",
+                            ] += 0.000001
 
-    with warnings.catch_warnings():
-        # Supress a numpy deprecation warning
-        warnings.simplefilter("ignore")
-        for index, row in dataset.iterrows():
-            if index != 0:
-                if row["ID"] == dataset.loc[index - 1]["ID"]:
-                    if row["TIME"] == dataset.loc[index - 1]["TIME"]:
-                        temp = index - 1
-                        while dataset.loc[temp]["TIME"] == row["TIME"]:
-                            if dataset.loc[temp]["EVID"] not in [0, 3]:
-                                if rate:
-                                    if dataset.loc[temp]["RATE"] == 0:
-                                        time[temp] = time[temp] + 10**-6
-                                else:
-                                    time[temp] = time[temp] + 10**-6
-                            temp += 1
-    model.dataset["TIME"] = time
+    model = model.replace(dataset = dataset)
     return model
-
 
 def rvs_same(model: pharmpy.model.Model, sigma: bool = False, omega: bool = False) -> bool:
     """
