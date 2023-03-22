@@ -156,7 +156,7 @@ def var_3_check_find_term(expr, res, model):
                 
         if prop == True and new_prop is None:
             for symbol in term.free_symbols:
-                if symbol != res:        
+                if symbol not in res_full.free_symbols:        
                     new_prop = symbol
         else:
             new_add = list(term.free_symbols)[0]
