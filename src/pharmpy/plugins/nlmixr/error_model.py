@@ -4,8 +4,7 @@ import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.internals.expr.subs import subs
-
-from .sanity_checks import print_warning
+from pharmpy.modeling import get_sigmas
 
 
 def find_term(
@@ -100,10 +99,70 @@ def find_term(
         if term is not None:
             term = convert_eps_to_sigma(term, model)
         errors_add_prop[key] = term
-
+    
+    # Check if error is on the form Y = F + W * EPS(1)
+    errors_add_prop = var_3_check(errors_add_prop, res, model)
+    
     return res, errors_add_prop
 
+def var_3_check(error: dict, res, model: pharmpy.model.Model) -> dict:
+    
+    sigmas = get_sigmas(model)
+    sigma = sigmas[0]
+    if len(sigmas) == 1 and sigma.init == 1:
+        if error["add"] and not error["prop"]:
+            add = error["add"]
+            add_symbols = add.free_symbols
+            
+            if len(add_symbols) == 2 and sigma.symbol in add_symbols:
+                for symbol in add_symbols:
+                    if symbol != sigma.symbol:
+                        w = symbol
+                
+                #for s in model.statements.after_odes:
+                #   if s.symbol == w:
+                #        w_full = s.expression
+                #        break
+                w_full = full_expression(w, model)    
+            
+                if w_full.is_Piecewise:
+                    for expr, cond in w_full.args:
+                        if cond == sympy.true:
+                            w_full = expr
+                
+                if isinstance(w_full, sympy.Pow):
+                    new_add, new_prop = var_3_check_find_term(w_full.args[0], res, model)
+                else:
+                    new_add, new_prop = var_3_check_find_term(w_full, res, model)
+                
+                error["add"] = new_add
+                error["prop"] = new_prop
+                print(error)
+                return error
+    else:
+        return error
 
+def var_3_check_find_term(expr, res, model):
+    res_full = full_expression(res, model)
+    
+    new_add = None
+    new_prop = None
+    prop = False
+    for term in sympy.Add.make_args(expr):
+        for symbol in term.free_symbols:
+            if symbol in res_full.free_symbols:
+                prop = True
+                
+        if prop == True and new_prop is None:
+            for symbol in term.free_symbols:
+                print(symbol)
+                if symbol != res:        
+                    new_prop = symbol
+        else:
+            new_add = list(term.free_symbols)[0]
+
+    return new_add, new_prop
+    
 def add_error_model(
     cg: CodeGenerator,
     expr: sympy.Symbol or sympy.Add,
@@ -174,6 +233,7 @@ def add_error_relation(cg: CodeGenerator, error: Dict, symbol: str) -> None:
     symbol : str
         Symbol of dependent variable.
     """
+    
     # Add the actual error model depedent on the previously
     # defined variable add_error and prop_error
     error_relation = ""
@@ -195,6 +255,7 @@ def add_error_relation(cg: CodeGenerator, error: Dict, symbol: str) -> None:
                     error_relation += "add(add_error)"
                     if n != last:
                         error_relation += " + "
+                    first = False
                 else:
                     error_relation += f"add(add_error_{n})"
                     if n != last:
