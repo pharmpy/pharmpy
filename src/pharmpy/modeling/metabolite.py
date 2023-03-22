@@ -63,7 +63,11 @@ def add_metabolite(model: Model, drug_dvid: int = 1):
     conc = Assignment(sympy.Symbol('CONC_M1'), metacomp.amount / vm1)
     y_m1 = sympy.Symbol('Y_M1')
     y = Assignment(y_m1, conc.symbol + sympy.Symbol(model.random_variables.epsilons.names[0]))
-    error = conc + model.statements.after_odes + y
+    original_y = next(iter(model.dependent_variables))
+    ind = model.statements.after_odes.find_assignment_index(original_y)
+    old_after = model.statements.after_odes
+    new_after = old_after[: ind + 1] + y + old_after[ind + 1 :]
+    error = conc + new_after
 
     dvs = model.dependent_variables.copy()
     dvs[y_m1] = 2  # FIXME: Should be next DVID in categories
