@@ -478,13 +478,18 @@ def has_proportional_error_model(model: Model, dv: Union[sympy.Symbol, str, int,
     return eps not in (expr / (1 + eps)).simplify().free_symbols
 
 
-def has_combined_error_model(model: Model):
-    """Check if a model has a combined additive and proportinal error model
+def has_combined_error_model(model: Model, dv: Union[sympy.Symbol, str, int, None] = None):
+    """Check if a model has a combined additive and proportional error model
+
+    Multiple dependent variables are supported. By default the only (in case of one) or the
+    first (in case of many) dependent variable is going to be checked.
 
     Parameters
     ----------
     model : Model
         The model to check
+    dv : Union[sympy.Symbol, str, int, None]
+        Name or DVID of dependent variable. None for the default (first or only)
 
     Return
     ------
@@ -504,8 +509,7 @@ def has_combined_error_model(model: Model):
     has_proportional_error_model : Check if a model has a proportional error model
     has_weighted_error_model : Check if a model has a weighted error model
     """
-    # FIXME: handle other DVs
-    y = list(model.dependent_variables.keys())[0]
+    y = get_dv_symbol(model, dv)
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}

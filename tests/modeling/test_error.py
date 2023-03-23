@@ -415,6 +415,30 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     model = read_model_from_string(code)
     assert has_combined_error_model(model)
 
+    code = """$PROBLEM base model
+$INPUT ID DV TIME DVID
+$DATA file.csv IGNORE=@
+
+$PRED
+CONC = THETA(1)
+IF (DVID.EQ.1) THEN
+    Y = (CONC + ETA(1)) + (CONC + ETA(1)) * ERR(1) + ERR(2)
+ELSE
+    Y = CONC + ERR(3)
+END IF
+
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$SIGMA .02
+$SIGMA .02
+$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+    model = read_model_from_string(code)
+    assert has_combined_error_model(model)
+    assert has_combined_error_model(model, 1)
+    assert not has_combined_error_model(model, 2)
+
 
 def test_use_theta_for_error_stdev():
     code = """$PROBLEM base model
