@@ -1581,7 +1581,7 @@ def is_linearized(model: Model):
     return True
 
 
-def get_dv_symbol(model: Model, dv: Union[sympy.Symbol, str, int]) -> sympy.Symbol:
+def get_dv_symbol(model: Model, dv: Union[sympy.Symbol, str, int, None] = None) -> sympy.Symbol:
     """Get the symbol for a certain dvid or dv and check that it is valid
 
     Parameters
@@ -1589,7 +1589,8 @@ def get_dv_symbol(model: Model, dv: Union[sympy.Symbol, str, int]) -> sympy.Symb
     model : Model
         Pharmpy model
     dv : Union[sympy.Symbol, str, int]
-        Either a dv symbol, str or dvid
+        Either a dv symbol, str or dvid. If None (default) return the
+        only or first dv.
 
     Return
     ------
@@ -1606,7 +1607,9 @@ def get_dv_symbol(model: Model, dv: Union[sympy.Symbol, str, int]) -> sympy.Symb
     Y
 
     """
-    if isinstance(dv, str):
+    if dv is None:
+        dv = next(iter(model.dependent_variables))
+    elif isinstance(dv, str):
         dv = sympy.Symbol(dv)
     elif isinstance(dv, int):
         for key, val in model.dependent_variables.items():

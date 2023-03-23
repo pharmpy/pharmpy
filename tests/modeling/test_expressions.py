@@ -493,6 +493,8 @@ def test_get_dv_symbol(testdata, load_model_for_test):
     assert get_dv_symbol(model, 2) == sympy.Symbol("Y_2")
     assert get_dv_symbol(model, "Y_1") == sympy.Symbol("Y_1")
     assert get_dv_symbol(model, sympy.Symbol("Y_2")) == sympy.Symbol("Y_2")
+    assert get_dv_symbol(model) == sympy.Symbol("Y_1")
+    assert get_dv_symbol(model, None) == sympy.Symbol("Y_1")
 
     with pytest.raises(ValueError):
         get_dv_symbol(model, 3)
