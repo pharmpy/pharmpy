@@ -341,6 +341,28 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     model = create_model_for_test(code)
     assert has_proportional_error_model(model)
 
+    code = """$PROBLEM base model
+$INPUT ID DV TIME DVID
+$DATA file.csv IGNORE=@
+
+$PRED
+IF (DVID.EQ.1) THEN
+    Y = THETA(1) + ETA(1) + ERR(1)
+ELSE
+    Y = THETA(1) + THETA(1) * EPS(2)
+END IF
+
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$SIGMA 1
+$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+    model = read_model_from_string(code)
+    assert not has_proportional_error_model(model)
+    assert not has_proportional_error_model(model, 1)
+    assert has_proportional_error_model(model, 2)
+
 
 def test_has_combined_error_model(create_model_for_test):
     code = """$PROBLEM base model
