@@ -448,7 +448,7 @@ def test_has_random_effect(load_model_for_test, testdata, model_path, level, exp
     (
         ('nonmem/pheno.mod', 'ETA_1', ['CL']),
         ('nonmem/pheno_real.mod', 'ETA_1', ['CL']),
-        ('nonmem/pheno_block.mod', 'ETA_4', ['MAT']),
+        ('nonmem/pheno_block.mod', 'ETA_MAT', ['MAT']),
         ('nonmem/qa/iov.mod', 'ETA_1', ['CL']),
         ('nonmem/qa/iov.mod', 'ETA_2', ['V']),
         ('nonmem/qa/iov.mod', 'ETA_3', ['CL']),

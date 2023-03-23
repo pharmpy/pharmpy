@@ -54,16 +54,19 @@ def test_eta_transformation(datadir, transformation, eta, tmp_path):
 
         assert mod_ori != mod_box
 
-        print(mod_box)
-
         assert not re.search(eta, mod_ori)
         assert re.search(eta, mod_box)
 
 
 @pytest.mark.parametrize(
-    'options', [['--operation', '+'], ['--operation', '*'], ['--eta_name', 'ETA(3)']]
+    'options, eta_name',
+    [
+        (['--operation', '+'], 'ETA_S1'),
+        (['--operation', '*'], 'ETA_S1'),
+        (['--eta_name', 'ETA(3)'], 'ETA(3)'),
+    ],
 )
-def test_add_iiv(datadir, options, tmp_path):
+def test_add_iiv(datadir, options, eta_name, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
@@ -76,9 +79,8 @@ def test_add_iiv(datadir, options, tmp_path):
             mod_cov = f_cov.read()
 
         assert mod_ori != mod_cov
-
-        assert not re.search(r'EXP\(ETA\(3\)\)', mod_ori)
-        assert re.search(r'EXP\(ETA\(3\)\)', mod_cov)
+        assert f'EXP({eta_name})' not in mod_ori
+        assert f'EXP({eta_name})' in mod_cov
 
 
 @pytest.mark.parametrize('options', [['--eta_names', 'ETA(3) ETA(4)']])
@@ -139,9 +141,15 @@ def test_create_joint_distribution(datadir, eta_args, tmp_path):
 
 
 @pytest.mark.parametrize(
-    'epsilons_args', [['--eps', 'EPS_1'], [], ['--same_eta', 'False'], ['--eta_names', 'ETA_3']]
+    'epsilons_args, eta_name',
+    [
+        (['--eps', 'EPS_1'], 'ETA_RV1'),
+        ([], 'ETA_RV1'),
+        (['--same_eta', 'False'], 'ETA_RV1'),
+        (['--eta_names', 'ETA_3'], 'ETA(3)'),
+    ],
 )
-def test_iiv_on_ruv(datadir, epsilons_args, tmp_path):
+def test_iiv_on_ruv(datadir, epsilons_args, eta_name, tmp_path):
     shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
@@ -154,9 +162,8 @@ def test_iiv_on_ruv(datadir, epsilons_args, tmp_path):
             mod_cov = f_cov.read()
 
         assert mod_ori != mod_cov
-
-        assert not re.search(r'EXP\(ETA\(3\)\)', mod_ori)
-        assert re.search(r'EXP\(ETA\(3\)\)', mod_cov)
+        assert f'EXP({eta_name})' not in mod_ori
+        assert f'EXP({eta_name})' in mod_cov
 
 
 @pytest.mark.parametrize('to_remove', [['--to_remove', 'ETA_2'], []])

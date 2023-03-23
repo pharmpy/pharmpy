@@ -185,10 +185,11 @@ $INPUT ID TIME AMT WGT APGR DV
 $SUBROUTINE ADVAN13 TOL=9
 
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
+$ABBR REPLACE ETA_2=ETA(1)
 $PK
 CLMM = THETA(3)
 KM = THETA(2)
-V = THETA(1)*EXP(ETA(1))
+V = THETA(1)*EXP(ETA_2)
 S1=V
 
 $DES
@@ -415,10 +416,11 @@ $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
+$ABBR REPLACE ETA_2=ETA(1)
 $PK
 CLMM = THETA(3)
 KM = THETA(2)
-V = THETA(1)*EXP(ETA(1))
+V = THETA(1)*EXP(ETA_2)
 S1=V
 $DES
 DADT(1) = -A(1)*CLMM*KM/(V*(A(1)/V + KM))
@@ -1783,21 +1785,21 @@ def test_transform_etas_john_draper(load_model_for_test, pheno_path, etas, etad,
 @pytest.mark.parametrize(
     'parameter, expression, operation, eta_name, buf_new, no_of_omega_recs',
     [
-        ('S1', 'exp', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))', 2),
-        ('S1', 'exp', '*', None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))', 2),
-        ('V', 'exp', '+', None, 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1=V', 2),
-        ('S1', 'add', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)', 2),
-        ('S1', 'prop', None, None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)*V', 2),
-        ('S1', 'log', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))/(EXP(ETA(3)) + 1)', 2),
-        ('S1', 'eta_new', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)', 2),
-        ('S1', 'eta_new**2', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)**2', 2),
+        ('S1', 'exp', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA_S1)', 2),
+        ('S1', 'exp', '*', None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA_S1)', 2),
+        ('V', 'exp', '+', None, 'V = TVV*EXP(ETA(2)) + EXP(ETA_V)\nS1=V', 2),
+        ('S1', 'add', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA_S1', 2),
+        ('S1', 'prop', None, None, 'V=TVV*EXP(ETA(2))\nS1 = ETA_S1*V', 2),
+        ('S1', 'log', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA_S1)/(EXP(ETA_S1) + 1)', 2),
+        ('S1', 'eta_new', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA_S1', 2),
+        ('S1', 'eta_new**2', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA_S1**2', 2),
         ('S1', 'exp', '+', 'ETA(3)', 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))', 2),
         (
             ['V', 'S1'],
             'exp',
             '+',
             None,
-            'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1 = V + EXP(ETA(4))',
+            'V = TVV*EXP(ETA(2)) + EXP(ETA_V)\nS1 = V + EXP(ETA_S1)',
             3,
         ),
         (
@@ -1805,7 +1807,7 @@ def test_transform_etas_john_draper(load_model_for_test, pheno_path, etas, etad,
             'exp',
             '+',
             ['new_eta1', 'new_eta2'],
-            'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1 = V + EXP(ETA(4))',
+            'V = TVV*EXP(ETA(2)) + EXP(NEW_ETA1)\nS1 = V + EXP(NEW_ETA2)',
             3,
         ),
     ],
@@ -1860,16 +1862,15 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
 
 
 @pytest.mark.parametrize(
-    'etas, pk_ref, omega_ref',
+    'etas, abbr_ref, omega_ref',
     [
         (
-            ['ETA_1', 'ETA_2'],
-            '$PK\n'
-            'CL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            ['ETA_CL', 'ETA_V'],
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA BLOCK(2)\n'
             '0.0309626\t; IVCL\n'
             '0.0031045\t; IIV_CL_IIV_V\n'
@@ -1880,11 +1881,12 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
             '0.0005 0.031128\n',
         ),
         (
-            ['ETA_1', 'ETA_3'],
-            '$PK\nCL=THETA(1)*EXP(ETA(1))\nV = THETA(2)*EXP(ETA(3))\n'
-            'S1 = V + ETA(2)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            ['ETA_CL', 'ETA_S1'],
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_S1=ETA(2)\n'
+            '$ABBR REPLACE ETA_V=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA BLOCK(2)\n'
             '0.0309626\t; IVCL\n'
             '0.0055644\t; IIV_CL_IIV_S1\n'
@@ -1895,12 +1897,12 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
             '0.0005 0.031128\n',
         ),
         (
-            ['ETA_2', 'ETA_3'],
-            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            ['ETA_V', 'ETA_S1'],
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA 0.0309626  ; IVCL\n'
             '$OMEGA BLOCK(2)\n'
             '0.031128\t; IVV\n'
@@ -1911,13 +1913,12 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
             '0.0005 0.031128\n',
         ),
         (
-            ['ETA_1', 'ETA_2', 'ETA_4'],
-            '$PK\n'
-            'CL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1 = V + ETA(4)\n'
-            'MAT = THETA(3)*EXP(ETA(3))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            ['ETA_CL', 'ETA_V', 'ETA_MAT'],
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(3)\n'
+            '$ABBR REPLACE ETA_S1=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA BLOCK(3)\n'
             '0.0309626\t; IVCL\n'
             '0.0031045\t; IIV_CL_IIV_V\n'
@@ -1929,13 +1930,12 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
             '$OMEGA  0.031128\n',
         ),
         (
-            ['ETA_2', 'ETA_3', 'ETA_4'],
-            '$PK\n'
-            'CL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            ['ETA_V', 'ETA_S1', 'ETA_MAT'],
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA 0.0309626  ; IVCL\n'
             '$OMEGA BLOCK(3)\n'
             '0.031128\t; IVV\n'
@@ -1947,13 +1947,12 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
             '$OMEGA  0.031128\n',
         ),
         (
-            ['ETA_3', 'ETA_4', 'ETA_5'],
-            '$PK\n'
-            'CL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            ['ETA_S1', 'ETA_MAT', 'ETA_Q'],
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA DIAGONAL(2)\n'
             '0.0309626  ; IVCL\n'
             '0.031128  ; IVV\n'
@@ -1967,11 +1966,11 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
         ),
         (
             None,
-            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA BLOCK(5)\n'
             '0.0309626\t; IVCL\n'
             '0.0031045\t; IIV_CL_IIV_V\n'
@@ -1991,26 +1990,34 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
         ),
     ],
 )
-def test_create_joint_distribution_plain(load_model_for_test, testdata, etas, pk_ref, omega_ref):
-    model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
+def test_create_joint_distribution_plain(load_model_for_test, testdata, etas, abbr_ref, omega_ref):
+    model_start = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
-    model = create_joint_distribution(model, etas, individual_estimates=None)
-    assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
+    model = create_joint_distribution(model_start, etas, individual_estimates=None)
+
+    rec_abbr = ''.join(
+        str(rec) for rec in model.internals.control_stream.get_records('ABBREVIATED')
+    )
+    assert rec_abbr == abbr_ref
+
+    rec_pk = str(model.internals.control_stream.get_pred_pk_record())
+    pk_ref = str(model_start.internals.control_stream.get_pred_pk_record())
+    assert rec_pk == pk_ref
 
     rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
-
     assert rec_omega == omega_ref
 
 
 @pytest.mark.parametrize(
-    'etas, pk_ref, omega_ref',
+    'etas, abbr_ref, omega_ref',
     [
         (
-            (['ETA_1', 'ETA_2'], ['ETA_1', 'ETA_3']),
-            '$PK\nCL=THETA(1)*EXP(ETA(1))\nV = THETA(2)*EXP(ETA(3))\n'
-            'S1 = V + ETA(2)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            (['ETA_CL', 'ETA_V'], ['ETA_CL', 'ETA_S1']),
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_S1=ETA(2)\n'
+            '$ABBR REPLACE ETA_V=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA BLOCK(2)\n'
             '0.0309626\t; IVCL\n'
             '0.0055644\t; IIV_CL_IIV_S1\n'
@@ -2021,13 +2028,12 @@ def test_create_joint_distribution_plain(load_model_for_test, testdata, etas, pk
             '0.0005 0.031128\n',
         ),
         (
-            (None, ['ETA_1', 'ETA_2']),
-            '$PK\n'
-            'CL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            (None, ['ETA_CL', 'ETA_V']),
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA BLOCK(2)\n'
             '0.0309626\t; IVCL\n'
             '0.0031045\t; IIV_CL_IIV_V\n'
@@ -2041,12 +2047,12 @@ def test_create_joint_distribution_plain(load_model_for_test, testdata, etas, pk
             '0.031128\n',
         ),
         (
-            (['ETA_1', 'ETA_2'], None),
-            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            (['ETA_CL', 'ETA_V'], None),
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA BLOCK(5)\n'
             '0.0309626\t; IVCL\n'
             '0.0031045\t; IIV_CL_IIV_V\n'
@@ -2066,13 +2072,20 @@ def test_create_joint_distribution_plain(load_model_for_test, testdata, etas, pk
         ),
     ],
 )
-def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, pk_ref, omega_ref):
-    model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
+def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, abbr_ref, omega_ref):
+    model_start = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
-    model = create_joint_distribution(model, etas[0], individual_estimates=None)
+    model = create_joint_distribution(model_start, etas[0], individual_estimates=None)
     model = create_joint_distribution(model, etas[1], individual_estimates=None)
 
-    assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
+    rec_abbr = ''.join(
+        str(rec) for rec in model.internals.control_stream.get_records('ABBREVIATED')
+    )
+    assert rec_abbr == abbr_ref
+
+    rec_pk = str(model.internals.control_stream.get_pred_pk_record())
+    pk_ref = str(model_start.internals.control_stream.get_pred_pk_record())
+    assert rec_pk == pk_ref
 
     rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
@@ -2080,15 +2093,15 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, p
 
 
 @pytest.mark.parametrize(
-    'etas, pk_ref, omega_ref',
+    'etas, abbr_ref, omega_ref',
     [
         (
-            ['ETA_1'],
-            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            ['ETA_CL'],
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA  0.0309626 ; IVCL\n'
             '$OMEGA BLOCK(4)\n'
             '0.031128\t; IVV\n'
@@ -2103,12 +2116,12 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, p
             '0.031128\n',
         ),
         (
-            ['ETA_1', 'ETA_2'],
-            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            ['ETA_CL', 'ETA_V'],
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA  0.0309626 ; IVCL\n'
             '$OMEGA  0.031128 ; IVV\n'
             '$OMEGA BLOCK(3)\n'
@@ -2120,12 +2133,12 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, p
             '0.031128\n',
         ),
         (
-            ['ETA_1', 'ETA_3'],
-            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
-            'V = THETA(2)*EXP(ETA(3))\n'
-            'S1 = V + ETA(2)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            ['ETA_CL', 'ETA_S1'],
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_S1=ETA(2)\n'
+            '$ABBR REPLACE ETA_V=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA  0.0309626 ; IVCL\n'
             '$OMEGA  0.1 ; OMEGA_3_3\n'
             '$OMEGA BLOCK(3)\n'
@@ -2138,11 +2151,11 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, p
         ),
         (
             None,
-            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA  0.0309626 ; IVCL\n'
             '$OMEGA  0.031128 ; IVV\n'
             '$OMEGA  0.1\n'
@@ -2150,12 +2163,12 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, p
             '$OMEGA  0.031128\n',
         ),
         (
-            'ETA_1',
-            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            'ETA_CL',
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
             '$OMEGA  0.0309626 ; IVCL\n'
             '$OMEGA BLOCK(4)\n'
             '0.031128\t; IVV\n'
@@ -2171,13 +2184,20 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, p
         ),
     ],
 )
-def test_split_joint_distribution(load_model_for_test, testdata, etas, pk_ref, omega_ref):
-    model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
-    model = create_joint_distribution(model)
+def test_split_joint_distribution(load_model_for_test, testdata, etas, abbr_ref, omega_ref):
+    model_start = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
+    model = create_joint_distribution(model_start)
 
     model = split_joint_distribution(model, etas)
 
-    assert str(model.internals.control_stream.get_pred_pk_record()) == pk_ref
+    rec_abbr = ''.join(
+        str(rec) for rec in model.internals.control_stream.get_records('ABBREVIATED')
+    )
+    assert rec_abbr == abbr_ref
+
+    rec_pk = str(model.internals.control_stream.get_pred_pk_record())
+    pk_ref = str(model_start.internals.control_stream.get_pred_pk_record())
+    assert rec_pk == pk_ref
 
     rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
@@ -2191,15 +2211,15 @@ def test_split_joint_distribution(load_model_for_test, testdata, etas, pk_ref, o
             ['EPS_1'],
             False,
             None,
-            'Y = F + EPS(1)*W*EXP(ETA(3))\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
+            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
             '$OMEGA  0.09 ; IIV_RUV1',
         ),
         (
             ['EPS_1', 'EPS_2'],
             False,
             None,
-            'Y = F + EPS(1)*W*EXP(ETA(3))\n'
-            'IPRED = F + EPS(2)*EXP(ETA(4))\n'
+            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
+            'IPRED = F + EPS(2)*EXP(ETA_RV2)\n'
             'IRES=DV-IPRED+EPS(3)\n',
             '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2',
         ),
@@ -2207,27 +2227,27 @@ def test_split_joint_distribution(load_model_for_test, testdata, etas, pk_ref, o
             ['EPS_1', 'EPS_3'],
             False,
             None,
-            'Y = F + EPS(1)*W*EXP(ETA(3))\n'
+            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
             'IPRED=F+EPS(2)\n'
-            'IRES = DV - IPRED + EPS(3)*EXP(ETA(4))\n',
+            'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV2)\n',
             '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2',
         ),
         (
             None,
             False,
             None,
-            'Y = F + EPS(1)*W*EXP(ETA(3))\n'
-            'IPRED = F + EPS(2)*EXP(ETA(4))\n'
-            'IRES = DV - IPRED + EPS(3)*EXP(ETA(5))\n',
+            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
+            'IPRED = F + EPS(2)*EXP(ETA_RV2)\n'
+            'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV3)\n',
             '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2\n' '$OMEGA  0.09 ; IIV_RUV3',
         ),
         (
             None,
             True,
             None,
-            'Y = F + EPS(1)*W*EXP(ETA(3))\n'
-            'IPRED = F + EPS(2)*EXP(ETA(3))\n'
-            'IRES = DV - IPRED + EPS(3)*EXP(ETA(3))\n',
+            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
+            'IPRED = F + EPS(2)*EXP(ETA_RV1)\n'
+            'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV1)\n',
             '$OMEGA  0.09 ; IIV_RUV1',
         ),
         (
@@ -2241,7 +2261,7 @@ def test_split_joint_distribution(load_model_for_test, testdata, etas, pk_ref, o
             'EPS_1',
             False,
             None,
-            'Y = F + EPS(1)*W*EXP(ETA(3))\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
+            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
             '$OMEGA  0.09 ; IIV_RUV1',
         ),
     ],
@@ -2289,13 +2309,13 @@ def test_set_iiv_on_ruv(
     'etas, pk_ref, omega_ref',
     [
         (
-            ['ETA_1'],
+            ['ETA_CL'],
             '$PK\n'
             'CL = THETA(1)\n'
-            'V = THETA(2)*EXP(ETA(1))\n'
-            'S1 = V + ETA(2)\n'
-            'MAT = THETA(3)*EXP(ETA(3))\n'
-            'Q = THETA(4)*EXP(ETA(4))\n\n',
+            'V=THETA(2)*EXP(ETA_V)\n'
+            'S1=V+ETA_S1\n'
+            'MAT=THETA(3)*EXP(ETA_MAT)\n'
+            'Q=THETA(4)*EXP(ETA_Q)\n\n',
             '$OMEGA 0.031128  ; IVV\n'
             '$OMEGA 0.1\n'
             '$OMEGA BLOCK(2)\n'
@@ -2303,31 +2323,31 @@ def test_set_iiv_on_ruv(
             '0.0005 0.031128\n',
         ),
         (
-            ['ETA_1', 'ETA_2'],
+            ['ETA_CL', 'ETA_V'],
             '$PK\n'
             'CL = THETA(1)\n'
             'V = THETA(2)\n'
-            'S1 = V + ETA(1)\n'
-            'MAT = THETA(3)*EXP(ETA(2))\n'
-            'Q = THETA(4)*EXP(ETA(3))\n\n',
+            'S1=V+ETA_S1\n'
+            'MAT=THETA(3)*EXP(ETA_MAT)\n'
+            'Q=THETA(4)*EXP(ETA_Q)\n\n',
             '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n',
         ),
         (
-            ['ETA_1', 'ETA_4'],
+            ['ETA_CL', 'ETA_MAT'],
             '$PK\n'
             'CL = THETA(1)\n'
-            'V = THETA(2)*EXP(ETA(1))\n'
-            'S1 = V + ETA(2)\n'
+            'V=THETA(2)*EXP(ETA_V)\n'
+            'S1=V+ETA_S1\n'
             'MAT = THETA(3)\n'
-            'Q = THETA(4)*EXP(ETA(3))\n\n',
+            'Q=THETA(4)*EXP(ETA_Q)\n\n',
             '$OMEGA 0.031128  ; IVV\n' '$OMEGA 0.1\n' '$OMEGA  0.031128 ; OMEGA_5_5\n',
         ),
         (
-            ['ETA_4', 'ETA_5'],
+            ['ETA_MAT', 'ETA_Q'],
             '$PK\n'
-            'CL=THETA(1)*EXP(ETA(1))\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
+            'CL=THETA(1)*EXP(ETA_CL)\n'
+            'V=THETA(2)*EXP(ETA_V)\n'
+            'S1=V+ETA_S1\n'
             'MAT = THETA(3)\n'
             'Q = THETA(4)\n\n',
             '$OMEGA DIAGONAL(2)\n' '0.0309626  ; IVCL\n' '0.031128  ; IVV\n' '$OMEGA 0.1\n',
@@ -2347,10 +2367,10 @@ def test_set_iiv_on_ruv(
             ['CL'],
             '$PK\n'
             'CL = THETA(1)\n'
-            'V = THETA(2)*EXP(ETA(1))\n'
-            'S1 = V + ETA(2)\n'
-            'MAT = THETA(3)*EXP(ETA(3))\n'
-            'Q = THETA(4)*EXP(ETA(4))\n\n',
+            'V=THETA(2)*EXP(ETA_V)\n'
+            'S1=V+ETA_S1\n'
+            'MAT=THETA(3)*EXP(ETA_MAT)\n'
+            'Q=THETA(4)*EXP(ETA_Q)\n\n',
             '$OMEGA 0.031128  ; IVV\n'
             '$OMEGA 0.1\n'
             '$OMEGA BLOCK(2)\n'
@@ -2358,13 +2378,13 @@ def test_set_iiv_on_ruv(
             '0.0005 0.031128\n',
         ),
         (
-            'ETA_1',
+            'ETA_CL',
             '$PK\n'
             'CL = THETA(1)\n'
-            'V = THETA(2)*EXP(ETA(1))\n'
-            'S1 = V + ETA(2)\n'
-            'MAT = THETA(3)*EXP(ETA(3))\n'
-            'Q = THETA(4)*EXP(ETA(4))\n\n',
+            'V=THETA(2)*EXP(ETA_V)\n'
+            'S1=V+ETA_S1\n'
+            'MAT=THETA(3)*EXP(ETA_MAT)\n'
+            'Q=THETA(4)*EXP(ETA_Q)\n\n',
             '$OMEGA 0.031128  ; IVV\n'
             '$OMEGA 0.1\n'
             '$OMEGA BLOCK(2)\n'
@@ -2401,9 +2421,9 @@ def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
         str(model.internals.control_stream.get_pred_pk_record()) == '$PK\n'
         'CL = THETA(1)\n'
         'V = THETA(2)\n'
-        'S1 = V + ETA(1)\n'
-        'MAT = THETA(3)*EXP(ETA(2))\n'
-        'Q = THETA(4)*EXP(ETA(3))\n\n'
+        'S1=V+ETA_S1\n'
+        'MAT=THETA(3)*EXP(ETA_MAT)\n'
+        'Q=THETA(4)*EXP(ETA_Q)\n\n'
     )
     rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
@@ -2480,7 +2500,7 @@ $OMEGA 0.1'''
 
 
 @pytest.mark.parametrize(
-    ('distribution', 'occ', 'to_remove', 'cases', 'rest'),
+    ('distribution', 'occ', 'to_remove', 'cases', 'rest', 'abbr_ref'),
     (
         (
             'disjoint',
@@ -2493,6 +2513,7 @@ $OMEGA 0.1'''
             'IOV_3 = 0\n'
             'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0\n',
             (),
+            '',
         ),
         (
             'joint',
@@ -2505,6 +2526,7 @@ $OMEGA 0.1'''
             'IOV_3 = 0\n'
             'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0\n',
             (),
+            '',
         ),
         (
             'disjoint',
@@ -2513,12 +2535,16 @@ $OMEGA 0.1'''
             'IOV_1 = 0\n'
             'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
             'IOV_2 = 0\n'
-            'IF (VISI.EQ.3) IOV_2 = ETA(4)\n'
-            'IF (VISI.EQ.8) IOV_2 = ETA(5)\n'
+            'IF (VISI.EQ.3) IOV_2 = ETA_IOV_2_1\n'
+            'IF (VISI.EQ.8) IOV_2 = ETA_IOV_2_2\n'
             'IOV_3 = 0\n'
-            'IF (VISI.EQ.3) IOV_3 = ETA(6)\n'
-            'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
+            'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
             ('ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'),
+            '$ABBR REPLACE ETA_IOV_2_1=ETA(4)\n'
+            '$ABBR REPLACE ETA_IOV_2_2=ETA(5)\n'
+            '$ABBR REPLACE ETA_IOV_3_1=ETA(6)\n'
+            '$ABBR REPLACE ETA_IOV_3_2=ETA(7)\n',
         ),
         (
             'joint',
@@ -2527,12 +2553,16 @@ $OMEGA 0.1'''
             'IOV_1 = 0\n'
             'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
             'IOV_2 = 0\n'
-            'IF (VISI.EQ.3) IOV_2 = ETA(4)\n'
-            'IF (VISI.EQ.8) IOV_2 = ETA(6)\n'
+            'IF (VISI.EQ.3) IOV_2 = ETA_IOV_2_1\n'
+            'IF (VISI.EQ.8) IOV_2 = ETA_IOV_2_2\n'
             'IOV_3 = 0\n'
-            'IF (VISI.EQ.3) IOV_3 = ETA(5)\n'
-            'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
+            'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
             ('ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'),
+            '$ABBR REPLACE ETA_IOV_2_1=ETA(4)\n'
+            '$ABBR REPLACE ETA_IOV_3_1=ETA(5)\n'
+            '$ABBR REPLACE ETA_IOV_2_2=ETA(6)\n'
+            '$ABBR REPLACE ETA_IOV_3_2=ETA(7)\n',
         ),
         (
             'disjoint',
@@ -2541,12 +2571,16 @@ $OMEGA 0.1'''
             'IOV_1 = 0\n'
             'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
             'IOV_2 = 0\n'
-            'IF (VISI.EQ.3) IOV_2 = ETA(4)\n'
-            'IF (VISI.EQ.8) IOV_2 = ETA(5)\n'
+            'IF (VISI.EQ.3) IOV_2 = ETA_IOV_2_1\n'
+            'IF (VISI.EQ.8) IOV_2 = ETA_IOV_2_2\n'
             'IOV_3 = 0\n'
-            'IF (VISI.EQ.3) IOV_3 = ETA(6)\n'
-            'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
+            'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
             ('ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'),
+            '$ABBR REPLACE ETA_IOV_2_1=ETA(4)\n'
+            '$ABBR REPLACE ETA_IOV_2_2=ETA(5)\n'
+            '$ABBR REPLACE ETA_IOV_3_1=ETA(6)\n'
+            '$ABBR REPLACE ETA_IOV_3_2=ETA(7)\n',
         ),
         (
             'joint',
@@ -2555,12 +2589,16 @@ $OMEGA 0.1'''
             'IOV_1 = 0\n'
             'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
             'IOV_2 = 0\n'
-            'IF (VISI.EQ.3) IOV_2 = ETA(4)\n'
-            'IF (VISI.EQ.8) IOV_2 = ETA(6)\n'
+            'IF (VISI.EQ.3) IOV_2 = ETA_IOV_2_1\n'
+            'IF (VISI.EQ.8) IOV_2 = ETA_IOV_2_2\n'
             'IOV_3 = 0\n'
-            'IF (VISI.EQ.3) IOV_3 = ETA(5)\n'
-            'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
+            'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
             ('ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'),
+            '$ABBR REPLACE ETA_IOV_2_1=ETA(4)\n'
+            '$ABBR REPLACE ETA_IOV_3_1=ETA(5)\n'
+            '$ABBR REPLACE ETA_IOV_2_2=ETA(6)\n'
+            '$ABBR REPLACE ETA_IOV_3_2=ETA(7)\n',
         ),
         (
             'disjoint',
@@ -2571,9 +2609,10 @@ $OMEGA 0.1'''
             'IOV_2 = 0\n'
             'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
             'IOV_3 = 0\n'
-            'IF (VISI.EQ.3) IOV_3 = ETA(4)\n'
-            'IF (VISI.EQ.8) IOV_3 = ETA(5)\n',
+            'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
             ('ETA_IOV_3_1', 'ETA_IOV_3_2'),
+            '$ABBR REPLACE ETA_IOV_3_1=ETA(4)\n' '$ABBR REPLACE ETA_IOV_3_2=ETA(5)\n',
         ),
         (
             'joint',
@@ -2584,15 +2623,16 @@ $OMEGA 0.1'''
             'IOV_2 = 0\n'
             'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
             'IOV_3 = 0\n'
-            'IF (VISI.EQ.3) IOV_3 = ETA(4)\n'
-            'IF (VISI.EQ.8) IOV_3 = ETA(5)\n',
+            'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
             ('ETA_IOV_3_1', 'ETA_IOV_3_2'),
+            '$ABBR REPLACE ETA_IOV_3_1=ETA(4)\n' '$ABBR REPLACE ETA_IOV_3_2=ETA(5)\n',
         ),
     ),
     ids=repr,
 )
 def test_remove_iov_with_options(
-    tmp_path, load_model_for_test, testdata, distribution, occ, to_remove, cases, rest
+    tmp_path, load_model_for_test, testdata, distribution, occ, to_remove, cases, rest, abbr_ref
 ):
     with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
@@ -2608,6 +2648,14 @@ def test_remove_iov_with_options(
 
         assert cases in model_with_some_iovs_removed.model_code
         assert set(model_with_some_iovs_removed.random_variables.iov.names) == set(rest)
+
+        rec_abbr = ''.join(
+            str(rec)
+            for rec in model_with_some_iovs_removed.internals.control_stream.get_records(
+                'ABBREVIATED'
+            )
+        )
+        assert rec_abbr == abbr_ref
 
 
 @pytest.mark.parametrize(
@@ -2808,8 +2856,8 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             ['ETA_1'],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
@@ -2821,8 +2869,8 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             'ETA_1',
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
@@ -2834,8 +2882,8 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             'ETA_1',
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
@@ -2847,8 +2895,8 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             ['CL', 'ETA_1'],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
@@ -2860,8 +2908,8 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             ['ETA_1', 'CL'],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
@@ -2873,8 +2921,8 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             [['CL', 'ETA_1']],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
@@ -2886,8 +2934,8 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             [['ETA_1', 'CL']],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
@@ -2899,11 +2947,11 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             None,
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA(5)\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
@@ -2921,11 +2969,11 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             None,
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(5)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA(4)\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
@@ -2942,11 +2990,11 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             None,
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA(5)\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
@@ -2964,8 +3012,8 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             ['ETA_2'],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(2)\n',
             'CL=TVCL*EXP(ETA(1))\n' 'V = TVV*EXP(ETAI1)\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n' '0.0031128 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
@@ -2977,8 +3025,8 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             ['CL'],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
@@ -2990,11 +3038,11 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             ['CL', 'ETA_2'],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA(5)\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
@@ -3012,11 +3060,11 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             ['CL', 'ETA_2'],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(5)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA(4)\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
@@ -3056,17 +3104,17 @@ def test_nested_update_source(load_model_for_test, pheno_path):
         (
             'nonmem/pheno_block.mod',
             'FA1',
-            ['ETA_1'],
+            ['ETA_CL'],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(6)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(7)\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+            'ETAI1 = IOV_1 + ETA_CL\n',
             'CL = THETA(1)*EXP(ETAI1)\n'
-            'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)\n'
-            'MAT=THETA(3)*EXP(ETA(4))\n'
-            'Q=THETA(4)*EXP(ETA(5))\n',
+            'V=THETA(2)*EXP(ETA_V)\n'
+            'S1=V+ETA_S1\n'
+            'MAT=THETA(3)*EXP(ETA_MAT)\n'
+            'Q=THETA(4)*EXP(ETA_Q)\n',
             '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
             'disjoint',
         ),
@@ -3076,25 +3124,25 @@ def test_nested_update_source(load_model_for_test, pheno_path):
             None,
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(6)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(7)\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA(8)\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA(9)\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
             'IOV_3 = 0\n'
-            'IF (FA1.EQ.0) IOV_3 = ETA(10)\n'
-            'IF (FA1.EQ.1) IOV_3 = ETA(11)\n'
+            'IF (FA1.EQ.0) IOV_3 = ETA_IOV_3_1\n'
+            'IF (FA1.EQ.1) IOV_3 = ETA_IOV_3_2\n'
             'IOV_4 = 0\n'
-            'IF (FA1.EQ.0) IOV_4 = ETA(12)\n'
-            'IF (FA1.EQ.1) IOV_4 = ETA(14)\n'
+            'IF (FA1.EQ.0) IOV_4 = ETA_IOV_4_1\n'
+            'IF (FA1.EQ.1) IOV_4 = ETA_IOV_4_2\n'
             'IOV_5 = 0\n'
-            'IF (FA1.EQ.0) IOV_5 = ETA(13)\n'
-            'IF (FA1.EQ.1) IOV_5 = ETA(15)\n'
-            'ETAI1 = IOV_1 + ETA(1)\n'
-            'ETAI2 = IOV_2 + ETA(2)\n'
-            'ETAI3 = IOV_3 + ETA(3)\n'
-            'ETAI4 = IOV_4 + ETA(4)\n'
-            'ETAI5 = IOV_5 + ETA(5)\n',
+            'IF (FA1.EQ.0) IOV_5 = ETA_IOV_5_1\n'
+            'IF (FA1.EQ.1) IOV_5 = ETA_IOV_5_2\n'
+            'ETAI1 = IOV_1 + ETA_CL\n'
+            'ETAI2 = IOV_2 + ETA_V\n'
+            'ETAI3 = IOV_3 + ETA_S1\n'
+            'ETAI4 = IOV_4 + ETA_MAT\n'
+            'ETAI5 = IOV_5 + ETA_Q\n',
             'CL = THETA(1)*EXP(ETAI1)\n'
             'V = THETA(2)*EXP(ETAI2)\n'
             'S1 = ETAI3 + V\n'
@@ -3147,6 +3195,11 @@ def test_add_iov(
     rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega[-len(omega_ref) :] == omega_ref
+
+    if eta_names:
+        assert len(model.internals.control_stream.get_records('ABBREVIATED')) == 0
+    else:
+        assert len(model.internals.control_stream.get_records('ABBREVIATED')) > 0
 
 
 def test_add_iov_compose(load_model_for_test, pheno_path):

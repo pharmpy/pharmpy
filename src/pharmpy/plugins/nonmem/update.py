@@ -1273,8 +1273,6 @@ def add_rate_assignment_if_missing(
 
 def update_abbr_record(model: Model, rv_trans):
     trans = {}
-    if not rv_trans:
-        return model, trans
 
     # Remove not used ABBR, keep ABBR that are not REPLACE
     keep = []
@@ -1286,21 +1284,16 @@ def update_abbr_record(model: Model, rv_trans):
                 break
         else:
             keep.append(rec)
-    control_stream = model.internals.control_stream.replace_all('ABBREVIATED', keep)
-    abbr_map = control_stream.abbreviated.translate_to_pharmpy_names()
 
-    # Add new ABBR
-    for rv in model.random_variables.names:
-        abbr_pattern = re.match(r'ETA_([A-Za-z]\w*)', rv)
-        if abbr_pattern and '_' not in abbr_pattern.group(1):
-            parameter = abbr_pattern.group(1)
-            nonmem_name = rv_trans[rv]
-            if nonmem_name not in abbr_map:
-                abbr_name = f'ETA({parameter})'
-                trans[rv] = abbr_name
-                abbr_record_code = f'$ABBR REPLACE {abbr_name}={nonmem_name}\n'
-                abbr_record = create_record(abbr_record_code)
-                control_stream = control_stream.insert_record(abbr_record)
+    control_stream = model.internals.control_stream.replace_all('ABBREVIATED', keep)
+
+    if rv_trans:
+        for pharmpy_name, nonmem_name in rv_trans.items():
+            abbr_record_code = f'$ABBR REPLACE {pharmpy_name}={nonmem_name}\n'
+            abbr_record = create_record(abbr_record_code)
+            trans[nonmem_name] = pharmpy_name
+            control_stream = control_stream.insert_record(abbr_record)
+
     model = model.replace(internals=model.internals.replace(control_stream=control_stream))
     return model, trans
 

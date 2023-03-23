@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import dataclasses
+import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -181,15 +182,24 @@ class Model(BaseModel):
             )
         )
 
+        # Parameters that needs to be renamed in statements
         trans = create_name_map(model)
 
+        # RVs that need $ABBR (either has proper names or have been renumbered
         rv_trans = {}
         i = 1
         for dist in model._random_variables.etas:
             for name in dist.names:
-                rv_trans[name] = f'ETA({i})'
+                nonmem_pattern = re.match(r'ETA[_(]([0-9]+)\)*', name)
+                if not nonmem_pattern:
+                    rv_trans[name] = f'ETA({i})'
+                elif nonmem_pattern.group(1) != str(i):
+                    rv_trans[name] = f'ETA({i})'
                 i += 1
-        model, _ = abbr_translation(model, rv_trans)
+
+        if model._random_variables.etas.names != ['eta_dummy']:
+            model, abbr_map = abbr_translation(model, rv_trans)
+            trans = {key: value for key, value in trans.items() if key not in abbr_map.values()}
 
         trans = {sympy.Symbol(key): sympy.Symbol(value) for key, value in trans.items()}
         model, updated_dataset = update_statements(

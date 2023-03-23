@@ -113,7 +113,7 @@ def test_set_combined_error_model_with_eta_on_ruv(testdata, load_model_for_test)
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = set_iiv_on_ruv(model)
     model = set_combined_error_model(model)
-    assert model.model_code.split('\n')[12] == 'Y = F + EPS(1)*F*EXP(ETA(3)) + EPS(2)*EXP(ETA(3))'
+    assert model.model_code.split('\n')[12] == 'Y = F + EPS(1)*F*EXP(ETA_RV1) + EPS(2)*EXP(ETA_RV1)'
 
 
 def test_set_combined_error_model_with_time_varying(testdata, load_model_for_test):
@@ -132,10 +132,11 @@ def test_set_combined_error_model_with_time_varying_and_eta_on_ruv(testdata, loa
     model = set_combined_error_model(model)
     assert (
         model.model_code.split('\n')[13]
-        == '    Y = F + EPS(1)*F*THETA(3)*EXP(ETA(3)) + EPS(2)*THETA(3)*EXP(ETA(3))'
+        == '    Y = F + EPS(1)*F*THETA(3)*EXP(ETA_RV1) + EPS(2)*THETA(3)*EXP(ETA_RV1)'
     )
     assert (
-        model.model_code.split('\n')[15] == '    Y = F + EPS(1)*F*EXP(ETA(3)) + EPS(2)*EXP(ETA(3))'
+        model.model_code.split('\n')[15]
+        == '    Y = F + EPS(1)*F*EXP(ETA_RV1) + EPS(2)*EXP(ETA_RV1)'
     )
 
 

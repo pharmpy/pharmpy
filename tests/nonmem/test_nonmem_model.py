@@ -5,7 +5,6 @@ import pytest
 import sympy
 from sympy import Symbol as symbol
 
-from pharmpy.config import ConfigurationContext
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import (
     Assignment,
@@ -29,7 +28,7 @@ from pharmpy.modeling import (
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
-from pharmpy.plugins.nonmem import conf, convert_model
+from pharmpy.plugins.nonmem import convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.plugins.nonmem.records.factory import create_record
 from pharmpy.tools.amd.funcs import create_start_model
@@ -325,8 +324,9 @@ def test_add_random_variables_and_statements(pheno):
     model = model.update_source()
     print(model.internals.control_stream.get_pred_pk_record())
     assert str(model.internals.control_stream.get_pred_pk_record()).endswith(
-        'X = ETA(3) + EPS(2) + 1\n\n'
+        'X = ETA_NEW + EPS(2) + 1\n\n'
     )
+    assert '$ABBR REPLACE ETA_NEW=ETA(1)'
 
 
 def test_minimal(load_model_for_test, datadir):
@@ -392,7 +392,8 @@ def test_deterministic_theta_comments(pheno):
 
 def test_remove_eta(pheno):
     model = remove_iiv(pheno, 'ETA_1')
-    assert model.model_code.split('\n')[12] == 'V = TVV*EXP(ETA(1))'
+    assert model.model_code.split('\n')[13] == 'V = TVV*EXP(ETA_2)'
+    assert '$ABBR REPLACE ETA_2=ETA(1)'
 
 
 def test_symbol_names_in_comment(load_model_for_test, pheno_path):
@@ -463,19 +464,12 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 
 
 def test_abbr_write(load_model_for_test, pheno_path):
-    with ConfigurationContext(conf, write_etas_in_abbr=True):
-        model = load_model_for_test(pheno_path)
-        model = add_iiv(model, 'S1', 'add')
+    model = load_model_for_test(pheno_path)
+    model = add_iiv(model, 'S1', 'add')
 
-        assert 'ETA(S1)' in model.model_code
-        assert 'ETA_S1' in model.random_variables.names
-        assert S('ETA_S1') in model.statements.free_symbols
-
-        model.update_source()
-
-        assert 'ETA(S1)' in model.model_code
-        assert 'ETA_S1' in model.random_variables.names
-        assert S('ETA_S1') in model.statements.free_symbols
+    assert 'ETA_S1' in model.model_code
+    assert 'ETA_S1' in model.random_variables.names
+    assert S('ETA_S1') in model.statements.free_symbols
 
 
 def test_abbr_read_write(load_model_for_test, pheno_path):
@@ -1110,9 +1104,9 @@ def test_abbr_etas():
     code = '''$PROBLEM
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
-$ABBR REPLACE ETA(MY)=ETA(1)
+$ABBR REPLACE ETA_MY=ETA(1)
 $PRED
-VAR = ETA(1)
+VAR = ETA_MY
 Y = THETA(1) + VAR + ERR(1)
 $THETA 0.1
 $OMEGA 0.01
@@ -1124,11 +1118,13 @@ $SIGMA 1
     model = add_iiv(model, ['Y'], 'exp', '+', eta_names=['ETA_DUMMY'])
     model = remove_iiv(model, ['ETA_MY'])
     model = add_iiv(model, ['VAR'], 'exp', '+', eta_names=['ETA_MY'])
-    assert model.model_code.split('\n')[3] == '$ABBR REPLACE ETA(DUMMY)=ETA(1)'
-    assert model.model_code.split('\n')[4] == '$ABBR REPLACE ETA(MY)=ETA(2)'
+    assert model.model_code.split('\n')[3] == '$ABBR REPLACE ETA_DUMMY=ETA(1)'
+    assert model.model_code.split('\n')[4] == '$ABBR REPLACE ETA_MY=ETA(2)'
     assert not model.model_code.split('\n')[5].startswith('$ABBR')
+    assert 'VAR = EXP(ETA_MY)' in model.model_code
+    assert 'Y = THETA(1) + VAR + ERR(1) + EXP(ETA_DUMMY)'
     model = remove_iiv(model, ['ETA_DUMMY'])
-    assert model.model_code.split('\n')[3] == '$ABBR REPLACE ETA(MY)=ETA(1)'
+    assert model.model_code.split('\n')[3] == '$ABBR REPLACE ETA_MY=ETA(1)'
     assert not model.model_code.split('\n')[4].startswith('$ABBR')
 
 
