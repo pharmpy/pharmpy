@@ -12,7 +12,7 @@ from pharmpy.model import Assignment, Model, NormalDistribution, Statements
 
 from .common import remove_unused_parameters_and_rvs
 from .data import get_observations
-from .expressions import create_symbol
+from .expressions import create_symbol, get_dv_symbol
 from .parameters import add_population_parameter, fix_parameters, set_initial_estimates
 
 
@@ -396,13 +396,15 @@ def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy
     return model.update_source()
 
 
-def has_additive_error_model(model: Model):
-    """Check if a model has an additive error model
+def has_additive_error_model(model: Model, dv: Union[sympy.Symbol, str, int, None] = None):
+    """Check if a model has an additive error model for a certain dv
 
     Parameters
     ----------
     model : Model
         The model to check
+    dv : Union[sympy.Symbol, str, int, None]
+        Name or DVID of dependent variable. None for the default (first or only)
 
     Return
     ------
@@ -422,8 +424,7 @@ def has_additive_error_model(model: Model):
     has_combined_error_model : Check if a model has a combined error model
     has_weighted_error_model : Check if a model has a weighted error model
     """
-    # FIXME: handle other DVs
-    y = list(model.dependent_variables.keys())[0]
+    y = get_dv_symbol(model, dv)
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
