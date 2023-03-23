@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, List, Optional
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy, sympy_printing
+from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.internals.parse import AttrTree
 from pharmpy.internals.sequence.lcs import diff
 from pharmpy.model import (
@@ -28,6 +29,7 @@ from pharmpy.model import (
     output,
 )
 from pharmpy.modeling import get_ids, has_linear_odes_with_real_eigenvalues, simplify_expression
+from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 
 if TYPE_CHECKING:
     from .model import Model
@@ -565,12 +567,10 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         newcs = model.internals.control_stream.insert_record(empty_error)
         model = model.replace(internals=model.internals.replace(control_stream=newcs))
     if error:
-        if (
-            len(error_statements) > 0
-            and isinstance((s := error_statements[0]), Assignment)
-            and s.symbol.name == 'F'
-        ):
-            error_statements = error_statements[1:]  # Remove the link statement
+        for i, s in enumerate(error_statements):
+            if s.symbol.name == 'F':
+                error_statements = error_statements[0:i] + error_statements[i + 1 :]
+                break
         new_ode_system = new.ode_system
         if new_ode_system is not None:
             amounts = list(new_ode_system.amounts)
@@ -582,6 +582,68 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         newcs = model.internals.control_stream.replace_records([error], [new_error])
         model = model.replace(internals=model.internals.replace(control_stream=newcs))
     return model, updated_dataset
+
+
+def update_dependent_variables(model: Model, trans):
+    old_dvs = model.internals.old_dependent_variables
+    new_dvs = model.dependent_variables
+    if old_dvs != new_dvs:
+        # Will replace AST nodes (representing plain assignments) for all dvs
+        # with new block IF structure. All statements are kept
+        # FIXME: Assumes DVs added from 1
+        # FIXME: Assumes DVID colname
+        # FIXME: Move to code_record? To use proper code generator
+        cg = CodeGenerator()
+        for i, (dv, dvid) in enumerate(new_dvs.items()):
+            if i == 0:
+                cg.add(f'IF (DVID.EQ.{dvid}) THEN')
+            elif i == 1 and len(new_dvs) == 2:
+                cg.add('ELSE')
+            else:
+                cg.add(f'ELSE IF (DVID.EQ.{dvid}) THEN')
+            yass = model.statements.find_assignment(dv)
+            cg.indent()
+            cg.add(f'Y = {yass.expression.subs(trans)}')
+            cg.dedent()
+        cg.add('END IF')
+        node = CodeRecordParser(str(cg) + '\n').root.children[0]
+
+        cs = model.internals.control_stream
+        rec = cs.get_error_pred_record()
+        newinds = []
+        nodes = []
+        first = True
+        diff = len(new_dvs) - 1
+        nextnode = 0
+        for ni, nj, si, sj in rec._index:
+            if ni > nextnode:
+                nodes += rec.root.children[nextnode:ni]
+            nextnode = nj
+            s = rec._statements[si]
+            if isinstance(s, Assignment) and s.symbol in new_dvs:
+                if first:
+                    nodes += [node]
+                    ind = (ni, ni + 1, si, si + len(new_dvs))
+                    newinds.append(ind)
+                    first = False
+            else:
+                nodes += rec.root.children[ni:nj]
+                if first:
+                    ind = (ni, nj, si, sj)
+                else:
+                    ind = (ni + diff, nj + diff, si, sj)
+                newinds.append(ind)
+        if nextnode < len(rec.root.children):
+            nodes += rec.root.children[nextnode : len(rec.root.children)]
+
+        new_tree = AttrTree(rec.root.rule, tuple(nodes))
+        new_rec = CodeRecord(
+            rec.name, rec.raw_name, new_tree, index=newinds, statements=rec._statements
+        )
+        cs = cs.replace_records([rec], [new_rec])
+        internals = model.internals.replace(control_stream=cs)
+        model = model.replace(internals=internals)
+    return model
 
 
 def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSystem):

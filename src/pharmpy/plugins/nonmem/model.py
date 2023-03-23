@@ -34,6 +34,7 @@ from .update import (
     abbr_translation,
     create_name_map,
     update_ccontra,
+    update_dependent_variables,
     update_description,
     update_estimation,
     update_initial_individual_estimates,
@@ -58,6 +59,7 @@ class NONMEMModelInternals:
     old_statements: Statements
     old_initial_individual_estimates: Optional[pd.DataFrame]
     old_datainfo: DataInfo
+    old_dependent_variables: dict
     compartment_map: Optional[Dict[str, int]]
     name_map: Dict[str, str]
 
@@ -193,6 +195,7 @@ class Model(BaseModel):
         model, updated_dataset = update_statements(
             model, model.internals.old_statements, model._statements, trans
         )
+        model = update_dependent_variables(model, trans)
 
         cs = model.internals.control_stream
         if (
@@ -368,6 +371,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         old_statements=statements,
         old_initial_individual_estimates=init_etas,
         old_datainfo=old_datainfo,
+        old_dependent_variables=dependent_variables,
         compartment_map=comp_map,
         name_map=name_map,
     )

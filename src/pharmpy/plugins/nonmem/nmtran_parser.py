@@ -198,6 +198,15 @@ class NMTranControlStream:
 
         raise ModelSyntaxError('Model has no $PK or $PRED')
 
+    def get_error_pred_record(self):
+        pred = self._get_first_record('PRED')
+        if pred is not None:
+            return pred
+        error = self._get_first_record('ERROR')
+        if error is not None:
+            return error
+        raise ModelSyntaxError('Model has no $ERROR or $PRED')
+
     def get_pk_record(self):
         return self._get_first_record('PK')
 
