@@ -15,6 +15,7 @@ from pharmpy.modeling import (
     calculate_eta_gradient_expression,
     cleanup_model,
     display_odes,
+    get_dv_symbol,
     get_individual_parameters,
     get_individual_prediction_expression,
     get_observation_expression,
@@ -485,3 +486,19 @@ def test_is_linearized(load_example_model_for_test):
     assert not is_linearized(model)
     model = load_example_model_for_test("pheno_linear")
     assert is_linearized(model)
+
+
+def test_get_dv_symbol(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
+    assert get_dv_symbol(model, 2) == sympy.Symbol("Y_2")
+    assert get_dv_symbol(model, "Y_1") == sympy.Symbol("Y_1")
+    assert get_dv_symbol(model, sympy.Symbol("Y_2")) == sympy.Symbol("Y_2")
+
+    with pytest.raises(ValueError):
+        get_dv_symbol(model, 3)
+    with pytest.raises(ValueError):
+        get_dv_symbol(model, "FLUMOX")
+    with pytest.raises(ValueError):
+        get_dv_symbol(model, sympy.Symbol("SPANNER"))
+    with pytest.raises(TypeError):
+        get_dv_symbol(model, 3.4)

@@ -1579,3 +1579,49 @@ def is_linearized(model: Model):
             return False
 
     return True
+
+
+def get_dv_symbol(model: Model, dv: Union[sympy.Symbol, str, int]) -> sympy.Symbol:
+    """Get the symbol for a certain dvid or dv and check that it is valid
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    dv : Union[sympy.Symbol, str, int]
+        Either a dv symbol, str or dvid
+
+    Return
+    ------
+    sympy.Symbol
+        DV symbol
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, get_dv_symbol
+    >>> model = load_example_model("pheno")
+    >>> get_dv_symbol(model, "Y")
+    Y
+    >>> get_dv_symbol(model, 1)
+    Y
+
+    """
+    if isinstance(dv, str):
+        dv = sympy.Symbol(dv)
+    elif isinstance(dv, int):
+        for key, val in model.dependent_variables.items():
+            if dv == val:
+                dv = key
+                break
+        else:
+            raise ValueError(f"DVID {dv} not defined in model")
+    elif isinstance(dv, sympy.Symbol):
+        pass
+    else:
+        raise TypeError(
+            f"dv is of type {type(dv)} has to be one of Symbol or str representing "
+            "a dv or int representing a dvid"
+        )
+    if dv not in model.dependent_variables:
+        raise ValueError(f"DV {dv} not defined in model")
+    return dv
