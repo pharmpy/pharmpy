@@ -208,7 +208,10 @@ class Model(BaseModel):
         model = update_dependent_variables(model, trans)
 
         cs = model.internals.control_stream
-        if (
+
+        if model.dataset is None:
+            pass
+        elif (
             updated_dataset
             or (model.datainfo.path is None and model.dataset is not None)
             or model.datainfo != model.internals.old_datainfo

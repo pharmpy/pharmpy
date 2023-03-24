@@ -4,8 +4,10 @@ from pathlib import Path
 import pytest
 import sympy
 
+from pharmpy.model import Model as BaseModel
 from pharmpy.modeling import (
     convert_model,
+    create_basic_pk_model,
     create_joint_distribution,
     fix_parameters,
     generate_model_code,
@@ -18,6 +20,8 @@ from pharmpy.modeling import (
     set_name,
     write_model,
 )
+from pharmpy.plugins.nlmixr.model import Model as nlmixrModel
+from pharmpy.plugins.nonmem.model import Model as NMModel
 
 
 def test_get_config_path():
@@ -116,6 +120,19 @@ def test_convert_model():
     assert model.name == run2.name == run1.name
     assert model.parameters == run1.parameters == run2.parameters
     assert model.statements == run1.statements == run2.statements
+    assert isinstance(run1, nlmixrModel)
+    assert isinstance(run2, NMModel)
+
+    base = create_basic_pk_model('iv')
+
+    assert isinstance(base, BaseModel)
+
+    run3 = convert_model(base, 'nonmem')
+
+    assert base.name == run3.name
+    # Only checking parameters due to NONMEM parametrizations
+    assert base.parameters == run3.parameters
+    assert isinstance(run3, NMModel)
 
 
 def test_remove_unused_parameters_and_rvs(pheno):

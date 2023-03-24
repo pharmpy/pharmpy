@@ -1413,7 +1413,7 @@ def update_estimation(control_stream, model):
         cols.update(estep.predictions)
         cols.update(estep.residuals)
     tables = control_stream.get_records('TABLE')
-    if not tables and cols:
+    if model.dataset is not None and not tables and cols:
         s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
         s += f'{model.datainfo.dv_column.name} '
         s += f'{" ".join(cols)} FILE=mytab NOAPPEND NOPRINT'
