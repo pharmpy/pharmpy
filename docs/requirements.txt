@@ -3,6 +3,6 @@ pydata-sphinx-theme==0.13.1
 sphinxcontrib-autoprogram==0.1.8
 sphinx-automodapi==0.15.0
 jupyter-sphinx==0.4.0
-markdown==3.4.2
+markdown==3.4.3
 ipython_genutils
 -e .
