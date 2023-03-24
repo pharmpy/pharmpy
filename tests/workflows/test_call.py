@@ -32,6 +32,7 @@ def add(a, b):
     return wf
 
 
+@pytest.mark.xdist_group(name="workflow")
 def test_call_workflow_threaded(tmp_path):
     a, b = 1, 2
     wf = add(a, b)
@@ -42,6 +43,7 @@ def test_call_workflow_threaded(tmp_path):
                 execute_workflow(wf)
 
 
+@pytest.mark.xdist_group(name="workflow")
 def test_call_workflow_distributed(tmp_path):
     a, b = 1, 2
     wf = add(a, b)
