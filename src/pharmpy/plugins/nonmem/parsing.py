@@ -258,6 +258,10 @@ def convert_dvs(statements, control_stream):
     kept = []
     dvs = {sympy.Symbol('Y'): 1}
     change = False
+    yind = after.find_assignment_index('Y')
+    if yind is None:
+        return statements, dvs
+    yind = yind - 1
     for s in after:
         expr = s.expression
         if isinstance(expr, sympy.Piecewise) and sympy.Symbol("DVID") in expr.free_symbols:
@@ -276,12 +280,25 @@ def convert_dvs(statements, control_stream):
         statements = statements.before_odes + statements.ode_system + after
         if change:  # $ERROR
             rec = control_stream.get_records('ERROR')[0]
-            rec._statements = after[1:]
     else:
         statements = after
         if change:  # $PRED
             rec = control_stream.get_records('PRED')[0]
-            rec._statements = after[1:]
+    if change:
+        rec._statements = after[1:]
+        first = True
+        inds = []
+        for ni, nj, si, sj in rec._index:
+            if first and si == yind:
+                first = False
+                ind = (ni, nj, si, si + 2)
+            else:
+                if first:
+                    ind = (ni, nj, si, si)
+                else:
+                    ind = (ni, nj, si + 2, sj + 2)
+            inds.append(ind)
+        rec._index = inds
     return statements, dvs
 
 

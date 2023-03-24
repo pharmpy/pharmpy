@@ -78,7 +78,10 @@ def remove_error_model(model: Model):
 
 
 def set_additive_error_model(
-    model: Model, data_trans: Optional[Union[str, sympy.Expr]] = None, series_terms: int = 2
+    model: Model,
+    dv: Union[sympy.Symbol, str, int, None] = None,
+    data_trans: Optional[Union[str, sympy.Expr]] = None,
+    series_terms: int = 2,
 ):
     r"""Set an additive error model. Initial estimate for new sigma is :math:`(min(DV)/2)²`.
 
@@ -97,6 +100,8 @@ def set_additive_error_model(
     ----------
     model : Model
         Set error model for this model
+    dv : Union[sympy.Symbol, str, int, None]
+        Name or DVID of dependent variable. None for the default (first or only)
     data_trans : str or expression
         A data transformation expression or None (default) to use the transformation
         specified by the model. Series expansion will be used for approximation.
@@ -142,8 +147,8 @@ def set_additive_error_model(
 
     data_trans = _canonicalize_data_transformation(model, data_trans)
     expr = f + ruv
-    # FIXME: handle other DVs
-    dv = list(model.dependent_variables.keys())[0]
+
+    dv = get_dv_symbol(model, dv)
     if data_trans != dv:
         expr = subs(data_trans, {dv: expr}, simultaneous=True).series(ruv, n=series_terms).removeO()
 

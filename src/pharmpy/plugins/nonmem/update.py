@@ -579,6 +579,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         new_error = error.update_statements(
             error_statements.subs(trans), model.random_variables, trans
         )
+        new_error = new_error.update_extra_nodes(model.dependent_variables)
         newcs = model.internals.control_stream.replace_records([error], [new_error])
         model = model.replace(internals=model.internals.replace(control_stream=newcs))
     return model, updated_dataset

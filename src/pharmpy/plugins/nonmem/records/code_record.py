@@ -9,6 +9,7 @@ from operator import neg, pos, sub, truediv
 from typing import Iterator, Literal, Sequence, Set, Tuple
 
 from pharmpy.deps import sympy, sympy_printing
+from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.internals.ds.ordered_set import OrderedSet
 from pharmpy.internals.expr.funcs import (
     INT,
@@ -590,6 +591,58 @@ class CodeRecord(Record):
             expression = subs(ode.rhs, function_map, simultaneous=True)
             statements.append(Assignment(symbol, expression))
         return self.update_statements(statements)
+
+    def update_extra_nodes(self, dvs):
+        """Update AST nodes not part of the statements
+
+        Currently the block IF for DVID is handled as extra nodes
+        """
+        # Want to find block_if node not in index
+        if len(dvs) < 2:
+            return self
+        curn = 0
+        found = None
+        for ni, nj, _, _ in self._index:
+            for n in range(curn, ni):
+                node = self.root.children[n]
+                if node.find('block_if'):
+                    found = n
+                    break
+            curn = nj
+        if curn < len(self.root.children):
+            for n in range(curn, len(self.root.children)):
+                node = self.root.children[n]
+                if node.find('block_if'):
+                    found = n
+                    break
+
+        if found is None:
+            node = create_dvs_node(dvs)
+            new_root = AttrTree(self.root.rule, self.root.children + (node,))
+            rec = CodeRecord(
+                self.name, self.raw_name, new_root, index=self._index, statements=self._statements
+            )
+            return rec
+        else:
+            return self
+
+
+def create_dvs_node(dvs):
+    """Create special dvs AST node"""
+    cg = CodeGenerator()
+    for i, (dv, dvid) in enumerate(dvs.items()):
+        if i == 0:
+            cg.add(f'IF (DVID.EQ.{dvid}) THEN')
+        elif i == 1 and len(dvs) == 2:
+            cg.add('ELSE')
+        else:
+            cg.add(f'ELSE IF (DVID.EQ.{dvid}) THEN')
+        cg.indent()
+        cg.add(f'Y = {dv}')
+        cg.dedent()
+    cg.add('END IF')
+    node = CodeRecordParser(str(cg) + '\n').root.children[0]
+    return node
 
 
 def _parse_tree(tree: AttrTree):

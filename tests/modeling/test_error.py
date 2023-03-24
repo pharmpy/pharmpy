@@ -33,6 +33,21 @@ def test_set_additive_error_model(testdata, load_model_for_test):
     model = set_additive_error_model(model)  # One more time and nothing should change
     assert before == model.model_code
 
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
+    model = set_additive_error_model(model)
+    rec = model.internals.control_stream.get_records('ERROR')[0]
+    correct = """$ERROR
+Y_1 = F + EPS(3)
+Y_2 = F + EPS(1)*F + EPS(2)
+
+IF (DVID.EQ.1) THEN
+    Y = Y_1
+ELSE
+    Y = Y_2
+END IF
+"""
+    assert str(rec) == correct
+
 
 def test_set_additive_error_model_logdv(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')

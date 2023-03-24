@@ -1147,5 +1147,6 @@ $SIGMA 1
 
 def test_parse_dvid(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
+    assert model.statements[-1] == Assignment.create("Y_2", "EPS_1 * F + EPS_2 + F")
     model = model.update_source()
     assert model.statements[-1] == Assignment.create("Y_2", "EPS_1 * F + EPS_2 + F")
