@@ -74,7 +74,7 @@ def convert_model(
     )
 
     # Update dataset
-    if model.dataset is not None or len(model.dataset) != 0:
+    if model.dataset is not None:
         if keep_etas is True:
             nlmixr_model = nlmixr_model.replace(
                 modelfit_results=ModelfitResults(
@@ -91,8 +91,8 @@ def convert_model(
             dataset=nlmixr_model.dataset.reset_index(drop=True),
         )
 
-    # Add evid
-    nlmixr_model = add_evid(nlmixr_model)
+        # Add evid
+        nlmixr_model = add_evid(nlmixr_model)
 
     # Check model for warnings regarding data structure or model contents
     nlmixr_model = check_model(nlmixr_model, skip_error_model_check=skip_check)

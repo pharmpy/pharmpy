@@ -119,10 +119,6 @@ def var_3_check(error: dict, res, model: pharmpy.model.Model) -> dict:
                     if symbol != sigma.symbol:
                         w = symbol
                 
-                #for s in model.statements.after_odes:
-                #   if s.symbol == w:
-                #        w_full = s.expression
-                #        break
                 w_full = full_expression(w, model)
                 if isinstance(w_full, sympy.Symbol):
                     return error
@@ -335,7 +331,11 @@ def full_expression(expression: sympy.Expr, model: pharmpy.model.Model) -> sympy
         The fully expanded expression
 
     """
-    for statement in reversed(model.statements.after_odes):
+    if model.statements.after_odes is None:
+        statements = model.statements
+    else:
+        statements = model.statements.after_odes
+    for statement in reversed(statements):
         expression = subs(expression, {statement.symbol: statement.expression}, simultaneous=True)
     return expression
 

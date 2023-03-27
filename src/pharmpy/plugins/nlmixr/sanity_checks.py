@@ -42,7 +42,7 @@ def check_model(
     """
 
     # Checks for the dataset
-    if model.dataset is not None or len(model.dataset) != 0:
+    if model.dataset is not None:
         if "TIME" in model.dataset.columns:
             if same_time(model):
                 print_warning(
