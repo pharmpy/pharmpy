@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-from .option_record import OptionRecord
+from .option_record import EnumOpt, IntOpt, MxOpt, OptionRecord, Opts, SimpleOpt, StrOpt, WildOpt
 
 
 class TableRecord(OptionRecord):
@@ -36,3 +36,47 @@ class TableRecord(OptionRecord):
                 n = m.group(1)
                 derivs.append(int(n))
         return derivs
+
+
+# Same option multiple times is ignored
+# Another option in same group is illegal
+# Names can override options
+# No columns are allowed after first option
+# Overridden names are ignored after first option (not error)
+
+table_options = Opts(
+    MxOpt('PRINT', 'print', default=True),
+    MxOpt('NOPRINT', 'print'),
+    StrOpt('FILE'),
+    MxOpt('NOHEADER', 'header'),
+    MxOpt('ONEHEADER', 'header'),
+    SimpleOpt('ONEHEADERALL', noabbrev=True),
+    MxOpt('NOTITLE', 'title'),
+    MxOpt('NOLABEL', 'title'),
+    MxOpt('FIRSTONLY', 'only'),
+    MxOpt('LASTONLY', 'only'),
+    MxOpt('FIRSTLASTONLY', 'only'),
+    MxOpt('NOFORWARD', 'forward'),
+    MxOpt('FORWARD', 'forward'),
+    MxOpt('APPEND', 'append', default=True),
+    MxOpt('NOAPPEND', 'append'),
+    StrOpt('FORMAT', default='s1PE11.4'),
+    StrOpt('LFORMAT'),
+    StrOpt('RFORMAT'),
+    StrOpt('IDFORMAT'),
+    EnumOpt('NOSUB', (0, 1), default=0),
+    StrOpt('PARAFILE'),
+    IntOpt('ESAMPLE', default=300),
+    SimpleOpt('WRESCHOL'),
+    IntOpt('SEED', default=11456),
+    EnumOpt('CLOCKSEED', (0, 1)),
+    StrOpt('RANMETHOD'),
+    EnumOpt('VARCALC', (0, 1, 2, 3)),
+    StrOpt('FIXEDETAS'),
+    EnumOpt('NPDTYPE', (0, 1), default=0),
+    MxOpt('UNCONDITIONAL', 'cond', default=True),
+    MxOpt('CONDITIONAL', 'cond'),
+    SimpleOpt('OMITTED'),
+    WildOpt(),
+    # BY and EXCLUDE_BY missing
+)

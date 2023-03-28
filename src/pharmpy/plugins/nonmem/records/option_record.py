@@ -312,7 +312,7 @@ class OptionRecord(Record):
         return candidates[0] if len(candidates) == 1 else None
 
 
-class Options:
+class Opts:
     def __init__(self, *args):
         self.options = args
         self.find_abbreviations()
@@ -329,7 +329,7 @@ class Options:
 
         # Handle options not allowed to be abbreviated
         for opt in self.options:
-            if opt.noabbrev:
+            if not isinstance(opt, WildOpt) and opt.noabbrev:
                 # Currenty only single options
                 opt.abbreviations = [opt.name]
                 accepted.add(opt.name)
@@ -338,6 +338,8 @@ class Options:
         # Find longest length
         longest = 0
         for opt in self.options:
+            if isinstance(opt, WildOpt):
+                continue
             if len(opt.name) > longest:
                 longest = len(opt.name)
 
@@ -346,6 +348,8 @@ class Options:
             count = {}
             optdict = {}
             for opt in self.options:
+                if isinstance(opt, WildOpt):
+                    continue
                 name = opt.name
                 if name not in done and len(name) >= curlength:
                     abbrev = name[0:curlength]
@@ -369,83 +373,121 @@ class Options:
                 break
             curlength -= 1
 
+    def parse_ast(self, tree):
+        # Return a list of tuples of canonical option name, value (or None for no value)
+        opt_nodes = list(tree.subtrees('option'))
+        i = 0
+        parsed = []
+        while i < len(opt_nodes):
+            node = opt_nodes[i]
+            key = _get_key(node)
+            value = _get_value(node)
+            for opt in self.options:
+                if opt.match(key):
+                    if opt.need_value is True:
+                        if value is None:
+                            i += 1
+                            if i < len(opt_nodes):
+                                next_node = opt_nodes[i]
+                                next_key = _get_key(next_node)
+                                next_value = _get_value(next_node)
+                                if next_value is not None:
+                                    raise ValueError(f"Unexpected value for {opt.name}")
+                                value = next_key
+                            else:
+                                raise ValueError(f"No value for option {opt.name}")
+                        converted = opt.convert_value(value)
+                        if converted is not None:
+                            parsed.append((opt.name, converted))
+                        else:
+                            raise ValueError(f"Bad value {value} for option {opt.name}")
 
-class Option:
+                    elif opt.need_value is False:
+                        if value is not None:
+                            raise ValueError(f"Unexpected value for {opt.name}")
+                        parsed.append((opt.name, converted))
+                    else:  # value optional
+                        parsed.append((key, value))
+                    break
+            i += 1
+        return parsed
+
+
+class Opt:
     def __init__(self, noabbrev=False):
         self.abbreviations = []
         self.noabbrev = noabbrev
 
+    def match(self, s):
+        return s in self.abbreviations
 
-class MxOpt(Option):
-    def __init__(self, name, group, **kwargs):
+
+class MxOpt(Opt):
+    need_value = False
+
+    def __init__(self, name, group, default=False, **kwargs):
         self.name = name
         self.group = group
+        self.default = default
         super().__init__(**kwargs)
 
 
-class StrOpt(Option):
+class StrOpt(Opt):
+    need_value = True
+
+    def __init__(self, name, default=None, **kwargs):
+        self.name = name
+        self.default = default
+        super().__init__(**kwargs)
+
+    def convert_value(self, value):
+        return value
+
+
+class IntOpt(Opt):
+    need_value = True
+
+    def __init__(self, name, default=None, **kwargs):
+        self.name = name
+        self.default = default
+        super().__init__(**kwargs)
+
+    def convert_value(self, value):
+        try:
+            n = int(value)
+        except ValueError:
+            return None
+        return n
+
+
+class SimpleOpt(Opt):
+    need_value = False
+
     def __init__(self, name, **kwargs):
         self.name = name
         super().__init__(**kwargs)
 
 
-class IntOpt(Option):
-    def __init__(self, name, **kwargs):
-        self.name = name
-        super().__init__(**kwargs)
+class EnumOpt(Opt):
+    need_value = True
 
-
-class SimpleOpt(Option):
-    def __init__(self, name, **kwargs):
-        self.name = name
-        super().__init__(**kwargs)
-
-
-class EnumOpt(Option):
-    def __init__(self, name, allowed, **kwargs):
+    def __init__(self, name, allowed, default=None, **kwargs):
         self.name = name
         self.allowed = allowed
+        if not (default is None or default in allowed):
+            raise ValueError(f"Default value {default} must be in allowed: {allowed}")
         super().__init__(**kwargs)
 
+    def convert_value(self, value):
+        enum = value.upper()
+        if enum in self.allowed:
+            return enum
+        else:
+            return None
 
-# Same option multiple times is ignored
-# Another option in same group is illegal
-# Names can override options
-# No columns are allowed after first option
-# Overridden names are ignored after first option (not error)
 
-table_options = Options(
-    MxOpt('PRINT', 'print'),
-    MxOpt('NOPRINT', 'print'),
-    StrOpt('FILE'),
-    MxOpt('NOHEADER', 'header'),
-    MxOpt('ONEHEADER', 'header'),
-    SimpleOpt('ONEHEADERALL', noabbrev=True),
-    MxOpt('NOTITLE', 'title'),
-    MxOpt('NOLABEL', 'title'),
-    MxOpt('FIRSTONLY', 'only'),
-    MxOpt('LASTONLY', 'only'),
-    MxOpt('FIRSTLASTONLY', 'only'),
-    MxOpt('NOFORWARD', 'forward'),
-    MxOpt('FORWARD', 'forward'),
-    MxOpt('APPEND', 'append'),
-    MxOpt('NOAPPEND', 'append'),
-    StrOpt('FORMAT'),
-    StrOpt('LFORMAT'),
-    StrOpt('RFORMAT'),
-    StrOpt('IDFORMAT'),
-    EnumOpt('NOSUB', (0, 1)),
-    StrOpt('PARAFILE'),
-    IntOpt('ESAMPLE'),
-    SimpleOpt('WRESCHOL'),
-    IntOpt('SEED'),
-    EnumOpt('CLOCKSEED', (0, 1)),
-    StrOpt('RANMETHOD'),
-    EnumOpt('VARCALC', (0, 1, 2, 3)),
-    StrOpt('FIXEDETAS'),
-    EnumOpt('NPDTYPE', (0, 1)),
-    MxOpt('UNCONDITIONAL', 'cond'),
-    MxOpt('CONDITIONAL', 'cond'),
-    SimpleOpt('OMITTED'),
-    # BY and EXCLUDE_BY missing
-)
+class WildOpt:
+    need_value = None
+
+    def match(self, s):
+        return True

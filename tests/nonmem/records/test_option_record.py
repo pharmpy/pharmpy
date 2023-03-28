@@ -1,6 +1,7 @@
 import pytest
 
-from pharmpy.plugins.nonmem.records.option_record import OptionRecord, table_options
+from pharmpy.plugins.nonmem.records.option_record import OptionRecord
+from pharmpy.plugins.nonmem.records.table_record import table_options
 
 
 def test_create_record(parser):
@@ -162,5 +163,22 @@ def test_remove_subotion_for_all(parser):
     assert str(newrec) == '$MODEL COMP=(COMP1) COMP=(COMP2)'
 
 
-def test_options():
+def test_options(parser):
     assert table_options['NOPRINT'].abbreviations == ['NOPRINT', 'NOPRIN', 'NOPRI', 'NOPR', 'NOP']
+    rec = parser.parse('$TABLE IPRED DV FILE=sdtab').records[0]
+    a = table_options.parse_ast(rec.root)
+    assert a == [('IPRED', None), ('DV', None), ('FILE', 'sdtab')]
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize(
+    "buf",
+    [
+        '$TABLE CLOCKSEED=2',
+        '$TABLE ESAMPLE=str',
+    ],
+)
+def test_option_errors(parser, buf):
+    rec = parser.parse('$TABLE CLOCKSEED=2').records[0]
+    with pytest.raises(ValueError):
+        table_options.parse_ast(rec.root)
