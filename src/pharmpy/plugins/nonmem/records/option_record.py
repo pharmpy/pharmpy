@@ -310,3 +310,142 @@ class OptionRecord(Record):
             i += 1
 
         return candidates[0] if len(candidates) == 1 else None
+
+
+class Options:
+    def __init__(self, *args):
+        self.options = args
+        self.find_abbreviations()
+
+    def __getitem__(self, name):
+        for opt in self.options:
+            if opt.name == name:
+                return opt
+        raise KeyError(f"No option named {name}")
+
+    def find_abbreviations(self):
+        accepted = set()
+        done = set()
+
+        # Handle options not allowed to be abbreviated
+        for opt in self.options:
+            if opt.noabbrev:
+                # Currenty only single options
+                opt.abbreviations = [opt.name]
+                accepted.add(opt.name)
+                done.add(opt.name)
+
+        # Find longest length
+        longest = 0
+        for opt in self.options:
+            if len(opt.name) > longest:
+                longest = len(opt.name)
+
+        curlength = longest
+        while True:
+            count = {}
+            optdict = {}
+            for opt in self.options:
+                name = opt.name
+                if name not in done and len(name) >= curlength:
+                    abbrev = name[0:curlength]
+                    if abbrev not in count:
+                        count[abbrev] = 1
+                        optdict[abbrev] = opt
+                    else:
+                        count[abbrev] += 1
+
+            if len(count) == 0:
+                continue
+
+            for name, n in count.items():
+                if n == 1 and name not in accepted:
+                    optdict[name].abbreviations.append(name)
+                    accepted.add(name)
+                else:
+                    done.add(name)
+
+            if curlength == 3:
+                break
+            curlength -= 1
+
+
+class Option:
+    def __init__(self, noabbrev=False):
+        self.abbreviations = []
+        self.noabbrev = noabbrev
+
+
+class MxOpt(Option):
+    def __init__(self, name, group, **kwargs):
+        self.name = name
+        self.group = group
+        super().__init__(**kwargs)
+
+
+class StrOpt(Option):
+    def __init__(self, name, **kwargs):
+        self.name = name
+        super().__init__(**kwargs)
+
+
+class IntOpt(Option):
+    def __init__(self, name, **kwargs):
+        self.name = name
+        super().__init__(**kwargs)
+
+
+class SimpleOpt(Option):
+    def __init__(self, name, **kwargs):
+        self.name = name
+        super().__init__(**kwargs)
+
+
+class EnumOpt(Option):
+    def __init__(self, name, allowed, **kwargs):
+        self.name = name
+        self.allowed = allowed
+        super().__init__(**kwargs)
+
+
+# Same option multiple times is ignored
+# Another option in same group is illegal
+# Names can override options
+# No columns are allowed after first option
+# Overridden names are ignored after first option (not error)
+
+table_options = Options(
+    MxOpt('PRINT', 'print'),
+    MxOpt('NOPRINT', 'print'),
+    StrOpt('FILE'),
+    MxOpt('NOHEADER', 'header'),
+    MxOpt('ONEHEADER', 'header'),
+    SimpleOpt('ONEHEADERALL', noabbrev=True),
+    MxOpt('NOTITLE', 'title'),
+    MxOpt('NOLABEL', 'title'),
+    MxOpt('FIRSTONLY', 'only'),
+    MxOpt('LASTONLY', 'only'),
+    MxOpt('FIRSTLASTONLY', 'only'),
+    MxOpt('NOFORWARD', 'forward'),
+    MxOpt('FORWARD', 'forward'),
+    MxOpt('APPEND', 'append'),
+    MxOpt('NOAPPEND', 'append'),
+    StrOpt('FORMAT'),
+    StrOpt('LFORMAT'),
+    StrOpt('RFORMAT'),
+    StrOpt('IDFORMAT'),
+    EnumOpt('NOSUB', (0, 1)),
+    StrOpt('PARAFILE'),
+    IntOpt('ESAMPLE'),
+    SimpleOpt('WRESCHOL'),
+    IntOpt('SEED'),
+    EnumOpt('CLOCKSEED', (0, 1)),
+    StrOpt('RANMETHOD'),
+    EnumOpt('VARCALC', (0, 1, 2, 3)),
+    StrOpt('FIXEDETAS'),
+    EnumOpt('NPDTYPE', (0, 1)),
+    MxOpt('UNCONDITIONAL', 'cond'),
+    MxOpt('CONDITIONAL', 'cond'),
+    SimpleOpt('OMITTED'),
+    # BY and EXCLUDE_BY missing
+)

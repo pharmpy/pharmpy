@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.plugins.nonmem.records.option_record import OptionRecord
+from pharmpy.plugins.nonmem.records.option_record import OptionRecord, table_options
 
 
 def test_create_record(parser):
@@ -160,3 +160,7 @@ def test_remove_subotion_for_all(parser):
     rec = parser.parse('$MODEL COMP=(COMP1 DEFDOSE) COMP=(COMP2)').records[0]
     newrec = rec.remove_suboption_for_all('COMPARTMENT', 'DEFDOSE')
     assert str(newrec) == '$MODEL COMP=(COMP1) COMP=(COMP2)'
+
+
+def test_options():
+    assert table_options['NOPRINT'].abbreviations == ['NOPRINT', 'NOPRIN', 'NOPRI', 'NOPR', 'NOP']
