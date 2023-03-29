@@ -395,7 +395,7 @@ class Opts:
                         raise ValueError(
                             f"Option {fopt.name} in same group as {name} has already been specified."
                         )
-            parsed.append((name, value))
+            parsed.append((opt, name, value))
             found_options.add(opt)
 
         while i < len(opt_nodes):
@@ -427,7 +427,7 @@ class Opts:
                             raise ValueError(f"Unexpected value for {opt.name}")
                         add_option(opt, opt.name, converted)
                     else:  # value optional
-                        parsed.append((key, value))
+                        parsed.append((opt, key, value))
                     break
             i += 1
         return parsed
@@ -437,6 +437,12 @@ class Opt:
     def __init__(self, noabbrev=False):
         self.abbreviations = []
         self.noabbrev = noabbrev
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
 
     def match(self, s):
         return s in self.abbreviations
@@ -511,3 +517,6 @@ class WildOpt:
 
     def match(self, s):
         return True
+
+    def __eq__(self, other):
+        return isinstance(other, WildOpt)

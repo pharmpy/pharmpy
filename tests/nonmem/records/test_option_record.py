@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.plugins.nonmem.records.option_record import OptionRecord
+from pharmpy.plugins.nonmem.records.option_record import OptionRecord, StrOpt, WildOpt
 from pharmpy.plugins.nonmem.records.table_record import table_options
 
 
@@ -167,7 +167,11 @@ def test_options(parser):
     assert table_options['NOPRINT'].abbreviations == ['NOPRINT', 'NOPRIN', 'NOPRI', 'NOPR', 'NOP']
     rec = parser.parse('$TABLE IPRED DV FILE=sdtab').records[0]
     a = table_options.parse_ast(rec.root)
-    assert a == [('IPRED', None), ('DV', None), ('FILE', 'sdtab')]
+    assert a == [
+        (WildOpt(), 'IPRED', None),
+        (WildOpt(), 'DV', None),
+        (StrOpt('FILE'), 'FILE', 'sdtab'),
+    ]
 
 
 @pytest.mark.usefixtures('parser')
