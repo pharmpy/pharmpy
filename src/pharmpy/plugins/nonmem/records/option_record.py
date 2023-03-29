@@ -376,8 +376,28 @@ class Opts:
     def parse_ast(self, tree):
         # Return a list of tuples of canonical option name, value (or None for no value)
         opt_nodes = list(tree.subtrees('option'))
+        found_options = set()
         i = 0
         parsed = []
+
+        def add_option(opt, name, value):
+            # * Same MxOpt or SimpleOpt multiple times is ignored
+            # * Same opt taking argument multiple times is illegal
+            # * Another option in same mx group is illegal
+            if opt in found_options:
+                if opt.need_value:
+                    raise ValueError(f"Option {name} has already been specified.")
+                else:
+                    return
+            elif isinstance(opt, MxOpt):
+                for fopt in found_options:
+                    if fopt.group == opt.group and fopt.name != name:
+                        raise ValueError(
+                            f"Option {fopt.name} in same group as {name} has already been specified."
+                        )
+            parsed.append((name, value))
+            found_options.add(opt)
+
         while i < len(opt_nodes):
             node = opt_nodes[i]
             key = _get_key(node)
@@ -398,14 +418,14 @@ class Opts:
                                 raise ValueError(f"No value for option {opt.name}")
                         converted = opt.convert_value(value)
                         if converted is not None:
-                            parsed.append((opt.name, converted))
+                            add_option(opt, opt.name, converted)
                         else:
                             raise ValueError(f"Bad value {value} for option {opt.name}")
 
                     elif opt.need_value is False:
                         if value is not None:
                             raise ValueError(f"Unexpected value for {opt.name}")
-                        parsed.append((opt.name, converted))
+                        add_option(opt, opt.name, converted)
                     else:  # value optional
                         parsed.append((key, value))
                     break

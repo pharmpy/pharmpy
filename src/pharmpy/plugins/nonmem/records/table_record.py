@@ -38,9 +38,7 @@ class TableRecord(OptionRecord):
         return derivs
 
 
-# Same option multiple times is ignored
-# Another option in same group is illegal
-# Names can override options
+# Names (from $INPUT, $PK, $ERROR and $PRED?) can override options
 # No columns are allowed after first option
 # Overridden names are ignored after first option (not error)
 

@@ -176,6 +176,8 @@ def test_options(parser):
     [
         '$TABLE CLOCKSEED=2',
         '$TABLE ESAMPLE=str',
+        '$TABLE ID TIME PRINT NOPRINT',
+        '$TABLE CLOCKSEED=0 CLOCK=0',
     ],
 )
 def test_option_errors(parser, buf):
