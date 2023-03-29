@@ -47,7 +47,7 @@ def test_round_trip(pheno_path):
         ),
         (
             '$TABLE ID TIME CONC=CIPREDI NOAPPEND\n$TABLE ID TIME CONC',
-            [['ID', 'TIME', 'CIPREDI'], ['ID', 'TIME', 'CIPREDI']],
+            [['ID', 'TIME', 'CIPREDI'], ['ID', 'TIME', 'CIPREDI', 'DV', 'PRED', 'RES', 'WRES']],
         ),
     ],
 )
