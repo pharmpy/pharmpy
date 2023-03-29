@@ -29,6 +29,11 @@ Option = namedtuple('Option', ['key', 'value'])
 
 
 class OptionRecord(Record):
+    def __init__(self, name, raw_name, root):
+        if hasattr(self, 'option_defs'):
+            self.parsed_options = self.option_defs.parse_ast(root)
+        super().__init__(name, raw_name, root)
+
     @property
     def option_pairs(self):
         """Extract the key-value pairs
@@ -391,7 +396,7 @@ class Opts:
                     return
             elif isinstance(opt, MxOpt):
                 for fopt in found_options:
-                    if fopt.group == opt.group and fopt.name != name:
+                    if isinstance(fopt, MxOpt) and fopt.group == opt.group and fopt.name != name:
                         raise ValueError(
                             f"Option {fopt.name} in same group as {name} has already been specified."
                         )
@@ -425,7 +430,7 @@ class Opts:
                     elif opt.need_value is False:
                         if value is not None:
                             raise ValueError(f"Unexpected value for {opt.name}")
-                        add_option(opt, opt.name, converted)
+                        add_option(opt, opt.name, value)
                     else:  # value optional
                         parsed.append((opt, key, value))
                     break
