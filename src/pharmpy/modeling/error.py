@@ -140,15 +140,15 @@ def set_additive_error_model(
     set_combined_error_model : Combined error model
 
     """
-    if has_additive_error_model(model):
+    dv = get_dv_symbol(model, dv)
+    if has_additive_error_model(model, dv):
         return model
     stats, y, f = _preparations(model)
     ruv = create_symbol(model, 'epsilon_a')
 
-    data_trans = _canonicalize_data_transformation(model, data_trans)
+    data_trans = _canonicalize_data_transformation(model, data_trans, dv)
     expr = f + ruv
 
-    dv = get_dv_symbol(model, dv)
     if data_trans != dv:
         expr = subs(data_trans, {dv: expr}, simultaneous=True).series(ruv, n=series_terms).removeO()
 
