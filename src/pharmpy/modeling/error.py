@@ -28,9 +28,9 @@ def _preparations(model):
     return stats, y, f
 
 
-def _canonicalize_data_transformation(model, value):
-    # FIXME: handle other DVs
-    dv = list(model.dependent_variables.keys())[0]
+def _canonicalize_data_transformation(model, value, dv=None):
+    if dv is None:  # FIXME remove and make dv mandatory
+        dv = list(model.dependent_variables.keys())[0]
     if value is None:
         value = dv
     else:
@@ -172,7 +172,10 @@ def _get_prop_init(model):
 
 
 def set_proportional_error_model(
-    model: Model, data_trans: Optional[Union[str, sympy.Expr]] = None, zero_protection: bool = True
+    model: Model,
+    dv: Union[sympy.Symbol, str, int, None] = None,
+    data_trans: Optional[Union[str, sympy.Expr]] = None,
+    zero_protection: bool = True,
 ):
     r"""Set a proportional error model. Initial estimate for new sigma is 0.09.
 
@@ -190,6 +193,8 @@ def set_proportional_error_model(
     ----------
     model : Model
         Set error model for this model
+    dv : Union[sympy.Symbol, str, int, None]
+        Name or DVID of dependent variable. None for the default (first or only)
     data_trans : str or expression
         A data transformation expression or None (default) to use the transformation
         specified by the model.
@@ -248,17 +253,16 @@ def set_proportional_error_model(
     set_combined_error_model : Combined error model
 
     """
-    if has_proportional_error_model(model):
+    dv = get_dv_symbol(model, dv)
+    if has_proportional_error_model(model, dv):
         return model
 
     stats, y, f = _preparations(model)
     ruv = create_symbol(model, 'epsilon_p')
 
-    data_trans = _canonicalize_data_transformation(model, data_trans)
+    data_trans = _canonicalize_data_transformation(model, data_trans, dv)
     ipred = create_symbol(model, 'IPREDADJ') if zero_protection else f
 
-    # FIXME: handle other DVs
-    dv = list(model.dependent_variables.keys())[0]
     if data_trans == sympy.log(dv):
         expr = sympy.log(ipred) + ruv
     elif data_trans == dv:

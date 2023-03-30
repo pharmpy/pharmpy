@@ -70,6 +70,26 @@ def test_set_proportional_error_model_nolog(load_model_for_test, testdata):
     assert model.model_code.split('\n')[11] == 'Y=F+F*EPS(1)'
     assert model.model_code.split('\n')[17] == '$SIGMA 0.013241'
 
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
+    model = set_proportional_error_model(model, dv=2)
+    rec = model.internals.control_stream.get_records('ERROR')[0]
+    correct = """$ERROR
+IF (F.EQ.0) THEN
+    IPREDADJ = 2.22500000000000E-16
+ELSE
+    IPREDADJ = F
+END IF
+Y_1 = F + EPS(3)*IPREDADJ
+Y_2 = F + EPS(1)*F + EPS(2)
+
+IF (DVID.EQ.1) THEN
+    Y = Y_1
+ELSE
+    Y = Y_2
+END IF
+"""
+    assert str(rec) == correct
+
 
 def test_set_proportional_error_model_log(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
