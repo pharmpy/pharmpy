@@ -32,12 +32,10 @@ from pharmpy.modeling import (
     set_bolus_absorption,
     set_first_order_absorption,
     set_first_order_elimination,
-    set_iiv_on_ruv,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
     set_ode_solver,
     set_peripheral_compartments,
-    set_power_on_ruv,
     set_seq_zo_fo_absorption,
     set_transit_compartments,
     set_zero_order_absorption,
@@ -2205,107 +2203,6 @@ def test_split_joint_distribution(load_model_for_test, testdata, etas, abbr_ref,
 
 
 @pytest.mark.parametrize(
-    'epsilons, same_eta, eta_names, err_ref, omega_ref',
-    [
-        (
-            ['EPS_1'],
-            False,
-            None,
-            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
-            '$OMEGA  0.09 ; IIV_RUV1',
-        ),
-        (
-            ['EPS_1', 'EPS_2'],
-            False,
-            None,
-            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
-            'IPRED = F + EPS(2)*EXP(ETA_RV2)\n'
-            'IRES=DV-IPRED+EPS(3)\n',
-            '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2',
-        ),
-        (
-            ['EPS_1', 'EPS_3'],
-            False,
-            None,
-            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
-            'IPRED=F+EPS(2)\n'
-            'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV2)\n',
-            '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2',
-        ),
-        (
-            None,
-            False,
-            None,
-            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
-            'IPRED = F + EPS(2)*EXP(ETA_RV2)\n'
-            'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV3)\n',
-            '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2\n' '$OMEGA  0.09 ; IIV_RUV3',
-        ),
-        (
-            None,
-            True,
-            None,
-            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
-            'IPRED = F + EPS(2)*EXP(ETA_RV1)\n'
-            'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV1)\n',
-            '$OMEGA  0.09 ; IIV_RUV1',
-        ),
-        (
-            ['EPS_1'],
-            False,
-            ['ETA_3'],
-            'Y = F + EPS(1)*W*EXP(ETA(3))\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
-            '$OMEGA  0.09 ; IIV_RUV1',
-        ),
-        (
-            'EPS_1',
-            False,
-            None,
-            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
-            '$OMEGA  0.09 ; IIV_RUV1',
-        ),
-    ],
-)
-def test_set_iiv_on_ruv(
-    create_model_for_test,
-    load_model_for_test,
-    pheno_path,
-    epsilons,
-    same_eta,
-    eta_names,
-    err_ref,
-    omega_ref,
-):
-    model = load_model_for_test(pheno_path)
-
-    model_str = model.model_code
-    model_more_eps = re.sub(
-        'IPRED=F\nIRES=DV-IPRED', 'IPRED=F+EPS(2)\nIRES=DV-IPRED+EPS(3)', model_str
-    )
-    model_sigma = re.sub(
-        r'\$SIGMA 0.013241', '$SIGMA 0.013241\n$SIGMA 0.1\n$SIGMA 0.1', model_more_eps
-    )
-    model = create_model_for_test(model_sigma)
-
-    model = set_iiv_on_ruv(model, epsilons, same_eta, eta_names)
-
-    assert eta_names is None or eta_names[0] in model.random_variables.etas.names
-
-    err_rec = model.internals.control_stream.get_records('ERROR')[0]
-
-    assert str(err_rec) == f'$ERROR\n' f'W=F\n' f'{err_ref}' f'IWRES=IRES/W\n\n'
-
-    omega_rec = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
-
-    assert omega_rec == (
-        f'$OMEGA DIAGONAL(2)\n'
-        f' 0.0309626  ;       IVCL\n'
-        f' 0.031128  ;        IVV\n\n'
-        f'{omega_ref}\n'
-    )
-
-
-@pytest.mark.parametrize(
     'etas, pk_ref, omega_ref',
     [
         (
@@ -2740,82 +2637,6 @@ def test_update_inits_no_res(load_model_for_test, testdata, tmp_path):
 
         with pytest.raises(ValueError):
             update_inits(model, model.modelfit_results.parameter_estimates)
-
-
-@pytest.mark.parametrize(
-    'epsilons, err_ref, theta_ref',
-    [
-        (
-            ['EPS_1'],
-            'IF (F.EQ.0) F = 2.22500000000000E-307\n'
-            'Y = F + EPS(1)*F**THETA(4)\n'
-            'IPRED=F+EPS(2)\n'
-            'IRES=DV-IPRED+EPS(3)',
-            '$THETA  (0.01,1) ; power1',
-        ),
-        (
-            ['EPS_1', 'EPS_2'],
-            'IF (F.EQ.0) F = 2.22500000000000E-307\n'
-            'Y = F + EPS(1)*F**THETA(4)\n'
-            'IPRED = F + EPS(2)*F**THETA(5)\n'
-            'IRES=DV-IPRED+EPS(3)',
-            '$THETA  (0.01,1) ; power1\n' '$THETA  (0.01,1) ; power2',
-        ),
-        (
-            ['EPS_1', 'EPS_3'],
-            'IF (F.EQ.0) F = 2.22500000000000E-307\n'
-            'Y = F + EPS(1)*F**THETA(4)\n'
-            'IPRED=F+EPS(2)\n'
-            'IRES = DV - IPRED + EPS(3)*F**THETA(5)',
-            '$THETA  (0.01,1) ; power1\n' '$THETA  (0.01,1) ; power2',
-        ),
-        (
-            None,
-            'IF (F.EQ.0) F = 2.22500000000000E-307\n'
-            'Y = F + EPS(1)*F**THETA(4)\n'
-            'IPRED = F + EPS(2)*F**THETA(5)\n'
-            'IRES = DV - IPRED + EPS(3)*F**THETA(6)',
-            '$THETA  (0.01,1) ; power1\n' '$THETA  (0.01,1) ; power2\n' '$THETA  (0.01,1) ; power3',
-        ),
-    ],
-)
-def test_set_power_on_ruv(
-    load_model_for_test, create_model_for_test, testdata, epsilons, err_ref, theta_ref, tmp_path
-):
-    shutil.copy(testdata / 'nonmem/pheno_real.mod', tmp_path / 'run1.mod')
-    shutil.copy(testdata / 'nonmem/pheno_real.phi', tmp_path / 'run1.phi')
-    shutil.copy(testdata / 'nonmem/pheno_real.ext', tmp_path / 'run1.ext')
-    shutil.copy(testdata / 'nonmem/pheno.dta', tmp_path / 'pheno.dta')
-
-    with chdir(tmp_path):
-        model_pheno = load_model_for_test('run1.mod')
-        model_more_eps = re.sub(
-            r'( 0.031128  ;        IVV\n)',
-            '$SIGMA 0.1\n$SIGMA 0.1',
-            model_pheno.model_code,
-        )
-        model_more_eps = re.sub(
-            r'IPRED=F\nIRES=DV-IPRED',
-            r'IPRED=F+EPS(2)\nIRES=DV-IPRED+EPS(3)',
-            model_more_eps,
-        )
-        model = create_model_for_test(model_more_eps)
-        model = model.replace(dataset=model_pheno.dataset)
-
-        model = set_power_on_ruv(model, epsilons, zero_protection=True)
-
-        rec_err = str(model.internals.control_stream.get_records('ERROR')[0])
-        correct = f'$ERROR\n' f'W=F\n' f'{err_ref}\n' f'IWRES=IRES/W\n\n'
-        assert rec_err == correct
-
-        rec_theta = ''.join(str(rec) for rec in model.internals.control_stream.get_records('THETA'))
-
-        assert (
-            rec_theta == f'$THETA (0,0.00469307) ; PTVCL\n'
-            f'$THETA (0,1.00916) ; PTVV\n'
-            f'$THETA (-.99,.1)\n'
-            f'{theta_ref}\n'
-        )
 
 
 def test_nested_update_source(load_model_for_test, pheno_path):

@@ -30,6 +30,7 @@ from pharmpy.modeling.error import (
     set_additive_error_model,
     set_combined_error_model,
     set_dtbs_error_model,
+    set_iiv_on_ruv,
     set_power_on_ruv,
     set_proportional_error_model,
     set_time_varying_error_model,
@@ -51,7 +52,6 @@ from pharmpy.modeling.eta_transformations import (
     transform_etas_john_draper,
     transform_etas_tdist,
 )
-from pharmpy.modeling.iiv_on_ruv import set_iiv_on_ruv
 from pharmpy.modeling.math import (
     calculate_corr_from_cov,
     calculate_corr_from_inf,
