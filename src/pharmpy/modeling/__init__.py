@@ -30,6 +30,7 @@ from pharmpy.modeling.error import (
     set_additive_error_model,
     set_combined_error_model,
     set_dtbs_error_model,
+    set_power_on_ruv,
     set_proportional_error_model,
     set_time_varying_error_model,
     set_weighted_error_model,
@@ -95,7 +96,6 @@ from pharmpy.modeling.parameter_sampling import (
     sample_parameters_from_covariance_matrix,
     sample_parameters_uniformly,
 )
-from pharmpy.modeling.power_on_ruv import set_power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
 from pharmpy.modeling.write_csv import write_csv
