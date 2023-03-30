@@ -28,9 +28,7 @@ def _preparations(model):
     return stats, y, f
 
 
-def _canonicalize_data_transformation(model, value, dv=None):
-    if dv is None:  # FIXME remove and make dv mandatory
-        dv = list(model.dependent_variables.keys())[0]
+def _canonicalize_data_transformation(model, value, dv):
     if value is None:
         value = dv
     else:
@@ -289,7 +287,11 @@ def set_proportional_error_model(
     return model
 
 
-def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy.Expr]] = None):
+def set_combined_error_model(
+    model: Model,
+    dv: Union[sympy.Symbol, str, int, None] = None,
+    data_trans: Optional[Union[str, sympy.Expr]] = None,
+):
     r"""Set a combined error model. Initial estimates for new sigmas are :math:`(min(DV)/2)²` for
     proportional and 0.09 for additive.
 
@@ -307,6 +309,8 @@ def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy
     ----------
     model : Model
         Set error model for this model
+    dv : Union[sympy.Symbol, str, int, None]
+        Name or DVID of dependent variable. None for the default (first or only)
     data_trans : str or expression
         A data transformation expression or None (default) to use the transformation
         specified by the model.
@@ -338,7 +342,8 @@ def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy
     set_proportional_error_model: Proportional error model
 
     """
-    if has_combined_error_model(model):
+    dv = get_dv_symbol(model, dv)
+    if has_combined_error_model(model, dv):
         return model
     stats, y, f = _preparations(model)
 
@@ -350,7 +355,7 @@ def set_combined_error_model(model: Model, data_trans: Optional[Union[str, sympy
     eta_ruv = sympy.Symbol('ETA_RV1')
     theta_time = sympy.Symbol('time_varying')
 
-    data_trans = _canonicalize_data_transformation(model, data_trans)
+    data_trans = _canonicalize_data_transformation(model, data_trans, dv)
 
     # FIXME: handle other DVs
     dv = list(model.dependent_variables.keys())[0]

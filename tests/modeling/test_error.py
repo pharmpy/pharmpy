@@ -175,6 +175,23 @@ def test_set_combined_error_model_with_time_varying_and_eta_on_ruv(testdata, loa
     )
 
 
+def test_set_combined_error_model_multiple_dvs(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
+    model = set_combined_error_model(model, dv=1)
+    rec = model.internals.control_stream.get_records('ERROR')[0]
+    correct = """$ERROR
+Y_1 = F + EPS(3)*F + EPS(4)
+Y_2 = F + EPS(1)*F + EPS(2)
+
+IF (DVID.EQ.1) THEN
+    Y = Y_1
+ELSE
+    Y = Y_2
+END IF
+"""
+    assert str(rec) == correct
+
+
 def test_remove_error_without_f(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
