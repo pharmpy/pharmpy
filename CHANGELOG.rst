@@ -8,6 +8,7 @@ New features
 * Add function ``modeling.plot_transformed_eta_distributions``
 * Add function ``modeling.create_config_template``
 * Add function ``modeling.get_dv_symbol``
+* Add function ``modeling.get_initial_conditions``
 
 0.91.0 (2023-03-03)
 -------------------

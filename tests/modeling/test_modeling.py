@@ -10,6 +10,7 @@ import pytest
 import sympy
 
 from pharmpy.internals.fs.cwd import chdir
+from pharmpy.model import Assignment
 from pharmpy.modeling import (
     add_iiv,
     add_iov,
@@ -18,6 +19,7 @@ from pharmpy.modeling import (
     add_pk_iiv,
     create_joint_distribution,
     fix_parameters_to,
+    get_initial_conditions,
     has_first_order_elimination,
     has_linear_odes,
     has_linear_odes_with_real_eigenvalues,
@@ -3328,3 +3330,20 @@ def test_has_linear_odes_with_real_eigenvalues(
     path = datadir / 'minimal.mod'
     model = load_model_for_test(path)
     assert not has_linear_odes_with_real_eigenvalues(model)
+
+
+def test_get_initial_conditions(load_example_model_for_test, load_model_for_test, datadir):
+    model = load_example_model_for_test('pheno')
+    assert get_initial_conditions(model) == {sympy.Function('A_CENTRAL')(0): sympy.Integer(0)}
+    ic = Assignment(sympy.Function('A_CENTRAL')(0), sympy.Integer(23))
+    statements = (
+        model.statements.before_odes
+        + ic
+        + model.statements.ode_system
+        + model.statements.after_odes
+    )
+    mod2 = model.replace(statements=statements)
+    assert get_initial_conditions(mod2) == {sympy.Function('A_CENTRAL')(0): sympy.Integer(23)}
+    path = datadir / 'minimal.mod'
+    model = load_model_for_test(path)
+    assert get_initial_conditions(model) == {}

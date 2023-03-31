@@ -1917,3 +1917,38 @@ def has_linear_odes_with_real_eigenvalues(model: Model):
         if real is None or not real:
             return real
     return True
+
+
+def get_initial_conditions(model: Model) -> dict[sympy.Function, sympy.Expr]:
+    """Get initial conditions for the ode system
+
+    Default initial conditions at t=0 for amounts is 0
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    dict
+        Initial conditions
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import get_initial_conditions, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> get_initial_conditions(model)
+    {A_CENTRAL(0): 0}
+    """
+    d = {}
+    odes = model.statements.ode_system
+    if not odes:
+        return d
+    for amt in odes.amounts:
+        d[sympy.Function(amt.name)(0)] = sympy.Integer(0)
+    for s in model.statements:
+        if isinstance(s, Assignment):
+            if s.symbol.is_Function and not (s.symbol.args[0].free_symbols):
+                d[s.symbol] = s.expression
+    return d
