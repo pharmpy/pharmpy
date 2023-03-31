@@ -244,6 +244,7 @@ def parse_statements(
             statements += [cm, link]
             for i, amount in enumerate(cm.amounts, start=1):
                 trans_amounts[sympy.Symbol(f"A({i})")] = amount
+                trans_amounts[sympy.Symbol(f"A_0({i})")] = sympy.Function(amount.name)(0)
         statements += error.statements
         if trans_amounts:
             statements = statements.subs(trans_amounts)

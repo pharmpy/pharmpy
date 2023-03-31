@@ -1004,6 +1004,7 @@ $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
 
 
 def test_if_in_des():
+    # Also test parsing of A_0(N) =
     code = """
 $PROBLEM
 $DATA ../../pheno.dta IGNORE=@
@@ -1014,6 +1015,7 @@ $PK
 CL=THETA(1)*EXP(ETA(1))
 V=THETA(2)*EXP(ETA(2))
 S1=V
+A_0(1) = 2
 $DES
 IF (CL>0) THEN
 DADT(1) = -CL/V * A(1)
@@ -1031,6 +1033,8 @@ $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
 """
     model = Model.create_model(StringIO(code))
     assert type(model.statements.ode_system.eqs[0].rhs) == sympy.Piecewise
+    assert model.statements[3].symbol == sympy.Function("A_CENTRAL")(0)
+    assert model.statements[3].expression == sympy.Integer(2)
 
 
 @pytest.mark.parametrize(
