@@ -423,11 +423,15 @@ def calculate_pk_parameters_statistics(
     >>> pe = model.modelfit_results.parameter_estimates
     >>> cov = model.modelfit_results.covariance_matrix
     >>> calculate_pk_parameters_statistics(model, pe, cov, rng=rng)
-                              mean  variance    stderr
-    parameter covariates
-    k_e       p5          0.004234  0.000001  0.001138
-              median      0.004907  0.000001  0.001247
-              p95         0.004907  0.000001  0.001247
+                                  mean     variance     stderr
+    parameter   covariates
+    t_half_elim p5          173.337164  1769.493756  42.843398
+                median      149.567842  1317.474199  36.233070
+                p95         149.567842  1317.474199  36.233070
+    k_e         p5            0.004234     0.000001   0.001138
+                median        0.004907     0.000001   0.001247
+                p95           0.004907     0.000001   0.001247
+
 
     See Also
     --------
