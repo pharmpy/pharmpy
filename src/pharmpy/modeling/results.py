@@ -20,6 +20,7 @@ from pharmpy.model.random_variables import (
 )
 
 from .data import get_ids, get_observations
+from .odes import get_initial_conditions
 from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
 
 RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic'))
@@ -444,7 +445,7 @@ def calculate_pk_parameters_statistics(
     expressions = []  # Eq(name, expr)
     # FO abs + 1comp + FO elimination
     if len(odes) == 2 and depot and odes.t not in elimination_rate.free_symbols:
-        ode_list, ics = odes.eqs, odes.ics
+        ode_list, ics = odes.eqs, get_initial_conditions(model, dosing=True)
         sols = sympy.dsolve(ode_list, ics=ics)
         expr = sols[1].rhs
         d = sympy.diff(expr, odes.t)
@@ -464,17 +465,17 @@ def calculate_pk_parameters_statistics(
                 cb = CompartmentalSystemBuilder(elimination_system)
                 cb.remove_compartment(elimination_system.find_compartment(name))
                 elimination_system = CompartmentalSystem(cb)
-                eq = elimination_system.eqs[0]
-                ic = dict(elimination_system.ics).popitem()[0]
-                A0 = sympy.Symbol('A0')
-                sols = sympy.dsolve(eq, ics={ic: A0})
-                eq_half = sympy.Eq(sympy.Rational(1, 2) * A0, sols.rhs)
-                thalf_elim = sympy.solve(eq_half, odes.t)[0]
-                expressions.append(sympy.Eq(sympy.Symbol('t_half_elim'), thalf_elim))
+        eq = elimination_system.eqs[0]
+        ic = sympy.Function(elimination_system.amounts[0].name)(0)
+        A0 = sympy.Symbol('A0')
+        sols = sympy.dsolve(eq, ics={ic: A0})
+        eq_half = sympy.Eq(sympy.Rational(1, 2) * A0, sols.rhs)
+        thalf_elim = sympy.solve(eq_half, odes.t)[0]
+        expressions.append(sympy.Eq(sympy.Symbol('t_half_elim'), thalf_elim))
 
     # Bolus dose + 2comp + FO elimination
     if len(peripherals) == 1 and len(odes) == 2 and odes.t not in elimination_rate.free_symbols:
-        ode_list, ics = odes.eqs, odes.ics
+        ode_list, ics = odes.eqs, get_initial_conditions(model, dosing=True)
         sols = sympy.dsolve(ode_list, ics=ics)
         A = sympy.Wild('A')
         B = sympy.Wild('B')
