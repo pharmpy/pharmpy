@@ -1,7 +1,7 @@
 """
 :meta private:
 """
-from typing import Set
+from typing import Mapping, Set
 
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
@@ -1919,7 +1919,7 @@ def has_linear_odes_with_real_eigenvalues(model: Model):
     return True
 
 
-def get_initial_conditions(model: Model) -> dict[sympy.Function, sympy.Expr]:
+def get_initial_conditions(model: Model) -> Mapping[sympy.Function, sympy.Expr]:
     """Get initial conditions for the ode system
 
     Default initial conditions at t=0 for amounts is 0
