@@ -462,7 +462,7 @@ class CompartmentalSystem(ODESystem):
         self._t = t
 
     @classmethod
-    def create(cls, builder=None, graph=None, eqs=None, ics=None, t=sympy.Symbol('t')):
+    def create(cls, builder=None, graph=None, eqs=None, t=sympy.Symbol('t')):
         numargs = (
             (0 if builder is None else 1) + (0 if graph is None else 1) + (0 if eqs is None else 1)
         )
@@ -498,21 +498,6 @@ class CompartmentalSystem(ODESystem):
         a = self.compartmental_matrix @ amount_funcs + inputs
         eqs = [sympy.Eq(lhs, canonical_ode_rhs(rhs)) for lhs, rhs in zip(derivatives, a)]
         return tuple(eqs)
-
-    @property
-    def ics(self):
-        """Dict of initial conditions"""
-        ics = {}
-        for node in _comps(self._g):
-            if node.dose is not None and isinstance(node.dose, Bolus):
-                if node.lag_time:
-                    time = node.lag_time
-                else:
-                    time = 0
-                ics[sympy.Function(node.amount.name)(time)] = node.dose.amount
-            else:
-                ics[sympy.Function(node.amount.name)(0)] = sympy.Integer(0)
-        return ics
 
     @property
     def free_symbols(self):

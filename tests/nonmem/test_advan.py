@@ -2,6 +2,7 @@ import pytest
 import sympy
 
 from pharmpy.model import output
+from pharmpy.modeling import get_initial_conditions
 from pharmpy.plugins.nonmem.advan import compartmental_model
 
 
@@ -156,12 +157,14 @@ def S(x):
 )
 def test_pheno(pheno, advan, trans, compmat, amounts, strodes, corrics):
     cm, ass, _ = compartmental_model(pheno, advan, trans)
+    statements = pheno.statements.before_odes + cm + pheno.statements.after_odes
+    model = pheno.replace(statements=statements)
 
     assert ass.symbol == S('F')
     assert ass.expression == S('A_CENTRAL') / S('S1') or ass.expression == S('A_CENTRAL')
     assert cm.compartmental_matrix == sympy.Matrix(compmat)
     assert cm.amounts == sympy.Matrix(amounts)
-    odes, ics = cm.eqs, cm.ics
+    odes, ics = cm.eqs, get_initial_conditions(model, dosing=True)
     odes = [str(ode) for ode in odes]
     assert odes == strodes
     assert ics == corrics

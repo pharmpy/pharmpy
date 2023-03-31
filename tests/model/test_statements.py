@@ -234,9 +234,7 @@ def test_full_expression(load_model_for_test, pheno_path):
 def test_to_explicit_ode_system(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     cs = model.statements.ode_system
-    odes, ics = cs.eqs, cs.ics
-    assert len(odes) == 1
-    assert len(ics) == 1
+    assert len(cs.eqs) == 1
 
     assert cs.amounts == sympy.Matrix([sympy.Symbol('A_CENTRAL')])
 
