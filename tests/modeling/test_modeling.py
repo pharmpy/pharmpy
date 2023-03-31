@@ -34,6 +34,7 @@ from pharmpy.modeling import (
     set_bolus_absorption,
     set_first_order_absorption,
     set_first_order_elimination,
+    set_initial_condition,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
     set_ode_solver,
@@ -3347,3 +3348,18 @@ def test_get_initial_conditions(load_example_model_for_test, load_model_for_test
     path = datadir / 'minimal.mod'
     model = load_model_for_test(path)
     assert get_initial_conditions(model) == {}
+
+
+def test_set_initial_conditions(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    model = set_initial_condition(model, "CENTRAL", 10)
+    assert len(model.statements) == 16
+    ic = Assignment(sympy.Function('A_CENTRAL')(0), sympy.Integer(10))
+    assert model.statements.before_odes[-1] == ic
+    assert get_initial_conditions(model) == {sympy.Function('A_CENTRAL')(0): sympy.Integer(10)}
+    model = set_initial_condition(model, "CENTRAL", 23)
+    assert len(model.statements) == 16
+    ic = Assignment(sympy.Function('A_CENTRAL')(0), sympy.Integer(23))
+    assert model.statements.before_odes[-1] == ic
+    model = set_initial_condition(model, "CENTRAL", 0)
+    assert len(model.statements) == 15

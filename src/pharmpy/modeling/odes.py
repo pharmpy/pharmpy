@@ -1,7 +1,7 @@
 """
 :meta private:
 """
-from typing import Mapping, Set
+from typing import Mapping, Set, Union
 
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
@@ -1971,6 +1971,67 @@ def get_initial_conditions(
                 d[sympy.Function(comp.amount.name)(time)] = comp.dose.amount
 
     return d
+
+
+def set_initial_condition(
+    model: Model,
+    compartment: str,
+    expression: Union[str, int, float, sympy.Expr],
+    time: Union[str, int, float, sympy.Expr] = sympy.Integer(0),
+) -> Model:
+    """Set an initial condition for the ode system
+
+    If the initial condition is already set it will be updated. If the initial condition
+    is set to zero at time zero it will be removed (since the default is 0).
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    compartment : str
+        Name of the compartment
+    expression : Union[str, sympy.Expr]
+        The expression of the initial condition
+    time : Union[str, sympy.Expr]
+        Time point. Default 0
+
+    Return
+    ------
+    model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = set_initial_condition(model, "CENTRAL", 10)
+    >>> get_initial_conditions(model)
+    {A_CENTRAL(0): 10}
+    """
+    odes = model.statements.ode_system
+    if odes is None:
+        raise ValueError("Model has no system of ODEs")
+    comp = odes.find_compartment(compartment)
+    if comp is None:
+        raise ValueError(f"Model has no compartment named {compartment}")
+    expr = sympy.sympify(expression)
+    time = sympy.sympify(time)
+    amount = sympy.Function(comp.amount.name)(time)
+    assignment = Assignment(amount, expr)
+    for i, s in enumerate(model.statements.before_odes):
+        if s.symbol == amount:
+            if time == 0 and expr == 0:
+                statements = model.statements[:i] + model.statements[i + 1 :]
+            else:
+                statements = model.statements[:i] + assignment + model.statements[i + 1 :]
+            break
+    else:
+        if not (time == 0 and expr == 0):
+            statements = (
+                model.statements.before_odes + assignment + odes + model.statements.after_odes
+            )
+    model = model.replace(statements=statements)
+    return model.update_source()
 
 
 class ODEDisplayer:

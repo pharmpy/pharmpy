@@ -9,6 +9,7 @@ New features
 * Add function ``modeling.create_config_template``
 * Add function ``modeling.get_dv_symbol``
 * Add function ``modeling.get_initial_conditions``
+* Add function ``modeling.set_initial_condition``
 
 0.91.0 (2023-03-03)
 -------------------
