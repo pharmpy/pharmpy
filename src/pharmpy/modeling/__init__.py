@@ -1,5 +1,7 @@
-from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
-from pharmpy.modeling.common import (
+from .allometry import add_allometry
+from .basic_models import create_basic_pk_model
+from .block_rvs import create_joint_distribution, split_joint_distribution
+from .common import (
     bump_model_number,
     convert_model,
     create_config_template,
@@ -16,12 +18,37 @@ from pharmpy.modeling.common import (
     set_name,
     write_model,
 )
-from pharmpy.modeling.covariate_effect import (
-    add_covariate_effect,
-    has_covariate_effect,
-    remove_covariate_effect,
+from .compartments import get_bioavailability, get_lag_times
+from .covariate_effect import add_covariate_effect, has_covariate_effect, remove_covariate_effect
+from .data import (
+    add_time_after_dose,
+    check_dataset,
+    deidentify_data,
+    drop_columns,
+    drop_dropped_columns,
+    expand_additional_doses,
+    get_baselines,
+    get_cmt,
+    get_concentration_parameters_from_data,
+    get_covariate_baselines,
+    get_doseid,
+    get_doses,
+    get_evid,
+    get_ids,
+    get_mdv,
+    get_number_of_individuals,
+    get_number_of_observations,
+    get_number_of_observations_per_individual,
+    get_observations,
+    list_time_varying_covariates,
+    read_dataset_from_datainfo,
+    remove_loq_data,
+    set_covariates,
+    set_dvid,
+    translate_nmtran_time,
+    undrop_columns,
 )
-from pharmpy.modeling.error import (
+from .error import (
     has_additive_error_model,
     has_combined_error_model,
     has_proportional_error_model,
@@ -37,7 +64,8 @@ from pharmpy.modeling.error import (
     set_weighted_error_model,
     use_thetas_for_error_stdev,
 )
-from pharmpy.modeling.estimation_steps import (
+from .estimation import calculate_parameters_from_ucp, calculate_ucp_scale
+from .estimation_steps import (
     add_covariance_step,
     add_estimation_step,
     append_estimation_step_options,
@@ -46,13 +74,42 @@ from pharmpy.modeling.estimation_steps import (
     set_estimation_step,
     set_evaluation_step,
 )
-from pharmpy.modeling.eta_additions import add_iiv, add_iov, add_pk_iiv
-from pharmpy.modeling.eta_transformations import (
+from .eta_additions import add_iiv, add_iov, add_pk_iiv
+from .eta_transformations import (
     transform_etas_boxcox,
     transform_etas_john_draper,
     transform_etas_tdist,
 )
-from pharmpy.modeling.math import (
+from .evaluation import (
+    evaluate_epsilon_gradient,
+    evaluate_eta_gradient,
+    evaluate_expression,
+    evaluate_individual_prediction,
+    evaluate_population_prediction,
+    evaluate_weighted_residuals,
+)
+from .expressions import (
+    calculate_epsilon_gradient_expression,
+    calculate_eta_gradient_expression,
+    cleanup_model,
+    create_symbol,
+    get_dv_symbol,
+    get_individual_parameters,
+    get_individual_prediction_expression,
+    get_observation_expression,
+    get_pk_parameters,
+    get_population_prediction_expression,
+    get_rv_parameters,
+    greekify_model,
+    has_random_effect,
+    is_linearized,
+    is_real,
+    make_declarative,
+    mu_reference_model,
+    simplify_expression,
+)
+from .iterators import omit_data, resample_data
+from .math import (
     calculate_corr_from_cov,
     calculate_corr_from_inf,
     calculate_cov_from_corrse,
@@ -62,7 +119,8 @@ from pharmpy.modeling.math import (
     calculate_se_from_cov,
     calculate_se_from_inf,
 )
-from pharmpy.modeling.odes import (
+from .metabolite import add_metabolite
+from .odes import (
     add_individual_parameter,
     add_lag_time,
     add_peripheral_compartment,
@@ -93,78 +151,12 @@ from pharmpy.modeling.odes import (
     set_zero_order_elimination,
     solve_ode_system,
 )
-from pharmpy.modeling.parameter_sampling import (
+from .parameter_sampling import (
     create_rng,
     sample_individual_estimates,
     sample_parameters_from_covariance_matrix,
     sample_parameters_uniformly,
 )
-from pharmpy.modeling.remove_iiv import remove_iiv
-from pharmpy.modeling.remove_iov import remove_iov
-from pharmpy.modeling.write_csv import write_csv
-
-from .allometry import add_allometry
-from .basic_models import create_basic_pk_model
-from .compartments import get_bioavailability, get_lag_times
-from .data import (
-    add_time_after_dose,
-    check_dataset,
-    deidentify_data,
-    drop_columns,
-    drop_dropped_columns,
-    expand_additional_doses,
-    get_baselines,
-    get_cmt,
-    get_concentration_parameters_from_data,
-    get_covariate_baselines,
-    get_doseid,
-    get_doses,
-    get_evid,
-    get_ids,
-    get_mdv,
-    get_number_of_individuals,
-    get_number_of_observations,
-    get_number_of_observations_per_individual,
-    get_observations,
-    list_time_varying_covariates,
-    read_dataset_from_datainfo,
-    remove_loq_data,
-    set_covariates,
-    set_dvid,
-    translate_nmtran_time,
-    undrop_columns,
-)
-from .estimation import calculate_parameters_from_ucp, calculate_ucp_scale
-from .evaluation import (
-    evaluate_epsilon_gradient,
-    evaluate_eta_gradient,
-    evaluate_expression,
-    evaluate_individual_prediction,
-    evaluate_population_prediction,
-    evaluate_weighted_residuals,
-)
-from .expressions import (
-    calculate_epsilon_gradient_expression,
-    calculate_eta_gradient_expression,
-    cleanup_model,
-    create_symbol,
-    get_dv_symbol,
-    get_individual_parameters,
-    get_individual_prediction_expression,
-    get_observation_expression,
-    get_pk_parameters,
-    get_population_prediction_expression,
-    get_rv_parameters,
-    greekify_model,
-    has_random_effect,
-    is_linearized,
-    is_real,
-    make_declarative,
-    mu_reference_model,
-    simplify_expression,
-)
-from .iterators import omit_data, resample_data
-from .metabolite import add_metabolite
 from .parameters import (
     add_population_parameter,
     fix_or_unfix_parameters,
@@ -185,6 +177,8 @@ from .plots import (
     plot_iofv_vs_iofv,
     plot_transformed_eta_distributions,
 )
+from .remove_iiv import remove_iiv
+from .remove_iov import remove_iov
 from .reporting import create_report
 from .results import (
     calculate_aic,
@@ -198,6 +192,7 @@ from .results import (
 )
 from .units import get_unit_of
 from .update_inits import update_initial_individual_estimates, update_inits
+from .write_csv import write_csv
 
 # Must be set directly, otherwise errors about unused imports
 __all__ = [
