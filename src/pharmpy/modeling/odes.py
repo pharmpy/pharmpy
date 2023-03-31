@@ -5,6 +5,7 @@ from typing import Mapping, Set
 
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
+from pharmpy.internals.unicode import bracket
 from pharmpy.model import (
     Assignment,
     Bolus,
@@ -1969,3 +1970,69 @@ def get_initial_conditions(
                 d[sympy.Function(comp.amount.name)(time)] = comp.dose.amount
 
     return d
+
+
+class ODEDisplayer:
+    def __init__(self, eqs, ics):
+        self._eqs = eqs
+        self._ics = ics
+
+    def __repr__(self):
+        if self._eqs is None:
+            return ""
+        a = []
+        for ode in self._eqs:
+            ode_str = sympy.pretty(ode)
+            a += ode_str.split('\n')
+        for key, value in self._ics.items():
+            ics_str = sympy.pretty(sympy.Eq(key, value))
+            a += ics_str.split('\n')
+        return bracket(a)
+
+    def _repr_latex_(self):
+        if self._eqs is None:
+            return ""
+        rows = []
+        for ode in self._eqs:
+            ode_repr = sympy.latex(ode, mul_symbol='dot')
+            rows.append(ode_repr)
+        for k, v in self._ics.items():
+            ics_eq = sympy.Eq(k, v)
+            ics_repr = sympy.latex(ics_eq, mul_symbol='dot')
+            rows.append(ics_repr)
+        return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
+
+
+def display_odes(model: Model):
+    """Displays the ordinary differential equation system
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    ODEDisplayer
+        A displayable object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> display_odes(model)
+    ⎧d                  -CL⋅A_CENTRAL(t)
+    ⎨──(A_CENTRAL(t)) = ─────────────────
+    ⎩dt                         V
+    <BLANKLINE>
+
+    """
+
+    odes = model.statements.ode_system
+    if odes is not None:
+        eqs = odes.eqs
+        ics = {key: val for key, val in get_initial_conditions(model).items() if val != 0}
+    else:
+        eqs = None
+        ics = None
+    return ODEDisplayer(eqs, ics)
