@@ -27,6 +27,7 @@ fsspec==2023.3.0
 HeapDict==1.0.1
 idna==3.4
 imagesize==1.4.1
+importlib_metadata==6.1.0
 ipykernel==6.22.0
 ipython==8.12.0
 ipywidgets==8.0.6
@@ -100,6 +101,7 @@ wcwidth==0.2.6
 webencodings==0.5.1
 widgetsnbextension==4.0.7
 zict==2.2.0
+zipp==3.15.0
 tflite-runtime==2.11.0; sys_platform == 'linux' and python_version == '3.8'
 tflite-runtime==2.11.0; sys_platform == 'linux' and python_version == '3.9'
 tflite-runtime==2.5.0; sys_platform == 'darwin' and python_version == '3.8'
