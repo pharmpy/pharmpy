@@ -16,6 +16,7 @@ from pharmpy.model import (
     Infusion,
     Model,
     ModelError,
+    ODESystem,
     Parameter,
     Parameters,
     Statements,
@@ -2036,3 +2037,51 @@ def display_odes(model: Model):
         eqs = None
         ics = None
     return ODEDisplayer(eqs, ics)
+
+
+def solve_ode_system(model: Model):
+    """Replace ODE system with analytical solution if possible
+
+    Warnings
+    --------
+    This function can currently only handle the most simple of ODE systems.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model.statements.ode_system
+    Bolus(AMT, admid=1)
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
+    >>> model = solve_ode_system(model)
+
+    """
+    odes = model.statements.ode_system
+    if odes is None:
+        return model
+    ics = get_initial_conditions(model, dosing=True)
+    # FIXME: Should set assumptions on symbols before solving
+    # FIXME: Need a way to handle systems with no explicit solutions
+    sol = sympy.dsolve(odes.eqs, ics=ics)
+    new = []
+    for s in model.statements:
+        if isinstance(s, ODESystem):
+            for eq in sol:
+                ass = Assignment(eq.lhs, eq.rhs)
+                new.append(ass)
+        else:
+            new.append(s)
+    model = model.replace(statements=Statements(new)).update_source()
+    return model

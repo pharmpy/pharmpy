@@ -91,6 +91,7 @@ from pharmpy.modeling.odes import (
     set_transit_compartments,
     set_zero_order_absorption,
     set_zero_order_elimination,
+    solve_ode_system,
 )
 from pharmpy.modeling.parameter_sampling import (
     create_rng,
@@ -161,7 +162,6 @@ from .expressions import (
     make_declarative,
     mu_reference_model,
     simplify_expression,
-    solve_ode_system,
 )
 from .iterators import omit_data, resample_data
 from .metabolite import add_metabolite
