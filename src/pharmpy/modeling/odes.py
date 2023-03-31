@@ -1919,7 +1919,9 @@ def has_linear_odes_with_real_eigenvalues(model: Model):
     return True
 
 
-def get_initial_conditions(model: Model) -> Mapping[sympy.Function, sympy.Expr]:
+def get_initial_conditions(
+    model: Model, dosing: bool = False
+) -> Mapping[sympy.Function, sympy.Expr]:
     """Get initial conditions for the ode system
 
     Default initial conditions at t=0 for amounts is 0
@@ -1928,6 +1930,8 @@ def get_initial_conditions(model: Model) -> Mapping[sympy.Function, sympy.Expr]:
     ----------
     model : Model
         Pharmpy model
+    dosing : bool
+        Set to True to add dosing as initial conditions
 
     Return
     ------
@@ -1940,6 +1944,8 @@ def get_initial_conditions(model: Model) -> Mapping[sympy.Function, sympy.Expr]:
     >>> model = load_example_model("pheno")
     >>> get_initial_conditions(model)
     {A_CENTRAL(0): 0}
+    >>> get_initial_conditions(model, dosing=True)
+    {A_CENTRAL(0): AMT}
     """
     d = {}
     odes = model.statements.ode_system
@@ -1951,4 +1957,15 @@ def get_initial_conditions(model: Model) -> Mapping[sympy.Function, sympy.Expr]:
         if isinstance(s, Assignment):
             if s.symbol.is_Function and not (s.symbol.args[0].free_symbols):
                 d[s.symbol] = s.expression
+
+    if dosing:
+        for name in odes.compartment_names:
+            comp = odes.find_compartment(name)
+            if comp.dose is not None and isinstance(comp.dose, Bolus):
+                if comp.lag_time:
+                    time = comp.lag_time
+                else:
+                    time = 0
+                d[sympy.Function(comp.amount.name)(time)] = comp.dose.amount
+
     return d
