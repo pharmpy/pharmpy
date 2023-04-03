@@ -1,3 +1,7 @@
+import uuid
+import os
+import json
+import subprocess
 from dataclasses import dataclass, replace
 from typing import Optional
 from pathlib import Path
@@ -17,7 +21,8 @@ from pharmpy.plugins.nlmixr.model_block import (
     )
 from pharmpy.modeling import (
     get_sigmas,
-    get_thetas
+    get_thetas,
+    write_csv
     )
 from pharmpy.plugins.nlmixr.error_model import convert_eps_to_sigma
 
@@ -63,6 +68,107 @@ class Model(pharmpy.model.Model):
         assert code is not None
         return code
 
+def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
+    """
+    Executes a model using rxode2.
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        An pharmpy model object.
+    db : str
+        Name of folder in home directory to store resulting files in.
+
+    Returns
+    -------
+    model : pharmpy.model.Model
+        Model with accompanied results.
+
+    """
+    db = pharmpy.workflows.LocalDirectoryToolDatabase(db)
+    database = db.model_database
+    model = convert_model(model)
+    path = Path.cwd() / f'rxode_run_{model.name}-{uuid.uuid1()}'
+    model.internals.path = path
+    meta = path / '.pharmpy'
+    meta.mkdir(parents=True, exist_ok=True)
+    write_csv(model, path=path)
+    model = model.replace(datainfo=model.datainfo.replace(path=path))
+
+    dataname = f'{model.name}.csv'
+    pre = f'library(rxode2)\n\nev <- read.csv("{path / dataname}")\n'
+
+    pre += "\n"
+
+    code = pre + model.model_code
+    cg = CodeGenerator()
+    cg.add("res <- as.data.frame(fit)")
+    cg.add(
+        f'save(file="{path}/{model.name}.RDATA", res)'
+    )
+    
+    with open(path / f'{model.name}.R', 'w') as fh:
+        fh.write(code)
+
+    from pharmpy.plugins.nlmixr import conf
+
+    rpath = conf.rpath / 'bin' / 'Rscript'
+
+    newenv = os.environ
+    # Reset environment variables incase started from R
+    # and calling other R version.
+    newenv['R_LIBS_USERS'] = ''
+    newenv['R_LIBS_SITE'] = ''
+
+    stdout = path / 'stdout'
+    stderr = path / 'stderr'
+
+    args = [str(rpath), str(path / (model.name + '.R'))]
+
+    with open(stdout, "wb") as out, open(stderr, "wb") as err:
+        result = subprocess.run(args, stdin=subprocess.DEVNULL, stderr=err, stdout=out, env=newenv)
+
+    rdata_path = path / f'{model.name}.RDATA'
+
+    metadata = {
+        'plugin': 'nlmixr',
+        'path': str(path),
+    }
+
+    plugin = {
+        'rpath': str(rpath),
+        'commands': [
+            {
+                'args': args,
+                'returncode': result.returncode,
+                'stdout': 'stdout',
+                'stderr': 'stderr',
+            }
+        ],
+    }
+
+    with database.transaction(model) as txn:
+        txn.store_local_file(path / f'{model.name}.R')
+        txn.store_local_file(rdata_path)
+
+        txn.store_local_file(stdout)
+        txn.store_local_file(stderr)
+        txn.store_local_file(path / f'{model.name}.csv')
+
+        txn.store_local_file(model.datainfo.path)
+
+        plugin_path = path / 'nlmixr.json'
+        with open(plugin_path, 'w') as f:
+            json.dump(plugin, f, indent=2)
+
+        txn.store_local_file(plugin_path)
+
+        txn.store_metadata(metadata)
+        txn.store_modelfit_results()
+
+    #res = parse_modelfit_results(model, path)
+    #model = model.replace(modelfit_results=res)
+    return model
 
 def convert_model(model):
     
@@ -98,7 +204,7 @@ def convert_model(model):
     return rxode_model
 
 def create_model(cg, model):
-    add_statements(model, cg, model.statements.before_odes)
+    add_true_statements(model, cg, model.statements.before_odes)
 
     if model.statements.ode_system:
         add_ode(model, cg)
