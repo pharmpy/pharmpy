@@ -363,6 +363,7 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
         Model with accompanied results.
 
     """
+    db = pharmpy.workflows.LocalDirectoryToolDatabase(db)
     database = db.model_database
     model = convert_model(model)
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
@@ -536,8 +537,7 @@ def verification(
     print_step("Executing nlmixr2 model... (this might take a while)")
     import pharmpy.workflows
 
-    db = pharmpy.workflows.LocalDirectoryToolDatabase(db_name)
-    nlmixr_model = execute_model(nlmixr_model, db)
+    nlmixr_model = execute_model(nlmixr_model, db_name)
     nlmixr_results = nlmixr_model.modelfit_results.predictions
 
     pred = False
