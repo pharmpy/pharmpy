@@ -22,7 +22,7 @@ class Model(pharmpy.model.Model):
 
     def update_source(self):
         cg = CodeGenerator()
-        cg.add(f'{self.name} <- rxode2{{')
+        cg.add(f'{self.name} <- rxode2({{')
         cg.indent()
         create_model(cg, self)
         cg.dedent()
@@ -83,7 +83,20 @@ def create_model(cg, model):
     if model.statements.ode_system:
         add_ode(model, cg)
 
-    add_statements(model, cg, model.statements.after_odes)
+    add_true_statements(model,
+                   cg,
+                   model.statements.after_odes)
+
+def add_true_statements(model, cg, statements):
+    from pharmpy.plugins.nlmixr.model_block import add_piecewise
+    from pharmpy.plugins.nlmixr.error_model import convert_eps_to_sigma
+    for s in statements:
+        expr = s.expression
+        expr = convert_eps_to_sigma(expr, model)
+        if expr.is_Piecewise:
+            add_piecewise(model, cg, s)
+        else:
+            cg.add(f'{s.symbol.name} <- {expr}')
 
 def create_theta(cg, model):
     from pharmpy.modeling import get_thetas
@@ -98,15 +111,9 @@ def create_theta(cg, model):
     cg.add(")")
 
 def create_eta(cg, model):
-    from pharmpy.modeling import get_omegas
-    cg.add("etas <-")
-    cg.add("c(")
-    omegas = get_omegas(model)
-    for n, omega in enumerate(omegas):
-        if n != len(omegas)-1:
-            cg.add(f'{omega.name} = {omega.init}, ')
-        else:
-            cg.add(f'{omega.name} = {omega.init}')
+    from pharmpy.plugins.nlmixr.ini import add_eta
+    cg.add("omegas = lotri(")
+    add_eta(model, cg, as_list = True)
     cg.add(")")
 
 def create_sigma(cg, model):
@@ -116,10 +123,10 @@ def create_sigma(cg, model):
     sigmas = get_sigmas(model)
     for n, sigma in enumerate(sigmas):
         if n != len(sigmas)-1:
-            cg.add(f'{sigma.name} = {sigma.init}, ')
+            cg.add(f'{sigma.name} ~ {sigma.init}, ')
         else:
-            cg.add(f'{sigma.name} = {sigma.init}')
+            cg.add(f'{sigma.name} ~ {sigma.init}')
     cg.add(")")
 
 def create_fit(cg, model):
-    cg.add(f'fit <- {model.name} %>% rxSolve(theta = thetas, omega = omegas, sigma = sigmas, events = ev)')
+    cg.add(f'fit <- {model.name} %>% rxSolve(thetas, ev, omega = omegas, sigma = sigmas)')
