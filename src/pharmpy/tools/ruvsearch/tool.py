@@ -248,7 +248,7 @@ def _create_base_model(input_model, current_iteration):
     sigma = Parameter('sigma', 1, lower=0)
     params = Parameters((theta, omega, sigma))
 
-    eta_name = 'eta'
+    eta_name = 'eta_base'
     eta = NormalDistribution.create(eta_name, 'iiv', 0, omega.symbol)
     sigma_name = 'epsilon'
     sigma = NormalDistribution.create(sigma_name, 'ruv', 0, sigma.symbol)
