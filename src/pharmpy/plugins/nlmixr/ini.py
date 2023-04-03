@@ -24,7 +24,7 @@ def add_theta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
             add_ini_parameter(cg, theta)
 
 
-def add_eta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
+def add_eta(model: pharmpy.model.Model, cg: CodeGenerator, as_list = False) -> None:
     """
     Add ETAs to code generator when converting a model
 
@@ -34,12 +34,17 @@ def add_eta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
         Pharmpy model object.
     cg : CodeGenerator
         Code generator to add code upon.
+    as_list : bool
+        Add with separation character ","
     """
     for dist in model.random_variables.etas:
         omega = dist.variance
         if len(dist.names) == 1:
             init = model.parameters[omega.name].init
-            cg.add(f'{name_mangle(dist.names[0])} ~ {init}')
+            code_line = f'{name_mangle(dist.names[0])} ~ {init}'
+            if as_list and dist != model.random_variables.etas[-1]:
+                code_line += ","
+            cg.add(code_line)
         else:
             inits = []
             for row in range(omega.rows):
