@@ -6,6 +6,20 @@ from pharmpy.internals.code_generator import CodeGenerator
 
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment
+from pharmpy.modeling import drop_columns
+from pharmpy.plugins.nlmixr.model import (
+    add_evid,
+    )
+from pharmpy.plugins.nlmixr.model_block import (
+    add_statements,
+    add_ode,
+    add_piecewise
+    )
+from pharmpy.modeling import (
+    get_sigmas,
+    get_thetas
+    )
+from pharmpy.plugins.nlmixr.error_model import convert_eps_to_sigma
 
 @dataclass
 class RxODEModelInternals:
@@ -69,15 +83,21 @@ def convert_model(model):
         description=model.description,
     )
     
+    if all(x in rxode_model.dataset.columns for x in ["RATE", "DUR"]):
+        rxode_model = drop_columns(rxode_model, ["DUR"])
+    rxode_model = rxode_model.replace(
+        datainfo=rxode_model.datainfo.replace(path=None),
+        dataset=rxode_model.dataset.reset_index(drop=True),
+    )
+
+    # Add evid
+    rxode_model = add_evid(rxode_model)
+    
     rxode_model.update_source()
     
     return rxode_model
 
 def create_model(cg, model):
-    from pharmpy.plugins.nlmixr.model_block import (
-        add_statements,
-        add_ode
-        )
     add_statements(model, cg, model.statements.before_odes)
 
     if model.statements.ode_system:
@@ -88,8 +108,6 @@ def create_model(cg, model):
                    model.statements.after_odes)
 
 def add_true_statements(model, cg, statements):
-    from pharmpy.plugins.nlmixr.model_block import add_piecewise
-    from pharmpy.plugins.nlmixr.error_model import convert_eps_to_sigma
     for s in statements:
         expr = s.expression
         expr = convert_eps_to_sigma(expr, model)
@@ -99,7 +117,6 @@ def add_true_statements(model, cg, statements):
             cg.add(f'{s.symbol.name} <- {expr}')
 
 def create_theta(cg, model):
-    from pharmpy.modeling import get_thetas
     cg.add("thetas <-")
     cg.add("c(")
     thetas = get_thetas(model)
@@ -117,7 +134,6 @@ def create_eta(cg, model):
     cg.add(")")
 
 def create_sigma(cg, model):
-    from pharmpy.modeling import get_sigmas
     cg.add("sigmas <-")
     cg.add("c(")
     sigmas = get_sigmas(model)
