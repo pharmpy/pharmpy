@@ -141,6 +141,8 @@ def update_thetas(model: Model, control_stream, old: Parameters, new: Parameters
 
 
 def update_random_variables(model: Model, old: RandomVariables, new: RandomVariables):
+    _validate_eta_names(new.names)
+
     rvs_diff_eta = diff(old.etas, new.etas)
     new_omegas = update_random_variable_records(model, rvs_diff_eta, 'OMEGA')
     control_stream = model.internals.control_stream.replace_all('OMEGA', new_omegas)
@@ -149,6 +151,11 @@ def update_random_variables(model: Model, old: RandomVariables, new: RandomVaria
     new_sigmas = update_random_variable_records(model, rvs_diff_eps, 'SIGMA')
     control_stream = control_stream.replace_all('SIGMA', new_sigmas)
     return control_stream
+
+
+def _validate_eta_names(names):
+    if any(name.lower() == 'eta' for name in names):
+        raise ValueError('NONMEM does not allow etas named `eta`')
 
 
 def update_random_variable_records(model: Model, rvs_diff, record_type):

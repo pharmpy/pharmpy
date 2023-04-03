@@ -1154,3 +1154,19 @@ def test_parse_dvid(testdata, load_model_for_test):
     assert model.statements[-1] == Assignment.create("Y_2", "EPS_1 * F + EPS_2 + F")
     model = model.update_source()
     assert model.statements[-1] == Assignment.create("Y_2", "EPS_1 * F + EPS_2 + F")
+
+
+def test_validate_eta_names():
+    code = '''$PROBLEM
+    $INPUT ID DV TIME
+    $DATA file.csv IGNORE=@
+    $PRED
+    Y = THETA(1) + ETA(1) + ERR(1)
+    $THETA 0.1
+    $OMEGA 0.01
+    $SIGMA 1
+    '''
+    model = Model.create_model(StringIO(code))
+
+    with pytest.raises(ValueError, match='NONMEM does not allow etas named `eta`'):
+        add_iiv(model, ['Y'], 'exp', '+', eta_names=['eta'])
