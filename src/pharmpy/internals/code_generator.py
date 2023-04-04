@@ -14,6 +14,13 @@ class CodeGenerator:
 
     def empty_line(self):
         self.lines.append('')
+        
+    def remove(self, line):
+        # Remove the first instance exactly equal to input
+        for n, code_line in enumerate(self.lines):
+            if line in code_line:
+                self.lines.pop(n)
+                break
 
     def __str__(self):
         return '\n'.join(self.lines)
