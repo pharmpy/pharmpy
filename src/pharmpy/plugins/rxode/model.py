@@ -175,8 +175,13 @@ def convert_model(model):
     if isinstance(model, Model):
         return model
     
+    if model.internals.control_stream.get_records("DES"):
+        des = model.internals.control_stream.get_records("DES")[0]
+    else:
+        des = None
+    
     rxode_model = Model(
-        internals=RxODEModelInternals(),
+        internals=RxODEModelInternals(DES=des),
         parameters=model.parameters,
         random_variables=model.random_variables,
         statements=model.statements,
