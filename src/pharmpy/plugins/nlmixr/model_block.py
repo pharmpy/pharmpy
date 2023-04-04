@@ -65,8 +65,8 @@ def add_statements(
                 if s.expression.is_Piecewise:
                     convert_piecewise(s, cg, model)
                 else:
-                    expr, error = find_term(model, s.expression)
-                    add_error_model(cg, expr, error, s.symbol.name)
+                    expr, error = find_term(model, s.expression, cg)
+                    add_error_model(model, cg, expr, error, s.symbol.name)
                     add_error_relation(cg, error, s.symbol)
                     error_model_found = True
 

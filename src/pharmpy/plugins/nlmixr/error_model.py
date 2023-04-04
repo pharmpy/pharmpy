@@ -8,7 +8,9 @@ from pharmpy.modeling import get_sigmas
 
 
 def find_term(
-    model: pharmpy.model.Model, expr: sympy.Add
+    model: pharmpy.model.Model,
+    expr: sympy.Add,
+    cg: CodeGenerator
 ) -> Tuple[Union[sympy.Symbol, sympy.Add], Dict]:
     """
     For a given expression for the dependent variable, find the terms
@@ -20,6 +22,8 @@ def find_term(
         A pharmpy model object
     expr : sympy.Add
         An expression for the dependent variable. Should be a sympy.Add statement
+    cg : CodeGenerator
+        CodeGenerator holding the model code
 
     Raises
     ------
@@ -50,6 +54,7 @@ def find_term(
             else:
                 res = res + term
         else:
+            #FIXME: long runtime for complex piecewise statements
             full_term = full_expression(term, model)
             error_term = False
             for symbol in full_term.free_symbols:
@@ -101,21 +106,26 @@ def find_term(
         errors_add_prop[key] = term
     
     # Check if error is on the form Y = F + W * EPS(1)
-    errors_add_prop = var_3_check(errors_add_prop, res, model)
+    errors_add_prop = var_3_check(errors_add_prop, res, model, cg)
     
     return res, errors_add_prop
 
-def var_3_check(error: dict, res, model: pharmpy.model.Model) -> dict:
-    
+def var_3_check(error: dict,
+                res,
+                model: pharmpy.model.Model,
+                cg: CodeGenerator) -> dict:
     sigmas = get_sigmas(model)
     sigma = sigmas[0]
     if len(sigmas) == 1 and sigma.init == 1:
-        if error["add"] and not error["prop"]:
-            add = error["add"]
-            add_symbols = add.free_symbols
+        if (error["add"] and not error["prop"]) or (error["prop"] and not error["add"]):
+            if error["add"]:
+                term = error["add"]
+            else:
+                term = error["prop"]
+            term_symbols = term.free_symbols
             
-            if len(add_symbols) == 2 and sigma.symbol in add_symbols:
-                for symbol in add_symbols:
+            if len(term_symbols) == 2 and sigma.symbol in term_symbols:
+                for symbol in term_symbols:
                     if symbol != sigma.symbol:
                         w = symbol
                 
@@ -135,9 +145,11 @@ def var_3_check(error: dict, res, model: pharmpy.model.Model) -> dict:
                 
                 error["add"] = new_add
                 error["prop"] = new_prop
+                
+                # remove SIGMA definition due to redundancy
+                cg.remove(f"{sigma.name} <- fixed({sigma.init})")
                 return error
-    else:
-        return error
+    return error
 
 def var_3_check_find_term(expr, res, model):
     res_full = full_expression(res, model)
@@ -160,6 +172,7 @@ def var_3_check_find_term(expr, res, model):
     return new_add, new_prop
     
 def add_error_model(
+    model: pharmpy.model.Model,
     cg: CodeGenerator,
     expr: sympy.Symbol or sympy.Add,
     error: dict,
@@ -172,6 +185,8 @@ def add_error_model(
 
     Parameters
     ----------
+    model : pharmpy.model.Model
+        Connected pharmpy model object
     cg : CodeGenerator
         Codegenerator object holding the code to be added to.
     expr : sympy.Symbol or sympy.Add
@@ -331,10 +346,11 @@ def full_expression(expression: sympy.Expr, model: pharmpy.model.Model) -> sympy
         The fully expanded expression
 
     """
-    if model.statements.after_odes is None:
+    if len(model.statements.after_odes) == 0:
         statements = model.statements
     else:
         statements = model.statements.after_odes
+        
     for statement in reversed(statements):
         expression = subs(expression, {statement.symbol: statement.expression}, simultaneous=True)
     return expression
@@ -420,19 +436,19 @@ def convert_piecewise(
     for expr, cond in piecewise.expression.args:
         if first:
             cg.add(f'if ({cond}){{')
-            expr, error = find_term(model, expr)
+            expr, error = find_term(model, expr, cg)
             cg.add(f'{piecewise.symbol} <- {expr}')
             cg.add('}')
             first = False
         else:
             if cond is not sympy.S.true:
                 cg.add(f'else if ({cond}){{')
-                expr, error = find_term(model, expr)
+                expr, error = find_term(model, expr, cg)
                 cg.add(f'{piecewise.symbol} <- {expr}')
                 cg.add('}')
             else:
                 cg.add('else {')
-                expr, error = find_term(model, expr)
+                expr, error = find_term(model, expr, cg)
                 cg.add(f'{piecewise.symbol} <- {expr}')
                 cg.add('}')
 
