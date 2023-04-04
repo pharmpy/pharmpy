@@ -47,12 +47,11 @@ def find_term(
     dv = list(model.dependent_variables.keys())[0]
     expr = sympy.expand(expr)
     terms = sympy.Add.make_args(expr)
+    res_found = False
     for term in terms:
-        if term == dv:
-            if "res" not in locals():
-                res = term
-            else:
-                res = res + term
+        
+        if res_found:
+            error_term = True
         else:
             #FIXME: long runtime for complex piecewise statements
             full_term = full_expression(term, model)
@@ -61,13 +60,13 @@ def find_term(
                 if str(symbol) in model.random_variables.epsilons.names:
                     error_term = True
     
-            if error_term:
-                errors.append((term, full_term))
-            else:
-                if "res" not in locals():
-                    res = term
-                else:
-                    res = res + term
+        if error_term:
+            errors.append((term, full_term))
+        else:
+            if "res" not in locals():
+                res = term
+                res_found = True
+                    
 
     errors_add_prop = {"add": None, "prop": None}
     prop = False
