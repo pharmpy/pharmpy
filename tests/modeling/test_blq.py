@@ -3,7 +3,11 @@ import pytest
 from pharmpy.deps import numpy as np
 from pharmpy.model.model import update_datainfo
 from pharmpy.modeling.blq import transform_blq
-from pharmpy.modeling.error import set_additive_error_model, set_combined_error_model, set_proportional_error_model
+from pharmpy.modeling.error import (
+    set_additive_error_model,
+    set_combined_error_model,
+    set_proportional_error_model,
+)
 
 
 @pytest.mark.parametrize(
@@ -20,6 +24,12 @@ from pharmpy.modeling.error import set_additive_error_model, set_combined_error_
             set_proportional_error_model,
             ('PROP = F*SQRT(SIGMA(1,1))', 'SD = SQRT(PROP**2)'),
             ('Y = F + EPS(1)*F', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
+        ),
+        (
+            'm4',
+            set_combined_error_model,
+            ('PROP = F*SQRT(SIGMA(1,1))', 'ADD = SQRT(SIGMA(2,2))', 'SD = SQRT(ADD**2 + PROP**2)'),
+            ('Y = F + EPS(1)*F + EPS(2)', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
         ),
     ],
 )

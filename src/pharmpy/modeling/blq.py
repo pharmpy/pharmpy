@@ -5,7 +5,6 @@ from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment, EstimationSteps, Model
 
 from .data import remove_loq_data
-from .error import has_additive_error_model, has_proportional_error_model
 from .expressions import create_symbol
 
 SUPPORTED_METHODS = frozenset(['m1', 'm4'])
@@ -134,24 +133,26 @@ def _weight_as_sd(model, y, ipred):
     # FIXME: make more general
     sd_assignments = []
 
-    expr = model.statements.error.full_expression(y.expression)
+    expr = model.statements.find_assignment(y.symbol).expression
     rvs = model.random_variables.epsilons
     rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
-    eps = model.random_variables[rvs_in_y.pop()]
-    sigma = eps.variance
 
-    if has_additive_error_model(model):
-        symb_add = create_symbol(model, 'ADD')
-        add = Assignment(symb_add, sympy.sqrt(sigma))
-        sd_assignments.append(add)
-    elif has_proportional_error_model(model):
-        symb_prop = create_symbol(model, 'PROP')
-        prop = Assignment(symb_prop, sympy.sqrt(sigma) * ipred)
-        sd_assignments.append(prop)
-    else:
-        raise NotImplementedError(
-            'Currently only supports additional, proportional, and combined' 'error model'
-        )
+    for arg in expr.args:
+        if not rvs_in_y.intersection(arg.free_symbols):
+            continue
+        if isinstance(arg, sympy.Symbol):
+            eps = model.random_variables[arg]
+            sigma = eps.variance
+            symb_add = create_symbol(model, 'ADD')
+            add = Assignment(symb_add, sympy.sqrt(sigma))
+            sd_assignments.append(add)
+        else:
+            rv = rvs_in_y.intersection(arg.free_symbols).pop()
+            eps = model.random_variables[rv]
+            sigma = eps.variance
+            symb_prop = create_symbol(model, 'PROP')
+            prop = Assignment(symb_prop, sympy.sqrt(sigma) * ipred)
+            sd_assignments.append(prop)
 
     symb_sd = create_symbol(model, 'SD')
 
