@@ -33,13 +33,19 @@ from pharmpy.modeling import (
             ('PROP = F*SQRT(SIGMA(1,1))', 'ADD = SQRT(SIGMA(2,2))', 'SD = SQRT(ADD**2 + PROP**2)'),
             ('Y = F + EPS(1)*F + EPS(2)', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
         ),
+        (
+            'm3',
+            set_additive_error_model,
+            ('ADD = SQRT(SIGMA(1,1))', 'SD = SQRT(ADD**2)'),
+            ('Y = F + EPS(1)', 'Y = PHI((-F + LLOQ)/SD)'),
+        ),
     ],
 )
 def test_transform_blq(load_model_for_test, testdata, method, error_func, sd_ref, y_ref):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = error_func(model)
 
-    model = transform_blq(model, 0.1)
+    model = transform_blq(model, method=method, lloq=0.1)
 
     assert all(statement in model.model_code for statement in sd_ref)
     assert all(statement in model.model_code for statement in y_ref)

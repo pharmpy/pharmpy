@@ -8,13 +8,14 @@ from .data import remove_loq_data
 from .error import has_additive_error_model, has_combined_error_model, has_proportional_error_model
 from .expressions import create_symbol
 
-SUPPORTED_METHODS = frozenset(['m1', 'm4'])
+SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4'])
 
 
 def transform_blq(model: Model, lloq: Optional[float] = None, method: str = 'm4'):
     """Transform for BLQ data
 
-    Transform a given model, methods available are m1 and m4 [1]_. Current limits of the m4 method:
+    Transform a given model, methods available are m1, m3, and m4 [1]_. Current limits of the
+    m3 and m4 method:
 
     * Does not support covariance between epsilons
     * Only supports additive, proportional, and combined error model
@@ -63,9 +64,9 @@ def transform_blq(model: Model, lloq: Optional[float] = None, method: str = 'm4'
 
     if method == 'm1':
         model = _m1_method(model, lloq)
-    if method == 'm4':
+    if method in ('m3', 'm4'):
         _verify_model(model, method)
-        model = _m4_method(model, lloq)
+        model = _m3_m4_method(model, lloq, method)
 
     return model
 
@@ -74,7 +75,7 @@ def _m1_method(model, lloq):
     return remove_loq_data(model, lloq)
 
 
-def _m4_method(model, lloq):
+def _m3_m4_method(model, lloq, method):
     sset = model.statements
 
     est_steps = model.estimation_steps
@@ -104,7 +105,6 @@ def _m4_method(model, lloq):
     symb_dv = sympy.Symbol(model.datainfo.dv_column.name)
     symb_fflag = create_symbol(model, 'F_FLAG')
     symb_cumd = create_symbol(model, 'CUMD')
-    symb_cumdz = create_symbol(model, 'CUMDZ')
 
     if lloq_type == 'lloq':
         is_above_lloq = sympy.GreaterThan(symb_dv, symb_lloq)
@@ -117,15 +117,22 @@ def _m4_method(model, lloq):
         lloq = Assignment(symb_lloq, sympy.Float(lloq))
         assignments.append(lloq)
 
-    cumd = Assignment(symb_cumd, PHI((symb_lloq - ipred) / symb_sd))
-    cumdz = Assignment(symb_cumdz, PHI(-ipred / symb_sd))
-    fflag = Assignment(symb_fflag, sympy.Piecewise((0, is_above_lloq), (1, True)))
-    y_below_lloq = (symb_cumd - symb_cumdz) / (1 - symb_cumdz)
-    y_new = Assignment(
-        y.symbol, sympy.Piecewise((y.expression, is_above_lloq), (y_below_lloq, True))
-    )
+    assignments += Assignment(symb_fflag, sympy.Piecewise((0, is_above_lloq), (1, True)))
 
-    assignments.extend([cumd, cumdz, fflag, y_new])
+    cumd = Assignment(symb_cumd, PHI((symb_lloq - ipred) / symb_sd))
+    if method == 'm3':
+        assignments += Assignment(
+            y.symbol, sympy.Piecewise((y.expression, is_above_lloq), (cumd.expression, True))
+        )
+    else:
+        assignments += cumd
+        symb_cumdz = create_symbol(model, 'CUMDZ')
+        assignments += Assignment(symb_cumdz, PHI(-ipred / symb_sd))
+
+        y_below_lloq = (symb_cumd - symb_cumdz) / (1 - symb_cumdz)
+        assignments += Assignment(
+            y.symbol, sympy.Piecewise((y.expression, is_above_lloq), (y_below_lloq, True))
+        )
 
     y_idx = sset.find_assignment_index(y.symbol)
     sset_new = sset[:y_idx] + assignments + sset[y_idx + 1 :]
