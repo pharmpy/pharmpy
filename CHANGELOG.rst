@@ -1,5 +1,5 @@
-next version
-------------
+0.92.0 (2023-04-05)
+-------------------
 
 New features
 ============
@@ -10,6 +10,12 @@ New features
 * Add function ``modeling.get_dv_symbol``
 * Add function ``modeling.get_initial_conditions``
 * Add function ``modeling.set_initial_condition``
+* Add function ``modeling.transform_blq``
+
+Bugfixes
+========
+
+* Fix bug where $ABBR wasn't added for etas
 
 0.91.0 (2023-03-03)
 -------------------
