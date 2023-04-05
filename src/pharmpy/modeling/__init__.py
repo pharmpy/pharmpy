@@ -1,6 +1,7 @@
 from .allometry import add_allometry
 from .basic_models import create_basic_pk_model
 from .block_rvs import create_joint_distribution, split_joint_distribution
+from .blq import transform_blq
 from .common import (
     bump_model_number,
     convert_model,
@@ -363,6 +364,7 @@ __all__ = [
     'simplify_expression',
     'solve_ode_system',
     'split_joint_distribution',
+    'transform_blq',
     'transform_etas_boxcox',
     'transform_etas_john_draper',
     'transform_etas_tdist',

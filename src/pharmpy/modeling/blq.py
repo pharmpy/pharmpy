@@ -3,20 +3,59 @@ from typing import Optional
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment, EstimationSteps, Model
-from pharmpy.modeling import (
+
+from .data import remove_loq_data
+from .error import (
+    get_weighted_error_model_weight,
     has_weighted_error_model,
-    remove_loq_data,
     set_weighted_error_model,
     use_thetas_for_error_stdev,
 )
-
-from .error import get_weighted_error_model_weight
 from .expressions import create_symbol
 
 SUPPORTED_METHODS = frozenset(['m1', 'm4'])
 
 
 def transform_blq(model: Model, lloq: Optional[float] = None, method: str = 'm4'):
+    """Transform for BLQ data
+
+    Transform a given model, methods available are m1 and m4 [1]_.
+
+    .. [1] Beal SL. Ways to fit a PK model with some data below the quantification
+    limit. J Pharmacokinet Pharmacodyn. 2001 Oct;28(5):481-504. doi: 10.1023/a:1012299115260.
+    Erratum in: J Pharmacokinet Pharmacodyn 2002 Jun;29(3):309. PMID: 11768292.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    lloq : float, optional
+        LLOQ limit to use, if None Pharmpy will use the BLQ/LLOQ column in the dataset
+    method : str
+        Which BLQ method to use
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = transform_blq(model, method='m4')
+    >>> model.statements.find_assignment("Y")
+        ⎧ EPS₁⋅W + F   for BLQ = 1
+        ⎪
+        ⎨CUMD - CUMDZ
+        ⎪────────────   otherwise
+    Y = ⎩ 1 - CUMDZ
+
+    See also
+    --------
+    remove_loq_data
+
+    """
     if method not in SUPPORTED_METHODS:
         raise ValueError(
             f'Invalid `method`: got `{method}`,' f' must be one of {sorted(SUPPORTED_METHODS)}.'
