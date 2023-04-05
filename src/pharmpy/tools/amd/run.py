@@ -5,9 +5,9 @@ from typing import Callable, List, Optional, Tuple, Union
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Model, Results
+from pharmpy.modeling.blq import transform_blq
 from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
-from pharmpy.modeling.data import remove_loq_data
 from pharmpy.modeling.eta_additions import get_occasion_levels
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import retrieve_final_model, summarize_errors, write_results
@@ -39,7 +39,8 @@ def run_amd(
     vc_init: float = 1.0,
     mat_init: float = 0.1,
     search_space: Optional[str] = None,
-    lloq: Optional[float] = None,
+    lloq_method: Optional[str] = None,
+    lloq_limit: Optional[str] = None,
     order: Optional[List[str]] = None,
     allometric_variable: Optional[Union[str, sympy.Symbol]] = None,
     occasion: Optional[str] = None,
@@ -66,8 +67,10 @@ def run_amd(
         Initial estimate for the mean absorption time (not for iv models)
     search_space : str
         MFL for search space for structural model
-    lloq : float
-        Lower limit of quantification. LOQ data will be removed.
+    lloq_method : str
+        Method for how to remove LOQ data. See `transform_blq` for list of available methods
+    lloq_limit : float
+        Lower limit of quantification. If None LLOQ column from dataset will be used
     order : list
         Runorder of components
     allometric_variable: str or Symbol
@@ -115,8 +118,8 @@ def run_amd(
             f' only NONMEM model or standalone dataset are supported currently.'
         )
 
-    if lloq is not None:
-        model = remove_loq_data(model, lloq=lloq)
+    if lloq_method is not None:
+        model = transform_blq(model, lloq=lloq_limit, method=lloq_method)
 
     default_order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
     if order is None:
