@@ -2,9 +2,10 @@ from typing import Optional
 
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.funcs import PHI
-from pharmpy.model import Assignment, EstimationSteps, Model
+from pharmpy.model import Assignment, EstimationSteps, JointNormalDistribution, Model
 
 from .data import remove_loq_data
+from .error import has_additive_error_model, has_combined_error_model, has_proportional_error_model
 from .expressions import create_symbol
 
 SUPPORTED_METHODS = frozenset(['m1', 'm4'])
@@ -13,7 +14,10 @@ SUPPORTED_METHODS = frozenset(['m1', 'm4'])
 def transform_blq(model: Model, lloq: Optional[float] = None, method: str = 'm4'):
     """Transform for BLQ data
 
-    Transform a given model, methods available are m1 and m4 [1]_.
+    Transform a given model, methods available are m1 and m4 [1]_. Current limits of the m4 method:
+
+    * Does not support covariance between epsilons
+    * Only supports additive, proportional, and combined error model
 
     .. [1] Beal SL. Ways to fit a PK model with some data below the quantification
     limit. J Pharmacokinet Pharmacodyn. 2001 Oct;28(5):481-504. doi: 10.1023/a:1012299115260.
@@ -60,6 +64,7 @@ def transform_blq(model: Model, lloq: Optional[float] = None, method: str = 'm4'
     if method == 'm1':
         model = _m1_method(model, lloq)
     if method == 'm4':
+        _verify_model(model, method)
         model = _m4_method(model, lloq)
 
     return model
@@ -127,6 +132,20 @@ def _m4_method(model, lloq):
     model = model.replace(statements=sset_new)
 
     return model.update_source()
+
+
+def _verify_model(model, method):
+    rvs = model.random_variables.epsilons
+    if any(isinstance(rv, JointNormalDistribution) for rv in rvs):
+        raise ValueError(
+            f'Invalid input model: covariance between epsilons not supported in `method` {method}'
+        )
+    if not (
+        has_additive_error_model(model)
+        or has_proportional_error_model(model)
+        or has_combined_error_model(model)
+    ):
+        raise ValueError('Invalid input model: error model not supported')
 
 
 def _weight_as_sd(model, y, ipred):

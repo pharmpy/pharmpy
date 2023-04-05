@@ -2,11 +2,13 @@ import pytest
 
 from pharmpy.deps import numpy as np
 from pharmpy.model.model import update_datainfo
-from pharmpy.modeling.blq import transform_blq
-from pharmpy.modeling.error import (
+from pharmpy.modeling import (
+    create_joint_distribution,
     set_additive_error_model,
     set_combined_error_model,
+    set_iiv_on_ruv,
     set_proportional_error_model,
+    transform_blq,
 )
 
 
@@ -41,6 +43,19 @@ def test_transform_blq(load_model_for_test, testdata, method, error_func, sd_ref
 
     assert all(statement in model.model_code for statement in sd_ref)
     assert all(statement in model.model_code for statement in y_ref)
+
+
+def test_transform_blq_invalid_input_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model = set_combined_error_model(model)
+    model = create_joint_distribution(model, model.random_variables.epsilons.names)
+    with pytest.raises(ValueError, match='Invalid input model: covariance between epsilons'):
+        transform_blq(model, method='m4')
+
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model = set_iiv_on_ruv(model)
+    with pytest.raises(ValueError, match='Invalid input model: error model not supported'):
+        transform_blq(model, method='m4')
 
 
 def test_transform_blq_different_lloq(load_model_for_test, testdata):
