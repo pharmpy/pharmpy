@@ -11,7 +11,7 @@ from .expressions import create_symbol
 SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4'])
 
 
-def transform_blq(model: Model, lloq: Optional[float] = None, method: str = 'm4'):
+def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None):
     """Transform for BLQ data
 
     Transform a given model, methods available are m1, m3, and m4 [1]_. Current limits of the
@@ -28,10 +28,10 @@ def transform_blq(model: Model, lloq: Optional[float] = None, method: str = 'm4'
     ----------
     model : Model
         Pharmpy model
-    lloq : float, optional
-        LLOQ limit to use, if None Pharmpy will use the BLQ/LLOQ column in the dataset
     method : str
         Which BLQ method to use
+    lloq : float, optional
+        LLOQ limit to use, if None Pharmpy will use the BLQ/LLOQ column in the dataset
 
     Return
     ------
@@ -42,9 +42,9 @@ def transform_blq(model: Model, lloq: Optional[float] = None, method: str = 'm4'
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = transform_blq(model, method='m4')
+    >>> model = transform_blq(model, method='m4', lloq=0.1)
     >>> model.statements.find_assignment("Y")
-        ⎧ EPS₁⋅W + F   for BLQ = 1
+        ⎧ EPS₁⋅W + F   for DV ≥ LLOQ
         ⎪
         ⎨CUMD - CUMDZ
         ⎪────────────   otherwise

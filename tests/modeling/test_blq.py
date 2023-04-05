@@ -50,6 +50,8 @@ def test_transform_blq(load_model_for_test, testdata, method, error_func, sd_ref
     assert all(statement in model.model_code for statement in sd_ref)
     assert all(statement in model.model_code for statement in y_ref)
 
+    assert all(est.laplace for est in model.estimation_steps)
+
 
 def test_transform_blq_invalid_input_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
@@ -66,7 +68,7 @@ def test_transform_blq_invalid_input_model(load_model_for_test, testdata):
 
 def test_transform_blq_different_lloq(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    model_float = transform_blq(model, 0.1)
+    model_float = transform_blq(model, lloq=0.1)
 
     assert 'DV.GE.LLOQ' in model_float.model_code
 

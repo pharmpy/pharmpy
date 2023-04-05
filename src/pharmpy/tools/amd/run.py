@@ -119,7 +119,11 @@ def run_amd(
         )
 
     if lloq_method is not None:
-        model = transform_blq(model, lloq=lloq_limit, method=lloq_method)
+        model = transform_blq(
+            model,
+            method=lloq_method,
+            lloq=lloq_limit,
+        )
 
     default_order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
     if order is None:
