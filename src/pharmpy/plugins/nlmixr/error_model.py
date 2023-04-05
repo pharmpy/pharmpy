@@ -80,11 +80,12 @@ def find_term(
         term = t[0]
         full_term = t[1]
         for symbol in full_term.free_symbols:
-            for ali in find_aliases(symbol, model) + list(term.free_symbols):
+            for ali in find_aliases(symbol, model).union(term.free_symbols):
                 if ali in res_alias:
                     prop = True
                     # Remove the resulting symbol from the error term
                     term = term.subs(ali, 1)
+                    
 
         if prop:
             if errors_add_prop["prop"] is None:
@@ -355,7 +356,7 @@ def full_expression(expression: sympy.Expr, model: pharmpy.model.Model) -> sympy
     return expression
 
 
-def find_aliases(symbol: str, model: pharmpy.model) -> list:
+def find_aliases(symbol: str, model: pharmpy.model, aliases: set = None) -> list:
     """
     Returns a list of all variable names that are the same as the inputed symbol
 
@@ -372,16 +373,23 @@ def find_aliases(symbol: str, model: pharmpy.model) -> list:
         A list of aliases for the symbol.
 
     """
-    aliases = [symbol]
+    if aliases is None:
+        aliases = set([symbol])
+    else:
+        aliases.add(symbol)
+        
     for expr in model.statements.after_odes:
         if symbol == expr.symbol and isinstance(expr.expression, sympy.Symbol):
-            aliases.append(expr.expression)
+            if expr.expression not in aliases:
+                aliases.union(find_aliases(expr.expression, model, aliases))
         if symbol == expr.symbol and expr.expression.is_Piecewise:
             for e, c in expr.expression.args:
                 if isinstance(e, sympy.Symbol):
-                    aliases.append(e)
+                    if e not in aliases:
+                        aliases.union(find_aliases(e, model, aliases))
         if symbol == expr.expression:
-            aliases.append(expr.symbol)
+            if expr.symbol not in aliases:
+                aliases.union(find_aliases(expr.symbol, model, aliases))
     return aliases
 
 
