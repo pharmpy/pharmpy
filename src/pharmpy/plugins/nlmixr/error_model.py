@@ -51,12 +51,14 @@ def find_term(
     for term in terms:
         
         if res_found:
+            #TODO: check that current term contain epsilon
             error_term = True
         else:
             #FIXME: long runtime for complex piecewise statements
             full_term = full_expression(term, model)
             error_term = False
-            for symbol in full_term.free_symbols:
+            all_symbols = full_term.free_symbols.union(term.free_symbols)
+            for symbol in all_symbols:
                 if str(symbol) in model.random_variables.epsilons.names:
                     error_term = True
     
