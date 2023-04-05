@@ -7,11 +7,13 @@ def test_transform_blq(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model_m4_float = transform_blq(model, 0.1)
 
-    y_above_lloq = 'Y = F + EPS(1)*W'
+    y_above_lloq = 'Y = F + EPS(1)*F'
     y_below_lloq = 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'
+    sd_statement = 'SD = SQRT(PROP**2)'
 
     assert y_above_lloq in model_m4_float.model_code
     assert y_below_lloq in model_m4_float.model_code
+    assert sd_statement in model_m4_float.model_code
     assert 'LAPLACE' in model_m4_float.model_code
     assert 'DV.GE.LLOQ' in model_m4_float.model_code
 
@@ -26,6 +28,7 @@ def test_transform_blq(load_model_for_test, testdata):
 
     assert y_above_lloq in model_m4_blq.model_code
     assert y_below_lloq in model_m4_blq.model_code
+    assert sd_statement in model_m4_blq.model_code
     assert 'LAPLACE' in model_m4_blq.model_code
     assert 'BLQ.EQ.1' in model_m4_blq.model_code
 
@@ -40,6 +43,7 @@ def test_transform_blq(load_model_for_test, testdata):
 
     assert y_above_lloq in model_m4_lloq.model_code
     assert y_below_lloq in model_m4_lloq.model_code
+    assert sd_statement in model_m4_lloq.model_code
     assert 'LAPLACE' in model_m4_lloq.model_code
     assert 'DV.GE.LLOQ' in model_m4_lloq.model_code
     assert 'LLOQ = ' not in model_m4_lloq.model_code

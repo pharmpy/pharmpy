@@ -5,12 +5,7 @@ from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment, EstimationSteps, Model
 
 from .data import remove_loq_data
-from .error import (
-    get_weighted_error_model_weight,
-    has_weighted_error_model,
-    set_weighted_error_model,
-    use_thetas_for_error_stdev,
-)
+from .error import has_additive_error_model, has_proportional_error_model
 from .expressions import create_symbol
 
 SUPPORTED_METHODS = frozenset(['m1', 'm4'])
@@ -76,10 +71,6 @@ def _m1_method(model, lloq):
 
 
 def _m4_method(model, lloq):
-    if not has_weighted_error_model(model):
-        model = set_weighted_error_model(model)
-    model = use_thetas_for_error_stdev(model)
-
     sset = model.statements
 
     est_steps = model.estimation_steps
@@ -90,8 +81,6 @@ def _m4_method(model, lloq):
     y_symb = list(model.dependent_variables.keys())[0]
     y = sset.find_assignment(y_symb)
     ipred = y.expression.subs({rv: 0 for rv in model.random_variables.epsilons.names})
-    w = get_weighted_error_model_weight(model)
-    assert w is not None
 
     if isinstance(lloq, float):
         symb_lloq = create_symbol(model, 'LLOQ')
@@ -107,6 +96,7 @@ def _m4_method(model, lloq):
             raise ValueError(f'Can only have one of column type: {lloq_datainfo}')
         symb_lloq = sympy.Symbol(lloq_datainfo[0].name)
 
+    sd_assignments, symb_sd = _weight_as_sd(model, y, ipred)
     symb_dv = sympy.Symbol(model.datainfo.dv_column.name)
     symb_fflag = create_symbol(model, 'F_FLAG')
     symb_cumd = create_symbol(model, 'CUMD')
@@ -117,14 +107,14 @@ def _m4_method(model, lloq):
     else:
         is_above_lloq = sympy.Equality(symb_lloq, 1)
 
-    assignments = []
+    assignments = sd_assignments
 
     if isinstance(lloq, float):
         lloq = Assignment(symb_lloq, sympy.Float(lloq))
         assignments.append(lloq)
 
-    cumd = Assignment(symb_cumd, PHI((symb_lloq - ipred) / w))
-    cumdz = Assignment(symb_cumdz, PHI(-ipred / w))
+    cumd = Assignment(symb_cumd, PHI((symb_lloq - ipred) / symb_sd))
+    cumdz = Assignment(symb_cumdz, PHI(-ipred / symb_sd))
     fflag = Assignment(symb_fflag, sympy.Piecewise((0, is_above_lloq), (1, True)))
     y_below_lloq = (symb_cumd - symb_cumdz) / (1 - symb_cumdz)
     y_new = Assignment(
@@ -138,3 +128,33 @@ def _m4_method(model, lloq):
     model = model.replace(statements=sset_new)
 
     return model.update_source()
+
+
+def _weight_as_sd(model, y, ipred):
+    # FIXME: make more general
+    sd_assignments = []
+
+    expr = model.statements.error.full_expression(y.expression)
+    rvs = model.random_variables.epsilons
+    rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
+    eps = model.random_variables[rvs_in_y.pop()]
+    sigma = eps.variance
+
+    if has_additive_error_model(model):
+        symb_add = create_symbol(model, 'ADD')
+        add = Assignment(symb_add, sympy.sqrt(sigma))
+        sd_assignments.append(add)
+    elif has_proportional_error_model(model):
+        symb_prop = create_symbol(model, 'PROP')
+        prop = Assignment(symb_prop, sympy.sqrt(sigma) * ipred)
+        sd_assignments.append(prop)
+    else:
+        raise NotImplementedError(
+            'Currently only supports additional, proportional, and combined' 'error model'
+        )
+
+    symb_sd = create_symbol(model, 'SD')
+
+    sd = Assignment(symb_sd, sympy.sqrt(sympy.Add(*[ass.symbol**2 for ass in sd_assignments])))
+    sd_assignments.append(sd)
+    return sd_assignments, symb_sd
