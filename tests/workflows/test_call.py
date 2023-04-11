@@ -17,6 +17,7 @@ def sub(a, b):
     return wf
 
 
+@pytest.mark.xdist_group(name="workflow")
 def f(context, a, b):
     wf = sub(a, b)
     name = uuid4()
