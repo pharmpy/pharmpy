@@ -215,7 +215,7 @@ V,WGT,95th,0.940506,1.014065,1.091648
 59,CL,0.976533341560172,0.9298917166331006,0.9915919601050044
 59,V,0.9980614650127685,0.9734701845573707,1.014970713377564
 """
-    correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
+    correct = pd.read_csv(StringIO(correct), dtype={0: 'int32'}, index_col=[0, 1])
     correct.index.set_names(['ID', 'parameter'], inplace=True)
     pd.testing.assert_frame_equal(res.individual_effects, correct)
 
@@ -388,7 +388,7 @@ V,APGRX,other,0.8545033358481884,0.9090756330508469,0.9559616221673316
 59,V,1.0039597917474488,0.9945015889322739,1.0411260478578415
 """
 
-    correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
+    correct = pd.read_csv(StringIO(correct), dtype={0: 'int32'}, index_col=[0, 1])
     correct.index.set_names(['ID', 'parameter'], inplace=True)
     pd.testing.assert_frame_equal(res.individual_effects, correct)
 
