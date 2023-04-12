@@ -94,6 +94,11 @@ def add_statements(model: pharmpy.model.Model,
                                 e += " + "
                             e += f'prop({dv_term.prop.expr})'
                         cg.add(f'{s.symbol} ~ {e}')
+                else:
+                    dv_term = res_error_term(model, s.expression)
+                    cg.add(f"res <- {dv_term.res}")
+                    cg.add(f'add_error <- {dv_term.add.expr}')
+                    cg.add(f'prop_error <- {dv_term.prop.expr}')
 
             else:
                 expr = s.expression

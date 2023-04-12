@@ -183,8 +183,16 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         res_alias = set()
         for s in model.statements.after_odes:
             if s.symbol == dv:
-                for value, cond in s.expression.args:
-                    dv_term = res_error_term(model, value)
+                if s.expression.is_Piecewise:
+                    for value, cond in s.expression.args:
+                        if value != dv:
+                            dv_term = res_error_term(model, value)
+                            dependencies.update(dv_term.dependencies())
+                            
+                            dv_term.create_res_alias()
+                            res_alias.update(dv_term.res_alias)
+                else:        
+                    dv_term = res_error_term(model, s.expression)
                     dependencies.update(dv_term.dependencies())
                     
                     dv_term.create_res_alias()
