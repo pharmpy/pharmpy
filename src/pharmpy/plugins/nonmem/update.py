@@ -526,6 +526,13 @@ def to_des(model: Model, new: ODESystem):
     return model
 
 
+def add_comps_to_trans(model, trans):
+    odes = model.statements.ode_system
+    if odes is not None:
+        for i, amount in enumerate(odes.amounts, start=1):
+            trans[sympy.Function(amount.name)(0)] = sympy.Function('A_0')(i)
+
+
 def update_statements(model: Model, old: Statements, new: Statements, trans):
     trans['NaN'] = int(data.conf.na_rep)
     main_statements = Statements()
@@ -559,6 +566,8 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                     newcs = model.internals.control_stream.replace_records([subs], [newsubs])
                     model = model.replace(internals=model.internals.replace(control_stream=newcs))
                     model = update_model_record(model, advan)
+
+    add_comps_to_trans(model, trans)
 
     main_statements = model.statements.before_odes
     error_statements = model.statements.after_odes

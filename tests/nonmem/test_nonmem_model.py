@@ -24,6 +24,7 @@ from pharmpy.modeling import (
     create_joint_distribution,
     remove_iiv,
     set_estimation_step,
+    set_initial_condition,
     set_initial_estimates,
     set_zero_order_absorption,
     set_zero_order_elimination,
@@ -1170,3 +1171,11 @@ def test_validate_eta_names():
 
     with pytest.raises(ValueError, match='NONMEM does not allow etas named `eta`'):
         add_iiv(model, ['Y'], 'exp', '+', eta_names=['eta'])
+
+
+def test_ics(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    model = set_initial_condition(model, 'CENTRAL', 23)
+    pk = model.internals.control_stream.get_pred_pk_record()
+    a = str(pk).split('\n')
+    assert a[9] == 'A_0(1) = 23'
