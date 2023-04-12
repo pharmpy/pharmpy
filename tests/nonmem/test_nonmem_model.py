@@ -28,6 +28,7 @@ from pharmpy.modeling import (
     set_initial_estimates,
     set_zero_order_absorption,
     set_zero_order_elimination,
+    set_zero_order_input,
 )
 from pharmpy.plugins.nonmem import convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
@@ -1179,3 +1180,11 @@ def test_ics(load_model_for_test, pheno_path):
     pk = model.internals.control_stream.get_pred_pk_record()
     a = str(pk).split('\n')
     assert a[9] == 'A_0(1) = 23'
+
+
+def test_zo(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    model = set_zero_order_input(model, "CENTRAL", 10)
+    des = model.internals.control_stream.get_records("DES")[0]
+    print(des)
+    assert str(des) == "$DES\nDADT(1) = -A(1)*CL/V + 10\n"

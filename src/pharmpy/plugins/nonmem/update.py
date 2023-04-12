@@ -375,9 +375,9 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
 
     model = update_lag_time(model, old, new)
 
-    advan, trans, nonlin = new_advan_trans(model)
+    advan, trans, nonlin, haszo = new_advan_trans(model)
 
-    if nonlin:
+    if nonlin or haszo:
         model = to_des(model, new)
     else:
         if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.datainfo.names:
@@ -401,6 +401,12 @@ def is_nonlinear_odes(model: Model):
     odes = model.statements.ode_system
     M = odes.compartmental_matrix
     return odes.t in M.free_symbols
+
+
+def has_zero_order_inputs(model: Model):
+    odes = model.statements.ode_system
+    zo = odes.zero_order_inputs
+    return not all(a == 0 for a in zo)
 
 
 def update_infusion(model: Model, old: ODESystem):
@@ -969,7 +975,8 @@ def new_advan_trans(model: Model):
         oldtrans = None
     odes = model.statements.ode_system
     nonlin = is_nonlinear_odes(model)
-    if nonlin:
+    has_zo = has_zero_order_inputs(model)
+    if nonlin or has_zo:
         advan = 'ADVAN13'
     elif match_advan1(odes):
         advan = 'ADVAN1'
@@ -1030,7 +1037,7 @@ def new_advan_trans(model: Model):
     else:
         trans = 'TRANS1'
 
-    return advan, trans, nonlin
+    return advan, trans, nonlin, has_zo
 
 
 def update_subroutines_record(model: Model, advan, trans):
