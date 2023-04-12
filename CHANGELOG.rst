@@ -11,6 +11,7 @@ New features
 * Add function ``modeling.get_initial_conditions``
 * Add function ``modeling.set_initial_condition``
 * Add function ``modeling.transform_blq``
+* Add function ``modeling.get_zero_order_inputs``
 
 Bugfixes
 ========

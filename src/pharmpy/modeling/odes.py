@@ -2034,6 +2034,32 @@ def set_initial_condition(
     return model.update_source()
 
 
+def get_zero_order_inputs(model: Model) -> sympy.Matrix:
+    """Get zero order inputs for all compartments
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    sympy.Matrix
+        Vector of inputs
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import get_initial_conditions, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> get_zero_order_inputs(model)
+    Matrix([[0]])
+    """
+    odes = model.statements.ode_system
+    if odes is None:
+        return sympy.Matrix()
+    return odes.zero_order_inputs
+
+
 class ODEDisplayer:
     def __init__(self, eqs, ics):
         self._eqs = eqs

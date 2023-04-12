@@ -20,6 +20,7 @@ from pharmpy.modeling import (
     create_joint_distribution,
     fix_parameters_to,
     get_initial_conditions,
+    get_zero_order_inputs,
     has_first_order_elimination,
     has_linear_odes,
     has_linear_odes_with_real_eigenvalues,
@@ -3350,7 +3351,7 @@ def test_get_initial_conditions(load_example_model_for_test, load_model_for_test
     assert get_initial_conditions(model) == {}
 
 
-def test_set_initial_conditions(load_example_model_for_test):
+def test_set_intial_conditions(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     model = set_initial_condition(model, "CENTRAL", 10)
     assert len(model.statements) == 16
@@ -3363,3 +3364,9 @@ def test_set_initial_conditions(load_example_model_for_test):
     assert model.statements.before_odes[-1] == ic
     model = set_initial_condition(model, "CENTRAL", 0)
     assert len(model.statements) == 15
+
+
+def test_get_zero_order_inputs(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    zo = get_zero_order_inputs(model)
+    assert zo == sympy.Matrix([[0]])
