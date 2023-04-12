@@ -1030,6 +1030,15 @@ class CompartmentalSystem(ODESystem):
             return iter(a)
 
         nodes = list(nx.bfs_tree(self._g, dosecmt, sort_neighbors=sortfunc))
+
+        remaining = set(self._g.nodes) - {output} - set(nodes)
+        if remaining:  # Disjoint graph
+            # Start with the one compartment having a zero order input (target for TMDD)
+            for comp in remaining:
+                if comp.input != 0:
+                    break
+            ordered_remaining = list(nx.bfs_tree(self._g, comp, sort_neighbors=sortfunc))
+            nodes += ordered_remaining
         return nodes
 
     @property

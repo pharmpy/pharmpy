@@ -194,6 +194,7 @@ from .results import (
     check_high_correlations,
     check_parameters_near_bounds,
 )
+from .tmdd import set_tmdd
 from .units import get_unit_of
 from .update_inits import update_initial_individual_estimates, update_inits
 from .write_csv import write_csv
@@ -360,6 +361,7 @@ __all__ = [
     'set_proportional_error_model',
     'set_seq_zo_fo_absorption',
     'set_time_varying_error_model',
+    'set_tmdd',
     'set_transit_compartments',
     'set_weighted_error_model',
     'set_zero_order_absorption',

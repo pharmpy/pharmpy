@@ -13,6 +13,7 @@ New features
 * Add function ``modeling.transform_blq``
 * Add function ``modeling.get_zero_order_inputs``
 * Add function ``modeling.set_zero_order_input``
+* Add function ``modeling.set_tmdd``
 
 Bugfixes
 ========
