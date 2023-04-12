@@ -18,25 +18,25 @@ from pharmpy.modeling import (
         (
             'm4',
             set_additive_error_model,
-            ('ADD = SQRT(SIGMA(1,1))', 'SD = SQRT(ADD**2)'),
+            'SD = SQRT(SIGMA(1,1))',
             ('Y = F + EPS(1)', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
         ),
         (
             'm4',
             set_proportional_error_model,
-            ('PROP = F*SQRT(SIGMA(1,1))', 'SD = SQRT(PROP**2)'),
+            'SD = SQRT(SIGMA(1,1))*ABS(F)',
             ('Y = F + EPS(1)*F', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
         ),
         (
             'm4',
             set_combined_error_model,
-            ('PROP = F*SQRT(SIGMA(1,1))', 'ADD = SQRT(SIGMA(2,2))', 'SD = SQRT(ADD**2 + PROP**2)'),
+            'SD = SQRT(F**2*SIGMA(1,1) + SIGMA(2,2))',
             ('Y = F + EPS(1)*F + EPS(2)', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
         ),
         (
             'm3',
             set_additive_error_model,
-            ('ADD = SQRT(SIGMA(1,1))', 'SD = SQRT(ADD**2)'),
+            'SD = SQRT(SIGMA(1,1))',
             ('Y = F + EPS(1)', 'Y = PHI((-F + LLOQ)/SD)'),
         ),
     ],
@@ -47,7 +47,7 @@ def test_transform_blq(load_model_for_test, testdata, method, error_func, sd_ref
 
     model = transform_blq(model, method=method, lloq=0.1)
 
-    assert all(statement in model.model_code for statement in sd_ref)
+    assert sd_ref in model.model_code
     assert all(statement in model.model_code for statement in y_ref)
 
     assert all(est.laplace for est in model.estimation_steps)

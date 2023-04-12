@@ -6,7 +6,7 @@ from pharmpy.model import Assignment, EstimationSteps, JointNormalDistribution, 
 
 from .data import remove_loq_data
 from .error import has_additive_error_model, has_combined_error_model, has_proportional_error_model
-from .expressions import create_symbol
+from .expressions import create_symbol, simplify_expression
 
 SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4'])
 
@@ -101,7 +101,7 @@ def _m3_m4_method(model, lloq, method):
             raise ValueError(f'Can only have one of column type: {lloq_datainfo}')
         symb_lloq = sympy.Symbol(lloq_datainfo[0].name)
 
-    sd_assignments, symb_sd = _weight_as_sd(model, y, ipred)
+    sd = _get_sd(model, y)
     symb_dv = sympy.Symbol(model.datainfo.dv_column.name)
     symb_fflag = create_symbol(model, 'F_FLAG')
     symb_cumd = create_symbol(model, 'CUMD')
@@ -111,7 +111,7 @@ def _m3_m4_method(model, lloq, method):
     else:
         is_above_lloq = sympy.Equality(symb_lloq, 1)
 
-    assignments = sd_assignments
+    assignments = [sd]
 
     if isinstance(lloq, float):
         lloq = Assignment(symb_lloq, sympy.Float(lloq))
@@ -119,7 +119,7 @@ def _m3_m4_method(model, lloq, method):
 
     assignments += Assignment(symb_fflag, sympy.Piecewise((0, is_above_lloq), (1, True)))
 
-    cumd = Assignment(symb_cumd, PHI((symb_lloq - ipred) / symb_sd))
+    cumd = Assignment(symb_cumd, PHI((symb_lloq - ipred) / sd.symbol))
     if method == 'm3':
         assignments += Assignment(
             y.symbol, sympy.Piecewise((y.expression, is_above_lloq), (cumd.expression, True))
@@ -127,7 +127,7 @@ def _m3_m4_method(model, lloq, method):
     else:
         assignments += cumd
         symb_cumdz = create_symbol(model, 'CUMDZ')
-        assignments += Assignment(symb_cumdz, PHI(-ipred / symb_sd))
+        assignments += Assignment(symb_cumdz, PHI(-ipred / sd.symbol))
 
         y_below_lloq = (symb_cumd - symb_cumdz) / (1 - symb_cumdz)
         assignments += Assignment(
@@ -155,33 +155,18 @@ def _verify_model(model, method):
         raise ValueError('Invalid input model: error model not supported')
 
 
-def _weight_as_sd(model, y, ipred):
-    # FIXME: make more general
-    sd_assignments = []
-
-    expr = model.statements.find_assignment(y.symbol).expression
+def _get_sd(model, y):
+    y_expr = model.statements.find_assignment(y.symbol).expression
     rvs = model.random_variables.epsilons
-    rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
 
-    for arg in expr.args:
-        if not rvs_in_y.intersection(arg.free_symbols):
-            continue
-        if isinstance(arg, sympy.Symbol):
-            eps = model.random_variables[arg]
-            sigma = eps.variance
-            symb_add = create_symbol(model, 'ADD')
-            add = Assignment(symb_add, sympy.sqrt(sigma))
-            sd_assignments.append(add)
-        else:
-            rv = rvs_in_y.intersection(arg.free_symbols).pop()
-            eps = model.random_variables[rv]
-            sigma = eps.variance
-            symb_prop = create_symbol(model, 'PROP')
-            prop = Assignment(symb_prop, sympy.sqrt(sigma) * ipred)
-            sd_assignments.append(prop)
+    rv_terms = [arg for arg in y_expr.args if arg.free_symbols.intersection(rvs.free_symbols)]
+    sd_expr = []
+    for i, term in enumerate(rv_terms, 1):
+        expr = rvs.replace_with_sympy_rvs(term)
+        std_term = simplify_expression(model, sympy.stats.std(expr))
+        sd_expr.append(std_term)
 
     symb_sd = create_symbol(model, 'SD')
+    sd_expr_full = sympy.sqrt(sympy.Add(*[expr**2 for expr in sd_expr]))
 
-    sd = Assignment(symb_sd, sympy.sqrt(sympy.Add(*[ass.symbol**2 for ass in sd_assignments])))
-    sd_assignments.append(sd)
-    return sd_assignments, symb_sd
+    return Assignment(symb_sd, simplify_expression(model, sd_expr_full))
