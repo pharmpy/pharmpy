@@ -6,7 +6,7 @@ from itertools import chain, product
 from typing import Container, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union, overload
 
 from pharmpy.deps import numpy as np
-from pharmpy.deps import symengine, sympy
+from pharmpy.deps import symengine, sympy, sympy_stats
 from pharmpy.internals.expr.eval import eval_expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
@@ -793,10 +793,39 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         return RandomVariables.create(rvs)
 
+    def replace_with_sympy_rvs(self, expr):
+        """Replaces Pharmpy RVs in a Sympy expression with Sympy RVs
+
+        Takes a Sympy expression and replaces all RVs with Sympy RVs, resulting expression
+        can be used in different Sympy functions (e.g. sympy.stats.std())
+
+        Parameters
+        ----------
+        expr : sympy.Expr
+            Expression which will get RVs replaced
+
+        Returns
+        -------
+        sympy.Expr
+            Expression with replaced RVs
+        """
+        rvs_in_expr = {self[rv] for rv in expr.free_symbols.intersection(self.free_symbols)}
+        subs_dict = {}
+        for i, rv in enumerate(rvs_in_expr):
+            if isinstance(rv, JointNormalDistribution):
+                # sympy.stats.MultivariateNormal uses variance, sympy.stats.Normal takes std
+                dist = sympy.stats.MultivariateNormal(f'__rv{i}', rv.mean, rv.variance)
+                for j in range(0, len(rv.names)):
+                    subs_dict[rv.names[j]] = dist[j]
+            else:
+                subs_dict[rv.names[0]] = sympy_stats.Normal(
+                    f'__rv{i}', rv.mean, sympy.sqrt(rv.variance)
+                )
+        return expr.subs(subs_dict)
+
 
 def _sample_from_distributions(distributions, expr, parameters, nsamples, rng):
     random_variable_symbols = expr.free_symbols.difference(parameters.keys())
-    print(random_variable_symbols)
     filtered_distributions = filter_distributions(distributions, random_variable_symbols)
     sampling_rvs = subs_distributions(filtered_distributions, parameters)
     sampled_expr = subs(expr, parameters, simultaneous=True)

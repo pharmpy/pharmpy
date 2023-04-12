@@ -784,3 +784,29 @@ def test_levels():
         h[x3]
     with pytest.raises(KeyError):
         h['NOTHING']
+
+
+def test_replace_with_sympy_rvs():
+    var1 = symbol('OMEGA(1,1)')
+
+    dist = NormalDistribution.create('ETA(1)', 'iiv', 0, var1)
+    rvs = RandomVariables.create([dist])
+
+    expr_symbs = symbol('ETA(1)') + symbol('x')
+    expr_sympy = rvs.replace_with_sympy_rvs(expr_symbs)
+
+    assert expr_symbs != expr_sympy
+    assert not all(isinstance(arg, symbol) for arg in expr_sympy.args)
+
+    var2, cov = symbol('OMEGA(2,2)'), symbol('OMEGA(2,1)')
+
+    dist = JointNormalDistribution.create(
+        ['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[var1, cov], [cov, var2]]
+    )
+    rvs = RandomVariables.create([dist])
+
+    expr_symbs = symbol('ETA(1)') + symbol('ETA(2)') + symbol('x')
+    expr_sympy = rvs.replace_with_sympy_rvs(expr_symbs)
+
+    assert expr_symbs != expr_sympy
+    assert not all(isinstance(arg, symbol) for arg in expr_sympy.args)
