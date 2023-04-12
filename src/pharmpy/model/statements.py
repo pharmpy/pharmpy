@@ -1023,28 +1023,9 @@ class CompartmentalSystem(ODESystem):
         >>> model = load_example_model("pheno")
         >>> sympy.pprint(model.statements.ode_system.zero_order_inputs)
         [0]
-        >>> model = set_zero_order_absorption(model)    # doctest: +ELLIPSIS
-        >>> sympy.pprint(model.statements.ode_system.zero_order_inputs)
-                ⎡⎧AMT            ⎤
-                ⎢⎪───  for D₁ > t⎥
-                ⎢⎨ D₁            ⎥
-                ⎢⎪               ⎥
-                ⎣⎩ 0   otherwise ⎦
 
         """
-        inputs = []
-        for node in self._order_compartments():  # self._g.nodes:
-            if node.dose is not None and isinstance(node.dose, Infusion):
-                if node.dose.rate is not None:
-                    expr = node.dose.rate
-                    cond = node.dose.amount / node.dose.rate
-                else:
-                    expr = node.dose.amount / node.dose.duration
-                    cond = node.dose.duration
-                infusion_func = sympy.Piecewise((expr, self.t < cond), (0, True))
-                inputs.append(infusion_func)
-            else:
-                inputs.append(0)
+        inputs = [node.input for node in self._order_compartments()]
         return sympy.Matrix(inputs)
 
     def __len__(self):
