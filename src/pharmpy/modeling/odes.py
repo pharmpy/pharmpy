@@ -2049,7 +2049,7 @@ def get_zero_order_inputs(model: Model) -> sympy.Matrix:
 
     Examples
     --------
-    >>> from pharmpy.modeling import get_initial_conditions, load_example_model
+    >>> from pharmpy.modeling import get_zero_order_inputs, load_example_model
     >>> model = load_example_model("pheno")
     >>> get_zero_order_inputs(model)
     Matrix([[0]])
