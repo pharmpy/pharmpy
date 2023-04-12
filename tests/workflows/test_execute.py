@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass, replace
 from typing import Optional
 
@@ -16,6 +17,14 @@ from pharmpy.workflows import Task, ToolDatabase, Workflow, execute_workflow, lo
 # on C: (main drive is D:).
 
 
+def ignore_scratch_warning():
+    warnings.filterwarnings(
+        "ignore",
+        message=".*creating scratch directories is taking a surprisingly long time",
+        category=UserWarning,
+    )
+
+
 @pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_constant(tmp_path):
     a = lambda: 1  # noqa E731
@@ -23,7 +32,9 @@ def test_execute_workflow_constant(tmp_path):
     wf = Workflow([t1], name='test-workflow')
 
     with chdir(tmp_path):
-        res = execute_workflow(wf)
+        with warnings.catch_warnings():
+            ignore_scratch_warning()
+            res = execute_workflow(wf)
 
     assert res == a()
 
@@ -38,7 +49,9 @@ def test_execute_workflow_unary(tmp_path):
     wf.add_task(t2, predecessors=[t1])
 
     with chdir(tmp_path):
-        res = execute_workflow(wf)
+        with warnings.catch_warnings():
+            ignore_scratch_warning()
+            res = execute_workflow(wf)
 
     assert res == f(a())
 
@@ -55,7 +68,9 @@ def test_execute_workflow_binary(tmp_path):
     wf.add_task(t3, predecessors=[t1, t2])
 
     with chdir(tmp_path):
-        res = execute_workflow(wf)
+        with warnings.catch_warnings():
+            ignore_scratch_warning()
+            res = execute_workflow(wf)
 
     assert res == f(a(), b())
 
@@ -72,7 +87,9 @@ def test_execute_workflow_map_reduce(tmp_path):
     wf.insert_workflow(Workflow(layer_reduce))
 
     with chdir(tmp_path):
-        res = execute_workflow(wf)
+        with warnings.catch_warnings():
+            ignore_scratch_warning()
+            res = execute_workflow(wf)
 
     assert res == sum(map(f, range(n)))
 
@@ -91,7 +108,9 @@ def test_execute_workflow_set_bolus_absorption(load_model_for_test, testdata, tm
     wf.insert_workflow(Workflow([t3]))
 
     with chdir(tmp_path):
-        res = execute_workflow(wf)
+        with warnings.catch_warnings():
+            ignore_scratch_warning()
+            res = execute_workflow(wf)
 
     assert res.model_code == advan1_before
 
@@ -117,8 +136,9 @@ def test_execute_workflow_fit_mock(load_model_for_test, testdata, tmp_path):
     wf.insert_workflow(Workflow([gather]))
 
     with chdir(tmp_path):
-        # res = execute_workflow(wf)
-        execute_workflow(wf)
+        with warnings.catch_warnings():
+            ignore_scratch_warning()
+            execute_workflow(wf)
 
     # FIXME: These cannot be updated in place
     # for orig, fitted, ofv in zip(models, res, ofvs):
@@ -135,7 +155,9 @@ def test_execute_workflow_results(tmp_path):
     wf = Workflow([Task('result', lambda: mfr)], name='test-workflow')
 
     with chdir(tmp_path):
-        res = execute_workflow(wf)
+        with warnings.catch_warnings():
+            ignore_scratch_warning()
+            res = execute_workflow(wf)
 
     assert res.ofv == ofv
     assert not hasattr(res, 'tool_database')
@@ -155,7 +177,9 @@ def test_execute_workflow_results_with_tool_database(tmp_path):
     wf = Workflow([Task('result', lambda: mfr)], name='test-workflow')
 
     with chdir(tmp_path):
-        res = execute_workflow(wf)
+        with warnings.catch_warnings():
+            ignore_scratch_warning()
+            res = execute_workflow(wf)
         assert res.tool_database is not None
 
     assert res.ofv == ofv
@@ -168,7 +192,9 @@ def test_execute_workflow_results_with_report(testdata, tmp_path):
     wf = Workflow([Task('result', lambda: mfr)], name='test-workflow')
 
     with chdir(tmp_path):
-        res = execute_workflow(wf)
+        with warnings.catch_warnings():
+            ignore_scratch_warning()
+            res = execute_workflow(wf)
         html = res.tool_database.path / 'results.html'
         assert html.is_file()
         assert html.stat().st_size > 500000
