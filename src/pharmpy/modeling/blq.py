@@ -5,7 +5,6 @@ from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment, EstimationSteps, JointNormalDistribution, Model
 
 from .data import remove_loq_data
-from .error import has_additive_error_model, has_combined_error_model, has_proportional_error_model
 from .expressions import create_symbol, simplify_expression
 
 SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4'])
@@ -147,12 +146,6 @@ def _verify_model(model, method):
         raise ValueError(
             f'Invalid input model: covariance between epsilons not supported in `method` {method}'
         )
-    if not (
-        has_additive_error_model(model)
-        or has_proportional_error_model(model)
-        or has_combined_error_model(model)
-    ):
-        raise ValueError('Invalid input model: error model not supported')
 
 
 def _get_sd(model, y):
@@ -162,6 +155,12 @@ def _get_sd(model, y):
     rv_terms = [arg for arg in y_expr.args if arg.free_symbols.intersection(rvs.free_symbols)]
     sd_expr = []
     for i, term in enumerate(rv_terms, 1):
+        rvs_in_term = model.random_variables.free_symbols.intersection(term.free_symbols)
+        if len(rvs_in_term) > 1:
+            raise ValueError(
+                'Invalid input model: error model not supported, terms in error model cannot contain '
+                'more than one random variable'
+            )
         expr = rvs.replace_with_sympy_rvs(term)
         std_term = simplify_expression(model, sympy.stats.std(expr))
         sd_expr.append(std_term)

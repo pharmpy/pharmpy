@@ -7,6 +7,7 @@ from pharmpy.modeling import (
     set_additive_error_model,
     set_combined_error_model,
     set_iiv_on_ruv,
+    set_power_on_ruv,
     set_proportional_error_model,
     transform_blq,
 )
@@ -32,6 +33,12 @@ from pharmpy.modeling import (
             set_combined_error_model,
             'SD = SQRT(F**2*SIGMA(1,1) + SIGMA(2,2))',
             ('Y = F + EPS(1)*F + EPS(2)', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
+        ),
+        (
+            'm4',
+            set_power_on_ruv,
+            'SD = SQRT(SIGMA(1,1))*SQRT(F**(2*THETA(3)))',
+            ('Y = F + EPS(1)*F**THETA(3)', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
         ),
         (
             'm3',
@@ -63,7 +70,7 @@ def test_transform_blq_invalid_input_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = set_iiv_on_ruv(model)
     with pytest.raises(ValueError, match='Invalid input model: error model not supported'):
-        transform_blq(model, method='m4')
+        transform_blq(model, method='m4', lloq=0.1)
 
 
 def test_transform_blq_different_lloq(load_model_for_test, testdata):
