@@ -101,8 +101,7 @@ def add_statements(model: pharmpy.model.Model,
                     first = True
                     for value, cond in expr.args:
                         if cond is not sympy.S.true:
-                            if cond.atoms(sympy.Eq):
-                                cond = convert_eq(cond)
+                            cond = convert_eq(cond)
                             if first:
                                 cg.add(f'if ({cond}) {{')
                                 first = False
@@ -380,5 +379,12 @@ def convert_eq(cond: sympy.Eq) -> str:
     cond = cond.replace("=", "==")
     cond = cond.replace("∧", "&")
     cond = cond.replace("∨", "|")
-    cond = re.sub(r'(ID\s*==\s*)(\d+)', r"\1'\2'", cond)
+    
+    cond = re.sub(r'(ID\s*==\s*)(\d+)',r"\1'\2'", cond)
+    
+    if (re.search(r'(ID\s*<=\s*)(\d+)', cond) or
+        re.search(r'(ID\s*>=\s*)(\d+)', cond) or
+        re.search(r'(ID\s*<\s*)(\d+)', cond) or
+        re.search(r'(ID\s*>\s*)(\d+)', cond)):
+        raise ValueError(f"Condition '{cond}' not supported by nlmixr")
     return cond
