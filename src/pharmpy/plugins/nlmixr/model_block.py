@@ -1,11 +1,12 @@
 import re
+from typing import Union
 
 import pharmpy.model
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model import Assignment
 
-from .error_model import add_error_model, add_error_relation, convert_piecewise, find_term
+from .error_model import res_error_term
 from .name_mangle import name_mangle
 
 
@@ -28,14 +29,16 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
         else:
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
-
-def add_statements(
-    model: pharmpy.model.Model, cg: CodeGenerator, statements: pharmpy.model.statements
-) -> None:
+def add_statements(model: pharmpy.model.Model,
+                       cg: CodeGenerator,
+                       statements: pharmpy.model.statements,
+                       only_piecewise: Union[bool, None] = None,
+                       dependencies: set[sympy.Symbol] = set(),
+                       res_alias: set[sympy.Symbol] = set()):
     """
-    Add statements to generated code generator. The statements should be before
-    or after the ODEs.
-
+    Will add the provided statements to the code generator objects, translated
+    to nlmixr format.
+    
     Parameters
     ----------
     model : pharmpy.model.Model
@@ -44,31 +47,53 @@ def add_statements(
         Codegenerator object holding the code to be added to.
     statements : pharmpy.model.statements
         Statements to be added to the code generator.
+    only_piecewise : Union[bool, None], optional
+        Is the dependent variable only dependent on piecewise statements.
+        The default is None.
+    dependencies : set[sympy.Symbols], optional
+        A set with symbols that the dependent variable are dependent on.
+        Could for instance a term 'W' which define the error model.
+        The default is set().
+    res_alias : set[sympy.Symbols], optional
+        A set with aliases for the dependent or resulting term for the 
+        dependent variable. The default is set().
+
     """
+    
     # FIXME: handle other DVs?
     dv = list(model.dependent_variables.keys())[0]
-
-    error_model_found = False
-    dv_found = False
-
+        
     for s in statements:
         if isinstance(s, Assignment):
-            if s.symbol == dv:
-                dv_found = True
-
+            if s.symbol == dv and not s.expression.is_Piecewise:
                 # FIXME : Find another way to assert that a sigma exist
                 sigma = None
                 for dist in model.random_variables.epsilons:
                     sigma = dist.variance
                 assert sigma is not None
-
-                if s.expression.is_Piecewise:
-                    convert_piecewise(s, cg, model)
-                else:
-                    expr, error = find_term(model, s.expression, cg)
-                    add_error_model(model, cg, expr, error, s.symbol.name)
-                    add_error_relation(cg, error, s.symbol)
-                    error_model_found = True
+                
+                if only_piecewise is False:
+                    dv_term = res_error_term(model, s.expression)
+                    res = dv_term.res
+                    if len(dependencies) != 0:
+                        cg.add(f'{s.symbol} <- {res}')
+                        cg.add(f'{s.symbol} ~ add(add_error) + prop(prop_error)')
+                        
+                        # TODO: Remove sigma here instead of at the end
+                        # removal of sigma done at the end
+                        
+                    else:
+                        cg.add(f'{s.symbol} <- {res}')
+                        e = ""
+                        first = True
+                        if dv_term.add.expr != None:
+                            e += f'add({dv_term.add.expr})'
+                            first = False
+                        if dv_term.prop.expr != None:
+                            if not first:
+                                e += " + "
+                            e += f'prop({dv_term.prop.expr})'
+                        cg.add(f'{s.symbol} ~ {e}')
 
             else:
                 expr = s.expression
@@ -101,16 +126,100 @@ def add_statements(
                                                 largest_cond = cond
                                 value = largest_value
                         cg.indent()
-                        cg.add(f'{s.symbol.name} <- {value}')
+                        
+                        if only_piecewise is False:
+                            cg.add(f'{s.symbol.name} <- {value}')
+                            
+                            if s.symbol in dependencies:
+                                if not value.is_constant() and not isinstance(value, sympy.Symbol):
+                                    add, prop = extract_add_prop(value, res_alias, model)
+                                    cg.add(f'add_error <- {add}')
+                                    cg.add(f'prop_error <- {prop}')
+                        elif s.symbol == dv:
+                            if not value.is_constant() and not isinstance(value, sympy.Symbol):
+                                t = res_error_term(model, value)
+                                # FIXME : Remove sigma here instead of at the end
+                                cg.add(f"res <- {t.res}")
+                                cg.add(f'add_error <- {t.add.expr}')
+                                cg.add(f'prop_error <- {t.prop.expr}')
+                            else:
+                                cg.add(f'{s.symbol.name} <- {value}')
+                        else:
+                            cg.add(f'{s.symbol.name} <- {value}')
+                                
                         cg.dedent()
                     cg.add('}')
+                elif s.symbol in dependencies:
+                    add, prop = extract_add_prop(s.expression, res_alias, model)
+                    cg.add(f'{s.symbol.name} <- {expr}') #TODO : Remove ?
+                    cg.add(f'add_error <- {add}')
+                    cg.add(f'prop_error <- {prop}')
                 else:
                     cg.add(f'{s.symbol.name} <- {expr}')
+    
+    if only_piecewise:
+        cg.add(f'{dv} <- res')
+        cg.add(f'{dv} ~ add(add_error) + prop(prop_error)')
+        
+    # Assume all sigma with a fixed inital value of 1 to be removed
+    # TODO: Remove when using res_error_term instead
+    from pharmpy.modeling import get_sigmas
+    sigma_to_remove = set()
+    for sigma in get_sigmas(model):
+        # TODO : also remove alias for sigma
+        if sigma.init == 1 and sigma.fix:
+            cg.remove(f"{sigma.name} <- fixed({sigma.init})")
+            sigma_to_remove.add(sigma.symbol)
+    
+        
 
-    if dv_found and not error_model_found:
-        error = {"add": None, "prop": None}
-        add_error_relation(cg, error, dv)
+def extract_add_prop(s,
+                     res_alias: set[sympy.symbols],
+                     model: pharmpy.model.Model):
+    """
+    
 
+    Parameters
+    ----------
+    s : A sympy expression
+        A sympy expression from which an additive and a proportional error
+        term are to be extracted.
+    res_alias : set[sympy.symbols]
+        A set with aliases for the dependent or resulting term for the 
+        dependent variable.
+    model : pharmpy.model.Model
+        The connected pharmpy model.
+
+    Returns
+    -------
+    add : sympy.Symbol
+        The symbol representing the additive error. Zero if none found
+    prop : sympy.Symbol
+        The symbol representing  the proportional error. Zero if none found
+
+    """
+    if isinstance(s, sympy.Symbol):
+        terms = [s]
+    elif isinstance(s, sympy.Pow):
+        terms = sympy.Add.make_args(s.args[0])
+    else:
+        terms = sympy.Add.make_args(s.expression)
+    assert(len(terms) <= 2)
+    
+    prop = 0
+    add = 0
+    prop_found = False
+    for term in terms:
+        for symbol in term.free_symbols:
+            if symbol in res_alias:
+                if prop_found is False:
+                    term = term.subs(symbol, 1)
+                    prop = list(term.free_symbols)[0]
+                    prop_found = True
+        if prop_found is False:
+            add = list(term.free_symbols)[0]
+    
+    return add, prop
 
 def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     """

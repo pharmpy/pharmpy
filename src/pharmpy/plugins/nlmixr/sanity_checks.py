@@ -278,39 +278,54 @@ def change_rvs_same(
     var_to_add = {}
     rvs_and_var = {}
     for rv in rvs:
-        var = rv.variance
-        if var in checked_variance:
-            n = 1
-            new_var = sympy.Symbol(var.name + "_" + f'{n}')
-            while new_var in checked_variance:
-                n += 1
-                new_var = sympy.Symbol(var.name + "_" + f'{n}')
-
-            var_to_add[new_var] = var
-
-            checked_variance.append(new_var)
-
-            rvs_and_var[rv.names] = new_var
-            print(rv, " : ", new_var)
+        current_var = []
+        
+        if isinstance(rv.variance, sympy.Symbol):
+            variance = [rv.variance]
         else:
-            checked_variance.append(var)
-
-    for rv in rvs:
-        if rv.names in rvs_and_var:
-            new_rv = rv.replace(variance=rvs_and_var[rv.names])
-
-            all_rvs = model.random_variables
-            keep = [name for name in all_rvs.names if name not in [rv.names[0]]]
-
-            model = model.replace(random_variables=all_rvs[keep])
-            model = model.replace(random_variables=model.random_variables + new_rv)
-
+            variance = rv.variance
+            
+        for var in variance:
+            if var in checked_variance:
+                n = 1
+                new_var = sympy.Symbol(var.name + "_" + f'{n}')
+                while new_var in checked_variance:
+                    n += 1
+                    new_var = sympy.Symbol(var.name + "_" + f'{n}')
+    
+                var_to_add[new_var] = var
+    
+                current_var.append(new_var)
+    
+                rvs_and_var[(rv.names, var)] = new_var
+                #print(rv, " : ", new_var)
+            else:
+                current_var.append(var)
+        
+        checked_variance += current_var
+    
     params = model.parameters
     for s in var_to_add:
         param = model.parameters[var_to_add[s]].replace(name=s.name)
         params = params + param
     model = model.replace(parameters=params)
-
+    
+    etas = [e[0] for e in rvs_and_var.keys()]
+    for rv in rvs:
+        if rv.names in etas:
+            old_to_new = [l for l in rvs_and_var if l[0] == rv.names]
+            new_rv = rv
+            for el in old_to_new:
+                old = el[1]
+                new = rvs_and_var[el]
+                new_variance = new_rv.variance.replace(old, new)
+                new_rv = new_rv.replace(variance = new_variance)
+            all_rvs = model.random_variables
+            
+            keep = [name for name in all_rvs.names if name not in rv.names]
+            model = model.replace(random_variables=all_rvs[keep])
+            model = model.replace(random_variables=model.random_variables + new_rv)
+    
     # Add newline after all updated sigma values have been printed
     print()
     return model

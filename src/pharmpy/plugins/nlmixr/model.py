@@ -27,7 +27,7 @@ from pharmpy.tools import fit
 from .ini import add_eta, add_sigma, add_theta
 from .model_block import add_ode, add_statements
 from .sanity_checks import check_model, print_warning
-
+from .error_model import res_error_term
 
 def convert_model(
     model: pharmpy.model.Model, keep_etas: bool = False, skip_check: bool = False
@@ -162,14 +162,50 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     """
 
     cg.add('model({')
+    
+    # Add statements before ODEs
     cg.indent()
-
-    add_statements(model, cg, model.statements.before_odes)
-
+    if len(model.statements.after_odes) != 0:
+        add_statements(model, cg, model.statements.before_odes)
+    
+    # Add the ODEs
     if model.statements.ode_system:
         add_ode(model, cg)
-
-    add_statements(model, cg, model.statements.after_odes)
+    
+    # Find what kind of error model we are looking at
+    dv = list(model.dependent_variables.keys())[0]
+    dv_statement = model.statements.find_assignment(dv)
+    
+    only_piecewise = False
+    if dv_statement.expression.is_Piecewise:
+        only_piecewise = True
+        dependencies = set()
+        res_alias = set()
+        for s in model.statements.after_odes:
+            if s.symbol == dv:
+                for value, cond in s.expression.args:
+                    dv_term = res_error_term(model, value)
+                    dependencies.update(dv_term.dependencies())
+                    
+                    dv_term.create_res_alias()
+                    res_alias.update(dv_term.res_alias)
+    else:
+        dv_term = res_error_term(model, dv_statement.expression)
+        dependencies = dv_term.dependencies()
+        dv_term.create_res_alias()
+        res_alias = dv_term.res_alias
+    
+    # Add statements after ODEs
+    if len(model.statements.after_odes) == 0:
+        statements = model.statements
+    else:
+        statements = model.statements.after_odes
+    add_statements(model,
+                       cg,
+                       statements,
+                       only_piecewise,
+                       dependencies = dependencies,
+                       res_alias = res_alias)
 
     cg.dedent()
     cg.add('})')
@@ -307,7 +343,11 @@ def parse_modelfit_results(
         return None
 
     rdata["thetas"] = rdata["thetas"].loc[get_thetas(model).names]
-    rdata["sigma"] = rdata["sigma"].loc[get_sigmas(model).names]
+    s = []
+    for sigma in get_sigmas(model):
+        if sigma.init != 1 and not sigma.fix:
+            s.append(sigma.name)
+    rdata["sigma"] = rdata["sigma"].loc[s]
 
     ofv = rdata['ofv']['ofv'][0]
     omegas_sigmas = {}
@@ -320,7 +360,9 @@ def parse_modelfit_results(
     sigma = model.random_variables.epsilons.covariance_matrix
     for i in range(len(sigma)):
         if sigma[i] != 0:
-            omegas_sigmas[sigma[i].name] = rdata['sigma']['fit$theta'][sigma[i].name]
+            s = sigma[i]
+            if model.parameters[s].init != 1 and not model.parameters[s].fix:
+                omegas_sigmas[sigma[i].name] = rdata['sigma']['fit$theta'][sigma[i].name]
     thetas_index = 0
     pe = {}
     for param in model.parameters:
@@ -547,9 +589,11 @@ def verification(
             pred = True
             nonmem_results.rename(columns={p: 'PRED_NONMEM'}, inplace=True)
             nlmixr_results.rename(columns={p: 'PRED_NLMIXR'}, inplace=True)
-        elif p == "IPRED":
+        elif p == "IPRED" or p == "CIPREDI":
             ipred = True
             nonmem_results.rename(columns={p: 'IPRED_NONMEM'}, inplace=True)
+            if p == "CIPREDI":
+                p = "IPRED"
             nlmixr_results.rename(columns={p: 'IPRED_NLMIXR'}, inplace=True)
         else:
             print(
