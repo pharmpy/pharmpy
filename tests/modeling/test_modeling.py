@@ -44,6 +44,7 @@ from pharmpy.modeling import (
     set_transit_compartments,
     set_zero_order_absorption,
     set_zero_order_elimination,
+    set_zero_order_input,
     split_joint_distribution,
     transform_etas_boxcox,
     transform_etas_john_draper,
@@ -3370,3 +3371,10 @@ def test_get_zero_order_inputs(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
     zo = get_zero_order_inputs(model)
     assert zo == sympy.Matrix([[0]])
+
+
+def test_set_zero_order_input(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    model = set_zero_order_input(model, "CENTRAL", 10)
+    zo = get_zero_order_inputs(model)
+    assert zo == sympy.Matrix([[10]])

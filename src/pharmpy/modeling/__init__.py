@@ -152,6 +152,7 @@ from .odes import (
     set_transit_compartments,
     set_zero_order_absorption,
     set_zero_order_elimination,
+    set_zero_order_input,
     solve_ode_system,
 )
 from .parameter_sampling import (
@@ -363,6 +364,7 @@ __all__ = [
     'set_weighted_error_model',
     'set_zero_order_absorption',
     'set_zero_order_elimination',
+    'set_zero_order_input',
     'simplify_expression',
     'solve_ode_system',
     'split_joint_distribution',

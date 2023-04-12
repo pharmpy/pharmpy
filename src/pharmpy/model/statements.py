@@ -371,6 +371,26 @@ class CompartmentalSystemBuilder:
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
 
+    def set_input(self, compartment, input):
+        """Set zero order input of compartment
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to change zero order input
+        input : expr
+            New input
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+        """
+        new_comp = compartment.replace(input=input)
+        mapping = {compartment: new_comp}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+        return new_comp
+
 
 def _is_positive(expr: sympy.Expr) -> bool:
     return sympy.ask(

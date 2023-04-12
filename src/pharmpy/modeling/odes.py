@@ -2060,6 +2060,50 @@ def get_zero_order_inputs(model: Model) -> sympy.Matrix:
     return odes.zero_order_inputs
 
 
+def set_zero_order_input(
+    model: Model, compartment: str, expression: Union[str, int, float, sympy.Expr]
+) -> Model:
+    """Set a zero order input for the ode system
+
+    If the zero order input is already set it will be updated.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    compartment : str
+        Name of the compartment
+    expression : Union[str, sympy.Expr]
+        The expression of the zero order input
+
+    Return
+    ------
+    model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = set_zero_order_input(model, "CENTRAL", 10)
+    >>> get_zero_order_inputs(model)
+    Matrix([[10]])
+    """
+    odes = model.statements.ode_system
+    if odes is None:
+        raise ValueError("Model has no system of ODEs")
+    comp = odes.find_compartment(compartment)
+    if comp is None:
+        raise ValueError(f"Model has no compartment named {compartment}")
+    expr = sympy.sympify(expression)
+    cb = CompartmentalSystemBuilder(odes)
+    cb.set_input(comp, expr)
+    cs = CompartmentalSystem(cb)
+    statements = model.statements.before_odes + cs + model.statements.after_odes
+    model = model.replace(statements=statements)
+    return model.update_source()
+
+
 class ODEDisplayer:
     def __init__(self, eqs, ics):
         self._eqs = eqs
