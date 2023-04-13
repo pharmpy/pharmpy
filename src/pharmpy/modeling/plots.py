@@ -28,7 +28,7 @@ def plot_iofv_vs_iofv(iofv1: pd.Series, iofv2: pd.Series, name1: str, name2: str
     name2 : str
         Name of second model
 
-    Results
+    Returns
     -------
     alt.Chart
         Scatterplot

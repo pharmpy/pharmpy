@@ -986,7 +986,7 @@ def get_concentration_parameters_from_data(model: Model):
     model : Model
         Pharmpy model object
 
-    Results
+    Returns
     -------
     pd.DataFrame
         Concentration parameters
@@ -1337,7 +1337,7 @@ def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[f
     uloq : float
         Upper limit of quantification. Default not specified.
 
-    Results
+    Returns
     -------
     Model
         Pharmpy model object
@@ -1547,7 +1547,7 @@ def check_dataset(model: Model, dataframe: bool = False, verbose: bool = False):
     verbose : Bool
         Print out all rules checked if True else print only failed rules
 
-    Results
+    Returns
     -------
     pd.DataFrame
         Only returns a DataFrame is dataframe=True
@@ -1626,7 +1626,7 @@ def read_dataset_from_datainfo(
     datatype : str
         A string to specify dataset type
 
-    Results
+    Returns
     -------
     pd.DataFrame
         The dataset
@@ -1684,7 +1684,7 @@ def deidentify_data(
     date_columns : list
         Names of all date columns
 
-    Results
+    Returns
     -------
     pd.DataFrame
         Deidentified dataset

@@ -404,7 +404,7 @@ def make_declarative(model: Model):
     model : Model
         Pharmpy model
 
-    Results
+    Returns
     -------
     Model
         Pharmpy model object
