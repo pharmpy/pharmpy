@@ -1542,9 +1542,9 @@ def check_dataset(model: Model, dataframe: bool = False, verbose: bool = False):
     ----------
     model : Model
         Pharmpy model object
-    dataframe : Bool
+    dataframe : bool
         True to return a DataFrame instead of printing to the console
-    verbose : Bool
+    verbose : bool
         Print out all rules checked if True else print only failed rules
 
     Returns
