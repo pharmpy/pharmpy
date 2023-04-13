@@ -1,3 +1,6 @@
+"""
+:meta private:
+"""
 from typing import Optional
 
 from pharmpy.deps import sympy
@@ -86,39 +89,29 @@ def _m3_m4_method(model, lloq, method):
     y = sset.find_assignment(y_symb)
     ipred = y.expression.subs({rv: 0 for rv in model.random_variables.epsilons.names})
 
+    blq_symb, blq_type = get_blq_symb_and_type(model)
     if isinstance(lloq, float):
-        symb_lloq = create_symbol(model, 'LLOQ')
-        lloq_type = 'lloq'
-    else:
-        try:
-            lloq_datainfo = model.datainfo.typeix['blq']
-            lloq_type = 'blq'
-        except IndexError:
-            lloq_datainfo = model.datainfo.typeix['lloq']
-            lloq_type = 'lloq'
-        if len(lloq_datainfo.names) > 1:
-            raise ValueError(f'Can only have one of column type: {lloq_datainfo}')
-        symb_lloq = sympy.Symbol(lloq_datainfo[0].name)
+        blq_symb = create_symbol(model, blq_symb)
 
     sd = _get_sd(model, y)
     symb_dv = sympy.Symbol(model.datainfo.dv_column.name)
     symb_fflag = create_symbol(model, 'F_FLAG')
     symb_cumd = create_symbol(model, 'CUMD')
 
-    if lloq_type == 'lloq':
-        is_above_lloq = sympy.GreaterThan(symb_dv, symb_lloq)
+    if blq_type == 'lloq':
+        is_above_lloq = sympy.GreaterThan(symb_dv, blq_symb)
     else:
-        is_above_lloq = sympy.Equality(symb_lloq, 1)
+        is_above_lloq = sympy.Equality(blq_symb, 1)
 
     assignments = [sd]
 
     if isinstance(lloq, float):
-        lloq = Assignment(symb_lloq, sympy.Float(lloq))
+        lloq = Assignment(blq_symb, sympy.Float(lloq))
         assignments.append(lloq)
 
     assignments += Assignment(symb_fflag, sympy.Piecewise((0, is_above_lloq), (1, True)))
 
-    cumd = Assignment(symb_cumd, PHI((symb_lloq - ipred) / sd.symbol))
+    cumd = Assignment(symb_cumd, PHI((blq_symb - ipred) / sd.symbol))
     if method == 'm3':
         assignments += Assignment(
             y.symbol, sympy.Piecewise((y.expression, is_above_lloq), (cumd.expression, True))
@@ -138,6 +131,41 @@ def _m3_m4_method(model, lloq, method):
     model = model.replace(statements=sset_new)
 
     return model.update_source()
+
+
+def has_blq_transformation(model: Model, y_expr):
+    # FIXME: make more general
+    if not isinstance(y_expr, sympy.Piecewise):
+        return False
+    for statement, cond in y_expr.args:
+        blq_symb, _ = get_blq_symb_and_type(model)
+        if blq_symb in cond.free_symbols:
+            break
+    else:
+        return False
+
+    expected_m3 = ['SD', 'F_FLAG']
+    expected_m4 = ['SD', 'F_FLAG', 'CUMD', 'CUMDZ']
+    return _has_all_expected_symbs(model.statements.error, expected_m3) or _has_all_expected_symbs(
+        model.statements.error, expected_m4
+    )
+
+
+def get_blq_symb_and_type(model: Model):
+    try:
+        blq_datainfo = model.datainfo.typeix['blq']
+        return sympy.Symbol(blq_datainfo[0].name), 'blq'
+    except IndexError:
+        try:
+            blq_datainfo = model.datainfo.typeix['lloq']
+            return sympy.Symbol(blq_datainfo[0].name), 'lloq'
+        except IndexError:
+            return sympy.Symbol('LLOQ'), 'lloq'
+
+
+def _has_all_expected_symbs(sset, expected_symbs):
+    symb_names = [s.symbol.name for s in sset]
+    return all(symb in symb_names for symb in expected_symbs)
 
 
 def _verify_model(model, method):

@@ -1,6 +1,7 @@
 import pytest
 
 from pharmpy.deps import numpy as np
+from pharmpy.deps import sympy
 from pharmpy.model.model import update_datainfo
 from pharmpy.modeling import (
     create_joint_distribution,
@@ -11,6 +12,7 @@ from pharmpy.modeling import (
     set_proportional_error_model,
     transform_blq,
 )
+from pharmpy.modeling.blq import has_blq_transformation
 
 
 @pytest.mark.parametrize(
@@ -58,6 +60,31 @@ def test_transform_blq(load_model_for_test, testdata, method, error_func, sd_ref
     assert all(statement in model.model_code for statement in y_ref)
 
     assert all(est.laplace for est in model.estimation_steps)
+
+
+@pytest.mark.parametrize(
+    'method, error_func',
+    [
+        ('m4', set_additive_error_model),
+        ('m4', set_proportional_error_model),
+        ('m4', set_combined_error_model),
+        ('m4', set_power_on_ruv),
+        ('m3', set_additive_error_model),
+    ],
+)
+def test_has_blq_transformation(load_model_for_test, testdata, method, error_func):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model = error_func(model)
+
+    y_expr = model.statements.find_assignment(sympy.Symbol('Y')).expression
+
+    assert not has_blq_transformation(model, y_expr)
+
+    model = transform_blq(model, method=method, lloq=0.1)
+
+    y_expr = model.statements.find_assignment(sympy.Symbol('Y')).expression
+
+    assert has_blq_transformation(model, y_expr)
 
 
 def test_transform_blq_invalid_input_model(load_model_for_test, testdata):
