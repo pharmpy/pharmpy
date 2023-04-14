@@ -28,7 +28,7 @@ from pharmpy.model import (
     data,
     output,
 )
-from pharmpy.modeling import get_ids, has_linear_odes_with_real_eigenvalues, simplify_expression
+from pharmpy.modeling import get_ids, simplify_expression
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 
 if TYPE_CHECKING:
@@ -1003,10 +1003,9 @@ def new_advan_trans(model: Model):
     elif match_advan12(odes):
         advan = 'ADVAN12'
     else:  # General linear
-        if has_linear_odes_with_real_eigenvalues(model):
-            advan = 'ADVAN7'
-        else:
-            advan = 'ADVAN5'
+        # We could use ADVAN7 if has_linear_odes_with_real_eigenvalues
+        # but ADVAN7 seems to be unstable in NONMEM
+        advan = 'ADVAN5'
 
     if nonlin:
         trans = None
