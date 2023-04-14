@@ -1,5 +1,5 @@
 import re
-from typing import Union
+from typing import Union, Set
 
 import pharmpy.model
 from pharmpy.deps import sympy, sympy_printing
@@ -35,8 +35,8 @@ def add_statements(
     cg: CodeGenerator,
     statements: pharmpy.model.statements,
     only_piecewise: Union[bool, None] = None,
-    dependencies: set[sympy.Symbol] = set(),
-    res_alias: set[sympy.Symbol] = set(),
+    dependencies: Set[sympy.Symbol] = set(),
+    res_alias: Set[sympy.Symbol] = set(),
 ):
     """
     Will add the provided statements to the code generator objects, translated
@@ -180,7 +180,7 @@ def add_statements(
             sigma_to_remove.add(sigma.symbol)
 
 
-def extract_add_prop(s, res_alias: set[sympy.symbols], model: pharmpy.model.Model):
+def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Model):
     """
     Extract additiv and proportional error terms from a sympy expression
 
