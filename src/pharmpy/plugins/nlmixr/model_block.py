@@ -62,7 +62,7 @@ def add_statements(model: pharmpy.model.Model,
     
     # FIXME: handle other DVs?
     dv = list(model.dependent_variables.keys())[0]
-        
+
     for s in statements:
         if isinstance(s, Assignment):
             if s.symbol == dv and not s.expression.is_Piecewise:
@@ -86,10 +86,10 @@ def add_statements(model: pharmpy.model.Model,
                         cg.add(f'{s.symbol} <- {res}')
                         e = ""
                         first = True
-                        if dv_term.add.expr != None:
+                        if dv_term.add.expr != 0:
                             e += f'add({dv_term.add.expr})'
                             first = False
-                        if dv_term.prop.expr != None:
+                        if dv_term.prop.expr != 0:
                             if not first:
                                 e += " + "
                             e += f'prop({dv_term.prop.expr})'

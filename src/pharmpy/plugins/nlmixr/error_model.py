@@ -137,7 +137,7 @@ class res_error_term:
 class error:
     def __init__(self,
                  model = None,
-                 expr = None,
+                 expr = 0,
                  sigma = None,
                  add = False,
                  sigma_alias = None,
