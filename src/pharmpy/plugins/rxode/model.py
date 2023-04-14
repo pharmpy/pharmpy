@@ -2,15 +2,18 @@ import uuid
 import os
 import json
 import subprocess
+import warnings
+from pathlib import Path, PosixPath
 from dataclasses import dataclass, replace
-from typing import Optional
+from typing import Optional, Union
 from pathlib import Path
 import pharmpy.model
 from pharmpy.internals.code_generator import CodeGenerator
-
+from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment
 from pharmpy.modeling import drop_columns
+from pharmpy.results import ModelfitResults
 from pharmpy.plugins.nlmixr.model import (
     add_evid,
     )
@@ -22,7 +25,9 @@ from pharmpy.plugins.nlmixr.model_block import (
 from pharmpy.modeling import (
     get_sigmas,
     get_thetas,
-    write_csv
+    get_omegas,
+    write_csv,
+    translate_nmtran_time
     )
 from pharmpy.plugins.nlmixr.error_model import convert_eps_to_sigma
 
@@ -102,10 +107,18 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
 
     code = pre + model.model_code
     cg = CodeGenerator()
-    cg.add("res <- as.data.frame(fit)")
+
+    dv = list(model.dependent_variables.keys())[0]
+    cg.add(f"res <- as.data.frame(fit[c('id', 'time', '{dv}')])")
+    cg.add("sigma <- as.data.frame(sigmas)")
+    cg.add("omegas <- as.data.frame(omegas)")
+    cg.add("params <- as.data.frame(fit$params)")
+    
     cg.add(
-        f'save(file="{path}/{model.name}.RDATA", res)'
+        f'save(file="{path}/{model.name}.RDATA", res, params)'
     )
+    
+    code += f'\n{str(cg)}'
     
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
@@ -166,9 +179,152 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
         txn.store_metadata(metadata)
         txn.store_modelfit_results()
 
-    #res = parse_modelfit_results(model, path)
-    #model = model.replace(modelfit_results=res)
+    res = parse_modelfit_results(model, path)
+    model = model.replace(modelfit_results=res)
     return model
+
+def parse_modelfit_results(
+    model: pharmpy.model.Model, path: PosixPath
+) -> Union[None, ModelfitResults]:
+
+    rdata_path = path / (model.name + '.RDATA')
+    with warnings.catch_warnings():
+        # Supress a numpy deprecation warning
+        warnings.simplefilter("ignore")
+        import pyreadr
+    try:
+        rdata = pyreadr.read_r(rdata_path)
+    except (FileNotFoundError, OSError):
+        return None
+    
+    dv = list(model.dependent_variables.keys())[0]
+    pred = rdata["res"][["id", "time", f"{dv}"]]
+    pred.rename(columns={f"{dv}": 'PRED', "id": "ID", "time": "TIME"}, inplace=True)
+    pred = pred.set_index(["ID", "TIME"])
+    
+    # TODO : extract thetas, omegas and sigmas
+    
+    predictions = pred
+    predictions.index = predictions.index.set_levels(
+        predictions.index.levels[0].astype("float64"), level=0
+    )
+
+    # TODO : Add more variables such as name and description and parameter estimates
+    res = ModelfitResults(
+        predictions = predictions
+        )
+    return res
+
+def verification(
+    model: pharmpy.model.Model,
+    db_name: str,
+    error: float = 10**-3,
+    return_comp: bool = False,
+    fix_eta: bool = True,
+) -> Union[bool, pd.DataFrame]:
+
+    nonmem_model = model
+    
+    from pharmpy.plugins.nlmixr.model import (
+        print_step,
+        )
+    from pharmpy.modeling import update_inits
+    from pharmpy.tools import fit
+    # Save results from the nonmem model
+    if nonmem_model.modelfit_results is None:
+        print_step("Calculating NONMEM predictions... (this might take a while)")
+        nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
+        nonmem_results = nonmem_model.modelfit_results.predictions.copy()
+    else:
+        if nonmem_model.modelfit_results.predictions is None:
+            print_step("Calculating NONMEM predictions... (this might take a while)")
+            nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
+            nonmem_results = nonmem_model.modelfit_results.predictions.copy()
+        else:
+            nonmem_results = nonmem_model.modelfit_results.predictions.copy()
+            
+    keep = []
+    old_params = nonmem_model.parameters.names
+    param_estimates = nonmem_model.modelfit_results.parameter_estimates
+    
+    omega_names = get_omegas(nonmem_model).names
+    for name in omega_names:
+        param_estimates[name] = 0
+    
+    sigma_names = get_sigmas(model).names
+    for name in sigma_names:
+        param_estimates[name] = 0
+    
+    # Update the nonmem model with new estimates
+    # and convert to nlmixr
+    print_step("Converting NONMEM model to RxODE...")
+    rxode_model = convert_model(
+        update_inits(nonmem_model, param_estimates)
+    )
+
+    # Execute the nlmixr model
+    print_step("Executing RxODE model... (this might take a while)")
+
+    rxode_model = execute_model(rxode_model, db_name)
+    rxode_results = rxode_model.modelfit_results.predictions
+
+    pred = False
+    ipred = False
+    for p in nonmem_model.modelfit_results.predictions.columns:
+        if p == "PRED":
+            pred = True
+            nonmem_results.rename(columns={p: 'PRED_NONMEM'}, inplace=True)
+            rxode_results.rename(columns={p: 'PRED_RXODE'}, inplace=True)
+        else:
+            print(
+                f"Unknown prediction value {p}. Currently only 'PRED' are supported and this is ignored"
+            )
+
+    if not (pred or ipred):
+        print("No known prediction value was found. Please use 'PRED' or 'IPRED")
+        return False
+
+    # Combine the two based on ID and time
+    print_step("Creating result comparison table...")
+    nonmem_model = nonmem_model.replace(dataset=nonmem_model.dataset.reset_index())
+
+    if "EVID" not in nonmem_model.dataset.columns:
+        nonmem_model = add_evid(nonmem_model)
+    nonmem_results = nonmem_results.reset_index()
+    nonmem_results = nonmem_results.drop(
+        nonmem_model.dataset[nonmem_model.dataset["EVID"] != 0].index.to_list()
+    )
+    nonmem_results = nonmem_results.set_index(["ID", "TIME"])
+
+    combined_result = nonmem_results
+    if pred:
+        combined_result['PRED_RXODE'] = rxode_results['PRED_RXODE'].to_list()
+        # Add difference between the models
+        combined_result['PRED_DIFF'] = abs(
+            combined_result['PRED_NONMEM'] - combined_result['PRED_RXODE']
+        )
+
+    combined_result["PASS/FAIL"] = "PASS"
+    print("Differences in population predicted values")
+    if (pred and ipred) or (pred and not ipred):
+            print("Using PRED values for final comparison")
+            final = "PRED"
+    elif ipred and not pred:
+        print("Using IPRED values for final comparison")
+        final = "IPRED"
+    combined_result.loc[combined_result[f'{final}_DIFF'] > error, "PASS/FAIL"] = "FAIL"
+    print(
+        combined_result[f'{final}_DIFF'].describe()[["mean", "75%", "max"]].to_string(), end="\n\n"
+    )
+
+    print_step("DONE")
+    if return_comp is True:
+        return combined_result
+    else:
+        if all(combined_result["PASS/FAIL"] == "PASS"):
+            return True
+        else:
+            return False
 
 def convert_model(model):
     
@@ -194,15 +350,23 @@ def convert_model(model):
         description=model.description,
     )
     
-    if all(x in rxode_model.dataset.columns for x in ["RATE", "DUR"]):
-        rxode_model = drop_columns(rxode_model, ["DUR"])
-    rxode_model = rxode_model.replace(
-        datainfo=rxode_model.datainfo.replace(path=None),
-        dataset=rxode_model.dataset.reset_index(drop=True),
-    )
-
-    # Add evid
-    rxode_model = add_evid(rxode_model)
+    # Update dataset
+    if model.dataset is not None:
+        rxode_model = translate_nmtran_time(rxode_model)
+    
+        if all(x in rxode_model.dataset.columns for x in ["RATE", "DUR"]):
+            rxode_model = drop_columns(rxode_model, ["DUR"])
+        rxode_model = rxode_model.replace(
+            datainfo=rxode_model.datainfo.replace(path=None),
+            dataset=rxode_model.dataset.reset_index(drop=True),
+        )
+    
+        # Add evid
+        rxode_model = add_evid(rxode_model)
+    
+    # Check model for warnings regarding data structure or model contents
+    from pharmpy.plugins.nlmixr.sanity_checks import check_model
+    rxode_model = check_model(rxode_model)
     
     rxode_model.update_source()
     
@@ -257,6 +421,7 @@ def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
                                 largest_cond = cond
                 value = largest_value
         cg.indent()
+        value = convert_eps_to_sigma(value, model)
         cg.add(f'{s.symbol.name} <- {value}')
         cg.dedent()
     cg.add('}')
@@ -280,7 +445,7 @@ def create_eta(cg, model):
 
 def create_sigma(cg, model):
     cg.add("sigmas <-")
-    cg.add("c(")
+    cg.add("lotri(")
     sigmas = get_sigmas(model)
     for n, sigma in enumerate(sigmas):
         if n != len(sigmas)-1:
