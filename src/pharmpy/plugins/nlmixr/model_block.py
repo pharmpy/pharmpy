@@ -182,7 +182,7 @@ def add_statements(
 
 def extract_add_prop(s, res_alias: set[sympy.symbols], model: pharmpy.model.Model):
     """
-
+    Extract additiv and proportional error terms from a sympy expression
 
     Parameters
     ----------
