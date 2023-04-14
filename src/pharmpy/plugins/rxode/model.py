@@ -1,35 +1,29 @@
-import uuid
-import os
 import json
+import os
 import subprocess
+import uuid
 import warnings
-from pathlib import Path, PosixPath
 from dataclasses import dataclass, replace
+from pathlib import Path, PosixPath
 from typing import Optional, Union
-from pathlib import Path
+
 import pharmpy.model
-from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.model import Assignment
-from pharmpy.modeling import drop_columns
-from pharmpy.results import ModelfitResults
-from pharmpy.plugins.nlmixr.model import (
-    add_evid,
-    )
-from pharmpy.plugins.nlmixr.model_block import (
-    add_statements,
-    add_ode,
-    convert_eq
-    )
+from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.modeling import (
+    drop_columns,
+    get_omegas,
     get_sigmas,
     get_thetas,
-    get_omegas,
+    translate_nmtran_time,
     write_csv,
-    translate_nmtran_time
-    )
+)
 from pharmpy.plugins.nlmixr.error_model import convert_eps_to_sigma
+from pharmpy.plugins.nlmixr.model import add_evid
+from pharmpy.plugins.nlmixr.model_block import add_ode, convert_eq
+from pharmpy.results import ModelfitResults
+
 
 @dataclass
 class RxODEModelInternals:
@@ -73,6 +67,7 @@ class Model(pharmpy.model.Model):
         assert code is not None
         return code
 
+
 def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
     """
     Executes a model using rxode2.
@@ -113,13 +108,11 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
     cg.add("sigma <- as.data.frame(sigmas)")
     cg.add("omegas <- as.data.frame(omegas)")
     cg.add("params <- as.data.frame(fit$params)")
-    
-    cg.add(
-        f'save(file="{path}/{model.name}.RDATA", res, params)'
-    )
-    
+
+    cg.add(f'save(file="{path}/{model.name}.RDATA", res, params)')
+
     code += f'\n{str(cg)}'
-    
+
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
 
@@ -183,10 +176,10 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
     model = model.replace(modelfit_results=res)
     return model
 
+
 def parse_modelfit_results(
     model: pharmpy.model.Model, path: PosixPath
 ) -> Union[None, ModelfitResults]:
-
     rdata_path = path / (model.name + '.RDATA')
     with warnings.catch_warnings():
         # Supress a numpy deprecation warning
@@ -196,24 +189,23 @@ def parse_modelfit_results(
         rdata = pyreadr.read_r(rdata_path)
     except (FileNotFoundError, OSError):
         return None
-    
+
     dv = list(model.dependent_variables.keys())[0]
     pred = rdata["res"][["id", "time", f"{dv}"]]
     pred.rename(columns={f"{dv}": 'PRED', "id": "ID", "time": "TIME"}, inplace=True)
     pred = pred.set_index(["ID", "TIME"])
-    
+
     # TODO : extract thetas, omegas and sigmas
-    
+
     predictions = pred
     predictions.index = predictions.index.set_levels(
         predictions.index.levels[0].astype("float64"), level=0
     )
 
     # TODO : Add more variables such as name and description and parameter estimates
-    res = ModelfitResults(
-        predictions = predictions
-        )
+    res = ModelfitResults(predictions=predictions)
     return res
+
 
 def verification(
     model: pharmpy.model.Model,
@@ -222,14 +214,12 @@ def verification(
     return_comp: bool = False,
     fix_eta: bool = True,
 ) -> Union[bool, pd.DataFrame]:
-
     nonmem_model = model
-    
-    from pharmpy.plugins.nlmixr.model import (
-        print_step,
-        )
+
     from pharmpy.modeling import update_inits
+    from pharmpy.plugins.nlmixr.model import print_step
     from pharmpy.tools import fit
+
     # Save results from the nonmem model
     if nonmem_model.modelfit_results is None:
         print_step("Calculating NONMEM predictions... (this might take a while)")
@@ -242,25 +232,21 @@ def verification(
             nonmem_results = nonmem_model.modelfit_results.predictions.copy()
         else:
             nonmem_results = nonmem_model.modelfit_results.predictions.copy()
-            
-    keep = []
-    old_params = nonmem_model.parameters.names
+
     param_estimates = nonmem_model.modelfit_results.parameter_estimates
-    
+
     omega_names = get_omegas(nonmem_model).names
     for name in omega_names:
         param_estimates[name] = 0
-    
+
     sigma_names = get_sigmas(model).names
     for name in sigma_names:
         param_estimates[name] = 0
-    
+
     # Update the nonmem model with new estimates
     # and convert to nlmixr
     print_step("Converting NONMEM model to RxODE...")
-    rxode_model = convert_model(
-        update_inits(nonmem_model, param_estimates)
-    )
+    rxode_model = convert_model(update_inits(nonmem_model, param_estimates))
 
     # Execute the nlmixr model
     print_step("Executing RxODE model... (this might take a while)")
@@ -307,8 +293,8 @@ def verification(
     combined_result["PASS/FAIL"] = "PASS"
     print("Differences in population predicted values")
     if (pred and ipred) or (pred and not ipred):
-            print("Using PRED values for final comparison")
-            final = "PRED"
+        print("Using PRED values for final comparison")
+        final = "PRED"
     elif ipred and not pred:
         print("Using IPRED values for final comparison")
         final = "IPRED"
@@ -326,16 +312,16 @@ def verification(
         else:
             return False
 
+
 def convert_model(model):
-    
     if isinstance(model, Model):
         return model
-    
+
     if model.internals.control_stream.get_records("DES"):
         des = model.internals.control_stream.get_records("DES")[0]
     else:
         des = None
-    
+
     rxode_model = Model(
         internals=RxODEModelInternals(DES=des),
         parameters=model.parameters,
@@ -349,28 +335,30 @@ def convert_model(model):
         name=model.name,
         description=model.description,
     )
-    
+
     # Update dataset
     if model.dataset is not None:
         rxode_model = translate_nmtran_time(rxode_model)
-    
+
         if all(x in rxode_model.dataset.columns for x in ["RATE", "DUR"]):
             rxode_model = drop_columns(rxode_model, ["DUR"])
         rxode_model = rxode_model.replace(
             datainfo=rxode_model.datainfo.replace(path=None),
             dataset=rxode_model.dataset.reset_index(drop=True),
         )
-    
+
         # Add evid
         rxode_model = add_evid(rxode_model)
-    
+
     # Check model for warnings regarding data structure or model contents
     from pharmpy.plugins.nlmixr.sanity_checks import check_model
+
     rxode_model = check_model(rxode_model)
-    
+
     rxode_model.update_source()
-    
+
     return rxode_model
+
 
 def create_model(cg, model):
     add_true_statements(model, cg, model.statements.before_odes)
@@ -378,9 +366,8 @@ def create_model(cg, model):
     if model.statements.ode_system:
         add_ode(model, cg)
 
-    add_true_statements(model,
-                   cg,
-                   model.statements.after_odes)
+    add_true_statements(model, cg, model.statements.after_odes)
+
 
 def add_true_statements(model, cg, statements):
     for s in statements:
@@ -390,6 +377,7 @@ def add_true_statements(model, cg, statements):
             add_piecewise(model, cg, s)
         else:
             cg.add(f'{s.symbol.name} <- {expr}')
+
 
 def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
     expr = s.expression
@@ -426,33 +414,38 @@ def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
         cg.dedent()
     cg.add('}')
 
+
 def create_theta(cg, model):
     cg.add("thetas <-")
     cg.add("c(")
     thetas = get_thetas(model)
     for n, theta in enumerate(thetas):
-        if n != len(thetas)-1:
+        if n != len(thetas) - 1:
             cg.add(f'{theta.name} = {theta.init}, ')
         else:
             cg.add(f'{theta.name} = {theta.init}')
     cg.add(")")
 
+
 def create_eta(cg, model):
     from pharmpy.plugins.nlmixr.ini import add_eta
+
     cg.add("omegas = lotri(")
-    add_eta(model, cg, as_list = True)
+    add_eta(model, cg, as_list=True)
     cg.add(")")
+
 
 def create_sigma(cg, model):
     cg.add("sigmas <-")
     cg.add("lotri(")
     sigmas = get_sigmas(model)
     for n, sigma in enumerate(sigmas):
-        if n != len(sigmas)-1:
+        if n != len(sigmas) - 1:
             cg.add(f'{sigma.name} ~ {sigma.init}, ')
         else:
             cg.add(f'{sigma.name} ~ {sigma.init}')
     cg.add(")")
+
 
 def create_fit(cg, model):
     cg.add(f'fit <- {model.name} %>% rxSolve(thetas, ev, omega = omegas, sigma = sigmas)')

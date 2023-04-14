@@ -24,7 +24,7 @@ def add_theta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
             add_ini_parameter(cg, theta)
 
 
-def add_eta(model: pharmpy.model.Model, cg: CodeGenerator, as_list = False) -> None:
+def add_eta(model: pharmpy.model.Model, cg: CodeGenerator, as_list=False) -> None:
     """
     Add ETAs to code generator when converting a model
 
