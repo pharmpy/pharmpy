@@ -263,10 +263,20 @@ def convert_eps_to_sigma(
         Same expression as inputed, but with epsilon names changed to sigma.
 
     """
-    eps_to_sigma = {
-        sympy.Symbol(eps.names[0]): sympy.Symbol(str(eps.variance))
-        for eps in model.random_variables.epsilons
-    }
+    #eps_to_sigma = {
+    #    sympy.Symbol(eps.names[0]): sympy.Symbol(str(eps.variance))
+    #    for eps in model.random_variables.epsilons
+    #}
+    eps_to_sigma = {}
+    for dist in model.random_variables.epsilons:
+        sigma = dist.variance
+        if len(dist.names) == 1:
+            eps_to_sigma[dist.names[0]] = sigma   
+        else:
+            for row, col, eps in zip(range(sigma.rows),
+                                range(sigma.rows+1),
+                                dist.names):
+                eps_to_sigma[eps] = sigma[row, col]
     return expr.subs(eps_to_sigma)
 
 
