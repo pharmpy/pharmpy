@@ -15,4 +15,5 @@ def test_load_plugins():
         'pharmpy.plugins.nonmem',
         'pharmpy.plugins.nlmixr',
         'pharmpy.plugins.fcon',
+        'pharmpy.plugins.rxode',
     }
