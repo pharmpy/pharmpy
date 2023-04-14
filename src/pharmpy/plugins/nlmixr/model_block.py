@@ -172,25 +172,25 @@ def add_statements(
 
 def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Model):
     """
-    Extract additiv and proportional error terms from a sympy expression
+        Extract additiv and proportional error terms from a sympy expression
 
-    Parameters
-    ----------
-    s : A sympy expression
-        A sympy expression from which an additive and a proportional error
-        term are to be extracted.
-    res_alias : set[sympy.symbols]
-        A set with aliases for the dependent or resulting term for the
-        dependent variable.
-    model : pharmpy.model.Model
-        The connected pharmpy model.
+        Parameters
+        ----------
+        s : A sympy expression
+            A sympy expression from which an additive and a proportional error
+            term are to be extracted.
+        res_alias : set[sympy.symbols]
+            A set with aliases for the dependent or resulting term for the
+            dependent variable.
+        model : pharmpy.model.Model
+            The connected pharmpy model.
 
-Returns
-    -------
-    add : sympy.Symbol
-        The symbol representing the additive error. Zero if none found
-    prop : sympy.Symbol
-        The symbol representing  the proportional error. Zero if none found
+    Returns
+        -------
+        add : sympy.Symbol
+            The symbol representing the additive error. Zero if none found
+        prop : sympy.Symbol
+            The symbol representing  the proportional error. Zero if none found
 
     """
     if isinstance(s, sympy.Symbol):
@@ -215,7 +215,8 @@ Returns
             add = list(term.free_symbols)[0]
 
     return add, prop
-    
+
+
 def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
     expr = s.expression
     first = True
