@@ -532,11 +532,24 @@ def to_des(model: Model, new: ODESystem):
     return model
 
 
-def add_comps_to_trans(model, trans):
-    odes = model.statements.ode_system
+def update_ics(statements, odes):
     if odes is not None:
+        trans = {}
         for i, amount in enumerate(odes.amounts, start=1):
             trans[sympy.Function(amount.name)(0)] = sympy.Function('A_0')(i)
+
+        new = []
+        update = False
+        for s in statements:
+            if s.symbol.is_Function:
+                newsymb = trans[s.symbol]
+                s = s.replace(symbol=newsymb)
+                update = True
+            new.append(s)
+        if update:
+            return Statements(new)
+
+    return statements
 
 
 def update_statements(model: Model, old: Statements, new: Statements, trans):
@@ -573,9 +586,8 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                     model = model.replace(internals=model.internals.replace(control_stream=newcs))
                     model = update_model_record(model, advan)
 
-    add_comps_to_trans(model, trans)
-
     main_statements = model.statements.before_odes
+    main_statements = update_ics(main_statements, new_odes)
     error_statements = model.statements.after_odes
 
     rec = model.internals.control_stream.get_pred_pk_record()
