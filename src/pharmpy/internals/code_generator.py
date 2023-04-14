@@ -14,7 +14,7 @@ class CodeGenerator:
 
     def empty_line(self):
         self.lines.append('')
-        
+
     def remove(self, line):
         # Remove the first instance exactly equal to input
         for n, code_line in enumerate(self.lines):

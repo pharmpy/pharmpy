@@ -1,7 +1,6 @@
 import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.internals.code_generator import CodeGenerator
-from pharmpy.modeling import get_sigmas
 
 from .name_mangle import name_mangle
 
@@ -69,14 +68,14 @@ def add_sigma(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
             if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
                 add_ini_parameter(cg, sigma_param, boundary=True)
             else:
-                add_ini_parameter(cg, sigma_param)    
+                add_ini_parameter(cg, sigma_param)
         else:
-            for row, col in zip(range(sigma.rows), range(sigma.rows+1)):
-                sigma_param = model.parameters[sigma[row,col]]
+            for row, col in zip(range(sigma.rows), range(sigma.rows + 1)):
+                sigma_param = model.parameters[sigma[row, col]]
                 if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
                     add_ini_parameter(cg, sigma_param, boundary=True)
                 else:
-                    add_ini_parameter(cg, sigma_param) 
+                    add_ini_parameter(cg, sigma_param)
 
 
 def add_ini_parameter(cg: CodeGenerator, parameter: sympy.Symbol, boundary: bool = False) -> None:

@@ -24,10 +24,11 @@ from pharmpy.modeling import (
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import fit
 
+from .error_model import res_error_term
 from .ini import add_eta, add_sigma, add_theta
 from .model_block import add_ode, add_statements
-from .sanity_checks import check_model, print_warning
-from .error_model import res_error_term
+from .sanity_checks import check_model
+
 
 def convert_model(
     model: pharmpy.model.Model, keep_etas: bool = False, skip_check: bool = False
@@ -162,20 +163,20 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     """
 
     cg.add('model({')
-    
+
     # Add statements before ODEs
     cg.indent()
     if len(model.statements.after_odes) != 0:
         add_statements(model, cg, model.statements.before_odes)
-    
+
     # Add the ODEs
     if model.statements.ode_system:
         add_ode(model, cg)
-    
+
     # Find what kind of error model we are looking at
     dv = list(model.dependent_variables.keys())[0]
     dv_statement = model.statements.find_assignment(dv)
-    
+
     only_piecewise = False
     if dv_statement.expression.is_Piecewise:
         only_piecewise = True
@@ -188,13 +189,13 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
                         if value != dv:
                             dv_term = res_error_term(model, value)
                             dependencies.update(dv_term.dependencies())
-                            
+
                             dv_term.create_res_alias()
                             res_alias.update(dv_term.res_alias)
-                else:        
+                else:
                     dv_term = res_error_term(model, s.expression)
                     dependencies.update(dv_term.dependencies())
-                    
+
                     dv_term.create_res_alias()
                     res_alias.update(dv_term.res_alias)
     else:
@@ -202,18 +203,15 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         dependencies = dv_term.dependencies()
         dv_term.create_res_alias()
         res_alias = dv_term.res_alias
-    
+
     # Add statements after ODEs
     if len(model.statements.after_odes) == 0:
         statements = model.statements
     else:
         statements = model.statements.after_odes
-    add_statements(model,
-                       cg,
-                       statements,
-                       only_piecewise,
-                       dependencies = dependencies,
-                       res_alias = res_alias)
+    add_statements(
+        model, cg, statements, only_piecewise, dependencies=dependencies, res_alias=res_alias
+    )
 
     cg.dedent()
     cg.add('})')
@@ -585,7 +583,6 @@ def verification(
 
     # Execute the nlmixr model
     print_step("Executing nlmixr2 model... (this might take a while)")
-    import pharmpy.workflows
 
     nlmixr_model = execute_model(nlmixr_model, db_name)
     nlmixr_results = nlmixr_model.modelfit_results.predictions

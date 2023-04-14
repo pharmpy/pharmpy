@@ -1,25 +1,25 @@
-from typing import Dict, Tuple, Union
+from typing import Union
 
 import pharmpy.model
 from pharmpy.deps import sympy
-from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.internals.expr.subs import subs
-from pharmpy.modeling import get_sigmas, get_thetas
+from pharmpy.modeling import get_thetas
+
 
 class res_error_term:
     def __init__(self, model, expr):
         self.model = model
         self.expr = sympy.expand(expr)
-        
+
         self.only_piecewise = None
         self.is_only_piecewise()
-        
+
         self.res = None
         self.res_alias = None
         self.add = error()
         self.prop = error()
         self.find_term()
-        
+
     def create_res_alias(self):
         if self.res is not None:
             res_alias = set()
@@ -29,7 +29,7 @@ class res_error_term:
                     if a not in res_alias:
                         res_alias.add(a)
             self.res_alias = res_alias
-    
+
     def dependencies(self):
         dependencies = set()
         if self.add.expr is not None:
@@ -37,7 +37,7 @@ class res_error_term:
         elif self.prop.expr is not None:
             dependencies.update(self.prop.dependencies)
         return dependencies
-        
+
     def find_term(self):
         # NEED TO BE
         # VAR 1 : y = F + F*eps + eps
@@ -47,8 +47,8 @@ class res_error_term:
         # ELSE raise error
         terms = sympy.Add.make_args(self.expr)
         # Assert that it follows the above set of format rules
-        assert(len(terms) <= 3)
-        
+        assert len(terms) <= 3
+
         errors = []
         for term in terms:
             error_term = False
@@ -60,18 +60,22 @@ class res_error_term:
                         sigma = convert_eps_to_sigma(symbol, self.model)
                         if self.model.parameters[str(sigma)].init == 1.0:
                             if self.model.parameters[str(sigma)].fix:
-                                term.subs(factor,1)
+                                term.subs(factor, 1)
                         if factor != symbol:
                             sigma_alias = factor
                         else:
                             sigma_alias = None
                         error_term = True
-                        
+
             if error_term:
-                errors.append({"term": term,
-                               "full_term": full_term,
-                               "sigma": sigma,
-                               "sigma_alias": sigma_alias})
+                errors.append(
+                    {
+                        "term": term,
+                        "full_term": full_term,
+                        "sigma": sigma,
+                        "sigma_alias": sigma_alias,
+                    }
+                )
             else:
                 if self.res is None:
                     self.res = term
@@ -79,16 +83,16 @@ class res_error_term:
                 else:
                     # FIXME : Should this be allowed??
                     self.res += term
-                    
+
         if self.res is None:
             print("No resulting term found")
             exit
         elif len(errors) > 2:
             print("Too many error terms found")
             exit
-        
+
         prop = False
-        
+
         for t in errors:
             prop = False
             term = t["term"]
@@ -100,19 +104,15 @@ class res_error_term:
                         # Remove the resulting symbol from the error term
                         term = convert_eps_to_sigma(term, self.model)
                         term = term.subs(ali, 1)
-                        self.prop = error(self.model,
-                                          term,
-                                          t["sigma"],
-                                          sigma_alias = t["sigma_alias"],
-                                          prop = True)
-                                                
+                        self.prop = error(
+                            self.model, term, t["sigma"], sigma_alias=t["sigma_alias"], prop=True
+                        )
+
             if prop is False:
                 term = convert_eps_to_sigma(term, self.model)
-                self.add = error(self.model,
-                                 term,
-                                 t["sigma"],
-                                 sigma_alias = t["sigma_alias"],
-                                 add = True)
+                self.add = error(
+                    self.model, term, t["sigma"], sigma_alias=t["sigma_alias"], add=True
+                )
 
     def is_only_piecewise(self):
         dv = list(self.model.dependent_variables.keys())[0]
@@ -121,10 +121,10 @@ class res_error_term:
                 if not s.expression.is_Piecewise:
                     self.only_piecewise = False
                     break
-        
+
         if self.only_piecewise is None:
             self.only_piecewise = True
-    
+
     def __str__(self):
         s = ""
         s += str(f"add : {self.add.expr}\n")
@@ -134,14 +134,9 @@ class res_error_term:
         s += str(f"Only piecewise : {self.only_piecewise}\n")
         return s
 
+
 class error:
-    def __init__(self,
-                 model = None,
-                 expr = 0,
-                 sigma = None,
-                 add = False,
-                 sigma_alias = None,
-                 prop = False):
+    def __init__(self, model=None, expr=0, sigma=None, add=False, sigma_alias=None, prop=False):
         self.model = model
         self.expr = expr
         self.sigma = sigma
@@ -151,15 +146,15 @@ class error:
         self.prop = prop
         self.dependencies = set()
         self.check_dependecies()
-        
+
     def is_sigma_fix(self):
-        if not self.model is None:
+        if self.model is not None:
             if self.model.parameters[str(self.sigma)].init == 1.0:
                 if self.model.parameters[str(self.sigma)].fix:
                     return True
         else:
             return False
-    
+
     def check_dependecies(self):
         if self.model is not None and self.expr is not None:
             accepted_symbols = set([self.sigma, self.sigma_alias])
@@ -167,7 +162,7 @@ class error:
             accepted_symbols.update(thetas)
             for symbol in self.expr.free_symbols:
                 if symbol not in accepted_symbols:
-                    # TODO : also aid  aliases for all dependencies 
+                    # TODO : also aid  aliases for all dependencies
                     self.dependencies.add(symbol)
 
 
@@ -192,7 +187,7 @@ def full_expression(expression: sympy.Expr, model: pharmpy.model.Model) -> sympy
         statements = model.statements
     else:
         statements = model.statements.after_odes
-        
+
     for statement in reversed(statements):
         expression = subs(expression, {statement.symbol: statement.expression}, simultaneous=True)
     return expression
@@ -220,12 +215,11 @@ def find_aliases(symbol: str, model: pharmpy.model, aliases: set = None) -> list
     else:
         aliases.add(symbol)
     for expr in model.statements.after_odes:
-        
         # If RES = ALI
         if symbol == expr.symbol and isinstance(expr.expression, sympy.Symbol):
             if expr.expression not in aliases:
                 aliases.union(find_aliases(expr.expression, model, aliases))
-        
+
         # If RES = PIECEWISE or PIECEWISE = RES
         if expr.expression.is_Piecewise:
             for e, c in expr.expression.args:
@@ -235,7 +229,7 @@ def find_aliases(symbol: str, model: pharmpy.model, aliases: set = None) -> list
                 elif symbol == e:
                     if expr.symbol not in aliases:
                         aliases.union(find_aliases(expr.symbol, model, aliases))
-        
+
         # If ALI = RES
         if symbol == expr.expression:
             if expr.symbol not in aliases:
@@ -263,61 +257,16 @@ def convert_eps_to_sigma(
         Same expression as inputed, but with epsilon names changed to sigma.
 
     """
-    #eps_to_sigma = {
+    # eps_to_sigma = {
     #    sympy.Symbol(eps.names[0]): sympy.Symbol(str(eps.variance))
     #    for eps in model.random_variables.epsilons
-    #}
+    # }
     eps_to_sigma = {}
     for dist in model.random_variables.epsilons:
         sigma = dist.variance
         if len(dist.names) == 1:
-            eps_to_sigma[dist.names[0]] = sigma   
+            eps_to_sigma[dist.names[0]] = sigma
         else:
-            for row, col, eps in zip(range(sigma.rows),
-                                range(sigma.rows+1),
-                                dist.names):
+            for row, col, eps in zip(range(sigma.rows), range(sigma.rows + 1), dist.names):
                 eps_to_sigma[eps] = sigma[row, col]
     return expr.subs(eps_to_sigma)
-
-
-def convert_piecewise(
-    piecewise: sympy.Piecewise, cg: CodeGenerator, model: pharmpy.model.Model
-) -> None:
-    """
-    For an expression of the dependent variable contating a piecewise statement
-    this function will convert the expression to an if/else if/else statement
-    compatible with nlmixr.
-    NOTE(!) nlmixr2 conversion cannot handle conditional error models, which are ignored.
-
-    Parameters
-    ----------
-    piecewise : sympy.Piecewise
-        A sympy expression contining made up of a Piecewise statement
-    cg : CodeGenerator
-        CodeGenerator class object for creating code
-    model : pharmpy.Model
-        Pharmpy model object
-
-    """
-    first = True
-    for expr, cond in piecewise.expression.args:
-        if first:
-            cg.add(f'if ({cond}){{')
-            expr, error = find_term(model, expr, cg)
-            cg.add(f'{piecewise.symbol} <- {expr}')
-            cg.add('}')
-            first = False
-        else:
-            if cond is not sympy.S.true:
-                cg.add(f'else if ({cond}){{')
-                expr, error = find_term(model, expr, cg)
-                cg.add(f'{piecewise.symbol} <- {expr}')
-                cg.add('}')
-            else:
-                cg.add('else {')
-                expr, error = find_term(model, expr, cg)
-                cg.add(f'{piecewise.symbol} <- {expr}')
-                cg.add('}')
-
-    # FIXME : Add error relation where the error model is conditional
-    # add_error_relation(cg, error, piecewise.symbol)

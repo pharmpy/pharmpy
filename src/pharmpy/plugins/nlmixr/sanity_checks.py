@@ -6,8 +6,6 @@ It serves purpose in catching known errors that are not yet solved, or limitatio
 that are found in the conversion software
 """
 
-import warnings
-
 import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.modeling import (
@@ -49,7 +47,7 @@ def check_model(
                     "Observation and bolus dose at the same time in the data. Modified for nlmixr model"
                 )
                 model = change_same_time(model)
-    
+
     # Checks regarding error model
     if not skip_error_model_check:
         if not known_error_model(model):
@@ -62,14 +60,15 @@ def check_model(
     if rvs_same(model, omega=True):
         print_warning("Omega with value same not supported. Updated as follows.")
         model = change_rvs_same(model, omega=True)
-    
+
     # Checks regarding esimation method
     if method := known_estimation_method(model):
         print_warning(
             f"Estimation method {method} unknown to nlmixr2. Using 'FOCEI' as placeholder"
         )
-    
+
     return model
+
 
 def known_estimation_method(model):
     nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
@@ -78,6 +77,7 @@ def known_estimation_method(model):
         return method
     else:
         return None
+
 
 def known_error_model(model: pharmpy.model.Model) -> bool:
     """
@@ -205,9 +205,10 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
                                 & (~dataset["EVID"].isin(evid_ignore)),
                                 "TIME",
                             ] += 0.000001
-                            
-    model = model.replace(dataset = dataset)
+
+    model = model.replace(dataset=dataset)
     return model
+
 
 def rvs_same(model: pharmpy.model.Model, sigma: bool = False, omega: bool = False) -> bool:
     """
@@ -279,12 +280,12 @@ def change_rvs_same(
     rvs_and_var = {}
     for rv in rvs:
         current_var = []
-        
+
         if isinstance(rv.variance, sympy.Symbol):
             variance = [rv.variance]
         else:
             variance = rv.variance
-            
+
         for var in variance:
             if var in checked_variance:
                 n = 1
@@ -292,40 +293,40 @@ def change_rvs_same(
                 while new_var in checked_variance:
                     n += 1
                     new_var = sympy.Symbol(var.name + "_" + f'{n}')
-    
+
                 var_to_add[new_var] = var
-    
+
                 current_var.append(new_var)
-    
+
                 rvs_and_var[(rv.names, var)] = new_var
-                #print(rv, " : ", new_var)
+                # print(rv, " : ", new_var)
             else:
                 current_var.append(var)
-        
+
         checked_variance += current_var
-    
+
     params = model.parameters
     for s in var_to_add:
         param = model.parameters[var_to_add[s]].replace(name=s.name)
         params = params + param
     model = model.replace(parameters=params)
-    
+
     etas = [e[0] for e in rvs_and_var.keys()]
     for rv in rvs:
         if rv.names in etas:
-            old_to_new = [l for l in rvs_and_var if l[0] == rv.names]
+            old_to_new = [name_var for name_var in rvs_and_var if name_var[0] == rv.names]
             new_rv = rv
             for el in old_to_new:
                 old = el[1]
                 new = rvs_and_var[el]
                 new_variance = new_rv.variance.replace(old, new)
-                new_rv = new_rv.replace(variance = new_variance)
+                new_rv = new_rv.replace(variance=new_variance)
             all_rvs = model.random_variables
-            
+
             keep = [name for name in all_rvs.names if name not in rv.names]
             model = model.replace(random_variables=all_rvs[keep])
             model = model.replace(random_variables=model.random_variables + new_rv)
-    
+
     # Add newline after all updated sigma values have been printed
     print()
     return model

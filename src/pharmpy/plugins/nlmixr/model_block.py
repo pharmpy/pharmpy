@@ -29,16 +29,19 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
         else:
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
-def add_statements(model: pharmpy.model.Model,
-                       cg: CodeGenerator,
-                       statements: pharmpy.model.statements,
-                       only_piecewise: Union[bool, None] = None,
-                       dependencies: set[sympy.Symbol] = set(),
-                       res_alias: set[sympy.Symbol] = set()):
+
+def add_statements(
+    model: pharmpy.model.Model,
+    cg: CodeGenerator,
+    statements: pharmpy.model.statements,
+    only_piecewise: Union[bool, None] = None,
+    dependencies: set[sympy.Symbol] = set(),
+    res_alias: set[sympy.Symbol] = set(),
+):
     """
     Will add the provided statements to the code generator objects, translated
     to nlmixr format.
-    
+
     Parameters
     ----------
     model : pharmpy.model.Model
@@ -55,11 +58,11 @@ def add_statements(model: pharmpy.model.Model,
         Could for instance a term 'W' which define the error model.
         The default is set().
     res_alias : set[sympy.Symbols], optional
-        A set with aliases for the dependent or resulting term for the 
+        A set with aliases for the dependent or resulting term for the
         dependent variable. The default is set().
 
     """
-    
+
     # FIXME: handle other DVs?
     dv = list(model.dependent_variables.keys())[0]
 
@@ -71,17 +74,17 @@ def add_statements(model: pharmpy.model.Model,
                 for dist in model.random_variables.epsilons:
                     sigma = dist.variance
                 assert sigma is not None
-                
+
                 if only_piecewise is False:
                     dv_term = res_error_term(model, s.expression)
                     res = dv_term.res
                     if len(dependencies) != 0:
                         cg.add(f'{s.symbol} <- {res}')
                         cg.add(f'{s.symbol} ~ add(add_error) + prop(prop_error)')
-                        
+
                         # TODO: Remove sigma here instead of at the end
                         # removal of sigma done at the end
-                        
+
                     else:
                         cg.add(f'{s.symbol} <- {res}')
                         e = ""
@@ -130,10 +133,10 @@ def add_statements(model: pharmpy.model.Model,
                                                 largest_cond = cond
                                 value = largest_value
                         cg.indent()
-                        
+
                         if only_piecewise is False:
                             cg.add(f'{s.symbol.name} <- {value}')
-                            
+
                             if s.symbol in dependencies:
                                 if not value.is_constant() and not isinstance(value, sympy.Symbol):
                                     add, prop = extract_add_prop(value, res_alias, model)
@@ -150,38 +153,36 @@ def add_statements(model: pharmpy.model.Model,
                                 cg.add(f'{s.symbol.name} <- {value}')
                         else:
                             cg.add(f'{s.symbol.name} <- {value}')
-                                
+
                         cg.dedent()
                     cg.add('}')
                 elif s.symbol in dependencies:
                     add, prop = extract_add_prop(s.expression, res_alias, model)
-                    cg.add(f'{s.symbol.name} <- {expr}') #TODO : Remove ?
+                    cg.add(f'{s.symbol.name} <- {expr}')  # TODO : Remove ?
                     cg.add(f'add_error <- {add}')
                     cg.add(f'prop_error <- {prop}')
                 else:
                     cg.add(f'{s.symbol.name} <- {expr}')
-    
+
     if only_piecewise:
         cg.add(f'{dv} <- res')
         cg.add(f'{dv} ~ add(add_error) + prop(prop_error)')
-        
+
     # Assume all sigma with a fixed inital value of 1 to be removed
     # TODO: Remove when using res_error_term instead
     from pharmpy.modeling import get_sigmas
+
     sigma_to_remove = set()
     for sigma in get_sigmas(model):
         # TODO : also remove alias for sigma
         if sigma.init == 1 and sigma.fix:
             cg.remove(f"{sigma.name} <- fixed({sigma.init})")
             sigma_to_remove.add(sigma.symbol)
-    
-        
 
-def extract_add_prop(s,
-                     res_alias: set[sympy.symbols],
-                     model: pharmpy.model.Model):
+
+def extract_add_prop(s, res_alias: set[sympy.symbols], model: pharmpy.model.Model):
     """
-    
+
 
     Parameters
     ----------
@@ -189,7 +190,7 @@ def extract_add_prop(s,
         A sympy expression from which an additive and a proportional error
         term are to be extracted.
     res_alias : set[sympy.symbols]
-        A set with aliases for the dependent or resulting term for the 
+        A set with aliases for the dependent or resulting term for the
         dependent variable.
     model : pharmpy.model.Model
         The connected pharmpy model.
@@ -208,8 +209,8 @@ def extract_add_prop(s,
         terms = sympy.Add.make_args(s.args[0])
     else:
         terms = sympy.Add.make_args(s.expression)
-    assert(len(terms) <= 2)
-    
+    assert len(terms) <= 2
+
     prop = 0
     add = 0
     prop_found = False
@@ -222,8 +223,9 @@ def extract_add_prop(s,
                     prop_found = True
         if prop_found is False:
             add = list(term.free_symbols)[0]
-    
+
     return add, prop
+
 
 def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     """
@@ -386,12 +388,14 @@ def convert_eq(cond: sympy.Eq) -> str:
     cond = cond.replace("≥", "<=")
     cond = cond.replace("∧", "&")
     cond = cond.replace("∨", "|")
-    
-    cond = re.sub(r'(ID\s*==\s*)(\d+)',r"\1'\2'", cond)
-    
-    if (re.search(r'(ID\s*<=\s*)(\d+)', cond) or
-        re.search(r'(ID\s*>=\s*)(\d+)', cond) or
-        re.search(r'(ID\s*<\s*)(\d+)', cond) or
-        re.search(r'(ID\s*>\s*)(\d+)', cond)):
+
+    cond = re.sub(r'(ID\s*==\s*)(\d+)', r"\1'\2'", cond)
+
+    if (
+        re.search(r'(ID\s*<=\s*)(\d+)', cond)
+        or re.search(r'(ID\s*>=\s*)(\d+)', cond)
+        or re.search(r'(ID\s*<\s*)(\d+)', cond)
+        or re.search(r'(ID\s*>\s*)(\d+)', cond)
+    ):
         raise ValueError(f"Condition '{cond}' not supported by nlmixr")
     return cond
