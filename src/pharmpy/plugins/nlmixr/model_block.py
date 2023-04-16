@@ -1,5 +1,5 @@
 import re
-from typing import Union, Set
+from typing import Set, Union
 
 import pharmpy.model
 from pharmpy.deps import sympy, sympy_printing
