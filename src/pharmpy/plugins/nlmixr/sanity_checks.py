@@ -62,7 +62,8 @@ def check_model(
         model = change_rvs_same(model, omega=True)
 
     # Checks regarding esimation method
-    if method := known_estimation_method(model):
+    method = model.estimation_steps[0].method
+    if not known_estimation_method(method):
         print_warning(
             f"Estimation method {method} unknown to nlmixr2. Using 'FOCEI' as placeholder"
         )
@@ -70,13 +71,12 @@ def check_model(
     return model
 
 
-def known_estimation_method(model):
+def known_estimation_method(method):
     nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
-    method = model.estimation_steps[0].method
-    if method not in nonmem_method_to_nlmixr.keys():
-        return method
+    if method in nonmem_method_to_nlmixr.keys():
+        return True
     else:
-        return None
+        return False
 
 
 def known_error_model(model: pharmpy.model.Model) -> bool:
