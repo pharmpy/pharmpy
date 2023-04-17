@@ -10,8 +10,8 @@ from pharmpy.modeling import (
     create_basic_pk_model,
     create_joint_distribution,
     fix_parameters,
-    generate_model_code,
     get_config_path,
+    get_model_code,
     get_model_covariates,
     load_example_model,
     read_model,
@@ -82,7 +82,7 @@ def test_write_model(testdata, load_model_for_test, tmp_path):
 def test_generate_model_code(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     model = fix_parameters(model, ['THETA_1'])
-    assert generate_model_code(model).split('\n')[7] == '$THETA 0.1 FIX'
+    assert get_model_code(model).split('\n')[7] == '$THETA 0.1 FIX'
 
 
 def test_load_example_model():

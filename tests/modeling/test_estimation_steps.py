@@ -4,7 +4,6 @@ from pharmpy.modeling import (
     add_covariance_step,
     add_estimation_step,
     append_estimation_step_options,
-    generate_model_code,
     remove_covariance_step,
     remove_estimation_step,
     set_estimation_step,
@@ -45,7 +44,7 @@ from pharmpy.modeling import (
 def test_set_estimation_step(testdata, load_model_for_test, method, kwargs, code_ref):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     model = set_estimation_step(model, method, **kwargs)
-    assert generate_model_code(model).split('\n')[-2] == code_ref
+    assert model.model_code.split('\n')[-2] == code_ref
 
 
 def test_set_estimation_step_est_middle(testdata, load_model_for_test):
@@ -62,13 +61,13 @@ def test_add_estimation_step(testdata, load_model_for_test):
     assert len(model.estimation_steps) == 1
     model = add_estimation_step(model, 'fo')
     assert len(model.estimation_steps) == 2
-    assert generate_model_code(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO'
+    assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO'
 
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     model = add_estimation_step(model, 'fo', evaluation=True)
     assert len(model.estimation_steps) == 2
-    assert generate_model_code(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
+    assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
 
 
 def test_add_estimation_step_non_int(testdata, load_model_for_test):
@@ -83,25 +82,24 @@ def test_remove_estimation_step(testdata, load_model_for_test):
     assert len(model.estimation_steps) == 1
     model = remove_estimation_step(model, 0)
     assert not model.estimation_steps
-    assert generate_model_code(model).split('\n')[-2] == '$SIGMA 1'
+    assert model.model_code.split('\n')[-2] == '$SIGMA 1'
 
 
 def test_add_covariance_step(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     model = add_covariance_step(model)
-    print(model.model_code)
     assert len(model.estimation_steps) == 1
-    assert generate_model_code(model).split('\n')[-2] == '$COVARIANCE'
+    assert model.model_code.split('\n')[-2] == '$COVARIANCE'
 
 
 def test_remove_covariance_step(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     model = add_covariance_step(model)
-    assert generate_model_code(model).split('\n')[-2] == '$COVARIANCE'
+    assert model.model_code.split('\n')[-2] == '$COVARIANCE'
     model = remove_covariance_step(model)
     assert (
-        generate_model_code(model).split('\n')[-2]
+        model.model_code.split('\n')[-2]
         == '$ESTIMATION METHOD=COND INTER MAXEVAL=9990 PRINT=2 POSTHOC'
     )
 

@@ -197,7 +197,7 @@ def convert_model(model: Model, to_format: str):
     return new
 
 
-def generate_model_code(model: Model):
+def get_model_code(model: Model):
     """Get the model code of the underlying model language
 
     Parameters
@@ -212,9 +212,9 @@ def generate_model_code(model: Model):
 
     Examples
     --------
-    >>> from pharmpy.modeling import generate_model_code, load_example_model
+    >>> from pharmpy.modeling import get_model_code, load_example_model
     >>> model = load_example_model("pheno")
-    >>> generate_model_code(model)  # doctest: +SKIP
+    >>> get_model_code(model)  # doctest: +SKIP
 
     """
     return model.model_code
