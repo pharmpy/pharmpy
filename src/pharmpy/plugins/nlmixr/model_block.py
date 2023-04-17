@@ -82,8 +82,8 @@ def add_statements(
                         cg.add(f'{s.symbol} <- {res}')
                         cg.add(f'{s.symbol} ~ add(add_error) + prop(prop_error)')
 
-                        # TODO: Remove sigma here instead of at the end
-                        # removal of sigma done at the end
+                        # TODO: Remove sigma here instead of in ini
+                        # also remove aliases
 
                     else:
                         cg.add(f'{s.symbol} <- {res}')
@@ -145,7 +145,8 @@ def add_statements(
                         elif s.symbol == dv:
                             if not value.is_constant() and not isinstance(value, sympy.Symbol):
                                 t = res_error_term(model, value)
-                                # FIXME : Remove sigma here instead of at the end
+                                # FIXME : Remove sigma here instead of in ini
+                                # also remove aliases for sigma
                                 cg.add(f"res <- {t.res}")
                                 cg.add(f'add_error <- {t.add.expr}')
                                 cg.add(f'prop_error <- {t.prop.expr}')
@@ -167,17 +168,6 @@ def add_statements(
     if only_piecewise:
         cg.add(f'{dv} <- res')
         cg.add(f'{dv} ~ add(add_error) + prop(prop_error)')
-
-    # Assume all sigma with a fixed inital value of 1 to be removed
-    # TODO: Remove when using res_error_term instead
-    from pharmpy.modeling import get_sigmas
-
-    sigma_to_remove = set()
-    for sigma in get_sigmas(model):
-        # TODO : also remove alias for sigma
-        if sigma.init == 1 and sigma.fix:
-            cg.remove(f"{sigma.name} <- fixed({sigma.init})")
-            sigma_to_remove.add(sigma.symbol)
 
 
 def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Model):
