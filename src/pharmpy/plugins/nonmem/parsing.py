@@ -805,9 +805,10 @@ def parse_table_columns(control_stream):
                         columns.append(key)
 
         if not noappend:
-            toappend = ['DV', 'PRED', 'RES', 'WRES']
-            # Remove appended columns explicitly in $TABLE
-            columns = [col for col in columns if col not in toappend]
+            toremove = ['PRED', 'RES', 'WRES']
+            toappend = ['DV'] + toremove
+            # Remove appended columns explicitly in $TABLE except DV
+            columns = [col for col in columns if col not in toremove]
             columns.extend(toappend)
 
         all_columns.append(columns)
