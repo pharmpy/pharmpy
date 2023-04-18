@@ -166,7 +166,7 @@ def test_remove_subotion_for_all(parser):
 def test_options(parser):
     assert table_options['NOPRINT'].abbreviations == ['NOPRINT', 'NOPRIN', 'NOPRI', 'NOPR', 'NOP']
     rec = parser.parse('$TABLE IPRED DV FILE=sdtab').records[0]
-    assert rec.parse_options(nonoptions=set()) == [
+    assert rec.parse_options(nonoptions=set(), netas=2) == [
         (WildOpt(), 'IPRED', None),
         (WildOpt(), 'DV', None),
         (StrOpt('FILE'), 'FILE', 'sdtab'),
@@ -185,4 +185,27 @@ def test_options(parser):
 )
 def test_option_errors(parser, buf):
     with pytest.raises(ValueError):
-        parser.parse(buf).records[0].parse_options(nonoptions=set())
+        parser.parse(buf).records[0].parse_options(nonoptions=set(), netas=2)
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize(
+    "buf,netas,correct",
+    [
+        ('$TABLE ID TIME', 1, ['ID', 'TIME']),
+        ('$TABLE ID TIME ETAS(1:2)', 2, ['ID', 'TIME', 'ETA1', 'ETA2']),
+        ('$TABLE ID ETAS(1:2) TIME', 2, ['ID', 'ETA1', 'ETA2', 'TIME']),
+        ('$TABLE ID ETAS (1 : 2   ) TIME', 2, ['ID', 'ETA1', 'ETA2', 'TIME']),
+        ('$TABLE ID ETAS(1:LAST) TIME', 3, ['ID', 'ETA1', 'ETA2', 'ETA3', 'TIME']),
+        ('$TABLE ID ETAS(1 TO LAST) TIME', 3, ['ID', 'ETA1', 'ETA2', 'ETA3', 'TIME']),
+        ('$TABLE ID ETAS(1 TO LAST BY 2) TIME', 4, ['ID', 'ETA1', 'ETA3', 'TIME']),
+        ('$TABLE ID ETAS(1,2,4) TIME', 4, ['ID', 'ETA1', 'ETA2', 'ETA4', 'TIME']),
+        ('$TABLE ID ETAS(3:1) TIME', 3, ['ID', 'ETA3', 'ETA2', 'ETA1', 'TIME']),
+        ('$TABLE ID ETAS(4:1 BY -2) TIME', 4, ['ID', 'ETA4', 'ETA2', 'TIME']),
+        ('$TABLE ID ETAS(1:4 BY -1) TIME', 4, ['ID', 'ETA4', 'ETA3', 'ETA2', 'ETA1', 'TIME']),
+    ],
+)
+def test_table_parsing(parser, buf, netas, correct):
+    res = parser.parse(buf).records[0].parse_options(nonoptions=set(), netas=netas)
+    names = [col[1] for col in res]
+    assert names == correct

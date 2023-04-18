@@ -67,7 +67,7 @@ def _parse_modelfit_results(
         ses_sdcorr,
     ) = _parse_ext(control_stream, name_map, ext_tables, subproblem, parameters)
 
-    table_df = _parse_tables(path, control_stream)
+    table_df = _parse_tables(path, control_stream, netas=len(model.random_variables.etas.names))
     residuals = _parse_residuals(table_df)
     predictions = _parse_predictions(table_df)
     iofv, ie, iec = _parse_phi(path, control_stream, name_map, etas, subproblem)
@@ -322,7 +322,7 @@ def _parse_phi(
         return None, None, None
 
 
-def _parse_tables(path: Path, control_stream: NMTranControlStream) -> pd.DataFrame:
+def _parse_tables(path: Path, control_stream: NMTranControlStream, netas) -> pd.DataFrame:
     """Parse $TABLE and table files into one large dataframe of useful columns"""
     interesting_columns = {
         'ID',
@@ -338,7 +338,7 @@ def _parse_tables(path: Path, control_stream: NMTranControlStream) -> pd.DataFra
     }
 
     table_recs = control_stream.get_records('TABLE')
-    colnames_list = parse_table_columns(control_stream)
+    colnames_list = parse_table_columns(control_stream, netas)
     found = set()
     df = pd.DataFrame()
     for table_rec, colnames in zip(table_recs, colnames_list):

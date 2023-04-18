@@ -774,7 +774,7 @@ def filter_observations(df, col_names):
     return df[~df['ID'].isin(ids_to_remove)]
 
 
-def parse_table_columns(control_stream):
+def parse_table_columns(control_stream, netas):
     # Handle synonyms and appended columns
 
     reserved = {'PRED', 'IPRED', 'CIPREDI'}
@@ -797,7 +797,7 @@ def parse_table_columns(control_stream):
     for table_record in control_stream.get_records('TABLE'):
         noappend = False
         columns = []
-        for opt, key, value in table_record.parse_options(nonoptions=symbs):
+        for opt, key, value in table_record.parse_options(nonoptions=symbs, netas=netas):
             if key == 'NOAPPEND':
                 noappend = True
             elif opt.need_value is None:

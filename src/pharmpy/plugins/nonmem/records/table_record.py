@@ -81,8 +81,8 @@ class TableRecord(OptionRecord):
                 derivs.append(int(n))
         return derivs
 
-    def parse_options(self, nonoptions):
-        return self.option_defs.parse_ast(self.root, nonoptions)
+    def parse_options(self, nonoptions, netas):
+        return self.option_defs.parse_ast(self.root, nonoptions=nonoptions, netas=netas)
 
 
 # FIXME: These situations are not handled

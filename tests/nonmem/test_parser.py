@@ -56,5 +56,5 @@ def test_table_columns(buf, columns):
 
     cs = parser.parse(buf)
     cs._active_problem = -1  # To trick cs.get_records
-    parsed_columns = parse_table_columns(cs)
+    parsed_columns = parse_table_columns(cs, netas=2)
     assert parsed_columns == columns

@@ -378,7 +378,7 @@ class Opts:
                 break
             curlength -= 1
 
-    def parse_ast(self, tree, nonoptions=None):
+    def parse_ast(self, tree, nonoptions=None, netas=None):
         # Return a list of tuples of canonical option name, value (or None for no value)
         # Nonoptions will not be matched against options but kept as WildOpts
         opt_nodes = list(tree.subtrees('option'))
@@ -407,6 +407,47 @@ class Opts:
         while i < len(opt_nodes):
             node = opt_nodes[i]
             key = _get_key(node)
+            # FIXME: This is special for $TABLE. Either have special case for this or have an Opt for it.
+            m = re.match(r'ETAS\(?', key)
+            if m:
+                # join all keys that belong with the ETAS
+                etas = key
+                while ')' not in key:
+                    i += 1
+                    node = opt_nodes[i]
+                    key = _get_key(node)
+                    etas += key
+                etas = etas[5:-1].replace(" ", "").replace("\t", "")
+                if ',' in etas:
+                    a = etas.split(',')
+                    for n in a:
+                        parsed.append((WildOpt(), f'ETA{n}', None))
+                else:
+                    m = re.match(r'(?P<start>\d+)(TO|:)(?P<end>\d+|LAST)(BY(?P<by>-?\d+))?', etas)
+                    if m:
+                        by = 1 if m.group('by') is None else int(m.group('by'))
+                        start = int(m.group('start'))
+                        end = m.group('end')
+                        if end == 'LAST':
+                            end = netas
+                        else:
+                            end = int(end)
+                        if start > end:
+                            end -= 1
+                            if by > 0:
+                                by = -by
+                        else:
+                            if by < 0:
+                                start, end = end, start
+                                end -= 1
+                            else:
+                                end += 1
+                        for n in range(start, end, by):
+                            parsed.append((WildOpt(), f'ETA{n}', None))
+                i += 1
+                continue
+
+            # FIXME: What happens if key=value for nonoption?
             if key in nonoptions:
                 parsed.append((WildOpt(), key, None))
                 i += 1
