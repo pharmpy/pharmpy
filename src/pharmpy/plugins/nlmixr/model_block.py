@@ -172,25 +172,25 @@ def add_statements(
 
 def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Model):
     """
-    Extract additiv and proportional error terms from a sympy expression
+        Extract additiv and proportional error terms from a sympy expression
 
-    Parameters
-    ----------
-    s : A sympy expression
-        A sympy expression from which an additive and a proportional error
-        term are to be extracted.
-    res_alias : set[sympy.symbols]
-        A set with aliases for the dependent or resulting term for the
-        dependent variable.
-    model : pharmpy.model.Model
-        The connected pharmpy model.
+        Parameters
+        ----------
+        s : A sympy expression
+            A sympy expression from which an additive and a proportional error
+            term are to be extracted.
+        res_alias : set[sympy.symbols]
+            A set with aliases for the dependent or resulting term for the
+            dependent variable.
+        model : pharmpy.model.Model
+            The connected pharmpy model.
 
     Returns
-    -------
-    add : sympy.Symbol
-        The symbol representing the additive error. Zero if none found
-    prop : sympy.Symbol
-        The symbol representing  the proportional error. Zero if none found
+        -------
+        add : sympy.Symbol
+            The symbol representing the additive error. Zero if none found
+        prop : sympy.Symbol
+            The symbol representing  the proportional error. Zero if none found
 
     """
     if isinstance(s, sympy.Symbol):
@@ -215,6 +215,41 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
             add = list(term.free_symbols)[0]
 
     return add, prop
+
+
+def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
+    expr = s.expression
+    first = True
+    for value, cond in expr.args:
+        if cond is not sympy.S.true:
+            if cond.atoms(sympy.Eq):
+                cond = convert_eq(cond)
+            if first:
+                cg.add(f'if ({cond}) {{')
+                first = False
+            else:
+                cg.add(f'}} else if ({cond}) {{')
+        else:
+            cg.add('} else {')
+            if "NEWIND" in [t.name for t in expr.free_symbols] and value == 0:
+                largest_value = expr.args[0].expr
+                largest_cond = expr.args[0].cond
+                for value, cond in expr.args[1:]:
+                    if cond is not sympy.S.true:
+                        if cond.rhs > largest_cond.rhs:
+                            largest_value = value
+                            largest_cond = cond
+                        elif cond.rhs == largest_cond.rhs:
+                            if not isinstance(cond, sympy.LessThan) and isinstance(
+                                largest_cond, sympy.LessThan
+                            ):
+                                largest_value = value
+                                largest_cond = cond
+                value = largest_value
+        cg.indent()
+        cg.add(f'{s.symbol.name} <- {value}')
+        cg.dedent()
+    cg.add('}')
 
 
 def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
