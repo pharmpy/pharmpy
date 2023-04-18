@@ -44,6 +44,11 @@ table_options = Opts(
 class TableRecord(OptionRecord):
     option_defs = table_options
 
+    def __init__(self, name, raw_name, root):
+        # Overriding to not parse options at parse time.
+        # Need other records to be parsed first.
+        super(OptionRecord, self).__init__(name, raw_name, root)
+
     @property
     def path(self):
         file_option = self.option_pairs['FILE']
@@ -76,8 +81,10 @@ class TableRecord(OptionRecord):
                 derivs.append(int(n))
         return derivs
 
+    def parse_options(self, nonoptions):
+        return self.option_defs.parse_ast(self.root, nonoptions)
+
 
 # FIXME: These situations are not handled
-# Names (from $INPUT, $PK, $ERROR and $PRED?) can override options
 # No columns are allowed after first option
 # Overridden names are ignored after first option (not error)

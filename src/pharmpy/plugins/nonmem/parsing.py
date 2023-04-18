@@ -781,10 +781,23 @@ def parse_table_columns(control_stream):
     synonyms = dict()
     all_columns = []
 
+    code_recs = (
+        control_stream.get_records('PK')
+        + control_stream.get_records('PRED')
+        + control_stream.get_records('ERROR')
+    )
+    symbs = set()
+    for rec in code_recs:
+        for s in rec.statements:
+            symbs.add(s.symbol.name)
+
+    (colnames, _, _, _) = parse_column_info(control_stream)
+    symbs |= set(colnames)
+
     for table_record in control_stream.get_records('TABLE'):
         noappend = False
         columns = []
-        for opt, key, value in table_record.parsed_options:
+        for opt, key, value in table_record.parse_options(nonoptions=symbs):
             if key == 'NOAPPEND':
                 noappend = True
             elif opt.need_value is None:

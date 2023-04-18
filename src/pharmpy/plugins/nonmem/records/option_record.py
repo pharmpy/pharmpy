@@ -378,8 +378,9 @@ class Opts:
                 break
             curlength -= 1
 
-    def parse_ast(self, tree):
+    def parse_ast(self, tree, nonoptions=None):
         # Return a list of tuples of canonical option name, value (or None for no value)
+        # Nonoptions will not be matched against options but kept as WildOpts
         opt_nodes = list(tree.subtrees('option'))
         found_options = set()
         i = 0
@@ -406,6 +407,10 @@ class Opts:
         while i < len(opt_nodes):
             node = opt_nodes[i]
             key = _get_key(node)
+            if key in nonoptions:
+                parsed.append((WildOpt(), key, None))
+                i += 1
+                continue
             value = _get_value(node)
             for opt in self.options:
                 if opt.match(key):

@@ -166,7 +166,7 @@ def test_remove_subotion_for_all(parser):
 def test_options(parser):
     assert table_options['NOPRINT'].abbreviations == ['NOPRINT', 'NOPRIN', 'NOPRI', 'NOPR', 'NOP']
     rec = parser.parse('$TABLE IPRED DV FILE=sdtab').records[0]
-    assert rec.parsed_options == [
+    assert rec.parse_options(nonoptions=set()) == [
         (WildOpt(), 'IPRED', None),
         (WildOpt(), 'DV', None),
         (StrOpt('FILE'), 'FILE', 'sdtab'),
@@ -185,4 +185,4 @@ def test_options(parser):
 )
 def test_option_errors(parser, buf):
     with pytest.raises(ValueError):
-        parser.parse(buf).records[0]
+        parser.parse(buf).records[0].parse_options(nonoptions=set())
