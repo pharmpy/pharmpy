@@ -1,7 +1,6 @@
 import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.internals.code_generator import CodeGenerator
-from pharmpy.modeling import get_sigmas
 
 from .name_mangle import name_mangle
 
@@ -62,11 +61,23 @@ def add_sigma(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     cg : CodeGenerator
         Code generator to add code upon.
     """
-    for sigma in get_sigmas(model):
-        if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
-            add_ini_parameter(cg, sigma, boundary=True)
+    for dist in model.random_variables.epsilons:
+        sigma = dist.variance
+        if len(dist.names) == 1:
+            sigma_param = model.parameters[sigma]
+            if sigma_param.init != 1 and not sigma_param.fix:
+                if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
+                    add_ini_parameter(cg, sigma_param, boundary=True)
+                else:
+                    add_ini_parameter(cg, sigma_param)
         else:
-            add_ini_parameter(cg, sigma)
+            for row, col in zip(range(sigma.rows), range(sigma.rows + 1)):
+                sigma_param = model.parameters[sigma[row, col]]
+                if sigma_param.init != 1 and not sigma_param.fix:
+                    if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
+                        add_ini_parameter(cg, sigma_param, boundary=True)
+                    else:
+                        add_ini_parameter(cg, sigma_param)
 
 
 def add_ini_parameter(cg: CodeGenerator, parameter: sympy.Symbol, boundary: bool = False) -> None:

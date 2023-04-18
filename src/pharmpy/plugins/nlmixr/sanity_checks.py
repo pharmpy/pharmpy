@@ -6,8 +6,6 @@ It serves purpose in catching known errors that are not yet solved, or limitatio
 that are found in the conversion software
 """
 
-import warnings
-
 import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.modeling import (
@@ -40,8 +38,9 @@ def check_model(
         Issues will be printed to the terminal and model is returned.
 
     """
+
     # Checks for the dataset
-    if model.dataset is not None or len(model.dataset) != 0:
+    if model.dataset is not None:
         if "TIME" in model.dataset.columns:
             if same_time(model):
                 print_warning(
@@ -62,7 +61,22 @@ def check_model(
         print_warning("Omega with value same not supported. Updated as follows.")
         model = change_rvs_same(model, omega=True)
 
+    # Checks regarding esimation method
+    method = model.estimation_steps[0].method
+    if not known_estimation_method(method):
+        print_warning(
+            f"Estimation method {method} unknown to nlmixr2. Using 'FOCEI' as placeholder"
+        )
+
     return model
+
+
+def known_estimation_method(method):
+    nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
+    if method in nonmem_method_to_nlmixr.keys():
+        return True
+    else:
+        return False
 
 
 def known_error_model(model: pharmpy.model.Model) -> bool:
@@ -157,8 +171,7 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
 
     """
     dataset = model.dataset.copy()
-    dataset = dataset.reset_index()
-    time = dataset["TIME"]
+    dataset = dataset.reset_index(drop=True)
 
     if "RATE" in dataset.columns:
         rate = True
@@ -178,36 +191,22 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
                         [x in evid_ignore for x in subset["EVID"].unique()]
                     ):
                         if rate:
-                            if any([x != 0 for x in subset["RATE"].unique()]) and any(
-                                [x == 0 for x in subset["RATE"].unique()]
-                            ):
-                                dataset.loc[
-                                    (dataset["ID"] == ID)
-                                    & (dataset["TIME"] == TIME)
-                                    & (dataset["RATE"] == 0)
-                                    & (~dataset["EVID"].isin(evid_ignore)),
-                                    "TIME",
-                                ] += 0.000001
+                            dataset.loc[
+                                (dataset["ID"] == ID)
+                                & (dataset["TIME"] == TIME)
+                                & (dataset["RATE"] == 0)
+                                & (~dataset["EVID"].isin(evid_ignore)),
+                                "TIME",
+                            ] += 0.000001
                         else:
-                            return True
+                            dataset.loc[
+                                (dataset["ID"] == ID)
+                                & (dataset["TIME"] == TIME)
+                                & (~dataset["EVID"].isin(evid_ignore)),
+                                "TIME",
+                            ] += 0.000001
 
-    with warnings.catch_warnings():
-        # Supress a numpy deprecation warning
-        warnings.simplefilter("ignore")
-        for index, row in dataset.iterrows():
-            if index != 0:
-                if row["ID"] == dataset.loc[index - 1]["ID"]:
-                    if row["TIME"] == dataset.loc[index - 1]["TIME"]:
-                        temp = index - 1
-                        while dataset.loc[temp]["TIME"] == row["TIME"]:
-                            if dataset.loc[temp]["EVID"] not in [0, 3]:
-                                if rate:
-                                    if dataset.loc[temp]["RATE"] == 0:
-                                        time[temp] = time[temp] + 10**-6
-                                else:
-                                    time[temp] = time[temp] + 10**-6
-                            temp += 1
-    model.dataset["TIME"] = time
+    model = model.replace(dataset=dataset)
     return model
 
 
@@ -280,38 +279,53 @@ def change_rvs_same(
     var_to_add = {}
     rvs_and_var = {}
     for rv in rvs:
-        var = rv.variance
-        if var in checked_variance:
-            n = 1
-            new_var = sympy.Symbol(var.name + "_" + f'{n}')
-            while new_var in checked_variance:
-                n += 1
-                new_var = sympy.Symbol(var.name + "_" + f'{n}')
+        current_var = []
 
-            var_to_add[new_var] = var
-
-            checked_variance.append(new_var)
-
-            rvs_and_var[rv.names] = new_var
-            print(rv, " : ", new_var)
+        if isinstance(rv.variance, sympy.Symbol):
+            variance = [rv.variance]
         else:
-            checked_variance.append(var)
+            variance = rv.variance
 
-    for rv in rvs:
-        if rv.names in rvs_and_var:
-            new_rv = rv.replace(variance=rvs_and_var[rv.names])
+        for var in variance:
+            if var in checked_variance:
+                n = 1
+                new_var = sympy.Symbol(var.name + "_" + f'{n}')
+                while new_var in checked_variance:
+                    n += 1
+                    new_var = sympy.Symbol(var.name + "_" + f'{n}')
 
-            all_rvs = model.random_variables
-            keep = [name for name in all_rvs.names if name not in [rv.names[0]]]
+                var_to_add[new_var] = var
 
-            model = model.replace(random_variables=all_rvs[keep])
-            model = model.replace(random_variables=model.random_variables + new_rv)
+                current_var.append(new_var)
+
+                rvs_and_var[(rv.names, var)] = new_var
+                # print(rv, " : ", new_var)
+            else:
+                current_var.append(var)
+
+        checked_variance += current_var
 
     params = model.parameters
     for s in var_to_add:
         param = model.parameters[var_to_add[s]].replace(name=s.name)
         params = params + param
     model = model.replace(parameters=params)
+
+    etas = [e[0] for e in rvs_and_var.keys()]
+    for rv in rvs:
+        if rv.names in etas:
+            old_to_new = [name_var for name_var in rvs_and_var if name_var[0] == rv.names]
+            new_rv = rv
+            for el in old_to_new:
+                old = el[1]
+                new = rvs_and_var[el]
+                new_variance = new_rv.variance.replace(old, new)
+                new_rv = new_rv.replace(variance=new_variance)
+            all_rvs = model.random_variables
+
+            keep = [name for name in all_rvs.names if name not in rv.names]
+            model = model.replace(random_variables=all_rvs[keep])
+            model = model.replace(random_variables=model.random_variables + new_rv)
 
     # Add newline after all updated sigma values have been printed
     print()

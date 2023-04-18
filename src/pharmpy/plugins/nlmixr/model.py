@@ -24,9 +24,10 @@ from pharmpy.modeling import (
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import fit
 
+from .error_model import res_error_term
 from .ini import add_eta, add_sigma, add_theta
 from .model_block import add_ode, add_statements
-from .sanity_checks import check_model, print_warning
+from .sanity_checks import check_model
 
 
 def convert_model(
@@ -74,7 +75,7 @@ def convert_model(
     )
 
     # Update dataset
-    if model.dataset is not None or len(model.dataset) != 0:
+    if model.dataset is not None:
         if keep_etas is True:
             nlmixr_model = nlmixr_model.replace(
                 modelfit_results=ModelfitResults(
@@ -91,8 +92,8 @@ def convert_model(
             dataset=nlmixr_model.dataset.reset_index(drop=True),
         )
 
-    # Add evid
-    nlmixr_model = add_evid(nlmixr_model)
+        # Add evid
+        nlmixr_model = add_evid(nlmixr_model)
 
     # Check model for warnings regarding data structure or model contents
     nlmixr_model = check_model(nlmixr_model, skip_error_model_check=skip_check)
@@ -162,14 +163,55 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     """
 
     cg.add('model({')
+
+    # Add statements before ODEs
     cg.indent()
+    if len(model.statements.after_odes) != 0:
+        add_statements(model, cg, model.statements.before_odes)
 
-    add_statements(model, cg, model.statements.before_odes)
-
+    # Add the ODEs
     if model.statements.ode_system:
         add_ode(model, cg)
 
-    add_statements(model, cg, model.statements.after_odes)
+    # Find what kind of error model we are looking at
+    dv = list(model.dependent_variables.keys())[0]
+    dv_statement = model.statements.find_assignment(dv)
+
+    only_piecewise = False
+    if dv_statement.expression.is_Piecewise:
+        only_piecewise = True
+        dependencies = set()
+        res_alias = set()
+        for s in model.statements.after_odes:
+            if s.symbol == dv:
+                if s.expression.is_Piecewise:
+                    for value, cond in s.expression.args:
+                        if value != dv:
+                            dv_term = res_error_term(model, value)
+                            dependencies.update(dv_term.dependencies())
+
+                            dv_term.create_res_alias()
+                            res_alias.update(dv_term.res_alias)
+                else:
+                    dv_term = res_error_term(model, s.expression)
+                    dependencies.update(dv_term.dependencies())
+
+                    dv_term.create_res_alias()
+                    res_alias.update(dv_term.res_alias)
+    else:
+        dv_term = res_error_term(model, dv_statement.expression)
+        dependencies = dv_term.dependencies()
+        dv_term.create_res_alias()
+        res_alias = dv_term.res_alias
+
+    # Add statements after ODEs
+    if len(model.statements.after_odes) == 0:
+        statements = model.statements
+    else:
+        statements = model.statements.after_odes
+    add_statements(
+        model, cg, statements, only_piecewise, dependencies=dependencies, res_alias=res_alias
+    )
 
     cg.dedent()
     cg.add('})')
@@ -205,9 +247,6 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
 
     if method not in nonmem_method_to_nlmixr.keys():
-        print_warning(
-            f"Estimation method {method} unknown to nlmixr2. Using 'FOCEI' as placeholder"
-        )
         nlmixr_method = "focei"
     else:
         nlmixr_method = nonmem_method_to_nlmixr[method]
@@ -310,7 +349,11 @@ def parse_modelfit_results(
         return None
 
     rdata["thetas"] = rdata["thetas"].loc[get_thetas(model).names]
-    rdata["sigma"] = rdata["sigma"].loc[get_sigmas(model).names]
+    s = []
+    for sigma in get_sigmas(model):
+        if sigma.init != 1 and not sigma.fix:
+            s.append(sigma.name)
+    rdata["sigma"] = rdata["sigma"].loc[s]
 
     ofv = rdata['ofv']['ofv'][0]
     omegas_sigmas = {}
@@ -323,7 +366,9 @@ def parse_modelfit_results(
     sigma = model.random_variables.epsilons.covariance_matrix
     for i in range(len(sigma)):
         if sigma[i] != 0:
-            omegas_sigmas[sigma[i].name] = rdata['sigma']['fit$theta'][sigma[i].name]
+            s = sigma[i]
+            if model.parameters[s].init != 1 and not model.parameters[s].fix:
+                omegas_sigmas[sigma[i].name] = rdata['sigma']['fit$theta'][sigma[i].name]
     thetas_index = 0
     pe = {}
     for param in model.parameters:
@@ -366,6 +411,7 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
         Model with accompanied results.
 
     """
+    db = pharmpy.workflows.LocalDirectoryToolDatabase(db)
     database = db.model_database
     model = convert_model(model)
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
@@ -537,10 +583,8 @@ def verification(
 
     # Execute the nlmixr model
     print_step("Executing nlmixr2 model... (this might take a while)")
-    import pharmpy.workflows
 
-    db = pharmpy.workflows.LocalDirectoryToolDatabase(db_name)
-    nlmixr_model = execute_model(nlmixr_model, db)
+    nlmixr_model = execute_model(nlmixr_model, db_name)
     nlmixr_results = nlmixr_model.modelfit_results.predictions
 
     pred = False
@@ -550,9 +594,11 @@ def verification(
             pred = True
             nonmem_results.rename(columns={p: 'PRED_NONMEM'}, inplace=True)
             nlmixr_results.rename(columns={p: 'PRED_NLMIXR'}, inplace=True)
-        elif p == "IPRED":
+        elif p == "IPRED" or p == "CIPREDI":
             ipred = True
             nonmem_results.rename(columns={p: 'IPRED_NONMEM'}, inplace=True)
+            if p == "CIPREDI":
+                p = "IPRED"
             nlmixr_results.rename(columns={p: 'IPRED_NLMIXR'}, inplace=True)
         else:
             print(
