@@ -150,7 +150,7 @@ def convert_model(model: Model, to_format: str):
     model : Model
         Model to convert
     to_format : str
-        Name of format to convert into. Currently supported 'generic', 'nlmixr' and 'nonmem'
+        Name of format to convert into. Currently supported 'generic', 'nlmixr', 'nonmem', and 'rxode'
 
     Returns
     -------
@@ -164,7 +164,7 @@ def convert_model(model: Model, to_format: str):
     >>> converted_model = convert_model(model, "nlmixr")    # doctest: +SKIP
 
     """
-    supported = ['generic', 'nlmixr', 'nonmem']
+    supported = ['generic', 'nlmixr', 'nonmem', 'rxode']
     if to_format not in supported:
         raise ValueError(f"Unknown format {to_format}: supported formats are f{supported}")
     # FIXME: Use code that can discover plugins below
@@ -190,6 +190,10 @@ def convert_model(model: Model, to_format: str):
         import pharmpy.plugins.nlmixr.model as nlmixr
 
         new = nlmixr.convert_model(model)
+    elif to_format == 'rxode':
+        import pharmpy.plugins.rxode.model as rxode
+
+        new = rxode.convert_model(model)
     else:
         import pharmpy.plugins.nonmem.model as nonmem
 
