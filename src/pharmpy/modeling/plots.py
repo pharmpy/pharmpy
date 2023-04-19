@@ -99,7 +99,7 @@ def plot_transformed_eta_distributions(
     ----------
     model : Model
         Previously run Pharmpy model.
-    parameter_estimates : dict
+    parameter_estimates : Dict
         Parameter estimates of model fit
     individual_estimates : pd.DataFrame
         Individual estimates for etas
