@@ -407,7 +407,7 @@ def to_compartmental_system(names, eqs):
 
     names : func to compartment name map
     """
-
+    
     cb = CompartmentalSystemBuilder()
     compartments = {}
     concentrations = set()
@@ -418,29 +418,63 @@ def to_compartmental_system(names, eqs):
         comp = Compartment.create(name)
         cb.add_compartment(comp)
         compartments[name] = comp
-
+        
     neweqs = list(eqs)  # Remaining flows
+    
     for eq in eqs:
+        checked_terms = set()
         for comp_func in concentrations.intersection(free_images(eq.rhs)):
             dep = eq.rhs.as_independent(comp_func, as_Add=True)[1]
-            terms = sympy.Add.make_args(dep)
+            terms = sympy.Add.make_args(dep.expand())
             for term in terms:
-                if _is_positive(term):
-                    from_comp = compartments[names[comp_func.func]]
-                    to_comp = compartments[names[eq.lhs.args[0].func]]
-                    cb.add_flow(from_comp, to_comp, term / comp_func)
-                    for i, neweq in enumerate(neweqs):
-                        if neweq.lhs.args[0].name == eq.lhs.args[0].name:
-                            neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(neweq.rhs - term))
-                        elif neweq.lhs.args[0].name == comp_func.name:
-                            neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(neweq.rhs + term))
-
+                if term not in checked_terms:
+                    checked_terms.add(term)
+                    from_comp = None
+                    to_comp = None
+                    if len(concentrations.intersection(free_images(term))) >= 2:
+                        # This means second order absorption -> find matching term
+                        if _is_positive(term):
+                            for second_comp in concentrations.intersection(free_images(term)):
+                                for eq_2 in eqs:
+                                    if eq_2.lhs.args[0].name == second_comp.name:
+                                        if -term in sympy.Add.make_args(eq_2.rhs.expand()):
+                                            from_comp = compartments[names[second_comp.func]]
+                                            to_comp = compartments[names[eq.lhs.args[0].func]]
+                    else:
+                        if _is_positive(term):
+                            from_comp = compartments[names[comp_func.func]]
+                            to_comp = compartments[names[eq.lhs.args[0].func]]
+                            
+                    if from_comp != None and to_comp != None:
+                        # FIXME : get current flow from builder?
+                        cs = CompartmentalSystem(cb)
+                        current_flow = cs.get_flow(from_comp, to_comp)
+                        
+                        if isinstance(current_flow, sympy.core.numbers.Zero):
+                            cb.add_flow(from_comp, to_comp, term / comp_func)
+                        else:
+                            new_flow = term / comp_func + current_flow
+                            cb.add_flow(from_comp, to_comp, new_flow)
+                            
+                        for i, neweq in enumerate(neweqs):
+                            if neweq.lhs.args[0].name == eq.lhs.args[0].name:
+                                neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(neweq.rhs - term))
+                            elif neweq.lhs.args[0].name == comp_func.name:
+                                neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(neweq.rhs + term))
     for eq in neweqs:
         if eq.rhs != 0:
+            i = sympy.Add(0)
+            o = sympy.Add(0)
+            for term in sympy.Add.make_args(eq.rhs):
+                if _is_positive(term):
+                    i = i + term
+                else:
+                    o = o + term
+                    
             comp_func = eq.lhs.args[0]
             from_comp = compartments[names[comp_func.func]]
-            cb.add_flow(from_comp, output, -eq.rhs / comp_func)
-
+            cb.add_flow(from_comp, output, -o / comp_func)
+            cb.set_input(from_comp, i)
     cs = CompartmentalSystem(cb)
     return cs
 
@@ -455,6 +489,7 @@ class CompartmentalSystem(ODESystem):
     >>> cb = CompartmentalSystemBuilder()
     >>> dose = Bolus.create("AMT")
     >>> central = Compartment("CENTRAL", dose)
+    -
     >>> cb.add_compartment(central)
     >>> peripheral = Compartment("PERIPHERAL")
     >>> cb.add_compartment(peripheral)
