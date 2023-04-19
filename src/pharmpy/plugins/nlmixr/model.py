@@ -23,6 +23,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import fit
+from pharmpy.workflows.log import Log
 
 from .error_model import res_error_term
 from .ini import add_eta, add_sigma, add_theta
@@ -389,7 +390,13 @@ def parse_modelfit_results(
     )
 
     res = ModelfitResults(
-        name=name, description=description, ofv=ofv, parameter_estimates=pe, predictions=predictions
+        name=name,
+        description=description,
+        ofv=ofv,
+        minimization_successful=True,  # FIXME: parse minimization status
+        parameter_estimates=pe,
+        predictions=predictions,
+        log=Log(),
     )
     return res
 

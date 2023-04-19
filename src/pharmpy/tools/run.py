@@ -959,14 +959,14 @@ def _summarize_step(res, i):
     else:
         summary_dict['minimization_successful'] = False
 
-    if i == -1:
+    if i == -1 and res.ofv_iterations is not None:
         i = max(res.ofv_iterations.index.get_level_values(0)) - 1
-    ofv = res.ofv_iterations[i + 1,].iloc[-1]
-    summary_dict['ofv'] = ofv
-    summary_dict['runtime_total'] = res.runtime_total
-    summary_dict['estimation_runtime'] = res.estimation_runtime_iterations.iloc[i]
 
-    pe = res.parameter_estimates_iterations.loc[i + 1,].iloc[-1]
+    summary_dict['ofv'] = _get_ofv(res, i)
+    summary_dict['runtime_total'] = res.runtime_total
+    summary_dict['estimation_runtime'] = _get_estimation_runtime(res, i)
+
+    pe = _get_parameter_estimates(res, i)
     ses = res.standard_errors
     rses = res.relative_standard_errors
 
@@ -978,6 +978,24 @@ def _summarize_step(res, i):
             summary_dict[f'{param}_RSE'] = rses[param]
 
     return summary_dict
+
+
+def _get_ofv(res, i):
+    if res.ofv_iterations is None:
+        return res.ofv
+    return res.ofv_iterations[i + 1,].iloc[-1]
+
+
+def _get_parameter_estimates(res, i):
+    if res.parameter_estimates_iterations is None:
+        return res.parameter_estimates
+    return res.parameter_estimates_iterations.loc[i + 1,].iloc[-1]
+
+
+def _get_estimation_runtime(res, i):
+    if res.estimation_runtime_iterations is None:
+        return res.runtime_total
+    return res.estimation_runtime_iterations.iloc[i]
 
 
 def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
