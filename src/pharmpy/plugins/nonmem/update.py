@@ -1477,7 +1477,12 @@ def solver_to_advan(solver):
 
 
 def update_ccontra(model: Model, path=None, force=False):
-    h = model.observation_transformation
+    # FIXME: handle multiple DVs
+    if len(model.observation_transformation) > 1:
+        raise ValueError('Cannot create ccontra for multiple DVs')
+
+    obs_trans = model.observation_transformation
+    h = model.observation_transformation[next(iter(obs_trans))]
 
     # FIXME: handle other DVs?
     y = list(model.dependent_variables.keys())[0]

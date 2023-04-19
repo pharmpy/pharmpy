@@ -10,7 +10,6 @@ from typing import Dict, Optional, Tuple
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.model import Assignment, DataInfo, EstimationSteps
 from pharmpy.model import Model as BaseModel
@@ -95,12 +94,8 @@ def convert_model(model):
     nm_model._dataset = model.dataset
     nm_model._estimation_steps = model.estimation_steps
     nm_model._initial_individual_estimates = model.initial_individual_estimates
-    new_obs_trans = subs(
-        model.observation_transformation,
-        # FIXME: Currently only handling one DV
-        {list(model.dependent_variables.keys())[0]: sympy.Symbol('Y')},
-        simultaneous=True,
-    )
+    # FIXME: This is handled equivalently to dependent variables, should handle multiple DVs
+    new_obs_trans = {sympy.Symbol('Y'): sympy.Symbol('Y')}
     internals = nm_model.internals.replace(old_parameters=Parameters())
     nm_model = nm_model.replace(
         name=model.name,
@@ -330,7 +325,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         pass
 
     statements, comp_map = parse_statements(di, dataset, control_stream)
-    statements, dependent_variables = convert_dvs(statements, control_stream)
+    statements, dependent_variables, obs_trans = convert_dvs(statements, control_stream)
 
     parameters, rvs, name_map = parse_parameters(control_stream, statements)
 
@@ -369,6 +364,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
             random_variables=rvs,
             statements=statements,
             dependent_variables=dependent_variables,
+            observation_transformation=obs_trans,
             estimation_steps=estimation_steps,
         ),
     )
@@ -378,7 +374,7 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         old_name=name,
         old_description=description,
         old_estimation_steps=estimation_steps,
-        old_observation_transformation=dependent_variables,
+        old_observation_transformation=obs_trans,
         old_parameters=parameters,
         old_random_variables=rvs,
         old_statements=statements,

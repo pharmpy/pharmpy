@@ -80,8 +80,7 @@ class Model(Immutable):
         self._statements = statements
         self._dependent_variables = actual_dependent_variables
         if observation_transformation is None:
-            # FIXME: Support transformation for multiple DVs?
-            self._observation_transformation = list(actual_dependent_variables.keys())[0]
+            self._observation_transformation = {dv: dv for dv in actual_dependent_variables.keys()}
         else:
             self._observation_transformation = observation_transformation
         self._estimation_steps = estimation_steps

@@ -30,6 +30,9 @@ def test_fit_single(tmp_path, model_count, testdata):
         assert rundir.is_dir()
         assert model_count(rundir) == 1
         assert (rundir / 'models' / 'pheno' / '.pharmpy').exists()
+        assert not [
+            path.name for path in (rundir / 'models' / 'pheno').iterdir() if 'contr' in path.name
+        ]
 
 
 def test_fit_multiple(tmp_path, model_count, testdata):

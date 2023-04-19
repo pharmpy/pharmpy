@@ -258,10 +258,11 @@ def convert_dvs(statements, control_stream):
     after = statements.error
     kept = []
     dvs = {sympy.Symbol('Y'): 1}
+    obs_trans = {sympy.Symbol('Y'): sympy.Symbol('Y')}
     change = False
     yind = after.find_assignment_index('Y')
     if yind is None:
-        return statements, dvs
+        return statements, dvs, obs_trans
     yind = yind - 1
     for s in after:
         expr = s.expression
@@ -273,6 +274,7 @@ def convert_dvs(statements, control_stream):
                 kept.append(ass1)
                 kept.append(ass2)
                 dvs = {sympy.Symbol('Y_1'): 1, sympy.Symbol('Y_2'): 2}
+                obs_trans = {sympy.Symbol('Y_1'): sympy.Symbol('Y_1')}
                 change = True
                 continue
         kept.append(s)
@@ -300,7 +302,7 @@ def convert_dvs(statements, control_stream):
                     ind = (ni, nj, si + 2, sj + 2)
             inds.append(ind)
         rec._index = inds
-    return statements, dvs
+    return statements, dvs, obs_trans
 
 
 def parse_value_type(control_stream, statements):

@@ -771,7 +771,8 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
         + stats[yexpr_ind + 1 :]
     )
 
-    obs = sympy.Piecewise(
+    obs = model.observation_transformation
+    obs[y] = sympy.Piecewise(
         (sympy.log(y), sympy.Eq(lam, 0)), ((y**lam - 1) / lam, sympy.Ne(lam, 0))
     )
     model = model.replace(observation_transformation=obs, statements=statements)

@@ -1158,6 +1158,14 @@ def test_parse_dvid(testdata, load_model_for_test):
     assert model.statements[-1] == Assignment.create("Y_2", "EPS_1 * F + EPS_2 + F")
 
 
+def test_parse_observation_transformation(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
+    assert model.observation_transformation == {
+        sympy.Symbol('Y_1'): sympy.Symbol('Y_1'),
+        sympy.Symbol('Y_2'): sympy.Symbol('Y_2'),
+    }
+
+
 def test_validate_eta_names():
     code = '''$PROBLEM
     $INPUT ID DV TIME
