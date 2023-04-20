@@ -441,9 +441,15 @@ def to_compartmental_system(names, eqs):
                                             from_comp = compartments[names[second_comp.func]]
                                             to_comp = compartments[names[eq.lhs.args[0].func]]
                     else:
+                        # TODO: match this term as well to make sure it is
+                        # inputed correctly
                         if _is_positive(term):
-                            from_comp = compartments[names[comp_func.func]]
-                            to_comp = compartments[names[eq.lhs.args[0].func]]
+                            for eq_2 in eqs:
+                                if -term in sympy.Add.make_args(eq_2.rhs.expand()):
+                                    from_comp = compartments[names[eq_2.lhs.args[0].func]]
+                                    to_comp = compartments[names[eq.lhs.args[0].func]]
+                            #from_comp = compartments[names[comp_func.func]]
+                            #to_comp = compartments[names[eq.lhs.args[0].func]]
                             
                     if from_comp != None and to_comp != None:
                         # FIXME : get current flow from builder?
@@ -1069,13 +1075,25 @@ class CompartmentalSystem(ODESystem):
         while remaining:  # Disjoint graph
             comp = None
             # Start with the one compartment having a zero order input (target for TMDD)
+            # FIXME : There is some issue where connected nodes (that are disjointed from dose)
+            # are counted twice, i believe these are not perfectly removed from 
+            # the remaining set (see alskar interspecies model)
+            # EXEMPEL)
+            # c1 --> c2 (plus resterande graf)
+            # c1 har ingen input
+            # c2 HAR input => c2 tas först
+            # väl vid c1 så kommer både c1 OCH c2 hittas igen.
             for c in remaining:
                 if c.input != 0:
                     comp = c
             if comp == None:
                 comp = c
             ordered_remaining = list(nx.bfs_tree(self._g, comp, sort_neighbors=sortfunc))
-            nodes += ordered_remaining
+            cleaned_ordered_remaining = []
+            for c in ordered_remaining:
+                if c not in set(nodes):
+                    cleaned_ordered_remaining.append(c)
+            nodes += cleaned_ordered_remaining
             remaining = set(self._g.nodes) - {output} - set(nodes)
         return nodes
 
