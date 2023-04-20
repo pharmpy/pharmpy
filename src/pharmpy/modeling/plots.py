@@ -1,6 +1,6 @@
 import re
 import warnings
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import pharmpy.visualization
 from pharmpy.deps import altair as alt
@@ -91,7 +91,9 @@ def plot_individual_predictions(
 
 
 def plot_transformed_eta_distributions(
-    model: Model, parameter_estimates: Dict, individual_estimates: pd.DataFrame
+    model: Model,
+    parameter_estimates: Union[pd.Series, Dict[str, float]],
+    individual_estimates: pd.DataFrame,
 ):
     """Plot transformed eta distributions for all transformed etas
 
@@ -99,7 +101,7 @@ def plot_transformed_eta_distributions(
     ----------
     model : Model
         Previously run Pharmpy model.
-    parameter_estimates : Dict
+    parameter_estimates : Union[pd.Series, Dict[str, float]]
         Parameter estimates of model fit
     individual_estimates : pd.DataFrame
         Individual estimates for etas
