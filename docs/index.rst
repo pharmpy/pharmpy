@@ -13,25 +13,24 @@ Welcome to Pharmpy
 ==================
 
 
-Pharmpy is a library and a set of tools for pharmacometrics. It can be used as a regular Python package, in R using
-pharmr package or via its built-in command line interface. The API of Pharmpy is model agnostic and
-the library is architectured to be able to handle different types of model and data formats (currently
-mainly NONMEM is supported, but some support for nlmixr is available).
+Pharmpy is a library and a set of tools for pharmacometrics. It can be used as a regular Python package, in R using the
+pharmr package or via its built-in command line interface. Current features include:
 
-Current features include:
-
-* A model abstraction as a foundation for higher level operations
-* Functions to transform models and datasets, extract information from models and read and calculate results
-* Parsing of NONMEM models, datasets and result files
-* Generating updated NONMEM code for modified models
-* Complex tools to for example optimize the iiv structure or residual error of a model
-* CLI supporting operations on datasets and models and running tools
+* General model abstraction for pharmacometric models
+* Manipulation of models
+* Extraction of model estimation results
+* Manipulation of datasets
+* Various calculations and evaluations
+* Running models
+* Running higher level workflows or tools
+* Plugin system to support different model formats
+* Parsing and updating NONMEM models
+* Partial support for model conversion to nlmixr and rxode
 
 We encourage your contribution to the Pharmpy project! You can report issues and post suggestions of features via
 GitHub issues (to `Pharmpy <https://github.com/pharmpy/pharmpy/issues>`_ or to
 `pharmr <https://github.com/pharmpy/pharmr/issues>`_). If you want to contribute with code you can find more information
 under :ref:`contribute`.
-
 
 Pharmpy is maintained by the Uppsala University Pharmacometrics group and is an open-source project.
 

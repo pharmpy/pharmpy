@@ -5,19 +5,17 @@ Pharmpy in R
 ============
 
 `pharmr <https://github.com/pharmpy/pharmr>`_ is an R wrapper to Pharmpy. It provides an R interface to all functions
-found in the modeling-module (documented `here <https://pharmpy.github.io/latest/reference/pharmpy.modeling.html>`_).
-Each function is also available via the help-function (or ``?``). The version number of pharmr mirrors Pharmpy, so it is
-import to make sure they have the same version number (a warning will appear if they are different). pharmr is available on
-CRAN. However, since Pharmpy still is under development and different features constantly are being
-released, we still recommend using the development version on Github until Pharmpy/pharmr version 1.0.0 has been released.
+found in the `modeling <https://pharmpy.github.io/latest/api_modeling.html>`_-module and the
+`tools <https://pharmpy.github.io/latest/api_tools.html>`_-module. Each function is also available via the help-function
+(or ``?``). pharmr is available on CRAN, however, since Pharmpy is under rapid development, we still recommend using
+the development version on Github until Pharmpy/pharmr version 1.0.0 has been released.
 
 .. _install_pharmr:
 
 Installing pharmr
 ~~~~~~~~~~~~~~~~~
 
-pharmr uses the package `reticulate <https://rstudio.github.io/reticulate>`_ for calling Python from R. Install
-pharmr and Pharmpy with the following:
+Install pharmr and Pharmpy with the following:
 
 .. code-block:: r
 
@@ -52,9 +50,9 @@ Trouble shooting
 Wrong Python version
 --------------------
 
-When reticulate sets up Miniconda it can default to use Python 3.6 (which Pharmpy does not support). If you have any
-trouble installing Pharmpy or any of its dependencies, you can do the following to check the Python version in your
-reticulate environment:
+pharmr uses the package `reticulate <https://rstudio.github.io/reticulate>`_ for calling Python from R. When reticulate
+sets up Miniconda it can default to use Python 3.8. If you have any trouble installing Pharmpy or any of its
+dependencies, you can do the following to check the Python version in your reticulate environment:
 
 .. code-block:: r
 
@@ -64,7 +62,7 @@ Make sure the Python version is >= 3.8. If it is not, you can run the following 
 
 .. code-block:: r
 
-    reticulate::conda_create('r-reticulate', python_version = '3.9')
+    reticulate::conda_create('r-reticulate', python_version = '3.11')
 
 Restart the session and try installing Pharmpy again:
 
@@ -83,13 +81,22 @@ that pharmr is not using or finding the right virtual environment. If you used p
 
     reticulate::py_discover_config()
 
-and make sure you have something similar to the following as the output:
+and make sure 'r-reticulate' is found:
 
 .. code-block::
 
     python:         .../r-reticulate/bin/python
-    libpython:      .../r-reticulate/lib/libpython3.10.so
+    libpython:      .../r-reticulate/lib/libpython3.11.so
     ...
+
+If you are using Rstudio you can change this in either project or global options, under Python.
+
+Mismatch of versions between Pharmpy and pharmr
+-----------------------------------------------
+
+The version number of pharmr mirrors Pharmpy, so it is important to make sure they have the same version number
+(a warning will appear if they are different). To avoid this happening, use ``install_pharmpy()`` which detects which
+version of pharmr you have installed and installs the correct version.
 
 Using pharmr
 ~~~~~~~~~~~~
@@ -118,10 +125,9 @@ referring to indices, you need to use the Python way. For example:
 
     set_estimation_step(model, method, interaction = TRUE, options = NULL, idx = 0)
 
-Note that normal R data structures such as vectors, lists and data frames are still indexed
-the same way as usual:
+Similarly, you need to use 0-indexing when accessing the first element of Pharmpy objects such as random variables:
 
 .. code-block:: r
 
-    etas <- model$random_variables
-    etas[1] # access first element
+    rvs <- model$random_variables
+    rvs[0] # access first element
