@@ -56,13 +56,8 @@ def convert_model(
     if isinstance(model, Model):
         return model
 
-    if model.internals.control_stream.get_records("DES"):
-        des = model.internals.control_stream.get_records("DES")[0]
-    else:
-        des = None
-
     nlmixr_model = Model(
-        internals=NLMIXRModelInternals(DES=des),
+        internals=NLMIXRModelInternals(),
         parameters=model.parameters,
         random_variables=model.random_variables,
         statements=model.statements,
@@ -281,7 +276,6 @@ def add_evid(model: pharmpy.model.Model) -> pharmpy.model.Model:
 class NLMIXRModelInternals:
     src: Optional[str] = None
     path: Optional[Path] = None
-    DES: Optional = None
 
 
 class Model(pharmpy.model.Model):

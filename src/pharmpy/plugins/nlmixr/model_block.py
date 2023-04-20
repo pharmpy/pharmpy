@@ -266,14 +266,6 @@ def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     amounts = [am.name for am in list(model.statements.ode_system.amounts)]
     printer = ExpressionPrinter(amounts)
 
-    des = model.internals.DES
-    statements = []
-    if des:
-        pattern = re.compile(r"DADT\(\d*\)")
-        for s in des.statements:
-            if not pattern.match(s.symbol.name):
-                statements.append(s)
-        add_statements(model, cg, statements)
     for eq in model.statements.ode_system.eqs:
         # Should remove piecewise from these equations in nlmixr
         if eq.atoms(sympy.Piecewise):
