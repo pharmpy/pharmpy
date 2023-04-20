@@ -1075,14 +1075,9 @@ class CompartmentalSystem(ODESystem):
         while remaining:  # Disjoint graph
             comp = None
             # Start with the one compartment having a zero order input (target for TMDD)
-            # FIXME : There is some issue where connected nodes (that are disjointed from dose)
-            # are counted twice, i believe these are not perfectly removed from 
-            # the remaining set (see alskar interspecies model)
-            # EXEMPEL)
-            # c1 --> c2 (plus resterande graf)
-            # c1 har ingen input
-            # c2 HAR input => c2 tas först
-            # väl vid c1 så kommer både c1 OCH c2 hittas igen.
+            # FIXME : the order of the compartments is incorrect which creates 
+            # errors when substituting A(N) since this is dependent on the order
+            # --> Need to be stated in some way (especially for NONMEM)
             for c in remaining:
                 if c.input != 0:
                     comp = c
