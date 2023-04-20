@@ -26,7 +26,7 @@ from pharmpy.model import (
 )
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 
-from .advan import _compartmental_model
+from .advan import _compartmental_model, des_assign_statements
 from .dataset import read_nonmem_dataset
 from .nmtran_parser import NMTranControlStream
 
@@ -217,31 +217,6 @@ def parse_parameters(control_stream, statements):
     rvs = etas + epsilons
 
     return parameters, rvs, name_map
-
-def des_assign_statements(
-    control_stream: NMTranControlStream,
-    des=None,
-):
-    rec_model = control_stream.get_records('MODEL')[0]
-
-    subs_dict, comp_names = {}, {}
-    comps = [c for c, _ in rec_model.compartments()]
-    func_to_name = {}
-
-    t = sympy.Symbol('t')
-    for i, c in enumerate(comps, 1):
-        a = sympy.Function(f'A_{c}')
-        subs_dict[f'DADT({i})'] = sympy.Derivative(a(t))
-        subs_dict[f'DADT ({i})'] = sympy.Derivative(a(t))
-        subs_dict[f'A({i})'] = a(t)
-        comp_names[f'A({i})'] = a
-        func_to_name[a] = c
-
-    sset = des.statements.subs(subs_dict)
-
-    statements = [sympy.Eq(s.symbol, s.expression) for s in sset if s.symbol.is_Symbol]
-    
-    return statements
 
 def parse_statements(
     di: DataInfo,
