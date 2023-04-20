@@ -197,23 +197,38 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
         terms = [s]
     elif isinstance(s, sympy.Pow):
         terms = sympy.Add.make_args(s.args[0])
+    elif isinstance(s, sympy.Mul):
+        terms = [s]
     else:
         terms = sympy.Add.make_args(s.expression)
     assert len(terms) <= 2
-
+    
+    r = "sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2 \+ [a-zA-Z0-9_.-]*\*\*2\)"
+    if re.match(r, str(s)):
+        w = True
+    else:
+        w = False
+    
     prop = 0
     add = 0
     prop_found = False
+    print("---")
     for term in terms:
+        print(term)
         for symbol in term.free_symbols:
             if symbol in res_alias:
                 if prop_found is False:
                     term = term.subs(symbol, 1)
-                    prop = list(term.free_symbols)[0]
+                    if w:
+                        prop = list(term.free_symbols)[0]
+                    else:
+                        add = term
                     prop_found = True
         if prop_found is False:
-            add = list(term.free_symbols)[0]
-
+            if w:
+                add = list(term.free_symbols)[0]
+            else:
+                add = term
     return add, prop
 
 
