@@ -212,9 +212,7 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
     prop = 0
     add = 0
     prop_found = False
-    print("---")
     for term in terms:
-        print(term)
         for symbol in term.free_symbols:
             if symbol in res_alias:
                 if prop_found is False:
