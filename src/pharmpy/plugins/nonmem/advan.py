@@ -334,13 +334,12 @@ def des_assign_statements(
         subs_dict, comp_names = {}, {}
         comps = [c for c, _ in rec_model.compartments()]
         func_to_name = {}
-    
         t = sympy.Symbol('t')
         for i, c in enumerate(comps, 1):
             a = sympy.Function(f'A_{c}')
             subs_dict[f'DADT({i})'] = sympy.Derivative(a(t))
             subs_dict[f'DADT ({i})'] = sympy.Derivative(a(t))
-            subs_dict[f'A({i})'] = a(t)
+            subs_dict[f'A({i})'] = str(a)
             comp_names[f'A({i})'] = a
             func_to_name[a] = c
     
