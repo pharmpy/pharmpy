@@ -218,6 +218,30 @@ def parse_parameters(control_stream, statements):
 
     return parameters, rvs, name_map
 
+def des_assign_statements(
+    control_stream: NMTranControlStream,
+    des=None,
+):
+    rec_model = control_stream.get_records('MODEL')[0]
+
+    subs_dict, comp_names = {}, {}
+    comps = [c for c, _ in rec_model.compartments()]
+    func_to_name = {}
+
+    t = sympy.Symbol('t')
+    for i, c in enumerate(comps, 1):
+        a = sympy.Function(f'A_{c}')
+        subs_dict[f'DADT({i})'] = sympy.Derivative(a(t))
+        subs_dict[f'DADT ({i})'] = sympy.Derivative(a(t))
+        subs_dict[f'A({i})'] = a(t)
+        comp_names[f'A({i})'] = a
+        func_to_name[a] = c
+
+    sset = des.statements.subs(subs_dict)
+
+    statements = [sympy.Eq(s.symbol, s.expression) for s in sset if s.symbol.is_Symbol]
+    
+    return statements
 
 def parse_statements(
     di: DataInfo,
@@ -233,6 +257,10 @@ def parse_statements(
 
     if error:
         sub = control_stream.get_records('SUBROUTINES')[0]
+        des_assign = des_assign_statements(control_stream, des)
+        if des_assign is not None:
+            for s in des_assign:
+                statements += Assignment(s.lhs, s.rhs)
         comp = _compartmental_model(di, dataset, control_stream, sub.advan, sub.trans, des)
         trans_amounts = {}
         if comp is None:
