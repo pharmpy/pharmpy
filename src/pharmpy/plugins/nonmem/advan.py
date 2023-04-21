@@ -324,13 +324,14 @@ def _compartmental_model(
         return None
     return CompartmentalSystem(cb), ass, comp_map
 
+
 def des_assign_statements(
     control_stream: NMTranControlStream,
     des=None,
-):  
+):
     if des:
         rec_model = control_stream.get_records('MODEL')[0]
-    
+
         subs_dict, comp_names = {}, {}
         comps = [c for c, _ in rec_model.compartments()]
         func_to_name = {}
@@ -342,13 +343,14 @@ def des_assign_statements(
             subs_dict[f'A({i})'] = str(a)
             comp_names[f'A({i})'] = a
             func_to_name[a] = c
-    
+
         sset = des.statements.subs(subs_dict)
-    
+
         statements = [sympy.Eq(s.symbol, s.expression) for s in sset if s.symbol.is_Symbol]
         if len(statements) == 0:
-            statements = None 
+            statements = None
         return statements
+
 
 def _f_link_assignment(control_stream: NMTranControlStream, compartment: Compartment, compno: int):
     f = sympy.Symbol('F')

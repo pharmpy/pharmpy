@@ -407,7 +407,7 @@ def to_compartmental_system(names, eqs):
 
     names : func to compartment name map
     """
-    
+
     cb = CompartmentalSystemBuilder()
     compartments = {}
     concentrations = set()
@@ -418,9 +418,9 @@ def to_compartmental_system(names, eqs):
         comp = Compartment.create(name)
         cb.add_compartment(comp)
         compartments[name] = comp
-        
+
     neweqs = list(eqs)  # Remaining flows
-    
+
     for eq in eqs:
         checked_terms = set()
         for comp_func in concentrations.intersection(free_images(eq.rhs)):
@@ -433,6 +433,7 @@ def to_compartmental_system(names, eqs):
                     to_comp = None
                     if len(concentrations.intersection(free_images(term))) >= 2:
                         # This means second order absorption -> find matching term
+                        # to determine flow
                         if _is_positive(term):
                             for second_comp in concentrations.intersection(free_images(term)):
                                 for eq_2 in eqs:
@@ -441,27 +442,25 @@ def to_compartmental_system(names, eqs):
                                             from_comp = compartments[names[second_comp.func]]
                                             to_comp = compartments[names[eq.lhs.args[0].func]]
                     else:
-                        # TODO: match this term as well to make sure it is
-                        # inputed correctly
+                        # Find matching term to determine if flow is between
+                        # compartments or not
                         if _is_positive(term):
                             for eq_2 in eqs:
                                 if -term in sympy.Add.make_args(eq_2.rhs.expand()):
                                     from_comp = compartments[names[eq_2.lhs.args[0].func]]
                                     to_comp = compartments[names[eq.lhs.args[0].func]]
-                            #from_comp = compartments[names[comp_func.func]]
-                            #to_comp = compartments[names[eq.lhs.args[0].func]]
-                            
-                    if from_comp != None and to_comp != None:
-                        # FIXME : get current flow from builder?
+
+                    if from_comp is not None and to_comp is not None:
+                        # FIXME : get current flow from builder instead?
                         cs = CompartmentalSystem(cb)
                         current_flow = cs.get_flow(from_comp, to_comp)
-                        
+
                         if isinstance(current_flow, sympy.core.numbers.Zero):
                             cb.add_flow(from_comp, to_comp, term / comp_func)
                         else:
                             new_flow = term / comp_func + current_flow
                             cb.add_flow(from_comp, to_comp, new_flow)
-                            
+
                         for i, neweq in enumerate(neweqs):
                             if neweq.lhs.args[0].name == eq.lhs.args[0].name:
                                 neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(neweq.rhs - term))
@@ -476,7 +475,7 @@ def to_compartmental_system(names, eqs):
                     i = i + term
                 else:
                     o = o + term
-                    
+
             comp_func = eq.lhs.args[0]
             from_comp = compartments[names[comp_func.func]]
             cb.add_flow(from_comp, output, -o / comp_func)

@@ -218,6 +218,7 @@ def parse_parameters(control_stream, statements):
 
     return parameters, rvs, name_map
 
+
 def parse_statements(
     di: DataInfo,
     dataset: Callable[[], pd.DataFrame],
@@ -245,7 +246,7 @@ def parse_statements(
         else:
             cm, link, comp_map = comp
             statements += [cm, link]
-            
+
             rec_model = control_stream.get_records('MODEL')[0]
             comps = [c for c, _ in rec_model.compartments()]
             for i, c in enumerate(comps, 1):
