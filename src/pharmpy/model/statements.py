@@ -1073,16 +1073,11 @@ class CompartmentalSystem(ODESystem):
         nodes = list(nx.bfs_tree(self._g, dosecmt, sort_neighbors=sortfunc))
         remaining = set(self._g.nodes) - {output} - set(nodes)
         while remaining:  # Disjoint graph
-            comp = None
-            # Start with the one compartment having a zero order input (target for TMDD)
-            # FIXME : the order of the compartments is incorrect which creates 
-            # errors when substituting A(N) since this is dependent on the order
-            # --> Need to be stated in some way (especially for NONMEM)
+            comp = sorted(remaining, key=lambda x: x.name)[0]
+            # Start with a compartment having a zero order input
             for c in remaining:
-                if c.input != 0:
+                if comp is None and c.input != 0:
                     comp = c
-            if comp == None:
-                comp = c
             ordered_remaining = list(nx.bfs_tree(self._g, comp, sort_neighbors=sortfunc))
             cleaned_ordered_remaining = []
             for c in ordered_remaining:
