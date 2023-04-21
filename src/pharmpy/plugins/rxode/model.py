@@ -313,7 +313,7 @@ def verification(
             return False
 
 
-def convert_model(model):
+def convert_model(model, skip_check = False):
     if isinstance(model, Model):
         return model
 
@@ -353,7 +353,7 @@ def convert_model(model):
     # Check model for warnings regarding data structure or model contents
     from pharmpy.plugins.nlmixr.sanity_checks import check_model
 
-    rxode_model = check_model(rxode_model)
+    rxode_model = check_model(rxode_model, skip_error_model_check=skip_check)
 
     rxode_model.update_source()
 
