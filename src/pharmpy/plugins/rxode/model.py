@@ -438,12 +438,34 @@ def create_eta(cg, model):
 def create_sigma(cg, model):
     cg.add("sigmas <-")
     cg.add("lotri(")
-    sigmas = get_sigmas(model)
-    for n, sigma in enumerate(sigmas):
-        if n != len(sigmas) - 1:
-            cg.add(f'{sigma.name} ~ {sigma.init}, ')
+    all_eps = model.random_variables.epsilons
+    for n, eps in enumerate(all_eps):
+        sigma = eps.variance
+        if len(eps.names) == 1:
+            name = model.parameters[sigma].name
+            init = model.parameters[sigma].init
+            if n != len(all_eps) - 1:
+                cg.add(f'{name} ~ {init},')
+            else:
+                cg.add(f'{name} ~ {init}')
         else:
-            cg.add(f'{sigma.name} ~ {sigma.init}')
+            cg.add(
+                f'{" + ".join([name for name in eps.names])} ~ c('
+                )
+            inits = []
+            for row in range(sigma.rows):
+                for col in range(row + 1):
+                    if col == 0 and row != 0:
+                        cg.add(f'{", ".join([str(x) for x in inits])},')
+                        inits = []
+                        inits.append(f'{model.parameters[sigma[row, col].name].init}')
+                    else:
+                        inits.append(model.parameters[sigma[row, col].name].init)
+            cg.add(f'{", ".join([str(x) for x in inits])}')
+            if eps != model.random_variables.epsilons[-1]:
+                cg.add("),")
+            else:
+                cg.add(")")
     cg.add(")")
 
 
