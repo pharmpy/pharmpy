@@ -299,9 +299,6 @@ class Model(pharmpy.model.Model):
         self.internals.src = str(cg).replace("AMT", "amt").replace("TIME", "time")
         self.internals.path = None
         code = str(cg).replace("AMT", "amt").replace("TIME", "time")
-        # Replace all instances of EPS with sigma instead
-        for eps in self.random_variables.epsilons:
-            code = code.replace(eps.names[0], eps.variance.name)
         internals = replace(self.internals, src=code)
         model = self.replace(internals=internals)
         return model
