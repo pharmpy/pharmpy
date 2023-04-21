@@ -245,9 +245,12 @@ def parse_statements(
         else:
             cm, link, comp_map = comp
             statements += [cm, link]
-            for i, amount in enumerate(cm.amounts, start=1):
-                trans_amounts[sympy.Symbol(f"A({i})")] = amount
-                trans_amounts[sympy.Symbol(f"A_0({i})")] = sympy.Function(amount.name)(0)
+            
+            rec_model = control_stream.get_records('MODEL')[0]
+            comps = [c for c, _ in rec_model.compartments()]
+            for i, c in enumerate(comps, 1):
+                trans_amounts[sympy.Symbol(f"A({i})")] = c
+                trans_amounts[sympy.Symbol(f"A_0({i})")] = sympy.Function(c)(0)
         statements += error.statements
         if trans_amounts:
             statements = statements.subs(trans_amounts)
