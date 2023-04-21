@@ -16,6 +16,7 @@ def add_theta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     cg : CodeGenerator
         Code generator to add code upon.
     """
+    cg.add("# --- THETAS ---")
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
     for theta in thetas:
         if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
@@ -37,6 +38,8 @@ def add_eta(model: pharmpy.model.Model, cg: CodeGenerator, as_list=False) -> Non
     as_list : bool
         Add with separation character ","
     """
+    cg.add("")
+    cg.add("# --- ETAS ---")
     for dist in model.random_variables.etas:
         omega = dist.variance
         if len(dist.names) == 1:
@@ -46,16 +49,23 @@ def add_eta(model: pharmpy.model.Model, cg: CodeGenerator, as_list=False) -> Non
                 code_line += ","
             cg.add(code_line)
         else:
+            cg.add(
+                f'{" + ".join([name_mangle(name) for name in dist.names])} ~ c('
+                )
             inits = []
             for row in range(omega.rows):
                 for col in range(row + 1):
                     if col == 0 and row != 0:
-                        inits.append(f'\n{model.parameters[omega[row, col].name].init}')
+                        cg.add(f'{", ".join([str(x) for x in inits])},')
+                        inits = []
+                        inits.append(f'{model.parameters[omega[row, col].name].init}')
                     else:
                         inits.append(model.parameters[omega[row, col].name].init)
-            cg.add(
-                f'{" + ".join([name_mangle(name) for name in dist.names])} ~ c({", ".join([str(x) for x in inits])})'
-            )
+            cg.add(f'{", ".join([str(x) for x in inits])}')
+            if as_list and dist != model.random_variables.etas[-1]:
+                cg.add("),")
+            else:
+                cg.add(")")
 
 
 def add_sigma(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
@@ -69,6 +79,8 @@ def add_sigma(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     cg : CodeGenerator
         Code generator to add code upon.
     """
+    cg.add("")
+    cg.add("# --- EPSILONS ---")
     for dist in model.random_variables.epsilons:
         sigma = dist.variance
         if len(dist.names) == 1:

@@ -166,8 +166,11 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         add_statements(model, cg, model.statements.before_odes)
 
     # Add the ODEs
+    cg.add("")
+    cg.add("# --- DIFF EQUATIONS ---")
     if model.statements.ode_system:
         add_ode(model, cg)
+    cg.add("")
 
     # Find what kind of error model we are looking at
     dv = list(model.dependent_variables.keys())[0]
