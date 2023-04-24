@@ -494,7 +494,6 @@ class CompartmentalSystem(ODESystem):
     >>> cb = CompartmentalSystemBuilder()
     >>> dose = Bolus.create("AMT")
     >>> central = Compartment("CENTRAL", dose)
-    -
     >>> cb.add_compartment(central)
     >>> peripheral = Compartment("PERIPHERAL")
     >>> cb.add_compartment(peripheral)
