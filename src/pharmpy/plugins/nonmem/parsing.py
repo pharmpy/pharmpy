@@ -250,8 +250,8 @@ def parse_statements(
                 rec_model = control_stream.get_records('MODEL')[0]
                 comps = [c for c, _ in rec_model.compartments()]
                 for i, c in enumerate(comps, 1):
-                    trans_amounts[sympy.Symbol(f"A({i})")] = c
-                    trans_amounts[sympy.Symbol(f"A_0({i})")] = sympy.Function(c)(0)
+                    trans_amounts[sympy.Symbol(f"A({i})")] = f'A_{c}'
+                    trans_amounts[sympy.Symbol(f"A_0({i})")] = sympy.Function(f'A_{c}')(0)
             else:
                 for i, amount in enumerate(cm.amounts, start = 1):
                     trans_amounts[sympy.Symbol(f"A({i})")] = amount
