@@ -199,6 +199,10 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
         terms = sympy.Add.make_args(s.args[0])
     elif isinstance(s, sympy.Mul):
         terms = [s]
+    elif isinstance(s, sympy.Integer):
+        terms = [s]
+    elif isinstance(s, sympy.Float):
+        terms = [s]
     else:
         terms = sympy.Add.make_args(s.expression)
     assert len(terms) <= 2

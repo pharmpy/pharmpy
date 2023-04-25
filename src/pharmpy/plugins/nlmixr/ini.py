@@ -85,7 +85,12 @@ def add_sigma(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
         sigma = dist.variance
         if len(dist.names) == 1:
             sigma_param = model.parameters[sigma]
-            if sigma_param.init != 1 and not sigma_param.fix:
+            if sigma_param.init != 1:
+                if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
+                    add_ini_parameter(cg, sigma_param, boundary=True)
+                else:
+                    add_ini_parameter(cg, sigma_param)
+            elif not sigma_param.fix:
                 if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
                     add_ini_parameter(cg, sigma_param, boundary=True)
                 else:
@@ -93,7 +98,12 @@ def add_sigma(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
         else:
             for row, col in zip(range(sigma.rows), range(sigma.rows + 1)):
                 sigma_param = model.parameters[sigma[row, col]]
-                if sigma_param.init != 1 and not sigma_param.fix:
+                if sigma_param.init != 1:
+                    if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
+                        add_ini_parameter(cg, sigma_param, boundary=True)
+                    else:
+                        add_ini_parameter(cg, sigma_param)
+                elif not sigma_param.fix:
                     if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
                         add_ini_parameter(cg, sigma_param, boundary=True)
                     else:
