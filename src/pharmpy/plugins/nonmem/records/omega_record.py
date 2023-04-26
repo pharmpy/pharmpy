@@ -1,6 +1,5 @@
 import math
 import re
-import warnings
 from typing import cast
 
 from pharmpy.deps import numpy as np
@@ -101,21 +100,6 @@ class OmegaRecord(Record):
                 block = (None, None, None, True)
             blocks.append(block)
         return blocks
-
-    def _find_label(self, node, seen_labels):
-        """Find label from comment of omega parameter"""
-        # needed to avoid circular import with Python 3.6
-        import pharmpy.plugins.nonmem as nonmem
-
-        name = None
-        if 'comment' in nonmem.conf.parameter_names:
-            name = self._get_name(node)
-            if name in seen_labels:
-                warnings.warn(
-                    f'The parameter name {name} is duplicated. Falling back to basic NONMEM names.'
-                )
-                name = None
-        return name
 
     def _get_name(self, node):
         name = None
