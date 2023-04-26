@@ -9,7 +9,7 @@ Definitions
 ===========
 """
 
-__version__ = '0.93.2'
+__version__ = '0.94.0'
 
 import logging
 
