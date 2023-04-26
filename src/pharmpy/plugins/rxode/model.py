@@ -278,7 +278,7 @@ def verification(
         nonmem_model = add_evid(nonmem_model)
     nonmem_results = nonmem_results.reset_index()
     nonmem_results = nonmem_results.drop(
-        nonmem_model.dataset[nonmem_model.dataset["EVID"] != 0].index.to_list()
+        nonmem_model.dataset[~nonmem_model.dataset["EVID"].isin([0, 2])].index.to_list()
     )
     nonmem_results = nonmem_results.set_index(["ID", "TIME"])
 
