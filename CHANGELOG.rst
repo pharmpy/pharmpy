@@ -1,3 +1,22 @@
+0.94.0 (2023-04-26)
+-------------------
+
+New features
+============
+
+* Support parsing assignments other than DADT in $DES in NONMEM
+* Fix parsing of some complex ODE-systems in NONMEM
+
+Changes
+=======
+
+* Drop support for Python 3.8
+
+Bugfixes
+========
+
+* Fix bug causing BIC calculation to fail for models having first order absorption and lag_time after going into zero order absorption
+
 0.93.0 (2023-04-19)
 -------------------
 
