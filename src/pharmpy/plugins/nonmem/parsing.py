@@ -26,7 +26,7 @@ from pharmpy.model import (
 )
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 
-from .advan import _compartmental_model
+from .advan import _compartmental_model, des_assign_statements
 from .dataset import read_nonmem_dataset
 from .nmtran_parser import NMTranControlStream
 
@@ -233,6 +233,10 @@ def parse_statements(
 
     if error:
         sub = control_stream.get_records('SUBROUTINES')[0]
+        des_assign = des_assign_statements(control_stream, des)
+        if des_assign is not None:
+            for s in des_assign:
+                statements += Assignment(s.lhs, s.rhs)
         comp = _compartmental_model(di, dataset, control_stream, sub.advan, sub.trans, des)
         trans_amounts = {}
         if comp is None:
@@ -242,9 +246,16 @@ def parse_statements(
         else:
             cm, link, comp_map = comp
             statements += [cm, link]
-            for i, amount in enumerate(cm.amounts, start=1):
-                trans_amounts[sympy.Symbol(f"A({i})")] = amount
-                trans_amounts[sympy.Symbol(f"A_0({i})")] = sympy.Function(amount.name)(0)
+            if des:
+                rec_model = control_stream.get_records('MODEL')[0]
+                comps = [c for c, _ in rec_model.compartments()]
+                for i, c in enumerate(comps, 1):
+                    trans_amounts[sympy.Symbol(f"A({i})")] = f'A_{c}'
+                    trans_amounts[sympy.Symbol(f"A_0({i})")] = sympy.Function(f'A_{c}')(0)
+            else:
+                for i, amount in enumerate(cm.amounts, start=1):
+                    trans_amounts[sympy.Symbol(f"A({i})")] = amount
+                    trans_amounts[sympy.Symbol(f"A_0({i})")] = sympy.Function(amount.name)(0)
         statements += error.statements
         if trans_amounts:
             statements = statements.subs(trans_amounts)
