@@ -32,7 +32,10 @@ from .sanity_checks import check_model
 
 
 def convert_model(
-    model: pharmpy.model.Model, keep_etas: bool = False, skip_check: bool = False
+    model: pharmpy.model.Model,
+    keep_etas: bool = False,
+    skip_check: bool = False,
+    updated_estimates: bool = False
 ) -> pharmpy.model.Model:
     """
     Convert a NONMEM model into an nlmixr model
@@ -55,6 +58,9 @@ def convert_model(
 
     if isinstance(model, Model):
         return model
+    
+    if updated_estimates:
+        model = update_inits(model, model.modelfit_results.parameter_estimates)
 
     nlmixr_model = Model(
         internals=NLMIXRModelInternals(),
@@ -78,6 +84,8 @@ def convert_model(
                     individual_estimates=model.modelfit_results.individual_estimates
                 )
             )
+            nlmixr_model = fixate_eta(nlmixr_model)
+            
         nlmixr_model = translate_nmtran_time(nlmixr_model)
         # FIXME: dropping columns runs update source which becomes redundant.
         # drop_dropped_columns(nlmixr_model)
@@ -372,7 +380,7 @@ def parse_modelfit_results(
         elif param.name in omegas_sigmas:
             pe[param.name] = omegas_sigmas[param.name]
         else:
-            pe[param.name] = rdata['thetas']['fit$theta'][thetas_index]
+            pe[param.name] = rdata['thetas']['fit$theta'][param.name]
             thetas_index += 1
 
     name = model.name
@@ -395,7 +403,7 @@ def parse_modelfit_results(
     return res
 
 
-def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
+def execute_model(model: pharmpy.model.Model, db: str, evaluate = False) -> pharmpy.model.Model:
     """
     Executes a model using nlmixr2 estimation.
 
@@ -412,6 +420,10 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
         Model with accompanied results.
 
     """
+    if evaluate:
+        if [s.evaluation for s in model.estimation_steps._steps][0] is False:
+            model = set_evaluation_step(model)
+    
     db = pharmpy.workflows.LocalDirectoryToolDatabase(db)
     database = db.model_database
     model = convert_model(model)
@@ -419,6 +431,8 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
     model.internals.path = path
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
+    if model.datainfo.path is not None:
+        model = model.replace(datainfo=model.datainfo.replace(path=None))    
     write_csv(model, path=path)
     model = model.replace(datainfo=model.datainfo.replace(path=path))
 
@@ -618,7 +632,7 @@ def verification(
         nonmem_model = add_evid(nonmem_model)
     nonmem_results = nonmem_results.reset_index()
     nonmem_results = nonmem_results.drop(
-        nonmem_model.dataset[nonmem_model.dataset["EVID"] != 0].index.to_list()
+        nonmem_model.dataset[~nonmem_model.dataset["EVID"].isin([0, 2])].index.to_list()
     )
     nonmem_results = nonmem_results.set_index(["ID", "TIME"])
 
@@ -740,3 +754,38 @@ def write_fix_eta(model: pharmpy.model.Model, path=None, force=True) -> str:
     path = path_absolute(path)
     model.modelfit_results.individual_estimates.to_csv(path, na_rep=data.conf.na_rep, index=False)
     return path
+
+def verify_param(model1, model2, est = False):
+    tol = 0.01
+    
+    if est:
+        param1 = model1.modelfit_results.parameter_estimates
+        param2 = model2.modelfit_results.parameter_estimates
+
+        passed = []
+        failed = []
+        for p1 in param1.index:
+            if p1 in param2.index:
+                p1_value = param1[p1]
+                p2_value = param2[p1]
+                diff = p1_value - p2_value
+                if abs(diff) > tol:
+                    failed.append((p1, diff))
+                else:
+                    passed.append((p1, diff))
+        
+    else:
+        param1 = model1.parameters
+        param2 = model2.parameters
+        
+        passed = []
+        failed = []
+        for p1 in param1:
+            if p1.name in param2.names:
+                p2 = param2[p1.name]
+                diff = p1.init - p2.init
+                if abs(diff) > tol:
+                    failed.append((p1.name, diff))
+                else:
+                    passed.append((p1.name, diff))
+    return passed, failed
