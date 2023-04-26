@@ -1,9 +1,17 @@
 from collections.abc import Collection, Container, Iterable, Iterator, Sequence, Sized
 from inspect import signature
-from typing import Any
-from typing import Container as TypingContainer  # NOTE needed for Python 3.8
-from typing import Iterable as TypingIterable  # NOTE needed for Python 3.8
-from typing import List, Literal, Optional, Tuple, Type, Union, get_args, get_origin, get_type_hints
+from typing import (
+    Any,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 
 def with_runtime_arguments_type_check(fn):
@@ -166,11 +174,11 @@ def _match(typing, value):
         return (
             _match(Sized, value)
             and _match(
-                TypingContainer[t] if t else Container,  # pyright: ignore [reportGeneralTypeIssues]
+                Container[t] if t else Container,  # pyright: ignore [reportGeneralTypeIssues]
                 value,
             )
             and _match(
-                TypingIterable[t] if t else Iterable,  # pyright: ignore [reportGeneralTypeIssues]
+                Iterable[t] if t else Iterable,  # pyright: ignore [reportGeneralTypeIssues]
                 value,
             )
         )

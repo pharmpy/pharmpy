@@ -5,9 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional
-from typing import Sequence as TypingSequence
-from typing import Tuple, Union, cast, overload
+from typing import Optional, Tuple, Union, cast, overload
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -471,7 +469,7 @@ class DataInfo(Sequence, Immutable):
 
     def __init__(
         self,
-        columns: Optional[Union[TypingSequence[ColumnInfo], TypingSequence[str]]] = (),
+        columns: Optional[Union[Sequence[ColumnInfo], Sequence[str]]] = (),
         path: Optional[Union[str, Path]] = None,
         separator: str = ',',
         force_absolute_path: bool = True,
@@ -484,7 +482,7 @@ class DataInfo(Sequence, Immutable):
     @classmethod
     def create(
         cls,
-        columns: Optional[Union[TypingSequence[ColumnInfo], TypingSequence[str]]] = None,
+        columns: Optional[Union[Sequence[ColumnInfo], Sequence[str]]] = None,
         path: Optional[Union[str, Path]] = None,
         separator: str = ',',
         force_absolute_path: bool = True,
