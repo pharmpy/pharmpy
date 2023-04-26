@@ -58,7 +58,7 @@ dependencies, you can do the following to check the Python version in your retic
 
     reticulate::py_discover_config()
 
-Make sure the Python version is >= 3.8. If it is not, you can run the following in R:
+Make sure the Python version is >= 3.9. If it is not, you can run the following in R:
 
 .. code-block:: r
 

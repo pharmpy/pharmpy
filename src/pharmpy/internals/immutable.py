@@ -30,6 +30,5 @@ def frozenmapping(*args: Union[Mapping[K, V], Iterable[Tuple[K, V]]], **kwargs: 
     # NOTE MappingProxyType[K, V] is both a Mapping[K, V] and an Iterable[K].
     # Pyright tries to idenfiy Iterable[Tuple[K, V]] to an input of type
     # MappingProxyType[Tuple[K, V], Any] which is unfortunately not what we
-    # want. We also cannot cast to MappingProxyType[K, V] because Python 3.8
-    # does not define that.
+    # want.
     return cast(MappingProxyType, arg)
