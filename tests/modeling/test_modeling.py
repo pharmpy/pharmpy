@@ -20,6 +20,7 @@ from pharmpy.modeling import (
     create_joint_distribution,
     fix_parameters_to,
     get_initial_conditions,
+    get_lag_times,
     get_zero_order_inputs,
     has_first_order_elimination,
     has_linear_odes,
@@ -1416,6 +1417,14 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 '''
     assert model.model_code == correct
+
+
+def test_lagtime_then_zoabs(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    model = set_first_order_absorption(model)
+    model = add_lag_time(model)
+    model = set_zero_order_absorption(model)
+    assert get_lag_times(model) == {'CENTRAL': sympy.Symbol('ALAG1')}
 
 
 def test_seq_to_ZO(load_model_for_test, testdata):

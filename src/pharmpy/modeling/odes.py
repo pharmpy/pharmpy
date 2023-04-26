@@ -967,11 +967,11 @@ def set_zero_order_absorption(model: Model):
         assert ka is not None
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_compartment(depot)
-        cb.set_dose(to_comp, dose)
+        to_comp = cb.set_dose(to_comp, dose)
+        to_comp = cb.set_lag_time(to_comp, depot.lag_time)
+        cb.set_bioavailability(to_comp, depot.bioavailability)
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         symbols = ka.free_symbols
-    else:
-        to_comp = dose_comp  #
 
     new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
     mat_idx = statements.find_assignment_index('MAT')
