@@ -27,7 +27,7 @@ from pharmpy.workflows.log import Log
 
 from .error_model import res_error_term
 from .ini import add_eta, add_sigma, add_theta
-from .model_block import add_ode, add_statements, add_bioavailability
+from .model_block import add_bioavailability, add_ode, add_statements
 from .sanity_checks import check_model
 
 
@@ -35,7 +35,7 @@ def convert_model(
     model: pharmpy.model.Model,
     keep_etas: bool = False,
     skip_check: bool = False,
-    updated_estimates: bool = False
+    updated_estimates: bool = False,
 ) -> pharmpy.model.Model:
     """
     Convert a NONMEM model into an nlmixr model
@@ -58,7 +58,7 @@ def convert_model(
 
     if isinstance(model, Model):
         return model
-    
+
     if updated_estimates:
         model = update_inits(model, model.modelfit_results.parameter_estimates)
 
@@ -85,7 +85,7 @@ def convert_model(
                 )
             )
             nlmixr_model = fixate_eta(nlmixr_model)
-            
+
         nlmixr_model = translate_nmtran_time(nlmixr_model)
         # FIXME: dropping columns runs update source which becomes redundant.
         # drop_dropped_columns(nlmixr_model)
@@ -210,10 +210,10 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         dependencies = dv_term.dependencies()
         dv_term.create_res_alias()
         res_alias = dv_term.res_alias
-    
+
     # Add bioavailability statements
     add_bioavailability(model, cg)
-    
+
     # Add statements after ODEs
     if len(model.statements.after_odes) == 0:
         statements = model.statements
@@ -406,7 +406,7 @@ def parse_modelfit_results(
     return res
 
 
-def execute_model(model: pharmpy.model.Model, db: str, evaluate = False) -> pharmpy.model.Model:
+def execute_model(model: pharmpy.model.Model, db: str, evaluate=False) -> pharmpy.model.Model:
     """
     Executes a model using nlmixr2 estimation.
 
@@ -426,7 +426,7 @@ def execute_model(model: pharmpy.model.Model, db: str, evaluate = False) -> phar
     if evaluate:
         if [s.evaluation for s in model.estimation_steps._steps][0] is False:
             model = set_evaluation_step(model)
-    
+
     db = pharmpy.workflows.LocalDirectoryToolDatabase(db)
     database = db.model_database
     model = convert_model(model)
@@ -435,7 +435,7 @@ def execute_model(model: pharmpy.model.Model, db: str, evaluate = False) -> phar
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     if model.datainfo.path is not None:
-        model = model.replace(datainfo=model.datainfo.replace(path=None))    
+        model = model.replace(datainfo=model.datainfo.replace(path=None))
     write_csv(model, path=path)
     model = model.replace(datainfo=model.datainfo.replace(path=path))
 
@@ -758,9 +758,10 @@ def write_fix_eta(model: pharmpy.model.Model, path=None, force=True) -> str:
     model.modelfit_results.individual_estimates.to_csv(path, na_rep=data.conf.na_rep, index=False)
     return path
 
-def verify_param(model1, model2, est = False):
+
+def verify_param(model1, model2, est=False):
     tol = 0.01
-    
+
     if est:
         param1 = model1.modelfit_results.parameter_estimates
         param2 = model2.modelfit_results.parameter_estimates
@@ -776,11 +777,11 @@ def verify_param(model1, model2, est = False):
                     failed.append((p1, diff))
                 else:
                     passed.append((p1, diff))
-        
+
     else:
         param1 = model1.parameters
         param2 = model2.parameters
-        
+
         passed = []
         failed = []
         for p1 in param1:

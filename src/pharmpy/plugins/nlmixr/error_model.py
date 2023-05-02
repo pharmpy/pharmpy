@@ -85,7 +85,6 @@ class res_error_term:
                     # FIXME : Should this be allowed??
                     self.res += term
                     self.create_res_alias()
-                    
 
         if self.res is None:
             print("No resulting term found")

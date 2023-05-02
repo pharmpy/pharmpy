@@ -49,9 +49,7 @@ def add_eta(model: pharmpy.model.Model, cg: CodeGenerator, as_list=False) -> Non
                 code_line += ","
             cg.add(code_line)
         else:
-            cg.add(
-                f'{" + ".join([name_mangle(name) for name in dist.names])} ~ c('
-                )
+            cg.add(f'{" + ".join([name_mangle(name) for name in dist.names])} ~ c(')
             inits = []
             for row in range(omega.rows):
                 for col in range(row + 1):

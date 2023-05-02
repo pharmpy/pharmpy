@@ -13,16 +13,16 @@ from pharmpy.deps import sympy
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.modeling import (
     drop_columns,
+    get_bioavailability,
     get_omegas,
     get_sigmas,
     get_thetas,
     translate_nmtran_time,
     write_csv,
-    get_bioavailability
 )
 from pharmpy.plugins.nlmixr.error_model import convert_eps_to_sigma
 from pharmpy.plugins.nlmixr.model import add_evid
-from pharmpy.plugins.nlmixr.model_block import add_ode, convert_eq, add_bioavailability
+from pharmpy.plugins.nlmixr.model_block import add_bioavailability, add_ode, convert_eq
 from pharmpy.results import ModelfitResults
 
 
@@ -93,7 +93,7 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     if model.datainfo.path is not None:
-        model = model.replace(datainfo=model.datainfo.replace(path=None)) 
+        model = model.replace(datainfo=model.datainfo.replace(path=None))
     write_csv(model, path=path)
     model = model.replace(datainfo=model.datainfo.replace(path=path))
 
@@ -315,7 +315,7 @@ def verification(
             return False
 
 
-def convert_model(model, skip_check = False):
+def convert_model(model, skip_check=False):
     if isinstance(model, Model):
         return model
 
@@ -362,10 +362,10 @@ def create_model(cg, model):
 
     if model.statements.ode_system:
         add_ode(model, cg)
-    
+
     # Add bioavailability statements
     add_bioavailability(model, cg)
-    
+
     # Add statements after ODE
     add_true_statements(model, cg, model.statements.after_odes)
 
@@ -451,9 +451,7 @@ def create_sigma(cg, model):
             else:
                 cg.add(f'{name} ~ {init}')
         else:
-            cg.add(
-                f'{" + ".join([name for name in eps.names])} ~ c('
-                )
+            cg.add(f'{" + ".join([name for name in eps.names])} ~ c(')
             inits = []
             for row in range(sigma.rows):
                 for col in range(row + 1):

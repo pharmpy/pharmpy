@@ -103,7 +103,7 @@ def add_statements(
                     cg.add(f"res <- {dv_term.res}")
                     cg.add(f'add_error <- {dv_term.add.expr}')
                     cg.add(f'prop_error <- {dv_term.prop.expr}')
-            
+
             elif s.symbol in get_bioavailability(model).values():
                 pass
             else:
@@ -209,13 +209,13 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
     else:
         terms = sympy.Add.make_args(s.expression)
     assert len(terms) <= 2
-    
-    r = "sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2 \+ [a-zA-Z0-9_.-]*\*\*2\)"
+
+    r = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2 \+ [a-zA-Z0-9_.-]*\*\*2\)"
     if re.match(r, str(s)):
         w = True
     else:
         w = False
-    
+
     prop = 0
     add = 0
     prop_found = False
@@ -236,11 +236,13 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
                 add = term
     return add, prop
 
+
 def add_bioavailability(model: pharmpy.model.Model, cg: CodeGenerator):
     bio = get_bioavailability(model)
     for comp, symbol in bio.items():
         symbol_value = model.statements.find_assignment(symbol).expression
         cg.add(f'f(A_{comp}) <- {symbol_value}')
+
 
 def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
     expr = s.expression
