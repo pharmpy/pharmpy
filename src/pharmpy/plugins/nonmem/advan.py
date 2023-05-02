@@ -297,7 +297,6 @@ def _compartmental_model(
 
         cs = to_compartmental_system(func_to_name, eqs)
         cb = CompartmentalSystemBuilder(cs)
-
         for i, comp_name in enumerate(comps, start=1):
             comp = cs.find_compartment(comp_name)
             if comp is None:  # Compartments can be in $MODEL but not used in $DES
@@ -305,8 +304,10 @@ def _compartmental_model(
             if i == 1:
                 dose = dosing(di, dataset, 1)  # FIXME: Only one dose to 1st compartment
                 cb.set_dose(comp, dose)
+                comp = cb.find_compartment(comp_name)
             f = _get_bioavailability(control_stream, i)
             cb.set_bioavailability(comp, f)
+            comp = cb.find_compartment(comp_name)
             alag = _get_alag(control_stream, i)
             cb.set_lag_time(comp, alag)
 

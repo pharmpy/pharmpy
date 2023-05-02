@@ -390,6 +390,11 @@ class CompartmentalSystemBuilder:
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
+    
+    def find_compartment(self, name):
+        for comp in self._g.nodes:
+            if not isinstance(comp, Output) and comp.name == name:
+                return comp
 
 
 def _is_positive(expr: sympy.Expr) -> bool:
@@ -1375,6 +1380,7 @@ class Compartment:
             and self.dose == other.dose
             and self.input == other.input
             and self.lag_time == other.lag_time
+            and self.bioavailability == other.bioavailability
         )
 
     def __hash__(self):
