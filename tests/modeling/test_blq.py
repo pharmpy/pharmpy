@@ -111,9 +111,9 @@ def test_transform_blq_different_lloq(load_model_for_test, testdata):
     di_blq = update_datainfo(model.datainfo, df_blq)
     blq_col = di_blq['BLQ'].replace(type='blq')
     di_blq = di_blq.set_column(blq_col)
-    model_blq_col = model.replace(dataset=df_blq, datainfo=di_blq)
+    model_blq = model.replace(dataset=df_blq, datainfo=di_blq)
 
-    model_blq_col = transform_blq(model_blq_col)
+    model_blq_col = transform_blq(model_blq)
 
     assert 'BLQ.EQ.1' in model_blq_col.model_code
 
@@ -128,3 +128,8 @@ def test_transform_blq_different_lloq(load_model_for_test, testdata):
 
     assert 'DV.GE.LLOQ' in model_lloq_col.model_code
     assert 'LLOQ = ' not in model_lloq_col.model_code
+
+    model_float_with_blq_col = transform_blq(model_blq, lloq=0.1)
+
+    assert 'DV.GE.LLOQ' in model_float_with_blq_col.model_code
+    assert 'LLOQ = ' in model_float_with_blq_col.model_code

@@ -89,9 +89,11 @@ def _m3_m4_method(model, lloq, method):
     y = sset.find_assignment(y_symb)
     ipred = y.expression.subs({rv: 0 for rv in model.random_variables.epsilons.names})
 
-    blq_symb, blq_type = get_blq_symb_and_type(model)
     if isinstance(lloq, float):
-        blq_symb = create_symbol(model, blq_symb)
+        blq_symb = create_symbol(model, 'LLOQ')
+        blq_type = 'lloq'
+    else:
+        blq_symb, blq_type = get_blq_symb_and_type(model)
 
     sd = _get_sd(model, y)
     symb_dv = sympy.Symbol(model.datainfo.dv_column.name)
