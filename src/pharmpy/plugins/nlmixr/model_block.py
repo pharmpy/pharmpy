@@ -5,6 +5,7 @@ import pharmpy.model
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model import Assignment
+from pharmpy.modeling import get_bioavailability
 
 from .error_model import res_error_term
 from .name_mangle import name_mangle
@@ -102,7 +103,9 @@ def add_statements(
                     cg.add(f"res <- {dv_term.res}")
                     cg.add(f'add_error <- {dv_term.add.expr}')
                     cg.add(f'prop_error <- {dv_term.prop.expr}')
-
+            
+            elif s.symbol in get_bioavailability(model).values():
+                pass
             else:
                 expr = s.expression
                 if expr.is_Piecewise:
@@ -233,6 +236,11 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
                 add = term
     return add, prop
 
+def add_bioavailability(model: pharmpy.model.Model, cg: CodeGenerator):
+    bio = get_bioavailability(model)
+    for comp, symbol in bio.items():
+        symbol_value = model.statements.find_assignment(symbol).expression
+        cg.add(f'f(A_{comp}) <- {symbol_value}')
 
 def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
     expr = s.expression
