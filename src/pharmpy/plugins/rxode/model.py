@@ -29,7 +29,6 @@ from pharmpy.results import ModelfitResults
 class RxODEModelInternals:
     src: Optional[str] = None
     path: Optional[Path] = None
-    DES: Optional = None
 
 
 class Model(pharmpy.model.Model):
@@ -317,13 +316,8 @@ def convert_model(model, skip_check = False):
     if isinstance(model, Model):
         return model
 
-    if model.internals.control_stream.get_records("DES"):
-        des = model.internals.control_stream.get_records("DES")[0]
-    else:
-        des = None
-
     rxode_model = Model(
-        internals=RxODEModelInternals(DES=des),
+        internals=RxODEModelInternals(),
         parameters=model.parameters,
         random_variables=model.random_variables,
         statements=model.statements,
