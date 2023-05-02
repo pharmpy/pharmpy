@@ -18,10 +18,11 @@ from pharmpy.modeling import (
     get_thetas,
     translate_nmtran_time,
     write_csv,
+    get_bioavailability
 )
 from pharmpy.plugins.nlmixr.error_model import convert_eps_to_sigma
 from pharmpy.plugins.nlmixr.model import add_evid
-from pharmpy.plugins.nlmixr.model_block import add_ode, convert_eq
+from pharmpy.plugins.nlmixr.model_block import add_ode, convert_eq, add_bioavailability
 from pharmpy.results import ModelfitResults
 
 
@@ -359,18 +360,23 @@ def create_model(cg, model):
 
     if model.statements.ode_system:
         add_ode(model, cg)
-
+    
+    # Add bioavailability statements
+    add_bioavailability(model, cg)
+    
+    # Add statements after ODE
     add_true_statements(model, cg, model.statements.after_odes)
 
 
 def add_true_statements(model, cg, statements):
     for s in statements:
-        expr = s.expression
-        expr = convert_eps_to_sigma(expr, model)
-        if expr.is_Piecewise:
-            add_piecewise(model, cg, s)
-        else:
-            cg.add(f'{s.symbol.name} <- {expr}')
+        if s.symbol not in get_bioavailability(model).values():
+            expr = s.expression
+            expr = convert_eps_to_sigma(expr, model)
+            if expr.is_Piecewise:
+                add_piecewise(model, cg, s)
+            else:
+                cg.add(f'{s.symbol.name} <- {expr}')
 
 
 def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
