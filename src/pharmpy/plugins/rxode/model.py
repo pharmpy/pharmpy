@@ -92,6 +92,8 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
     model.internals.path = path
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
+    if model.datainfo.path is not None:
+        model = model.replace(datainfo=model.datainfo.replace(path=None)) 
     write_csv(model, path=path)
     model = model.replace(datainfo=model.datainfo.replace(path=path))
 
