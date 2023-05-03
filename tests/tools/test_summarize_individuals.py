@@ -33,15 +33,12 @@ def test_summarize_individuals_count_table():
     assert list(res['inf_outlier']) == [0, 1, 0]
 
 
-tflite_condition = (
-    sys.version_info >= (3, 10)
-    and sys.platform != 'linux'
-    or sys.version_info >= (3, 11)
-    and sys.platform == 'linux'
+tflite_condition = sys.version_info >= (3, 10) and sys.platform == 'darwin'
+
+
+@pytest.mark.skipif(
+    tflite_condition, reason="Skipping tests requiring tflite for MacOS and Python 3.10 or later"
 )
-
-
-@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.10")
 def test_tflite_not_installed(pheno_path, monkeypatch):
     model = read_model(pheno_path)
 

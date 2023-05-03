@@ -5,15 +5,12 @@ import pytest
 from pharmpy.modeling import load_example_model
 from pharmpy.tools import predict_influential_individuals, predict_outliers
 
-tflite_condition = (
-    sys.version_info >= (3, 10)
-    and sys.platform != 'linux'
-    or sys.version_info >= (3, 11)
-    and sys.platform == 'linux'
+tflite_condition = sys.version_info >= (3, 10) and sys.platform == 'darwin'
+
+
+@pytest.mark.skipif(
+    tflite_condition, reason="Skipping tests requiring tflite for MacOS and Python 3.10 or later"
 )
-
-
-@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.10")
 def test_predict_outliers():
     model = load_example_model('pheno')
     res = predict_outliers(model, model.modelfit_results)
@@ -21,7 +18,9 @@ def test_predict_outliers():
     assert res['residual'][1] == pytest.approx(-0.28144291043281555)
 
 
-@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.10")
+@pytest.mark.skipif(
+    tflite_condition, reason="Skipping tests requiring tflite for MacOS and Python 3.10 or later"
+)
 def test_predict_influential_individuals():
     model = load_example_model('pheno')
     res = predict_influential_individuals(model, model.modelfit_results)
