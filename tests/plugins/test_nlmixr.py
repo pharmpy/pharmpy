@@ -5,9 +5,48 @@ def test_model(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = convert_model(nmmodel)
     assert 'ini' in model.model_code
-
-
+    assert 'model' in model.model_code
+    
 def test_pheno_real(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     model = convert_model(nmmodel)
     assert '} else {' in model.model_code
+
+def test_pheno_error_model(testdata, load_model_for_test):
+    mmodel = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    model = convert_model(mmodel)
+    assert "add_error <- 0" in model.model_code
+    assert "prop_error <- SIGMA_1_1" in model.model_code
+    assert "Y ~ add(add_error) + prop(prop_error)" in model.model_code
+    
+def test_remove_sigma(testdata, load_model_for_test):
+    nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
+    model = convert_model(nmmodel)
+    assert "SIGMA_1_1" not in model.model_code
+    
+def test_update_estimates(testdata, load_model_for_test):
+    pass
+
+def test_dataset_modifications(testdata, load_model_for_test):
+    nmmodel = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model = convert_model(nmmodel)
+    assert "EVID" in model.dataset.columns
+    
+def test_w_error_model(testdata, load_model_for_test):
+    nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
+    model = convert_model(nmmodel)
+    assert 'add_error <- THETA_3' in model.model_code
+    assert 'prop_error <- THETA_4' in model.model_code
+    assert "Y ~ add(add_error) + prop(prop_error)" in model.model_code
+    
+def test_omega_same(testdata, load_model_for_test):
+    nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
+    model = convert_model(nmmodel)
+    assert "IOV_CL_7" in model.parameters
+    assert "IOV_V_7" in model.parameters
+    
+
+    
+    
+    
+    
