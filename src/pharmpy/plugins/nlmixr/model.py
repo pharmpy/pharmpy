@@ -212,7 +212,8 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         res_alias = dv_term.res_alias
 
     # Add bioavailability statements
-    add_bioavailability(model, cg)
+    if model.statements.ode_system is not None:
+        add_bioavailability(model, cg)
 
     # Add statements after ODEs
     if len(model.statements.after_odes) == 0:
