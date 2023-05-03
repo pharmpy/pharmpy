@@ -13,6 +13,7 @@ from pharmpy.deps import sympy
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.modeling import (
     drop_columns,
+    get_bioavailability,
     get_omegas,
     get_sigmas,
     get_thetas,
@@ -21,7 +22,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.plugins.nlmixr.error_model import convert_eps_to_sigma
 from pharmpy.plugins.nlmixr.model import add_evid
-from pharmpy.plugins.nlmixr.model_block import add_ode, convert_eq
+from pharmpy.plugins.nlmixr.model_block import add_bioavailability, add_ode, convert_eq
 from pharmpy.results import ModelfitResults
 
 
@@ -29,7 +30,6 @@ from pharmpy.results import ModelfitResults
 class RxODEModelInternals:
     src: Optional[str] = None
     path: Optional[Path] = None
-    DES: Optional = None
 
 
 class Model(pharmpy.model.Model):
@@ -92,6 +92,8 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
     model.internals.path = path
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
+    if model.datainfo.path is not None:
+        model = model.replace(datainfo=model.datainfo.replace(path=None))
     write_csv(model, path=path)
     model = model.replace(datainfo=model.datainfo.replace(path=path))
 
@@ -278,7 +280,7 @@ def verification(
         nonmem_model = add_evid(nonmem_model)
     nonmem_results = nonmem_results.reset_index()
     nonmem_results = nonmem_results.drop(
-        nonmem_model.dataset[nonmem_model.dataset["EVID"] != 0].index.to_list()
+        nonmem_model.dataset[~nonmem_model.dataset["EVID"].isin([0, 2])].index.to_list()
     )
     nonmem_results = nonmem_results.set_index(["ID", "TIME"])
 
@@ -313,17 +315,12 @@ def verification(
             return False
 
 
-def convert_model(model):
+def convert_model(model, skip_check=False):
     if isinstance(model, Model):
         return model
 
-    if model.internals.control_stream.get_records("DES"):
-        des = model.internals.control_stream.get_records("DES")[0]
-    else:
-        des = None
-
     rxode_model = Model(
-        internals=RxODEModelInternals(DES=des),
+        internals=RxODEModelInternals(),
         parameters=model.parameters,
         random_variables=model.random_variables,
         statements=model.statements,
@@ -353,7 +350,7 @@ def convert_model(model):
     # Check model for warnings regarding data structure or model contents
     from pharmpy.plugins.nlmixr.sanity_checks import check_model
 
-    rxode_model = check_model(rxode_model)
+    rxode_model = check_model(rxode_model, skip_error_model_check=skip_check)
 
     rxode_model.update_source()
 
@@ -366,17 +363,22 @@ def create_model(cg, model):
     if model.statements.ode_system:
         add_ode(model, cg)
 
+    # Add bioavailability statements
+    add_bioavailability(model, cg)
+
+    # Add statements after ODE
     add_true_statements(model, cg, model.statements.after_odes)
 
 
 def add_true_statements(model, cg, statements):
     for s in statements:
-        expr = s.expression
-        expr = convert_eps_to_sigma(expr, model)
-        if expr.is_Piecewise:
-            add_piecewise(model, cg, s)
-        else:
-            cg.add(f'{s.symbol.name} <- {expr}')
+        if s.symbol not in get_bioavailability(model).values():
+            expr = s.expression
+            expr = convert_eps_to_sigma(expr, model)
+            if expr.is_Piecewise:
+                add_piecewise(model, cg, s)
+            else:
+                cg.add(f'{s.symbol.name} <- {expr}')
 
 
 def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
@@ -438,12 +440,32 @@ def create_eta(cg, model):
 def create_sigma(cg, model):
     cg.add("sigmas <-")
     cg.add("lotri(")
-    sigmas = get_sigmas(model)
-    for n, sigma in enumerate(sigmas):
-        if n != len(sigmas) - 1:
-            cg.add(f'{sigma.name} ~ {sigma.init}, ')
+    all_eps = model.random_variables.epsilons
+    for n, eps in enumerate(all_eps):
+        sigma = eps.variance
+        if len(eps.names) == 1:
+            name = model.parameters[sigma].name
+            init = model.parameters[sigma].init
+            if n != len(all_eps) - 1:
+                cg.add(f'{name} ~ {init},')
+            else:
+                cg.add(f'{name} ~ {init}')
         else:
-            cg.add(f'{sigma.name} ~ {sigma.init}')
+            cg.add(f'{" + ".join([name for name in eps.names])} ~ c(')
+            inits = []
+            for row in range(sigma.rows):
+                for col in range(row + 1):
+                    if col == 0 and row != 0:
+                        cg.add(f'{", ".join([str(x) for x in inits])},')
+                        inits = []
+                        inits.append(f'{model.parameters[sigma[row, col].name].init}')
+                    else:
+                        inits.append(model.parameters[sigma[row, col].name].init)
+            cg.add(f'{", ".join([str(x) for x in inits])}')
+            if eps != model.random_variables.epsilons[-1]:
+                cg.add("),")
+            else:
+                cg.add(")")
     cg.add(")")
 
 

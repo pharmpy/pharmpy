@@ -52,9 +52,10 @@ class res_error_term:
         errors = []
         for term in terms:
             error_term = False
+            full_term = full_expression(term, self.model)
             for factor in sympy.Mul.make_args(term):
-                full_term = full_expression(factor, self.model)
-                all_symbols = full_term.free_symbols.union(factor.free_symbols)
+                full_factor = full_expression(factor, self.model)
+                all_symbols = full_factor.free_symbols.union(factor.free_symbols)
                 for symbol in all_symbols:
                     if str(symbol) in self.model.random_variables.epsilons.names:
                         sigma = convert_eps_to_sigma(symbol, self.model)
@@ -83,6 +84,7 @@ class res_error_term:
                 else:
                     # FIXME : Should this be allowed??
                     self.res += term
+                    self.create_res_alias()
 
         if self.res is None:
             print("No resulting term found")
@@ -91,14 +93,12 @@ class res_error_term:
             print("Too many error terms found")
             exit
 
-        prop = False
-
         for t in errors:
             prop = False
             term = t["term"]
             full_term = t["full_term"]
-            for symbol in full_term.free_symbols:
-                for ali in find_aliases(symbol, self.model).union(term.free_symbols):
+            for symbol in full_term.free_symbols.union(term.free_symbols):
+                for ali in find_aliases(symbol, self.model):
                     if ali in self.res_alias:
                         prop = True
                         # Remove the resulting symbol from the error term

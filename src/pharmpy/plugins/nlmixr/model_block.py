@@ -5,6 +5,7 @@ import pharmpy.model
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model import Assignment
+from pharmpy.modeling import get_bioavailability
 
 from .error_model import res_error_term
 from .name_mangle import name_mangle
@@ -103,6 +104,8 @@ def add_statements(
                     cg.add(f'add_error <- {dv_term.add.expr}')
                     cg.add(f'prop_error <- {dv_term.prop.expr}')
 
+            elif s.symbol in get_bioavailability(model).values():
+                pass
             else:
                 expr = s.expression
                 if expr.is_Piecewise:
@@ -197,9 +200,21 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
         terms = [s]
     elif isinstance(s, sympy.Pow):
         terms = sympy.Add.make_args(s.args[0])
+    elif isinstance(s, sympy.Mul):
+        terms = [s]
+    elif isinstance(s, sympy.Integer):
+        terms = [s]
+    elif isinstance(s, sympy.Float):
+        terms = [s]
     else:
         terms = sympy.Add.make_args(s.expression)
     assert len(terms) <= 2
+
+    r = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2 \+ [a-zA-Z0-9_.-]*\*\*2\)"
+    if re.match(r, str(s)):
+        w = True
+    else:
+        w = False
 
     prop = 0
     add = 0
@@ -209,12 +224,24 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
             if symbol in res_alias:
                 if prop_found is False:
                     term = term.subs(symbol, 1)
-                    prop = list(term.free_symbols)[0]
+                    if w:
+                        prop = list(term.free_symbols)[0]
+                    else:
+                        add = term
                     prop_found = True
         if prop_found is False:
-            add = list(term.free_symbols)[0]
-
+            if w:
+                add = list(term.free_symbols)[0]
+            else:
+                add = term
     return add, prop
+
+
+def add_bioavailability(model: pharmpy.model.Model, cg: CodeGenerator):
+    bio = get_bioavailability(model)
+    for comp, symbol in bio.items():
+        symbol_value = model.statements.find_assignment(symbol).expression
+        cg.add(f'f(A_{comp}) <- {symbol_value}')
 
 
 def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
