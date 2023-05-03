@@ -87,17 +87,10 @@ def add_statements(
                         # also remove aliases
 
                     else:
-                        cg.add(f'{s.symbol} <- {res}')
-                        e = ""
-                        first = True
-                        if dv_term.add.expr != 0:
-                            e += f'add({dv_term.add.expr})'
-                            first = False
-                        if dv_term.prop.expr != 0:
-                            if not first:
-                                e += " + "
-                            e += f'prop({dv_term.prop.expr})'
-                        cg.add(f'{s.symbol} ~ {e}')
+                        cg.add(f"{s.symbol} <- {res}")
+                        cg.add(f'add_error <- {dv_term.add.expr}')
+                        cg.add(f'prop_error <- {dv_term.prop.expr}')
+                        cg.add(f'{s.symbol} ~ add(add_error) + prop(prop_error)')
                 else:
                     dv_term = res_error_term(model, s.expression)
                     cg.add(f"res <- {dv_term.res}")
