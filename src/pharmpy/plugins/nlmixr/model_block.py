@@ -97,7 +97,7 @@ def add_statements(
                     cg.add(f'add_error <- {dv_term.add.expr}')
                     cg.add(f'prop_error <- {dv_term.prop.expr}')
 
-            elif s.symbol in get_bioavailability(model).values():
+            elif model.statements.ode_system is not None and s.symbol in get_bioavailability(model).values():
                 pass
             else:
                 expr = s.expression
