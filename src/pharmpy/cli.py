@@ -250,13 +250,13 @@ def run_amd(args):
         vc_init=args.vc_init,
         mat_init=args.mat_init,
         search_space=args.search_space,
-        lloq=args.lloq,
+        lloq_method=args.lloq_method,
+        lloq_limit=args.lloq_limit,
         order=args.order,
-        categorical=args.categorical,
-        continuous=args.continuous,
         allometric_variable=args.allometric_variable,
         occasion=args.occasion,
         path=args.path,
+        resume=args.resume,
     )
 
 
@@ -1343,28 +1343,24 @@ parser_definition = [
                                 'help': 'MFL for search space for structural model',
                             },
                             {
-                                'name': '--lloq',
+                                'name': '--lloq_method',
+                                'type': str,
+                                'default': None,
+                                'help': 'Method for how to remove LOQ data. See '
+                                '`transform_blq` for list of available methods',
+                            },
+                            {
+                                'name': '--lloq_limit',
                                 'type': float,
                                 'default': None,
-                                'help': 'Lower limit of quantification. LOQ data will be removed.',
+                                'help': 'Lower limit of quantification. If None LLOQ column '
+                                'from dataset will be used',
                             },
                             {
                                 'name': '--order',
                                 'type': comma_list,
                                 'default': None,
                                 'help': 'Runorder of components',
-                            },
-                            {
-                                'name': '--categorical',
-                                'type': comma_list,
-                                'default': None,
-                                'help': 'List of categorical covariates',
-                            },
-                            {
-                                'name': '--continuous',
-                                'type': comma_list,
-                                'default': None,
-                                'help': 'List of continuous covariates',
                             },
                             {
                                 'name': '--allometric_variable',
@@ -1383,6 +1379,12 @@ parser_definition = [
                                 'type': str,
                                 'default': None,
                                 'help': 'Path to run AMD in',
+                            },
+                            {
+                                'name': '--resume',
+                                'type': bool,
+                                'default': True,
+                                'help': 'Whether to allow resuming previous run',
                             },
                         ],
                     }

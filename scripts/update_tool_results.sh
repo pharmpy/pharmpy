@@ -25,7 +25,7 @@ rm -rf $TESTPATH
 cd ..
 mkdir $TESTPATH
 
-python3.9 -m venv $TESTPATH/pharmpy_venv
+python3 -m venv $TESTPATH/pharmpy_venv
 activate () {
     . $TESTPATH/pharmpy_venv/bin/activate
 }
@@ -55,6 +55,8 @@ cp $TESTDATA/models/mox2.ext $TESTPATH
 cp $TESTDATA/models/mox2.phi $TESTPATH
 cp $TESTDATA/models/mox_simulated_normal.csv $TESTPATH
 cp $TESTDATA/models/mox_simulated_normal.datainfo $TESTPATH
+cp $TESTDATA/models/moxo_simulated_amd.csv $TESTPATH
+cp $TESTDATA/models/moxo_simulated_amd.datainfo $TESTPATH
 
 if [ "$TOOL" == 'modelsearch' ] || [ "$TOOL" == 'all' ]; then
   pharmpy run modelsearch $TESTPATH/mox2.mod 'PERIPHERALS(1);LAGTIME()' 'reduced_stepwise' --path $TESTPATH/modelsearch/
@@ -89,7 +91,7 @@ if [ "$TOOL" == 'ruvsearch' ] || [ "$TOOL" == 'all' ]; then
 fi
 
 if [ "$TOOL" == 'amd' ] || [ "$TOOL" == 'all' ]; then
-  pharmpy run amd $TESTPATH/mox_simulated_normal.csv --modeltype 'pk_oral' --search_space 'PERIPHERALS(1)' --occasion 'VISI' --path $TESTPATH/amd/
+  pharmpy run amd $TESTPATH/moxo_simulated_amd.csv --modeltype 'pk_oral' --search_space 'PERIPHERALS(1);LET(CATEGORICAL, [SEX]);LET(CONTINUOUS, [AGE])' --occasion 'VISI' --allometric_variable 'WT' --path $TESTPATH/amd/
   cp_results $TESTPATH/amd/results.json $DEST/amd_results.json
 fi
 
