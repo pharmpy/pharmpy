@@ -570,14 +570,10 @@ def verification(
     if nonmem_model.modelfit_results is None:
         print_step("Calculating NONMEM predictions... (this might take a while)")
         nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
-        nonmem_results = nonmem_model.modelfit_results.predictions.copy()
     else:
         if nonmem_model.modelfit_results.predictions is None:
             print_step("Calculating NONMEM predictions... (this might take a while)")
             nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
-            nonmem_results = nonmem_model.modelfit_results.predictions.copy()
-        else:
-            nonmem_results = nonmem_model.modelfit_results.predictions.copy()
 
     # Set a tool option to fix theta values when running nlmixr
     if fix_eta:
@@ -604,21 +600,74 @@ def verification(
     print_step("Executing nlmixr2 model... (this might take a while)")
 
     nlmixr_model = execute_model(nlmixr_model, db_name)
-    nlmixr_results = nlmixr_model.modelfit_results.predictions
 
+    # Combine the two based on ID and time
+    print_step("Creating result comparison table...")
+    combined_result = compare_models(nonmem_model, nlmixr_model, error = error, ipred_diff = ipred_diff)
+
+    print_step("DONE")
+    if return_comp is True:
+        return combined_result
+    else:
+        if all(combined_result["PASS/FAIL"] == "PASS"):
+            return True
+        else:
+            return False
+
+def compare_models(model_1, model_2, error = 10**-3, ipred_diff = False):
+    assert model_1.modelfit_results.predictions is not None
+    assert model_2.modelfit_results.predictions is not None
+    
+    mod1 = model_1
+    mod1_type = str(type(mod1)).split(".")[2]
+    mod2 = model_2
+    mod2_type = str(type(mod2)).split(".")[2]
+    
+    nm_to_r = False
+    if (mod1_type == "nonmem" and mod2_type != "nonmem" or
+        mod2_type == "nonmem" and mod1_type != "nonmem"):
+        nm_to_r = True
+    
+    mod1 = mod1.replace(dataset=mod1.dataset.reset_index())
+    mod2 = mod2.replace(dataset=mod2.dataset.reset_index())
+
+    for mod in [mod1, mod2]:
+        if "EVID" not in mod.dataset.columns:
+            mod = add_evid(mod)
+
+    if nm_to_r:
+        if mod1_type == "nonmem":
+            predictions = mod1.modelfit_results.predictions.reset_index()
+            predictions = predictions.drop(
+                mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list()
+            )
+            predictions = predictions.set_index(["ID", "TIME"])
+            mod1 = mod1.replace(modelfit_results = ModelfitResults(predictions = predictions))
+        if mod2_type == "nonmem":
+            predictions = mod2.modelfit_results.predictions.reset_index()
+            predictions = predictions.drop(
+                mod2.dataset[~mod2.dataset["EVID"].isin([0, 2])].index.to_list()
+            )
+            predictions = predictions.set_index(["ID", "TIME"])
+            mod2 = mod2.replace(modelfit_results = ModelfitResults(predictions = predictions))
+    
+    mod1_results = mod1.modelfit_results.predictions.copy()
+    
+    mod2_results = mod2.modelfit_results.predictions.copy()
+    
     pred = False
     ipred = False
-    for p in nonmem_model.modelfit_results.predictions.columns:
+    for p in mod1_results.columns:
         if p == "PRED":
             pred = True
-            nonmem_results.rename(columns={p: 'PRED_NONMEM'}, inplace=True)
-            nlmixr_results.rename(columns={p: 'PRED_NLMIXR'}, inplace=True)
+            mod1_results.rename(columns={p: f'PRED_{mod1_type}'}, inplace=True)
+            mod2_results.rename(columns={p: f'PRED_{mod2_type}'}, inplace=True)
         elif p == "IPRED" or p == "CIPREDI":
             ipred = True
-            nonmem_results.rename(columns={p: 'IPRED_NONMEM'}, inplace=True)
+            mod1_results.rename(columns={p: f'IPRED_{mod1_type}'}, inplace=True)
             if p == "CIPREDI":
                 p = "IPRED"
-            nlmixr_results.rename(columns={p: 'IPRED_NLMIXR'}, inplace=True)
+            mod2_results.rename(columns={p: f'IPRED_{mod2_type}'}, inplace=True)
         else:
             print(
                 f"Unknown prediction value {p}. Currently only 'PRED' and 'IPRED' are supported and this is ignored"
@@ -628,29 +677,17 @@ def verification(
         print("No known prediction value was found. Please use 'PRED' or 'IPRED")
         return False
 
-    # Combine the two based on ID and time
-    print_step("Creating result comparison table...")
-    nonmem_model = nonmem_model.replace(dataset=nonmem_model.dataset.reset_index())
-
-    if "EVID" not in nonmem_model.dataset.columns:
-        nonmem_model = add_evid(nonmem_model)
-    nonmem_results = nonmem_results.reset_index()
-    nonmem_results = nonmem_results.drop(
-        nonmem_model.dataset[~nonmem_model.dataset["EVID"].isin([0, 2])].index.to_list()
-    )
-    nonmem_results = nonmem_results.set_index(["ID", "TIME"])
-
-    combined_result = nonmem_results
+    combined_result = mod1_results
     if pred:
-        combined_result['PRED_NLMIXR'] = nlmixr_results['PRED_NLMIXR'].to_list()
+        combined_result[f'PRED_{mod2_type}'] = mod2_results[f'PRED_{mod2_type}'].to_list()
         # Add difference between the models
         combined_result['PRED_DIFF'] = abs(
-            combined_result['PRED_NONMEM'] - combined_result['PRED_NLMIXR']
+            combined_result[f'PRED_{mod1_type}'] - combined_result[f'PRED_{mod2_type}']
         )
     if ipred:
-        combined_result['IPRED_NLMIXR'] = nlmixr_results['IPRED_NLMIXR'].to_list()
+        combined_result[f'IPRED_{mod2_type}'] = mod2_results[f'IPRED_{mod2_type}'].to_list()
         combined_result['IPRED_DIFF'] = abs(
-            combined_result['IPRED_NONMEM'] - combined_result['IPRED_NLMIXR']
+            combined_result[f'IPRED_{mod1_type}'] - combined_result[f'IPRED_{mod2_type}']
         )
 
     combined_result["PASS/FAIL"] = "PASS"
@@ -669,16 +706,6 @@ def verification(
     print(
         combined_result[f'{final}_DIFF'].describe()[["mean", "75%", "max"]].to_string(), end="\n\n"
     )
-
-    print_step("DONE")
-    if return_comp is True:
-        return combined_result
-    else:
-        if all(combined_result["PASS/FAIL"] == "PASS"):
-            return True
-        else:
-            return False
-
 
 def print_step(s: str) -> None:
     """
