@@ -143,9 +143,6 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Run integration tests
         run: tox -e integration
 
