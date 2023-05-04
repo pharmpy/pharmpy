@@ -48,6 +48,48 @@ def _extract_params_from_symb(
     return pset[theta_name]
 
 
+def _find_noncov_theta(model, paramsymb, full=False):
+    # Deterministic function to find the main theta in the expression for parasymb
+    # Set full to True if already providing a full expression
+    # Find subexpression with as few thetas and covariates as possible
+    # Stop if one theta found with no covs.
+    if full:
+        start_expr = paramsymb
+    else:
+        start_expr = model.statements.before_odes.full_expression(paramsymb)
+
+    exprs = [start_expr]
+    all_popparams = set(model.parameters.symbols)
+    all_covs = set(sympy.Symbol(name) for name in model.datainfo.names)
+
+    while exprs:
+        nthetas = float("Inf")
+        ncovs = float("Inf")
+        next_expr = None
+        for expr in exprs:
+            symbs = expr.free_symbols
+            curthetas = symbs & all_popparams
+            ncurthetas = len(curthetas)
+            curcovs = symbs & all_covs
+            ncurcovs = len(curcovs)
+            if ncurthetas != 0 and (
+                ncurthetas < nthetas or (ncurthetas == nthetas and ncurcovs < ncovs)
+            ):
+                next_expr = expr
+                thetas = curthetas
+                nthetas = ncurthetas
+                ncovs = ncurcovs
+
+        if next_expr is None:
+            break
+        else:
+            if nthetas == 1 and ncovs == 0:
+                return next(iter(thetas))
+            else:
+                exprs = next_expr.args
+    raise ValueError(f"Could not find theta connected to {paramsymb}")
+
+
 def add_individual_parameter(model: Model, name: str):
     """Add an individual or pk parameter to a model
 
@@ -1473,12 +1515,8 @@ def add_peripheral_compartment(model: Model):
                 cl1 = cl.args[0]
                 if cl1.is_Mul:
                     cl = cl1.args[0]
-            full_cl = statements.before_odes.full_expression(cl)
-            full_vc = statements.before_odes.full_expression(vc)
-            pop_cl_candidates = full_cl.free_symbols & set(model.parameters.symbols)
-            pop_cl = pop_cl_candidates.pop()
-            pop_vc_candidates = full_vc.free_symbols & set(model.parameters.symbols)
-            pop_vc = pop_vc_candidates.pop()
+            pop_cl = _find_noncov_theta(model, cl)
+            pop_vc = _find_noncov_theta(model, vc)
             pop_cl_init = model.parameters[pop_cl].init
             pop_vc_init = model.parameters[pop_vc].init
             qp_init = pop_cl_init
@@ -1492,10 +1530,8 @@ def add_peripheral_compartment(model: Model):
         full_vp1 = statements.before_odes.full_expression(vp1)
         if full_vp1 == 1:
             full_qp1, full_vp1 = full_qp1.as_numer_denom()
-        pop_qp1_candidates = full_qp1.free_symbols & set(model.parameters.symbols)
-        pop_qp1 = pop_qp1_candidates.pop()
-        pop_vp1_candidates = full_vp1.free_symbols & set(model.parameters.symbols)
-        pop_vp1 = pop_vp1_candidates.pop()
+        pop_qp1 = _find_noncov_theta(model, full_qp1, full=True)
+        pop_vp1 = _find_noncov_theta(model, full_vp1, full=True)
         pop_qp1_init = model.parameters[pop_qp1].init
         pop_vp1_init = model.parameters[pop_vp1].init
         model = set_initial_estimates(model, {pop_qp1.name: pop_qp1_init * 0.10})
@@ -1583,18 +1619,10 @@ def remove_peripheral_compartment(model: Model):
             from_rate = odes.get_flow(last_peripheral, central)
             assert from_rate is not None
             qp1, vp1 = from_rate.as_numer_denom()
-            full_cl = statements.before_odes.full_expression(cl)
-            full_vc = statements.before_odes.full_expression(vc)
-            full_qp1 = statements.before_odes.full_expression(qp1)
-            full_vp1 = statements.before_odes.full_expression(vp1)
-            pop_cl_candidates = full_cl.free_symbols & set(model.parameters.symbols)
-            pop_cl = pop_cl_candidates.pop()
-            pop_vc_candidates = full_vc.free_symbols & set(model.parameters.symbols)
-            pop_vc = pop_vc_candidates.pop()
-            pop_qp1_candidates = full_qp1.free_symbols & set(model.parameters.symbols)
-            pop_qp1 = pop_qp1_candidates.pop()
-            pop_vp1_candidates = full_vp1.free_symbols & set(model.parameters.symbols)
-            pop_vp1 = pop_vp1_candidates.pop()
+            pop_cl = _find_noncov_theta(model, cl)
+            pop_vc = _find_noncov_theta(model, vc)
+            pop_qp1 = _find_noncov_theta(model, qp1)
+            pop_vp1 = _find_noncov_theta(model, vp1)
             pop_vc_init = model.parameters[pop_vc].init
             pop_cl_init = model.parameters[pop_cl].init
             pop_qp1_init = model.parameters[pop_qp1].init
@@ -1609,18 +1637,10 @@ def remove_peripheral_compartment(model: Model):
             from2_rate = odes.get_flow(last_peripheral, central)
             assert from2_rate is not None
             qp2, vp2 = from2_rate.as_numer_denom()
-            full_qp2 = statements.before_odes.full_expression(qp2)
-            full_vp2 = statements.before_odes.full_expression(vp2)
-            full_qp1 = statements.before_odes.full_expression(qp1)
-            full_vp1 = statements.before_odes.full_expression(vp1)
-            pop_qp2_candidates = full_qp2.free_symbols & set(model.parameters.symbols)
-            pop_qp2 = pop_qp2_candidates.pop()
-            pop_vp2_candidates = full_vp2.free_symbols & set(model.parameters.symbols)
-            pop_vp2 = pop_vp2_candidates.pop()
-            pop_qp1_candidates = full_qp1.free_symbols & set(model.parameters.symbols)
-            pop_qp1 = pop_qp1_candidates.pop()
-            pop_vp1_candidates = full_vp1.free_symbols & set(model.parameters.symbols)
-            pop_vp1 = pop_vp1_candidates.pop()
+            pop_qp2 = _find_noncov_theta(model, qp2)
+            pop_vp2 = _find_noncov_theta(model, vp2)
+            pop_qp1 = _find_noncov_theta(model, qp1)
+            pop_vp1 = _find_noncov_theta(model, vp1)
             pop_qp2_init = model.parameters[pop_qp2].init
             pop_vp2_init = model.parameters[pop_vp2].init
             pop_qp1_init = model.parameters[pop_qp1].init

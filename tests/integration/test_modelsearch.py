@@ -215,6 +215,7 @@ def test_summary_individuals(tmp_path, testdata):
         assert summary is not None
         assert tuple(summary.columns) == columns
         for column in columns:
+            # Cannot check that all are non-na because some model runs fail
             assert summary[column].notna().any()
         assert summary['dofv_vs_parent'].equals(
             summary.apply(
