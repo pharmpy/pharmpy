@@ -103,7 +103,7 @@ def _m3_m4_method(model, lloq, method):
     if blq_type == 'lloq':
         is_above_lloq = sympy.GreaterThan(symb_dv, blq_symb)
     else:
-        is_above_lloq = sympy.Equality(blq_symb, 1)
+        is_above_lloq = sympy.Equality(blq_symb, 0)
 
     assignments = [sd]
 

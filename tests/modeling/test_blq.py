@@ -115,7 +115,7 @@ def test_transform_blq_different_lloq(load_model_for_test, testdata):
 
     model_blq_col = transform_blq(model_blq)
 
-    assert 'BLQ.EQ.1' in model_blq_col.model_code
+    assert 'BLQ.EQ.0' in model_blq_col.model_code
 
     df_lloq = model.dataset
     df_lloq['LLOQ'] = np.random.random(df_lloq.shape[0])
