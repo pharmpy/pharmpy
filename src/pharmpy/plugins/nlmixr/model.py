@@ -603,7 +603,7 @@ def verification(
 
     # Combine the two based on ID and time
     print_step("Creating result comparison table...")
-    combined_result = compare_models(nonmem_model, nlmixr_model, error = error, ipred_diff = ipred_diff)
+    combined_result = compare_models(nonmem_model, nlmixr_model, error=error, ipred_diff=ipred_diff)
 
     print_step("DONE")
     if return_comp is True:
@@ -614,20 +614,25 @@ def verification(
         else:
             return False
 
-def compare_models(model_1, model_2, error = 10**-3, ipred_diff = False):
+
+def compare_models(model_1, model_2, error=10**-3, ipred_diff=False):
     assert model_1.modelfit_results.predictions is not None
     assert model_2.modelfit_results.predictions is not None
-    
+
     mod1 = model_1
     mod1_type = str(type(mod1)).split(".")[2]
     mod2 = model_2
     mod2_type = str(type(mod2)).split(".")[2]
-    
+
     nm_to_r = False
-    if (mod1_type == "nonmem" and mod2_type != "nonmem" or
-        mod2_type == "nonmem" and mod1_type != "nonmem"):
+    if (
+        mod1_type == "nonmem"
+        and mod2_type != "nonmem"
+        or mod2_type == "nonmem"
+        and mod1_type != "nonmem"
+    ):
         nm_to_r = True
-    
+
     mod1 = mod1.replace(dataset=mod1.dataset.reset_index())
     mod2 = mod2.replace(dataset=mod2.dataset.reset_index())
 
@@ -642,19 +647,19 @@ def compare_models(model_1, model_2, error = 10**-3, ipred_diff = False):
                 mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list()
             )
             predictions = predictions.set_index(["ID", "TIME"])
-            mod1 = mod1.replace(modelfit_results = ModelfitResults(predictions = predictions))
+            mod1 = mod1.replace(modelfit_results=ModelfitResults(predictions=predictions))
         if mod2_type == "nonmem":
             predictions = mod2.modelfit_results.predictions.reset_index()
             predictions = predictions.drop(
                 mod2.dataset[~mod2.dataset["EVID"].isin([0, 2])].index.to_list()
             )
             predictions = predictions.set_index(["ID", "TIME"])
-            mod2 = mod2.replace(modelfit_results = ModelfitResults(predictions = predictions))
-    
+            mod2 = mod2.replace(modelfit_results=ModelfitResults(predictions=predictions))
+
     mod1_results = mod1.modelfit_results.predictions.copy()
-    
+
     mod2_results = mod2.modelfit_results.predictions.copy()
-    
+
     pred = False
     ipred = False
     for p in mod1_results.columns:
@@ -706,6 +711,7 @@ def compare_models(model_1, model_2, error = 10**-3, ipred_diff = False):
     print(
         combined_result[f'{final}_DIFF'].describe()[["mean", "75%", "max"]].to_string(), end="\n\n"
     )
+
 
 def print_step(s: str) -> None:
     """

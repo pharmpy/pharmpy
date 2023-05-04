@@ -163,12 +163,15 @@ class error:
             etas = [sympy.Symbol(i) for i in self.model.random_variables.etas.names]
             accepted_symbols.update(etas)
             for symbol in self.expr.free_symbols:
-                dependent = [i for i in find_aliases(symbol, self.model) if i not in accepted_symbols]
+                dependent = [
+                    i for i in find_aliases(symbol, self.model) if i not in accepted_symbols
+                ]
                 for symbol in dependent:
                     if is_number(symbol, self.model):
                         accepted_symbols.update([symbol])
                     else:
                         self.dependencies.add(symbol)
+
 
 def is_number(expression: sympy.Expr, model: pharmpy.model.Model) -> bool:
     alias = find_aliases(expression, model)
@@ -178,6 +181,7 @@ def is_number(expression: sympy.Expr, model: pharmpy.model.Model) -> bool:
             if a_assign.expression.is_number:
                 return True
     return False
+
 
 def full_expression(expression: sympy.Expr, model: pharmpy.model.Model) -> sympy.Expr:
     """
