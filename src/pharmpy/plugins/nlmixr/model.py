@@ -531,7 +531,9 @@ def verification(
     error: float = 10**-3,
     return_comp: bool = False,
     fix_eta: bool = True,
-    ipred_diff: bool = False,
+    force_ipred: bool = False,
+    force_pred: bool = False,
+    ignore_print = False
 ) -> Union[bool, pd.DataFrame]:
     """
     Verify that a model inputet in NONMEM format can be correctly translated to
@@ -539,7 +541,8 @@ def verification(
     given a user specified error margin (defailt is 0.001).
 
     Comparison will be done on PRED values as default unless only IPRED values
-    are present or if ipred_diff is set to True.
+    are present or if force_ipred is set to True. Can also force to use pred values
+    which will cause an error if only ipred values are present.
 
     Parameters
     ----------
@@ -553,8 +556,10 @@ def verification(
         Choose to return table of predictions. The default is False.
     fix_eta : bool, optional
         Decide if NONMEM estimated ETAs are to be used. The default is True.
-    ipred_diff : bool, optional
+    force_ipred : bool, optional
         Force to use IPRED for calculating differences instead of PRED. The default is False.
+    force_pred : bool, optional
+        Force to use PRED for calculating differences. The default is False.
 
     Returns
     -------
@@ -568,11 +573,13 @@ def verification(
 
     # Save results from the nonmem model
     if nonmem_model.modelfit_results is None:
-        print_step("Calculating NONMEM predictions... (this might take a while)")
+        if not ignore_print:
+            print_step("Calculating NONMEM predictions... (this might take a while)")
         nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
     else:
         if nonmem_model.modelfit_results.predictions is None:
-            print_step("Calculating NONMEM predictions... (this might take a while)")
+            if not ignore_print:
+                print_step("Calculating NONMEM predictions... (this might take a while)")
             nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
 
     # Set a tool option to fix theta values when running nlmixr
@@ -585,7 +592,8 @@ def verification(
 
     # Update the nonmem model with new estimates
     # and convert to nlmixr
-    print_step("Converting NONMEM model to nlmixr2...")
+    if not ignore_print:
+        print_step("Converting NONMEM model to nlmixr2...")
     if fix_eta is True:
         nlmixr_model = convert_model(
             update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates),
@@ -597,15 +605,23 @@ def verification(
         )
 
     # Execute the nlmixr model
-    print_step("Executing nlmixr2 model... (this might take a while)")
+    if not ignore_print:
+        print_step("Executing nlmixr2 model... (this might take a while)")
 
     nlmixr_model = execute_model(nlmixr_model, db_name)
 
     # Combine the two based on ID and time
-    print_step("Creating result comparison table...")
-    combined_result = compare_models(nonmem_model, nlmixr_model, error=error, ipred_diff=ipred_diff)
-
-    print_step("DONE")
+    if not ignore_print:
+        print_step("Creating result comparison table...")
+    combined_result = compare_models(nonmem_model, 
+                                     nlmixr_model, 
+                                     error=error, 
+                                     force_ipred=force_ipred,
+                                     force_pred=force_pred,
+                                     ignore_print=ignore_print)
+    
+    if not ignore_print:
+        print_step("DONE")
     if return_comp is True:
         return combined_result
     else:
@@ -615,7 +631,10 @@ def verification(
             return False
 
 
-def compare_models(model_1, model_2, error=10**-3, ipred_diff=False):
+def compare_models(model_1, model_2, error=10**-3,
+                   force_ipred=False,
+                   force_pred=False,
+                   ignore_print = False):
     assert model_1.modelfit_results.predictions is not None
     assert model_2.modelfit_results.predictions is not None
 
@@ -662,24 +681,46 @@ def compare_models(model_1, model_2, error=10**-3, ipred_diff=False):
 
     pred = False
     ipred = False
-    for p in mod1_results.columns:
-        if p == "PRED":
+    #---
+    if force_pred:
+        if "PRED" in mod1_results.columns:
             pred = True
+            p = "PRED"
+            assert p in mod2_results.columns
             mod1_results.rename(columns={p: f'PRED_{mod1_type}'}, inplace=True)
             mod2_results.rename(columns={p: f'PRED_{mod2_type}'}, inplace=True)
-        elif p == "IPRED" or p == "CIPREDI":
+    elif force_ipred:
+        if "IPRED" in mod1_results.columns:
+            p = "IPRED"    
             ipred = True
-            mod1_results.rename(columns={p: f'IPRED_{mod1_type}'}, inplace=True)
-            if p == "CIPREDI":
-                p = "IPRED"
+            assert p in mod2_results.columns
+            mod1_results.rename(columns={p: f'{p}_{mod1_type}'}, inplace=True)
             mod2_results.rename(columns={p: f'IPRED_{mod2_type}'}, inplace=True)
-        else:
-            print(
-                f"Unknown prediction value {p}. Currently only 'PRED' and 'IPRED' are supported and this is ignored"
-            )
+        elif "CIPREDI" in mod1_results.columns:
+            p = "CIPREDI"    
+            ipred = True
+            assert p in mod2_results.columns
+            mod1_results.rename(columns={p: f'{p}_{mod1_type}'}, inplace=True)
+            mod2_results.rename(columns={p: f'IPRED_{mod2_type}'}, inplace=True)
+    else:
+        for p in mod1_results.columns:
+            if p == "PRED":
+                pred = True
+                assert p in mod2_results.columns
+                mod1_results.rename(columns={p: f'PRED_{mod1_type}'}, inplace=True)
+                mod2_results.rename(columns={p: f'PRED_{mod2_type}'}, inplace=True)
+            elif (p == "IPRED" or p == "CIPREDI") and "PRED" not in mod1_results.columns:
+                ipred = True
+                assert "IPRED" in mod2_results.columns or "CIPREDI" in mod2_results.columns
+                mod1_results.rename(columns={p: f'{p}_{mod1_type}'}, inplace=True)
+                if "IPRED" in mod2_results.columns:
+                    mod2_results.rename(columns={p: f'IPRED_{mod2_type}'}, inplace=True)
+                else:
+                    mod2_results.rename(columns={p: f'CIPREDI_{mod2_type}'}, inplace=True)
+    #---
 
     if not (pred or ipred):
-        print("No known prediction value was found. Please use 'PRED' or 'IPRED")
+        print("No comparable prediction value was found. Please use 'PRED' or 'IPRED")
         return False
 
     combined_result = mod1_results
@@ -696,21 +737,33 @@ def compare_models(model_1, model_2, error=10**-3, ipred_diff=False):
         )
 
     combined_result["PASS/FAIL"] = "PASS"
-    print("Differences in population predicted values")
+    if not ignore_print:
+        print("Differences in population predicted values")
     if (pred and ipred) or (pred and not ipred):
-        if ipred_diff:
-            print("Using PRED values for final comparison")
+        if force_ipred:
+            if not ignore_print:
+                print("Using IPRED values for final comparison")
             final = "IPRED"
         else:
-            print("Using PRED values for final comparison")
+            if not ignore_print:
+                print("Using PRED values for final comparison")
             final = "PRED"
     elif ipred and not pred:
-        print("Using IPRED values for final comparison")
+        if force_ipred:
+            if not ignore_print:        
+                print("Using IPRED values for final comparison")
+        else:
+            if not ignore_print:        
+                print("Using IPRED values instead")
         final = "IPRED"
+        
     combined_result.loc[combined_result[f'{final}_DIFF'] > error, "PASS/FAIL"] = "FAIL"
-    print(
-        combined_result[f'{final}_DIFF'].describe()[["mean", "75%", "max"]].to_string(), end="\n\n"
-    )
+    if not ignore_print:
+        print(
+            combined_result[f'{final}_DIFF'].describe()[["mean", "75%", "max"]].to_string(), end="\n\n"
+        )
+    
+    return combined_result
 
 
 def print_step(s: str) -> None:

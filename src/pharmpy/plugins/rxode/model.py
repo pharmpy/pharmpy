@@ -214,7 +214,7 @@ def verification(
     db_name: str,
     error: float = 10**-3,
     return_comp: bool = False,
-    fix_eta: bool = True,
+    ignore_print = False
 ) -> Union[bool, pd.DataFrame]:
     nonmem_model = model
 
@@ -224,16 +224,14 @@ def verification(
 
     # Save results from the nonmem model
     if nonmem_model.modelfit_results is None:
-        print_step("Calculating NONMEM predictions... (this might take a while)")
+        if not ignore_print:
+            print_step("Calculating NONMEM predictions... (this might take a while)")
         nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
-        nonmem_results = nonmem_model.modelfit_results.predictions.copy()
     else:
         if nonmem_model.modelfit_results.predictions is None:
-            print_step("Calculating NONMEM predictions... (this might take a while)")
+            if not ignore_print:
+                print_step("Calculating NONMEM predictions... (this might take a while)")
             nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
-            nonmem_results = nonmem_model.modelfit_results.predictions.copy()
-        else:
-            nonmem_results = nonmem_model.modelfit_results.predictions.copy()
 
     param_estimates = nonmem_model.modelfit_results.parameter_estimates
 
@@ -247,65 +245,25 @@ def verification(
 
     # Update the nonmem model with new estimates
     # and convert to nlmixr
-    print_step("Converting NONMEM model to RxODE...")
+    if not ignore_print:
+        print_step("Converting NONMEM model to RxODE...")
     rxode_model = convert_model(update_inits(nonmem_model, param_estimates))
 
     # Execute the nlmixr model
-    print_step("Executing RxODE model... (this might take a while)")
+    if not ignore_print:
+        print_step("Executing RxODE model... (this might take a while)")
 
     rxode_model = execute_model(rxode_model, db_name)
-    rxode_results = rxode_model.modelfit_results.predictions
-
-    pred = False
-    ipred = False
-    for p in nonmem_model.modelfit_results.predictions.columns:
-        if p == "PRED":
-            pred = True
-            nonmem_results.rename(columns={p: 'PRED_NONMEM'}, inplace=True)
-            rxode_results.rename(columns={p: 'PRED_RXODE'}, inplace=True)
-        else:
-            print(
-                f"Unknown prediction value {p}. Currently only 'PRED' are supported and this is ignored"
-            )
-
-    if not (pred or ipred):
-        print("No known prediction value was found. Please use 'PRED' or 'IPRED")
-        return False
-
-    # Combine the two based on ID and time
-    print_step("Creating result comparison table...")
-    nonmem_model = nonmem_model.replace(dataset=nonmem_model.dataset.reset_index())
-
-    if "EVID" not in nonmem_model.dataset.columns:
-        nonmem_model = add_evid(nonmem_model)
-    nonmem_results = nonmem_results.reset_index()
-    nonmem_results = nonmem_results.drop(
-        nonmem_model.dataset[~nonmem_model.dataset["EVID"].isin([0, 2])].index.to_list()
-    )
-    nonmem_results = nonmem_results.set_index(["ID", "TIME"])
-
-    combined_result = nonmem_results
-    if pred:
-        combined_result['PRED_RXODE'] = rxode_results['PRED_RXODE'].to_list()
-        # Add difference between the models
-        combined_result['PRED_DIFF'] = abs(
-            combined_result['PRED_NONMEM'] - combined_result['PRED_RXODE']
-        )
-
-    combined_result["PASS/FAIL"] = "PASS"
-    print("Differences in population predicted values")
-    if (pred and ipred) or (pred and not ipred):
-        print("Using PRED values for final comparison")
-        final = "PRED"
-    elif ipred and not pred:
-        print("Using IPRED values for final comparison")
-        final = "IPRED"
-    combined_result.loc[combined_result[f'{final}_DIFF'] > error, "PASS/FAIL"] = "FAIL"
-    print(
-        combined_result[f'{final}_DIFF'].describe()[["mean", "75%", "max"]].to_string(), end="\n\n"
-    )
-
-    print_step("DONE")
+    
+    from pharmpy.plugins.nlmixr.model import compare_models
+    combined_result = compare_models(nonmem_model, 
+                                     rxode_model, 
+                                     error=error, 
+                                     force_pred=True,
+                                     ignore_print=ignore_print)
+    
+    if not ignore_print:
+        print_step("DONE")
     if return_comp is True:
         return combined_result
     else:
@@ -364,7 +322,8 @@ def create_model(cg, model):
         add_ode(model, cg)
 
     # Add bioavailability statements
-    add_bioavailability(model, cg)
+    if model.statements.ode_system is not None:
+        add_bioavailability(model, cg)
 
     # Add statements after ODE
     add_true_statements(model, cg, model.statements.after_odes)
@@ -372,7 +331,10 @@ def create_model(cg, model):
 
 def add_true_statements(model, cg, statements):
     for s in statements:
-        if s.symbol not in get_bioavailability(model).values():
+        if (model.statements.ode_system is not None
+        and s.symbol in get_bioavailability(model).values()):
+            pass
+        else:
             expr = s.expression
             expr = convert_eps_to_sigma(expr, model)
             if expr.is_Piecewise:
