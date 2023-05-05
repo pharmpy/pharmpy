@@ -73,7 +73,7 @@ python-dateutil==2.8.2
 pytz==2023.3
 pywin32>=302,!=304; sys_platform == 'win32' and platform_python_implementation != 'PyPy'
 PyYAML==6.0
-requests==2.29.0
+requests==2.30.0
 pyzmq==25.0.2
 rich==13.3.5
 scipy==1.10.1
