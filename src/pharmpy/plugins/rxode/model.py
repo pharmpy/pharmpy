@@ -214,7 +214,7 @@ def verification(
     db_name: str,
     error: float = 10**-3,
     return_comp: bool = False,
-    ignore_print = False
+    ignore_print=False,
 ) -> Union[bool, pd.DataFrame]:
     nonmem_model = model
 
@@ -254,14 +254,13 @@ def verification(
         print_step("Executing RxODE model... (this might take a while)")
 
     rxode_model = execute_model(rxode_model, db_name)
-    
+
     from pharmpy.plugins.nlmixr.model import compare_models
-    combined_result = compare_models(nonmem_model, 
-                                     rxode_model, 
-                                     error=error, 
-                                     force_pred=True,
-                                     ignore_print=ignore_print)
-    
+
+    combined_result = compare_models(
+        nonmem_model, rxode_model, error=error, force_pred=True, ignore_print=ignore_print
+    )
+
     if not ignore_print:
         print_step("DONE")
     if return_comp is True:
@@ -331,8 +330,10 @@ def create_model(cg, model):
 
 def add_true_statements(model, cg, statements):
     for s in statements:
-        if (model.statements.ode_system is not None
-        and s.symbol in get_bioavailability(model).values()):
+        if (
+            model.statements.ode_system is not None
+            and s.symbol in get_bioavailability(model).values()
+        ):
             pass
         else:
             expr = s.expression

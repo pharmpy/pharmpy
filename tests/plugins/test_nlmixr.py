@@ -21,21 +21,21 @@ def test_pheno_error_model(testdata, load_model_for_test):
     assert "prop_error <- SIGMA_1_1" in model.model_code
     assert "Y ~ add(add_error) + prop(prop_error)" in model.model_code
 
+def test_prop_alias(testdata, load_model_for_test):
+    nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = convert_model(nmmodel)
+    assert "prop_error <- RUV_PROP" in model.model_code
 
 def test_remove_sigma(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
     model = convert_model(nmmodel)
     assert "SIGMA_1_1" not in model.model_code
 
+
 def test_sigma(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = convert_model(nmmodel)
-    assert "SIGMA_1_1 <- 0.1" in model.model_code
-
-def test_multi_res_terms(testdata, load_model_for_test):
-    nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    model = convert_model(nmmodel)
-    assert "CONC + CONC" in model.model_code
+    assert "RUV_PROP <- 0.1" in model.model_code
 
 
 def test_dataset_modifications(testdata, load_model_for_test):
