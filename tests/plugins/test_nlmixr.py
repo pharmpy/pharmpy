@@ -27,9 +27,15 @@ def test_remove_sigma(testdata, load_model_for_test):
     model = convert_model(nmmodel)
     assert "SIGMA_1_1" not in model.model_code
 
+def test_sigma(testdata, load_model_for_test):
+    nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = convert_model(nmmodel)
+    assert "SIGMA_1_1 <- 0.1" in model.model_code
 
-def test_update_estimates(testdata, load_model_for_test):
-    pass
+def test_multi_res_terms(testdata, load_model_for_test):
+    nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = convert_model(nmmodel)
+    assert "CONC + CONC" in model.model_code
 
 
 def test_dataset_modifications(testdata, load_model_for_test):
