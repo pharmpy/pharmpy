@@ -21,10 +21,12 @@ def test_pheno_error_model(testdata, load_model_for_test):
     model = convert_model(mmodel)
     assert "Y <- F + SIGMA_1_1*W" in model.model_code
 
+
 def test_sigma(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = convert_model(nmmodel)
     assert "RUV_PROP ~ 0.1" in model.model_code
+
 
 def test_dataset_modifications(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')

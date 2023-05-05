@@ -2,7 +2,7 @@ import pathlib
 
 import pharmpy.config as config
 
-from .model import Model, convert_model, parse_modelfit_results, verification, execute_model
+from .model import Model, convert_model, execute_model, parse_modelfit_results, verification
 
 r"""
 .. list-table:: Options for the nlmixr plugin
