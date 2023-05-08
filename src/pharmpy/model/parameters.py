@@ -119,7 +119,7 @@ class Parameter(Immutable):
         return self._init
 
     def __hash__(self):
-        return hash(self.name)
+        return hash((self.name, self.init, self.lower, self.upper, self.fix))
 
     def __eq__(self, other):
         """Two parameters are equal if they have the same name, init and constraints"""
