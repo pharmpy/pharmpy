@@ -61,7 +61,7 @@ class res_error_term:
                         sigma = convert_eps_to_sigma(symbol, self.model)
                         if self.model.parameters[str(sigma)].init == 1.0:
                             if self.model.parameters[str(sigma)].fix:
-                                term.subs(factor, 1)
+                                term = term.subs(factor, 1)
                         if factor != symbol:
                             sigma_alias = factor
                         else:
@@ -160,10 +160,24 @@ class error:
             accepted_symbols = set([self.sigma, self.sigma_alias])
             thetas = get_thetas(self.model).symbols
             accepted_symbols.update(thetas)
+            etas = [sympy.Symbol(i) for i in self.model.random_variables.etas.names]
+            accepted_symbols.update(etas)
             for symbol in self.expr.free_symbols:
-                if symbol not in accepted_symbols:
-                    # TODO : also aid  aliases for all dependencies
-                    self.dependencies.add(symbol)
+                if not any([i in accepted_symbols for i in find_aliases(symbol, self.model)]):
+                    if is_number(symbol, self.model):
+                        accepted_symbols.update([symbol])
+                    else:
+                        self.dependencies.add(symbol)
+
+
+def is_number(symbol: sympy.Expr, model: pharmpy.model.Model) -> bool:
+    alias = find_aliases(symbol, model)
+    for a in alias:
+        if a not in model.random_variables.free_symbols:
+            a_assign = model.statements.find_assignment(a)
+            if a_assign.expression.is_number:
+                return True
+    return False
 
 
 def full_expression(expression: sympy.Expr, model: pharmpy.model.Model) -> sympy.Expr:
