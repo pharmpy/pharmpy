@@ -14,6 +14,7 @@ from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.modeling import (
     drop_columns,
     get_bioavailability,
+    get_lag_times,
     get_omegas,
     get_sigmas,
     get_thetas,
@@ -22,7 +23,12 @@ from pharmpy.modeling import (
 )
 from pharmpy.plugins.nlmixr.error_model import convert_eps_to_sigma
 from pharmpy.plugins.nlmixr.model import add_evid
-from pharmpy.plugins.nlmixr.model_block import add_bioavailability, add_ode, convert_eq
+from pharmpy.plugins.nlmixr.model_block import (
+    add_bioavailability,
+    add_lag_times,
+    add_ode,
+    convert_eq,
+)
 from pharmpy.results import ModelfitResults
 
 
@@ -323,6 +329,7 @@ def create_model(cg, model):
     # Add bioavailability statements
     if model.statements.ode_system is not None:
         add_bioavailability(model, cg)
+        add_lag_times(model, cg)
 
     # Add statements after ODE
     add_true_statements(model, cg, model.statements.after_odes)
@@ -330,9 +337,9 @@ def create_model(cg, model):
 
 def add_true_statements(model, cg, statements):
     for s in statements:
-        if (
-            model.statements.ode_system is not None
-            and s.symbol in get_bioavailability(model).values()
+        if model.statements.ode_system is not None and (
+            s.symbol in get_bioavailability(model).values()
+            or s.symbol in get_lag_times(model).values()
         ):
             pass
         else:

@@ -27,7 +27,7 @@ from pharmpy.workflows.log import Log
 
 from .error_model import res_error_term
 from .ini import add_eta, add_sigma, add_theta
-from .model_block import add_bioavailability, add_ode, add_statements
+from .model_block import add_bioavailability, add_lag_times, add_ode, add_statements
 from .sanity_checks import check_model
 
 
@@ -214,6 +214,7 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     # Add bioavailability statements
     if model.statements.ode_system is not None:
         add_bioavailability(model, cg)
+        add_lag_times(model, cg)
 
     # Add statements after ODEs
     if len(model.statements.after_odes) == 0:

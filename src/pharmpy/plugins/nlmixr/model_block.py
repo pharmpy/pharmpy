@@ -5,7 +5,7 @@ import pharmpy.model
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model import Assignment
-from pharmpy.modeling import get_bioavailability
+from pharmpy.modeling import get_bioavailability, get_lag_times
 
 from .error_model import res_error_term
 from .name_mangle import name_mangle
@@ -97,9 +97,9 @@ def add_statements(
                     cg.add(f'add_error <- {dv_term.add.expr}')
                     cg.add(f'prop_error <- {dv_term.prop.expr}')
 
-            elif (
-                model.statements.ode_system is not None
-                and s.symbol in get_bioavailability(model).values()
+            elif model.statements.ode_system is not None and (
+                s.symbol in get_bioavailability(model).values()
+                or s.symbol in get_lag_times(model).values()
             ):
                 pass
             else:
@@ -238,6 +238,13 @@ def add_bioavailability(model: pharmpy.model.Model, cg: CodeGenerator):
     for comp, symbol in bio.items():
         symbol_value = model.statements.find_assignment(symbol).expression
         cg.add(f'f(A_{comp}) <- {symbol_value}')
+
+
+def add_lag_times(model: pharmpy.model.Model, cg: CodeGenerator):
+    lag = get_lag_times(model)
+    for comp, symbol in lag.items():
+        symbol_value = model.statements.find_assignment(symbol).expression
+        cg.add(f'alag(A_{comp}) <- {symbol_value}')
 
 
 def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
