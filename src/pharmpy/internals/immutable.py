@@ -1,6 +1,5 @@
 from abc import ABC
-from types import MappingProxyType
-from typing import Iterable, Mapping, Tuple, TypeVar, Union, cast
+from typing import Iterator, Mapping, TypeVar
 
 
 class Immutable(ABC):
@@ -15,20 +14,24 @@ K = TypeVar('K')
 V = TypeVar('V')
 
 
-def frozenmapping(*args: Union[Mapping[K, V], Iterable[Tuple[K, V]]], **kwargs: V) -> Mapping[K, V]:
-    """Returns a frozen 'dict'. Missing a hash function at the moment."""
+class frozenmapping(Mapping[K, V]):
+    def __init__(self, mapping):
+        self._mapping = mapping
+        self._hash = None
 
-    if len(args) >= 2:
-        # NOTE We make sure any call to dict does not raise later
-        raise TypeError(f'frozenmapping expected at most 1 argument, got {len(args)}')
+    def __getitem__(self, key: K) -> V:
+        return self._mapping[key]
 
-    arg = args[0] if args else ()
+    def __iter__(self) -> Iterator[K]:
+        return iter(self._mapping)
 
-    if kwargs or not isinstance(arg, MappingProxyType):
-        return MappingProxyType(dict(arg, **kwargs))
+    def __len__(self) -> int:
+        return len(self._mapping)
 
-    # NOTE MappingProxyType[K, V] is both a Mapping[K, V] and an Iterable[K].
-    # Pyright tries to idenfiy Iterable[Tuple[K, V]] to an input of type
-    # MappingProxyType[Tuple[K, V], Any] which is unfortunately not what we
-    # want.
-    return cast(MappingProxyType, arg)
+    def __repr__(self):
+        return repr(self._mapping)
+
+    def __hash__(self) -> int:
+        if self._hash is None:
+            self._hash = hash(tuple((k, v) for k, v in self._mapping.items()))
+        return self._hash
