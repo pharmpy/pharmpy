@@ -268,6 +268,21 @@ class Model(Immutable):
 
         return True
 
+    def __hash__(self):
+        return hash(
+            (
+                self._parameters,
+                self._random_variables,
+                self._statements,
+                self._dependent_variables,
+                self._observation_transformation,
+                self._estimation_steps,
+                self._initial_individual_estimates,
+                self._datainfo,
+                self._value_type,
+            )
+        )
+
     def __repr__(self):
         return f'<Pharmpy model object {self.name}>'
 

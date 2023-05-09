@@ -225,7 +225,13 @@ def test_pset_replace():
 
 def test_hash():
     p1 = Parameter.create('Y', 9)
-    hash(p1)
+    p2 = Parameter.create('Y', 9, upper=23)
+    assert hash(p1) != hash(p2)
+    p3 = Parameter.create('X', 9)
+    p4 = Parameter.create('Z', 9)
+    pset1 = Parameters((p1, p3))
+    pset2 = Parameters((p1, p4))
+    assert hash(pset1) != hash(pset2)
 
 
 def test_contains():

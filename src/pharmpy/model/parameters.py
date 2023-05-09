@@ -390,6 +390,9 @@ class Parameters(CollectionsSequence, Immutable):
                 return False
         return True
 
+    def __hash__(self):
+        return hash(self._params)
+
     def __repr__(self):
         if len(self) == 0:
             return "Parameters()"

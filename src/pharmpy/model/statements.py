@@ -157,6 +157,9 @@ class Assignment(Statement):
             and self.expression == other.expression
         )
 
+    def __hash__(self):
+        return hash((self.symbol, self.expression))
+
     def __repr__(self):
         expression = sympy.pretty(self.expression)
         lines = [line.rstrip() for line in expression.split('\n')]
@@ -653,6 +656,9 @@ class CompartmentalSystem(ODESystem):
             and nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
             and self.dosing_compartment.dose == other.dosing_compartment.dose
         )
+
+    def __hash__(self):
+        return hash((self._t, self._g))
 
     def get_flow(self, source, destination):
         """Get the rate of flow between two compartments
@@ -1375,16 +1381,25 @@ class Compartment:
     def __eq__(self, other):
         return (
             isinstance(other, Compartment)
-            and self.name == other.name
-            and self.amount == other.amount
-            and self.dose == other.dose
-            and self.input == other.input
-            and self.lag_time == other.lag_time
-            and self.bioavailability == other.bioavailability
+            and self._name == other._name
+            and self._amount == other._amount
+            and self._dose == other._dose
+            and self._input == other._input
+            and self._lag_time == other._lag_time
+            and self._bioavailability == other._bioavailability
         )
 
     def __hash__(self):
-        return hash(self.name)
+        return hash(
+            (
+                self._name,
+                self._amount,
+                self._dose,
+                self._input,
+                self._lag_time,
+                self._bioavailability,
+            )
+        )
 
     def __repr__(self):
         lag = '' if self.lag_time == 0 else f', lag_time={self._lag_time}'
@@ -1486,6 +1501,9 @@ class Bolus(Dose):
             and self._amount == other._amount
             and self._admid == other._admid
         )
+
+    def __hash__(self):
+        return hash((self._amount, self._admid))
 
     def __repr__(self):
         return f'Bolus({self.amount}, admid={self._admid})'
@@ -1617,6 +1635,9 @@ class Infusion(Dose):
             and self._duration == other._duration
             and self._amount == other._amount
         )
+
+    def __hash__(self):
+        return hash((self._admid, self._rate, self._duration, self._amount))
 
     def __repr__(self):
         if self.rate is not None:
@@ -2106,6 +2127,9 @@ class Statements(Sequence, Immutable):
                 if first != second:
                     return False
         return True
+
+    def __hash__(self):
+        return hash(self._statements)
 
     def __repr__(self):
         return '\n'.join([repr(statement) for statement in self])

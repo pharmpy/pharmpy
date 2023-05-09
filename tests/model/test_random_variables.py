@@ -119,6 +119,7 @@ def test_eq():
     assert rvs != rvs2
     rvs3 = RandomVariables.create([dist1, dist3])
     assert rvs != rvs3
+    assert hash(rvs) != hash(rvs2)
 
 
 def test_add():
@@ -634,6 +635,7 @@ def test_variability_level():
     assert new.name == 'IIV'
     assert new.reference is True
     assert new.group == 'L1'
+    assert hash(level) != hash(new)
 
     new = level.replace(group='L1', reference=False)
     assert new.name == 'IIV'
@@ -651,6 +653,7 @@ def test_variability_hierarchy():
         levs[1].name
     lev2 = VariabilityLevel('CENTER', reference=False, group='CENTER')
     levs2 = VariabilityHierarchy((lev2, lev1))
+    assert hash(levs) != hash(levs2)
     assert len(levs2) == 2
     lev3 = VariabilityLevel('PLANET', reference=False, group='PLANET')
     levs3 = VariabilityHierarchy((lev3, lev2, lev1))

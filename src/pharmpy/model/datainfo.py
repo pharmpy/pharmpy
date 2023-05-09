@@ -226,6 +226,21 @@ class ColumnInfo(Immutable):
             and self._datatype == other._datatype
         )
 
+    def __hash__(self):
+        return hash(
+            (
+                self._name,
+                self._type,
+                self._unit,
+                self._scale,
+                self._continuous,
+                self._categories,
+                self._drop,
+                self._datatype,
+                self._descriptor,
+            )
+        )
+
     @property
     def name(self):
         """Column name"""
@@ -537,6 +552,9 @@ class DataInfo(Sequence, Immutable):
             if col1 != col2:
                 return False
         return True
+
+    def __hash__(self):
+        return hash(self._columns)
 
     def __len__(self):
         return len(self._columns)

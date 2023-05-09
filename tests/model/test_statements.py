@@ -95,6 +95,29 @@ def test_eq_modelstatements(load_model_for_test, testdata):
     assert s1 != s2
 
 
+def test_hash():
+    s1 = Assignment(S('KA'), S('X') + S('Y'))
+    s2 = Assignment(S('KA'), S('X') + S('Z'))
+    assert hash(s1) != hash(s2)
+
+    b1 = Bolus(S('AMT'))
+    b2 = Bolus(S('AMT'), admid=2)
+    assert hash(b1) != hash(b2)
+
+    i1 = Infusion("AMT", rate="R1")
+    i2 = Infusion("AMT", rate="R2")
+    assert hash(i1) != hash(i2)
+
+    c1 = Compartment.create("DEPOT", lag_time="ALAG")
+    c2 = Compartment.create("DEPOT")
+    assert hash(c1) != hash(c2)
+    assert hash(c1) != hash(output)
+
+    st1 = Statements((s1, s2))
+    st2 = Statements((s1,))
+    assert hash(st1) != hash(st2)
+
+
 def test_add():
     s1 = Assignment(S('KA'), S('X') + S('Y'))
     s2 = Assignment(S('Z'), sympy.Integer(23) + S('M'))
@@ -317,9 +340,10 @@ def test_builder():
     assert cm.find_compartment('DEPOT').dose is None
     assert cm.central_compartment.dose == dose
     cb.move_dose(central, depot)
-    cm = CompartmentalSystem(cb)
-    assert cm.find_compartment('DEPOT').dose == dose
-    assert cm.central_compartment.dose is None
+    cm2 = CompartmentalSystem(cb)
+    assert cm2.find_compartment('DEPOT').dose == dose
+    assert cm2.central_compartment.dose is None
+    assert hash(cm) != hash(cm2)
 
 
 def test_infusion_repr():

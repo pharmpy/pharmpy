@@ -274,6 +274,26 @@ class EstimationStep(Immutable):
             and self.tool_options == other.tool_options
         )
 
+    def __hash__(self):
+        return hash(
+            (
+                self._method,
+                self._interaction,
+                self._cov,
+                self._evaluation,
+                self._maximum_evaluations,
+                self._laplace,
+                self._isample,
+                self._niter,
+                self._auto,
+                self._keep_every_nth_iter,
+                self._solver,
+                self._solver_rtol,
+                self._solver_atol,
+                self._tool_options,
+            )
+        )
+
     def __repr__(self):
         return (
             f'EstimationStep("{self.method}", interaction={self.interaction}, '
@@ -347,6 +367,9 @@ class EstimationSteps(Sequence, Immutable):
             if s1 != s2:
                 return False
         return True
+
+    def __hash__(self):
+        return hash(self._steps)
 
     def to_dataframe(self):
         """Convert to DataFrame

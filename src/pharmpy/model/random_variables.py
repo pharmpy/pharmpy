@@ -61,6 +61,9 @@ class VariabilityLevel(Immutable):
             and self._group == other._group
         )
 
+    def __hash__(self):
+        return hash((self._name, self._reference, self._group))
+
     @property
     def name(self) -> str:
         """Name of the variability level"""
@@ -124,6 +127,9 @@ class VariabilityHierarchy(Immutable):
                 if l1 != l2:
                     return False
             return True
+
+    def __hash__(self):
+        return hash(self._levels)
 
     def _lookup(self, ind: Union[int, str, VariabilityLevel]) -> VariabilityLevel:
         # Lookup one index
@@ -354,6 +360,9 @@ class RandomVariables(CollectionsSequence, Immutable):
                 and self._epsilon_levels == other._epsilon_levels
             )
         return False
+
+    def __hash__(self):
+        return hash((self._dists, self._eta_levels, self._epsilon_levels))
 
     def _lookup_rv(self, ind):
         if isinstance(ind, sympy.Symbol):
