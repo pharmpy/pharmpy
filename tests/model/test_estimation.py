@@ -91,13 +91,13 @@ def test_add():
     assert len(conc) == 4
 
 
-# def test_hash():
-#    a = EstimationStep.create('foce')
-#    b = EstimationStep.create('fo')
-#    assert hash(a) != hash(b)
-#    s1 = EstimationSteps.create([a, b])
-#    s2 = EstimationSteps.create([a])
-#    assert hash(s1) != hash(s2)
+def test_hash():
+    a = EstimationStep.create('foce')
+    b = EstimationStep.create('fo')
+    assert hash(a) != hash(b)
+    s1 = EstimationSteps.create([a, b])
+    s2 = EstimationSteps.create([a])
+    assert hash(s1) != hash(s2)
 
 
 def test_getitem():
