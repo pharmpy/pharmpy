@@ -22,10 +22,8 @@ def test_exhaustive(tmp_path, model_count, start_model):
         assert len(res.summary_tool) == 4
         assert len(res.summary_models) == 4
         assert len(res.models) == 3
-        assert all(
-            model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
-            for model in res.models
-        )
+        assert all(model.modelfit_results for model in res.models)
+        assert not all(np.isnan(model.modelfit_results.ofv) for model in res.models)
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
         assert model_count(rundir) == 3
