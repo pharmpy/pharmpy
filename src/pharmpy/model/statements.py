@@ -160,6 +160,15 @@ class Assignment(Statement):
     def __hash__(self):
         return hash((self.symbol, self.expression))
 
+    def to_dict(self):
+        return {'symbol': sympy.srepr(self.symbol), 'expression': sympy.srepr(self.expression)}
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            symbol=sympy.parse_expr(d['symbol']), expression=sympy.parse_expr(d['expression'])
+        )
+
     def __repr__(self):
         expression = sympy.pretty(self.expression)
         lines = [line.rstrip() for line in expression.split('\n')]
@@ -1401,6 +1410,37 @@ class Compartment:
             )
         )
 
+    def to_dict(self):
+        if self._dose is None:
+            dose = None
+        else:
+            dose = self._dose.to_dict()
+        return {
+            'name': self._name,
+            'amount': sympy.srepr(self._amount),
+            'dose': dose,
+            'input': sympy.srepr(self._input),
+            'lag_time': sympy.srepr(self._lag_time),
+            'bioavailability': sympy.srepr(self._bioavailability),
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        if d['dose'] is None:
+            dose = None
+        elif d['dose']['class'] == 'Bolus':
+            dose = Bolus.from_dict(d['dose'])
+        else:
+            dose = Infusion.from_dict(d['dose'])
+        return cls(
+            name=d['name'],
+            amount=sympy.parse_expr(d['amount']),
+            dose=dose,
+            input=sympy.parse_expr(d['input']),
+            lag_time=sympy.parse_expr(d['lag_time']),
+            bioavailability=sympy.parse_expr(d['bioavailability']),
+        )
+
     def __repr__(self):
         lag = '' if self.lag_time == 0 else f', lag_time={self._lag_time}'
         dose = '' if self.dose is None else f', dose={self._dose}'
@@ -1504,6 +1544,13 @@ class Bolus(Dose):
 
     def __hash__(self):
         return hash((self._amount, self._admid))
+
+    def to_dict(self):
+        return {'class': 'Bolus', 'amount': sympy.srepr(self._amount), 'admid': self._admid}
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(amount=sympy.parse_expr(d['amount']), admid=d['admid'])
 
     def __repr__(self):
         return f'Bolus({self.amount}, admid={self._admid})'
@@ -1638,6 +1685,24 @@ class Infusion(Dose):
 
     def __hash__(self):
         return hash((self._admid, self._rate, self._duration, self._amount))
+
+    def to_dict(self):
+        return {
+            'class': 'Infusion',
+            'amount': sympy.srepr(self._amount),
+            'rate': sympy.srepr(self._rate),
+            'duration': sympy.srepr(self._duration),
+            'admid': self._admid,
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            amount=sympy.parse_expr(d['amount']),
+            admid=d['admid'],
+            rate=sympy.parse_expr(d['rate']),
+            duration=sympy.parse_expr(d['duration']),
+        )
 
     def __repr__(self):
         if self.rate is not None:

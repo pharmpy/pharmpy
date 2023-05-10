@@ -118,6 +118,45 @@ def test_hash():
     assert hash(st1) != hash(st2)
 
 
+def test_dict():
+    ass1 = Assignment(S('KA'), S('X') + S('Y'))
+    d = ass1.to_dict()
+    assert d == {'symbol': "Symbol('KA')", 'expression': "Add(Symbol('X'), Symbol('Y'))"}
+    ass2 = Assignment.from_dict(d)
+    assert ass1 == ass2
+
+    dose1 = Bolus.create('AMT')
+    d = dose1.to_dict()
+    assert d == {'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1}
+    dose2 = Bolus.from_dict(d)
+    assert dose1 == dose2
+
+    inf1 = Infusion.create('AMT', rate='R1')
+    d = inf1.to_dict()
+    assert d == {
+        'class': 'Infusion',
+        'amount': "Symbol('AMT')",
+        'admid': 1,
+        'rate': "Symbol('R1')",
+        'duration': 'None',
+    }
+    inf2 = Infusion.from_dict(d)
+    assert inf1 == inf2
+
+    central = Compartment.create('CENTRAL', dose=dose1)
+    d = central.to_dict()
+    assert d == {
+        'name': 'CENTRAL',
+        'amount': "Symbol('A_CENTRAL')",
+        'dose': {'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},
+        'input': 'Integer(0)',
+        'lag_time': 'Integer(0)',
+        'bioavailability': 'Integer(1)',
+    }
+    central2 = Compartment.from_dict(d)
+    assert central == central2
+
+
 def test_add():
     s1 = Assignment(S('KA'), S('X') + S('Y'))
     s2 = Assignment(S('Z'), sympy.Integer(23) + S('M'))
@@ -275,7 +314,7 @@ def test_repr_html():
     assert 'X + Y' in html
 
     cb = CompartmentalSystemBuilder()
-    dose = Bolus('AMT')
+    dose = Bolus.create('AMT')
     central = Compartment.create('CENTRAL', dose=dose)
     cb.add_compartment(central)
     cb.add_compartment(output)
@@ -347,11 +386,11 @@ def test_builder():
 
 
 def test_infusion_repr():
-    inf = Infusion('AMT', rate='R1')
+    inf = Infusion.create('AMT', rate='R1')
     assert repr(inf) == 'Infusion(AMT, admid=1, rate=R1)'
-    inf = Infusion('AMT', duration='D1')
+    inf = Infusion.create('AMT', duration='D1')
     assert repr(inf) == 'Infusion(AMT, admid=1, duration=D1)'
-    inf = Infusion('AMT', admid=2, duration='D1')
+    inf = Infusion.create('AMT', admid=2, duration='D1')
     assert repr(inf) == 'Infusion(AMT, admid=2, duration=D1)'
 
 
