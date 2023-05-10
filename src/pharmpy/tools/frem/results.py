@@ -451,10 +451,10 @@ def calculate_results(
 def base_vs_frem_model(frem_model, model_1):
     base_ests = model_1.modelfit_results.parameter_estimates
     final_ests = frem_model.modelfit_results.parameter_estimates
-    ser = pd.Series(dtype=np.float64)
+    ser = pd.Series(dtype=np.float64, name='relative_change')
     for param in base_ests.keys():
-        ser[param] = (final_ests[param] - base_ests[param]) / abs(base_ests[param]) * 100
-    ser.name = 'relative_change'
+        if param in final_ests:
+            ser[param] = (final_ests[param] - base_ests[param]) / abs(base_ests[param]) * 100
     return ser
 
 
@@ -817,13 +817,13 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
 
 def get_params(frem_model, rvs, npars):
     param_names = rvs[:npars]
-    sset = frem_model.statements.before_odes
+    sset = reversed(frem_model.statements.before_odes) + frem_model.statements.error
     symbs = []
 
     for p in param_names:
-        statement = [s for s in reversed(sset) if sympy.Symbol(p) in s.rhs_symbols][0]
+        statement = [s for s in sset if sympy.Symbol(p) in s.rhs_symbols][0]
         if str(statement.expression) == p:
-            statement = [s for s in reversed(sset) if statement.symbol in s.rhs_symbols][0]
+            statement = [s for s in sset if statement.symbol in s.rhs_symbols][0]
         symbs.append(statement.symbol.name)
 
     duplicates = set([e for e in symbs if symbs.count(e) > 1])
