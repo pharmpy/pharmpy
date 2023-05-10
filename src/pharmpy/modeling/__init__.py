@@ -183,7 +183,6 @@ from .plots import (
 )
 from .remove_iiv import remove_iiv
 from .remove_iov import remove_iov
-from .reporting import create_report
 from .results import (
     calculate_aic,
     calculate_bic,
@@ -242,7 +241,6 @@ __all__ = [
     'create_basic_pk_model',
     'create_config_template',
     'create_joint_distribution',
-    'create_report',
     'create_rng',
     'create_symbol',
     'deidentify_data',

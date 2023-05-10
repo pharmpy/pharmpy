@@ -13,7 +13,7 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.tmp import TemporaryDirectory
 
 
-def generate_report(rst_path, results_path):
+def generate_report(rst_path, results_path, target_path):
     """Generate report from rst and results json"""
     results_path = Path(results_path)
     with TemporaryDirectory() as tmpdirname:
@@ -21,7 +21,9 @@ def generate_report(rst_path, results_path):
         source_path = tmp_path / 'source'
         source_path.mkdir()
         shutil.copy(rst_path, source_path / 'results.rst')
-        shutil.copy(results_path / 'results.json', source_path)
+        if results_path.is_dir():
+            results_path /= 'results.json'
+        shutil.copy(results_path, source_path)
 
         conf_path = Path(__file__).resolve().parent
 
@@ -91,7 +93,7 @@ def generate_report(rst_path, results_path):
             )
         report_path = tmp_path / 'results.html'
         embed_css_and_js(tmp_path / 'results.html', report_path)
-        shutil.copy(report_path, results_path)
+        shutil.copy(report_path, target_path)
 
 
 def embed_css_and_js(html, target):

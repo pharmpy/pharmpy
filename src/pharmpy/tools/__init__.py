@@ -1,6 +1,7 @@
 from threading import Lock
 
 __all__ = (
+    'create_report',  # pyright: ignore [reportUnsupportedDunderAll]
     'create_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'fit',  # pyright: ignore [reportUnsupportedDunderAll]
     'predict_influential_individuals',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -36,6 +37,7 @@ _allowed = set(__all__)
 
 _not_wrapped = {
     '.amd.run': ('run_amd',),
+    '.reporting': ('create_report',),
     '.run': (
         'create_results',
         'fit',

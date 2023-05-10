@@ -7,7 +7,6 @@ import pandas as pd
 import pytest
 from pytest import approx
 
-import pharmpy.modeling as modeling
 import pharmpy.tools as tools
 from pharmpy.tools.frem.models import calculate_parcov_inits, create_model3b
 from pharmpy.tools.frem.results import (
@@ -542,7 +541,7 @@ def test_modeling_create_results(testdata):
 def test_create_report(testdata, tmp_path):
     res = tools.read_results(testdata / 'frem' / 'results.json')
     shutil.copy(testdata / 'frem' / 'results.json', tmp_path)
-    modeling.create_report(res, tmp_path)
+    tools.create_report(res, tmp_path)
     html = tmp_path / 'results.html'
     assert html.is_file()
     assert html.stat().st_size > 500000
