@@ -1,3 +1,14 @@
+next version
+------------
+
+Bugfixes
+--------
+
+* Fix bug causing changes in FIX from model1 to model4 to crash frem
+* Fix bug causing individual parameters in $ERROR to crash frem
+* create_report now does not assume that results.json already exists
+* ~ for $HOME is now supported in write_model and create_report
+
 0.94.0 (2023-04-26)
 -------------------
 
