@@ -242,6 +242,24 @@ class NormalDistribution(Distribution):
     def __hash__(self):
         return hash((self._name, self._level, self._mean, self._variance))
 
+    def to_dict(self):
+        return {
+            'class': self.__class__.__name__,
+            'name': self._name,
+            'level': self._level,
+            'mean': sympy.srepr(self._mean),
+            'variance': sympy.srepr(self._variance),
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            name=d['name'],
+            level=d['level'],
+            mean=sympy.parse_expr(d['mean']),
+            variance=sympy.parse_expr(d['variance']),
+        )
+
     def __repr__(self):
         return (
             f'{sympy.pretty(sympy.Symbol(self._name), wrap_line=False, use_unicode=True)}'
@@ -463,6 +481,24 @@ class JointNormalDistribution(Distribution):
 
     def __hash__(self):
         return hash((self._names, self._level, self._mean, self._variance))
+
+    def to_dict(self):
+        return {
+            'class': self.__class__.__name__,
+            'names': self._names,
+            'level': self._level,
+            'mean': sympy.srepr(self._mean),
+            'variance': sympy.srepr(self._variance),
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            names=d['names'],
+            level=d['level'],
+            mean=sympy.parse_expr(d['mean']),
+            variance=sympy.parse_expr(d['variance']),
+        )
 
     def __repr__(self):
         name_vector = sympy.Matrix(self._names)

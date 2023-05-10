@@ -409,6 +409,20 @@ def test_hash():
     assert hash(dist3) != hash(dist4)
 
 
+def test_dict():
+    dist1 = NormalDistribution.create('ETA_3', 'iiv', 2, 1)
+    d = dist1.to_dict()
+    assert d == {
+        'class': 'NormalDistribution',
+        'name': 'ETA_3',
+        'level': 'IIV',
+        'mean': 'Integer(2)',
+        'variance': 'Integer(1)',
+    }
+    dist2 = NormalDistribution.from_dict(d)
+    assert dist1 == dist2
+
+
 def test_nearest_valid_parameters():
     values = {'x': 1, 'y': 0.1, 'z': 2}
     dist1 = JointNormalDistribution.create(
