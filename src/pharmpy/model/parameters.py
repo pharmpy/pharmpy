@@ -121,6 +121,19 @@ class Parameter(Immutable):
     def __hash__(self):
         return hash((self.name, self.init, self.lower, self.upper, self.fix))
 
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'init': self.init,
+            'lower': self.lower,
+            'upper': self.upper,
+            'fix': self.fix,
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(**d)
+
     def __eq__(self, other):
         """Two parameters are equal if they have the same name, init and constraints"""
         return (
@@ -392,6 +405,15 @@ class Parameters(CollectionsSequence, Immutable):
 
     def __hash__(self):
         return hash(self._params)
+
+    def to_dict(self):
+        params = tuple(p.to_dict() for p in self._params)
+        return {'parameters': params}
+
+    @classmethod
+    def from_dict(cls, d):
+        params = tuple(Parameter.from_dict(p) for p in d['parameters'])
+        return cls(parameters=params)
 
     def __repr__(self):
         if len(self) == 0:

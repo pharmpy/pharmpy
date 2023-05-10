@@ -234,6 +234,31 @@ def test_hash():
     assert hash(pset1) != hash(pset2)
 
 
+def test_dict():
+    p1 = Parameter.create('Y', 9)
+    d = p1.to_dict()
+    assert d == {
+        'name': 'Y',
+        'init': 9.0,
+        'lower': -float('inf'),
+        'upper': float('inf'),
+        'fix': False,
+    }
+    p2 = Parameter.from_dict(d)
+    assert p1 == p2
+    p3 = Parameter.create('Z', 0, lower=0, upper=22)
+    pset = Parameters((p1, p3))
+    d2 = pset.to_dict()
+    assert d2 == {
+        'parameters': (
+            {'name': 'Y', 'init': 9.0, 'lower': -float('inf'), 'upper': float('inf'), 'fix': False},
+            {'name': 'Z', 'init': 0.0, 'lower': 0.0, 'upper': 22.0, 'fix': False},
+        )
+    }
+    pset2 = Parameters.from_dict(d2)
+    assert pset == pset2
+
+
 def test_contains():
     p1 = Parameter.create('Y', 9)
     p2 = Parameter.create('X', 3)
