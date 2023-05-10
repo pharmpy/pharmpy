@@ -64,6 +64,13 @@ class VariabilityLevel(Immutable):
     def __hash__(self):
         return hash((self._name, self._reference, self._group))
 
+    def to_dict(self):
+        return {'name': self._name, 'reference': self._reference, 'group': self._group}
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(**d)
+
     @property
     def name(self) -> str:
         """Name of the variability level"""
@@ -130,6 +137,15 @@ class VariabilityHierarchy(Immutable):
 
     def __hash__(self):
         return hash(self._levels)
+
+    def to_dict(self):
+        levels = tuple(level.to_dict() for level in self._levels)
+        return {'levels': levels}
+
+    @classmethod
+    def from_dict(cls, d):
+        levels = tuple(VariabilityLevel.from_dict(vl) for vl in d['levels'])
+        return cls(levels=levels)
 
     def _lookup(self, ind: Union[int, str, VariabilityLevel]) -> VariabilityLevel:
         # Lookup one index

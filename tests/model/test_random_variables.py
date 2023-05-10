@@ -658,6 +658,11 @@ def test_variability_level():
 
     assert repr(level) == "VariabilityLevel(IIV, reference=True, group=ID)"
 
+    d = level.to_dict()
+    assert d == {'name': 'IIV', 'reference': True, 'group': 'ID'}
+    level2 = VariabilityLevel.from_dict(d)
+    assert level == level2
+
 
 def test_variability_hierarchy():
     lev1 = VariabilityLevel('IIV', reference=True, group='ID')
@@ -677,6 +682,16 @@ def test_variability_hierarchy():
     assert len(levs4) == 2
     levs5 = lev2 + levs
     assert len(levs5) == 2
+
+    d = levs2.to_dict()
+    assert d == {
+        'levels': (
+            {'name': 'CENTER', 'group': 'CENTER', 'reference': False},
+            {'name': 'IIV', 'group': 'ID', 'reference': True},
+        )
+    }
+    levs6 = VariabilityHierarchy.from_dict(d)
+    assert levs2 == levs6
 
 
 def test_covariance_matrix():
