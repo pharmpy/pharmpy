@@ -669,6 +669,7 @@ def write_results(results: Results, path: Union[str, Path], lzma: bool = False, 
     csv : bool
         Save as csv file
     """
+    path = normalize_user_given_path(path)
     if csv:
         results.to_csv(path)
     else:
