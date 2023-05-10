@@ -470,7 +470,10 @@ def _parse_ofv(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
         final_table = table
 
     assert isinstance(final_table, ExtTable)
-    final_ofv = final_table.final_ofv
+    if np.isnan(ofv[-1]):
+        final_ofv = ofv[-1]
+    else:
+        final_ofv = final_table.final_ofv
     ofv_iterations = create_ofv_iterations_series(ofv, step, iteration)
     return final_ofv, ofv_iterations
 
@@ -482,7 +485,24 @@ def _get_iter_df(df):
         df = df[iters == -(10**9)]
         df.at[0, 'ITERATION'] = 0
     else:
-        df = df[iters >= 0]
+        try:
+            final_iter_ofv = df[iters == final_iter].iloc[-1].loc['OBJ']
+        except IndexError:
+            final_iter_ofv = np.nan
+        last_iter_ofv = df[iters >= 0].iloc[-1].loc['OBJ']
+        if final_iter_ofv != last_iter_ofv:
+            new_iter_no = int(df[iters >= 0].iloc[-1].loc['ITERATION']) + 1
+            if final_iter in iters.values:
+                idx = df[iters == final_iter].index.values[0]
+                df.at[idx, 'ITERATION'] = new_iter_no
+                new_iter_no += 1
+            nan_row_dict = {
+                colname: (new_iter_no if colname == 'ITERATION' else np.nan)
+                for colname in df.columns
+            }
+            nan_row = pd.DataFrame(nan_row_dict, index=[len(df)])
+            df = pd.concat([df, nan_row])
+        df = df[df['ITERATION'] >= 0]
     return df
 
 
@@ -521,9 +541,12 @@ def _parse_parameter_estimates(
 
     assert fix is not None
     assert final_table is not None
-    final = final_table.final_parameter_estimates
-    final = final.drop(fixed_param_names)
-    final = final.rename(index=name_map)
+    if pe.iloc[-1].drop(['ITERATION', 'step']).isnull().all():
+        final = pe.iloc[-1].drop(['ITERATION', 'step']).rename('estimates')
+    else:
+        final = final_table.final_parameter_estimates
+        final = final.drop(fixed_param_names)
+        final = final.rename(index=name_map)
     pe = pe.rename(columns={'ITERATION': 'iteration'}).set_index(['step', 'iteration'])
 
     try:
@@ -589,27 +612,27 @@ def simfit_results(model, model_path):
     return results
 
 
-def parse_ext(model, path, subproblem):
-    try:
-        ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
-    except ValueError:
-        failed_pe = _create_failed_parameter_estimates(model.parameters)
-        n = len(model.estimation_steps)
-        df = pd.concat([failed_pe] * n, axis=1).T
-        df['step'] = range(1, n + 1)
-        df['iteration'] = 0
-        df = df.set_index(['step', 'iteration'])
-        return (
-            [],
-            np.nan,
-            _create_failed_ofv_iterations(len(model.estimation_steps)),
-            failed_pe,
-            failed_pe,
-            df,
-            None,
-            None,
-        )
-    return _parse_ext(model.internals.control_stream, ext_tables, subproblem, model.parameters)
+# def parse_ext(model, path, subproblem):
+#     try:
+#         ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
+#     except ValueError:
+#         failed_pe = _create_failed_parameter_estimates(model.parameters)
+#         n = len(model.estimation_steps)
+#         df = pd.concat([failed_pe] * n, axis=1).T
+#         df['step'] = range(1, n + 1)
+#         df['iteration'] = 0
+#         df = df.set_index(['step', 'iteration'])
+#         return (
+#             [],
+#             np.nan,
+#             _create_failed_ofv_iterations(len(model.estimation_steps)),
+#             failed_pe,
+#             failed_pe,
+#             df,
+#             None,
+#             None,
+#         )
+#     return _parse_ext(model.internals.control_stream, ext_tables, subproblem, model.parameters)
 
 
 def parse_modelfit_results(

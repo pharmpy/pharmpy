@@ -4,7 +4,9 @@ import shutil
 import pandas as pd
 import pytest
 
+from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
+from pharmpy.plugins.nonmem.model import parse_code
 from pharmpy.plugins.nonmem.results import simfit_results
 from pharmpy.results import read_results
 
@@ -12,6 +14,41 @@ from pharmpy.results import read_results
 def test_ofv(pheno):
     res = pheno.modelfit_results
     assert res.ofv == 586.27605628188053
+
+
+def test_failed_ofv(testdata, load_model_for_test):
+    code = '''$PROBLEM
+$INPUT ID TIME AMT WGT APGR DV
+$DATA file.csv
+$SUBROUTINES ADVAN2 TRANS2
+$PK
+MAT = THETA(3)*EXP(ETA(1))
+CL = THETA(1)*EXP(ETA(2))
+VC = THETA(2)*EXP(ETA(3))
+KA = 1/MAT
+V = VC
+$ERROR
+Y=F+F*EPS(1)
+$THETA  (0,0.01) ; POP_CL
+$THETA  (0,0.1) ; POP_VC
+$THETA  (0,0.01) ; POP_MAT
+$OMEGA BLOCK(2)
+0.1	; IIV_CL
+0.01	; IIV_CL_IIV_VC
+0.1	; IIV_VC
+$OMEGA  0.1 ; IIV_MAT
+$SIGMA  0.09 ; sigma
+$ESTIMATION METHOD=1 INTER
+'''
+    model = parse_code(code, testdata / 'nonmem' / 'errors' / 'failed_run')
+    res = model.modelfit_results
+    assert np.isnan(res.ofv)
+    assert res.parameter_estimates.isnull().all()
+
+    model = load_model_for_test(testdata / 'nonmem' / 'errors' / 'run_interrupted.mod')
+    res = model.modelfit_results
+    assert np.isnan(res.ofv)
+    assert res.parameter_estimates.isnull().all()
 
 
 def test_special_models(testdata, load_model_for_test):
