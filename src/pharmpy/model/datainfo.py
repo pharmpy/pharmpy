@@ -234,7 +234,8 @@ class ColumnInfo(Immutable):
                 self._unit,
                 self._scale,
                 self._continuous,
-                self._categories,
+                # FIXME: What are categories really?
+                # self._categories,
                 self._drop,
                 self._datatype,
                 self._descriptor,
@@ -484,8 +485,8 @@ class DataInfo(Sequence, Immutable):
 
     def __init__(
         self,
-        columns: Optional[Union[Sequence[ColumnInfo], Sequence[str]]] = (),
-        path: Optional[Union[str, Path]] = None,
+        columns: tuple[ColumnInfo, ...] = (),
+        path: Optional[Path] = None,
         separator: str = ',',
         force_absolute_path: bool = True,
     ):
@@ -514,8 +515,17 @@ class DataInfo(Sequence, Immutable):
         return cls(columns=columns, path=path, separator=separator)
 
     def replace(self, **kwargs):
-        columns = kwargs.get('columns', self._columns)
-        path = kwargs.get('path', self._path)
+        if 'columns' in kwargs:
+            columns = tuple(kwargs['columns'])
+        else:
+            columns = self._columns
+        if 'path' in kwargs:
+            if kwargs['path'] is not None:
+                path = Path(kwargs['path'])
+            else:
+                path = None
+        else:
+            path = self._path
         separator = kwargs.get('separator', self._separator)
         return DataInfo.create(columns=columns, path=path, separator=separator)
 

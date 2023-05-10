@@ -35,3 +35,8 @@ class frozenmapping(Mapping[K, V]):
         if self._hash is None:
             self._hash = hash(tuple((k, v) for k, v in self._mapping.items()))
         return self._hash
+
+    def replace(self, key, value):
+        new = dict(self._mapping)
+        new[key] = value
+        return frozenmapping(new)

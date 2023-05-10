@@ -18,7 +18,7 @@ from pathlib import Path
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.immutable import Immutable
+from pharmpy.internals.immutable import Immutable, frozenmapping
 from pharmpy.plugins.utils import detect_model
 
 from .datainfo import ColumnInfo, DataInfo
@@ -78,11 +78,15 @@ class Model(Immutable):
         self._random_variables = random_variables
         self._parameters = parameters
         self._statements = statements
-        self._dependent_variables = actual_dependent_variables
+        # FIXME: Only do this conversion in the future Model.create
+        self._dependent_variables = frozenmapping(actual_dependent_variables)
         if observation_transformation is None:
-            self._observation_transformation = {dv: dv for dv in actual_dependent_variables.keys()}
+            self._observation_transformation = frozenmapping(
+                {dv: dv for dv in actual_dependent_variables.keys()}
+            )
         else:
-            self._observation_transformation = observation_transformation
+            # FIXME: Only do this conversion in the future Model.create
+            self._observation_transformation = frozenmapping(observation_transformation)
         self._estimation_steps = estimation_steps
         self._modelfit_results = modelfit_results
         self._parent_model = parent_model
@@ -134,7 +138,16 @@ class Model(Immutable):
         if not isinstance(name, str):
             raise TypeError("Name of a model has to be of string type")
 
-        dependent_variables = kwargs.get('dependent_variables', self.dependent_variables)
+        if 'dependent_variables' in kwargs:
+            dependent_variables = frozenmapping(kwargs['dependent_variables'])
+        else:
+            dependent_variables = self.dependent_variables
+
+        if 'observation_transformation' in kwargs:
+            observation_transformation = frozenmapping(kwargs['observation_transformation'])
+        else:
+            observation_transformation = self.observation_transformation
+
         parameters = kwargs.get('parameters', self.parameters)
 
         if 'random_variables' in kwargs:
@@ -184,9 +197,6 @@ class Model(Immutable):
         else:
             value_type = self.value_type
         description = kwargs.get('description', self.description)
-        observation_transformation = kwargs.get(
-            'observation_transformation', self.observation_transformation
-        )
         internals = kwargs.get('internals', self._internals)
         return self.__class__(
             name=name,

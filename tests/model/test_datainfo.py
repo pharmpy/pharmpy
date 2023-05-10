@@ -76,6 +76,12 @@ Name: DUMMY"""
     assert repr(col) == correct
 
 
+def test_columninfo_hash():
+    col1 = ColumnInfo.create("DUMMY", scale='nominal')
+    col2 = ColumnInfo.create("DUMMY", scale='ratio')
+    assert hash(col1) != hash(col2)
+
+
 def test_init():
     di = DataInfo.create()
     assert len(di) == 0
@@ -303,3 +309,11 @@ def test_convert_datatype_to_pd_dtype():
 
     datatype = ColumnInfo.convert_pd_dtype_to_datatype("float64")
     assert datatype == 'float64'
+
+
+def test_hash():
+    col1 = ColumnInfo.create("ID", type='id')
+    col2 = ColumnInfo.create("WGT", type='covariate', descriptor='body weight')
+    di1 = DataInfo.create([col1, col2])
+    di2 = DataInfo.create([col1])
+    assert hash(di1) != hash(di2)

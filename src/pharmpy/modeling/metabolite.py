@@ -69,8 +69,7 @@ def add_metabolite(model: Model, drug_dvid: int = 1):
     new_after = old_after[: ind + 1] + y + old_after[ind + 1 :]
     error = conc + new_after
 
-    dvs = model.dependent_variables.copy()
-    dvs[y_m1] = 2  # FIXME: Should be next DVID in categories
+    dvs = model.dependent_variables.replace(y_m1, 2)  # FIXME: Should be next DVID in categories
     statements = model.statements.before_odes + cs + error
     model = model.replace(statements=statements, dependent_variables=dvs)
     return model.update_source()

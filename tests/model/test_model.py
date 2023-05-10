@@ -57,3 +57,5 @@ def test_model_equality():
     assert pheno1 != pheno_linear2
     assert pheno2 != pheno_linear1
     assert pheno2 != pheno_linear2
+
+    assert hash(pheno1) != hash(pheno_linear1)
