@@ -380,6 +380,27 @@ class RandomVariables(CollectionsSequence, Immutable):
     def __hash__(self):
         return hash((self._dists, self._eta_levels, self._epsilon_levels))
 
+    def to_dict(self):
+        dists = tuple(d.to_dict() for d in self._dists)
+        return {
+            'dists': dists,
+            'eta_levels': self._eta_levels.to_dict(),
+            'epsilon_levels': self._epsilon_levels.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        eta_levels = VariabilityHierarchy.from_dict(d['eta_levels'])
+        epsilon_levels = VariabilityHierarchy.from_dict(d['epsilon_levels'])
+        dists = []
+        for dist_dict in d['dists']:
+            if dist_dict['class'] == 'NormalDistribution':
+                dist = NormalDistribution.from_dict(dist_dict)
+            else:
+                dist = JointNormalDistribution.from_dict(dist_dict)
+            dists.append(dist)
+        return cls(dists=tuple(dists), eta_levels=eta_levels, epsilon_levels=epsilon_levels)
+
     def _lookup_rv(self, ind):
         if isinstance(ind, sympy.Symbol):
             ind = ind.name

@@ -422,6 +422,46 @@ def test_dict():
     dist2 = NormalDistribution.from_dict(d)
     assert dist1 == dist2
 
+    dist1 = NormalDistribution.create('ETA_1', 'iiv', 0, 1)
+    dist2 = JointNormalDistribution.create(
+        ['ETA_2', 'ETA_3'],
+        'iiv',
+        [0, 0],
+        [
+            [symbol('OMEGA11'), symbol('OMEGA21')],
+            [symbol('OMEGA21'), symbol('OMEGA22')],
+        ],
+    )
+    rvs = RandomVariables.create([dist1, dist2])
+    d = rvs.to_dict()
+    assert d == {
+        'dists': (
+            {
+                'class': 'NormalDistribution',
+                'name': 'ETA_1',
+                'level': 'IIV',
+                'mean': 'Integer(0)',
+                'variance': 'Integer(1)',
+            },
+            {
+                'class': 'JointNormalDistribution',
+                'names': ('ETA_2', 'ETA_3'),
+                'level': 'IIV',
+                'mean': 'ImmutableDenseMatrix([[Integer(0)], [Integer(0)]])',
+                'variance': "ImmutableDenseMatrix([[Symbol('OMEGA11'), Symbol('OMEGA21')], [Symbol('OMEGA21'), Symbol('OMEGA22')]])",  # noqa: E501
+            },
+        ),
+        'eta_levels': {
+            'levels': (
+                {'name': 'IIV', 'reference': True, 'group': 'ID'},
+                {'name': 'IOV', 'reference': False, 'group': 'OCC'},
+            )
+        },
+        'epsilon_levels': {'levels': ({'name': 'RUV', 'reference': True, 'group': None},)},
+    }
+    rvs2 = RandomVariables.from_dict(d)
+    assert rvs == rvs2
+
 
 def test_nearest_valid_parameters():
     values = {'x': 1, 'y': 0.1, 'z': 2}
