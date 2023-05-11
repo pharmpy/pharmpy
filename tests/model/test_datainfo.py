@@ -317,3 +317,20 @@ def test_hash():
     di1 = DataInfo.create([col1, col2])
     di2 = DataInfo.create([col1])
     assert hash(di1) != hash(di2)
+
+
+def test_dict():
+    col1 = ColumnInfo.create("ID", type='id')
+    d = col1.to_dict()
+    assert d == {
+        'name': 'ID',
+        'type': 'id',
+        'unit': 'Integer(1)',
+        'scale': 'ratio',
+        'continuous': True,
+        'drop': False,
+        'datatype': 'float64',
+        'descriptor': None,
+    }
+    col2 = ColumnInfo.from_dict(d)
+    assert col1 == col2

@@ -242,6 +242,31 @@ class ColumnInfo(Immutable):
             )
         )
 
+    def to_dict(self):
+        return {
+            'name': self._name,
+            'type': self._type,
+            'unit': sympy.srepr(self._unit),
+            'scale': self._scale,
+            'continuous': self._continuous,
+            'drop': self._drop,
+            'datatype': self._datatype,
+            'descriptor': self._descriptor,
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            name=d['name'],
+            type=d['type'],
+            unit=sympy.parse_expr(d['unit']),
+            scale=d['scale'],
+            continuous=d['continuous'],
+            drop=d['drop'],
+            datatype=d['datatype'],
+            descriptor=d['descriptor'],
+        )
+
     @property
     def name(self):
         """Column name"""
