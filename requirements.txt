@@ -90,7 +90,7 @@ sphinxcontrib-serializinghtml==1.1.5
 sphinxcontrib.applehelp==1.0.4
 stack-data==0.6.2
 symengine==0.10.0
-sympy==1.11.1
+sympy==1.12
 tblib==1.7.0
 tinycss2==1.2.1
 toolz==0.12.0
