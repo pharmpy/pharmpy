@@ -86,6 +86,8 @@ class ColumnInfo(Immutable):
         'plasma concentration',
         'subject identifier',
         'observation identifier',
+        'pk measurement',
+        'pd measurement',
     )
 
     @staticmethod
@@ -316,6 +318,8 @@ class ColumnInfo(Immutable):
         plasma concentration   Concentration of substance in blood plasma
         subject identifier     Unique integer identifier for a subject
         observation identifier Unique integer identifier for an observation
+        pk measurement         Any kind of PK measurement
+        pd measurement         Any kind of PD measurement
         ====================== ============================================
         """
         return self._descriptor
