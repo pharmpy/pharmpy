@@ -118,10 +118,14 @@ def test_hash():
     assert hash(st1) != hash(st2)
 
 
-def test_dict():
+def test_dict(load_model_for_test, testdata):
     ass1 = Assignment(S('KA'), S('X') + S('Y'))
     d = ass1.to_dict()
-    assert d == {'symbol': "Symbol('KA')", 'expression': "Add(Symbol('X'), Symbol('Y'))"}
+    assert d == {
+        'class': 'Assignment',
+        'symbol': "Symbol('KA')",
+        'expression': "Add(Symbol('X'), Symbol('Y'))",
+    }
     ass2 = Assignment.from_dict(d)
     assert ass1 == ass2
 
@@ -146,6 +150,7 @@ def test_dict():
     central = Compartment.create('CENTRAL', dose=dose1)
     d = central.to_dict()
     assert d == {
+        'class': 'Compartment',
         'name': 'CENTRAL',
         'amount': "Symbol('A_CENTRAL')",
         'dose': {'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},
@@ -155,6 +160,48 @@ def test_dict():
     }
     central2 = Compartment.from_dict(d)
     assert central == central2
+
+    d = output.to_dict()
+    assert d == {'class': 'Output'}
+    output2 = output.__class__.from_dict(d)
+    assert output == output2
+
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    odes = model.statements.ode_system
+    d = odes.to_dict()
+    assert d == {
+        'class': 'CompartmentalSystem',
+        'compartments': (
+            {'class': 'Output'},
+            {
+                'class': 'Compartment',
+                'name': 'CENTRAL',
+                'amount': "Symbol('A_CENTRAL')",
+                'dose': {'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},
+                'input': 'Integer(0)',
+                'lag_time': 'Integer(0)',
+                'bioavailability': 'Integer(1)',
+            },
+        ),
+        'rates': [(1, 0, "Mul(Symbol('CL'), Pow(Symbol('V'), Integer(-1)))")],
+        't': "Symbol('t')",
+    }
+    odes2 = CompartmentalSystem.from_dict(d)
+    assert odes == odes2
+
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
+    d = model.statements.to_dict()
+    assert d == {
+        'statements': (
+            {
+                'class': 'Assignment',
+                'symbol': "Symbol('Y')",
+                'expression': "Add(Symbol('EPS_1'), Symbol('ETA_1'), Symbol('THETA_1'))",
+            },
+        )
+    }
+    stats2 = Statements.from_dict(d)
+    assert model.statements == stats2
 
 
 def test_add():

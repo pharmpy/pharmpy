@@ -161,7 +161,11 @@ class Assignment(Statement):
         return hash((self.symbol, self.expression))
 
     def to_dict(self):
-        return {'symbol': sympy.srepr(self.symbol), 'expression': sympy.srepr(self.expression)}
+        return {
+            'class': 'Assignment',
+            'symbol': sympy.srepr(self.symbol),
+            'expression': sympy.srepr(self.expression),
+        }
 
     @classmethod
     def from_dict(cls, d):
@@ -205,6 +209,13 @@ class Output(Immutable):
 
     def __hash__(self):
         return 5267
+
+    def to_dict(self):
+        return {'class': 'Output'}
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls.instance
 
     def __eq__(self, other):
         return self is other
@@ -668,6 +679,44 @@ class CompartmentalSystem(ODESystem):
 
     def __hash__(self):
         return hash((self._t, self._g))
+
+    def to_dict(self):
+        comps = [comp for comp in self._g.nodes]
+        comps_dicts = tuple(comp.to_dict() for comp in comps)
+
+        edges = []
+        for from_comp, to_comp, rate in self._g.edges.data('rate'):
+            from_n = comps.index(from_comp)
+            to_n = comps.index(to_comp)
+            edge = (from_n, to_n, sympy.srepr(rate))
+            edges.append(edge)
+
+        d = {
+            'class': 'CompartmentalSystem',
+            'compartments': comps_dicts,
+            'rates': edges,
+            't': sympy.srepr(self._t),
+        }
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        cb = CompartmentalSystemBuilder()
+        comps = []
+        for comp_dict in d['compartments']:
+            if comp_dict['class'] == 'Output':
+                compartment = output
+            else:
+                compartment = Compartment.from_dict(comp_dict)
+                cb.add_compartment(compartment)
+            comps.append(compartment)
+
+        for from_n, to_n, rate in d['rates']:
+            from_comp = comps[from_n]
+            to_comp = comps[to_n]
+            cb.add_flow(from_comp, to_comp, sympy.parse_expr(rate))
+
+        return cls(cb, t=sympy.parse_expr(d['t']))
 
     def get_flow(self, source, destination):
         """Get the rate of flow between two compartments
@@ -1416,6 +1465,7 @@ class Compartment:
         else:
             dose = self._dose.to_dict()
         return {
+            'class': 'Compartment',
             'name': self._name,
             'amount': sympy.srepr(self._amount),
             'dose': dose,
@@ -2195,6 +2245,21 @@ class Statements(Sequence, Immutable):
 
     def __hash__(self):
         return hash(self._statements)
+
+    def to_dict(self):
+        stats = tuple(s.to_dict() for s in self)
+        return {'statements': stats}
+
+    @classmethod
+    def from_dict(cls, d):
+        statements = []
+        for sdict in d['statements']:
+            if sdict['class'] == 'Assignment':
+                s = Assignment.from_dict(sdict)
+            else:
+                s = CompartmentalSystem.from_dict(sdict)
+            statements.append(s)
+        return cls(tuple(statements))
 
     def __repr__(self):
         return '\n'.join([repr(statement) for statement in self])
