@@ -100,6 +100,71 @@ def test_hash():
     assert hash(s1) != hash(s2)
 
 
+def test_dict():
+    a = EstimationStep.create('foce')
+    d = a.to_dict()
+    assert d == {
+        'method': 'FOCE',
+        'interaction': False,
+        'cov': False,
+        'evaluation': False,
+        'maximum_evaluations': None,
+        'laplace': False,
+        'isample': None,
+        'niter': None,
+        'auto': None,
+        'keep_every_nth_iter': None,
+        'solver': None,
+        'solver_rtol': None,
+        'solver_atol': None,
+        'tool_options': {},
+    }
+    step2 = EstimationStep.from_dict(d)
+    assert step2 == a
+
+    b = EstimationStep.create('fo')
+    s1 = EstimationSteps.create([a, b])
+    d = s1.to_dict()
+    assert d == {
+        'steps': (
+            {
+                'method': 'FOCE',
+                'interaction': False,
+                'cov': False,
+                'evaluation': False,
+                'maximum_evaluations': None,
+                'laplace': False,
+                'isample': None,
+                'niter': None,
+                'auto': None,
+                'keep_every_nth_iter': None,
+                'solver': None,
+                'solver_rtol': None,
+                'solver_atol': None,
+                'tool_options': {},
+            },
+            {
+                'method': 'FO',
+                'interaction': False,
+                'cov': False,
+                'evaluation': False,
+                'maximum_evaluations': None,
+                'laplace': False,
+                'isample': None,
+                'niter': None,
+                'auto': None,
+                'keep_every_nth_iter': None,
+                'solver': None,
+                'solver_rtol': None,
+                'solver_atol': None,
+                'tool_options': {},
+            },
+        )
+    }
+    s2 = EstimationSteps.from_dict(d)
+    assert s1 == s2
+
+
 def test_getitem():
     a = EstimationStep.create('foce')
     b = EstimationStep.create('fo')

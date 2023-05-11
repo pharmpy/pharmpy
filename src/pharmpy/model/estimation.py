@@ -294,6 +294,28 @@ class EstimationStep(Immutable):
             )
         )
 
+    def to_dict(self):
+        return {
+            'method': self._method,
+            'interaction': self._interaction,
+            'cov': self._cov,
+            'evaluation': self._evaluation,
+            'maximum_evaluations': self._maximum_evaluations,
+            'laplace': self._laplace,
+            'isample': self._isample,
+            'niter': self._niter,
+            'auto': self._auto,
+            'keep_every_nth_iter': self._keep_every_nth_iter,
+            'solver': self._solver,
+            'solver_rtol': self._solver_rtol,
+            'solver_atol': self._solver_atol,
+            'tool_options': self._tool_options,
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(**d)
+
     def __repr__(self):
         return (
             f'EstimationStep("{self.method}", interaction={self.interaction}, '
@@ -370,6 +392,13 @@ class EstimationSteps(Sequence, Immutable):
 
     def __hash__(self):
         return hash(self._steps)
+
+    def to_dict(self):
+        return {'steps': tuple(step.to_dict() for step in self._steps)}
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(steps=tuple(EstimationStep.from_dict(s) for s in d['steps']))
 
     def to_dataframe(self):
         """Convert to DataFrame
