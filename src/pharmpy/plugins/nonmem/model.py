@@ -34,7 +34,6 @@ from .update import (
     abbr_translation,
     create_name_map,
     update_ccontra,
-    update_dependent_variables,
     update_description,
     update_estimation,
     update_initial_individual_estimates,
@@ -200,7 +199,7 @@ class Model(BaseModel):
         model, updated_dataset = update_statements(
             model, model.internals.old_statements, model._statements, trans
         )
-        model = update_dependent_variables(model, trans)
+        # model = update_dependent_variables(model, trans)
 
         cs = model.internals.control_stream
 

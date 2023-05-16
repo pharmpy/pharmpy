@@ -620,6 +620,8 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
 
 
 def update_dependent_variables(model: Model, trans):
+    # FIXME: This is currently not used.
+    # Does it conflict with code_record.update_extra_nodes ?
     old_dvs = model.internals.old_dependent_variables
     new_dvs = model.dependent_variables
     if old_dvs != new_dvs:
@@ -907,6 +909,10 @@ def match_advan2(odes):
     if len(outflows) != 1:
         return False
     central = outflows[0][0]
+    central_rate = outflows[0][1]
+    if {sympy.Symbol('CL'), sympy.Symbol('V')} & central_rate.free_symbols:
+        # Cannot use reserved symbols
+        return False
     central_outflows = odes.get_compartment_outflows(central)
     if len(central_outflows) != 1:
         return False
