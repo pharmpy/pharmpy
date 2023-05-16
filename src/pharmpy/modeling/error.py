@@ -17,10 +17,11 @@ from .help_functions import _format_input_list, _get_epsilons
 from .parameters import add_population_parameter, fix_parameters, set_initial_estimates
 
 
-def _preparations(model):
+def _preparations(model, y=None):
     stats = model.statements
     # FIXME: handle other DVs?
-    y = list(model.dependent_variables.keys())[0]
+    if y is None:
+        y = list(model.dependent_variables.keys())[0]
     f = subs(
         model.statements.find_assignment(y.name).expression,
         {sympy.Symbol(eps): 0 for eps in model.random_variables.epsilons.names},
@@ -142,7 +143,7 @@ def set_additive_error_model(
     dv = get_dv_symbol(model, dv)
     if has_additive_error_model(model, dv):
         return model
-    stats, y, f = _preparations(model)
+    stats, y, f = _preparations(model, dv)
     ruv = create_symbol(model, 'epsilon_a')
 
     data_trans = _canonicalize_data_transformation(model, data_trans, dv)
@@ -256,7 +257,7 @@ def set_proportional_error_model(
     if has_proportional_error_model(model, dv):
         return model
 
-    stats, y, f = _preparations(model)
+    stats, y, f = _preparations(model, dv)
     ruv = create_symbol(model, 'epsilon_p')
 
     data_trans = _canonicalize_data_transformation(model, data_trans, dv)
@@ -346,7 +347,7 @@ def set_combined_error_model(
     dv = get_dv_symbol(model, dv)
     if has_combined_error_model(model, dv):
         return model
-    stats, y, f = _preparations(model)
+    stats, y, f = _preparations(model, dv)
 
     expr = stats.find_assignment(y.name).expression
 

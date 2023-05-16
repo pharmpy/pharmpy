@@ -11,6 +11,7 @@ from pharmpy.model import (
     output,
 )
 
+from .error import set_proportional_error_model
 from .odes import _find_noncov_theta, add_individual_parameter
 from .parameters import set_initial_estimates
 
@@ -70,7 +71,7 @@ def add_metabolite(model: Model, drug_dvid: int = 1):
 
     conc = Assignment(sympy.Symbol('CONC_M'), metacomp.amount / vm)
     y_m = sympy.Symbol('Y_M')
-    y = Assignment(y_m, conc.symbol + sympy.Symbol(model.random_variables.epsilons.names[0]))
+    y = Assignment(y_m, conc.symbol)
     original_y = next(iter(model.dependent_variables))
     ind = model.statements.after_odes.find_assignment_index(original_y)
     old_after = model.statements.after_odes
@@ -80,4 +81,5 @@ def add_metabolite(model: Model, drug_dvid: int = 1):
     dvs = model.dependent_variables.replace(y_m, 2)  # FIXME: Should be next DVID in categories
     statements = model.statements.before_odes + cs + error
     model = model.replace(statements=statements, dependent_variables=dvs)
-    return model.update_source()
+    model = set_proportional_error_model(model, dv=2, zero_protection=False)
+    return model

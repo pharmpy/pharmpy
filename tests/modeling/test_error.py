@@ -80,13 +80,13 @@ def test_set_proportional_error_model_nolog(load_model_for_test, testdata):
     model = set_proportional_error_model(model, dv=2)
     rec = model.internals.control_stream.get_records('ERROR')[0]
     correct = """$ERROR
+Y_1 = F + EPS(1)*F
 IF (F.EQ.0) THEN
     IPREDADJ = 2.22500000000000E-16
 ELSE
     IPREDADJ = F
 END IF
-Y_1 = F + EPS(3)*IPREDADJ
-Y_2 = F + EPS(1)*F + EPS(2)
+Y_2 = F + EPS(2)*IPREDADJ
 
 IF (DVID.EQ.1) THEN
     Y = Y_1
