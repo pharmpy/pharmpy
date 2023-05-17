@@ -307,7 +307,6 @@ def _create_combined_model(input_model, current_iteration):
     ruv_add = create_symbol(model, 'epsilon_a')
     ipred = sympy.Symbol('IPRED')
     s = Assignment(s.symbol, s.expression + ruv_prop + ruv_add / ipred)
-    model = model.replace(statements=s + sset[1:])
 
     prop_name = 'sigma_prop'
     model = add_population_parameter(model, prop_name, 1, lower=0)
@@ -323,7 +322,10 @@ def _create_combined_model(input_model, current_iteration):
     eps_add = NormalDistribution.create(ruv_add.name, 'ruv', 0, sympy.Symbol(add_name))
     name = f'combined_{current_iteration}'
     model = model.replace(
-        random_variables=model.random_variables + [eps_prop, eps_add], name=name, description=name
+        statements=s + sset[1:],
+        random_variables=model.random_variables + [eps_prop, eps_add],
+        name=name,
+        description=name,
     )
     return model
 
