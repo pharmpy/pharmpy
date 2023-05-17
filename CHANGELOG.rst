@@ -1,13 +1,21 @@
 next version
 ------------
 
+Changes
+=======
+
+* ``ModelfitResults.ofv_iterations`` and ``ModelfitResults.parameter_estimates_iterations`` have NaN rows in failed runs
+
 Bugfixes
---------
+========
 
 * Fix bug causing changes in FIX from model1 to model4 to crash frem
 * Fix bug causing individual parameters in $ERROR to crash frem
 * create_report now does not assume that results.json already exists
 * ~ for $HOME is now supported in write_model and create_report
+* Fix bug where LLOQ value did not override column in dataset in ``transform_blq``
+* Correct BLQ indicator column condition in ``transform_blq``
+* Fix bug where modelfit results were not connected to model after a fit
 
 0.94.0 (2023-04-26)
 -------------------
