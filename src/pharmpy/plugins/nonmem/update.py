@@ -554,11 +554,19 @@ def update_ics(statements, odes):
 
 def update_statements(model: Model, old: Statements, new: Statements, trans):
     trans['NaN'] = int(data.conf.na_rep)
-    main_statements = Statements()
-    error_statements = Statements()
 
     new_odes = new.ode_system
     updated_dataset = False
+
+    old_solver, new_solver = None, None
+    if len(model.estimation_steps) > 0:
+        new_solver = model.estimation_steps[0].solver
+    if len(model.internals.old_estimation_steps) > 0:
+        old_solver = model.internals.old_estimation_steps[0].solver
+
+    if old == new and old_solver == new_solver:
+        return model, updated_dataset
+
     if new_odes is not None:
         old_odes = old.ode_system
         if new_odes != old_odes:
@@ -572,12 +580,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
                 )
             model, updated_dataset = update_ode_system(model, old_odes, new_odes)
         else:
-            if len(model.estimation_steps) > 0:
-                new_solver = model.estimation_steps[0].solver
-            else:
-                new_solver = None
             if new_solver:
-                old_solver = model.internals.old_estimation_steps[0].solver
                 if new_solver != old_solver:
                     advan = solver_to_advan(new_solver)
                     subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
