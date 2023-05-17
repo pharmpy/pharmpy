@@ -10,9 +10,9 @@ from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model, NormalDistribution, Parameter, Parameters, Statements
 
-from .common import remove_unused_parameters_and_rvs
+from .common import _get_unused_parameters_and_rvs, remove_unused_parameters_and_rvs
 from .data import get_observations
-from .expressions import create_symbol, get_dv_symbol
+from .expressions import _create_symbol, create_symbol, get_dv_symbol
 from .help_functions import _format_input_list, _get_epsilons
 from .parameters import add_population_parameter, fix_parameters, set_initial_estimates
 
@@ -152,14 +152,18 @@ def set_additive_error_model(
     if data_trans != dv:
         expr = subs(data_trans, {dv: expr}, simultaneous=True).series(ruv, n=series_terms).removeO()
 
-    model = model.replace(statements=stats.reassign(y, expr))
-    model = remove_unused_parameters_and_rvs(model)
-
     sigma = create_symbol(model, 'sigma')
     model = add_population_parameter(model, sigma.name, _get_prop_init(model))
 
     eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
-    model = model.replace(random_variables=model.random_variables + eps)
+
+    rvs_new, params_new = _get_unused_parameters_and_rvs(
+        stats.reassign(y, expr), model.parameters, model.random_variables + eps
+    )
+
+    model = model.replace(
+        statements=stats.reassign(y, expr), random_variables=rvs_new, parameters=params_new
+    )
     return model.update_source()
 
 
@@ -277,16 +281,20 @@ def set_proportional_error_model(
         ind = stats.find_assignment_index(y)
         statements = statements[0:ind] + guard_assignment + statements[ind:]
 
-    model = model.replace(statements=statements.reassign(y, expr))
-    model = remove_unused_parameters_and_rvs(model)
-
     sigma = create_symbol(model, 'sigma')
     model = add_population_parameter(model, sigma.name, 0.09)
 
     eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
-    model = model.replace(random_variables=model.random_variables + eps)
-    model = model.update_source()
-    return model
+
+    rvs_new, params_new = _get_unused_parameters_and_rvs(
+        stats.reassign(y, expr), model.parameters, model.random_variables + eps
+    )
+
+    model = model.replace(
+        statements=statements.reassign(y, expr), random_variables=rvs_new, parameters=params_new
+    )
+
+    return model.update_source()
 
 
 def set_combined_error_model(
@@ -398,8 +406,7 @@ def set_combined_error_model(
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
 
-    model = model.replace(statements=stats.reassign(y, expr_combined))
-    model = remove_unused_parameters_and_rvs(model)
+    stats_new = stats.reassign(y, expr_combined)
 
     sigma_prop = create_symbol(model, 'sigma_prop')
     model = add_population_parameter(model, sigma_prop.name, 0.09)
@@ -408,7 +415,12 @@ def set_combined_error_model(
 
     eps_prop = NormalDistribution.create(ruv_prop.name, 'RUV', 0, sigma_prop)
     eps_add = NormalDistribution.create(ruv_add.name, 'RUV', 0, sigma_add)
-    model = model.replace(random_variables=model.random_variables + [eps_prop, eps_add])
+
+    rvs_new, params_new = _get_unused_parameters_and_rvs(
+        stats_new, model.parameters, model.random_variables + [eps_prop, eps_add]
+    )
+    model = model.replace(statements=stats_new, random_variables=rvs_new, parameters=params_new)
+
     return model.update_source()
 
 
@@ -825,8 +837,9 @@ def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME')
         ),
         (y.expression, True),
     )
-    model = model.replace(statements=model.statements.reassign(y.symbol, expr))
     model = add_population_parameter(model, theta.name, 0.1)
+    model = model.replace(statements=model.statements.reassign(y.symbol, expr))
+
     return model.update_source()
 
 
@@ -907,7 +920,11 @@ def set_power_on_ruv(
         alternative = None
 
     for e in eps.names:
-        theta_name = str(create_symbol(model, stem='power', force_numbering=True))
+        theta_name = str(
+            _create_symbol(
+                sset, pset, model.random_variables, model.datainfo, 'power', force_numbering=True
+            )
+        )
         if lower_limit is None:
             theta = Parameter(theta_name, theta_init)
         else:
@@ -919,7 +936,6 @@ def set_power_on_ruv(
         if alternative:  # To avoid getting W*EPS*F**THETA
             sset = sset.subs({sympy.Symbol(e) * alternative: sympy.Symbol(e)})
         sset = sset.subs({sympy.Symbol(e): ipred ** sympy.Symbol(theta.name) * sympy.Symbol(e)})
-        model = model.replace(statements=sset)
 
     model = model.replace(parameters=Parameters.create(pset), statements=sset)
 

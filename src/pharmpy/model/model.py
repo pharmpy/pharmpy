@@ -25,7 +25,7 @@ from .datainfo import ColumnInfo, DataInfo
 from .estimation import EstimationSteps
 from .parameters import Parameters
 from .random_variables import RandomVariables
-from .statements import Statements
+from .statements import ODESystem, Statements
 
 
 class ModelError(Exception):
@@ -129,9 +129,36 @@ class Model(Immutable):
             raise TypeError("model.random_variables must be of RandomVariables type")
 
     @staticmethod
-    def _canonicalize_statements(statements):
+    def _canonicalize_statements(statements, params, rvs, datainfo):
         if not isinstance(statements, Statements):
             raise TypeError("model.statements must be of Statements type")
+        colnames = {sympy.Symbol(colname) for colname in datainfo.names}
+        symbs_all = rvs.free_symbols.union(params.symbols).union(colnames)
+        sset_prev = []
+        for i, statement in enumerate(statements):
+            if isinstance(statement, ODESystem):
+                continue
+
+            symbs = statement.expression.free_symbols
+            if not symbs.issubset(symbs_all):
+                # E.g. after solve_ode_system
+                if isinstance(statement.symbol, sympy.Function):
+                    symbs_all.add(sympy.Symbol(statement.symbol.func.__name__))
+                    continue
+
+                for symb in symbs:
+                    if symb in symbs_all:
+                        continue
+                    if str(symb) == 'NaN':
+                        continue
+                    if statements.find_assignment(symb) is None:
+                        if statements.ode_system and symb in statements.ode_system.amounts:
+                            continue
+                        raise ValueError(f'Symbol {symb} is not defined')
+                    if Statements(sset_prev).find_assignment_index(symb) is None:
+                        raise ValueError(f'Symbol {symb} defined after being used')
+
+            sset_prev += statement
 
     def replace(self, **kwargs):
         name = kwargs.get('name', self.name)
@@ -158,12 +185,6 @@ class Model(Immutable):
 
         parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
 
-        if 'statements' in kwargs:
-            statements = kwargs['statements']
-            Model._canonicalize_statements(statements)
-        else:
-            statements = self.statements
-
         if 'dataset' in kwargs:
             dataset = kwargs['dataset']
             new_dataset = True
@@ -180,6 +201,13 @@ class Model(Immutable):
 
         if new_dataset:
             datainfo = update_datainfo(datainfo, dataset)
+
+        # Has to be checked after datainfo is updated since it looks for symbols in datainfo as well
+        if 'statements' in kwargs:
+            statements = kwargs['statements']
+            Model._canonicalize_statements(statements, parameters, random_variables, datainfo)
+        else:
+            statements = self.statements
 
         estimation_steps = kwargs.get('estimation_steps', self.estimation_steps)
         if not isinstance(estimation_steps, EstimationSteps):

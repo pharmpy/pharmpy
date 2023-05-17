@@ -3,6 +3,7 @@ from io import StringIO
 import pandas as pd
 import pytest
 
+from pharmpy.model import DataInfo
 from pharmpy.tools.linearize.results import calculate_results, psn_linearize_results
 from pharmpy.tools.linearize.tool import create_linearized_model
 from pharmpy.tools.psn_helpers import create_results
@@ -108,5 +109,9 @@ def test_create_results(testdata):
 def test_create_linearized_model(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'pheno_real.mod'
     model = load_model_for_test(path)
+    datainfo = DataInfo.create(
+        ['D_ETA1', 'OETA', 'OPRED', 'D_EPS1', 'D_EPSETA1_1', 'OETA1', 'D_EPSETA1_2', 'OETA2']
+    )
+    model = model.replace(datainfo=datainfo)
     linbase = create_linearized_model(model)
     assert len(linbase.statements) == 8

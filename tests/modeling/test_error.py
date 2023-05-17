@@ -995,9 +995,14 @@ def test_set_power_on_ruv(
     with chdir(tmp_path):
         model_pheno = load_model_for_test('run1.mod')
         model_more_eps = re.sub(
+            r'V=TVV\*EXP\(ETA\(2\)\)',
+            'V=TVV',
+            model_pheno.model_code,
+        )
+        model_more_eps = re.sub(
             r'( 0.031128  ;        IVV\n)',
             '$SIGMA 0.1\n$SIGMA 0.1',
-            model_pheno.model_code,
+            model_more_eps,
         )
         model_more_eps = re.sub(
             r'IPRED=F\nIRES=DV-IPRED',

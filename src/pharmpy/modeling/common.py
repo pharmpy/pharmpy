@@ -588,11 +588,19 @@ def remove_unused_parameters_and_rvs(model: Model):
     Model
         Pharmpy model object
     """
-    symbols = model.statements.free_symbols
+    new_rvs, new_params = _get_unused_parameters_and_rvs(
+        model.statements, model.parameters, model.random_variables
+    )
+    model = model.replace(random_variables=new_rvs, parameters=new_params)
+    return model.update_source()
+
+
+def _get_unused_parameters_and_rvs(statements, parameters, random_variables):
+    symbols = statements.free_symbols
 
     # Find unused rvs needing unjoining
     to_unjoin = []
-    for dist in model.random_variables:
+    for dist in random_variables:
         if isinstance(dist, JointNormalDistribution):
             names = dist.names
             for i, name in enumerate(names):
@@ -601,7 +609,7 @@ def remove_unused_parameters_and_rvs(model: Model):
                 if symb not in symbols and symbols.isdisjoint(params):
                     to_unjoin.append(name)
 
-    rvs = model.random_variables.unjoin(to_unjoin)
+    rvs = random_variables.unjoin(to_unjoin)
 
     new_dists = []
     for dist in rvs:
@@ -614,13 +622,12 @@ def remove_unused_parameters_and_rvs(model: Model):
     new_rvs = RandomVariables(tuple(new_dists), rvs._eta_levels, rvs._epsilon_levels)
 
     new_params = []
-    for p in model.parameters:
+    for p in parameters:
         symb = p.symbol
         if symb in symbols or symb in new_rvs.free_symbols or (p.fix and p.init == 0):
             new_params.append(p)
 
-    model = model.replace(random_variables=new_rvs, parameters=Parameters.create(new_params))
-    return model.update_source()
+    return new_rvs, Parameters.create(new_params)
 
 
 def rename_symbols(
@@ -642,7 +649,12 @@ def rename_symbols(
     Model
         Pharmpy model object
     """
-    d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in new_names.items()}
+    d = {
+        (sympy.Symbol(key) if isinstance(key, str) else key): (
+            sympy.Symbol(val) if isinstance(val, str) else val
+        )
+        for key, val in new_names.items()
+    }
 
     new = []
     for p in model.parameters:

@@ -193,13 +193,17 @@ def test_add_two_parameters(pheno):
 
 
 @pytest.mark.parametrize(
-    'statement_new,buf_new',
+    'statement_new,param_new,buf_new',
     [
-        (Assignment(S('CL'), sympy.Integer(2)), 'CL = 2'),
-        (Assignment(S('Y'), S('THETA(4)') + S('THETA(5)')), 'Y = THETA(4) + THETA(5)'),
+        (Assignment(S('CL'), sympy.Integer(2)), None, 'CL = 2'),
+        (
+            Assignment(S('Y'), S('THETA(4)') + S('THETA(5)')),
+            [Parameter.create('THETA(4)', 0.1), Parameter.create('THETA(5)', 0.1)],
+            'Y = THETA(4) + THETA(5)',
+        ),
     ],
 )
-def test_add_statements(pheno, statement_new, buf_new):
+def test_add_statements(pheno, statement_new, buf_new, param_new):
     sset = pheno.statements
     assert len(sset) == 15
 
@@ -210,7 +214,9 @@ def test_add_statements(pheno, statement_new, buf_new):
             new_sset.append(statement_new)
         new_sset.append(s)
 
-    model = pheno.replace(statements=Statements(new_sset))
+    model = pheno.replace(
+        statements=Statements(new_sset), parameters=pheno.parameters + Parameters.create(param_new)
+    )
     model = model.update_source()
 
     assert len(model.statements) == 16
@@ -349,39 +355,6 @@ def test_initial_individual_estimates(load_model_for_test, datadir):
     assert len(inits) == 59
     assert len(inits.columns) == 2
     assert inits['ETA_1'][2] == -0.166321
-
-
-@pytest.mark.parametrize(
-    'buf_new, len_expected',
-    [
-        (
-            'IF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\nTVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\nCL=TVCL*EXP(ETA(1))'
-            '\nV=TVV*EXP(ETA(2))\nS1=V\nY=A+B',
-            9,
-        ),
-        (
-            'IF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n'
-            'TVCL=THETA(1)*WGT\nTVV=THETA(2)*WGT\n'
-            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\nCL=TVCL*EXP(ETA(1))'
-            '\nV=TVV*EXP(ETA(2))\nS1=2*V',
-            8,
-        ),
-    ],
-)
-def test_statements_setter(pheno, buf_new, len_expected):
-    parser = NMTranParser()
-    buf_new = _ensure_trailing_newline(buf_new)
-    statements_new = parser.parse(f'$PRED\n{buf_new}').records[0].statements
-
-    assert len(pheno.statements) == 15
-    assert len(statements_new) == len_expected
-
-    model = pheno.replace(statements=statements_new)
-
-    assert len(model.statements) == len_expected
-    assert model.statements == statements_new
 
 
 def test_deterministic_theta_comments(pheno):

@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from pharmpy.model import Model
+from pharmpy.deps import sympy
+from pharmpy.model import Assignment, Model
 from pharmpy.modeling import convert_model, create_symbol, load_example_model
 from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
@@ -59,3 +60,23 @@ def test_model_equality():
     assert pheno2 != pheno_linear2
 
     assert hash(pheno1) != hash(pheno_linear1)
+
+
+def test_replace(load_model_for_test, testdata):
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(path)
+    sset = model.statements
+    cl = sset.find_assignment('CL')
+    sset_new = sset.reassign(cl.symbol, cl.expression + sympy.Symbol('x'))
+    with pytest.raises(ValueError, match='Symbol x is not defined'):
+        model.replace(statements=sset_new)
+
+    x_assignment = Assignment(sympy.Symbol('x'), sympy.Float(1))
+    model.replace(statements=x_assignment + sset_new)
+
+    sset_new = sset_new.before_odes + x_assignment + sset_new.ode_system + sset_new.after_odes
+    with pytest.raises(ValueError, match='Symbol x defined after being used'):
+        model.replace(statements=sset_new)
+
+    sset_new = sset.reassign(cl.symbol, cl.expression + sympy.Symbol('TIME'))
+    model.replace(statements=sset_new)

@@ -3,6 +3,7 @@ import sympy
 
 from pharmpy.model import (
     Assignment,
+    DataInfo,
     Model,
     NormalDistribution,
     Parameter,
@@ -161,6 +162,7 @@ $ESTIMATION METHOD=1 INTERACTION
 )
 def test_mu_reference_model_generic(statements, correct):
     model = Model()
+    datainfo = DataInfo.create(['AGE'])
     eta1 = NormalDistribution.create('ETA(1)', 'iiv', 0, s('omega1'))
     eta2 = NormalDistribution.create('ETA(2)', 'iiv', 0, s('omega2'))
     rvs = RandomVariables.create([eta1, eta2])
@@ -169,7 +171,10 @@ def test_mu_reference_model_generic(statements, correct):
     th3 = Parameter('THETA(3)', 2, lower=1)
     params = Parameters((th1, th2, th3))
     model = model.replace(
-        statements=Statements(statements), parameters=params, random_variables=rvs
+        statements=Statements(statements),
+        parameters=params,
+        random_variables=rvs,
+        datainfo=datainfo,
     )
     model = mu_reference_model(model)
     assert model.statements == Statements(correct)

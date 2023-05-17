@@ -229,15 +229,23 @@ def create_symbol(model: Model, stem: str, force_numbering: bool = False):
     >>> create_symbol(model, "CL")
     CL1
     """
-    symbols = [str(symbol) for symbol in model.statements.free_symbols]
-    params = [param.name for param in model.parameters]
-    rvs = model.random_variables.names
-    dataset_col = model.datainfo.names
-    # FIXME: handle other DVs
-    dv = list(model.dependent_variables.keys())[0]
-    misc = [dv]
+    return _create_symbol(
+        model.statements,
+        model.parameters,
+        model.random_variables,
+        model.datainfo,
+        stem,
+        force_numbering,
+    )
 
-    all_names = symbols + params + rvs + dataset_col + misc
+
+def _create_symbol(statements, parameters, random_variables, datainfo, stem, force_numbering):
+    symbols = [str(symbol) for symbol in statements.free_symbols]
+    params = [param.name for param in parameters]
+    rvs = random_variables.names
+    dataset_col = datainfo.names
+
+    all_names = symbols + params + rvs + dataset_col
 
     if str(stem) not in all_names and not force_numbering:
         return sympy.Symbol(str(stem))
@@ -703,9 +711,10 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     for i, epsilon in enumerate(model.random_variables.epsilons.names, start=1):
         subscript = get_subscript(epsilon, i, named_subscripts)
         subs[sympy.Symbol(epsilon)] = sympy.Symbol(f"epsilon_{subscript}")
-    statements = model.statements.subs(subs)
-    model = model.replace(statements=statements)
-    return model.update_source()
+    from pharmpy.modeling import rename_symbols
+
+    model = rename_symbols(model, subs)
+    return model
 
 
 def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:

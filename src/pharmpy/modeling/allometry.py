@@ -6,7 +6,7 @@ from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.model import Assignment, Model, Parameter, Parameters
 
-from .expressions import create_symbol
+from .expressions import _create_symbol
 from .odes import find_clearance_parameters, find_volume_parameters
 
 
@@ -114,19 +114,20 @@ def add_allometry(
 
     if not (len(parsed_parameters) == len(initials) == len(lower_bounds) == len(upper_bounds)):
         raise ValueError("The number of parameters, initials and bounds must be the same")
-
+    sset = model.statements
     params = list(model.parameters)
     for p, init, lower, upper in zip(parsed_parameters, initials, lower_bounds, upper_bounds):
-        symb = create_symbol(model, f'ALLO_{p.name}')
+        symb = _create_symbol(
+            sset, params, model.random_variables, model.datainfo, f'ALLO_{p.name}', False
+        )
         param = Parameter(symb.name, init=init, lower=lower, upper=upper, fix=fixed)
         params.append(param)
         expr = p * (variable / reference) ** param.symbol
         new_ass = Assignment(p, expr)
-        ind = model.statements.find_assignment_index(p)
-        statements = model.statements[0 : ind + 1] + new_ass + model.statements[ind + 1 :]
-        model = model.replace(statements=statements)
+        ind = sset.find_assignment_index(p)
+        sset = sset[0 : ind + 1] + new_ass + sset[ind + 1 :]
     parameters = Parameters.create(params)
-    model = model.replace(parameters=parameters)
+    model = model.replace(statements=sset, parameters=parameters)
     model = model.update_source()
 
     return model
