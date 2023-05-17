@@ -352,7 +352,7 @@ def test_set_dvid(load_example_model_for_test):
     col = m.datainfo['FA1']
     assert col.type == 'dvid'
     assert col.scale == 'nominal'
-    assert col.categories == [0, 1]
+    assert col.categories == (0, 1)
     m = set_dvid(m, 'FA1')
     assert m.datainfo['FA1'].type == 'dvid'
     m = set_dvid(m, 'FA2')

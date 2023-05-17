@@ -11,7 +11,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.units import parse as parse_units
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
-from pharmpy.internals.immutable import Immutable
+from pharmpy.internals.immutable import Immutable, frozenmapping
 
 
 class ColumnInfo(Immutable):
@@ -29,8 +29,8 @@ class ColumnInfo(Immutable):
         Scale of measurement (see the "scale" attribute)
     continuous : bool
         True if continuous or False if discrete
-    categories : list
-        List of all possible categories
+    categories : Optional[Union[Tuple, Dict]]
+        Tuple of all possible categories or dict from value to label for each category
     drop : bool
         Should column be dropped (i.e. barred from being used)
     datatype : str
@@ -161,6 +161,21 @@ class ColumnInfo(Immutable):
         self._datatype = datatype
         self._descriptor = descriptor
 
+    @staticmethod
+    def _canonicalize_categories(categories):
+        if isinstance(categories, dict):
+            return frozenmapping(categories)
+        elif isinstance(categories, frozenmapping):
+            return categories
+        elif isinstance(categories, list):
+            return tuple(categories)
+        elif isinstance(categories, tuple):
+            return categories
+        elif categories is None:
+            return categories
+        else:
+            raise TypeError("categories must be None, list-like or dict-like")
+
     @classmethod
     def create(
         cls,
@@ -196,6 +211,8 @@ class ColumnInfo(Immutable):
             )
         if descriptor not in ColumnInfo._all_descriptors:
             raise TypeError(f"Unknown column descriptor {descriptor}")
+        categories = ColumnInfo._canonicalize_categories(categories)
+
         return cls(
             name=name,
             type=type,
@@ -251,6 +268,7 @@ class ColumnInfo(Immutable):
             'unit': sympy.srepr(self._unit),
             'scale': self._scale,
             'continuous': self._continuous,
+            'categories': self._categories,
             'drop': self._drop,
             'datatype': self._datatype,
             'descriptor': self._descriptor,
@@ -264,6 +282,7 @@ class ColumnInfo(Immutable):
             unit=sympy.parse_expr(d['unit']),
             scale=d['scale'],
             continuous=d['continuous'],
+            categories=d['categories'],
             drop=d['drop'],
             datatype=d['datatype'],
             descriptor=d['descriptor'],
@@ -353,7 +372,7 @@ class ColumnInfo(Immutable):
 
     @property
     def categories(self):
-        """List of allowed categories"""
+        """List or dict of allowed categories"""
         return self._categories
 
     @property
@@ -469,6 +488,13 @@ class ColumnInfo(Immutable):
             'uint32',
             'uint64',
         ]
+
+    def get_all_categories(self):
+        """Get a list of all categories"""
+        if isinstance(self._categories, tuple):
+            return list(self._categories)
+        else:
+            return list(self._categories.keys())
 
     def __repr__(self):
         ser = pd.Series(

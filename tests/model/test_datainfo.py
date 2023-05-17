@@ -328,9 +328,17 @@ def test_dict():
         'unit': 'Integer(1)',
         'scale': 'ratio',
         'continuous': True,
+        'categories': None,
         'drop': False,
         'datatype': 'float64',
         'descriptor': None,
     }
     col2 = ColumnInfo.from_dict(d)
     assert col1 == col2
+
+
+def test_get_all_categories():
+    col1 = ColumnInfo.create("SCORE", categories=[1, 2, 3])
+    assert col1.get_all_categories() == [1, 2, 3]
+    col2 = ColumnInfo.create("SCORE", categories={1: 'a', 2: 'b'})
+    assert col2.get_all_categories() == [1, 2]
