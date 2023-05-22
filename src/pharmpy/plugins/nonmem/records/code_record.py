@@ -725,7 +725,7 @@ def _parse_tree(tree: AttrTree):
                         # Special case for empty if
                         piecewise_logic = sympy.Not(blocks[0][0])
                     blocks.append((piecewise_logic, else_symb_exprs))
-
+                s_block = []
                 for symbol in symbols:
                     pairs = []
                     for block in blocks:
@@ -748,9 +748,9 @@ def _parse_tree(tree: AttrTree):
                     else:
                         pw = sympy.Piecewise(*pairs)
                         ass = Assignment(symbol, pw)
-                    s.append(ass)
+                    s_block.append(ass)
 
-                s = _reorder_block_statements(s)
+                s.extend(_reorder_block_statements(s_block))
                 curind = (child_index, child_index + 1, len(s) - len(symbols), len(s))
                 new_index.append(curind)
 
