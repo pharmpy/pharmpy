@@ -84,9 +84,9 @@ def create_basic_pk_model(
 
     params = Parameters((pop_cl, pop_vc, iiv_cl, iiv_vc))
 
-    eta_cl_name = 'eta_cl'
+    eta_cl_name = 'ETA_CL'
     eta_cl = NormalDistribution.create(eta_cl_name, 'iiv', 0, iiv_cl.symbol)
-    eta_vc_name = 'eta_vc'
+    eta_vc_name = 'ETA_VC'
     eta_vc = NormalDistribution.create(eta_vc_name, 'iiv', 0, iiv_vc.symbol)
     rvs = RandomVariables.create([eta_cl, eta_vc])
 
