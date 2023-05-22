@@ -155,12 +155,12 @@ def has_blq_transformation(model: Model, y_expr):
 
 def get_blq_symb_and_type(model: Model):
     try:
-        blq_datainfo = model.datainfo.typeix['blq']
-        return sympy.Symbol(blq_datainfo[0].name), 'blq'
+        blq_datainfo = model.datainfo.typeix['lloq']
+        return sympy.Symbol(blq_datainfo[0].name), 'lloq'
     except IndexError:
         try:
-            blq_datainfo = model.datainfo.typeix['lloq']
-            return sympy.Symbol(blq_datainfo[0].name), 'lloq'
+            blq_datainfo = model.datainfo.typeix['blq']
+            return sympy.Symbol(blq_datainfo[0].name), 'blq'
         except IndexError:
             return sympy.Symbol('LLOQ'), 'lloq'
 
