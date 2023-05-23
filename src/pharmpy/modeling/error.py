@@ -10,9 +10,10 @@ from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model, NormalDistribution, Parameter, Parameters, Statements
 
+from .blq import get_blq_symb_and_type, get_sd_expr, has_blq_transformation
 from .common import _get_unused_parameters_and_rvs, remove_unused_parameters_and_rvs
 from .data import get_observations
-from .expressions import _create_symbol, create_symbol, get_dv_symbol
+from .expressions import _create_symbol, create_symbol, get_dv_symbol, simplify_expression
 from .help_functions import _format_input_list, _get_epsilons
 from .parameters import add_population_parameter, fix_parameters, set_initial_estimates
 
@@ -267,34 +268,60 @@ def set_proportional_error_model(
     data_trans = _canonicalize_data_transformation(model, data_trans, dv)
     ipred = create_symbol(model, 'IPREDADJ') if zero_protection else f
 
-    if data_trans == sympy.log(dv):
-        expr = sympy.log(ipred) + ruv
-    elif data_trans == dv:
-        expr = f + ipred * ruv
-    else:
-        raise ValueError(f"Not supported data transformation {data_trans}")
-
-    statements = model.statements
-    if zero_protection:
-        guard_expr = sympy.Piecewise((2.225e-16, sympy.Eq(f, 0)), (f, True))
-        guard_assignment = Assignment(ipred, guard_expr)
-        ind = stats.find_assignment_index(y)
-        statements = statements[0:ind] + guard_assignment + statements[ind:]
-
     sigma = create_symbol(model, 'sigma')
     model = add_population_parameter(model, sigma.name, 0.09)
 
     eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
 
+    f_dummy = sympy.Dummy('x')
+    if data_trans == sympy.log(dv):
+        error_expr = sympy.log(ipred) + ruv if zero_protection else sympy.log(f_dummy) + ruv
+    elif data_trans == dv:
+        error_expr = f_dummy + ipred * ruv if zero_protection else f_dummy + f_dummy * ruv
+    else:
+        raise ValueError(f"Not supported data transformation {data_trans}")
+
+    stats_new = stats
+    if has_blq_transformation(model, y):
+        f, expr, sd_symb, sd_expr = _update_blq(model, error_expr, f, f_dummy, eps)
+        stats_new = stats.reassign(sd_symb, sd_expr)
+    else:
+        expr = error_expr.subs({f_dummy: f})
+    stats_new = stats_new.reassign(y, expr)
+
+    if zero_protection:
+        guard_expr = sympy.Piecewise((2.225e-16, sympy.Eq(f, 0)), (f, True))
+        guard_assignment = Assignment(ipred, guard_expr)
+        ind = 0
+        # Find first occurrence of IPREDADJ
+        for i, s in enumerate(stats_new):
+            if ipred in s.free_symbols:
+                ind = i
+                break
+        stats_new = stats_new[0:ind] + guard_assignment + stats_new[ind:]
+
     rvs_new, params_new = _get_unused_parameters_and_rvs(
-        stats.reassign(y, expr), model.parameters, model.random_variables + eps
+        stats_new, model.parameters, model.random_variables + eps
     )
 
-    model = model.replace(
-        statements=statements.reassign(y, expr), random_variables=rvs_new, parameters=params_new
-    )
+    model = model.replace(statements=stats_new, random_variables=rvs_new, parameters=params_new)
 
     return model.update_source()
+
+
+def _update_blq(model, expr_dummy, f, f_dummy, eps_new):
+    blq_symb, _ = get_blq_symb_and_type(model)
+    for expr, cond in f.args:
+        if blq_symb in cond.free_symbols:
+            f_above_lloq = expr
+            break
+    else:
+        raise AssertionError('BLQ symbol not found')
+    expr_above_lloq = expr_dummy.subs({f_dummy: f_above_lloq})
+    expr = f.subs({f_above_lloq: expr_above_lloq})
+    sd = model.statements.find_assignment('SD')
+    sd_new = get_sd_expr(expr_above_lloq, model.random_variables + eps_new)
+    return f_above_lloq, expr, sd.symbol, simplify_expression(model, sd_new)
 
 
 def set_combined_error_model(

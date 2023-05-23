@@ -63,6 +63,43 @@ def test_transform_blq(load_model_for_test, testdata, method, error_func, sd_ref
 
 
 @pytest.mark.parametrize(
+    'method, error_func_before, error_func_after, args, sd_ref, y_ref',
+    [
+        (
+            'm4',
+            set_additive_error_model,
+            set_proportional_error_model,
+            {'zero_protection': False},
+            'SD = SQRT(SIGMA(1,1))*ABS(F)',
+            ('Y = F + EPS(1)*F', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
+        ),
+        (
+            'm4',
+            set_additive_error_model,
+            set_proportional_error_model,
+            {},
+            'SD = SQRT(SIGMA(1,1))*ABS(IPREDADJ)',
+            ('Y = F + EPS(1)*IPREDADJ', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
+        ),
+    ],
+)
+def test_update_blq_transformation(
+    load_model_for_test, testdata, method, error_func_before, error_func_after, args, sd_ref, y_ref
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model = error_func_before(model)
+
+    model = transform_blq(model, method=method, lloq=0.1)
+
+    model = error_func_after(model, **args)
+
+    assert sd_ref in model.model_code
+    assert all(statement in model.model_code for statement in y_ref)
+
+    assert all(est.laplace for est in model.estimation_steps)
+
+
+@pytest.mark.parametrize(
     'method, error_func',
     [
         ('m4', set_additive_error_model),
@@ -76,15 +113,11 @@ def test_has_blq_transformation(load_model_for_test, testdata, method, error_fun
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = error_func(model)
 
-    y_expr = model.statements.find_assignment(sympy.Symbol('Y')).expression
-
-    assert not has_blq_transformation(model, y_expr)
+    assert not has_blq_transformation(model, sympy.Symbol('Y'))
 
     model = transform_blq(model, method=method, lloq=0.1)
 
-    y_expr = model.statements.find_assignment(sympy.Symbol('Y')).expression
-
-    assert has_blq_transformation(model, y_expr)
+    assert has_blq_transformation(model, sympy.Symbol('Y'))
 
 
 def test_transform_blq_invalid_input_model(load_model_for_test, testdata):

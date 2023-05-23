@@ -135,8 +135,9 @@ def _m3_m4_method(model, lloq, method):
     return model.update_source()
 
 
-def has_blq_transformation(model: Model, y_expr):
+def has_blq_transformation(model: Model, y):
     # FIXME: make more general
+    y_expr = model.statements.error.find_assignment(y).expression
     if not isinstance(y_expr, sympy.Piecewise):
         return False
     for statement, cond in y_expr.args:
@@ -180,22 +181,22 @@ def _verify_model(model, method):
 
 def _get_sd(model, y):
     y_expr = model.statements.find_assignment(y.symbol).expression
-    rvs = model.random_variables.epsilons
+    sd_expr = get_sd_expr(y_expr, model.random_variables)
+    symb_sd = create_symbol(model, 'SD')
+    return Assignment(symb_sd, simplify_expression(model, sd_expr))
 
+
+def get_sd_expr(y_expr, rvs):
     rv_terms = [arg for arg in y_expr.args if arg.free_symbols.intersection(rvs.free_symbols)]
     sd_expr = []
     for i, term in enumerate(rv_terms, 1):
-        rvs_in_term = model.random_variables.free_symbols.intersection(term.free_symbols)
+        rvs_in_term = rvs.free_symbols.intersection(term.free_symbols)
         if len(rvs_in_term) > 1:
             raise ValueError(
                 'Invalid input model: error model not supported, terms in error model cannot contain '
                 'more than one random variable'
             )
         expr = rvs.replace_with_sympy_rvs(term)
-        std_term = simplify_expression(model, sympy.stats.std(expr))
-        sd_expr.append(std_term)
+        sd_expr.append(sympy.stats.std(expr))
 
-    symb_sd = create_symbol(model, 'SD')
-    sd_expr_full = sympy.sqrt(sympy.Add(*[expr**2 for expr in sd_expr]))
-
-    return Assignment(symb_sd, simplify_expression(model, sd_expr_full))
+    return sympy.sqrt(sympy.Add(*[expr**2 for expr in sd_expr]))
