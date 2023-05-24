@@ -905,7 +905,8 @@ def match_advan1(odes):
     return len(odes) == 1
 
 
-def match_advan2(odes):
+def match_advan2(statements):
+    odes = statements.ode_system
     if len(odes) != 2:
         return False
     dosing = odes.dosing_compartment
@@ -914,7 +915,16 @@ def match_advan2(odes):
         return False
     central = outflows[0][0]
     central_rate = outflows[0][1]
-    if {sympy.Symbol('CL'), sympy.Symbol('V')} & central_rate.free_symbols:
+
+    # Check if rate is depending on CL or V assignments
+    dep_assigns = set()
+    expr = central_rate
+    for s in reversed(statements.before_odes):
+        if s.symbol in expr.free_symbols:
+            dep_assigns.add(s.symbol)
+            expr = expr.subs(s.symbol, s.expression)
+
+    if {sympy.Symbol('CL'), sympy.Symbol('V')} & dep_assigns:
         # Cannot use reserved symbols
         return False
     central_outflows = odes.get_compartment_outflows(central)
@@ -1002,7 +1012,7 @@ def new_advan_trans(model: Model):
         advan = 'ADVAN13'
     elif match_advan1(odes):
         advan = 'ADVAN1'
-    elif match_advan2(odes):
+    elif match_advan2(model.statements):
         advan = 'ADVAN2'
     elif match_advan3(odes):
         advan = 'ADVAN3'
