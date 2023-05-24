@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
 from pharmpy.modeling import (
     evaluate_epsilon_gradient,
     evaluate_eta_gradient,
@@ -12,7 +13,7 @@ from pharmpy.modeling import (
     evaluate_population_prediction,
     evaluate_weighted_residuals,
 )
-from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
+from pharmpy.tools import read_modelfit_results
 
 tabpath = Path(__file__).resolve().parent.parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
 lincorrect = read_nonmem_dataset(
@@ -24,7 +25,8 @@ lincorrect = read_nonmem_dataset(
 
 def test_evaluate_expression(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_noifs.mod')
-    ser = evaluate_expression(model, 'TVV', model.modelfit_results.parameter_estimates)
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'pheno_noifs.mod')
+    ser = evaluate_expression(model, 'TVV', res.parameter_estimates)
     assert ser[0] == pytest.approx(1.413062)
     assert ser[743] == pytest.approx(1.110262)
 
@@ -56,9 +58,8 @@ def test_evaluate_individual_prediction(load_model_for_test, testdata):
 
     linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
     linmod = load_model_for_test(linpath)
-    pred = evaluate_individual_prediction(
-        model=linmod, etas=linmod.modelfit_results.individual_estimates
-    )
+    res = read_modelfit_results(linpath)
+    pred = evaluate_individual_prediction(model=linmod, etas=res.individual_estimates)
 
     pd.testing.assert_series_equal(lincorrect['CIPREDI'], pred, rtol=1e-4, check_names=False)
 
@@ -88,14 +89,14 @@ def test_evaluate_epsilon_gradient(load_model_for_test, testdata):
 
     linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
     linmod = load_model_for_test(linpath)
-    grad = evaluate_epsilon_gradient(linmod, etas=linmod.modelfit_results.individual_estimates)
+    res = read_modelfit_results(linpath)
+    grad = evaluate_epsilon_gradient(linmod, etas=res.individual_estimates)
     pd.testing.assert_series_equal(lincorrect['H11'], grad.iloc[:, 0], rtol=1e-4, check_names=False)
 
 
 def test_evaluate_weighted_residuals(load_model_for_test, testdata):
     linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
     linmod = load_model_for_test(linpath)
-    wres = evaluate_weighted_residuals(
-        linmod, parameters=dict(linmod.modelfit_results.parameter_estimates)
-    )
+    res = read_modelfit_results(linpath)
+    wres = evaluate_weighted_residuals(linmod, parameters=dict(res.parameter_estimates))
     pd.testing.assert_series_equal(lincorrect['WRES'], wres, rtol=1e-4, check_names=False)

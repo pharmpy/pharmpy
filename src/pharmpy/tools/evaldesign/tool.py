@@ -9,7 +9,7 @@ def create_workflow(model: Model):
     wf = Workflow()
     wf.name = 'evaldesign'
 
-    from pharmpy.plugins.nonmem.run import evaluate_design
+    from pharmpy.tools.external.nonmem.run import evaluate_design
 
     task = Task('run', evaluate_design, model)
     wf.add_task(task)

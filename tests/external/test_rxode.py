@@ -1,4 +1,4 @@
-from pharmpy.plugins.rxode import convert_model
+from pharmpy.model.external.rxode import convert_model
 
 
 def test_model(testdata, load_model_for_test):

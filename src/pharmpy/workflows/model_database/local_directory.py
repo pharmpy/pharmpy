@@ -33,14 +33,16 @@ def get_modelfit_results(model, path):
     # the database. For this to work roundtrip of DataFrames in json is needed.
     # This is currently broken because of rounding issue in pandas
     # Also the modelfit_results attribute will soon be removed from model objects.
-    import pharmpy.plugins.nonmem as nonmem
+    import pharmpy.model.external.nonmem as nonmem_model
+    import pharmpy.tools.external.nonmem as nonmem
 
-    if isinstance(model, nonmem.Model):
+    if isinstance(model, nonmem_model.Model):
         res = nonmem.parse_modelfit_results(model, path)
     else:
-        import pharmpy.plugins.nlmixr as nlmixr
+        import pharmpy.model.external.nlmixr as nlmixr_model
+        import pharmpy.tools.external.nlmixr as nlmixr
 
-        assert isinstance(model, nlmixr.Model)
+        assert isinstance(model, nlmixr_model.Model)
         res = nlmixr.parse_modelfit_results(model, path)
 
     model = model.replace(modelfit_results=res)
@@ -303,7 +305,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
             path = root / filename
             try:
                 # NOTE this will guess the model type
-                model = Model.create_model(path)
+                model = Model.parse_model(path)
                 break
             except FileNotFoundError as e:
                 errors.append(e)

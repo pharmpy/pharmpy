@@ -100,7 +100,7 @@ def run_amd(
     run_tool
 
     """
-    from pharmpy.plugins import nonmem  # FIXME We should not depend on NONMEM
+    from pharmpy.model.external import nonmem  # FIXME We should not depend on NONMEM
 
     if type(input) is str:
         from pharmpy.tools.amd.funcs import create_start_model
@@ -248,7 +248,7 @@ def run_amd(
             'a summary.'
         )
 
-    summary_errors = summarize_errors(next_model)
+    summary_errors = summarize_errors(next_model.modelfit_results)
     res = AMDResults(
         final_model=next_model.name,
         summary_tool=summary_tool,

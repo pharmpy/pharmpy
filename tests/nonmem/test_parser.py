@@ -1,7 +1,7 @@
 import pytest
 
-from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
-from pharmpy.plugins.nonmem.parsing import parse_table_columns
+from pharmpy.model.external.nonmem.nmtran_parser import NMTranParser
+from pharmpy.model.external.nonmem.parsing import parse_table_columns
 
 
 def test_simple_parse():

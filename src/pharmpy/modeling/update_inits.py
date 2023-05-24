@@ -32,10 +32,12 @@ def update_inits(
     Example
     -------
     >>> from pharmpy.modeling import load_example_model, update_inits
-    >>> model = load_example_model("pheno")   # This model was previously fitted to its data
+    >>> from pharmpy.tools import load_example_modelfit_results
+    >>> model = load_example_model("pheno")
+    >>> results = load_example_modelfit_results("pheno")
     >>> model.parameters.inits  # doctest:+ELLIPSIS
     {'PTVCL': 0.00469307, 'PTVV': 1.00916, 'THETA_3': 0.1, 'IVCL': 0.0309626, 'IVV': 0.031128, 'SIGMA_1_1': 0.013241}
-    >>> model = update_inits(model, model.modelfit_results.parameter_estimates)
+    >>> model = update_inits(model, results.parameter_estimates)
     >>> model.parameters.inits  # doctest:+ELLIPSIS
     {'PTVCL': 0.00469555, 'PTVV': 0.984258, 'THETA_3': 0.15892, 'IVCL': 0.0293508, 'IVV': 0.027906, ...}
 
@@ -105,8 +107,10 @@ def update_initial_individual_estimates(
     Example
     -------
     >>> from pharmpy.modeling import load_example_model, update_initial_individual_estimates
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> ie = model.modelfit_results.individual_estimates
+    >>> results = load_example_modelfit_results("pheno")
+    >>> ie = results.individual_estimates
     >>> model = update_initial_individual_estimates(model, ie)
     """
     if not force and model.initial_individual_estimates is None:

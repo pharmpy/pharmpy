@@ -8,6 +8,7 @@ import pytest
 from pytest import approx
 
 import pharmpy.tools as tools
+from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.frem.models import calculate_parcov_inits, create_model3b
 from pharmpy.tools.frem.results import (
     calculate_results,
@@ -47,7 +48,8 @@ def test_check_covariates_mult_warns(load_model_for_test, testdata):
 
 def test_parcov_inits(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
-    params = calculate_parcov_inits(model, 2)
+    res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
+    params = calculate_parcov_inits(model, res.individual_estimates, 2)
     assert params == approx(
         {
             'OMEGA_3_1': 0.02560327,
@@ -60,8 +62,9 @@ def test_parcov_inits(load_model_for_test, testdata):
 
 def test_create_model3b(load_model_for_test, testdata):
     model3 = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
+    model3_res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
     model1b = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    model3b = create_model3b(model1b, model3, 2)
+    model3b = create_model3b(model1b, model3, model3_res, 2)
     pset = model3b.parameters
     assert pset['OMEGA_3_1'].init == approx(0.02560327)
     assert pset['POP_CL'].init == 0.00469555
@@ -70,14 +73,20 @@ def test_create_model3b(load_model_for_test, testdata):
 
 def test_bipp_covariance(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
-    res = calculate_results_using_bipp(model, continuous=['APGR', 'WGT'], categorical=[], rng=9532)
+    res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
+    res = calculate_results_using_bipp(
+        model, res, continuous=['APGR', 'WGT'], categorical=[], rng=9532
+    )
     assert res
 
 
 def test_frem_results_pheno(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     rng = np.random.default_rng(39)
-    res = calculate_results(model, continuous=['APGR', 'WGT'], categorical=[], samples=10, rng=rng)
+    res = calculate_results(
+        model, res, continuous=['APGR', 'WGT'], categorical=[], samples=10, rng=rng
+    )
 
     correct = """parameter,covariate,condition,p5,mean,p95
 CL,APGR,5th,0.972200,1.099294,1.242870
@@ -250,8 +259,11 @@ V,all,0.14572521381314374,0.11146577839548052,0.16976758171177983
 
 def test_frem_results_pheno_categorical(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
     rng = np.random.default_rng(8978)
-    res = calculate_results(model, continuous=['WGT'], categorical=['APGRX'], samples=10, rng=rng)
+    res = calculate_results(
+        model, res, continuous=['WGT'], categorical=['APGRX'], samples=10, rng=rng
+    )
 
     correct = """parameter,covariate,condition,p5,mean,p95
 CL,WGT,5th,0.8888806479928386,0.9344068474824363,1.0429216842428766

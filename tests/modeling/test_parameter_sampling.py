@@ -4,11 +4,11 @@ import pytest
 
 from pharmpy.modeling import (
     create_rng,
-    load_example_model,
     sample_individual_estimates,
     sample_parameters_from_covariance_matrix,
     sample_parameters_uniformly,
 )
+from pharmpy.tools import read_modelfit_results
 
 
 def test_create_rng():
@@ -19,20 +19,20 @@ def test_create_rng():
     assert rng.standard_normal() == 0.5532605888887387
 
 
-def test_sample_parameters_uniformly():
-    model = load_example_model("pheno")
+def test_sample_parameters_uniformly(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
     rng = create_rng(23)
-    df = sample_parameters_uniformly(
-        model, model.modelfit_results.parameter_estimates, n=3, rng=rng
-    )
+    df = sample_parameters_uniformly(model, res.parameter_estimates, n=3, rng=rng)
     assert df['PTVCL'][0] == 0.004877674495376137
 
 
 def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
     rng = np.random.default_rng(318)
-    pe = model.modelfit_results.parameter_estimates
-    cm = model.modelfit_results.covariance_matrix
+    pe = res.parameter_estimates
+    cm = res.covariance_matrix
     samples = sample_parameters_from_covariance_matrix(
         model,
         pe,
@@ -66,9 +66,10 @@ def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
 
 def test_sample_individual_estimates(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
     rng = np.random.default_rng(86)
-    ie = model.modelfit_results.individual_estimates
-    iec = model.modelfit_results.individual_estimates_covariance
+    ie = res.individual_estimates
+    iec = res.individual_estimates_covariance
     samples = sample_individual_estimates(model, ie, iec, rng=rng)
     assert len(samples) == 59 * 100
     assert list(samples.columns) == ['ETA_1', 'ETA_2']

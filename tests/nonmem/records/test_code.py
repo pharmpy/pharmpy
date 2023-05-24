@@ -3,7 +3,7 @@ import sympy
 
 from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment
-from pharmpy.plugins.nonmem.records.code_record import CodeRecord
+from pharmpy.model.external.nonmem.records.code_record import CodeRecord
 
 
 def _ensure_trailing_newline(buf):

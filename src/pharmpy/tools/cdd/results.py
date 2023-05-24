@@ -9,7 +9,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import linalg
 from pharmpy.model import Model, Results
 from pharmpy.modeling import plot_individual_predictions
-from pharmpy.results import mfr
+from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
 
 
@@ -42,14 +42,12 @@ def compute_cook_scores(base_estimate, cdd_estimates, covariance_matrix):
         return None
 
 
-def compute_delta_ofv(base_model: Model, cdd_models: List[Model], skipped_individuals):
-    iofv = mfr(base_model).individual_ofv
+def compute_delta_ofv(base_model_results, cdd_model_results, skipped_individuals):
+    iofv = base_model_results.individual_ofv
     if iofv is None:
-        return [np.nan] * len(cdd_models)
+        return [np.nan] * len(cdd_model_results)
 
-    cdd_ofvs = [
-        m.modelfit_results.ofv if m.modelfit_results is not None else np.nan for m in cdd_models
-    ]
+    cdd_ofvs = [res.ofv if res is not None else np.nan for res in cdd_model_results]
 
     # need to set dtype for index.difference to work
     skipped_indices = [
@@ -68,32 +66,38 @@ def compute_jackknife_covariance_matrix(cdd_estimates):
     return delta_est.transpose() @ delta_est * (bigN - 1) / bigN
 
 
-def compute_covariance_ratios(cdd_models, covariance_matrix):
+def compute_covariance_ratios(cdd_model_results, covariance_matrix):
     try:
         orig_det = np.linalg.det(covariance_matrix)
         return [
-            sqrt(np.linalg.det(m.modelfit_results.covariance_matrix) / orig_det)
-            if m.modelfit_results is not None and m.modelfit_results.covariance_matrix is not None
+            sqrt(np.linalg.det(res.covariance_matrix) / orig_det)
+            if res is not None and res.covariance_matrix is not None
             else np.nan
-            for m in cdd_models
+            for res in cdd_model_results
         ]
     except Exception:
         return None
 
 
 def calculate_results(
-    base_model: Model, cdd_models: List[Model], case_column, skipped_individuals, **_
+    base_model: Model,
+    base_model_results,
+    cdd_models: List[Model],
+    cdd_model_results,
+    case_column,
+    skipped_individuals,
+    **_,
 ):
     """Calculate CDD results"""
 
-    if base_model.modelfit_results is None:
+    if base_model_results is None:
         raise ValueError('cdd base model has no results')
 
     cdd_estimates = pd.DataFrame(
         data=[
-            pd.Series(m.modelfit_results.parameter_estimates, name=m.name)
-            for m in cdd_models
-            if m.modelfit_results is not None
+            pd.Series(res.parameter_estimates, name=m.name)
+            for m, res in zip(cdd_models, cdd_model_results)
+            if res is not None
         ]
     )
 
@@ -102,16 +106,16 @@ def calculate_results(
     # create Series of NaN values and then replace any computable results
     cook_temp = pd.Series(np.nan, index=cdd_model_names)
     try:
-        base_model.modelfit_results.covariance_matrix
+        base_model_results.covariance_matrix
     except Exception:
         pass
     else:
         cook_temp.update(
             pd.Series(
                 compute_cook_scores(
-                    base_model.modelfit_results.parameter_estimates,
+                    base_model_results.parameter_estimates,
                     cdd_estimates,
-                    base_model.modelfit_results.covariance_matrix,
+                    base_model_results.covariance_matrix,
                 ),
                 index=cdd_estimates.index,
                 dtype=np.float64,
@@ -124,14 +128,14 @@ def calculate_results(
         jackkknife_covariance_matrix = compute_jackknife_covariance_matrix(cdd_estimates)
         jack_cook_score = pd.Series(
             compute_cook_scores(
-                base_model.modelfit_results.parameter_estimates,
+                base_model_results.parameter_estimates,
                 cdd_estimates,
                 jackkknife_covariance_matrix,
             ),
             index=cdd_model_names,
         )
 
-    dofv = compute_delta_ofv(base_model, cdd_models, skipped_individuals)
+    dofv = compute_delta_ofv(base_model_results, cdd_model_results, skipped_individuals)
     dofv_influential = [elt > 3.86 for elt in dofv]
     infl_list = [
         skipped[0]
@@ -143,7 +147,7 @@ def calculate_results(
         try:
             iplot = plot_individual_predictions(
                 base_model,
-                base_model.modelfit_results.predictions[['PRED', 'CIPREDI']],
+                base_model_results.predictions[['PRED', 'CIPREDI']],
                 individuals=infl_list,
             )
         except Exception:
@@ -152,11 +156,11 @@ def calculate_results(
         iplot = None
 
     try:
-        covmatrix = base_model.modelfit_results.covariance_matrix
+        covmatrix = base_model_results.covariance_matrix
     except Exception:
         covratios = np.nan
     else:
-        covratios = compute_covariance_ratios(cdd_models, covmatrix)
+        covratios = compute_covariance_ratios(cdd_model_results, covmatrix)
 
     case_results = pd.DataFrame(
         {
@@ -230,9 +234,19 @@ def psn_cdd_results(path: Union[str, Path], base_model_path=None):
     if base_model_path is None:
         base_model_path = Path(options['model_path'])
     base_model = Model.create_model(base_model_path)
+    base_model_results = read_modelfit_results(base_model_path)
 
-    cdd_models = list(map(Model.create_model, model_paths(path, 'cdd_*.mod')))
+    paths = model_paths(path, 'cdd_*.mod')
+    cdd_models = list(map(Model.parse_model, paths))
+    cdd_results = list(map(read_modelfit_results, paths))
     skipped_individuals = psn_cdd_skipped_individuals(path)
 
-    res = calculate_results(base_model, cdd_models, options['case_column'], skipped_individuals)
+    res = calculate_results(
+        base_model,
+        base_model_results,
+        cdd_models,
+        cdd_results,
+        options['case_column'],
+        skipped_individuals,
+    )
     return res

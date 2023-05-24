@@ -5,6 +5,8 @@ import pytest
 import sympy
 
 from pharmpy.model import Model as BaseModel
+from pharmpy.model.external.nlmixr.model import Model as nlmixrModel
+from pharmpy.model.external.nonmem import Model as NMModel
 from pharmpy.modeling import (
     convert_model,
     create_basic_pk_model,
@@ -20,8 +22,7 @@ from pharmpy.modeling import (
     set_name,
     write_model,
 )
-from pharmpy.plugins.nlmixr.model import Model as nlmixrModel
-from pharmpy.plugins.nonmem.model import Model as NMModel
+from pharmpy.tools import read_modelfit_results
 
 
 def test_get_config_path():
@@ -88,7 +89,6 @@ def test_generate_model_code(testdata, load_model_for_test):
 def test_load_example_model():
     model = load_example_model("pheno")
     assert len(model.parameters) == 6
-    assert len(model.modelfit_results.parameter_estimates) == 6
 
     model = load_example_model("moxo")
     assert len(model.parameters) == 11
@@ -135,11 +135,11 @@ def test_convert_model():
     assert isinstance(run3, NMModel)
 
 
-def test_remove_unused_parameters_and_rvs(pheno):
+def test_remove_unused_parameters_and_rvs(load_model_for_test, pheno_path):
+    pheno = load_model_for_test(pheno_path)
+    res = read_modelfit_results(pheno_path)
     model = remove_unused_parameters_and_rvs(pheno)
-    model = create_joint_distribution(
-        model, individual_estimates=model.modelfit_results.individual_estimates
-    )
+    model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
     statements = model.statements
     i = statements.index(statements.find_assignment('CL'))
     model = model.replace(statements=model.statements[0:i] + model.statements[i + 1 :])

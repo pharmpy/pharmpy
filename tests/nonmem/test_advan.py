@@ -2,8 +2,8 @@ import pytest
 import sympy
 
 from pharmpy.model import output
+from pharmpy.model.external.nonmem.advan import compartmental_model
 from pharmpy.modeling import get_initial_conditions
-from pharmpy.plugins.nonmem.advan import compartmental_model
 
 
 def S(x):

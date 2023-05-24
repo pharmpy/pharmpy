@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from pharmpy.model import DataInfo
+from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.linearize.results import calculate_results, psn_linearize_results
 from pharmpy.tools.linearize.tool import create_linearized_model
 from pharmpy.tools.psn_helpers import create_results
@@ -11,8 +12,10 @@ from pharmpy.tools.psn_helpers import create_results
 
 def test_ofv(load_model_for_test, testdata):
     base = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    baseres = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
     lin = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    res = calculate_results(base, lin)
+    linres = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    res = calculate_results(base, baseres, lin, linres)
     correct = """,ofv
 base,730.894727
 lin_evaluated,730.894727
@@ -24,8 +27,10 @@ lin_estimated,730.847272
 
 def test_iofv(load_model_for_test, testdata):
     base = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    baseres = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
     lin = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    res = calculate_results(base, lin)
+    linres = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    res = calculate_results(base, baseres, lin, linres)
     correct = """,base,linear,delta
 1,7.742852,7.722670,-0.020182
 2,12.049275,12.072932,0.023657

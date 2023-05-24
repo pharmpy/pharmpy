@@ -4,7 +4,6 @@
 
 import re
 import warnings
-from io import StringIO
 from pathlib import Path
 from typing import Dict, Union
 
@@ -48,7 +47,7 @@ def read_model(path: Union[str, Path]):
 
     """
     path = normalize_user_given_path(path)
-    model = Model.create_model(path)
+    model = Model.parse_model(path)
     return model
 
 
@@ -86,7 +85,7 @@ def read_model_from_string(code: str):
     read_model_from_database : Read model from database
 
     """
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     return model
 
 
@@ -169,7 +168,7 @@ def convert_model(model: Model, to_format: str):
         raise ValueError(f"Unknown format {to_format}: supported formats are f{supported}")
     # FIXME: Use code that can discover plugins below
     if to_format == 'generic':
-        new = Model.create_model()
+        new = Model()
         new = new.replace(
             dataset=model.dataset,
             datainfo=model.datainfo,
@@ -187,15 +186,15 @@ def convert_model(model: Model, to_format: str):
         )
         return new
     elif to_format == 'nlmixr':
-        import pharmpy.plugins.nlmixr.model as nlmixr
+        import pharmpy.model.external.nlmixr.model as nlmixr
 
         new = nlmixr.convert_model(model)
     elif to_format == 'rxode':
-        import pharmpy.plugins.rxode.model as rxode
+        import pharmpy.model.external.rxode.model as rxode
 
         new = rxode.convert_model(model)
     else:
-        import pharmpy.plugins.nonmem.model as nonmem
+        import pharmpy.model.external.nonmem.model as nonmem
 
         new = nonmem.convert_model(model)
     return new

@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 from numpy import nan
 
-import pharmpy.plugins.nonmem.results_file as rf
-import pharmpy.plugins.nonmem.table as table
-from pharmpy.modeling import read_model
+import pharmpy.model.external.nonmem.table as table
+import pharmpy.tools.external.nonmem.results_file as rf
+from pharmpy.tools import read_modelfit_results
 from pharmpy.workflows.log import Log
 
 
@@ -429,10 +429,10 @@ def test_warnings(testdata, file_name, ref, idx):
 
 
 def test_covariance_status(testdata):
-    model = read_model(
+    res = read_modelfit_results(
         testdata / 'nonmem' / 'modelfit_results' / 'covariance' / 'pheno_nocovariance.mod'
     )
-    assert model.modelfit_results.standard_errors is None
-    assert model.modelfit_results.covariance_matrix is None
-    assert model.modelfit_results.correlation_matrix is None
-    assert model.modelfit_results.information_matrix is None
+    assert res.standard_errors is None
+    assert res.covariance_matrix is None
+    assert res.correlation_matrix is None
+    assert res.information_matrix is None

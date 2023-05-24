@@ -64,8 +64,10 @@ def evaluate_expression(
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_expression
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> pe = model.modelfit_results.parameter_estimates
+    >>> results = load_example_modelfit_results("pheno")
+    >>> pe = results.parameter_estimates
     >>> evaluate_expression(model, "TVCL*1000", parameter_estimates=pe)
     0      6.573770
     1      6.573770
@@ -122,8 +124,10 @@ def evaluate_population_prediction(
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_population_prediction
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno_linear")
-    >>> pe = model.modelfit_results.parameter_estimates
+    >>> results = load_example_modelfit_results("pheno_linear")
+    >>> pe = results.parameter_estimates
     >>> evaluate_population_prediction(model, parameters=dict(pe))
     0      17.529739
     1      28.179910
@@ -188,8 +192,10 @@ def evaluate_individual_prediction(
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_individual_prediction
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno_linear")
-    >>> etas = model.modelfit_results.individual_estimates
+    >>> results = load_example_modelfit_results("pheno_linear")
+    >>> etas = results.individual_estimates
     >>> evaluate_individual_prediction(model, etas=etas)
     0      17.771084
     1      28.881859
@@ -274,8 +280,10 @@ def evaluate_eta_gradient(
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_eta_gradient
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno_linear")
-    >>> etas = model.modelfit_results.individual_estimates
+    >>> results = load_example_modelfit_results("pheno_linear")
+    >>> etas = results.individual_estimates
     >>> evaluate_eta_gradient(model, etas=etas)
          dF/dETA_1  dF/dETA_2
     0     -0.159537 -17.609116
@@ -362,8 +370,10 @@ def evaluate_epsilon_gradient(
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_epsilon_gradient
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno_linear")
-    >>> etas = model.modelfit_results.individual_estimates
+    >>> results = load_example_modelfit_results("pheno_linear")
+    >>> etas = results.individual_estimates
     >>> evaluate_epsilon_gradient(model, etas=etas)
          dY/dEPS_1
     0     17.771084
@@ -448,8 +458,10 @@ def evaluate_weighted_residuals(
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, evaluate_weighted_residuals
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno_linear")
-    >>> parameters = model.modelfit_results.parameter_estimates
+    >>> results = load_example_modelfit_results("pheno_linear")
+    >>> parameters = results.parameter_estimates
     >>> evaluate_weighted_residuals(model, parameters=dict(parameters))
     0     -0.313859
     1      0.675721

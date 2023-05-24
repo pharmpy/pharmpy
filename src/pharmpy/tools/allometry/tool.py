@@ -172,7 +172,7 @@ def results(start_model, allometry_model):
     summods = pd.concat([summod_start, summod_allometry], keys=[0, 1], names=['step'])
     suminds = summarize_individuals([start_model, allometry_model])
     sumcount = summarize_individuals_count_table(df=suminds)
-    sumerrs = summarize_errors([start_model, allometry_model])
+    sumerrs = summarize_errors([start_model.modelfit_results, allometry_model.modelfit_results])
 
     return AllometryResults(
         summary_models=summods,

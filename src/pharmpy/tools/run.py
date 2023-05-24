@@ -22,6 +22,8 @@ from pharmpy.workflows import Workflow, execute_workflow, split_common_options
 from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
 from pharmpy.workflows.tool_database import ToolDatabase
 
+from .external import parse_modelfit_results
+
 
 def fit(
     model_or_models: Union[Model, List[Model]], tool: Optional[str] = None
@@ -180,7 +182,7 @@ def run_tool_with_name(
 ) -> Union[Model, List[Model], Tuple[Model], Results]:
     # FIXME: workaround until ModelfitResults is disentangled with
     #  Model object
-    if 'model' in kwargs.keys() and 'results' in kwargs.keys():
+    if 'model' in kwargs and 'results' in kwargs:
         model = kwargs['model']
         res = kwargs['results']
         if isinstance(model, Model) and isinstance(res, ModelfitResults):
@@ -676,15 +678,15 @@ def write_results(results: Results, path: Union[str, Path], lzma: bool = False, 
         results.to_json(path, lzma=lzma)
 
 
-def summarize_errors(models: Union[Model, List[Model]]) -> pd.DataFrame:
+def summarize_errors(results: Union[ModelfitResults, List[ModelfitResults]]) -> pd.DataFrame:
     """Summarize errors and warnings from one or multiple model runs.
 
     Summarize the errors and warnings found after running the model/models.
 
     Parameters
     ----------
-    models : list, Model
-        List of models or single model
+    results : list, ModelfitResults
+        List of ModelfitResults or single ModelfitResults
 
     Return
     ------
@@ -700,16 +702,15 @@ def summarize_errors(models: Union[Model, List[Model]]) -> pd.DataFrame:
     >>> summarize_errors(model)      # doctest: +SKIP
     """
     # FIXME: have example with errors
-    if isinstance(models, Model):
-        models = [models]
+    if isinstance(results, ModelfitResults):
+        results = [results]
 
     idcs, rows = [], []
 
-    for model in models:
-        res = model.modelfit_results
+    for res in results:
         if res is not None and len(res.log.log) > 0:
             for i, entry in enumerate(res.log.log):
-                idcs.append((model.name, entry.category, i))
+                idcs.append((res.name, entry.category, i))
                 rows.append([entry.time, entry.message])
 
     index_names = ['model', 'category', 'error_no']
@@ -1022,9 +1023,9 @@ def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
         Results object
     """
     path = Path(path)
-    # FIXME: Quick and dirty solution
     model = read_model(path)
-    return mfr(model)
+    res = parse_modelfit_results(model, path)
+    return res
 
 
 def _get_run_setup_from_metadata(path):
@@ -1044,3 +1045,40 @@ def _get_run_setup_from_metadata(path):
     assert common_options['database']['toolname'] == tool_name
 
     return dispatcher, tool_database
+
+
+def load_example_modelfit_results(name: str):
+    """Load the modelfit results of an example model
+
+    Load the modelfit results of an example model built into Pharmpy
+
+    Parameters
+    ----------
+    name : str
+        Name of the model. Currently available models are "pheno" and "pheno_linear"
+
+    Returns
+    -------
+    ModelfitResults
+        Loaded modelfit results object
+
+    Example
+    -------
+    >>> from pharmpy.tools import load_example_modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
+    >>> results.parameter_estimates
+        PTVCL        0.004696
+    PTVV         0.984258
+    THETA_3      0.158920
+    IVCL         0.029351
+    IVV          0.027906
+    SIGMA_1_1    0.013241
+    Name: estimates, dtype: float64
+
+    """
+    available = ('moxo', 'pheno', 'pheno_linear')
+    if name not in available:
+        raise ValueError(f'Unknown example model {name}. Available examples: {available}')
+    path = Path(__file__).resolve().parent.parent / 'modeling' / 'example_models' / (name + '.mod')
+    res = read_modelfit_results(path)
+    return res

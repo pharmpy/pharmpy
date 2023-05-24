@@ -13,13 +13,12 @@ Definitions
 from __future__ import annotations
 
 import warnings
-from io import IOBase
 from pathlib import Path
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.immutable import Immutable, frozenmapping
-from pharmpy.plugins.utils import detect_model
+from pharmpy.model.external import detect_model
 
 from .datainfo import ColumnInfo, DataInfo
 from .estimation import EstimationSteps
@@ -462,7 +461,7 @@ class Model(Immutable):
         return self._description
 
     @staticmethod
-    def create_model(obj=None, **kwargs):
+    def parse_model(path, **kwargs):
         """Factory for creating a :class:`pharmpy.model` object from an object representing the model
 
         .. _path-like object: https://docs.python.org/3/glossary.html#term-path-like-object
@@ -478,23 +477,18 @@ class Model(Immutable):
             Generic :class:`~pharmpy.generic.Model` if obj is None, otherwise appropriate
             implementation is invoked (e.g. NONMEM7 :class:`~pharmpy.plugins.nonmem.Model`).
         """
-        if obj is None:
-            return Model()
-        elif isinstance(obj, IOBase):
-            path = None
-            code = obj.read()
-        elif isinstance(obj, (str, Path)):
-            path = Path(obj)
-            with open(path, 'r', encoding='latin-1') as fp:
-                code = fp.read()
-        else:
-            raise ValueError("Unknown input type to Model constructor")
+        path = Path(path)
+        with open(path, 'r', encoding='latin-1') as fp:
+            code = fp.read()
 
         model_module = detect_model(code)
-        model = model_module.parse_code(code, path, **kwargs)
-        # Setup model database here
-        # Read in model results here?
-        # Set filename extension?
+        model = model_module.parse_model(code, path, **kwargs)
+        return model
+
+    @staticmethod
+    def parse_model_from_string(code):
+        model_module = detect_model(code)
+        model = model_module.parse_model(code, None)
         return model
 
     def update_source(self):

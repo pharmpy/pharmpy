@@ -1,8 +1,9 @@
 import pathlib
 
 import pharmpy.config as config
+from pharmpy.model.external.nlmixr import Model, convert_model
 
-from .model import Model, convert_model, execute_model, parse_modelfit_results, verification
+from .run import execute_model, parse_modelfit_results, verification
 
 r"""
 .. list-table:: Options for the nlmixr plugin
@@ -20,8 +21,8 @@ r"""
 """
 
 
-class RxODEConfiguration(config.Configuration):
-    module = 'pharmpy.plugins.rxode'
+class NLMIXRConfiguration(config.Configuration):
+    module = 'pharmpy.plugins.nlmixr'
     rpath = config.ConfigItem(
         pathlib.Path(''),
         'Path to R installation directory',
@@ -29,6 +30,6 @@ class RxODEConfiguration(config.Configuration):
     )
 
 
-conf = RxODEConfiguration()
+conf = NLMIXRConfiguration()
 
 __all__ = ('Model', 'convert_model', 'parse_modelfit_results', 'verification', 'execute_model')

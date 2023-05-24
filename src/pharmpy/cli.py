@@ -892,8 +892,12 @@ def input_model(path):
     """
     path = check_input_path(path)
     from pharmpy.model import Model
+    from pharmpy.tools import read_modelfit_results
 
-    model = Model.create_model(path)
+    model = Model.parse_model(path)
+    res = read_modelfit_results(path)
+    # FIXME: Should use tuple or something else instead
+    model = model.replace(modelfit_results=res)
     return model
 
 

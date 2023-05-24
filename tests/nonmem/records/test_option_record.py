@@ -1,7 +1,7 @@
 import pytest
 
-from pharmpy.plugins.nonmem.records.option_record import OptionRecord, StrOpt, WildOpt
-from pharmpy.plugins.nonmem.records.table_record import table_options
+from pharmpy.model.external.nonmem.records.option_record import OptionRecord, StrOpt, WildOpt
+from pharmpy.model.external.nonmem.records.table_record import table_options
 
 
 def test_create_record(parser):

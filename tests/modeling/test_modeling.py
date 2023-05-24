@@ -54,6 +54,7 @@ from pharmpy.modeling import (
     update_inits,
 )
 from pharmpy.modeling.odes import find_clearance_parameters, find_volume_parameters
+from pharmpy.tools import read_modelfit_results
 
 
 def test_set_first_order_elimination(load_model_for_test, testdata):
@@ -2584,9 +2585,8 @@ def test_update_inits(load_model_for_test, testdata, etas_file, force, file_exis
             f.write(etas_file)
 
         model = load_model_for_test('run1.mod')
-        model = update_initial_individual_estimates(
-            model, model.modelfit_results.individual_estimates, force=force
-        )
+        res = read_modelfit_results('run1.mod')
+        model = update_initial_individual_estimates(model, res.individual_estimates, force=force)
         model = model.write_files()
 
         assert ('$ETAS FILE=run1_input.phi' in model.model_code) is file_exists
@@ -2595,7 +2595,7 @@ def test_update_inits(load_model_for_test, testdata, etas_file, force, file_exis
 
 def test_update_inits_move_est(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    res = model.modelfit_results
+    res = read_modelfit_results(pheno_path)
 
     model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
     model = add_iiv(model, 'S1', 'add')
@@ -2615,7 +2615,7 @@ def test_update_inits_zero_fix(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     d = {name: 0 for name in model.random_variables.iiv.parameter_names}
     model = fix_parameters_to(model, d)
-    res = model.modelfit_results
+    res = read_modelfit_results(pheno_path)
     param_est = res.parameter_estimates.drop(index=['IVCL'])
     model = update_inits(model, param_est)
     assert model.parameters['IVCL'].init == 0
@@ -2624,7 +2624,6 @@ def test_update_inits_zero_fix(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     d = {name: 0 for name in model.random_variables.iiv.parameter_names}
     model = fix_parameters_to(model, d)
-    res = model.modelfit_results
     param_est = res.parameter_estimates.drop(index=['IVCL'])
     model = update_inits(model, param_est, move_est_close_to_bounds=True)
     assert model.parameters['IVCL'].init == 0
@@ -2640,25 +2639,24 @@ def test_update_inits_no_res(load_model_for_test, testdata, tmp_path):
         shutil.copy(testdata / 'nonmem/pheno.lst', tmp_path / 'run1.lst')
 
         model = load_model_for_test('run1.mod')
+        res = read_modelfit_results('run1.mod')
 
         modelfit_results = replace(
-            model.modelfit_results,
+            res,
             parameter_estimates=pd.Series(
                 np.nan, name='estimates', index=list(model.parameters.nonfixed.inits.keys())
             ),
         )
-        model = model.replace(modelfit_results=modelfit_results)
 
         with pytest.raises(ValueError):
-            update_inits(model, model.modelfit_results.parameter_estimates)
+            update_inits(model, modelfit_results.parameter_estimates)
 
 
 def test_nested_update_source(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
+    res = read_modelfit_results(pheno_path)
 
-    model = create_joint_distribution(
-        model, individual_estimates=model.modelfit_results.individual_estimates
-    )
+    model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
     model = model.update_source()
 
     assert 'IIV_CL_IIV_V' in model.model_code

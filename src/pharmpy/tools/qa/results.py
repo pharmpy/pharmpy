@@ -10,6 +10,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Model, Results
 from pharmpy.results import read_results
+from pharmpy.tools import read_modelfit_results
 
 
 @dataclass(frozen=True)
@@ -494,32 +495,52 @@ def psn_qa_results(path):
     """
     path = Path(path)
 
-    original_model = Model.create_model(path / 'linearize_run' / 'scm_dir1' / 'derivatives.mod')
+    original_model = Model.parse_model(path / 'linearize_run' / 'scm_dir1' / 'derivatives.mod')
+    orig_res = read_modelfit_results(path / 'linearize_run' / 'scm_dir1' / 'derivatives.mod')
+    original_model = original_model.replace(modelfit_results=orig_res)
+
     base_path = list(path.glob('*_linbase.mod'))[0]
-    base_model = Model.create_model(base_path)
+    base_model = Model.parse_model(base_path)
+    base_res = Model.parse_model(base_path)
+    base_model = base_model.replace(modelfit_results=base_res)
+
     fullblock_path = path / 'modelfit_run' / 'fullblock.mod'
     if fullblock_path.is_file():
-        fullblock_model = Model.create_model(fullblock_path)
+        fullblock_model = Model.parse_model(fullblock_path)
+        fb_res = read_modelfit_results(fullblock_path)
+        fullblock_model = fullblock_model.replace(modelfit_results=fb_res)
     else:
         fullblock_model = None
+
     boxcox_path = path / 'modelfit_run' / 'boxcox.mod'
     if boxcox_path.is_file():
-        boxcox_model = Model.create_model(boxcox_path)
+        boxcox_model = Model.parse_model(boxcox_path)
+        bc_res = read_modelfit_results(boxcox_path)
+        boxcox_model = boxcox_model.replace(modelfit_results=bc_res)
     else:
         boxcox_model = None
+
     tdist_path = path / 'modelfit_run' / 'tdist.mod'
     if tdist_path.is_file():
-        tdist_model = Model.create_model(tdist_path)
+        tdist_model = Model.parse_model(tdist_path)
+        td_res = read_modelfit_results(tdist_path)
+        tdist_model = tdist_model.replace(modelfit_results=td_res)
     else:
         tdist_model = None
+
     addetas_path = path / 'add_etas_run' / 'add_etas_linbase.mod'
     if addetas_path.is_file():
-        addetas_model = Model.create_model(addetas_path)
+        addetas_model = Model.parse_model(addetas_path)
+        ae_res = read_modelfit_results(addetas_path)
+        addetas_model = addetas_model.replace(modelfit_results=ae_res)
     else:
         addetas_model = None
+
     iov_path = path / 'modelfit_run' / 'iov.mod'
     if iov_path.is_file():
-        iov_model = Model.create_model(iov_path)
+        iov_model = Model.parse_model(iov_path)
+        iov_res = read_modelfit_results(iov_path)
+        iov_model = iov_model.replace(modelfit_results=iov_res)
     else:
         iov_model = None
 

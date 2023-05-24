@@ -7,6 +7,7 @@ from typing import Any, Optional
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
 from pharmpy.modeling import plot_individual_predictions
+from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.simfit.results import psn_simfit_results
 
 
@@ -19,14 +20,14 @@ class SimevalResults(Results):
     individual_predictions_plot: Optional[Any] = None
 
 
-def calculate_results(original_model, simfit_results):
+def calculate_results(original_model, original_results, simfit_results):
     """Calculate simeval results"""
     sampled_iofv = pd.concat(
         [res.individual_ofv for res in simfit_results.modelfit_results],
         axis=1,
         keys=range(1, len(simfit_results.modelfit_results) + 1),
     )
-    origiofv = original_model.modelfit_results.individual_ofv
+    origiofv = original_results.individual_ofv
     iofv_summary = pd.DataFrame(
         {
             'original': origiofv,
@@ -51,7 +52,7 @@ def calculate_results(original_model, simfit_results):
         try:
             id_plot = plot_individual_predictions(
                 original_model,
-                original_model.modelfit_results.predictions[['IPRED', 'PRED']],
+                original_results.predictions[['IPRED', 'PRED']],
                 individuals=ids,
             )
         except Exception:
@@ -69,8 +70,9 @@ def psn_simeval_results(path):
     path = Path(path)
     simfit_paths = (path / 'm1').glob('sim-*.mod')
     simfit_results = psn_simfit_results(simfit_paths)
-    original = Model.create_model(path / 'm1' / 'original.mod')
-    res = calculate_results(original, simfit_results)
+    original = Model.parse_model(path / 'm1' / 'original.mod')
+    original_results = read_modelfit_results(path / 'm1' / 'original.mod')
+    res = calculate_results(original, original_results, simfit_results)
 
     # Add CWRES outliers as 2 in data_flag
     # Reading PsN results for now

@@ -3,409 +3,25 @@ import os
 import subprocess
 import uuid
 import warnings
-from dataclasses import dataclass, replace
-from pathlib import Path, PosixPath
-from typing import Optional, Union
+from pathlib import Path
+from typing import Union
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.code_generator import CodeGenerator
+from pharmpy.model.external.nlmixr import convert_model
+from pharmpy.model.external.nlmixr.model import add_evid
 from pharmpy.modeling import (
     append_estimation_step_options,
-    drop_columns,
-    get_evid,
     get_sigmas,
     get_thetas,
     set_evaluation_step,
-    translate_nmtran_time,
     update_inits,
     write_csv,
 )
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import fit
 from pharmpy.workflows.log import Log
-
-from .error_model import res_error_term
-from .ini import add_eta, add_sigma, add_theta
-from .model_block import add_bioavailability, add_lag_times, add_ode, add_statements
-from .sanity_checks import check_model
-
-
-def convert_model(
-    model: pharmpy.model.Model,
-    keep_etas: bool = False,
-    skip_check: bool = False,
-    updated_estimates: bool = False,
-) -> pharmpy.model.Model:
-    """
-    Convert a NONMEM model into an nlmixr model
-
-    Parameters
-    ----------
-    model : pharmpy.model.Model
-        A NONMEM pharmpy model object
-    keep_etas : bool, optional
-        Decide if NONMEM estimated thetas are to be used. The default is False.
-    skip_check : bool, optional
-        Skip determination of error model type. Could speed up conversion. The default is False.
-
-    Returns
-    -------
-    pharmpy.model.Model
-        A model converted to nlmixr format.
-
-    """
-
-    if isinstance(model, Model):
-        return model
-
-    if updated_estimates:
-        model = update_inits(model, model.modelfit_results.parameter_estimates)
-
-    nlmixr_model = Model(
-        internals=NLMIXRModelInternals(),
-        parameters=model.parameters,
-        random_variables=model.random_variables,
-        statements=model.statements,
-        dependent_variables=model.dependent_variables,
-        estimation_steps=model.estimation_steps,
-        filename_extension='.R',
-        datainfo=model.datainfo,
-        dataset=model.dataset,
-        name=model.name,
-        description=model.description,
-    )
-
-    # Update dataset
-    if model.dataset is not None:
-        if keep_etas is True:
-            nlmixr_model = nlmixr_model.replace(
-                modelfit_results=ModelfitResults(
-                    individual_estimates=model.modelfit_results.individual_estimates
-                )
-            )
-            nlmixr_model = fixate_eta(nlmixr_model)
-
-        nlmixr_model = translate_nmtran_time(nlmixr_model)
-        # FIXME: dropping columns runs update source which becomes redundant.
-        # drop_dropped_columns(nlmixr_model)
-        if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
-            nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
-        nlmixr_model = nlmixr_model.replace(
-            datainfo=nlmixr_model.datainfo.replace(path=None),
-            dataset=nlmixr_model.dataset.reset_index(drop=True),
-        )
-
-        # Add evid
-        nlmixr_model = add_evid(nlmixr_model)
-
-    # Check model for warnings regarding data structure or model contents
-    nlmixr_model = check_model(nlmixr_model, skip_error_model_check=skip_check)
-
-    nlmixr_model.update_source()
-
-    return nlmixr_model
-
-
-def create_dataset(cg: CodeGenerator, model: pharmpy.model.Model, path=None) -> None:
-    """
-    Create dataset for nlmixr
-
-    Parameters
-    ----------
-    cg : CodeGenerator
-        A code object associated with the model.
-    model : pharmpy.model.Model
-        A pharmpy.model object.
-    path : TYPE, optional
-        Path to add file to. The default is None.
-
-    """
-    dataname = f'{model.name}.csv'
-    if path is None:
-        path = ""
-    path = Path(path) / dataname
-    cg.add(f'dataset <- read.csv("{path}")')
-
-
-def create_ini(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
-    """
-    Create the nlmixr ini block code
-
-    Parameters
-    ----------
-    cg : CodeGenerator
-        A code object associated with the model.
-    model : pharmpy.model.Model
-        A pharmpy.model object.
-
-    """
-    cg.add('ini({')
-    cg.indent()
-
-    add_theta(model, cg)
-
-    add_eta(model, cg)
-
-    add_sigma(model, cg)
-
-    cg.dedent()
-    cg.add('})')
-
-
-def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
-    """
-    Create the nlmixr model block code
-
-    Parameters
-    ----------
-    cg : CodeGenerator
-        A code object associated with the model.
-    model : pharmpy.model.Model
-        A pharmpy.model object.
-
-    """
-
-    cg.add('model({')
-
-    # Add statements before ODEs
-    cg.indent()
-    if len(model.statements.after_odes) != 0:
-        add_statements(model, cg, model.statements.before_odes)
-
-    # Add the ODEs
-    cg.add("")
-    cg.add("# --- DIFF EQUATIONS ---")
-    if model.statements.ode_system:
-        add_ode(model, cg)
-    cg.add("")
-
-    # Find what kind of error model we are looking at
-    dv = list(model.dependent_variables.keys())[0]
-    dv_statement = model.statements.find_assignment(dv)
-
-    only_piecewise = False
-    if dv_statement.expression.is_Piecewise:
-        only_piecewise = True
-        dependencies = set()
-        res_alias = set()
-        for s in model.statements.after_odes:
-            if s.symbol == dv:
-                if s.expression.is_Piecewise:
-                    for value, cond in s.expression.args:
-                        if value != dv:
-                            dv_term = res_error_term(model, value)
-                            dependencies.update(dv_term.dependencies())
-
-                            dv_term.create_res_alias()
-                            res_alias.update(dv_term.res_alias)
-                else:
-                    dv_term = res_error_term(model, s.expression)
-                    dependencies.update(dv_term.dependencies())
-
-                    dv_term.create_res_alias()
-                    res_alias.update(dv_term.res_alias)
-    else:
-        dv_term = res_error_term(model, dv_statement.expression)
-        dependencies = dv_term.dependencies()
-        dv_term.create_res_alias()
-        res_alias = dv_term.res_alias
-
-    # Add bioavailability statements
-    if model.statements.ode_system is not None:
-        add_bioavailability(model, cg)
-        add_lag_times(model, cg)
-
-    # Add statements after ODEs
-    if len(model.statements.after_odes) == 0:
-        statements = model.statements
-    else:
-        statements = model.statements.after_odes
-    add_statements(
-        model, cg, statements, only_piecewise, dependencies=dependencies, res_alias=res_alias
-    )
-
-    cg.dedent()
-    cg.add('})')
-
-
-def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
-    """
-    Create the call to fit for the nlmixr model with appropriate methods and datasets
-
-    Parameters
-    ----------
-    cg : CodeGenerator
-        A code object associated with the model.
-    model : pharmpy.model
-        A pharmpy.model.Model object.
-
-    """
-    # FIXME : rasie error if the method does not match when evaluating
-    estimation_steps = model.estimation_steps[0]
-    if "fix_eta" in estimation_steps.tool_options:
-        fix_eta = True
-    else:
-        fix_eta = False
-
-    if [s.evaluation for s in model.estimation_steps._steps][0] is True:
-        max_eval = 0
-    else:
-        max_eval = estimation_steps.maximum_evaluations
-
-    method = estimation_steps.method
-    interaction = estimation_steps.interaction
-
-    nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
-
-    if method not in nonmem_method_to_nlmixr.keys():
-        nlmixr_method = "focei"
-    else:
-        nlmixr_method = nonmem_method_to_nlmixr[method]
-
-    if interaction and nlmixr_method != "saem":
-        nlmixr_method += "i"
-
-    if max_eval is not None:
-        if max_eval == 0 and nlmixr_method not in ["fo", "foi", "foce", "focei"]:
-            nlmixr_method = "posthoc"
-            cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}"')
-        else:
-            f = f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", '
-            if fix_eta:
-                f += f'control=foceiControl(maxOuterIterations={max_eval}, maxInnerIterations=0, etaMat = etas))'
-            else:
-                f += f'control=foceiControl(maxOuterIterations={max_eval}))'
-            cg.add(f)
-    else:
-        cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}")')
-
-
-def add_evid(model: pharmpy.model.Model) -> pharmpy.model.Model:
-    temp_model = model
-    if "EVID" not in temp_model.dataset.columns:
-        temp_model.dataset["EVID"] = get_evid(temp_model)
-    return temp_model
-
-
-@dataclass
-class NLMIXRModelInternals:
-    src: Optional[str] = None
-    path: Optional[Path] = None
-
-
-class Model(pharmpy.model.Model):
-    def __init__(self, **kwargs):
-        super().__init__(
-            **kwargs,
-        )
-
-    def update_source(self):
-        cg = CodeGenerator()
-        cg.add(f'{self.name} <- function() {{')
-        cg.indent()
-        create_ini(cg, self)
-        create_model(cg, self)
-        cg.dedent()
-        cg.add('}')
-        cg.empty_line()
-        create_fit(cg, self)
-        # Create lowercase id, time and amount symbols for nlmixr to be able
-        # to run
-        self.internals.src = str(cg).replace("AMT", "amt").replace("TIME", "time")
-        self.internals.path = None
-        code = str(cg).replace("AMT", "amt").replace("TIME", "time")
-        internals = replace(self.internals, src=code)
-        model = self.replace(internals=internals)
-        return model
-
-    @property
-    def model_code(self):
-        model = self.update_source()
-        code = model.internals.src
-        assert code is not None
-        return code
-
-
-def parse_modelfit_results(
-    model: pharmpy.model.Model, path: PosixPath
-) -> Union[None, ModelfitResults]:
-    """
-    Create ModelfitResults object for given model object taken from values saved in executed Rdata file
-
-    Parameters
-    ----------
-    model : pharmpy.model.Model
-        An nlmixr pharmpy model object.
-    path : PosixPath
-        A path to folder with model and data files.
-
-    Returns
-    -------
-    Union[None, ModelfitResults]
-        Either return ModelfitResult object or None if Rdata file not found.
-
-    """
-    rdata_path = path / (model.name + '.RDATA')
-    with warnings.catch_warnings():
-        # Supress a numpy deprecation warning
-        warnings.simplefilter("ignore")
-        import pyreadr
-    try:
-        rdata = pyreadr.read_r(rdata_path)
-    except (FileNotFoundError, OSError):
-        return None
-
-    rdata["thetas"] = rdata["thetas"].loc[get_thetas(model).names]
-    s = []
-    for sigma in get_sigmas(model):
-        if sigma.init != 1 and not sigma.fix:
-            s.append(sigma.name)
-    rdata["sigma"] = rdata["sigma"].loc[s]
-
-    ofv = rdata['ofv']['ofv'][0]
-    omegas_sigmas = {}
-    omega = model.random_variables.etas.covariance_matrix
-    for i in range(0, omega.rows):
-        for j in range(0, omega.cols):
-            symb = omega.row(i)[j]
-            if symb != 0:
-                omegas_sigmas[symb.name] = rdata['omega'].values[i, j]
-    sigma = model.random_variables.epsilons.covariance_matrix
-    for i in range(len(sigma)):
-        if sigma[i] != 0:
-            s = sigma[i]
-            if model.parameters[s].init != 1 and not model.parameters[s].fix:
-                omegas_sigmas[sigma[i].name] = rdata['sigma']['fit$theta'][sigma[i].name]
-    thetas_index = 0
-    pe = {}
-    for param in model.parameters:
-        if param.fix:
-            continue
-        elif param.name in omegas_sigmas:
-            pe[param.name] = omegas_sigmas[param.name]
-        else:
-            pe[param.name] = rdata['thetas']['fit$theta'][param.name]
-            thetas_index += 1
-
-    name = model.name
-    description = model.description
-    pe = pd.Series(pe)
-    predictions = rdata['pred'].set_index(["ID", "TIME"])
-    predictions.index = predictions.index.set_levels(
-        predictions.index.levels[0].astype("float64"), level=0
-    )
-
-    res = ModelfitResults(
-        name=name,
-        description=description,
-        ofv=ofv,
-        minimization_successful=True,  # FIXME: parse minimization status
-        parameter_estimates=pe,
-        predictions=predictions,
-        log=Log(),
-    )
-    return res
 
 
 def execute_model(model: pharmpy.model.Model, db: str, evaluate=False) -> pharmpy.model.Model:
@@ -466,7 +82,7 @@ def execute_model(model: pharmpy.model.Model, db: str, evaluate=False) -> pharmp
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
 
-    from pharmpy.plugins.nlmixr import conf
+    from pharmpy.tools.external.nlmixr import conf
 
     rpath = conf.rpath / 'bin' / 'Rscript'
 
@@ -883,3 +499,82 @@ def verify_param(model1, model2, est=False):
                 else:
                     passed.append((p1.name, diff))
     return passed, failed
+
+
+def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None, ModelfitResults]:
+    """
+    Create ModelfitResults object for given model object taken from values saved in executed Rdata file
+
+    Parameters
+    ----------
+    model : pharmpy.model.Model
+        An nlmixr pharmpy model object.
+    path : Path
+        A path to folder with model and data files.
+
+    Returns
+    -------
+    Union[None, ModelfitResults]
+        Either return ModelfitResult object or None if Rdata file not found.
+
+    """
+    rdata_path = path / (model.name + '.RDATA')
+    with warnings.catch_warnings():
+        # Supress a numpy deprecation warning
+        warnings.simplefilter("ignore")
+        import pyreadr
+    try:
+        rdata = pyreadr.read_r(rdata_path)
+    except (FileNotFoundError, OSError):
+        return None
+
+    rdata["thetas"] = rdata["thetas"].loc[get_thetas(model).names]
+    s = []
+    for sigma in get_sigmas(model):
+        if sigma.init != 1 and not sigma.fix:
+            s.append(sigma.name)
+    rdata["sigma"] = rdata["sigma"].loc[s]
+
+    ofv = rdata['ofv']['ofv'][0]
+    omegas_sigmas = {}
+    omega = model.random_variables.etas.covariance_matrix
+    for i in range(0, omega.rows):
+        for j in range(0, omega.cols):
+            symb = omega.row(i)[j]
+            if symb != 0:
+                omegas_sigmas[symb.name] = rdata['omega'].values[i, j]
+    sigma = model.random_variables.epsilons.covariance_matrix
+    for i in range(len(sigma)):
+        if sigma[i] != 0:
+            s = sigma[i]
+            if model.parameters[s].init != 1 and not model.parameters[s].fix:
+                omegas_sigmas[sigma[i].name] = rdata['sigma']['fit$theta'][sigma[i].name]
+    thetas_index = 0
+    pe = {}
+    for param in model.parameters:
+        if param.fix:
+            continue
+        elif param.name in omegas_sigmas:
+            pe[param.name] = omegas_sigmas[param.name]
+        else:
+            pe[param.name] = rdata['thetas']['fit$theta'][param.name]
+            thetas_index += 1
+
+    name = model.name
+    description = model.description
+    pe = pd.Series(pe)
+    predictions = rdata['pred'].set_index(["ID", "TIME"])
+    predictions.index = predictions.index.set_levels(
+        predictions.index.levels[0].astype("float64"), level=0
+    )
+
+    res = ModelfitResults(
+        name=name,
+        description=description,
+        ofv=ofv,
+        minimization_successful=True,  # FIXME: parse minimization status
+        parameter_estimates=pe,
+        predictions=predictions,
+        log=Log(),
+    )
+    return res

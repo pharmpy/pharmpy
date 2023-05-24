@@ -118,7 +118,7 @@ def post_process(input_model, *models):
         [base_model.modelfit_results] + [model.modelfit_results for model in res_models],
         include_all_estimation_steps=True,
     )
-    summary_errors = summarize_errors(models)
+    summary_errors = summarize_errors(m.modelfit_results for m in models)
     summary_settings = summarize_estimation_steps([base_model] + res_models)
 
     if base_model.name == input_model.name:

@@ -29,7 +29,6 @@ from .parsing import (
     parse_statements,
     parse_value_type,
 )
-from .results import _parse_modelfit_results
 from .update import (
     abbr_translation,
     create_name_map,
@@ -86,7 +85,7 @@ def convert_model(model):
         code += '$SUBROUTINES ADVAN1 TRANS2\n'
         code += '$PK\nY=X\n'
         code += '$ERROR\nA=B\n'
-    nm_model = parse_code(code, dataset=model.dataset)
+    nm_model = parse_model(code, dataset=model.dataset)
     assert isinstance(nm_model, Model)
     nm_model._datainfo = model.datainfo
     nm_model._parameters = model.parameters
@@ -300,7 +299,9 @@ class Model(BaseModel):
         )
 
 
-def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.DataFrame] = None, **_):
+def parse_model(
+    code: str, path: Optional[Path] = None, dataset: Optional[pd.DataFrame] = None, **_
+):
     parser = NMTranParser()
     if path is None:
         name = 'run1'
@@ -352,22 +353,6 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
 
     value_type = parse_value_type(control_stream, statements)
 
-    modelfit_results = _parse_modelfit_results(
-        path,
-        control_stream,
-        name_map,
-        BaseModel(  # FIXME This should not be necessary
-            name=name,
-            description=description,
-            parameters=parameters,
-            random_variables=rvs,
-            statements=statements,
-            dependent_variables=dependent_variables,
-            observation_transformation=obs_trans,
-            estimation_steps=estimation_steps,
-        ),
-    )
-
     internals = NONMEMModelInternals(
         control_stream=control_stream,
         old_name=name,
@@ -393,7 +378,6 @@ def parse_code(code: str, path: Optional[Path] = None, dataset: Optional[pd.Data
         datainfo=di,
         dependent_variables=dependent_variables,
         estimation_steps=estimation_steps,
-        modelfit_results=modelfit_results,
         parent_model=None,
         initial_individual_estimates=init_etas,
         filename_extension=filename_extension,

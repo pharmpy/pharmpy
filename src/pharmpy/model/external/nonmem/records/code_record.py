@@ -30,8 +30,8 @@ from pharmpy.internals.parse import AttrTree, NoSuchRuleException
 from pharmpy.internals.parse.tree import Interpreter
 from pharmpy.internals.sequence.lcs import diff
 from pharmpy.model import Assignment, Statement, Statements
-from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 
+from .parsers import CodeRecordParser
 from .record import Record
 
 

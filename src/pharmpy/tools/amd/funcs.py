@@ -20,6 +20,9 @@ from pharmpy.model import (
     Statements,
     output,
 )
+
+# FIXME: This shouldn't be used here
+from pharmpy.model.external.nonmem.advan import dosing
 from pharmpy.modeling import (
     add_iiv,
     create_joint_distribution,
@@ -28,7 +31,6 @@ from pharmpy.modeling import (
     set_proportional_error_model,
 )
 from pharmpy.modeling.data import read_dataset_from_datainfo
-from pharmpy.plugins.nonmem.advan import dosing
 
 
 def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=1.0, mat_init=0.1):

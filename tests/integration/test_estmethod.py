@@ -22,7 +22,7 @@ def test_estmethod(
         for path in (testdata / 'nonmem').glob('pheno_real.*'):
             shutil.copy2(path, tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
-        model_start = Model.create_model('pheno_real.mod')
+        model_start = Model.parse_model('pheno_real.mod')
         model_start = model_start.replace(
             datainfo=model_start.datainfo.replace(path=tmp_path / 'pheno.dta')
         )

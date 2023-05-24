@@ -5,14 +5,21 @@ import pandas as pd
 import pytest
 
 from pharmpy.results import read_results
+from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.qa.results import calculate_results, psn_qa_results
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
 
 
 def test_add_etas(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig = orig.replace(modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base = base.replace(modelfit_results=base_res)
     add_etas = load_model_for_test(testdata / 'nonmem' / 'qa' / 'add_etas_linbase.mod')
+    add_etas_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'add_etas_linbase.mod')
+    add_etas = add_etas.replace(modelfit_results=add_etas_res)
     res = calculate_results(orig, base, add_etas_model=add_etas, etas_added_to=['CL', 'V'])
     correct = """added,new_sd,orig_sd
 ETA_1,True,0.338974,0.333246
@@ -31,8 +38,14 @@ V,False,0.010000,NaN
 
 def test_fullblock(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig = orig.replace(modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base = base.replace(modelfit_results=base_res)
     fb = load_model_for_test(testdata / 'nonmem' / 'qa' / 'fullblock.mod')
+    fb_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'fullblock.mod')
+    fb = fb.replace(modelfit_results=fb_res)
     res = calculate_results(orig, base, fullblock_model=fb)
     correct = """,new,old
 "IVCL",0.486600,0.333246
@@ -53,8 +66,14 @@ def test_fullblock(load_model_for_test, testdata):
 
 def test_boxcox(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig = orig.replace(modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base = base.replace(modelfit_results=base_res)
     bc = load_model_for_test(testdata / 'nonmem' / 'qa' / 'boxcox.mod')
+    bc_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'boxcox.mod')
+    bc = bc.replace(modelfit_results=bc_res)
     res = calculate_results(orig, base, boxcox_model=bc)
     correct = """lambda,new_sd,old_sd
 ETA_1,-1.581460,0.296257,0.333246
@@ -74,8 +93,14 @@ ETA_2,0.645817,0.429369,0.448917
 
 def test_tdist(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig = orig.replace(modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base = base.replace(modelfit_results=base_res)
     td = load_model_for_test(testdata / 'nonmem' / 'qa' / 'tdist.mod')
+    td_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'tdist.mod')
+    td = td.replace(modelfit_results=td_res)
     res = calculate_results(orig, base, tdist_model=td)
     correct = """df,new_sd,old_sd
 ETA_1,3.77,0.344951,0.333246
@@ -94,8 +119,14 @@ ETA_2,3.77,0.400863,0.448917
 
 def test_iov(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig = orig.replace(modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base = base.replace(modelfit_results=base_res)
     iov = load_model_for_test(testdata / 'nonmem' / 'qa' / 'iov.mod')
+    iov_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'iov.mod')
+    iov = iov.replace(modelfit_results=iov_res)
     res = calculate_results(orig, base, iov_model=iov)
     correct = """new_iiv_sd,orig_iiv_sd,iov_sd
 ETA_1,0.259560,0.333246,0.555607
@@ -110,7 +141,11 @@ ETA_2,0.071481,0.448917,0.400451
 
 def test_scm(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig = orig.replace(modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base = base.replace(modelfit_results=base_res)
     scm_res = read_results(testdata / 'nonmem' / 'qa' / 'scm_results.json')
     res = calculate_results(orig, base, scm_results=scm_res)
     correct = """,,dofv,coeff
@@ -128,7 +163,11 @@ ETA(2),WGT,0.00887,-0.003273
 
 def test_resmod(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig = orig.replace(modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base = base.replace(modelfit_results=base_res)
     resmod_res = read_results(testdata / 'nonmem' / 'qa' / 'resmod_results.json')
     res = calculate_results(orig, base, resmod_idv_results=resmod_res)
     assert list(res.residual_error['additional_parameters']) == [2, 2, 1, 1, 1, 1]
@@ -146,7 +185,11 @@ def test_resmod(load_model_for_test, testdata):
 
 def test_resmod_dvid(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig = orig.replace(modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base = base.replace(modelfit_results=base_res)
     resmod_res = psn_resmod_results(testdata / 'psn' / 'resmod_dir2')
     res = calculate_results(orig, base, resmod_idv_results=resmod_res)
     assert res.residual_error.loc[("4", "tdist"), 'dOFV'] == 2.41

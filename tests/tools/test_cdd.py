@@ -3,6 +3,7 @@ import pandas as pd
 from pytest import approx
 
 import pharmpy.tools.cdd.results as cdd
+from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
 
 
@@ -29,11 +30,14 @@ def test_psn_options():
 def test_cdd_psn(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
     base_model = load_model_for_test(testdata / 'nonmem' / 'cdd' / 'pheno_real.mod')
+    base_model_results = read_modelfit_results(testdata / 'nonmem' / 'cdd' / 'pheno_real.mod')
     cdd_models = [load_model_for_test(p) for p in model_paths(path, 'cdd_*.mod')]
+    cdd_model_results = [read_modelfit_results(p) for p in model_paths(path, 'cdd_*.mod')]
     skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
 
-    cdd_bin_id = cdd.calculate_results(base_model, cdd_models, 'ID', skipped_individuals)
-    print(cdd_bin_id)
+    cdd_bin_id = cdd.calculate_results(
+        base_model, base_model_results, cdd_models, cdd_model_results, 'ID', skipped_individuals
+    )
 
     correct = pd.DataFrame(
         {
@@ -130,12 +134,14 @@ def test_cdd_calculate_results(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
     skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
     base_model = load_model_for_test(testdata / 'nonmem' / 'cdd' / 'pheno_real.mod')
+    base_model_results = read_modelfit_results(testdata / 'nonmem' / 'cdd' / 'pheno_real.mod')
     cdd_model_paths = model_paths(path, 'cdd_*.mod')
 
     cdd_models = [load_model_for_test(p) for p in cdd_model_paths]
+    cdd_model_results = [read_modelfit_results(p) for p in cdd_model_paths]
 
     # Results for plain PsN run
-    delta_ofv = cdd.compute_delta_ofv(base_model, cdd_models, skipped_individuals)
+    delta_ofv = cdd.compute_delta_ofv(base_model_results, cdd_model_results, skipped_individuals)
 
     assert delta_ofv == approx(
         [0.27067, 0.35146, 0.79115, 0.84426, 0.86966, 0.37618, 0.69805, 0.49343, 0.31184, 0.31729],
@@ -144,9 +150,9 @@ def test_cdd_calculate_results(load_model_for_test, testdata):
 
     cdd_estimates = pd.DataFrame(
         data=[
-            pd.Series(m.modelfit_results.parameter_estimates, name=m.name)
-            for m in cdd_models
-            if m.modelfit_results is not None
+            pd.Series(res.parameter_estimates, name=m.name)
+            for m, res in zip(cdd_models, cdd_model_results)
+            if res is not None
         ]
     )
 
@@ -193,9 +199,9 @@ def test_cdd_calculate_results(load_model_for_test, testdata):
     assert jackknife.values.flatten() == approx(jackpsnvalues, rel=1e-6)
 
     cook_scores = cdd.compute_cook_scores(
-        base_model.modelfit_results.parameter_estimates,
+        base_model_results.parameter_estimates,
         cdd_estimates,
-        base_model.modelfit_results.covariance_matrix,
+        base_model_results.covariance_matrix,
     )
 
     assert cook_scores == approx(
@@ -215,7 +221,7 @@ def test_cdd_calculate_results(load_model_for_test, testdata):
     )
 
     cov_ratios = cdd.compute_covariance_ratios(
-        cdd_models, base_model.modelfit_results.covariance_matrix
+        cdd_model_results, base_model_results.covariance_matrix
     )
 
     assert cov_ratios == approx(
@@ -237,10 +243,15 @@ def test_cdd_calculate_results(load_model_for_test, testdata):
     # Replace three estimated cdd_models with fake models without estimates
     # and recompute results to verify handling of missing output
     cdd_models[0] = load_model_for_test(path / 'm1' / 'rem_1.mod')
+    cdd_model_results[0] = read_modelfit_results(path / 'm1' / 'rem_1.mod')
     cdd_models[1] = load_model_for_test(path / 'm1' / 'rem_2.mod')
+    cdd_model_results[1] = read_modelfit_results(path / 'm1' / 'rem_2.mod')
     cdd_models[3] = load_model_for_test(path / 'm1' / 'rem_4.mod')
+    cdd_model_results[3] = read_modelfit_results(path / 'm1' / 'rem_4.mod')
 
-    res = cdd.calculate_results(base_model, cdd_models, 'ID', skipped_individuals)
+    res = cdd.calculate_results(
+        base_model, base_model_results, cdd_models, cdd_model_results, 'ID', skipped_individuals
+    )
 
     assert res.case_results.delta_ofv.values == approx(
         [np.nan, np.nan, 0.79115, np.nan, 0.86966, 0.37618, 0.69805, 0.49343, 0.31184, 0.31729],

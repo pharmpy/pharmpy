@@ -1636,8 +1636,8 @@ def read_dataset_from_datainfo(
 
     if datainfo.path is None:
         raise ValueError('datainfo.path is None')
-    from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
-    from pharmpy.plugins.nonmem.parsing import filter_observations
+    from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
+    from pharmpy.model.external.nonmem.parsing import filter_observations
 
     if datatype == 'nonmem':
         drop = [col.drop for col in datainfo]

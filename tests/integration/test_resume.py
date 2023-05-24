@@ -6,8 +6,8 @@ from pandas.testing import assert_frame_equal
 from pharmpy.config import ConfigurationContext
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
-from pharmpy.plugins.nonmem import conf
-from pharmpy.tools import fit, resume_tool, run_tool
+from pharmpy.tools import fit, read_modelfit_results, resume_tool, run_tool
+from pharmpy.tools.external.nonmem import conf
 
 
 def test_run_tool_ruvsearch_resume_flag(tmp_path, testdata):
@@ -18,14 +18,16 @@ def test_run_tool_ruvsearch_resume_flag(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
         # FIXME: temporary workaround so that read in parameter estimates use the Pharmpy name
         with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-            model = Model.create_model('pheno_real.mod')
+            model = Model.parse_model('pheno_real.mod')
+            results = read_modelfit_results('pheno_real.mod')
             model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
             path = 'x'
             for i, resume in enumerate([False, False, True]):
                 try:
                     res = run_tool(
                         'ruvsearch',
-                        model,
+                        model=model,
+                        results=results,
                         groups=4,
                         p_value=0.05,
                         skip=[],
@@ -48,7 +50,7 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         # FIXME: temporary workaround so that read in parameter estimates use the Pharmpy name
         with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-            model_start = Model.create_model('mox2.mod')
+            model_start = Model.parse_model('mox2.mod')
             model_start = model_start.replace(
                 datainfo=model_start.datainfo.replace(path=tmp_path / 'mox_simulated_normal.csv')
             )
@@ -102,7 +104,7 @@ def test_run_tool_modelsearch_resume_flag(
     # FIXME: temporary workaround so that read in parameter estimates use the Pharmpy name
     with chdir(tmp_path):
         with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-            model_start = Model.create_model('mox2.mod')
+            model_start = Model.parse_model('mox2.mod')
             model_start = model_start.replace(
                 datainfo=model_start.datainfo.replace(path=tmp_path / 'mox_simulated_normal.csv')
             )
@@ -164,13 +166,14 @@ def test_resume_tool_ruvsearch(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
 
-        model = Model.create_model('pheno_real.mod')
+        model = Model.parse_model('pheno_real.mod')
+        results = read_modelfit_results('pheno_real.mod')
         model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
         path = 'x'
         run_tool_res = run_tool(
             'ruvsearch',
-            model,
-            results=model.modelfit_results,
+            model=model,
+            results=results,
             groups=4,
             p_value=0.05,
             skip=[],

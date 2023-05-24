@@ -18,9 +18,10 @@ def calculate_se_from_cov(cov: pd.DataFrame):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, calculate_se_from_cov
-    >>> model = load_example_model("pheno")
-    >>> cov = model.modelfit_results.covariance_matrix
+    >>> from pharmpy.modeling import calculate_se_from_cov
+    >>> from pharmpy.tools import load_example_modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
+    >>> cov = results.covariance_matrix
     >>> cov
                       PTVCL          PTVV   THETA_3      IVCL           IVV     SIGMA_1_1
     PTVCL      4.411510e-08  4.010000e-08 -0.000002 -0.000001  1.538630e-07  8.178090e-08
@@ -67,9 +68,10 @@ def calculate_se_from_inf(information_matrix: pd.DataFrame):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, calculate_se_from_inf
-    >>> model = load_example_model("pheno")
-    >>> inf = model.modelfit_results.information_matrix
+    >>> from pharmpy.modeling import calculate_se_from_inf
+    >>> from pharmpy.tools import load_example_modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
+    >>> inf = results.information_matrix
     >>> inf
                       PTVCL          PTVV       THETA_3           IVCL           IVV      SIGMA_1_1
     PTVCL      2.995567e+07  22660.028196  16057.855248  203511.614428 -39474.250514 -820118.299536
@@ -118,9 +120,10 @@ def calculate_corr_from_cov(cov: pd.DataFrame):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, calculate_corr_from_cov
-    >>> model = load_example_model("pheno")
-    >>> cov = model.modelfit_results.covariance_matrix
+    >>> from pharmpy.modeling import calculate_corr_from_cov
+    >>> from pharmpy.tools import load_example_modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
+    >>> cov = results.covariance_matrix
     >>> cov
                       PTVCL          PTVV   THETA_3      IVCL           IVV     SIGMA_1_1
     PTVCL      4.411510e-08  4.010000e-08 -0.000002 -0.000001  1.538630e-07  8.178090e-08
@@ -168,9 +171,10 @@ def calculate_cov_from_inf(information_matrix: pd.DataFrame):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, calculate_cov_from_inf
-    >>> model = load_example_model("pheno")
-    >>> inf = model.modelfit_results.information_matrix
+    >>> from pharmpy.modeling import calculate_cov_from_inf
+    >>> from pharmpy.tools import load_example_modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
+    >>> inf = results.information_matrix
     >>> inf
                       PTVCL          PTVV       THETA_3           IVCL           IVV      SIGMA_1_1
     PTVCL      2.995567e+07  22660.028196  16057.855248  203511.614428 -39474.250514 -820118.299536
@@ -224,10 +228,11 @@ def calculate_cov_from_corrse(corr: pd.DataFrame, se: pd.Series):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, calculate_cov_from_corrse
-    >>> model = load_example_model("pheno")
-    >>> corr = model.modelfit_results.correlation_matrix
-    >>> se = model.modelfit_results.standard_errors
+    >>> from pharmpy.modeling import calculate_cov_from_corrse
+    >>> from pharmpy.tools import load_example_modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
+    >>> corr = results.correlation_matrix
+    >>> se = results.standard_errors
     >>> corr
                   PTVCL      PTVV   THETA_3      IVCL       IVV  SIGMA_1_1
     PTVCL      1.000000  0.007099 -0.094640 -0.388059  0.097981   0.170820
@@ -277,9 +282,10 @@ def calculate_inf_from_cov(cov: pd.DataFrame):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, calculate_inf_from_cov
-    >>> model = load_example_model("pheno")
-    >>> cov = model.modelfit_results.covariance_matrix
+    >>> from pharmpy.modeling import calculate_inf_from_cov
+    >>> from pharmpy.tools import load_example_modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
+    >>> cov = results.covariance_matrix
     >>> cov
                       PTVCL          PTVV   THETA_3      IVCL           IVV     SIGMA_1_1
     PTVCL      4.411510e-08  4.010000e-08 -0.000002 -0.000001  1.538630e-07  8.178090e-08
@@ -329,10 +335,11 @@ def calculate_inf_from_corrse(corr: pd.DataFrame, se: pd.Series):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, calculate_inf_from_corrse
-    >>> model = load_example_model("pheno")
-    >>> corr = model.modelfit_results.correlation_matrix
-    >>> se = model.modelfit_results.standard_errors
+    >>> from pharmpy.modeling import calculate_inf_from_corrse
+    >>> from pharmpy.tools import load_example_modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
+    >>> corr = results.correlation_matrix
+    >>> se = results.standard_errors
     >>> corr
                   PTVCL      PTVV   THETA_3      IVCL       IVV  SIGMA_1_1
     PTVCL      1.000000  0.007099 -0.094640 -0.388059  0.097981   0.170820
@@ -382,9 +389,10 @@ def calculate_corr_from_inf(information_matrix: pd.DataFrame):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, calculate_corr_from_inf
-    >>> model = load_example_model("pheno")
-    >>> inf = model.modelfit_results.information_matrix
+    >>> from pharmpy.modeling import calculate_corr_from_inf
+    >>> from pharmpy.tools import load_example_modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
+    >>> inf = results.information_matrix
     >>> inf
                       PTVCL          PTVV       THETA_3           IVCL           IVV      SIGMA_1_1
     PTVCL      2.995567e+07  22660.028196  16057.855248  203511.614428 -39474.250514 -820118.299536

@@ -115,9 +115,9 @@ def get_execute_model(tool: Optional[SupportedPlugin]):
         tool = conf.default_tool
 
     if tool == 'nonmem':
-        from pharmpy.plugins.nonmem.run import execute_model
+        from pharmpy.tools.external.nonmem.run import execute_model
     elif tool == 'nlmixr':
-        from pharmpy.plugins.nlmixr.run import execute_model
+        from pharmpy.tools.external.nlmixr.run import execute_model
     else:
         raise ValueError(f"Unknown estimation tool {tool}")
 

@@ -1,5 +1,4 @@
 import shutil
-from io import StringIO
 
 import pytest
 import sympy
@@ -18,6 +17,9 @@ from pharmpy.model import (
     Parameters,
     Statements,
 )
+from pharmpy.model.external.nonmem import convert_model
+from pharmpy.model.external.nonmem.nmtran_parser import NMTranParser
+from pharmpy.model.external.nonmem.records.factory import create_record
 from pharmpy.modeling import (
     add_iiv,
     add_population_parameter,
@@ -30,9 +32,7 @@ from pharmpy.modeling import (
     set_zero_order_elimination,
     set_zero_order_input,
 )
-from pharmpy.plugins.nonmem import convert_model
-from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
-from pharmpy.plugins.nonmem.records.factory import create_record
+from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.amd.funcs import create_start_model
 
 
@@ -49,32 +49,31 @@ def test_source(pheno):
     assert pheno.model_code.startswith('$PROBLEM PHENOBARB')
 
 
-def test_update_inits(load_model_for_test, pheno, pheno_path):
+def test_update_inits(load_model_for_test, pheno_path):
     from pharmpy.modeling import update_inits
 
-    model = update_inits(pheno, pheno.modelfit_results.parameter_estimates)
-
     model = load_model_for_test(pheno_path)
-    model = update_inits(model, model.modelfit_results.parameter_estimates)
+    res = read_modelfit_results(pheno_path)
+    model = update_inits(model, res.parameter_estimates)
 
 
-def test_empty_ext_file(load_model_for_test, testdata):
+def test_empty_ext_file(testdata):
     # assert existing but empty ext-file does not give modelfit_results
-    model = load_model_for_test(
+    res = read_modelfit_results(
         testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'noESTwithSIM' / 'onlysim.mod'
     )
-    assert model.modelfit_results is None
+    assert res is None
 
 
 def test_detection():
-    Model.create_model(StringIO("$PROBLEM this\n$PRED\n"))
-    Model.create_model(StringIO("   \t$PROBLEM skld fjl\n$PRED\n"))
-    Model.create_model(StringIO(" $PRO l907\n$PRED\n"))
+    Model.parse_model_from_string("$PROBLEM this\n$PRED\n")
+    Model.parse_model_from_string("   \t$PROBLEM skld fjl\n$PRED\n")
+    Model.parse_model_from_string(" $PRO l907\n$PRED\n")
 
 
-def test_validate(pheno):
+def test_validate():
     with pytest.raises(ModelSyntaxError):
-        Model.create_model(StringIO("$PROBLEM this\n$SIZES LIM1=3000\n$PRED\n"))
+        Model.parse_model_from_string("$PROBLEM this\n$SIZES LIM1=3000\n$PRED\n")
 
 
 def test_parameters(pheno):
@@ -90,7 +89,9 @@ def test_parameters(pheno):
     )
 
 
-def test_set_parameters(pheno):
+def test_set_parameters(pheno_path, load_model_for_test):
+    pheno = load_model_for_test(pheno_path)
+    res = read_modelfit_results(pheno_path)
     params = {
         'PTVCL': 0.75,
         'PTVV': 0.5,
@@ -120,9 +121,7 @@ def test_set_parameters(pheno):
     assert model.parameters['PTVCL'] == Parameter('PTVCL', 18, lower=0, upper=1000000)
     assert model.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=1000000)
 
-    model = create_joint_distribution(
-        pheno, individual_estimates=model.modelfit_results.individual_estimates
-    )
+    model = create_joint_distribution(pheno, individual_estimates=res.individual_estimates)
     with pytest.raises(UserWarning, match='Adjusting initial'):
         set_initial_estimates(model, {'IVV': 0.000001})
 
@@ -389,7 +388,7 @@ $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     with pytest.warns(UserWarning):
-        model = Model.create_model(StringIO(code))
+        model = Model.parse_model_from_string(code)
         assert model.parameters.names == ['THETA_1', 'OMEGA_1_1', 'SIGMA_1_1']
 
 
@@ -419,7 +418,7 @@ $SIGMA 1 ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     with pytest.warns(UserWarning):
-        model = Model.create_model(StringIO(code))
+        model = Model.parse_model_from_string(code)
         assert model.parameters.names == ['TV', 'OMEGA_1_1', 'SIGMA_1_1']
 
     code = """$PROBLEM base model
@@ -434,7 +433,7 @@ $THETA 0.1  ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     with pytest.warns(UserWarning):
-        model = Model.create_model(StringIO(code))
+        model = Model.parse_model_from_string(code)
         assert model.parameters.names == ['TV', 'THETA_2']
 
 
@@ -450,7 +449,7 @@ def test_abbr_write(load_model_for_test, pheno_path):
 def test_abbr_read_write(load_model_for_test, pheno_path):
     model_write = load_model_for_test(pheno_path)
     model_write = add_iiv(model_write, 'S1', 'add')
-    model_read = Model.create_model(StringIO(model_write.model_code))
+    model_read = Model.parse_model_from_string(model_write.model_code)
     assert model_read.model_code == model_write.model_code
     assert model_read.statements == model_write.statements
     assert not (
@@ -549,7 +548,7 @@ $SIGMA  0.112373
 $SIGMA  0.0000001  FIX  ;     EPSCOV
 $ESTIMATION METHOD=1 MAXEVAL=9999 NONINFETA=1 MCETA=1
 """
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     rvs = model.random_variables
     assert len(rvs.names) == 11
 
@@ -564,7 +563,7 @@ def test_des(load_model_for_test, testdata, model_path, transformation):
     model_ref = load_model_for_test(testdata / model_path)
     model_ref = transformation(model_ref)
 
-    model_des = Model.create_model(StringIO(model_ref.model_code))
+    model_des = Model.parse_model_from_string(model_ref.model_code)
 
     assert model_ref.statements.ode_system == model_des.statements.ode_system
 
@@ -573,7 +572,7 @@ def test_cmt_warning(load_model_for_test, testdata):
     model_original = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
 
     model_str = model_original.model_code.replace('CMT=DROP', 'CMT')
-    model = Model.create_model(StringIO(model_str))
+    model = Model.parse_model_from_string(model_str)
     model = model.replace(datainfo=model.datainfo.replace(path=model_original.datainfo.path))
 
     with pytest.raises(UserWarning, match='Compartment structure has been updated'):
@@ -629,7 +628,7 @@ $OMEGA 0.01
 $SIGMA 1
 '''
     code += estcode
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     correct = EstimationSteps.create(steps=est_steps)
     assert model.estimation_steps == correct
 
@@ -645,7 +644,7 @@ $OMEGA 0.01
 $SIGMA 1
 $ESTIMATION METHOD=1 SADDLE_RESET=1
 '''
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     assert model.estimation_steps[0].method == 'FOCE'
     assert model.estimation_steps[0].tool_options['SADDLE_RESET'] == '1'
 
@@ -691,7 +690,7 @@ $OMEGA 0.01
 $SIGMA 1
 '''
     code += estcode
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     steps = model.estimation_steps
     newstep = steps[0].replace(**kwargs)
     model = model.replace(estimation_steps=newstep + steps[1:])
@@ -725,7 +724,7 @@ $OMEGA 0.01
 $SIGMA 1
 '''
     code += estcode
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
 
     steps = model.estimation_steps
     newstep = steps[0].replace(**kwargs)
@@ -748,7 +747,7 @@ $OMEGA 0.01
 $SIGMA 1
 $EST METH=COND INTER
 '''
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     est_new = EstimationStep.create('IMP', interaction=True, tool_options={'saddle_reset': 1})
     model = model.replace(estimation_steps=model.estimation_steps + est_new)
     model = model.update_source()
@@ -778,7 +777,7 @@ $OMEGA 0.01
 $SIGMA 1
 $EST METH=COND INTER
 '''
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     model = model.replace(estimation_steps=model.estimation_steps[1:])
     assert not model.estimation_steps
     model = model.update_source()
@@ -824,7 +823,7 @@ $TABLE      ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
             NOPRINT ONEHEADER FILE=mytab3
 """
     with pytest.warns(UserWarning):
-        model = Model.create_model(StringIO(code))
+        model = Model.parse_model_from_string(code)
         model.update_source()
 
 
@@ -841,7 +840,7 @@ $OMEGA 2 ; OM1
 $SIGMA 3 ; SI1
 $ESTIMATION METHOD=1 INTER
 """
-    base = Model.create_model(StringIO(code))
+    base = Model.parse_model_from_string(code)
     base.dataset_path = testdata / 'nonmem' / 'file.csv'
     model = convert_model(base)
     model.dataset_path = "file.csv"  # Otherwise we get full path
@@ -873,7 +872,7 @@ def test_table_long_ids(testdata):
     $SIGMA 3 ; SI1
     $ESTIMATION METHOD=1 INTER
     """
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     dataset_new = model.dataset.copy()
     dataset_new['ID'] = dataset_new['ID'] * 10000
     model = model.replace(dataset=dataset_new)
@@ -916,7 +915,7 @@ $OMEGA 0 FIX ; OM1
 $SIGMA 3 ; SI1
 $ESTIMATION METHOD=1 INTER
 """
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     assert len(model.random_variables.etas) == 1
 
 
@@ -942,7 +941,7 @@ $OMEGA 0.0293508 0.027906
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
 """
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     assert len(model.estimation_steps) == 1
     step = model.estimation_steps[0]
     assert step.solver == 'DVERK'
@@ -970,7 +969,7 @@ $OMEGA 0.0293508 0.027906
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
 """
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     assert len(model.estimation_steps) == 1
     step = model.estimation_steps[0]
     assert step.solver == 'LSODA'
@@ -1006,7 +1005,7 @@ $OMEGA 0.0293508 0.027906
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
 """
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     assert type(model.statements.ode_system.eqs[0].rhs) == sympy.Piecewise
     assert model.statements[3].symbol == sympy.Function("A_CENTRAL")(0)
     assert model.statements[3].expression == sympy.Integer(2)
@@ -1031,7 +1030,7 @@ $THETA 1  ; TH1
 $OMEGA 0 FIX ; OM1
 $SIGMA 3 ; SI1
 """
-    model = Model.create_model(StringIO(code + estline))
+    model = Model.parse_model_from_string(code + estline)
     assert model.value_type == likelihood
 
 
@@ -1049,7 +1048,7 @@ $OMEGA 0 FIX ; OM1
 $SIGMA 3 ; SI1
 $ESTIMATION METHOD=1 INTER
 """
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     assert model.value_type == sympy.Symbol('F_FLAG')
 
 
@@ -1074,7 +1073,7 @@ $ESTIMATION METHOD=1 INTERACTION
     with pytest.warns(
         UserWarning, match='NONMEM .mod and dataset .datainfo disagree on DROP for columns WGT'
     ):
-        model = Model.create_model(StringIO(code))
+        model = Model.parse_model_from_string(code)
 
     assert model.datainfo['WGT'].drop
 
@@ -1091,7 +1090,7 @@ $THETA 0.1
 $OMEGA 0.01
 $SIGMA 1
 '''
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     assert model.random_variables.etas.names == ['ETA_MY']
 
     model = add_iiv(model, ['Y'], 'exp', '+', eta_names=['ETA_DUMMY'])
@@ -1119,7 +1118,7 @@ $THETA 0.1
 $OMEGA 0.01
 $SIGMA 1
 '''
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
     model = add_iiv(model, ['Y'], 'exp', '+', eta_names=['ETA_DUMMY'])
     assert model.model_code.split('\n')[3] == '$ABBR PROTECT DERIV2=NO'
 
@@ -1149,7 +1148,7 @@ def test_validate_eta_names():
     $OMEGA 0.01
     $SIGMA 1
     '''
-    model = Model.create_model(StringIO(code))
+    model = Model.parse_model_from_string(code)
 
     with pytest.raises(ValueError, match='NONMEM does not allow etas named `eta`'):
         add_iiv(model, ['Y'], 'exp', '+', eta_names=['eta'])

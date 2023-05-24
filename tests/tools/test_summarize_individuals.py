@@ -6,7 +6,11 @@ import pytest
 
 from pharmpy.modeling import read_model
 from pharmpy.results import ModelfitResults
-from pharmpy.tools import summarize_individuals, summarize_individuals_count_table
+from pharmpy.tools import (
+    read_modelfit_results,
+    summarize_individuals,
+    summarize_individuals_count_table,
+)
 from pharmpy.tools.funcs.summarize_individuals import dofv
 
 
@@ -62,6 +66,8 @@ def test_dofv_parent_model_is_none(pheno_path):
 
 def test_dofv_modelfit_results_is_none(pheno_path):
     parent_model = read_model(pheno_path)
+    res = read_modelfit_results(pheno_path)
+    parent_model = parent_model.replace(modelfit_results=res)
     candidate_model = parent_model.replace(modelfit_results=None)
     res = dofv(parent_model, candidate_model)
     assert res.isna().all()
@@ -69,6 +75,8 @@ def test_dofv_modelfit_results_is_none(pheno_path):
 
 def test_dofv_individual_ofv_is_none(pheno_path):
     parent_model = read_model(pheno_path)
+    res = read_modelfit_results(pheno_path)
+    parent_model = parent_model.replace(modelfit_results=res)
     candidate_model = parent_model.replace(modelfit_results=ModelfitResults())
     res = dofv(parent_model, candidate_model)
     assert res.isna().all()

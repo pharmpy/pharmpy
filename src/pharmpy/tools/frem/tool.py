@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     set_covariates,
     write_model,
 )
+from pharmpy.tools import read_modelfit_results
 
 from .models import create_model3b
 
@@ -78,7 +79,8 @@ def update_model3b_for_psn(rundir, ncovs):
           and is a temporary solution
     """
     model_path = Path(rundir) / 'm1'
-    model1b = Model.create_model(model_path / 'model_1b.mod')
-    model3 = Model.create_model(model_path / 'model_3.mod')
-    model3b = create_model3b(model1b, model3, int(ncovs))
+    model1b = Model.parse_model(model_path / 'model_1b.mod')
+    model3 = Model.parse_model(model_path / 'model_3.mod')
+    model3_res = read_modelfit_results(model_path / 'model_3.mod')
+    model3b = create_model3b(model1b, model3, model3_res, int(ncovs))
     write_model(model3b, model_path, force=True)

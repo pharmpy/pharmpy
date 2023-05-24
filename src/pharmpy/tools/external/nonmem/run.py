@@ -10,10 +10,10 @@ from itertools import repeat
 from pathlib import Path
 
 from pharmpy.model import EstimationSteps
+from pharmpy.model.external.nonmem import convert_model
+from pharmpy.model.external.nonmem.records.factory import create_record
 from pharmpy.modeling import write_csv, write_model
-from pharmpy.plugins.nonmem import conf, convert_model, parse_modelfit_results
-
-from .records.factory import create_record
+from pharmpy.tools.external.nonmem import conf, parse_modelfit_results
 
 PARENT_DIR = f'..{os.path.sep}'
 
@@ -135,7 +135,7 @@ def execute_model(model, db):
         txn.store_local_file(plugin_path)
 
         txn.store_metadata(metadata)
-        if len(model.estimation_steps) > 0:
+        if len(model.estimation_steps) > 0 or True:
             txn.store_modelfit_results()
 
             # Read in results for the server side
@@ -200,7 +200,7 @@ def evaluate_design(context, model):
     internals = model.internals.replace(control_stream=stream)
     model = model.replace(internals=internals)
 
-    execute_model(model, context)
+    model = execute_model(model, context)
 
     from pharmpy.tools.evaldesign import EvalDesignResults
 

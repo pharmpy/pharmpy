@@ -7,14 +7,14 @@ import pharmpy.modeling as modeling
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import EstimationSteps, Model, Parameters, RandomVariables
+from pharmpy.model.external.nonmem.nmtran_parser import NMTranControlStream
+from pharmpy.model.external.nonmem.parsing import parse_table_columns
+from pharmpy.model.external.nonmem.table import ExtTable, NONMEMTableFile, PhiTable
+from pharmpy.model.external.nonmem.update import create_name_map
 from pharmpy.results import ModelfitResults
 from pharmpy.workflows.log import Log
 
-from .nmtran_parser import NMTranControlStream
-from .parsing import parse_table_columns
 from .results_file import NONMEMResultsFile
-from .table import ExtTable, NONMEMTableFile, PhiTable
-from .update import create_name_map
 
 
 def _parse_modelfit_results(
@@ -587,7 +587,7 @@ def _parse_standard_errors(
 def _parse_evaluation(estimation_steps: EstimationSteps):
     index = list(range(1, len(estimation_steps) + 1))
     evaluation = [est.evaluation for est in estimation_steps]
-    return pd.Series(evaluation, index=index, name='evaluation')
+    return pd.Series(evaluation, index=index, name='evaluation', dtype='float64')
 
 
 def _get_fixed_parameters(table: ExtTable, parameters: Parameters, pe_translation: Dict):

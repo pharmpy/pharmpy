@@ -4,7 +4,7 @@ from sympy import Symbol as S
 from pharmpy.model import NormalDistribution
 from pharmpy.modeling import add_iiv, create_joint_distribution
 from pharmpy.modeling.block_rvs import _choose_param_init
-from pharmpy.results import ModelfitResults
+from pharmpy.tools import read_modelfit_results
 
 
 @pytest.mark.parametrize(
@@ -21,33 +21,26 @@ def test_incorrect_params(load_model_for_test, testdata, rvs, exception_msg):
     )
 
     with pytest.raises(Exception, match=exception_msg):
-        create_joint_distribution(
-            model, rvs, individual_estimates=model.modelfit_results.individual_estimates
-        )
+        create_joint_distribution(model, rvs, individual_estimates=None)
 
 
 def test_choose_param_init(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
+    res = read_modelfit_results(pheno_path)
     params = (model.parameters['IVCL'], model.parameters['IVV'])
     rvs = model.random_variables.etas
-    init = _choose_param_init(model, model.modelfit_results.individual_estimates, rvs, *params)
+    init = _choose_param_init(model, res.individual_estimates, rvs, *params)
     assert init == 0.0118179
 
     model = load_model_for_test(pheno_path)
-    model = model.replace(modelfit_results=None)
     init = _choose_param_init(model, None, rvs, *params)
     assert init == 0.0031045
 
     model = load_model_for_test(pheno_path)
     rv_new = NormalDistribution.create('ETA_3', 'IIV', 0, S('OMEGA_3_3'))
     rvs += rv_new
-    res = model.modelfit_results
     ie = res.individual_estimates.copy()
     ie['ETA_3'] = ie['ETA_1']
-    modelfit_results = ModelfitResults(
-        parameter_estimates=res.parameter_estimates, individual_estimates=ie
-    )
-    model = model.replace(modelfit_results=modelfit_results)
     init = _choose_param_init(model, res.individual_estimates, rvs, *params)
     assert init == 0.0118179
 
@@ -56,22 +49,17 @@ def test_choose_param_init(load_model_for_test, pheno_path):
     model = add_iiv(model, 'S1', 'add')
     params = (model.parameters['IVCL'], model.parameters['IIV_S1'])
     rvs = model.random_variables[('ETA_1', 'ETA_S1')]
-    init = _choose_param_init(model, model.modelfit_results.individual_estimates, rvs, *params)
+    init = _choose_param_init(model, res.individual_estimates, rvs, *params)
     assert init == 0.0052789
 
     # If the standard deviation in individual estimates of one eta is 0
     model = load_model_for_test(pheno_path)
-    res = model.modelfit_results
     ie = res.individual_estimates.copy()
     ie['ETA_1'] = 0
-    modelfit_results = ModelfitResults(
-        parameter_estimates=res.parameter_estimates, individual_estimates=ie
-    )
-    model = model.replace(modelfit_results=modelfit_results)
     params = (model.parameters['IVCL'], model.parameters['IVV'])
     rvs = model.random_variables[('ETA_1', 'ETA_2')]
     with pytest.warns(UserWarning, match='Correlation of individual estimates'):
-        init = _choose_param_init(model, model.modelfit_results.individual_estimates, rvs, *params)
+        init = _choose_param_init(model, ie, rvs, *params)
         assert init == 0.0031045
 
 

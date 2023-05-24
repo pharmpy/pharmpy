@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.plugins.nonmem.table import CovTable, ExtTable, NONMEMTableFile, PhiTable
+from pharmpy.model.external.nonmem.table import CovTable, ExtTable, NONMEMTableFile, PhiTable
 
 
 def test_nonmem_table(pheno_ext):

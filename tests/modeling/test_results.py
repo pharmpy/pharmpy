@@ -14,12 +14,14 @@ from pharmpy.modeling import (
     check_parameters_near_bounds,
     set_iiv_on_ruv,
 )
+from pharmpy.tools import read_modelfit_results
 
 
 def test_calculate_eta_shrinkage(load_model_for_test, testdata):
     pheno = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    pe = pheno.modelfit_results.parameter_estimates
-    ie = pheno.modelfit_results.individual_estimates
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    pe = res.parameter_estimates
+    ie = res.individual_estimates
     shrinkage = calculate_eta_shrinkage(pheno, pe, ie)
     assert len(shrinkage) == 2
     assert pytest.approx(shrinkage['ETA_1'], 0.0001) == 7.2048e01 / 100
@@ -32,10 +34,11 @@ def test_calculate_eta_shrinkage(load_model_for_test, testdata):
 
 def test_calculate_individual_shrinkage(load_model_for_test, testdata):
     pheno = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
     ishr = calculate_individual_shrinkage(
         pheno,
-        pheno.modelfit_results.parameter_estimates,
-        pheno.modelfit_results.individual_estimates_covariance,
+        res.parameter_estimates,
+        res.individual_estimates_covariance,
     )
     assert len(ishr) == 59
     assert pytest.approx(ishr['ETA_1'][1], 1e-15) == 0.84778949807160287
@@ -43,12 +46,13 @@ def test_calculate_individual_shrinkage(load_model_for_test, testdata):
 
 def test_calculate_individual_parameter_statistics(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'secondary_parameters' / 'pheno.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'secondary_parameters' / 'pheno.mod')
     rng = np.random.default_rng(103)
     stats = calculate_individual_parameter_statistics(
         model,
         'CL/V',
-        model.modelfit_results.parameter_estimates,
-        model.modelfit_results.covariance_matrix,
+        res.parameter_estimates,
+        res.covariance_matrix,
         rng=rng,
     )
 
@@ -57,12 +61,13 @@ def test_calculate_individual_parameter_statistics(load_model_for_test, testdata
     assert stats['stderr'][0] == pytest.approx(0.0035089729730046304, abs=1e-6)
 
     model = load_model_for_test(testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod')
     rng = np.random.default_rng(5678)
     stats = calculate_individual_parameter_statistics(
         model,
         'CL/V',
-        model.modelfit_results.parameter_estimates,
-        model.modelfit_results.covariance_matrix,
+        res.parameter_estimates,
+        res.covariance_matrix,
         rng=rng,
     )
     assert stats['mean'][0] == pytest.approx(0.0049100899539843)
@@ -70,12 +75,13 @@ def test_calculate_individual_parameter_statistics(load_model_for_test, testdata
     assert stats['stderr'][0] == pytest.approx(0.0009425952783595735, abs=1e-6)
 
     covmodel = load_model_for_test(testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod')
     rng = np.random.default_rng(8976)
     stats = calculate_individual_parameter_statistics(
         covmodel,
         'K = CL/V',
-        covmodel.modelfit_results.parameter_estimates,
-        covmodel.modelfit_results.covariance_matrix,
+        res.parameter_estimates,
+        res.covariance_matrix,
         rng=rng,
     )
     assert stats['mean']['K', 'median'] == pytest.approx(0.004526899290470633)
@@ -91,11 +97,12 @@ def test_calculate_individual_parameter_statistics(load_model_for_test, testdata
 
 def test_calculate_pk_parameters_statistics(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox1.mod')
     rng = np.random.default_rng(103)
     df = calculate_pk_parameters_statistics(
         model,
-        model.modelfit_results.parameter_estimates,
-        model.modelfit_results.covariance_matrix,
+        res.parameter_estimates,
+        res.covariance_matrix,
         rng=rng,
     )
     assert df['mean'].loc['t_max', 'median'] == pytest.approx(1.5999856886869577)
@@ -110,11 +117,12 @@ def test_calc_pk_two_comp_bolus(load_model_for_test, testdata):
     # Warning: These results are based on a manually modified cov-matrix
     # Results are not verified
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox_2comp.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox_2comp.mod')
     rng = np.random.default_rng(103)
     df = calculate_pk_parameters_statistics(
         model,
-        model.modelfit_results.parameter_estimates,
-        model.modelfit_results.covariance_matrix,
+        res.parameter_estimates,
+        res.covariance_matrix,
         rng=rng,
     )
     # FIXME: Why doesn't random state handle this difference in stderr?
@@ -135,12 +143,14 @@ k_e,median,13.319584,2.67527,2.633615
 
 def test_aic(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert calculate_aic(model, model.modelfit_results.ofv) == 740.8947268137307
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    assert calculate_aic(model, res.ofv) == 740.8947268137307
 
 
 def test_bic(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    ofv = model.modelfit_results.ofv
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    ofv = res.ofv
     assert calculate_bic(model, ofv, type='iiv') == 739.0498017015422
     assert calculate_bic(model, ofv, type='fixed') == 756.111852398327
     assert calculate_bic(model, ofv, type='random') == 751.2824140332593
@@ -152,6 +162,7 @@ def test_bic(load_model_for_test, testdata):
 def test_check_parameters_near_bounds(load_model_for_test, testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
     nearbound = load_model_for_test(onePROB / 'oneEST' / 'noSIM' / 'near_bounds.mod')
+    res = read_modelfit_results(onePROB / 'oneEST' / 'noSIM' / 'near_bounds.mod')
     correct = pd.Series(
         [False, True, False, False, False, False, False, False, True, True, False],
         index=[
@@ -169,6 +180,6 @@ def test_check_parameters_near_bounds(load_model_for_test, testdata):
         ],
     )
     pd.testing.assert_series_equal(
-        check_parameters_near_bounds(nearbound, nearbound.modelfit_results.parameter_estimates),
+        check_parameters_near_bounds(nearbound, res.parameter_estimates),
         correct,
     )

@@ -62,7 +62,9 @@ def create_results(
         summary_tool['description'],
         summary_tool[f'd{"ofv" if rank_type == "lrt" else rank_type}'],
     )
-    summary_errors = summarize_errors([base_model] + res_models)
+    summary_errors = summarize_errors(
+        [base_model.modelfit_results] + [m.modelfit_results for m in res_models]
+    )
 
     best_model_name = summary_tool['rank'].idxmin()
     best_model = next(filter(lambda model: model.name == best_model_name, res_models), base_model)

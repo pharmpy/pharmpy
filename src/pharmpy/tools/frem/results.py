@@ -25,6 +25,7 @@ from pharmpy.modeling import (
     sample_parameters_from_covariance_matrix,
     set_covariates,
 )
+from pharmpy.tools import read_modelfit_results
 from pharmpy.workflows import ToolDatabase
 
 
@@ -393,7 +394,15 @@ def plot_unexplained_variability(res):
 
 
 def calculate_results(
-    frem_model, continuous, categorical, method=None, intermediate_models=None, rng=None, **kwargs
+    frem_model,
+    frem_model_results,
+    continuous,
+    categorical,
+    method=None,
+    intermediate_models=None,
+    intermediate_models_res=None,
+    rng=None,
+    **kwargs,
 ):
     """Calculate FREM results
 
@@ -401,39 +410,47 @@ def calculate_results(
     """
     if intermediate_models is None:
         intermediate_models = []
+        intermediate_models_res = []
 
     if method is None or method == 'cov_sampling':
         try:
             res = calculate_results_using_cov_sampling(
-                frem_model, continuous, categorical, rng=rng, **kwargs
+                frem_model, frem_model_results, continuous, categorical, rng=rng, **kwargs
             )
         except AttributeError:
             # Fallback to bipp
-            res = calculate_results_using_bipp(frem_model, continuous, categorical, rng=rng)
+            res = calculate_results_using_bipp(
+                frem_model, frem_model_results, continuous, categorical, rng=rng
+            )
     elif method == 'bipp':
-        res = calculate_results_using_bipp(frem_model, continuous, categorical, rng=rng)
+        res = calculate_results_using_bipp(
+            frem_model, frem_model_results, continuous, categorical, rng=rng
+        )
     else:
         raise ValueError(f'Unknown frem postprocessing method {method}')
     mod_names = []
     mod_ofvs = []
     if intermediate_models:
-        for intmod in intermediate_models:
-            intmod_res = intmod.modelfit_results
+        for intmod, intmod_res in zip(intermediate_models, intermediate_models_res):
             if intmod_res is not None:
                 mod_ofvs.append(intmod_res.ofv)
                 mod_names.append(intmod.name)
-    mod_ofvs.append(frem_model.modelfit_results.ofv)
+    mod_ofvs.append(frem_model_results.ofv)
     mod_names.append(frem_model.name)
     ofv = pd.DataFrame({'ofv': mod_ofvs}, index=mod_names)
     ofv.index.name = 'model_name'
-    estimates = parameter_inits_and_estimates(frem_model, intermediate_models)
+    estimates = parameter_inits_and_estimates(
+        frem_model, frem_model_results, intermediate_models, intermediate_models_res
+    )
     res = replace(res, ofv=ofv, parameter_inits_and_estimates=estimates)
 
     if intermediate_models:
-        ser = base_vs_frem_model(frem_model, intermediate_models[0])
+        ser = base_vs_frem_model(frem_model_results, intermediate_models_res[0])
         res = replace(res, base_parameter_change=ser)
 
-    estimated_covbase = _calculate_covariate_baselines(frem_model, continuous + categorical)
+    estimated_covbase = _calculate_covariate_baselines(
+        frem_model, frem_model_results, continuous + categorical
+    )
     mean = estimated_covbase.mean()
     stdev = estimated_covbase.std()
     estcovs = pd.DataFrame({'mean': mean, 'stdev': stdev})
@@ -448,9 +465,9 @@ def calculate_results(
     )
 
 
-def base_vs_frem_model(frem_model, model_1):
-    base_ests = model_1.modelfit_results.parameter_estimates
-    final_ests = frem_model.modelfit_results.parameter_estimates
+def base_vs_frem_model(frem_model_res, model_1_res):
+    base_ests = model_1_res.parameter_estimates
+    final_ests = frem_model_res.parameter_estimates
     ser = pd.Series(dtype=np.float64, name='relative_change')
     for param in base_ests.keys():
         if param in final_ests:
@@ -458,16 +475,18 @@ def base_vs_frem_model(frem_model, model_1):
     return ser
 
 
-def parameter_inits_and_estimates(frem_model, intermediate_models) -> pd.DataFrame:
+def parameter_inits_and_estimates(
+    frem_model, frem_model_results, intermediate_models, intermediate_models_res
+) -> pd.DataFrame:
     model_names = []
     df = pd.DataFrame()
 
-    for model in intermediate_models:
+    for model, res in zip(intermediate_models, intermediate_models_res):
         df = pd.concat(
             [
                 df,
                 pd.Series(model.parameters.nonfixed.inits),
-                model.modelfit_results.parameter_estimates,
+                res.parameter_estimates,
             ],
             ignore_index=True,
             axis=1,
@@ -478,7 +497,7 @@ def parameter_inits_and_estimates(frem_model, intermediate_models) -> pd.DataFra
         [
             df,
             pd.Series(frem_model.parameters.nonfixed.inits),
-            frem_model.modelfit_results.parameter_estimates,
+            frem_model_results.parameter_estimates,
         ],
         ignore_index=True,
         axis=1,
@@ -493,6 +512,7 @@ def parameter_inits_and_estimates(frem_model, intermediate_models) -> pd.DataFra
 
 def calculate_results_using_cov_sampling(
     frem_model,
+    frem_model_results,
     continuous,
     categorical,
     cov_model=None,
@@ -518,14 +538,14 @@ def calculate_results_using_cov_sampling(
     if cov_model is not None:
         uncertainty_results = cov_model.modelfit_results
     else:
-        uncertainty_results = frem_model.modelfit_results
+        uncertainty_results = frem_model_results
 
     dist = frem_model.random_variables.iiv[-1]
     sigma_symb = dist.variance
 
     parameters = [
         s
-        for s in frem_model.modelfit_results.parameter_estimates.index
+        for s in frem_model_results.parameter_estimates.index
         if sympy.Symbol(s) in sigma_symb.free_symbols
     ]
     parvecs = sample_parameters_from_covariance_matrix(
@@ -538,12 +558,14 @@ def calculate_results_using_cov_sampling(
         rng=rng,
     )
     res = calculate_results_from_samples(
-        frem_model, continuous, categorical, parvecs, rescale=rescale
+        frem_model, frem_model_results, continuous, categorical, parvecs, rescale=rescale
     )
     return res
 
 
-def calculate_results_from_samples(frem_model, continuous, categorical, parvecs, rescale=True):
+def calculate_results_from_samples(
+    frem_model, frem_model_results, continuous, categorical, parvecs, rescale=True
+):
     """Calculate the FREM results given samples of parameter estimates"""
     n = len(parvecs)
     dist = frem_model.random_variables.iiv[-1]
@@ -551,10 +573,10 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     sigma_symb = dist.variance
     parameters = [
         s
-        for s in frem_model.modelfit_results.parameter_estimates.index
+        for s in frem_model_results.parameter_estimates.index
         if sympy.Symbol(s) in sigma_symb.free_symbols
     ]
-    parvecs.loc['estimates'] = frem_model.modelfit_results.parameter_estimates.loc[parameters]
+    parvecs.loc['estimates'] = frem_model_results.parameter_estimates.loc[parameters]
 
     covariates = continuous + categorical
     frem_model = set_covariates(frem_model, covariates)
@@ -615,7 +637,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     sigma_symb = symengine.sympify(sigma_symb)
     parvecs.columns = [symengine.Symbol(colname) for colname in parvecs.columns]
 
-    estimated_covbase = _calculate_covariate_baselines(frem_model, covariates)
+    estimated_covbase = _calculate_covariate_baselines(frem_model, frem_model_results, covariates)
     covbase = estimated_covbase.to_numpy()
 
     parameter_variability_all = None
@@ -849,7 +871,7 @@ def rename_duplicate(params, stem):
         i += 1
 
 
-def _calculate_covariate_baselines(model, covariates):
+def _calculate_covariate_baselines(model, res, covariates):
     exprs = [
         ass.expression.args[0][0]
         for ass in model.statements
@@ -857,7 +879,7 @@ def _calculate_covariate_baselines(model, covariates):
     ]
     exprs = [
         subs(
-            subs(expr, dict(model.modelfit_results.parameter_estimates), simultaneous=True),
+            subs(expr, dict(res.parameter_estimates), simultaneous=True),
             model.parameters.inits,
             simultaneous=True,
         )
@@ -875,13 +897,13 @@ def _calculate_covariate_baselines(model, covariates):
     def fn(row):
         return [np.float64(subs(expr, dict(row))) for expr in exprs]
 
-    df = model.modelfit_results.individual_estimates.apply(fn, axis=1, result_type='expand')
+    df = res.individual_estimates.apply(fn, axis=1, result_type='expand')
     df.columns = covariates
     return df
 
 
 def calculate_results_using_bipp(
-    frem_model, continuous, categorical, rescale=True, samples=2000, rng=None
+    frem_model, frem_model_results, continuous, categorical, rescale=True, samples=2000, rng=None
 ):
     """Estimate a covariance matrix for the frem model using the BIPP method
 
@@ -896,16 +918,16 @@ def calculate_results_using_bipp(
     etas = list(dist.names)
     pool = sample_individual_estimates(
         frem_model,
-        frem_model.modelfit_results.individual_estimates,
-        frem_model.modelfit_results.individual_estimates_covariance,
+        frem_model_results.individual_estimates,
+        frem_model_results.individual_estimates_covariance,
         parameters=etas,
         rng=rng,
     ).droplevel('sample')
     ninds = len(pool.index.unique())
     ishr = calculate_individual_shrinkage(
         frem_model,
-        frem_model.modelfit_results.parameter_estimates,
-        frem_model.modelfit_results.individual_estimates_covariance,
+        frem_model_results.parameter_estimates,
+        frem_model_results.individual_estimates_covariance,
     )
     ishr = ishr[pool.columns]
     lower_indices = np.tril_indices(len(etas))
@@ -926,10 +948,10 @@ def calculate_results_using_bipp(
         k += 1
     frame = pd.DataFrame(parameter_samples, columns=pop_params)
     # Shift to the mean of the parameter estimate
-    shift = frem_model.modelfit_results.parameter_estimates[pop_params] - frame.mean()
+    shift = frem_model_results.parameter_estimates[pop_params] - frame.mean()
     frame = frame + shift
     res = calculate_results_from_samples(
-        frem_model, continuous, categorical, frame, rescale=rescale
+        frem_model, frem_model_results, continuous, categorical, frame, rescale=rescale
     )
     return res
 
@@ -986,19 +1008,20 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     model_4_path = path / 'final_models' / 'model_4.mod'
     if not model_4_path.is_file():
         raise IOError(f'Could not find FREM model 4: {str(model_4_path)}')
-    model_4 = Model.create_model(model_4_path)
+    model_4 = Model.parse_model(model_4_path)
+    model_4_results = read_modelfit_results(model_4_path)
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Adjusting initial estimates")
-        if model_4.modelfit_results is None:
+        if model_4_results is None:
             raise ValueError('Model 4 has no results')
     cov_model = None
     if method == 'cov_sampling':
         try:
-            model_4.modelfit_results.covariance_matrix
+            model_4_results.covariance_matrix
         except Exception:
             model_4b_path = path / 'final_models' / 'model_4b.mod'
             try:
-                model_4b = Model.create_model(model_4b_path)
+                model_4b = Model.parse_model(model_4b_path)
             except FileNotFoundError:
                 pass
             else:
@@ -1038,23 +1061,27 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
 
     intmod_names = ['model_1.mod', 'model_2.mod', 'model_3.mod', 'model_3b.mod']
     intmods = []
+    intmodres = []
     for m in intmod_names:
         intmod_path = path / 'm1' / m
         if intmod_path.is_file():
-            intmod = Model.create_model(intmod_path)
+            intmod = Model.parse_model(intmod_path)
             intmods.append(intmod)
+            res = read_modelfit_results(intmod_path)
+            intmodres.append(res)
 
-    model1b = Model.create_model(path / 'm1' / 'model_1b.mod')
+    model1b = Model.parse_model(path / 'm1' / 'model_1b.mod')
     model1 = intmods[0]
-    modelfit_results = replace(
-        model1.modelfit_results, parameter_estimates=pd.Series(model1b.parameters.nonfixed.inits)
+    model1_res = replace(
+        intmodres[0], parameter_estimates=pd.Series(model1b.parameters.nonfixed.inits)
     )
-    model1 = model1.replace(modelfit_results=modelfit_results)
     model1 = psn_reorder_base_model_inits(model1, path)
     intmods[0] = model1
+    intmodres[0] = model1_res
 
     res = calculate_results(
         model_4,
+        model_4_results,
         continuous,
         categorical,
         method=method,
@@ -1063,6 +1090,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         cov_model=cov_model,
         rescale=rescale,
         intermediate_models=intmods,
+        intermediate_models_res=intmodres,
         rng=np.random.default_rng(9843),
     )
     return res

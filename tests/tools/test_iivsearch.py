@@ -6,6 +6,7 @@ from pharmpy.modeling import (
     add_pk_iiv,
     create_joint_distribution,
 )
+from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.iivsearch.algorithms import (
     _create_param_dict,
     _is_rv_block_structure,
@@ -40,11 +41,12 @@ def test_brute_force_block_structure(
     load_model_for_test, testdata, list_of_parameters, block_structure, no_of_models
 ):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = add_peripheral_compartment(model)
     model = add_iiv(model, list_of_parameters, 'add')
     if block_structure:
         model = create_joint_distribution(
-            model, block_structure, individual_estimates=model.modelfit_results.individual_estimates
+            model, block_structure, individual_estimates=res.individual_estimates
         )
 
     wf = brute_force_block_structure(model)
@@ -92,13 +94,14 @@ def test_rv_block_structures_5_etas(load_model_for_test, pheno_path):
 
 def test_is_rv_block_structure(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
+    res = read_modelfit_results(pheno_path)
     model = add_iiv(model, ['TAD', 'S1'], 'exp')
 
     etas_block_structure = (('ETA_1', 'ETA_2'), ('ETA_TAD',), ('ETA_S1',))
     model = create_joint_distribution(
         model,
         list(etas_block_structure[0]),
-        individual_estimates=model.modelfit_results.individual_estimates,
+        individual_estimates=res.individual_estimates,
     )
     etas = model.random_variables.iiv
     assert _is_rv_block_structure(etas, etas_block_structure)
@@ -109,9 +112,7 @@ def test_is_rv_block_structure(load_model_for_test, pheno_path):
     etas_block_structure = (('ETA_1',), ('ETA_2', 'ETA_TAD'), ('ETA_S1',))
     assert not _is_rv_block_structure(etas, etas_block_structure)
 
-    model = create_joint_distribution(
-        model, individual_estimates=model.modelfit_results.individual_estimates
-    )
+    model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
     etas_block_structure = (('ETA_1', 'ETA_2', 'ETA_TAD', 'ETA_S1'),)
     etas = model.random_variables.iiv
     assert _is_rv_block_structure(etas, etas_block_structure)
@@ -119,6 +120,10 @@ def test_is_rv_block_structure(load_model_for_test, pheno_path):
 
 def test_create_joint_dist(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    # FIXME!!
+    model = model.replace(modelfit_results=res)
+
     model = add_peripheral_compartment(model)
     model = add_pk_iiv(model)
     etas_block_structure = (('ETA_1', 'ETA_2'), ('ETA_QP1',), ('ETA_VP1',))
@@ -126,12 +131,13 @@ def test_create_joint_dist(load_model_for_test, testdata):
     assert len(model.random_variables.iiv) == 4
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = model.replace(modelfit_results=res)
     model = add_peripheral_compartment(model)
     model = add_pk_iiv(model)
     model = create_joint_distribution(
         model,
         ['ETA_1', 'ETA_2'],
-        individual_estimates=model.modelfit_results.individual_estimates,
+        individual_estimates=res.individual_estimates,
     )
     etas_block_structure = (('ETA_1',), ('ETA_2',), ('ETA_3', 'ETA_VP1', 'ETA_QP1'))
     model = create_eta_blocks(etas_block_structure, model)

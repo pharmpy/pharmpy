@@ -29,7 +29,8 @@ from pharmpy.model import (
     output,
 )
 from pharmpy.modeling import get_ids, simplify_expression
-from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
+
+from .records.parsers import CodeRecordParser
 
 if TYPE_CHECKING:
     from .model import Model

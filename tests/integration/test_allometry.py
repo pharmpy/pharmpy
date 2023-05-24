@@ -3,7 +3,7 @@ import shutil
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
-from pharmpy.tools import run_tool
+from pharmpy.tools import read_modelfit_results, run_tool
 from pharmpy.workflows import ModelDatabase
 
 
@@ -14,12 +14,11 @@ def test_allometry(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
 
-        model = Model.create_model('pheno_real.mod')
+        model = Model.parse_model('pheno_real.mod')
+        results = read_modelfit_results('pheno_real.mod')
         datainfo = model.datainfo.replace(path=tmp_path / 'pheno.dta')
         model = model.replace(datainfo=datainfo)
-        res = run_tool(
-            'allometry', model, results=model.modelfit_results, allometric_variable='WGT'
-        )
+        res = run_tool('allometry', model=model, results=results, allometric_variable='WGT')
         assert len(res.summary_models) == 2
 
         db: ModelDatabase = res.tool_database.model_database

@@ -6,93 +6,68 @@ import pytest
 
 from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.plugins.nonmem.model import parse_code
-from pharmpy.plugins.nonmem.results import simfit_results
 from pharmpy.results import read_results
+from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.nonmem.results import simfit_results
 
 
-def test_ofv(pheno):
-    res = pheno.modelfit_results
+def test_ofv(pheno_path):
+    res = read_modelfit_results(pheno_path)
     assert res.ofv == 586.27605628188053
 
 
 def test_failed_ofv(testdata, load_model_for_test):
-    code = '''$PROBLEM
-$INPUT ID TIME AMT WGT APGR DV
-$DATA file.csv
-$SUBROUTINES ADVAN2 TRANS2
-$PK
-MAT = THETA(3)*EXP(ETA(1))
-CL = THETA(1)*EXP(ETA(2))
-VC = THETA(2)*EXP(ETA(3))
-KA = 1/MAT
-V = VC
-$ERROR
-Y=F+F*EPS(1)
-$THETA  (0,0.01) ; POP_CL
-$THETA  (0,0.1) ; POP_VC
-$THETA  (0,0.01) ; POP_MAT
-$OMEGA BLOCK(2)
-0.1	; IIV_CL
-0.01	; IIV_CL_IIV_VC
-0.1	; IIV_VC
-$OMEGA  0.1 ; IIV_MAT
-$SIGMA  0.09 ; sigma
-$ESTIMATION METHOD=1 INTER
-'''
-    model = parse_code(code, testdata / 'nonmem' / 'errors' / 'failed_run')
-    res = model.modelfit_results
+    res = read_modelfit_results(testdata / 'nonmem' / 'errors' / 'failed_run.mod')
     assert np.isnan(res.ofv)
     assert res.parameter_estimates.isnull().all()
 
-    model = load_model_for_test(testdata / 'nonmem' / 'errors' / 'run_interrupted.mod')
-    res = model.modelfit_results
+    res = read_modelfit_results(testdata / 'nonmem' / 'errors' / 'run_interrupted.mod')
     assert np.isnan(res.ofv)
     assert res.parameter_estimates.isnull().all()
 
 
 def test_special_models(testdata, load_model_for_test):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
-    withBayes = load_model_for_test(onePROB / 'multEST' / 'noSIM' / 'withBayes.mod')
-    assert pytest.approx(withBayes.modelfit_results.standard_errors['POP_CL'], 1e-13) == 2.51942e00
-    succ1 = withBayes.modelfit_results.minimization_successful_iterations.iloc[0]
-    succ2 = withBayes.modelfit_results.minimization_successful_iterations.iloc[1]
+    res = read_modelfit_results(onePROB / 'multEST' / 'noSIM' / 'withBayes.mod')
+    assert pytest.approx(res.standard_errors['POP_CL'], 1e-13) == 2.51942e00
+    succ1 = res.minimization_successful_iterations.iloc[0]
+    succ2 = res.minimization_successful_iterations.iloc[1]
     assert succ1 is not None and not succ1
     assert succ2 is not None and not succ2
 
-    maxeval0 = load_model_for_test(onePROB / 'oneEST' / 'noSIM' / 'maxeval0.mod')
-    assert maxeval0.modelfit_results.minimization_successful is None
+    res = read_modelfit_results(onePROB / 'oneEST' / 'noSIM' / 'maxeval0.mod')
+    assert res.minimization_successful is None
 
-    maxeval3 = load_model_for_test(onePROB / 'oneEST' / 'noSIM' / 'maxeval3.mod')
-    assert maxeval3.modelfit_results.minimization_successful is False
+    res = read_modelfit_results(onePROB / 'oneEST' / 'noSIM' / 'maxeval3.mod')
+    assert res.minimization_successful is False
 
 
-def test_covariance(load_model_for_test, pheno_path):
-    res = load_model_for_test(pheno_path).modelfit_results
+def test_covariance(pheno_path):
+    res = read_modelfit_results(pheno_path)
     cov = res.covariance_matrix
     assert len(cov) == 6
     assert pytest.approx(cov.loc['PTVCL', 'PTVCL'], 1e-13) == 4.41151e-08
     assert pytest.approx(cov.loc['IVV', 'PTVV'], 1e-13) == 7.17184e-05
 
 
-def test_information(load_model_for_test, pheno_path):
-    res = load_model_for_test(pheno_path).modelfit_results
+def test_information(pheno_path):
+    res = read_modelfit_results(pheno_path)
     m = res.information_matrix
     assert len(m) == 6
     assert pytest.approx(m.loc['PTVCL', 'PTVCL'], 1e-13) == 2.99556e07
     assert pytest.approx(m.loc['IVV', 'PTVV'], 1e-13) == -2.80082e03
 
 
-def test_correlation(load_model_for_test, pheno_path):
-    res = load_model_for_test(pheno_path).modelfit_results
+def test_correlation(pheno_path):
+    res = read_modelfit_results(pheno_path)
     corr = res.correlation_matrix
     assert len(corr) == 6
     assert corr.loc['PTVCL', 'PTVV'] == 0.00709865
     assert pytest.approx(corr.loc['IVV', 'PTVV'], 1e-13) == 3.56662e-01
 
 
-def test_standard_errors(load_model_for_test, pheno_path):
-    res = load_model_for_test(pheno_path).modelfit_results
+def test_standard_errors(pheno_path):
+    res = read_modelfit_results(pheno_path)
     ses = res.standard_errors
     assert len(ses) == 6
     assert pytest.approx(ses['PTVCL'], 1e-13) == 2.10036e-04
@@ -112,15 +87,16 @@ def test_standard_errors(load_model_for_test, pheno_path):
     pd.testing.assert_series_equal(ses_sd, correct)
 
 
-def test_individual_ofv(pheno):
-    iofv = pheno.modelfit_results.individual_ofv
+def test_individual_ofv(pheno_path):
+    res = read_modelfit_results(pheno_path)
+    iofv = res.individual_ofv
     assert len(iofv) == 59
     assert pytest.approx(iofv[1], 1e-15) == 5.9473520242962552
     assert pytest.approx(iofv[57], 1e-15) == 5.6639479151436394
 
 
-def test_individual_estimates_basic(load_model_for_test, pheno_path):
-    res = load_model_for_test(pheno_path).modelfit_results
+def test_individual_estimates_basic(pheno_path):
+    res = read_modelfit_results(pheno_path)
     ie = res.individual_estimates
     assert len(ie) == 59
     assert pytest.approx(ie['ETA_1'][1], 1e-15) == -0.0438608
@@ -129,8 +105,8 @@ def test_individual_estimates_basic(load_model_for_test, pheno_path):
     assert pytest.approx(ie['ETA_2'][28], 1e-15) == 8.32311e-02
 
 
-def test_individual_estimates_covariance(load_model_for_test, pheno_path):
-    res = load_model_for_test(pheno_path).modelfit_results
+def test_individual_estimates_covariance(pheno_path):
+    res = read_modelfit_results(pheno_path)
     cov = res.individual_estimates_covariance
     assert len(cov) == 59
     names = ['ETA_1', 'ETA_2']
@@ -144,8 +120,8 @@ def test_individual_estimates_covariance(load_model_for_test, pheno_path):
     pd.testing.assert_frame_equal(cov[43], correct2)
 
 
-def test_parameter_estimates(load_model_for_test, pheno_path):
-    res = load_model_for_test(pheno_path).modelfit_results
+def test_parameter_estimates(pheno_path):
+    res = read_modelfit_results(pheno_path)
     pe = res.parameter_estimates
     assert len(pe) == 6
     assert pe['PTVCL'] == 4.69555e-3
@@ -154,7 +130,7 @@ def test_parameter_estimates(load_model_for_test, pheno_path):
 
 def test_parameter_estimates_ext_missing_fix(load_model_for_test, pheno_path, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'errors' / 'run_interrupted.mod')
-    res = model.modelfit_results
+    res = read_modelfit_results(testdata / 'nonmem' / 'errors' / 'run_interrupted.mod')
     assert len(res.parameter_estimates.index.values) == len(model.parameters)
 
 
@@ -167,26 +143,26 @@ def test_simfit(testdata, load_model_for_test):
     assert results[2].ofv == 570.73440114145342
 
 
-def test_residuals(testdata, load_model_for_test):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    df = model.modelfit_results.residuals
+def test_residuals(testdata):
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    df = res.residuals
     assert len(df) == 155
     assert list(df.columns) == ['RES', 'CWRES']
     assert df['RES'][1.0, 2.0] == -0.67071
     assert df['CWRES'][1.0, 2.0] == -0.401100
 
 
-def test_predictions(testdata, load_model_for_test):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    df = model.modelfit_results.predictions
+def test_predictions(testdata):
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    df = res.predictions
     assert len(df) == 744
     assert set(df.columns) == {'IPRED', 'PRED'}
     assert df['PRED'][1.0, 0.0] == 18.143
 
 
-def test_runtime_total(testdata, load_model_for_test):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    runtime = model.modelfit_results.runtime_total
+def test_runtime_total(testdata):
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    runtime = res.runtime_total
     assert runtime == 4
 
 
@@ -251,19 +227,18 @@ def test_runtime_different_formats(
         with open('pheno_real.lst', 'a') as f:
             f.write(lst_file_repl)
 
-        model = load_model_for_test('pheno_real.mod')
-        runtime = model.modelfit_results.runtime_total
+        res = read_modelfit_results('pheno_real.mod')
+        runtime = res.runtime_total
         assert runtime == runtime_ref
 
 
-def test_estimation_runtime_steps(pheno_path, testdata, load_model_for_test):
-    model = load_model_for_test(pheno_path)
+def test_estimation_runtime_steps(pheno_path, testdata):
+    res = read_modelfit_results(pheno_path)
 
-    res = model.modelfit_results
     assert res.estimation_runtime_iterations.iloc[0] == 0.32
     assert res.runtime_total == 4
 
-    model = load_model_for_test(
+    res = read_modelfit_results(
         testdata
         / 'nonmem'
         / 'modelfit_results'
@@ -272,15 +247,14 @@ def test_estimation_runtime_steps(pheno_path, testdata, load_model_for_test):
         / 'noSIM'
         / 'pheno_multEST.mod'
     )
-    res = model.modelfit_results
     assert res.estimation_runtime_iterations.iloc[0] == 0.33
     assert res.estimation_runtime_iterations.iloc[1] == 2.75
     assert res.runtime_total == 7
     assert res.estimation_runtime == 0.33
 
 
-def test_evaluation(testdata, load_model_for_test):
-    model = load_model_for_test(
+def test_evaluation(testdata):
+    res = read_modelfit_results(
         testdata
         / 'nonmem'
         / 'modelfit_results'
@@ -289,16 +263,14 @@ def test_evaluation(testdata, load_model_for_test):
         / 'noSIM'
         / 'pheno_multEST.mod'
     )
-    res = model.modelfit_results
 
     assert round(res.ofv, 3) == 729.955
     assert res.minimization_successful_iterations.iloc[-1]
     assert not res.minimization_successful
 
 
-def test_serialization(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox_2comp.mod')
-    res = model.modelfit_results
+def test_serialization(testdata):
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox_2comp.mod')
     res_json = res.to_json()
     res_decode = read_results(res_json)
 

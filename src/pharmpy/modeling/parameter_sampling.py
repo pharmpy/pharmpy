@@ -151,9 +151,11 @@ def sample_parameters_uniformly(
     Example
     -------
     >>> from pharmpy.modeling import create_rng, sample_parameters_uniformly, load_example_model
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
+    >>> results = load_example_modelfit_results("pheno")
     >>> rng = create_rng(23)
-    >>> pe = model.modelfit_results.parameter_estimates
+    >>> pe = results.parameter_estimates
     >>> sample_parameters_uniformly(model, pe, n=3, rng=rng)
           PTVCL      PTVV   THETA_3      IVCL       IVV  SIGMA_1_1
     0  0.004878  0.908216  0.149441  0.029179  0.025472   0.012947
@@ -221,10 +223,12 @@ def sample_parameters_from_covariance_matrix(
     Example
     -------
     >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
+    >>> results = load_example_modelfit_results("pheno")
     >>> rng = create_rng(23)
-    >>> cov = model.modelfit_results.covariance_matrix
-    >>> pe = model.modelfit_results.parameter_estimates
+    >>> cov = results.covariance_matrix
+    >>> pe = results.parameter_estimates
     >>> sample_parameters_from_covariance_matrix(model, pe, cov, n=3, rng=rng)
           PTVCL      PTVV   THETA_3      IVCL       IVV  SIGMA_1_1
     0  0.005069  0.974989  0.204629  0.024756  0.012088   0.012943
@@ -291,11 +295,13 @@ def sample_individual_estimates(
 
     Example
     -------
-    >>> from pharmpy.modeling import *
+    >>> from pharmpy.modeling import create_rng, load_example_model, sample_individual_estimates
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
+    >>> results = load_example_modelfit_results("pheno")
     >>> rng = create_rng(23)
-    >>> ie = model.modelfit_results.individual_estimates
-    >>> iec = model.modelfit_results.individual_estimates_covariance
+    >>> ie = results.individual_estimates
+    >>> iec = results.individual_estimates_covariance
     >>> sample_individual_estimates(model, ie, iec, samples_per_id=2, rng=rng)
                   ETA_1     ETA_2
     ID sample

@@ -179,7 +179,7 @@ def start(context, model, groups, p_value, skip):
     sumcount = summarize_individuals_count_table(df=sumind)
     summf = pd.concat(sum_models, keys=list(range(last_iteration)), names=['step'])
     summary_tool = _create_summary_tool(selected_models, cutoff)
-    summary_errors = summarize_errors(selected_models)
+    summary_errors = summarize_errors(m.modelfit_results for m in selected_models)
 
     res = RUVSearchResults(
         cwres_models=pd.concat(cwres_models),

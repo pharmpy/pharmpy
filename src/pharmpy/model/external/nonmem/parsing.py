@@ -24,11 +24,11 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
 )
-from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 
 from .advan import _compartmental_model, des_assign_statements
 from .dataset import read_nonmem_dataset
 from .nmtran_parser import NMTranControlStream
+from .table import NONMEMTableFile, PhiTable
 
 
 def parse_thetas(control_stream):

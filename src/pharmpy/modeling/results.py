@@ -54,9 +54,11 @@ def calculate_eta_shrinkage(
     Examples
     --------
     >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> pe = model.modelfit_results.parameter_estimates
-    >>> ie = model.modelfit_results.individual_estimates
+    >>> results = load_example_modelfit_results("pheno")
+    >>> pe = results.parameter_estimates
+    >>> ie = results.individual_estimates
     >>> calculate_eta_shrinkage(model, pe, ie)
     ETA_1    0.720481
     ETA_2    0.240295
@@ -109,9 +111,11 @@ def calculate_individual_shrinkage(
     Examples
     --------
     >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> pe = model.modelfit_results.parameter_estimates
-    >>> covs = model.modelfit_results.individual_estimates_covariance
+    >>> results = load_example_modelfit_results("pheno")
+    >>> pe = results.parameter_estimates
+    >>> covs = results.individual_estimates_covariance
     >>> calculate_individual_shrinkage(model, pe, covs)
            ETA_1     ETA_2
     ID
@@ -246,10 +250,12 @@ def calculate_individual_parameter_statistics(
     --------
     >>> from pharmpy.modeling import load_example_model, create_rng
     >>> from pharmpy.modeling import calculate_individual_parameter_statistics
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
+    >>> results = load_example_modelfit_results("pheno")
     >>> rng = create_rng(23)
-    >>> pe = model.modelfit_results.parameter_estimates
-    >>> cov = model.modelfit_results.covariance_matrix
+    >>> pe = results.parameter_estimates
+    >>> cov = results.covariance_matrix
     >>> calculate_individual_parameter_statistics(model, "K=CL/V", pe, cov, rng=rng)
                               mean  variance    stderr
     parameter covariates
@@ -418,10 +424,12 @@ def calculate_pk_parameters_statistics(
     --------
     >>> from pharmpy.modeling import load_example_model, create_rng
     >>> from pharmpy.modeling import calculate_pk_parameters_statistics
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
+    >>> results = load_example_modelfit_results("pheno")
     >>> rng = create_rng(23)
-    >>> pe = model.modelfit_results.parameter_estimates
-    >>> cov = model.modelfit_results.covariance_matrix
+    >>> pe = results.parameter_estimates
+    >>> cov = results.covariance_matrix
     >>> calculate_pk_parameters_statistics(model, pe, cov, rng=rng)
                                   mean     variance     stderr
     parameter   covariates
@@ -595,8 +603,10 @@ def calculate_bic(model: Model, likelihood: float, type: Optional[str] = None):
     Examples
     --------
     >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> ofv = model.modelfit_results.ofv
+    >>> results = load_example_modelfit_results("pheno")
+    >>> ofv = results.ofv
     >>> calculate_bic(model, ofv)
     611.7071686183284
     >>> calculate_bic(model, ofv, type='fixed')
@@ -674,8 +684,10 @@ def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9)
     Example
     -------
     >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> cor = model.modelfit_results.correlation_matrix
+    >>> results = load_example_modelfit_results("pheno")
+    >>> cor = results.correlation_matrix
     >>> check_high_correlations(model, cor, limit=0.3)
     PTVCL  IVCL      -0.388059
     PTVV   THETA_3   -0.356899
@@ -710,8 +722,10 @@ def check_parameters_near_bounds(
     Example
     -------
     >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> check_parameters_near_bounds(model, model.modelfit_results.parameter_estimates)
+    >>> results = load_example_modelfit_results("pheno")
+    >>> check_parameters_near_bounds(model, results.parameter_estimates)
     PTVCL        False
     PTVV         False
     THETA_3      False

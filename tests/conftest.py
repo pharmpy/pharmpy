@@ -35,7 +35,7 @@ def load_model_for_test(tmp_path_factory):
         # TODO Cache based on file contents instead.
 
         def _parse_model():
-            model = Model.create_model(given_path)
+            model = Model.parse_model(given_path)
             try:
                 model.dataset  # NOTE Force parsing of dataset
             except FileNotFoundError:
@@ -56,7 +56,7 @@ def load_model_for_test(tmp_path_factory):
             # basetemp. With Python >= 3.9 we could use is_relative_to instead.
             pass
 
-        from pharmpy.plugins.nonmem import conf
+        from pharmpy.tools.external.nonmem import conf
 
         key = (str(conf), str(resolved_path))
 
@@ -79,7 +79,7 @@ def load_example_model_for_test():
         def _parse_model():
             return load_example_model(given_name)
 
-        from pharmpy.plugins.nonmem import conf
+        from pharmpy.tools.external.nonmem import conf
 
         key = (str(conf), given_name)
 
@@ -93,12 +93,10 @@ def load_example_model_for_test():
 
 @pytest.fixture(scope='session')
 def create_model_for_test(load_example_model_for_test):
-    from io import StringIO
-
     from pharmpy.model import Model
 
     def _create(code: str, dataset: Optional[str] = None) -> Model:
-        model = Model.create_model(StringIO(code))
+        model = Model.parse_model_from_string(code)
         datapath = model.datainfo.path
         if dataset is not None:
             # NOTE This yields a copy of the dataset through Model#copy

@@ -5,7 +5,7 @@ from pharmpy.internals.math import corr2cov, nearest_postive_semidefinite
 from pharmpy.modeling import fix_or_unfix_parameters, set_initial_estimates
 
 
-def calculate_parcov_inits(model, ncovs):
+def calculate_parcov_inits(model, ie, ncovs):
     """Get dict of new updated inits for parcov block
 
     model already has a FREM block
@@ -13,7 +13,6 @@ def calculate_parcov_inits(model, ncovs):
     """
     dist = model.random_variables.iiv[-1]
     rvs = list(dist.names)
-    ie = model.modelfit_results.individual_estimates
     eta_corr = ie[rvs].corr()
     eta_corr.fillna(value=1.0, inplace=True)  # Identical etas will get NaN as both diag and corr
 
@@ -37,7 +36,7 @@ def calculate_parcov_inits(model, ncovs):
     return param_inits
 
 
-def create_model3b(model1b, model3, ncovs):
+def create_model3b(model1b, model3, model3_res, ncovs):
     """Create model 3b from model 3
 
     * Update parcov omega block
@@ -45,14 +44,13 @@ def create_model3b(model1b, model3, ncovs):
     * Use initial etas from model3
     """
     model3b = model3.replace(name='model_3b')
-    parcov_inits = calculate_parcov_inits(model3, ncovs)
+    ie = model3_res.individual_estimates
+    parcov_inits = calculate_parcov_inits(model3, ie, ncovs)
     model3b = set_initial_estimates(model3b, parcov_inits)
     model3b = set_initial_estimates(
         model3b, model3b.random_variables.nearest_valid_parameters(model3b.parameters.inits)
     )
     model3b = fix_or_unfix_parameters(model3b, model1b.parameters.fix)
 
-    model3b = model3b.replace(
-        initial_individual_estimates=model3.modelfit_results.individual_estimates
-    )
+    model3b = model3b.replace(initial_individual_estimates=ie)
     return model3b
