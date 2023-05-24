@@ -461,32 +461,41 @@ class Model(Immutable):
         return self._description
 
     @staticmethod
-    def parse_model(path, **kwargs):
-        """Factory for creating a :class:`pharmpy.model` object from an object representing the model
-
-        .. _path-like object: https://docs.python.org/3/glossary.html#term-path-like-object
+    def parse_model(path):
+        """Create a model object by parsing a model file of any supported type
 
         Parameters
         ----------
-        obj
-            `path-like object`_ pointing to the model file or an IO object.
+        path : Path or str
+            Path to a model file
 
         Returns
         -------
         Model
-            Generic :class:`~pharmpy.generic.Model` if obj is None, otherwise appropriate
-            implementation is invoked (e.g. NONMEM7 :class:`~pharmpy.plugins.nonmem.Model`).
+            A model object
         """
         path = Path(path)
         with open(path, 'r', encoding='latin-1') as fp:
             code = fp.read()
 
         model_module = detect_model(code)
-        model = model_module.parse_model(code, path, **kwargs)
+        model = model_module.parse_model(code, path)
         return model
 
     @staticmethod
     def parse_model_from_string(code):
+        """Create a model object by parsing a string with model code of any supported type
+
+        Parameters
+        ----------
+        code : str
+            Model code
+
+        Returns
+        -------
+        Model
+            A model object
+        """
         model_module = detect_model(code)
         model = model_module.parse_model(code, None)
         return model
