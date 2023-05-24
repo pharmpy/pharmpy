@@ -111,7 +111,6 @@ def create_basic_pk_model(
         maximum_evaluations=99999,
         predictions=['CIPREDI'],
         residuals=['CWRES'],
-        tool_options={'SADDLE_RESET': 1},
     )
     eststeps = EstimationSteps.create([est])
 
