@@ -1,7 +1,6 @@
 import pytest
 
 from pharmpy.deps import numpy as np
-from pharmpy.deps import sympy
 from pharmpy.model.model import update_datainfo
 from pharmpy.modeling import (
     create_joint_distribution,
@@ -81,6 +80,22 @@ def test_transform_blq(load_model_for_test, testdata, method, error_func, sd_ref
             'SD = SQRT(SIGMA(1,1))*ABS(IPREDADJ)',
             ('Y = F + EPS(1)*IPREDADJ', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
         ),
+        (
+            'm4',
+            set_additive_error_model,
+            set_combined_error_model,
+            {},
+            'SD = SQRT(F**2*SIGMA(1,1) + SIGMA(2,2))',
+            ('Y = F + EPS(1)*F + EPS(2)', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
+        ),
+        (
+            'm4',
+            set_proportional_error_model,
+            set_combined_error_model,
+            {},
+            'SD = SQRT(F**2*SIGMA(1,1) + SIGMA(2,2))',
+            ('Y = F + EPS(1)*F + EPS(2)', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
+        ),
     ],
 )
 def test_update_blq_transformation(
@@ -113,11 +128,11 @@ def test_has_blq_transformation(load_model_for_test, testdata, method, error_fun
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = error_func(model)
 
-    assert not has_blq_transformation(model, sympy.Symbol('Y'))
+    assert not has_blq_transformation(model)
 
     model = transform_blq(model, method=method, lloq=0.1)
 
-    assert has_blq_transformation(model, sympy.Symbol('Y'))
+    assert has_blq_transformation(model)
 
 
 def test_transform_blq_invalid_input_model(load_model_for_test, testdata):

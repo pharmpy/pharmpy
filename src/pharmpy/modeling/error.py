@@ -281,13 +281,11 @@ def set_proportional_error_model(
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
 
-    stats_new = stats
-    if has_blq_transformation(model, y):
-        f, expr, sd_symb, sd_expr = _update_blq(model, error_expr, f, f_dummy, eps)
-        stats_new = stats.reassign(sd_symb, sd_expr)
+    if has_blq_transformation(model):
+        f, stats_new = _get_updated_blq_statements(model, error_expr, y, f, f_dummy, eps)
     else:
         expr = error_expr.subs({f_dummy: f})
-    stats_new = stats_new.reassign(y, expr)
+        stats_new = stats.reassign(y, expr)
 
     if zero_protection:
         guard_expr = sympy.Piecewise((2.225e-16, sympy.Eq(f, 0)), (f, True))
@@ -309,7 +307,7 @@ def set_proportional_error_model(
     return model.update_source()
 
 
-def _update_blq(model, expr_dummy, f, f_dummy, eps_new):
+def _get_updated_blq_statements(model, expr_dummy, y, f, f_dummy, eps_new):
     blq_symb, _ = get_blq_symb_and_type(model)
     for expr, cond in f.args:
         if blq_symb in cond.free_symbols:
@@ -319,9 +317,12 @@ def _update_blq(model, expr_dummy, f, f_dummy, eps_new):
         raise AssertionError('BLQ symbol not found')
     expr_above_lloq = expr_dummy.subs({f_dummy: f_above_lloq})
     expr = f.subs({f_above_lloq: expr_above_lloq})
+    # FIXME: make more general
     sd = model.statements.find_assignment('SD')
     sd_new = get_sd_expr(expr_above_lloq, model.random_variables + eps_new)
-    return f_above_lloq, expr, sd.symbol, simplify_expression(model, sd_new)
+    stats_new = model.statements.reassign(sd.symbol, simplify_expression(model, sd_new))
+    stats_new = stats_new.reassign(y, expr)
+    return f_above_lloq, stats_new
 
 
 def set_combined_error_model(
@@ -394,47 +395,6 @@ def set_combined_error_model(
 
     data_trans = _canonicalize_data_transformation(model, data_trans, dv)
 
-    # FIXME: handle other DVs
-    dv = list(model.dependent_variables.keys())[0]
-    if data_trans == sympy.log(dv):
-        expr_combined = sympy.log(f) + ruv_prop + ruv_add / f
-    elif data_trans == dv:
-        if isinstance(expr, sympy.Piecewise):
-            expr_0 = expr.args[0][0]
-            expr_1 = expr.args[1][0]
-            cond_0 = expr.args[0][1]
-            expr_combined = None
-            for eps in model.random_variables.epsilons.names:
-                expr_0 = subs(expr_0, {sympy.Symbol(eps): ruv_prop}, simultaneous=True)
-                expr_1 = subs(expr_1, {sympy.Symbol(eps): ruv_prop}, simultaneous=True)
-                if (
-                    eta_ruv in model.random_variables.free_symbols
-                    and theta_time in model.parameters.symbols
-                ):
-                    expr_combined = sympy.Piecewise(
-                        (expr_0 + ruv_add * theta_time * sympy.exp(eta_ruv), cond_0),
-                        (expr_1 + ruv_add * sympy.exp(eta_ruv), True),
-                    )
-                elif (
-                    eta_ruv not in model.random_variables.free_symbols
-                    and theta_time in model.parameters.symbols
-                ):
-                    expr_combined = sympy.Piecewise(
-                        (expr_0 + ruv_add * theta_time, cond_0), (expr_1 + ruv_add, True)
-                    )
-            assert expr_combined is not None
-        elif (
-            eta_ruv in model.random_variables.free_symbols
-            and theta_time not in model.parameters.symbols
-        ):
-            expr_combined = f + f * ruv_prop * sympy.exp(eta_ruv) + ruv_add * sympy.exp(eta_ruv)
-        else:
-            expr_combined = f + f * ruv_prop + ruv_add
-    else:
-        raise ValueError(f"Not supported data transformation {data_trans}")
-
-    stats_new = stats.reassign(y, expr_combined)
-
     sigma_prop = create_symbol(model, 'sigma_prop')
     model = add_population_parameter(model, sigma_prop.name, 0.09)
     sigma_add = create_symbol(model, 'sigma_add')
@@ -442,6 +402,59 @@ def set_combined_error_model(
 
     eps_prop = NormalDistribution.create(ruv_prop.name, 'RUV', 0, sigma_prop)
     eps_add = NormalDistribution.create(ruv_add.name, 'RUV', 0, sigma_add)
+
+    # FIXME: handle other DVs
+    dv = list(model.dependent_variables.keys())[0]
+    f_dummy = sympy.Dummy('x')
+    if data_trans == sympy.log(dv):
+        error_expr = sympy.log(f_dummy) + ruv_prop + ruv_add / f_dummy
+    elif data_trans == dv:
+        # Time varying
+        if isinstance(expr, sympy.Piecewise) and not has_blq_transformation(model):
+            expr_0 = expr.args[0][0]
+            expr_1 = expr.args[1][0]
+            cond_0 = expr.args[0][1]
+            error_expr = None
+            for eps in model.random_variables.epsilons.names:
+                expr_0 = subs(expr_0, {sympy.Symbol(eps): ruv_prop}, simultaneous=True)
+                expr_1 = subs(expr_1, {sympy.Symbol(eps): ruv_prop}, simultaneous=True)
+                if (
+                    eta_ruv in model.random_variables.free_symbols
+                    and theta_time in model.parameters.symbols
+                ):
+                    error_expr = sympy.Piecewise(
+                        (expr_0 + ruv_add * theta_time * sympy.exp(eta_ruv), cond_0),
+                        (expr_1 + ruv_add * sympy.exp(eta_ruv), True),
+                    )
+                elif (
+                    eta_ruv not in model.random_variables.free_symbols
+                    and theta_time in model.parameters.symbols
+                ):
+                    error_expr = sympy.Piecewise(
+                        (expr_0 + ruv_add * theta_time, cond_0), (expr_1 + ruv_add, True)
+                    )
+            assert error_expr is not None
+        elif (
+            eta_ruv in model.random_variables.free_symbols
+            and theta_time not in model.parameters.symbols
+        ):
+            if has_blq_transformation(model):
+                raise ValueError('Currently not supported to change from IIV on RUV model with BLQ')
+            error_expr = (
+                f_dummy + f_dummy * ruv_prop * sympy.exp(eta_ruv) + ruv_add * sympy.exp(eta_ruv)
+            )
+        else:
+            error_expr = f_dummy + f_dummy * ruv_prop + ruv_add
+    else:
+        raise ValueError(f"Not supported data transformation {data_trans}")
+
+    if has_blq_transformation(model):
+        _, stats_new = _get_updated_blq_statements(
+            model, error_expr, y, f, f_dummy, [eps_prop, eps_add]
+        )
+    else:
+        expr = error_expr.subs({f_dummy: f})
+        stats_new = stats.reassign(y, expr)
 
     rvs_new, params_new = _get_unused_parameters_and_rvs(
         stats_new, model.parameters, model.random_variables + [eps_prop, eps_add]

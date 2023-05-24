@@ -135,8 +135,9 @@ def _m3_m4_method(model, lloq, method):
     return model.update_source()
 
 
-def has_blq_transformation(model: Model, y):
+def has_blq_transformation(model: Model):
     # FIXME: make more general
+    y = list(model.dependent_variables.keys())[0]
     y_expr = model.statements.error.find_assignment(y).expression
     if not isinstance(y_expr, sympy.Piecewise):
         return False
