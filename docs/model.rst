@@ -137,7 +137,11 @@ Joint distributions are also supported
 
 .. pharmpy-execute::
 
-   frem_model = read_model(path / "frem" / "pheno" / "model_4.mod")
+   from pharmpy.tools import read_modelfit_results
+
+   frem_path = path / "frem" / "pheno" / "model_4.mod"
+   frem_model = read_model(frem_path)
+   frem_model_results = read_modelfit_results(frem_path)
 
    rvs = frem_model.random_variables
    rvs
@@ -157,7 +161,7 @@ or from estimated values
 
 .. pharmpy-execute::
 
-   omega_est = omega.subs(dict(frem_model.modelfit_results.parameter_estimates))
+   omega_est = omega.subs(dict(frem_model_results.parameter_estimates))
    omega_est
 
 Operations on this parameter matrix can be done either by using SymPy
@@ -220,35 +224,3 @@ A model can describe one or more dependent variables (output variables). Each de
 .. pharmpy-execute::
 
     model.dependent_variables
-
-~~~~~~~~~~~~~~~~
-Modelfit results
-~~~~~~~~~~~~~~~~
-
-If a model has been fit the results can be retrieved directly from the model object. Here are some examples of the results that can be available:
-
-.. pharmpy-execute::
-
-   model.modelfit_results.parameter_estimates
-
-
-.. pharmpy-execute::
-
-   model.modelfit_results.covariance_matrix
-
-.. pharmpy-execute::
-
-   model.modelfit_results.standard_errors
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-Updating initial estimates
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Updating all initial estimates of a model from its own results can be done by:
-
-.. pharmpy-execute::
-
-    from pharmpy.modeling import update_inits
-    update_inits(model, model.modelfit_results.parameter_estimates)
-
-

@@ -48,6 +48,9 @@ tflite_condition = (
 @pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.10")
 def test_tflite_not_installed(pheno_path, monkeypatch):
     model = read_model(pheno_path)
+    results = read_modelfit_results(pheno_path)
+    # FIXME
+    model = model.replace(modelfit_results=results)
 
     df = summarize_individuals([model])
     assert not df['predicted_dofv'].isnull().any().any()
