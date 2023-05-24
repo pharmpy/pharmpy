@@ -27,10 +27,10 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
 
     Examples
     --------
-    >>> from pharmpy.modeling import *
+    >>> from pharmpy.modeling import load_example_model
+    >>> from pharmpy.tools import run_bootstrap, load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import run_bootstrap # doctest: +SKIP
-    >>> res = model.modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
     >>> run_bootstrap(model, res, resamples=500) # doctest: +SKIP
     """
 

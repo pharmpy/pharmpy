@@ -65,9 +65,10 @@ def create_workflow(
     Examples
     --------
     >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import run_allometry, load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import run_allometry # doctest: +SKIP
-    >>> run_allometry(model=model, results=model.modelfit_results, allometric_variable='WGT') # doctest: +SKIP
+    >>> results = load_example_modelfit_results("pheno")
+    >>> run_allometry(model=model, results=results, allometric_variable='WGT') # doctest: +SKIP
 
     """
 

@@ -134,11 +134,12 @@ def create_workflow(
 
     Examples
     --------
-    >>> from pharmpy.modeling import *
+    >>> from pharmpy.modeling import load_example_model
+    >>> from pharmpy.tools import run_covsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import run_covsearch  # doctest: +SKIP
+    >>> results = load_example_modelfit_results("pheno")
     >>> effects = 'COVARIATE([CL, V], [AGE, WT], EXP)'
-    >>> res = run_covsearch(effects, model=model, results=model.modelfit_results)      # doctest: +SKIP
+    >>> res = run_covsearch(effects, model=model, results=results)      # doctest: +SKIP
     """
 
     wf = Workflow()

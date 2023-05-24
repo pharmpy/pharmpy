@@ -90,9 +90,10 @@ def run_amd(
     Examples
     --------
     >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import run_amd, load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import run_amd # doctest: +SKIP
-    >>> run_amd(model, results=model.modelfit_results)      # doctest: +SKIP
+    >>> results = load_example_modelfit_results("pheno")
+    >>> run_amd(model, results=results)      # doctest: +SKIP
 
     See also
     --------

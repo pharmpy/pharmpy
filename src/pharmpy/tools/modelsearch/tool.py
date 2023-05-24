@@ -53,11 +53,11 @@ def create_workflow(
 
     Examples
     --------
-    >>> from pharmpy.modeling import *
+    >>> from pharmpy.modeling import load_example_model
+    >>> from pharmpy.tools import run_modelsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import run_modelsearch # doctest: +SKIP
-    >>> res = model.modelfit_results
-    >>> run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', results=res, model=model) # doctest: +SKIP
+    >>> results = load_example_modelfit_results("pheno")
+    >>> run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', results=results, model=model) # doctest: +SKIP
 
     """
 

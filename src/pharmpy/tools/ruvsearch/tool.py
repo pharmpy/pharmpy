@@ -73,10 +73,11 @@ def create_workflow(
 
     Examples
     --------
-    >>> from pharmpy.modeling import *
+    >>> from pharmpy.modeling import load_example_model
+    >>> from pharmpy.tools import run_ruvsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import run_ruvsearch # doctest: +SKIP
-    >>> run_ruvsearch(model=model, results=model.modelfit_results)      # doctest: +SKIP
+    >>> results = load_example_modelfit_results("pheno")
+    >>> run_ruvsearch(model=model, results=results)      # doctest: +SKIP
 
     """
 

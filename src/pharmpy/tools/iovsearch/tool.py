@@ -65,9 +65,11 @@ def create_workflow(
 
     Examples
     --------
-    >>> from pharmpy.modeling import *
+    >>> from pharmpy.modeling import load_example_model
+    >>> from pharmpy.tools import run_iovsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> run_iovsearch('OCC', results=model.modelfit_results, model=model)      # doctest: +SKIP
+    >>> results = load_example_modelfit_results("pheno")
+    >>> run_iovsearch('OCC', results=results, model=model)      # doctest: +SKIP
     """
 
     wf = Workflow()

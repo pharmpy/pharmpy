@@ -53,11 +53,11 @@ def create_workflow(
     Examples
     --------
     >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import run_estmethod, load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import run_estmethod # doctest: +SKIP
-    >>> res = model.modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
     >>> methods = ['imp', 'saem']
-    >>> run_estmethod('reduced', methods=methods, solvers='all', results=res, model=model) # doctest: +SKIP
+    >>> run_estmethod('reduced', methods=methods, solvers='all', results=results, model=model) # doctest: +SKIP
 
     """
     wf = Workflow()
