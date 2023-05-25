@@ -147,6 +147,7 @@ def verification(
     db_name: str,
     error: float = 10**-3,
     return_comp: bool = False,
+    return_stat: bool = False,
     fix_eta: bool = True,
     force_ipred: bool = False,
     force_pred: bool = False,
@@ -233,12 +234,13 @@ def verification(
         error=error,
         force_ipred=force_ipred,
         force_pred=force_pred,
+        return_stat = return_stat,
         ignore_print=ignore_print,
     )
 
     if not ignore_print:
         print_step("DONE")
-    if return_comp is True:
+    if return_comp is True or return_stat is True:
         return combined_result
     else:
         if all(combined_result["PASS/FAIL"] == "PASS"):
@@ -248,7 +250,13 @@ def verification(
 
 
 def compare_models(
-    model_1, model_2, error=10**-3, force_ipred=False, force_pred=False, ignore_print=False
+    model_1,
+    model_2,
+    error=10**-3,
+    force_ipred=False,
+    force_pred=False,
+    ignore_print=False,
+    return_stat = False
 ):
     assert model_1.modelfit_results.predictions is not None
     assert model_2.modelfit_results.predictions is not None
@@ -399,11 +407,14 @@ def compare_models(
     combined_result.loc[combined_result[f'{final}_DIFF'] > error, "PASS/FAIL"] = "FAIL"
     if not ignore_print:
         print(
-            combined_result[f'{final}_DIFF'].describe()[["mean", "75%", "max"]].to_string(),
+            combined_result[f'{final}_DIFF'].describe()[["min", "mean", "75%", "max"]].to_string(),
             end="\n\n",
         )
-
-    return combined_result
+        
+    if return_stat:
+        return combined_result[f'{final}_DIFF'].describe()[["min", "mean", "75%", "max"]]
+    else:
+        return combined_result
 
 
 def print_step(s: str) -> None:
