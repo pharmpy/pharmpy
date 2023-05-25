@@ -438,6 +438,7 @@ def convert_eq(cond: sympy.Eq) -> str:
     """
     cond = sympy.pretty(cond)
     cond = cond.replace("=", "==")
+    cond = cond.replace("≠", "!=")
     cond = cond.replace("≤", "<=")
     cond = cond.replace("≥", "<=")
     cond = cond.replace("∧", "&")
