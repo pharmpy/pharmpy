@@ -284,6 +284,12 @@ def compare_models(
             )
             predictions = predictions.set_index(["ID", "TIME"])
             mod1 = mod1.replace(modelfit_results=ModelfitResults(predictions=predictions))
+            
+            dataset = mod1.dataset
+            dv_var = "DV"
+            dv = dataset.drop(
+                mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list()
+            )[dv_var]
         if mod2_type == "nonmem":
             predictions = mod2.modelfit_results.predictions.reset_index()
             predictions = predictions.drop(
@@ -291,6 +297,20 @@ def compare_models(
             )
             predictions = predictions.set_index(["ID", "TIME"])
             mod2 = mod2.replace(modelfit_results=ModelfitResults(predictions=predictions))
+            
+            dataset = mod2.dataset
+            dv_var = "DV"
+            dv = dataset.drop(
+                mod2.dataset[~mod2.dataset["EVID"].isin([0, 2])].index.to_list()
+            )[dv_var]
+    else:
+        dataset = mod1.dataset
+        dv_var = "DV"
+        dv = dataset.drop(
+            mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list()
+        )[dv_var]
+        
+    dv = dv.reset_index(drop = True)
             
     mod1_results = mod1.modelfit_results.predictions.copy()
 
@@ -352,6 +372,8 @@ def compare_models(
         combined_result['IPRED_DIFF'] = abs(
             combined_result[f'IPRED_{mod1_type}'] - combined_result[f'IPRED_{mod2_type}']
         )
+        
+    combined_result["DV"] = dv.values
 
     combined_result["PASS/FAIL"] = "PASS"
     if not ignore_print:
