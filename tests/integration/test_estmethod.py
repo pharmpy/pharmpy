@@ -11,8 +11,8 @@ from pharmpy.tools import run_estmethod
 @pytest.mark.parametrize(
     'algorithm, methods, solvers, no_of_candidates, advan_ref',
     [
-        ('exhaustive', ['foce', 'imp'], None, 2, 'ADVAN1'),
-        ('exhaustive_only_eval', ['foce', 'imp'], None, 2, 'ADVAN1'),
+        ('exhaustive', ['foce', 'laplace'], None, 2, 'ADVAN1'),
+        ('exhaustive_only_eval', ['foce', 'laplace'], None, 2, 'ADVAN1'),
     ],
 )
 def test_estmethod(
