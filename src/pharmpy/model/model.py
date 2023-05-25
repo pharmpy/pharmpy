@@ -95,6 +95,61 @@ class Model(Immutable):
         self._description = description
         self._internals = internals
 
+    @classmethod
+    def create(
+        cls,
+        name,
+        parameters=None,
+        random_variables=None,
+        statements=None,
+        dataset=None,
+        datainfo=None,
+        dependent_variables=None,
+        observation_transformation=None,
+        estimation_steps=None,
+        modelfit_results=None,
+        parent_model=None,
+        initial_individual_estimates=None,
+        filename_extension='',
+        value_type='PREDICTION',
+        description='',
+        internals=None,
+    ):
+        Model._canonicalize_name(name)
+        dependent_variables = Model._canonicalize_dependent_variables(dependent_variables)
+        observation_transformation = Model._canonicalize_observation_transformation(
+            observation_transformation, dependent_variables
+        )
+        parameters = Model._canonicalize_parameters(parameters)
+        random_variables = Model._canonicalize_random_variables(random_variables)
+        parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
+        estimation_steps = Model._canonicalize_estimation_steps(estimation_steps)
+        value_type = Model._canonicalize_value_type(value_type)
+        if not isinstance(datainfo, DataInfo):
+            raise TypeError("model.datainfo must be of DataInfo type")
+
+        if dataset is not None:
+            datainfo = update_datainfo(datainfo, dataset)
+
+        statements = Model._canonicalize_statements(
+            statements, parameters, random_variables, datainfo
+        )
+        return cls(
+            name=name,
+            dependent_variables=dependent_variables,
+            observation_transformation=observation_transformation,
+            parameters=parameters,
+            random_variables=random_variables,
+            estimation_steps=estimation_steps,
+            statements=statements,
+            modelfit_results=modelfit_results,
+            description=description,
+            parent_model=parent_model,
+            filename_extension=filename_extension,
+            internals=internals,
+            initial_individual_estimates=initial_individual_estimates,
+        )
+
     def _canonicalize_value_type(self, value):
         allowed_strings = ('PREDICTION', 'LIKELIHOOD', '-2LL')
         if isinstance(value, str):
@@ -126,9 +181,15 @@ class Model(Immutable):
     def _canonicalize_random_variables(rvs):
         if not isinstance(rvs, RandomVariables):
             raise TypeError("model.random_variables must be of RandomVariables type")
+        if rvs is None:
+            return RandomVariables.create()
+        else:
+            return rvs
 
     @staticmethod
     def _canonicalize_statements(statements, params, rvs, datainfo):
+        if statements is None:
+            return Statements()
         if not isinstance(statements, Statements):
             raise TypeError("model.statements must be of Statements type")
         colnames = {sympy.Symbol(colname) for colname in datainfo.names}
@@ -158,27 +219,68 @@ class Model(Immutable):
                         raise ValueError(f'Symbol {symb} defined after being used')
 
             sset_prev += statement
+        return statements
 
-    def replace(self, **kwargs):
-        name = kwargs.get('name', self.name)
+    @staticmethod
+    def _canonicalize_name(name):
         if not isinstance(name, str):
             raise TypeError("Name of a model has to be of string type")
 
+    @staticmethod
+    def _canonicalize_dependent_variables(dvs):
+        if dvs is None:
+            dvs = {sympy.Symbol('y'): 1}
+        return frozenmapping(dvs)
+
+    @staticmethod
+    def _canonicalize_observation_transformation(obs, dvs):
+        if obs is None:
+            obs = {dv: dv for dv in dvs.keys()}
+        return frozenmapping(obs)
+
+    @staticmethod
+    def _canonicalize_parameters(params):
+        if params is None:
+            return Parameters()
+        else:
+            if not isinstance(params, Parameters):
+                raise TypeError("parameters must be of Parameters type")
+            return params
+
+    @staticmethod
+    def _canonicalize_estimation_steps(steps):
+        if steps is None:
+            return EstimationSteps()
+        else:
+            if not isinstance(steps, EstimationSteps):
+                raise TypeError("model.estimation_steps must be of EstimationSteps type")
+            return steps
+
+    def replace(self, **kwargs):
+        name = kwargs.get('name', self.name)
+        Model._canonicalize_name(name)
+
         if 'dependent_variables' in kwargs:
-            dependent_variables = frozenmapping(kwargs['dependent_variables'])
+            dependent_variables = Model._canonicalize_dependent_variables(
+                kwargs['dependent_variables']
+            )
         else:
             dependent_variables = self.dependent_variables
 
         if 'observation_transformation' in kwargs:
-            observation_transformation = frozenmapping(kwargs['observation_transformation'])
+            observation_transformation = Model._canonicalize_observation_transformation(
+                kwargs['observation_transformation'], dependent_variables
+            )
         else:
             observation_transformation = self.observation_transformation
 
-        parameters = kwargs.get('parameters', self.parameters)
+        if 'parameters' in kwargs:
+            parameters = Model._canonicalize_parameters(kwargs['parameters'])
+        else:
+            parameters = self.parameters
 
         if 'random_variables' in kwargs:
-            random_variables = kwargs['random_variables']
-            Model._canonicalize_random_variables(random_variables)
+            random_variables = Model._canonicalize_random_variables(kwargs['random_variables'])
         else:
             random_variables = self.random_variables
 
@@ -203,14 +305,17 @@ class Model(Immutable):
 
         # Has to be checked after datainfo is updated since it looks for symbols in datainfo as well
         if 'statements' in kwargs:
-            statements = kwargs['statements']
-            Model._canonicalize_statements(statements, parameters, random_variables, datainfo)
+            statements = Model._canonicalize_statements(
+                kwargs['statements'], parameters, random_variables, datainfo
+            )
         else:
             statements = self.statements
 
-        estimation_steps = kwargs.get('estimation_steps', self.estimation_steps)
-        if not isinstance(estimation_steps, EstimationSteps):
-            raise TypeError("model.estimation_steps must be of EstimationSteps type")
+        if 'estimation_steps' in kwargs:
+            estimation_steps = Model._canonicalize_estimation_steps(kwargs['estimation_steps'])
+        else:
+            estimation_steps = self.estimation_steps
+
         modelfit_results = kwargs.get('modelfit_results', self.modelfit_results)
         parent_model = kwargs.get('parent_model', self.parent_model)
         initial_individual_estimates = kwargs.get(
