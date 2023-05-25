@@ -24,7 +24,7 @@ from pharmpy.tools import fit
 from pharmpy.workflows.log import Log
 
 
-def execute_model(model: pharmpy.model.Model, db: str, evaluate=False) -> pharmpy.model.Model:
+def execute_model(model: pharmpy.model.Model, db: str, evaluate=False, path = None) -> pharmpy.model.Model:
     """
     Executes a model using nlmixr2 estimation.
 
@@ -48,7 +48,8 @@ def execute_model(model: pharmpy.model.Model, db: str, evaluate=False) -> pharmp
     db = pharmpy.workflows.LocalDirectoryToolDatabase(db)
     database = db.model_database
     model = convert_model(model)
-    path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
+    if path is None:
+        path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
     model.internals.path = path
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
@@ -61,7 +62,6 @@ def execute_model(model: pharmpy.model.Model, db: str, evaluate=False) -> pharmp
     pre = f'library(nlmixr2)\n\ndataset <- read.csv("{path / dataname}")\n'
 
     if "fix_eta" in model.estimation_steps[0].tool_options:
-        write_fix_eta(model, path=path)
         pre += f'etas <- as.matrix(read.csv("{path}/fix_eta.csv"))'
     pre += "\n"
 
@@ -211,21 +211,18 @@ def verification(
     # and convert to nlmixr
     if not ignore_print:
         print_step("Converting NONMEM model to nlmixr2...")
-    if fix_eta is True:
-        nlmixr_model = convert_model(
-            update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates),
-            keep_etas=True,
-        )
-    else:
-        nlmixr_model = convert_model(
+    nlmixr_model = convert_model(
             update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
         )
 
     # Execute the nlmixr model
     if not ignore_print:
         print_step("Executing nlmixr2 model... (this might take a while)")
-
-    nlmixr_model = execute_model(nlmixr_model, db_name)
+    path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
+    meta = path / '.pharmpy'
+    meta.mkdir(parents=True, exist_ok=True)
+    write_fix_eta(nonmem_model, path=path)
+    nlmixr_model = execute_model(nlmixr_model, db_name, path = path)
 
     # Combine the two based on ID and time
     if not ignore_print:
@@ -257,26 +254,28 @@ def compare_models(
     assert model_2.modelfit_results.predictions is not None
 
     mod1 = model_1
-    mod1_type = str(type(mod1)).split(".")[2]
+    mod1_type = str(type(mod1)).split(".")[3]
     mod2 = model_2
-    mod2_type = str(type(mod2)).split(".")[2]
+    mod2_type = str(type(mod2)).split(".")[3]
 
     nm_to_r = False
     if (
-        mod1_type == "nonmem"
-        and mod2_type != "nonmem"
-        or mod2_type == "nonmem"
-        and mod1_type != "nonmem"
+        (mod1_type == "nonmem"
+        and mod2_type != "nonmem")
+        or (mod2_type == "nonmem"
+        and mod1_type != "nonmem")
     ):
         nm_to_r = True
 
     mod1 = mod1.replace(dataset=mod1.dataset.reset_index())
     mod2 = mod2.replace(dataset=mod2.dataset.reset_index())
 
-    for mod in [mod1, mod2]:
-        if "EVID" not in mod.dataset.columns:
-            mod = add_evid(mod)
+    if "EVID" not in mod1.dataset.columns:
+        mod1 = add_evid(mod1)
 
+    if "EVID" not in mod2.dataset.columns:
+        mod2 = add_evid(mod2)
+    
     if nm_to_r:
         if mod1_type == "nonmem":
             predictions = mod1.modelfit_results.predictions.reset_index()
@@ -292,7 +291,7 @@ def compare_models(
             )
             predictions = predictions.set_index(["ID", "TIME"])
             mod2 = mod2.replace(modelfit_results=ModelfitResults(predictions=predictions))
-
+            
     mod1_results = mod1.modelfit_results.predictions.copy()
 
     mod2_results = mod2.modelfit_results.predictions.copy()

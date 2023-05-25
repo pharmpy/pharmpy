@@ -14,7 +14,6 @@ from .sanity_checks import check_model
 
 def convert_model(
     model: pharmpy.model.Model,
-    keep_etas: bool = False,
     skip_check: bool = False,
     updated_estimates: bool = False,
 ) -> pharmpy.model.Model:
@@ -25,8 +24,6 @@ def convert_model(
     ----------
     model : pharmpy.model.Model
         A NONMEM pharmpy model object
-    keep_etas : bool, optional
-        Decide if NONMEM estimated thetas are to be used. The default is False.
     skip_check : bool, optional
         Skip determination of error model type. Could speed up conversion. The default is False.
 
