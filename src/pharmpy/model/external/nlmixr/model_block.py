@@ -232,13 +232,13 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
                     if w:
                         prop = list(term.free_symbols)[0]
                     else:
-                        prop = term
+                        prop += term
                     prop_found = True
         if prop_found is False:
             if w:
                 add = list(term.free_symbols)[0]
             else:
-                add = term
+                add += term
     return add, prop
 
 def add_bio_lag(model: pharmpy.model.Model, cg: CodeGenerator, bio = False, lag = False):
