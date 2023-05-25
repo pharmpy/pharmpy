@@ -105,7 +105,11 @@ class res_error_term:
                         term = term.subs(ali, 1)
                         if self.prop.expr == 0:
                             self.prop = error(
-                                self.model, term, t["sigma"], sigma_alias=t["sigma_alias"], prop=True
+                                self.model,
+                                term,
+                                t["sigma"],
+                                sigma_alias=t["sigma_alias"],
+                                prop=True,
                             )
                         else:
                             self.prop.expr = self.prop.expr + term
@@ -161,10 +165,12 @@ class error:
             return False
 
     def check_dependecies(self):
-        if (self.model is not None and
-            self.expr is not None and
-            self.model.parameters[self.sigma].init == 1 and
-            self.sigma_fix):
+        if (
+            self.model is not None
+            and self.expr is not None
+            and self.model.parameters[self.sigma].init == 1
+            and self.sigma_fix
+        ):
             accepted_symbols = set([self.sigma, self.sigma_alias])
             thetas = get_thetas(self.model).symbols
             accepted_symbols.update(thetas)

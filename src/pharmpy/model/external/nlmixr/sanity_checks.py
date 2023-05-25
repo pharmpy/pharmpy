@@ -78,10 +78,11 @@ def check_model(
 
     return model
 
+
 def add_time(model):
     dataset = model.dataset
     dataset["TIME"] = 0
-    model = model.replace(dataset = dataset)
+    model = model.replace(dataset=dataset)
     return model
 
 

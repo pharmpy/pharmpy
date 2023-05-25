@@ -183,8 +183,8 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
 
     # Add bioavailability statements
     if model.statements.ode_system is not None:
-        add_bio_lag(model, cg, bio = True)
-        add_bio_lag(model, cg, lag = True)
+        add_bio_lag(model, cg, bio=True)
+        add_bio_lag(model, cg, lag=True)
 
     # Add statements after ODEs
     if len(model.statements.after_odes) == 0:

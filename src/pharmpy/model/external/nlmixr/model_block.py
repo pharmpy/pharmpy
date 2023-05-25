@@ -212,11 +212,7 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
     r2 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\ \+ [a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2)"
     r3 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2\)"
     r4 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\)"
-    if (re.match(r1, str(s)) or
-        re.match(r2, str(s)) or
-        re.match(r3, str(s)) or
-        re.match(r4, str(s))
-        ):
+    if re.match(r1, str(s)) or re.match(r2, str(s)) or re.match(r3, str(s)) or re.match(r4, str(s)):
         w = True
     else:
         w = False
@@ -241,18 +237,19 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
                 add += term
     return add, prop
 
-def add_bio_lag(model: pharmpy.model.Model, cg: CodeGenerator, bio = False, lag = False):
+
+def add_bio_lag(model: pharmpy.model.Model, cg: CodeGenerator, bio=False, lag=False):
     if bio:
         bio_lag = get_bioavailability(model)
     elif lag:
         bio_lag = get_lag_times(model)
     else:
         return
-    
+
     for s in model.statements.before_odes:
         if s.symbol in bio_lag.values():
             comp = list(bio_lag.keys())[list(bio_lag.values()).index(s.symbol)]
-            
+
             if s.expression.is_Piecewise:
                 first = True
                 for value, cond in s.expression.args:
@@ -265,7 +262,7 @@ def add_bio_lag(model: pharmpy.model.Model, cg: CodeGenerator, bio = False, lag 
                             cg.add(f'}} else if ({cond}) {{')
                     else:
                         cg.add('} else {')
-                
+
                     if bio:
                         cg.add(f'f(A_{comp}) <- {value}')
                     elif lag:

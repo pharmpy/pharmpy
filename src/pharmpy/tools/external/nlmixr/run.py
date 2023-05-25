@@ -24,7 +24,9 @@ from pharmpy.tools import fit
 from pharmpy.workflows.log import Log
 
 
-def execute_model(model: pharmpy.model.Model, db: str, evaluate=False, path = None) -> pharmpy.model.Model:
+def execute_model(
+    model: pharmpy.model.Model, db: str, evaluate=False, path=None
+) -> pharmpy.model.Model:
     """
     Executes a model using nlmixr2 estimation.
 
@@ -213,8 +215,8 @@ def verification(
     if not ignore_print:
         print_step("Converting NONMEM model to nlmixr2...")
     nlmixr_model = convert_model(
-            update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
-        )
+        update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
+    )
 
     # Execute the nlmixr model
     if not ignore_print:
@@ -223,7 +225,7 @@ def verification(
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     write_fix_eta(nonmem_model, path=path)
-    nlmixr_model = execute_model(nlmixr_model, db_name, path = path)
+    nlmixr_model = execute_model(nlmixr_model, db_name, path=path)
 
     # Combine the two based on ID and time
     if not ignore_print:
@@ -234,7 +236,7 @@ def verification(
         error=error,
         force_ipred=force_ipred,
         force_pred=force_pred,
-        return_stat = return_stat,
+        return_stat=return_stat,
         ignore_print=ignore_print,
     )
 
@@ -256,7 +258,7 @@ def compare_models(
     force_ipred=False,
     force_pred=False,
     ignore_print=False,
-    return_stat = False
+    return_stat=False,
 ):
     assert model_1.modelfit_results.predictions is not None
     assert model_2.modelfit_results.predictions is not None
@@ -267,11 +269,8 @@ def compare_models(
     mod2_type = str(type(mod2)).split(".")[3]
 
     nm_to_r = False
-    if (
-        (mod1_type == "nonmem"
-        and mod2_type != "nonmem")
-        or (mod2_type == "nonmem"
-        and mod1_type != "nonmem")
+    if (mod1_type == "nonmem" and mod2_type != "nonmem") or (
+        mod2_type == "nonmem" and mod1_type != "nonmem"
     ):
         nm_to_r = True
 
@@ -283,7 +282,7 @@ def compare_models(
 
     if "EVID" not in mod2.dataset.columns:
         mod2 = add_evid(mod2)
-    
+
     if nm_to_r:
         if mod1_type == "nonmem":
             predictions = mod1.modelfit_results.predictions.reset_index()
@@ -292,12 +291,12 @@ def compare_models(
             )
             predictions = predictions.set_index(["ID", "TIME"])
             mod1 = mod1.replace(modelfit_results=ModelfitResults(predictions=predictions))
-            
+
             dataset = mod1.dataset
             dv_var = "DV"
-            dv = dataset.drop(
-                mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list()
-            )[dv_var]
+            dv = dataset.drop(mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list())[
+                dv_var
+            ]
         if mod2_type == "nonmem":
             predictions = mod2.modelfit_results.predictions.reset_index()
             predictions = predictions.drop(
@@ -305,21 +304,19 @@ def compare_models(
             )
             predictions = predictions.set_index(["ID", "TIME"])
             mod2 = mod2.replace(modelfit_results=ModelfitResults(predictions=predictions))
-            
+
             dataset = mod2.dataset
             dv_var = "DV"
-            dv = dataset.drop(
-                mod2.dataset[~mod2.dataset["EVID"].isin([0, 2])].index.to_list()
-            )[dv_var]
+            dv = dataset.drop(mod2.dataset[~mod2.dataset["EVID"].isin([0, 2])].index.to_list())[
+                dv_var
+            ]
     else:
         dataset = mod1.dataset
         dv_var = "DV"
-        dv = dataset.drop(
-            mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list()
-        )[dv_var]
-        
-    dv = dv.reset_index(drop = True)
-            
+        dv = dataset.drop(mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list())[dv_var]
+
+    dv = dv.reset_index(drop=True)
+
     mod1_results = mod1.modelfit_results.predictions.copy()
 
     mod2_results = mod2.modelfit_results.predictions.copy()
@@ -391,7 +388,7 @@ def compare_models(
         combined_result['IPRED_DIFF'] = abs(
             combined_result[f'IPRED_{mod1_type}'] - combined_result[f'IPRED_{mod2_type}']
         )
-        
+
     combined_result["DV"] = dv.values
 
     combined_result["PASS/FAIL"] = "PASS"
@@ -421,7 +418,7 @@ def compare_models(
             combined_result[f'{final}_DIFF'].describe()[["min", "mean", "75%", "max"]].to_string(),
             end="\n\n",
         )
-        
+
     if return_stat:
         return combined_result[f'{final}_DIFF'].describe()[["min", "mean", "75%", "max"]]
     else:
