@@ -7,6 +7,7 @@ from typing import Callable, Dict, Optional, Tuple
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import path_absolute
+from pharmpy.internals.immutable import frozenmapping
 from pharmpy.internals.math import triangular_root
 from pharmpy.model import (
     Assignment,
@@ -268,8 +269,8 @@ def convert_dvs(statements, control_stream):
     # could partly be done in code_record
     after = statements.error
     kept = []
-    dvs = {sympy.Symbol('Y'): 1}
-    obs_trans = {sympy.Symbol('Y'): sympy.Symbol('Y')}
+    dvs = frozenmapping({sympy.Symbol('Y'): 1})
+    obs_trans = frozenmapping({sympy.Symbol('Y'): sympy.Symbol('Y')})
     change = False
     yind = after.find_assignment_index('Y')
     if yind is None:
@@ -284,7 +285,7 @@ def convert_dvs(statements, control_stream):
                 ass2 = s.replace(symbol=sympy.Symbol('Y_2'), expression=expr.args[1][0])
                 kept.append(ass1)
                 kept.append(ass2)
-                dvs = {sympy.Symbol('Y_1'): 1, sympy.Symbol('Y_2'): 2}
+                dvs = frozenmapping({sympy.Symbol('Y_1'): 1, sympy.Symbol('Y_2'): 2})
                 obs_trans = {sympy.Symbol('Y_1'): sympy.Symbol('Y_1')}
                 change = True
                 continue

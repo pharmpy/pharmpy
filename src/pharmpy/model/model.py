@@ -57,7 +57,7 @@ class Model(Immutable):
         statements=Statements(),
         dataset=None,
         datainfo=DataInfo(),
-        dependent_variables=None,
+        dependent_variables=frozenmapping({sympy.Symbol('y'): 1}),
         observation_transformation=None,
         estimation_steps=EstimationSteps(),
         modelfit_results=None,
@@ -68,24 +68,18 @@ class Model(Immutable):
         description='',
         internals=None,
     ):
-        actual_dependent_variables = (
-            {sympy.Symbol('y'): 1} if dependent_variables is None else dependent_variables
-        )
         self._name = name
         self._datainfo = datainfo
         self._dataset = dataset
         self._random_variables = random_variables
         self._parameters = parameters
         self._statements = statements
-        # FIXME: Only do this conversion in the future Model.create
-        self._dependent_variables = frozenmapping(actual_dependent_variables)
+        self._dependent_variables = dependent_variables
         if observation_transformation is None:
-            self._observation_transformation = frozenmapping(
-                {dv: dv for dv in actual_dependent_variables.keys()}
+            observation_transformation = frozenmapping(
+                {dv: dv for dv in dependent_variables.keys()}
             )
-        else:
-            # FIXME: Only do this conversion in the future Model.create
-            self._observation_transformation = frozenmapping(observation_transformation)
+        self._observation_transformation = observation_transformation
         self._estimation_steps = estimation_steps
         self._modelfit_results = modelfit_results
         self._parent_model = parent_model
