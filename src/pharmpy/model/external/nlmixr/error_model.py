@@ -156,7 +156,10 @@ class error:
             return False
 
     def check_dependecies(self):
-        if self.model is not None and self.expr is not None:
+        if (self.model is not None and
+            self.expr is not None and
+            self.model.parameters[self.sigma].init == 1 and
+            not self.sigma_fix):
             accepted_symbols = set([self.sigma, self.sigma_alias])
             thetas = get_thetas(self.model).symbols
             accepted_symbols.update(thetas)
