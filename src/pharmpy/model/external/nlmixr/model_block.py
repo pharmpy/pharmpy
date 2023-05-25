@@ -241,19 +241,40 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
                 add = term
     return add, prop
 
-
-def add_bioavailability(model: pharmpy.model.Model, cg: CodeGenerator):
-    bio = get_bioavailability(model)
-    for comp, symbol in bio.items():
-        symbol_value = model.statements.find_assignment(symbol).expression
-        cg.add(f'f(A_{comp}) <- {symbol_value}')
-
-
-def add_lag_times(model: pharmpy.model.Model, cg: CodeGenerator):
-    lag = get_lag_times(model)
-    for comp, symbol in lag.items():
-        symbol_value = model.statements.find_assignment(symbol).expression
-        cg.add(f'alag(A_{comp}) <- {symbol_value}')
+def add_bio_lag(model: pharmpy.model.Model, cg: CodeGenerator, bio = False, lag = False):
+    if bio:
+        bio_lag = get_bioavailability(model)
+    elif lag:
+        bio_lag = get_lag_times(model)
+    else:
+        return
+    
+    for s in model.statements.before_odes:
+        if s.symbol in bio_lag.values():
+            comp = list(bio_lag.keys())[list(bio_lag.values()).index(s.symbol)]
+            
+            if s.expression.is_Piecewise:
+                first = True
+                for value, cond in s.expression.args:
+                    if cond is not sympy.S.true:
+                        cond = convert_eq(cond)
+                        if first:
+                            cg.add(f'if ({cond}) {{')
+                            first = False
+                        else:
+                            cg.add(f'}} else if ({cond}) {{')
+                    else:
+                        cg.add('} else {')
+                
+                    if bio:
+                        cg.add(f'f(A_{comp}) <- {value}')
+                    elif lag:
+                        cg.add(f'alag(A_{comp}) <- {value}')
+            else:
+                if bio:
+                    cg.add(f'f(A_{comp}) <- {s.expression}')
+                elif lag:
+                    cg.add(f'alag(A_{comp}) <- {s.expression}')
 
 
 def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
