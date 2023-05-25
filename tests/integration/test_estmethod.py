@@ -12,7 +12,15 @@ from pharmpy.tools import run_estmethod
     ],
 )
 def test_estmethod(
-    tmp_path, start_model, model_count, testdata, algorithm, methods, solvers, no_of_candidates, advan_ref
+    tmp_path,
+    start_model,
+    model_count,
+    testdata,
+    algorithm,
+    methods,
+    solvers,
+    no_of_candidates,
+    advan_ref,
 ):
     with chdir(tmp_path):
         res = run_estmethod(algorithm, methods=methods, solvers=solvers, model=start_model)
