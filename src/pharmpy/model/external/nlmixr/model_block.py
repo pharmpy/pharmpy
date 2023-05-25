@@ -206,8 +206,15 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
         terms = sympy.Add.make_args(s.expression)
     assert len(terms) <= 2
 
-    r = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2 \+ [a-zA-Z0-9_.-]*\*\*2\)"
-    if re.match(r, str(s)):
+    r1 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2 \+ [a-zA-Z0-9_.-]*\*\*2\)"
+    r2 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\ \+ [a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2)"
+    r3 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2\)"
+    r4 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\)"
+    if (re.match(r1, str(s)) or
+        re.match(r2, str(s)) or
+        re.match(r3, str(s)) or
+        re.match(r4, str(s))
+        ):
         w = True
     else:
         w = False
@@ -223,7 +230,7 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
                     if w:
                         prop = list(term.free_symbols)[0]
                     else:
-                        add = term
+                        prop = term
                     prop_found = True
         if prop_found is False:
             if w:
