@@ -129,7 +129,7 @@ def _parse_modelfit_results(
         log_likelihood=log_likelihood,
         covariance_matrix=cov,
         correlation_matrix=cor,
-        information_matrix=coi,
+        precision_matrix=coi,
         standard_errors=ses,
         standard_errors_sdcorr=ses_sdcorr,
         individual_ofv=iofv,
@@ -151,22 +151,22 @@ def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
         if cor is not None:
             cov = modeling.calculate_cov_from_corrse(cor, ses)
         elif coi is not None:
-            cov = modeling.calculate_cov_from_inf(coi)
+            cov = modeling.calculate_cov_from_prec(coi)
     if cor is None:
         if cov is not None:
             cor = modeling.calculate_corr_from_cov(cov)
         elif coi is not None:
-            cor = modeling.calculate_corr_from_inf(coi)
+            cor = modeling.calculate_corr_from_prec(coi)
     if coi is None:
         if cov is not None:
-            coi = modeling.calculate_inf_from_cov(cov)
+            coi = modeling.calculate_prec_from_cov(cov)
         elif cor is not None:
-            coi = modeling.calculate_inf_from_corrse(cor, ses)
+            coi = modeling.calculate_prec_from_corrse(cor, ses)
     if ses is None:
         if cov is not None:
             ses = modeling.calculate_se_from_cov(cov)
         elif coi is not None:
-            ses = modeling.calculate_se_from_inf(coi)
+            ses = modeling.calculate_se_from_prec(coi)
     return cov, cor, coi, ses
 
 

@@ -154,8 +154,8 @@ class ModelfitResults(Results):
         Correlation matrix of the population parameter estimates
     covariance_matrix : pd.DataFrame
         Covariance matrix of the population parameter estimates
-    information_matrix : pd.DataFrame
-        Fischer information matrix of the population parameter estimates
+    precision_matrix : pd.DataFrame
+        Precision matrix of the population parameter estimates
     evaluation_ofv : float
         The objective function value as if the model was evaluated. Currently
         workfs for classical estimation methods by taking the OFV of the first
@@ -205,7 +205,7 @@ class ModelfitResults(Results):
     parameter_estimates_iterations: Optional[pd.DataFrame] = None
     covariance_matrix: Optional[pd.DataFrame] = None
     correlation_matrix: Optional[pd.DataFrame] = None
-    information_matrix: Optional[pd.DataFrame] = None
+    precision_matrix: Optional[pd.DataFrame] = None
     standard_errors: Optional[pd.Series] = None
     standard_errors_sdcorr: Optional[pd.Series] = None
     relative_standard_errors: Optional[pd.Series] = None

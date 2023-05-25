@@ -52,7 +52,7 @@ def test_covariance(pheno_path):
 
 def test_information(pheno_path):
     res = read_modelfit_results(pheno_path)
-    m = res.information_matrix
+    m = res.precision_matrix
     assert len(m) == 6
     assert pytest.approx(m.loc['PTVCL', 'PTVCL'], 1e-13) == 2.99556e07
     assert pytest.approx(m.loc['IVV', 'PTVV'], 1e-13) == -2.80082e03

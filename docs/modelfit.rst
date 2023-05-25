@@ -85,14 +85,14 @@ The correlation matrix for all estimated parameters.
 
     results.correlation_matrix
 
-Information Matrix
-~~~~~~~~~~~~~~~~~~
+Precision Matrix
+~~~~~~~~~~~~~~~~
 
-The information matrix for all estimated parameters. This is the inverse of the covariance matrix.
+The precision matrix for all estimated parameters. This is the inverse of the covariance matrix.
 
 .. pharmpy-execute::
 
-    results.information_matrix
+    results.precision_matrix
 
 Indiviudal OFV
 ~~~~~~~~~~~~~~

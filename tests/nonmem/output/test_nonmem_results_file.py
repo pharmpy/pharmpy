@@ -435,4 +435,4 @@ def test_covariance_status(testdata):
     assert res.standard_errors is None
     assert res.covariance_matrix is None
     assert res.correlation_matrix is None
-    assert res.information_matrix is None
+    assert res.precision_matrix is None

@@ -1,6 +1,11 @@
 0.96.0 (2023-05-24)
 -------------------
 
+Changes
+=======
+
+* Rename functions handling the precision matrix (was previosuly referring to information matrix which was an error)
+
 New features
 ============
 
