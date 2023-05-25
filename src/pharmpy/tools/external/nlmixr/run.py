@@ -190,17 +190,20 @@ def verification(
     """
 
     nonmem_model = model
-
-    # Save results from the nonmem model
-    if nonmem_model.modelfit_results is None:
-        if not ignore_print:
-            print_step("Calculating NONMEM predictions... (this might take a while)")
-        nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
-    else:
-        if nonmem_model.modelfit_results.predictions is None:
+    
+    try:
+        # Save results from the nonmem model
+        if nonmem_model.modelfit_results is None:
             if not ignore_print:
                 print_step("Calculating NONMEM predictions... (this might take a while)")
             nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
+        else:
+            if nonmem_model.modelfit_results.predictions is None:
+                if not ignore_print:
+                    print_step("Calculating NONMEM predictions... (this might take a while)")
+                nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
+    except Exception:
+        raise Exception("Nonmem model could not be fitted")
 
     # Set a tool option to fix theta values when running nlmixr
     if fix_eta:
@@ -214,9 +217,12 @@ def verification(
     # and convert to nlmixr
     if not ignore_print:
         print_step("Converting NONMEM model to nlmixr2...")
-    nlmixr_model = convert_model(
-        update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
-    )
+    try:
+        nlmixr_model = convert_model(
+            update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
+        )
+    except Exception:
+        raise Exception("Could not convert model to nlmixr2")
 
     # Execute the nlmixr model
     if not ignore_print:
@@ -225,7 +231,10 @@ def verification(
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     write_fix_eta(nonmem_model, path=path)
-    nlmixr_model = execute_model(nlmixr_model, db_name, path=path)
+    try:
+        nlmixr_model = execute_model(nlmixr_model, db_name, path=path)
+    except Exception:
+        raise Exception("nlmixr2 model could not be fitted")
 
     # Combine the two based on ID and time
     if not ignore_print:

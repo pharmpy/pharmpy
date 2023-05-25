@@ -8,8 +8,7 @@ from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model.external.nlmixr.error_model import convert_eps_to_sigma
 from pharmpy.model.external.nlmixr.model import add_evid
 from pharmpy.model.external.nlmixr.model_block import (
-    add_bioavailability,
-    add_lag_times,
+    add_bio_lag,
     add_ode,
     convert_eq,
 )
@@ -114,8 +113,8 @@ def create_model(cg, model):
 
     # Add bioavailability statements
     if model.statements.ode_system is not None:
-        add_bioavailability(model, cg)
-        add_lag_times(model, cg)
+        add_bio_lag(model, cg, bio=True)
+        add_bio_lag(model, cg, lag=True)
 
     # Add statements after ODE
     add_true_statements(model, cg, model.statements.after_odes)
