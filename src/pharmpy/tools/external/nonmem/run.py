@@ -208,6 +208,6 @@ def evaluate_design(context, model):
     res = EvalDesignResults(
         ofv=mfr.ofv,
         individual_ofv=mfr.individual_ofv,
-        information_matrix=mfr.information_matrix,
+        information_matrix=mfr.precision_matrix,
     )
     return res
