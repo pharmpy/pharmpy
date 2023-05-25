@@ -142,7 +142,7 @@ def add_statements(
                                     cg.add(f'add_error <- {add}')
                                     cg.add(f'prop_error <- {prop}')
                         elif s.symbol == dv:
-                            if not value.is_constant() and not isinstance(value, sympy.Symbol):
+                            if value != dv:
                                 t = res_error_term(model, value)
                                 # FIXME : Remove sigma here instead of in ini
                                 # also remove aliases for sigma
@@ -150,7 +150,9 @@ def add_statements(
                                 cg.add(f'add_error <- {t.add.expr}')
                                 cg.add(f'prop_error <- {t.prop.expr}')
                             else:
-                                cg.add(f'{s.symbol.name} <- {value}')
+                                cg.add("res <- res")
+                                cg.add('add_error <- add_error')
+                                cg.add('prop_error <- prop_error')
                         else:
                             cg.add(f'{s.symbol.name} <- {value}')
 
