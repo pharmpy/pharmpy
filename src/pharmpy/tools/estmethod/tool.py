@@ -8,7 +8,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import has_first_order_elimination
+from pharmpy.modeling import has_linear_odes
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_errors, summarize_modelfit_results
 from pharmpy.tools.common import ToolResults
@@ -71,6 +71,9 @@ def create_workflow(
         start_task = Task('start_estmethod', start)
 
     wf.add_task(start_task)
+
+    if methods is None:
+        methods = [model.estimation_steps[-1].method]
 
     wf_algorithm, task_base_model_fit = algorithm_func(
         _format_input(methods, EST_METHODS), _format_input(solvers, SOLVERS)
@@ -175,7 +178,7 @@ def summarize_estimation_steps(models):
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(algorithm, methods, solvers, model):
-    if solvers is not None and has_first_order_elimination(model):
+    if solvers is not None and not has_linear_odes(model):
         raise ValueError(
             'Invalid input `model`: testing non-linear solvers on linear system is not supported'
         )
