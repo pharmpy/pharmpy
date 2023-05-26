@@ -1,15 +1,22 @@
-0.96.0 (2023-05-24)
+0.96.0 (2023-05-26)
 -------------------
 
 Changes
 =======
 
-* Rename functions handling the precision matrix (was previosuly referring to information matrix which was an error)
+* Rename functions handling the precision matrix (was previously referring to information matrix which was an error)
+* Remove saddle reset for default AMD model
+* Let LLQ column takes precedence over BLQ column
 
 New features
 ============
 
 * Add tools.load_example_modelfit_results
+
+Bugfixes
+========
+
+* Fix bug where if-statements were reordered incorrectly
 
 0.95.0 (2023-05-22)
 -------------------
