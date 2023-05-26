@@ -431,7 +431,7 @@ def _comps(graph):
 
 
 def to_compartmental_system(names, eqs):
-    """Convert an list of odes to a compartmenal system
+    """Convert an list of odes to a compartmental system
 
     names : func to compartment name map
     """
