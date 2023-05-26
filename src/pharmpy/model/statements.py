@@ -15,6 +15,13 @@ from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.immutable import Immutable
 
 
+def is_zero_matrix(A):
+    for e in A:
+        if not e.is_zero:
+            return False
+    return True
+
+
 class Statement(Immutable):
     """Abstract base class for all types of statements"""
 
@@ -1207,7 +1214,7 @@ class CompartmentalSystem(ODESystem):
                 break
 
         noutput = len(self.get_compartment_inflows(output))
-        have_zo_input = int(not self.zero_order_inputs.is_zero)
+        have_zo_input = int(not is_zero_matrix(self.zero_order_inputs))
         comp_nrows = comp_height * 2 - 1 + (1 if noutput > 1 else 0)
         nrows = comp_nrows + have_zo_input
         ncols = comp_width * 2
