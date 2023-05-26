@@ -1207,16 +1207,24 @@ class CompartmentalSystem(ODESystem):
                 break
 
         noutput = len(self.get_compartment_inflows(output))
-        nrows = comp_height * 2 - 1 + (1 if noutput > 1 else 0)
+        have_zo_input = int(not self.zero_order_inputs.is_zero)
+        comp_nrows = comp_height * 2 - 1 + (1 if noutput > 1 else 0)
+        nrows = comp_nrows + have_zo_input
         ncols = comp_width * 2
         grid = unicode.Grid(nrows, ncols)
 
         current = self.dosing_compartment
         col = 0
-        if nrows == 1 or nrows == 2:
-            main_row = 0
+        if comp_nrows == 1 or comp_nrows == 2:
+            main_row = 0 + have_zo_input
         else:
-            main_row = 2
+            main_row = 2 + have_zo_input
+
+        if have_zo_input:
+            # Assuming a fully linear layout
+            for i, zo in enumerate(self.zero_order_inputs):
+                if zo != 0:
+                    grid.set(0, i * 2, unicode.VerticalArrow(str(zo)))
 
         while True:
             bidirects = self.get_bidirectionals(current)
