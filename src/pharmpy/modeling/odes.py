@@ -1897,8 +1897,8 @@ def has_linear_odes(model: Model) -> bool:
         return False
 
     odes = model.statements.ode_system
-    M = odes.compartmental_matrix
-    return odes.t not in M.free_symbols
+    symbs = odes.compartmental_matrix.free_symbols | odes.zero_order_inputs.free_symbols
+    return odes.t not in symbs
 
 
 def has_linear_odes_with_real_eigenvalues(model: Model):
