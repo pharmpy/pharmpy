@@ -178,7 +178,7 @@ def summarize_estimation_steps(models):
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(algorithm, methods, solvers, model):
-    if solvers is not None and not has_linear_odes(model):
+    if solvers is not None and has_linear_odes(model):
         raise ValueError(
             'Invalid input `model`: testing non-linear solvers on linear system is not supported'
         )
