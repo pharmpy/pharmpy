@@ -496,18 +496,19 @@ def to_compartmental_system(names, eqs):
                                 neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(neweq.rhs + term))
     for eq in neweqs:
         if eq.rhs != 0:
-            i = sympy.Add(0)
-            o = sympy.Add(0)
+            i = sympy.Integer(0)
+            o = sympy.Integer(0)
             for term in sympy.Add.make_args(eq.rhs):
                 if _is_positive(term):
                     i = i + term
                 else:
                     o = o + term
-
             comp_func = eq.lhs.args[0]
             from_comp = compartments[names[comp_func.func]]
-            cb.add_flow(from_comp, output, -o / comp_func)
-            cb.set_input(from_comp, i)
+            if o != 0:
+                cb.add_flow(from_comp, output, -o / comp_func)
+            if i != 0:
+                cb.set_input(from_comp, i)
     cs = CompartmentalSystem(cb)
     return cs
 
