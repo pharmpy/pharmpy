@@ -1102,11 +1102,11 @@ def update_model_record(model: Model, advan):
     """Update $MODEL"""
     odes = model.statements.ode_system
     if not isinstance(odes, CompartmentalSystem):
-        return
+        return model
 
     oldmap = model.internals.compartment_map
     if oldmap is None:
-        return
+        return model
     newmap = new_compartmental_map(odes)
 
     replace_dict = {'compartment_map': newmap}
