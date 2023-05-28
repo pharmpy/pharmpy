@@ -209,10 +209,13 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
     assert len(terms) <= 2
 
     r1 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2 \+ [a-zA-Z0-9_.-]*\*\*2\)"
-    r2 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\ \+ [a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2)"
+    r2 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\ \+ [a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2\)"
     r3 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2\)"
     r4 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\)"
-    if re.match(r1, str(s)) or re.match(r2, str(s)) or re.match(r3, str(s)) or re.match(r4, str(s)):
+    if (re.match(r1, str(s)) or 
+        re.match(r2, str(s)) or 
+        re.match(r3, str(s)) or 
+        re.match(r4, str(s))):
         w = True
     else:
         w = False

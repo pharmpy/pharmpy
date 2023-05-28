@@ -103,18 +103,18 @@ class res_error_term:
                         # Remove the resulting symbol from the error term
                         term = convert_eps_to_sigma(term, self.model)
                         term = term.subs(ali, 1)
-                        if self.prop.expr == 0:
-                            self.prop = error(
-                                self.model,
-                                term,
-                                t["sigma"],
-                                sigma_alias=t["sigma_alias"],
-                                prop=True,
-                            )
-                        else:
-                            self.prop.expr = self.prop.expr + term
-
-            if prop is False:
+            if prop is True:
+                if self.prop.expr == 0:
+                    self.prop = error(
+                        self.model,
+                        term,
+                        t["sigma"],
+                        sigma_alias=t["sigma_alias"],
+                        prop=True,
+                    )
+                else:
+                    self.prop.expr = self.prop.expr + term
+            else:
                 term = convert_eps_to_sigma(term, self.model)
                 if self.add.expr == 0:
                     self.add = error(
