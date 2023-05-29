@@ -16,6 +16,7 @@ import json
 import warnings
 from pathlib import Path
 
+import pharmpy
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.immutable import Immutable, frozenmapping
@@ -576,6 +577,8 @@ class Model(Immutable):
     def model_code(self):
         """Model type specific code"""
         d = self.to_dict()
+        d['__magic__'] = "Pharmpy Model"
+        d['__version__'] = pharmpy.__version__
         return json.dumps(d)
 
     @property
