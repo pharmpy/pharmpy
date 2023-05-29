@@ -15,5 +15,6 @@ def test_load_plugins():
         'pharmpy.model.external.nonmem',
         'pharmpy.model.external.nlmixr',
         'pharmpy.model.external.fcon',
+        'pharmpy.model.external.generic',
         'pharmpy.model.external.rxode',
     }
