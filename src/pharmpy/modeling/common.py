@@ -2,6 +2,7 @@
 :meta private:
 """
 
+import importlib
 import re
 import warnings
 from pathlib import Path
@@ -166,37 +167,9 @@ def convert_model(model: Model, to_format: str):
     supported = ['generic', 'nlmixr', 'nonmem', 'rxode']
     if to_format not in supported:
         raise ValueError(f"Unknown format {to_format}: supported formats are f{supported}")
-    # FIXME: Use code that can discover plugins below
-    if to_format == 'generic':
-        new = Model()
-        new = new.replace(
-            dataset=model.dataset,
-            datainfo=model.datainfo,
-            name=model.name,
-            parameters=model.parameters,
-            statements=model.statements,
-            random_variables=model.random_variables,
-            estimation_steps=model.estimation_steps,
-            dependent_variables=model.dependent_variables,
-            observation_transformation=model.observation_transformation,
-            description=model.description,
-            parent_model=model.name,
-            filename_extension=model.filename_extension,
-            initial_individual_estimates=model.initial_individual_estimates,
-        )
-        return new
-    elif to_format == 'nlmixr':
-        import pharmpy.model.external.nlmixr.model as nlmixr
-
-        new = nlmixr.convert_model(model)
-    elif to_format == 'rxode':
-        import pharmpy.model.external.rxode.model as rxode
-
-        new = rxode.convert_model(model)
-    else:
-        import pharmpy.model.external.nonmem.model as nonmem
-
-        new = nonmem.convert_model(model)
+    module_name = 'pharmpy.model.external.' + to_format
+    module = importlib.import_module(module_name)
+    new = module.convert_model(model)
     return new
 
 
