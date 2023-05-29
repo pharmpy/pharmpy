@@ -309,11 +309,12 @@ class EstimationStep(Immutable):
             'solver': self._solver,
             'solver_rtol': self._solver_rtol,
             'solver_atol': self._solver_atol,
-            'tool_options': self._tool_options,
+            'tool_options': dict(self._tool_options),
         }
 
     @classmethod
     def from_dict(cls, d):
+        d['tool_options'] = frozenmapping(d['tool_options'])
         return cls(**d)
 
     def __repr__(self):

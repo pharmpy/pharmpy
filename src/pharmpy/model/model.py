@@ -12,6 +12,7 @@ Definitions
 """
 from __future__ import annotations
 
+import json
 import warnings
 from pathlib import Path
 
@@ -430,6 +431,11 @@ class Model(Immutable):
             ie = self._initial_individual_estimates.to_dict()
         else:
             ie = None
+        depvars = {str(key): val for key, val in self._dependent_variables.items()}
+        obstrans = {
+            sympy.srepr(key): sympy.srepr(val)
+            for key, val in self._observation_transformation.items()
+        }
         return {
             'parameters': self._parameters.to_dict(),
             'random_variables': self._random_variables.to_dict(),
@@ -437,8 +443,8 @@ class Model(Immutable):
             'estimation_steps': self._estimation_steps.to_dict(),
             'datainfo': self._datainfo.to_dict(),
             'value_type': self._value_type,
-            'dependent_variables': dict(self._dependent_variables),
-            'observation_transformation': dict(self._observation_transformation),
+            'dependent_variables': depvars,
+            'observation_transformation': obstrans,
             'initial_individual_estimates': ie,
         }
 
@@ -449,6 +455,11 @@ class Model(Immutable):
             ie = None
         else:
             ie = pd.DataFrame.from_dict(ie_dict)
+        depvars = {sympy.Symbol(key): value for key, value in d['dependent_variables'].items()}
+        obstrans = {
+            sympy.parse_expr(key): sympy.parse_expr(val)
+            for key, val in d['observation_transformation'].items()
+        }
         return cls(
             parameters=Parameters.from_dict(d['parameters']),
             random_variables=RandomVariables.from_dict(d['random_variables']),
@@ -456,8 +467,8 @@ class Model(Immutable):
             estimation_steps=EstimationSteps.from_dict(d['estimation_steps']),
             datainfo=DataInfo.from_dict(d['datainfo']),
             value_type=d['value_type'],
-            dependent_variables=frozenmapping(d['dependent_variables']),
-            observation_transformation=frozenmapping(d['observation_transformation']),
+            dependent_variables=frozenmapping(depvars),
+            observation_transformation=frozenmapping(obstrans),
             initial_individual_estimates=ie,
         )
 
@@ -564,7 +575,8 @@ class Model(Immutable):
     @property
     def model_code(self):
         """Model type specific code"""
-        raise NotImplementedError("Generic model does not implement the model_code property")
+        d = self.to_dict()
+        return json.dumps(d)
 
     @property
     def parent_model(self):
@@ -647,9 +659,7 @@ class Model(Immutable):
         return self
 
     def write_files(self, path=None, force=False):
-        """Write necessary files of the model. If any paths need to be changed or added (e.g. for a
-        NONMEM model with an updated dataset) they will be replaced with the correct path. update_source()
-        will be called first."""
+        """Write all extra files needed for a specific external format."""
         return self
 
 
