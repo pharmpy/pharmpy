@@ -970,6 +970,10 @@ def set_power_on_ruv(
                         ipredadj = s.symbol
                         break
 
+        if has_blq_transformation(model):
+            _, _, f = _preparations(model)
+            ipred = _get_f_above_lloq(model, f)
+
     for e in eps.names:
         theta_name = str(
             _create_symbol(
@@ -993,6 +997,13 @@ def set_power_on_ruv(
             )
         else:
             sset = sset.subs({sympy.Symbol(e): ipred ** sympy.Symbol(theta.name) * sympy.Symbol(e)})
+
+        if has_blq_transformation(model):
+            # FIXME: make more general
+            y_above_lloq, _ = sset.find_assignment('Y').expression.args[0]
+            sd = model.statements.find_assignment('SD')
+            sd_new = get_sd_expr(y_above_lloq, model.random_variables, Parameters.create(pset))
+            sset = sset.reassign(sd.symbol, sd_new)
 
     model = model.replace(parameters=Parameters.create(pset), statements=sset)
 
