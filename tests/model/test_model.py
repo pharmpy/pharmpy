@@ -80,3 +80,11 @@ def test_replace(load_model_for_test, testdata):
 
     sset_new = sset.reassign(cl.symbol, cl.expression + sympy.Symbol('TIME'))
     model.replace(statements=sset_new)
+
+
+def test_dict(load_model_for_test, testdata):
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(path)
+    d = model.to_dict()
+    model2 = Model.from_dict(d)
+    assert model == model2

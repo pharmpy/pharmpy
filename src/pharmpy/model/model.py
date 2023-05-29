@@ -395,8 +395,14 @@ class Model(Immutable):
             return False
         if self.estimation_steps != other.estimation_steps:
             return False
-        if self.initial_individual_estimates != other.initial_individual_estimates:
-            return False
+        if self.initial_individual_estimates is None:
+            if other.initial_individual_estimates is not None:
+                return False
+        else:
+            if other.initial_individual_estimates is None:
+                return False
+            elif not self.initial_individual_estimates.equals(other.initial_individual_estimates):
+                return False
         if self.datainfo != other.datainfo:
             return False
         if self.value_type != other.value_type:
@@ -418,6 +424,22 @@ class Model(Immutable):
                 self._value_type,
             )
         )
+
+    def to_dict(self):
+        if self._initial_individual_estimates is not None:
+            ie = self._initial_individual_estimates.to_dict()
+        else:
+            ie = None
+        return {'parameters': self._parameters.to_dict(), 'random_variables': self._random_variables.to_dict(), 'statements': self._statements.to_dict(), 'estimation_steps': self._estimation_steps.to_dict(), 'datainfo': self._datainfo.to_dict(), 'value_type': self._value_type, 'dependent_variables': dict(self._dependent_variables), 'observation_transformation': dict(self._observation_transformation), 'initial_individual_estimates': ie}
+
+    @classmethod
+    def from_dict(cls, d):
+        ie_dict = d['initial_individual_estimates']
+        if ie_dict is None:
+            ie = None
+        else:
+            ie = pd.DataFrame.from_dict(ie_dict)
+        return cls(parameters=Parameters.from_dict(d['parameters']), random_variables=RandomVariables.from_dict(d['random_variables']), statements=Statements.from_dict(d['statements']), estimation_steps=EstimationSteps.from_dict(d['estimation_steps']), datainfo=DataInfo.from_dict(d['datainfo']), value_type=d['value_type'], dependent_variables=frozenmapping(d['dependent_variables']), observation_transformation=frozenmapping(d['observation_transformation']), initial_individual_estimates=ie)
 
     def __repr__(self):
         return f'<Pharmpy model object {self.name}>'

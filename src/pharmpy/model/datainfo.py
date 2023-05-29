@@ -279,7 +279,7 @@ class ColumnInfo(Immutable):
         return cls(
             name=d['name'],
             type=d['type'],
-            unit=sympy.parse_expr(d['unit']),
+            unit=parse_units(d['unit']),
             scale=d['scale'],
             continuous=d['continuous'],
             categories=d['categories'],
@@ -869,6 +869,14 @@ class DataInfo(Sequence, Immutable):
             for col in self
         }
 
+    def to_dict(self):
+        return self._to_dict(path=None)
+
+    @classmethod
+    def from_dict(cls, d):
+        columns = [ColumnInfo.from_dict(col) for col in d['columns']]
+        return cls(columns=columns, path=d['path'], separator=d['separator'])
+
     def _to_dict(self, path: Optional[str]):
         a = []
         for col in self._columns:
@@ -881,9 +889,8 @@ class DataInfo(Sequence, Immutable):
                 "unit": str(col.unit),
                 "datatype": col.datatype,
                 "drop": col.drop,
+                "descriptor": col.descriptor,
             }
-            if col.descriptor is not None:
-                d["descriptor"] = col.descriptor
             a.append(d)
 
         return {
