@@ -1026,3 +1026,12 @@ def test_set_power_on_ruv(
             f'$THETA (-.99,.1)\n'
             f'{theta_ref}\n'
         )
+
+
+def test_set_power_on_ruv_with_zero_protect(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model = remove_error_model(model)
+    model = set_proportional_error_model(model)
+    model = set_power_on_ruv(model)
+
+    assert 'F + EPS(1)*IPREDADJ**THETA(3)' in model.model_code

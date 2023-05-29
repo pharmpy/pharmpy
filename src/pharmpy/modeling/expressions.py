@@ -368,9 +368,13 @@ def simplify_expression(model: Model, expr: Union[int, float, str, sympy.Expr]):
     >>> simplify_expression(model, "Abs(PTVCL)")
     PTVCL
     """
+    return _simplify_expression_from_parameters(expr, model.parameters)
+
+
+def _simplify_expression_from_parameters(expr, parameters):
     expr = parse_expr(expr)
     d = {}
-    for p in model.parameters:
+    for p in parameters:
         if p.fix:
             s = sympy.Float(p.init)
         elif p.upper < 0:

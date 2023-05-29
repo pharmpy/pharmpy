@@ -8,7 +8,7 @@ from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment, EstimationSteps, JointNormalDistribution, Model
 
 from .data import remove_loq_data
-from .expressions import create_symbol, simplify_expression
+from .expressions import _simplify_expression_from_parameters, create_symbol
 
 SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4'])
 
@@ -182,12 +182,12 @@ def _verify_model(model, method):
 
 def _get_sd(model, y):
     y_expr = model.statements.find_assignment(y.symbol).expression
-    sd_expr = get_sd_expr(y_expr, model.random_variables)
+    sd_expr = get_sd_expr(y_expr, model.random_variables, model.parameters)
     symb_sd = create_symbol(model, 'SD')
-    return Assignment(symb_sd, simplify_expression(model, sd_expr))
+    return Assignment(symb_sd, sd_expr)
 
 
-def get_sd_expr(y_expr, rvs):
+def get_sd_expr(y_expr, rvs, params):
     rv_terms = [arg for arg in y_expr.args if arg.free_symbols.intersection(rvs.free_symbols)]
     sd_expr = []
     for i, term in enumerate(rv_terms, 1):
@@ -200,4 +200,6 @@ def get_sd_expr(y_expr, rvs):
         expr = rvs.replace_with_sympy_rvs(term)
         sd_expr.append(sympy.stats.std(expr))
 
-    return sympy.sqrt(sympy.Add(*[expr**2 for expr in sd_expr]))
+    return _simplify_expression_from_parameters(
+        sympy.sqrt(sympy.Add(*[expr**2 for expr in sd_expr])), params
+    )

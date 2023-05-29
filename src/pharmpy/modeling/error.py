@@ -13,7 +13,7 @@ from pharmpy.model import Assignment, Model, NormalDistribution, Parameter, Para
 from .blq import get_blq_symb_and_type, get_sd_expr, has_blq_transformation
 from .common import _get_unused_parameters_and_rvs, remove_unused_parameters_and_rvs
 from .data import get_observations
-from .expressions import _create_symbol, create_symbol, get_dv_symbol, simplify_expression
+from .expressions import _create_symbol, create_symbol, get_dv_symbol
 from .help_functions import _format_input_list, _get_epsilons
 from .parameters import add_population_parameter, fix_parameters, set_initial_estimates
 
@@ -282,7 +282,7 @@ def set_proportional_error_model(
         raise ValueError(f"Not supported data transformation {data_trans}")
 
     if has_blq_transformation(model):
-        f, stats_new = _get_updated_blq_statements(model, error_expr, y, f, f_dummy, eps)
+        f, stats_new = _get_updated_blq_statements(model, error_expr, f, f_dummy, eps)
     else:
         expr = error_expr.subs({f_dummy: f})
         stats_new = stats.reassign(y, expr)
@@ -307,22 +307,26 @@ def set_proportional_error_model(
     return model.update_source()
 
 
-def _get_updated_blq_statements(model, expr_dummy, y, f, f_dummy, eps_new):
-    blq_symb, _ = get_blq_symb_and_type(model)
-    for expr, cond in f.args:
-        if blq_symb in cond.free_symbols:
-            f_above_lloq = expr
-            break
-    else:
-        raise AssertionError('BLQ symbol not found')
+def _get_updated_blq_statements(model, expr_dummy, f, f_dummy, eps_new):
+    y = list(model.dependent_variables.keys())[0]
+    f_above_lloq = _get_f_above_lloq(model, f)
     expr_above_lloq = expr_dummy.subs({f_dummy: f_above_lloq})
     expr = f.subs({f_above_lloq: expr_above_lloq})
     # FIXME: make more general
     sd = model.statements.find_assignment('SD')
-    sd_new = get_sd_expr(expr_above_lloq, model.random_variables + eps_new)
-    stats_new = model.statements.reassign(sd.symbol, simplify_expression(model, sd_new))
+    sd_new = get_sd_expr(expr_above_lloq, model.random_variables + eps_new, model.parameters)
+    stats_new = model.statements.reassign(sd.symbol, sd_new)
     stats_new = stats_new.reassign(y, expr)
     return f_above_lloq, stats_new
+
+
+def _get_f_above_lloq(model, f):
+    blq_symb, _ = get_blq_symb_and_type(model)
+    for expr, cond in f.args:
+        if blq_symb in cond.free_symbols:
+            return expr
+    else:
+        raise AssertionError('BLQ symbol not found')
 
 
 def set_combined_error_model(
@@ -450,7 +454,7 @@ def set_combined_error_model(
 
     if has_blq_transformation(model):
         _, stats_new = _get_updated_blq_statements(
-            model, error_expr, y, f, f_dummy, [eps_prop, eps_add]
+            model, error_expr, f, f_dummy, [eps_prop, eps_add]
         )
     else:
         expr = error_expr.subs({f_dummy: f})
@@ -945,19 +949,26 @@ def set_power_on_ruv(
         theta_init = 0.1
 
     # Find for example W = IPRED
+    ipredadj = None
+    alternative = None
     for s in sset:
-        if isinstance(s, Assignment) and s.expression == ipred:
-            alternative = s.symbol
-            if zero_protection:
-                guard_expr = sympy.Piecewise(
-                    (2.225e-307, sympy.Eq(s.expression, 0)), (s.expression, True)
-                )
-                guard_assignment = Assignment(ipred, guard_expr)
-                ind = sset.find_assignment_index('Y')
-                sset = sset[0:ind] + guard_assignment + sset[ind:]
-            break
-    else:
-        alternative = None
+        if isinstance(s, Assignment):
+            if s.expression == ipred:
+                alternative = s.symbol
+                if zero_protection:
+                    guard_expr = sympy.Piecewise(
+                        (2.225e-307, sympy.Eq(s.expression, 0)), (s.expression, True)
+                    )
+                    guard_assignment = Assignment(ipred, guard_expr)
+                    ind = sset.find_assignment_index('Y')
+                    sset = sset[0:ind] + guard_assignment + sset[ind:]
+                break
+            if isinstance(s.expression, sympy.Piecewise):
+                args = s.expression.args
+                for expr, cond in args:
+                    if expr == ipred:
+                        ipredadj = s.symbol
+                        break
 
     for e in eps.names:
         theta_name = str(
@@ -975,7 +986,13 @@ def set_power_on_ruv(
         )  # To avoid getting F*EPS*F**THETA
         if alternative:  # To avoid getting W*EPS*F**THETA
             sset = sset.subs({sympy.Symbol(e) * alternative: sympy.Symbol(e)})
-        sset = sset.subs({sympy.Symbol(e): ipred ** sympy.Symbol(theta.name) * sympy.Symbol(e)})
+
+        if ipredadj:
+            sset = sset.subs(
+                {sympy.Symbol(e) * ipredadj: ipredadj ** sympy.Symbol(theta.name) * sympy.Symbol(e)}
+            )
+        else:
+            sset = sset.subs({sympy.Symbol(e): ipred ** sympy.Symbol(theta.name) * sympy.Symbol(e)})
 
     model = model.replace(parameters=Parameters.create(pset), statements=sset)
 
