@@ -27,6 +27,7 @@ from pharmpy.modeling import (
     set_initial_estimates,
     set_power_on_ruv,
 )
+from pharmpy.modeling.blq import has_blq_transformation
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import (
@@ -50,6 +51,7 @@ def create_workflow(
     groups: int = 4,
     p_value: float = 0.05,
     skip: Optional[List[str]] = None,
+    max_iter: Optional[int] = 3,
 ):
     """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 
@@ -65,6 +67,8 @@ def create_workflow(
         The p-value to use for the likelihood ratio test
     skip : list
         A list of models to not attempt.
+    max_iter :  int
+        Number of iterations to run (1, 2, or 3). For models with BLQ only one iteration is supported.
 
     Returns
     -------
@@ -83,7 +87,7 @@ def create_workflow(
 
     wf = Workflow()
     wf.name = "ruvsearch"
-    start_task = Task('start_ruvsearch', start, model, groups, p_value, skip)
+    start_task = Task('start_ruvsearch', start, model, groups, p_value, skip, max_iter)
     wf.add_task(start_task)
     task_results = Task('results', _results)
     wf.add_task(task_results, predecessors=[start_task])
@@ -141,7 +145,7 @@ def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
     return wf
 
 
-def start(context, model, groups, p_value, skip):
+def start(context, model, groups, p_value, skip, max_iter):
     cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
@@ -151,7 +155,7 @@ def start(context, model, groups, p_value, skip):
     cwres_models = []
     tool_database = None
     last_iteration = 0
-    for current_iteration in (1, 2, 3):
+    for current_iteration in range(1, max_iter + 1):
         last_iteration = current_iteration
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
         res, best_model, selected_model_name = call_workflow(
@@ -438,7 +442,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(model, groups, p_value, skip):
+def validate_input(model, groups, p_value, skip, max_iter):
     if groups <= 0:
         raise ValueError(f'Invalid `groups`: got `{groups}`, must be >= 1.')
 
@@ -447,6 +451,9 @@ def validate_input(model, groups, p_value, skip):
 
     if skip is not None and not set(skip).issubset(SKIP):
         raise ValueError(f'Invalid `skip`: got `{skip}`, must be None/NULL or a subset of {SKIP}.')
+
+    if max_iter < 1 or max_iter > 3:
+        raise ValueError(f'Invalid `max_iter`: got `{max_iter}`, must be int in range [1, 3].')
 
     if model is not None:
         if model.modelfit_results is None:
@@ -464,4 +471,10 @@ def validate_input(model, groups, p_value, skip):
             raise ValueError(
                 f'Invalid `model`: please check {model.name}.mod file to'
                 f' make sure ID, TIME, CIPREDI (or IPRED) are in $TABLE.'
+            )
+
+        if has_blq_transformation(model) and max_iter > 1:
+            raise ValueError(
+                f'Invalid `max_iter`: got `{max_iter}`,only 1 iteration is supported '
+                f'for models with BLQ transformation.'
             )
