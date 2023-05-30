@@ -3,6 +3,7 @@
 """
 from pharmpy.deps import sympy
 from pharmpy.model import (
+    Assignment,
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
@@ -10,7 +11,7 @@ from pharmpy.model import (
     output,
 )
 
-from .odes import add_individual_parameter
+from .odes import add_individual_parameter, set_initial_condition
 
 
 def set_tmdd(model: Model, type: str):
@@ -69,6 +70,9 @@ def set_tmdd(model: Model, type: str):
         cb.set_input(target_comp, kin)
         cb.set_input(central, koff * complex_amount - kon * central_amount * target_amount)
         cs = CompartmentalSystem(cb)
+        model = model.replace(
+            statements=model.statements.before_odes + cs + model.statements.after_odes
+        )
     elif type == "IB":
         kon = sympy.Symbol('KON')
         model = add_individual_parameter(model, kon.name)
@@ -133,28 +137,59 @@ def set_tmdd(model: Model, type: str):
         cb.add_flow(complex_comp, central, kon * central_amount)
         cs = CompartmentalSystem(cb)
     elif type == "QSS":
+        r_0 = sympy.Symbol('R_0')
+        model = add_individual_parameter(model, r_0.name)
+        kdc = sympy.Symbol('KDC')
+        model = add_individual_parameter(model, kdc.name)
+        kint = sympy.Symbol('KINT')
+        model = add_individual_parameter(model, kint.name)
+        kdeg = sympy.Symbol('KDEG')
+        model = add_individual_parameter(model, kdeg.name)
+
+        ksyn = sympy.Symbol('KSYN')
         kd = sympy.Symbol('KD')
-        model = add_individual_parameter(model, kd.name)
-        kpe = sympy.Symbol('KPE')
-        model = add_individual_parameter(model, kpe.name)
+        central_comp = odes.central_compartment
+        elimination_rate = odes.get_flow(central_comp, output)
+        numer, denom = elimination_rate.as_numer_denom()
+        if denom != 1:
+            vc = denom
+        else:
+            vc = sympy.Symbol('VC')  # FIXME: What do do here?
+        ksyn_ass = Assignment(ksyn, r_0 * kdeg)
+        kd_ass = Assignment(kd, kdc * vc)
 
         cb = CompartmentalSystemBuilder(odes)
         target_comp = Compartment.create(name="TARGET")
-        complex_comp = Compartment.create(name="COMPLEX")
+        cb.add_compartment(target_comp)
+        central_amount = sympy.Function(central_comp.amount.name)(sympy.Symbol('t'))
         target_amount = sympy.Function(target_comp.amount.name)(sympy.Symbol('t'))
-        complex_amount = sympy.Function(complex_comp.amount.name)(sympy.Symbol('t'))
-        cb.add_flow(complex_comp, output, kpe)
 
-        # lcfree = sympy.Rational(1, 2) * (
-        #    central_amount
-        #    - complex_amount
-        #    - kd
-        #    + sympy.sqrt((central_amount - complex_amount - kd) ** 2 + 4 * kd * central_amount)
-        # )
+        lcfree_symb = sympy.Symbol('LCFREE')
+        lcfree_expr = sympy.Rational(1, 2) * (
+            central_amount
+            - target_amount
+            - kd
+            + sympy.sqrt((central_amount - target_amount - kd) ** 2 + 4 * kd * central_amount)
+        )
+        lcfree_ass = Assignment(lcfree_symb, lcfree_expr)
+
+        # FIXME: Missing CL/VC (elimination rate) in central_comp input
+        # FIXME: Support two and three compartment distribution
+        cb.set_input(central_comp, -target_amount * kint * lcfree_symb / (kd + lcfree_symb))
+        cb.set_input(
+            target_comp,
+            ksyn * vc
+            - kdeg * target_amount
+            - (kint - kdeg) * target_amount * lcfree_symb / (kd + lcfree_symb),
+        )
+
+        before = model.statements.before_odes + (ksyn_ass, kd_ass, lcfree_ass)
         cs = CompartmentalSystem(cb)
+        model = model.replace(statements=before + cs + model.statements.after_odes)
     else:
-        raise ValueError(f'Unknown TMDD type "{type}". Supported is full')
+        raise ValueError(f'Unknown TMDD type "{type}".')
 
-    statements = model.statements.before_odes + cs + model.statements.after_odes
-    model = model.replace(statements=statements)
+    if type == "QSS":
+        model = set_initial_condition(model, "TARGET", r_0 * vc)
+
     return model.update_source()

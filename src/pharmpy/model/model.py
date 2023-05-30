@@ -190,6 +190,8 @@ class Model(Immutable):
             raise TypeError("model.statements must be of Statements type")
         colnames = {sympy.Symbol(colname) for colname in datainfo.names}
         symbs_all = rvs.free_symbols.union(params.symbols).union(colnames)
+        if statements.ode_system is not None:
+            symbs_all = symbs_all.union({statements.ode_system.t})
         sset_prev = []
         for i, statement in enumerate(statements):
             if isinstance(statement, ODESystem):
