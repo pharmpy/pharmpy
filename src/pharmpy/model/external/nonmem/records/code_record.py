@@ -578,12 +578,14 @@ class CodeRecord(Record):
         statement_nodes = list(node_tree.subtrees('statement'))
         return statement_nodes
 
-    def from_odes(self, ode_system):
-        """Set statements of record given an explicit ode system"""
+    def from_odes(self, ode_system, extra):
+        """Set statements of record given an explicit ode system
+        extra statements are added to the top
+        """
         odes = ode_system.eqs
         functions = [ode.lhs.args[0] for ode in odes]
         function_map = {f: sympy.Symbol(f'A({i + 1})') for i, f in enumerate(functions)}
-        statements = []
+        statements = extra
         for i, ode in enumerate(odes):
             # For now Piecewise signals zero-order infusions, which are handled with parameters
             ode = ode.replace(sympy.Piecewise, lambda a1, a2: 0)

@@ -513,7 +513,13 @@ def to_des(model: Model, new: ODESystem):
     des = create_record('$DES\nDUMMY=0\n')
     cs = cs.insert_record(des)
     assert isinstance(des, CodeRecord)
-    newdes = des.from_odes(new)
+
+    to_odes = []
+    for s in model.statements.before_odes:
+        if model.statements.ode_system.t in s.free_symbols:
+            to_odes.append(s)
+
+    newdes = des.from_odes(new, to_odes)
     cs = cs.replace_records([des], [newdes])
     cs = cs.remove_records(model.internals.control_stream.get_records('MODEL'))
     mod = create_record('$MODEL\n')
@@ -592,6 +598,13 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
 
     main_statements = model.statements.before_odes
     main_statements = update_ics(main_statements, new_odes)
+    if model.statements.ode_system is not None:
+        keep = []
+        for s in main_statements:
+            if model.statements.ode_system.t not in s.free_symbols:
+                keep.append(s)
+        main_statements = Statements(tuple(keep))
+
     error_statements = model.statements.after_odes
 
     rec = model.internals.control_stream.get_pred_pk_record()
