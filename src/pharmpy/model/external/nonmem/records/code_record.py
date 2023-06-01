@@ -585,7 +585,7 @@ class CodeRecord(Record):
         odes = ode_system.eqs
         functions = [ode.lhs.args[0] for ode in odes]
         function_map = {f: sympy.Symbol(f'A({i + 1})') for i, f in enumerate(functions)}
-        statements = extra
+        statements = [s.subs(function_map) for s in extra]
         for i, ode in enumerate(odes):
             # For now Piecewise signals zero-order infusions, which are handled with parameters
             ode = ode.replace(sympy.Piecewise, lambda a1, a2: 0)
