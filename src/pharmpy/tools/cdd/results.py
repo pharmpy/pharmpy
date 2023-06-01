@@ -233,7 +233,7 @@ def psn_cdd_results(path: Union[str, Path], base_model_path=None):
 
     if base_model_path is None:
         base_model_path = Path(options['model_path'])
-    base_model = Model.create_model(base_model_path)
+    base_model = Model.parse_model(base_model_path)
     base_model_results = read_modelfit_results(base_model_path)
 
     paths = model_paths(path, 'cdd_*.mod')

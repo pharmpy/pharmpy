@@ -16,7 +16,7 @@ from .models import create_model3b
 
 
 def setup(model_path, covariates):
-    input_model = Model.create_model(model_path)
+    input_model = Model.parse_model(model_path)
     covariates = check_covariates(input_model, covariates)
     return covariates
 

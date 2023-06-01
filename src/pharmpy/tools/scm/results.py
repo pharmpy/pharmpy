@@ -672,7 +672,7 @@ def _add_covariate_effects_to_steps(steps, path):
         model_path = path / row.directory / f'{model_name}.mod'
         if not model_path.is_file():
             return np.nan
-        model = Model.create_model(model_path)
+        model = Model.parse_model(model_path)
         varpars = model.random_variables.free_symbols
         all_thetas = [param for param in model.parameters if param.symbol not in varpars]
         new_thetas = all_thetas[-degrees:]

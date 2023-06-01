@@ -104,7 +104,7 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
         from pharmpy.model import Model
 
         try:
-            model = Model.create_model(path)
+            model = Model.parse_model(path)
         except FileNotFoundError:
             raise KeyError('Model cannot be found in database')
         model = get_modelfit_results(model, self.path)

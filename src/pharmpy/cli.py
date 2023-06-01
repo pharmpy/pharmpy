@@ -909,7 +909,7 @@ def input_model_or_dataset(path):
     try:
         from pharmpy.model import Model
 
-        obj = Model.create_model(path)
+        obj = Model.parse_model(path)
     except PluginError:
         obj = pd.read_csv(path)
     return obj
