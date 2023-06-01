@@ -25,6 +25,7 @@ __all__ = (
     'run_modelfit',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_modelsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_ruvsearch',  # pyright: ignore [reportUnsupportedDunderAll]
+    'run_structsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_tool',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_errors',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_individuals',  # pyright: ignore [reportUnsupportedDunderAll]
