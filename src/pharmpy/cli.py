@@ -759,7 +759,7 @@ def results_frem(args):
     res.to_json(path=args.psn_dir / 'results.json')
     res.to_csv(path=args.psn_dir / 'results.csv')
 
-    from pharmpy.modeling.reporting import create_report
+    from pharmpy.tools.reporting import create_report
 
     create_report(res, args.psn_dir)
 
@@ -848,7 +848,7 @@ def results_report(args):
     from pharmpy.results import read_results
 
     res = read_results(results_path)
-    from pharmpy.modeling.reporting import create_report
+    from pharmpy.tools.reporting import create_report
 
     create_report(res, args.psn_dir)
 
