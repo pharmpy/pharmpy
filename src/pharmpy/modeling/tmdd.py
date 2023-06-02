@@ -184,6 +184,8 @@ def set_tmdd(model: Model, type: str):
 
         before = model.statements.before_odes + (ksyn_ass, kd_ass, lcfree_ass)
         after = lcfree_ass + model.statements.after_odes
+        ipred = lcfree_symb / vc
+        after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
         cs = CompartmentalSystem(cb)
         model = model.replace(statements=before + cs + after)
     else:
