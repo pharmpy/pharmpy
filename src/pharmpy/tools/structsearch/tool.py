@@ -8,7 +8,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import set_initial_estimates, set_name, set_tmdd
+from pharmpy.modeling import get_observations, set_initial_estimates, set_name, set_tmdd
 from pharmpy.results import ModelfitResults
 from pharmpy.tools.common import ToolResults
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -53,7 +53,7 @@ def create_workflow(
 
     wf = Workflow()
     wf.name = 'structsearch'
-    start_task = Task('run_qss', run_qss, model)
+    start_task = Task('run_tmdd', run_tmdd, model)
     wf.add_task(start_task)
     results_task = Task('results', _results)
     wf.add_task(results_task, predecessors=[start_task])
@@ -66,20 +66,31 @@ def product_dict(**kwargs):
         yield dict(zip(keys, instance))
 
 
-def run_qss(context, model):
-    qss_base_model = set_tmdd(model, type="QSS")
-    all_inits = product_dict(POP_KDEG=(0.5623, 17.28), POP_R_0=(0.001, 0.01, 0.1, 1))
-    qss_candidate_models = [
-        set_initial_estimates(set_name(qss_base_model, f"QSS{i}"), inits)
-        for i, inits in enumerate(all_inits, start=1)
-    ]
+def run_tmdd(context, model):
+    qss_candidate_models = create_qss_models(model)
+
     wf = create_fit_workflow(qss_candidate_models)
     task_results = Task('results', bundle_results)
     wf.add_task(task_results, predecessors=wf.output_tasks)
     results = call_workflow(wf, 'results_QSS', context)
+
     ofvs = [res.ofv for res in results]
     minindex = ofvs.index(np.nanmin(ofvs))
     return qss_candidate_models[minindex]
+
+
+def create_qss_models(model):
+    # Create qss models with different initial estimates from basic pk model
+    qss_base_model = set_tmdd(model, type="QSS")
+    cmax = get_observations(model).max()
+    all_inits = product_dict(
+        POP_KDEG=(0.5623, 17.28), POP_R_0=(0.001 * cmax, 0.01 * cmax, 0.1 * cmax, 1 * cmax)
+    )
+    qss_candidate_models = [
+        set_initial_estimates(set_name(qss_base_model, f"QSS{i}"), inits)
+        for i, inits in enumerate(all_inits, start=1)
+    ]
+    return qss_candidate_models
 
 
 def bundle_results(*args):
