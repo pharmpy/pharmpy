@@ -173,7 +173,6 @@ def set_tmdd(model: Model, type: str):
         )
         lcfree_ass = Assignment(lcfree_symb, lcfree_expr)
 
-        # FIXME: Missing CL/VC (elimination rate) in central_comp input
         # FIXME: Support two and three compartment distribution
         cb.set_input(central_comp, -target_amount * kint * lcfree_symb / (kd + lcfree_symb))
         cb.set_input(
@@ -184,8 +183,9 @@ def set_tmdd(model: Model, type: str):
         )
 
         before = model.statements.before_odes + (ksyn_ass, kd_ass, lcfree_ass)
+        after = lcfree_ass + model.statements.after_odes
         cs = CompartmentalSystem(cb)
-        model = model.replace(statements=before + cs + model.statements.after_odes)
+        model = model.replace(statements=before + cs + after)
     else:
         raise ValueError(f'Unknown TMDD type "{type}".')
 
