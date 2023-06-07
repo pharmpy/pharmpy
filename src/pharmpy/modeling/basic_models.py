@@ -27,11 +27,10 @@ from pharmpy.model import (
     output,
 )
 
-from .block_rvs import create_joint_distribution
 from .data import read_dataset_from_datainfo
 from .error import set_proportional_error_model
-from .eta_additions import add_iiv
 from .odes import set_first_order_absorption
+from .parameter_variability import add_iiv, create_joint_distribution
 from .parameters import set_initial_estimates
 
 

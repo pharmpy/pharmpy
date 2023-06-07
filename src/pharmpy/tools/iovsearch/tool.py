@@ -11,7 +11,7 @@ from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_subsets
 from pharmpy.model import Assignment, Model
 from pharmpy.modeling import add_iov, get_pk_parameters, remove_iiv, remove_iov
-from pharmpy.modeling.eta_additions import ADD_IOV_DISTRIBUTION
+from pharmpy.modeling.parameter_variability import ADD_IOV_DISTRIBUTION
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import rank_models, summarize_modelfit_results

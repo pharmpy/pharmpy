@@ -5,8 +5,7 @@ from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.set.partitions import partitions
 from pharmpy.internals.set.subsets import non_empty_subsets
 from pharmpy.model import Model, RandomVariables
-from pharmpy.modeling import remove_iiv
-from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
+from pharmpy.modeling import create_joint_distribution, remove_iiv, split_joint_distribution
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.results import mfr
 from pharmpy.tools.common import update_initial_estimates

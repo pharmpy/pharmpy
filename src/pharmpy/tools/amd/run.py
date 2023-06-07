@@ -8,7 +8,7 @@ from pharmpy.model import Model, Results
 from pharmpy.modeling.blq import transform_blq
 from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
-from pharmpy.modeling.eta_additions import get_occasion_levels
+from pharmpy.modeling.parameter_variability import get_occasion_levels
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import retrieve_final_model, summarize_errors, write_results
 from pharmpy.tools.allometry.tool import validate_allometric_variable

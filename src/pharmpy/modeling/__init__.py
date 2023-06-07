@@ -1,6 +1,5 @@
 from .allometry import add_allometry
 from .basic_models import create_basic_pk_model
-from .block_rvs import create_joint_distribution, split_joint_distribution
 from .blq import transform_blq
 from .common import (
     bump_model_number,
@@ -74,12 +73,6 @@ from .estimation_steps import (
     remove_estimation_step,
     set_estimation_step,
     set_evaluation_step,
-)
-from .eta_additions import add_iiv, add_iov, add_pk_iiv
-from .eta_transformations import (
-    transform_etas_boxcox,
-    transform_etas_john_draper,
-    transform_etas_tdist,
 )
 from .evaluation import (
     evaluate_epsilon_gradient,
@@ -161,6 +154,18 @@ from .parameter_sampling import (
     sample_parameters_from_covariance_matrix,
     sample_parameters_uniformly,
 )
+from .parameter_variability import (
+    add_iiv,
+    add_iov,
+    add_pk_iiv,
+    create_joint_distribution,
+    remove_iiv,
+    remove_iov,
+    split_joint_distribution,
+    transform_etas_boxcox,
+    transform_etas_john_draper,
+    transform_etas_tdist,
+)
 from .parameters import (
     add_population_parameter,
     fix_or_unfix_parameters,
@@ -181,8 +186,6 @@ from .plots import (
     plot_iofv_vs_iofv,
     plot_transformed_eta_distributions,
 )
-from .remove_iiv import remove_iiv
-from .remove_iov import remove_iov
 from .results import (
     calculate_aic,
     calculate_bic,
