@@ -182,9 +182,11 @@ def set_tmdd(model: Model, type: str):
             - (kint - kdeg) * target_amount * lcfree_symb / (kd + lcfree_symb),
         )
 
+        lcfreef = sympy.Symbol("LCFREEF")
+        lcfree_final = Assignment(lcfreef, lcfree_expr)
         before = model.statements.before_odes + (ksyn_ass, kd_ass, lcfree_ass)
-        after = lcfree_ass + model.statements.after_odes
-        ipred = lcfree_symb / vc
+        after = lcfree_final + model.statements.after_odes
+        ipred = lcfreef / vc
         after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
         cs = CompartmentalSystem(cb)
         model = model.replace(statements=before + cs + after)
