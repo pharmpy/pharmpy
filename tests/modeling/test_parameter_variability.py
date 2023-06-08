@@ -1,3 +1,4 @@
+import os
 import re
 import shutil
 from operator import add, mul
@@ -23,6 +24,7 @@ from pharmpy.modeling import (
     transform_etas_boxcox,
     transform_etas_john_draper,
     transform_etas_tdist,
+    update_initial_individual_estimates,
 )
 from pharmpy.modeling.parameter_variability import (
     EtaAddition,
@@ -1641,3 +1643,28 @@ $ESTIMATION METHOD=1 INTERACTION
         else None,
     )
     assert 'IIV_CL_V_IIV_S1' in model.parameters.names
+
+
+@pytest.mark.parametrize(
+    'etas_file, force, file_exists',
+    [('', False, False), ('', True, True), ('$ETAS FILE=run1.phi', False, True)],
+)
+def test_update_initial_individual_estimates(
+    load_model_for_test, testdata, etas_file, force, file_exists, tmp_path
+):
+    shutil.copy(testdata / 'nonmem/pheno.mod', tmp_path / 'run1.mod')
+    shutil.copy(testdata / 'nonmem/pheno.phi', tmp_path / 'run1.phi')
+    shutil.copy(testdata / 'nonmem/pheno.ext', tmp_path / 'run1.ext')
+    shutil.copy(testdata / 'nonmem/pheno.dta', tmp_path / 'pheno.dta')
+
+    with chdir(tmp_path):
+        with open('run1.mod', 'a') as f:
+            f.write(etas_file)
+
+        model = load_model_for_test('run1.mod')
+        res = read_modelfit_results('run1.mod')
+        model = update_initial_individual_estimates(model, res.individual_estimates, force=force)
+        model = model.write_files()
+
+        assert ('$ETAS FILE=run1_input.phi' in model.model_code) is file_exists
+        assert (os.path.isfile('run1_input.phi')) is file_exists

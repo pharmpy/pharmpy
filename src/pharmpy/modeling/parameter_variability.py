@@ -1079,3 +1079,40 @@ def _choose_cov_param_init(model, individual_estimates, rvs, parent1, parent2):
         return round(init_cov, 7)
     else:
         return init_default
+
+
+def update_initial_individual_estimates(
+    model: Model, individual_estimates: pd.Series, force: bool = True
+):
+    """Update initial individual estimates for a model
+
+    Updates initial individual estimates for a model.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to update initial estimates
+    individual_estimates : pd.DataFrame
+        Individual estimates to use
+    force : bool
+        Set to False to only update if the model had initial individual estimates before
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, update_initial_individual_estimates
+    >>> from pharmpy.tools import load_example_modelfit_results
+    >>> model = load_example_model("pheno")
+    >>> results = load_example_modelfit_results("pheno")
+    >>> ie = results.individual_estimates
+    >>> model = update_initial_individual_estimates(model, ie)
+    """
+    if not force and model.initial_individual_estimates is None:
+        return model
+
+    model = model.replace(initial_individual_estimates=individual_estimates)
+    return model.update_source()

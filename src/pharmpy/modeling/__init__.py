@@ -165,6 +165,7 @@ from .parameter_variability import (
     transform_etas_boxcox,
     transform_etas_john_draper,
     transform_etas_tdist,
+    update_initial_individual_estimates,
 )
 from .parameters import (
     add_population_parameter,
@@ -180,6 +181,7 @@ from .parameters import (
     unconstrain_parameters,
     unfix_parameters,
     unfix_parameters_to,
+    update_inits,
 )
 from .plots import (
     plot_individual_predictions,
@@ -198,7 +200,6 @@ from .results import (
 )
 from .tmdd import set_tmdd
 from .units import get_unit_of
-from .update_inits import update_initial_individual_estimates, update_inits
 from .write_csv import write_csv
 
 # Must be set directly, otherwise errors about unused imports
