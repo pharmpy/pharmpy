@@ -475,5 +475,5 @@ def convert_eq(cond: sympy.Eq) -> str:
         or re.search(r'(ID\s*<\s*)(\d+)', cond)
         or re.search(r'(ID\s*>\s*)(\d+)', cond)
     ):
-        raise ValueError(f"Condition '{cond}' not supported by nlmixr")
+        print(f"Condition '{cond}' not supported by nlmixr. Model will not run.")
     return cond
