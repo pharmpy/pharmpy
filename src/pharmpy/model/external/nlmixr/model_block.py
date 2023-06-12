@@ -208,18 +208,23 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
         terms = sympy.Add.make_args(s.expression)
     assert len(terms) <= 2
 
-    r1 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2 \+ [a-zA-Z0-9_.-]*\*\*2\)"
-    r2 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\ \+ [a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2\)"
-    r3 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2\)"
-    r4 = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\)"
-    if (re.match(r1, str(s)) or 
-        re.match(r2, str(s)) or 
-        re.match(r3, str(s)) or 
-        re.match(r4, str(s))):
-        w = True
-    else:
-        w = False
-
+    w = False
+    
+    if isinstance(s, sympy.Pow):
+        s_arg = sympy.Add.make_args(s.args[0])
+        if len(s_arg) <= 2:
+            all_pow = True
+            for t in s_arg:
+                for f in sympy.Mul.make_args(t):
+                    if (isinstance(f, sympy.Pow) or 
+                    isinstance(f, sympy.Integer) or 
+                    isinstance(f, sympy.Float)):
+                        pass
+                    else:
+                        all_pow = False
+        if all_pow:
+            w = True
+    
     prop = 0
     add = 0
     prop_found = False
@@ -229,13 +234,13 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
                 if prop_found is False:
                     term = term.subs(symbol, 1)
                     if w:
-                        prop = list(term.free_symbols)[0]
+                        prop = sympy.sqrt(term)
                     else:
                         prop += term
                     prop_found = True
         if prop_found is False:
             if w:
-                add = list(term.free_symbols)[0]
+                add = sympy.sqrt(term)
             else:
                 add += term
     return add, prop
