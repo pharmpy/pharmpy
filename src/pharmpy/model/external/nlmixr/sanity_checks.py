@@ -63,10 +63,10 @@ def check_model(
 
     # Checks regarding random variables
     if rvs_same(model, sigma=True):
-        print_warning("Sigma with value same not supported. Updated as follows.")
+        print_warning("Sigma with value same not supported. Parameters are updated")
         model = change_rvs_same(model, sigma=True)
     if rvs_same(model, omega=True):
-        print_warning("Omega with value same not supported. Updated as follows.")
+        print_warning("Omega with value same not supported. Parameters are updated")
         model = change_rvs_same(model, omega=True)
 
     # Checks regarding esimation method
