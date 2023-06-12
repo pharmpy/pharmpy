@@ -94,6 +94,7 @@ class res_error_term:
 
         for t in errors:
             prop = False
+            ali_removed = False
             term = t["term"]
             full_term = t["full_term"]
             for symbol in full_term.free_symbols.union(term.free_symbols):
@@ -102,8 +103,12 @@ class res_error_term:
                         prop = True
                         # Remove the resulting symbol from the error term
                         term = convert_eps_to_sigma(term, self.model)
-                        term = term.subs(ali, 1)
+                        if ali in term.free_symbols:
+                            term = term.subs(ali, 1)
+                            ali_removed = True
             if prop is True:
+                if not ali_removed:
+                    term = term / self.res
                 if self.prop.expr == 0:
                     self.prop = error(
                         self.model,
