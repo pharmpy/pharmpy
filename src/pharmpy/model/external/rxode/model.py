@@ -7,11 +7,7 @@ from pharmpy.deps import sympy
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model.external.nlmixr.error_model import convert_eps_to_sigma
 from pharmpy.model.external.nlmixr.model import add_evid
-from pharmpy.model.external.nlmixr.model_block import (
-    add_bio_lag,
-    add_ode,
-    convert_eq,
-)
+from pharmpy.model.external.nlmixr.model_block import add_bio_lag, add_ode, convert_eq
 from pharmpy.modeling import (
     drop_columns,
     get_bioavailability,

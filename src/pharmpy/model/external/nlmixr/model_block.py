@@ -209,22 +209,24 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
     assert len(terms) <= 2
 
     w = False
-    
+
     if isinstance(s, sympy.Pow):
         s_arg = sympy.Add.make_args(s.args[0])
         if len(s_arg) <= 2:
             all_pow = True
             for t in s_arg:
                 for f in sympy.Mul.make_args(t):
-                    if (isinstance(f, sympy.Pow) or 
-                    isinstance(f, sympy.Integer) or 
-                    isinstance(f, sympy.Float)):
+                    if (
+                        isinstance(f, sympy.Pow)
+                        or isinstance(f, sympy.Integer)
+                        or isinstance(f, sympy.Float)
+                    ):
                         pass
                     else:
                         all_pow = False
         if all_pow:
             w = True
-    
+
     prop = 0
     add = 0
     prop_found = False

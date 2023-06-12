@@ -190,7 +190,7 @@ def verification(
     """
 
     nonmem_model = model
-    
+
     try:
         # Save results from the nonmem model
         if nonmem_model.modelfit_results is None:
