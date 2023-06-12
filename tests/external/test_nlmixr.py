@@ -49,8 +49,8 @@ def test_dataset_modifications(testdata, load_model_for_test):
 def test_w_error_model(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
     model = convert_model(nmmodel)
-    assert 'add_error <- THETA_3' in model.model_code
-    assert 'prop_error <- THETA_4' in model.model_code
+    assert 'add_error <- sqrt(THETA_3**2)' in model.model_code
+    assert 'prop_error <- sqrt(THETA_4**2)' in model.model_code
     assert "Y ~ add(add_error) + prop(prop_error)" in model.model_code
 
 
