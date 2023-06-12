@@ -23,7 +23,7 @@ docutils==0.20.1
 entrypoints==0.4
 executing==1.2.0
 fastjsonschema==2.17.1
-fsspec==2023.5.0
+fsspec==2023.6.0
 HeapDict==1.0.1
 idna==3.4
 imagesize==1.4.1
