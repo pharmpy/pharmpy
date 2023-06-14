@@ -11,13 +11,16 @@ from pharmpy.model import (
     output,
 )
 
-from .odes import add_individual_parameter, set_initial_condition
+from .odes import add_individual_parameter, set_first_order_elimination, set_initial_condition
+from .parameter_variability import add_iiv
 
 
 def set_tmdd(model: Model, type: str):
     """Sets target mediated drug disposition
 
     Sets target mediated drug disposition to a PK model.
+
+    Supported models are full, ib, cr, crib, qss, wagner and mmapp.
 
     Parameters
     ----------
@@ -40,129 +43,80 @@ def set_tmdd(model: Model, type: str):
     """
     type = type.upper()
 
+    if type != "MMAPP":
+        model = set_first_order_elimination(model)
+
     odes = model.statements.ode_system
     central = odes.central_compartment
     central_amount = sympy.Function(central.amount.name)(sympy.Symbol('t'))
+    cb = CompartmentalSystemBuilder(odes)
+
+    vc, cl = _get_central_volume_and_cl(model)
+    r_0 = sympy.Symbol('R_0')
+    model = add_individual_parameter(model, r_0.name)
+    model = add_iiv(model, [r_0], 'exp')
+    kint = sympy.Symbol('KINT')
+    model = add_individual_parameter(model, kint.name)
 
     if type == "FULL":
-        kon = sympy.Symbol('KON')
-        model = add_individual_parameter(model, kon.name)
-        koff = sympy.Symbol('KOFF')
-        model = add_individual_parameter(model, koff.name)
-        kin = sympy.Symbol('KIN')
-        model = add_individual_parameter(model, kin.name)
-        kout = sympy.Symbol('KOUT')
-        model = add_individual_parameter(model, kout.name)
-        kpe = sympy.Symbol('KPE')
-        model = add_individual_parameter(model, kpe.name)
-
-        cb = CompartmentalSystemBuilder(odes)
-        target_comp = Compartment.create(name="TARGET")
-        complex_comp = Compartment.create(name="COMPLEX")
-        target_amount = sympy.Function(target_comp.amount.name)(sympy.Symbol('t'))
-        complex_amount = sympy.Function(complex_comp.amount.name)(sympy.Symbol('t'))
-        cb.add_compartment(target_comp)
-        cb.add_compartment(complex_comp)
-        cb.add_flow(target_comp, complex_comp, kon * central_amount)
-        cb.add_flow(complex_comp, target_comp, koff)
-        cb.add_flow(target_comp, output, kout)
-        cb.add_flow(complex_comp, output, kpe)
-        cb.set_input(target_comp, kin)
-        cb.set_input(central, koff * complex_amount - kon * central_amount * target_amount)
-        cs = CompartmentalSystem(cb)
-        model = model.replace(
-            statements=model.statements.before_odes + cs + model.statements.after_odes
+        model, kon, koff, kdeg = _create_parameters(model, ['KON', 'KOFF', 'KDEG'])
+        target_comp, target_amount, complex_comp, complex_amount = _create_compartments(
+            cb, ['TARGET', 'COMPLEX']
         )
-    elif type == "IB":
-        kon = sympy.Symbol('KON')
-        model = add_individual_parameter(model, kon.name)
-        kin = sympy.Symbol('KIN')
-        model = add_individual_parameter(model, kin.name)
-        kout = sympy.Symbol('KOUT')
-        model = add_individual_parameter(model, kout.name)
-        kpe = sympy.Symbol('KPE')
-        model = add_individual_parameter(model, kpe.name)
+        ksyn, ksyn_ass = _create_ksyn()
 
-        cb = CompartmentalSystemBuilder(odes)
-        target_comp = Compartment.create(name="TARGET")
-        complex_comp = Compartment.create(name="COMPLEX")
-        target_amount = sympy.Function(target_comp.amount.name)(sympy.Symbol('t'))
-        complex_amount = sympy.Function(complex_comp.amount.name)(sympy.Symbol('t'))
-        cb.add_compartment(target_comp)
-        cb.add_compartment(complex_comp)
-        cb.add_flow(target_comp, complex_comp, kon * central_amount)
-        cb.add_flow(target_comp, output, kout)
-        cb.add_flow(complex_comp, output, kpe)
-        cb.set_input(target_comp, kin)
-        cb.set_input(central, -kon * central_amount * target_amount)
-        cs = CompartmentalSystem(cb)
-    elif type == "CR":
-        kon = sympy.Symbol('KON')
-        model = add_individual_parameter(model, kon.name)
-        koff = sympy.Symbol('KOFF')
-        model = add_individual_parameter(model, koff.name)
-        kin = sympy.Symbol('KIN')
-        model = add_individual_parameter(model, kin.name)
-        kout = sympy.Symbol('KOUT')
-        model = add_individual_parameter(model, kout.name)
-
-        cb = CompartmentalSystemBuilder(odes)
-        target_comp = Compartment.create(name="TARGET")
-        complex_comp = Compartment.create(name="COMPLEX")
-        target_amount = sympy.Function(target_comp.amount.name)(sympy.Symbol('t'))
-        complex_amount = sympy.Function(complex_comp.amount.name)(sympy.Symbol('t'))
-        cb.add_compartment(target_comp)
-        cb.add_compartment(complex_comp)
         cb.add_flow(target_comp, complex_comp, kon * central_amount)
         cb.add_flow(complex_comp, target_comp, koff)
-        cb.add_flow(target_comp, output, kout)
-        cb.add_flow(complex_comp, output, kout)
-        cb.set_input(target_comp, kin)
-        cb.set_input(central, koff * complex_amount - kon * central_amount * target_amount)
-        cs = CompartmentalSystem(cb)
-    elif type == "CRIB":
-        kon = sympy.Symbol('KON')
-        model = add_individual_parameter(model, kon.name)
-        kint = sympy.Symbol('KINT')
-        model = add_individual_parameter(model, kint.name)
-        rinit = sympy.Symbol('RINIT')
-        model = add_individual_parameter(model, rinit.name)
-
-        cb = CompartmentalSystemBuilder(odes)
-        complex_comp = Compartment.create(name="COMPLEX")
-        complex_amount = sympy.Function(complex_comp.amount.name)(sympy.Symbol('t'))
-        cb.add_compartment(complex_comp)
+        cb.add_flow(target_comp, output, kdeg)
         cb.add_flow(complex_comp, output, kint)
-        cb.add_flow(central, complex_comp, kon * rinit)
-        cb.add_flow(complex_comp, central, kon * central_amount)
-        cs = CompartmentalSystem(cb)
+        cb.set_input(target_comp, ksyn * vc)
+        cb.set_input(central, koff * complex_amount - kon * central_amount * target_amount)
+
+        before = model.statements.before_odes + ksyn_ass
+        after = model.statements.after_odes
+    elif type == "IB":
+        model, kdeg, kon = _create_parameters(model, ['KDEG', 'KON'])
+        target_comp, target_amount, complex_comp, complex_amount = _create_compartments(
+            cb, ['TARGET', 'COMPLEX']
+        )
+        ksyn, ksyn_ass = _create_ksyn()
+
+        cb.add_flow(target_comp, complex_comp, kon * central_amount / vc)
+        cb.add_flow(target_comp, output, kdeg)
+        cb.add_flow(complex_comp, output, kint)
+        cb.set_input(target_comp, ksyn * vc)
+        cb.set_input(central, -kon * central_amount * target_amount / vc)
+
+        before = model.statements.before_odes + ksyn_ass
+        after = model.statements.after_odes
+    elif type == "CR":
+        model, kon, koff = _create_parameters(model, ['KON', 'KOFF'])
+        complex_comp, complex_amount = _create_compartments(cb, ['COMPLEX'])
+
+        cb.add_flow(complex_comp, central, koff + kon * central_amount / vc)
+        cb.add_flow(complex_comp, output, kint)
+        cb.add_flow(central, complex_comp, kon * r_0)
+
+        before = model.statements.before_odes
+        after = model.statements.after_odes
+    elif type == "CRIB":
+        model, kon = _create_parameters(model, ['KON'])
+        complex_comp, complex_amount = _create_compartments(cb, ['COMPLEX'])
+
+        cb.add_flow(complex_comp, output, kint)
+        cb.add_flow(central, complex_comp, kon * r_0)
+        cb.add_flow(complex_comp, central, kon * central_amount / vc)
+
+        before = model.statements.before_odes
+        after = model.statements.after_odes
     elif type == "QSS":
-        r_0 = sympy.Symbol('R_0')
-        model = add_individual_parameter(model, r_0.name)
-        kdc = sympy.Symbol('KDC')
-        model = add_individual_parameter(model, kdc.name)
-        kint = sympy.Symbol('KINT')
-        model = add_individual_parameter(model, kint.name)
-        kdeg = sympy.Symbol('KDEG')
-        model = add_individual_parameter(model, kdeg.name)
+        model, kdc, kdeg = _create_parameters(model, ['KDC', 'KDEG'])
+        target_comp, target_amount = _create_compartments(cb, ['TARGET'])
 
-        ksyn = sympy.Symbol('KSYN')
         kd = sympy.Symbol('KD')
-        central_comp = odes.central_compartment
-        elimination_rate = odes.get_flow(central_comp, output)
-        numer, denom = elimination_rate.as_numer_denom()
-        if denom != 1:
-            vc = denom
-        else:
-            vc = sympy.Symbol('VC')  # FIXME: What do do here?
-        ksyn_ass = Assignment(ksyn, r_0 * kdeg)
-        kd_ass = Assignment(kd, kdc * vc)
 
-        cb = CompartmentalSystemBuilder(odes)
-        target_comp = Compartment.create(name="TARGET")
-        cb.add_compartment(target_comp)
-        central_amount = sympy.Function(central_comp.amount.name)(sympy.Symbol('t'))
-        target_amount = sympy.Function(target_comp.amount.name)(sympy.Symbol('t'))
+        ksyn, ksyn_ass = _create_ksyn()
+        kd_ass = Assignment(kd, kdc * vc)
 
         lcfree_symb = sympy.Symbol('LCFREE')
         lcfree_expr = sympy.Rational(1, 2) * (
@@ -174,7 +128,7 @@ def set_tmdd(model: Model, type: str):
         lcfree_ass = Assignment(lcfree_symb, lcfree_expr)
 
         # FIXME: Support two and three compartment distribution
-        cb.set_input(central_comp, -target_amount * kint * lcfree_symb / (kd + lcfree_symb))
+        cb.set_input(central, -target_amount * kint * lcfree_symb / (kd + lcfree_symb))
         cb.set_input(
             target_comp,
             ksyn * vc
@@ -188,12 +142,79 @@ def set_tmdd(model: Model, type: str):
         after = lcfree_final + model.statements.after_odes
         ipred = lcfreef / vc
         after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
-        cs = CompartmentalSystem(cb)
-        model = model.replace(statements=before + cs + after)
+    elif type == 'WAGNER':
+        model, km = _create_parameters(model, ['KM'])
+
+        ke = odes.get_flow(central, output)
+        kd = km * vc
+        rinit = r_0 * vc
+        rate = (ke + rinit * kint / (kd + central_amount)) / (
+            1 + rinit * kd / (kd + central_amount) ** 2
+        )
+        cb.add_flow(central, output, rate)
+
+        before = model.statements.before_odes
+        after = model.statements.after_odes
+    elif type == 'MMAPP':
+        model, kmc, kdeg = _create_parameters(model, ['KMC', 'KDEG'])
+        target_comp, target_amount = _create_compartments(cb, ['TARGET'])
+        ksyn, ksyn_ass = _create_ksyn()
+
+        target_elim = kdeg + (kint - kdeg) * (central_amount / vc) / (
+            kmc * vc + central_amount / vc
+        )
+        cb.add_flow(target_comp, output, target_elim)
+        elim = (cl + target_amount * kint / (central_amount / vc + kmc * vc)) / vc
+        cb.add_flow(central, output, elim)
+        cb.set_input(target_comp, ksyn * vc)
+
+        before = model.statements.before_odes + ksyn_ass
+        after = model.statements.after_odes
     else:
         raise ValueError(f'Unknown TMDD type "{type}".')
 
-    if type == "QSS":
+    model = model.replace(statements=before + CompartmentalSystem(cb) + after)
+    if type in ['IB', 'FULL', 'MMAPP']:
         model = set_initial_condition(model, "TARGET", r_0 * vc)
 
     return model.update_source()
+
+
+def _create_parameters(model, names):
+    symbs = []
+    for name in names:
+        symb = sympy.Symbol(name)
+        symbs.append(symb)
+        model = add_individual_parameter(model, symb.name)
+    return model, *symbs
+
+
+def _create_compartments(cb, names):
+    comps = []
+    for name in names:
+        comp = Compartment.create(name=name)
+        comps.append(comp)
+        amount_func = sympy.Function(comp.amount.name)(sympy.Symbol('t'))
+        comps.append(amount_func)
+        cb.add_compartment(comp)
+    return comps
+
+
+def _get_central_volume_and_cl(model):
+    odes = model.statements.ode_system
+    central_comp = odes.central_compartment
+    elimination_rate = odes.get_flow(central_comp, output)
+    numer, denom = elimination_rate.as_numer_denom()
+    if denom != 1:
+        vc = denom
+        cl = numer
+    else:
+        vc = sympy.Symbol('VC')  # FIXME: What do do here?
+        cl = sympy.Integer(1)
+    return vc, cl
+
+
+def _create_ksyn():
+    ksyn = sympy.Symbol('KSYN')
+    ksyn_ass = Assignment(ksyn, sympy.Symbol("R_0") * sympy.Symbol("KDEG"))
+    return ksyn, ksyn_ass
