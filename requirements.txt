@@ -44,7 +44,7 @@ locket==1.0.0
 lxml==4.9.2
 MarkupSafe==2.1.3
 matplotlib-inline==0.1.6
-mistune==2.0.5
+mistune==3.0.1
 mpmath==1.3.0
 msgpack==1.0.5
 nbclient==0.8.0
