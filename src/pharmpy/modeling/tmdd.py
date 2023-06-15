@@ -118,29 +118,29 @@ def set_tmdd(model: Model, type: str):
         ksyn, ksyn_ass = _create_ksyn()
         kd_ass = Assignment(kd, kdc * vc)
 
-        lcfree_symb = sympy.Symbol('LCFREE')
-        lcfree_expr = sympy.Rational(1, 2) * (
+        lafree_symb = sympy.Symbol('LAFREE')
+        lafree_expr = sympy.Rational(1, 2) * (
             central_amount
             - target_amount
             - kd
             + sympy.sqrt((central_amount - target_amount - kd) ** 2 + 4 * kd * central_amount)
         )
-        lcfree_ass = Assignment(lcfree_symb, lcfree_expr)
+        lafree_ass = Assignment(lafree_symb, lafree_expr)
 
         # FIXME: Support two and three compartment distribution
-        cb.set_input(central, -target_amount * kint * lcfree_symb / (kd + lcfree_symb))
+        cb.set_input(central, -target_amount * kint * lafree_symb / (kd + lafree_symb))
         cb.set_input(
             target_comp,
             ksyn * vc
             - kdeg * target_amount
-            - (kint - kdeg) * target_amount * lcfree_symb / (kd + lcfree_symb),
+            - (kint - kdeg) * target_amount * lafree_symb / (kd + lafree_symb),
         )
 
-        lcfreef = sympy.Symbol("LCFREEF")
-        lcfree_final = Assignment(lcfreef, lcfree_expr)
-        before = model.statements.before_odes + (ksyn_ass, kd_ass, lcfree_ass)
-        after = lcfree_final + model.statements.after_odes
-        ipred = lcfreef / vc
+        lafreef = sympy.Symbol("LAFREEF")
+        lafree_final = Assignment(lafreef, lafree_expr)
+        before = model.statements.before_odes + (ksyn_ass, kd_ass, lafree_ass)
+        after = lafree_final + model.statements.after_odes
+        ipred = lafreef / vc
         after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
     elif type == 'WAGNER':
         model, km = _create_parameters(model, ['KM'])
