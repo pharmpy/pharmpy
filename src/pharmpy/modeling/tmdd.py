@@ -148,13 +148,25 @@ def set_tmdd(model: Model, type: str):
         ke = odes.get_flow(central, output)
         kd = km * vc
         rinit = r_0 * vc
-        rate = (ke + rinit * kint / (kd + central_amount)) / (
-            1 + rinit * kd / (kd + central_amount) ** 2
-        )
-        cb.add_flow(central, output, rate)
 
-        before = model.statements.before_odes
-        after = model.statements.after_odes
+        lafree_symb = sympy.Symbol('LAFREE')
+        lafree_expr = sympy.Rational(1, 2) * (
+            central_amount
+            - rinit
+            - kd
+            + sympy.sqrt((central_amount - rinit - kd) ** 2 + 4 * kd * central_amount)
+        )
+        lafree_ass = Assignment(lafree_symb, lafree_expr)
+
+        cb.set_input(central, -(ke - kint) * lafree_symb)
+        cb.add_flow(central, output, -kint)
+
+        lafreef = sympy.Symbol("LAFREEF")
+        lafree_final = Assignment(lafreef, lafree_expr)
+        before = model.statements.before_odes + lafree_ass
+        after = lafree_final + model.statements.after_odes
+        ipred = lafreef / vc
+        after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
     elif type == 'MMAPP':
         model, kmc, kdeg = _create_parameters(model, ['KMC', 'KDEG'])
         target_comp, target_amount = _create_compartments(cb, ['TARGET'])
