@@ -508,11 +508,11 @@ def get_config_path():
     if config.user_config_file_enabled():
         env_path = config.env_config_path()
         if env_path is not None:
-            return str(env_path)
+            return str(env_path.resolve())
         else:
             config_path = config.user_config_path()
             if config_path.exists():
-                return str(config_path)
+                return str(config_path.resolve())
             else:
                 warnings.warn(f'Cannot find config path {config_path}')
                 return None
