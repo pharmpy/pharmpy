@@ -1339,7 +1339,16 @@ def _classify_assignments(assignments: Sequence[Assignment]):
                 it = iter(fs)
                 a = next(it)
                 b = next(it)
-                if a in symbols and b in symbols and (expression == a / b or expression == b / a):
+                if (
+                    a in symbols
+                    and b in symbols
+                    and (
+                        expression == a / b
+                        or expression == b / a
+                        or expression == a * b
+                        or expression == b * a
+                    )
+                ):
                     yield 'synthetic', assignment  # E.g. K=CL/V
                     continue
 
