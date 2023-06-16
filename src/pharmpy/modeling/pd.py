@@ -1,14 +1,11 @@
 """
 :meta private:
 """
-from sympy import Piecewise
-
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment, Model, output
 
 from .error import set_proportional_error_model
-from .expressions import create_symbol
-from .odes import add_individual_parameter, add_population_parameter
+from .odes import add_individual_parameter, set_initial_estimates
 
 
 def set_direct_effect(model: Model, expr: str):
@@ -41,10 +38,10 @@ def set_direct_effect(model: Model, expr: str):
     model = add_individual_parameter(model, e0.name)
     if expr in ["Emax", "sigmoid", "step"]:
         emax = sympy.Symbol("E_max")
-        model = add_individual_parameter(model, emax)
+        model = add_individual_parameter(model, emax.name)
     if expr in ["Emax", "sigmoid"]:
         ec50 = sympy.Symbol("EC_50")
-        model = add_individual_parameter(model, ec50)
+        model = add_individual_parameter(model, ec50.name)
 
     # vc = sympy.Symbol("VC") # must be changed later
     vc, cl = _get_central_volume_and_cl(model)
@@ -60,19 +57,15 @@ def set_direct_effect(model: Model, expr: str):
     elif expr == "Emax":
         E = Assignment(sympy.Symbol("E"), e0 + emax * conc / (ec50 + conc))
     elif expr == "step":
-        E = Assignment(sympy.Symbol("E"), Piecewise((0, conc < 0), (emax, True)))
+        E = Assignment(sympy.Symbol("E"), sympy.Piecewise((0, conc < 0), (emax, True)))
     elif expr == "sigmoid":
         n = sympy.Symbol("n")
-        pops = create_symbol(model, f'POP_{n}')
-        model = add_population_parameter(model, pops.name, init=1, lower=0.1)
-        symb = create_symbol(model, n)
-        ass = Assignment(symb, pops)
-        model = model.replace(statements=ass + model.statements)
-        model = model.update_source()
+        model = add_individual_parameter(model, n.name)
+        model = set_initial_estimates(model, {"POP_n": 1})
         E = Assignment(sympy.Symbol("E"), emax * conc**n / (ec50**n + conc**n))
     elif expr == "loglin":
         m = sympy.Symbol("m")  # slope
-        model = add_individual_parameter(model, m)
+        model = add_individual_parameter(model, m.name)
         E = Assignment(sympy.Symbol("E"), m * sympy.log(conc + sympy.exp(e0 / m)))
     else:
         raise ValueError(f'Unknown model "{expr}".')
