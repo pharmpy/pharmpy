@@ -183,6 +183,7 @@ from .parameters import (
     unfix_parameters_to,
     update_inits,
 )
+from .pd import set_direct_effect
 from .plots import (
     plot_individual_predictions,
     plot_iofv_vs_iofv,
@@ -204,6 +205,7 @@ from .write_csv import write_csv
 
 # Must be set directly, otherwise errors about unused imports
 __all__ = [
+    'set_direct_effect',
     'add_allometry',
     'add_covariance_step',
     'add_covariate_effect',
