@@ -12,6 +12,7 @@ matches () {
         -e '^import sympy($|\.| )' -e '^from sympy( |\.)' \
         -r src/pharmpy \
         --exclude-dir deps \
+        --include="*.py" \
         "$@"
 }
 
