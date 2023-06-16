@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 from dataclasses import dataclass
 from typing import Optional
 
@@ -8,11 +7,13 @@ from pharmpy.deps import numpy as np
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import get_observations, set_initial_estimates, set_name, set_tmdd
 from pharmpy.results import ModelfitResults
+from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
+
+from .tmdd import create_qss_models, create_remaining_models
 
 ROUTES = frozenset(('iv', 'oral'))
 TYPES = frozenset(('tmdd',))
@@ -60,41 +61,35 @@ def create_workflow(
     return wf
 
 
-def product_dict(**kwargs):
-    keys = kwargs.keys()
-    for instance in itertools.product(*kwargs.values()):
-        yield dict(zip(keys, instance))
-
-
 def run_tmdd(context, model):
     qss_candidate_models = create_qss_models(model)
 
     wf = create_fit_workflow(qss_candidate_models)
     task_results = Task('results', bundle_results)
     wf.add_task(task_results, predecessors=wf.output_tasks)
-    results = call_workflow(wf, 'results_QSS', context)
+    qss_run_models = call_workflow(wf, 'results_QSS', context)
 
-    ofvs = [res.ofv for res in results]
+    ofvs = [m.modelfit_results.ofv for m in qss_run_models]
     minindex = ofvs.index(np.nanmin(ofvs))
-    return qss_candidate_models[minindex]
+    best_qss_model = qss_candidate_models[minindex]
 
+    models = create_remaining_models(model, best_qss_model.modelfit_results.parameter_estimates)
+    wf2 = create_fit_workflow(models)
+    task_results = Task('results', bundle_results)
+    wf.add_task(task_results, predecessors=wf2.output_tasks)
+    run_models = call_workflow(wf, 'results_remaining', context)
 
-def create_qss_models(model):
-    # Create qss models with different initial estimates from basic pk model
-    qss_base_model = set_tmdd(model, type="QSS")
-    cmax = get_observations(model).max()
-    all_inits = product_dict(
-        POP_KDEG=(0.5623, 17.28), POP_R_0=(0.001 * cmax, 0.01 * cmax, 0.1 * cmax, 1 * cmax)
+    summary_models = summarize_modelfit_results(
+        [model.modelfit_results for model in qss_run_models + run_models]
     )
-    qss_candidate_models = [
-        set_initial_estimates(set_name(qss_base_model, f"QSS{i}"), inits)
-        for i, inits in enumerate(all_inits, start=1)
-    ]
-    return qss_candidate_models
+
+    res = StructSearchResults(summary_models=summary_models)
+
+    return res
 
 
 def bundle_results(*args):
-    return [model.modelfit_results for model in args]
+    return args
 
 
 def _results(model):
