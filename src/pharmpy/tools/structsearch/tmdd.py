@@ -39,7 +39,8 @@ def create_cr_models(model, ests):
     # Create cr models with different initial estimates from basic pk model and best qss ests
     cr_base_model = set_tmdd(model, type="CR")
     cr_base_model = set_initial_estimates(
-        cr_base_model, {"POP_KINT": ests['POP_KINT'], "POP_R0": ests['POP_R0']}
+        cr_base_model,
+        {"POP_KINT": ests['POP_KINT'], "POP_R0": ests['POP_R0'], "IIV_R0": ests['IIV_R0']},
     )
     cr1 = set_name(cr_base_model, "CR1")
     cr1 = set_initial_estimates(
@@ -57,7 +58,12 @@ def create_ib_models(model, ests):
     ib_base_model = set_tmdd(model, type="IB")
     ib_base_model = set_initial_estimates(
         ib_base_model,
-        {"POP_KINT": ests['POP_KINT'], "POP_R0": ests['POP_R0'], "POP_KDEG": ests['POP_KDEG']},
+        {
+            "POP_KINT": ests['POP_KINT'],
+            "POP_R0": ests['POP_R0'],
+            "POP_KDEG": ests['POP_KDEG'],
+            "IIV_R0": ests['IIV_R0'],
+        },
     )
     ib1 = set_name(ib_base_model, "IB1")
     ib1 = set_initial_estimates(
@@ -74,7 +80,8 @@ def create_crib_models(model, ests):
     # Create crib models with different initial estimates from basic pk model and best qss ests
     crib_base_model = set_tmdd(model, type="IB")
     crib_base_model = set_initial_estimates(
-        crib_base_model, {"POP_KINT": ests['POP_KINT'], "POP_R0": ests['POP_R0']}
+        crib_base_model,
+        {"POP_KINT": ests['POP_KINT'], "POP_R0": ests['POP_R0'], "IIV_R0": ests['IIV_R0']},
     )
     crib1 = set_name(crib_base_model, "CRIB1")
     crib1 = set_initial_estimates(
@@ -95,6 +102,7 @@ def create_full_models(model, ests):
         {
             "POP_KINT": ests['POP_KINT'],
             "POP_R0": ests['POP_R0'],
+            "IIV_R0": ests['IIV_R0'],
             "POP_KDEG": ests['POP_KDEG'],
             "POP_KON": 0.1 / (ests['POP_KDEG'] * ests['POP_VC']),
         },
@@ -113,6 +121,7 @@ def create_wagner_model(model, ests):
         {
             "POP_KINT": ests['POP_KINT'],
             "POP_R0": ests['POP_R0'],
+            "IIV_R0": ests['IIV_R0'],
             "POP_KM": ests['POP_KDC'] * ests['POP_VC'],
         },
     )
@@ -124,6 +133,11 @@ def create_mmapp_model(model, ests):
     mmapp = set_name(mmapp, "MMAPP")
     mmapp = set_initial_estimates(
         mmapp,
-        {"POP_KINT": ests['POP_KINT'], "POP_R0": ests['POP_R0'], "POP_KDEG": ests['POP_KDEG']},
+        {
+            "POP_KINT": ests['POP_KINT'],
+            "POP_R0": ests['POP_R0'],
+            "IIV_R0": ests['IIV_R0'],
+            "POP_KDEG": ests['POP_KDEG'],
+        },
     )
     return [mmapp]
