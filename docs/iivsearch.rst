@@ -17,8 +17,8 @@ To initiate IIVsearch in Python/R:
 
 .. pharmpy-code::
 
-    from pharmpy.modeling import read_model, read_modelfit_results
-    from pharmpy.tools import run_iivsearch
+    from pharmpy.modeling import read_model
+    from pharmpy.tools import read_modelfit_results, run_iivsearch
 
     start_model = read_model('path/to/model')
     start_model_results = read_model_results('path/to/model')

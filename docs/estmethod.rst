@@ -16,8 +16,8 @@ To initiate Estmethod in Python/R:
 
 .. pharmpy-code::
 
-    from pharmpy.modeling import read_model, read_modelfit_results
-    from pharmpy.tools import run_estmethod
+    from pharmpy.modeling import read_model
+    from pharmpy.tools import read_modelfit_results, run_estmethod
 
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
