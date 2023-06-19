@@ -1168,3 +1168,12 @@ def test_zo(load_model_for_test, pheno_path):
     des = model.internals.control_stream.get_records("DES")[0]
     print(des)
     assert str(des) == "$DES\nDADT(1) = -A(1)*CL/V + 10\n"
+
+
+def test_des_assignments(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "models" / "pheno_des_assignments.mod")
+
+    stats = model.statements
+
+    assert stats[3] == Assignment.create("KE", "CL/VC")
+    assert stats[4] == Assignment.create("EXTRA", "2 * A_CENTRAL(t)")

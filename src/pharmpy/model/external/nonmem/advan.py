@@ -342,7 +342,7 @@ def des_assign_statements(
             a = sympy.Function(f'A_{c}')
             subs_dict[f'DADT({i})'] = sympy.Derivative(a(t))
             subs_dict[f'DADT ({i})'] = sympy.Derivative(a(t))
-            subs_dict[f'A({i})'] = str(a)
+            subs_dict[f'A({i})'] = a(t)
             comp_names[f'A({i})'] = a
             func_to_name[a] = c
 
