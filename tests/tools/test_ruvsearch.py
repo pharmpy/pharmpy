@@ -1,11 +1,13 @@
+import shutil
 from dataclasses import replace
 
 import pytest
 
-from pharmpy.modeling import remove_covariance_step
+from pharmpy.internals.fs.cwd import chdir
+from pharmpy.modeling import remove_covariance_step, transform_blq
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
-from pharmpy.tools.ruvsearch.tool import create_workflow, validate_input
+from pharmpy.tools.ruvsearch.tool import _create_dataset, create_workflow, validate_input
 from pharmpy.workflows import Workflow
 
 
@@ -59,6 +61,42 @@ def test_validate_input_with_model(load_model_for_test, testdata):
     model = model.replace(modelfit_results=res)
     model = remove_covariance_step(model)
     validate_input(model=model)
+
+
+def test_create_dataset(load_model_for_test, testdata, tmp_path):
+    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    model = model.replace(modelfit_results=res)
+
+    df = _create_dataset(model)
+
+    assert len(df) == 1006
+    assert (df['DV'] != 0).all()
+
+    with chdir(tmp_path):
+        for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):
+            shutil.copy2(path, tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'ruvsearch' / 'moxo_simulated_resmod.csv', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'ruvsearch' / 'mytab', tmp_path)
+
+        # Introduce 0 in CWRES to mimic rows BLQ
+        with open('mytab') as f:
+            mytab_new = f.read().replace('-2.4366E+00', '0.0000E+00')
+
+        with open('mytab', 'w') as f:
+            f.write(mytab_new)
+
+        model = load_model_for_test('mox3.mod')
+        res = read_modelfit_results('mox3.mod')
+
+        model = model.replace(modelfit_results=res)
+
+        model = transform_blq(model, method='m3', lloq=0.05)
+
+        df = _create_dataset(model)
+
+        assert len(df) == 1005
+        assert (df['DV'] != 0).all()
 
 
 @pytest.mark.parametrize(

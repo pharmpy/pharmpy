@@ -336,8 +336,11 @@ def _create_combined_model(input_model, current_iteration):
 
 
 def _create_dataset(input_model):
+    # Non-observations have already been filtered
     residuals = input_model.modelfit_results.residuals
     cwres = residuals['CWRES'].reset_index(drop=True)
+    if has_blq_transformation(input_model):
+        cwres = cwres.loc[cwres != 0]
     predictions = input_model.modelfit_results.predictions
     if 'CIPREDI' in predictions:
         ipredcol = 'CIPREDI'
@@ -356,6 +359,7 @@ def _create_dataset(input_model):
     df = pd.concat([mdv, input_id, tad, ipred], axis=1)
     df = df[df['MDV'] == 0].reset_index(drop=True)
     df = pd.concat([df, cwres], axis=1).rename(columns={'CWRES': 'DV', ipredcol: 'IPRED'})
+    df = df.loc[df['DV'].notna()]
     return df
 
 
