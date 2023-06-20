@@ -128,7 +128,13 @@ def set_tmdd(model: Model, type: str):
         lafree_ass = Assignment(lafree_symb, lafree_expr)
 
         # FIXME: Support two and three compartment distribution
-        cb.set_input(central, -target_amount * kint * lafree_symb / (kd + lafree_symb))
+        elimination_rate = odes.get_flow(central, output)
+        cb.remove_flow(central, output)
+        cb.set_input(
+            central,
+            -lafree_symb * elimination_rate
+            - target_amount * kint * lafree_symb / (kd + lafree_symb),
+        )
         cb.set_input(
             target_comp,
             ksyn * vc
@@ -186,7 +192,9 @@ def set_tmdd(model: Model, type: str):
         raise ValueError(f'Unknown TMDD type "{type}".')
 
     model = model.replace(statements=before + CompartmentalSystem(cb) + after)
-    if type in ['IB', 'FULL', 'MMAPP']:
+    if type == 'WAGNER':
+        model = set_initial_condition(model, central.name, r_0 * vc)
+    elif type not in ['CR', 'CRIB']:
         model = set_initial_condition(model, "TARGET", r_0 * vc)
 
     return model.update_source()
