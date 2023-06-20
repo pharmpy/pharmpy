@@ -24,7 +24,9 @@ from pharmpy.tools import fit
 from pharmpy.workflows.log import Log
 
 
-def execute_model(model: pharmpy.model.Model, db: str, evaluate=False) -> pharmpy.model.Model:
+def execute_model(
+    model: pharmpy.model.Model, db: str, evaluate=False, path=None
+) -> pharmpy.model.Model:
     """
     Executes a model using nlmixr2 estimation.
 
@@ -48,7 +50,8 @@ def execute_model(model: pharmpy.model.Model, db: str, evaluate=False) -> pharmp
     db = pharmpy.workflows.LocalDirectoryToolDatabase(db)
     database = db.model_database
     model = convert_model(model)
-    path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
+    if path is None:
+        path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
     model.internals.path = path
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
@@ -61,7 +64,6 @@ def execute_model(model: pharmpy.model.Model, db: str, evaluate=False) -> pharmp
     pre = f'library(nlmixr2)\n\ndataset <- read.csv("{path / dataname}")\n'
 
     if "fix_eta" in model.estimation_steps[0].tool_options:
-        write_fix_eta(model, path=path)
         pre += f'etas <- as.matrix(read.csv("{path}/fix_eta.csv"))'
     pre += "\n"
 
@@ -147,6 +149,7 @@ def verification(
     db_name: str,
     error: float = 10**-3,
     return_comp: bool = False,
+    return_stat: bool = False,
     fix_eta: bool = True,
     force_ipred: bool = False,
     force_pred: bool = False,
@@ -188,16 +191,19 @@ def verification(
 
     nonmem_model = model
 
-    # Save results from the nonmem model
-    if nonmem_model.modelfit_results is None:
-        if not ignore_print:
-            print_step("Calculating NONMEM predictions... (this might take a while)")
-        nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
-    else:
-        if nonmem_model.modelfit_results.predictions is None:
+    try:
+        # Save results from the nonmem model
+        if nonmem_model.modelfit_results is None:
             if not ignore_print:
                 print_step("Calculating NONMEM predictions... (this might take a while)")
             nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
+        else:
+            if nonmem_model.modelfit_results.predictions is None:
+                if not ignore_print:
+                    print_step("Calculating NONMEM predictions... (this might take a while)")
+                nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
+    except Exception:
+        raise Exception("Nonmem model could not be fitted")
 
     # Set a tool option to fix theta values when running nlmixr
     if fix_eta:
@@ -211,21 +217,24 @@ def verification(
     # and convert to nlmixr
     if not ignore_print:
         print_step("Converting NONMEM model to nlmixr2...")
-    if fix_eta is True:
-        nlmixr_model = convert_model(
-            update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates),
-            keep_etas=True,
-        )
-    else:
+    try:
         nlmixr_model = convert_model(
             update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
         )
+    except Exception:
+        raise Exception("Could not convert model to nlmixr2")
 
     # Execute the nlmixr model
     if not ignore_print:
         print_step("Executing nlmixr2 model... (this might take a while)")
-
-    nlmixr_model = execute_model(nlmixr_model, db_name)
+    path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
+    meta = path / '.pharmpy'
+    meta.mkdir(parents=True, exist_ok=True)
+    write_fix_eta(nonmem_model, path=path)
+    try:
+        nlmixr_model = execute_model(nlmixr_model, db_name, path=path)
+    except Exception:
+        raise Exception("nlmixr2 model could not be fitted")
 
     # Combine the two based on ID and time
     if not ignore_print:
@@ -236,12 +245,13 @@ def verification(
         error=error,
         force_ipred=force_ipred,
         force_pred=force_pred,
+        return_stat=return_stat,
         ignore_print=ignore_print,
     )
 
     if not ignore_print:
         print_step("DONE")
-    if return_comp is True:
+    if return_comp is True or return_stat is True:
         return combined_result
     else:
         if all(combined_result["PASS/FAIL"] == "PASS"):
@@ -251,31 +261,36 @@ def verification(
 
 
 def compare_models(
-    model_1, model_2, error=10**-3, force_ipred=False, force_pred=False, ignore_print=False
+    model_1,
+    model_2,
+    error=10**-3,
+    force_ipred=False,
+    force_pred=False,
+    ignore_print=False,
+    return_stat=False,
 ):
     assert model_1.modelfit_results.predictions is not None
     assert model_2.modelfit_results.predictions is not None
 
     mod1 = model_1
-    mod1_type = str(type(mod1)).split(".")[2]
+    mod1_type = str(type(mod1)).split(".")[3]
     mod2 = model_2
-    mod2_type = str(type(mod2)).split(".")[2]
+    mod2_type = str(type(mod2)).split(".")[3]
 
     nm_to_r = False
-    if (
-        mod1_type == "nonmem"
-        and mod2_type != "nonmem"
-        or mod2_type == "nonmem"
-        and mod1_type != "nonmem"
+    if (mod1_type == "nonmem" and mod2_type != "nonmem") or (
+        mod2_type == "nonmem" and mod1_type != "nonmem"
     ):
         nm_to_r = True
 
     mod1 = mod1.replace(dataset=mod1.dataset.reset_index())
     mod2 = mod2.replace(dataset=mod2.dataset.reset_index())
 
-    for mod in [mod1, mod2]:
-        if "EVID" not in mod.dataset.columns:
-            mod = add_evid(mod)
+    if "EVID" not in mod1.dataset.columns:
+        mod1 = add_evid(mod1)
+
+    if "EVID" not in mod2.dataset.columns:
+        mod2 = add_evid(mod2)
 
     if nm_to_r:
         if mod1_type == "nonmem":
@@ -285,6 +300,12 @@ def compare_models(
             )
             predictions = predictions.set_index(["ID", "TIME"])
             mod1 = mod1.replace(modelfit_results=ModelfitResults(predictions=predictions))
+
+            dataset = mod1.dataset
+            dv_var = "DV"
+            dv = dataset.drop(mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list())[
+                dv_var
+            ]
         if mod2_type == "nonmem":
             predictions = mod2.modelfit_results.predictions.reset_index()
             predictions = predictions.drop(
@@ -292,6 +313,18 @@ def compare_models(
             )
             predictions = predictions.set_index(["ID", "TIME"])
             mod2 = mod2.replace(modelfit_results=ModelfitResults(predictions=predictions))
+
+            dataset = mod2.dataset
+            dv_var = "DV"
+            dv = dataset.drop(mod2.dataset[~mod2.dataset["EVID"].isin([0, 2])].index.to_list())[
+                dv_var
+            ]
+    else:
+        dataset = mod1.dataset
+        dv_var = "DV"
+        dv = dataset.drop(mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list())[dv_var]
+
+    dv = dv.reset_index(drop=True)
 
     mod1_results = mod1.modelfit_results.predictions.copy()
 
@@ -307,6 +340,9 @@ def compare_models(
             assert p in mod2_results.columns
             mod1_results.rename(columns={p: f'PRED_{mod1_type}'}, inplace=True)
             mod2_results.rename(columns={p: f'PRED_{mod2_type}'}, inplace=True)
+        else:
+            print("No PRED column found")
+            return None
     elif force_ipred:
         if "IPRED" in mod1_results.columns:
             p = "IPRED"
@@ -320,22 +356,30 @@ def compare_models(
             assert p in mod2_results.columns
             mod1_results.rename(columns={p: f'{p}_{mod1_type}'}, inplace=True)
             mod2_results.rename(columns={p: f'IPRED_{mod2_type}'}, inplace=True)
+        else:
+            print("No IPRED (or CIPRED) column found")
+            return None
     else:
-        for p in mod1_results.columns:
-            if p == "PRED":
-                pred = True
-                assert p in mod2_results.columns
-                mod1_results.rename(columns={p: f'PRED_{mod1_type}'}, inplace=True)
-                mod2_results.rename(columns={p: f'PRED_{mod2_type}'}, inplace=True)
-            elif (p == "IPRED" or p == "CIPREDI") and "PRED" not in mod1_results.columns:
-                ipred = True
-                assert "IPRED" in mod2_results.columns or "CIPREDI" in mod2_results.columns
-                mod1_results.rename(columns={p: f'{p}_{mod1_type}'}, inplace=True)
-                if "IPRED" in mod2_results.columns:
-                    mod2_results.rename(columns={p: f'IPRED_{mod2_type}'}, inplace=True)
-                else:
-                    mod2_results.rename(columns={p: f'CIPREDI_{mod2_type}'}, inplace=True)
-    # ---
+        if "PRED" in mod1_results.columns:
+            p = "PRED"
+            pred = True
+            assert p in mod2_results.columns
+            mod1_results.rename(columns={p: f'PRED_{mod1_type}'}, inplace=True)
+            mod2_results.rename(columns={p: f'PRED_{mod2_type}'}, inplace=True)
+        elif "IPRED" in mod1_results.columns:
+            p = "IPRED"
+            ipred = True
+            mod1_results.rename(columns={p: f'{p}_{mod1_type}'}, inplace=True)
+            assert p in mod2_results.columns
+            mod2_results.rename(columns={p: f'{p}_{mod2_type}'}, inplace=True)
+        elif "CIPREDI" in mod1_results.columns:
+            p = "CIPREDI"
+            ipred = True
+            mod1_results.rename(columns={p: f'IPRED_{mod1_type}'}, inplace=True)
+            if p not in mod2_results.columns:
+                mod2_results.rename(columns={"IPRED": f'IPRED_{mod2_type}'}, inplace=True)
+            else:
+                mod2_results.rename(columns={p: f'IPRED_{mod2_type}'}, inplace=True)
 
     if not (pred or ipred):
         print("No comparable prediction value was found. Please use 'PRED' or 'IPRED")
@@ -353,6 +397,8 @@ def compare_models(
         combined_result['IPRED_DIFF'] = abs(
             combined_result[f'IPRED_{mod1_type}'] - combined_result[f'IPRED_{mod2_type}']
         )
+
+    combined_result["DV"] = dv.values
 
     combined_result["PASS/FAIL"] = "PASS"
     if not ignore_print:
@@ -378,11 +424,14 @@ def compare_models(
     combined_result.loc[combined_result[f'{final}_DIFF'] > error, "PASS/FAIL"] = "FAIL"
     if not ignore_print:
         print(
-            combined_result[f'{final}_DIFF'].describe()[["mean", "75%", "max"]].to_string(),
+            combined_result[f'{final}_DIFF'].describe()[["min", "mean", "75%", "max"]].to_string(),
             end="\n\n",
         )
 
-    return combined_result
+    if return_stat:
+        return combined_result[f'{final}_DIFF'].describe()[["min", "mean", "75%", "max"]]
+    else:
+        return combined_result
 
 
 def print_step(s: str) -> None:

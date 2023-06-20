@@ -42,11 +42,19 @@ def check_model(
     # Checks for the dataset
     if model.dataset is not None:
         if "TIME" in model.dataset.columns:
+            # Forcefully change so that doses and observation dont happen
+            # at the same time
             if same_time(model):
                 print_warning(
                     "Observation and bolus dose at the same time in the data. Modified for nlmixr model"
                 )
                 model = change_same_time(model)
+        else:
+            # Add placeholder time to be able to run model
+            print_warning(
+                "TIME column required to run model. Added time with zero value for all events"
+            )
+            model = add_time(model)
 
     # Checks regarding error model
     if not skip_error_model_check:
@@ -55,10 +63,10 @@ def check_model(
 
     # Checks regarding random variables
     if rvs_same(model, sigma=True):
-        print_warning("Sigma with value same not supported. Updated as follows.")
+        print_warning("Sigma with value same not supported. Parameters are updated")
         model = change_rvs_same(model, sigma=True)
     if rvs_same(model, omega=True):
-        print_warning("Omega with value same not supported. Updated as follows.")
+        print_warning("Omega with value same not supported. Parameters are updated")
         model = change_rvs_same(model, omega=True)
 
     # Checks regarding esimation method
@@ -68,6 +76,13 @@ def check_model(
             f"Estimation method {method} unknown to nlmixr2. Using 'FOCEI' as placeholder"
         )
 
+    return model
+
+
+def add_time(model):
+    dataset = model.dataset
+    dataset["TIME"] = 0
+    model = model.replace(dataset=dataset)
     return model
 
 

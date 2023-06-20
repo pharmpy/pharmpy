@@ -44,7 +44,7 @@ class res_error_term:
         # VAR 2 : y = F + F*theta*eps + theta*eps (EPS FIX 1)
         # VAR 3 : y = F + W*eps (W = sqrt(theta....)) (EPS FIX 1)
         # VAR 4 : y = F + W*eps (W = F*theta + theta) (EPS FIX 1)
-        # ELSE raise error
+        # ELSE conversion might be incorrect.
         terms = sympy.Add.make_args(self.expr)
         # Assert that it follows the above set of format rules
         assert len(terms) <= 3
@@ -90,11 +90,11 @@ class res_error_term:
             print("No resulting term found")
             exit
         elif len(errors) > 2:
-            print("Too many error terms found")
-            exit
+            print("Too many error terms found. Will try to translate either way.")
 
         for t in errors:
             prop = False
+            ali_removed = False
             term = t["term"]
             full_term = t["full_term"]
             for symbol in full_term.free_symbols.union(term.free_symbols):
@@ -103,16 +103,30 @@ class res_error_term:
                         prop = True
                         # Remove the resulting symbol from the error term
                         term = convert_eps_to_sigma(term, self.model)
-                        term = term.subs(ali, 1)
-                        self.prop = error(
-                            self.model, term, t["sigma"], sigma_alias=t["sigma_alias"], prop=True
-                        )
-
-            if prop is False:
+                        if ali in term.free_symbols:
+                            term = term.subs(ali, 1)
+                            ali_removed = True
+            if prop is True:
+                if not ali_removed:
+                    term = term / self.res
+                if self.prop.expr == 0:
+                    self.prop = error(
+                        self.model,
+                        term,
+                        t["sigma"],
+                        sigma_alias=t["sigma_alias"],
+                        prop=True,
+                    )
+                else:
+                    self.prop.expr = self.prop.expr + term
+            else:
                 term = convert_eps_to_sigma(term, self.model)
-                self.add = error(
-                    self.model, term, t["sigma"], sigma_alias=t["sigma_alias"], add=True
-                )
+                if self.add.expr == 0:
+                    self.add = error(
+                        self.model, term, t["sigma"], sigma_alias=t["sigma_alias"], add=True
+                    )
+                else:
+                    self.add.expr = self.add.expr + term
 
     def is_only_piecewise(self):
         dv = list(self.model.dependent_variables.keys())[0]
@@ -156,7 +170,12 @@ class error:
             return False
 
     def check_dependecies(self):
-        if self.model is not None and self.expr is not None:
+        if (
+            self.model is not None
+            and self.expr is not None
+            and self.model.parameters[self.sigma].init == 1
+            and self.sigma_fix
+        ):
             accepted_symbols = set([self.sigma, self.sigma_alias])
             thetas = get_thetas(self.model).symbols
             accepted_symbols.update(thetas)

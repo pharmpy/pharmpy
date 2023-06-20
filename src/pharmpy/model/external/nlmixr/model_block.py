@@ -142,7 +142,7 @@ def add_statements(
                                     cg.add(f'add_error <- {add}')
                                     cg.add(f'prop_error <- {prop}')
                         elif s.symbol == dv:
-                            if not value.is_constant() and not isinstance(value, sympy.Symbol):
+                            if value != dv:
                                 t = res_error_term(model, value)
                                 # FIXME : Remove sigma here instead of in ini
                                 # also remove aliases for sigma
@@ -150,7 +150,9 @@ def add_statements(
                                 cg.add(f'add_error <- {t.add.expr}')
                                 cg.add(f'prop_error <- {t.prop.expr}')
                             else:
-                                cg.add(f'{s.symbol.name} <- {value}')
+                                cg.add("res <- res")
+                                cg.add('add_error <- add_error')
+                                cg.add('prop_error <- prop_error')
                         else:
                             cg.add(f'{s.symbol.name} <- {value}')
 
@@ -206,11 +208,24 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
         terms = sympy.Add.make_args(s.expression)
     assert len(terms) <= 2
 
-    r = r"sqrt\([a-zA-Z0-9_.-]*\*\*2\*[a-zA-Z0-9_.-]*\*\*2 \+ [a-zA-Z0-9_.-]*\*\*2\)"
-    if re.match(r, str(s)):
-        w = True
-    else:
-        w = False
+    w = False
+
+    if isinstance(s, sympy.Pow):
+        s_arg = sympy.Add.make_args(s.args[0])
+        if len(s_arg) <= 2:
+            all_pow = True
+            for t in s_arg:
+                for f in sympy.Mul.make_args(t):
+                    if (
+                        isinstance(f, sympy.Pow)
+                        or isinstance(f, sympy.Integer)
+                        or isinstance(f, sympy.Float)
+                    ):
+                        pass
+                    else:
+                        all_pow = False
+        if all_pow:
+            w = True
 
     prop = 0
     add = 0
@@ -221,30 +236,52 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
                 if prop_found is False:
                     term = term.subs(symbol, 1)
                     if w:
-                        prop = list(term.free_symbols)[0]
+                        prop = sympy.sqrt(term)
                     else:
-                        add = term
+                        prop += term
                     prop_found = True
         if prop_found is False:
             if w:
-                add = list(term.free_symbols)[0]
+                add = sympy.sqrt(term)
             else:
-                add = term
+                add += term
     return add, prop
 
 
-def add_bioavailability(model: pharmpy.model.Model, cg: CodeGenerator):
-    bio = get_bioavailability(model)
-    for comp, symbol in bio.items():
-        symbol_value = model.statements.find_assignment(symbol).expression
-        cg.add(f'f(A_{comp}) <- {symbol_value}')
+def add_bio_lag(model: pharmpy.model.Model, cg: CodeGenerator, bio=False, lag=False):
+    if bio:
+        bio_lag = get_bioavailability(model)
+    elif lag:
+        bio_lag = get_lag_times(model)
+    else:
+        return
 
+    for s in model.statements.before_odes:
+        if s.symbol in bio_lag.values():
+            comp = list(bio_lag.keys())[list(bio_lag.values()).index(s.symbol)]
 
-def add_lag_times(model: pharmpy.model.Model, cg: CodeGenerator):
-    lag = get_lag_times(model)
-    for comp, symbol in lag.items():
-        symbol_value = model.statements.find_assignment(symbol).expression
-        cg.add(f'alag(A_{comp}) <- {symbol_value}')
+            if s.expression.is_Piecewise:
+                first = True
+                for value, cond in s.expression.args:
+                    if cond is not sympy.S.true:
+                        cond = convert_eq(cond)
+                        if first:
+                            cg.add(f'if ({cond}) {{')
+                            first = False
+                        else:
+                            cg.add(f'}} else if ({cond}) {{')
+                    else:
+                        cg.add('} else {')
+
+                    if bio:
+                        cg.add(f'f(A_{comp}) <- {value}')
+                    elif lag:
+                        cg.add(f'alag(A_{comp}) <- {value}')
+            else:
+                if bio:
+                    cg.add(f'f(A_{comp}) <- {s.expression}')
+                elif lag:
+                    cg.add(f'alag(A_{comp}) <- {s.expression}')
 
 
 def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
@@ -431,6 +468,7 @@ def convert_eq(cond: sympy.Eq) -> str:
     """
     cond = sympy.pretty(cond)
     cond = cond.replace("=", "==")
+    cond = cond.replace("≠", "!=")
     cond = cond.replace("≤", "<=")
     cond = cond.replace("≥", "<=")
     cond = cond.replace("∧", "&")
@@ -444,5 +482,5 @@ def convert_eq(cond: sympy.Eq) -> str:
         or re.search(r'(ID\s*<\s*)(\d+)', cond)
         or re.search(r'(ID\s*>\s*)(\d+)', cond)
     ):
-        raise ValueError(f"Condition '{cond}' not supported by nlmixr")
+        print(f"Condition '{cond}' not supported by nlmixr. Model will not run.")
     return cond
