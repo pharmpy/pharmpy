@@ -5,7 +5,7 @@ from typing import Callable, List, Optional, Tuple, Union
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Model, Results
-from pharmpy.modeling.blq import transform_blq
+from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.parameter_variability import get_occasion_levels
@@ -330,7 +330,11 @@ def _subfunc_iiv(path) -> SubFunc:
 
 def _subfunc_ruvsearch(path) -> SubFunc:
     def _run_ruvsearch(model):
-        res = run_tool('ruvsearch', model, path=path / 'ruvsearch')
+        if has_blq_transformation(model):
+            skip, max_iter = ['IIV_on_RUV', 'time_varying'], 1
+        else:
+            skip, max_iter = [], 3
+        res = run_tool('ruvsearch', model, skip=skip, max_iter=max_iter, path=path / 'ruvsearch')
         assert isinstance(res, Results)
         return res
 
