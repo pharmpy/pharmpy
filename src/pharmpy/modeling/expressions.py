@@ -1330,7 +1330,10 @@ def _classify_assignments(assignments: Sequence[Assignment]):
         fs = expression.free_symbols
 
         if symbol not in fs:  # NOTE We skip redefinitions (e.g. CL=CL+1)
-            if len(fs) == 1:
+            if sympy.Symbol('t') in fs:  # FIXME: Should use ode.t here at some point
+                yield 'synthetic', assignment
+                continue
+            elif len(fs) == 1:
                 a = next(iter(fs))
                 if a in symbols:
                     yield 'synthetic', assignment  # E.g. S1=V
