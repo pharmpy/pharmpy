@@ -34,7 +34,8 @@ from .results import AMDResults
 def run_amd(
     input: Union[Model, Path, str],
     results: Optional[ModelfitResults] = None,
-    modeltype: str = 'pk_oral',
+    modeltype: str = 'basic_pk',
+    administraton: str = 'oral',
     cl_init: float = 0.01,
     vc_init: float = 1.0,
     mat_init: float = 0.1,
@@ -58,7 +59,9 @@ def run_amd(
     results : ModelfitResults
         Reults of input if input is a model
     modeltype : str
-        Type of model to build. Either 'pk_oral' or 'pk_iv'
+        Type of model to build. Either 'basic_pl' or 'tmdd'
+    administration : str
+        Route of administration. Either 'iv' or 'oral'
     cl_init : float
         Initial estimate for the population clearance
     vc_init : float

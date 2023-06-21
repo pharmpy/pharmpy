@@ -164,8 +164,8 @@ def set_tmdd(model: Model, type: str):
         )
         lafree_ass = Assignment(lafree_symb, lafree_expr)
 
-        cb.set_input(central, -(ke - kint) * lafree_symb)
         cb.add_flow(central, output, -kint)
+        cb.set_input(central, -(ke - kint) * lafree_symb)
 
         lafreef = sympy.Symbol("LAFREEF")
         lafree_final = Assignment(lafreef, lafree_expr)
