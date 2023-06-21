@@ -183,7 +183,7 @@ from .parameters import (
     unfix_parameters_to,
     update_inits,
 )
-from .pd import set_direct_effect
+from .pd import add_effect_compartment, set_direct_effect
 from .plots import (
     plot_individual_predictions,
     plot_iofv_vs_iofv,
@@ -210,6 +210,7 @@ __all__ = [
     'add_covariance_step',
     'add_covariate_effect',
     'add_estimation_step',
+    'add_effect_compartment',
     'add_iiv',
     'add_individual_parameter',
     'add_iov',
