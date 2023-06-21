@@ -40,7 +40,7 @@ def add_effect_compartment(model: Model, expr: str):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model
+    >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model = add_effect_compartment(model, "linear")
     >>> model.statements.ode_system.find_compartment("EFFECT")
