@@ -1813,10 +1813,11 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_nested_transit_peripherals(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    model = set_transit_compartments(model, 1)
-    model = set_michaelis_menten_elimination(model)
+    model = set_transit_compartments(model, 2)
     model = set_peripheral_compartments(model, 1)
     model = set_peripheral_compartments(model, 2)
+    assert 'K64 = QP2/VP2' in model.model_code
+    assert 'K40 = CL/V' in model.model_code
 
 
 def test_add_depot(create_model_for_test):

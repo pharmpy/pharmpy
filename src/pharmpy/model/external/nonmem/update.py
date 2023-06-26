@@ -906,11 +906,12 @@ def pk_param_conversion(model: Model, advan, trans):
                     }
                 )
     if advan == 'ADVAN5' or advan == 'ADVAN7':
+        n = newmap['CENTRAL']
         if from_advan not in ('ADVAN5', 'ADVAN7'):
-            n = len(newmap)
-            d[sympy.Symbol('K')] = sympy.Symbol(f'K{n-1}0')
+            d[sympy.Symbol('K')] = sympy.Symbol(f'K{n}0')
         else:
-            d[sympy.Symbol(f'K{len(oldmap)-1}0')] = sympy.Symbol(f'K{len(newmap)-1}0')
+            n_old = oldmap['CENTRAL']
+            d[sympy.Symbol(f'K{n_old}0')] = sympy.Symbol(f'K{n}0')
     model = model.replace(statements=statements.subs(d))
     return model
 
