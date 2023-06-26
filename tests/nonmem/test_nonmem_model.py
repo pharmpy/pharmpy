@@ -589,7 +589,7 @@ def test_cmt_warning(load_model_for_test, testdata):
         ('$ESTIMA METH=0', [EstimationStep.create('fo')]),
         ('$ESTIMA METH=ZERO', [EstimationStep.create('fo')]),
         ('$ESTIMA INTER', [EstimationStep.create('fo', interaction=True)]),
-        ('$ESTIMA INTER\n$COV', [EstimationStep.create('fo', interaction=True, cov=True)]),
+        ('$ESTIMA INTER\n$COV', [EstimationStep.create('fo', interaction=True, cov='sandwich')]),
         (
             '$ESTIMA METH=COND INTER\n$EST METH=COND',
             [
@@ -654,7 +654,7 @@ $ESTIMATION METHOD=1 SADDLE_RESET=1
     [
         ('$EST METH=COND INTER', {'method': 'fo'}, '$ESTIMATION METHOD=ZERO INTER'),
         ('$EST METH=COND INTER', {'interaction': False}, '$ESTIMATION METHOD=COND'),
-        ('$EST METH=COND INTER', {'cov': True}, '$COVARIANCE'),
+        ('$EST METH=COND INTER', {'cov': 'sandwich'}, '$COVARIANCE'),
         (
             '$EST METH=COND INTER MAXEVAL=99999',
             {'method': 'fo'},
