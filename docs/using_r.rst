@@ -47,8 +47,8 @@ If you get any error during the installation or when running the code above, ple
 Trouble shooting
 ================
 
-Wrong Python version
---------------------
+Wrong Python version when using conda
+-------------------------------------
 
 pharmr uses the package `reticulate <https://rstudio.github.io/reticulate>`_ for calling Python from R. When reticulate
 sets up Miniconda it can default to use Python 3.8. If you have any trouble installing Pharmpy or any of its
@@ -89,7 +89,7 @@ and make sure 'r-reticulate' is found:
     libpython:      .../r-reticulate/lib/libpython3.11.so
     ...
 
-If you are using Rstudio you can change this in either project or global options, under Python.
+If you are using Rstudio you can change this in either project or global options, under Python/Python interpreter.
 
 Mismatch of versions between Pharmpy and pharmr
 -----------------------------------------------
