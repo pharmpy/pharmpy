@@ -1,11 +1,12 @@
+.. _dataset:
+
 ===================
 Datasets in Pharmpy
 ===================
 
-Datasets in Pharmpy are represented using the :py:class:`pd.DataFrame` class and a separate :py:class:`DataInfo` class that provides additional information about the dataset.
-This could contain for example a description of how the columns are used in the model or the units used for the data.
-
-.. math::
+Datasets in Pharmpy are represented using the :py:class:`pd.DataFrame` class and a separate
+:py:class:`pharmpy.model.DataInfo` class that provides additional information about the dataset. This could contain
+for example a description of how the columns are used in the model or the units used for the data.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Retrieving the dataset from a model
