@@ -28,8 +28,8 @@ To be able to use components using machine learning the tflite package is needed
 A first example
 ---------------
 
-The :class:`pharmpy.Model` class is representation of a nonlinear mixed effects model. For example, to
-read an example NONMEM model (in this case ``pheno``):
+The :class:`pharmpy.model.Model` class is representation of a nonlinear mixed effects model. For example, to
+load an example NONMEM model:
 
 .. pharmpy-execute::
    :hide-output:
@@ -45,7 +45,10 @@ The model file format is automatically detected:
 
     type(model)
 
-You can read more about how to read in an examine your model in :ref:`model`, and how to transform your model via
+You can read more about how to read in and examine your model in :ref:`model`, and how to transform your model via
 :ref:`modeling`. We also have several :ref:`pharmpy_tools` to run more complex workflows.
 
+.. note::
 
+    In order to run any of the tools you need to have a configuration file set up with a path to NONMEM, instructions
+    can be found :ref:`here <config_page>`.
