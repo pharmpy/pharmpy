@@ -19,6 +19,11 @@ results from PsN tools. Documentation of PsN tools can be found :ref:`here <psn_
 Tools in Pharmpy
 ~~~~~~~~~~~~~~~~
 
+.. note::
+
+    In order to run any of the tools you need to have a configuration file set up with a path to NONMEM, instructions
+    can be found :ref:`here <config_page>`.
+
 .. toctree::
    :maxdepth: 1
 
@@ -51,8 +56,9 @@ Common features
 ~~~~~~~~~~~~~~~
 
 .. note::
-    The AMD tool is a collection of tools, meaning that some aspects of this section may not be applicable. For example
-    datasets will be in the database for each subtool
+
+    The AMD tool is a collection of tools, meaning that some aspects of this section may not be applicable. For
+    example, datasets will be in the database for each subtool.
 
 .. _tool_database:
 
