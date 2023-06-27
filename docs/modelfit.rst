@@ -1,25 +1,56 @@
-========================
-Reading modelfit results
-========================
+============================
+Model estimation and results
+============================
 
-Pharmpy can retrieve results from a NONMEM run.
+Pharmpy can both estimate a model and retrieve results from a NONMEM run (including runs that were not started by
+Pharmpy).
 
-.. math::
+~~~~~~~~~~~~~~~
+Fitting a model
+~~~~~~~~~~~~~~~
+
+You can fit a model using the :py:func:`pharmpy.tools.fit` function:
+
+.. pharmpy-code::
+
+    from pharmpy.modeling import load_example_model
+    from pharmpy.tools import fit
+
+    model = load_example_model('pheno')
+    results = fit(model)
+
+It is also possible to specify which estimation tool:
+
+.. pharmpy-code::
+
+    results = fit(model, tool='nlmixr')
+
+.. note::
+
+    In order to esimate using any of the supported softwares (NONMEM, nlmixr, rxODE) you need to have a configuration
+    file set up with a path to NONMEM, instructions can be found :ref:`here <config_page>`.
 
 ~~~~~~~~~~~~~~~~
 Modelfit results
 ~~~~~~~~~~~~~~~~
 
-Final OFV
-~~~~~~~~~
-
-The final OFV is available in `ofv`:
+To read in the results (if not fitted in Pharmpy), you can use the :py:func:`pharmpy.tools.read_modelfit_results`
+function.
 
 .. pharmpy-execute::
+   :hide-output:
 
     from pharmpy.tools import read_modelfit_results
 
     results = read_modelfit_results('tests/testdata/nonmem/pheno_real.mod')
+
+Final OFV
+~~~~~~~~~
+
+The final OFV is available in the `ofv`-attribute:
+
+.. pharmpy-execute::
+
     results.ofv
 
 
@@ -130,7 +161,8 @@ Individual estimates (or EBEs)
 
     results.individual_estimates
 
-Uncertainty for the individual estimates can be found in `individual_estimates_covariance`, which is a series of covariance matrices for each individual.
+Uncertainty for the individual estimates can be found in `individual_estimates_covariance`, which is a series of
+covariance matrices for each individual.
 
 .. pharmpy-execute::
 
