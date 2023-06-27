@@ -1,10 +1,13 @@
+.. _api_ref:
+
 =============
 API Reference
 =============
 
-This page contains the documentation of the public API. The pharmpy-module includes the model object and
-the classes related to it (parameters, statements, random variables etc.), the modeling-module handles
-different transformations and manipulations, and the workflows-module is how different tools are built and run.
+This page contains the documentation of the public API. The :py:class:`pharmpy.model` module includes the model object
+and the classes related to it (parameters, statements, random variables etc.), the :py:class:`pharmpy.modeling` module
+handles different transformations and manipulations, and the :py:class:`pharmpy.tools` module handles model estimation
+and tools. The :py:class:`pharmpy.workflows` module handles how different tools are built and run.
 
 .. note::
 
