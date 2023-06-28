@@ -7,7 +7,7 @@ Modeling
 While the :py:class:`pharmpy.model.Model` class can be directly manipulated
 with low level operations the modeling module offers higher level operations and transformations for building a model.
 These transformations are also available via the Pharmpy command line interface. To read more about these functions
-such as how the initial estimates of parameters are chosen, see their respective API documentation.
+such as how the initial estimates of parameters are chosen, see their respective :ref:`API documentation<api_ref>`.
 
 .. pharmpy-execute::
    :hide-output:
@@ -17,31 +17,14 @@ such as how the initial estimates of parameters are chosen, see their respective
    path = Path('tests/testdata/nonmem/')
    from docs.help_functions import print_model_diff
 
-The following model is the start model for the examples.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import read_model
-
-   model_ref = read_model(path / "pheno.mod")
-   print(model_ref)
-
 ~~~~~~~~~~~~~~~
-Basic modeling
+Basic functions
 ~~~~~~~~~~~~~~~
 
-Many basic model manipulation tasks that could also be done using methods on model objects have been included in the modeling module. This
-makes it possible to do most common model manipulations using a functional interface that is easy to chain into a pipeline.
+Reading and writing models
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. warning::
-
-   Note that all manipulations are done in place, i.e. the model referenced by the input argument will be changed.
-
-Reading, writing and updating source models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Read model from file
-====================
+Pharmpy can read in NONMEM models using the :py:func:`pharmpy.modeling.read_model` function:
 
 .. pharmpy-execute::
    :hide-output:
@@ -49,10 +32,15 @@ Read model from file
    from pharmpy.modeling import *
    model = read_model(path / 'pheno.mod')
 
-Read model from string
-======================
+To inspect the read in model code, the :py:func:`pharmpy.modeling.print_model_code` function is available:
 
-If the model code is in a string variable it can be read in directly.
+.. pharmpy-execute::
+   :hide-output:
+
+   print_model_code(model)
+
+If the model code is in a string variable it can be read in directly using
+:py:func:`pharmpy.modeling.read_model_from_string`.
 
 .. pharmpy-execute::
     :hide-output:
@@ -60,349 +48,280 @@ If the model code is in a string variable it can be read in directly.
     code = '$PROBLEM base model\n$INPUT ID DV TIME\n$DATA file.csv IGNORE=@\n$PRED Y = THETA(1) + ETA(1) + ERR(1)\n$THETA 0.1\n$OMEGA 0.01\n$SIGMA 1\n$ESTIMATION METHOD=1'
     model = read_model_from_string(code)
 
-Getting the model code
-======================
-
-The model code (e.g. the NONMEM code) can be retrieved using the `model_code` attribute.
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / 'pheno.mod')
-   model.model_code
-
-Write model to file
-===================
+Finally, any Pharmpy model can be written to a file with :py:func:`pharmpy.modeling.write_model`:
 
 .. pharmpy-code::
 
    write_model(model, 'mymodel.mod')
 
-Parameters
-~~~~~~~~~~
+Loading example models
+~~~~~~~~~~~~~~~~~~~~~~
 
-Fix and unfix parameters
-========================
+Pharmpy has example models with example datasets that can be accessed using
+:py:func:`pharmpy.modeling.load_example_model`:
 
-The functions for fixing/unfixing parameters take either a list of parameter names or one single parameter name string.
+.. pharmpy-execute::
+
+   model = load_example_model('pheno')
+   print_model_code(model)
+
+Converting models
+~~~~~~~~~~~~~~~~~
+
+Pharmpy supports the estimation software NONMEM, nlmixr2 and rxODE2, and a Pharmpy model can be converted into those
+formats using :py:func:`pharmpy.modeling.convert_model`:
 
 .. pharmpy-execute::
    :hide-output:
 
-   model = fix_parameters(model, ['TVCL', 'TVV'])
-   model = unfix_parameters(model, 'TVCL')
+   model_nlmixr = convert_model(model, 'nlmixr')
 
-It is also possible to fix and unfix the parameters to a specified value or to a list of values. If parameter_names
-is None, all parameters will be transformed.
+Then we can inspect the new model code:
+
+.. pharmpy-execute::
+
+   print_model_code(model_nlmixr)
+
+.. _basic_models:
+
+~~~~~~~~~~~~~~~~~~~
+Create basic models
+~~~~~~~~~~~~~~~~~~~
+
+As a starting point for this user guide, we will create a basic PK model using the function
+:py:func:`pharmpy.modeling.create_basic_pk_model`:
+
 
 .. pharmpy-execute::
    :hide-output:
 
-   model = fix_parameters_to(model, {'TVCL': 0, 'TVV': 1})
-   model = fix_parameters_to(model, {'TVCL': 0, 'TVV': 0})
-   model = unfix_parameters_to(model, {'TVCL': 0})
+    dataset_path = path / 'pheno.dta'
+    model_start = create_basic_pk_model(modeltype='oral',
+                                        dataset_path=dataset_path,
+                                        cl_init=0.01,
+                                        vc_init=1.0,
+                                        mat_init=0.1)
 
-
-Add parameter
-=============
-
-A new parameter can be added by using the name of the new parameter.
+We can examine the model statements of the model:
 
 .. pharmpy-execute::
+    model_start.statements
 
-   model = read_model(path / 'pheno.mod')
-   model = add_individual_parameter(model, 'MAT')
-   print_model_diff(model_ref, model)
+We can see that the model is a one compartment model with first order absorption and elimination and no absorption
+delay. Examining the random variables:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~
-PK models and ODE systems
-~~~~~~~~~~~~~~~~~~~~~~~~~
+.. pharmpy-execute::
+    model_start.random_variables
 
-Absorption rate
-~~~~~~~~~~~~~~~
-
-Bolus absorption
-==================
-
-Let us use a model with bolus absorption as a starting point.
-
-.. graphviz::
-
-   digraph fo {
-     rankdir = LR
-     node [shape=box]
-     S [label="S", style=invis, width=0, height=0, margin=0];
-     Output [label="O", style=invis, width=0, height=0, margin=0];
-     "Central" -> Output [label=K];
-     S -> "Central" [label="Bolus"];
-   }
+Next we can convert the start model from a generic Pharmpy model to a NONMEM model:
 
 .. pharmpy-execute::
    :hide-output:
 
-   from pharmpy.modeling import set_bolus_absorption
-   model = read_model(path / "pheno.mod")
+    model_start = convert_model(model_start, 'nonmem')
 
-This type of absorption can be created with:
-
-.. pharmpy-execute::
-
-    model = set_bolus_absorption(model)
-    print_model_diff(model_ref, model)
-
-
-Zero order
-===========
-
-Let us now change to zero order absorption.
-
-.. graphviz::
-
-   digraph fo {
-     rankdir = LR
-     node [shape=box]
-     S [label="S", style=invis, width=0, height=0, margin=0];
-     Output [label="O", style=invis, width=0, height=0, margin=0];
-     "Central" -> Output [label=K];
-     S -> "Central" [label=Infusion];
-   }
-
-See :py:func:`pharmpy.modeling.set_zero_order_absorption`.
+We can then examine the NONMEM model code:
 
 .. pharmpy-execute::
-
-   from pharmpy.modeling import set_zero_order_absorption
-   model = set_zero_order_absorption(model)
-   print_model_diff(model_ref, model)
-
-First order
-===========
-
-First order absorption would mean adding an absorption (depot) compartment like this:
-
-.. graphviz::
-
-   digraph fo {
-     rankdir = LR
-     node [shape=box]
-     S [label="S", style=invis, width=0, height=0, margin=0];
-     Output [label="O", style=invis, width=0, height=0, margin=0];
-     "Depot" -> "Central" [label=Ka];
-     "Central" -> Output [label=K];
-     S -> "Depot" [label=Bolus];
-   }
-
-See :py:func:`pharmpy.modeling.set_first_order_absorption`.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_first_order_absorption
-   model = set_first_order_absorption(model)
-   print_model_diff(model_ref, model)
-
-Sequential zero-order then first-order
-======================================
-
-Sequential zero-order absorption followed by first-order absorption will have an infusion dose into the depot compartment.
-
-.. graphviz::
-
-   digraph fo {
-     rankdir = LR
-     node [shape=box]
-     S [label="S", style=invis, width=0, height=0, margin=0];
-     Output [label="O", style=invis, width=0, height=0, margin=0];
-     "Depot" -> "Central" [label=Ka];
-     "Central" -> Output [label=K];
-     S -> "Depot" [label=Infusion];
-   }
-
-See :py:func:`pharmpy.modeling.set_seq_zo_fo_absorption`.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_seq_zo_fo_absorption
-   model = set_seq_zo_fo_absorption(model)
-   print_model_diff(model_ref, model)
-
-Absorption delay
-~~~~~~~~~~~~~~~~
-
-Transit compartments
-====================
-
-Transit compartments can be added or removed using the :py:func:`pharmpy.modeling.set_transit_compartments` function.
-
-.. pharmpy-execute::
-
-   model = read_model(path / "pheno.mod")
-   from pharmpy.modeling import set_transit_compartments
-
-   model = set_transit_compartments(model, 4)
-   print_model_diff(model_ref, model)
-
-
-Lag time
-========
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-Lag time may be added to a dose compartment of a model.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import add_lag_time
-   model = add_lag_time(model)
-   print_model_diff(model_ref, model)
-
-Similarly, to remove lag time:
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import remove_lag_time
-   model = remove_lag_time(model)
-   print_model_diff(model_ref, model)
-
-Elimination rate
-~~~~~~~~~~~~~~~~
-
-Pharmpy supports changing a model to first-order, zero-order, Michaelis-Menten, and first-order + Michaelis-Menten
-elimination.
-
-First-order elimination
-=======================
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_first_order_elimination
-   model = read_model(path / "pheno.mod")
-   model = set_first_order_elimination(model)
-   print_model_diff(model_ref, model)
-
-See :py:func:`pharmpy.modeling.set_first_order_elimination`.
-
-Zero-order elimination
-======================
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_zero_order_elimination
-   model = read_model(path / "pheno.mod")
-   model = set_zero_order_elimination(model)
-   print_model_diff(model_ref, model)
-
-See :py:func:`pharmpy.modeling.set_zero_order_elimination`.
-
-Michaelis-Menten elimination
-============================
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_michaelis_menten_elimination
-   model = read_model(path / "pheno.mod")
-   model = set_michaelis_menten_elimination(model)
-   print_model_diff(model_ref, model)
-
-See :py:func:`pharmpy.modeling.set_michaelis_menten_elimination`.
-
-Mixed Michaelis-Menten + First-Order elimination
-===================================================
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_mixed_mm_fo_elimination
-   model = read_model(path / "pheno.mod")
-   model = set_mixed_mm_fo_elimination(model)
-   print_model_diff(model_ref, model)
-
-See :py:func:`pharmpy.modeling.set_mixed_mm_fo_elimination`.
-
-Distribution
-~~~~~~~~~~~~
-
-Add peripheral compartment
-==========================
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-Adding a peripheral compartment.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import add_peripheral_compartment
-   model = add_peripheral_compartment(model)
-   print_model_diff(model_ref, model)
-
-
-Remove peripheral compartment
-=============================
-
-Removing a peripheral compartment.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import remove_peripheral_compartment
-   model = remove_peripheral_compartment(model)
-
-.. _cov_effects:
-
-
-Set the number of peripheral compartments
-=========================================
-
-As an alternative to adding or removing one peripheral compartment a certain number of peripheral compartents can be set directly.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_peripheral_compartments
-   model = set_peripheral_compartments(model, 2)
-
-
+    print_model_code(model_start)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~
-Adding covariate effects
+Modeling transformations
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-Covariate effects may be applied to a model.
-
-.. pharmpy-execute::
-   :hide-output:
-
-   from pharmpy.modeling import add_covariate_effect
-   model = add_covariate_effect(model, 'CL', 'WGT', 'pow', operation='*')
-
-Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the name of the
-covariate, and *pow* (power function) is the effect you want to apply. The effect can be either
-added or multiplied to the parameter, denoted by '*' or '+' (multiplied is default).
-
-.. pharmpy-execute::
-
-   print_model_diff(model_ref, model)
+In Pharmpy there are many different modeling functions that modify the model object. In Pharmpy, the model object and
+all its attributes are immutable, meaning that the modeling functions always return a copy of the model object.
 
 .. note::
 
-   To see the list of available effects and how the initial estimates for each type of effect is chosen,
-   see :py:class:`pharmpy.modeling.add_covariate_effect`.
+   To see more information on how initial estimates are chosen etc., please check the :ref:`API reference<api_ref>`.
+
+Structural model
+~~~~~~~~~~~~~~~~
+
+There are many functions to change or examine the structural model of a PK dataset. Using the
+:ref:`base model<basic_models>` from above, we'll go through how to change different aspects of the structural model
+step by step.
+
+Absorption rate
+===============
+
+As an example, we'll set the absorption of the start model to zero order absorption:
+
+.. pharmpy-execute::
+
+    run1 = set_zero_order_absorption(model_start)
+    run1.statements.ode_system
+
+And examine the updated NONMEM code:
+
+.. pharmpy-execute::
+    print_model_code(run1)
+
+Note that the ADVAN has been updated.
+
+List of functions to change absorption rate:
+
+* :py:func:`pharmpy.modeling.set_bolus_absorption`
+* :py:func:`pharmpy.modeling.set_first_order_absorption`
+* :py:func:`pharmpy.modeling.set_seq_zo_fo_absorption`
+* :py:func:`pharmpy.modeling.set_zero_order_absorption`
+
+Absorption delay
+================
+
+Next, we will add absorption delay.
+
+.. pharmpy-execute::
+    run2 = add_lag_time(run1)
+    run2.statements.ode_system
+
+And examine the model code:
+
+.. pharmpy-execute::
+    print_model_code(run2)
+
+List of functions to change elimination:
+
+* :py:func:`pharmpy.modeling.add_lag_time`
+* :py:func:`pharmpy.modeling.remove_lag_time`
+* :py:func:`pharmpy.modeling.set_transit_compartments`
+
+Distribution
+============
+
+It is possible to change the number of peripheral compartments. Let us add one peripheral compartment
+
+.. pharmpy-execute::
+
+    run3 = add_peripheral_compartment(run2)
+    run3.statements.ode_system
+
+And examine the model code:
+
+.. pharmpy-execute::
+    print_model_code(run3)
+
+List of functions to change distribution:
+
+* :py:func:`pharmpy.modeling.add_peripheral_compartment`
+* :py:func:`pharmpy.modeling.remove_peripheral_compartment`
+* :py:func:`pharmpy.modeling.set_peripheral_compartments`
+
+Elimination
+===========
+
+Now we will change to non-linear elimination.
+
+.. pharmpy-execute::
+
+    run4 = set_michaelis_menten_elimination(run3)
+    run4.statements.ode_system
+
+And examine the model code:
+
+.. pharmpy-execute::
+    print_model_code(run4)
+
+List of functions to change elimination:
+
+* :py:func:`pharmpy.modeling.set_first_order_elimination`
+* :py:func:`pharmpy.modeling.set_michaelis_menten_elimination`
+* :py:func:`pharmpy.modeling.set_mixed_mm_fo_elimination`
+* :py:func:`pharmpy.modeling.set_zero_order_elimination`
+
+Parameter variability model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pharmpy has multiple functions to change the parameter variability model. Using the
+:ref:`base model<basic_models>` from above, we'll go through different aspects of changing the parameter variability
+model.
+
+Adding and removing parameter variability
+=========================================
+
+It is possible to add and remove inter-individual variability (IIV) and inter-occasion variability (IOV) using
+:py:func:`pharmpy.modeling.add_iiv` and :py:func:`pharmpy.modeling.add_iov`. Since the start model from
+:ref:`above<basic_models>` has IIV on all its parameters, we will start by removing an IIV using the
+:py:func:`pharmpy.modeling.remove_iiv` function.
+
+.. pharmpy-execute::
+    run1 = remove_iiv(model_start, 'MAT')
+    run1.random_variables.iiv
+
+Next, we add an IIV to the same parameter:
+
+.. pharmpy-execute::
+    run2 = add_iiv(run1, 'MAT', 'exp', operation='*')
+    run2.random_variables.iiv
+
+And examine the model code:
+
+.. pharmpy-execute::
+   print_model_code(run2)
+
+List of functions to add and remove parameter variability:
+
+* :py:func:`pharmpy.modeling.add_iiv`
+* :py:func:`pharmpy.modeling.add_iov`
+* :py:func:`pharmpy.modeling.add_pk_iiv`
+* :py:func:`pharmpy.modeling.remove_iiv`
+* :py:func:`pharmpy.modeling.remove_iov`
+
+Adding and removing covariance
+==============================
+
+As the next example, we will create a joint distribution using :py:func:`pharmpy.modeling.create_joint_distribution`
+where the eta on MAT is included:
+
+.. pharmpy-execute::
+    run3 = create_joint_distribution(run2)
+    run3.random_variables.iiv
+
+And examine the model code:
+
+.. pharmpy-execute::
+   print_model_code(run3)
+
+List of functions to change covariance structure:
+
+* :py:func:`pharmpy.modeling.create_joint_distribution`
+* :py:func:`pharmpy.modeling.split_joint_distribution`
+
+Eta transformations
+===================
+
+It is also possible to transform the etas using the following functions:
+
+* :py:func:`pharmpy.modeling.transform_etas_boxcox`
+* :py:func:`pharmpy.modeling.transform_etas_john_draper`
+* :py:func:`pharmpy.modeling.transform_etas_tdist`
+
+Covariates and allometry
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Covariate effects may be applied to a model using the :py:func:`pharmpy.modeling.add_covariate_effect`.
+
+.. pharmpy-execute::
+   :hide-output:
+
+    run1 = add_covariate_effect(model_start, 'CL', 'WGT', 'pow', operation='*')
+
+Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the name of the
+covariate, and *pow* (power function) is the effect you want to apply. The effect can be either
+added or multiplied to the parameter, denoted by '*' or '+' (multiplied is default). We can examine the model code:
+
+.. pharmpy-execute::
+
+   print_model_code(run1)
 
 Pharmpy also supports user formatted covariate effects.
 
 .. pharmpy-execute::
    :hide-output:
 
-   model = read_model(path / "pheno.mod")
    user_effect = '((cov/std) - median) * theta'
-   model = add_covariate_effect(model, 'CL', 'WGT', user_effect, operation='*')
+   run2 = add_covariate_effect(model_start, 'CL', 'WGT', user_effect, operation='*')
 
 The covariate is denoted as *cov*, the theta as *theta* (or, if multiple thetas: *theta1*, *theta2* etc.), and the mean,
 median, and standard deviation as *mean*, *median*, and *std* respectively. This is in order for
@@ -410,646 +329,117 @@ the names to be substituted with the correct symbols.
 
 .. pharmpy-execute::
 
-   print_model_diff(model_ref, model)
+   print_model_code(run2)
 
-~~~~~~~~~~~~~~~~~~~~~~
-Transformation of etas
-~~~~~~~~~~~~~~~~~~~~~~
+List of functions for covariates and allometry:
 
-Boxcox
-~~~~~~
+* :py:func:`pharmpy.modeling.add_allometry`
+* :py:func:`pharmpy.modeling.add_covariate_effect`
+* :py:func:`pharmpy.modeling.remove_covariate_effect`
 
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-To apply a boxcox transformation, input a list of the etas of interest. See
-:py:func:`pharmpy.modeling.transform_etas_boxcox`.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import transform_etas_boxcox
-   model = transform_etas_boxcox(model, ['ETA_1'])
-   print_model_diff(model_ref, model)
-
-This can be done for one or multiple etas. The new model will have new statements where *ETAB1* is a boxcox
-transformation of *ETA_1*.
-
-If no list is provided, all etas will be updated.
-
-.. pharmpy-execute::
-
-   model = read_model(path / "pheno.mod")
-   model = transform_etas_boxcox(model)
-   print_model_diff(model_ref, model)
-
-Approximate t-distribution
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Applying an approximate t-distribution transformation of etas is analogous to a boxcox transformation. The input
-is a list of etas, and if no list is provided all etas will be transformed. See
-:py:func:`pharmpy.modeling.transform_etas_tdist`.
-
-.. pharmpy-execute::
-
-   model = read_model(path / "pheno.mod")
-   from pharmpy.modeling import transform_etas_tdist
-   model = transform_etas_tdist(model, ['ETA_1'])
-   print_model_diff(model_ref, model)
-
-John Draper
-~~~~~~~~~~~
-
-John Draper transformation is also supported. The function takes a list of etas as input, if no list is
-provided all etas will be transformed. See :py:func:`pharmpy.modeling.transform_etas_john_draper`.
-
-.. pharmpy-execute::
-
-   model = read_model(path / "pheno.mod")
-   from pharmpy.modeling import transform_etas_john_draper
-   model = transform_etas_john_draper(model, ['ETA_1'])
-   print_model_diff(model_ref, model)
-
-~~~~~~~~~~~~~~~
-Adding new etas
-~~~~~~~~~~~~~~~
-
-Adding IIVs
-~~~~~~~~~~~
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-IIVs may be added to a model.
-
-.. pharmpy-execute::
-   :hide-output:
-
-   from pharmpy.modeling import add_iiv
-   model = add_iiv(model, 'S1', 'exp', operation='*')
-
-In this example, *S1* is the parameter to add the IIV to, *exp* is the effect on the new eta (see
-:py:class:`pharmpy.modeling.add_iiv` for available templates and how initial estimates are chosen). The
-operation denotes whether the new eta should be added or multiplied (default).
-
-.. pharmpy-execute::
-
-   print_model_diff(model_ref, model)
-
-For some of the templates, such as proportional etas, the operation can be omitted since it is
-already defined by the effect.
-
-.. pharmpy-execute::
-
-   model = read_model(path / "pheno.mod")
-   model = add_iiv(model, 'S1', 'prop')
-   print_model_diff(model_ref, model)
-
-A list of parameter names can also be used as input. In that case, the effect and the operation (if not omitted) must
-be either a string (in that case, all new IIVs will have those settings) or be a list of the same size.
-
-.. pharmpy-execute::
-
-   model = read_model(path / "pheno.mod")
-   model = add_iiv(model, ['V', 'S1'], 'exp')
-   print_model_diff(model_ref, model)
-
-
-Similarly to when you :ref:`add a covariate effect<cov_effects>`, you can add user
-specified effects.
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-   user_effect = 'eta_new**2'
-   model = add_iiv(model, 'S1', user_effect, operation='*')
-
-The new etas need to be denoted as *eta_new*.
-
-.. pharmpy-execute::
-
-   print_model_diff(model_ref, model)
-
-You can also provide a custom eta name, i.e the name of the internal representation of the eta in Pharmpy. For
-example, if you want to be able to use the NONMEM name.
-
-.. pharmpy-execute::
-
-   model = read_model(path / "pheno.mod")
-   model = add_iiv(model, 'S1', 'exp', eta_names='ETA_3')
-   model.random_variables
-
-
-Adding IOVs
-~~~~~~~~~~~
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-.. pharmpy-execute::
-   :hide-output:
-   :hide-code:
-
-   import numpy as np
-   df = model.dataset.copy()
-   df['FA1'] = np.random.randint(0, 2, len(model.dataset.index))
-   model = model.replace(dataset=df)
-
-Similarly, you can also add IOVs to your model.
-
-.. pharmpy-execute::
-   :hide-output:
-
-   from pharmpy.modeling import add_iov
-   model = add_iov(model, 'FA1', ['ETA_1'])
-
-In this example, *FA1* is the name of the occasion column, and the etas on which you wish to add the IOV on are
-provided as a list. See :py:class:`pharmpy.modeling.add_iov` for information on how initial estimates are chosen.
-
-.. pharmpy-execute::
-
-   print_model_diff(model_ref, model)
-
-The name of the parameter may also be provided as an argument, and a mix of eta names and parameter names is
-supported.
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-.. pharmpy-execute::
-   :hide-output:
-   :hide-code:
-
-   df['FA1'] = np.random.randint(0, 2, len(model.dataset.index))
-   model = model.replace(dataset=df)
-
-.. pharmpy-execute::
-
-   model = add_iov(model, 'FA1', ['CL', 'ETA_2'])
-   print_model_diff(model_ref, model)
-
-.. _add_iov_custom_names:
-
-Custom eta names are supported, meaning that the internal representation of the eta in Pharmpy can be set via
-the eta_names argument. For example, if you want to be able to use the NONMEM name.
-
-.. warning::
-   The number of names must be equal to the number of created etas (i.e. the number of
-   input etas times the number of categories for occasion).
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-.. pharmpy-execute::
-   :hide-output:
-   :hide-code:
-
-   df = model.dataset.copy()
-   df['FA1'] = np.random.randint(0, 2, len(model.dataset.index))
-   model = model.replace(dataset=df)
-
-.. pharmpy-execute::
-
-   model = add_iov(model, 'FA1', ['ETA_1'], eta_names=['ETA_3', 'ETA_4'])
-   model.random_variables
-
-
-~~~~~~~~~~~~~
-Removing etas
-~~~~~~~~~~~~~
-
-Remove IIVs
-~~~~~~~~~~~
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-Etas can also be removed by providing a list of etas and/or name of parameters to remove IIV from. See
-:py:func:`pharmpy.modeling.remove_iiv`.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import remove_iiv
-   model = remove_iiv(model, ['ETA_1', 'V'])
-   print_model_diff(model_ref, model)
-
-If you want to remove all etas, leave argument empty.
-
-.. pharmpy-execute::
-
-   model = read_model(path / "pheno.mod")
-   from pharmpy.modeling import remove_iiv
-   model = remove_iiv(model)
-   print_model_diff(model_ref, model)
-
-Remove IOVs
-~~~~~~~~~~~
-
-You can remove IOVs as well, however all IOV omegas will be removed. See
-:py:func:`pharmpy.modeling.remove_iov`.
-
-.. pharmpy-execute::
-   :hide-output:
-   :hide-code:
-
-    import warnings
-    warnings.filterwarnings('ignore', message='No IOVs present')
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-   from pharmpy.modeling import remove_iov
-   model = remove_iov(model)
-
-~~~~~~~~~~~~~~~
-The error model
-~~~~~~~~~~~~~~~
-
-Removing the error model
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. warning::
-   Removing all epsilons might lead to a model that isn't runnable.
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-The error model can be removed.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import remove_error_model
-
-   model = remove_error_model(model)
-   print_model_diff(model_ref, model)
-
-Setting an additive error model
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The additive error model is :math:`y = f + \epsilon_a`. In the case of log transformed data the
-same error model can be approximated to :math:`y = \log f + \frac{\epsilon_a}{f}`. This because
-
-.. math::
-
-    \log (f + \epsilon_a) = \log (f(1+\frac{\epsilon_a}{f})) = \log f + \log(1 + \frac{\epsilon_a}{f}) \approx \log f + \frac{\epsilon_a}{f}
-
-where the approximation is the first term of the Taylor expansion of :math:`\log(1 + x)`.
-
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-To set an additive error model:
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_additive_error_model
-
-   model = set_additive_error_model(model)
-   model.statements.find_assignment('Y')
-
-.. pharmpy-execute::
-
-   print_model_diff(model_ref, model)
-
-To set an additive error model with log transformed data:
-
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_additive_error_model
-
-   model = read_model(path / "pheno.mod")
-   model = set_additive_error_model(model, data_trans='log(Y)')
-   print_model_diff(model_ref, model)
-
-or set the `data_transformation` attribute on the model.
-
-See :py:func:`pharmpy.modeling.set_additive_error_model`.
-
-Setting a proportional error model
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The proportinal error model is :math:`y = f + f \epsilon_p`. In the case of log transformed data the
-same error model can be approximated to :math:`y = \log f + \epsilon_p`. This because
-
-.. math::
-
-    \log (f + f\epsilon_p) = \log (f(1+\epsilon_p)) = \log f + \log(1+ \epsilon_p) \approx \log f + \epsilon_p
-
-where again the approximation is the first term of the Taylor expansion of :math:`\log(1 + x)`.
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-To set a proportional error model:
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_proportional_error_model
-
-   model = set_proportional_error_model(model)
-   model.statements.find_assignment('Y')
-
-.. pharmpy-execute::
-
-   print_model_diff(model_ref, model)
-
-To set a proportional error model with log transformed data:
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_proportional_error_model
-
-   model = read_model(path / "pheno.mod")
-   model = set_proportional_error_model(model, data_trans='log(Y)')
-   print_model_diff(model_ref, model)
-
-
-See :py:func:`pharmpy.modeling.set_proportional_error_model`.
-
-Setting a combined additive and proportional error model
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The combined error model is :math:`y = f + f \epsilon_p + \epsilon_a`. In the case of log transformed data the
-same error model can be approximated to :math:`y = \log f + \epsilon_p + \frac{\epsilon_a}{f}`. This because
-
-.. math::
-
-    \log (f + f\epsilon_p + \epsilon_a) = \log (f(1+\epsilon_p+\frac{\epsilon_a}{f})) = \log f + \log(1 + \epsilon_p + \frac{\epsilon_a}{f}) \approx \log f + \epsilon_p + \frac{\epsilon_a}{f}
-
-where again the approximation is the first term of the Taylor expansion of :math:`\log(1 + x)`.
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-To set a combined error model:
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_combined_error_model
-
-   model = set_combined_error_model(model)
-   model.statements.find_assignment('Y')
-
-.. pharmpy-execute::
-
-   print_model_diff(model_ref, model)
-
-To set a combined error model with log transformed data:
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_combined_error_model
-
-   model = read_model(path / "pheno.mod")
-   model = set_combined_error_model(model, data_trans='log(Y)')
-   print_model_diff(model_ref, model)
-
-
-See :py:func:`pharmpy.modeling.set_combined_error_model`.
-
-Applying IIV on RUVs
-~~~~~~~~~~~~~~~~~~~~
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-IIVs can be added to RUVs by multiplying epsilons with an exponential new eta.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_iiv_on_ruv
-
-   model = set_iiv_on_ruv(model, ['EPS_1'])
-   print_model_diff(model_ref, model)
-
-Input a list of the epsilons you wish to transform, leave argument empty if all epsilons should be
-transformed.
-
-.. pharmpy-execute::
-
-   model = read_model(path / "pheno.mod")
-   model = set_iiv_on_ruv(model)
-   print_model_diff(model_ref, model)
-
-See :py:func:`pharmpy.modeling.set_iiv_on_ruv`.
-
-Custom eta names are supported the same way as when :ref:`adding IOVs<add_iov_custom_names>`.
-
-.. pharmpy-execute::
-
-   model = read_model(path / "pheno.mod")
-   model = set_iiv_on_ruv(model, ['EPS_1'], eta_names=['ETA_3'])
-   model.random_variables
-
-
-Power effects on RUVs
+Population parameters
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. pharmpy-execute::
-
-   from pharmpy.modeling import set_power_on_ruv
-   model = read_model(path / "pheno.mod")
-   model = set_power_on_ruv(model, ['EPS(1)'])
-   print_model_diff(model_ref, model)
-
-A power effect will be applied to all provided epsilons, leave argument empty if all
-epsilons should be transformed.
-
-See :py:func:`pharmpy.modeling.set_power_on_ruv`.
-
-Estimate standard deviation of epsilons with thetas
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Someimes it is useful to estimate a theta instead of a sigma. This can be done by fixing the sigma to 1 and multiplying the
-correspondng epsilon with a theta. This way the theta will represent the standard deviation of the epsilon.
+There are several functions to simplify changing population parameters, such as functions to change initial estimates
+and fixing parameters. As a first example, let us fix some parameters with :py:func:`pharmpy.modeling.fix_parameters`:
 
 .. pharmpy-execute::
+    run1 = fix_parameters(model_start, ['POP_CL', 'POP_VC'])
+    run1.parameters
 
-    from pharmpy.modeling import use_thetas_for_error_stdev
-    model = read_model(path / "pheno.mod")
-    model = use_thetas_for_error_stdev(model)
-    print_model_diff(model_ref, model)
+Another function that may be useful would be setting the initial estimates with
+:py:func:`pharmpy.modeling.set_initial_estimates`.
 
-Weighted error model
-~~~~~~~~~~~~~~~~~~~~
+.. pharmpy-execute::
+    run2 = set_initial_estimates(run1, {'IIV_CL': 0.05, 'IIV_VC': 0.05})
+    run2.parameters
+
+And then the final model code:
 
 .. pharmpy-execute::
 
-    from pharmpy.modeling import set_weighted_error_model
-    model = read_model(path / "pheno.mod")
-    model = set_weighted_error_model(model)
-    print_model_diff(model_ref, model)
+   print_model_code(run2)
 
-dTBS error model
+List of functions to change population parameters:
+
+* :py:func:`pharmpy.modeling.add_population_parameter`
+* :py:func:`pharmpy.modeling.fix_or_unfix_parameters`
+* :py:func:`pharmpy.modeling.fix_parameters`
+* :py:func:`pharmpy.modeling.fix_parameters_to`
+* :py:func:`pharmpy.modeling.set_initial_estimates`
+* :py:func:`pharmpy.modeling.set_lower_bounds`
+* :py:func:`pharmpy.modeling.set_upper_bounds`
+* :py:func:`pharmpy.modeling.unconstrain_parameters`
+* :py:func:`pharmpy.modeling.unfix_parameters`
+* :py:func:`pharmpy.modeling.unfix_parameters_to`
+* :py:func:`pharmpy.modeling.update_inits`
+
+Error model
+~~~~~~~~~~~~
+
+Pharmpy supports several error models. As an example, let us set the error model to a combined error model (start
+model had proportional error model) using :py:func:`pharmpy.modeling.set_combined_error_model`:
+
+.. pharmpy-execute::
+    run1 = set_combined_error_model(model_start)
+    run1.statements.error
+
+List of functions to change the error model:
+
+* :py:func:`pharmpy.modeling.remove_error_model`
+* :py:func:`pharmpy.modeling.set_additive_error_model`
+* :py:func:`pharmpy.modeling.set_combined_error_model`
+* :py:func:`pharmpy.modeling.set_dtbs_error_model`
+* :py:func:`pharmpy.modeling.set_iiv_on_ruv`
+* :py:func:`pharmpy.modeling.set_power_on_ruv`
+* :py:func:`pharmpy.modeling.set_proportional_error_model`
+* :py:func:`pharmpy.modeling.set_time_varying_error_model`
+* :py:func:`pharmpy.modeling.set_weighted_error_model`
+* :py:func:`pharmpy.modeling.use_thetas_for_error_stdev`
+
+BLQ transformations
+~~~~~~~~~~~~~~~~~~~
+
+It is also possible to perform BLQ transformations using the :py:func:`pharmpy.modeling.transform_blq` function. If
+using the M3 or M4 method the standard deviation statement is derived symbolically.
+
+.. pharmpy-execute::
+    run1 = transform_blq(model_start, method='m4', lloq=0.1)
+    run1.statements.error
+
+And examine the model code:
+
+.. pharmpy-execute::
+
+   print_model_code(run1)
+
+List of functions to perform BLQ transformations:
+
+* :py:func:`pharmpy.modeling.transform_blq`
+
+Estimation steps
 ~~~~~~~~~~~~~~~~
 
-.. pharmpy-execute::
-
-    from pharmpy.modeling import set_weighted_error_model
-    model = read_model(path / "pheno.mod")
-    set_dtbs_error_model(model)
-    print_model_diff(model_ref, model)
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Creating joint distributions of multiple etas
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Pharmpy can change the estimation steps. As an example, let us change the estimation method from FOCE to IMP and set
+how many iterations to output (the ``PRINT`` option in NONMEM) using the :py:func:`pharmpy.modeling.set_estimation_step`
+function:
 
 .. pharmpy-execute::
-   :hide-output:
+    run1 = set_estimation_step(model_start, method='imp', keep_every_nth_iter=10)
+    run1.estimation_steps
 
-   model = read_model(path / "pheno.mod")
-
-Pharmpy supports the joining of multiple etas into a joint distribution. See
-:py:func:`pharmpy.modeling.create_joint_distribution`.
+If we then examine the model code:
 
 .. pharmpy-execute::
 
-   from pharmpy.modeling import create_joint_distribution
+   print_model_code(run1)
 
-   create_joint_distribution(model, ['ETA_1', 'ETA_2'])
-   print_model_diff(model_ref, model)
+List of functions to change the estimation steps:
 
-The listed etas will be combined into a new distribution. Valid etas must be IIVs and cannot be
-fixed. If no list is provided as input, all etas would be included in the same distribution.
-
-.. pharmpy-execute::
-
-   model = read_model(path / "pheno.mod")
-   create_joint_distribution(model)
-   print_model_diff(model_ref, model)
-
-.. warning::
-
-   If you already have a joint distribution and wish to include another eta, note that you need to have all etas from that
-   distribution as input argument, any that are not included will be separated from that distribution.
-
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Remove covariance between etas
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model = read_model(path / "pheno.mod")
-
-Covariance can be removed between etas using the function :py:func:`pharmpy.modeling.split_joint_distribution`. If we have
-the model:
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import create_joint_distribution
-
-   model_block = create_joint_distribution(model)
-   print(model_block)
-
-Provide etas as a list.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import split_joint_distribution
-
-   model = split_joint_distribution(model, ['ETA_1'])
-   print_model_diff(model_block, model)
-
-If no list of etas is provided, all block structures will be split.
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Update initial estimates from previous run
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If there are results from a previous run, those can be used for initial estimates in your
-pharmpy model. See :py:func:`pharmpy.modeling.update_inits`.
-
-.. pharmpy-execute::
-
-   from pharmpy.modeling import read_model, update_inits
-   from pharmpy.tools import read_modelfit_results
-
-   model = read_model(path / "pheno.mod")
-   results = read_modelfit_results(path / "pheno.mod")
-
-   update_inits(model, results.parameter_estimates)
-
-
-~~~~~~~~~~~~~~~
-Fitting a model
-~~~~~~~~~~~~~~~
-
-Pharmpy is designed to be able to do fitting of models to data using different external tools. Currently only NONMEM is supported.
-
-.. pharmpy-code::
-
-    from pharmpy.tools import fit
-    fit(model)
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Getting results from a PsN run
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Pharmpy can create results objects from PsN run directories for some of the PsN tools. The result objects is a collection of different
-results from the tool and can be saved as either json or csv.
-
-.. pharmpy-code::
-
-    from pharmpy.tools import create_results
-    res = create_results("bootstrap_dir1")
-    res.to_json("bootstrap_dir1/results.json")
-    res.to_csv("bootstrap_dir1/results.csv")
-
-~~~~~~~~~~~~~
-Eta shrinkage
-~~~~~~~~~~~~~
-
-Eta shrinkage can be calculated either on the standard deviation scale or on the variance scale
-
-.. pharmpy-execute::
-
-    from pharmpy.modeling import calculate_eta_shrinkage
-
-    pe = results.parameter_estimates
-    ie = results.individual_estimates
-    calculate_eta_shrinkage(model, pe, ie)
-
-
-.. pharmpy-execute::
-
-    calculate_eta_shrinkage(model, pe, ie, sd=True)
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Individual parameter calculations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Pharmpy has functions to calculate statistics for individual parameters that are either defined
-in the model code or that can be defined expressions containing dataset columns and/or variables
-from the model code.
-
-.. pharmpy-code::
-
-    from pharmpy.modeling import calculate_individual_parameter_statistics
-    model = read_model(path / 'secondary_parameters'/ 'run2.mod')
+* :py:func:`pharmpy.modeling.add_covariance_step`
+* :py:func:`pharmpy.modeling.add_estimation_step`
+* :py:func:`pharmpy.modeling.append_estimation_step_options`
+* :py:func:`pharmpy.modeling.remove_covariance_step`
+* :py:func:`pharmpy.modeling.remove_estimation_step`
+* :py:func:`pharmpy.modeling.set_estimation_step`
+* :py:func:`pharmpy.modeling.set_evaluation_step`
