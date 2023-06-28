@@ -443,3 +443,130 @@ List of functions to change the estimation steps:
 * :py:func:`pharmpy.modeling.remove_estimation_step`
 * :py:func:`pharmpy.modeling.set_estimation_step`
 * :py:func:`pharmpy.modeling.set_evaluation_step`
+
+.. _modeling_dataset:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Examining and modifying dataset
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Pharmpy dataset can be examined and modified with several help functions in Pharmpy. To read more about the
+dataset, see the :ref:`dataset documentation<dataset>`.
+
+List of dataset functions:
+
+* :py:func:`pharmpy.modeling.add_time_after_dose`
+* :py:func:`pharmpy.modeling.check_dataset`
+* :py:func:`pharmpy.modeling.deidentify_data`
+* :py:func:`pharmpy.modeling.drop_columns`
+* :py:func:`pharmpy.modeling.drop_dropped_columns`
+* :py:func:`pharmpy.modeling.expand_additional_doses`
+* :py:func:`pharmpy.modeling.get_baselines`
+* :py:func:`pharmpy.modeling.get_cmt`
+* :py:func:`pharmpy.modeling.get_concentration_parameters_from_data`
+* :py:func:`pharmpy.modeling.get_covariate_baselines`
+* :py:func:`pharmpy.modeling.get_doseid`
+* :py:func:`pharmpy.modeling.get_doses`
+* :py:func:`pharmpy.modeling.get_evid`
+* :py:func:`pharmpy.modeling.get_ids`
+* :py:func:`pharmpy.modeling.get_mdv`
+* :py:func:`pharmpy.modeling.get_number_of_individuals`
+* :py:func:`pharmpy.modeling.get_number_of_observations`
+* :py:func:`pharmpy.modeling.get_number_of_observations_per_individual`
+* :py:func:`pharmpy.modeling.get_observations`
+* :py:func:`pharmpy.modeling.list_time_varying_covariates`
+* :py:func:`pharmpy.modeling.read_dataset_from_datainfo`
+* :py:func:`pharmpy.modeling.remove_loq_data`
+* :py:func:`pharmpy.modeling.set_covariates`
+* :py:func:`pharmpy.modeling.set_dvid`
+* :py:func:`pharmpy.modeling.translate_nmtran_time`
+* :py:func:`pharmpy.modeling.undrop_columns`
+
+Subjects
+~~~~~~~~
+
+An array of all subject IDs can be retrieved.
+
+.. pharmpy-execute::
+
+    model = read_model(path / "pheno_real.mod")
+    get_ids(model)
+
+The number of subjects in the dataset could optionally be retrieved directly.
+
+.. pharmpy-execute::
+
+    get_number_of_individuals(model)
+
+Observations
+~~~~~~~~~~~~
+
+The observations of the dataset indexed on subject ID and the independent variable can be extracted.
+
+.. pharmpy-execute::
+
+    get_observations(model)
+
+The total number of observations can optionally be retrieved directly.
+
+.. pharmpy-execute::
+
+    get_number_of_observations(model)
+
+Dosing
+~~~~~~
+
+Extract dosing information
+==========================
+
+The doses of the dataset indexed on subject ID and the independent variable can be extracted.
+
+.. pharmpy-execute::
+
+    doses = get_doses(model)
+    doses
+
+All unique doses can be listed
+
+.. pharmpy-execute::
+
+    doses.unique()
+
+as well as the largest and the smallest dose
+
+.. pharmpy-execute::
+
+    doses.min()
+
+.. pharmpy-execute::
+
+    doses.max()
+
+Dose grouping
+=============
+
+It is possible to create a DOSEID that groups each dose period starting from 1.
+
+.. pharmpy-execute::
+
+    ser = get_doseid(model)
+    ser
+
+Time after dose
+===============
+
+Add a column for time after dose (TAD)
+
+.. pharmpy-execute::
+
+    model = add_time_after_dose(model)
+    model.dataset['TAD']
+
+Concentration parameters
+========================
+
+Extract pharmacokinetic concentration parameters from the dataset
+
+.. pharmpy-execute::
+
+    get_concentration_parameters_from_data(model)

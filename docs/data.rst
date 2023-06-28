@@ -48,7 +48,8 @@ Note that all values here are strings
 Update the dataset of a model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A new or updated dataset can be set to a model
+Since the Pharmpy dataset is a pandas dataframe, it can be manipulated as such. A new or updated dataset can be set to
+a model like this:
 
 .. pharmpy-execute::
    :hide-output:
@@ -58,107 +59,8 @@ A new or updated dataset can be set to a model
    df['DV'] = np.log(df['DV'], where=(df['DV'] != 0))
    model = model.replace(dataset=df)
 
-~~~~~~~~
-Subjects
-~~~~~~~~
-
-An array of all subject IDs can be retrieved.
-
-.. pharmpy-execute::
-
-    from pharmpy.modeling import get_ids
-    model = read_model(path / "pheno_real.mod")
-    get_ids(model)
-
-The number of subjects in the dataset could optionally be retrieved directly.
-
-.. pharmpy-execute::
-
-    from pharmpy.modeling import get_number_of_individuals
-    get_number_of_individuals(model)
-
-
-~~~~~~~~~~~~
-Observations
-~~~~~~~~~~~~
-
-The observations of the dataset indexed on subject ID and the independent variable can be extracted.
-
-.. pharmpy-execute::
-
-    from pharmpy.modeling import get_observations
-    get_observations(model)
-
-The total number of observations can optionally be retrieved directly.
-
-.. pharmpy-execute::
-
-    from pharmpy.modeling import get_number_of_observations
-    get_number_of_observations(model)
-
-~~~~~~
-Dosing
-~~~~~~
-
-Extract dosing information
-==========================
-
-The doses of the dataset indexed on subject ID and the independent variable can be extracted.
-
-.. pharmpy-execute::
-
-    from pharmpy.modeling import get_doses
-    doses = get_doses(model)
-    doses
-
-All unique doses can be listed
-
-.. pharmpy-execute::
-
-    doses.unique()
-
-as well as the largest and the smallest dose
-
-.. pharmpy-execute::
-
-    doses.min()
-
-.. pharmpy-execute::
-
-    doses.max()
-
-Dose grouping
-=============
-
-It is possible to create a DOSEID that groups each dose period starting from 1.
-
-.. pharmpy-execute::
-
-    from pharmpy.modeling import get_doseid
-    ser = get_doseid(model)
-    ser
-
-Time after dose
-===============
-
-Add a column for time after dose (TAD)
-
-.. pharmpy-execute::
-
-    from pharmpy.modeling import add_time_after_dose
-    model = add_time_after_dose(model)
-    model.dataset['TAD']
-
-Concentration parameters
-========================
-
-Extract pharmacokinetic concentration parameters from the dataset
-
-.. pharmpy-execute::
-
-    from pharmpy.modeling import get_concentration_parameters_from_data
-    get_concentration_parameters_from_data(model)
-
+The :py:mod:`pharmpy.modeling` module has several functions to examine and modify the dataset, see the user guide for
+:ref:`dataset modeling<modeling_dataset>`.
 
 .. _datainfo:
 
