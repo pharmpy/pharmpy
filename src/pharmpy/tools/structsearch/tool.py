@@ -13,10 +13,11 @@ from pharmpy.tools.common import ToolResults
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
 
+from .pkpd import create_pkpd_models
 from .tmdd import create_qss_models, create_remaining_models
 
 ROUTES = frozenset(('iv', 'oral'))
-TYPES = frozenset(('tmdd',))
+TYPES = frozenset(('tmdd', 'pkpd'))
 
 
 def create_workflow(
@@ -32,7 +33,7 @@ def create_workflow(
     route : str
         Route of administration. Either 'pk' or 'oral'
     type : str
-        Type of model. Currently only 'tmdd'
+        Type of model. Currently only 'tmdd' and 'pkpd'
     results : ModelfitResults
         Results for the start model
     model : Model
@@ -54,10 +55,13 @@ def create_workflow(
 
     wf = Workflow()
     wf.name = 'structsearch'
-    start_task = Task('run_tmdd', run_tmdd, model)
+    if type == 'tmdd':
+        start_task = Task('run_tmdd', run_tmdd, model)
+    elif type == 'pkpd':
+        start_task = Task('run_pkpd', run_pkpd, model)
     wf.add_task(start_task)
-    results_task = Task('results', _results)
-    wf.add_task(results_task, predecessors=[start_task])
+    # results_task = Task('results', _results)
+    # wf.add_task(results_task, predecessors=[start_task])
     return wf
 
 
@@ -81,6 +85,33 @@ def run_tmdd(context, model):
 
     summary_models = summarize_modelfit_results(
         [model.modelfit_results for model in qss_run_models + run_models]
+    )
+
+    res = StructSearchResults(summary_models=summary_models)
+
+    return res
+
+
+def run_pkpd(context, model):
+    wf = create_fit_workflow(model)
+    task_results = Task('results1', bundle_results)
+    wf.add_task(task_results, predecessors=wf.output_tasks)
+    pk_model = call_workflow(wf, 'results_pd', context)
+
+    pd_direct_models = create_pkpd_models(
+        "direct_effect", model, pk_model[0].modelfit_results.parameter_estimates
+    )
+    pd_comp_models = create_pkpd_models(
+        "effect_compartment", model, pk_model[0].modelfit_results.parameter_estimates
+    )
+
+    wf2 = create_fit_workflow(pd_direct_models + pd_comp_models)
+    task_results = Task('results2', bundle_results)
+    wf2.add_task(task_results, predecessors=wf2.output_tasks)
+    pkpd_models = call_workflow(wf2, 'results_remaining', context)
+
+    summary_models = summarize_modelfit_results(
+        [m.modelfit_results for m in pk_model + pkpd_models]
     )
 
     res = StructSearchResults(summary_models=summary_models)
