@@ -13,6 +13,7 @@ Development
 * Aurelien Ooms
 * Gunnar Yngman, gunnar.yngman@farmaci.uu.se
 * Johan Borg
+* Antonia Hufnagl
 
 Scientific input
 ~~~~~~~~~~~~~~~~
@@ -29,6 +30,10 @@ Scientific input
 * Sebastian Ueckert
 * Shijun Wang
 * Tianwu Yang
+* Keqi Shi
+* Xuanlin Liu
+* Samia Mohamed
+* Yersultan Mirasbekov
 
 Funding
 ~~~~~~~
