@@ -60,8 +60,6 @@ def create_workflow(
     elif type == 'pkpd':
         start_task = Task('run_pkpd', run_pkpd, model)
     wf.add_task(start_task)
-    # results_task = Task('results', _results)
-    # wf.add_task(results_task, predecessors=[start_task])
     return wf
 
 
@@ -98,14 +96,9 @@ def run_pkpd(context, model):
     wf.add_task(task_results, predecessors=wf.output_tasks)
     pk_model = call_workflow(wf, 'results_pd', context)
 
-    pd_direct_models = create_pkpd_models(
-        "direct_effect", model, pk_model[0].modelfit_results.parameter_estimates
-    )
-    pd_comp_models = create_pkpd_models(
-        "effect_compartment", model, pk_model[0].modelfit_results.parameter_estimates
-    )
+    pd_models = create_pkpd_models(model, pk_model[0].modelfit_results.parameter_estimates)
 
-    wf2 = create_fit_workflow(pd_direct_models + pd_comp_models)
+    wf2 = create_fit_workflow(pd_models)
     task_results = Task('results2', bundle_results)
     wf2.add_task(task_results, predecessors=wf2.output_tasks)
     pkpd_models = call_workflow(wf2, 'results_remaining', context)

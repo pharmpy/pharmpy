@@ -1,6 +1,6 @@
 import pandas as pd
 
-from pharmpy.model import Parameter
+from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.structsearch.pkpd import create_pkpd_models
 from pharmpy.tools.structsearch.tmdd import (
     create_cr_models,
@@ -69,22 +69,19 @@ def test_create_remaining_models(load_example_model_for_test):
 
 
 def test_pkpd(load_model_for_test, testdata):
-    ests = [0, 1, 2, 3, 4]
+    res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
+    ests = res.parameter_estimates
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    direct_models = create_pkpd_models("direct_effect", model, ests)
-    effect_comp_models = create_pkpd_models("effect_compartment", model, ests)
-    assert len(direct_models) == 6
-    assert len(effect_comp_models) == 6
-    assert direct_models[0].name == "direct_effect_baseline"
-    assert direct_models[1].name == "direct_effect_linear"
-    assert effect_comp_models[0].name == "effect_compartment_baseline"
-    assert effect_comp_models[1].name == "effect_compartment_linear"
-    param1 = Parameter.create(name='TVCL', init=0, lower=0.0, upper=1000000.0, fix=True)
-    param2 = Parameter.create(name='TVV', init=1, lower=0.0, upper=1000000.0, fix=True)
-    assert direct_models[0].parameters[0] == param1
-    assert effect_comp_models[0].parameters[0] == param1
-    assert direct_models[0].parameters[1] == param2
-    assert effect_comp_models[0].parameters[1] == param2
+    pkpd_models = create_pkpd_models(model, ests)
+    assert len(pkpd_models) == 12
+    assert pkpd_models[0].name == "direct_effect_baseline"
+    assert pkpd_models[1].name == "direct_effect_linear"
+    assert pkpd_models[6].name == "effect_compartment_baseline"
+    assert pkpd_models[7].name == "effect_compartment_linear"
+    assert pkpd_models[0].parameters[0].name == 'TVCL'
+    assert pkpd_models[6].parameters[0].name == 'TVCL'
+    assert pkpd_models[0].parameters[1].name == 'TVV'
+    assert pkpd_models[6].parameters[1].name == 'TVV'
 
 
 def test_create_workflow():
