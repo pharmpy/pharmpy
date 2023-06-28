@@ -49,7 +49,7 @@ def test_set_estimation_step(testdata, load_model_for_test, method, kwargs, code
 
 def test_set_estimation_step_est_middle(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    model = set_estimation_step(model, 'FOCE', interaction=True, cov=True, idx=0)
+    model = set_estimation_step(model, 'FOCE', interaction=True, cov='SANDWICH', idx=0)
     assert (
         '$ESTIMATION METHOD=COND INTER MAXEVAL=9990 PRINT=2 POSTHOC\n$COVARIANCE'
         in model.model_code

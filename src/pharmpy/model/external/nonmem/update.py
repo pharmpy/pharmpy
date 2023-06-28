@@ -1459,19 +1459,23 @@ def update_estimation(control_stream, model):
             newrec = create_record(str(rec))
             control_stream = control_stream.insert_record(newrec)
 
-    old_cov = False
+    # Initiate old_cov
+    old_cov = None
     for est in old:
-        old_cov |= est.cov
-    new_cov = False
+        old_cov = est.cov
+
+    # Initiate new_cov
+    new_cov = None
     for est in new:
-        new_cov |= est.cov
-    if not old_cov and new_cov:
+        new_cov = est.cov
+
+    if old_cov is None and new_cov is not None:
         # Add $COV
         last_est_rec = control_stream.get_records('ESTIMATION')[-1]
         idx_cov = control_stream.records.index(last_est_rec)
         covrec = create_record('$COVARIANCE\n')
         control_stream = control_stream.insert_record(covrec, at_index=idx_cov + 1)
-    elif old_cov and not new_cov:
+    elif old_cov is not None and new_cov is None:
         # Remove $COV
         covrecs = control_stream.get_records('COVARIANCE')
         control_stream = control_stream.remove_records(covrecs)

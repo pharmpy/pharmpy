@@ -14,12 +14,13 @@ class EstimationStep(Immutable):
     """
     supported_methods = frozenset(('FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'))
     supported_solvers = frozenset(('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'))
+    supported_covs = frozenset(('SANDWICH',))
 
     def __init__(
         self,
         method,
         interaction=False,
-        cov=False,
+        cov=None,
         evaluation=False,
         maximum_evaluations=None,
         laplace=False,
@@ -60,7 +61,7 @@ class EstimationStep(Immutable):
         cls,
         method,
         interaction=False,
-        cov=False,
+        cov=None,
         evaluation=False,
         maximum_evaluations=None,
         laplace=False,
@@ -92,6 +93,12 @@ class EstimationStep(Immutable):
             predictions = ()
         else:
             predictions = tuple(predictions)
+        if cov is not None:
+            cov = cov.upper()
+        if not (cov is None or cov in EstimationStep.supported_covs):
+            raise ValueError(
+                f"Unknown cov {cov}. Recognized covs are {sorted(EstimationStep.supported_covs)}."
+            )
         if solver is not None:
             solver = solver.upper()
         if not (solver is None or solver in EstimationStep.supported_solvers):
@@ -169,7 +176,15 @@ class EstimationStep(Immutable):
 
     @property
     def cov(self):
-        """Should the parameter uncertainty be estimated?"""
+        """Method to use when estimating parameter uncertainty
+        Supported methods and their corresponding NMTRAN code:
+
+        +----------------------------+------------------+
+        | Method                     | NMTRAN           |
+        +============================+==================+
+        | Sandwich                   | $COV             |
+        +----------------------------+------------------+
+        """
         return self._cov
 
     @property
@@ -414,8 +429,8 @@ class EstimationSteps(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.estimation_steps.to_dataframe()   # doctest: +ELLIPSIS
-          method  interaction   cov  ...  auto keep_every_nth_iter  tool_options
-        0   FOCE         True  True  ...  None                None            {}
+          method  interaction       cov  ...  auto keep_every_nth_iter  tool_options
+        0   FOCE         True  SANDWICH  ...  None                None            {}
         """
         method = [s.method for s in self._steps]
         interaction = [s.interaction for s in self._steps]
