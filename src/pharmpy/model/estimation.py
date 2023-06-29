@@ -14,7 +14,7 @@ class EstimationStep(Immutable):
     """
     supported_methods = frozenset(('FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'))
     supported_solvers = frozenset(('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'))
-    supported_covs = frozenset(('SANDWICH',))
+    supported_covs = frozenset(('SANDWICH', 'CPG', 'OFIM'))
 
     def __init__(
         self,
@@ -183,6 +183,10 @@ class EstimationStep(Immutable):
         | Method                     | NMTRAN           |
         +============================+==================+
         | Sandwich                   | $COV             |
+        +----------------------------+------------------+
+        | Cross-product gradient     | $COV MATRIX=S    |
+        +----------------------------+------------------+
+        | Observed FIM               | $COV MATRIX=R    |
         +----------------------------+------------------+
         """
         return self._cov

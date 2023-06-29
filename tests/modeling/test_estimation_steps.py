@@ -88,14 +88,14 @@ def test_remove_estimation_step(testdata, load_model_for_test):
 def test_add_covariance_step(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
-    model = add_covariance_step(model)
+    model = add_covariance_step(model, 'SANDWICH')
     assert len(model.estimation_steps) == 1
     assert model.model_code.split('\n')[-2] == '$COVARIANCE'
 
 
 def test_remove_covariance_step(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    model = add_covariance_step(model)
+    model = add_covariance_step(model, 'SANDWICH')
     assert model.model_code.split('\n')[-2] == '$COVARIANCE'
     model = remove_covariance_step(model)
     assert (
