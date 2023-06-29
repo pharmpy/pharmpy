@@ -333,14 +333,16 @@ class EstimationStep(Immutable):
         return cls(**d)
 
     def __repr__(self):
+        cov = f"'{self.cov}'" if self.cov is not None else self.cov
+        solver = f"'{self.solver}'" if self.solver is not None else self.solver
         return (
-            f'EstimationStep("{self.method}", interaction={self.interaction}, '
-            f'cov={self.cov}, evaluation={self.evaluation}, '
-            f'maximum_evaluations={self.maximum_evaluations}, laplace={self.laplace}, '
-            f'isample={self.isample}, niter={self.niter}, auto={self.auto}, '
-            f'keep_every_nth_iter={self.keep_every_nth_iter}, solver={self.solver}, '
-            f'solver_rtol={self.solver_rtol}, solver_atol={self.solver_atol}, '
-            f'tool_options={self.tool_options})'
+            f"EstimationStep('{self.method}', interaction={self.interaction}, "
+            f"cov={cov}, evaluation={self.evaluation}, "
+            f"maximum_evaluations={self.maximum_evaluations}, laplace={self.laplace}, "
+            f"isample={self.isample}, niter={self.niter}, auto={self.auto}, "
+            f"keep_every_nth_iter={self.keep_every_nth_iter}, solver={solver}, "
+            f"solver_rtol={self.solver_rtol}, solver_atol={self.solver_atol}, "
+            f"tool_options={self.tool_options})"
         )
 
 
