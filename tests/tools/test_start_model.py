@@ -11,7 +11,7 @@ def test_create_start_model(testdata):
     assert len(model.parameters) == 6
     assert 'POP_CL' in model.parameters
     assert 'POP_MAT' not in model.parameters
-    assert model.statements.ode_system.dosing_compartment.dose == Bolus.create("AMT")
+    assert model.statements.ode_system.dosing_compartment[0].dose == Bolus.create("AMT")
     model = create_start_model(path, modeltype='pk_oral')
     assert 'IIV_MAT' in model.parameters
     assert 'POP_CL' in model.parameters
@@ -19,6 +19,6 @@ def test_create_start_model(testdata):
 
     path_2 = testdata / 'nonmem' / 'modeling' / 'pheno_zero_order.csv'
     model = create_start_model(path_2, modeltype='pk_iv')
-    assert model.statements.ode_system.dosing_compartment.dose == Infusion.create(
+    assert model.statements.ode_system.dosing_compartment[0].dose == Infusion.create(
         "AMT", duration="D1"
     )

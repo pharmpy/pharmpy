@@ -908,19 +908,19 @@ class CompartmentalSystem(ODESystem):
     def dosing_compartment(self):
         """The dosing compartment
 
-        A dosing compartment is a compartment that receives an input dose. Only one dose
-        compartment is supported.
+        A dosing compartment is a compartment that receives an input dose. Multiple
+        dose compartments are supported.
 
         Returns
         -------
-        Compartment
-            Dosing compartment
+        tuple
+            A tuple of dose compartments
 
         Examples
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.ode_system.dosing_compartment
+        >>> model.statements.ode_system.dosing_compartment[0]
         Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1))
         """
         dosing_comps = tuple()

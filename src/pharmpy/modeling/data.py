@@ -870,7 +870,7 @@ def get_cmt(model: Model):
         return model.dataset[cmtcols[0].name]
     odes = model.statements.ode_system
     if isinstance(odes, CompartmentalSystem):
-        dosing = odes.dosing_compartment
+        dosing = odes.dosing_compartment[0]
         names = odes.compartment_names
         dose_cmt = names.index(dosing.name) + 1
     else:
