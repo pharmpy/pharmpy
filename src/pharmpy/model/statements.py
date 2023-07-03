@@ -923,9 +923,15 @@ class CompartmentalSystem(ODESystem):
         >>> model.statements.ode_system.dosing_compartment
         Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1))
         """
+        dosing_comps = tuple()
         for node in _comps(self._g):
             if node.dose is not None:
-                return node
+                if node.name != 'CENTRAL':
+                    dosing_comps = tuple([node]) + dosing_comps
+                else:
+                    dosing_comps = dosing_comps + tuple([node])
+        if len(dosing_comps) != 0:
+            return dosing_comps
         raise ValueError('No dosing compartment exists')
 
     @property
@@ -1139,7 +1145,7 @@ class CompartmentalSystem(ODESystem):
     def _order_compartments(self):
         """Return list of all compartments in canonical order"""
         try:
-            dosecmt = self.dosing_compartment
+            dosecmt = self.dosing_compartment[0]
         except ValueError:
             # Fallback for cases where no dose is available (yet)
             return list(_comps(self._g))
