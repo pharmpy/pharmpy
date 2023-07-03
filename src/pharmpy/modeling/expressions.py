@@ -1208,8 +1208,8 @@ def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[sympy.Symbo
     if kind == 'absorption':
         return (
             []
-            if cs.dosing_compartment == cs.central_compartment
-            else _pk_free_symbols_from_compartment(cs, cs.dosing_compartment)
+            if cs.dosing_compartment[0] == cs.central_compartment
+            else _pk_free_symbols_from_compartment(cs, cs.dosing_compartment[0])
         )
 
     if kind == 'distribution':

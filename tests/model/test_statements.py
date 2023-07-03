@@ -293,7 +293,7 @@ def test_find_compartment(load_model_for_test, testdata):
 
 def test_dosing_compartment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert model.statements.ode_system.dosing_compartment.name == 'CENTRAL'
+    assert model.statements.ode_system.dosing_compartment[0].name == 'CENTRAL'
 
 
 def test_central_compartment(load_model_for_test, testdata):
