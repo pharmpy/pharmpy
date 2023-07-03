@@ -16,6 +16,15 @@ from pharmpy.model import (
 def S(x):
     return sympy.Symbol(x)
 
+def test_statements_effect_compartment(load_model_for_test,testdata):
+    model = load_model_for_test(testdata/'nonmem'/'pheno_pd.mod')
+    from pharmpy.modeling import add_effect_compartment
+    model = add_effect_compartment(model, "baseline")
+    import warnings
+    with pytest.warns(UserWarning) as stm:
+        print(model.statements)
+        if not stm:
+            pytest.fail("Expected a warning!")
 
 def test_str(load_model_for_test, testdata):
     s1 = Assignment(S('KA'), S('X') + S('Y'))
