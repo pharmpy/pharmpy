@@ -683,7 +683,7 @@ class CompartmentalSystem(ODESystem):
             isinstance(other, CompartmentalSystem)
             and self._t == other._t
             and nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
-            and self.dosing_compartment.dose == other.dosing_compartment.dose
+            and self.dosing_compartment == other.dosing_compartment
         )
 
     def __hash__(self):
@@ -922,9 +922,9 @@ class CompartmentalSystem(ODESystem):
         for node in _comps(self._g):
             if node.dose is not None:
                 if node.name != 'CENTRAL':
-                    dosing_comps = tuple([node]) + dosing_comps
-                else:
                     dosing_comps = dosing_comps + tuple([node])
+                else:
+                    dosing_comps = tuple([node]) + dosing_comps
         if len(dosing_comps) != 0:
             return dosing_comps
         raise ValueError('No dosing compartment exists')
@@ -1004,7 +1004,7 @@ class CompartmentalSystem(ODESystem):
         []
         """
         transits = []
-        comp = self.dosing_compartment
+        comp = self.dosing_compartment[0]
         if len(self.get_compartment_inflows(comp)) != 0:
             return transits
         outflows = self.get_compartment_outflows(comp)
@@ -1204,7 +1204,7 @@ class CompartmentalSystem(ODESystem):
         def comp_string(comp):
             return comp.name + lag_string(comp) + f_string(comp)
 
-        current = self.dosing_compartment
+        current = self.dosing_compartment[0]
         comp_height = 0
         comp_width = 0
 
@@ -1227,7 +1227,7 @@ class CompartmentalSystem(ODESystem):
         ncols = comp_width * 2
         grid = unicode.Grid(nrows, ncols)
 
-        current = self.dosing_compartment
+        current = self.dosing_compartment[0]
         col = 0
         if comp_nrows == 1 or comp_nrows == 2:
             main_row = 0 + have_zo_input
@@ -1294,7 +1294,7 @@ class CompartmentalSystem(ODESystem):
             if not current:
                 break
 
-        dose = self.dosing_compartment.dose
+        dose = self.dosing_compartment[0].dose
         s = str(dose) + '\n' + str(grid).rstrip()
         return s
 
