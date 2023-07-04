@@ -958,6 +958,56 @@ def remove_lag_time(model: Model):
         model = remove_unused_parameters_and_rvs(model)
     return model
 
+def add_bioavailability_statement(model: Model):
+    """Add bioavailability statement for the dose compartment(s) of the model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = add_bioavailability_statement(model)
+
+    See also
+    --------
+    remove_bioavailability
+
+    """
+    odes = model.statements.ode_system
+    if odes is None:
+        raise ValueError(f'Model {model.name} has no ODE system')
+    
+    for dose_comp in odes.dosing_compartment:
+        bio = dose_comp.bioavailability
+        # Add a new parameter for the bioavailability
+        if isinstance(bio, sympy.Number):
+            model, bio_symb = _add_parameter(model, f'{dose_comp.name}_BIO', init=float(bio))
+        
+            # Set bioavailability of compartment to statement instead
+            cb = CompartmentalSystemBuilder(odes)
+            cb.set_bioavailability(dose_comp, bio_symb)
+            
+            # Add statement to the code
+            model = model.replace(
+                statements=(
+                    model.statements.before_odes +
+                    CompartmentalSystem(cb) +
+                    model.statements.after_odes
+                )
+            )
+
+    return model.update_source()
+        
+
 
 def set_zero_order_absorption(model: Model):
     """Set or change to zero order absorption rate.

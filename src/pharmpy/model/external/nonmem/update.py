@@ -375,6 +375,7 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
         old = CompartmentalSystem(CompartmentalSystemBuilder())
 
     model = update_lag_time(model, old, new)
+    model = update_bio(model, old, new)
 
     advan, trans, nonlin, haszo = new_advan_trans(model)
 
@@ -716,6 +717,25 @@ def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSy
             + model.statements.after_odes
         )
     return model
+
+def update_bio(model: Model, old: CompartmentalSystem, new: CompartmentalSystem):
+    for new_dosing, old_dosing in zip(new.dosing_compartment, old.dosing_compartment):
+        new_bio = new_dosing.bioavailability
+        old_bio = old_dosing.bioavailability
+        if new_bio != old_bio and new_bio != 1:
+            for n, comp in enumerate(new._order_compartments(), start = 1):
+                if comp == new_dosing:
+                    comp_number = n
+            ass = Assignment(sympy.Symbol(f'F{comp_number}'), new_bio)
+            cb = CompartmentalSystemBuilder(new)
+            cb.set_bioavailability(new_dosing, ass.symbol)
+            model = model.replace(
+                statements=model.statements.before_odes
+                + ass
+                + CompartmentalSystem(cb)
+                + model.statements.after_odes
+            )
+        return model
 
 
 def new_compartmental_map(cs: CompartmentalSystem):
