@@ -11,10 +11,19 @@ from pharmpy.model import (
     Statements,
     output,
 )
+from pharmpy.modeling import add_effect_compartment
 
 
 def S(x):
     return sympy.Symbol(x)
+
+
+def test_statements_effect_compartment(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+    model = add_effect_compartment(model, "baseline")
+
+    with pytest.warns(UserWarning):
+        print(model.statements)
 
 
 def test_str(load_model_for_test, testdata):

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Iterable, List, Optional, Set, Tuple, Union, overload
@@ -1231,8 +1232,13 @@ class CompartmentalSystem(ODESystem):
             # Assuming a fully linear layout
             for i, zo in enumerate(self.zero_order_inputs):
                 if zo != 0:
-                    grid.set(0, i * 2, unicode.VerticalArrow(str(zo)))
-
+                    try:
+                        grid.set(0, i * 2, unicode.VerticalArrow(str(zo)))
+                    except IndexError:
+                        warnings.warn(
+                            """The ODE system cannot be printed. Try statements.before_odes
+                            and statements.after_odes instead."""
+                        )
         while True:
             bidirects = self.get_bidirectionals(current)
             outflows = self.get_compartment_outflows(current)
