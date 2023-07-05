@@ -84,7 +84,7 @@ def _test_effect_models(model, expr, conc):
         assert model.statements[1] == Assignment(e0, S("POP_E0"))
         assert model.statements[0] == Assignment(emax, S("POP_E_max"))
         assert model.statements.after_odes[-2] == Assignment(
-            e, sympy.Piecewise((0, conc < 0), (emax, True))
+            e, sympy.Piecewise((e0, conc < 0), (e0 + emax, True))
         )
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
     elif expr == "loglin":
