@@ -161,8 +161,8 @@ def get_blq_symb_and_type(model: Model):
         return sympy.Symbol(blq_datainfo[0].name), 'lloq'
     except IndexError:
         try:
-            blq_datainfo = model.datainfo.typeix['blq']
-            return sympy.Symbol(blq_datainfo[0].name), 'blq'
+            blq_datainfo = model.datainfo.typeix['blqdv']
+            return sympy.Symbol(blq_datainfo[0].name), 'blqdv'
         except IndexError:
             return sympy.Symbol('LLOQ'), 'lloq'
 
