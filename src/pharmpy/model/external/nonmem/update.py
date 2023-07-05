@@ -1473,7 +1473,13 @@ def update_estimation(control_stream, model):
         # Add $COV
         last_est_rec = control_stream.get_records('ESTIMATION')[-1]
         idx_cov = control_stream.records.index(last_est_rec)
-        covrec = create_record('$COVARIANCE\n')
+        if new_cov == 'SANDWICH':
+            covrec_ = '$COVARIANCE'
+        elif new_cov == 'CPG':
+            covrec_ = '$COVARIANCE MATRIX=S'
+        elif new_cov == 'OFIM':
+            covrec_ = '$COVARIANCE MATRIX=R'
+        covrec = create_record(f'{covrec_}\n')
         control_stream = control_stream.insert_record(covrec, at_index=idx_cov + 1)
     elif old_cov is not None and new_cov is None:
         # Remove $COV

@@ -217,13 +217,15 @@ def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], i
     return model.update_source()
 
 
-def add_covariance_step(model: Model):
+def add_covariance_step(model: Model, cov: str):
     """Adds covariance step to the final estimation step
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    cov : str
+        covariance method to use
 
     Returns
     -------
@@ -235,7 +237,7 @@ def add_covariance_step(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model = set_estimation_step(model, 'FOCE', cov=None)
-    >>> model = add_covariance_step(model)
+    >>> model = add_covariance_step(model, 'SANDWICH')
     >>> ests = model.estimation_steps
     >>> ests[0]   # doctest: +ELLIPSIS
     EstimationStep('FOCE', interaction=True, cov='SANDWICH', ...)
@@ -251,7 +253,7 @@ def add_covariance_step(model: Model):
 
     """
     steps = model.estimation_steps
-    newstep = steps[-1].replace(cov='SANDWICH')
+    newstep = steps[-1].replace(cov=f'{cov}')
     newsteps = steps[0:-1] + newstep
     model = model.replace(estimation_steps=newsteps)
     return model.update_source()
