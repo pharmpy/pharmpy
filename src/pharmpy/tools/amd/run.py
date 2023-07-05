@@ -35,7 +35,7 @@ def run_amd(
     input: Union[Model, Path, str],
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
-    administraton: str = 'oral',
+    administration: str = 'oral',
     cl_init: float = 0.01,
     vc_init: float = 1.0,
     mat_init: float = 0.1,
@@ -59,7 +59,7 @@ def run_amd(
     results : ModelfitResults
         Reults of input if input is a model
     modeltype : str
-        Type of model to build. Either 'basic_pl' or 'tmdd'
+        Type of model to build. Either 'basic_pk' or 'tmdd'
     administration : str
         Route of administration. Either 'iv' or 'oral'
     cl_init : float
@@ -105,6 +105,12 @@ def run_amd(
 
     """
     from pharmpy.model.external import nonmem  # FIXME We should not depend on NONMEM
+
+    # FIXME: temporary until modeltype and administration is fully supported in e.g. create_start_model
+    if modeltype == 'basic_pk' and administration == 'iv':
+        modeltype = 'pk_iv'
+    elif modeltype == 'basic_pk' and administration == 'oral':
+        modeltype = 'pk_oral'
 
     if type(input) is str:
         from pharmpy.tools.amd.funcs import create_start_model
