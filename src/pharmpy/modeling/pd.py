@@ -17,21 +17,23 @@ from .odes import add_individual_parameter, set_initial_estimates
 
 
 def add_effect_compartment(model: Model, expr: str):
-    """Add an effect compartment
+    r"""Add an effect compartment.
+
+    Implemented PD models are:
+
+    * Baseline: :math:`E = E_0`
+    * Linear: :math:`E = E_0 + S \cdot C`
+    * Emax: :math:`E = E_0 + \frac {E_{max} \cdot C } { EC_{50} + C }`
+    * Step effect: :math:`E = \Biggl \lbrace { E_0 \quad  \text{ if C } < 0 \atop E_0 + E_{max} \quad  \text{else}}`
+    * Sigmoidal: :math:`E = \frac {E_{max} C^n} { EC_{50}^n + C^n}`
+    * Log-linear: :math:`E = m \cdot  \text{log}(C + C_0)`
 
     Parameters
     ----------
     model : Model
         Pharmpy model
     expr : str
-        Name of PD effect function. The function can either be
-        * baseline: E = E0
-        * step effect: Emax = theta if C > 0 else 0, E = E0 + Emax
-        * linear: E = E0 + S * C
-        * Emax: E = E0 + Emax * C / (EC50 + C)
-        * sigmoidal: E = Emax * C^n / (EC50^n + C^n)
-        * log-lin: E = m * log(C + C0)
-        Valid strings are: baseline, linear, Emax, sigmoid, step, loglin
+        Name of the PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step, loglin
 
     Return
     ------
@@ -73,21 +75,23 @@ def add_effect_compartment(model: Model, expr: str):
 
 
 def set_direct_effect(model: Model, expr: str):
-    """Add an effect to a model
+    r"""Add an effect to a model.
+
+    Implemented PD models are:
+
+    * Baseline: :math:`E = E_0`
+    * Linear: :math:`E = E_0 + S \cdot C`
+    * Emax: :math:`E = E_0 + \frac {E_{max} \cdot C } { EC_{50} + C }`
+    * Step effect: :math:`E = \Biggl \lbrace { E_0 \quad  \text{ if C } < 0 \atop E_0 + E_{max} \quad  \text{else}}`
+    * Sigmoidal: :math:`E = \frac {E_{max} C^n} { EC_{50}^n + C^n}`
+    * Log-linear: :math:`E = m \cdot  \text{log}(C + C_0)`
 
     Parameters
     ----------
     model : Model
         Pharmpy model
     expr : str
-        Name of PD effect function. The function can either be
-        * baseline: E = E0
-        * step effect: Emax = theta if C > 0 else 0, E = E0 + Emax
-        * linear: E = E0 + S * C
-        * Emax: E = E0 + Emax * C / (EC50 + C)
-        * sigmoidal: E = Emax * C^n / (EC50^n + C^n)
-        * log-lin: E = m * log(C + C0)
-        Valid strings are: baseline, linear, Emax, sigmoid, step, loglin
+        Name of PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step, loglin
 
     Return
     ------
@@ -96,9 +100,15 @@ def set_direct_effect(model: Model, expr: str):
 
     Examples
     --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = set_direct_effect(model, "linear")
+    >>> model.statements.find_assignment("E")
+        A_CENTRAL⋅S
+        ─────────── + E₀
+    E =      V
 
     """
-    # vc = sympy.Symbol("VC") # must be changed later
     vc, cl = _get_central_volume_and_cl(model)
     conc = model.statements.ode_system.central_compartment.amount / vc
 
@@ -140,7 +150,7 @@ def _add_effect(model: Model, expr: str, conc):
     elif expr == "Emax":
         E = Assignment(sympy.Symbol("E"), e0 + emax * conc / (ec50 + conc))
     elif expr == "step":
-        E = Assignment(sympy.Symbol("E"), sympy.Piecewise((0, conc < 0), (emax, True)))
+        E = Assignment(sympy.Symbol("E"), sympy.Piecewise((e0, conc < 0), (e0 + emax, True)))
     elif expr == "sigmoid":
         n = sympy.Symbol("n")  # Hill coefficient
         model = add_individual_parameter(model, n.name)
