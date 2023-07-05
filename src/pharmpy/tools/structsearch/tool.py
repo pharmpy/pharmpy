@@ -4,12 +4,13 @@ from dataclasses import dataclass
 from typing import Optional
 
 from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
-from pharmpy.tools.common import ToolResults
+from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
 
@@ -81,13 +82,20 @@ def run_tmdd(context, model):
     wf.add_task(task_results, predecessors=wf2.output_tasks)
     run_models = call_workflow(wf, 'results_remaining', context)
 
-    summary_models = summarize_modelfit_results(
+    summary_input = summarize_modelfit_results(model.modelfit_results)
+    summary_candidates = summarize_modelfit_results(
         [model.modelfit_results for model in qss_run_models + run_models]
     )
 
-    res = StructSearchResults(summary_models=summary_models)
-
-    return res
+    return create_results(
+        StructSearchResults,
+        model,
+        model,
+        qss_run_models + run_models,
+        rank_type='bic',
+        cutoff=None,
+        summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step']),
+    )
 
 
 def run_pkpd(context, model):
