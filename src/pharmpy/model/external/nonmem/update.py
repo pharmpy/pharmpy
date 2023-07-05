@@ -719,23 +719,23 @@ def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSy
     return model
 
 def update_bio(model: Model, old: CompartmentalSystem, new: CompartmentalSystem):
-    for new_dosing, old_dosing in zip(new.dosing_compartment, old.dosing_compartment):
-        new_bio = new_dosing.bioavailability
-        old_bio = old_dosing.bioavailability
-        if new_bio != old_bio and new_bio != 1:
-            for n, comp in enumerate(new._order_compartments(), start = 1):
-                if comp == new_dosing:
-                    comp_number = n
-            ass = Assignment(sympy.Symbol(f'F{comp_number}'), new_bio)
-            cb = CompartmentalSystemBuilder(new)
-            cb.set_bioavailability(new_dosing, ass.symbol)
-            model = model.replace(
-                statements=model.statements.before_odes
-                + ass
-                + CompartmentalSystem(cb)
-                + model.statements.after_odes
-            )
-        return model
+    #for new_dosing, old_dosing in zip(new.dosing_compartment, old.dosing_compartment):
+    new_dosing = new.dosing_compartment[0]
+    old_dosing = old.dosing_compartment[0]
+    new_bio = new_dosing.bioavailability
+    old_bio = old_dosing.bioavailability
+    if new_bio != old_bio and new_bio != 1:
+        ass = Assignment(sympy.Symbol('F1'), new_bio)
+        cb = CompartmentalSystemBuilder(new)
+        cb.set_bioavailability(new_dosing, ass.symbol)
+        model = model.replace(
+            statements=model.statements.before_odes
+            + ass
+            + CompartmentalSystem(cb)
+            + model.statements.after_odes
+        )      
+
+    return model
 
 
 def new_compartmental_map(cs: CompartmentalSystem):
@@ -772,14 +772,17 @@ def pk_param_conversion(model: Model, advan, trans):
     oldmap = model.internals.compartment_map
     assert oldmap is not None
     newmap = new_compartmental_map(cs)
-    newmap['OUTPUT'] = len(newmap) + 1
+    if 'OUTPUT' not in newmap:
+        newmap['OUTPUT'] = len(newmap) + 1
     oldmap = oldmap.copy()
-    oldmap['OUTPUT'] = len(oldmap) + 1
+    if 'OUTPUT' not in oldmap:
+        oldmap['OUTPUT'] = len(oldmap) + 1
     remap = create_compartment_remap(oldmap, newmap)
     d = {}
     for old, new in remap.items():
         d[sympy.Symbol(f'S{old}')] = sympy.Symbol(f'S{new}')
-        d[sympy.Symbol(f'F{old}')] = sympy.Symbol(f'F{new}')
+        # FIXME: Shoudl F also be moved with the dose compartment?
+        # d[sympy.Symbol(f'F{old}')] = sympy.Symbol(f'F{new}')
         # FIXME: R, D and ALAG should be moved with dose compartment
         # d[sympy.Symbol(f'R{old}')] = sympy.Symbol(f'R{new}')
         # d[sympy.Symbol(f'D{old}')] = sympy.Symbol(f'D{new}')

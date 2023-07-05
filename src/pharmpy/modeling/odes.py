@@ -780,6 +780,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         cb = CompartmentalSystemBuilder(cs)
 
         while nremove > 0:
+            # FIXME : Cannot remove all transat compartment, issue with the last one
             from_comp, from_flow = cs.get_compartment_inflows(trans)[0]
             cb.add_flow(from_comp, destination, from_flow)
             cb.remove_compartment(trans)
@@ -985,25 +986,24 @@ def add_bioavailability_statement(model: Model):
     odes = model.statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
+    dose_comp = odes.dosing_compartment[0]
+    bio = dose_comp.bioavailability
+    # Add a new parameter for the bioavailability
+    if isinstance(bio, sympy.Number):
+        model, bio_symb = _add_parameter(model, 'BIO', init=float(bio))
     
-    for dose_comp in odes.dosing_compartment:
-        bio = dose_comp.bioavailability
-        # Add a new parameter for the bioavailability
-        if isinstance(bio, sympy.Number):
-            model, bio_symb = _add_parameter(model, f'{dose_comp.name}_BIO', init=float(bio))
+        # Set bioavailability of compartment to statement instead
+        cb = CompartmentalSystemBuilder(odes)
+        cb.set_bioavailability(dose_comp, bio_symb)
         
-            # Set bioavailability of compartment to statement instead
-            cb = CompartmentalSystemBuilder(odes)
-            cb.set_bioavailability(dose_comp, bio_symb)
-            
-            # Add statement to the code
-            model = model.replace(
-                statements=(
-                    model.statements.before_odes +
-                    CompartmentalSystem(cb) +
-                    model.statements.after_odes
-                )
+        # Add statement to the code
+        model = model.replace(
+            statements=(
+                model.statements.before_odes +
+                CompartmentalSystem(cb) +
+                model.statements.after_odes
             )
+        )
 
     return model.update_source()
         
@@ -1127,6 +1127,7 @@ def set_first_order_absorption(model: Model):
     amount = dose_comp.dose.amount
     symbols = dose_comp.free_symbols
     lag_time = dose_comp.lag_time
+    bio = dose_comp.bioavailability
     cb = CompartmentalSystemBuilder(cs)
     if depot and depot == dose_comp:
         dose_comp = cb.set_dose(dose_comp, Bolus(dose_comp.dose.amount))
@@ -1134,7 +1135,6 @@ def set_first_order_absorption(model: Model):
     if not depot:
         dose_comp = cb.set_dose(dose_comp, Bolus(amount))
     statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-
     new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
     mat_idx = statements.find_assignment_index('MAT')
     if mat_idx is not None:
@@ -1145,7 +1145,7 @@ def set_first_order_absorption(model: Model):
 
     model = remove_unused_parameters_and_rvs(model)
     if not depot:
-        model, _ = _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time)
+        model, _ = _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time, bio)
         model = model.update_source()
     return model
 
@@ -1357,18 +1357,22 @@ def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=
     return model
 
 
-def _add_first_order_absorption(model, dose, to_comp, lag_time=None):
+def _add_first_order_absorption(model, dose, to_comp, lag_time=None, bioavailability=None):
     """Add first order absorption
     Disregards what is currently in the model.
     """
     odes = model.statements.ode_system
     cb = CompartmentalSystemBuilder(odes)
     depot = Compartment.create(
-        'DEPOT', dose=dose, lag_time=sympy.Integer(0) if lag_time is None else lag_time
+        'DEPOT', 
+        dose=dose,
+        lag_time=sympy.Integer(0) if lag_time is None else lag_time, 
+        bioavailability=sympy.Integer(1) if bioavailability is None else bioavailability
     )
     cb.add_compartment(depot)
     to_comp = cb.set_dose(to_comp, None)
     to_comp = cb.set_lag_time(to_comp, sympy.Integer(0))
+    to_comp = cb.set_bioavailability(to_comp, sympy.Integer(1))
 
     mat_assign = model.statements.find_assignment('MAT')
     if mat_assign:
