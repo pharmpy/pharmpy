@@ -91,6 +91,10 @@ def test_add_covariance_step(testdata, load_model_for_test):
     model = add_covariance_step(model, 'SANDWICH')
     assert len(model.estimation_steps) == 1
     assert model.model_code.split('\n')[-2] == '$COVARIANCE'
+    model = remove_covariance_step(model)
+    model = add_covariance_step(model, 'CPG')
+    assert len(model.estimation_steps) == 1
+    assert model.model_code.split('\n')[-2] == '$COVARIANCE MATRIX=S'
 
 
 def test_remove_covariance_step(testdata, load_model_for_test):
