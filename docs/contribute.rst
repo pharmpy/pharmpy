@@ -107,13 +107,13 @@ Build and test the documentation
 
 The documentation can be built with::
 
-    tox -e docs
+    tox -e docs-build
 
 The local version of the documentation can now be found in ``dist/docs/``.
 
 Documentation tests are run with::
 
-    tox -e doctest
+    tox -e docs-test
 
 This will test all code given in examples of function documentation and check their output.
 
