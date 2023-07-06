@@ -415,7 +415,9 @@ def update_infusion(model: Model, old: ODESystem):
     statements = model.statements
     new = statements.ode_system
     assert new is not None
-    if isinstance(new.dosing_compartment[0].dose, Infusion) and not statements.find_assignment('D1'):
+    if isinstance(new.dosing_compartment[0].dose, Infusion) and not statements.find_assignment(
+        'D1'
+    ):
         # Handle direct moving of Infusion dose
         statements = statements.subs({'D2': 'D1'})
 
@@ -718,8 +720,9 @@ def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSy
         )
     return model
 
+
 def update_bio(model: Model, old: CompartmentalSystem, new: CompartmentalSystem):
-    #for new_dosing, old_dosing in zip(new.dosing_compartment, old.dosing_compartment):
+    # for new_dosing, old_dosing in zip(new.dosing_compartment, old.dosing_compartment):
     new_dosing = new.dosing_compartment[0]
     old_dosing = old.dosing_compartment[0]
     new_bio = new_dosing.bioavailability
@@ -733,7 +736,7 @@ def update_bio(model: Model, old: CompartmentalSystem, new: CompartmentalSystem)
             + ass
             + CompartmentalSystem(cb)
             + model.statements.after_odes
-        )      
+        )
 
     return model
 
@@ -772,6 +775,7 @@ def pk_param_conversion(model: Model, advan, trans):
     oldmap = model.internals.compartment_map
     assert oldmap is not None
     newmap = new_compartmental_map(cs)
+    # FIXME: Determine wheter or not OUTPUT should be in model.internals.compartment_map
     if 'OUTPUT' not in newmap:
         newmap['OUTPUT'] = len(newmap) + 1
     oldmap = oldmap.copy()
@@ -781,7 +785,7 @@ def pk_param_conversion(model: Model, advan, trans):
     d = {}
     for old, new in remap.items():
         d[sympy.Symbol(f'S{old}')] = sympy.Symbol(f'S{new}')
-        # FIXME: Shoudl F also be moved with the dose compartment?
+        # FIXME: F should also be moved with the dose compartment?
         # d[sympy.Symbol(f'F{old}')] = sympy.Symbol(f'F{new}')
         # FIXME: R, D and ALAG should be moved with dose compartment
         # d[sympy.Symbol(f'R{old}')] = sympy.Symbol(f'R{new}')
