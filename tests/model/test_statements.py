@@ -469,3 +469,12 @@ def test_compartment_repr():
 def test_compartment_names(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert model.statements.ode_system.compartment_names == ['CENTRAL']
+
+
+def test_assignment_create_numeric(load_model_for_test, testdata):
+    with pytest.raises(AttributeError):
+        Assignment('X', 1).free_symbols
+    assert Assignment.create('X', 1).free_symbols
+    with pytest.raises(AttributeError):
+        Assignment('X', 1.0).free_symbols
+    assert Assignment.create('X', 1.0).free_symbols

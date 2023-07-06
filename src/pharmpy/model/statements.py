@@ -81,6 +81,11 @@ class Assignment(Statement):
             raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
         if isinstance(expression, str):
             expression = parse_expr(expression)
+        # Needed for expression.free_symbols to work
+        if isinstance(expression, float):
+            expression = sympy.Float(expression)
+        if isinstance(expression, int):
+            expression = sympy.Integer(expression)
         return cls(symbol, expression)
 
     def replace(self, **kwargs):
