@@ -388,6 +388,12 @@ def test_summarize_modelfit_results(
 
     assert summary_multest_full_no_res.loc['mox1', 1]['ofv'] == -624.5229577248352
 
+    with pytest.raises(ValueError, match='Option `results` is None'):
+        summarize_modelfit_results(None)
+
+    with pytest.raises(ValueError, match='All input results are empty'):
+        summarize_modelfit_results([None, None])
+
 
 def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_path, pheno_path):
     with chdir(tmp_path):

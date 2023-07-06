@@ -911,6 +911,8 @@ def summarize_modelfit_results(
     if isinstance(results, ModelfitResults):
         results = [results]
 
+    if results is None:
+        raise ValueError('Option `results` is None')
     if all(res is None for res in results):
         raise ValueError('All input results are empty')
 
