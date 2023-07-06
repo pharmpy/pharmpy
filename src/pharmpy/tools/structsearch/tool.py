@@ -111,13 +111,20 @@ def run_pkpd(context, model):
     wf2.add_task(task_results, predecessors=wf2.output_tasks)
     pkpd_models = call_workflow(wf2, 'results_remaining', context)
 
-    summary_models = summarize_modelfit_results(
-        [m.modelfit_results for m in pk_model + pkpd_models]
+    summary_input = summarize_modelfit_results(model.modelfit_results)
+    summary_candidates = summarize_modelfit_results(
+        [model.modelfit_results for model in pk_model + pkpd_models]
     )
 
-    res = StructSearchResults(summary_models=summary_models)
-
-    return res
+    return create_results(
+        StructSearchResults,
+        model,
+        model,
+        pk_model + pkpd_models,
+        rank_type='bic',
+        cutoff=None,
+        summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step']),
+    )
 
 
 def bundle_results(*args):
