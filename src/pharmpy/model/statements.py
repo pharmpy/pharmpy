@@ -948,8 +948,9 @@ class CompartmentalSystem(ODESystem):
         Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1))
         """
         try:
-            central = next(self._g.predecessors(output))
-        except StopIteration:
+            # E.g. TMDD models have more than one input
+            central = list(self._g.predecessors(output))[-1]
+        except IndexError:
             raise ValueError('Cannot find central compartment')
         return central
 

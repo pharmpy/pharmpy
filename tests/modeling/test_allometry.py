@@ -1,7 +1,7 @@
 import pytest
 
 from pharmpy.model import Assignment
-from pharmpy.modeling import add_allometry, add_peripheral_compartment
+from pharmpy.modeling import add_allometry, add_peripheral_compartment, set_tmdd
 
 
 def test_allometry(load_model_for_test, testdata):
@@ -118,4 +118,23 @@ def test_allometry(load_model_for_test, testdata):
         initials=[1],
         lower_bounds=[0],
         upper_bounds=[1],
+    )
+
+
+def test_add_allometry_tmdd(pheno_path, load_model_for_test):
+    model = load_model_for_test(pheno_path)
+    model = set_tmdd(model, type="full")
+    add_allometry(
+        model,
+        allometric_variable='WGT',
+        reference_value=70,
+    )
+
+    # FIXME: currently adds to CL and LAFREE, is this correct?
+    model = load_model_for_test(pheno_path)
+    model = set_tmdd(model, type="qss")
+    add_allometry(
+        model,
+        allometric_variable='WGT',
+        reference_value=70,
     )

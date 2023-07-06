@@ -142,6 +142,9 @@ def set_tmdd(model: Model, type: str):
             - (kint - kdeg) * target_amount * lafree_symb / (kd + lafree_symb),
         )
 
+        # FIXME: should others also have flows?
+        cb.add_flow(central, output, lafree_symb * elimination_rate)
+
         lafreef = sympy.Symbol("LAFREEF")
         lafree_final = Assignment(lafreef, lafree_expr)
         before = model.statements.before_odes + (ksyn_ass, kd_ass, lafree_ass)

@@ -32,6 +32,7 @@ from pharmpy.modeling import (
     set_ode_solver,
     set_peripheral_compartments,
     set_seq_zo_fo_absorption,
+    set_tmdd,
     set_transit_compartments,
     set_zero_order_absorption,
     set_zero_order_elimination,
@@ -2587,3 +2588,15 @@ def test_find_volume_parameters_github_issues_1053_and_1062_bis(load_example_mod
     model = add_peripheral_compartment(model)
     model = set_michaelis_menten_elimination(model)
     assert find_volume_parameters(model) == _symbols(['V1', 'VP1', 'VP2'])
+
+
+def test_find_clearance_and_volume_parameters_tmdd(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    model = set_tmdd(model, 'full')
+    assert find_clearance_parameters(model) == _symbols(['CL'])
+    assert find_volume_parameters(model) == _symbols(['V'])
+
+    model = load_example_model_for_test('pheno')
+    model = set_tmdd(model, 'qss')
+    assert find_clearance_parameters(model) == _symbols(['CL', 'LAFREE'])
+    assert find_volume_parameters(model) == _symbols(['V'])
