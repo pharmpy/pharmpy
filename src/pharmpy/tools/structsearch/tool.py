@@ -99,31 +99,38 @@ def run_tmdd(context, model):
 
 
 def run_pkpd(context, model):
-    wf = create_fit_workflow(model)
+    pk_dataset = model.dataset
+    pk_dataset = pk_dataset[pk_dataset["DVID"] != 2]
+    pk_model = model.replace(
+        dataset=pk_dataset,
+        description=model.description + ". Removed rows with DVID=2.",
+        name="PK_" + model.name,
+    )
+
+    wf = create_fit_workflow(pk_model)
     task_results = Task('results1', bundle_results)
     wf.add_task(task_results, predecessors=wf.output_tasks)
-    pk_model = call_workflow(wf, 'results_pd', context)
+    pk_model_fit = call_workflow(wf, 'results_pd', context)
+    pkpd_models = create_pkpd_models(model, pk_model_fit[0].modelfit_results.parameter_estimates)
 
-    pd_models = create_pkpd_models(model, pk_model[0].modelfit_results.parameter_estimates)
-
-    wf2 = create_fit_workflow(pd_models)
+    wf2 = create_fit_workflow(pkpd_models)
     task_results = Task('results2', bundle_results)
     wf2.add_task(task_results, predecessors=wf2.output_tasks)
-    pkpd_models = call_workflow(wf2, 'results_remaining', context)
+    pkpd_models_fit = call_workflow(wf2, 'results_remaining', context)
 
     summary_input = summarize_modelfit_results(model.modelfit_results)
     summary_candidates = summarize_modelfit_results(
-        [model.modelfit_results for model in pk_model + pkpd_models]
+        [model.modelfit_results for model in pk_model_fit + pkpd_models_fit]
     )
 
     return create_results(
         StructSearchResults,
         model,
         model,
-        pk_model + pkpd_models,
+        [pk_model] + list(pkpd_models_fit),
         rank_type='bic',
         cutoff=None,
-        summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step']),
+        summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"]),
     )
 
 
