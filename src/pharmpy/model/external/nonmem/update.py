@@ -375,7 +375,8 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
         old = CompartmentalSystem(CompartmentalSystemBuilder())
 
     model = update_lag_time(model, old, new)
-
+    model, updated_dataset = update_cmt_column(model, old, new)
+    
     advan, trans, nonlin, haszo = new_advan_trans(model)
 
     if nonlin or haszo:
@@ -392,10 +393,42 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
 
         if not is_nonlinear_odes(model):
             model = from_des(model, advan)
-
-    model, updated_dataset = update_infusion(model, old)
+    
+    if not updated_dataset:
+        model, updated_dataset = update_infusion(model, old)
+    else:
+        model, _ = update_infusion(model, old)
     return model, updated_dataset
 
+def update_cmt_column(model, old, new):
+    if "CMT" in model.datainfo.names and len(old.compartment_names) != len(new.compartment_names):
+        # Differ in amount of compartment -> Change cmt numbering
+        # The cmt number should be the same as the dosing compartment
+        oldmap = model.internals.compartment_map
+        assert oldmap is not None
+        cs = model.statements.ode_system
+        newmap = new_compartmental_map(cs)    
+        oldmap = oldmap.copy()
+        
+        # FIXME: When admid is implemented, use that for deciding cmt remap instead
+        dose_remap = {}
+        for dose_comp in old.dosing_compartment:
+            if dose_comp.name == "CENTRAL":
+                # Remap doses to the central compartment
+                dose_remap[oldmap["CENTRAL"]] = newmap["CENTRAL"]
+            else:
+                # Remap oral doses to new dosing compartment
+                dose_remap[oldmap[dose_comp.name]] = newmap[new.dosing_compartment[0].name]
+        dataset = model.dataset
+        dataset = dataset.replace({"CMT": dose_remap})
+        model = model.replace(dataset = dataset)
+        
+        updated_dataset = True
+    else:
+        # Could verify that the cmt column is the same
+        updated_dataset = False
+    
+    return model, updated_dataset
 
 def is_nonlinear_odes(model: Model):
     """Check if ode system is nonlinear"""
