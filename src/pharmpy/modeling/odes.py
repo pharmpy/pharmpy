@@ -839,6 +839,8 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             n -= 1
             cb.add_flow(new_comp, comp, rate)
             comp = new_comp
+        comp = cb.set_bioavailability(comp, dosing_comp.bioavailability)
+        dosing_comp = cb.set_bioavailability(dosing_comp, sympy.Integer(1))
         cb.move_dose(dosing_comp, comp)
         statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
