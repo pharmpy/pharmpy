@@ -844,6 +844,44 @@ def get_evid(model: Model):
     mdv = get_mdv(model)
     return mdv.rename('EVID')
 
+def get_admid(model: Model):
+    """Get the admid from model dataset
+
+    If an administration column is present this will be extracted otherwise
+    an admid column will be created.
+    1 : Oral dose
+    2 : IV dose
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.Series
+        ADMID
+    """
+    di = model.datainfo
+    try:
+        admidcols = di.typeix["admid"]
+    except IndexError:
+        pass
+    else:
+        return model.dataset[admidcols[0].name]
+    
+    oral = iv = None
+    odes = model.statements.ode_system
+    names = odes.compartment_names
+    if isinstance(odes, CompartmentalSystem):
+        for dosing in odes.dosing_compartment:
+            if dosing == odes.central_compartment:
+                iv = names.index(dosing.name) + 1
+            else:
+                oral = names.index(dosing.name) + 1
+    adm = get_cmt(model)
+    adm = adm.replace({oral: 1, iv: 2})
+    return adm
 
 def get_cmt(model: Model):
     """Get the cmt (compartment) column from the model dataset
