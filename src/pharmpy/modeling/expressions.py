@@ -1175,7 +1175,52 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
 
     dependency_graph = _dependency_graph(natural_assignments)
 
-    return sorted(map(str, _filter_symbols(dependency_graph, free_symbols)))
+    pk_symbols = sorted(map(str, _filter_symbols(dependency_graph, free_symbols)))
+    if model.statements.ode_system.find_compartment("EFFECT") is not None:
+        PD_parameters = model.statements.ode_system.find_compartment("EFFECT").input.free_symbols
+        return [x for x in pk_symbols if sympy.Symbol(x) not in PD_parameters]
+    else:
+        return pk_symbols
+
+
+def get_pd_parameters(model: Model) -> List[str]:
+    """Retrieves PD parameters in :class:`pharmpy.model`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to retrieve the PD parameters from
+
+    Return
+    ------
+    list[str]
+        A list of the PD parameter names of the given model
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = set_direct_effect(model, "linear")
+    >>> get_pd_parameters(model)
+    ['E0', 'S']
+
+    See also
+    --------
+    get_pk_parameters
+
+    """
+    pd_symbols = []
+    if model.statements.find_assignment('Y_2') is not None:
+        parameters_in_E = model.statements.find_assignment('E').free_symbols
+        pk_parameters = get_pk_parameters(model)
+        parameters_in_E = [x for x in parameters_in_E if str(x) not in pk_parameters]
+        for i in range(model.statements.before_odes.__len__()):
+            pd_symbols.append(model.statements.before_odes[i].symbol)
+        pd_symbols = set(pd_symbols)
+        pd_symbols = [x for x in pd_symbols if x in parameters_in_E]
+        if model.statements.ode_system.find_compartment("EFFECT") is not None:
+            pd_symbols.append("KE0")
+    return sorted(map(str, pd_symbols))
 
 
 def _get_natural_assignments(before_odes):

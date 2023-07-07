@@ -12,6 +12,7 @@ from pharmpy.model import (
     Statements,
 )
 from pharmpy.modeling import (
+    add_effect_compartment,
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
     cleanup_model,
@@ -20,6 +21,7 @@ from pharmpy.modeling import (
     get_individual_parameters,
     get_individual_prediction_expression,
     get_observation_expression,
+    get_pd_parameters,
     get_pk_parameters,
     get_population_prediction_expression,
     get_rv_parameters,
@@ -30,6 +32,7 @@ from pharmpy.modeling import (
     make_declarative,
     mu_reference_model,
     read_model_from_string,
+    set_direct_effect,
     simplify_expression,
     solve_ode_system,
 )
@@ -335,6 +338,28 @@ def test_greekify_model(pheno):
 def test_get_pk_parameters(load_model_for_test, testdata, model_path, kind, expected):
     model = load_model_for_test(testdata / model_path)
     assert set(get_pk_parameters(model, kind)) == set(expected)
+    assert 'KE0' not in get_pk_parameters(model)
+
+    pkpd_model = load_model_for_test(testdata / "nonmem" / "pheno_real.mod")
+    pkpd_model = add_effect_compartment(pkpd_model, "linear")
+    assert 'KE0' not in get_pk_parameters(pkpd_model)
+
+
+def test_get_pd_parameters(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
+    pkpd_model_baseline = set_direct_effect(model, "baseline")
+    pkpd_effect_comp_model_baseline = add_effect_compartment(model, "baseline")
+    pkpd_model_linear = set_direct_effect(model, "linear")
+    pkpd_effect_comp_model_linear = add_effect_compartment(model, "linear")
+    pkpd_model_sigmoid = set_direct_effect(model, "sigmoid")
+    pkpd_effect_comp_model_sigmoid = add_effect_compartment(model, "sigmoid")
+    assert get_pd_parameters(pkpd_model_baseline) == ['E0']
+    assert get_pd_parameters(pkpd_effect_comp_model_baseline) == ['E0', 'KE0']
+    assert get_pd_parameters(pkpd_model_linear) == ['E0', 'S']
+    assert get_pd_parameters(pkpd_effect_comp_model_linear) == ['E0', 'KE0', 'S']
+    assert get_pd_parameters(pkpd_model_sigmoid) == ['EC_50', 'E_max', 'n']
+    assert get_pd_parameters(pkpd_effect_comp_model_sigmoid) == ['EC_50', 'E_max', 'KE0', 'n']
+    assert get_pd_parameters(model) == []
 
 
 @pytest.mark.parametrize(
