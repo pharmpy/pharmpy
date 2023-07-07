@@ -688,7 +688,7 @@ class CompartmentalSystem(ODESystem):
             isinstance(other, CompartmentalSystem)
             and self._t == other._t
             and nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
-            and self.dosing_compartment.dose == other.dosing_compartment.dose
+            and self.dosing_compartment == other.dosing_compartment
         )
 
     def __hash__(self):
@@ -908,24 +908,33 @@ class CompartmentalSystem(ODESystem):
     def dosing_compartment(self):
         """The dosing compartment
 
-        A dosing compartment is a compartment that receives an input dose. Only one dose
-        compartment is supported.
+        A dosing compartment is a compartment that receives an input dose. Multiple
+        dose compartments are supported. The order of dose compartments is defined
+        to put the central compartment last.
 
         Returns
         -------
-        Compartment
-            Dosing compartment
+        tuple
+            A tuple of dose compartments
 
         Examples
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.ode_system.dosing_compartment
+        >>> model.statements.ode_system.dosing_compartment[0]
         Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1))
         """
+        dosing_comps = tuple()
         for node in _comps(self._g):
             if node.dose is not None:
-                return node
+                if node.name != self.central_compartment.name:
+                    dosing_comps = (node,) + dosing_comps
+                else:
+                    dosing_comps = dosing_comps + (node,)
+
+        if len(dosing_comps) != 0:
+            return dosing_comps
+
         raise ValueError('No dosing compartment exists')
 
     @property
@@ -1004,7 +1013,7 @@ class CompartmentalSystem(ODESystem):
         []
         """
         transits = []
-        comp = self.dosing_compartment
+        comp = self.dosing_compartment[0]
         if len(self.get_compartment_inflows(comp)) != 0:
             return transits
         outflows = self.get_compartment_outflows(comp)
@@ -1139,7 +1148,7 @@ class CompartmentalSystem(ODESystem):
     def _order_compartments(self):
         """Return list of all compartments in canonical order"""
         try:
-            dosecmt = self.dosing_compartment
+            dosecmt = self.dosing_compartment[0]
         except ValueError:
             # Fallback for cases where no dose is available (yet)
             return list(_comps(self._g))
@@ -1204,7 +1213,7 @@ class CompartmentalSystem(ODESystem):
         def comp_string(comp):
             return comp.name + lag_string(comp) + f_string(comp)
 
-        current = self.dosing_compartment
+        current = self.dosing_compartment[0]
         comp_height = 0
         comp_width = 0
 
@@ -1227,7 +1236,7 @@ class CompartmentalSystem(ODESystem):
         ncols = comp_width * 2
         grid = unicode.Grid(nrows, ncols)
 
-        current = self.dosing_compartment
+        current = self.dosing_compartment[0]
         col = 0
         if comp_nrows == 1 or comp_nrows == 2:
             main_row = 0 + have_zo_input
@@ -1294,7 +1303,7 @@ class CompartmentalSystem(ODESystem):
             if not current:
                 break
 
-        dose = self.dosing_compartment.dose
+        dose = self.dosing_compartment[0].dose
         s = str(dose) + '\n' + str(grid).rstrip()
         return s
 
