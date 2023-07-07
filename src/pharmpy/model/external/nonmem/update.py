@@ -424,6 +424,23 @@ def update_cmt_column(model, old, new):
         model = model.replace(dataset = dataset)
         
         updated_dataset = True
+    elif "CMT" not in model.datainfo.names and "ADMID" in model.datainfo.names and model.dataset["ADMID"].unique() != 1:
+        d = {}
+        for dose_comp in model.statements.ode_system.dosing_compartment:
+            d[dose_comp.dose.admid] = model.internals.compartment_map[dose_comp.name]
+        from pharmpy.modeling.data import get_admid
+        from pharmpy.model.model import update_datainfo
+        
+        cmt_col = get_admid(model)
+        cmt_col = cmt_col.replace(d)
+        
+        dataset = model.dataset
+        dataset['CMT'] = cmt_col
+        di = update_datainfo(model.datainfo, dataset)
+        colinfo = di['CMT'].replace(type='compartment')
+        model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
+        
+        updated_dataset = True
     else:
         # Could verify that the cmt column is the same
         updated_dataset = False
