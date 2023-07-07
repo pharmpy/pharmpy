@@ -775,7 +775,9 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         n = _as_integer(n)
     except ValueError:
         raise ValueError(f'Number of compartments must be integer: {n}')
-
+    
+    model = remove_lag_time(model)
+    
     # Handle keep_depot option
     depot = cs.find_depot(statements)
     mdt_init = None
