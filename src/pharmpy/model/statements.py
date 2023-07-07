@@ -909,7 +909,8 @@ class CompartmentalSystem(ODESystem):
         """The dosing compartment
 
         A dosing compartment is a compartment that receives an input dose. Multiple
-        dose compartments are supported.
+        dose compartments are supported. The order of dose compartments is defined
+        to put the central compartment last.
 
         Returns
         -------
