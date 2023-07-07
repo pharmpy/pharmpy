@@ -881,7 +881,20 @@ def get_admid(model: Model):
                 oral = names.index(dosing.name) + 1
     adm = get_cmt(model)
     adm = adm.replace({oral: 1, iv: 2})
+    adm.name = "ADMID"
     return adm
+
+def add_admid(model):
+    di = model.datainfo
+    if not "admid" in di.types:
+        adm = get_admid(model)
+        dataset = model.dataset
+        dataset["ADMID"] = adm
+        di = update_datainfo(model.datainfo, dataset)
+        colinfo = di['ADMID'].replace(type='admid')
+        model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
+    
+    return model
 
 def get_cmt(model: Model):
     """Get the cmt (compartment) column from the model dataset
