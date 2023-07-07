@@ -205,6 +205,80 @@ def set_first_order_elimination(model: Model):
         model = remove_unused_parameters_and_rvs(model)
     return model
 
+def add_bioavailability_statement(model: Model, add_parameter=True):
+    """Add bioavailability statement for the dose compartment(s) of the model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = add_bioavailability_statement(model)
+
+    See also
+    --------
+    remove_bioavailability
+
+    """
+    odes = model.statements.ode_system
+    if odes is None:
+        raise ValueError(f'Model {model.name} has no ODE system')
+    
+    dose_comp = odes.dosing_compartment[0]
+    bio = dose_comp.bioavailability
+    
+    if isinstance(bio, sympy.Number):
+        # Bio not defined
+        if add_parameter:
+            model, bio_symb = _add_parameter(model, 'BIO', init=float(bio))
+            ass = Assignment(sympy.Symbol('F'), bio_symb)
+            
+            # Set bioavailability of compartment to statement instead
+            cb = CompartmentalSystemBuilder(odes)
+            cb.set_bioavailability(dose_comp, ass.symbol)
+            
+            # Add statement to the code
+            model = model.replace(
+                statements=(
+                    model.statements.before_odes +
+                    ass +
+                    CompartmentalSystem(cb) +
+                    model.statements.after_odes
+                )
+            )
+        else:
+            # Add as a number
+            bio_ass = Assignment(sympy.Symbol("BIO"), sympy.Number(1))
+            f_ass = Assignment(sympy.Symbol("F"), bio_ass.symbol)
+            
+            cb = CompartmentalSystemBuilder(odes)
+            cb.set_bioavailability(dose_comp, f_ass.symbol)
+            
+            model = model.replace(
+                statements=(
+                    bio_ass +
+                    model.statements.before_odes + 
+                    f_ass +
+                    CompartmentalSystem(cb) +
+                    model.statements.after_odes
+                    )
+                )
+            
+    else:
+        # BIO already defined, leave it alone?
+        pass
+
+    return model.update_source()
+
 
 def set_zero_order_elimination(model: Model):
     """Sets elimination to zero order.

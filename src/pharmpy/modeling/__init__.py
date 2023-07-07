@@ -117,6 +117,7 @@ from .metabolite import add_metabolite
 from .odes import (
     add_individual_parameter,
     add_lag_time,
+    add_bioavailability_statement,
     add_peripheral_compartment,
     display_odes,
     find_clearance_parameters,
@@ -215,6 +216,7 @@ __all__ = [
     'add_individual_parameter',
     'add_iov',
     'add_lag_time',
+    'add_bioavailability_statement',
     'add_metabolite',
     'add_peripheral_compartment',
     'add_pk_iiv',
