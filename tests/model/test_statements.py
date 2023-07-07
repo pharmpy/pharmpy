@@ -11,7 +11,7 @@ from pharmpy.model import (
     Statements,
     output,
 )
-from pharmpy.modeling import add_effect_compartment
+from pharmpy.modeling import add_effect_compartment, set_first_order_absorption
 
 
 def S(x):
@@ -478,3 +478,17 @@ def test_assignment_create_numeric(load_model_for_test, testdata):
     with pytest.raises(AttributeError):
         Assignment('X', 1.0).free_symbols
     assert Assignment.create('X', 1.0).free_symbols
+
+
+def test_multi_dose_comp_order(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model = set_first_order_absorption(model)
+
+    ode = model.statements.ode_system
+    cb = CompartmentalSystemBuilder(ode)
+    cb.set_dose(cb.find_compartment("CENTRAL"), cb.find_compartment("DEPOT").dose)
+    ode = CompartmentalSystem(cb)
+    model = model.replace(
+        statements=model.statements.before_odes + ode + model.statements.after_odes
+    )
+    assert ode.dosing_compartment[0].name == "DEPOT"

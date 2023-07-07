@@ -926,12 +926,14 @@ class CompartmentalSystem(ODESystem):
         dosing_comps = tuple()
         for node in _comps(self._g):
             if node.dose is not None:
-                if node.name != 'CENTRAL':
-                    dosing_comps = dosing_comps + tuple([node])
-                else:
+                if node.name != self.central_compartment.name:
                     dosing_comps = tuple([node]) + dosing_comps
+                else:
+                    dosing_comps = dosing_comps + tuple([node])
+
         if len(dosing_comps) != 0:
             return dosing_comps
+
         raise ValueError('No dosing compartment exists')
 
     @property
