@@ -414,7 +414,9 @@ def update_infusion(model: Model, old: ODESystem):
     statements = model.statements
     new = statements.ode_system
     assert new is not None
-    if isinstance(new.dosing_compartment[0].dose, Infusion) and not statements.find_assignment('D1'):
+    if isinstance(new.dosing_compartment[0].dose, Infusion) and not statements.find_assignment(
+        'D1'
+    ):
         # Handle direct moving of Infusion dose
         statements = statements.subs({'D2': 'D1'})
 
