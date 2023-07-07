@@ -488,7 +488,4 @@ def test_multi_dose_comp_order(load_model_for_test, testdata):
     cb = CompartmentalSystemBuilder(ode)
     cb.set_dose(cb.find_compartment("CENTRAL"), cb.find_compartment("DEPOT").dose)
     ode = CompartmentalSystem(cb)
-    model = model.replace(
-        statements=model.statements.before_odes + ode + model.statements.after_odes
-    )
     assert ode.dosing_compartment[0].name == "DEPOT"
