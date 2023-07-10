@@ -720,17 +720,21 @@ def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSy
         )
     return model
 
+
 def update_bio(model, old, new):
     new_dosing = new.dosing_compartment[0]
     new_bio = new_dosing.bioavailability
     old_bio = old.dosing_compartment[0].bioavailability
-    
+
     if new_bio != old_bio:
         if isinstance(new_bio, sympy.Symbol):
             if new_bio != sympy.Symbol('F1'):
-                model = model.replace(statements = model.statements.subs({new_bio: sympy.Symbol('F1')}))
-    
+                model = model.replace(
+                    statements=model.statements.subs({new_bio: sympy.Symbol('F1')})
+                )
+
     return model
+
 
 def new_compartmental_map(cs: CompartmentalSystem):
     """Create compartmental map for updated model

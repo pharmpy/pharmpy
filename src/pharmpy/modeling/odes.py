@@ -205,6 +205,7 @@ def set_first_order_elimination(model: Model):
         model = remove_unused_parameters_and_rvs(model)
     return model
 
+
 def add_bioavailability_statement(model: Model, add_parameter=True):
     """Add bioavailability statement for the dose compartment(s) of the model
 
@@ -232,47 +233,47 @@ def add_bioavailability_statement(model: Model, add_parameter=True):
     odes = model.statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    
+
     dose_comp = odes.dosing_compartment[0]
     bio = dose_comp.bioavailability
-    
+
     if isinstance(bio, sympy.Number):
         # Bio not defined
         if add_parameter:
             model, bio_symb = _add_parameter(model, 'BIO', init=float(bio))
             ass = Assignment(sympy.Symbol('F'), bio_symb)
-            
+
             # Set bioavailability of compartment to statement instead
             cb = CompartmentalSystemBuilder(odes)
             cb.set_bioavailability(dose_comp, ass.symbol)
-            
+
             # Add statement to the code
             model = model.replace(
                 statements=(
-                    model.statements.before_odes +
-                    ass +
-                    CompartmentalSystem(cb) +
-                    model.statements.after_odes
+                    model.statements.before_odes
+                    + ass
+                    + CompartmentalSystem(cb)
+                    + model.statements.after_odes
                 )
             )
         else:
             # Add as a number
             bio_ass = Assignment(sympy.Symbol("BIO"), sympy.Number(1))
             f_ass = Assignment(sympy.Symbol("F"), bio_ass.symbol)
-            
+
             cb = CompartmentalSystemBuilder(odes)
             cb.set_bioavailability(dose_comp, f_ass.symbol)
-            
+
             model = model.replace(
                 statements=(
-                    bio_ass +
-                    model.statements.before_odes + 
-                    f_ass +
-                    CompartmentalSystem(cb) +
-                    model.statements.after_odes
-                    )
+                    bio_ass
+                    + model.statements.before_odes
+                    + f_ass
+                    + CompartmentalSystem(cb)
+                    + model.statements.after_odes
                 )
-            
+            )
+
     else:
         # BIO already defined, leave it alone?
         pass
@@ -775,9 +776,9 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         n = _as_integer(n)
     except ValueError:
         raise ValueError(f'Number of compartments must be integer: {n}')
-    
+
     model = remove_lag_time(model)
-    
+
     # Handle keep_depot option
     depot = cs.find_depot(statements)
     mdt_init = None
@@ -1396,7 +1397,7 @@ def _add_first_order_absorption(model, dose, to_comp, lag_time=None, bioavailabi
         'DEPOT',
         dose=dose,
         lag_time=sympy.Integer(0) if lag_time is None else lag_time,
-        bioavailability=sympy.Integer(1) if bioavailability is None else bioavailability
+        bioavailability=sympy.Integer(1) if bioavailability is None else bioavailability,
     )
     cb.add_compartment(depot)
     to_comp = cb.set_dose(to_comp, None)
