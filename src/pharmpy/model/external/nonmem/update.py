@@ -631,12 +631,6 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         if new_odes != old_odes:
             colnames, drop, _, _ = parse_column_info(model.internals.control_stream)
             col_dropped = dict(zip(colnames, drop))
-            if 'CMT' in col_dropped.keys() and not col_dropped['CMT']:
-                warnings.warn(
-                    'Compartment structure has been updated, CMT-column '
-                    'in dataset might not be relevant anymore. Check '
-                    'CMT-column or drop column'
-                )
             model, updated_dataset = update_ode_system(model, old_odes, new_odes)
         else:
             if new_solver:
