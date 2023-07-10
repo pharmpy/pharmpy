@@ -1,6 +1,12 @@
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
-from pharmpy.modeling import add_effect_compartment, fix_parameters_to, set_direct_effect, set_name
+from pharmpy.modeling import (
+    add_effect_compartment,
+    add_iiv,
+    fix_parameters_to,
+    set_direct_effect,
+    set_name,
+)
 
 
 def create_pkpd_models(model: Model, ests: pd.Series):
@@ -29,5 +35,11 @@ def create_pkpd_models(model: Model, ests: pd.Series):
                 pkpd_model = add_effect_compartment(model, expr=pd_type)
             pkpd_model = set_name(pkpd_model, f"{model_type}_{pd_type}")
             pkpd_model = fix_parameters_to(pkpd_model, ests)
+            pkpd_model = add_iiv(pkpd_model, ["E0"], "exp")
+            for parameter in ["S", "E_max", "m"]:
+                try:
+                    pkpd_model = add_iiv(pkpd_model, [parameter], "exp")
+                except ValueError:
+                    pass
             models.append(pkpd_model)
     return models
