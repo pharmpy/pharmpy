@@ -17,6 +17,7 @@ from pharmpy.workflows import Task, Workflow
 
 EST_METHODS = ('FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES')
 SOLVERS = ('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI')
+COVS = ('SANDWICH', 'CPG', 'OFIM')
 
 ALGORITHMS = frozenset(['exhaustive', 'exhaustive_with_update', 'exhaustive_only_eval'])
 
@@ -25,6 +26,7 @@ def create_workflow(
     algorithm: str,
     methods: Optional[Union[List[str], str]] = None,
     solvers: Optional[Union[List[str], str]] = None,
+    covs: Optional[Union[List[str], str]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):
@@ -40,6 +42,9 @@ def create_workflow(
     solvers : list, str or None
         List of solver to test. Can be specified as 'all', a list of solvers, or None (to
         not test any solver)
+    covs : list, str or None
+        List of covariance to test. Can be specified as 'all', a list of covs, or None (to
+        not evaluate any covariance)
     results : ModelfitResults
         Results for model
     model : Model
@@ -57,7 +62,10 @@ def create_workflow(
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
     >>> methods = ['imp', 'saem']
-    >>> run_estmethod('reduced', methods=methods, solvers='all', results=results, model=model) # doctest: +SKIP
+    >>> covs = None
+    >>> run_estmethod( # doctest: +SKIP
+    >>>     'reduced', methods=methods, solvers='all', covs=covs, results=results, model=model # doctest: +SKIP
+    >>> ) # doctest: +SKIP
 
     """
     wf = Workflow()
@@ -76,7 +84,9 @@ def create_workflow(
         methods = [model.estimation_steps[-1].method]
 
     wf_algorithm, task_base_model_fit = algorithm_func(
-        _format_input(methods, EST_METHODS), _format_input(solvers, SOLVERS)
+        _format_input(methods, EST_METHODS),
+        _format_input(solvers, SOLVERS),
+        _format_input(covs, COVS),
     )
     wf.insert_workflow(wf_algorithm, predecessors=start_task)
 
@@ -177,7 +187,7 @@ def summarize_estimation_steps(models):
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(algorithm, methods, solvers, model):
+def validate_input(algorithm, methods, solvers, covs, model):
     if solvers is not None and has_linear_odes(model):
         raise ValueError(
             'Invalid input `model`: testing non-linear solvers on linear system is not supported'
@@ -188,9 +198,9 @@ def validate_input(algorithm, methods, solvers, model):
             f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'
         )
 
-    if methods is None and solvers is None:
+    if methods is None and solvers is None and covs is None:
         raise ValueError(
-            'Invalid search space options: please specify at least `methods` or `solvers`'
+            'Invalid search space options: please specify at least one of `methods`, `solvers`, or `covs`'
         )
 
     if methods is not None:
@@ -198,6 +208,9 @@ def validate_input(algorithm, methods, solvers, model):
 
     if solvers is not None:
         _validate_search_space(solvers, SOLVERS, 'solvers')
+
+    if covs is not None:
+        _validate_search_space(covs, COVS, 'covs')
 
 
 def _validate_search_space(input_search_space, allowed_search_space, option_name):
