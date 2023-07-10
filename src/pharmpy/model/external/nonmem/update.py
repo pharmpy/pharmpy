@@ -402,7 +402,31 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
 
 def update_cmt_column(model, old, new):
     if model.dataset is not None:
-        if "CMT" in model.datainfo.names and len(old.compartment_names) != len(
+        if (
+            "admid" in model.datainfo.types
+            and len(model.dataset[model.datainfo.typeix["admid"].names[0]].unique()) != 1
+        ):
+            cs = model.statements.ode_system
+            newmap = new_compartmental_map(cs)
+
+            d = {}
+            for dose_comp in model.statements.ode_system.dosing_compartment:
+                d[dose_comp.dose.admid] = newmap[dose_comp.name]
+
+            from pharmpy.model.model import update_datainfo
+            from pharmpy.modeling.data import get_admid
+
+            cmt_col = get_admid(model)
+            cmt_col = cmt_col.replace(d)
+
+            dataset = model.dataset
+            dataset['CMT'] = cmt_col
+            di = update_datainfo(model.datainfo, dataset)
+            colinfo = di['CMT'].replace(type='compartment')
+            model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
+
+            updated_dataset = True
+        elif "CMT" in model.datainfo.names and len(old.compartment_names) != len(
             new.compartment_names
         ):
             # Make sure column is a number and not string
@@ -424,27 +448,6 @@ def update_cmt_column(model, old, new):
             dataset = model.dataset
             dataset = dataset.replace({"CMT": remap})
             model = model.replace(dataset=dataset)
-
-            updated_dataset = True
-        elif (
-            "CMT" not in model.datainfo.names
-            and "admid" in model.datainfo.types
-            and model.dataset[model.datainfo.typeix["admid"].names].unique() != 1
-        ):
-            d = {}
-            for dose_comp in model.statements.ode_system.dosing_compartment:
-                d[dose_comp.dose.admid] = model.internals.compartment_map[dose_comp.name]
-            from pharmpy.model.model import update_datainfo
-            from pharmpy.modeling.data import get_admid
-
-            cmt_col = get_admid(model)
-            cmt_col = cmt_col.replace(d)
-
-            dataset = model.dataset
-            dataset['CMT'] = cmt_col
-            di = update_datainfo(model.datainfo, dataset)
-            colinfo = di['CMT'].replace(type='compartment')
-            model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
 
             updated_dataset = True
         else:
