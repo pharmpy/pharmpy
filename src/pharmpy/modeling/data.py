@@ -844,6 +844,7 @@ def get_evid(model: Model):
     mdv = get_mdv(model)
     return mdv.rename('EVID')
 
+
 def get_admid(model: Model):
     """Get the admid from model dataset
 
@@ -869,7 +870,7 @@ def get_admid(model: Model):
         pass
     else:
         return model.dataset[admidcols[0].name]
-    
+
     oral = iv = None
     odes = model.statements.ode_system
     names = odes.compartment_names
@@ -884,17 +885,19 @@ def get_admid(model: Model):
     adm.name = "ADMID"
     return adm
 
+
 def add_admid(model):
     di = model.datainfo
-    if not "admid" in di.types:
+    if "admid" not in di.types:
         adm = get_admid(model)
         dataset = model.dataset
         dataset["ADMID"] = adm
         di = update_datainfo(model.datainfo, dataset)
         colinfo = di['ADMID'].replace(type='admid')
         model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
-    
+
     return model
+
 
 def get_cmt(model: Model):
     """Get the cmt (compartment) column from the model dataset
