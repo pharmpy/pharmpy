@@ -8,10 +8,9 @@ def test_pkpd(tmp_path, load_model_for_test, testdata):
         start_res = fit(model)
         res = run_structsearch(type='pkpd', route='iv', results=start_res, model=model)
 
-        assert len(res.summary_models) > 1
-        assert len(res.summary_tool) > 1
-        assert len(res.models) > 1
-        assert res is not None
+        assert len(res.summary_models) == 14
+        assert len(res.summary_tool) == 14
+        assert len(res.models) == 13
 
         rundir = tmp_path / 'structsearch_dir1'
         assert rundir.is_dir()

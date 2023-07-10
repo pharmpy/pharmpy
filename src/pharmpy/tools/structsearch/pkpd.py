@@ -17,7 +17,7 @@ def create_pkpd_models(model: Model, ests: pd.Series):
 
     Returns
     -------
-    Pharmpy model
+    List of pharmpy models
     """
     models = []
     pd_types = ["baseline", "linear", "Emax", "sigmoid", "step", "loglin"]
@@ -31,3 +31,16 @@ def create_pkpd_models(model: Model, ests: pd.Series):
             pkpd_model = fix_parameters_to(pkpd_model, ests)
             models.append(pkpd_model)
     return models
+
+
+def create_pk_model(model: Model):
+    # Create copy of model with filtered dataset.
+    # FIXME: this function needs to be removed later
+    pk_dataset = model.dataset
+    pk_dataset = pk_dataset[pk_dataset["DVID"] != 2]
+    pk_model = model.replace(
+        dataset=pk_dataset,
+        description=model.description + ". Removed rows with DVID=2.",
+        name="PK_" + model.name,
+    )
+    return pk_model

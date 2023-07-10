@@ -14,7 +14,7 @@ from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
 
-from .pkpd import create_pkpd_models
+from .pkpd import create_pk_model, create_pkpd_models
 from .tmdd import create_qss_models, create_remaining_models
 
 ROUTES = frozenset(('iv', 'oral'))
@@ -99,18 +99,15 @@ def run_tmdd(context, model):
 
 
 def run_pkpd(context, model):
-    pk_dataset = model.dataset
-    pk_dataset = pk_dataset[pk_dataset["DVID"] != 2]
-    pk_model = model.replace(
-        dataset=pk_dataset,
-        description=model.description + ". Removed rows with DVID=2.",
-        name="PK_" + model.name,
-    )
+    pk_model = create_pk_model(
+        model
+    )  # FIXME: a copy of input model with a filtered dataset is used.
 
     wf = create_fit_workflow(pk_model)
     task_results = Task('results1', bundle_results)
     wf.add_task(task_results, predecessors=wf.output_tasks)
     pk_model_fit = call_workflow(wf, 'results_pd', context)
+
     pkpd_models = create_pkpd_models(model, pk_model_fit[0].modelfit_results.parameter_estimates)
 
     wf2 = create_fit_workflow(pkpd_models)
@@ -127,7 +124,7 @@ def run_pkpd(context, model):
         StructSearchResults,
         model,
         model,
-        [pk_model] + list(pkpd_models_fit),
+        [pk_model] + list(pkpd_models_fit),  # FIXME: replace pk_model with something else later
         rank_type='bic',
         cutoff=None,
         summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"]),
