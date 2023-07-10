@@ -28,10 +28,9 @@ from pharmpy.modeling import (
     set_estimation_step,
     set_initial_condition,
     set_initial_estimates,
-    set_zero_order_absorption,
+    set_transit_compartments,
     set_zero_order_elimination,
     set_zero_order_input,
-    set_transit_compartments,
 )
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.amd.funcs import create_start_model
