@@ -206,13 +206,16 @@ def set_first_order_elimination(model: Model):
     return model
 
 
-def add_bioavailability_statement(model: Model, add_parameter=True):
-    """Add bioavailability statement for the dose compartment(s) of the model
+def add_bioavailability_statement(model: Model, add_parameter: bool=True):
+    """Add bioavailability statement for the dose compartment(s) of the model.
+    Can be added as a new parameter or simply as a number.
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    add_parameter : bool
+        Add new parameter representing bioavailability or not
 
     Return
     ------
