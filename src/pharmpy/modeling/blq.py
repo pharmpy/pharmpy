@@ -20,7 +20,7 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
     m3 and m4 method:
 
     * Does not support covariance between epsilons
-    * Only supports additive, proportional, and combined error model
+    * Supports additive, proportional, combined, and power error model
 
     .. [1] Beal SL. Ways to fit a PK model with some data below the quantification
     limit. J Pharmacokinet Pharmacodyn. 2001 Oct;28(5):481-504. doi: 10.1023/a:1012299115260.
