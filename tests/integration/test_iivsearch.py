@@ -8,6 +8,35 @@ from pharmpy.modeling import set_seq_zo_fo_absorption
 from pharmpy.tools import fit, retrieve_models, run_iivsearch
 
 
+def test_no_of_etas_keep(tmp_path, model_count, start_model):
+    with chdir(tmp_path):
+        res_keep0 = run_iivsearch(
+            'brute_force_no_of_etas',
+            results=start_model.modelfit_results,
+            model=start_model,
+            keep=[],
+        )
+        res_keep1 = run_iivsearch(
+            'brute_force_no_of_etas',
+            results=start_model.modelfit_results,
+            model=start_model,
+            keep=["CL"],
+        )
+        res_keep2 = run_iivsearch(
+            'brute_force_no_of_etas',
+            results=start_model.modelfit_results,
+            model=start_model,
+            keep=["CL", "VC"],
+        )
+        no_of_models = 8
+        assert len(res_keep0.summary_models) == no_of_models
+        assert len(res_keep1.summary_models) == no_of_models // 2
+        assert len(res_keep2.summary_models) == no_of_models // 4
+        assert res_keep0.summary_tool.iloc[-1]['description'] == '[]'
+        assert res_keep1.summary_individuals.iloc[-1]['description'] == '[CL]'
+        assert res_keep2.summary_individuals.iloc[-1]['description'] == '[CL]+[VC]'
+
+
 def test_block_structure(tmp_path, model_count, start_model):
     with chdir(tmp_path):
         res = run_iivsearch(
