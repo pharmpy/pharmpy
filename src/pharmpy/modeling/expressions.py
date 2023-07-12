@@ -1134,7 +1134,7 @@ def _remove_covariate_effect_from_statements_recursive(
 
 
 def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
-    """Retrieves PK parameters in :class:`pharmpy.model`.
+    """Retrieves PK parameters in :class:`pharmpy.model.Model`.
 
     Parameters
     ----------
@@ -1175,16 +1175,15 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
 
     dependency_graph = _dependency_graph(natural_assignments)
 
-    pk_symbols = sorted(map(str, _filter_symbols(dependency_graph, free_symbols)))
+    pk_symbols = _filter_symbols(dependency_graph, free_symbols)
     if model.statements.ode_system.find_compartment("EFFECT") is not None:
-        PD_parameters = model.statements.ode_system.find_compartment("EFFECT").input.free_symbols
-        return [x for x in pk_symbols if sympy.Symbol(x) not in PD_parameters]
-    else:
-        return pk_symbols
+        pd_symbols = model.statements.ode_system.find_compartment("EFFECT").input.free_symbols
+        pk_symbols = pk_symbols.difference(pd_symbols)
+    return sorted(map(str, pk_symbols))
 
 
 def get_pd_parameters(model: Model) -> List[str]:
-    """Retrieves PD parameters in :class:`pharmpy.model`.
+    """Retrieves PD parameters in :class:`pharmpy.model.Model`.
 
     Parameters
     ----------
@@ -1209,17 +1208,18 @@ def get_pd_parameters(model: Model) -> List[str]:
     get_pk_parameters
 
     """
+    # FIXME: this function needs to be updated. Currently uses fixed parameter names.
+
     pd_symbols = []
-    if model.statements.find_assignment('Y_2') is not None:
-        parameters_in_E = model.statements.find_assignment('E').free_symbols
+    sset = model.statements
+    if sympy.Symbol('Y_2') in model.dependent_variables:
+        parameters_in_e = sset.find_assignment('E').free_symbols
         pk_parameters = get_pk_parameters(model)
-        parameters_in_E = [x for x in parameters_in_E if str(x) not in pk_parameters]
-        for i in range(model.statements.before_odes.__len__()):
-            pd_symbols.append(model.statements.before_odes[i].symbol)
-        pd_symbols = set(pd_symbols)
-        pd_symbols = [x for x in pd_symbols if x in parameters_in_E]
-        if model.statements.ode_system.find_compartment("EFFECT") is not None:
-            pd_symbols.append("KE0")
+        parameters_in_e = {x for x in parameters_in_e if str(x) not in pk_parameters}
+        pd_symbols = {statement.symbol for statement in sset.before_odes}
+        pd_symbols = pd_symbols.intersection(parameters_in_e)
+        if sset.ode_system.find_compartment("EFFECT") is not None:
+            pd_symbols.add("KE0")
     return sorted(map(str, pd_symbols))
 
 

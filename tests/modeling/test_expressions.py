@@ -345,21 +345,32 @@ def test_get_pk_parameters(load_model_for_test, testdata, model_path, kind, expe
     assert 'KE0' not in get_pk_parameters(pkpd_model)
 
 
-def test_get_pd_parameters(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
-    pkpd_model_baseline = set_direct_effect(model, "baseline")
-    pkpd_effect_comp_model_baseline = add_effect_compartment(model, "baseline")
-    pkpd_model_linear = set_direct_effect(model, "linear")
-    pkpd_effect_comp_model_linear = add_effect_compartment(model, "linear")
-    pkpd_model_sigmoid = set_direct_effect(model, "sigmoid")
-    pkpd_effect_comp_model_sigmoid = add_effect_compartment(model, "sigmoid")
-    assert get_pd_parameters(pkpd_model_baseline) == ['E0']
-    assert get_pd_parameters(pkpd_effect_comp_model_baseline) == ['E0', 'KE0']
-    assert get_pd_parameters(pkpd_model_linear) == ['E0', 'S']
-    assert get_pd_parameters(pkpd_effect_comp_model_linear) == ['E0', 'KE0', 'S']
-    assert get_pd_parameters(pkpd_model_sigmoid) == ['EC_50', 'E_max', 'n']
-    assert get_pd_parameters(pkpd_effect_comp_model_sigmoid) == ['EC_50', 'E_max', 'KE0', 'n']
-    assert get_pd_parameters(model) == []
+@pytest.mark.parametrize(
+    ('model_path', 'kind', 'expected'),
+    (
+        ('nonmem/pheno.mod', 'baseline', ['E0']),
+        ('nonmem/pheno.mod', 'linear', ['E0', 'S']),
+        ('nonmem/pheno.mod', 'Emax', ['E0', 'E_max', 'EC_50']),
+        ('nonmem/pheno.mod', 'step', ['E0', 'E_max']),
+        ('nonmem/pheno.mod', 'sigmoid', ['EC_50', 'E_max', 'n']),
+        ('nonmem/pheno.mod', 'loglin', ['E0', 'm']),
+    ),
+    ids=repr,
+)
+def test_get_pd_parameters(load_model_for_test, testdata, model_path, kind, expected):
+    model = load_model_for_test(testdata / model_path)
+    assert set(get_pd_parameters(set_direct_effect(model, kind))) == set(expected)
+    assert set(get_pd_parameters(add_effect_compartment(model, kind))) == set(expected + ["KE0"])
+    assert not set(
+        set(get_pd_parameters(set_direct_effect(model, kind))).intersection(
+            get_pk_parameters(set_direct_effect(model, kind))
+        )
+    )
+    assert not set(
+        set(get_pd_parameters(add_effect_compartment(model, kind))).intersection(
+            get_pk_parameters(add_effect_compartment(model, kind))
+        )
+    )
 
 
 @pytest.mark.parametrize(
