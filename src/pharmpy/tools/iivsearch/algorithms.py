@@ -1,5 +1,4 @@
-from itertools import chain
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.internals.expr.subs import subs
@@ -21,7 +20,7 @@ def brute_force_no_of_etas(base_model, index_offset=0, keep=[]):
     iivs = base_model.random_variables.iiv
     iiv_names = iivs.names
     if len(keep) > 0:
-        iiv_names = list(set(iiv_names) - _get_eta_from_parameter(base_model, keep))
+        iiv_names = set(iiv_names) - _get_eta_from_parameter(base_model, keep)
 
     for i, to_remove in enumerate(non_empty_subsets(iiv_names), 1):
         model_name = f'iivsearch_run{i + index_offset}'
@@ -155,26 +154,12 @@ def update_description(model):
     return model
 
 
-def _get_eta_from_parameter(model: Model, parameters: List[str]) -> List[str]:
-    # returns list of eta parameters from parameter names
+def _get_eta_from_parameter(model: Model, parameters: List[str]) -> Set[str]:
+    # returns list of eta names from parameter names
     iiv_set = set()
     iiv_names = model.random_variables.names
-    if _has_iiv(model, parameters):
-        for iiv_name in iiv_names:
-            param = get_rv_parameters(model, iiv_name)
-            if set(param).issubset(set(parameters)) and len(param) > 0:
-                iiv_set.add(iiv_name)
+    for iiv_name in iiv_names:
+        param = get_rv_parameters(model, iiv_name)
+        if set(param).issubset(parameters) and len(param) > 0:
+            iiv_set.add(iiv_name)
     return iiv_set
-
-
-def _has_iiv(model: Model, parameters: List[str]):
-    # returns False if the parameter does not exist in the model or has no iiv
-    is_in_params = True
-    iiv_names = model.random_variables.iiv.names
-    params_that_have_iiv = [get_rv_parameters(model, iiv_name) for iiv_name in iiv_names]
-    params_that_have_iiv = list(set(chain.from_iterable(params_that_have_iiv)))
-    for parameter in parameters:
-        if parameter not in params_that_have_iiv:
-            is_in_params = False
-            raise ValueError(f"Parameter {parameter} does not exist or has no iiv")
-    return is_in_params

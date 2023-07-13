@@ -9,7 +9,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import add_pk_iiv, calculate_bic, create_joint_distribution
+from pharmpy.modeling import add_pk_iiv, calculate_bic, create_joint_distribution, has_random_effect
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
@@ -35,7 +35,7 @@ def create_workflow(
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
-    keep: Optional[List[str]] = None,
+    keep: Optional[List[str]] = [],
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -98,7 +98,10 @@ def create_algorithm_workflow(
         [model_name for model_name in state.model_names_so_far if 'base' not in model_name]
     )
     algorithm_func = getattr(algorithms, state.algorithm)
-    wf_method = algorithm_func(base_model, index_offset, keep)
+    if state.algorithm == "brute_force_no_of_etas":
+        wf_method = algorithm_func(base_model, index_offset, keep)
+    else:
+        wf_method = algorithm_func(base_model, index_offset)
     wf.insert_workflow(wf_method)
 
     task_result = Task(
@@ -265,6 +268,8 @@ def validate_input(
     algorithm,
     iiv_strategy,
     rank_type,
+    model,
+    keep,
 ):
     if algorithm not in IIV_ALGORITHMS:
         raise ValueError(
@@ -281,6 +286,13 @@ def validate_input(
             f'Invalid `iiv_strategy`: got `{iiv_strategy}`,'
             f' must be one of {sorted(IIV_STRATEGIES)}.'
         )
+
+    if len(keep) > 0:
+        for parameter in keep:
+            try:
+                has_random_effect(model, parameter, "iiv")
+            except KeyError:
+                raise ValueError(f"Parameter {parameter} has no iiv.")
 
 
 @dataclass(frozen=True)
