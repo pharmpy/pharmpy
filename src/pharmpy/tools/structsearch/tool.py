@@ -14,7 +14,7 @@ from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
 
-from .pkpd import create_pk_model, create_pkpd_models
+from .pkpd import create_pkpd_models
 from .tmdd import create_qss_models, create_remaining_models
 
 ROUTES = frozenset(('iv', 'oral'))
@@ -99,32 +99,23 @@ def run_tmdd(context, model):
 
 
 def run_pkpd(context, model):
-    pk_model = create_pk_model(
-        model
-    )  # FIXME: a copy of input model with a filtered dataset is used.
+    pkpd_models = create_pkpd_models(model, model.modelfit_results.parameter_estimates)
 
-    wf = create_fit_workflow(pk_model)
-    task_results = Task('results1', bundle_results)
-    wf.add_task(task_results, predecessors=wf.output_tasks)
-    pk_model_fit = call_workflow(wf, 'results_pd', context)
-
-    pkpd_models = create_pkpd_models(model, pk_model_fit[0].modelfit_results.parameter_estimates)
-
-    wf2 = create_fit_workflow(pkpd_models)
+    wf = create_fit_workflow(pkpd_models)
     task_results = Task('results2', bundle_results)
-    wf2.add_task(task_results, predecessors=wf2.output_tasks)
-    pkpd_models_fit = call_workflow(wf2, 'results_remaining', context)
+    wf.add_task(task_results, predecessors=wf.output_tasks)
+    pkpd_models_fit = call_workflow(wf, 'results_remaining', context)
 
     summary_input = summarize_modelfit_results(model.modelfit_results)
     summary_candidates = summarize_modelfit_results(
-        [model.modelfit_results for model in pk_model_fit + pkpd_models_fit]
+        [model.modelfit_results for model in pkpd_models_fit]
     )
 
     return create_results(
         StructSearchResults,
         model,
         model,
-        [pk_model] + list(pkpd_models_fit),  # FIXME: replace pk_model with something else later
+        list(pkpd_models_fit),
         rank_type='bic',
         cutoff=None,
         summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"]),
