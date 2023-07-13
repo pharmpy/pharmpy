@@ -208,7 +208,8 @@ def set_first_order_elimination(model: Model):
 
 def add_bioavailability(model: Model, add_parameter: bool = True):
     """Add bioavailability statement for the dose compartment(s) of the model.
-    Can be added as a new parameter or simply as a number.
+    Can be added as a new parameter or otherwise it will be set to 1. This will affect
+    the first dosing compartment if multiple are present.
 
     Parameters
     ----------
