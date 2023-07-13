@@ -779,8 +779,7 @@ def pk_param_conversion(model: Model, advan, trans):
     d = {}
     for old, new in remap.items():
         d[sympy.Symbol(f'S{old}')] = sympy.Symbol(f'S{new}')
-        # FIXME: F should also be moved with dose compartment (?)
-        # d[sympy.Symbol(f'F{old}')] = sympy.Symbol(f'F{new}')
+        d[sympy.Symbol(f'F{old}')] = sympy.Symbol(f'F{new}')
         # FIXME: R, D and ALAG should be moved with dose compartment
         # d[sympy.Symbol(f'R{old}')] = sympy.Symbol(f'R{new}')
         # d[sympy.Symbol(f'D{old}')] = sympy.Symbol(f'D{new}')
