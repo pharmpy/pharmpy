@@ -143,6 +143,7 @@ def set_tmdd(model: Model, type: str):
         )
 
         # FIXME: should others also have flows?
+        central = cb.find_compartment('CENTRAL')
         cb.add_flow(central, output, lafree_symb * elimination_rate)
 
         lafreef = sympy.Symbol("LAFREEF")
