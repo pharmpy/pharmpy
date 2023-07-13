@@ -722,6 +722,8 @@ def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSy
 
 
 def update_bio(model, old, new):
+    
+    #FIXME : Bioavailability only supported for the first compartment
     new_dosing = new.dosing_compartment[0]
     new_bio = new_dosing.bioavailability
     old_bio = old.dosing_compartment[0].bioavailability
