@@ -419,7 +419,7 @@ def update_cmt_column(model, old, new):
             cmt_col = get_admid(model)
             cmt_col = cmt_col.replace(d)
 
-            dataset = model.dataset
+            dataset = model.dataset.copy()
             dataset['CMT'] = cmt_col
             di = update_datainfo(model.datainfo, dataset)
             colinfo = di['CMT'].replace(type='compartment')
