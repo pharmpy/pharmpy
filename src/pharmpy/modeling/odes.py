@@ -245,18 +245,15 @@ def add_bioavailability(model: Model, add_parameter: bool = True):
         # Bio not defined
         if add_parameter:
             model, bio_symb = _add_parameter(model, 'BIO', init=float(bio))
-            ass = Assignment('F', bio_symb)
+            f_ass = Assignment.create(sympy.Symbol('F_BIO'), bio_symb)
 
-            # Set bioavailability of compartment to statement instead
-            cb = CompartmentalSystemBuilder(odes)
-            cb.set_bioavailability(dose_comp, ass.symbol)
-            new_before_odes = model.statements.before_odes + ass
+            new_before_odes = model.statements.before_odes + f_ass
 
         else:
             # Add as a number
-            bio_ass = Assignment("BIO", sympy.Number(1))
-            f_ass = Assignment("F", bio_ass.symbol)
-            new_before_odes = bio_ass + model.statements.before_odes + ass
+            bio_ass = Assignment.create(sympy.Symbol("BIO"), sympy.Number(1))
+            f_ass = Assignment.create(sympy.Symbol("F_BIO"), bio_ass.symbol)
+            new_before_odes = bio_ass + model.statements.before_odes + f_ass
         
         # Add statement to code
         cb = CompartmentalSystemBuilder(odes)
