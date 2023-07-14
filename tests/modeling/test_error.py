@@ -846,6 +846,64 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
+def test_set_time_varying_error_model_multiple_dvs(testdata, load_model_for_test):
+    code = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+$ERROR
+IF (DVID.EQ.1) THEN
+    Y = F + F*EPS(1)
+ELSE
+    Y = F + F*EPS(1) + EPS(2)
+END IF
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    model = read_model_from_string(code)
+    model = set_time_varying_error_model(model, cutoff=1.0, dv=1)
+
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+$ERROR
+IF (TIME.LT.1.0) THEN
+    Y_1 = F + EPS(1)*F*THETA(3)
+ELSE
+    Y_1 = F + EPS(1)*F
+END IF
+Y_2 = F + EPS(1)*F + EPS(2)
+IF (DVID.EQ.1) THEN
+    Y = Y_1
+ELSE
+    Y = Y_2
+END IF
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$THETA  0.1 ; time_varying
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert model.model_code == correct
+
+
 @pytest.mark.parametrize(
     'epsilons, same_eta, eta_names, err_ref, omega_ref',
     [

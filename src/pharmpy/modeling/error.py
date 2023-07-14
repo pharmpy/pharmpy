@@ -838,7 +838,9 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     return model.update_source()
 
 
-def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME'):
+def set_time_varying_error_model(
+    model: Model, cutoff: float, idv: str = 'TIME', dv: Union[sympy.Symbol, str, int, None] = None
+):
     """Set a time varying error model per time cutoff
 
     Parameters
@@ -849,6 +851,8 @@ def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME')
         A value at the given quantile over idv column
     idv : str
         Time or time after dose, default is Time
+    dv : Union[sympy.Symbol, str, int, None]
+        Name or DVID of dependent variable. None for the default (first or only)
 
     Return
     ------
@@ -866,7 +870,8 @@ def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME')
     Y = ⎩      EPS₁⋅W + F           otherwise
 
     """
-    y = model.statements.find_assignment('Y')
+    dv = get_dv_symbol(model, dv)
+    y = model.statements.find_assignment(dv)
     idv = parse_expr(idv)
     theta = create_symbol(model, 'time_varying')
     eps = model.random_variables.epsilons
