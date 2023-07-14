@@ -722,19 +722,36 @@ def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSy
 
 
 def update_bio(model, old, new):
-    
-    #FIXME : Bioavailability only supported for the first compartment
-    new_dosing = new.dosing_compartment[0]
-    new_bio = new_dosing.bioavailability
-    old_bio = old.dosing_compartment[0].bioavailability
-
-    if new_bio != old_bio:
-        if isinstance(new_bio, sympy.Symbol):
-            if new_bio != sympy.Symbol('F1'):
-                model = model.replace(
-                    statements=model.statements.subs({new_bio: sympy.Symbol('F1')})
-                )
-
+    """
+    Update all bioavailability statements to match the numbering of the
+    compartments in NONMEM.
+    Is based on the order of dosing compartments
+    """
+    if len(new.dosing_compartment) == len(old.dosing_compartment):
+        for new_dosing, old_dosing in zip(new.dosing_compartment, old.dosing_compartment):
+            
+            new_bio = new_dosing.bioavailability
+            old_bio = old_dosing.bioavailability
+            
+            old_comp_number = model.internals.compartment_map[old_dosing.name]
+            newmap = new_compartmental_map(model.statements.ode_system)
+            new_comp_number = newmap[new_dosing.name]
+            if new_bio != old_bio:
+                if isinstance(new_bio, sympy.Symbol):
+                    model = model.replace(
+                        statements=model.statements.subs({new_bio: sympy.Symbol(f'F{new_comp_number}')})
+                    )
+            else:
+                if new_bio != sympy.Symbol("F1"):
+                    # If number of compartments have changed, F1 should NOT
+                    # be changed to match the old compartment
+                    # All other Fn should be changed to match the new number
+                    model = model.replace(
+                        statements=model.statements.subs({sympy.Symbol(f'F{old_comp_number}'): sympy.Symbol(f'F{new_comp_number}')})
+                    )
+    else:
+        # TODO : Number of dose compartments have changed
+        pass
     return model
 
 
@@ -779,7 +796,8 @@ def pk_param_conversion(model: Model, advan, trans):
     d = {}
     for old, new in remap.items():
         d[sympy.Symbol(f'S{old}')] = sympy.Symbol(f'S{new}')
-        d[sympy.Symbol(f'F{old}')] = sympy.Symbol(f'F{new}')
+        # FIXME: F should also be moved with dose compartment (?)
+        # d[sympy.Symbol(f'F{old}')] = sympy.Symbol(f'F{new}')
         # FIXME: R, D and ALAG should be moved with dose compartment
         # d[sympy.Symbol(f'R{old}')] = sympy.Symbol(f'R{new}')
         # d[sympy.Symbol(f'D{old}')] = sympy.Symbol(f'D{new}')
