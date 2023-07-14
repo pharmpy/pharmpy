@@ -20,6 +20,19 @@ from pharmpy.workflows import Workflow
 
 
 @pytest.mark.parametrize(
+    'list_of_parameters, expected_values',
+    [([], 3), (['CL'], 1), (["CL", "V"], 0)],
+)
+def test_brute_force_no_of_etas_keep(
+    load_model_for_test, testdata, list_of_parameters, expected_values
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    wf = brute_force_no_of_etas(model, keep=list_of_parameters)
+    fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
+    assert len(fit_tasks) == expected_values
+
+
+@pytest.mark.parametrize(
     'list_of_parameters, no_of_models',
     [([], 7), (['QP1'], 15)],
 )
