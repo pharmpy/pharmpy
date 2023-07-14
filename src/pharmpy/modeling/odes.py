@@ -206,6 +206,69 @@ def set_first_order_elimination(model: Model):
     return model
 
 
+def add_bioavailability(model: Model, add_parameter: bool = True):
+    """Add bioavailability statement for the first dose compartment of the model.
+    Can be added as a new parameter or otherwise it will be set to 1.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    add_parameter : bool
+        Add new parameter representing bioavailability or not
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = add_bioavailability(model)
+
+    See also
+    --------
+    remove_bioavailability
+
+    """
+    odes = model.statements.ode_system
+    if odes is None:
+        raise ValueError(f'Model {model.name} has no ODE system')
+
+    dose_comp = odes.dosing_compartment[0]
+    bio = dose_comp.bioavailability
+
+    if isinstance(bio, sympy.Number):
+        # Bio not defined
+        if add_parameter:
+            model, bio_symb = _add_parameter(model, 'BIO', init=float(bio))
+            f_ass = Assignment.create(sympy.Symbol('F_BIO'), bio_symb)
+
+            new_before_odes = model.statements.before_odes + f_ass
+
+        else:
+            # Add as a number
+            bio_ass = Assignment.create(sympy.Symbol("BIO"), sympy.Number(1))
+            f_ass = Assignment.create(sympy.Symbol("F_BIO"), bio_ass.symbol)
+            new_before_odes = bio_ass + model.statements.before_odes + f_ass
+
+        # Add statement to code
+        cb = CompartmentalSystemBuilder(odes)
+        cb.set_bioavailability(dose_comp, f_ass.symbol)
+
+        model = model.replace(
+            statements=(new_before_odes + CompartmentalSystem(cb) + model.statements.after_odes)
+        )
+
+    else:
+        # BIO already defined, leave it alone?
+        pass
+
+    return model.update_source()
+
+
 def set_zero_order_elimination(model: Model):
     """Sets elimination to zero order.
 
@@ -702,6 +765,8 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
     except ValueError:
         raise ValueError(f'Number of compartments must be integer: {n}')
 
+    model = remove_lag_time(model)
+
     # Handle keep_depot option
     depot = cs.find_depot(statements)
     mdt_init = None
@@ -765,6 +830,8 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             n -= 1
             cb.add_flow(new_comp, comp, rate)
             comp = new_comp
+        comp = cb.set_bioavailability(comp, dosing_comp.bioavailability)
+        dosing_comp = cb.set_bioavailability(dosing_comp, sympy.Integer(1))
         cb.move_dose(dosing_comp, comp)
         statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
@@ -1077,6 +1144,7 @@ def set_first_order_absorption(model: Model):
     amount = dose_comp.dose.amount
     symbols = dose_comp.free_symbols
     lag_time = dose_comp.lag_time
+    bio = dose_comp.bioavailability
     cb = CompartmentalSystemBuilder(cs)
     if depot and depot == dose_comp:
         dose_comp = cb.set_dose(dose_comp, Bolus(dose_comp.dose.amount))
@@ -1095,7 +1163,7 @@ def set_first_order_absorption(model: Model):
 
     model = remove_unused_parameters_and_rvs(model)
     if not depot:
-        model, _ = _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time)
+        model, _ = _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time, bio)
         model = model.update_source()
     return model
 
@@ -1307,18 +1375,22 @@ def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=
     return model
 
 
-def _add_first_order_absorption(model, dose, to_comp, lag_time=None):
+def _add_first_order_absorption(model, dose, to_comp, lag_time=None, bioavailability=None):
     """Add first order absorption
     Disregards what is currently in the model.
     """
     odes = model.statements.ode_system
     cb = CompartmentalSystemBuilder(odes)
     depot = Compartment.create(
-        'DEPOT', dose=dose, lag_time=sympy.Integer(0) if lag_time is None else lag_time
+        'DEPOT',
+        dose=dose,
+        lag_time=sympy.Integer(0) if lag_time is None else lag_time,
+        bioavailability=sympy.Integer(1) if bioavailability is None else bioavailability,
     )
     cb.add_compartment(depot)
     to_comp = cb.set_dose(to_comp, None)
     to_comp = cb.set_lag_time(to_comp, sympy.Integer(0))
+    to_comp = cb.set_bioavailability(to_comp, sympy.Integer(1))
 
     mat_assign = model.statements.find_assignment('MAT')
     if mat_assign:

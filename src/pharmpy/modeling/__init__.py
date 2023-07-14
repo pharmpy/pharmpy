@@ -116,6 +116,7 @@ from .math import (
 )
 from .metabolite import add_metabolite
 from .odes import (
+    add_bioavailability,
     add_individual_parameter,
     add_lag_time,
     add_peripheral_compartment,
@@ -216,6 +217,7 @@ __all__ = [
     'add_individual_parameter',
     'add_iov',
     'add_lag_time',
+    'add_bioavailability',
     'add_metabolite',
     'add_peripheral_compartment',
     'add_pk_iiv',
