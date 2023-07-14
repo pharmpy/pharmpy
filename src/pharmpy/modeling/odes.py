@@ -226,7 +226,7 @@ def add_bioavailability(model: Model, add_parameter: bool = True):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = add_bioavailability_statement(model)
+    >>> model = add_bioavailability(model)
 
     See also
     --------
