@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from typing import TYPE_CHECKING, Optional, Tuple
+import warnings
 
 from pharmpy.deps import sympy
 from pharmpy.model import (
@@ -39,11 +40,11 @@ def _compartmental_model(
 ):
     if advan == 'ADVAN1':
         # FIXME : Require multiple doses per comp before IV+ORAL
-        dose = dosing(di, dataset, 1)
+        doses = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         central = Compartment.create(
             'CENTRAL',
-            dose=dose,
+            dose=find_dose(doses, comp_number=1, admid=1),
             lag_time=_get_alag(control_stream, 1),
             bioavailability=_get_bioavailability(control_stream, 1),
         )
@@ -56,13 +57,13 @@ def _compartmental_model(
         cb = CompartmentalSystemBuilder()
         depot = Compartment.create(
             'DEPOT',
-            dose=find_dose(doses, comp_number = 1, admid = 1),
+            dose=find_dose(doses, comp_number=1, admid=1),
             lag_time=_get_alag(control_stream, 1),
             bioavailability=_get_bioavailability(control_stream, 1),
         )
         central = Compartment.create(
             'CENTRAL',
-            dose=find_dose(doses, comp_number = 2, admid = 2),
+            dose=find_dose(doses, comp_number=2, admid=2),
             lag_time=_get_alag(control_stream, 2),
             bioavailability=_get_bioavailability(control_stream, 2),
         )
@@ -78,7 +79,7 @@ def _compartmental_model(
         cb = CompartmentalSystemBuilder()
         central = Compartment.create(
             'CENTRAL',
-            dose=find_dose(doses, comp_number = 1, admid = 2),
+            dose=find_dose(doses, comp_number=1, admid=2),
             lag_time=_get_alag(control_stream, 1),
             bioavailability=_get_bioavailability(control_stream, 1),
         )
@@ -101,13 +102,13 @@ def _compartmental_model(
         cb = CompartmentalSystemBuilder()
         depot = Compartment.create(
             'DEPOT',
-            dose=find_dose(doses, comp_number = 1, admid = 1),
+            dose=find_dose(doses, comp_number=1, admid=1),
             lag_time=_get_alag(control_stream, 1),
             bioavailability=_get_bioavailability(control_stream, 1),
         )
         central = Compartment.create(
             'CENTRAL',
-            dose=find_dose(doses, comp_number = 2, admid = 2),
+            dose=find_dose(doses, comp_number=2, admid=2),
             lag_time=_get_alag(control_stream, 2),
             bioavailability=_get_bioavailability(control_stream, 2),
         )
@@ -128,9 +129,6 @@ def _compartmental_model(
         ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL': 3, 'OUTPUT': 4}
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
-        
-        # FIXME : Add dose based on presence of CMT column
-        
         cb = CompartmentalSystemBuilder()
         modrec = control_stream.get_records('MODEL')[0]
         defobs: Optional[Tuple[str, int]] = None
@@ -168,8 +166,7 @@ def _compartmental_model(
                 defdose = deffirst_dose
             else:
                 raise ModelSyntaxError('Dosing compartment is unknown')
-        
-        # TODO : ADD SUPPORT FOR MORE MODELS HERE
+
         doses = dosing(di, dataset, defdose[1])
         obscomp = None
         for i, name in enumerate(comp_names):
@@ -199,7 +196,7 @@ def _compartmental_model(
         cb = CompartmentalSystemBuilder()
         central = Compartment.create(
             'CENTRAL',
-            dose=find_dose(doses, comp_number = 1, admid = 2),
+            dose=find_dose(doses, comp_number=1, admid=2),
             lag_time=_get_alag(control_stream, 1),
             bioavailability=_get_bioavailability(control_stream, 1),
         )
@@ -215,7 +212,7 @@ def _compartmental_model(
         cb = CompartmentalSystemBuilder()
         central = Compartment.create(
             'CENTRAL',
-            dose=find_dose(doses, dose_comp = 1, admid = 2),
+            dose=find_dose(doses, dose_comp=1, admid=2),
             lag_time=_get_alag(control_stream, 1),
             bioavailability=_get_bioavailability(control_stream, 1),
         )
@@ -247,13 +244,13 @@ def _compartmental_model(
         cb = CompartmentalSystemBuilder()
         depot = Compartment.create(
             'DEPOT',
-            dose=find_dose(doses, dose_comp = 1, admid = 1),
+            dose=find_dose(doses, dose_comp=1, admid=1),
             lag_time=_get_alag(control_stream, 1),
             bioavailability=_get_bioavailability(control_stream, 1),
         )
         central = Compartment.create(
             'CENTRAL',
-            dose=find_dose(doses, dose_comp = 2, admid = 2),
+            dose=find_dose(doses, dose_comp=2, admid=2),
             lag_time=_get_alag(control_stream, 2),
             bioavailability=_get_bioavailability(control_stream, 2),
         )
@@ -284,9 +281,9 @@ def _compartmental_model(
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
     elif des:
         # FIXME : Add dose based on presence of CMT column
-        
+
         ### !!! CURRENTLY BROKEN !!! ###
-        
+
         rec_model = control_stream.get_records('MODEL')[0]
 
         subs_dict, comp_names = {}, {}
@@ -313,10 +310,13 @@ def _compartmental_model(
             comp = cs.find_compartment(comp_name)
             if comp is None:  # Compartments can be in $MODEL but not used in $DES
                 continue
-            if i == 1:
-                dose = dosing(di, dataset, 1)  # FIXME: Only one dose to 1st compartment
-                cb.set_dose(comp, dose)
-                comp = cb.find_compartment(comp_name)
+            admid = 1
+            if i == len(comps):
+                # FIXME : Assume last compartment is IV dose
+                admid = 2
+            doses = dosing(di, dataset, i)
+            cb.set_dose(comp, find_dose(doses, i, admid=admid))
+            comp = cb.find_compartment(comp_name)
             f = _get_bioavailability(control_stream, i)
             cb.set_bioavailability(comp, f)
             comp = cb.find_compartment(comp_name)
@@ -590,10 +590,11 @@ def _advan12_trans(trans: str):
             sympy.Symbol('KA'),
         )
 
+
 def old_dosing(di, dataset, dose_comp, cmt=False):
     if 'RATE' not in di.names or di['RATE'].drop:
         return Bolus(sympy.Symbol('AMT'))
-    
+
     if cmt == False:
         df = dataset
     else:
@@ -609,48 +610,39 @@ def old_dosing(di, dataset, dose_comp, cmt=False):
     else:
         return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol('RATE'))
 
+
 def dosing(di: DataInfo, dataset, dose_comp: int):
     if 'CMT' not in di.names or di['CMT'].drop:
-        return (
-            {
-            'comp_number' : dose_comp,
-            'dose' : _dosing(di, dataset, dose_comp)
-                },
-            )
+        return ({'comp_number': dose_comp, 'dose': _dosing(di, dataset, dose_comp)},)
     else:
         # CMT column present
         cmt = dataset['CMT']
         if len(cmt.unique()) < 1:
             # Single compartment dose
             # Overwrite dose_comp
+            warnings.warn(
+                "CMT column present with only one value"
+                "Need ADMID column to determine doses (if multiple)"
+            )
             comp_number = cmt[0]
-            return (
-                {
-                'comp_number' : comp_number,
-                'dose' : _dosing(di, dataset, comp_number)
-                    },
-                )
+            return ({'comp_number': comp_number, 'dose': _dosing(di, dataset, comp_number)},)
         else:
             # Multiple different compartments
             doses = ()
             for comp_number in cmt.unique():
-                doses += (
-                    {
-                    'comp_number' : comp_number,
-                    'dose' : _dosing(di, dataset, comp_number)
-                        },
-                    )
+                doses += ({'comp_number': comp_number, 'dose': _dosing(di, dataset, comp_number)},)
             return doses
-            
+
+
 def _dosing(di, dataset, dose_comp, cmt=False):
     if 'RATE' not in di.names or di['RATE'].drop:
         return Bolus(sympy.Symbol('AMT'))
-    
+
     if cmt == False:
         df = dataset
     else:
         df = dataset[dataset['CMT'] == dose_comp]
-        
+
     if df is None:
         return Bolus(sympy.Symbol('AMT'))
     elif (df['RATE'] == 0).all():
@@ -662,12 +654,14 @@ def _dosing(di, dataset, dose_comp, cmt=False):
     else:
         return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol('RATE'))
 
-def find_dose(doses, comp_number, admid = 1):
+
+def find_dose(doses, comp_number, admid=1):
     for dose in doses:
         if dose['comp_number'] == comp_number:
             comp_dose = dose['dose']
-            return comp_dose.replace(admid = admid)
+            return comp_dose.replace(admid=admid)
     return None
+
 
 def _get_alag(control_stream: NMTranControlStream, n: int):
     """Check if ALAGn is defined in model and return it else return 0"""
