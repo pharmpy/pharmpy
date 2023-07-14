@@ -987,7 +987,7 @@ def test_set_iiv_on_ruv(
     )
     model = create_model_for_test(model_sigma)
 
-    model = set_iiv_on_ruv(model, epsilons, same_eta, eta_names)
+    model = set_iiv_on_ruv(model, list_of_eps=epsilons, same_eta=same_eta, eta_names=eta_names)
 
     assert eta_names is None or eta_names[0] in model.random_variables.etas.names
 
@@ -1003,6 +1003,23 @@ def test_set_iiv_on_ruv(
         f' 0.031128  ;        IVV\n\n'
         f'{omega_ref}\n'
     )
+
+
+def test_set_iiv_on_ruv_multiple_dvs(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
+    model = set_iiv_on_ruv(model, dv=1)
+    rec = model.internals.control_stream.get_records('ERROR')[0]
+    correct = """$ERROR
+Y_1 = F + EPS(1)*F*EXP(ETA_RV1)
+Y_2 = F + EPS(1)*F + EPS(2)
+
+IF (DVID.EQ.1) THEN
+    Y = Y_1
+ELSE
+    Y = Y_2
+END IF
+"""
+    assert str(rec) == correct
 
 
 @pytest.mark.parametrize(
