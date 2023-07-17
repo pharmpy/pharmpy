@@ -917,7 +917,7 @@ def add_admid(model: Model):
         colinfo = di['ADMID'].replace(type='admid')
         model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
 
-    return model
+    return model.update_source()
 
 
 def get_cmt(model: Model):
