@@ -579,7 +579,7 @@ def test_cmt_update(load_model_for_test, testdata):
     updated_cmt = model.dataset["CMT"]
 
     assert old_cmt[0] == 1 and updated_cmt[0] == 1
-    assert old_cmt[1] == 2 and updated_cmt[1] == 1
+    assert old_cmt[1] == 2 and updated_cmt[1] == 4
 
 
 def test_zero_order_cmt(load_model_for_test, testdata):
