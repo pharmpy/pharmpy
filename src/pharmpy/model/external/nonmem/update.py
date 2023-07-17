@@ -25,10 +25,9 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
     data,
-    output
+    output,
 )
 from pharmpy.model.model import update_datainfo
-
 from pharmpy.modeling import get_admid, get_ids, simplify_expression
 
 from .records.parsers import CodeRecordParser

@@ -3,6 +3,7 @@ import shutil
 import pytest
 import sympy
 from sympy import Symbol as symbol
+
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import (
@@ -576,15 +577,16 @@ def test_cmt_update(load_model_for_test, testdata):
 
     model = set_transit_compartments(model, 2)
     updated_cmt = model.dataset["CMT"]
-    
+
     assert old_cmt[0] == 1 and updated_cmt[0] == 1
     assert old_cmt[1] == 2 and updated_cmt[1] == 1
-    
+
+
 def test_zero_order_cmt(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
     old_cmt = model.dataset["CMT"]
     old_cmt = pd.to_numeric(old_cmt)
-    
+
     model = set_zero_order_absorption(model)
     updated_cmt = model.dataset["CMT"]
 

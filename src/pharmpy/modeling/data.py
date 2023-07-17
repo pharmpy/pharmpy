@@ -888,7 +888,7 @@ def get_admid(model: Model):
 
 def add_admid(model: Model):
     """
-    Add an admid column to the model dataset and datainfo. Dependent on the 
+    Add an admid column to the model dataset and datainfo. Dependent on the
     presence of a CMT column in order to add admid correctly.
     1 : Oral dose
     2 : IV dose
@@ -902,7 +902,7 @@ def add_admid(model: Model):
     -------
     model : Model
         Pharmpy model
-    
+
     See also
     --------
     get_admid : Get or create an admid column
