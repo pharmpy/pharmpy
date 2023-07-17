@@ -612,7 +612,7 @@ def old_dosing(di, dataset, dose_comp, cmt=False):
 
 
 def dosing(di: DataInfo, dataset, dose_comp: int):
-    if 'CMT' not in di.names or di['CMT'].drop:
+    if 'CMT' not in di.names or di['CMT'].drop or dataset is None:
         return ({'comp_number': dose_comp, 'dose': _dosing(di, dataset, dose_comp)},)
     else:
         # CMT column present
