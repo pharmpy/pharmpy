@@ -25,9 +25,9 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
     data,
-    output,
-    update_datainfo
+    output
 )
+from pharmpy.model.model import update_datainfo
 
 from pharmpy.modeling import get_admid, get_ids, simplify_expression
 
