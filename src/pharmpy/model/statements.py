@@ -933,8 +933,7 @@ class CompartmentalSystem(ODESystem):
                     else:
                         dosing_comps = (node,) + dosing_comps
                 else:
-                    if dosing_comps:
-                        dosing_comps = dosing_comps + (node,)
+                    dosing_comps = dosing_comps + (node,)
 
         if len(dosing_comps) != 0:
             return dosing_comps
