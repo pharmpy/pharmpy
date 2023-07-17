@@ -26,8 +26,10 @@ from pharmpy.model import (
     Statements,
     data,
     output,
+    update_datainfo
 )
-from pharmpy.modeling import get_ids, simplify_expression
+
+from pharmpy.modeling import get_admid, get_ids, simplify_expression
 
 from .records.parsers import CodeRecordParser
 
@@ -412,9 +414,6 @@ def update_cmt_column(model, old, new):
             d = {}
             for dose_comp in model.statements.ode_system.dosing_compartment:
                 d[dose_comp.dose.admid] = newmap[dose_comp.name]
-
-            from pharmpy.model.model import update_datainfo
-            from pharmpy.modeling.data import get_admid
 
             cmt_col = get_admid(model)
             cmt_col = cmt_col.replace(d)
