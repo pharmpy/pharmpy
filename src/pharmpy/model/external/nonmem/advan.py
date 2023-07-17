@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Optional, Tuple
 import warnings
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from pharmpy.deps import sympy
 from pharmpy.model import (
@@ -281,8 +281,6 @@ def _compartmental_model(
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
     elif des:
         # FIXME : Add dose based on presence of CMT column
-
-        ### !!! CURRENTLY BROKEN !!! ###
 
         rec_model = control_stream.get_records('MODEL')[0]
 
@@ -618,7 +616,7 @@ def _dosing(di, dataset, dose_comp, cmt=False):
     if 'RATE' not in di.names or di['RATE'].drop:
         return Bolus(sympy.Symbol('AMT'))
 
-    if cmt == False:
+    if cmt is False:
         df = dataset
     else:
         df = dataset[dataset['CMT'] == dose_comp]
