@@ -444,7 +444,7 @@ def update_cmt_column(model, old, new):
                 if dose_comp != old.central_compartment:
                     # Remap oral doses to new dosing compartment
                     remap[oldmap[dose_comp.name]] = newmap[new.dosing_compartment[0].name]
-            dataset = model.dataset
+            dataset = model.dataset.copy()
             dataset = dataset.replace({"CMT": remap})
             model = model.replace(dataset=dataset)
 
