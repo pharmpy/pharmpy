@@ -886,7 +886,28 @@ def get_admid(model: Model):
     return adm
 
 
-def add_admid(model):
+def add_admid(model: Model):
+    """
+    Add an admid column to the model dataset and datainfo. Dependent on the 
+    presence of a CMT column in order to add admid correctly.
+    1 : Oral dose
+    2 : IV dose
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    model : Model
+        Pharmpy model
+    
+    See also
+    --------
+    get_admid : Get or create an admid column
+    get_cmt : Get or create a cmt column
+    """
     di = model.datainfo
     if "admid" not in di.types:
         adm = get_admid(model)
