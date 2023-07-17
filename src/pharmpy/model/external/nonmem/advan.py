@@ -591,26 +591,6 @@ def _advan12_trans(trans: str):
         )
 
 
-def old_dosing(di, dataset, dose_comp, cmt=False):
-    if 'RATE' not in di.names or di['RATE'].drop:
-        return Bolus(sympy.Symbol('AMT'))
-
-    if cmt == False:
-        df = dataset
-    else:
-        df = dataset[dataset['CMT'] == dose_comp]
-    if df is None:
-        return Bolus(sympy.Symbol('AMT'))
-    elif (df['RATE'] == 0).all():
-        return Bolus(sympy.Symbol('AMT'))
-    elif (df['RATE'] == -1).any():
-        return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol(f'R{dose_comp}'))
-    elif (df['RATE'] == -2).any():
-        return Infusion(sympy.Symbol('AMT'), duration=sympy.Symbol(f'D{dose_comp}'))
-    else:
-        return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol('RATE'))
-
-
 def dosing(di: DataInfo, dataset, dose_comp: int):
     if 'CMT' not in di.names or di['CMT'].drop or dataset is None:
         return ({'comp_number': dose_comp, 'dose': _dosing(di, dataset, dose_comp)},)
