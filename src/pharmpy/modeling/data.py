@@ -924,7 +924,8 @@ def get_cmt(model: Model):
     """Get the cmt (compartment) column from the model dataset
 
     If a cmt column is present this will be extracted otherwise
-    a cmt column will be created.
+    a cmt column will be created. If created, multiple dose compartments are
+    not supported.
 
     Parameters
     ----------
