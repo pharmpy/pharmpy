@@ -311,8 +311,8 @@ def _compartmental_model(
             if comp is None:  # Compartments can be in $MODEL but not used in $DES
                 continue
             admid = 1
-            if i == len(comps):
-                # FIXME : Assume last compartment is IV dose
+            if i == len(comps) and len(comps) != 1:
+                # FIXME : Always assume last comp to be CENTRAL and IV?
                 admid = 2
             doses = dosing(di, dataset, i)
             cb.set_dose(comp, find_dose(doses, i, admid=admid))
