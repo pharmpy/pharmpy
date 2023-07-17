@@ -928,9 +928,13 @@ class CompartmentalSystem(ODESystem):
         for node in _comps(self._g):
             if node.dose is not None:
                 if node.name != self.central_compartment.name:
-                    dosing_comps = (node,) + dosing_comps
+                    if len(dosing_comps) >= 2:
+                        dosing_comps = dosing_comps[:-1] + (node,) + dosing_comps[-1:]
+                    else:
+                        dosing_comps = (node,) + dosing_comps
                 else:
-                    dosing_comps = dosing_comps + (node,)
+                    if dosing_comps:
+                        dosing_comps = dosing_comps + (node,)
 
         if len(dosing_comps) != 0:
             return dosing_comps
