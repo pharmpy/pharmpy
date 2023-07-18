@@ -268,7 +268,46 @@ def add_bioavailability(model: Model, add_parameter: bool = True):
 
     return model.update_source()
 
+def remove_bioavailability(model: Model):
+    """Remove bioavailability from the first dose compartment of model.
 
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = remove_bioavailability(model)
+
+    See also
+    --------
+    set_bioavailability
+    """
+    odes = model.statements.ode_system
+    if odes is None:
+        raise ValueError(f'Model {model.name} has no ODE system')
+    dosing_comp = odes.dosing_compartment[0]
+    bio = dosing_comp.bioavailability
+    if bio:
+        symbols = bio.free_symbols
+        cb = CompartmentalSystemBuilder(odes)
+        cb.set_bioavailability(dosing_comp, sympy.Integer(1))
+        statements = (
+            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+        )
+        statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
+        model = model.replace(statements=statements)
+        model = remove_unused_parameters_and_rvs(model)
+    return model
+    
 def set_zero_order_elimination(model: Model):
     """Sets elimination to zero order.
 
