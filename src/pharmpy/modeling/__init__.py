@@ -93,6 +93,7 @@ from .expressions import (
     get_individual_parameters,
     get_individual_prediction_expression,
     get_observation_expression,
+    get_pd_parameters,
     get_pk_parameters,
     get_population_prediction_expression,
     get_rv_parameters,
@@ -117,6 +118,7 @@ from .math import (
 )
 from .metabolite import add_metabolite
 from .odes import (
+    add_bioavailability,
     add_individual_parameter,
     add_lag_time,
     add_peripheral_compartment,
@@ -218,6 +220,7 @@ __all__ = [
     'add_individual_parameter',
     'add_iov',
     'add_lag_time',
+    'add_bioavailability',
     'add_metabolite',
     'add_peripheral_compartment',
     'add_pk_iiv',
@@ -295,6 +298,7 @@ __all__ = [
     'get_observations',
     'get_observation_expression',
     'get_pk_parameters',
+    'get_pd_parameters',
     'get_population_prediction_expression',
     'get_rv_parameters',
     'get_sigmas',

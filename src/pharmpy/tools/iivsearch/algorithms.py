@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Dict, List, Set, Tuple
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.internals.expr.subs import subs
@@ -12,14 +12,17 @@ from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
 
-def brute_force_no_of_etas(base_model, index_offset=0):
+def brute_force_no_of_etas(base_model, index_offset=0, keep=[]):
     wf = Workflow()
 
     base_model = base_model.replace(description=create_description(base_model))
 
     iivs = base_model.random_variables.iiv
+    iiv_names = iivs.names
+    if len(keep) > 0:
+        iiv_names = set(iiv_names) - _get_eta_from_parameter(base_model, keep)
 
-    for i, to_remove in enumerate(non_empty_subsets(iivs.names), 1):
+    for i, to_remove in enumerate(non_empty_subsets(iiv_names), 1):
         model_name = f'iivsearch_run{i + index_offset}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
@@ -149,3 +152,14 @@ def update_description(model):
     description = create_description(model)
     model = model.replace(description=description)
     return model
+
+
+def _get_eta_from_parameter(model: Model, parameters: List[str]) -> Set[str]:
+    # returns list of eta names from parameter names
+    iiv_set = set()
+    iiv_names = model.random_variables.names
+    for iiv_name in iiv_names:
+        param = get_rv_parameters(model, iiv_name)
+        if set(param).issubset(parameters) and len(param) > 0:
+            iiv_set.add(iiv_name)
+    return iiv_set

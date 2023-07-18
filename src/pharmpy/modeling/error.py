@@ -838,7 +838,9 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     return model.update_source()
 
 
-def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME'):
+def set_time_varying_error_model(
+    model: Model, cutoff: float, idv: str = 'TIME', dv: Union[sympy.Symbol, str, int, None] = None
+):
     """Set a time varying error model per time cutoff
 
     Parameters
@@ -849,6 +851,8 @@ def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME')
         A value at the given quantile over idv column
     idv : str
         Time or time after dose, default is Time
+    dv : Union[sympy.Symbol, str, int, None]
+        Name or DVID of dependent variable. None for the default (first or only)
 
     Return
     ------
@@ -866,7 +870,8 @@ def set_time_varying_error_model(model: Model, cutoff: float, idv: str = 'TIME')
     Y = ⎩      EPS₁⋅W + F           otherwise
 
     """
-    y = model.statements.find_assignment('Y')
+    dv = get_dv_symbol(model, dv)
+    y = model.statements.find_assignment(dv)
     idv = parse_expr(idv)
     theta = create_symbol(model, 'time_varying')
     eps = model.random_variables.epsilons
@@ -1026,6 +1031,7 @@ def get_ipred(model):
 
 def set_iiv_on_ruv(
     model: Model,
+    dv: Union[sympy.Symbol, str, int, None] = None,
     list_of_eps: Optional[Union[List[str], str]] = None,
     same_eta: bool = True,
     eta_names: Optional[Union[List[str], str]] = None,
@@ -1047,6 +1053,8 @@ def set_iiv_on_ruv(
         should be created for each RUV. True is default.
     eta_names : str, list
         Custom names of new etas. Must be equal to the number epsilons or 1 if same eta.
+    dv : Union[sympy.Symbol, str, int, None]
+        Name or DVID of dependent variable. None for the default (first or only)
 
     Return
     ------
@@ -1086,13 +1094,20 @@ def set_iiv_on_ruv(
         rvs = rvs + etas
         eta_dict = dict(zip(eps, etas))
 
+    dv_symb = get_dv_symbol(model, dv)
+    y = model.statements.find_assignment(dv_symb)
+
     for e in eps:
-        sset = sset.subs(
-            {
-                sympy.Symbol(e.names[0]): sympy.Symbol(e.names[0])
-                * sympy.exp(sympy.Symbol(eta_dict[e].names[0]))
-            }
-        )
+        subs_dict = {
+            sympy.Symbol(e.names[0]): sympy.Symbol(e.names[0])
+            * sympy.exp(sympy.Symbol(eta_dict[e].names[0]))
+        }
+        # FIXME: this is needed if you e.g. have Y and IPRED, with multiple DVs, how should this be handled?
+        if not dv:
+            sset = sset.subs(subs_dict)
+        else:
+            y = y.subs(subs_dict)
+            sset = sset.reassign(y.symbol, y.expression)
 
     model = model.replace(random_variables=rvs, parameters=Parameters.create(pset), statements=sset)
     return model.update_source()

@@ -14,6 +14,9 @@ def test_full(pheno_path, load_model_for_test):
 def test_qss(pheno_path, load_model_for_test):
     model = load_model_for_test(pheno_path)
     model = set_tmdd(model, type="qss")
+    assert model.statements.ode_system.eqs[0].rhs == sympy.sympify(
+        '-A_CENTRAL(t)*CL*LAFREE/V - A_TARGET(t)*KINT*LAFREE/(KD + LAFREE) - CL*LAFREE/V'
+    )
 
 
 def test_cr(pheno_path, load_model_for_test):

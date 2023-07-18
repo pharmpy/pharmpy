@@ -1134,7 +1134,7 @@ def _remove_covariate_effect_from_statements_recursive(
 
 
 def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
-    """Retrieves PK parameters in :class:`pharmpy.model`.
+    """Retrieves PK parameters in :class:`pharmpy.model.Model`.
 
     Parameters
     ----------
@@ -1175,7 +1175,52 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
 
     dependency_graph = _dependency_graph(natural_assignments)
 
-    return sorted(map(str, _filter_symbols(dependency_graph, free_symbols)))
+    pk_symbols = _filter_symbols(dependency_graph, free_symbols)
+    if model.statements.ode_system.find_compartment("EFFECT") is not None:
+        pd_symbols = model.statements.ode_system.find_compartment("EFFECT").input.free_symbols
+        pk_symbols = pk_symbols.difference(pd_symbols)
+    return sorted(map(str, pk_symbols))
+
+
+def get_pd_parameters(model: Model) -> List[str]:
+    """Retrieves PD parameters in :class:`pharmpy.model.Model`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to retrieve the PD parameters from
+
+    Return
+    ------
+    list[str]
+        A list of the PD parameter names of the given model
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = set_direct_effect(model, "linear")
+    >>> get_pd_parameters(model)
+    ['E0', 'S']
+
+    See also
+    --------
+    get_pk_parameters
+
+    """
+    # FIXME: this function needs to be updated. Currently uses fixed parameter names.
+
+    pd_symbols = []
+    sset = model.statements
+    if sympy.Symbol('Y_2') in model.dependent_variables:
+        parameters_in_e = sset.find_assignment('E').free_symbols
+        pk_parameters = get_pk_parameters(model)
+        parameters_in_e = {x for x in parameters_in_e if str(x) not in pk_parameters}
+        pd_symbols = {statement.symbol for statement in sset.before_odes}
+        pd_symbols = pd_symbols.intersection(parameters_in_e)
+        if sset.ode_system.find_compartment("EFFECT") is not None:
+            pd_symbols.add("KE0")
+    return sorted(map(str, pd_symbols))
 
 
 def _get_natural_assignments(before_odes):
