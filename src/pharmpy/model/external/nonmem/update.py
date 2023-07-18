@@ -373,7 +373,6 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
     """
     if old is None:
         old = CompartmentalSystem(CompartmentalSystemBuilder())
-
     model = update_lag_time(model, old, new)
     model = update_bio(model, old, new)
     model, updated_dataset = update_cmt_column(model, old, new)
@@ -661,7 +660,6 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         main_statements = Statements(tuple(keep))
 
     error_statements = model.statements.after_odes
-
     rec = model.internals.control_stream.get_pred_pk_record()
     newrec = rec.update_statements(main_statements.subs(trans), model.random_variables, trans)
     newcs = model.internals.control_stream.replace_records([rec], [newrec])
@@ -779,38 +777,19 @@ def update_bio(model, old, new):
     compartments in NONMEM.
     Is based on the order of dosing compartments
     """
-    if len(new.dosing_compartment) == len(old.dosing_compartment):
-        for new_dosing, old_dosing in zip(new.dosing_compartment, old.dosing_compartment):
-            new_bio = new_dosing.bioavailability
-            old_bio = old_dosing.bioavailability
+    newmap = new_compartmental_map(new)
+    for dose in new.dosing_compartment:
+        if (
+            not isinstance(dose.bioavailability, sympy.Number)
+            and dose.bioavailability != f'F{newmap[dose.name]}'
+        ):
+            # if dose.bioavailability != sympy.Symbol('F1'):
+            model = model.replace(
+                statements=model.statements.subs(
+                    {sympy.Symbol(f'{dose.bioavailability}'): sympy.Symbol(f'F{newmap[dose.name]}')}
+                )
+            )
 
-            old_comp_number = model.internals.compartment_map[old_dosing.name]
-            newmap = new_compartmental_map(model.statements.ode_system)
-            new_comp_number = newmap[new_dosing.name]
-            if new_bio != old_bio:
-                if isinstance(new_bio, sympy.Symbol):
-                    model = model.replace(
-                        statements=model.statements.subs(
-                            {new_bio: sympy.Symbol(f'F{new_comp_number}')}
-                        )
-                    )
-            else:
-                if new_bio != sympy.Symbol("F1"):
-                    # If number of compartments have changed, F1 should NOT
-                    # be changed to match the old compartment
-                    # All other Fn should be changed to match the new number
-                    model = model.replace(
-                        statements=model.statements.subs(
-                            {
-                                sympy.Symbol(f'F{old_comp_number}'): sympy.Symbol(
-                                    f'F{new_comp_number}'
-                                )
-                            }
-                        )
-                    )
-    else:
-        # TODO : Number of dose compartments have changed
-        pass
     return model
 
 
