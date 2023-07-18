@@ -4,6 +4,7 @@ import pytest
 import sympy
 from sympy import Symbol as symbol
 
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import (
     Assignment,
@@ -28,6 +29,7 @@ from pharmpy.modeling import (
     set_estimation_step,
     set_initial_condition,
     set_initial_estimates,
+    set_transit_compartments,
     set_zero_order_absorption,
     set_zero_order_elimination,
     set_zero_order_input,
@@ -568,15 +570,28 @@ def test_des(load_model_for_test, testdata, model_path, transformation):
     assert model_ref.statements.ode_system == model_des.statements.ode_system
 
 
-def test_cmt_warning(load_model_for_test, testdata):
-    model_original = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
+def test_cmt_update(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    old_cmt = model.dataset["CMT"]
+    old_cmt = pd.to_numeric(old_cmt)
 
-    model_str = model_original.model_code.replace('CMT=DROP', 'CMT')
-    model = Model.parse_model_from_string(model_str)
-    model = model.replace(datainfo=model.datainfo.replace(path=model_original.datainfo.path))
+    model = set_transit_compartments(model, 2)
+    updated_cmt = model.dataset["CMT"]
 
-    with pytest.raises(UserWarning, match='Compartment structure has been updated'):
-        set_zero_order_absorption(model)
+    assert old_cmt[0] == 1 and updated_cmt[0] == 1
+    assert old_cmt[1] == 2 and updated_cmt[1] == 4
+
+
+def test_zero_order_cmt(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    old_cmt = model.dataset["CMT"]
+    old_cmt = pd.to_numeric(old_cmt)
+
+    model = set_zero_order_absorption(model)
+    updated_cmt = model.dataset["CMT"]
+
+    assert old_cmt[0] == 1 and updated_cmt[0] == 1
+    assert old_cmt[1] == 2 and updated_cmt[1] == 1
 
 
 @pytest.mark.parametrize(

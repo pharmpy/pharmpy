@@ -21,12 +21,14 @@ from .common import (
 from .compartments import get_bioavailability, get_lag_times
 from .covariate_effect import add_covariate_effect, has_covariate_effect, remove_covariate_effect
 from .data import (
+    add_admid,
     add_time_after_dose,
     check_dataset,
     deidentify_data,
     drop_columns,
     drop_dropped_columns,
     expand_additional_doses,
+    get_admid,
     get_baselines,
     get_cmt,
     get_concentration_parameters_from_data,
@@ -208,6 +210,7 @@ from .write_csv import write_csv
 # Must be set directly, otherwise errors about unused imports
 __all__ = [
     'set_direct_effect',
+    'add_admid',
     'add_allometry',
     'add_covariance_step',
     'add_covariate_effect',
@@ -269,6 +272,7 @@ __all__ = [
     'fix_or_unfix_parameters',
     'fix_parameters',
     'fix_parameters_to',
+    'get_admid',
     'get_baselines',
     'get_bioavailability',
     'get_cmt',

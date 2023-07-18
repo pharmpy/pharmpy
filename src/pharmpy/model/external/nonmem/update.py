@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import warnings
 from itertools import product
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
@@ -28,7 +27,8 @@ from pharmpy.model import (
     data,
     output,
 )
-from pharmpy.modeling import get_ids, simplify_expression
+from pharmpy.model.model import update_datainfo
+from pharmpy.modeling import get_admid, get_ids, simplify_expression
 
 from .records.parsers import CodeRecordParser
 
@@ -376,6 +376,7 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
 
     model = update_lag_time(model, old, new)
     model = update_bio(model, old, new)
+    model, updated_dataset = update_cmt_column(model, old, new)
 
     advan, trans, nonlin, haszo = new_advan_trans(model)
 
@@ -394,7 +395,66 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
         if not is_nonlinear_odes(model):
             model = from_des(model, advan)
 
-    model, updated_dataset = update_infusion(model, old)
+    if not updated_dataset:
+        model, updated_dataset = update_infusion(model, old)
+    else:
+        model, _ = update_infusion(model, old)
+    return model, updated_dataset
+
+
+def update_cmt_column(model, old, new):
+    if model.dataset is not None:
+        if (
+            "admid" in model.datainfo.types
+            and len(model.dataset[model.datainfo.typeix["admid"].names[0]].unique()) != 1
+        ):
+            cs = model.statements.ode_system
+            newmap = new_compartmental_map(cs)
+
+            d = {}
+            for dose_comp in model.statements.ode_system.dosing_compartment:
+                d[dose_comp.dose.admid] = newmap[dose_comp.name]
+
+            cmt_col = get_admid(model)
+            cmt_col = cmt_col.replace(d)
+
+            dataset = model.dataset.copy()
+            dataset['CMT'] = cmt_col
+            di = update_datainfo(model.datainfo, dataset)
+            colinfo = di['CMT'].replace(type='compartment')
+            model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
+
+            updated_dataset = True
+        elif "CMT" in model.datainfo.names and len(old.compartment_names) != len(
+            new.compartment_names
+        ):
+            # Make sure column is a number and not string
+            model.dataset["CMT"] = pd.to_numeric(model.dataset["CMT"])
+
+            # Differ in amount of compartment -> Change cmt numbering
+            # The cmt number should be the same as the dosing compartment
+            oldmap = model.internals.compartment_map
+            assert oldmap is not None
+            cs = model.statements.ode_system
+            newmap = new_compartmental_map(cs)
+            oldmap = oldmap.copy()
+            remap = create_compartment_remap(oldmap, newmap)
+
+            for dose_comp in old.dosing_compartment:
+                if dose_comp != old.central_compartment:
+                    # Remap oral doses to new dosing compartment
+                    remap[oldmap[dose_comp.name]] = newmap[new.dosing_compartment[0].name]
+            dataset = model.dataset.copy()
+            dataset = dataset.replace({"CMT": remap})
+            model = model.replace(dataset=dataset)
+
+            updated_dataset = True
+        else:
+            # Could verify that the cmt column is the same
+            updated_dataset = False
+    else:
+        updated_dataset = False
+
     return model, updated_dataset
 
 
@@ -580,14 +640,6 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
     if new_odes is not None:
         old_odes = old.ode_system
         if new_odes != old_odes:
-            colnames, drop, _, _ = parse_column_info(model.internals.control_stream)
-            col_dropped = dict(zip(colnames, drop))
-            if 'CMT' in col_dropped.keys() and not col_dropped['CMT']:
-                warnings.warn(
-                    'Compartment structure has been updated, CMT-column '
-                    'in dataset might not be relevant anymore. Check '
-                    'CMT-column or drop column'
-                )
             model, updated_dataset = update_ode_system(model, old_odes, new_odes)
         else:
             if new_solver:
