@@ -781,7 +781,7 @@ def update_bio(model, old, new):
     """
     newmap = new_compartmental_map(new)
     for dose in new.dosing_compartment:
-        # If the dose is not already correctly set (i.e dose numbering has 
+        # If the dose is not already correctly set (i.e dose numbering has
         # changed), it should be update to match the new number.
         if (
             not isinstance(dose.bioavailability, sympy.Number)
