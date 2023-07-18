@@ -24,6 +24,7 @@ from pharmpy.modeling import (
     get_pd_parameters,
     get_pk_parameters,
     get_population_prediction_expression,
+    get_rv_names,
     get_rv_parameters,
     greekify_model,
     has_random_effect,
@@ -504,10 +505,39 @@ def test_get_rv_parameter(load_model_for_test, testdata, model_path, rv, expecte
     assert rv_params == expected
 
 
+@pytest.mark.parametrize(
+    ('model_path', 'param', 'var_type', 'expected'),
+    (
+        ('nonmem/pheno.mod', 'CL', 'iiv', ['ETA_1']),
+        ('nonmem/pheno.mod', 'ETA_1', 'iiv', ['ETA_1']),
+        ('nonmem/pheno_real.mod', 'CL', 'iiv', ['ETA_1']),
+        ('nonmem/pheno_real.mod', 'TAD', 'iiv', []),
+        ('nonmem/qa/iov.mod', 'CL', 'iiv', ['ETA_1']),
+        ('nonmem/qa/iov.mod', 'V', 'iiv', ['ETA_2']),
+        ('nonmem/qa/iov.mod', 'CL', 'iiv', ['ETA_1']),
+        ('nonmem/qa/iov.mod', 'V', 'iiv', ['ETA_2']),
+        ('nonmem/qa/iov.mod', 'CL', 'iov', ['ETA_3', 'ETA_5']),
+        ('nonmem/qa/iov.mod', 'V', 'iov', ['ETA_4', 'ETA_6']),
+    ),
+    ids=repr,
+)
+def test_get_rv_names(load_model_for_test, testdata, model_path, param, var_type, expected):
+    model = load_model_for_test(testdata / model_path)
+    iiv_names = get_rv_names(model, param, var_type)
+    assert iiv_names == expected
+
+
 def test_get_rv_parameter_verify_input(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     with pytest.raises(ValueError, match='Could not find random variable: x'):
         get_rv_parameters(model, 'x')
+
+
+def test_get_rv_names_verify_input(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    print(model.statements.free_symbols)
+    with pytest.raises(ValueError, match='Could not find parameter x'):
+        get_rv_names(model, 'x')
 
 
 def test_display_odes(load_model_for_test, pheno_path):
