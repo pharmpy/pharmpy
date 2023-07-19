@@ -5,7 +5,12 @@ from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.set.partitions import partitions
 from pharmpy.internals.set.subsets import non_empty_subsets
 from pharmpy.model import Model, RandomVariables
-from pharmpy.modeling import create_joint_distribution, remove_iiv, split_joint_distribution
+from pharmpy.modeling import (
+    create_joint_distribution,
+    get_omegas,
+    remove_iiv,
+    split_joint_distribution,
+)
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.results import mfr
 from pharmpy.tools.common import update_initial_estimates
@@ -49,8 +54,11 @@ def brute_force_block_structure(base_model, index_offset=0):
     iivs = base_model.random_variables.iiv
     model_no = 1 + index_offset
 
-    for block_structure in _rv_block_structures(iivs):
-        if _is_rv_block_structure(iivs, block_structure):
+    fixed_etas = _get_fixed_etas(base_model)
+    iiv_names = _remove_sublist(iivs.names, fixed_etas)
+
+    for block_structure in _rv_block_structures(iiv_names):
+        if _is_rv_block_structure(iivs, block_structure, fixed_etas):
             continue
 
         model_name = f'iivsearch_run{model_no}'
@@ -75,12 +83,20 @@ def brute_force_block_structure(base_model, index_offset=0):
 
 def _rv_block_structures(etas: RandomVariables):
     # NOTE All possible partitions of etas into block structures
-    return partitions(etas.names)
+    return partitions(etas)
 
 
-def _is_rv_block_structure(etas: RandomVariables, partition: Tuple[Tuple[str, ...], ...]):
+def _is_rv_block_structure(
+    etas: RandomVariables, partition: Tuple[Tuple[str, ...], ...], fixed_etas
+):
     parts = set(partition)
-    return all(map(lambda dist: dist.names in parts, etas))
+    # Remove fixed etas from etas
+    list_of_tuples = list(
+        filter(
+            None, list(map(lambda dist: tuple(_remove_sublist(list(dist.names), fixed_etas)), etas))
+        )
+    )
+    return all(map(lambda dist: dist in parts, list_of_tuples))
 
 
 def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
@@ -163,3 +179,17 @@ def _get_eta_from_parameter(model: Model, parameters: List[str]) -> Set[str]:
         if set(param).issubset(parameters) and len(param) > 0:
             iiv_set.add(iiv_name)
     return iiv_set
+
+
+def _get_fixed_etas(model: Model) -> List[str]:
+    fixed_omegas = get_omegas(model).fixed.names
+    if len(fixed_omegas) > 0:
+        return [
+            iiv.names[0] for iiv in model.random_variables.iiv if iiv._variance.name in fixed_omegas
+        ]
+    else:
+        return []
+
+
+def _remove_sublist(list_a, list_b):
+    return [x for x in list_a if x not in list_b]

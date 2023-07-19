@@ -2,9 +2,11 @@ import pytest
 
 from pharmpy.modeling import (
     add_iiv,
+    add_individual_parameter,
     add_peripheral_compartment,
     add_pk_iiv,
     create_joint_distribution,
+    fix_parameters,
 )
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.iivsearch.algorithms import (
@@ -17,6 +19,22 @@ from pharmpy.tools.iivsearch.algorithms import (
 )
 from pharmpy.tools.iivsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
+
+
+@pytest.mark.parametrize(
+    'list_of_parameters, expected_values',
+    [([], 4), (['IVCL'], 1), (["IVCL", "IVV"], 0)],
+)
+def test_brute_force_block_structure_ignore_fixed_params(
+    load_model_for_test, testdata, list_of_parameters, expected_values
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    model = add_individual_parameter(model, 'PD1')
+    model = add_iiv(model, 'PD1', 'exp')
+    model = fix_parameters(model, list_of_parameters)
+    wf = brute_force_block_structure(model)
+    fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
+    assert len(fit_tasks) == expected_values
 
 
 @pytest.mark.parametrize(
@@ -72,7 +90,7 @@ def test_rv_block_structures_4_etas(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     model = add_iiv(model, ['TAD', 'S1'], 'exp')
 
-    block_structures = list(_rv_block_structures(model.random_variables.iiv))
+    block_structures = list(_rv_block_structures(model.random_variables.iiv.names))
 
     assert len(block_structures) == 15
 
@@ -90,7 +108,7 @@ def test_rv_block_structures_5_etas(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     model = add_iiv(model, ['TVCL', 'TAD', 'S1'], 'exp')
 
-    block_structures = list(_rv_block_structures(model.random_variables.iiv))
+    block_structures = list(_rv_block_structures(model.random_variables.iiv.names))
     assert len(block_structures) == 52
 
     block_structures_integer_partitions = [
@@ -117,18 +135,18 @@ def test_is_rv_block_structure(load_model_for_test, pheno_path):
         individual_estimates=res.individual_estimates,
     )
     etas = model.random_variables.iiv
-    assert _is_rv_block_structure(etas, etas_block_structure)
+    assert _is_rv_block_structure(etas, etas_block_structure, [])
 
     etas_block_structure = (('ETA_1',), ('ETA_2',), ('ETA_TAD', 'ETA_S1'))
-    assert not _is_rv_block_structure(etas, etas_block_structure)
+    assert not _is_rv_block_structure(etas, etas_block_structure, [])
 
     etas_block_structure = (('ETA_1',), ('ETA_2', 'ETA_TAD'), ('ETA_S1',))
-    assert not _is_rv_block_structure(etas, etas_block_structure)
+    assert not _is_rv_block_structure(etas, etas_block_structure, [])
 
     model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
     etas_block_structure = (('ETA_1', 'ETA_2', 'ETA_TAD', 'ETA_S1'),)
     etas = model.random_variables.iiv
-    assert _is_rv_block_structure(etas, etas_block_structure)
+    assert _is_rv_block_structure(etas, etas_block_structure, [])
 
 
 def test_create_joint_dist(load_model_for_test, testdata):
