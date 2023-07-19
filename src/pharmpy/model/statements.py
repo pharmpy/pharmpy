@@ -1557,7 +1557,7 @@ class Compartment:
 
     def __repr__(self):
         lag = '' if self.lag_time == 0 else f', lag_time={self._lag_time}'
-        dose = '' if self.dose is None else f', dose={self._dose}'
+        dose = '' if self.dose is None else f', dose={self._dose[0] if len(self._dose) == 1 else self._dose}'
         input = '' if self.input == 0 else f', input={self._input}'
         bioavailability = (
             '' if self.bioavailability == 1 else f', bioavailability={self._bioavailability}'
