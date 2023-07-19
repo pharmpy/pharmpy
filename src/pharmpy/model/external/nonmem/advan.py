@@ -637,7 +637,7 @@ def find_dose(doses, comp_number, admid=1):
     for dose in doses:
         if dose['comp_number'] == comp_number:
             comp_dose = dose['dose']
-            return comp_dose.replace(admid=admid)
+            return (comp_dose.replace(admid=admid),)
     return None
 
 

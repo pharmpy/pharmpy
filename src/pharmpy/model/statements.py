@@ -1318,7 +1318,7 @@ class Compartment:
     ----------
     name : str
         Compartment name
-    dose : Dose
+    dose : Dose, tuple(Dose)
         Dose object for dose into this compartment. Default None for no dose.
     input : Expression
         Expression for other inputs to the compartment
@@ -1374,8 +1374,14 @@ class Compartment:
             amount = parse_expr(amount)
         else:
             amount = sympy.Symbol(f'A_{name}')
-        if dose is not None and not isinstance(dose, Dose):
-            raise TypeError("dose must be of Dose type (or None)")
+        if isinstance(dose, Dose):
+            dose = (dose,)
+        if dose is not None and not isinstance(dose, tuple):
+            raise TypeError("dose(s) need to be given as a tuple")
+        if dose is not None:
+            for d in dose:
+                if not isinstance(d, Dose):
+                    raise TypeError("All doses need to be of type Dose")
         input = parse_expr(input)
         lag_time = parse_expr(lag_time)
         bioavailability = parse_expr(bioavailability)
@@ -1416,6 +1422,15 @@ class Compartment:
 
     @property
     def dose(self):
+        if self._dose is not None:
+            return sorted(self._dose, key=lambda d: d.admid)
+        else:
+            return self._dose
+    
+    @property
+    def first_dose(self):
+        if self._dose is not None:
+            return self.dose[0]
         return self._dose
 
     @property
@@ -1446,7 +1461,8 @@ class Compartment:
         """
         symbs = set()
         if self.dose is not None:
-            symbs |= self.dose.free_symbols
+            for d in self.dose:
+                symbs |= d.free_symbols
         symbs |= self.input.free_symbols
         symbs |= self.lag_time.free_symbols
         symbs |= self.bioavailability.free_symbols
@@ -1464,13 +1480,15 @@ class Compartment:
         Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(DOSE, admid=1))
         """
         if self.dose is not None:
-            dose = self.dose.subs(substitutions)
+            new_dose = tuple()
+            for d in self.dose:
+                new_dose = new_dose + (d.subs(substitutions),)
         else:
-            dose = None
+            new_dose = None
         return Compartment(
             self.name,
             amount=subs(self._amount, substitutions),
-            dose=dose,
+            dose=new_dose,
             input=subs(self._input, substitutions),
             lag_time=subs(self._lag_time, substitutions),
             bioavailability=subs(self._bioavailability, substitutions),
