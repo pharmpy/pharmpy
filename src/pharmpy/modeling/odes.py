@@ -832,7 +832,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             innode, inflow = inflows[0]
             cb.add_flow(innode, central, inflow)
         else:
-            cb.set_dose(central, depot.dose)
+            cb.set_dose(central, depot.first_dose)
         if statements.find_assignment('MAT'):
             model = _rename_parameter(model, 'MAT', 'MDT')
             statements = model.statements
@@ -898,7 +898,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             nremove -= 1
 
         if n == 0:
-            dose = cs.dosing_compartment[0].dose
+            dose = cs.dosing_compartment[0].first_dose
             cb.set_dose(destination, dose)
 
         statements = (
@@ -1109,7 +1109,7 @@ def set_zero_order_absorption(model: Model):
 
     dose_comp = odes.dosing_compartment[0]
     symbols = dose_comp.free_symbols
-    dose = dose_comp.dose
+    dose = dose_comp.first_dose
     lag_time = dose_comp.lag_time
     if depot:
         to_comp, _ = odes.get_compartment_outflows(depot)[0]
@@ -1182,13 +1182,13 @@ def set_first_order_absorption(model: Model):
     depot = cs.find_depot(statements)
 
     dose_comp = cs.dosing_compartment[0]
-    amount = dose_comp.dose.amount
+    amount = dose_comp.first_dose.amount
     symbols = dose_comp.free_symbols
     lag_time = dose_comp.lag_time
     bio = dose_comp.bioavailability
     cb = CompartmentalSystemBuilder(cs)
     if depot and depot == dose_comp:
-        dose_comp = cb.set_dose(dose_comp, Bolus(dose_comp.dose.amount))
+        dose_comp = cb.set_dose(dose_comp, Bolus(dose_comp.first_dose.amount))
         dose_comp = cb.set_lag_time(dose_comp, sympy.Integer(0))
     if not depot:
         dose_comp = cb.set_dose(dose_comp, Bolus(amount))
@@ -1249,7 +1249,7 @@ def set_bolus_absorption(model: Model):
     if depot:
         to_comp, _ = cs.get_compartment_outflows(depot)[0]
         cb = CompartmentalSystemBuilder(cs)
-        cb.set_dose(to_comp, depot.dose)
+        cb.set_dose(to_comp, depot.first_dose)
         ka = cs.get_flow(depot, cs.central_compartment)
         cb.remove_compartment(depot)
         symbols = ka.free_symbols
@@ -1262,7 +1262,7 @@ def set_bolus_absorption(model: Model):
         dose_comp = cs.dosing_compartment[0]
         old_symbols = dose_comp.free_symbols
         cb = CompartmentalSystemBuilder(cs)
-        new_dose = Bolus(dose_comp.dose.amount)
+        new_dose = Bolus(dose_comp.first_dose.amount)
         cb.set_dose(dose_comp, new_dose)
         unneeded_symbols = old_symbols - new_dose.free_symbols
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
@@ -1323,9 +1323,9 @@ def set_seq_zo_fo_absorption(model: Model):
     if depot and not have_ZO:
         model = _add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
     elif not depot and have_ZO:
-        model, _ = _add_first_order_absorption(model, dose_comp.dose, dose_comp)
+        model, _ = _add_first_order_absorption(model, dose_comp.first_dose, dose_comp)
     elif not depot and not have_ZO:
-        amount = dose_comp.dose.amount
+        amount = dose_comp.first_dose.amount
         model, depot = _add_first_order_absorption(model, Bolus(amount), dose_comp)
         model = _add_zero_order_absorption(model, amount, depot, 'MDT')
     model = model.update_source()
@@ -1334,11 +1334,11 @@ def set_seq_zo_fo_absorption(model: Model):
 
 def _disallow_infusion(model, odes):
     dose_comp = odes.dosing_compartment[0]
-    if isinstance(dose_comp.dose, Infusion):
-        if dose_comp.dose.rate is not None:
-            ex = dose_comp.dose.rate
+    if isinstance(dose_comp.first_dose, Infusion):
+        if dose_comp.first_dose.rate is not None:
+            ex = dose_comp.first_dose.rate
         else:
-            ex = dose_comp.dose.duration
+            ex = dose_comp.first_dose.duration
         assert ex is not None
 
         for s in ex.free_symbols:
@@ -1373,7 +1373,7 @@ def has_zero_order_absorption(model: Model):
     if cs is None:
         raise ValueError(f'Model {model.name} has no ODE system')
     dosing = cs.dosing_compartment[0]
-    dose = dosing.dose
+    dose = dosing.first_dose
     if isinstance(dose, Infusion):
         if dose.rate is None:
             value = dose.duration
@@ -2096,12 +2096,12 @@ def get_initial_conditions(
     if dosing:
         for name in odes.compartment_names:
             comp = odes.find_compartment(name)
-            if comp.dose is not None and isinstance(comp.dose, Bolus):
+            if comp.first_dose is not None and isinstance(comp.first_dose, Bolus):
                 if comp.lag_time:
                     time = comp.lag_time
                 else:
                     time = 0
-                d[sympy.Function(comp.amount.name)(time)] = comp.dose.amount
+                d[sympy.Function(comp.amount.name)(time)] = comp.first_dose.amount
 
     return d
 
