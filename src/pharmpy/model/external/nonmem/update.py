@@ -779,11 +779,12 @@ def update_bio(model, old, new):
     """
     newmap = new_compartmental_map(new)
     for dose in new.dosing_compartment:
+        # If the dose is not already correctly set (i.e dose numbering has
+        # changed), it should be update to match the new number.
         if (
             not isinstance(dose.bioavailability, sympy.Number)
             and dose.bioavailability != f'F{newmap[dose.name]}'
         ):
-            # if dose.bioavailability != sympy.Symbol('F1'):
             model = model.replace(
                 statements=model.statements.subs(
                     {sympy.Symbol(f'{dose.bioavailability}'): sympy.Symbol(f'F{newmap[dose.name]}')}

@@ -268,6 +268,7 @@ def add_bioavailability(model: Model, add_parameter: bool = True):
 
     return model.update_source()
 
+
 def remove_bioavailability(model: Model):
     """Remove bioavailability from the first dose compartment of model.
 
@@ -307,7 +308,8 @@ def remove_bioavailability(model: Model):
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     return model
-    
+
+
 def set_zero_order_elimination(model: Model):
     """Sets elimination to zero order.
 

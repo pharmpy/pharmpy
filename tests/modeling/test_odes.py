@@ -1673,6 +1673,7 @@ def test_transits_non_linear_elim_with_update(load_model_for_test, testdata):
     assert 'CLMM = THETA(6)' in model.model_code
     assert 'CL = THETA(1) * EXP(ETA(1))' in model.model_code
 
+
 def test_bioavailability(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     before = model.model_code
@@ -1680,20 +1681,22 @@ def test_bioavailability(load_model_for_test, testdata):
     assert "POP_BIO" in model.parameters
     assert model.statements.find_assignment("BIO")
     assert model.statements.find_assignment("F1")
-    
+
     model = remove_bioavailability(model)
     assert model.model_code == before
-    
+
+
 def test_move_bioavailability(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     model = add_bioavailability(model)
     assert model.statements.ode_system.dosing_compartment[0].bioavailability == sympy.Symbol("F1")
-    
+
     model = set_first_order_absorption(model)
     assert model.statements.ode_system.dosing_compartment[0].name == "DEPOT"
     assert model.statements.ode_system.dosing_compartment[0].bioavailability == sympy.Symbol("F1")
     assert model.statements.ode_system.find_compartment("CENTRAL").dose is None
-    
+
+
 def test_lag_time(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     before = model.model_code
