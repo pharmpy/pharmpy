@@ -1522,14 +1522,14 @@ class Compartment:
 
     def to_dict(self):
         if self._dose is None:
-            dose = None
+            all_doses = None
         else:
-            dose = self._dose.to_dict()
+            all_doses = tuple(dose.to_dict() for dose in self._dose)
         return {
             'class': 'Compartment',
             'name': self._name,
             'amount': sympy.srepr(self._amount),
-            'dose': dose,
+            'dose': all_doses,
             'input': sympy.srepr(self._input),
             'lag_time': sympy.srepr(self._lag_time),
             'bioavailability': sympy.srepr(self._bioavailability),
@@ -1538,15 +1538,18 @@ class Compartment:
     @classmethod
     def from_dict(cls, d):
         if d['dose'] is None:
-            dose = None
-        elif d['dose']['class'] == 'Bolus':
-            dose = Bolus.from_dict(d['dose'])
+            all_doses = None
         else:
-            dose = Infusion.from_dict(d['dose'])
+            all_doses = tuple()
+            for dose in d['dose']:
+                if dose['class'] == 'Bolus':
+                    all_doses += (Bolus.from_dict(dose),)
+                else:
+                    all_doses += (Infusion.from_dict(dose),)
         return cls(
             name=d['name'],
             amount=sympy.parse_expr(d['amount']),
-            dose=dose,
+            dose=all_doses,
             input=sympy.parse_expr(d['input']),
             lag_time=sympy.parse_expr(d['lag_time']),
             bioavailability=sympy.parse_expr(d['bioavailability']),
