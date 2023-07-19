@@ -21,10 +21,10 @@ from pharmpy.modeling import (
     get_individual_parameters,
     get_individual_prediction_expression,
     get_observation_expression,
+    get_parameter_rv,
     get_pd_parameters,
     get_pk_parameters,
     get_population_prediction_expression,
-    get_rv_names,
     get_rv_parameters,
     greekify_model,
     has_random_effect,
@@ -509,7 +509,6 @@ def test_get_rv_parameter(load_model_for_test, testdata, model_path, rv, expecte
     ('model_path', 'param', 'var_type', 'expected'),
     (
         ('nonmem/pheno.mod', 'CL', 'iiv', ['ETA_1']),
-        ('nonmem/pheno.mod', 'ETA_1', 'iiv', ['ETA_1']),
         ('nonmem/pheno_real.mod', 'CL', 'iiv', ['ETA_1']),
         ('nonmem/pheno_real.mod', 'TAD', 'iiv', []),
         ('nonmem/qa/iov.mod', 'CL', 'iiv', ['ETA_1']),
@@ -521,9 +520,9 @@ def test_get_rv_parameter(load_model_for_test, testdata, model_path, rv, expecte
     ),
     ids=repr,
 )
-def test_get_rv_names(load_model_for_test, testdata, model_path, param, var_type, expected):
+def test_get_parameter_rv(load_model_for_test, testdata, model_path, param, var_type, expected):
     model = load_model_for_test(testdata / model_path)
-    iiv_names = get_rv_names(model, param, var_type)
+    iiv_names = get_parameter_rv(model, param, var_type)
     assert iiv_names == expected
 
 
@@ -533,11 +532,15 @@ def test_get_rv_parameter_verify_input(load_model_for_test, pheno_path):
         get_rv_parameters(model, 'x')
 
 
-def test_get_rv_names_verify_input(load_model_for_test, pheno_path):
+def test_get_parameter_rv_verify_input(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    print(model.statements.free_symbols)
     with pytest.raises(ValueError, match='Could not find parameter x'):
-        get_rv_names(model, 'x')
+        get_parameter_rv(model, 'x')
+    with pytest.raises(
+        ValueError,
+        match='ETA_1 is a random variable. Only parameters are accepted as input',
+    ):
+        get_parameter_rv(model, 'ETA_1')
 
 
 def test_display_odes(load_model_for_test, pheno_path):

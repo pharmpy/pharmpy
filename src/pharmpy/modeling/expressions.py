@@ -884,8 +884,8 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     return sorted(map(str, _filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)})))
 
 
-def get_rv_names(model: Model, parameter: str, var_type: str = 'iiv') -> List[str]:
-    """Retrieves name of iiv parameters in :class:`pharmpy.model.Model` given a parameter.
+def get_parameter_rv(model: Model, parameter: str, var_type: str = 'iiv') -> List[str]:
+    """Retrieves name of random variable in :class:`pharmpy.model.Model` given a parameter.
 
     Parameters
     ----------
@@ -905,7 +905,7 @@ def get_rv_names(model: Model, parameter: str, var_type: str = 'iiv') -> List[st
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> get_rv_names(model, 'CL')
+    >>> get_parameter_rv(model, 'CL')
     ['ETA_1']
 
     See also
@@ -918,17 +918,17 @@ def get_rv_names(model: Model, parameter: str, var_type: str = 'iiv') -> List[st
     """
     if parameter not in list(map(str, model.statements.free_symbols)):
         raise ValueError(f'Could not find parameter {parameter}')
+    if parameter in model.random_variables.names:
+        raise ValueError(f"{parameter} is a random variable. Only parameters are accepted as input")
 
     natural_assignments = _get_natural_assignments(model.statements.before_odes)
 
-    if var_type == 'iov':
-        rv = list(
-            map(lambda iiv_string: sympy.Symbol(iiv_string), model.random_variables.iov.names)
+    rv = list(
+        map(
+            lambda rv_string: sympy.Symbol(rv_string),
+            getattr(model.random_variables, var_type).names,
         )
-    else:
-        rv = list(
-            map(lambda iiv_string: sympy.Symbol(iiv_string), model.random_variables.iiv.names)
-        )
+    )
 
     dependency_graph = graph_inverse(_dependency_graph(natural_assignments))
     return sorted(map(str, _filter_symbols(dependency_graph, rv, {sympy.Symbol(parameter)})))
