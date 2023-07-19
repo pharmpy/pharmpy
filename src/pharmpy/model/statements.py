@@ -1305,9 +1305,12 @@ class CompartmentalSystem(ODESystem):
             current = next_comp
             if not current:
                 break
-
-        dose = self.dosing_compartment[0].dose
-        s = str(dose) + '\n' + str(grid).rstrip()
+        
+        all_doses = ""
+        for dose_comp in self.dosing_compartment:
+            for dose in dose_comp.dose:
+                    all_doses += f'{str(dose)} --> {dose_comp.name} \n'
+        s = all_doses + str(grid).rstrip()
         return s
 
 
