@@ -1426,7 +1426,7 @@ class Compartment:
     @property
     def dose(self):
         if self._dose is not None:
-            return sorted(self._dose, key=lambda d: d.admid)
+            return tuple(sorted(self._dose, key=lambda d: d.admid))
         else:
             return self._dose
     
