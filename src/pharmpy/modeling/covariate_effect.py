@@ -142,8 +142,8 @@ def add_covariate_effect(
                 \\text{coveff} = 1 + \\text{theta}
 
         - Init: :math:`0.001`
-        - Upper: :math:`100,000`
-        - Lower: :math:`-100,000`
+        - Upper: :math:`5`
+        - Lower: :math:`-1`
     - Piecewise linear function/"hockey-stick", continuous covariates only (*piece_lin*)
         - Function:
             - If cov <= median:
