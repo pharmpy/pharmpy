@@ -348,7 +348,7 @@ class CompartmentalSystemBuilder:
         nx.relabel_nodes(self._g, mapping, copy=False)
 
     def set_dose(self, compartment, dose):
-        """Set dose of compartment
+        """Set dose of compartment, replacing the previous if existing
 
         Parameters
         ----------
@@ -363,6 +363,31 @@ class CompartmentalSystemBuilder:
             The new updated compartment
         """
         new_comp = compartment.replace(dose=dose)
+        mapping = {compartment: new_comp}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+        return new_comp
+    
+    def add_dose(self, compartment, dose):
+        """
+        Add a dose to the compartment, without replacing existing one(s)
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to add the dose to.
+        dose : Dose
+            New dose.
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+
+        """
+        if compartment.dose is None:
+            new_comp = compartment.replace(dose=(dose,))
+        else:
+            new_comp = compartment.replace(dose=compartment.dose + (dose,))
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
