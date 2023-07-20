@@ -591,35 +591,59 @@ def _advan12_trans(trans: str):
 
 def dosing(di: DataInfo, dataset, dose_comp: int):
     if 'CMT' not in di.names or di['CMT'].drop or dataset is None:
-        return ({'comp_number': dose_comp, 'dose': _dosing(di, dataset, dose_comp)},)
+        if 'ADMID' in di.names:
+            # Add multiple doses with different ADMID
+            doses = tuple()
+            for admid in dataset['ADMID'].unique():
+                doses += ({'comp_number': dose_comp, 
+                           'dose': _dosing(di, dataset, dose_comp),
+                           'admid': admid},)
+        else:
+            return ({'comp_number': dose_comp, 
+                     'dose': _dosing(di, dataset, dose_comp),
+                     'admid': None},)
     else:
         # CMT column present
         cmt = dataset['CMT']
         if len(cmt.unique()) < 1:
             # Single compartment dose
             # Overwrite dose_comp
-            warnings.warn(
-                "CMT column present with only one value"
-                "Need ADMID column to determine doses (if multiple)"
-            )
-            comp_number = cmt[0]
-            return ({'comp_number': comp_number, 'dose': _dosing(di, dataset, comp_number)},)
+            if 'ADMID' in di.names:
+                # Add multiple doses to the same compartment based on 
+                # the admid column (to the compartment in the cmt column)
+                pass
+            else:
+                warnings.warn(
+                    "CMT column present with only one value"
+                    "Need ADMID column to determine doses (if multiple)"
+                )
+                comp_number = cmt[0]
+                return ({'comp_number': comp_number, 
+                         'dose': _dosing(di, dataset, comp_number),
+                         'admid': None},)
         else:
+            # FIXME : what if admid is present???
             # Multiple different compartments
-            doses = ()
+            doses = tuple()
             for comp_number in cmt.unique():
-                doses += ({'comp_number': comp_number, 'dose': _dosing(di, dataset, comp_number)},)
+                cmt_dataset = dataset[dataset['CMT'] == dose_comp]
+                if 'ADMID' in di.names:   
+                    for admid in cmt_dataset['ADMID'].unique():
+                        doses += ({'comp_number': comp_number, 
+                                   'dose': _dosing(di, cmt_dataset, comp_number),
+                                   'admid': admid},)
+                else:
+                    doses += ({'comp_number': comp_number, 
+                               'dose': _dosing(di, cmt_dataset, comp_number),
+                               'admid': None},)
             return doses
 
 
-def _dosing(di, dataset, dose_comp, cmt=False):
+def _dosing(di, dataset, dose_comp):
     if 'RATE' not in di.names or di['RATE'].drop:
         return Bolus(sympy.Symbol('AMT'))
 
-    if cmt is False:
-        df = dataset
-    else:
-        df = dataset[dataset['CMT'] == dose_comp]
+    df = dataset
 
     if df is None:
         return Bolus(sympy.Symbol('AMT'))
@@ -634,11 +658,14 @@ def _dosing(di, dataset, dose_comp, cmt=False):
 
 
 def find_dose(doses, comp_number, admid=1):
+    comp_doses = tuple()
     for dose in doses:
         if dose['comp_number'] == comp_number:
             comp_dose = dose['dose']
-            return (comp_dose.replace(admid=admid),)
-    return None
+            if dose['admid']:
+                admid = dose['admid']
+            comp_doses += (comp_dose.replace(admid=admid),)
+    return comp_doses if comp_doses else None
 
 
 def _get_alag(control_stream: NMTranControlStream, n: int):
