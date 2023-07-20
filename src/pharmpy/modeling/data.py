@@ -875,7 +875,7 @@ def get_admid(model: Model):
     odes = model.statements.ode_system
     names = odes.compartment_names
     if isinstance(odes, CompartmentalSystem):
-        for dosing in odes.dosing_compartment:
+        for dosing in odes.dosing_compartments:
             if dosing == odes.central_compartment:
                 iv = names.index(dosing.name) + 1
             else:
@@ -946,7 +946,7 @@ def get_cmt(model: Model):
         return model.dataset[cmtcols[0].name]
     odes = model.statements.ode_system
     if isinstance(odes, CompartmentalSystem):
-        dosing = odes.dosing_compartment[0]
+        dosing = odes.first_dosing_compartment
         names = odes.compartment_names
         dose_cmt = names.index(dosing.name) + 1
     else:

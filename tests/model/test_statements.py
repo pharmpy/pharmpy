@@ -293,7 +293,7 @@ def test_find_compartment(load_model_for_test, testdata):
 
 def test_dosing_compartment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert model.statements.ode_system.dosing_compartment[0].name == 'CENTRAL'
+    assert model.statements.ode_system.first_dosing_compartment.name == 'CENTRAL'
 
 
 def test_central_compartment(load_model_for_test, testdata):
@@ -488,4 +488,4 @@ def test_multi_dose_comp_order(load_model_for_test, testdata):
     cb = CompartmentalSystemBuilder(ode)
     cb.set_dose(cb.find_compartment("CENTRAL"), cb.find_compartment("DEPOT").dose)
     ode = CompartmentalSystem(cb)
-    assert ode.dosing_compartment[0].name == "DEPOT"
+    assert ode.first_dosing_compartment.name == "DEPOT"

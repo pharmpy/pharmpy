@@ -366,7 +366,7 @@ class CompartmentalSystemBuilder:
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
-    
+
     def add_dose(self, compartment, dose):
         """
         Add a dose to the compartment, without replacing existing one(s)
@@ -713,7 +713,7 @@ class CompartmentalSystem(ODESystem):
             isinstance(other, CompartmentalSystem)
             and self._t == other._t
             and nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
-            and self.dosing_compartment == other.dosing_compartment
+            and self.dosing_compartments == other.dosing_compartments
         )
 
     def __hash__(self):
@@ -930,8 +930,8 @@ class CompartmentalSystem(ODESystem):
         return len((out_comps | in_comps) - {output})
 
     @property
-    def dosing_compartment(self):
-        """The dosing compartment
+    def dosing_compartments(self):
+        """The dosing compartment(s)
 
         A dosing compartment is a compartment that receives an input dose. Multiple
         dose compartments are supported. The order of dose compartments is defined
@@ -946,8 +946,8 @@ class CompartmentalSystem(ODESystem):
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.ode_system.dosing_compartment[0]
-        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1))
+        >>> model.statements.ode_system.dosing_compartments
+        (Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1)),)
         """
         dosing_comps = tuple()
         for node in _comps(self._g):
@@ -964,6 +964,28 @@ class CompartmentalSystem(ODESystem):
             return dosing_comps
 
         raise ValueError('No dosing compartment exists')
+
+    @property
+    def first_dosing_compartment(self):
+        """
+        Return the first dosing compartment defined for the model. If multiple dose
+        compartments, this will return a compartmen different from the central
+        compartment.
+
+        Returns
+        -------
+        Compartment
+            The first dosing compartment to the model.
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.first_dosing_compartment
+        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1))
+
+        """
+        return self.dosing_compartments[0]
 
     @property
     def central_compartment(self):
@@ -1041,7 +1063,7 @@ class CompartmentalSystem(ODESystem):
         []
         """
         transits = []
-        comp = self.dosing_compartment[0]
+        comp = self.first_dosing_compartment
         if len(self.get_compartment_inflows(comp)) != 0:
             return transits
         outflows = self.get_compartment_outflows(comp)
@@ -1176,7 +1198,7 @@ class CompartmentalSystem(ODESystem):
     def _order_compartments(self):
         """Return list of all compartments in canonical order"""
         try:
-            dosecmt = self.dosing_compartment[0]
+            dosecmt = self.first_dosing_compartment
         except ValueError:
             # Fallback for cases where no dose is available (yet)
             return list(_comps(self._g))
@@ -1241,7 +1263,7 @@ class CompartmentalSystem(ODESystem):
         def comp_string(comp):
             return comp.name + lag_string(comp) + f_string(comp)
 
-        current = self.dosing_compartment[0]
+        current = self.first_dosing_compartment
         comp_height = 0
         comp_width = 0
 
@@ -1264,7 +1286,7 @@ class CompartmentalSystem(ODESystem):
         ncols = comp_width * 2
         grid = unicode.Grid(nrows, ncols)
 
-        current = self.dosing_compartment[0]
+        current = self.first_dosing_compartment
         col = 0
         if comp_nrows == 1 or comp_nrows == 2:
             main_row = 0 + have_zo_input
@@ -1332,7 +1354,7 @@ class CompartmentalSystem(ODESystem):
                 break
 
         all_doses = ""
-        for dose_comp in self.dosing_compartment:
+        for dose_comp in self.dosing_compartments:
             for dose in dose_comp.dose:
                 all_doses += f'{str(dose)} --> {dose_comp.name} \n'
         s = all_doses + str(grid).rstrip()

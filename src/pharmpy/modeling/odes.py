@@ -237,7 +237,7 @@ def add_bioavailability(model: Model, add_parameter: bool = True):
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
 
-    dose_comp = odes.dosing_compartment[0]
+    dose_comp = odes.first_dosing_compartment
     bio = dose_comp.bioavailability
 
     if isinstance(bio, sympy.Number):
@@ -295,7 +295,7 @@ def remove_bioavailability(model: Model):
     odes = model.statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    dosing_comp = odes.dosing_compartment[0]
+    dosing_comp = odes.first_dosing_compartment
     bio = dosing_comp.bioavailability
     if bio:
         symbols = bio.free_symbols
@@ -862,7 +862,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
                 init = _get_absorption_init(model, 'MDT')
             model, mdt_symb = _add_parameter(model, 'MDT', init=init)
         rate = n / mdt_symb
-        dosing_comp = cs.dosing_compartment[0]
+        dosing_comp = cs.first_dosing_compartment
         comp = dosing_comp
         cb = CompartmentalSystemBuilder(cs)
         while n > 0:
@@ -898,7 +898,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             nremove -= 1
 
         if n == 0:
-            dose = cs.dosing_compartment[0].first_dose
+            dose = cs.first_dosing_compartment.first_dose
             cb.set_dose(destination, dose)
 
         statements = (
@@ -1003,7 +1003,7 @@ def add_lag_time(model: Model):
     odes = model.statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    dosing_comp = odes.dosing_compartment[0]
+    dosing_comp = odes.first_dosing_compartment
     old_lag_time = dosing_comp.lag_time
     model, mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
     cb = CompartmentalSystemBuilder(odes)
@@ -1052,7 +1052,7 @@ def remove_lag_time(model: Model):
     odes = model.statements.ode_system
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    dosing_comp = odes.dosing_compartment[0]
+    dosing_comp = odes.first_dosing_compartment
     lag_time = dosing_comp.lag_time
     if lag_time:
         symbols = lag_time.free_symbols
@@ -1107,7 +1107,7 @@ def set_zero_order_absorption(model: Model):
     _disallow_infusion(model, odes)
     depot = odes.find_depot(statements)
 
-    dose_comp = odes.dosing_compartment[0]
+    dose_comp = odes.first_dosing_compartment
     symbols = dose_comp.free_symbols
     dose = dose_comp.first_dose
     lag_time = dose_comp.lag_time
@@ -1136,7 +1136,7 @@ def set_zero_order_absorption(model: Model):
         odes = model.statements.ode_system
         assert odes is not None
         model = _add_zero_order_absorption(
-            model, dose.amount, odes.dosing_compartment[0], 'MAT', lag_time
+            model, dose.amount, odes.first_dosing_compartment, 'MAT', lag_time
         )
         model = model.update_source()
     return model
@@ -1181,7 +1181,7 @@ def set_first_order_absorption(model: Model):
         raise ValueError(f'Model {model.name} has no ODE system')
     depot = cs.find_depot(statements)
 
-    dose_comp = cs.dosing_compartment[0]
+    dose_comp = cs.first_dosing_compartment
     amount = dose_comp.first_dose.amount
     symbols = dose_comp.free_symbols
     lag_time = dose_comp.lag_time
@@ -1259,7 +1259,7 @@ def set_bolus_absorption(model: Model):
         )
         model = remove_unused_parameters_and_rvs(model)
     if has_zero_order_absorption(model):
-        dose_comp = cs.dosing_compartment[0]
+        dose_comp = cs.first_dosing_compartment
         old_symbols = dose_comp.free_symbols
         cb = CompartmentalSystemBuilder(cs)
         new_dose = Bolus(dose_comp.first_dose.amount)
@@ -1318,7 +1318,7 @@ def set_seq_zo_fo_absorption(model: Model):
     _disallow_infusion(model, cs)
     depot = cs.find_depot(statements)
 
-    dose_comp = cs.dosing_compartment[0]
+    dose_comp = cs.first_dosing_compartment
     have_ZO = has_zero_order_absorption(model)
     if depot and not have_ZO:
         model = _add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
@@ -1333,7 +1333,7 @@ def set_seq_zo_fo_absorption(model: Model):
 
 
 def _disallow_infusion(model, odes):
-    dose_comp = odes.dosing_compartment[0]
+    dose_comp = odes.first_dosing_compartment
     if isinstance(dose_comp.first_dose, Infusion):
         if dose_comp.first_dose.rate is not None:
             ex = dose_comp.first_dose.rate
@@ -1372,7 +1372,7 @@ def has_zero_order_absorption(model: Model):
     cs = model.statements.ode_system
     if cs is None:
         raise ValueError(f'Model {model.name} has no ODE system')
-    dosing = cs.dosing_compartment[0]
+    dosing = cs.first_dosing_compartment
     dose = dosing.first_dose
     if isinstance(dose, Infusion):
         if dose.rate is None:
@@ -1407,7 +1407,7 @@ def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=
     cb = CompartmentalSystemBuilder(model.statements.ode_system)
     cb.set_dose(to_comp, new_dose)
     if lag_time is not None and lag_time != 0:
-        cb.set_lag_time(model.statements.ode_system.dosing_compartment[0], lag_time)
+        cb.set_lag_time(model.statements.ode_system.first_dosing_compartment, lag_time)
     model = model.replace(
         statements=model.statements.before_odes
         + CompartmentalSystem(cb)

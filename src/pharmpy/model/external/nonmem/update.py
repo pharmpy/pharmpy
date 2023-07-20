@@ -383,7 +383,7 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
         model = to_des(model, new)
     else:
         if (
-            isinstance(new.dosing_compartment[0].first_dose, Bolus)
+            isinstance(new.first_dosing_compartment.first_dose, Bolus)
             and 'RATE' in model.datainfo.names
         ):
             df = model.dataset.drop(columns=['RATE'])
@@ -414,7 +414,7 @@ def update_cmt_column(model, old, new):
             newmap = new_compartmental_map(cs)
 
             d = {}
-            for dose_comp in model.statements.ode_system.dosing_compartment:
+            for dose_comp in model.statements.ode_system.dosing_compartments:
                 d[dose_comp.first_dose.admid] = newmap[dose_comp.name]
 
             cmt_col = get_admid(model)
@@ -444,11 +444,11 @@ def update_cmt_column(model, old, new):
             oldmap = oldmap.copy()
             remap = create_compartment_remap(oldmap, newmap)
 
-            for dose_comp in old.dosing_compartment:
+            for dose_comp in old.dosing_compartments:
                 if dose_comp != old.central_compartment:
                     # Remap oral doses to new dosing compartment
-                    remap[oldmap[dose_comp.name]] = newmap[new.dosing_compartment[0].name]
-
+                    remap[oldmap[dose_comp.name]] = newmap[new.first_dosing_compartment.name]
+            dataset = model.dataset.copy()
             dataset = dataset.replace({"CMT": remap})
             model = model.replace(dataset=dataset)
 
@@ -480,20 +480,20 @@ def update_infusion(model: Model, old: ODESystem):
     new = statements.ode_system
     assert new is not None
     if isinstance(
-        new.dosing_compartment[0].first_dose, Infusion
+        new.first_dosing_compartment.first_dose, Infusion
     ) and not statements.find_assignment('D1'):
         # Handle direct moving of Infusion dose
         statements = statements.subs({'D2': 'D1'})
 
-    if isinstance(new.dosing_compartment[0].first_dose, Infusion) and isinstance(
-        old.dosing_compartment[0].first_dose, Bolus
+    if isinstance(new.first_dosing_compartment.first_dose, Infusion) and isinstance(
+        old.first_dosing_compartment.first_dose, Bolus
     ):
-        dose = new.dosing_compartment[0].first_dose
+        dose = new.first_dosing_compartment.first_dose
         if dose.rate is None:
             # FIXME: Not always D1 here!
             ass = Assignment(sympy.Symbol('D1'), dose.duration)
             cb = CompartmentalSystemBuilder(new)
-            cb.set_dose(new.dosing_compartment[0], Infusion(dose.amount, duration=ass.symbol))
+            cb.set_dose(new.first_dosing_compartment, Infusion(dose.amount, duration=ass.symbol))
             statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")
@@ -593,7 +593,7 @@ def to_des(model: Model, new: ODESystem):
     cs = cs.insert_record(mod)
     old_mod = mod
     assert isinstance(mod, ModelRecord)
-    dosecmt_name = new.dosing_compartment[0].name
+    dosecmt_name = new.first_dosing_compartment.name
     for eq in new.eqs:
         name = eq.lhs.args[0].name[2:]
         if name == dosecmt_name:
@@ -760,9 +760,9 @@ def update_dependent_variables(model: Model, trans):
 
 
 def update_lag_time(model: Model, old: CompartmentalSystem, new: CompartmentalSystem):
-    new_dosing = new.dosing_compartment[0]
+    new_dosing = new.first_dosing_compartment
     new_lag_time = new_dosing.lag_time
-    old_lag_time = old.dosing_compartment[0].lag_time
+    old_lag_time = old.first_dosing_compartment.lag_time
     if new_lag_time != old_lag_time and new_lag_time != 0:
         ass = Assignment(sympy.Symbol('ALAG1'), new_lag_time)
         cb = CompartmentalSystemBuilder(new)
@@ -783,7 +783,7 @@ def update_bio(model, old, new):
     Is based on the order of dosing compartments
     """
     newmap = new_compartmental_map(new)
-    for dose in new.dosing_compartment:
+    for dose in new.dosing_compartments:
         # If the dose is not already correctly set (i.e dose numbering has
         # changed), it should be update to match the new number.
         if (
@@ -1006,7 +1006,7 @@ def match_advan2(statements):
     odes = statements.ode_system
     if len(odes) != 2:
         return False
-    dosing = odes.dosing_compartment[0]
+    dosing = odes.first_dosing_compartment
     outflows = odes.get_compartment_outflows(dosing)
     if len(outflows) != 1:
         return False
@@ -1033,7 +1033,7 @@ def match_advan2(statements):
 def match_advan3(odes):
     if len(odes) != 2:
         return False
-    central = odes.dosing_compartment[0]
+    central = odes.first_dosing_compartment
     bidir = odes.get_bidirectionals(central)
     if len(bidir) != 1:
         return False
@@ -1045,7 +1045,7 @@ def match_advan3(odes):
 def match_advan4(odes):
     if len(odes) != 3:
         return False
-    dosing = odes.dosing_compartment[0]
+    dosing = odes.first_dosing_compartment
     outflows = odes.get_compartment_outflows(dosing)
     if len(outflows) != 1:
         return False
@@ -1061,7 +1061,7 @@ def match_advan4(odes):
 def match_advan11(odes):
     if len(odes) != 3:
         return False
-    central = odes.dosing_compartment[0]
+    central = odes.first_dosing_compartment
     bidir = odes.get_bidirectionals(central)
     if len(bidir) != 2:
         return False
@@ -1077,7 +1077,7 @@ def match_advan11(odes):
 def match_advan12(odes):
     if len(odes) != 4:
         return False
-    dosing = odes.dosing_compartment[0]
+    dosing = odes.first_dosing_compartment
     outflows = odes.get_compartment_outflows(dosing)
     if len(outflows) != 1:
         return False

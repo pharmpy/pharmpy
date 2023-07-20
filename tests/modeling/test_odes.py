@@ -1689,11 +1689,11 @@ def test_bioavailability(load_model_for_test, testdata):
 def test_move_bioavailability(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     model = add_bioavailability(model)
-    assert model.statements.ode_system.dosing_compartment[0].bioavailability == sympy.Symbol("F1")
+    assert model.statements.ode_system.first_dosing_compartment.bioavailability == sympy.Symbol("F1")
 
     model = set_first_order_absorption(model)
-    assert model.statements.ode_system.dosing_compartment[0].name == "DEPOT"
-    assert model.statements.ode_system.dosing_compartment[0].bioavailability == sympy.Symbol("F1")
+    assert model.statements.ode_system.first_dosing_compartment.name == "DEPOT"
+    assert model.statements.ode_system.first_dosing_compartment.bioavailability == sympy.Symbol("F1")
     assert model.statements.ode_system.find_compartment("CENTRAL").dose is None
 
 
