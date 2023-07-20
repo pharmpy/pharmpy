@@ -346,6 +346,22 @@ class CompartmentalSystemBuilder:
         new_dest = destination.replace(dose=source.dose)
         mapping = {source: new_source, destination: new_dest}
         nx.relabel_nodes(self._g, mapping, copy=False)
+        
+    def move_oral_dose(self, source, destination):
+        """If present, move oral dose(s) (admid = 1) from one compartment to another
+        
+        Parameters
+        ----------
+        source : Compartment
+            Source compartment
+        destination : Compartment
+            Destination compartment
+
+        """
+        new_source = source.replace(dose=source.iv_dose)
+        new_dest = destination.replace(dose=source.oral_dose)
+        mapping = {source: new_source, destination: new_dest}
+        nx.relabel_nodes(self._g, mapping, copy=False)
 
     def set_dose(self, compartment, dose):
         """Set dose of compartment, replacing the previous if existing
@@ -1476,6 +1492,20 @@ class Compartment:
             return tuple(sorted(self._dose, key=lambda d: d.admid))
         else:
             return self._dose
+    
+    @property
+    def oral_dose(self):
+        if self._dose is not None:
+            oral_dose = tuple([dose for dose in self.dose if dose.admid == 1])
+            return oral_dose if oral_dose else None
+        return None
+
+    @property
+    def iv_dose(self):
+        if self._dose is not None:
+            iv_dose = tuple([dose for dose in self.dose if dose.admid == 2])
+            return iv_dose if iv_dose else None
+        return None
 
     @property
     def first_dose(self):
