@@ -598,6 +598,7 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
                 doses += ({'comp_number': dose_comp, 
                            'dose': _dosing(di, dataset, dose_comp),
                            'admid': admid},)
+            return doses
         else:
             return ({'comp_number': dose_comp, 
                      'dose': _dosing(di, dataset, dose_comp),
@@ -605,7 +606,7 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
     else:
         # CMT column present
         cmt = dataset['CMT']
-        if len(cmt.unique()) < 1:
+        if len(cmt.unique()) == 1:
             # Single compartment dose
             # Overwrite dose_comp
             if 'ADMID' in di.names:
@@ -662,7 +663,7 @@ def find_dose(doses, comp_number, admid=1):
     for dose in doses:
         if dose['comp_number'] == comp_number:
             comp_dose = dose['dose']
-            if dose['admid']:
+            if dose['admid'] is not None:
                 admid = dose['admid']
             comp_doses += (comp_dose.replace(admid=admid),)
     return comp_doses if comp_doses else None
