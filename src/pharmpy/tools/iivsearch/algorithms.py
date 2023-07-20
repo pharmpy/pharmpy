@@ -25,7 +25,12 @@ def brute_force_no_of_etas(base_model, index_offset=0, keep=[]):
     iivs = base_model.random_variables.iiv
     iiv_names = iivs.names
     if len(keep) > 0:
-        iiv_names = set(iiv_names) - _get_eta_from_parameter(base_model, keep)
+        # remove eta values to keep
+        iiv_names = _remove_sublist(iiv_names, _get_eta_from_parameter(base_model, keep))
+
+    # Remove fixed etas
+    fixed_etas = _get_fixed_etas(base_model)
+    iiv_names = _remove_sublist(iiv_names, fixed_etas)
 
     for i, to_remove in enumerate(non_empty_subsets(iiv_names), 1):
         model_name = f'iivsearch_run{i + index_offset}'

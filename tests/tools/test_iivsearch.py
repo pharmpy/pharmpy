@@ -50,6 +50,14 @@ def test_brute_force_no_of_etas_keep(
     assert len(fit_tasks) == expected_values
 
 
+def test_brute_force_no_of_etas_fixed(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    model = fix_parameters(model, 'IVCL')
+    wf = brute_force_no_of_etas(model)
+    fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
+    assert len(fit_tasks) == 1
+
+
 @pytest.mark.parametrize(
     'list_of_parameters, no_of_models',
     [([], 7), (['QP1'], 15)],
