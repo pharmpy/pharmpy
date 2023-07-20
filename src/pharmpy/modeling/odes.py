@@ -1190,8 +1190,9 @@ def set_first_order_absorption(model: Model):
     if depot and depot == dose_comp:
         dose_comp = cb.set_dose(dose_comp, Bolus(dose_comp.first_dose.amount))
         dose_comp = cb.set_lag_time(dose_comp, sympy.Integer(0))
-    if not depot:
-        dose_comp = cb.set_dose(dose_comp, Bolus(amount))
+    # FIXME : What is the purpose of this?
+    #if not depot:
+    #   dose_comp = cb.set_dose(dose_comp, Bolus(amount))
     statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
 
     new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
@@ -1429,7 +1430,7 @@ def _add_first_order_absorption(model, dose, to_comp, lag_time=None, bioavailabi
         bioavailability=sympy.Integer(1) if bioavailability is None else bioavailability,
     )
     cb.add_compartment(depot)
-    to_comp = cb.set_dose(to_comp, None)
+    to_comp = cb.set_dose(to_comp, to_comp.iv_dose)
     to_comp = cb.set_lag_time(to_comp, sympy.Integer(0))
     to_comp = cb.set_bioavailability(to_comp, sympy.Integer(1))
 
