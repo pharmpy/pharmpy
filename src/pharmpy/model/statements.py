@@ -1305,11 +1305,11 @@ class CompartmentalSystem(ODESystem):
             current = next_comp
             if not current:
                 break
-        
+
         all_doses = ""
         for dose_comp in self.dosing_compartment:
             for dose in dose_comp.dose:
-                    all_doses += f'{str(dose)} --> {dose_comp.name} \n'
+                all_doses += f'{str(dose)} --> {dose_comp.name} \n'
         s = all_doses + str(grid).rstrip()
         return s
 
@@ -1429,7 +1429,7 @@ class Compartment:
             return tuple(sorted(self._dose, key=lambda d: d.admid))
         else:
             return self._dose
-    
+
     @property
     def first_dose(self):
         if self._dose is not None:
@@ -1557,7 +1557,11 @@ class Compartment:
 
     def __repr__(self):
         lag = '' if self.lag_time == 0 else f', lag_time={self._lag_time}'
-        dose = '' if self.dose is None else f', dose={self._dose[0] if len(self._dose) == 1 else self._dose}'
+        dose = (
+            ''
+            if self.dose is None
+            else f', dose={self._dose[0] if len(self._dose) == 1 else self._dose}'
+        )
         input = '' if self.input == 0 else f', input={self._input}'
         bioavailability = (
             '' if self.bioavailability == 1 else f', bioavailability={self._bioavailability}'

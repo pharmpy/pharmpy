@@ -162,7 +162,7 @@ def test_dict(load_model_for_test, testdata):
         'class': 'Compartment',
         'name': 'CENTRAL',
         'amount': "Symbol('A_CENTRAL')",
-        'dose': {'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},
+        'dose': ({'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},),
         'input': 'Integer(0)',
         'lag_time': 'Integer(0)',
         'bioavailability': 'Integer(1)',
@@ -186,7 +186,7 @@ def test_dict(load_model_for_test, testdata):
                 'class': 'Compartment',
                 'name': 'CENTRAL',
                 'amount': "Symbol('A_CENTRAL')",
-                'dose': {'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},
+                'dose': ({'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},),
                 'input': 'Integer(0)',
                 'lag_time': 'Integer(0)',
                 'bioavailability': 'Integer(1)',
@@ -432,11 +432,11 @@ def test_builder():
     cb.add_compartment(depot)
     cb.add_flow(depot, central, S('KA'))
     cm = CompartmentalSystem(cb)
-    assert cm.find_compartment('DEPOT').dose is None
-    assert cm.central_compartment.dose == dose
+    assert cm.find_compartment('DEPOT').first_dose is None
+    assert cm.central_compartment.first_dose == dose
     cb.move_dose(central, depot)
     cm2 = CompartmentalSystem(cb)
-    assert cm2.find_compartment('DEPOT').dose == dose
+    assert cm2.find_compartment('DEPOT').first_dose == dose
     assert cm2.central_compartment.dose is None
     assert hash(cm) != hash(cm2)
 
