@@ -1,3 +1,4 @@
+from importlib.metadata import version
 from typing import Iterable, Iterator, List, Tuple, Union
 
 from lark import Token, Transformer, Tree
@@ -48,6 +49,8 @@ def _item_range(x: Union[Tree, Token]) -> Tuple[int, int]:
     if isinstance(x, Tree):
         i = x.meta.start_pos
         j = x.meta.end_pos
+        if version('lark') == '1.1.6':
+            j = _get_new_end_pos(x)
     else:
         i = x.start_pos
         j = x.end_pos
@@ -55,6 +58,14 @@ def _item_range(x: Union[Tree, Token]) -> Tuple[int, int]:
     assert isinstance(i, int)
     assert isinstance(j, int)
     return (i, j)
+
+
+def _get_new_end_pos(x):
+    # FIXME: temporary workaround, see https://github.com/lark-parser/lark/issues/1304
+    x = x.children[-1]
+    if isinstance(x, Token):
+        return x.end_pos
+    return _get_new_end_pos(x)
 
 
 def _interleave_ignored(source: str, it: Iterator[Union[Tree, Token]]):
@@ -96,11 +107,8 @@ class InterleaveIgnored(Transformer):
 def with_ignored_tokens(source, tree):
     new_tree = InterleaveIgnored(source).transform(tree)
 
-    # FIXME: temporary workaround, see https://github.com/lark-parser/lark/issues/1304
-    from importlib.metadata import version
-
-    if version('lark') == '1.1.6':
-        new_tree.meta.end_pos = new_tree.children[-1].meta.end_pos
+    if version('lark') == '1.1.6' and new_tree.children:
+        new_tree.meta.end_pos = _get_new_end_pos(new_tree)
 
     final_meta = Meta()
     # TODO propagate line/column information
