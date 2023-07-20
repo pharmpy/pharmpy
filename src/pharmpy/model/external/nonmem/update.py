@@ -428,8 +428,10 @@ def update_cmt_column(model, old, new):
         elif "CMT" in model.datainfo.names and len(old.compartment_names) != len(
             new.compartment_names
         ):
+            dataset = model.dataset.copy()
+
             # Make sure column is a number and not string
-            model.dataset["CMT"] = pd.to_numeric(model.dataset["CMT"])
+            dataset["CMT"] = pd.to_numeric(dataset["CMT"])
 
             # Differ in amount of compartment -> Change cmt numbering
             # The cmt number should be the same as the dosing compartment
@@ -444,7 +446,7 @@ def update_cmt_column(model, old, new):
                 if dose_comp != old.central_compartment:
                     # Remap oral doses to new dosing compartment
                     remap[oldmap[dose_comp.name]] = newmap[new.dosing_compartment[0].name]
-            dataset = model.dataset.copy()
+
             dataset = dataset.replace({"CMT": remap})
             model = model.replace(dataset=dataset)
 
