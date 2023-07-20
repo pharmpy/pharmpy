@@ -96,6 +96,12 @@ class InterleaveIgnored(Transformer):
 def with_ignored_tokens(source, tree):
     new_tree = InterleaveIgnored(source).transform(tree)
 
+    # FIXME: temporary workaround, see https://github.com/lark-parser/lark/issues/1304
+    from importlib.metadata import version
+
+    if version('lark') == '1.1.6':
+        new_tree.meta.end_pos = new_tree.children[-1].meta.end_pos
+
     final_meta = Meta()
     # TODO propagate line/column information
     final_meta.start_pos = 0
