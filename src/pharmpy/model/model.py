@@ -120,7 +120,7 @@ class Model(Immutable):
         random_variables = Model._canonicalize_random_variables(random_variables)
         parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
         estimation_steps = Model._canonicalize_estimation_steps(estimation_steps)
-        value_type = Model._canonicalize_value_type(Model, value_type)
+        value_type = Model._canonicalize_value_type(value_type)
         if not isinstance(datainfo, DataInfo):
             raise TypeError("model.datainfo must be of DataInfo type")
 
@@ -146,7 +146,8 @@ class Model(Immutable):
             initial_individual_estimates=initial_individual_estimates,
         )
 
-    def _canonicalize_value_type(self, value):
+    @staticmethod
+    def _canonicalize_value_type(value):
         allowed_strings = ('PREDICTION', 'LIKELIHOOD', '-2LL')
         if isinstance(value, str):
             if value.upper() not in allowed_strings:
