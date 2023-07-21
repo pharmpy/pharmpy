@@ -120,7 +120,7 @@ class Model(Immutable):
         random_variables = Model._canonicalize_random_variables(random_variables)
         parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
         estimation_steps = Model._canonicalize_estimation_steps(estimation_steps)
-        value_type = Model._canonicalize_value_type(value_type)
+        value_type = Model._canonicalize_value_type(Model, value_type)
         if not isinstance(datainfo, DataInfo):
             raise TypeError("model.datainfo must be of DataInfo type")
 
