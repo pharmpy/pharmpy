@@ -1,3 +1,22 @@
+0.98.0 (2023-07-21)
+-------------------
+
+New features
+============
+
+* Support for multiple doses
+* Add function ``modeling.add_bioavailability``
+* Add function ``modeling.remove_bioavailability``
+* Support for PKPD models in structsearch
+* Option to keep IIVs in IIVSearch
+* Option to test uncertainty methods in Estmethod
+* Autogenerate CMT column
+
+Changes
+=======
+
+* Rename BLQ flag datainfo typ to ``blqdv``
+
 0.97.0 (2023-06-28)
 -------------------
 
