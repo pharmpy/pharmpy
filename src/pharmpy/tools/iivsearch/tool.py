@@ -55,6 +55,8 @@ def create_workflow(
         Results for model
     model : Model
         Pharmpy model
+    keep :  List[str]
+        List of IIVs to keep
 
     Returns
     -------
