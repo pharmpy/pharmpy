@@ -493,7 +493,7 @@ def update_infusion(model: Model, old: ODESystem):
             # FIXME: Not always D1 here!
             ass = Assignment(sympy.Symbol('D1'), dose.duration)
             cb = CompartmentalSystemBuilder(new)
-            cb.set_dose(new.first_dosing_compartment, Infusion(dose.amount, duration=ass.symbol))
+            cb.set_dose(new.first_dosing_compartment, Infusion(dose.amount, admid = dose.admid, duration=ass.symbol))
             statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")
