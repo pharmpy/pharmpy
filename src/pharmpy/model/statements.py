@@ -445,6 +445,37 @@ class CompartmentalSystemBuilder:
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
+    
+    def remove_dose(self, compartment, dose_to_remove):
+        """
+        Remove specified dose.
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to remove dose from.
+        dose_to_remove : Dose
+            Dose to remove.
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+
+        """
+        comp_dose = compartment.dose
+        new_comp_dose = tuple()
+        for dose in comp_dose:
+            if dose != dose_to_remove:
+                new_comp_dose += (dose,)
+        if new_comp_dose == comp_dose:
+            raise ValueError("Specified dose was not found")
+        if len(new_comp_dose) == 0:
+            new_comp_dose = None
+        new_comp = compartment.replace(dose=new_comp_dose)
+        mapping = {compartment: new_comp}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+        return new_comp
 
     def set_lag_time(self, compartment, lag_time):
         """Set lag time of compartment
