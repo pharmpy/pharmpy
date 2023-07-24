@@ -186,7 +186,7 @@ def test_dict(load_model_for_test, testdata):
                 'class': 'Compartment',
                 'name': 'CENTRAL',
                 'amount': "Symbol('A_CENTRAL')",
-                'dose': ({'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},),
+                'dose': ({'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 2},),
                 'input': 'Integer(0)',
                 'lag_time': 'Integer(0)',
                 'bioavailability': 'Integer(1)',
