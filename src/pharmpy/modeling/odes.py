@@ -1423,7 +1423,7 @@ def _add_zero_order_absorption(model, old_dose, to_comp, parameter_name, lag_tim
             model, parameter_name, init=_get_absorption_init(model, parameter_name)
         )
     if to_comp == model.statements.ode_system.central_compartment:
-        new_dose = Infusion(old_dose.amount, admid=2, duration=mat_symb * 2)
+        new_dose = Infusion(old_dose.amount, duration=mat_symb * 2)
     else:
         new_dose = Infusion(old_dose.amount, duration=mat_symb * 2)
     cb = CompartmentalSystemBuilder(model.statements.ode_system)
