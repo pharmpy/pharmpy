@@ -1203,9 +1203,9 @@ def set_first_order_absorption(model: Model):
     if depot and depot == dose_comp:
         dose_comp = cb.set_dose(dose_comp, Bolus(dose_comp.first_dose.amount))
         dose_comp = cb.set_lag_time(dose_comp, sympy.Integer(0))
-    # FIXME : What is the purpose of this?
-    # if not depot:
-    #   dose_comp = cb.set_dose(dose_comp, Bolus(amount))
+    if not depot:
+        # TODO : Add another way of removing dependencies
+        dose_comp = cb.set_dose(dose_comp, Bolus(amount))
     statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
     new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
     mat_idx = statements.find_assignment_index('MAT')
@@ -1335,13 +1335,13 @@ def set_seq_zo_fo_absorption(model: Model):
     dose_comp = cs.first_dosing_compartment
     have_ZO = has_zero_order_absorption(model)
     if depot and not have_ZO:
-        model = _add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
+        model = _add_zero_order_absorption(model, dose_comp.first_dose, depot, 'MDT')
     elif not depot and have_ZO:
         model, _ = _add_first_order_absorption(model, dose_comp.first_dose, dose_comp)
     elif not depot and not have_ZO:
         amount = dose_comp.first_dose.amount
         model, depot = _add_first_order_absorption(model, Bolus(amount), dose_comp)
-        model = _add_zero_order_absorption(model, amount, depot, 'MDT')
+        model = _add_zero_order_absorption(model, Bolus(amount), depot, 'MDT')
     model = model.update_source()
     return model
 
@@ -1417,7 +1417,10 @@ def _add_zero_order_absorption(model, old_dose, to_comp, parameter_name, lag_tim
         model, mat_symb = _add_parameter(
             model, parameter_name, init=_get_absorption_init(model, parameter_name)
         )
-    new_dose = Infusion(old_dose.amount, duration=mat_symb * 2)
+    if to_comp == model.statements.ode_system.central_compartment:
+        new_dose = Infusion(old_dose.amount, admid=2, duration=mat_symb * 2)
+    else:
+        new_dose = Infusion(old_dose.amount, duration=mat_symb * 2)
     cb = CompartmentalSystemBuilder(model.statements.ode_system)
     cb.replace_dose(to_comp, old_dose, new_dose)
     if lag_time is not None and lag_time != 0:
