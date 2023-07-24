@@ -19,3 +19,9 @@ def test_create_basic_pk_model(testdata):
     assert not model.dataset.empty
     assert not run1.dataset.empty
     assert type(model.dependent_variables) == frozenmapping
+
+    dataset_path = testdata / 'nonmem/pheno_pd.csv'
+    model = create_basic_pk_model(
+        modeltype='oral', dataset_path=dataset_path, cl_init=0.01, vc_init=1.0, mat_init=0.1
+    )
+    assert not model.dataset.empty

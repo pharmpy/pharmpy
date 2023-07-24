@@ -150,7 +150,7 @@ def _create_default_datainfo(path):
         di = DataInfo.read_json(datainfo_path)
         di = di.replace(path=path)
     else:
-        colnames = list(pd.read_csv(path, nrows=0))
+        colnames = list(pd.read_csv(path, nrows=0, sep=r'\s+'))
         column_info = []
         for colname in colnames:
             if colname == 'ID' or colname == 'L1':
