@@ -382,6 +382,37 @@ class CompartmentalSystemBuilder:
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
+    
+    def replace_dose(self, compartment, old_dose, new_dose):
+        """
+        Replace and existing dose to a compartment
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to replace dose to.
+        old_dose : Dose
+            Dose to be replaces.
+        new_dose : Dose
+            New Dose
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+
+        """
+        comp_dose = compartment.dose
+        new_comp_dose = tuple()
+        for dose in comp_dose:
+            if dose == old_dose:
+                new_comp_dose += (new_dose,)
+            else:
+                new_comp_dose += (dose,)
+        new_comp = compartment.replace(dose=new_comp_dose)
+        mapping = {compartment: new_comp}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+        return new_comp
 
     def add_dose(self, compartment, dose):
         """
@@ -403,7 +434,8 @@ class CompartmentalSystemBuilder:
         if compartment.dose is None:
             new_comp = compartment.replace(dose=(dose,))
         else:
-            new_comp = compartment.replace(dose=compartment.dose + (dose,))
+            new_dose = compartment.dose + (dose,)
+            new_comp = compartment.replace(dose=tuple(sorted(new_dose, key=lambda d: d.admid)))
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
@@ -1506,6 +1538,18 @@ class Compartment:
             iv_dose = tuple([dose for dose in self.dose if dose.admid == 2])
             return iv_dose if iv_dose else None
         return None
+
+    @property
+    def number_of_doses(self):
+        return len(self._dose)
+    
+    @property
+    def number_of_oral_doses(self):
+        return len(self.oral_dose)
+    
+    @property
+    def number_of_iv_doses(self):
+        return len(self.iv_dose)
 
     @property
     def first_dose(self):
