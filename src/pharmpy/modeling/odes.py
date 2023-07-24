@@ -1201,11 +1201,16 @@ def set_first_order_absorption(model: Model):
     bio = dose_comp.bioavailability
     cb = CompartmentalSystemBuilder(cs)
     if depot and depot == dose_comp:
-        dose_comp = cb.set_dose(dose_comp, Bolus(dose_comp.first_dose.amount))
+        dose_comp = cb.replace_dose(dose_comp, dose_comp.first_dose, Bolus(dose_comp.first_dose.amount))
         dose_comp = cb.set_lag_time(dose_comp, sympy.Integer(0))
     if not depot:
         # TODO : Add another way of removing dependencies
-        dose_comp = cb.set_dose(dose_comp, Bolus(amount))
+        if dose_comp.number_of_doses == 1:
+            dose_comp = cb.set_dose(dose_comp, Bolus(amount))
+            remove_dose = True
+        else:
+            dose_comp = cb.set_dose(dose_comp, dose_comp.iv_dose)
+            remove_dose = False
     statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
     new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
     mat_idx = statements.find_assignment_index('MAT')
@@ -1218,7 +1223,7 @@ def set_first_order_absorption(model: Model):
     model = remove_unused_parameters_and_rvs(model)
     if not depot:
         # The new dose is created here
-        model, _ = _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time, bio)
+        model, _ = _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time, bio, remove_dose=remove_dose)
         model = model.update_source()
     return model
 
@@ -1433,7 +1438,7 @@ def _add_zero_order_absorption(model, old_dose, to_comp, parameter_name, lag_tim
     return model
 
 
-def _add_first_order_absorption(model, dose, to_comp, lag_time=None, bioavailability=None):
+def _add_first_order_absorption(model, dose, to_comp, lag_time=None, bioavailability=None, remove_dose=True):
     """Add first order absorption
     Disregards what is currently in the model.
     """
@@ -1446,9 +1451,7 @@ def _add_first_order_absorption(model, dose, to_comp, lag_time=None, bioavailabi
         bioavailability=sympy.Integer(1) if bioavailability is None else bioavailability,
     )
     cb.add_compartment(depot)
-    if to_comp.dose != to_comp.iv_dose:
-        to_comp = cb.set_dose(to_comp, to_comp.iv_dose)
-    else:
+    if remove_dose:
         to_comp = cb.set_dose(to_comp, None)
     to_comp = cb.set_lag_time(to_comp, sympy.Integer(0))
     to_comp = cb.set_bioavailability(to_comp, sympy.Integer(1))
