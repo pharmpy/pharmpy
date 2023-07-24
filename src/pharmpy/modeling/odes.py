@@ -1342,10 +1342,23 @@ def set_seq_zo_fo_absorption(model: Model):
     if depot and not have_ZO:
         model = _add_zero_order_absorption(model, dose_comp.first_dose, depot, 'MDT')
     elif not depot and have_ZO:
-        model, _ = _add_first_order_absorption(model, dose_comp.first_dose, dose_comp)
+        if dose_comp.number_of_doses == 1:
+            remove_dose = True
+        else:
+            fo_dose = dose_comp.first_dose
+            cb = CompartmentalSystemBuilder(model.statements.ode_system)
+            dose_comp = cb.remove_dose(dose_comp, dose_comp.first_dose)
+            model = model.replace(
+                statements=model.statements.before_odes
+                + CompartmentalSystem(cb)
+                + model.statements.after_odes
+            )
+            remove_dose = False
+        model, _ = _add_first_order_absorption(model, fo_dose, dose_comp, remove_dose=remove_dose)
     elif not depot and not have_ZO:
+        model = set_first_order_absorption(model)
         amount = dose_comp.first_dose.amount
-        model, depot = _add_first_order_absorption(model, Bolus(amount), dose_comp)
+        depot = model.statements.ode_system.find_depot(model.statements)
         model = _add_zero_order_absorption(model, Bolus(amount), depot, 'MDT')
     model = model.update_source()
     return model
