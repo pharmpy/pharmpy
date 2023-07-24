@@ -303,14 +303,14 @@ def _compartmental_model(
         eqs = [sympy.Eq(s.symbol, s.expression) for s in sset if not s.symbol.is_Symbol]
 
         cs = to_compartmental_system(func_to_name, eqs)
+        central_comp_name = cs.central_compartment.name
         cb = CompartmentalSystemBuilder(cs)
         for i, comp_name in enumerate(comps, start=1):
             comp = cs.find_compartment(comp_name)
             if comp is None:  # Compartments can be in $MODEL but not used in $DES
                 continue
             admid = 1
-            if i == len(comps) and len(comps) != 1:
-                # FIXME : Always assume last comp to be CENTRAL and IV?
+            if comp.name == central_comp_name:
                 admid = 2
             doses = dosing(di, dataset, i)
             cb.set_dose(comp, find_dose(doses, i, admid=admid))
