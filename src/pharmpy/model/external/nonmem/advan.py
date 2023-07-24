@@ -44,7 +44,7 @@ def _compartmental_model(
         cb = CompartmentalSystemBuilder()
         central = Compartment.create(
             'CENTRAL',
-            dose=find_dose(doses, comp_number=1, admid=1),
+            dose=find_dose(doses, comp_number=1, admid=2),
             lag_time=_get_alag(control_stream, 1),
             bioavailability=_get_bioavailability(control_stream, 1),
         )
