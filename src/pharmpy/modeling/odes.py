@@ -1117,18 +1117,21 @@ def set_zero_order_absorption(model: Model):
         assert ka is not None
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_compartment(depot)
-        to_comp = cb.set_dose(to_comp, dose)
+        if to_comp.dose is not None:
+            to_comp = cb.add_dose(to_comp, dose)
+        else:
+            to_comp = cb.set_dose(to_comp, dose)
         to_comp = cb.set_lag_time(to_comp, depot.lag_time)
         cb.set_bioavailability(to_comp, depot.bioavailability)
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         symbols = ka.free_symbols
-
     new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
     mat_idx = statements.find_assignment_index('MAT')
     if mat_idx is not None:
+        # FIXME : Causes issue if mat_assign statement is dependent on previously
+        # removed parameters/statements
         mat_assign = statements[mat_idx]
         new_statements = new_statements[0:mat_idx] + mat_assign + new_statements[mat_idx:]
-
     model = model.replace(statements=new_statements)
 
     model = remove_unused_parameters_and_rvs(model)
@@ -1136,7 +1139,7 @@ def set_zero_order_absorption(model: Model):
         odes = model.statements.ode_system
         assert odes is not None
         model = _add_zero_order_absorption(
-            model, dose.amount, odes.first_dosing_compartment, 'MAT', lag_time
+            model, dose, odes.first_dosing_compartment, 'MAT', lag_time
         )
         model = model.update_source()
     return model
@@ -1147,6 +1150,9 @@ def set_first_order_absorption(model: Model):
 
     Initial estimate for absorption rate is set to
     the previous rate if available, otherwise it is set to the time of first observation/2.
+    
+    If multiple doses is set to the affected compartment, currently only iv+oral
+    doses (one of each) is supported
 
     Parameters
     ----------
@@ -1180,8 +1186,13 @@ def set_first_order_absorption(model: Model):
     if cs is None:
         raise ValueError(f'Model {model.name} has no ODE system')
     depot = cs.find_depot(statements)
-
+    # FIXME currently can only handle :
+    # One oral OR one IV OR iv+oral to the same compartment
     dose_comp = cs.first_dosing_compartment
+    if dose_comp.number_of_doses > 1:
+        # Can only handle iv+oral
+        assert dose_comp.number_of_oral_doses == 1
+        assert dose_comp.number_of_iv_doses == 1
     amount = dose_comp.first_dose.amount
     symbols = dose_comp.free_symbols
     lag_time = dose_comp.lag_time
@@ -1194,7 +1205,6 @@ def set_first_order_absorption(model: Model):
     #if not depot:
     #   dose_comp = cb.set_dose(dose_comp, Bolus(amount))
     statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-
     new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
     mat_idx = statements.find_assignment_index('MAT')
     if mat_idx is not None:
@@ -1205,6 +1215,7 @@ def set_first_order_absorption(model: Model):
 
     model = remove_unused_parameters_and_rvs(model)
     if not depot:
+        # The new dose is created here
         model, _ = _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time, bio)
         model = model.update_source()
     return model
@@ -1392,7 +1403,7 @@ def has_zero_order_absorption(model: Model):
     return False
 
 
-def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=None):
+def _add_zero_order_absorption(model, old_dose, to_comp, parameter_name, lag_time=None):
     """Add zero order absorption to a compartment. Initial estimate for absorption rate is set
     the previous rate if available, otherwise it is set to the time of first observation/2 is used.
     Disregards what is currently in the model.
@@ -1404,9 +1415,9 @@ def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=
         model, mat_symb = _add_parameter(
             model, parameter_name, init=_get_absorption_init(model, parameter_name)
         )
-    new_dose = Infusion(amount, duration=mat_symb * 2)
+    new_dose = Infusion(old_dose.amount, duration=mat_symb * 2)
     cb = CompartmentalSystemBuilder(model.statements.ode_system)
-    cb.set_dose(to_comp, new_dose)
+    cb.replace_dose(to_comp, old_dose, new_dose)
     if lag_time is not None and lag_time != 0:
         cb.set_lag_time(model.statements.ode_system.first_dosing_compartment, lag_time)
     model = model.replace(
@@ -1430,7 +1441,10 @@ def _add_first_order_absorption(model, dose, to_comp, lag_time=None, bioavailabi
         bioavailability=sympy.Integer(1) if bioavailability is None else bioavailability,
     )
     cb.add_compartment(depot)
-    to_comp = cb.set_dose(to_comp, to_comp.iv_dose)
+    if to_comp.dose != to_comp.iv_dose:
+        to_comp = cb.set_dose(to_comp, to_comp.iv_dose)
+    else:
+        to_comp = cb.set_dose(to_comp, None)
     to_comp = cb.set_lag_time(to_comp, sympy.Integer(0))
     to_comp = cb.set_bioavailability(to_comp, sympy.Integer(1))
 
