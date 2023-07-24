@@ -119,9 +119,9 @@ def add_individual_parameter(model: Model, name: str):
     return model
 
 
-def _add_parameter(model: Model, name: str, init: float = 0.1):
+def _add_parameter(model: Model, name: str, init: float = 0.1, lower=0, upper=None):
     pops = create_symbol(model, f'POP_{name}')
-    model = add_population_parameter(model, pops.name, init, lower=0)
+    model = add_population_parameter(model, pops.name, init, lower=lower, upper=upper)
     symb = create_symbol(model, name)
     ass = Assignment(symb, pops)
     model = model.replace(statements=ass + model.statements)
@@ -206,7 +206,7 @@ def set_first_order_elimination(model: Model):
     return model
 
 
-def add_bioavailability(model: Model, add_parameter: bool = True):
+def add_bioavailability(model: Model, add_parameter: bool = True, init=0.5, lower=0, upper=1):
     """Add bioavailability statement for the first dose compartment of the model.
     Can be added as a new parameter or otherwise it will be set to 1.
 
@@ -243,7 +243,9 @@ def add_bioavailability(model: Model, add_parameter: bool = True):
     if isinstance(bio, sympy.Number):
         # Bio not defined
         if add_parameter:
-            model, bio_symb = _add_parameter(model, 'BIO', init=float(bio))
+            model, bio_symb = _add_parameter(
+                model, 'BIO', init=float(init), lower=float(lower), upper=float(upper)
+            )
             f_ass = Assignment.create(sympy.Symbol('F_BIO'), bio_symb)
 
             new_before_odes = model.statements.before_odes + f_ass
@@ -1150,7 +1152,7 @@ def set_first_order_absorption(model: Model):
 
     Initial estimate for absorption rate is set to
     the previous rate if available, otherwise it is set to the time of first observation/2.
-    
+
     If multiple doses is set to the affected compartment, currently only iv+oral
     doses (one of each) is supported
 
@@ -1202,7 +1204,7 @@ def set_first_order_absorption(model: Model):
         dose_comp = cb.set_dose(dose_comp, Bolus(dose_comp.first_dose.amount))
         dose_comp = cb.set_lag_time(dose_comp, sympy.Integer(0))
     # FIXME : What is the purpose of this?
-    #if not depot:
+    # if not depot:
     #   dose_comp = cb.set_dose(dose_comp, Bolus(amount))
     statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
     new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)

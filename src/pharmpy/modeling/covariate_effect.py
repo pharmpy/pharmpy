@@ -640,8 +640,13 @@ def get_covariates_allowed_in_covariate_effect(model: Model) -> Set[str]:
         di_covariate = []
 
     try:
+        di_admid = model.datainfo.typeix['admid'].names
+    except IndexError:
+        di_admid = []
+
+    try:
         di_unknown = model.datainfo.typeix['unknown'].names
     except IndexError:
         di_unknown = []
 
-    return set(di_covariate).union(di_unknown)
+    return set(di_covariate).union(di_unknown, di_admid)

@@ -346,10 +346,12 @@ class CompartmentalSystemBuilder:
         new_dest = destination.replace(dose=source.dose)
         mapping = {source: new_source, destination: new_dest}
         nx.relabel_nodes(self._g, mapping, copy=False)
-        
-    def move_oral_dose(self, source, destination):
-        """If present, move oral dose(s) (admid = 1) from one compartment to another
-        
+
+    def move_oral_dose(self, source, destination, single_dose=True):
+        """If present, move oral dose(s) (admid = 1) from one compartment to another.
+        If a only a single dose is present, there is option to move this regardless
+        of type.
+
         Parameters
         ----------
         source : Compartment
@@ -358,8 +360,12 @@ class CompartmentalSystemBuilder:
             Destination compartment
 
         """
-        new_source = source.replace(dose=source.iv_dose)
-        new_dest = destination.replace(dose=source.oral_dose)
+        if source.number_of_doses == 1 and single_dose:
+            new_source = source.replace(dose=None)
+            new_dest = destination.replace(dose=source.dose)
+        else:
+            new_source = source.replace(dose=source.iv_dose)
+            new_dest = destination.replace(dose=source.oral_dose)
         mapping = {source: new_source, destination: new_dest}
         nx.relabel_nodes(self._g, mapping, copy=False)
 
@@ -382,7 +388,7 @@ class CompartmentalSystemBuilder:
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
-    
+
     def replace_dose(self, compartment, old_dose, new_dose):
         """
         Replace and existing dose to a compartment
@@ -1524,7 +1530,7 @@ class Compartment:
             return tuple(sorted(self._dose, key=lambda d: d.admid))
         else:
             return self._dose
-    
+
     @property
     def oral_dose(self):
         if self._dose is not None:
@@ -1542,11 +1548,11 @@ class Compartment:
     @property
     def number_of_doses(self):
         return len(self._dose)
-    
+
     @property
     def number_of_oral_doses(self):
         return len(self.oral_dose)
-    
+
     @property
     def number_of_iv_doses(self):
         return len(self.iv_dose)

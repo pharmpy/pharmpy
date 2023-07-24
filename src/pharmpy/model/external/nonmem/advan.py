@@ -591,22 +591,27 @@ def _advan12_trans(trans: str):
 
 def dosing(di: DataInfo, dataset, dose_comp: int):
     # Only check doses
-    dataset = dataset[dataset['AMT'] != 0]
-    
+    if dataset is not None:
+        dataset = dataset[dataset['AMT'] != 0]
+
     if 'CMT' not in di.names or di['CMT'].drop or dataset is None:
         if 'ADMID' in di.names:
             # Go through all dose types to the same compartment
             doses = tuple()
             for admid in dataset['ADMID'].unique():
-                doses += ({'comp_number': dose_comp, 
-                           'dose': _dosing(di, dataset, dose_comp),
-                           'admid': admid},)
+                doses += (
+                    {
+                        'comp_number': dose_comp,
+                        'dose': _dosing(di, dataset, dose_comp),
+                        'admid': admid,
+                    },
+                )
             return doses
         else:
             # No ADMID or CMT
-            return ({'comp_number': dose_comp, 
-                     'dose': _dosing(di, dataset, dose_comp),
-                     'admid': None},)
+            return (
+                {'comp_number': dose_comp, 'dose': _dosing(di, dataset, dose_comp), 'admid': None},
+            )
     else:
         # CMT column present
         cmt = dataset['CMT']
@@ -615,9 +620,13 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
             if 'ADMID' in di.names:
                 # Go through all dose types to the same compartment
                 for admid in dataset['ADMID'].unique():
-                    doses += ({'comp_number': dose_comp, 
-                               'dose': _dosing(di, dataset, dose_comp),
-                               'admid': admid},)
+                    doses += (
+                        {
+                            'comp_number': dose_comp,
+                            'dose': _dosing(di, dataset, dose_comp),
+                            'admid': admid,
+                        },
+                    )
                 return doses
             else:
                 warnings.warn(
@@ -626,9 +635,13 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
                 )
                 # Change comp number to match dataset
                 comp_number = cmt[0]
-                return ({'comp_number': comp_number, 
-                         'dose': _dosing(di, dataset, comp_number),
-                         'admid': None},)
+                return (
+                    {
+                        'comp_number': comp_number,
+                        'dose': _dosing(di, dataset, comp_number),
+                        'admid': None,
+                    },
+                )
         else:
             # Multiple different compartments
             doses = tuple()
@@ -637,13 +650,21 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
                 if 'ADMID' in di.names:
                     # Go through all dose types to the same compartment
                     for admid in cmt_dataset['ADMID'].unique():
-                        doses += ({'comp_number': comp_number, 
-                                   'dose': _dosing(di, cmt_dataset, comp_number),
-                                   'admid': admid},)
+                        doses += (
+                            {
+                                'comp_number': comp_number,
+                                'dose': _dosing(di, cmt_dataset, comp_number),
+                                'admid': admid,
+                            },
+                        )
                 else:
-                    doses += ({'comp_number': comp_number, 
-                               'dose': _dosing(di, cmt_dataset, comp_number),
-                               'admid': None},)
+                    doses += (
+                        {
+                            'comp_number': comp_number,
+                            'dose': _dosing(di, cmt_dataset, comp_number),
+                            'admid': None,
+                        },
+                    )
             return doses
 
 

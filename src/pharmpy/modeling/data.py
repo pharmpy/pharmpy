@@ -944,6 +944,14 @@ def get_cmt(model: Model):
         pass
     else:
         return model.dataset[cmtcols[0].name]
+
+    try:
+        cmtcols = model.dataset["CMT"]
+    except KeyError:
+        pass
+    else:
+        return cmtcols
+
     odes = model.statements.ode_system
     if isinstance(odes, CompartmentalSystem):
         dosing = odes.first_dosing_compartment
