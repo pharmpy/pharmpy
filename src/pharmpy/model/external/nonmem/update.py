@@ -434,6 +434,7 @@ def update_cmt_column(model, old, new):
 
             # Make sure column is a number and not string
             dataset["CMT"] = pd.to_numeric(dataset["CMT"])
+            model = model.replace(dataset = dataset)
 
             # Differ in amount of compartment -> Change cmt numbering
             # The cmt number should be the same as the dosing compartment
