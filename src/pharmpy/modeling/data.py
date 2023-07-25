@@ -883,6 +883,17 @@ def get_admid(model: Model):
     adm = get_cmt(model)
     adm = adm.replace(remap)
     adm.name = "ADMID"
+    
+    # Replace all observations with the previous admid type
+    current = None
+    for i, data in enumerate(zip(get_evid(model), adm)):
+        event = data[0]
+        admin = data[1]
+        if event == 1:
+            current = admin
+        if event != 1:
+            if current is not None:
+                adm[i] = current
     return adm
 
 
