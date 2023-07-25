@@ -885,15 +885,21 @@ def get_admid(model: Model):
     adm.name = "ADMID"
     
     # Replace all observations with the previous admid type
-    current = None
-    for i, data in enumerate(zip(get_evid(model), adm)):
+    # FIXME : Replace with the last dose instead for all observations?
+    current_admin = adm[0]
+    current_subject = model.dataset["ID"][0]
+    for i, data in enumerate(zip(get_evid(model), adm, model.dataset["ID"])):
         event = data[0]
         admin = data[1]
-        if event == 1:
-            current = admin
-        if event != 1:
-            if current is not None:
-                adm[i] = current
+        subject = data[2]
+        if current_subject == subject:
+            if event == 1:
+                current_admin = admin
+            if event != 1:
+                if current_admin is not None:
+                    adm[i] = current_admin
+        else:
+            current_subject = subject
     return adm
 
 
