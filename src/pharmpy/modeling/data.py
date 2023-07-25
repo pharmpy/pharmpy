@@ -900,6 +900,7 @@ def get_admid(model: Model):
                     adm[i] = current_admin
         else:
             current_subject = subject
+            current_admin = admin
     return adm
 
 
