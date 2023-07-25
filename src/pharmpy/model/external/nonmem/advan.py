@@ -57,13 +57,13 @@ def _compartmental_model(
         cb = CompartmentalSystemBuilder()
         depot = Compartment.create(
             'DEPOT',
-            dose=find_dose(doses, comp_number=1, admid=1),
+            dose=find_dose(doses, comp_number=1, admid=1, depot=True),
             lag_time=_get_alag(control_stream, 1),
             bioavailability=_get_bioavailability(control_stream, 1),
         )
         central = Compartment.create(
             'CENTRAL',
-            dose=find_dose(doses, comp_number=2, admid=2),
+            dose=find_dose(doses, comp_number=2, admid=2, central = True),
             lag_time=_get_alag(control_stream, 2),
             bioavailability=_get_bioavailability(control_stream, 2),
         )
@@ -599,18 +599,33 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
             # Go through all dose types to the same compartment
             doses = tuple()
             for admid in dataset['ADMID'].unique():
+                if admid == 1:
+                    central = False
+                    depot = True
+                elif admid == 2:
+                    central = True
+                    depot = False
+                else:
+                    raise ValueError(f'Administration ID : {admid} not supported')
                 doses += (
                     {
-                        'comp_number': dose_comp,
+                        'comp_number': None,
                         'dose': _dosing(di, dataset, dose_comp),
                         'admid': admid,
+                        'central': central,
+                        'depot': depot,
                     },
                 )
             return doses
         else:
             # No ADMID or CMT
             return (
-                {'comp_number': dose_comp, 'dose': _dosing(di, dataset, dose_comp), 'admid': None},
+                {'comp_number': dose_comp,
+                 'dose': _dosing(di, dataset, dose_comp),
+                 'admid': None,
+                 'central': False,
+                 'depot': False,
+                 },
             )
     else:
         # CMT column present
@@ -618,13 +633,27 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
         if len(cmt.unique()) == 1:
             # All doses to same compartment
             if 'ADMID' in di.names:
+                warnings.warn(
+                    "CMT column present with only one value"
+                    "Using ADMID to determine dose input"
+                )
                 # Go through all dose types to the same compartment
                 for admid in dataset['ADMID'].unique():
+                    if admid == 1:
+                        central = False
+                        depot = True
+                    elif admid == 2:
+                        central = True
+                        depot = False
+                    else:
+                        raise ValueError(f'Administration ID : {admid} not supported')
                     doses += (
                         {
-                            'comp_number': dose_comp,
+                            'comp_number': None,
                             'dose': _dosing(di, dataset, dose_comp),
                             'admid': admid,
+                            'central': central,
+                            'depot': depot,
                         },
                     )
                 return doses
@@ -640,6 +669,8 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
                         'comp_number': comp_number,
                         'dose': _dosing(di, dataset, comp_number),
                         'admid': None,
+                        'central': False,
+                        'depot': False,
                     },
                 )
         else:
@@ -652,9 +683,11 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
                     for admid in cmt_dataset['ADMID'].unique():
                         doses += (
                             {
-                                'comp_number': comp_number,
+                                'comp_number': None,
                                 'dose': _dosing(di, cmt_dataset, comp_number),
                                 'admid': admid,
+                                'central': False,
+                                'depot': False,
                             },
                         )
                 else:
@@ -663,6 +696,8 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
                             'comp_number': comp_number,
                             'dose': _dosing(di, cmt_dataset, comp_number),
                             'admid': None,
+                            'central': False,
+                            'depot': False,
                         },
                     )
             return doses
@@ -686,10 +721,13 @@ def _dosing(di, dataset, dose_comp):
         return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol('RATE'))
 
 
-def find_dose(doses, comp_number, admid=1):
+def find_dose(doses, comp_number, admid=1, central=False, depot=False):
     comp_doses = tuple()
     for dose in doses:
-        if dose['comp_number'] == comp_number:
+        if (dose['comp_number'] == comp_number
+            or dose['central'] == central == True
+            or dose['depot'] == depot == True
+            ):
             comp_dose = dose['dose']
             if dose['admid'] is not None:
                 admid = dose['admid']
