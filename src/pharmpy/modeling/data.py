@@ -871,17 +871,17 @@ def get_admid(model: Model):
     else:
         return model.dataset[admidcols[0].name]
 
-    oral = iv = None
     odes = model.statements.ode_system
     names = odes.compartment_names
+    remap = {}
     if isinstance(odes, CompartmentalSystem):
         for dosing in odes.dosing_compartments:
             if dosing == odes.central_compartment:
-                iv = names.index(dosing.name) + 1
+                remap[names.index(dosing.name) + 1] = 2
             else:
-                oral = names.index(dosing.name) + 1
+                remap[names.index(dosing.name) + 1] = 1
     adm = get_cmt(model)
-    adm = adm.replace({oral: 1, iv: 2})
+    adm = adm.replace(remap)
     adm.name = "ADMID"
     return adm
 
@@ -925,7 +925,8 @@ def get_cmt(model: Model):
 
     If a cmt column is present this will be extracted otherwise
     a cmt column will be created. If created, multiple dose compartments are
-    not supported.
+    dependent on the presence of an admid type column, otherwise, dose/non-dose
+    will be considered.
 
     Parameters
     ----------
@@ -951,18 +952,37 @@ def get_cmt(model: Model):
         pass
     else:
         return cmtcols
-
-    odes = model.statements.ode_system
-    if isinstance(odes, CompartmentalSystem):
-        dosing = odes.first_dosing_compartment
-        names = odes.compartment_names
-        dose_cmt = names.index(dosing.name) + 1
+    
+    # See if admid exist
+    try:
+        admidcols = di.typeix["admid"]
+    except IndexError:
+        # No admid found --> Assume dose/non-dose
+        odes = model.statements.ode_system
+        if isinstance(odes, CompartmentalSystem):
+            dosing = odes.first_dosing_compartment
+            names = odes.compartment_names
+            dose_cmt = names.index(dosing.name) + 1
+        else:
+            dose_cmt = 1
+        cmt = get_evid(model)
+        cmt = cmt.replace({1: dose_cmt, 2: 0, 3: 0, 4: dose_cmt})  # Only consider dose/non-dose
+        cmt.name = "CMT"
+        return cmt
     else:
-        dose_cmt = 1
-    cmt = get_evid(model)
-    cmt = cmt.replace({1: dose_cmt, 2: 0, 3: 0, 4: dose_cmt})  # Only consider dose/non-dose
-    cmt.name = "CMT"
-    return cmt
+        # Admid found -> convert to CMT based on doses
+        odes = model.statements.ode_system
+        names = odes.compartment_names
+        remap = {}
+        if isinstance(odes, CompartmentalSystem):
+            for dosing in odes.dosing_compartments:
+                if dosing == odes.central_compartment:
+                    remap[2] = names.index(dosing.name) + 1
+                else:
+                    remap[1] = names.index(dosing.name) + 1
+        admidcols = admidcols.replace(remap)
+        admidcols.name = "ADMID"
+        return admidcols
 
 
 def add_time_after_dose(model: Model):
