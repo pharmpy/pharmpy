@@ -1201,7 +1201,7 @@ def get_pd_parameters(model: Model) -> List[str]:
     >>> model = load_example_model("pheno")
     >>> model = set_direct_effect(model, "linear")
     >>> get_pd_parameters(model)
-    ['E0', 'S']
+    ['E0', 'Slope']
 
     See also
     --------

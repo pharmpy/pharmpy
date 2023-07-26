@@ -26,14 +26,13 @@ def add_effect_compartment(model: Model, expr: str):
     * Emax: :math:`E = E_0 + \frac {E_{max} \cdot C } { EC_{50} + C }`
     * Step effect: :math:`E = \Biggl \lbrace { E_0 \quad  \text{ if C } < 0 \atop E_0 + E_{max} \quad  \text{else}}`
     * Sigmoidal: :math:`E = \frac {E_{max} C^n} { EC_{50}^n + C^n}`
-    * Log-linear: :math:`E = m \cdot  \text{log}(C + C_0)`
 
     Parameters
     ----------
     model : Model
         Pharmpy model
     expr : str
-        Name of the PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step, loglin
+        Name of the PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step
 
     Return
     ------
@@ -46,7 +45,7 @@ def add_effect_compartment(model: Model, expr: str):
     >>> model = load_example_model("pheno")
     >>> model = add_effect_compartment(model, "linear")
     >>> model.statements.ode_system.find_compartment("EFFECT")
-    Compartment(EFFECT, amount=A_EFFECT, input=KE0*A_CENTRAL(t))
+    Compartment(EFFECT, amount=A_EFFECT, input=KE0*A_CENTRAL(t)/V)
     """
     vc, cl = _get_central_volume_and_cl(model)
 
@@ -58,7 +57,7 @@ def add_effect_compartment(model: Model, expr: str):
     ke0 = sympy.Symbol("KE0")
     model = add_individual_parameter(model, ke0.name)
 
-    effect = Compartment.create("EFFECT", input=ke0 * central_amount)
+    effect = Compartment.create("EFFECT", input=ke0 * central_amount / vc)
     cb.add_compartment(effect)
     cb.add_flow(effect, output, ke0)
 
@@ -68,7 +67,7 @@ def add_effect_compartment(model: Model, expr: str):
         )
     )
 
-    conc_e = model.statements.ode_system.find_compartment("EFFECT").amount / vc
+    conc_e = model.statements.ode_system.find_compartment("EFFECT").amount
 
     model = _add_effect(model, expr, conc_e)
     return model
@@ -84,14 +83,13 @@ def set_direct_effect(model: Model, expr: str):
     * Emax: :math:`E = E_0 + \frac {E_{max} \cdot C } { EC_{50} + C }`
     * Step effect: :math:`E = \Biggl \lbrace { E_0 \quad  \text{ if C } < 0 \atop E_0 + E_{max} \quad  \text{else}}`
     * Sigmoidal: :math:`E = \frac {E_{max} C^n} { EC_{50}^n + C^n}`
-    * Log-linear: :math:`E = m \cdot  \text{log}(C + C_0)`
 
     Parameters
     ----------
     model : Model
         Pharmpy model
     expr : str
-        Name of PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step, loglin
+        Name of PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step
 
     Return
     ------
@@ -104,9 +102,9 @@ def set_direct_effect(model: Model, expr: str):
     >>> model = load_example_model("pheno")
     >>> model = set_direct_effect(model, "linear")
     >>> model.statements.find_assignment("E")
-        A_CENTRAL⋅S
-        ─────────── + E₀
-    E =      V
+        A_CENTRAL⋅Slope
+        ─────────────── + E₀
+    E =         V
 
     """
     vc, cl = _get_central_volume_and_cl(model)
@@ -144,7 +142,7 @@ def _add_effect(model: Model, expr: str, conc):
     if expr == "baseline":
         E = Assignment(sympy.Symbol('E'), e0)
     elif expr == "linear":
-        s = sympy.Symbol("S")  # slope
+        s = sympy.Symbol("Slope")  # slope
         model = add_individual_parameter(model, s.name)
         E = Assignment(sympy.Symbol('E'), e0 + s * conc)
     elif expr == "Emax":
@@ -156,10 +154,6 @@ def _add_effect(model: Model, expr: str, conc):
         model = add_individual_parameter(model, n.name)
         model = set_initial_estimates(model, {"POP_n": 1})
         E = Assignment(sympy.Symbol("E"), emax * conc**n / (ec50**n + conc**n))
-    elif expr == "loglin":
-        m = sympy.Symbol("m")  # slope
-        model = add_individual_parameter(model, m.name)
-        E = Assignment(sympy.Symbol("E"), m * sympy.log(conc + sympy.exp(e0 / m)))
     else:
         raise ValueError(f'Unknown model "{expr}".')
 
