@@ -1343,6 +1343,7 @@ def set_seq_zo_fo_absorption(model: Model):
         model = _add_zero_order_absorption(model, dose_comp.first_dose, depot, 'MDT')
     elif not depot and have_ZO:
         if dose_comp.number_of_doses == 1:
+            fo_dose = dose_comp.first_dose
             remove_dose = True
         else:
             fo_dose = dose_comp.first_dose
