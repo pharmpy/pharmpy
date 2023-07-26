@@ -988,6 +988,7 @@ def get_cmt(model: Model):
         cmt.name = "CMT"
         return cmt
     else:
+        admidcols = model.dataset[admidcols[0].name]
         # Admid found -> convert to CMT based on doses
         odes = model.statements.ode_system
         names = odes.compartment_names
@@ -996,9 +997,11 @@ def get_cmt(model: Model):
             for dosing in odes.dosing_compartments:
                 if dosing == odes.central_compartment:
                     remap[2] = names.index(dosing.name) + 1
+                    central_number = names.index(dosing.name) + 1
                 else:
                     remap[1] = names.index(dosing.name) + 1
         admidcols = admidcols.replace(remap)
+        admidcols.loc[get_evid(model) == 0] = central_number
         admidcols.name = "ADMID"
         return admidcols
 
