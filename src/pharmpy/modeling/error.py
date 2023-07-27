@@ -907,6 +907,10 @@ def set_power_on_ruv(
     Initial estimates for new thetas are 1 if the error
     model is proportional, otherwise they are 0.1.
 
+    NOTE : If no DVs or epsilons are specified, all epsilons with the same name
+    will be connected to the same theta. Running the function per DV will give
+    each epsilon a specific theta.
+
     Parameters
     ----------
     model : Model
@@ -975,6 +979,20 @@ def set_power_on_ruv(
         )
     ):
         warnings.warn(f'Some provided epsilons are not connected to the supplied DV ({dv_symb})')
+    elif dv is not None and any(
+        [
+            sympy.Symbol(e.names[0])
+            not in model.statements.after_odes.full_expression(dv_symb).free_symbols
+            for e in eps
+        ]
+    ):
+        # Only analyze epsilons connected to the given DV
+        eps = [
+            e
+            for e in eps
+            if sympy.Symbol(e.names[0])
+            in model.statements.after_odes.full_expression(dv_symb).free_symbols
+        ]
 
     # Check for used DV, not just the first one
     if has_proportional_error_model(model, dv=dv_symb):
