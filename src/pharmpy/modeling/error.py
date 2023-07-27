@@ -3,6 +3,7 @@
 """
 from __future__ import annotations
 
+import warnings
 from typing import List, Optional, Union
 
 from pharmpy.deps import sympy
@@ -895,11 +896,13 @@ def set_time_varying_error_model(
 def set_power_on_ruv(
     model: Model,
     list_of_eps: Optional[Union[str, list]] = None,
+    dv: Union[sympy.Symbol, str, int, None] = None,
     lower_limit: Optional[float] = 0.01,
     ipred: Optional[Union[str, sympy.Symbol]] = None,
     zero_protection: bool = False,
 ):
-    """Applies a power effect to provided epsilons.
+    """Applies a power effect to provided epsilons. If a dependent variable
+    is provided, then only said epsilons affecting said variable will be changed.
 
     Initial estimates for new thetas are 1 if the error
     model is proportional, otherwise they are 0.1.
@@ -911,6 +914,9 @@ def set_power_on_ruv(
     list_of_eps : str or list or None
         Name/names of epsilons to apply power effect. If None, all epsilons will be used.
         None is default.
+    dv : Union[sympy.Symbol, str, int, None]
+        Name or DVID of dependent variable. None will change the epsilon on all occurences
+        regardless of affected dependent variable.
     lower_limit : float or None
         Lower limit of power (theta). None for no limit.
     ipred : Symbol
@@ -938,17 +944,40 @@ def set_power_on_ruv(
 
     """
     list_of_eps = _format_input_list(list_of_eps)
-    eps = model.random_variables.epsilons
-    if list_of_eps is not None:
-        eps = eps[list_of_eps]
+    eps = _get_epsilons(model, list_of_eps)
+    eps = [e for e in eps]
+    dv_symb = get_dv_symbol(model, dv)
+    y = model.statements.find_assignment(dv_symb)
     pset, sset = list(model.parameters), model.statements
 
     if ipred is None:
-        ipred = get_ipred(model)
+        # Extract ipred based on the dv
+        ipred = get_ipred(model, dv=dv_symb)
     else:
+        # Assert that the DV and IPRED is matching
+        if get_ipred(model, dv=dv_symb) != parse_expr(ipred):
+            raise ValueError(
+                f'The provided DV ({dv_symb}) and IPRED ({ipred}) does not match any found statement'
+            )
         ipred = parse_expr(ipred)
 
-    if has_proportional_error_model(model):
+    # Assert that the provided epsilons are used for the corresponding DV
+    # Else give warning
+    if (
+        dv is not None
+        and list_of_eps is not None
+        and any(
+            [
+                sympy.Symbol(e.names[0])
+                not in model.statements.after_odes.full_expression(dv_symb).free_symbols
+                for e in eps
+            ]
+        )
+    ):
+        warnings.warn(f'Some provided epsilons are not connected to the supplied DV ({dv_symb})')
+
+    # Check for used DV, not just the first one
+    if has_proportional_error_model(model, dv=dv_symb):
         theta_init = 1
     else:
         theta_init = 0.1
@@ -979,7 +1008,8 @@ def set_power_on_ruv(
             _, _, f = _preparations(model)
             ipred = _get_f_above_lloq(model, f)
 
-    for e in eps.names:
+    for e in eps:
+        e = e.names[0]
         theta_name = str(
             _create_symbol(
                 sset, pset, model.random_variables, model.datainfo, 'power', force_numbering=True
@@ -990,18 +1020,38 @@ def set_power_on_ruv(
         else:
             theta = Parameter(theta_name, theta_init, lower=lower_limit)
         pset.append(theta)
-        sset = sset.subs(
-            {sympy.Symbol(e) * ipred: sympy.Symbol(e)}
-        )  # To avoid getting F*EPS*F**THETA
+
+        subs_dict = {sympy.Symbol(e) * ipred: sympy.Symbol(e)}  # To avoid getting F*EPS*F**THETA
+        if not dv:
+            sset = sset.subs(subs_dict)
+        else:
+            y = y.subs(subs_dict)
+            sset = sset.reassign(y.symbol, y.expression)
+
         if alternative:  # To avoid getting W*EPS*F**THETA
-            sset = sset.subs({sympy.Symbol(e) * alternative: sympy.Symbol(e)})
+            subs_dict = {sympy.Symbol(e) * alternative: sympy.Symbol(e)}
+            if not dv:
+                sset = sset.subs(subs_dict)
+            else:
+                y = y.subs(subs_dict)
+                sset = sset.reassign(y.symbol, y.expression)
 
         if ipredadj:
-            sset = sset.subs(
-                {sympy.Symbol(e) * ipredadj: ipredadj ** sympy.Symbol(theta.name) * sympy.Symbol(e)}
-            )
+            subs_dict = {
+                sympy.Symbol(e) * ipredadj: ipredadj ** sympy.Symbol(theta.name) * sympy.Symbol(e)
+            }
+            if not dv:
+                sset = sset.subs(subs_dict)
+            else:
+                y = y.subs(subs_dict)
+                sset = sset.reassign(y.symbol, y.expression)
         else:
-            sset = sset.subs({sympy.Symbol(e): ipred ** sympy.Symbol(theta.name) * sympy.Symbol(e)})
+            subs_dict = {sympy.Symbol(e): ipred ** sympy.Symbol(theta.name) * sympy.Symbol(e)}
+            if not dv:
+                sset = sset.subs(subs_dict)
+            else:
+                y = y.subs(subs_dict)
+                sset = sset.reassign(y.symbol, y.expression)
 
         if has_blq_transformation(model):
             # FIXME: make more general
@@ -1015,9 +1065,10 @@ def set_power_on_ruv(
     return model.update_source()
 
 
-def get_ipred(model):
+def get_ipred(model, dv=None):
     # FIXME: handle other DVs?
-    dv = list(model.dependent_variables.keys())[0]
+    if dv is None:
+        dv = list(model.dependent_variables.keys())[0]
     expr = model.statements.after_odes.full_expression(dv)
     ipred = subs(
         expr, {sympy.Symbol(rv): 0 for rv in model.random_variables.names}, simultaneous=True
