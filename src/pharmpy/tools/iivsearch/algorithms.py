@@ -188,10 +188,12 @@ def _get_eta_from_parameter(model: Model, parameters: List[str]) -> Set[str]:
 
 def _get_fixed_etas(model: Model) -> List[str]:
     fixed_omegas = get_omegas(model).fixed.names
+    iivs = model.random_variables.iiv
     if len(fixed_omegas) > 0:
-        return [
-            iiv.names[0] for iiv in model.random_variables.iiv if iiv._variance.name in fixed_omegas
+        fixed_etas = [
+            iiv.names for iiv in iivs if str(list(iiv.variance.free_symbols)[0]) in fixed_omegas
         ]
+        return [item for tup in fixed_etas for item in tup]
     else:
         return []
 
