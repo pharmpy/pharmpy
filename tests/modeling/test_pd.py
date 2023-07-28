@@ -76,7 +76,7 @@ def _test_effect_models(model, expr, conc):
         assert model.statements[3] == Assignment(e0, S("POP_E0"))
         assert model.statements[2] == Assignment(emax, S("POP_E_max"))
         assert model.statements.after_odes[-2] == Assignment(
-            e, (emax * conc ** S("n")) / (ec50 ** S("n") + conc ** S("n"))
+            e, e0 + ((emax * conc ** S("n")) / (ec50 ** S("n") + conc ** S("n")))
         )
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
         assert model.parameters["POP_n"].init == 1

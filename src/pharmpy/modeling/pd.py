@@ -153,7 +153,7 @@ def _add_effect(model: Model, expr: str, conc):
         n = sympy.Symbol("n")  # Hill coefficient
         model = add_individual_parameter(model, n.name)
         model = set_initial_estimates(model, {"POP_n": 1})
-        E = Assignment(sympy.Symbol("E"), emax * conc**n / (ec50**n + conc**n))
+        E = Assignment(sympy.Symbol("E"), e0 + emax * conc**n / (ec50**n + conc**n))
     else:
         raise ValueError(f'Unknown model "{expr}".')
 
