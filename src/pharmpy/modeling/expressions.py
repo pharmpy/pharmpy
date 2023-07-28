@@ -331,17 +331,21 @@ def mu_reference_model(model: Model):
         old_def = assignment.expression
         dep = old_def.as_independent(eta)[1]
         mu = sympy.Symbol(f'mu_{index[eta]}')
-        new_def = subs(dep, {eta: mu + eta})
-        mu_expr = sympy.solve(old_def - new_def, mu)[0]
-        insertion_ind = offset + old_ind
-        statements = (
-            statements[0:insertion_ind]
-            + Assignment(mu, mu_expr)
-            + Assignment(assignment.symbol, new_def)
-            + statements[insertion_ind + 1 :]
-        )
-        offset += 1  # NOTE We need this offset because we replace one
-        # statement by two statements
+        if mu in old_def.free_symbols:
+            # If mu reference is already used, ignore
+            pass
+        else:
+            new_def = subs(dep, {eta: mu + eta})
+            mu_expr = sympy.solve(old_def - new_def, mu)[0]        
+            insertion_ind = offset + old_ind
+            statements = (
+                statements[0:insertion_ind]
+                + Assignment(mu, mu_expr)
+                + Assignment(assignment.symbol, new_def)
+                + statements[insertion_ind + 1 :]
+            )
+            offset += 1  # NOTE We need this offset because we replace one
+            # statement by two statements
     model = model.replace(statements=statements).update_source()
     return model
 
