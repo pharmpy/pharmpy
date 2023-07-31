@@ -61,7 +61,7 @@ parso==0.8.3
 partd==1.4.0
 pexpect==4.8.0
 pickleshare==0.7.5
-platformdirs==3.9.1
+platformdirs==3.10.0
 prompt-toolkit==3.0.39
 psutil==5.9.5
 ptyprocess==0.7.0
