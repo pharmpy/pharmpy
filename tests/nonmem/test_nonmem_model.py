@@ -1023,7 +1023,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
 """
     model = Model.parse_model_from_string(code)
-    assert type(model.statements.ode_system.eqs[0].rhs) == sympy.Piecewise
+    assert isinstance(model.statements.ode_system.eqs[0].rhs, sympy.Piecewise)
     assert model.statements[3].symbol == sympy.Function("A_CENTRAL")(0)
     assert model.statements[3].expression == sympy.Integer(2)
 

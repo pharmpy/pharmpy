@@ -34,7 +34,7 @@ def test_to_generic_model(load_model_for_test, testdata):
     assert model.random_variables == nm_model.random_variables
     assert model.name == nm_model.name
     assert model.statements == nm_model.statements
-    assert type(model) == Model
+    assert isinstance(model, Model)
 
 
 def test_model_equality():
