@@ -280,4 +280,4 @@ def test_multiple_dv_CMT_parsing(tmp_path, testdata, load_model_for_test, create
         dataset.to_csv(tmp_path / "data_iv_oral.csv", index=False)
         model = create_model_for_test(code)
         odes = model.statements.ode_system
-        assert len(odes.dosing_compartment) == 2
+        assert len(odes.dosing_compartments) == 2
