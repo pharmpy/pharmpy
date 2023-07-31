@@ -313,6 +313,8 @@ def _compartmental_model(
             if comp.name == central_comp_name:
                 admid = 2
                 central = True
+            else:
+                central = False
             doses = dosing(di, dataset, i)
             cb.set_dose(comp, find_dose(doses, i, admid=admid, central=central))
             comp = cb.find_compartment(comp_name)
