@@ -445,7 +445,7 @@ class CompartmentalSystemBuilder:
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
-    
+
     def remove_dose(self, compartment, dose_to_remove):
         """
         Remove specified dose.

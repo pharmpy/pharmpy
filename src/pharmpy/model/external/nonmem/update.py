@@ -434,7 +434,7 @@ def update_cmt_column(model, old, new):
 
             # Make sure column is a number and not string
             dataset["CMT"] = pd.to_numeric(dataset["CMT"])
-            model = model.replace(dataset = dataset)
+            model = model.replace(dataset=dataset)
 
             # Differ in amount of compartment -> Change cmt numbering
             # The cmt number should be the same as the dosing compartment
@@ -494,7 +494,11 @@ def update_infusion(model: Model, old: ODESystem):
             # FIXME: Not always D1 here!
             ass = Assignment(sympy.Symbol('D1'), dose.duration)
             cb = CompartmentalSystemBuilder(new)
-            cb.replace_dose(new.first_dosing_compartment, dose, Infusion(dose.amount, admid = dose.admid, duration=ass.symbol))
+            cb.replace_dose(
+                new.first_dosing_compartment,
+                dose,
+                Infusion(dose.amount, admid=dose.admid, duration=ass.symbol),
+            )
             statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")

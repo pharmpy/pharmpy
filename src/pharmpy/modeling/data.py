@@ -883,7 +883,7 @@ def get_admid(model: Model):
     adm = get_cmt(model)
     adm = adm.replace(remap)
     adm.name = "ADMID"
-    
+
     # Replace all observations with the previous admid type
     # FIXME : Replace with the last dose instead for all observations?
     current_admin = adm[0]
@@ -970,7 +970,7 @@ def get_cmt(model: Model):
         pass
     else:
         return cmtcols
-    
+
     # See if admid exist
     try:
         admidcols = di.typeix["admid"]

@@ -63,7 +63,7 @@ def _compartmental_model(
         )
         central = Compartment.create(
             'CENTRAL',
-            dose=find_dose(doses, comp_number=2, admid=2, central = True),
+            dose=find_dose(doses, comp_number=2, admid=2, central=True),
             lag_time=_get_alag(control_stream, 2),
             bioavailability=_get_bioavailability(control_stream, 2),
         )
@@ -602,7 +602,7 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
             # Go through all dose types to the same compartment
             doses = tuple()
             for admid in dataset['ADMID'].unique():
-                if admid not in [1,2]:
+                if admid not in [1, 2]:
                     raise ValueError(f'Administration ID : {admid} not supported')
                 doses += (
                     {
@@ -615,10 +615,11 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
         else:
             # No ADMID or CMT
             return (
-                {'comp_number': dose_comp,
-                 'dose': _dosing(di, dataset, dose_comp),
-                 'admid': None,
-                 },
+                {
+                    'comp_number': dose_comp,
+                    'dose': _dosing(di, dataset, dose_comp),
+                    'admid': None,
+                },
             )
     else:
         # CMT column present
@@ -627,12 +628,11 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
             # All doses to same compartment
             if 'ADMID' in di.names:
                 warnings.warn(
-                    "CMT column present with only one value"
-                    "Using ADMID to determine dose type"
+                    "CMT column present with only one value" "Using ADMID to determine dose type"
                 )
                 # Go through all dose types to the same compartment
                 for admid in dataset['ADMID'].unique():
-                    if admid not in [1,2]:
+                    if admid not in [1, 2]:
                         raise ValueError(f'Administration ID : {admid} not supported')
                     doses += (
                         {
@@ -664,7 +664,7 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
                 if 'ADMID' in di.names:
                     # Go through all dose types to the same compartment
                     for admid in cmt_dataset['ADMID'].unique():
-                        if admid not in [1,2]:
+                        if admid not in [1, 2]:
                             raise ValueError(f'Administration ID : {admid} not supported')
                         doses += (
                             {
@@ -706,10 +706,15 @@ def find_dose(doses, comp_number, admid=1, central=False):
     comp_doses = tuple()
     for dose in doses:
         # FIRST check if admid == 2
-        if (dose['admid'] == 2 and central # Currently on central compartment with IV dose
-            or (dose['comp_number'] == comp_number # Comp number match and we are not on central compartment
-                and not dose['admid'] == 2)
-            ):
+        if (
+            dose['admid'] == 2
+            and central  # Currently on central compartment with IV dose
+            or (
+                dose['comp_number']
+                == comp_number  # Comp number match and we are not on central compartment
+                and not dose['admid'] == 2
+            )
+        ):
             comp_dose = dose['dose']
             if dose['admid'] is not None:
                 admid = dose['admid']

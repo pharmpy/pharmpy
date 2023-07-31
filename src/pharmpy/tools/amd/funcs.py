@@ -24,8 +24,6 @@ from pharmpy.model import (
 # FIXME: This shouldn't be used here
 from pharmpy.model.external.nonmem.advan import dosing, find_dose
 from pharmpy.modeling import (
-    add_admid,
-    add_bioavailability,
     add_iiv,
     create_joint_distribution,
     set_first_order_absorption,
