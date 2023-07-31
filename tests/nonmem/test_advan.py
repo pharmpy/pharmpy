@@ -1,6 +1,7 @@
 import pytest
 import sympy
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import output
 from pharmpy.model.external.nonmem.advan import compartmental_model
 from pharmpy.modeling import get_initial_conditions
@@ -238,3 +239,45 @@ $SIGMA  0.273617  ;   RUV_PROP
     model = create_model_for_test(code)
     odes = model.statements.ode_system
     assert odes.get_flow(odes.central_compartment, output) == sympy.Symbol('K100')
+
+
+def test_multiple_dv_CMT_parsing(tmp_path, testdata, load_model_for_test, create_model_for_test):
+    with chdir(tmp_path):
+        code = f"""$PROB INOGATRAN HEALTHY VOLUNTEER MODEL
+        $INPUT ID TIME AMT DV CMT
+        $DATA {tmp_path / "data_iv_oral.csv"} IGNORE=@ ;IGN(ID.GT.30)
+        $SUBROUTINE ADVAN2 TRANS1
+        $PK
+                     F2=1
+           FU=0.75
+           TVCL  = THETA(4)*(WT/70)**.75 + THETA(1)*FU*CLCR*60/1000
+           TVV   = THETA(2)*WT/70
+           TVMAT = THETA(3)
+
+           CL    = TVCL *EXP(ETA(1))
+           V     = TVV  *EXP(ETA(2))
+           MAT   = TVMAT*EXP(ETA(3))
+           KA    = 1/MAT
+           K     = CL/V
+           S2    = V
+           HL    = LOG(2)/K
+        $ERROR (OBSERVATION ONLY)
+           Y     = F*(1+EPS(1)) ;conc in mg/L
+        $THETA  (0,.1)     ;1 TVCLR - RENAL COMPONENT
+        $THETA  (0,30)     ;2 TVV
+        $THETA  (0,1)      ;3 TVMAT
+        $THETA  (0,30)     ;4 TVCLH - HEPATIC COMPONENT
+        $OMEGA  .04        ;1 IIV_CL
+        $OMEGA  .04        ;2 IIV_V
+        $OMEGA  .02        ;3 IIV_MAT
+        $SIGMA  .015        ;1 SIGMA_PK
+        $EST METH=1 INTER MAXEVAL=9999"""
+
+        pheno = load_model_for_test(testdata / 'nonmem' / "pheno.mod")
+        dataset = pheno.dataset.copy()
+        dataset["CMT"] = 2
+        dataset.loc[(dataset["ID"] <= 20) & (dataset["AMT"] == 0), "CMT"] = 1
+        dataset.to_csv(tmp_path / "data_iv_oral.csv", index=False)
+        model = create_model_for_test(code)
+        odes = model.statements.ode_system
+        assert len(odes.dosing_compartment) == 2
