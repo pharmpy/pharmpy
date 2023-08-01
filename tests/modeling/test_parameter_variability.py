@@ -51,8 +51,8 @@ from pharmpy.tools import read_modelfit_results
             're_log',
             '+',
             None,
-            'V=TVV*EXP(ETA(2))\nPHI_ETA_S1 = LOG(V/(1 - V))'
-            '\nS1 = EXP(ETA_S1*PHI_ETA_S1)/(EXP(ETA_S1*PHI_ETA_S1) + 1)',
+            'V=TVV*EXP(ETA(2))\nPHI_V = LOG(V/(1 - V))'
+            '\nS1 = EXP(ETA_S1*PHI_V)/(EXP(ETA_S1*PHI_V) + 1)',
             2,
         ),
         (
