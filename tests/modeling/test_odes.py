@@ -2655,4 +2655,4 @@ def test_multi_dose_change_absorption(load_model_for_test, testdata):
     central = model.statements.ode_system.find_compartment("CENTRAL")
 
     assert central.number_of_doses == 2
-    assert central.first_dose == Infusion(sympy.Symbol('AMT'), admid=1, duration=sympy.Symbol("D1"))
+    assert central.first_dose == Infusion(sympy.Symbol('AMT'), admid=2, duration=sympy.Symbol("D1"))

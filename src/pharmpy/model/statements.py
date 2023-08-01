@@ -759,7 +759,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.subs({'AMT': 'DOSE'})
-        Bolus(DOSE, admid=1)
+        Bolus(DOSE, admid=2) --> CENTRAL
         ┌───────┐
         │CENTRAL│──CL/V→
         └───────┘
@@ -924,7 +924,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.get_compartment_inflows(output)
-        [(Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1)), CL/V)]
+        [(Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=2)), CL/V)]
         """
         if isinstance(compartment, str):
             compartment = self.find_compartment(compartment)
@@ -982,7 +982,7 @@ class CompartmentalSystem(ODESystem):
         >>> model = load_example_model("pheno")
         >>> central = model.statements.ode_system.find_compartment("CENTRAL")
         >>> central
-        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1))
+        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=2))
         """
         for comp in _comps(self._g):
             if comp.name == name:
@@ -1032,7 +1032,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.dosing_compartments
-        (Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1)),)
+        (Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=2)),)
         """
         dosing_comps = tuple()
         for node in _comps(self._g):
@@ -1067,7 +1067,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.first_dosing_compartment
-        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1))
+        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=2))
 
         """
         return self.dosing_compartments[0]
@@ -1089,7 +1089,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.central_compartment
-        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=1))
+        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=2))
         """
         try:
             # E.g. TMDD models have more than one input
@@ -2073,7 +2073,7 @@ class Statements(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system
-        Bolus(AMT, admid=1)
+        Bolus(AMT, admid=2) --> CENTRAL
         ┌───────┐
         │CENTRAL│──CL/V→
         └───────┘

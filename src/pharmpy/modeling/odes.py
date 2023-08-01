@@ -119,7 +119,9 @@ def add_individual_parameter(model: Model, name: str):
     return model
 
 
-def _add_parameter(model: Model, name: str, init: float = 0.1, lower=0, upper=None):
+def _add_parameter(
+    model: Model, name: str, init: float = 0.1, lower: float = 0, upper: Union[float, None] = None
+):
     pops = create_symbol(model, f'POP_{name}')
     model = add_population_parameter(model, pops.name, init, lower=lower, upper=upper)
     symb = create_symbol(model, name)
@@ -147,7 +149,7 @@ def set_first_order_elimination(model: Model):
     >>> model = load_example_model("pheno")
     >>> model = set_first_order_elimination(model)
     >>> model.statements.ode_system
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=2) --> CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -206,7 +208,9 @@ def set_first_order_elimination(model: Model):
     return model
 
 
-def add_bioavailability(model: Model, add_parameter: bool = True, init=0.5, lower=0, upper=1):
+def add_bioavailability(
+    model: Model, add_parameter: bool = True, init: float = 0.5, lower: float = 0, upper: float = 1
+):
     """Add bioavailability statement for the first dose compartment of the model.
     Can be added as a new parameter or otherwise it will be set to 1.
 
@@ -216,6 +220,8 @@ def add_bioavailability(model: Model, add_parameter: bool = True, init=0.5, lowe
         Pharmpy model
     add_parameter : bool
         Add new parameter representing bioavailability or not
+    init: float
+
 
     Return
     ------
@@ -333,7 +339,7 @@ def set_zero_order_elimination(model: Model):
     >>> model = load_example_model("pheno")
     >>> model = set_zero_order_elimination(model)
     >>> model.statements.ode_system
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=2) --> CENTRAL
     ┌───────┐
     │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→
     └───────┘
@@ -539,7 +545,7 @@ def set_michaelis_menten_elimination(model: Model):
     >>> model = load_example_model("pheno")
     >>> model = set_michaelis_menten_elimination(model)
     >>> model.statements.ode_system
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=2) --> CENTRAL
     ┌───────┐
     │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→
     └───────┘
@@ -597,7 +603,7 @@ def set_mixed_mm_fo_elimination(model: Model):
     >>> model = load_example_model("pheno")
     >>> model = set_mixed_mm_fo_elimination(model)
     >>> model.statements.ode_system
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=2) --> CENTRAL
     ┌───────┐
     │CENTRAL│──(CL + CLMM*KM/(KM + A_CENTRAL(t)/V))/V→
     └───────┘
@@ -788,7 +794,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
     >>> model = load_example_model("pheno")
     >>> model = set_transit_compartments(model, 3)
     >>> model.statements.ode_system
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=2) --> TRANSIT1
     ┌────────┐      ┌────────┐      ┌────────┐      ┌───────┐
     │TRANSIT1│──K12→│TRANSIT2│──K23→│TRANSIT3│──K34→│CENTRAL│──K40→
     └────────┘      └────────┘      └────────┘      └───────┘
@@ -1091,7 +1097,7 @@ def set_zero_order_absorption(model: Model):
     >>> model = load_example_model("pheno")
     >>> model = set_zero_order_absorption(model)
     >>> model.statements.ode_system
-    Infusion(AMT, admid=1, duration=D1)
+    Infusion(AMT, admid=2, duration=D1) --> CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -1172,7 +1178,7 @@ def set_first_order_absorption(model: Model):
     >>> model = load_example_model("pheno")
     >>> model = set_first_order_absorption(model)
     >>> model.statements.ode_system
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=1) --> DEPOT
     ┌─────┐     ┌───────┐
     │DEPOT│──KA→│CENTRAL│──CL/V→
     └─────┘     └───────┘
@@ -1226,7 +1232,7 @@ def set_first_order_absorption(model: Model):
     if not depot:
         # The new dose is created here
         model, _ = _add_first_order_absorption(
-            model, Bolus(amount), dose_comp, lag_time, bio, remove_dose=remove_dose
+            model, Bolus(amount, admid=1), dose_comp, lag_time, bio, remove_dose=remove_dose
         )
         model = model.update_source()
     return model
@@ -1253,7 +1259,7 @@ def set_bolus_absorption(model: Model):
     >>> model = load_example_model("pheno")
     >>> model = set_bolus_absorption(model)
     >>> model.statements.ode_system
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=2) --> CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -1322,7 +1328,7 @@ def set_seq_zo_fo_absorption(model: Model):
     >>> model = load_example_model("pheno")
     >>> model = set_seq_zo_fo_absorption(model)
     >>> model.statements.ode_system
-    Infusion(AMT, admid=1, duration=D1)
+    Infusion(AMT, admid=1, duration=D1) --> DEPOT
     ┌─────┐     ┌───────┐
     │DEPOT│──KA→│CENTRAL│──CL/V→
     └─────┘     └───────┘
@@ -1362,9 +1368,8 @@ def set_seq_zo_fo_absorption(model: Model):
         model, _ = _add_first_order_absorption(model, fo_dose, dose_comp, remove_dose=remove_dose)
     elif not depot and not have_ZO:
         model = set_first_order_absorption(model)
-        amount = dose_comp.first_dose.amount
         depot = model.statements.ode_system.find_depot(model.statements)
-        model = _add_zero_order_absorption(model, Bolus(amount), depot, 'MDT')
+        model = _add_zero_order_absorption(model, Bolus(dose_comp.first_dose.amount), depot, 'MDT')
     model = model.update_source()
     return model
 
@@ -1441,9 +1446,9 @@ def _add_zero_order_absorption(model, old_dose, to_comp, parameter_name, lag_tim
             model, parameter_name, init=_get_absorption_init(model, parameter_name)
         )
     if to_comp == model.statements.ode_system.central_compartment:
-        new_dose = Infusion(old_dose.amount, duration=mat_symb * 2)
+        new_dose = Infusion(old_dose.amount, admid=2, duration=mat_symb * 2)
     else:
-        new_dose = Infusion(old_dose.amount, duration=mat_symb * 2)
+        new_dose = Infusion(old_dose.amount, admid=1, duration=mat_symb * 2)
     cb = CompartmentalSystemBuilder(model.statements.ode_system)
     cb.replace_dose(to_comp, old_dose, new_dose)
     if lag_time is not None and lag_time != 0:
@@ -1538,7 +1543,7 @@ def set_peripheral_compartments(model: Model, n: int):
     >>> model = load_example_model("pheno")
     >>> model = set_peripheral_compartments(model, 2)
     >>> model.statements.ode_system
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=2) --> CENTRAL
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘
@@ -1614,7 +1619,7 @@ def add_peripheral_compartment(model: Model):
     >>> model = load_example_model("pheno")
     >>> model = add_peripheral_compartment(model)
     >>> model.statements.ode_system
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=2) --> CENTRAL
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘
@@ -1743,7 +1748,7 @@ def remove_peripheral_compartment(model: Model):
     >>> model = set_peripheral_compartments(model, 2)
     >>> model = remove_peripheral_compartment(model)
     >>> model.statements.ode_system
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=2) --> CENTRAL
     ┌───────────┐
     │PERIPHERAL1│
     └───────────┘
@@ -2368,7 +2373,7 @@ def solve_ode_system(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.statements.ode_system
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=2) --> CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
