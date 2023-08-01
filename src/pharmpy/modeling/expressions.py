@@ -336,7 +336,7 @@ def mu_reference_model(model: Model):
             pass
         else:
             new_def = subs(dep, {eta: mu + eta})
-            mu_expr = sympy.solve(old_def - new_def, mu)[0]        
+            mu_expr = sympy.solve(old_def - new_def, mu)[0]
             insertion_ind = offset + old_ind
             statements = (
                 statements[0:insertion_ind]

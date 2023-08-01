@@ -48,6 +48,7 @@ def add_iiv(
     - Proportional (*prop*)
     - Exponential (*exp*)
     - Logit (*log*)
+    - Rescaled logit (*re_log*)
 
     For all except exponential the operation input is not needed. Otherwise user specified
     input is supported. Initial estimates for new etas are 0.09.
@@ -127,11 +128,24 @@ def add_iiv(
         statement = sset[index]
 
         eta_addition = _create_template(expression[i], operation[i])
-        eta_addition.apply(statement.expression, eta.names[0])
 
-        sset = (
-            sset[0:index] + Assignment(statement.symbol, eta_addition.template) + sset[index + 1 :]
-        )
+        if expression[i] == "re_log":
+            # Need to add phi as well
+            phi = sympy.Symbol("phi")
+            eta_addition.apply(phi, eta.names[0])
+            sset = (
+                sset[0:index]
+                + Assignment(phi, sympy.log(statement.expression / (1 - statement.expression)))
+                + Assignment(statement.symbol, eta_addition.template)
+                + sset[index + 1 :]
+            )
+        else:
+            eta_addition.apply(statement.expression, eta.names[0])
+            sset = (
+                sset[0:index]
+                + Assignment(statement.symbol, eta_addition.template)
+                + sset[index + 1 :]
+            )
 
     model = model.replace(random_variables=rvs, parameters=Parameters.create(pset), statements=sset)
 
@@ -456,6 +470,8 @@ def _create_template(expression, operation):
         return EtaAddition.exponential(operation_func)
     elif expression == 'log':
         return EtaAddition.logit()
+    elif expression == 're_log':
+        return EtaAddition.re_logit()
     else:
         expression = parse_expr(f'original {operation} {expression}')
         return EtaAddition(expression)
@@ -537,6 +553,13 @@ class EtaAddition:
             sympy.exp(sympy.Symbol('eta_new')) / (1 + sympy.exp(sympy.Symbol('eta_new')))
         )
 
+        return cls(template)
+
+    @classmethod
+    def re_logit(cls):
+        template = sympy.exp(sympy.Symbol('eta_new') * sympy.Symbol('original')) / (
+            1 + sympy.exp(sympy.Symbol('eta_new') * sympy.Symbol('original'))
+        )
         return cls(template)
 
 
