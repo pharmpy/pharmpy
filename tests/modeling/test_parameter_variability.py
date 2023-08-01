@@ -47,6 +47,15 @@ from pharmpy.tools import read_modelfit_results
         ('S1', 'eta_new**2', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA_S1**2', 2),
         ('S1', 'exp', '+', 'ETA(3)', 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))', 2),
         (
+            'S1',
+            're_log',
+            '+',
+            None,
+            'V=TVV*EXP(ETA(2))\nPHI_ETA_S1 = LOG(V/(1 - V))'
+            '\nS1 = EXP(ETA_S1*PHI_ETA_S1)/(EXP(ETA_S1*PHI_ETA_S1) + 1)',
+            2,
+        ),
+        (
             ['V', 'S1'],
             'exp',
             '+',
