@@ -131,7 +131,7 @@ def add_iiv(
 
         if expression[i] == "re_log":
             # Need to add phi as well
-            phi = sympy.Symbol("phi")
+            phi = sympy.Symbol(f'phi_{eta_name}')
             eta_addition.apply(phi, eta.names[0])
             sset = (
                 sset[0:index]
