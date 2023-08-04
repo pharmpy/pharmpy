@@ -75,7 +75,7 @@ pywin32>=302,!=304; sys_platform == 'win32' and platform_python_implementation !
 PyYAML==6.0.1
 requests==2.31.0
 pyzmq==25.1.0
-rich==13.5.1
+rich==13.5.2
 scipy==1.11.1
 six==1.16.0
 snowballstemmer==2.2.0
