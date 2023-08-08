@@ -15,7 +15,7 @@ comm==0.1.4
 commonmark==0.9.1
 csscompressor==0.9.5
 dask==2023.7.0
-debugpy==1.6.8
+debugpy==1.6.7
 decorator==5.1.1
 defusedxml==0.7.1
 distributed==2023.7.0
