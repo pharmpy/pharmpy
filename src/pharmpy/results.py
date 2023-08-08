@@ -26,6 +26,7 @@ def mfr(model: Model) -> ModelfitResults:
 
 def _df_read_json(obj) -> pd.DataFrame:
     # Convert time strings to naive datetime and then to string
+    # Needed because of https://github.com/pandas-dev/pandas/issues/52595
     for row in obj['data']:
         if 'time' in row:
             row['time'] = pd.to_datetime(row['time']).tz_localize(None)
