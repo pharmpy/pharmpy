@@ -29,7 +29,7 @@ def longdesc(text_str):
 
 setup(
     name='pharmpy-core',
-    version='0.97.0',
+    version='0.98.2',
     license='GNU Lesser General Public License v3 (LGPLv3)',
     description='Pharmacometric modeling',
     long_description='%s\n\n%s'
@@ -81,8 +81,8 @@ setup(
         'lxml',
         'numpy>=1.17',
         'scipy',
-        'dask>=2022.12.1',
-        'distributed>=2022.12.1',
+        'dask>=2022.12.1, <=2023.7.0',
+        'distributed>=2022.12.1, <=2023.7.0',
         'networkx',
         'appdirs',
         'rich',

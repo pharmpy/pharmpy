@@ -359,7 +359,7 @@ def get_baselines(model: Model):
     59   0.0  22.8  1.1   6.0  0.0  1.0  1.0
     """
     idlab = model.datainfo.id_column.name
-    baselines = model.dataset.groupby(idlab).nth(0)
+    baselines = model.dataset.groupby(idlab).nth(0).set_index(idlab)
     return baselines
 
 
@@ -845,11 +845,87 @@ def get_evid(model: Model):
     return mdv.rename('EVID')
 
 
+def get_admid(model: Model):
+    """Get the admid from model dataset
+
+    If an administration column is present this will be extracted otherwise
+    an admid column will be created.
+    1 : Oral dose
+    2 : IV dose
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.Series
+        ADMID
+    """
+    di = model.datainfo
+    try:
+        admidcols = di.typeix["admid"]
+    except IndexError:
+        pass
+    else:
+        return model.dataset[admidcols[0].name]
+
+    oral = iv = None
+    odes = model.statements.ode_system
+    names = odes.compartment_names
+    if isinstance(odes, CompartmentalSystem):
+        for dosing in odes.dosing_compartment:
+            if dosing == odes.central_compartment:
+                iv = names.index(dosing.name) + 1
+            else:
+                oral = names.index(dosing.name) + 1
+    adm = get_cmt(model)
+    adm = adm.replace({oral: 1, iv: 2})
+    adm.name = "ADMID"
+    return adm
+
+
+def add_admid(model: Model):
+    """
+    Add an admid column to the model dataset and datainfo. Dependent on the
+    presence of a CMT column in order to add admid correctly.
+    1 : Oral dose
+    2 : IV dose
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    model : Model
+        Pharmpy model
+
+    See also
+    --------
+    get_admid : Get or create an admid column
+    get_cmt : Get or create a cmt column
+    """
+    di = model.datainfo
+    if "admid" not in di.types:
+        adm = get_admid(model)
+        dataset = model.dataset
+        dataset["ADMID"] = adm
+        di = update_datainfo(model.datainfo, dataset)
+        colinfo = di['ADMID'].replace(type='admid')
+        model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
+
+    return model.update_source()
+
+
 def get_cmt(model: Model):
     """Get the cmt (compartment) column from the model dataset
 
     If a cmt column is present this will be extracted otherwise
-    a cmt column will be created.
+    a cmt column will be created. If created, multiple dose compartments are
+    not supported.
 
     Parameters
     ----------

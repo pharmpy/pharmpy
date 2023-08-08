@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import warnings
 from itertools import product
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
@@ -28,7 +27,8 @@ from pharmpy.model import (
     data,
     output,
 )
-from pharmpy.modeling import get_ids, simplify_expression
+from pharmpy.model.model import update_datainfo
+from pharmpy.modeling import get_admid, get_ids, simplify_expression
 
 from .records.parsers import CodeRecordParser
 
@@ -373,9 +373,9 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
     """
     if old is None:
         old = CompartmentalSystem(CompartmentalSystemBuilder())
-
     model = update_lag_time(model, old, new)
     model = update_bio(model, old, new)
+    model, updated_dataset = update_cmt_column(model, old, new)
 
     advan, trans, nonlin, haszo = new_advan_trans(model)
 
@@ -394,7 +394,68 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
         if not is_nonlinear_odes(model):
             model = from_des(model, advan)
 
-    model, updated_dataset = update_infusion(model, old)
+    if not updated_dataset:
+        model, updated_dataset = update_infusion(model, old)
+    else:
+        model, _ = update_infusion(model, old)
+    return model, updated_dataset
+
+
+def update_cmt_column(model, old, new):
+    if model.dataset is not None:
+        if (
+            "admid" in model.datainfo.types
+            and len(model.dataset[model.datainfo.typeix["admid"].names[0]].unique()) != 1
+        ):
+            cs = model.statements.ode_system
+            newmap = new_compartmental_map(cs)
+
+            d = {}
+            for dose_comp in model.statements.ode_system.dosing_compartment:
+                d[dose_comp.dose.admid] = newmap[dose_comp.name]
+
+            cmt_col = get_admid(model)
+            cmt_col = cmt_col.replace(d)
+
+            dataset = model.dataset.copy()
+            dataset['CMT'] = cmt_col
+            di = update_datainfo(model.datainfo, dataset)
+            colinfo = di['CMT'].replace(type='compartment')
+            model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
+
+            updated_dataset = True
+        elif "CMT" in model.datainfo.names and len(old.compartment_names) != len(
+            new.compartment_names
+        ):
+            dataset = model.dataset.copy()
+
+            # Make sure column is a number and not string
+            dataset["CMT"] = pd.to_numeric(dataset["CMT"])
+
+            # Differ in amount of compartment -> Change cmt numbering
+            # The cmt number should be the same as the dosing compartment
+            oldmap = model.internals.compartment_map
+            assert oldmap is not None
+            cs = model.statements.ode_system
+            newmap = new_compartmental_map(cs)
+            oldmap = oldmap.copy()
+            remap = create_compartment_remap(oldmap, newmap)
+
+            for dose_comp in old.dosing_compartment:
+                if dose_comp != old.central_compartment:
+                    # Remap oral doses to new dosing compartment
+                    remap[oldmap[dose_comp.name]] = newmap[new.dosing_compartment[0].name]
+
+            dataset = dataset.replace({"CMT": remap})
+            model = model.replace(dataset=dataset)
+
+            updated_dataset = True
+        else:
+            # Could verify that the cmt column is the same
+            updated_dataset = False
+    else:
+        updated_dataset = False
+
     return model, updated_dataset
 
 
@@ -580,14 +641,6 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
     if new_odes is not None:
         old_odes = old.ode_system
         if new_odes != old_odes:
-            colnames, drop, _, _ = parse_column_info(model.internals.control_stream)
-            col_dropped = dict(zip(colnames, drop))
-            if 'CMT' in col_dropped.keys() and not col_dropped['CMT']:
-                warnings.warn(
-                    'Compartment structure has been updated, CMT-column '
-                    'in dataset might not be relevant anymore. Check '
-                    'CMT-column or drop column'
-                )
             model, updated_dataset = update_ode_system(model, old_odes, new_odes)
         else:
             if new_solver:
@@ -609,7 +662,6 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         main_statements = Statements(tuple(keep))
 
     error_statements = model.statements.after_odes
-
     rec = model.internals.control_stream.get_pred_pk_record()
     newrec = rec.update_statements(main_statements.subs(trans), model.random_variables, trans)
     newcs = model.internals.control_stream.replace_records([rec], [newrec])
@@ -727,38 +779,20 @@ def update_bio(model, old, new):
     compartments in NONMEM.
     Is based on the order of dosing compartments
     """
-    if len(new.dosing_compartment) == len(old.dosing_compartment):
-        for new_dosing, old_dosing in zip(new.dosing_compartment, old.dosing_compartment):
-            new_bio = new_dosing.bioavailability
-            old_bio = old_dosing.bioavailability
+    newmap = new_compartmental_map(new)
+    for dose in new.dosing_compartment:
+        # If the dose is not already correctly set (i.e dose numbering has
+        # changed), it should be update to match the new number.
+        if (
+            not isinstance(dose.bioavailability, sympy.Number)
+            and dose.bioavailability != f'F{newmap[dose.name]}'
+        ):
+            model = model.replace(
+                statements=model.statements.subs(
+                    {sympy.Symbol(f'{dose.bioavailability}'): sympy.Symbol(f'F{newmap[dose.name]}')}
+                )
+            )
 
-            old_comp_number = model.internals.compartment_map[old_dosing.name]
-            newmap = new_compartmental_map(model.statements.ode_system)
-            new_comp_number = newmap[new_dosing.name]
-            if new_bio != old_bio:
-                if isinstance(new_bio, sympy.Symbol):
-                    model = model.replace(
-                        statements=model.statements.subs(
-                            {new_bio: sympy.Symbol(f'F{new_comp_number}')}
-                        )
-                    )
-            else:
-                if new_bio != sympy.Symbol("F1"):
-                    # If number of compartments have changed, F1 should NOT
-                    # be changed to match the old compartment
-                    # All other Fn should be changed to match the new number
-                    model = model.replace(
-                        statements=model.statements.subs(
-                            {
-                                sympy.Symbol(f'F{old_comp_number}'): sympy.Symbol(
-                                    f'F{new_comp_number}'
-                                )
-                            }
-                        )
-                    )
-    else:
-        # TODO : Number of dose compartments have changed
-        pass
     return model
 
 

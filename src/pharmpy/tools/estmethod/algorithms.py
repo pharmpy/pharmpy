@@ -6,22 +6,22 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
-def exhaustive(methods, solvers):
+def exhaustive(methods, solvers, covs):
     wf = Workflow()
 
     task_start = Task('start', start)
     wf.add_task(task_start)
 
     candidate_no = 1
-    for method, solver in itertools.product(methods, solvers):
-        wf_estmethod = _create_candidate_model_wf(candidate_no, method, solver, update=False)
+    for method, solver, cov in itertools.product(methods, solvers, covs):
+        wf_estmethod = _create_candidate_model_wf(candidate_no, method, solver, cov, update=False)
         wf.insert_workflow(wf_estmethod, predecessors=task_start)
         candidate_no += 1
 
     return wf, None
 
 
-def exhaustive_with_update(methods, solvers):
+def exhaustive_with_update(methods, solvers, covs):
     wf = Workflow()
 
     task_base_model = Task('create_base_model', _create_base_model)
@@ -31,34 +31,36 @@ def exhaustive_with_update(methods, solvers):
     task_base_model_fit = wf.output_tasks
 
     candidate_no = 1
-    for method, solver in itertools.product(methods, solvers):
+    for method, solver, cov in itertools.product(methods, solvers, covs):
         # This is equivalent to the base model
         if not (method == 'FOCE' and solver is None):
             # Create model with original estimates
             wf_estmethod_original = _create_candidate_model_wf(
-                candidate_no, method, solver, update=False
+                candidate_no, method, solver, cov, update=False
             )
             wf.insert_workflow(wf_estmethod_original, predecessors=task_base_model_fit)
             candidate_no += 1
 
         # Create model with updated estimates from FOCE
-        wf_estmethod_update = _create_candidate_model_wf(candidate_no, method, solver, update=True)
+        wf_estmethod_update = _create_candidate_model_wf(
+            candidate_no, method, solver, cov, update=True
+        )
         wf.insert_workflow(wf_estmethod_update, predecessors=task_base_model_fit)
         candidate_no += 1
 
     return wf, task_base_model_fit
 
 
-def exhaustive_only_eval(methods, solvers):
+def exhaustive_only_eval(methods, solvers, covs):
     wf = Workflow()
 
     task_start = Task('start', start)
     wf.add_task(task_start)
 
     candidate_no = 1
-    for method, solver in itertools.product(methods, solvers):
+    for method, solver, cov in itertools.product(methods, solvers, covs):
         wf_estmethod = _create_candidate_model_wf(
-            candidate_no, method, solver, update=False, is_eval_candidate=True
+            candidate_no, method, solver, cov, update=False, is_eval_candidate=True
         )
         wf.insert_workflow(wf_estmethod, predecessors=task_start)
         candidate_no += 1
@@ -70,7 +72,7 @@ def start(model):
     return model
 
 
-def _create_candidate_model_wf(candidate_no, method, solver, update, is_eval_candidate=False):
+def _create_candidate_model_wf(candidate_no, method, solver, cov, update, is_eval_candidate=False):
     wf = Workflow()
 
     model_name = f'estmethod_run{candidate_no}'
@@ -84,7 +86,7 @@ def _create_candidate_model_wf(candidate_no, method, solver, update, is_eval_can
     else:
         task_prev = task_copy
     task_create_candidate = Task(
-        'create_candidate', _create_candidate_model, method, solver, update, is_eval_candidate
+        'create_candidate', _create_candidate_model, method, solver, cov, update, is_eval_candidate
     )
     wf.add_task(task_create_candidate, predecessors=task_prev)
     return wf
@@ -112,14 +114,16 @@ def _create_base_model(model):
     return base_model
 
 
-def _create_candidate_model(method, solver, update, is_eval_candidate, model):
+def _create_candidate_model(method, solver, cov, update, is_eval_candidate, model):
     est_settings = _create_est_settings(method, is_eval_candidate)
     laplace = True if method == 'LAPLACE' else False
-    eval_settings = _create_eval_settings(laplace)
+    eval_settings = _create_eval_settings(laplace, cov)
 
     eval_method = eval_settings['method']
     model = model.replace(
-        description=_create_description([method, eval_method], solver=solver, update=update)
+        description=_create_description(
+            [method, eval_method], solver=solver, cov=cov, update=update
+        )
     )
 
     while len(model.estimation_steps) > 0:
@@ -139,6 +143,7 @@ def _create_est_settings(method, is_eval_candidate=False):
         'laplace': False,
         'auto': True,
         'keep_every_nth_iter': 10,
+        'cov': None,
     }
 
     if method == 'LAPLACE':
@@ -153,7 +158,7 @@ def _create_est_settings(method, is_eval_candidate=False):
     return est_settings
 
 
-def _create_eval_settings(laplace=False):
+def _create_eval_settings(laplace=False, cov=None):
     eval_settings = {
         'method': 'IMP',
         'interaction': True,
@@ -163,6 +168,7 @@ def _create_eval_settings(laplace=False):
         'isample': 10000,
         'niter': 10,
         'keep_every_nth_iter': 10,
+        'cov': cov,
     }
 
     if laplace:
@@ -171,10 +177,12 @@ def _create_eval_settings(laplace=False):
     return eval_settings
 
 
-def _create_description(methods, solver, update=False):
+def _create_description(methods, solver, cov, update=False):
     model_description = ','.join(methods)
     if solver:
         model_description += f';{solver}'
+    if cov:
+        model_description += f';{cov}'
     if update:
         model_description += ' (update)'
     return model_description

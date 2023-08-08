@@ -17,15 +17,14 @@ from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
 
-def brute_force_no_of_etas(base_model, index_offset=0, keep=[]):
+def brute_force_no_of_etas(base_model, index_offset=0, keep=None):
     wf = Workflow()
 
     base_model = base_model.replace(description=create_description(base_model))
 
     iivs = base_model.random_variables.iiv
     iiv_names = iivs.names
-    if len(keep) > 0:
-        # remove eta values to keep
+    if keep:
         iiv_names = _remove_sublist(iiv_names, _get_eta_from_parameter(base_model, keep))
 
     # Remove fixed etas

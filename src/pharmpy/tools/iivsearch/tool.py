@@ -35,7 +35,7 @@ def create_workflow(
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
-    keep: Optional[List[str]] = [],
+    keep: Optional[List[str]] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -55,6 +55,8 @@ def create_workflow(
         Results for model
     model : Model
         Pharmpy model
+    keep :  List[str]
+        List of IIVs to keep
 
     Returns
     -------
@@ -287,7 +289,7 @@ def validate_input(
             f' must be one of {sorted(IIV_STRATEGIES)}.'
         )
 
-    if len(keep) > 0:
+    if keep:
         for parameter in keep:
             try:
                 has_random_effect(model, parameter, "iiv")
