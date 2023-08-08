@@ -359,7 +359,7 @@ def get_baselines(model: Model):
     59   0.0  22.8  1.1   6.0  0.0  1.0  1.0
     """
     idlab = model.datainfo.id_column.name
-    baselines = model.dataset.groupby(idlab).nth(0)
+    baselines = model.dataset.groupby(idlab).nth(0).set_index(idlab)
     return baselines
 
 
