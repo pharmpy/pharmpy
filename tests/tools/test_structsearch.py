@@ -73,7 +73,7 @@ def test_pkpd(load_model_for_test, testdata):
     ests = res.parameter_estimates
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
     pkpd_models = create_pkpd_models(model, ests)
-    assert len(pkpd_models) == 9
+    assert len(pkpd_models) == 8
     assert pkpd_models[0].name == "structsearch_run1"
     assert pkpd_models[1].name == "structsearch_run2"
     assert pkpd_models[4].name == "structsearch_run5"
