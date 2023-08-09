@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Union
 
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Model, Parameter, Parameters
+from pharmpy.model import Model, Parameter, Parameters, RandomVariables
 
 
 def get_thetas(model: Model):
@@ -178,8 +178,15 @@ def update_inits(
     return model.update_source()
 
 
+def _get_nonfixed_rvs(model):
+    fixed_omegas = get_omegas(model).fixed.names
+    rvs = model.random_variables
+    nonfixed_rvs = [rv for rv in rvs if str(list(rv.variance.free_symbols)[0]) not in fixed_omegas]
+    return RandomVariables.create(nonfixed_rvs)
+
+
 def _move_est_close_to_bounds(model: Model, pe):
-    rvs, pset = model.random_variables, model.parameters
+    rvs, pset = _get_nonfixed_rvs(model), model.parameters
     est = pe.to_dict()
     sdcorr = rvs.parameters_sdcorr(est)
     newdict = est.copy()
@@ -202,8 +209,9 @@ def _move_est_close_to_bounds(model: Model, pe):
                             newdict[param_name] = 0.01
         else:
             param_name = dist.variance.name
-            if not _is_zero_fix(pset[param_name]) and est[param_name] < 0.001:
-                newdict[param_name] = 0.01
+            if not pset[param_name].fix:
+                if not _is_zero_fix(pset[param_name]) and est[param_name] < 0.001:
+                    newdict[param_name] = 0.01
     return newdict
 
 
