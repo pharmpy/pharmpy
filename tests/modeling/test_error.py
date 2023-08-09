@@ -1022,6 +1022,65 @@ END IF
     assert str(rec) == correct
 
 
+def test_set_power_on_ruv_multiple_dvs(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
+    updated_model = set_power_on_ruv(model, dv=1)
+    rec = updated_model.internals.control_stream.get_records('ERROR')[0]
+    correct = """$ERROR
+Y_1 = F + EPS(1)*F**THETA(3)
+Y_2 = F + EPS(1)*F + EPS(2)
+
+IF (DVID.EQ.1) THEN
+    Y = Y_1
+ELSE
+    Y = Y_2
+END IF
+"""
+    assert str(rec) == correct
+
+    updated_model = set_power_on_ruv(model, dv=2)
+    rec = updated_model.internals.control_stream.get_records('ERROR')[0]
+    correct = """$ERROR
+Y_1 = F + EPS(1)*F
+Y_2 = F + EPS(1)*F**THETA(3) + EPS(2)*F**THETA(4)
+
+IF (DVID.EQ.1) THEN
+    Y = Y_1
+ELSE
+    Y = Y_2
+END IF
+"""
+    assert str(rec) == correct
+
+    updated_model = set_power_on_ruv(model)
+    rec = updated_model.internals.control_stream.get_records('ERROR')[0]
+    correct = """$ERROR
+Y_1 = F + EPS(1)*F**THETA(3)
+Y_2 = F + EPS(1)*F**THETA(3) + EPS(2)*F**THETA(4)
+
+IF (DVID.EQ.1) THEN
+    Y = Y_1
+ELSE
+    Y = Y_2
+END IF
+"""
+    assert str(rec) == correct
+
+    updated_model = set_power_on_ruv(model, list_of_eps=["EPS_2"])
+    rec = updated_model.internals.control_stream.get_records('ERROR')[0]
+    correct = """$ERROR
+Y_1 = F + EPS(1)*F
+Y_2 = F + EPS(1)*F + EPS(2)*F**THETA(3)
+
+IF (DVID.EQ.1) THEN
+    Y = Y_1
+ELSE
+    Y = Y_2
+END IF
+"""
+    assert str(rec) == correct
+
+
 @pytest.mark.parametrize(
     'epsilons, err_ref, theta_ref',
     [
