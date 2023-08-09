@@ -7,7 +7,6 @@ def test_create_basic_pk_model(testdata):
     assert len(model.parameters) == 6
 
     model = create_basic_pk_model('oral')
-    # print(model.parameters)
     assert len(model.parameters) == 8
 
     dataset_path = testdata / 'nonmem/pheno.dta'
@@ -18,4 +17,4 @@ def test_create_basic_pk_model(testdata):
     run1 = set_zero_order_absorption(model)
     assert not model.dataset.empty
     assert not run1.dataset.empty
-    assert type(model.dependent_variables) == frozenmapping
+    assert isinstance(model.dependent_variables, frozenmapping)
