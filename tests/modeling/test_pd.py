@@ -17,7 +17,7 @@ def S(x):
 
 @pytest.mark.parametrize(
     'pd_model',
-    [('baseline'), ('linear'), ('Emax'), ('sigmoid'), ('step')],
+    [('baseline'), ('linear'), ('Emax'), ('sigmoid'), ('step'), ('loglin')],
 )
 def test_set_direct_effect(load_model_for_test, pd_model, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
@@ -27,7 +27,7 @@ def test_set_direct_effect(load_model_for_test, pd_model, testdata):
 
 @pytest.mark.parametrize(
     'pd_model',
-    [('baseline'), ('linear'), ('Emax'), ('sigmoid'), ('step')],
+    [('baseline'), ('linear'), ('Emax'), ('sigmoid'), ('step'), ('loglin')],
 )
 def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
@@ -76,7 +76,11 @@ def _test_effect_models(model, expr, conc):
         assert model.statements[3] == Assignment(e0, S("POP_E0"))
         assert model.statements[2] == Assignment(emax, S("POP_E_max"))
         assert model.statements.after_odes[-2] == Assignment(
-            e, e0 + ((emax * conc ** S("n")) / (ec50 ** S("n") + conc ** S("n")))
+            e,
+            sympy.Piecewise(
+                (e0 + ((emax * conc ** S("n")) / (ec50 ** S("n") + conc ** S("n"))), conc > 0),
+                (e0, True),
+            ),
         )
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
         assert model.parameters["POP_n"].init == 1
@@ -84,6 +88,13 @@ def _test_effect_models(model, expr, conc):
         assert model.statements[1] == Assignment(e0, S("POP_E0"))
         assert model.statements[0] == Assignment(emax, S("POP_E_max"))
         assert model.statements.after_odes[-2] == Assignment(
-            e, sympy.Piecewise((e0, conc < 0), (e0 + emax, True))
+            e, sympy.Piecewise((e0, conc <= 0), (e0 + emax, True))
+        )
+        assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
+    elif expr == "loglin":
+        assert model.statements[1] == Assignment(e0, S("POP_E0"))
+        assert model.statements[0] == Assignment(S("slope"), S("POP_slope"))
+        assert model.statements.after_odes[-2] == Assignment(
+            e, S("slope") * sympy.log(conc + sympy.exp(e0 / S("slope")))
         )
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
