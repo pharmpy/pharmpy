@@ -630,6 +630,7 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
                 warnings.warn(
                     "CMT column present with only one value" "Using ADMID to determine dose type"
                 )
+                doses = tuple()
                 # Go through all dose types to the same compartment
                 for admid in dataset['ADMID'].unique():
                     if admid not in [1, 2]:
