@@ -144,9 +144,12 @@ class Model(Immutable):
             filename_extension=filename_extension,
             internals=internals,
             initial_individual_estimates=initial_individual_estimates,
+            dataset=dataset,
+            datainfo=datainfo,
         )
 
-    def _canonicalize_value_type(self, value):
+    @staticmethod
+    def _canonicalize_value_type(value):
         allowed_strings = ('PREDICTION', 'LIKELIHOOD', '-2LL')
         if isinstance(value, str):
             if value.upper() not in allowed_strings:
@@ -323,7 +326,7 @@ class Model(Immutable):
         if not isinstance(filename_extension, str):
             raise TypeError("Filename extension has to be of string type")
         if 'value_type' in kwargs:
-            value_type = self._canonicalize_value_type(kwargs['value_type'])
+            value_type = Model._canonicalize_value_type(kwargs['value_type'])
         else:
             value_type = self.value_type
         description = kwargs.get('description', self.description)
