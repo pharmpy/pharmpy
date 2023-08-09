@@ -11,4 +11,5 @@ def insert_context(workflow: Workflow, context):
     for task in workflow.tasks:
         parameters = tuple(inspect.signature(task.function).parameters)
         if parameters and parameters[0] == 'context':
-            task.task_input = (context, *task.task_input)
+            new_task = task.replace(task_input=(context, *task.task_input))
+            workflow.replace_task(task, new_task)

@@ -62,7 +62,8 @@ def execute_workflow(
             else:
                 new_inp.append(inp)
 
-        task.task_input = tuple(new_inp)
+        new_task = task.replace(task_input=tuple(new_inp))
+        workflow.replace_task(task, new_task)
 
     insert_context(workflow, database)
 

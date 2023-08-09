@@ -50,6 +50,10 @@ class Workflow(Generic[T]):
                 for pred in predecessors:
                     self._g.add_edge(pred, task)
 
+    def replace_task(self, task: Task, new_task: Task):
+        mapping = {task: new_task}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+
     def insert_workflow(
         self, other: Workflow, predecessors: Optional[Union[Task, List[Task]]] = None
     ):
