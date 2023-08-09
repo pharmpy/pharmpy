@@ -73,15 +73,15 @@ def test_pkpd(load_model_for_test, testdata):
     ests = res.parameter_estimates
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
     pkpd_models = create_pkpd_models(model, ests)
-    assert len(pkpd_models) == 12
-    assert pkpd_models[0].name == "direct_effect_baseline"
-    assert pkpd_models[1].name == "direct_effect_linear"
-    assert pkpd_models[6].name == "effect_compartment_baseline"
-    assert pkpd_models[7].name == "effect_compartment_linear"
+    assert len(pkpd_models) == 9
+    assert pkpd_models[0].name == "structsearch_run1"
+    assert pkpd_models[1].name == "structsearch_run2"
+    assert pkpd_models[4].name == "structsearch_run5"
+    assert pkpd_models[5].name == "structsearch_run6"
     assert pkpd_models[0].parameters[0].name == 'TVCL'
-    assert pkpd_models[6].parameters[0].name == 'TVCL'
+    assert pkpd_models[5].parameters[0].name == 'TVCL'
     assert pkpd_models[0].parameters[1].name == 'TVV'
-    assert pkpd_models[6].parameters[1].name == 'TVV'
+    assert pkpd_models[5].parameters[1].name == 'TVV'
 
 
 def test_create_workflow():
