@@ -331,7 +331,7 @@ class CompartmentalSystemBuilder:
         """
         self._g.remove_edge(source, destination)
 
-    def move_dose(self, source, destination):
+    def move_dose(self, source, destination, admid=None, replace=True):
         """Move a dose input from one compartment to another
 
         Parameters
@@ -340,32 +340,23 @@ class CompartmentalSystemBuilder:
             Source compartment
         destination : Compartment
             Destination compartment
+        admid : int
+            Move dose with specified admid, move all if None. Default is None.
+        replace : bool
+            Replace dose of destination or add to. Default to True
 
         """
-        new_source = source.replace(dose=None)
-        new_dest = destination.replace(dose=source.dose)
-        mapping = {source: new_source, destination: new_dest}
-        nx.relabel_nodes(self._g, mapping, copy=False)
-
-    def move_oral_dose(self, source, destination, single_dose=True):
-        """If present, move oral dose(s) (admid = 1) from one compartment to another.
-        If a only a single dose is present, there is option to move this regardless
-        of type.
-
-        Parameters
-        ----------
-        source : Compartment
-            Source compartment
-        destination : Compartment
-            Destination compartment
-
-        """
-        if source.number_of_doses == 1 and single_dose:
-            new_source = source.replace(dose=None)
+        if admid:
+            new_source_dose = tuple([dose for dose in source.dose if dose.admid != admid])
+            new_dest_dose = tuple([dose for dose in source.dose if dose.admid == admid])
+        else:
+            new_source_dose = None
+            new_dest_dose = source.dose
+        new_source = source.replace(dose=new_source_dose)
+        if replace:
             new_dest = destination.replace(dose=source.dose)
         else:
-            new_source = source.replace(dose=source.iv_dose)
-            new_dest = destination.replace(dose=source.oral_dose)
+            new_dest = destination.replace(dose=destination.dose + new_dest_dose)
         mapping = {source: new_source, destination: new_dest}
         nx.relabel_nodes(self._g, mapping, copy=False)
 
