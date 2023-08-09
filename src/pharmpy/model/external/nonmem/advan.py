@@ -305,6 +305,7 @@ def _compartmental_model(
         cs = to_compartmental_system(func_to_name, eqs)
         central_comp_name = cs.central_compartment.name
         cb = CompartmentalSystemBuilder(cs)
+        doses = dosing(di, dataset, 1)
         for i, comp_name in enumerate(comps, start=1):
             comp = cs.find_compartment(comp_name)
             if comp is None:  # Compartments can be in $MODEL but not used in $DES
@@ -315,7 +316,6 @@ def _compartmental_model(
                 central = True
             else:
                 central = False
-            doses = dosing(di, dataset, i)
             cb.set_dose(comp, find_dose(doses, i, admid=admid, central=central))
             comp = cb.find_compartment(comp_name)
             f = _get_bioavailability(control_stream, i)
