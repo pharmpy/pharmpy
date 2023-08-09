@@ -87,7 +87,7 @@ sphinxcontrib-htmlhelp==2.0.2
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.4
 sphinxcontrib-serializinghtml==1.1.6
-sphinxcontrib.applehelp==1.0.4
+sphinxcontrib.applehelp==1.0.5
 stack-data==0.6.2
 symengine==0.10.0
 sympy==1.12
