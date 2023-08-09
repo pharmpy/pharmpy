@@ -124,7 +124,6 @@ def create_basic_pk_model(
         filename_extension='.mod',  # Should this really be needed?
         dataset=df,
         datainfo=di,
-        value_type='PREDICTION',
     )
 
     model = set_proportional_error_model(model)
