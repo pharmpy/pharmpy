@@ -124,6 +124,7 @@ def create_basic_pk_model(
         filename_extension='.mod',  # Should this really be needed?
         dataset=df,
         datainfo=di,
+        value_type='PREDICTION',
     )
 
     model = set_proportional_error_model(model)
@@ -149,7 +150,14 @@ def _create_default_datainfo(path):
         di = DataInfo.read_json(datainfo_path)
         di = di.replace(path=path)
     else:
-        colnames = list(pd.read_csv(path, nrows=0))
+        with open(path) as file:
+            first_line = file.readline()
+            if ',' not in first_line:
+                colnames = list(pd.read_csv(path, nrows=0, sep=r'\s+'))
+                seperator = r'\s+'
+            else:
+                colnames = list(pd.read_csv(path, nrows=0))
+                seperator = ','
         column_info = []
         for colname in colnames:
             if colname == 'ID' or colname == 'L1':
@@ -176,7 +184,7 @@ def _create_default_datainfo(path):
             else:
                 info = ColumnInfo.create(colname)
             column_info.append(info)
-        di = DataInfo.create(column_info, path=path, separator=',')
+        di = DataInfo.create(column_info, path=path, separator=seperator)
     return di
 
 

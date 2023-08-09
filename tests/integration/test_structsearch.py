@@ -10,7 +10,7 @@ def test_pkpd(tmp_path, load_model_for_test, testdata):
         pk_res = fit(pk_model)
         res = run_structsearch(type='pkpd', route='iv', results=pk_res, model=model)
 
-        no_of_models = 12
+        no_of_models = 10
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.models) == no_of_models

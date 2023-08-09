@@ -15,7 +15,7 @@ comm==0.1.4
 commonmark==0.9.1
 csscompressor==0.9.5
 dask==2023.7.0
-debugpy==1.6.7
+debugpy==1.6.7.post1
 decorator==5.1.1
 defusedxml==0.7.1
 distributed==2023.7.0
@@ -67,7 +67,7 @@ psutil==5.9.5
 ptyprocess==0.7.0
 pure-eval==0.2.2
 Pygments==2.16.1
-pyreadr==0.4.7
+pyreadr==0.4.8
 pyrsistent==0.19.3
 python-dateutil==2.8.2
 pytz==2023.3
@@ -82,12 +82,12 @@ snowballstemmer==2.2.0
 sortedcontainers==2.4.0
 soupsieve==2.4.1
 Sphinx==7.1.2
-sphinxcontrib-devhelp==1.0.2
-sphinxcontrib-htmlhelp==2.0.1
+sphinxcontrib-devhelp==1.0.3
+sphinxcontrib-htmlhelp==2.0.2
 sphinxcontrib-jsmath==1.0.1
-sphinxcontrib-qthelp==1.0.3
-sphinxcontrib-serializinghtml==1.1.5
-sphinxcontrib.applehelp==1.0.4
+sphinxcontrib-qthelp==1.0.4
+sphinxcontrib-serializinghtml==1.1.6
+sphinxcontrib.applehelp==1.0.5
 stack-data==0.6.2
 symengine==0.10.0
 sympy==1.12

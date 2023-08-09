@@ -349,11 +349,10 @@ def test_get_pk_parameters(load_model_for_test, testdata, model_path, kind, expe
     ('model_path', 'kind', 'expected'),
     (
         ('nonmem/pheno.mod', 'baseline', ['E0']),
-        ('nonmem/pheno.mod', 'linear', ['E0', 'S']),
+        ('nonmem/pheno.mod', 'linear', ['E0', 'Slope']),
         ('nonmem/pheno.mod', 'Emax', ['E0', 'E_max', 'EC_50']),
         ('nonmem/pheno.mod', 'step', ['E0', 'E_max']),
-        ('nonmem/pheno.mod', 'sigmoid', ['EC_50', 'E_max', 'n']),
-        ('nonmem/pheno.mod', 'loglin', ['E0', 'm']),
+        ('nonmem/pheno.mod', 'sigmoid', ['E0', 'EC_50', 'E_max', 'n']),
     ),
     ids=repr,
 )

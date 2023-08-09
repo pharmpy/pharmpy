@@ -14,7 +14,7 @@ from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
 
-from .pkpd import create_pkpd_models
+from .pkpd import create_baseline_pd_model, create_pkpd_models
 from .tmdd import create_qss_models, create_remaining_models
 
 ROUTES = frozenset(('iv', 'oral'))
@@ -99,23 +99,36 @@ def run_tmdd(context, model):
 
 
 def run_pkpd(context, model):
-    pkpd_models = create_pkpd_models(model, model.modelfit_results.parameter_estimates)
-
-    wf = create_fit_workflow(pkpd_models)
+    baseline_pd_model = create_baseline_pd_model(model, model.modelfit_results.parameter_estimates)
+    wf = create_fit_workflow(baseline_pd_model)
     task_results = Task('results2', bundle_results)
     wf.add_task(task_results, predecessors=wf.output_tasks)
-    pkpd_models_fit = call_workflow(wf, 'results_remaining', context)
+    pd_baseline_fit = call_workflow(wf, 'results_remaining', context)
+
+    parameter_estimates = pd.concat(
+        [
+            model.modelfit_results.parameter_estimates,
+            pd_baseline_fit[0].modelfit_results.parameter_estimates,
+        ],
+        axis=0,
+    )
+    pkpd_models = create_pkpd_models(model, parameter_estimates)
+
+    wf2 = create_fit_workflow(pkpd_models)
+    task_results = Task('results2', bundle_results)
+    wf2.add_task(task_results, predecessors=wf2.output_tasks)
+    pkpd_models_fit = call_workflow(wf2, 'results_remaining', context)
 
     summary_input = summarize_modelfit_results(model.modelfit_results)
     summary_candidates = summarize_modelfit_results(
-        [model.modelfit_results for model in pkpd_models_fit]
+        [model.modelfit_results for model in pd_baseline_fit + pkpd_models_fit]
     )
 
     return create_results(
         StructSearchResults,
         model,
         model,
-        list(pkpd_models_fit),
+        list(pd_baseline_fit + pkpd_models_fit),
         rank_type='bic',
         cutoff=None,
         summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"]),

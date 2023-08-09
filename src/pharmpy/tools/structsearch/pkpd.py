@@ -9,13 +9,33 @@ from pharmpy.modeling import (
 )
 
 
+def create_baseline_pd_model(model: Model, ests: pd.Series):
+    """Create baseline pkpd model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy PK model
+    ests : pd.Series
+       List of estimated PK parameters
+
+    Returns
+    -------
+    Baseline PD model
+    """
+    baseline_model = set_direct_effect(model, expr='baseline')
+    baseline_model = set_name(baseline_model, "baseline_pd_model")
+    baseline_model = baseline_model.replace(description="direct_effect_baseline")
+    baseline_model = fix_parameters_to(baseline_model, ests)
+    baseline_model = add_iiv(baseline_model, ["E0"], "exp")
+    return baseline_model
+
+
 def create_pkpd_models(model: Model, ests: pd.Series):
     """Create pkpd models
 
     Parameters
     ----------
-    model_type : str
-        Type of PD model. Currently either 'direct_effect' or 'effect_compartment'
     model : Model
         Pharmpy PK model
     ests : pd.Series
@@ -26,16 +46,21 @@ def create_pkpd_models(model: Model, ests: pd.Series):
     List of pharmpy models
     """
     models = []
-    pd_types = ["baseline", "linear", "Emax", "sigmoid", "step", "loglin"]
+    index = 1
+    pd_types = ["baseline", "linear", "Emax", "sigmoid", "step"]
     for model_type in ["direct_effect", "effect_compartment"]:
         for pd_type in pd_types:
             if model_type == "direct_effect":
+                if pd_type == "baseline":
+                    continue
                 pkpd_model = set_direct_effect(model, expr=pd_type)
             elif model_type == "effect_compartment":
                 pkpd_model = add_effect_compartment(model, expr=pd_type)
-            pkpd_model = set_name(pkpd_model, f"{model_type}_{pd_type}")
-            pkpd_model = fix_parameters_to(pkpd_model, ests)
+            pkpd_model = set_name(pkpd_model, f"structsearch_run{index}")
+            pkpd_model = pkpd_model.replace(description=f"{model_type}_{pd_type}")
+            index += 1
             pkpd_model = add_iiv(pkpd_model, ["E0"], "exp")
+            pkpd_model = fix_parameters_to(pkpd_model, ests)
             for parameter in ["S", "E_max", "m"]:
                 try:
                     pkpd_model = add_iiv(pkpd_model, [parameter], "exp")
