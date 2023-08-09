@@ -14,6 +14,7 @@ from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, create_results, update_initial_estimates
+from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
 
@@ -167,7 +168,10 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff, keep
         last_res = res
 
         assert base_model is not None
-        if len(base_model.random_variables.iiv.names) <= 1:
+        if (
+            len(set(base_model.random_variables.iiv.names).difference(_get_fixed_etas(base_model)))
+            <= 1
+        ):
             break
 
     assert last_res is not None
