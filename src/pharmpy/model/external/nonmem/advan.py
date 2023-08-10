@@ -597,92 +597,79 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
     if dataset is not None:
         dataset = dataset[dataset['AMT'] != 0]
 
-    if 'CMT' not in di.names or di['CMT'].drop or dataset is None:
-        if 'ADMID' in di.names:
-            # Go through all dose types to the same compartment
-            doses = tuple()
-            for admid in dataset['ADMID'].unique():
-                if admid not in [1, 2]:
-                    raise ValueError(f'Administration ID : {admid} not supported')
+    cmt_loop = False
+    admid_loop = False
+    return_dose = False
+    if 'ADMID' in di.names:
+        for admid in dataset['ADMID'].unique():
+            if admid not in [1, 2]:
+                raise ValueError(f'Administration ID : {admid} not supported')
+
+        if 'CMT' in di.names and not di['CMT'].drop:
+            if len(dataset['CMT']) == 1:
+                warnings.warn(
+                    "CMT column present with only one value" "Using admid column to determine dose"
+                )
+            cmt_loop = True
+            admid_loop = True
+        else:
+            admid_loop = True
+    elif 'CMT' in di.names:
+        if len(dataset['CMT']) == 1:
+            warnings.warn(
+                "CMT column present with only one value"
+                "Need ADMID column to determine doses (if multiple)"
+            )
+            return_dose = True
+        else:
+            cmt_loop = True
+    else:
+        return_dose = True
+
+    if return_dose:
+        return (
+            {
+                'comp_number': dose_comp,
+                'dose': _dosing(di, dataset, dose_comp),
+                'admid': None,
+            },
+        )
+
+    doses = tuple()
+    if admid_loop and cmt_loop:
+        for comp_number in dataset['CMT'].unique():
+            cmt_dataset = dataset[dataset['CMT'] == comp_number]
+            for admid in cmt_dataset['ADMID'].unique():
                 doses += (
                     {
-                        'comp_number': dose_comp,
-                        'dose': _dosing(di, dataset, dose_comp),
+                        'comp_number': comp_number,
+                        'dose': _dosing(
+                            di, cmt_dataset[cmt_dataset['ADMID'] == admid], comp_number
+                        ),
                         'admid': admid,
                     },
                 )
-            return doses
-        else:
-            # No ADMID or CMT
-            return (
+    elif admid_loop:
+        for admid in dataset['ADMID'].unique():
+            doses += (
                 {
                     'comp_number': dose_comp,
-                    'dose': _dosing(di, dataset, dose_comp),
+                    'dose': _dosing(di, dataset['ADMID'] == admid, dose_comp),
+                    'admid': admid,
+                },
+            )
+    elif cmt_loop:
+        for comp_number in dataset['CMT'].unique():
+            cmt_dataset = dataset[dataset['CMT'] == comp_number]
+            doses += (
+                {
+                    'comp_number': comp_number,
+                    'dose': _dosing(di, cmt_dataset, comp_number),
                     'admid': None,
                 },
             )
-    else:
-        # CMT column present
-        cmt = dataset['CMT']
-        if len(cmt.unique()) == 1:
-            # All doses to same compartment
-            if 'ADMID' in di.names:
-                warnings.warn(
-                    "CMT column present with only one value" "Using ADMID to determine dose type"
-                )
-                doses = tuple()
-                # Go through all dose types to the same compartment
-                for admid in dataset['ADMID'].unique():
-                    if admid not in [1, 2]:
-                        raise ValueError(f'Administration ID : {admid} not supported')
-                    doses += (
-                        {
-                            'comp_number': None,
-                            'dose': _dosing(di, dataset, dose_comp),
-                            'admid': admid,
-                        },
-                    )
-                return doses
-            else:
-                warnings.warn(
-                    "CMT column present with only one value"
-                    "Need ADMID column to determine doses (if multiple)"
-                )
-                # Change comp number to match dataset
-                comp_number = cmt[0]
-                return (
-                    {
-                        'comp_number': comp_number,
-                        'dose': _dosing(di, dataset, comp_number),
-                        'admid': None,
-                    },
-                )
-        else:
-            # Multiple different compartments
-            doses = tuple()
-            for comp_number in cmt.unique():
-                cmt_dataset = dataset[dataset['CMT'] == comp_number]
-                if 'ADMID' in di.names:
-                    # Go through all dose types to the same compartment
-                    for admid in cmt_dataset['ADMID'].unique():
-                        if admid not in [1, 2]:
-                            raise ValueError(f'Administration ID : {admid} not supported')
-                        doses += (
-                            {
-                                'comp_number': comp_number,
-                                'dose': _dosing(di, cmt_dataset, comp_number),
-                                'admid': admid,
-                            },
-                        )
-                else:
-                    doses += (
-                        {
-                            'comp_number': comp_number,
-                            'dose': _dosing(di, cmt_dataset, comp_number),
-                            'admid': None,
-                        },
-                    )
-            return doses
+
+    return doses
 
 
 def _dosing(di, dataset, dose_comp):
