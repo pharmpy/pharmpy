@@ -958,11 +958,6 @@ def set_power_on_ruv(
         # Extract ipred based on the dv
         ipred = get_ipred(model, dv=dv_symb)
     else:
-        # Assert that the DV and IPRED is matching
-        if get_ipred(model, dv=dv_symb) != parse_expr(ipred):
-            raise ValueError(
-                f'The provided DV ({dv_symb}) and IPRED ({ipred}) does not match any found statement'
-            )
         ipred = parse_expr(ipred)
 
     # Assert that the provided epsilons are used for the corresponding DV
@@ -1077,7 +1072,6 @@ def set_power_on_ruv(
             sd = model.statements.find_assignment('SD')
             sd_new = get_sd_expr(y_above_lloq, model.random_variables, Parameters.create(pset))
             sset = sset.reassign(sd.symbol, sd_new)
-
     model = model.replace(parameters=Parameters.create(pset), statements=sset)
 
     return model.update_source()
