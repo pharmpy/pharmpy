@@ -47,12 +47,10 @@ def create_pkpd_models(model: Model, ests: pd.Series):
     """
     models = []
     index = 1
-    pd_types = ["baseline", "linear", "Emax", "sigmoid", "step"]
+    pd_types = ["linear", "Emax", "sigmoid", "step"]
     for model_type in ["direct_effect", "effect_compartment"]:
         for pd_type in pd_types:
             if model_type == "direct_effect":
-                if pd_type == "baseline":
-                    continue
                 pkpd_model = set_direct_effect(model, expr=pd_type)
             elif model_type == "effect_compartment":
                 pkpd_model = add_effect_compartment(model, expr=pd_type)

@@ -21,18 +21,26 @@ def add_effect_compartment(model: Model, expr: str):
 
     Implemented PD models are:
 
-    * Baseline: :math:`E = E_0`
-    * Linear: :math:`E = E_0 + S \cdot C`
-    * Emax: :math:`E = E_0 + \frac {E_{max} \cdot C } { EC_{50} + C }`
-    * Step effect: :math:`E = \Biggl \lbrace { E_0 \quad  \text{ if C } < 0 \atop E_0 + E_{max} \quad  \text{else}}`
-    * Sigmoidal: :math:`E = \frac {E_{max} C^n} { EC_{50}^n + C^n}`
+    * Baseline:
+    .. math:: E = E_0
+    * Linear:
+    .. math:: E = E_0 + \text{slope} \cdot C
+    * Emax:
+    .. math:: E = E_0 + \frac {E_{max} \cdot C } { EC_{50} + C }
+    * Step effect:
+    .. math:: E = \Biggl \lbrace {E_0 \quad \text{if C} \leq 0 \atop E_0 + E_{max} \quad \text{else}}
+    * Sigmoidal:
+    .. math::  E=\Biggl \lbrace {E_0+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n} \quad \text{if C}>0 \atop \
+            E_0 \quad \text{else}}
+    * Log-linear:
+    .. math:: E = \text{slope} \cdot \text{log}(C + C_0)
 
     Parameters
     ----------
     model : Model
         Pharmpy model
     expr : str
-        Name of the PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step
+        Name of the PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step, loglin
 
     Return
     ------
@@ -78,18 +86,26 @@ def set_direct_effect(model: Model, expr: str):
 
     Implemented PD models are:
 
-    * Baseline: :math:`E = E_0`
-    * Linear: :math:`E = E_0 + S \cdot C`
-    * Emax: :math:`E = E_0 + \frac {E_{max} \cdot C } { EC_{50} + C }`
-    * Step effect: :math:`E = \Biggl \lbrace { E_0 \quad  \text{ if C } < 0 \atop E_0 + E_{max} \quad  \text{else}}`
-    * Sigmoidal: :math:`E = \frac {E_{max} C^n} { EC_{50}^n + C^n}`
+    * Baseline:
+    .. math:: E = E_0
+    * Linear:
+    .. math:: E = E_0 + \text{slope} \cdot C
+    * Emax:
+    .. math:: E = E_0 + \frac {E_{max} \cdot C } { EC_{50} + C }
+    * Step effect:
+    .. math:: E = \Biggl \lbrace {E_0 \quad \text{if C} \leq 0 \atop E_0 + E_{max} \quad \text{else}}
+    * Sigmoidal:
+    .. math::  E=\Biggl \lbrace {E_0+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n} \quad \text{if C}>0 \atop \
+            E_0 \quad \text{else}}
+    * Log-linear:
+    .. math:: E = \text{slope} \cdot \text{log}(C + C_0)
 
     Parameters
     ----------
     model : Model
         Pharmpy model
     expr : str
-        Name of PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step
+        Name of PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step, loglin
 
     Return
     ------
@@ -142,18 +158,27 @@ def _add_effect(model: Model, expr: str, conc):
     if expr == "baseline":
         E = Assignment(sympy.Symbol('E'), e0)
     elif expr == "linear":
-        s = sympy.Symbol("Slope")  # slope
+        s = sympy.Symbol("Slope")
         model = add_individual_parameter(model, s.name)
         E = Assignment(sympy.Symbol('E'), e0 + s * conc)
     elif expr == "Emax":
         E = Assignment(sympy.Symbol("E"), e0 + emax * conc / (ec50 + conc))
     elif expr == "step":
-        E = Assignment(sympy.Symbol("E"), sympy.Piecewise((e0, conc < 0), (e0 + emax, True)))
+        E = Assignment(sympy.Symbol("E"), sympy.Piecewise((e0, conc <= 0), (e0 + emax, True)))
     elif expr == "sigmoid":
         n = sympy.Symbol("n")  # Hill coefficient
         model = add_individual_parameter(model, n.name)
         model = set_initial_estimates(model, {"POP_n": 1})
-        E = Assignment(sympy.Symbol("E"), e0 + emax * conc**n / (ec50**n + conc**n))
+        E = Assignment(
+            sympy.Symbol("E"),
+            sympy.Piecewise(
+                ((e0 + emax * conc**n / (ec50**n + conc**n)), conc > 0), (e0, True)
+            ),
+        )
+    elif expr == "loglin":
+        s = sympy.Symbol("slope")
+        model = add_individual_parameter(model, s.name)
+        E = Assignment(sympy.Symbol("E"), s * sympy.log(conc + sympy.exp(e0 / s)))
     else:
         raise ValueError(f'Unknown model "{expr}".')
 
