@@ -39,7 +39,7 @@ from .model_database import (
 )
 from .task import Task
 from .tool_database import LocalDirectoryToolDatabase, NullToolDatabase, ToolDatabase
-from .workflow import Workflow
+from .workflow import Workflow, WorkflowBuilder
 
 
 class WorkflowConfiguration(config.Configuration):
@@ -91,4 +91,5 @@ __all__ = [
     'Task',
     'ToolDatabase',
     'Workflow',
+    'WorkflowBuilder',
 ]

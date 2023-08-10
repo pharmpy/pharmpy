@@ -22,7 +22,7 @@ from pharmpy.tools.common import (
     update_initial_estimates,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow, call_workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
 
 NAME_WF = 'iovsearch'
 
@@ -72,11 +72,10 @@ def create_workflow(
     >>> run_iovsearch('OCC', results=results, model=model)      # doctest: +SKIP
     """
 
-    wf = Workflow()
-    wf.name = NAME_WF
+    wb = WorkflowBuilder(name=NAME_WF)
 
     init_task = init(model)
-    wf.add_task(init_task)
+    wb.add_task(init_task)
 
     bic_type = 'random'
     search_task = Task(
@@ -90,8 +89,8 @@ def create_workflow(
         distribution,
     )
 
-    wf.add_task(search_task, predecessors=init_task)
-    search_output = wf.output_tasks
+    wb.add_task(search_task, predecessors=init_task)
+    search_output = wb.output_tasks
 
     results_task = Task(
         'results',
@@ -101,9 +100,9 @@ def create_workflow(
         bic_type,
     )
 
-    wf.add_task(results_task, predecessors=search_output)
+    wb.add_task(results_task, predecessors=search_output)
 
-    return wf
+    return Workflow(wb)
 
 
 def init(model):
@@ -222,7 +221,7 @@ def wf_etas_removal(
     etas_subsets: Iterable[Tuple[str]],
     i: int,
 ):
-    wf = Workflow()
+    wb = WorkflowBuilder()
     j = i
     for subset_of_iiv_parameters in etas_subsets:
         task = Task(
@@ -233,16 +232,16 @@ def wf_etas_removal(
             list(subset_of_iiv_parameters),
             j,
         )
-        wf.add_task(task)
+        wb.add_task(task)
         j += 1
 
     n = j - i
     wf_fit = create_fit_workflow(n=n)
-    wf.insert_workflow(wf_fit)
+    wb.insert_workflow(wf_fit)
 
     task_gather = Task('gather', lambda *models: models)
-    wf.add_task(task_gather, predecessors=wf.output_tasks)
-    return wf
+    wb.add_task(task_gather, predecessors=wb.output_tasks)
+    return Workflow(wb)
 
 
 def best_model(

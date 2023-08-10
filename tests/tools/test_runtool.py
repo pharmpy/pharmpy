@@ -7,7 +7,7 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model, Results
 from pharmpy.tools.run import import_tool, run_tool_with_name
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 
 def test_import_tool():
@@ -22,9 +22,9 @@ def create_workflow_rename(new_name, name=None, model: Optional[Model] = None):
         m = m.replace(name=new_name)
         return m
 
-    wf = Workflow([Task('copy', lambda x: x, model)], name=name)
-    wf.insert_workflow(Workflow([Task('rename', rename)]))
-    return wf
+    wb = WorkflowBuilder(tasks=[Task('copy', lambda x: x, model)], name=name)
+    wb.insert_workflow(WorkflowBuilder(tasks=[Task('rename', rename)]))
+    return Workflow(wb)
 
 
 @with_same_arguments_as(create_workflow_rename)
@@ -34,7 +34,7 @@ def validate_input_rename(model, new_name):
 
 
 def create_workflow_generic(name=None, model: Optional[Model] = None):
-    return Workflow([Task('copy', lambda _: Results(), model)], name=name)
+    return Workflow(WorkflowBuilder(tasks=[Task('copy', lambda _: Results(), model)], name=name))
 
 
 @with_same_arguments_as(create_workflow_generic)

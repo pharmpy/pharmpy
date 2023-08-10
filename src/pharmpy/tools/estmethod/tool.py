@@ -13,7 +13,7 @@ from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_errors, summarize_modelfit_results
 from pharmpy.tools.common import ToolResults
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 EST_METHODS = ('FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES')
 SOLVERS = ('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI')
@@ -68,8 +68,7 @@ def create_workflow(
     >>> ) # doctest: +SKIP
 
     """
-    wf = Workflow()
-    wf.name = "estmethod"
+    wb = WorkflowBuilder(name="estmethod")
 
     algorithm_func = getattr(algorithms, algorithm)
 
@@ -78,7 +77,7 @@ def create_workflow(
     else:
         start_task = Task('start_estmethod', start)
 
-    wf.add_task(start_task)
+    wb.add_task(start_task)
 
     if methods is None:
         methods = [model.estimation_steps[-1].method]
@@ -88,20 +87,20 @@ def create_workflow(
         _format_input(solvers, SOLVERS),
         _format_input(covs, COVS),
     )
-    wf.insert_workflow(wf_algorithm, predecessors=start_task)
+    wb.insert_workflow(wf_algorithm, predecessors=start_task)
 
-    wf_fit = create_fit_workflow(n=len(wf.output_tasks))
-    wf.insert_workflow(wf_fit, predecessors=wf.output_tasks)
+    wf_fit = create_fit_workflow(n=len(wb.output_tasks))
+    wb.insert_workflow(wf_fit, predecessors=wb.output_tasks)
 
     if task_base_model_fit:
-        model_tasks = wf.output_tasks + task_base_model_fit
+        model_tasks = wb.output_tasks + task_base_model_fit
     else:
-        model_tasks = wf.output_tasks
+        model_tasks = wb.output_tasks
 
     task_post_process = Task('post_process', post_process, model)
-    wf.add_task(task_post_process, predecessors=model_tasks)
+    wb.add_task(task_post_process, predecessors=model_tasks)
 
-    return wf
+    return Workflow(wb)
 
 
 def _format_input(input_option, default_option):

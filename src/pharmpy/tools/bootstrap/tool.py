@@ -5,7 +5,7 @@ from pharmpy.modeling import resample_data
 from pharmpy.results import ModelfitResults
 from pharmpy.tools.bootstrap.results import calculate_results
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 
 def create_workflow(model: Model, results: Optional[ModelfitResults] = None, resamples: int = 1):
@@ -34,20 +34,19 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
     >>> run_bootstrap(model, res, resamples=500) # doctest: +SKIP
     """
 
-    wf = Workflow()
-    wf.name = 'bootstrap'
+    wb = WorkflowBuilder(name='bootstrap')
 
     for i in range(resamples):
         task_resample = Task('resample', resample_model, model, f'bs_{i + 1}')
-        wf.add_task(task_resample)
+        wb.add_task(task_resample)
 
     wf_fit = create_fit_workflow(n=resamples)
-    wf.insert_workflow(wf_fit)
+    wb.insert_workflow(wf_fit)
 
     task_result = Task('results', post_process_results, model)
-    wf.add_task(task_result, predecessors=wf.output_tasks)
+    wb.add_task(task_result, predecessors=wb.output_tasks)
 
-    return wf
+    return Workflow(wb)
 
 
 def resample_model(model, name):

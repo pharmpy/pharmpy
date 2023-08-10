@@ -26,7 +26,7 @@ from pharmpy.tools.mfl.feature.covariate import (
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
-from pharmpy.workflows import Task, Workflow, call_workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
 
 from ..mfl.filter import covsearch_statement_types
 from .results import COVSearchResults
@@ -142,11 +142,10 @@ def create_workflow(
     >>> res = run_covsearch(effects, model=model, results=results)      # doctest: +SKIP
     """
 
-    wf = Workflow()
-    wf.name = NAME_WF
+    wb = WorkflowBuilder(name=NAME_WF)
 
     init_task = init(model)
-    wf.add_task(init_task)
+    wb.add_task(init_task)
 
     forward_search_task = Task(
         'forward-search',
@@ -156,8 +155,8 @@ def create_workflow(
         max_steps,
     )
 
-    wf.add_task(forward_search_task, predecessors=init_task)
-    search_output = wf.output_tasks
+    wb.add_task(forward_search_task, predecessors=init_task)
+    search_output = wb.output_tasks
 
     if algorithm == 'scm-forward-then-backward':
         backward_search_task = Task(
@@ -167,8 +166,8 @@ def create_workflow(
             max_steps,
         )
 
-        wf.add_task(backward_search_task, predecessors=search_output)
-        search_output = wf.output_tasks
+        wb.add_task(backward_search_task, predecessors=search_output)
+        search_output = wb.output_tasks
 
     results_task = Task(
         'results',
@@ -177,9 +176,9 @@ def create_workflow(
         p_backward,
     )
 
-    wf.add_task(results_task, predecessors=search_output)
+    wb.add_task(results_task, predecessors=search_output)
 
-    return wf
+    return Workflow(wb)
 
 
 def _init_search_state(model: Model) -> SearchState:
@@ -317,7 +316,7 @@ def _greedy_search(
 def wf_effects_addition(
     model: Model, candidate: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
 ):
-    wf = Workflow()
+    wb = WorkflowBuilder()
 
     for i, effect in enumerate(candidate_effects, 1):
         task = Task(
@@ -328,14 +327,14 @@ def wf_effects_addition(
             effect,
             index_offset + i,
         )
-        wf.add_task(task)
+        wb.add_task(task)
 
     wf_fit = create_fit_workflow(n=len(candidate_effects))
-    wf.insert_workflow(wf_fit)
+    wb.insert_workflow(wf_fit)
 
     task_gather = Task('gather', lambda *models: models)
-    wf.add_task(task_gather, predecessors=wf.output_tasks)
-    return wf
+    wb.add_task(task_gather, predecessors=wb.output_tasks)
+    return Workflow(wb)
 
 
 def task_add_covariate_effect(
@@ -382,7 +381,7 @@ def _create_description(
 def wf_effects_removal(
     base_model: Model, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
 ):
-    wf = Workflow()
+    wb = WorkflowBuilder()
 
     for i, effect in enumerate(candidate_effects, 1):
         task = Task(
@@ -393,14 +392,14 @@ def wf_effects_removal(
             effect,
             index_offset + i,
         )
-        wf.add_task(task)
+        wb.add_task(task)
 
     wf_fit = create_fit_workflow(n=len(candidate_effects))
-    wf.insert_workflow(wf_fit)
+    wb.insert_workflow(wf_fit)
 
     task_gather = Task('gather', lambda *models: models)
-    wf.add_task(task_gather, predecessors=wf.output_tasks)
-    return wf
+    wb.add_task(task_gather, predecessors=wb.output_tasks)
+    return Workflow(wb)
 
 
 def task_remove_covariate_effect(

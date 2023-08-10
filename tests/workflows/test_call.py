@@ -6,7 +6,7 @@ import pytest
 import pharmpy.workflows.dispatchers
 from pharmpy.config import ConfigurationContext
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.workflows import Task, Workflow, call_workflow, execute_workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow, execute_workflow
 
 
 def ignore_scratch_warning():
@@ -21,9 +21,9 @@ def sub(a, b):
     t1 = Task('t1', lambda: a)
     t2 = Task('t2', lambda: b)
     t3 = Task('t3', lambda x, y: x + y)
-    wf = Workflow([t1, t2])
-    wf.add_task(t3, predecessors=[t1, t2])
-    return wf
+    wb = WorkflowBuilder(tasks=[t1, t2])
+    wb.add_task(t3, predecessors=[t1, t2])
+    return Workflow(wb)
 
 
 @pytest.mark.xdist_group(name="workflow")
@@ -40,9 +40,9 @@ def add(a, b):
     t1 = Task('t1', lambda: a)
     t2 = Task('t2', lambda: b)
     t3 = Task('t3', f)
-    wf = Workflow([t1, t2], name='add')
-    wf.add_task(t3, predecessors=[t1, t2])
-    return wf
+    wb = WorkflowBuilder(tasks=[t1, t2], name='add')
+    wb.add_task(t3, predecessors=[t1, t2])
+    return Workflow(wb)
 
 
 @pytest.mark.xdist_group(name="workflow")

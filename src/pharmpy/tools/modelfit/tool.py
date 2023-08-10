@@ -1,7 +1,7 @@
 from typing import Iterable, Literal, Optional, Tuple, Union
 
 from pharmpy.model import Model
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 SupportedPlugin = Literal['nonmem', 'nlmixr']
 
@@ -36,36 +36,38 @@ def create_workflow(
     """
 
     wf = create_fit_workflow(model_or_models, n, tool)
-    wf.name = "modelfit"
+    wf = wf.replace(name="modelfit")
     if isinstance(model_or_models, Model) or (model_or_models is None and n is None):
         post_process_results = post_process_results_one
     else:
         post_process_results = post_process_results_many
     task_result: Task[Union[Model, Tuple[Model, ...]]] = Task('results', post_process_results)
-    wf.add_task(task_result, predecessors=wf.output_tasks)
+    wb = WorkflowBuilder(wf)
+    wb.add_task(task_result, predecessors=wf.output_tasks)
+    wf = Workflow(wb)
     return wf
 
 
 def create_fit_workflow(models=None, n=None, tool=None):
     execute_model = retrieve_from_database_or_execute_model_with_tool(tool)
 
-    wf = Workflow()
+    wb = WorkflowBuilder()
     if models is None:
         if n is None:
             task = Task('run', execute_model)
-            wf.add_task(task)
+            wb.add_task(task)
         else:
             for i in range(n):
                 task = Task(f'run{i}', execute_model)
-                wf.add_task(task)
+                wb.add_task(task)
     elif isinstance(models, Model):
         task = Task('run', execute_model, models)
-        wf.add_task(task)
+        wb.add_task(task)
     else:
         for i, model in enumerate(models):
             task = Task(f'run{i}', execute_model, model)
-            wf.add_task(task)
-    return wf
+            wb.add_task(task)
+    return Workflow(wb)
 
 
 def post_process_results_one(context, *models: Model):

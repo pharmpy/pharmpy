@@ -10,7 +10,7 @@ from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, create_results
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 from ..mfl.filter import modelsearch_statement_types
 from ..mfl.parse import parse as mfl_parse
@@ -61,21 +61,20 @@ def create_workflow(
 
     """
 
-    wf = Workflow()
-    wf.name = 'modelsearch'
+    wb = WorkflowBuilder(name='modelsearch')
 
     if model:
         start_task = Task('start_modelsearch', start, model)
     else:
         start_task = Task('start_modelsearch', start)
 
-    wf.add_task(start_task)
+    wb.add_task(start_task)
 
     algorithm_func = getattr(algorithms, algorithm)
 
     mfl_statements = mfl_parse(search_space)
     wf_search, candidate_model_tasks = algorithm_func(mfl_statements, iiv_strategy)
-    wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
+    wb.insert_workflow(wf_search, predecessors=wb.output_tasks)
 
     task_result = Task(
         'results',
@@ -84,9 +83,9 @@ def create_workflow(
         cutoff,
     )
 
-    wf.add_task(task_result, predecessors=[start_task] + candidate_model_tasks)
+    wb.add_task(task_result, predecessors=[start_task] + candidate_model_tasks)
 
-    return wf
+    return Workflow(wb)
 
 
 def start(model):

@@ -16,7 +16,7 @@ from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, create_results, update_initial_estimates
 from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow, call_workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
 
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock'))
 IIV_ALGORITHMS = frozenset(('brute_force',) + tuple(dir(algorithms)))
@@ -73,26 +73,24 @@ def create_workflow(
     >>> run_iivsearch('brute_force', results=results, model=model)   # doctest: +SKIP
     """
 
-    wf = Workflow()
-    wf.name = 'iivsearch'
+    wb = WorkflowBuilder(name='iivsearch')
     start_task = Task('start_iiv', start, model, algorithm, iiv_strategy, rank_type, cutoff, keep)
-    wf.add_task(start_task)
+    wb.add_task(start_task)
     task_results = Task('results', _results)
-    wf.add_task(task_results, predecessors=[start_task])
-    return wf
+    wb.add_task(task_results, predecessors=[start_task])
+    return Workflow(wb)
 
 
 def create_algorithm_workflow(
     input_model, base_model, state, iiv_strategy, rank_type, cutoff, keep
 ):
-    wf: Workflow[IIVSearchResults] = Workflow()
-
+    wb = WorkflowBuilder()
     start_task = Task(f'start_{state.algorithm}', _start_algorithm, base_model)
-    wf.add_task(start_task)
+    wb.add_task(start_task)
 
     if iiv_strategy != 'no_add':
         wf_fit = create_fit_workflow(n=1)
-        wf.insert_workflow(wf_fit)
+        wb.insert_workflow(wf_fit)
         base_model_task = wf_fit.output_tasks[0]
     else:
         base_model_task = start_task
@@ -105,16 +103,16 @@ def create_algorithm_workflow(
         wf_method = algorithm_func(base_model, index_offset, keep)
     else:
         wf_method = algorithm_func(base_model, index_offset)
-    wf.insert_workflow(wf_method)
+    wb.insert_workflow(wf_method)
 
     task_result = Task(
         'results', post_process, state, rank_type, cutoff, input_model, base_model.name
     )
 
-    post_process_tasks = [base_model_task] + wf.output_tasks
-    wf.add_task(task_result, predecessors=post_process_tasks)
+    post_process_tasks = [base_model_task] + wb.output_tasks
+    wb.add_task(task_result, predecessors=post_process_tasks)
 
-    return wf
+    return Workflow(wb)
 
 
 def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff, keep):

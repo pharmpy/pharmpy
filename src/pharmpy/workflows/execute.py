@@ -6,7 +6,7 @@ from typing import TypeVar
 from pharmpy.model import Model, Results
 
 from .context import insert_context
-from .workflow import Workflow
+from .workflow import Workflow, WorkflowBuilder
 
 T = TypeVar('T')
 
@@ -49,6 +49,7 @@ def execute_workflow(
     # For all input models set new database and read in results
     original_input_models = []
     input_models = []
+    wb = WorkflowBuilder(workflow)
     for task in workflow.tasks:
         new_inp = []
 
@@ -63,9 +64,10 @@ def execute_workflow(
                 new_inp.append(inp)
 
         new_task = task.replace(task_input=tuple(new_inp))
-        workflow.replace_task(task, new_task)
+        wb.replace_task(task, new_task)
 
-    insert_context(workflow, database)
+    insert_context(wb, database)
+    workflow = Workflow(wb)
 
     res: T = dispatcher.run(workflow)
 

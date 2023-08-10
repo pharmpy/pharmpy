@@ -3,32 +3,32 @@ import itertools
 from pharmpy.modeling import add_estimation_step, remove_estimation_step, set_ode_solver
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 
 def exhaustive(methods, solvers, covs):
-    wf = Workflow()
+    wb = WorkflowBuilder()
 
     task_start = Task('start', start)
-    wf.add_task(task_start)
+    wb.add_task(task_start)
 
     candidate_no = 1
     for method, solver, cov in itertools.product(methods, solvers, covs):
         wf_estmethod = _create_candidate_model_wf(candidate_no, method, solver, cov, update=False)
-        wf.insert_workflow(wf_estmethod, predecessors=task_start)
+        wb.insert_workflow(wf_estmethod, predecessors=task_start)
         candidate_no += 1
 
-    return wf, None
+    return Workflow(wb), None
 
 
 def exhaustive_with_update(methods, solvers, covs):
-    wf = Workflow()
+    wb = WorkflowBuilder()
 
     task_base_model = Task('create_base_model', _create_base_model)
-    wf.add_task(task_base_model)
+    wb.add_task(task_base_model)
     wf_fit = create_fit_workflow(n=1)
-    wf.insert_workflow(wf_fit, predecessors=task_base_model)
-    task_base_model_fit = wf.output_tasks
+    wb.insert_workflow(wf_fit, predecessors=task_base_model)
+    task_base_model_fit = wb.output_tasks
 
     candidate_no = 1
     for method, solver, cov in itertools.product(methods, solvers, covs):
@@ -38,34 +38,34 @@ def exhaustive_with_update(methods, solvers, covs):
             wf_estmethod_original = _create_candidate_model_wf(
                 candidate_no, method, solver, cov, update=False
             )
-            wf.insert_workflow(wf_estmethod_original, predecessors=task_base_model_fit)
+            wb.insert_workflow(wf_estmethod_original, predecessors=task_base_model_fit)
             candidate_no += 1
 
         # Create model with updated estimates from FOCE
         wf_estmethod_update = _create_candidate_model_wf(
             candidate_no, method, solver, cov, update=True
         )
-        wf.insert_workflow(wf_estmethod_update, predecessors=task_base_model_fit)
+        wb.insert_workflow(wf_estmethod_update, predecessors=task_base_model_fit)
         candidate_no += 1
 
-    return wf, task_base_model_fit
+    return Workflow(wb), task_base_model_fit
 
 
 def exhaustive_only_eval(methods, solvers, covs):
-    wf = Workflow()
+    wb = WorkflowBuilder()
 
     task_start = Task('start', start)
-    wf.add_task(task_start)
+    wb.add_task(task_start)
 
     candidate_no = 1
     for method, solver, cov in itertools.product(methods, solvers, covs):
         wf_estmethod = _create_candidate_model_wf(
             candidate_no, method, solver, cov, update=False, is_eval_candidate=True
         )
-        wf.insert_workflow(wf_estmethod, predecessors=task_start)
+        wb.insert_workflow(wf_estmethod, predecessors=task_start)
         candidate_no += 1
 
-    return wf, None
+    return Workflow(wb), None
 
 
 def start(model):
@@ -73,23 +73,23 @@ def start(model):
 
 
 def _create_candidate_model_wf(candidate_no, method, solver, cov, update, is_eval_candidate=False):
-    wf = Workflow()
+    wb = WorkflowBuilder()
 
     model_name = f'estmethod_run{candidate_no}'
     task_copy = Task('copy_model', _copy_model, model_name)
-    wf.add_task(task_copy)
+    wb.add_task(task_copy)
 
     if update:
         task_update_inits = Task('update_inits', update_initial_estimates)
-        wf.add_task(task_update_inits, predecessors=task_copy)
+        wb.add_task(task_update_inits, predecessors=task_copy)
         task_prev = task_update_inits
     else:
         task_prev = task_copy
     task_create_candidate = Task(
         'create_candidate', _create_candidate_model, method, solver, cov, update, is_eval_candidate
     )
-    wf.add_task(task_create_candidate, predecessors=task_prev)
-    return wf
+    wb.add_task(task_create_candidate, predecessors=task_prev)
+    return Workflow(wb)
 
 
 def _copy_model(name, model):

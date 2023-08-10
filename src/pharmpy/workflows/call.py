@@ -1,7 +1,7 @@
 from typing import TypeVar
 
 from .context import insert_context
-from .workflow import Workflow
+from .workflow import Workflow, WorkflowBuilder
 
 T = TypeVar('T')
 
@@ -29,7 +29,9 @@ def call_workflow(wf: Workflow[T], unique_name, db) -> T:
 
     from .optimize import optimize_task_graph_for_dask_distributed
 
-    insert_context(wf, db)
+    wb = WorkflowBuilder(wf)
+    insert_context(wb, db)
+    wf = Workflow(wb)
 
     client = get_client()
     dsk = wf.as_dask_dict()

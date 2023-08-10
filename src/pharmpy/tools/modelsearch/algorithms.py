@@ -4,7 +4,7 @@ from pharmpy.model import Model
 from pharmpy.modeling import add_iiv, add_pk_iiv, create_joint_distribution, set_upper_bounds
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 from ..mfl.helpers import (
     all_combinations,
@@ -24,7 +24,7 @@ def model_search_funcs(mfl_statements: List[Statement]):
 
 def exhaustive(mfl_statements: List[Statement], iiv_strategy: str):
     # TODO: rewrite using _create_model_workflow
-    wf_search = Workflow()
+    wb_search = WorkflowBuilder()
 
     model_tasks = []
 
@@ -35,37 +35,37 @@ def exhaustive(mfl_statements: List[Statement], iiv_strategy: str):
         model_name = f'modelsearch_run{i}'
 
         task_copy = Task('copy', _copy, model_name, combo)
-        wf_search.add_task(task_copy)
+        wb_search.add_task(task_copy)
 
         task_previous = task_copy
         for feat in combo:
             func = funcs[feat]
             task_function = Task(key_to_str(feat), func)
-            wf_search.add_task(task_function, predecessors=task_previous)
+            wb_search.add_task(task_function, predecessors=task_previous)
             if iiv_strategy != 'no_add':
                 task_add_iiv = Task('add_iivs', _add_iiv_to_func, iiv_strategy)
-                wf_search.add_task(task_add_iiv, predecessors=task_function)
+                wb_search.add_task(task_add_iiv, predecessors=task_function)
                 task_previous = task_add_iiv
             else:
                 task_previous = task_function
 
         wf_fit = create_fit_workflow(n=1)
-        wf_search.insert_workflow(wf_fit, predecessors=task_previous)
+        wb_search.insert_workflow(wf_fit, predecessors=task_previous)
 
         model_tasks += wf_fit.output_tasks
 
-    return wf_search, model_tasks
+    return Workflow(wb_search), model_tasks
 
 
 def exhaustive_stepwise(mfl_statements: List[Statement], iiv_strategy: str):
     mfl_funcs = model_search_funcs(mfl_statements)
 
-    wf_search = Workflow()
+    wb_search = WorkflowBuilder()
     model_tasks = []
 
     while True:
         no_of_trans = 0
-        actions = _get_possible_actions(wf_search, mfl_statements)
+        actions = _get_possible_actions(wb_search, mfl_statements)
         for task_parent, feat_new in actions.items():
             for feat in feat_new:
                 model_no = len(model_tasks) + 1
@@ -76,9 +76,9 @@ def exhaustive_stepwise(mfl_statements: List[Statement], iiv_strategy: str):
                 )
 
                 if task_parent:
-                    wf_search.insert_workflow(wf_create_model, predecessors=[task_parent])
+                    wb_search.insert_workflow(wf_create_model, predecessors=[task_parent])
                 else:
-                    wf_search += wf_create_model
+                    wb_search += WorkflowBuilder(wf_create_model)
 
                 model_tasks += wf_create_model.output_tasks
 
@@ -86,27 +86,27 @@ def exhaustive_stepwise(mfl_statements: List[Statement], iiv_strategy: str):
         if no_of_trans == 0:
             break
 
-    return wf_search, model_tasks
+    return Workflow(wb_search), model_tasks
 
 
 def reduced_stepwise(mfl_statements: List[Statement], iiv_strategy: str):
     mfl_funcs = model_search_funcs(mfl_statements)
 
-    wf_search = Workflow()
+    wb_search = WorkflowBuilder()
     model_tasks = []
 
     while True:
         no_of_trans = 0
-        actions = _get_possible_actions(wf_search, mfl_statements)
-        groups = _find_same_model_groups(wf_search, mfl_funcs)
+        actions = _get_possible_actions(wb_search, mfl_statements)
+        groups = _find_same_model_groups(wb_search, mfl_funcs)
         if len(groups) > 1:
             for group in groups:
                 # Only add collector nodes to tasks with possible actions (i.e. not to leaf nodes)
                 if all(len(actions[task]) > 0 for task in group):
                     task_best_model = Task('choose_best_model', _get_best_model)
-                    wf_search.add_task(task_best_model, predecessors=group)
+                    wb_search.add_task(task_best_model, predecessors=group)
             # Overwrite actions with new collector nodes
-            actions = _get_possible_actions(wf_search, mfl_statements)
+            actions = _get_possible_actions(wb_search, mfl_statements)
 
         for task_parent, feat_new in actions.items():
             for feat in feat_new:
@@ -118,9 +118,9 @@ def reduced_stepwise(mfl_statements: List[Statement], iiv_strategy: str):
                 )
 
                 if task_parent:
-                    wf_search.insert_workflow(wf_create_model, predecessors=[task_parent])
+                    wb_search.insert_workflow(wf_create_model, predecessors=[task_parent])
                 else:
-                    wf_search += wf_create_model
+                    wb_search += wf_create_model
 
                 model_tasks += wf_create_model.output_tasks
 
@@ -128,7 +128,7 @@ def reduced_stepwise(mfl_statements: List[Statement], iiv_strategy: str):
         if no_of_trans == 0:
             break
 
-    return wf_search, model_tasks
+    return Workflow(wb_search), model_tasks
 
 
 def _find_same_model_groups(wf, mfl_funcs):
@@ -196,28 +196,28 @@ def _get_previous_features(wf, task, mfl_funcs):
 
 
 def _create_model_workflow(model_name, feat, func, iiv_strategy):
-    wf_stepwise_step = Workflow()
+    wb_stepwise_step = WorkflowBuilder()
 
     task_copy = Task('copy', _copy, model_name, (feat,))
-    wf_stepwise_step.add_task(task_copy)
+    wb_stepwise_step.add_task(task_copy)
 
     task_update_inits = Task('update_inits', update_initial_estimates)
-    wf_stepwise_step.add_task(task_update_inits, predecessors=task_copy)
+    wb_stepwise_step.add_task(task_update_inits, predecessors=task_copy)
 
     task_function = Task(key_to_str(feat), _apply_transformation, feat, func)
-    wf_stepwise_step.add_task(task_function, predecessors=task_update_inits)
+    wb_stepwise_step.add_task(task_function, predecessors=task_update_inits)
 
     if iiv_strategy != 'no_add':
         task_add_iiv = Task('add_iivs', _add_iiv_to_func, iiv_strategy)
-        wf_stepwise_step.add_task(task_add_iiv, predecessors=task_function)
+        wb_stepwise_step.add_task(task_add_iiv, predecessors=task_function)
         task_to_fit = task_add_iiv
     else:
         task_to_fit = task_function
 
     wf_fit = create_fit_workflow(n=1)
-    wf_stepwise_step.insert_workflow(wf_fit, predecessors=task_to_fit)
+    wb_stepwise_step.insert_workflow(wf_fit, predecessors=task_to_fit)
 
-    return wf_stepwise_step, task_function
+    return Workflow(wb_stepwise_step), task_function
 
 
 def _apply_transformation(feat, func, model):

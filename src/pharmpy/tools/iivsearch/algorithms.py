@@ -14,11 +14,11 @@ from pharmpy.modeling import (
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.results import mfr
 from pharmpy.tools.common import update_initial_estimates
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 
 def brute_force_no_of_etas(base_model, index_offset=0, keep=None):
-    wf = Workflow()
+    wb = WorkflowBuilder()
 
     base_model = base_model.replace(description=create_description(base_model))
 
@@ -34,24 +34,24 @@ def brute_force_no_of_etas(base_model, index_offset=0, keep=None):
     for i, to_remove in enumerate(non_empty_subsets(iiv_names), 1):
         model_name = f'iivsearch_run{i + index_offset}'
         task_copy = Task('copy', copy, model_name)
-        wf.add_task(task_copy)
+        wb.add_task(task_copy)
 
         task_update_inits = Task('update_inits', update_initial_estimates)
-        wf.add_task(task_update_inits, predecessors=task_copy)
+        wb.add_task(task_update_inits, predecessors=task_copy)
 
         task_remove_eta = Task('remove_eta', remove_eta, to_remove)
-        wf.add_task(task_remove_eta, predecessors=task_update_inits)
+        wb.add_task(task_remove_eta, predecessors=task_update_inits)
 
         task_update_description = Task('update_description', update_description)
-        wf.add_task(task_update_description, predecessors=task_remove_eta)
+        wb.add_task(task_update_description, predecessors=task_remove_eta)
 
-    wf_fit = modelfit.create_fit_workflow(n=len(wf.output_tasks))
-    wf.insert_workflow(wf_fit)
-    return wf
+    wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
+    wb.insert_workflow(wf_fit)
+    return Workflow(wb)
 
 
 def brute_force_block_structure(base_model, index_offset=0):
-    wf = Workflow()
+    wb = WorkflowBuilder()
 
     base_model = base_model.replace(description=create_description(base_model))
 
@@ -67,22 +67,22 @@ def brute_force_block_structure(base_model, index_offset=0):
 
         model_name = f'iivsearch_run{model_no}'
         task_copy = Task('copy', copy, model_name)
-        wf.add_task(task_copy)
+        wb.add_task(task_copy)
 
         task_update_inits = Task('update_inits', update_initial_estimates)
-        wf.add_task(task_update_inits, predecessors=task_copy)
+        wb.add_task(task_update_inits, predecessors=task_copy)
 
         task_joint_dist = Task('create_eta_blocks', create_eta_blocks, block_structure)
-        wf.add_task(task_joint_dist, predecessors=task_update_inits)
+        wb.add_task(task_joint_dist, predecessors=task_update_inits)
 
         task_update_description = Task('update_description', update_description)
-        wf.add_task(task_update_description, predecessors=task_joint_dist)
+        wb.add_task(task_update_description, predecessors=task_joint_dist)
 
         model_no += 1
 
-    wf_fit = modelfit.create_fit_workflow(n=len(wf.output_tasks))
-    wf.insert_workflow(wf_fit)
-    return wf
+    wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
+    wb.insert_workflow(wf_fit)
+    return Workflow(wb)
 
 
 def _rv_block_structures(etas: RandomVariables):

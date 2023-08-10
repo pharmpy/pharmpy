@@ -38,7 +38,7 @@ from pharmpy.tools import (
 )
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow, call_workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
 
 from .results import RUVSearchResults, calculate_results
 
@@ -85,25 +85,24 @@ def create_workflow(
 
     """
 
-    wf = Workflow()
-    wf.name = "ruvsearch"
+    wb = WorkflowBuilder(name="ruvsearch")
     start_task = Task('start_ruvsearch', start, model, groups, p_value, skip, max_iter)
-    wf.add_task(start_task)
+    wb.add_task(start_task)
     task_results = Task('results', _results)
-    wf.add_task(task_results, predecessors=[start_task])
-    return wf
+    wb.add_task(task_results, predecessors=[start_task])
+    return Workflow(wb)
 
 
 def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
-    wf = Workflow()
+    wb = WorkflowBuilder()
 
     start_task = Task('start_iteration', _start_iteration, model)
-    wf.add_task(start_task)
+    wb.add_task(start_task)
 
     task_base_model = Task(
         'create_base_model', partial(_create_base_model, current_iteration=current_iteration)
     )
-    wf.add_task(task_base_model, predecessors=start_task)
+    wb.add_task(task_base_model, predecessors=start_task)
 
     tasks = []
     if 'IIV_on_RUV' not in skip:
@@ -112,19 +111,19 @@ def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
             partial(_create_iiv_on_ruv_model, current_iteration=current_iteration),
         )
         tasks.append(task_iiv)
-        wf.add_task(task_iiv, predecessors=task_base_model)
+        wb.add_task(task_iiv, predecessors=task_base_model)
 
     if 'power' not in skip and 'combined' not in skip:
         task_power = Task(
             'create_power_model', partial(_create_power_model, current_iteration=current_iteration)
         )
-        wf.add_task(task_power, predecessors=task_base_model)
+        wb.add_task(task_power, predecessors=task_base_model)
         tasks.append(task_power)
         task_combined = Task(
             'create_combined_error_model',
             partial(_create_combined_model, current_iteration=current_iteration),
         )
-        wf.add_task(task_combined, predecessors=task_base_model)
+        wb.add_task(task_combined, predecessors=task_base_model)
         tasks.append(task_combined)
 
     if 'time_varying' not in skip:
@@ -134,15 +133,15 @@ def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
             )
             task = Task(f"create_time_varying_model{i}", tvar)
             tasks.append(task)
-            wf.add_task(task, predecessors=task_base_model)
+            wb.add_task(task, predecessors=task_base_model)
 
     fit_wf = create_fit_workflow(n=1 + len(tasks))
-    wf.insert_workflow(fit_wf, predecessors=[task_base_model] + tasks)
+    wb.insert_workflow(fit_wf, predecessors=[task_base_model] + tasks)
     post_pro = partial(post_process, cutoff=cutoff, current_iteration=current_iteration)
     task_post_process = Task('post_process', post_pro)
-    wf.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
+    wb.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
 
-    return wf
+    return Workflow(wb)
 
 
 def start(context, model, groups, p_value, skip, max_iter):

@@ -1,20 +1,19 @@
 import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment, EstimationStep, EstimationSteps, Statements
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 
 def create_workflow(model=None):
-    wf = Workflow()
-    wf.name = "linearize"
+    wb = WorkflowBuilder(name="linearize")
 
     if model is not None:
         start_task = Task('start_linearize', start_linearize, model)
     else:
         start_task = Task('start_linearize', start_linearize)
 
-    wf.add_task(start_task)
-    return wf
+    wb.add_task(start_task)
+    return Workflow(wb)
 
 
 def start_linearize(model):

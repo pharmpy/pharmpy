@@ -12,7 +12,7 @@ from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow, call_workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
 
 from .pkpd import create_baseline_pd_model, create_pkpd_models
 from .tmdd import create_qss_models, create_remaining_models
@@ -54,14 +54,13 @@ def create_workflow(
     >>> run_structsearch(model_type='tmdd', results=results, model=model)   # doctest: +SKIP
     """
 
-    wf = Workflow()
-    wf.name = 'structsearch'
+    wb = WorkflowBuilder(name="structsearch")
     if type == 'tmdd':
         start_task = Task('run_tmdd', run_tmdd, model)
     elif type == 'pkpd':
         start_task = Task('run_pkpd', run_pkpd, model)
-    wf.add_task(start_task)
-    return wf
+    wb.add_task(start_task)
+    return Workflow(wb)
 
 
 def run_tmdd(context, model):
@@ -101,9 +100,10 @@ def run_tmdd(context, model):
 def run_pkpd(context, model):
     baseline_pd_model = create_baseline_pd_model(model, model.modelfit_results.parameter_estimates)
     wf = create_fit_workflow(baseline_pd_model)
+    wb = WorkflowBuilder(wf)
     task_results = Task('results2', bundle_results)
-    wf.add_task(task_results, predecessors=wf.output_tasks)
-    pd_baseline_fit = call_workflow(wf, 'results_remaining', context)
+    wb.add_task(task_results, predecessors=wf.output_tasks)
+    pd_baseline_fit = call_workflow(Workflow(wb), 'results_remaining', context)
 
     parameter_estimates = pd.concat(
         [
@@ -115,9 +115,10 @@ def run_pkpd(context, model):
     pkpd_models = create_pkpd_models(model, parameter_estimates)
 
     wf2 = create_fit_workflow(pkpd_models)
+    wb2 = WorkflowBuilder(wf2)
     task_results = Task('results2', bundle_results)
-    wf2.add_task(task_results, predecessors=wf2.output_tasks)
-    pkpd_models_fit = call_workflow(wf2, 'results_remaining', context)
+    wb2.add_task(task_results, predecessors=wf2.output_tasks)
+    pkpd_models_fit = call_workflow(Workflow(wb2), 'results_remaining', context)
 
     summary_input = summarize_modelfit_results(model.modelfit_results)
     summary_candidates = summarize_modelfit_results(

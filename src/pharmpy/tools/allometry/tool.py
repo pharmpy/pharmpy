@@ -20,7 +20,7 @@ from pharmpy.tools import (
 )
 from pharmpy.tools.common import ToolResults, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 
 def create_workflow(
@@ -72,8 +72,7 @@ def create_workflow(
 
     """
 
-    wf = Workflow()
-    wf.name = "allometry"
+    wb = WorkflowBuilder(name="allometry")
     if model is not None:
         start_task = Task('start_allometry', start, model)
     else:
@@ -89,12 +88,12 @@ def create_workflow(
         fixed=fixed,
     )
     task_add_allometry = Task('add allometry', _add_allometry)
-    wf.add_task(task_add_allometry, predecessors=start_task)
+    wb.add_task(task_add_allometry, predecessors=start_task)
     fit_wf = create_fit_workflow(n=1)
-    wf.insert_workflow(fit_wf, predecessors=task_add_allometry)
+    wb.insert_workflow(fit_wf, predecessors=task_add_allometry)
     results_task = Task('results', globals()['results'])
-    wf.add_task(results_task, predecessors=[start_task] + fit_wf.output_tasks)
-    return wf
+    wb.add_task(results_task, predecessors=[start_task] + fit_wf.output_tasks)
+    return Workflow(wb)
 
 
 def start(model):
