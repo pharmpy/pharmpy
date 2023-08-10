@@ -81,7 +81,7 @@ setup(
         'lxml',
         'numpy>=1.17',
         'scipy',
-        'dask>=2022.12.1, <=2023.7.0',
+        'dask>=2022.12.1, <=2023.8.0',
         'distributed>=2022.12.1, <=2023.7.0',
         'networkx',
         'appdirs',
