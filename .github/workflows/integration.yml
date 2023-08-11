@@ -210,7 +210,7 @@ jobs:
 
   integration-windows:
     needs: [get-nonmem]
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
 
       - name: Checkout Pharmpy
