@@ -1496,10 +1496,6 @@ class Compartment:
             return self._dose
 
     @property
-    def number_of_doses(self):
-        return len(self._dose)
-
-    @property
     def input(self):
         return self._input
 

@@ -1212,7 +1212,7 @@ def set_first_order_absorption(model: Model):
         dose_comp = cb.set_lag_time(dose_comp, sympy.Integer(0))
     if not depot:
         # TODO : Add another way of removing dependencies
-        if dose_comp.number_of_doses == 1:
+        if len(dose_comp.dose) == 1:
             dose_comp = cb.set_dose(dose_comp, Bolus(amount))
             remove_dose = True
         else:
@@ -1351,7 +1351,7 @@ def set_seq_zo_fo_absorption(model: Model):
     if depot and not have_ZO:
         model = _add_zero_order_absorption(model, dose_comp.dose[0], depot, 'MDT')
     elif not depot and have_ZO:
-        if dose_comp.number_of_doses == 1:
+        if len(dose_comp.dose) == 1:
             fo_dose = dose_comp.dose[0]
             remove_dose = True
         else:
