@@ -417,7 +417,7 @@ def get_model_covariates(model: Model, strings: bool = False):
 
     # Consider statements that are dependencies of the ode system and y
     if odes:
-        dose_comp = odes.first_dosing_compartment
+        dose_comp = odes.dosing_compartments[0]
         cb = CompartmentalSystemBuilder(odes)
         cb.set_dose(dose_comp, None)
         cs = CompartmentalSystem(cb)

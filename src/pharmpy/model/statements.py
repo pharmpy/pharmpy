@@ -347,8 +347,8 @@ class CompartmentalSystemBuilder:
 
         """
         if admid:
-            new_source_dose = tuple([dose for dose in source.dose if dose.admid != admid])
-            new_dest_dose = tuple([dose for dose in source.dose if dose.admid == admid])
+            new_source_dose = tuple([d for d in source.dose if d.admid != admid])
+            new_dest_dose = tuple([d for d in source.dose if d.admid == admid])
         else:
             new_source_dose = None
             new_dest_dose = source.dose
@@ -359,9 +359,15 @@ class CompartmentalSystemBuilder:
             new_dest = destination.replace(dose=destination.dose + new_dest_dose)
         mapping = {source: new_source, destination: new_dest}
         nx.relabel_nodes(self._g, mapping, copy=False)
+        return new_source, new_dest
 
-    def set_dose(self, compartment, dose):
+    def set_dose(self, compartment, dose, replace=True, admid=None):
         """Set dose of compartment, replacing the previous if existing
+
+        Set replace to False to instead add the dose to existing ones.
+
+        Given an admid, the given dose will replace the corresponding dose
+        based on that admid. This will ignore the 'replace' argument.
 
         Parameters
         ----------
@@ -375,64 +381,20 @@ class CompartmentalSystemBuilder:
         Compartment
             The new updated compartment
         """
-        new_comp = compartment.replace(dose=dose)
-        mapping = {compartment: new_comp}
-        nx.relabel_nodes(self._g, mapping, copy=False)
-        return new_comp
+        if dose is None:
+            dose = tuple()
+        elif isinstance(dose, Dose):
+            dose = (dose,)
 
-    def replace_dose(self, compartment, old_dose, new_dose):
-        """
-        Replace and existing dose to a compartment
+        if admid:
+            replace = True
+            old_dose = tuple([d for d in compartment.dose if d.admid != admid])
+            dose = old_dose + dose
 
-        Parameters
-        ----------
-        compartment : Compartment
-            Compartment for which to replace dose to.
-        old_dose : Dose
-            Dose to be replaces.
-        new_dose : Dose
-            New Dose
-
-        Returns
-        -------
-        Compartment
-            The new updated compartment
-
-        """
-        comp_dose = compartment.dose
-        new_comp_dose = tuple()
-        for dose in comp_dose:
-            if dose == old_dose:
-                new_comp_dose += (new_dose,)
-            else:
-                new_comp_dose += (dose,)
-        new_comp = compartment.replace(dose=new_comp_dose)
-        mapping = {compartment: new_comp}
-        nx.relabel_nodes(self._g, mapping, copy=False)
-        return new_comp
-
-    def add_dose(self, compartment, dose):
-        """
-        Add a dose to the compartment, without replacing existing one(s)
-
-        Parameters
-        ----------
-        compartment : Compartment
-            Compartment for which to add the dose to.
-        dose : Dose
-            New dose.
-
-        Returns
-        -------
-        Compartment
-            The new updated compartment
-
-        """
-        if compartment.dose is None:
-            new_comp = compartment.replace(dose=(dose,))
+        if replace or not compartment.dose:
+            new_comp = compartment.replace(dose=dose)
         else:
-            new_dose = compartment.dose + (dose,)
-            new_comp = compartment.replace(dose=tuple(sorted(new_dose, key=lambda d: d.admid)))
+            new_comp = compartment.replace(dose=compartment.dose + dose)
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
@@ -1027,7 +989,7 @@ class CompartmentalSystem(ODESystem):
         """
         dosing_comps = tuple()
         for node in _comps(self._g):
-            if node.dose is not None:
+            if node.dose:
                 if node.name != self.central_compartment.name:
                     if len(dosing_comps) >= 2:
                         dosing_comps = dosing_comps[:-1] + (node,) + dosing_comps[-1:]
@@ -1040,28 +1002,6 @@ class CompartmentalSystem(ODESystem):
             return dosing_comps
 
         raise ValueError('No dosing compartment exists')
-
-    @property
-    def first_dosing_compartment(self):
-        """
-        Return the first dosing compartment defined for the model. If multiple dose
-        compartments, this will return a compartmen different from the central
-        compartment.
-
-        Returns
-        -------
-        Compartment
-            The first dosing compartment to the model.
-
-        Examples
-        --------
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> model.statements.ode_system.first_dosing_compartment
-        Compartment(CENTRAL, amount=A_CENTRAL, dose=Bolus(AMT, admid=2))
-
-        """
-        return self.dosing_compartments[0]
 
     @property
     def central_compartment(self):
@@ -1139,7 +1079,7 @@ class CompartmentalSystem(ODESystem):
         []
         """
         transits = []
-        comp = self.first_dosing_compartment
+        comp = self.dosing_compartments[0]
         if len(self.get_compartment_inflows(comp)) != 0:
             return transits
         outflows = self.get_compartment_outflows(comp)
@@ -1274,7 +1214,7 @@ class CompartmentalSystem(ODESystem):
     def _order_compartments(self):
         """Return list of all compartments in canonical order"""
         try:
-            dosecmt = self.first_dosing_compartment
+            dosecmt = self.dosing_compartments[0]
         except ValueError:
             # Fallback for cases where no dose is available (yet)
             return list(_comps(self._g))
@@ -1339,7 +1279,7 @@ class CompartmentalSystem(ODESystem):
         def comp_string(comp):
             return comp.name + lag_string(comp) + f_string(comp)
 
-        current = self.first_dosing_compartment
+        current = self.dosing_compartments[0]
         comp_height = 0
         comp_width = 0
 
@@ -1362,7 +1302,7 @@ class CompartmentalSystem(ODESystem):
         ncols = comp_width * 2
         grid = unicode.Grid(nrows, ncols)
 
-        current = self.first_dosing_compartment
+        current = self.dosing_compartments[0]
         col = 0
         if comp_nrows == 1 or comp_nrows == 2:
             main_row = 0 + have_zo_input
@@ -1472,7 +1412,7 @@ class Compartment:
         self,
         name,
         amount=None,
-        dose=None,
+        dose=tuple(),
         input=sympy.Integer(0),
         lag_time=sympy.Integer(0),
         bioavailability=sympy.Integer(1),
@@ -1489,7 +1429,7 @@ class Compartment:
         cls,
         name,
         amount=None,
-        dose=None,
+        dose=tuple(),
         input=sympy.Integer(0),
         lag_time=sympy.Integer(0),
         bioavailability=sympy.Integer(1),
@@ -1500,9 +1440,11 @@ class Compartment:
             amount = parse_expr(amount)
         else:
             amount = sympy.Symbol(f'A_{name}')
+        if dose is None:
+            dose = tuple()
         if isinstance(dose, Dose):
             dose = (dose,)
-        if dose is not None and not isinstance(dose, tuple):
+        if not isinstance(dose, tuple):
             raise TypeError("dose(s) need to be given as a tuple")
         if dose is not None:
             for d in dose:
@@ -1554,36 +1496,8 @@ class Compartment:
             return self._dose
 
     @property
-    def oral_dose(self):
-        if self._dose is not None:
-            oral_dose = tuple([dose for dose in self.dose if dose.admid == 1])
-            return oral_dose if oral_dose else None
-        return None
-
-    @property
-    def iv_dose(self):
-        if self._dose is not None:
-            iv_dose = tuple([dose for dose in self.dose if dose.admid == 2])
-            return iv_dose if iv_dose else None
-        return None
-
-    @property
     def number_of_doses(self):
         return len(self._dose)
-
-    @property
-    def number_of_oral_doses(self):
-        return len(self.oral_dose)
-
-    @property
-    def number_of_iv_doses(self):
-        return len(self.iv_dose)
-
-    @property
-    def first_dose(self):
-        if self._dose is not None:
-            return self.dose[0]
-        return self._dose
 
     @property
     def input(self):
@@ -1708,7 +1622,7 @@ class Compartment:
         lag = '' if self.lag_time == 0 else f', lag_time={self._lag_time}'
         dose = (
             ''
-            if self.dose is None
+            if self.dose is tuple()
             else f', dose={self._dose[0] if len(self._dose) == 1 else self._dose}'
         )
         input = '' if self.input == 0 else f', input={self._input}'

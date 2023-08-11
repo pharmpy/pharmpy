@@ -616,7 +616,7 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
             admid_loop = True
         else:
             admid_loop = True
-    elif 'CMT' in di.names:
+    elif 'CMT' in di.names and not di['CMT'].drop:
         if len(dataset['CMT']) == 1:
             warnings.warn(
                 "CMT column present with only one value"
@@ -709,7 +709,7 @@ def find_dose(doses, comp_number, admid=1, central=False):
             if dose['admid'] is not None:
                 admid = dose['admid']
             comp_doses += (comp_dose.replace(admid=admid),)
-    return comp_doses if comp_doses else None
+    return comp_doses
 
 
 def _get_alag(control_stream: NMTranControlStream, n: int):

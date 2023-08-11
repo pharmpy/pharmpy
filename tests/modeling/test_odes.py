@@ -1690,16 +1690,12 @@ def test_bioavailability(load_model_for_test, testdata):
 def test_move_bioavailability(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     model = add_bioavailability(model)
-    assert model.statements.ode_system.first_dosing_compartment.bioavailability == sympy.Symbol(
-        "F1"
-    )
+    assert model.statements.ode_system.dosing_compartments[0].bioavailability == sympy.Symbol("F1")
 
     model = set_first_order_absorption(model)
-    assert model.statements.ode_system.first_dosing_compartment.name == "DEPOT"
-    assert model.statements.ode_system.first_dosing_compartment.bioavailability == sympy.Symbol(
-        "F1"
-    )
-    assert model.statements.ode_system.find_compartment("CENTRAL").dose is None
+    assert model.statements.ode_system.dosing_compartments[0].name == "DEPOT"
+    assert model.statements.ode_system.dosing_compartments[0].bioavailability == sympy.Symbol("F1")
+    assert not model.statements.ode_system.find_compartment("CENTRAL").dose
 
 
 def test_lag_time(load_model_for_test, testdata):
@@ -2636,7 +2632,7 @@ def test_multi_dose_change_absorption(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     ode = model.statements.ode_system
     cb = CompartmentalSystemBuilder(ode)
-    cb.add_dose(cb.find_compartment("CENTRAL"), Bolus(sympy.Symbol('AMT'), admid=1))
+    cb.set_dose(cb.find_compartment("CENTRAL"), Bolus(sympy.Symbol('AMT'), admid=1), replace=False)
     ode = CompartmentalSystem(cb)
     model = model.replace(
         statements=model.statements.before_odes + ode + model.statements.after_odes
@@ -2648,11 +2644,11 @@ def test_multi_dose_change_absorption(load_model_for_test, testdata):
     depot = model.statements.ode_system.find_compartment("DEPOT")
     central = model.statements.ode_system.find_compartment("CENTRAL")
 
-    assert depot.first_dose == Bolus(sympy.Symbol('AMT'), admid=1)
-    assert central.first_dose == Bolus(sympy.Symbol('AMT'), admid=2)
+    assert depot.dose[0] == Bolus(sympy.Symbol('AMT'), admid=1)
+    assert central.dose[0] == Bolus(sympy.Symbol('AMT'), admid=2)
 
     model = set_zero_order_absorption(model)
     central = model.statements.ode_system.find_compartment("CENTRAL")
 
     assert central.number_of_doses == 2
-    assert central.first_dose == Infusion(sympy.Symbol('AMT'), admid=2, duration=sympy.Symbol("D1"))
+    assert central.dose[0] == Infusion(sympy.Symbol('AMT'), admid=1, duration=sympy.Symbol("D1"))

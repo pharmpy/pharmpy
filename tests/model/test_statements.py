@@ -293,7 +293,7 @@ def test_find_compartment(load_model_for_test, testdata):
 
 def test_dosing_compartment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert model.statements.ode_system.first_dosing_compartment.name == 'CENTRAL'
+    assert model.statements.ode_system.dosing_compartments[0].name == 'CENTRAL'
 
 
 def test_central_compartment(load_model_for_test, testdata):
@@ -432,12 +432,12 @@ def test_builder():
     cb.add_compartment(depot)
     cb.add_flow(depot, central, S('KA'))
     cm = CompartmentalSystem(cb)
-    assert cm.find_compartment('DEPOT').first_dose is None
-    assert cm.central_compartment.first_dose == dose
+    assert not cm.find_compartment('DEPOT').dose
+    assert cm.central_compartment.dose[0] == dose
     cb.move_dose(central, depot)
     cm2 = CompartmentalSystem(cb)
-    assert cm2.find_compartment('DEPOT').first_dose == dose
-    assert cm2.central_compartment.dose is None
+    assert cm2.find_compartment('DEPOT').dose[0] == dose
+    assert not cm2.central_compartment.dose
     assert hash(cm) != hash(cm2)
 
 
@@ -488,4 +488,4 @@ def test_multi_dose_comp_order(load_model_for_test, testdata):
     cb = CompartmentalSystemBuilder(ode)
     cb.set_dose(cb.find_compartment("CENTRAL"), cb.find_compartment("DEPOT").dose)
     ode = CompartmentalSystem(cb)
-    assert ode.first_dosing_compartment.name == "DEPOT"
+    assert ode.dosing_compartments[0].name == "DEPOT"
