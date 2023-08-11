@@ -600,7 +600,9 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
     cmt_loop = False
     admid_loop = False
     return_dose = False
-    if 'ADMID' in di.names:
+    if dataset is None:
+        return_dose = True
+    elif 'ADMID' in di.names:
         for admid in dataset['ADMID'].unique():
             if admid not in [1, 2]:
                 raise ValueError(f'Administration ID : {admid} not supported')
