@@ -1438,6 +1438,63 @@ def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[f
     return model.update_source()
 
 
+def set_reference_values(model: Model, refs: dict):
+    """Set reference values for selected columns
+
+        All values for each selected column will be replaced. For dose columns
+        only the values for dosing events will be replaced.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    refs : dict
+        Pairs of column names and reference values
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = set_reference_values(model, {'WGT': 0.5, 'AMT': 4.0})
+    >>> model.dataset
+         ID   TIME  AMT  WGT  APGR    DV  FA1  FA2
+    0     1    0.0  4.0  0.5   7.0   0.0  1.0  1.0
+    1     1    2.0  0.0  0.5   7.0  17.3  0.0  0.0
+    2     1   12.5  4.0  0.5   7.0   0.0  1.0  1.0
+    3     1   24.5  4.0  0.5   7.0   0.0  1.0  1.0
+    4     1   37.0  4.0  0.5   7.0   0.0  1.0  1.0
+    ..   ..    ...  ...  ...   ...   ...  ...  ...
+    739  59  108.3  4.0  0.5   6.0   0.0  1.0  1.0
+    740  59  120.5  4.0  0.5   6.0   0.0  1.0  1.0
+    741  59  132.3  4.0  0.5   6.0   0.0  1.0  1.0
+    742  59  144.8  4.0  0.5   6.0   0.0  1.0  1.0
+    743  59  146.8  0.0  0.5   6.0  40.2  0.0  0.0
+    <BLANKLINE>
+    [744 rows x 8 columns]
+
+    """
+    df = model.dataset
+    di = model.datainfo
+    newcols = dict()
+    dtypes = dict()
+    for colname, value in refs.items():
+        if di[colname].type == 'dose':
+            newdose = df[colname].mask(df[colname] > 0, value)
+            newcols[colname] = newdose
+        else:
+            newcols[colname] = value
+        datatype = ColumnInfo.convert_datatype_to_pd_dtype(di[colname].datatype)
+        dtypes[colname] = datatype
+    df = df.assign(**newcols).astype(dtypes)
+    model = model.replace(dataset=df)
+    return model
+
+
 class Checker:
     _all_checks = (
         ('A1', 'Body weight has unit'),

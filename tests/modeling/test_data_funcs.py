@@ -24,6 +24,7 @@ from pharmpy.modeling import (
     list_time_varying_covariates,
     remove_loq_data,
     set_dvid,
+    set_reference_values,
     translate_nmtran_time,
     undrop_columns,
 )
@@ -360,3 +361,12 @@ def test_set_dvid(load_example_model_for_test):
     assert m.datainfo['FA2'].type == 'dvid'
     with pytest.raises(ValueError):
         set_dvid(m, 'WGT')
+
+
+def test_set_reference_values(load_example_model_for_test):
+    m = load_example_model_for_test('pheno')
+    m2 = set_reference_values(m, {'WGT': 0.5, 'AMT': 4})
+    df = m2.dataset
+    assert list(df['WGT'].unique()) == [0.5]
+    assert df['AMT'][0] == 4.0
+    assert df['AMT'][1] == 0.0

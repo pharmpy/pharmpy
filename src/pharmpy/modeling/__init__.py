@@ -47,6 +47,7 @@ from .data import (
     remove_loq_data,
     set_covariates,
     set_dvid,
+    set_reference_values,
     translate_nmtran_time,
     undrop_columns,
 )
@@ -374,6 +375,7 @@ __all__ = [
     'set_peripheral_compartments',
     'set_power_on_ruv',
     'set_proportional_error_model',
+    'set_reference_values',
     'set_seq_zo_fo_absorption',
     'set_time_varying_error_model',
     'set_tmdd',

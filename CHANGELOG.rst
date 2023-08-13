@@ -1,3 +1,11 @@
+next version
+------------
+
+New features
+============
+
+* Add function modeling.set_reference_values
+
 0.98.0 (2023-07-21)
 -------------------
 
