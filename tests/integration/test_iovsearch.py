@@ -2,6 +2,7 @@ import shutil
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
+from pharmpy.modeling import fix_parameters
 from pharmpy.tools import fit, run_iovsearch
 
 
@@ -12,6 +13,12 @@ def test_default_mox2(tmp_path, model_count, start_model):
         assert model_count(rundir) == 8
 
         assert res.final_model_name == 'iovsearch_run7'
+
+
+def test_ignore_fixed_iiv(tmp_path, model_count, start_model):
+    start_model = fix_parameters(start_model, 'IIV_CL')
+    res = run_iovsearch('VISI', results=start_model.modelfit_results, model=start_model)
+    assert len(res.summary_models) == 5
 
 
 def test_rank_type_ofv_mox2(tmp_path, model_count, start_model):
