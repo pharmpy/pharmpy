@@ -71,8 +71,10 @@ def test_create_remaining_models(load_example_model_for_test):
 def test_pkpd(load_model_for_test, testdata):
     res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
     ests = res.parameter_estimates
+    e0_init = pd.Series({'POP_E0': 5.75, 'IIV_E0': 0.01, 'sigma': 0.33})
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    pkpd_models = create_pkpd_models(model, ests)
+    pkpd_models = create_pkpd_models(model, e0_init, ests)
+
     assert len(pkpd_models) == 8
     assert pkpd_models[0].name == "structsearch_run1"
     assert pkpd_models[1].name == "structsearch_run2"

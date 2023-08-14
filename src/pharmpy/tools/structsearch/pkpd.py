@@ -5,6 +5,7 @@ from pharmpy.modeling import (
     add_iiv,
     fix_parameters_to,
     set_direct_effect,
+    set_initial_estimates,
     set_name,
 )
 
@@ -31,7 +32,7 @@ def create_baseline_pd_model(model: Model, ests: pd.Series):
     return baseline_model
 
 
-def create_pkpd_models(model: Model, ests: pd.Series):
+def create_pkpd_models(model: Model, e0_init: pd.Series, ests: pd.Series):
     """Create pkpd models
 
     Parameters
@@ -58,6 +59,7 @@ def create_pkpd_models(model: Model, ests: pd.Series):
             pkpd_model = pkpd_model.replace(description=f"{model_type}_{pd_type}")
             index += 1
             pkpd_model = add_iiv(pkpd_model, ["E0"], "exp")
+            pkpd_model = set_initial_estimates(pkpd_model, e0_init)
             pkpd_model = fix_parameters_to(pkpd_model, ests)
             for parameter in ["S", "E_max", "m"]:
                 try:

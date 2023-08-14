@@ -105,14 +105,11 @@ def run_pkpd(context, model):
     wb.add_task(task_results, predecessors=wf.output_tasks)
     pd_baseline_fit = call_workflow(Workflow(wb), 'results_remaining', context)
 
-    parameter_estimates = pd.concat(
-        [
-            model.modelfit_results.parameter_estimates,
-            pd_baseline_fit[0].modelfit_results.parameter_estimates,
-        ],
-        axis=0,
+    pkpd_models = create_pkpd_models(
+        model,
+        pd_baseline_fit[0].modelfit_results.parameter_estimates,
+        model.modelfit_results.parameter_estimates,
     )
-    pkpd_models = create_pkpd_models(model, parameter_estimates)
 
     wf2 = create_fit_workflow(pkpd_models)
     wb2 = WorkflowBuilder(wf2)
