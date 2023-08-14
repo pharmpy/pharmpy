@@ -172,6 +172,8 @@ def _compartmental_model(
         for i, name in enumerate(comp_names):
             if name == defdose[0]:
                 curdose = find_dose(doses, defdose[1])
+            elif defcentral and name == defcentral[0]:
+                curdose = find_dose(doses, defcentral[1], admid=2, central=True)
             else:
                 curdose = None
             comp = Compartment.create(
