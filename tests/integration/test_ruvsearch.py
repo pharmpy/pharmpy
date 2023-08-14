@@ -2,8 +2,39 @@ import shutil
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
-from pharmpy.modeling import remove_covariance_step, transform_blq
-from pharmpy.tools import read_modelfit_results, retrieve_final_model, run_tool
+from pharmpy.modeling import (
+    convert_model,
+    create_basic_pk_model,
+    remove_covariance_step,
+    transform_blq,
+)
+from pharmpy.tools import (
+    fit,
+    read_modelfit_results,
+    retrieve_final_model,
+    run_structsearch,
+    run_tool,
+)
+from pharmpy.tools.structsearch.pkpd import create_pk_model
+
+
+def test_ruvsearch_dv(tmp_path, load_model_for_test, testdata):
+    with chdir(tmp_path):
+        dataset = testdata / "nonmem/pheno_pd.csv"
+        model = create_basic_pk_model("iv", dataset_path=dataset)
+        model = convert_model(model, 'nonmem')
+
+        # Fit pk model
+        pk_model = create_pk_model(model)
+        pk_res = fit(pk_model)
+
+        # structsearch
+        res_struct = run_structsearch(type='pkpd', route='iv', results=pk_res, model=model)
+        model = res_struct.models[1]
+
+        # ruvsearch
+        res_ruv = run_tool('ruvsearch', model=model, results=model.modelfit_results, dv=2)
+        assert res_ruv
 
 
 def test_ruvsearch(tmp_path, testdata):
