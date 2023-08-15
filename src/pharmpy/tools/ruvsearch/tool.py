@@ -273,7 +273,7 @@ def _create_base_model(input_model, current_iteration, dv):
 
     est = EstimationStep.create('foce', interaction=True, maximum_evaluations=9999)
 
-    base_model = Model(
+    base_model = Model.create(
         parameters=params,
         random_variables=rvs,
         statements=statements,
