@@ -99,7 +99,7 @@ class Model(Immutable):
         random_variables=None,
         statements=None,
         dataset=None,
-        datainfo=None,
+        datainfo=DataInfo(),
         dependent_variables=None,
         observation_transformation=None,
         estimation_steps=None,
