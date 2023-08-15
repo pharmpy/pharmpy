@@ -53,7 +53,7 @@ def _get_eta_symbs(eta_str, rvs, sset):
         exp_symbs = sset.find_assignment(eta_str).expression.free_symbols
     except AttributeError:
         raise KeyError(f'Symbol "{eta_str}" does not exist')
-    return [str(e) for e in exp_symbs.intersection(rvs.free_symbols)]
+    return [str(e) for e in exp_symbs.intersection(rvs.etas.free_symbols)]
 
 
 def _has_fixed_params(model, rv):
