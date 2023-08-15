@@ -14,6 +14,7 @@ cloudpickle==2.2.1
 comm==0.1.4
 csscompressor==0.9.5
 dask==2023.7.0
+debugpy==1.6.7.post1
 decorator==5.1.1
 defusedxml==0.7.1
 distributed==2023.7.0
@@ -49,6 +50,7 @@ msgpack==1.0.5
 nbclient==0.8.0
 nbconvert==7.7.3
 nbformat==5.9.2
+nest-asyncio==1.5.7
 networkx==3.1
 numexpr==2.8.5
 numpy==1.24.3
