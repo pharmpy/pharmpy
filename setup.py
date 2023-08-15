@@ -87,6 +87,7 @@ setup(
         'appdirs',
         'rich',
         'jupyter-sphinx',
+        'ipykernel',
     ],
     extras_require={
         'nlmixr': ["pyreadr"],
