@@ -19,7 +19,7 @@ from pathlib import Path
 import pharmpy
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.immutable import Immutable, frozenmapping
+from pharmpy.internals.immutable import Immutable, cache_method, frozenmapping
 from pharmpy.model.external import detect_model
 
 from .datainfo import ColumnInfo, DataInfo
@@ -417,6 +417,7 @@ class Model(Immutable):
 
         return True
 
+    @cache_method
     def __hash__(self):
         return hash(
             (

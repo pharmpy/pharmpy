@@ -2,6 +2,20 @@ from abc import ABC
 from typing import Iterator, Mapping, TypeVar
 
 
+def cache_method(func):
+    if func.__name__ == '__hash__':
+
+        def wrapper(self):
+            if hasattr(self, '_hash'):
+                return self._hash
+            else:
+                return func(self)
+
+        return wrapper
+    else:
+        return func
+
+
 class Immutable(ABC):
     def __copy__(self):
         return self
