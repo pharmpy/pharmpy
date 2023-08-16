@@ -9,8 +9,8 @@ from pharmpy.deps import sympy
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_subsets
-from pharmpy.model import Assignment, Model
-from pharmpy.modeling import add_iov, get_pk_parameters, remove_iiv, remove_iov
+from pharmpy.model import Assignment, Model, RandomVariables
+from pharmpy.modeling import add_iov, get_omegas, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.parameter_variability import ADD_IOV_DISTRIBUTION
 from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
@@ -125,7 +125,7 @@ def task_brute_force_search(
 ):
     # NOTE Default is to try all IIV ETAs.
     if list_of_parameters is None:
-        iiv = model.random_variables.iiv
+        iiv = _get_nonfixed_iivs(model)
         iiv_before_odes = iiv.free_symbols.intersection(model.statements.before_odes.free_symbols)
         list_of_parameters = [iiv.name for iiv in iiv_before_odes]
 
@@ -353,7 +353,7 @@ def _get_iov_piecewise_assignment_symbols(model: Model):
 
 def _get_iiv_etas_with_corresponding_iov(model: Model):
     iovs = set(_get_iov_piecewise_assignment_symbols(model))
-    iiv = model.random_variables.iiv
+    iiv = _get_nonfixed_iivs(model)
 
     for statement in model.statements:
         if isinstance(statement, Assignment) and isinstance(statement.expression, sympy.Add):
@@ -363,3 +363,12 @@ def _get_iiv_etas_with_corresponding_iov(model: Model):
                     if isinstance(rest, sympy.Symbol) and rest in iiv:
                         yield rest
                     break
+
+
+def _get_nonfixed_iivs(model):
+    fixed_omegas = get_omegas(model).fixed.names
+    iivs = model.random_variables.iiv
+    nonfixed_iivs = [
+        iiv for iiv in iivs if str(list(iiv.variance.free_symbols)[0]) not in fixed_omegas
+    ]
+    return RandomVariables.create(nonfixed_iivs)

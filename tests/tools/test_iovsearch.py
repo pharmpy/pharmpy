@@ -1,13 +1,22 @@
 import pytest
 from sympy import Symbol as S
 
-from pharmpy.modeling import add_iov, remove_iov
+from pharmpy.modeling import add_iov, fix_parameters, remove_iov
 from pharmpy.tools.iovsearch.tool import (
     _get_iiv_etas_with_corresponding_iov,
+    _get_nonfixed_iivs,
     create_workflow,
     validate_input,
 )
 from pharmpy.workflows import Workflow
+
+
+def test_ignore_fixed_iiv(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    assert len(model.random_variables.iiv.names) == 2
+    model = fix_parameters(model, 'IVCL')
+    nonfixed_iivs = _get_nonfixed_iivs(model)
+    assert len(nonfixed_iivs.names) == 1
 
 
 def test_iovsearch_github_issues_976(load_model_for_test, testdata):
