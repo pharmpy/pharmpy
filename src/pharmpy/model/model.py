@@ -19,6 +19,7 @@ from pathlib import Path
 import pharmpy
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
+from pharmpy.internals.df import hash_df_runtime
 from pharmpy.internals.immutable import Immutable, cache_method, frozenmapping
 from pharmpy.model.external import detect_model
 
@@ -429,6 +430,7 @@ class Model(Immutable):
                 self._estimation_steps,
                 self._initial_individual_estimates,
                 self._datainfo,
+                hash_df_runtime(self._dataset),
                 self._value_type,
             )
         )
