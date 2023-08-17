@@ -11,6 +11,7 @@ from typing import Dict, Optional, Tuple
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
+from pharmpy.internals.immutable import frozenmapping
 from pharmpy.model import Assignment, DataInfo, EstimationSteps
 from pharmpy.model import Model as BaseModel
 from pharmpy.model import NormalDistribution, Parameter, Parameters, RandomVariables, Statements
@@ -92,14 +93,13 @@ def convert_model(model):
     nm_model._dataset = model.dataset
     nm_model._estimation_steps = model.estimation_steps
     nm_model._initial_individual_estimates = model.initial_individual_estimates
-    # FIXME: This is handled equivalently to dependent variables, should handle multiple DVs
-    new_obs_trans = {sympy.Symbol('Y'): sympy.Symbol('Y')}
+    new_obs_trans = frozenmapping({dv: dv for dv in model.dependent_variables.keys()})
     internals = nm_model.internals.replace(old_parameters=Parameters())
     nm_model = nm_model.replace(
         name=model.name,
         value_type=model.value_type,
         observation_transformation=new_obs_trans,
-        dependent_variables={sympy.Symbol('Y'): 1},
+        dependent_variables=model.dependent_variables,
         random_variables=model.random_variables,
         statements=model.statements,
         description=model.description,
@@ -377,6 +377,7 @@ def parse_model(
         dataset=dataset,
         datainfo=di,
         dependent_variables=dependent_variables,
+        observation_transformation=obs_trans,
         estimation_steps=estimation_steps,
         parent_model=None,
         initial_individual_estimates=init_etas,
