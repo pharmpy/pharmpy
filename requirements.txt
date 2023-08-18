@@ -9,7 +9,7 @@ beautifulsoup4==4.12.2
 bleach==6.0.0
 certifi==2023.7.22
 charset-normalizer==3.2.0
-click==8.1.6
+click==8.1.7
 cloudpickle==2.2.1
 comm==0.1.4
 csscompressor==0.9.5
