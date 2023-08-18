@@ -52,6 +52,7 @@ def create_workflow(
     p_value: float = 0.05,
     skip: Optional[List[str]] = None,
     max_iter: Optional[int] = 3,
+    dv: Optional[int] = None,
 ):
     """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 
@@ -86,21 +87,21 @@ def create_workflow(
     """
 
     wb = WorkflowBuilder(name="ruvsearch")
-    start_task = Task('start_ruvsearch', start, model, groups, p_value, skip, max_iter)
+    start_task = Task('start_ruvsearch', start, model, groups, p_value, skip, max_iter, dv)
     wb.add_task(start_task)
     task_results = Task('results', _results)
     wb.add_task(task_results, predecessors=[start_task])
     return Workflow(wb)
 
 
-def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
+def create_iteration_workflow(model, groups, cutoff, skip, current_iteration, dv):
     wb = WorkflowBuilder()
 
     start_task = Task('start_iteration', _start_iteration, model)
     wb.add_task(start_task)
 
     task_base_model = Task(
-        'create_base_model', partial(_create_base_model, current_iteration=current_iteration)
+        'create_base_model', partial(_create_base_model, current_iteration=current_iteration, dv=dv)
     )
     wb.add_task(task_base_model, predecessors=start_task)
 
@@ -108,14 +109,15 @@ def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
     if 'IIV_on_RUV' not in skip:
         task_iiv = Task(
             'create_iiv_on_ruv_model',
-            partial(_create_iiv_on_ruv_model, current_iteration=current_iteration),
+            partial(_create_iiv_on_ruv_model, current_iteration=current_iteration, dv=None),
         )
         tasks.append(task_iiv)
         wb.add_task(task_iiv, predecessors=task_base_model)
 
     if 'power' not in skip and 'combined' not in skip:
         task_power = Task(
-            'create_power_model', partial(_create_power_model, current_iteration=current_iteration)
+            'create_power_model',
+            partial(_create_power_model, current_iteration=current_iteration, dv=None),
         )
         wb.add_task(task_power, predecessors=task_base_model)
         tasks.append(task_power)
@@ -129,7 +131,11 @@ def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
     if 'time_varying' not in skip:
         for i in range(1, groups):
             tvar = partial(
-                _create_time_varying_model, groups=groups, i=i, current_iteration=current_iteration
+                _create_time_varying_model,
+                groups=groups,
+                i=i,
+                current_iteration=current_iteration,
+                dv=None,
             )
             task = Task(f"create_time_varying_model{i}", tvar)
             tasks.append(task)
@@ -137,14 +143,14 @@ def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
 
     fit_wf = create_fit_workflow(n=1 + len(tasks))
     wb.insert_workflow(fit_wf, predecessors=[task_base_model] + tasks)
-    post_pro = partial(post_process, cutoff=cutoff, current_iteration=current_iteration)
+    post_pro = partial(post_process, cutoff=cutoff, current_iteration=current_iteration, dv=dv)
     task_post_process = Task('post_process', post_pro)
     wb.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
 
     return Workflow(wb)
 
 
-def start(context, model, groups, p_value, skip, max_iter):
+def start(context, model, groups, p_value, skip, max_iter, dv):
     cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
@@ -156,7 +162,7 @@ def start(context, model, groups, p_value, skip, max_iter):
     last_iteration = 0
     for current_iteration in range(1, max_iter + 1):
         last_iteration = current_iteration
-        wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
+        wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration, dv=dv)
         res, best_model, selected_model_name = call_workflow(
             wf, f'results{current_iteration}', context
         )
@@ -224,10 +230,10 @@ def _results(res):
     return res
 
 
-def post_process(context, start_model, *models, cutoff, current_iteration):
+def post_process(context, start_model, *models, cutoff, current_iteration, dv):
     res = calculate_results(models)
     best_model_unfitted, selected_model_name = _create_best_model(
-        start_model, res, current_iteration, cutoff=cutoff
+        start_model, res, current_iteration, cutoff=cutoff, dv=dv
     )
     if best_model_unfitted is not None:
         fit_wf = create_fit_workflow(models=[best_model_unfitted])
@@ -246,7 +252,7 @@ def post_process(context, start_model, *models, cutoff, current_iteration):
     return (res, start_model, f"base_{current_iteration}")
 
 
-def _create_base_model(input_model, current_iteration):
+def _create_base_model(input_model, current_iteration, dv):
     theta = Parameter('theta', 0.1)
     omega = Parameter('omega', 0.01, lower=0)
     sigma = Parameter('sigma', 1, lower=0)
@@ -267,7 +273,7 @@ def _create_base_model(input_model, current_iteration):
 
     est = EstimationStep.create('foce', interaction=True, maximum_evaluations=9999)
 
-    base_model = Model(
+    base_model = Model.create(
         parameters=params,
         random_variables=rvs,
         statements=statements,
@@ -276,28 +282,30 @@ def _create_base_model(input_model, current_iteration):
         estimation_steps=EstimationSteps.create([est]),
         dependent_variables={y.symbol: 1},
     )
-    base_model = base_model.replace(dataset=_create_dataset(input_model))
+    base_model = base_model.replace(dataset=_create_dataset(input_model, dv))
     return base_model
 
 
-def _create_iiv_on_ruv_model(input_model, current_iteration):
-    model = set_iiv_on_ruv(input_model)
+def _create_iiv_on_ruv_model(input_model, current_iteration, dv):
+    model = set_iiv_on_ruv(input_model, dv)
     name = f'IIV_on_RUV_{current_iteration}'
     model = model.replace(name=name, description=name)
     return model
 
 
-def _create_power_model(input_model, current_iteration):
-    model = set_power_on_ruv(input_model, ipred='IPRED', lower_limit=None, zero_protection=True)
+def _create_power_model(input_model, current_iteration, dv):
+    model = set_power_on_ruv(
+        input_model, ipred='IPRED', lower_limit=None, zero_protection=True, dv=dv
+    )
     name = f'power_{current_iteration}'
     model = model.replace(name=name, description=name)
     return model
 
 
-def _create_time_varying_model(input_model, groups, i, current_iteration):
+def _create_time_varying_model(input_model, groups, i, current_iteration, dv):
     quantile = i / groups
     cutoff = input_model.dataset['TAD'].quantile(q=quantile)
-    model = set_time_varying_error_model(input_model, cutoff=cutoff, idv='TAD')
+    model = set_time_varying_error_model(input_model, cutoff=cutoff, idv='TAD', dv=dv)
     name = f"time_varying{i}_{current_iteration}"
     model = model.replace(name=name, description=name)
     return model
@@ -334,9 +342,16 @@ def _create_combined_model(input_model, current_iteration):
     return model
 
 
-def _create_dataset(input_model):
+def _create_dataset(input_model, dv):
     # Non-observations have already been filtered
     residuals = input_model.modelfit_results.residuals
+    if dv:
+        input_dataset = input_model.dataset
+        input_dataset = input_dataset[input_dataset['DV'] != 0].reset_index(
+            drop=True
+        )  # filter non-observations
+        indices = input_dataset.index[input_dataset['DVID'] == dv].tolist()
+        residuals = residuals.iloc[indices]
     cwres = residuals['CWRES'].reset_index(drop=True)
     if has_blq_transformation(input_model):
         cwres = cwres.loc[cwres != 0]
@@ -370,7 +385,7 @@ def _time_after_dose(model):
     return model
 
 
-def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
+def _create_best_model(model, res, current_iteration, dv, groups=4, cutoff=3.84):
     if not res.cwres_models.empty and any(res.cwres_models['dofv'] > cutoff):
         model = update_initial_estimates(model)
         selected_model_name = f'base_{current_iteration}'
@@ -386,7 +401,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
         )
 
         if name.startswith('power'):
-            model = set_power_on_ruv(model)
+            model = set_power_on_ruv(model, dv=dv)
             model = set_initial_estimates(
                 model,
                 {
@@ -397,7 +412,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
                 },
             )
         elif name.startswith('IIV_on_RUV'):
-            model = set_iiv_on_ruv(model)
+            model = set_iiv_on_ruv(model, dv=dv)
             model = set_initial_estimates(
                 model,
                 {
@@ -410,10 +425,10 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             model = _time_after_dose(model)
             i = int(name[-1])
             quantile = i / groups
-            df = _create_dataset(model)
+            df = _create_dataset(model, dv=dv)
             tad = df['TAD']
             cutoff_tvar = tad.quantile(q=quantile)
-            model = set_time_varying_error_model(model, cutoff=cutoff_tvar, idv='TAD')
+            model = set_time_varying_error_model(model, cutoff=cutoff_tvar, idv='TAD', dv=dv)
             model = set_initial_estimates(
                 model,
                 {
@@ -423,7 +438,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
                 },
             )
         else:
-            model = set_combined_error_model(model)
+            model = set_combined_error_model(model, dv=dv)
             model = set_initial_estimates(
                 model,
                 {
@@ -445,7 +460,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(model, groups, p_value, skip, max_iter):
+def validate_input(model, groups, p_value, skip, max_iter, dv):
     if groups <= 0:
         raise ValueError(f'Invalid `groups`: got `{groups}`, must be >= 1.')
 
@@ -481,3 +496,10 @@ def validate_input(model, groups, p_value, skip, max_iter):
                 f'Invalid `max_iter`: got `{max_iter}`,only 1 iteration is supported '
                 f'for models with BLQ transformation.'
             )
+
+        if dv:
+            if 'DVID' not in model.dataset.columns:
+                raise ValueError("No column DVID in dataset.")
+            else:
+                if dv not in set(model.dataset['DVID']):
+                    raise ValueError(f"No DVID = {dv} in dataset.")

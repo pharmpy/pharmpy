@@ -11,6 +11,15 @@ from pharmpy.tools.ruvsearch.tool import _create_dataset, create_workflow, valid
 from pharmpy.workflows import Workflow
 
 
+def test_filter_dataset(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem/pheno_pd.mod')
+    res = read_modelfit_results(testdata / 'nonmem/pheno_pd.mod')
+    model = model.replace(modelfit_results=res)
+    cwres = _create_dataset(model, dv=2)
+    expected_cwres = [-1.15490, 0.95703, -0.85365, 0.42327]
+    assert cwres['DV'].tolist() == expected_cwres
+
+
 def test_resmod_results(testdata):
     res = psn_resmod_results(testdata / 'psn' / 'resmod_dir1')
     assert list(res.cwres_models['dOFV']) == [
@@ -68,7 +77,7 @@ def test_create_dataset(load_model_for_test, testdata, tmp_path):
     res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     model = model.replace(modelfit_results=res)
 
-    df = _create_dataset(model)
+    df = _create_dataset(model, dv=None)
 
     assert len(df) == 1006
     assert (df['DV'] != 0).all()
@@ -93,7 +102,7 @@ def test_create_dataset(load_model_for_test, testdata, tmp_path):
 
         model = transform_blq(model, method='m3', lloq=0.05)
 
-        df = _create_dataset(model)
+        df = _create_dataset(model, dv=None)
 
         assert len(df) == 1005
         assert (df['DV'] != 0).all()
