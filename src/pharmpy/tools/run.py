@@ -773,24 +773,16 @@ def rank_models(
     rank_values, delta_values = {}, {}
     models_to_rank = []
 
-    ref_value = _get_rankval(base_model, rank_type, bic_type)
+    ref_value = _get_rankval(base_model, errors_allowed, rank_type, bic_type)
     model_dict = {model.name: model for model in models_all}
 
     # Filter on strictness
     for model in models_all:
         # Exclude OFV etc. if model was not successful
-        if not model.modelfit_results or np.isnan(model.modelfit_results.ofv):
+        rank_value = _get_rankval(model, errors_allowed, rank_type, bic_type)
+        if np.isnan(rank_value):
             continue
-        if not model.modelfit_results.minimization_successful:
-            if errors_allowed:
-                if model.modelfit_results.termination_cause not in errors_allowed:
-                    continue
-                if np.isnan(model.modelfit_results.significant_digits):
-                    continue
-            else:
-                continue
 
-        rank_value = _get_rankval(model, rank_type, bic_type)
         if rank_type == 'lrt':
             parent = model_dict[model.parent_model]
             if cutoff is None:
@@ -861,8 +853,22 @@ def rank_models(
         return df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
 
 
-def _get_rankval(model, rank_type, bic_type):
-    if not model.modelfit_results:
+def _is_valid_res(res, errors_allowed):
+    if not res or np.isnan(res.ofv):
+        return False
+    if not res.minimization_successful:
+        if errors_allowed:
+            if res.termination_cause not in errors_allowed:
+                return False
+            if np.isnan(res.significant_digits):
+                return False
+        else:
+            return False
+    return True
+
+
+def _get_rankval(model, errors_allowed, rank_type, bic_type):
+    if not _is_valid_res(model.modelfit_results, errors_allowed):
         return np.nan
     if rank_type in ['ofv', 'lrt']:
         return model.modelfit_results.ofv

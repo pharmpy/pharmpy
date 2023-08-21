@@ -327,6 +327,19 @@ def test_rank_models():
     df = rank_models(base_nan, models, errors_allowed=['rounding_errors'], rank_type='ofv')
     assert df.iloc[0].name == 'm1'
 
+    # Test if base model failed but still has OFV with a very high value, fall back to rank value
+    base_nan = DummyModel(
+        'base_nan',
+        parent='base_nan',
+        parameter_names=['p1'],
+        ofv=2e154,
+        minimization_successful=False,
+        termination_cause='something',
+    )
+    df = rank_models(base_nan, models, errors_allowed=['rounding_errors'], rank_type='ofv')
+    assert df.iloc[0].name == 'm1'
+    assert df.nunique()['ofv'] == df.nunique()['rank']
+
 
 def test_summarize_modelfit_results(
     load_model_for_test, create_model_for_test, testdata, pheno_path
