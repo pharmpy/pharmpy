@@ -1180,9 +1180,13 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
     dependency_graph = _dependency_graph(natural_assignments)
 
     pk_symbols = _filter_symbols(dependency_graph, free_symbols)
+
     if model.statements.ode_system.find_compartment("EFFECT") is not None:
-        pd_symbols = model.statements.ode_system.find_compartment("EFFECT").input.free_symbols
-        pk_symbols = pk_symbols.difference(pd_symbols)
+        pd_outflow = model.statements.ode_system.get_flow(
+            model.statements.ode_system.find_compartment("EFFECT"), output
+        )
+        pk_symbols.remove(pd_outflow)
+
     return sorted(map(str, pk_symbols))
 
 

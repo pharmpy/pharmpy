@@ -360,6 +360,8 @@ def test_get_pd_parameters(load_model_for_test, testdata, model_path, kind, expe
     model = load_model_for_test(testdata / model_path)
     assert set(get_pd_parameters(set_direct_effect(model, kind))) == set(expected)
     assert set(get_pd_parameters(add_effect_compartment(model, kind))) == set(expected + ["KE0"])
+    assert get_pk_parameters(add_effect_compartment(model, kind)) == ['CL', 'V']
+    assert get_pk_parameters(set_direct_effect(model, kind)) == ['CL', 'V']
     assert not set(
         set(get_pd_parameters(set_direct_effect(model, kind))).intersection(
             get_pk_parameters(set_direct_effect(model, kind))
