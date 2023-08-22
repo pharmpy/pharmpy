@@ -70,6 +70,8 @@ def create_workflow(
         A list of models to not attempt.
     max_iter :  int
         Number of iterations to run (1, 2, or 3). For models with BLQ only one iteration is supported.
+    dv : int
+        Which DV to assess the error model for.
 
     Returns
     -------
