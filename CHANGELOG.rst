@@ -1,10 +1,25 @@
-next version
-------------
+0.99.0 (2023-08-22)
+-------------------
 
 New features
 ============
 
 * Add function modeling.set_reference_values
+* Parse IV+oral models using CMT column
+* Specify DV in RUVSearch
+* Option to add logit IIV in ``add_iiv``
+
+Changes
+=======
+
+* Make Task and Workflow immutable
+* Ignore fixed IIVs/IOVs in IIVSearch and IOVSearch
+
+Bugfixes
+========
+
+* Fix bug where epsilons where removed in ``remove_iiv``
+* Fix bug in ``create_basic_pk_model`` to handle space separated datasets
 
 0.98.0 (2023-07-21)
 -------------------
