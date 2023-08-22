@@ -1399,19 +1399,29 @@ def translate_nmtran_time(model: Model):
     return model.update_source()
 
 
-def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[float] = None):
+def remove_loq_data(
+    model: Model,
+    lloq: Optional[Union[float, str]] = None,
+    uloq: Optional[Union[float, str]] = None,
+    blq: Optional[str] = None,
+    alq: Optional[str] = None,
+):
     """Remove loq data records from the dataset
 
-    Does nothing if none of the limits is specified.
+    Does nothing if none of the limits are specified.
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
-    lloq : float
-        Lower limit of quantification. Default not specified.
-    uloq : float
-        Upper limit of quantification. Default not specified.
+    lloq : float or str
+        Value or column name for lower limit of quantification.
+    uloq : float or str
+        Value or column name for upper limit of quantification.
+    blq : str
+        Column name for below limit of quantification indicator.
+    alq : str
+        Column name for above limit of quantification indicator.
 
     Returns
     -------
@@ -1426,14 +1436,26 @@ def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[f
     >>> len(model.dataset)
     736
     """
+    if blq and lloq:
+        raise ValueError("Cannot specify blq and lloq at the same time")
+    if alq and uloq:
+        raise ValueError("Cannot specify alq and uloq at the same time")
     df = model.dataset
     dv = model.datainfo.dv_column.name
     mdv = get_mdv(model)
     keep = pd.Series(True, index=df.index)
-    if lloq:
+    if isinstance(lloq, str):
+        lloq = df[lloq]
+    if isinstance(uloq, str):
+        uloq = df[uloq]
+    if lloq is not None:
         keep &= (df[dv] >= lloq) | mdv
-    if uloq:
+    elif blq:
+        keep &= df[blq] == 0
+    if uloq is not None:
         keep &= (df[dv] <= uloq) | mdv
+    elif alq:
+        keep &= df[alq] == 0
     model = model.replace(dataset=df[keep])
     return model.update_source()
 

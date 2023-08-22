@@ -262,8 +262,18 @@ def test_undrop_columns(load_example_model_for_test):
 
 def test_remove_loq_data(load_example_model_for_test):
     m = load_example_model_for_test('pheno')
-    m = remove_loq_data(m, lloq=10, uloq=40)
-    assert len(m.dataset) == 736
+    m2 = remove_loq_data(m, lloq=10, uloq=40)
+    assert len(m2.dataset) == 736
+
+    m3 = remove_loq_data(m, alq="FA1")
+    assert len(m3.dataset) == 155
+
+    m4 = remove_loq_data(m, blq="FA1")
+    assert len(m4.dataset) == 155
+
+    m.dataset['LLOQ'] = 10  # Warning: Changes dataset inplace
+    m5 = remove_loq_data(m, lloq="LLOQ")
+    assert len(m5.dataset) == 742
 
 
 def test_check_dataset(load_example_model_for_test):

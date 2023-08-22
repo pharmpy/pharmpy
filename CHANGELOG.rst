@@ -1,4 +1,4 @@
-0.99.0 (2023-08-22)
+0.99.0 (2023-08-23)
 -------------------
 
 New features
@@ -8,6 +8,7 @@ New features
 * Parse IV+oral models using CMT column
 * Specify DV in RUVSearch
 * Option to add logit IIV in ``add_iiv``
+* New options for remove_loq_data
 
 Changes
 =======
