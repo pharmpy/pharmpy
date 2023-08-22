@@ -291,7 +291,7 @@ def convert_dvs(statements, control_stream):
                 kept.append(ass1)
                 kept.append(ass2)
                 dvs = frozenmapping({sympy.Symbol('Y_1'): 1, sympy.Symbol('Y_2'): 2})
-                obs_trans = {sympy.Symbol('Y_1'): sympy.Symbol('Y_1')}
+                obs_trans = frozenmapping({dv: dv for dv in dvs.keys()})
                 change = True
                 continue
         kept.append(s)

@@ -24,8 +24,11 @@ from pharmpy.model.external.nonmem.records.factory import create_record
 from pharmpy.modeling import (
     add_iiv,
     add_population_parameter,
+    create_basic_pk_model,
     create_joint_distribution,
+    read_model,
     remove_iiv,
+    set_direct_effect,
     set_estimation_step,
     set_initial_condition,
     set_initial_estimates,
@@ -49,6 +52,24 @@ def S(x):
 
 def test_source(pheno):
     assert pheno.model_code.startswith('$PROBLEM PHENOBARB')
+
+
+def test_convert_nonmem_model(testdata):
+    model = create_basic_pk_model('iv', testdata / 'nonmem/pheno_pd.csv')
+    model = set_direct_effect(model, 'linear')
+    model = convert_model(model)
+    assert model.dependent_variables == {S('Y'): 1, S('Y_2'): 2}
+    assert model.observation_transformation == {S('Y'): S('Y'), S('Y_2'): S('Y_2')}
+
+
+def test_parse_nonmem_model(testdata):
+    model = read_model(testdata / 'nonmem/pheno_pd.mod')
+    assert model.dependent_variables == {S('Y'): 1}
+    assert model.observation_transformation == {S('Y'): S('Y')}
+
+    model = read_model(testdata / 'nonmem/models/pheno_dvid.mod')
+    assert model.dependent_variables == {S('Y_1'): 1, S('Y_2'): 2}
+    assert model.observation_transformation == {S('Y_1'): S('Y_1'), S('Y_2'): S('Y_2')}
 
 
 def test_update_inits(load_model_for_test, pheno_path):
