@@ -39,17 +39,6 @@ In our team we are using Python, tox and pytest for testing, github actions for 
     * Size: 350h
     * Difficulty: Medium
     * Mentors: Rikard Nordgren, Stella Belin and/or Zhe Huang
-
-* | **Switch lark parser from Earley to LALR(1)**
-  | Model files are currently parsed with an earley parser using the lark Python package. Lark
-  | also supports an LALR(1) parser, which is much faster.
-  | Grammars needs to be adapted to the stricter LALR(1) constraints.
-
-    * Outcomes: Much faster parsing of model description files
-    * Skills: Python, parsing
-    * Size: 175h
-    * Difficulty: Hard
-    * Mentors: Rikard Nordgren, Stella Belin and/or Zhe Huang
 	
 * | **Switch to using symengine instead if sympy for statements**
   | Currently sympy is used for almost all handling of mathematical expressions.
