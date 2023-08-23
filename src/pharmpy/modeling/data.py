@@ -1399,19 +1399,66 @@ def translate_nmtran_time(model: Model):
     return model.update_source()
 
 
-def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[float] = None):
+def _loq_mask(
+    model: Model,
+    lloq: Optional[Union[float, str]] = None,
+    uloq: Optional[Union[float, str]] = None,
+    blq: Optional[str] = None,
+    alq: Optional[str] = None,
+):
+    """Boolean series with False for lloq records and True for non-lloq
+    Options as remove_loq_data
+    """
+    if blq and lloq:
+        raise ValueError("Cannot specify blq and lloq at the same time")
+    if alq and uloq:
+        raise ValueError("Cannot specify alq and uloq at the same time")
+    df = model.dataset
+    if lloq is not None or uloq is not None:
+        dv = model.datainfo.dv_column.name
+    mdv = get_mdv(model)
+    which_keep = pd.Series(True, index=df.index)
+    if isinstance(lloq, str):
+        lloq = df[lloq]
+    if isinstance(uloq, str):
+        uloq = df[uloq]
+    if lloq is not None:
+        which_keep &= (df[dv] > lloq) | mdv
+    elif blq is not None:
+        which_keep &= (df[blq] == 0) | mdv
+    if uloq is not None:
+        which_keep &= (df[dv] < uloq) | mdv
+    elif alq is not None:
+        which_keep &= (df[alq] == 0) | mdv
+    return which_keep
+
+
+def remove_loq_data(
+    model: Model,
+    lloq: Optional[Union[float, str]] = None,
+    uloq: Optional[Union[float, str]] = None,
+    blq: Optional[str] = None,
+    alq: Optional[str] = None,
+    keep: Optional[int] = 0,
+):
     """Remove loq data records from the dataset
 
-    Does nothing if none of the limits is specified.
+    Does nothing if none of the limits are specified.
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
-    lloq : float
-        Lower limit of quantification. Default not specified.
-    uloq : float
-        Upper limit of quantification. Default not specified.
+    lloq : float or str
+        Value or column name for lower limit of quantification.
+    uloq : float or str
+        Value or column name for upper limit of quantification.
+    blq : str
+        Column name for below limit of quantification indicator.
+    alq : str
+        Column name for above limit of quantification indicator.
+    keep : int
+        Number of loq records to keep for each individual.
 
     Returns
     -------
@@ -1426,16 +1473,55 @@ def remove_loq_data(model: Model, lloq: Optional[float] = None, uloq: Optional[f
     >>> len(model.dataset)
     736
     """
+    which_keep = _loq_mask(model, lloq=lloq, uloq=uloq, blq=blq, alq=alq)
     df = model.dataset
-    dv = model.datainfo.dv_column.name
-    mdv = get_mdv(model)
-    keep = pd.Series(True, index=df.index)
-    if lloq:
-        keep &= (df[dv] >= lloq) | mdv
-    if uloq:
-        keep &= (df[dv] <= uloq) | mdv
-    model = model.replace(dataset=df[keep])
+    if keep > 0:
+        idcol = model.datainfo.id_column.name
+        keep_df = pd.DataFrame({'ID': df[idcol], 'remove': ~which_keep})
+        obj = keep_df.groupby(idcol).cumsum().le(keep)['remove']
+        which_keep = obj | which_keep
+    model = model.replace(dataset=df[which_keep])
     return model.update_source()
+
+
+def set_lloq_data(
+    model: Model,
+    value: Union[str, float, sympy.Expr],
+    lloq: Optional[Union[float, str]] = None,
+    blq: Optional[str] = None,
+):
+    """Set a dv value for lloq data records
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    value : float or sympy.Expression
+        The new dv value
+    lloq : float or str
+        Value or column name for lower limit of quantification.
+    blq : str
+        Column name for below limit of quantification indicator.
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = set_lloq_data(model, lloq=10)
+    """
+    which_keep = _loq_mask(model, lloq=lloq, blq=blq)
+    df = model.dataset.copy()
+    dv = model.datainfo.dv_column.name
+    if isinstance(value, sympy.Expr) or isinstance(value, str):
+        value = df.eval(str(value))
+    df[dv] = df[dv].where(which_keep, value)
+    model = model.replace(dataset=df)
+    return model
 
 
 def set_reference_values(model: Model, refs: dict):

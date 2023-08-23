@@ -7,17 +7,17 @@ from pharmpy.deps import sympy
 from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment, EstimationSteps, JointNormalDistribution, Model
 
-from .data import remove_loq_data
+from .data import remove_loq_data, set_lloq_data
 from .expressions import _simplify_expression_from_parameters, create_symbol
 
-SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4'])
+SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4', 'm5', 'm6', 'm7'])
 
 
 def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None):
     """Transform for BLQ data
 
-    Transform a given model, methods available are m1, m3, and m4 [1]_. Current limits of the
-    m3 and m4 method:
+    Transform a given model, methods available are m1, m3, m4, m5, m6 and m7 [1]_.
+    Current limitations of the m3 and m4 method:
 
     * Does not support covariance between epsilons
     * Supports additive, proportional, combined, and power error model
@@ -57,24 +57,81 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
     remove_loq_data
 
     """
+    method = method.lower()
     if method not in SUPPORTED_METHODS:
         raise ValueError(
             f'Invalid `method`: got `{method}`,' f' must be one of {sorted(SUPPORTED_METHODS)}.'
         )
-    if method == 'm1' and not isinstance(lloq, float):
-        raise ValueError('Invalid type of `lloq` when combined with m1 method, must be float')
+
+    try:
+        lloq_col, tp = _get_blq_name_and_type(model)
+    except IndexError:
+        tp = None
 
     if method == 'm1':
-        model = _m1_method(model, lloq)
-    if method in ('m3', 'm4'):
+        model = _m1_method(model, lloq, lloq_col, tp)
+    elif method in ('m3', 'm4'):
         _verify_model(model, method)
         model = _m3_m4_method(model, lloq, method)
+    elif method == 'm5':
+        model = _m5_method(model, lloq, lloq_col, tp)
+    elif method == 'm6':
+        model = _m6_method(model, lloq, lloq_col, tp)
+    elif method == 'm7':
+        model = _m7_method(model, lloq, lloq_col, tp)
 
     return model
 
 
-def _m1_method(model, lloq):
-    return remove_loq_data(model, lloq)
+def _m1_method(model, lloq, lloq_col, tp):
+    if lloq is not None:
+        return remove_loq_data(model, lloq)
+    elif tp == 'lloq':
+        return remove_loq_data(model, lloq=lloq_col)
+    elif tp == 'blqdv':
+        return remove_loq_data(model, blq=lloq_col)
+    else:
+        raise ValueError("M1 method needs either LLOQ or BLQ in datainfo or a provided LLOQ value")
+
+
+def _m5_method(model, lloq, lloq_col, tp):
+    if lloq is not None and tp == 'blqdv':
+        return set_lloq_data(model, lloq / 2, blq=lloq_col)
+    elif lloq is not None:
+        return set_lloq_data(model, lloq / 2, lloq=lloq)
+    elif tp == 'lloq':
+        return set_lloq_data(model, f'{lloq_col}/2', lloq=lloq_col)
+    else:
+        raise ValueError(
+            "M5 method needs either LLOQ in datainfo, BLQ in datainfo + an LLOQ value or only a provided LLOQ value"
+        )
+
+
+def _m6_method(model, lloq, lloq_col, tp):
+    if lloq is not None and tp == 'blqdv':
+        model = remove_loq_data(model, blq=lloq_col, keep=1)
+        return set_lloq_data(model, lloq / 2, blq=lloq_col)
+    elif lloq is not None:
+        model = remove_loq_data(model, lloq=lloq, keep=1)
+        return set_lloq_data(model, lloq / 2, lloq=lloq)
+    elif tp == 'lloq':
+        model = remove_loq_data(model, lloq=lloq_col, keep=1)
+        return set_lloq_data(model, f'{lloq_col}/2', lloq=lloq_col)
+    else:
+        raise ValueError(
+            "M6 method needs either LLOQ in datainfo, BLQ in datainfo + an LLOQ value or only a provided LLOQ value"
+        )
+
+
+def _m7_method(model, lloq, lloq_col, tp):
+    if lloq is not None:
+        return set_lloq_data(model, 0, lloq=lloq)
+    elif tp == 'lloq':
+        return set_lloq_data(model, 0, lloq=lloq_col)
+    elif tp == 'blqdv':
+        return set_lloq_data(model, 0, blq=lloq_col)
+    else:
+        raise ValueError("M7 method needs either LLOQ or BLQ in datainfo or a provided LLOQ value")
 
 
 def _m3_m4_method(model, lloq, method):
@@ -155,16 +212,21 @@ def has_blq_transformation(model: Model):
     )
 
 
-def get_blq_symb_and_type(model: Model):
+def _get_blq_name_and_type(model: Model):
     try:
         blq_datainfo = model.datainfo.typeix['lloq']
-        return sympy.Symbol(blq_datainfo[0].name), 'lloq'
+        return blq_datainfo[0].name, 'lloq'
     except IndexError:
-        try:
-            blq_datainfo = model.datainfo.typeix['blqdv']
-            return sympy.Symbol(blq_datainfo[0].name), 'blqdv'
-        except IndexError:
-            return sympy.Symbol('LLOQ'), 'lloq'
+        blq_datainfo = model.datainfo.typeix['blqdv']
+        return blq_datainfo[0].name, 'blqdv'
+
+
+def get_blq_symb_and_type(model: Model):
+    try:
+        name, tp = _get_blq_name_and_type(model)
+        return sympy.Symbol(name), tp
+    except IndexError:
+        return sympy.Symbol('LLOQ'), 'lloq'
 
 
 def _has_all_expected_symbs(sset, expected_symbs):
