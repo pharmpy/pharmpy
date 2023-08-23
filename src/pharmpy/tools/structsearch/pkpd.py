@@ -32,7 +32,9 @@ def create_baseline_pd_model(model: Model, ests: pd.Series):
     return baseline_model
 
 
-def create_pkpd_models(model: Model, e0_init: pd.Series, ests: pd.Series):
+def create_pkpd_models(
+    model: Model, e0_init: pd.Series, ests: pd.Series, emax_init=None, ec50_init=None
+):
     """Create pkpd models
 
     Parameters
@@ -55,12 +57,19 @@ def create_pkpd_models(model: Model, e0_init: pd.Series, ests: pd.Series):
                 pkpd_model = set_direct_effect(model, expr=pd_type)
             elif model_type == "effect_compartment":
                 pkpd_model = add_effect_compartment(model, expr=pd_type)
+
             pkpd_model = set_name(pkpd_model, f"structsearch_run{index}")
             pkpd_model = pkpd_model.replace(description=f"{model_type}_{pd_type}")
             index += 1
             pkpd_model = add_iiv(pkpd_model, ["E0"], "exp")
             pkpd_model = set_initial_estimates(pkpd_model, e0_init)
             pkpd_model = fix_parameters_to(pkpd_model, ests)
+
+            if emax_init:
+                pkpd_model = fix_parameters_to(pkpd_model, {'POP_E_MAX': emax_init})
+            if ec50_init:
+                pkpd_model = fix_parameters_to(pkpd_model, {'POP_EC_50': ec50_init})
+
             for parameter in ["SLOPE", "E_MAX"]:
                 try:
                     pkpd_model = add_iiv(pkpd_model, [parameter], "exp")

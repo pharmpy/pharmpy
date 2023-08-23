@@ -85,6 +85,22 @@ def test_pkpd(load_model_for_test, testdata):
     assert pkpd_models[0].parameters[1].name == 'TVV'
     assert pkpd_models[5].parameters[1].name == 'TVV'
 
+    models2 = create_pkpd_models(model, e0_init, ests, emax_init=2.0, ec50_init=1.0)
+    param_emax = models2[1].parameters['POP_E_MAX']
+    param_ec50 = models2[1].parameters['POP_EC_50']
+    assert param_emax.init == 2.0
+    assert param_emax.fix is True
+    assert param_ec50.init == 1.0
+    assert param_ec50.fix is True
+
+    models3 = create_pkpd_models(model, e0_init, ests)
+    param_emax = models3[1].parameters['POP_E_MAX']
+    param_ec50 = models3[1].parameters['POP_EC_50']
+    assert param_emax.init == 0.1
+    assert param_emax.fix is False
+    assert param_ec50.init == 0.1
+    assert param_ec50.fix is False
+
 
 def test_create_workflow():
     assert isinstance(create_workflow('oral', 'pkpd'), Workflow)
