@@ -142,48 +142,53 @@ def create_basic_pk_model(
     return model
 
 
-def _create_default_datainfo(path):
-    path = path_absolute(path)
-    datainfo_path = path.with_suffix('.datainfo')
-    if datainfo_path.is_file():
-        di = DataInfo.read_json(datainfo_path)
-        di = di.replace(path=path)
+def _create_default_datainfo(path_or_df):
+    if not isinstance(path_or_df, pd.DataFrame):
+        path = path_absolute(path_or_df)
+        datainfo_path = path.with_suffix('.datainfo')
+        if datainfo_path.is_file():
+            di = DataInfo.read_json(datainfo_path)
+            di = di.replace(path=path)
+            return di
+        else:
+            with open(path) as file:
+                first_line = file.readline()
+                if ',' not in first_line:
+                    colnames = list(pd.read_csv(path, nrows=0, sep=r'\s+'))
+                    separator = r'\s+'
+                else:
+                    colnames = list(pd.read_csv(path, nrows=0))
+                    separator = ','
     else:
-        with open(path) as file:
-            first_line = file.readline()
-            if ',' not in first_line:
-                colnames = list(pd.read_csv(path, nrows=0, sep=r'\s+'))
-                seperator = r'\s+'
+        colnames = path_or_df.columns
+        separator = None
+        path = None
+
+    column_info = []
+    for colname in colnames:
+        if colname == 'ID' or colname == 'L1':
+            info = ColumnInfo.create(colname, type='id', scale='nominal', datatype='int32')
+        elif colname == 'DV':
+            info = ColumnInfo.create(colname, type='dv')
+        elif colname == 'TIME':
+            if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
+                datatype = 'nmtran-time'
             else:
-                colnames = list(pd.read_csv(path, nrows=0))
-                seperator = ','
-        column_info = []
-        for colname in colnames:
-            if colname == 'ID' or colname == 'L1':
-                info = ColumnInfo.create(colname, type='id', scale='nominal', datatype='int32')
-            elif colname == 'DV':
-                info = ColumnInfo.create(colname, type='dv')
-            elif colname == 'TIME':
-                if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
-                    datatype = 'nmtran-time'
-                else:
-                    datatype = 'float64'
-                info = ColumnInfo.create(colname, type='idv', scale='ratio', datatype=datatype)
-            elif colname == 'EVID':
-                info = ColumnInfo.create(colname, type='event', scale='nominal')
-            elif colname == 'MDV':
-                if 'EVID' in colnames:
-                    info = ColumnInfo.create(colname, type='mdv')
-                else:
-                    info = ColumnInfo.create(
-                        colname, type='event', scale='nominal', datatype='int32'
-                    )
-            elif colname == 'AMT':
-                info = ColumnInfo.create(colname, type='dose', scale='ratio')
+                datatype = 'float64'
+            info = ColumnInfo.create(colname, type='idv', scale='ratio', datatype=datatype)
+        elif colname == 'EVID':
+            info = ColumnInfo.create(colname, type='event', scale='nominal')
+        elif colname == 'MDV':
+            if 'EVID' in colnames:
+                info = ColumnInfo.create(colname, type='mdv')
             else:
-                info = ColumnInfo.create(colname)
-            column_info.append(info)
-        di = DataInfo.create(column_info, path=path, separator=seperator)
+                info = ColumnInfo.create(colname, type='event', scale='nominal', datatype='int32')
+        elif colname == 'AMT':
+            info = ColumnInfo.create(colname, type='dose', scale='ratio')
+        else:
+            info = ColumnInfo.create(colname)
+        column_info.append(info)
+    di = DataInfo.create(column_info, path=path, separator=separator)
     return di
 
 

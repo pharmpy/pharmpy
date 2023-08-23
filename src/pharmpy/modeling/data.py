@@ -1405,6 +1405,7 @@ def remove_loq_data(
     uloq: Optional[Union[float, str]] = None,
     blq: Optional[str] = None,
     alq: Optional[str] = None,
+    keep: Optional[int] = 0,
 ):
     """Remove loq data records from the dataset
 
@@ -1422,6 +1423,8 @@ def remove_loq_data(
         Column name for below limit of quantification indicator.
     alq : str
         Column name for above limit of quantification indicator.
+    keep : int
+        Number of loq records to keep for each individual.
 
     Returns
     -------
@@ -1441,22 +1444,28 @@ def remove_loq_data(
     if alq and uloq:
         raise ValueError("Cannot specify alq and uloq at the same time")
     df = model.dataset
-    dv = model.datainfo.dv_column.name
+    if lloq is not None or uloq is not None:
+        dv = model.datainfo.dv_column.name
     mdv = get_mdv(model)
-    keep = pd.Series(True, index=df.index)
+    which_keep = pd.Series(True, index=df.index)
     if isinstance(lloq, str):
         lloq = df[lloq]
     if isinstance(uloq, str):
         uloq = df[uloq]
     if lloq is not None:
-        keep &= (df[dv] >= lloq) | mdv
-    elif blq:
-        keep &= df[blq] == 0
+        which_keep &= (df[dv] > lloq) | mdv
+    elif blq is not None:
+        which_keep &= (df[blq] == 0) | mdv
     if uloq is not None:
-        keep &= (df[dv] <= uloq) | mdv
-    elif alq:
-        keep &= df[alq] == 0
-    model = model.replace(dataset=df[keep])
+        which_keep &= (df[dv] < uloq) | mdv
+    elif alq is not None:
+        which_keep &= (df[alq] == 0) | mdv
+    if keep > 0:
+        idcol = model.datainfo.id_column.name
+        keep_df = pd.DataFrame({'ID': df[idcol], 'remove': ~which_keep})
+        obj = keep_df.groupby(idcol).cumsum().le(keep)['remove']
+        which_keep = obj | which_keep
+    model = model.replace(dataset=df[which_keep])
     return model.update_source()
 
 

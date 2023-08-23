@@ -28,6 +28,7 @@ from pharmpy.modeling import (
     translate_nmtran_time,
     undrop_columns,
 )
+from pharmpy.modeling.basic_models import _create_default_datainfo
 
 
 def test_get_ids(load_example_model_for_test):
@@ -265,15 +266,80 @@ def test_remove_loq_data(load_example_model_for_test):
     m2 = remove_loq_data(m, lloq=10, uloq=40)
     assert len(m2.dataset) == 736
 
-    m3 = remove_loq_data(m, alq="FA1")
-    assert len(m3.dataset) == 155
+    m.dataset['LQ'] = [1, 1] + [0] * 742
+    m3 = remove_loq_data(m, alq="LQ")
+    assert len(m3.dataset) == 743
 
-    m4 = remove_loq_data(m, blq="FA1")
-    assert len(m4.dataset) == 155
+    m4 = remove_loq_data(m, blq="LQ")
+    assert len(m4.dataset) == 743
 
-    m.dataset['LLOQ'] = 10  # Warning: Changes dataset inplace
+    m.dataset['LLOQ'] = 10
     m5 = remove_loq_data(m, lloq="LLOQ")
     assert len(m5.dataset) == 742
+
+
+@pytest.mark.usefixtures('load_example_model_for_test')
+@pytest.mark.parametrize(
+    'd,expected,keep',
+    [
+        (
+            {
+                'ID': [1, 1, 1, 1, 2, 2, 2, 2],
+                'MDV': [1, 1, 0, 0, 1, 1, 0, 0],
+                'BLQ': [0, 0, 1, 1, 0, 0, 1, 1],
+                'DV': [0, 1, 2, 3, 4, 5, 6, 7],
+            },
+            [0, 1, 4, 5],
+            0,
+        ),
+        (
+            {
+                'ID': [1, 1, 1, 1, 2, 2, 2, 2],
+                'MDV': [1, 1, 0, 0, 1, 1, 0, 0],
+                'BLQ': [1, 1, 1, 1, 1, 1, 1, 1],
+                'DV': [0, 1, 2, 3, 4, 5, 6, 7],
+            },
+            [0, 1, 4, 5],
+            0,
+        ),
+        (
+            {
+                'ID': [1, 1, 1, 1, 2, 2, 2, 2],
+                'MDV': [1, 1, 1, 1, 1, 1, 1, 1],
+                'BLQ': [1, 1, 1, 1, 1, 1, 1, 1],
+                'DV': [0, 1, 2, 3, 4, 5, 6, 7],
+            },
+            [0, 1, 2, 3, 4, 5, 6, 7],
+            0,
+        ),
+        (
+            {
+                'ID': [1, 1, 1, 1, 2, 2, 2, 2],
+                'MDV': [1, 1, 0, 0, 1, 1, 0, 0],
+                'BLQ': [0, 0, 1, 1, 0, 0, 1, 1],
+                'DV': [0, 1, 2, 3, 4, 5, 6, 7],
+            },
+            [0, 1, 2, 4, 5, 6],
+            1,
+        ),
+        (
+            {
+                'ID': [1, 1, 1, 1, 2, 2, 2, 2],
+                'MDV': [1, 1, 0, 0, 1, 1, 0, 0],
+                'BLQ': [0, 0, 1, 1, 0, 0, 1, 1],
+                'DV': [0, 1, 2, 3, 4, 5, 6, 7],
+            },
+            [0, 1, 2, 3, 4, 5, 6, 7],
+            2,
+        ),
+    ],
+)
+def test_remove_blq(load_example_model_for_test, d, expected, keep):
+    m = load_example_model_for_test('pheno')
+    df = pd.DataFrame(d)
+    m = m.replace(dataset=df, datainfo=_create_default_datainfo(df))
+    new = remove_loq_data(m, blq='BLQ', keep=keep)
+    assert list(new.dataset['DV']) == expected
 
 
 def test_check_dataset(load_example_model_for_test):
