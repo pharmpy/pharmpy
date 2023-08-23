@@ -267,15 +267,18 @@ def test_remove_loq_data(load_example_model_for_test):
     m2 = remove_loq_data(m, lloq=10, uloq=40)
     assert len(m2.dataset) == 736
 
-    m.dataset['LQ'] = [1, 1] + [0] * 742
-    m3 = remove_loq_data(m, alq="LQ")
+    df = m.dataset.copy()
+    df['LQ'] = [1, 1] + [0] * 742
+    m3 = m.replace(dataset=df)
+    m3 = remove_loq_data(m3, alq="LQ")
     assert len(m3.dataset) == 743
 
-    m4 = remove_loq_data(m, blq="LQ")
+    m4 = remove_loq_data(m3, blq="LQ")
     assert len(m4.dataset) == 743
 
-    m.dataset['LLOQ'] = 10
-    m5 = remove_loq_data(m, lloq="LLOQ")
+    df['LLOQ'] = 10
+    m5 = m.replace(dataset=df)
+    m5 = remove_loq_data(m5, lloq="LLOQ")
     assert len(m5.dataset) == 742
 
 
