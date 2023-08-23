@@ -24,6 +24,7 @@ from pharmpy.modeling import (
     list_time_varying_covariates,
     remove_loq_data,
     set_dvid,
+    set_lloq_data,
     set_reference_values,
     translate_nmtran_time,
     undrop_columns,
@@ -339,6 +340,50 @@ def test_remove_blq(load_example_model_for_test, d, expected, keep):
     df = pd.DataFrame(d)
     m = m.replace(dataset=df, datainfo=_create_default_datainfo(df))
     new = remove_loq_data(m, blq='BLQ', keep=keep)
+    assert list(new.dataset['DV']) == expected
+
+
+@pytest.mark.usefixtures('load_example_model_for_test')
+@pytest.mark.parametrize(
+    'd,expected,value',
+    [
+        (
+            {
+                'ID': [1, 1, 1, 1, 2, 2, 2, 2],
+                'MDV': [1, 1, 0, 0, 1, 1, 0, 0],
+                'BLQ': [0, 0, 1, 1, 0, 0, 1, 1],
+                'DV': [0, 1, 2, 3, 4, 5, 6, 7],
+            },
+            [0, 1, 0, 0, 4, 5, 0, 0],
+            0,
+        ),
+        (
+            {
+                'ID': [1, 1, 1, 1, 2, 2, 2, 2],
+                'MDV': [1, 1, 0, 0, 1, 1, 0, 0],
+                'BLQ': [1, 1, 1, 1, 1, 1, 1, 1],
+                'DV': [0, 1, 2, 3, 4, 5, 6, 7],
+            },
+            [0, 1, 1, 1, 4, 5, 1, 1],
+            1,
+        ),
+        (
+            {
+                'ID': [1, 1, 1, 1, 2, 2, 2, 2],
+                'MDV': [1, 1, 1, 1, 1, 1, 1, 1],
+                'BLQ': [1, 1, 1, 1, 1, 1, 1, 1],
+                'DV': [0, 1, 2, 3, 4, 5, 6, 7],
+            },
+            [0, 1, 2, 3, 4, 5, 6, 7],
+            0,
+        ),
+    ],
+)
+def test_set_lloq_value(load_example_model_for_test, d, expected, value):
+    m = load_example_model_for_test('pheno')
+    df = pd.DataFrame(d)
+    m = m.replace(dataset=df, datainfo=_create_default_datainfo(df))
+    new = set_lloq_data(m, value, blq='BLQ')
     assert list(new.dataset['DV']) == expected
 
 

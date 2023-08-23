@@ -5,6 +5,7 @@ New features
 ============
 
 * Add function modeling.set_reference_values
+* Add function modeling.set_lloq_data
 * Parse IV+oral models using CMT column
 * Specify DV in RUVSearch
 * Option to add logit IIV in ``add_iiv``
