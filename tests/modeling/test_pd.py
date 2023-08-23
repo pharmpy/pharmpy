@@ -52,7 +52,7 @@ def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
 def _test_effect_models(model, expr, conc):
     e = S("E")
     e0 = S("E0")
-    emax = S("E_max")
+    emax = S("E_MAX")
     ec50 = S("EC_50")
 
     if expr == 'baseline':
@@ -61,20 +61,20 @@ def _test_effect_models(model, expr, conc):
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
     elif expr == 'linear':
         assert model.statements[1] == Assignment(e0, S("POP_E0"))
-        assert model.statements[0] == Assignment(S("Slope"), S("POP_Slope"))
-        assert model.statements.after_odes[-2] == Assignment(e, e0 + S("Slope") * conc)
+        assert model.statements[0] == Assignment(S("SLOPE"), S("POP_SLOPE"))
+        assert model.statements.after_odes[-2] == Assignment(e, e0 + S("SLOPE") * conc)
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
     elif expr == "Emax":
         assert model.statements[0] == Assignment(ec50, S("POP_EC_50"))
         assert model.statements[2] == Assignment(e0, S("POP_E0"))
-        assert model.statements[1] == Assignment(emax, S("POP_E_max"))
+        assert model.statements[1] == Assignment(emax, S("POP_E_MAX"))
         assert model.statements.after_odes[-2] == Assignment(e, e0 + (emax * conc) / (ec50 + conc))
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
     elif expr == "sigmoid":
         assert model.statements[0] == Assignment(S("n"), S("POP_n"))
         assert model.statements[1] == Assignment(ec50, S("POP_EC_50"))
         assert model.statements[3] == Assignment(e0, S("POP_E0"))
-        assert model.statements[2] == Assignment(emax, S("POP_E_max"))
+        assert model.statements[2] == Assignment(emax, S("POP_E_MAX"))
         assert model.statements.after_odes[-2] == Assignment(
             e,
             sympy.Piecewise(
@@ -86,15 +86,15 @@ def _test_effect_models(model, expr, conc):
         assert model.parameters["POP_n"].init == 1
     elif expr == "step":
         assert model.statements[1] == Assignment(e0, S("POP_E0"))
-        assert model.statements[0] == Assignment(emax, S("POP_E_max"))
+        assert model.statements[0] == Assignment(emax, S("POP_E_MAX"))
         assert model.statements.after_odes[-2] == Assignment(
             e, sympy.Piecewise((e0, conc <= 0), (e0 + emax, True))
         )
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
     elif expr == "loglin":
         assert model.statements[1] == Assignment(e0, S("POP_E0"))
-        assert model.statements[0] == Assignment(S("slope"), S("POP_slope"))
+        assert model.statements[0] == Assignment(S("SLOPE"), S("POP_SLOPE"))
         assert model.statements.after_odes[-2] == Assignment(
-            e, S("slope") * sympy.log(conc + sympy.exp(e0 / S("slope")))
+            e, S("SLOPE") * sympy.log(conc + sympy.exp(e0 / S("SLOPE")))
         )
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
