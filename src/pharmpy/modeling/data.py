@@ -849,9 +849,11 @@ def get_admid(model: Model):
     """Get the admid from model dataset
 
     If an administration column is present this will be extracted otherwise
-    an admid column will be created.
-    1 : Oral dose
-    2 : IV dose
+    an admid column will be created based on the admids of the present doses.
+    This is dependent on the presence of a CMT column to be generated correctly.
+
+    When generated, admids of events in between doses is set to the last used
+    admid.
 
     Parameters
     ----------
@@ -876,16 +878,12 @@ def get_admid(model: Model):
     remap = {}
     if isinstance(odes, CompartmentalSystem):
         for dosing in odes.dosing_compartments:
-            if dosing == odes.central_compartment:
-                remap[names.index(dosing.name) + 1] = 2
-            else:
-                remap[names.index(dosing.name) + 1] = 1
+            remap[names.index(dosing.name) + 1] = dosing.doses[0].admid
     adm = get_cmt(model)
     adm = adm.replace(remap)
     adm.name = "ADMID"
 
     # Replace all observations with the previous admid type
-    # FIXME : Replace with the last dose instead for all observations?
     current_admin = adm[0]
     current_subject = model.dataset["ID"][0]
     for i, data in enumerate(zip(get_evid(model), adm, model.dataset["ID"])):
@@ -908,8 +906,9 @@ def add_admid(model: Model):
     """
     Add an admid column to the model dataset and datainfo. Dependent on the
     presence of a CMT column in order to add admid correctly.
-    1 : Oral dose
-    2 : IV dose
+
+    When generated, admids of events in between doses is set to the last used
+    admid.
 
     Parameters
     ----------

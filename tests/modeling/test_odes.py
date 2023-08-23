@@ -1695,7 +1695,7 @@ def test_move_bioavailability(load_model_for_test, testdata):
     model = set_first_order_absorption(model)
     assert model.statements.ode_system.dosing_compartments[0].name == "DEPOT"
     assert model.statements.ode_system.dosing_compartments[0].bioavailability == sympy.Symbol("F1")
-    assert not model.statements.ode_system.find_compartment("CENTRAL").dose
+    assert not model.statements.ode_system.find_compartment("CENTRAL").doses
 
 
 def test_lag_time(load_model_for_test, testdata):
@@ -2644,11 +2644,11 @@ def test_multi_dose_change_absorption(load_model_for_test, testdata):
     depot = model.statements.ode_system.find_compartment("DEPOT")
     central = model.statements.ode_system.find_compartment("CENTRAL")
 
-    assert depot.dose[0] == Bolus(sympy.Symbol('AMT'), admid=1)
-    assert central.dose[0] == Bolus(sympy.Symbol('AMT'), admid=2)
+    assert depot.doses[0] == Bolus(sympy.Symbol('AMT'), admid=1)
+    assert central.doses[0] == Bolus(sympy.Symbol('AMT'), admid=1)
 
     model = set_zero_order_absorption(model)
     central = model.statements.ode_system.find_compartment("CENTRAL")
 
-    assert len(central.dose) == 2
-    assert central.dose[0] == Infusion(sympy.Symbol('AMT'), admid=1, duration=sympy.Symbol("D1"))
+    assert len(central.doses) == 2
+    assert central.doses[0] == Infusion(sympy.Symbol('AMT'), admid=1, duration=sympy.Symbol("D1"))

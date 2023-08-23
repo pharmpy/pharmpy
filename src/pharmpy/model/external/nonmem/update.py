@@ -382,7 +382,10 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
     if nonlin or haszo:
         model = to_des(model, new)
     else:
-        if isinstance(new.dosing_compartments[0].dose[0], Bolus) and 'RATE' in model.datainfo.names:
+        if (
+            isinstance(new.dosing_compartments[0].doses[0], Bolus)
+            and 'RATE' in model.datainfo.names
+        ):
             df = model.dataset.drop(columns=['RATE'])
             model = model.replace(dataset=df)
 
@@ -412,7 +415,7 @@ def update_cmt_column(model, old, new):
 
             d = {}
             for dose_comp in model.statements.ode_system.dosing_compartments:
-                d[dose_comp.dose[0].admid] = newmap[dose_comp.name]
+                d[dose_comp.doses[0].admid] = newmap[dose_comp.name]
 
             cmt_col = get_admid(model)
             cmt_col = cmt_col.replace(d)
@@ -446,7 +449,6 @@ def update_cmt_column(model, old, new):
                 if dose_comp != old.central_compartment:
                     # Remap oral doses to new dosing compartment
                     remap[oldmap[dose_comp.name]] = newmap[new.dosing_compartments[0].name]
-            dataset = model.dataset.copy()
             dataset = dataset.replace({"CMT": remap})
             model = model.replace(dataset=dataset)
 
@@ -477,25 +479,26 @@ def update_infusion(model: Model, old: ODESystem):
     statements = model.statements
     new = statements.ode_system
     assert new is not None
-    if isinstance(new.dosing_compartments[0].dose[0], Infusion) and not statements.find_assignment(
+    if isinstance(new.dosing_compartments[0].doses[0], Infusion) and not statements.find_assignment(
         'D1'
     ):
         # Handle direct moving of Infusion dose
         statements = statements.subs({'D2': 'D1'})
 
-    if isinstance(new.dosing_compartments[0].dose[0], Infusion) and isinstance(
-        old.dosing_compartments[0].dose[0], Bolus
+    if isinstance(new.dosing_compartments[0].doses[0], Infusion) and isinstance(
+        old.dosing_compartments[0].doses[0], Bolus
     ):
-        dose = new.dosing_compartments[0].dose[0]
+        dose = new.dosing_compartments[0].doses[0]
         if dose.rate is None:
             # FIXME: Not always D1 here!
             ass = Assignment(sympy.Symbol('D1'), dose.duration)
             cb = CompartmentalSystemBuilder(new)
-            cb.set_dose(
+            comp = cb.set_dose(
                 new.dosing_compartments[0],
                 Infusion(dose.amount, admid=dose.admid, duration=ass.symbol),
-                admid=dose.admid,
             )
+            if len(new.dosing_compartments[0].doses) > 1:
+                cb.set_dose(comp, new.dosing_compartments[0].doses[1:], replace=False)
             statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")

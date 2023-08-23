@@ -463,7 +463,7 @@ def calculate_pk_parameters_statistics(
         d = sympy.diff(expr, odes.t)
         tmax_closed_form = sympy.solve(d, odes.t)[0]
         expressions.append(sympy.Eq(sympy.Symbol('t_max'), tmax_closed_form))
-        e2 = sympy.simplify(expr / depot.dose[0].amount / sympy.denom(elimination_rate))
+        e2 = sympy.simplify(expr / depot.doses[0].amount / sympy.denom(elimination_rate))
         cmax_dose_closed_form = sympy.simplify(
             subs(e2, {odes.t: tmax_closed_form}, simultaneous=True)
         )
@@ -498,8 +498,8 @@ def calculate_pk_parameters_statistics(
 
         beta = m[beta] / odes.t
         alpha = m[alpha] / odes.t
-        A = m[A] / central.dose[0].amount
-        B = m[B] / central.dose[0].amount
+        A = m[A] / central.doses[0].amount
+        B = m[B] / central.doses[0].amount
 
         if (beta - alpha).extract_multiplicatively(-1) is not None:
             # alpha > beta  (sympy couldn't simplify this directly)

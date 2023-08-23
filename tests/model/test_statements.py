@@ -156,13 +156,13 @@ def test_dict(load_model_for_test, testdata):
     inf2 = Infusion.from_dict(d)
     assert inf1 == inf2
 
-    central = Compartment.create('CENTRAL', dose=dose1)
+    central = Compartment.create('CENTRAL', doses=(dose1,))
     d = central.to_dict()
     assert d == {
         'class': 'Compartment',
         'name': 'CENTRAL',
         'amount': "Symbol('A_CENTRAL')",
-        'dose': ({'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},),
+        'doses': ({'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},),
         'input': 'Integer(0)',
         'lag_time': 'Integer(0)',
         'bioavailability': 'Integer(1)',
@@ -186,7 +186,7 @@ def test_dict(load_model_for_test, testdata):
                 'class': 'Compartment',
                 'name': 'CENTRAL',
                 'amount': "Symbol('A_CENTRAL')",
-                'dose': ({'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 2},),
+                'doses': ({'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},),
                 'input': 'Integer(0)',
                 'lag_time': 'Integer(0)',
                 'bioavailability': 'Integer(1)',
@@ -371,7 +371,7 @@ def test_repr_html():
 
     cb = CompartmentalSystemBuilder()
     dose = Bolus.create('AMT')
-    central = Compartment.create('CENTRAL', dose=dose)
+    central = Compartment.create('CENTRAL', doses=(dose,))
     cb.add_compartment(central)
     cb.add_compartment(output)
     cb.add_flow(central, output, S('K'))
@@ -425,19 +425,19 @@ def test_dependencies(load_model_for_test, pheno_path):
 def test_builder():
     cb = CompartmentalSystemBuilder()
     dose = Bolus('AMT')
-    central = Compartment.create('CENTRAL', dose=dose)
+    central = Compartment.create('CENTRAL', doses=(dose,))
     cb.add_compartment(central)
     cb.add_flow(central, output, S('K'))
     depot = Compartment.create('DEPOT')
     cb.add_compartment(depot)
     cb.add_flow(depot, central, S('KA'))
     cm = CompartmentalSystem(cb)
-    assert not cm.find_compartment('DEPOT').dose
-    assert cm.central_compartment.dose[0] == dose
+    assert not cm.find_compartment('DEPOT').doses
+    assert cm.central_compartment.doses[0] == dose
     cb.move_dose(central, depot)
     cm2 = CompartmentalSystem(cb)
-    assert cm2.find_compartment('DEPOT').dose[0] == dose
-    assert not cm2.central_compartment.dose
+    assert cm2.find_compartment('DEPOT').doses[0] == dose
+    assert not cm2.central_compartment.doses
     assert hash(cm) != hash(cm2)
 
 
@@ -486,6 +486,6 @@ def test_multi_dose_comp_order(load_model_for_test, testdata):
 
     ode = model.statements.ode_system
     cb = CompartmentalSystemBuilder(ode)
-    cb.set_dose(cb.find_compartment("CENTRAL"), cb.find_compartment("DEPOT").dose)
+    cb.set_dose(cb.find_compartment("CENTRAL"), cb.find_compartment("DEPOT").doses)
     ode = CompartmentalSystem(cb)
     assert ode.dosing_compartments[0].name == "DEPOT"
