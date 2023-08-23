@@ -61,11 +61,14 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
         raise ValueError(
             f'Invalid `method`: got `{method}`,' f' must be one of {sorted(SUPPORTED_METHODS)}.'
         )
-    if method == 'm1' and not isinstance(lloq, float):
-        raise ValueError('Invalid type of `lloq` when combined with m1 method, must be float')
+
+    try:
+        lloq_col, tp = _get_blq_name_and_type(model)
+    except IndexError:
+        tp = None
 
     if method == 'm1':
-        model = _m1_method(model, lloq)
+        model = _m1_method(model, lloq, lloq_col, tp)
     if method in ('m3', 'm4'):
         _verify_model(model, method)
         model = _m3_m4_method(model, lloq, method)
@@ -73,8 +76,15 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
     return model
 
 
-def _m1_method(model, lloq):
-    return remove_loq_data(model, lloq)
+def _m1_method(model, lloq, lloq_col, tp):
+    if lloq is not None:
+        return remove_loq_data(model, lloq)
+    elif tp == 'lloq':
+        return remove_loq_data(model, lloq=lloq_col)
+    elif tp == 'blqdv':
+        return remove_loq_data(model, blq=lloq_col)
+    else:
+        raise ValueError("M1 method needs either LLOQ or BLQ in datainfo or a provided LLOQ value")
 
 
 def _m3_m4_method(model, lloq, method):
