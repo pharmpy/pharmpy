@@ -7,16 +7,16 @@ from pharmpy.deps import sympy
 from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment, EstimationSteps, JointNormalDistribution, Model
 
-from .data import remove_loq_data
+from .data import remove_loq_data, set_lloq_data
 from .expressions import _simplify_expression_from_parameters, create_symbol
 
-SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4'])
+SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4', 'm7'])
 
 
 def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None):
     """Transform for BLQ data
 
-    Transform a given model, methods available are m1, m3, and m4 [1]_. Current limits of the
+    Transform a given model, methods available are m1, m3, m4 and m7 [1]_. Current limits of the
     m3 and m4 method:
 
     * Does not support covariance between epsilons
@@ -69,9 +69,11 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
 
     if method == 'm1':
         model = _m1_method(model, lloq, lloq_col, tp)
-    if method in ('m3', 'm4'):
+    elif method in ('m3', 'm4'):
         _verify_model(model, method)
         model = _m3_m4_method(model, lloq, method)
+    elif method == 'm7':
+        model = _m7_method(model, lloq, lloq_col, tp)
 
     return model
 
@@ -85,6 +87,17 @@ def _m1_method(model, lloq, lloq_col, tp):
         return remove_loq_data(model, blq=lloq_col)
     else:
         raise ValueError("M1 method needs either LLOQ or BLQ in datainfo or a provided LLOQ value")
+
+
+def _m7_method(model, lloq, lloq_col, tp):
+    if lloq is not None:
+        return set_lloq_data(model, 0, lloq=lloq)
+    elif tp == 'lloq':
+        return set_lloq_data(model, 0, lloq=lloq_col)
+    elif tp == 'blqdv':
+        return set_lloq_data(model, 0, blq=lloq_col)
+    else:
+        raise ValueError("M7 method needs either LLOQ or BLQ in datainfo or a provided LLOQ value")
 
 
 def _m3_m4_method(model, lloq, method):
