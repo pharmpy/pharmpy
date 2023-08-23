@@ -61,7 +61,7 @@ def create_pkpd_models(model: Model, e0_init: pd.Series, ests: pd.Series):
             pkpd_model = add_iiv(pkpd_model, ["E0"], "exp")
             pkpd_model = set_initial_estimates(pkpd_model, e0_init)
             pkpd_model = fix_parameters_to(pkpd_model, ests)
-            for parameter in ["Slope", "E_max"]:
+            for parameter in ["SLOPE", "E_MAX"]:
                 try:
                     pkpd_model = add_iiv(pkpd_model, [parameter], "exp")
                 except ValueError:
