@@ -1474,7 +1474,7 @@ def remove_loq_data(
     736
     """
     which_keep = _loq_mask(model, lloq=lloq, uloq=uloq, blq=blq, alq=alq)
-    df = model.dataset
+    df = model.dataset.copy()
     if keep > 0:
         idcol = model.datainfo.id_column.name
         keep_df = pd.DataFrame({'ID': df[idcol], 'remove': ~which_keep})
@@ -1512,7 +1512,7 @@ def set_lloq_data(
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = set_lloq_data(model, lloq=10)
+    >>> model = set_lloq_data(model, 0, lloq=10)
     """
     which_keep = _loq_mask(model, lloq=lloq, blq=blq)
     df = model.dataset.copy()
