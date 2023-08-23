@@ -1486,7 +1486,7 @@ def remove_loq_data(
 
 def set_lloq_data(
     model: Model,
-    value: float,
+    value: Union[str, float, sympy.Expr],
     lloq: Optional[Union[float, str]] = None,
     blq: Optional[str] = None,
 ):
@@ -1496,7 +1496,7 @@ def set_lloq_data(
     ----------
     model : Model
         Pharmpy model object
-    value : float
+    value : float or sympy.Expression
         The new dv value
     lloq : float or str
         Value or column name for lower limit of quantification.
@@ -1517,6 +1517,8 @@ def set_lloq_data(
     which_keep = _loq_mask(model, lloq=lloq, blq=blq)
     df = model.dataset.copy()
     dv = model.datainfo.dv_column.name
+    if isinstance(value, sympy.Expr) or isinstance(value, str):
+        value = df.eval(str(value))
     df[dv] = df[dv].where(which_keep, value)
     model = model.replace(dataset=df)
     return model

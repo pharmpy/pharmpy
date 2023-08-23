@@ -10,14 +10,14 @@ from pharmpy.model import Assignment, EstimationSteps, JointNormalDistribution, 
 from .data import remove_loq_data, set_lloq_data
 from .expressions import _simplify_expression_from_parameters, create_symbol
 
-SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4', 'm7'])
+SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4', 'm5', 'm6', 'm7'])
 
 
 def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None):
     """Transform for BLQ data
 
-    Transform a given model, methods available are m1, m3, m4 and m7 [1]_. Current limits of the
-    m3 and m4 method:
+    Transform a given model, methods available are m1, m3, m4, m5, m6 and m7 [1]_.
+    Current limitations of the m3 and m4 method:
 
     * Does not support covariance between epsilons
     * Supports additive, proportional, combined, and power error model
@@ -57,6 +57,7 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
     remove_loq_data
 
     """
+    method = method.lower()
     if method not in SUPPORTED_METHODS:
         raise ValueError(
             f'Invalid `method`: got `{method}`,' f' must be one of {sorted(SUPPORTED_METHODS)}.'
@@ -72,6 +73,10 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
     elif method in ('m3', 'm4'):
         _verify_model(model, method)
         model = _m3_m4_method(model, lloq, method)
+    elif method == 'm5':
+        model = _m5_method(model, lloq, lloq_col, tp)
+    elif method == 'm6':
+        model = _m6_method(model, lloq, lloq_col, tp)
     elif method == 'm7':
         model = _m7_method(model, lloq, lloq_col, tp)
 
@@ -87,6 +92,35 @@ def _m1_method(model, lloq, lloq_col, tp):
         return remove_loq_data(model, blq=lloq_col)
     else:
         raise ValueError("M1 method needs either LLOQ or BLQ in datainfo or a provided LLOQ value")
+
+
+def _m5_method(model, lloq, lloq_col, tp):
+    if lloq is not None and tp == 'blqdv':
+        return set_lloq_data(model, lloq / 2, blq=lloq_col)
+    elif lloq is not None:
+        return set_lloq_data(model, lloq / 2, lloq=lloq)
+    elif tp == 'lloq':
+        return set_lloq_data(model, f'{lloq_col}/2', lloq=lloq_col)
+    else:
+        raise ValueError(
+            "M5 method needs either LLOQ in datainfo, BLQ in datainfo + an LLOQ value or only a provided LLOQ value"
+        )
+
+
+def _m6_method(model, lloq, lloq_col, tp):
+    if lloq is not None and tp == 'blqdv':
+        model = remove_loq_data(model, blq=lloq_col, keep=1)
+        return set_lloq_data(model, lloq / 2, blq=lloq_col)
+    elif lloq is not None:
+        model = remove_loq_data(model, lloq=lloq, keep=1)
+        return set_lloq_data(model, lloq / 2, lloq=lloq)
+    elif tp == 'lloq':
+        model = remove_loq_data(model, lloq=lloq_col, keep=1)
+        return set_lloq_data(model, f'{lloq_col}/2', lloq=lloq_col)
+    else:
+        raise ValueError(
+            "M6 method needs either LLOQ in datainfo, BLQ in datainfo + an LLOQ value or only a provided LLOQ value"
+        )
 
 
 def _m7_method(model, lloq, lloq_col, tp):
