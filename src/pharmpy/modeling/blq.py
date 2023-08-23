@@ -155,16 +155,21 @@ def has_blq_transformation(model: Model):
     )
 
 
-def get_blq_symb_and_type(model: Model):
+def _get_blq_name_and_type(model: Model):
     try:
         blq_datainfo = model.datainfo.typeix['lloq']
-        return sympy.Symbol(blq_datainfo[0].name), 'lloq'
+        return blq_datainfo[0].name, 'lloq'
     except IndexError:
-        try:
-            blq_datainfo = model.datainfo.typeix['blqdv']
-            return sympy.Symbol(blq_datainfo[0].name), 'blqdv'
-        except IndexError:
-            return sympy.Symbol('LLOQ'), 'lloq'
+        blq_datainfo = model.datainfo.typeix['blqdv']
+        return blq_datainfo[0].name, 'blqdv'
+
+
+def get_blq_symb_and_type(model: Model):
+    try:
+        name, tp = _get_blq_name_and_type(model)
+        return sympy.Symbol(name), tp
+    except IndexError:
+        return sympy.Symbol('LLOQ'), 'lloq'
 
 
 def _has_all_expected_symbs(sset, expected_symbs):
