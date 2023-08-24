@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -1536,7 +1536,7 @@ def set_lloq_data(
     return model
 
 
-def set_reference_values(model: Model, refs: dict):
+def set_reference_values(model: Model, refs: Dict[str, Union[int, float]]):
     """Set reference values for selected columns
 
         All values for each selected column will be replaced. For dose columns
