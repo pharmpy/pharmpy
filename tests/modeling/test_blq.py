@@ -158,7 +158,7 @@ def test_transform_blq_invalid_input_model(load_model_for_test, testdata):
     model = set_combined_error_model(model)
     model = create_joint_distribution(model, model.random_variables.epsilons.names)
     with pytest.raises(ValueError, match='Invalid input model: covariance between epsilons'):
-        transform_blq(model, method='m4')
+        transform_blq(model, method='m4', lloq=0.1)
 
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = set_iiv_on_ruv(model)
@@ -179,9 +179,8 @@ def test_transform_blq_different_lloq(load_model_for_test, testdata):
     di_blq = di_blq.set_column(blq_col)
     model_blq = model.replace(dataset=df_blq, datainfo=di_blq)
 
-    model_blq_col = transform_blq(model_blq)
-
-    assert 'BLQ.EQ.0' in model_blq_col.model_code
+    with pytest.raises(ValueError):
+        transform_blq(model_blq)
 
     df_lloq = model.dataset
     df_lloq['LLOQ'] = np.random.random(df_lloq.shape[0])
@@ -197,5 +196,5 @@ def test_transform_blq_different_lloq(load_model_for_test, testdata):
 
     model_float_with_blq_col = transform_blq(model_blq, lloq=0.1)
 
-    assert 'DV.GE.LLOQ' in model_float_with_blq_col.model_code
+    assert 'BLQ.EQ.0' in model_float_with_blq_col.model_code
     assert 'LLOQ = ' in model_float_with_blq_col.model_code
