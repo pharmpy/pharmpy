@@ -212,7 +212,6 @@ from .write_csv import write_csv
 
 # Must be set directly, otherwise errors about unused imports
 __all__ = [
-    'set_direct_effect',
     'add_admid',
     'add_allometry',
     'add_covariance_step',
@@ -358,6 +357,7 @@ __all__ = [
     'set_bolus_absorption',
     'set_combined_error_model',
     'set_covariates',
+    'set_direct_effect',
     'set_dtbs_error_model',
     'set_dvid',
     'set_estimation_step',
