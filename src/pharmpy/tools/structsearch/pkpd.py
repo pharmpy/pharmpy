@@ -66,9 +66,9 @@ def create_pkpd_models(
             pkpd_model = fix_parameters_to(pkpd_model, ests)
 
             if emax_init:
-                pkpd_model = fix_parameters_to(pkpd_model, {'POP_E_MAX': emax_init})
+                pkpd_model = set_initial_estimates(pkpd_model, {'POP_E_MAX': emax_init})
             if ec50_init:
-                pkpd_model = fix_parameters_to(pkpd_model, {'POP_EC_50': ec50_init})
+                pkpd_model = set_initial_estimates(pkpd_model, {'POP_EC_50': ec50_init})
 
             for parameter in ["SLOPE", "E_MAX"]:
                 try:
