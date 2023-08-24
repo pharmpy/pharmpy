@@ -121,10 +121,10 @@ def add_covariate_effect(
 
         - Init:  0.001
         - Upper:
-            - If median of covariate equals minimum: :math:`100,000`
+            - If median of covariate equals minimum: 100,000
             - Otherwise: :math:`\\frac{1}{\\text{median} - \\text{min}}`
         - Lower:
-            - If median of covariate equals maximum: :math:`-100,000`
+            - If median of covariate equals maximum: -100,000
             - Otherwise: :math:`\\frac{1}{\\text{median} - \\text{max}}`
     - Linear function for categorical covariates (*cat*)
         - Function:
@@ -141,9 +141,9 @@ def add_covariate_effect(
 
                 \\text{coveff} = 1 + \\text{theta}
 
-        - Init: :math:`0.001`
-        - Upper: :math:`5`
-        - Lower: :math:`-1`
+        - Init: 0.001
+        - Upper: 5
+        - Lower: -1
     - Piecewise linear function/"hockey-stick", continuous covariates only (*piece_lin*)
         - Function:
             - If cov <= median:
@@ -159,12 +159,12 @@ def add_covariate_effect(
                 \\text{coveff} = 1 + \\text{theta2} * (\\text{cov} - \\text{median})
 
 
-        - Init: :math:`0.001`
+        - Init: 0.001
         - Upper:
             - For first state: :math:`\\frac{1}{\\text{median} - \\text{min}}`
-            - Otherwise: :math:`100,000`
+            - Otherwise: 100,000
         - Lower:
-            - For first state: :math:`-100,000`
+            - For first state: -100,000
             - Otherwise: :math:`\\frac{1}{\\text{median} - \\text{max}}`
     - Exponential function, continuous covariates only (*exp*)
         - Function:
@@ -176,9 +176,9 @@ def add_covariate_effect(
         - Init:
             - If lower > 0.001 or upper < 0.001: :math:`\\frac{\\text{upper} - \\text{lower}}{2}`
             - If estimated init is 0: :math:`\\frac{\\text{upper}}{2}`
-            - Otherwise: :math:`0.001`
+            - Otherwise: 0.001
         - Upper:
-            - If min - median = 0 or max - median = 0: :math:`100`
+            - If min - median = 0 or max - median = 0: 100
             - Otherwise:
 
             .. math::
@@ -186,7 +186,7 @@ def add_covariate_effect(
                 \\min(\\frac{\\log(0.01)}{\\text{min} - \\text{median}},
                 \\frac{\\log(100)}{\\text{max} - \\text{median}})
         - Lower:
-            - If min - median = 0 or max - median = 0: :math:`0.01`
+            - If min - median = 0 or max - median = 0: 0.01
             - Otherwise:
 
             .. math::
@@ -201,9 +201,9 @@ def add_covariate_effect(
 
             \\text{coveff} = (\\frac{\\text{cov}}{\\text{median}})^\\text{theta}
 
-        - Init: :math:`0.001`
-        - Upper: :math:`100,000`
-        - Lower: :math:`-100`
+        - Init: 0.001
+        - Upper: 100,000
+        - Lower: -100
 
 
     Parameters
