@@ -1472,6 +1472,12 @@ def remove_loq_data(
     >>> model = remove_loq_data(model, lloq=10, uloq=40)
     >>> len(model.dataset)
     736
+
+    See also
+    --------
+    set_lloq_data
+    transform_blq
+
     """
     which_keep = _loq_mask(model, lloq=lloq, uloq=uloq, blq=blq, alq=alq)
     df = model.dataset.copy()
@@ -1513,6 +1519,12 @@ def set_lloq_data(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model = set_lloq_data(model, 0, lloq=10)
+
+    See also
+    --------
+    remove_loq_data
+    transform_blq
+
     """
     which_keep = _loq_mask(model, lloq=lloq, blq=blq)
     df = model.dataset.copy()

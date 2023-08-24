@@ -55,6 +55,7 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
     See also
     --------
     remove_loq_data
+    set_lloq_data
 
     """
     method = method.lower()
@@ -88,14 +89,14 @@ def _m1_method(model, lloq, lloq_col, tp):
         return remove_loq_data(model, lloq)
     elif tp == 'lloq':
         return remove_loq_data(model, lloq=lloq_col)
-    elif tp == 'blqdv':
+    elif tp == 'blq':
         return remove_loq_data(model, blq=lloq_col)
     else:
         raise ValueError("M1 method needs either LLOQ or BLQ in datainfo or a provided LLOQ value")
 
 
 def _m5_method(model, lloq, lloq_col, tp):
-    if lloq is not None and tp == 'blqdv':
+    if lloq is not None and tp == 'blq':
         return set_lloq_data(model, lloq / 2, blq=lloq_col)
     elif lloq is not None:
         return set_lloq_data(model, lloq / 2, lloq=lloq)
@@ -108,7 +109,7 @@ def _m5_method(model, lloq, lloq_col, tp):
 
 
 def _m6_method(model, lloq, lloq_col, tp):
-    if lloq is not None and tp == 'blqdv':
+    if lloq is not None and tp == 'blq':
         model = remove_loq_data(model, blq=lloq_col, keep=1)
         return set_lloq_data(model, lloq / 2, blq=lloq_col)
     elif lloq is not None:
@@ -128,7 +129,7 @@ def _m7_method(model, lloq, lloq_col, tp):
         return set_lloq_data(model, 0, lloq=lloq)
     elif tp == 'lloq':
         return set_lloq_data(model, 0, lloq=lloq_col)
-    elif tp == 'blqdv':
+    elif tp == 'blq':
         return set_lloq_data(model, 0, blq=lloq_col)
     else:
         raise ValueError("M7 method needs either LLOQ or BLQ in datainfo or a provided LLOQ value")
@@ -217,8 +218,8 @@ def _get_blq_name_and_type(model: Model):
         blq_datainfo = model.datainfo.typeix['lloq']
         return blq_datainfo[0].name, 'lloq'
     except IndexError:
-        blq_datainfo = model.datainfo.typeix['blqdv']
-        return blq_datainfo[0].name, 'blqdv'
+        blq_datainfo = model.datainfo.typeix['blq']
+        return blq_datainfo[0].name, 'blq'
 
 
 def get_blq_symb_and_type(model: Model):
