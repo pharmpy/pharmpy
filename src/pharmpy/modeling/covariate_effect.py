@@ -128,7 +128,6 @@ def add_covariate_effect(
             - Otherwise: :math:`\\frac{1}{\\text{median} - \\text{max}}`
     - Linear function for categorical covariates (*cat*)
         - Function:
-
             - If covariate is most common category:
 
             .. math::
