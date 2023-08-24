@@ -17,14 +17,37 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
     """Transform for BLQ data
 
     Transform a given model, methods available are m1, m3, m4, m5, m6 and m7 [1]_.
+    The blq information can come from the dataset, the lloq option or a combination. Both LLOQ and BLQ
+    columns are supported. The table below explains which columns are used for the various cases:
+
+    +-------------+-------------+------------+-------------------+---------------+-------------------+
+    | lloq option | LLOQ column | BLQ column | Used as indicator | Used as level | Note              |
+    +=============+=============+============+===================+===============+===================+
+    | Available   | NA          | NA         | DV < lloq         | lloq          |                   |
+    +-------------+-------------+------------+-------------------+---------------+-------------------+
+    | NA          | Available   | NA         | DV < LLOQ         | LLOQ          |                   |
+    +-------------+-------------+------------+-------------------+---------------+-------------------+
+    | NA          | NA          | Available  | BLQ               | nothing       | Only for M1 and M7|
+    +-------------+-------------+------------+-------------------+---------------+-------------------+
+    | NA          | NA          | NA         | NA                | NA            | No BLQ handling   |
+    +-------------+-------------+------------+-------------------+---------------+-------------------+
+    | NA          | Available   | Available  | BLQ               | LLOQ          | DV column not used|
+    +-------------+-------------+------------+-------------------+---------------+-------------------+
+    | Available   | NA          | Available  | BLQ               | lloq          |                   |
+    +-------------+-------------+------------+-------------------+---------------+-------------------+
+    | Available   | Available   | NA         | DV < lloq         | lloq          | Column overridden |
+    +-------------+-------------+------------+-------------------+---------------+-------------------+
+    | Available   | Available   | Available  | DV < lloq         | lloq          | Columns overridden|
+    +-------------+-------------+------------+-------------------+---------------+-------------------+
+
     Current limitations of the m3 and m4 method:
 
     * Does not support covariance between epsilons
     * Supports additive, proportional, combined, and power error model
 
     .. [1] Beal SL. Ways to fit a PK model with some data below the quantification
-    limit. J Pharmacokinet Pharmacodyn. 2001 Oct;28(5):481-504. doi: 10.1023/a:1012299115260.
-    Erratum in: J Pharmacokinet Pharmacodyn 2002 Jun;29(3):309. PMID: 11768292.
+       limit. J Pharmacokinet Pharmacodyn. 2001 Oct;28(5):481-504. doi: 10.1023/a:1012299115260.
+       Erratum in: J Pharmacokinet Pharmacodyn 2002 Jun;29(3):309. PMID: 11768292.
 
     Parameters
     ----------
