@@ -1,10 +1,18 @@
-next version
-------------
+0.100.0 (2023-08-25)
+--------------------
+
+New features
+============
+
+* Support for M5, M6 and M7 methods for blq data
+* New symbols @PK and @PD in MFL
+* Internal support for multiple doses to one compartment
 
 Changes
 =======
 
 * Change the blqdv type to blq in datainfo
+* Better usage of BLQ and LLOQ columns for blq data
 
 0.99.0 (2023-08-23)
 -------------------
