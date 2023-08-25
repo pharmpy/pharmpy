@@ -2018,7 +2018,7 @@ def unload_dataset(model: Model):
 
     Example
     -------
-    >>> from pharmpy.modeling import load_example_model
+    >>> from pharmpy.modeling import load_example_model, unload_dataset
     >>> model = load_example_model("pheno")
     >>> model = unload_dataset(model)
     >>> model.dataset is None
@@ -2044,7 +2044,7 @@ def load_dataset(model: Model):
 
     Example
     -------
-    >>> from pharmpy.modeling import load_example_model
+    >>> from pharmpy.modeling import load_example_model, load_dataset, unload_dataset
     >>> model = load_example_model("pheno")
     >>> model = unload_dataset(model)
     >>> model.dataset is None
