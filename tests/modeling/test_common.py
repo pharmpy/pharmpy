@@ -20,7 +20,6 @@ from pharmpy.modeling import (
     read_model_from_string,
     remove_unused_parameters_and_rvs,
     set_name,
-    unload_dataset,
     write_model,
 )
 from pharmpy.tools import read_modelfit_results
@@ -146,10 +145,3 @@ def test_remove_unused_parameters_and_rvs(load_model_for_test, pheno_path):
     model = model.replace(statements=model.statements[0:i] + model.statements[i + 1 :])
     model = remove_unused_parameters_and_rvs(model)
     assert len(model.random_variables['ETA_2'].names) == 1
-
-
-def test_unload_dataset(load_example_model_for_test):
-    model = load_example_model_for_test("pheno")
-    assert model.dataset is not None
-    model = unload_dataset(model)
-    assert model.dataset is None

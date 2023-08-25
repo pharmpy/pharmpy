@@ -22,12 +22,14 @@ from pharmpy.modeling import (
     get_number_of_observations_per_individual,
     get_observations,
     list_time_varying_covariates,
+    load_dataset,
     remove_loq_data,
     set_dvid,
     set_lloq_data,
     set_reference_values,
     translate_nmtran_time,
     undrop_columns,
+    unload_dataset,
 )
 from pharmpy.modeling.basic_models import _create_default_datainfo
 
@@ -514,3 +516,18 @@ def test_set_reference_values(load_example_model_for_test):
     assert list(df['WGT'].unique()) == [0.5]
     assert df['AMT'][0] == 4.0
     assert df['AMT'][1] == 0.0
+
+
+def test_unload_dataset(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    assert model.dataset is not None
+    model = unload_dataset(model)
+    assert model.dataset is None
+
+
+def test_load_dataset(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    model = unload_dataset(model)
+    assert model.dataset is None
+    model = load_dataset(model)
+    assert model.dataset is not None

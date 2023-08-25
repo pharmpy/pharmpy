@@ -16,7 +16,6 @@ from .common import (
     remove_unused_parameters_and_rvs,
     rename_symbols,
     set_name,
-    unload_dataset,
     write_model,
 )
 from .compartments import get_bioavailability, get_lag_times
@@ -44,6 +43,7 @@ from .data import (
     get_number_of_observations_per_individual,
     get_observations,
     list_time_varying_covariates,
+    load_dataset,
     read_dataset_from_datainfo,
     remove_loq_data,
     set_covariates,
@@ -52,6 +52,7 @@ from .data import (
     set_reference_values,
     translate_nmtran_time,
     undrop_columns,
+    unload_dataset,
 )
 from .error import (
     has_additive_error_model,
@@ -326,6 +327,7 @@ __all__ = [
     'is_linearized',
     'is_real',
     'list_time_varying_covariates',
+    'load_dataset',
     'load_example_model',
     'make_declarative',
     'mu_reference_model',

@@ -2001,3 +2001,72 @@ def deidentify_data(
         df[datecol] = df[datecol].transform(convert)
 
     return df
+
+
+def unload_dataset(model: Model):
+    """Unload the dataset from a model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    Model
+        Pharmpy model with dataset removed
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model = unload_dataset(model)
+    >>> model.dataset is None
+    True
+
+    """
+    model = model.replace(dataset=None)
+    return model
+
+
+def load_dataset(model: Model):
+    """Load the dataset given datainfo
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    Model
+        Pharmpy model with dataset removed
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model = unload_dataset(model)
+    >>> model.dataset is None
+    True
+    >>> model = load_dataset(model)
+    >>> model.dataset
+         ID   TIME   AMT  WGT  APGR    DV  FA1  FA2
+    0     1    0.0  25.0  1.4   7.0   0.0  1.0  1.0
+    1     1    2.0   0.0  1.4   7.0  17.3  0.0  0.0
+    2     1   12.5   3.5  1.4   7.0   0.0  1.0  1.0
+    3     1   24.5   3.5  1.4   7.0   0.0  1.0  1.0
+    4     1   37.0   3.5  1.4   7.0   0.0  1.0  1.0
+    ..   ..    ...   ...  ...   ...   ...  ...  ...
+    739  59  108.3   3.0  1.1   6.0   0.0  1.0  1.0
+    740  59  120.5   3.0  1.1   6.0   0.0  1.0  1.0
+    741  59  132.3   3.0  1.1   6.0   0.0  1.0  1.0
+    742  59  144.8   3.0  1.1   6.0   0.0  1.0  1.0
+    743  59  146.8   0.0  1.1   6.0  40.2  0.0  0.0
+    <BLANKLINE>
+    [744 rows x 8 columns]
+
+    """
+    df = read_dataset_from_datainfo(model.datainfo)
+    model = model.replace(dataset=df)
+    return model
