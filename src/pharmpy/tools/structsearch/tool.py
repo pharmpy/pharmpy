@@ -38,11 +38,9 @@ def create_workflow(
     type : str
         Type of model. Currently only 'tmdd' and 'pkpd'
     emax_init: float
-        Initial estimate for E_MAX. If None the initial estimate will be taken
-        from model.modelfit_results.parameter_estimates
+        Initial estimate for E_MAX. The default value is 0.1
     ec50_init: float
-        Initial estimate for EC_50. If None the initial estimate will be taken
-        from model.modelfit_results.parameter_estimates
+        Initial estimate for EC_50. The default value is 0.1
     results : ModelfitResults
         Results for the start model
     model : Model

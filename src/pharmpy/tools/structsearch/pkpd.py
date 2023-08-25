@@ -43,6 +43,10 @@ def create_pkpd_models(
         Pharmpy PK model
     ests : pd.Series
        List of estimated PK parameters
+    emax_init : float
+        Initial estimate for E_max
+    ec50_init : float
+        Initial estimate for EC_50
 
     Returns
     -------
