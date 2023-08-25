@@ -645,3 +645,29 @@ def rename_symbols(
     )
     return model.update_source()
     # FIXME: Only handles parameters, statements and random_variables and no clashes and circular renaming
+
+
+def unload_dataset(model: Model):
+    """Unload the dataset from a model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    Model
+        Pharmpy model with dataset removed
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model = unload_dataset(model)
+    >>> model.dataset
+    None
+
+    """
+    model = model.replace(dataset=None)
+    return model

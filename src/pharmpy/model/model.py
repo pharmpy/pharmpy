@@ -302,7 +302,7 @@ class Model(Immutable):
         else:
             datainfo = self._datainfo
 
-        if new_dataset:
+        if new_dataset and dataset is not None:
             datainfo = update_datainfo(datainfo, dataset)
 
         # Has to be checked after datainfo is updated since it looks for symbols in datainfo as well

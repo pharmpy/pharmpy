@@ -16,6 +16,7 @@ from .common import (
     remove_unused_parameters_and_rvs,
     rename_symbols,
     set_name,
+    unload_dataset,
     write_model,
 )
 from .compartments import get_bioavailability, get_lag_times
@@ -403,4 +404,5 @@ __all__ = [
     'write_model',
     'unconstrain_parameters',
     'undrop_columns',
+    'unload_dataset',
 ]

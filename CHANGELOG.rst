@@ -5,6 +5,7 @@ Changes
 =======
 
 * Change the blqdv type to blq in datainfo
+* Add modeling.unload_dataset
 
 0.99.0 (2023-08-23)
 -------------------
