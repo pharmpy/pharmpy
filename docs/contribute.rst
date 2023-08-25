@@ -162,12 +162,20 @@ Releasing Pharmpy and documentation
 .. note::
     This information is for maintainers.
 
-A deployment workflow is setup on github actions to automatically release Pharmpy to PyPI and the documentation to pharmpy.github.io. The workflow also triggers an automatic update of pharmr. This workflow will be triggered when pushing a version tag, i.e. a tag starting with 'v'.
+A deployment workflow is setup on github actions to automatically release Pharmpy to PyPI and the documentation to pharmpy.github.io. The workflow also triggers an automatic update of pharmr. This workflow will be triggered when pushing a version tag, i.e. a tag starting with 'v'. The release branch is used for making releases so that development can continue on main during the release process without disturbing the release.
 
-1. Update the CHANGELOG
-2. Bump the version (see below)
-3. `git push`
-4. `git push --tags`
+1. `git checkout main`
+2. `git pull --rebase`
+3. `git checkout release`
+4. `git merge main`
+5. Do special release activities if needed
+6. Update the CHANGELOG
+7. Bump the version (see below)
+8. `git push origin release`
+9. `git push origin release --tags`
+10. If release is good continue
+11. `git checkout main`
+12. `git merge release`
 
 Version
 *******
