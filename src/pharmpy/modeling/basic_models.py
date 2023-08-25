@@ -95,7 +95,7 @@ def create_basic_pk_model(
     vc_ass = Assignment(VC, pop_vc.symbol * sympy.exp(sympy.Symbol(eta_vc_name)))
 
     cb = CompartmentalSystemBuilder()
-    central = Compartment.create('CENTRAL', dose=dosing(di, df, 1))
+    central = Compartment.create('CENTRAL', doses=(dosing(di, df, 1),))
     cb.add_compartment(central)
     cb.add_flow(central, output, CL / VC)
 

@@ -211,7 +211,7 @@ def create_symbol(model: Model, stem: str, force_numbering: bool = False):
         First part of the new variable name
     force_numbering : bool
         Forces addition of number to name even if variable does not exist, e.g.
-        COVEFF --> COVEFF1
+        COVEFF → COVEFF1
 
     Returns
     -------
@@ -537,7 +537,7 @@ def cleanup_model(model: Model):
              ETA₂
     V = TVV⋅ℯ
     S₁ = V
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=1) → CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -565,7 +565,7 @@ def cleanup_model(model: Model):
     CL = TVCL⋅ℯ
              ETA₂
     V = TVV⋅ℯ
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=1) → CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -627,7 +627,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
              ETA₂
     V = TVV⋅ℯ
     S₁ = V
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=1) → CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -656,7 +656,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     CL = TVCL⋅ℯ
              η₂
     V = TVV⋅ℯ
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=1) → CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -1261,8 +1261,8 @@ def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[sympy.Symbo
     if kind == 'absorption':
         return (
             []
-            if cs.dosing_compartment[0] == cs.central_compartment
-            else _pk_free_symbols_from_compartment(cs, cs.dosing_compartment[0])
+            if cs.dosing_compartments[0] == cs.central_compartment
+            else _pk_free_symbols_from_compartment(cs, cs.dosing_compartments[0])
         )
 
     if kind == 'distribution':

@@ -58,7 +58,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
 
     cb = CompartmentalSystemBuilder()
     doses = dosing(di, df, 1)
-    central = Compartment.create('CENTRAL', dose=find_dose(doses, 1))
+    central = Compartment.create('CENTRAL', doses=find_dose(doses, 1))
     cb.add_compartment(central)
     cb.add_flow(central, output, CL / VC)
 

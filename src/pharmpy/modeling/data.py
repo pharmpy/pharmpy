@@ -849,9 +849,11 @@ def get_admid(model: Model):
     """Get the admid from model dataset
 
     If an administration column is present this will be extracted otherwise
-    an admid column will be created.
-    1 : Oral dose
-    2 : IV dose
+    an admid column will be created based on the admids of the present doses.
+    This is dependent on the presence of a CMT column to be generated correctly.
+
+    When generated, admids of events in between doses is set to the last used
+    admid.
 
     Parameters
     ----------
@@ -871,18 +873,32 @@ def get_admid(model: Model):
     else:
         return model.dataset[admidcols[0].name]
 
-    oral = iv = None
     odes = model.statements.ode_system
     names = odes.compartment_names
+    remap = {}
     if isinstance(odes, CompartmentalSystem):
-        for dosing in odes.dosing_compartment:
-            if dosing == odes.central_compartment:
-                iv = names.index(dosing.name) + 1
-            else:
-                oral = names.index(dosing.name) + 1
+        for dosing in odes.dosing_compartments:
+            remap[names.index(dosing.name) + 1] = dosing.doses[0].admid
     adm = get_cmt(model)
-    adm = adm.replace({oral: 1, iv: 2})
+    adm = adm.replace(remap)
     adm.name = "ADMID"
+
+    # Replace all observations with the previous admid type
+    current_admin = adm[0]
+    current_subject = model.dataset["ID"][0]
+    for i, data in enumerate(zip(get_evid(model), adm, model.dataset["ID"])):
+        event = data[0]
+        admin = data[1]
+        subject = data[2]
+        if current_subject == subject:
+            if event == 1:
+                current_admin = admin
+            if event != 1:
+                if current_admin is not None:
+                    adm[i] = current_admin
+        else:
+            current_subject = subject
+            current_admin = admin
     return adm
 
 
@@ -890,8 +906,9 @@ def add_admid(model: Model):
     """
     Add an admid column to the model dataset and datainfo. Dependent on the
     presence of a CMT column in order to add admid correctly.
-    1 : Oral dose
-    2 : IV dose
+
+    When generated, admids of events in between doses is set to the last used
+    admid.
 
     Parameters
     ----------
@@ -925,7 +942,8 @@ def get_cmt(model: Model):
 
     If a cmt column is present this will be extracted otherwise
     a cmt column will be created. If created, multiple dose compartments are
-    not supported.
+    dependent on the presence of an admid type column, otherwise, dose/non-dose
+    will be considered.
 
     Parameters
     ----------
@@ -944,17 +962,47 @@ def get_cmt(model: Model):
         pass
     else:
         return model.dataset[cmtcols[0].name]
-    odes = model.statements.ode_system
-    if isinstance(odes, CompartmentalSystem):
-        dosing = odes.dosing_compartment[0]
-        names = odes.compartment_names
-        dose_cmt = names.index(dosing.name) + 1
+
+    try:
+        cmtcols = model.dataset["CMT"]
+    except KeyError:
+        pass
     else:
-        dose_cmt = 1
-    cmt = get_evid(model)
-    cmt = cmt.replace({1: dose_cmt, 2: 0, 3: 0, 4: dose_cmt})  # Only consider dose/non-dose
-    cmt.name = "CMT"
-    return cmt
+        return cmtcols
+
+    # See if admid exist
+    try:
+        admidcols = di.typeix["admid"]
+    except IndexError:
+        # No admid found --> Assume dose/non-dose
+        odes = model.statements.ode_system
+        if isinstance(odes, CompartmentalSystem):
+            dosing = odes.dosing_compartments[0]
+            names = odes.compartment_names
+            dose_cmt = names.index(dosing.name) + 1
+        else:
+            dose_cmt = 1
+        cmt = get_evid(model)
+        cmt = cmt.replace({1: dose_cmt, 2: 0, 3: 0, 4: dose_cmt})  # Only consider dose/non-dose
+        cmt.name = "CMT"
+        return cmt
+    else:
+        admidcols = model.dataset[admidcols[0].name]
+        # Admid found -> convert to CMT based on doses
+        odes = model.statements.ode_system
+        names = odes.compartment_names
+        remap = {}
+        if isinstance(odes, CompartmentalSystem):
+            for dosing in odes.dosing_compartments:
+                if dosing == odes.central_compartment:
+                    remap[2] = names.index(dosing.name) + 1
+                    central_number = names.index(dosing.name) + 1
+                else:
+                    remap[1] = names.index(dosing.name) + 1
+        admidcols = admidcols.replace(remap)
+        admidcols.loc[get_evid(model) == 0] = central_number
+        admidcols.name = "ADMID"
+        return admidcols
 
 
 def add_time_after_dose(model: Model):
