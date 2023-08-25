@@ -1458,7 +1458,7 @@ def remove_loq_data(
     alq : str
         Column name for above limit of quantification indicator.
     keep : int
-        Number of loq records to keep for each individual.
+        Number of loq records to keep for each run of consecutive loq records.
 
     Returns
     -------
@@ -1480,11 +1480,13 @@ def remove_loq_data(
 
     """
     which_keep = _loq_mask(model, lloq=lloq, uloq=uloq, blq=blq, alq=alq)
-    df = model.dataset.copy()
+    df = model.dataset
     if keep > 0:
         idcol = model.datainfo.id_column.name
-        keep_df = pd.DataFrame({'ID': df[idcol], 'remove': ~which_keep})
-        obj = keep_df.groupby(idcol).cumsum().le(keep)['remove']
+        keep_df = pd.DataFrame(
+            {'ID': df[idcol], 'consec': (~which_keep).diff().ne(0).cumsum(), 'remove': ~which_keep}
+        )
+        obj = keep_df.groupby([idcol, 'consec']).cumsum().le(keep)['remove']
         which_keep = obj | which_keep
     model = model.replace(dataset=df[which_keep])
     return model.update_source()
