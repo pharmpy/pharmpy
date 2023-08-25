@@ -349,10 +349,10 @@ def test_get_pk_parameters(load_model_for_test, testdata, model_path, kind, expe
     ('model_path', 'kind', 'expected'),
     (
         ('nonmem/pheno.mod', 'baseline', ['E0']),
-        ('nonmem/pheno.mod', 'linear', ['E0', 'Slope']),
-        ('nonmem/pheno.mod', 'Emax', ['E0', 'E_max', 'EC_50']),
-        ('nonmem/pheno.mod', 'step', ['E0', 'E_max']),
-        ('nonmem/pheno.mod', 'sigmoid', ['E0', 'EC_50', 'E_max', 'n']),
+        ('nonmem/pheno.mod', 'linear', ['E0', 'SLOPE']),
+        ('nonmem/pheno.mod', 'Emax', ['E0', 'E_MAX', 'EC_50']),
+        ('nonmem/pheno.mod', 'step', ['E0', 'E_MAX']),
+        ('nonmem/pheno.mod', 'sigmoid', ['E0', 'EC_50', 'E_MAX', 'n']),
     ),
     ids=repr,
 )
@@ -360,6 +360,8 @@ def test_get_pd_parameters(load_model_for_test, testdata, model_path, kind, expe
     model = load_model_for_test(testdata / model_path)
     assert set(get_pd_parameters(set_direct_effect(model, kind))) == set(expected)
     assert set(get_pd_parameters(add_effect_compartment(model, kind))) == set(expected + ["KE0"])
+    assert get_pk_parameters(add_effect_compartment(model, kind)) == ['CL', 'V']
+    assert get_pk_parameters(set_direct_effect(model, kind)) == ['CL', 'V']
     assert not set(
         set(get_pd_parameters(set_direct_effect(model, kind))).intersection(
             get_pk_parameters(set_direct_effect(model, kind))

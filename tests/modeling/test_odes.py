@@ -4,7 +4,7 @@ from typing import Iterable
 
 import sympy
 
-from pharmpy.model import Assignment
+from pharmpy.model import Assignment, Bolus, Infusion
 from pharmpy.modeling import (
     add_bioavailability,
     add_lag_time,
@@ -40,6 +40,7 @@ from pharmpy.modeling import (
     set_zero_order_elimination,
     set_zero_order_input,
 )
+from pharmpy.modeling.odes import CompartmentalSystem, CompartmentalSystemBuilder
 
 
 def test_advan1(create_model_for_test):
@@ -1689,12 +1690,12 @@ def test_bioavailability(load_model_for_test, testdata):
 def test_move_bioavailability(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     model = add_bioavailability(model)
-    assert model.statements.ode_system.dosing_compartment[0].bioavailability == sympy.Symbol("F1")
+    assert model.statements.ode_system.dosing_compartments[0].bioavailability == sympy.Symbol("F1")
 
     model = set_first_order_absorption(model)
-    assert model.statements.ode_system.dosing_compartment[0].name == "DEPOT"
-    assert model.statements.ode_system.dosing_compartment[0].bioavailability == sympy.Symbol("F1")
-    assert model.statements.ode_system.find_compartment("CENTRAL").dose is None
+    assert model.statements.ode_system.dosing_compartments[0].name == "DEPOT"
+    assert model.statements.ode_system.dosing_compartments[0].bioavailability == sympy.Symbol("F1")
+    assert not model.statements.ode_system.find_compartment("CENTRAL").doses
 
 
 def test_lag_time(load_model_for_test, testdata):
@@ -2625,3 +2626,29 @@ def test_find_clearance_and_volume_parameters_tmdd(load_example_model_for_test):
     model = set_tmdd(model, 'qss')
     assert find_clearance_parameters(model) == _symbols(['CL', 'LAFREE'])
     assert find_volume_parameters(model) == _symbols(['V'])
+
+
+def test_multi_dose_change_absorption(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    ode = model.statements.ode_system
+    cb = CompartmentalSystemBuilder(ode)
+    cb.set_dose(cb.find_compartment("CENTRAL"), Bolus(sympy.Symbol('AMT'), admid=1), replace=False)
+    ode = CompartmentalSystem(cb)
+    model = model.replace(
+        statements=model.statements.before_odes + ode + model.statements.after_odes
+    )
+
+    model = set_first_order_absorption(model)
+    assert len(model.statements.ode_system.dosing_compartments) == 2
+
+    depot = model.statements.ode_system.find_compartment("DEPOT")
+    central = model.statements.ode_system.find_compartment("CENTRAL")
+
+    assert depot.doses[0] == Bolus(sympy.Symbol('AMT'), admid=1)
+    assert central.doses[0] == Bolus(sympy.Symbol('AMT'), admid=1)
+
+    model = set_zero_order_absorption(model)
+    central = model.statements.ode_system.find_compartment("CENTRAL")
+
+    assert len(central.doses) == 2
+    assert central.doses[0] == Infusion(sympy.Symbol('AMT'), admid=1, duration=sympy.Symbol("D1"))

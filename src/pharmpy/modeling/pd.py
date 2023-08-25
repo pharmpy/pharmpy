@@ -118,7 +118,7 @@ def set_direct_effect(model: Model, expr: str):
     >>> model = load_example_model("pheno")
     >>> model = set_direct_effect(model, "linear")
     >>> model.statements.find_assignment("E")
-        A_CENTRAL⋅Slope
+        A_CENTRAL⋅SLOPE
         ─────────────── + E₀
     E =         V
 
@@ -148,7 +148,7 @@ def _add_effect(model: Model, expr: str, conc):
     e0 = sympy.Symbol("E0")
     model = add_individual_parameter(model, e0.name)
     if expr in ["Emax", "sigmoid", "step"]:
-        emax = sympy.Symbol("E_max")
+        emax = sympy.Symbol("E_MAX")
         model = add_individual_parameter(model, emax.name)
     if expr in ["Emax", "sigmoid"]:
         ec50 = sympy.Symbol("EC_50")
@@ -158,7 +158,7 @@ def _add_effect(model: Model, expr: str, conc):
     if expr == "baseline":
         E = Assignment(sympy.Symbol('E'), e0)
     elif expr == "linear":
-        s = sympy.Symbol("Slope")
+        s = sympy.Symbol("SLOPE")
         model = add_individual_parameter(model, s.name)
         E = Assignment(sympy.Symbol('E'), e0 + s * conc)
     elif expr == "Emax":
@@ -176,7 +176,7 @@ def _add_effect(model: Model, expr: str, conc):
             ),
         )
     elif expr == "loglin":
-        s = sympy.Symbol("slope")
+        s = sympy.Symbol("SLOPE")
         model = add_individual_parameter(model, s.name)
         E = Assignment(sympy.Symbol("E"), s * sympy.log(conc + sympy.exp(e0 / s)))
     else:

@@ -24,9 +24,7 @@ from pharmpy.tools import fit
 from pharmpy.workflows.log import Log
 
 
-def execute_model(
-    model: pharmpy.model.Model, db: str, evaluate=False, path=None
-) -> pharmpy.model.Model:
+def execute_model(model: pharmpy.model.Model, db, evaluate=False, path=None) -> pharmpy.model.Model:
     """
     Executes a model using nlmixr2 estimation.
 
@@ -47,7 +45,6 @@ def execute_model(
         if [s.evaluation for s in model.estimation_steps._steps][0] is False:
             model = set_evaluation_step(model)
 
-    db = pharmpy.workflows.LocalDirectoryToolDatabase(db)
     database = db.model_database
     model = convert_model(model)
     if path is None:

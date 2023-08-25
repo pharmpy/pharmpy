@@ -116,7 +116,14 @@ class NMTranPrinter(sympy_printing.str.StrPrinter):
         if expr.exp == sympy.Rational(1, 2):
             return f"SQRT({self.doprint(expr.base)})"
         elif expr.exp == -1:
-            return f"1/{expr.base}"
+            if (
+                isinstance(expr.base, sympy.Expr)
+                and not isinstance(expr.base, sympy.Symbol)
+                and len(expr.base.make_args(expr.base)) > 1
+            ):
+                return f"1/({expr.base})"
+            else:
+                return f"1/{expr.base}"
         else:
             return super()._print_Pow(expr)
 

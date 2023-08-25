@@ -95,7 +95,7 @@ def create_basic_pk_model(
     vc_ass = Assignment(VC, pop_vc.symbol * sympy.exp(sympy.Symbol(eta_vc_name)))
 
     cb = CompartmentalSystemBuilder()
-    central = Compartment.create('CENTRAL', dose=dosing(di, df, 1))
+    central = Compartment.create('CENTRAL', doses=(dosing(di, df, 1),))
     cb.add_compartment(central)
     cb.add_flow(central, output, CL / VC)
 
@@ -185,6 +185,10 @@ def _create_default_datainfo(path_or_df):
                 info = ColumnInfo.create(colname, type='event', scale='nominal', datatype='int32')
         elif colname == 'AMT':
             info = ColumnInfo.create(colname, type='dose', scale='ratio')
+        elif colname == 'BLQ':
+            info = ColumnInfo.create(colname, type='blq', scale='nominal', datatype='int32')
+        elif colname == 'LLOQ':
+            info = ColumnInfo.create(colname, type='lloq', scale='ratio')
         else:
             info = ColumnInfo.create(colname)
         column_info.append(info)

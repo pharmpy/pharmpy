@@ -358,7 +358,7 @@ def load_example_model(name: str):
              ETA₂
     V = TVV⋅ℯ
     S₁ = V
-    Bolus(AMT, admid=1)
+    Bolus(AMT, admid=1) → CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
@@ -417,7 +417,7 @@ def get_model_covariates(model: Model, strings: bool = False):
 
     # Consider statements that are dependencies of the ode system and y
     if odes:
-        dose_comp = odes.dosing_compartment[0]
+        dose_comp = odes.dosing_compartments[0]
         cb = CompartmentalSystemBuilder(odes)
         cb.set_dose(dose_comp, None)
         cs = CompartmentalSystem(cb)

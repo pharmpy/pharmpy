@@ -2,6 +2,7 @@ from typing import Tuple
 
 import pytest
 
+from pharmpy.modeling import set_direct_effect
 from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
@@ -287,6 +288,21 @@ from pharmpy.tools.mfl.stringify import stringify
             ),
         ),
         (
+            'COVARIATE(@PK, @CONTINUOUS, *);' 'COVARIATE(@PK, @CATEGORICAL, CAT, *)',
+            (
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*'),
+            ),
+        ),
+        (
             'COVARIATE(@ABSORPTION, APGR, CAT);'
             'COVARIATE(@DISTRIBUTION, WGT, EXP);'
             'COVARIATE(@ELIMINATION, SEX, CAT)',
@@ -302,6 +318,51 @@ def test_all_funcs(load_model_for_test, pheno_path, source, expected):
     pheno = load_model_for_test(pheno_path)
     statements = parse(source)
     funcs = all_funcs(pheno, statements)
+    keys = funcs.keys()
+    assert set(keys) == set(expected)
+
+
+@pytest.mark.parametrize(
+    ('source', 'expected'),
+    (
+        (
+            'COVARIATE(@PK, @CONTINUOUS, *);' 'COVARIATE(@PK, @CATEGORICAL, CAT, *)',
+            (
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*'),
+            ),
+        ),
+        (
+            'COVARIATE(@PD, @CONTINUOUS, *);' 'COVARIATE(@PD, @CATEGORICAL, CAT, *)',
+            (
+                ('COVARIATE', 'E0', 'APGR', 'cat', '*'),
+                ('COVARIATE', 'E0', 'WGT', 'exp', '*'),
+                ('COVARIATE', 'E0', 'WGT', 'lin', '*'),
+                ('COVARIATE', 'E0', 'WGT', 'pow', '*'),
+                ('COVARIATE', 'E0', 'WGT', 'piece_lin', '*'),
+                ('COVARIATE', 'SLOPE', 'APGR', 'cat', '*'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'lin', '*'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'pow', '*'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'piece_lin', '*'),
+            ),
+        ),
+    ),
+    ids=repr,
+)
+def test_all_funcs_pd(load_model_for_test, pheno_path, source, expected):
+    model = load_model_for_test(pheno_path)
+    model = set_direct_effect(model, 'linear')
+    statements = parse(source)
+    funcs = all_funcs(model, statements)
     keys = funcs.keys()
     assert set(keys) == set(expected)
 
