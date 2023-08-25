@@ -288,9 +288,17 @@ def convert_dvs(statements, control_stream):
             if cond.lhs == sympy.Symbol("DVID") and cond.rhs == 1:
                 ass1 = s.replace(symbol=sympy.Symbol('Y_1'), expression=expr.args[0][0])
                 ass2 = s.replace(symbol=sympy.Symbol('Y_2'), expression=expr.args[1][0])
-                kept.append(ass1)
-                kept.append(ass2)
-                dvs = frozenmapping({sympy.Symbol('Y_1'): 1, sympy.Symbol('Y_2'): 2})
+                if expr.args[0][0] not in statements.free_symbols:
+                    kept.append(ass1)
+                    dv_1 = 'Y_1'
+                else:
+                    dv_1 = str(expr.args[0][0])
+                if expr.args[1][0] not in statements.free_symbols:
+                    kept.append(ass2)
+                    dv_2 = 'Y_2'
+                else:
+                    dv_2 = str(expr.args[1][0])
+                dvs = frozenmapping({sympy.Symbol(dv_1): 1, sympy.Symbol(dv_2): 2})
                 obs_trans = frozenmapping({dv: dv for dv in dvs.keys()})
                 change = True
                 continue

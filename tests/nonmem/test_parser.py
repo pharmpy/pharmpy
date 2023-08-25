@@ -1,7 +1,14 @@
 import pytest
 
+from pharmpy.deps import sympy
+from pharmpy.model import Assignment
 from pharmpy.model.external.nonmem.nmtran_parser import NMTranParser
 from pharmpy.model.external.nonmem.parsing import parse_table_columns
+from pharmpy.modeling import read_model_from_string
+
+
+def symbol(x):
+    return sympy.Symbol(x)
 
 
 def test_simple_parse():
@@ -58,3 +65,106 @@ def test_table_columns(buf, columns):
     cs._active_problem = -1  # To trick cs.get_records
     parsed_columns = parse_table_columns(cs, netas=2)
     assert parsed_columns == columns
+
+
+def test_parse_multiple_dvs():
+    code1 = """$PROBLEM PHENOBARB PD
+$INPUT ID TIME DV AMT DVID
+$DATA pheno_pd.csv IGNORE=@
+$SUBROUTINES ADVAN1 TRANS2
+$ABBR REPLACE ETA_E0=ETA(3)
+$ABBR REPLACE ETA_S=ETA(4)
+$PK
+S = THETA(4)*EXP(ETA_S)
+E0 = THETA(3)*EXP(ETA_E0)
+VC = THETA(1) * EXP(ETA(1))
+CL = THETA(2) * EXP(ETA(2))
+V=VC
+$ERROR
+C = A(1)/V
+Y = C*(1+EPS(1))
+E = A(1)*S/V + E0
+Y_2 = E + E*EPS(2)
+IF (DVID.EQ.1) THEN
+    Y = Y
+ELSE
+    Y = Y_2
+END IF
+$ESTIMATION MAXEVAL=9999 SIGDIGITS=4 POSTHOC
+$THETA (0, 95.0648) FIX ; POP_VC
+$THETA (0, 10.3416) FIX ; POP_CL
+$THETA  (0,0.1) ; POP_E0
+$THETA  (0,0.1) ; POP_S
+$OMEGA BLOCK(2) FIX
+0.0605492	; IIV_VC
+0.000294284	; IIV_VC_IIV_CL
+1.13303e-05	; IIV_CL
+$OMEGA  0.09 ; IIV_E0
+$OMEGA  0.09 ; IIV_S
+$SIGMA 1.16066 FIX; PK RUV_PROP
+$SIGMA  0.09 ; sigma"""
+
+    model = read_model_from_string(code1)
+    assert Assignment(symbol('Y_1'), symbol('Y')) not in model.statements.after_odes
+    assert Assignment(symbol('Y_2'), symbol('Y_2')) not in model.statements.after_odes
+    assert (
+        Assignment(symbol('Y'), symbol('C') * (1 + symbol('EPS_1'))) in model.statements.after_odes
+    )
+    assert (
+        Assignment(symbol('Y_2'), symbol('E') + symbol('E') * symbol('EPS_2'))
+        in model.statements.after_odes
+    )
+    assert model.dependent_variables == {symbol('Y'): 1, symbol('Y_2'): 2}
+    assert model.observation_transformation == {
+        symbol('Y'): symbol('Y'),
+        symbol('Y_2'): symbol('Y_2'),
+    }
+
+    code2 = """$PROBLEM PHENOBARB PD
+$INPUT ID TIME DV AMT DVID
+$DATA pheno_pd.csv IGNORE=@
+$SUBROUTINES ADVAN1 TRANS2
+$ABBR REPLACE ETA_E0=ETA(3)
+$ABBR REPLACE ETA_S=ETA(4)
+$PK
+S = THETA(4)*EXP(ETA_S)
+E0 = THETA(3)*EXP(ETA_E0)
+VC = THETA(1) * EXP(ETA(1))
+CL = THETA(2) * EXP(ETA(2))
+V=VC
+$ERROR
+C = A(1)/V
+E = A(1)*S/V + E0
+IF (DVID.EQ.1) THEN
+    Y = C*(1+EPS(1))
+ELSE
+    Y = E + E*EPS(2)
+END IF
+$ESTIMATION MAXEVAL=9999 SIGDIGITS=4 POSTHOC
+$THETA (0, 95.0648) FIX ; POP_VC
+$THETA (0, 10.3416) FIX ; POP_CL
+$THETA  (0,0.1) ; POP_E0
+$THETA  (0,0.1) ; POP_S
+$OMEGA BLOCK(2) FIX
+0.0605492	; IIV_VC
+0.000294284	; IIV_VC_IIV_CL
+1.13303e-05	; IIV_CL
+$OMEGA  0.09 ; IIV_E0
+$OMEGA  0.09 ; IIV_S
+$SIGMA 1.16066 FIX; PK RUV_PROP
+$SIGMA  0.09 ; sigma"""
+
+    model2 = read_model_from_string(code2)
+    assert (
+        Assignment(symbol('Y_1'), symbol('C') * (1 + symbol('EPS_1')))
+        in model2.statements.after_odes
+    )
+    assert (
+        Assignment(symbol('Y_2'), symbol('E') + symbol('E') * symbol('EPS_2'))
+        in model2.statements.after_odes
+    )
+    assert model2.dependent_variables == {symbol('Y_1'): 1, symbol('Y_2'): 2}
+    assert model2.observation_transformation == {
+        symbol('Y_1'): symbol('Y_1'),
+        symbol('Y_2'): symbol('Y_2'),
+    }
