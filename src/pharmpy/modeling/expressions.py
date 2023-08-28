@@ -850,7 +850,7 @@ def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
 
 
 def get_rv_parameters(model: Model, rv: str) -> List[str]:
-    """Retrieves parameters in :class:`pharmpy.model` given a random variable.
+    """Retrieves parameters in :class:`pharmpy.model.Model` given a random variable.
 
     Parameters
     ----------
@@ -886,6 +886,56 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     free_symbols = model.statements.free_symbols
     dependency_graph = _dependency_graph(natural_assignments)
     return sorted(map(str, _filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)})))
+
+
+def get_parameter_rv(model: Model, parameter: str, var_type: str = 'iiv') -> List[str]:
+    """Retrieves name of random variable in :class:`pharmpy.model.Model` given a parameter.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to retrieve parameters from
+    parameter : str
+        Name of parameter to retrieve random variable from
+    var_type: str
+        Variability type: iiv (default) or iov
+
+    Return
+    ------
+    list[str]
+        A list of random variable names for the given parameter
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> get_parameter_rv(model, 'CL')
+    ['ETA_1']
+
+    See also
+    --------
+    get_rv_parameters
+    has_random_effect
+    get_pk_parameters
+    get_individual_parameters
+
+    """
+    if parameter not in list(map(str, model.statements.free_symbols)):
+        raise ValueError(f'Could not find parameter {parameter}')
+    if parameter in model.random_variables.names:
+        raise ValueError(f"{parameter} is a random variable. Only parameters are accepted as input")
+
+    natural_assignments = _get_natural_assignments(model.statements.before_odes)
+
+    rv = list(
+        map(
+            lambda rv_string: sympy.Symbol(rv_string),
+            getattr(model.random_variables, var_type).names,
+        )
+    )
+
+    dependency_graph = graph_inverse(_dependency_graph(natural_assignments))
+    return sorted(map(str, _filter_symbols(dependency_graph, rv, {sympy.Symbol(parameter)})))
 
 
 @dataclass(frozen=True)
