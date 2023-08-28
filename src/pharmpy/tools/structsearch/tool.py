@@ -24,6 +24,8 @@ TYPES = frozenset(('tmdd', 'pkpd'))
 def create_workflow(
     route: str,
     type: str,
+    emax_init: Optional[float] = None,
+    ec50_init: Optional[float] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):
@@ -35,6 +37,10 @@ def create_workflow(
         Route of administration. Either 'pk' or 'oral'
     type : str
         Type of model. Currently only 'tmdd' and 'pkpd'
+    emax_init: float
+        Initial estimate for E_MAX. The default value is 0.1
+    ec50_init: float
+        Initial estimate for EC_50. The default value is 0.1
     results : ModelfitResults
         Results for the start model
     model : Model
@@ -58,7 +64,7 @@ def create_workflow(
     if type == 'tmdd':
         start_task = Task('run_tmdd', run_tmdd, model)
     elif type == 'pkpd':
-        start_task = Task('run_pkpd', run_pkpd, model)
+        start_task = Task('run_pkpd', run_pkpd, model, emax_init, ec50_init)
     wb.add_task(start_task)
     return Workflow(wb)
 
@@ -97,7 +103,7 @@ def run_tmdd(context, model):
     )
 
 
-def run_pkpd(context, model):
+def run_pkpd(context, model, emax_init, ec50_init):
     baseline_pd_model = create_baseline_pd_model(model, model.modelfit_results.parameter_estimates)
     wf = create_fit_workflow(baseline_pd_model)
     wb = WorkflowBuilder(wf)
@@ -109,6 +115,8 @@ def run_pkpd(context, model):
         model,
         pd_baseline_fit[0].modelfit_results.parameter_estimates,
         model.modelfit_results.parameter_estimates,
+        emax_init,
+        ec50_init,
     )
 
     wf2 = create_fit_workflow(pkpd_models)
