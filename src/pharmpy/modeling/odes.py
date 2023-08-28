@@ -208,9 +208,7 @@ def set_first_order_elimination(model: Model):
     return model
 
 
-def add_bioavailability(
-    model: Model, add_parameter: bool = True, lower: float = 0, upper: float = 1
-):
+def add_bioavailability(model: Model, add_parameter: bool = True):
     """Add bioavailability statement for the first dose compartment of the model.
     Can be added as a new parameter or otherwise it will be set to 1.
 
@@ -247,9 +245,7 @@ def add_bioavailability(
     if isinstance(bio, sympy.Number):
         # Bio not defined
         if add_parameter:
-            model, bio_symb = _add_parameter(
-                model, 'BIO', init=float(bio), lower=float(lower), upper=float(upper)
-            )
+            model, bio_symb = _add_parameter(model, 'BIO', init=float(bio))
             f_ass = Assignment.create(sympy.Symbol('F_BIO'), bio_symb)
 
             new_before_odes = model.statements.before_odes + f_ass
