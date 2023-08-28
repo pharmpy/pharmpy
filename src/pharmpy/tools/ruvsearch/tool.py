@@ -197,7 +197,7 @@ def start(context, model, groups, p_value, skip, max_iter, dv):
         cwres_models=pd.concat(cwres_models),
         summary_individuals=sumind,
         summary_individuals_count=sumcount,
-        final_model_name=model.name,
+        final_model=model,
         summary_models=summf,
         summary_tool=summary_tool,
         summary_errors=summary_errors,

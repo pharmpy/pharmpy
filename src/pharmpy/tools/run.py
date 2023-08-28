@@ -586,14 +586,14 @@ def retrieve_final_model(res: Results) -> Model:
 
     """
     try:
-        final_model_name = getattr(res, 'final_model_name')
+        final_model = getattr(res, 'final_model')
     except AttributeError:
-        raise ValueError('Attribute \'final_model_name\' is missing from results object')
+        raise ValueError('Attribute \'final_model\' is missing from results object')
 
-    if final_model_name is None:
-        raise ValueError('Attribute \'final_model_name\' is None')
+    if final_model is None:
+        raise ValueError('Attribute \'final_model\' is None')
 
-    return retrieve_models(res, names=[final_model_name])[0]
+    return retrieve_models(res, names=[final_model.name])[0]
 
 
 def print_fit_summary(model: Model):

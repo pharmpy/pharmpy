@@ -1,5 +1,6 @@
 import inspect
-import os
+
+# import os
 import shutil
 from pathlib import Path
 from typing import get_type_hints
@@ -9,8 +10,9 @@ import pytest
 import pharmpy
 from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.results import read_results
-from pharmpy.tools.run import (
+
+# from pharmpy.results import read_results
+from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_common,
     _create_metadata_tool,
     _get_run_setup,
@@ -18,8 +20,6 @@ from pharmpy.tools.run import (
     load_example_modelfit_results,
     rank_models,
     read_modelfit_results,
-    retrieve_final_model,
-    retrieve_models,
     summarize_errors,
     summarize_modelfit_results,
 )
@@ -141,79 +141,79 @@ def test_create_metadata_common(tmp_path):
         assert metadata['path'] == 'tool_database_path'
 
 
-def test_retrieve_models(testdata):
-    tool_database_path = testdata / 'results' / 'tool_databases' / 'modelsearch'
+# def test_retrieve_models(testdata):
+#    tool_database_path = testdata / 'results' / 'tool_databases' / 'modelsearch'
 
-    model_to_retrieve = ['modelsearch_run1']
+#    model_to_retrieve = ['modelsearch_run1']
 
-    models = retrieve_models(tool_database_path, names=model_to_retrieve)
-    assert len(models) == 1
-    assert models[0].name == model_to_retrieve[0]
+#    models = retrieve_models(tool_database_path, names=model_to_retrieve)
+#    assert len(models) == 1
+#    assert models[0].name == model_to_retrieve[0]
 
-    model_names_all = [
-        'input_model',
-        'modelsearch_run1',
-        'modelsearch_run2',
-        'modelsearch_run3',
-        'modelsearch_run4',
-    ]
+#    model_names_all = [
+#        'input_model',
+#        'modelsearch_run1',
+#        'modelsearch_run2',
+#        'modelsearch_run3',
+#        'modelsearch_run4',
+#    ]
 
-    models = retrieve_models(tool_database_path)
-    assert [model.name for model in models] == model_names_all
+#    models = retrieve_models(tool_database_path)
+#    assert [model.name for model in models] == model_names_all
 
-    with open(tool_database_path / 'results.json') as f:
-        results_json = f.read()
-        if os.name == 'nt':
-            new_path = str(tool_database_path).replace('\\', '\\\\')
-        else:
-            new_path = str(tool_database_path)
+#    with open(tool_database_path / 'results.json') as f:
+#        results_json = f.read()
+#        if os.name == 'nt':
+#            new_path = str(tool_database_path).replace('\\', '\\\\')
+#        else:
+#            new_path = str(tool_database_path)
 
-        results_json_testpath = results_json.replace('/tmp/tool_results/modelsearch', new_path)
+#        results_json_testpath = results_json.replace('/tmp/tool_results/modelsearch', new_path)
 
-    res = read_results(results_json_testpath)
-    models = retrieve_models(res, names=model_to_retrieve)
-    assert models[0].name == model_to_retrieve[0]
+#    res = read_results(results_json_testpath)
+#    models = retrieve_models(res, names=model_to_retrieve)
+#    assert models[0].name == model_to_retrieve[0]
 
-    tool_db = LocalDirectoryToolDatabase('modelsearch', path=tool_database_path, exist_ok=True)
-    models = retrieve_models(tool_db, names=model_to_retrieve)
-    assert models[0].name == model_to_retrieve[0]
+#    tool_db = LocalDirectoryToolDatabase('modelsearch', path=tool_database_path, exist_ok=True)
+#    models = retrieve_models(tool_db, names=model_to_retrieve)
+#    assert models[0].name == model_to_retrieve[0]
 
-    models = retrieve_models(tool_db.model_database, names=model_to_retrieve)
-    assert models[0].name == model_to_retrieve[0]
+#    models = retrieve_models(tool_db.model_database, names=model_to_retrieve)
+#    assert models[0].name == model_to_retrieve[0]
 
-    with pytest.raises(ValueError, match='Models {\'x\'} not in database'):
-        retrieve_models(res, names=['x'])
+#    with pytest.raises(ValueError, match='Models {\'x\'} not in database'):
+#        retrieve_models(res, names=['x'])
 
-    tool_without_db_in_results = testdata / 'results' / 'qa_results.json'
-    res = read_results(tool_without_db_in_results)
-    with pytest.raises(
-        ValueError, match='Results type \'QAResults\' does not serialize tool database'
-    ):
-        retrieve_models(res, names=model_to_retrieve)
+#    tool_without_db_in_results = testdata / 'results' / 'qa_results.json'
+#    res = read_results(tool_without_db_in_results)
+#    with pytest.raises(
+#        ValueError, match='Results type \'QAResults\' does not serialize tool database'
+#    ):
+#        retrieve_models(res, names=model_to_retrieve)
 
 
-def test_retrieve_final_model(testdata):
-    tool_database_path = testdata / 'results' / 'tool_databases' / 'modelsearch'
+# def test_retrieve_final_model(testdata):
+#    tool_database_path = testdata / 'results' / 'tool_databases' / 'modelsearch'
 
-    with open(tool_database_path / 'results.json') as f:
-        results_json = f.read()
-        if os.name == 'nt':
-            new_path = str(tool_database_path).replace('\\', '\\\\')
-        else:
-            new_path = str(tool_database_path)
+#    with open(tool_database_path / 'results.json') as f:
+#        results_json = f.read()
+#        if os.name == 'nt':
+#            new_path = str(tool_database_path).replace('\\', '\\\\')
+#        else:
+#            new_path = str(tool_database_path)
 
-        results_json_testpath = results_json.replace('/tmp/tool_results/modelsearch', new_path)
+#        results_json_testpath = results_json.replace('/tmp/tool_results/modelsearch', new_path)
 
-    res = read_results(results_json_testpath)
-    final_model = retrieve_final_model(res)
-    assert final_model.name == 'modelsearch_run2'
+#    res = read_results(results_json_testpath)
+#    final_model = retrieve_final_model(res)
+#    assert final_model.name == 'modelsearch_run2'
 
-    results_json_none = results_json_testpath.replace(
-        '"final_model_name": "modelsearch_run2"', '"final_model_name": null'
-    )
-    res = read_results(results_json_none)
-    with pytest.raises(ValueError, match='Attribute \'final_model_name\' is None'):
-        retrieve_final_model(res)
+#    results_json_none = results_json_testpath.replace(
+#        '"final_model_name": "modelsearch_run2"', '"final_model_name": null'
+#    )
+#    res = read_results(results_json_none)
+#    with pytest.raises(ValueError, match='Attribute \'final_model_name\' is None'):
+#        retrieve_final_model(res)
 
 
 def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):

@@ -179,7 +179,7 @@ def results(start_model, allometry_model):
         summary_individuals=suminds,
         summary_individuals_count=sumcount,
         summary_errors=sumerrs,
-        final_model_name=best_model.name,
+        final_model=best_model,
     )
 
 

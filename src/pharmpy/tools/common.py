@@ -38,7 +38,7 @@ class ToolResults(Results):
     summary_individuals: Optional[pd.DataFrame] = None
     summary_individuals_count: Optional[pd.DataFrame] = None
     summary_errors: Optional[pd.DataFrame] = None
-    final_model_name: Optional[str] = None
+    final_model: Optional[Model] = None
     models: Sequence[Model] = ()
     tool_database: Optional[ToolDatabase] = None
 
@@ -80,7 +80,7 @@ def create_results(
         summary_individuals=summary_individuals,
         summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
-        final_model_name=best_model.name,
+        final_model=best_model,
         models=models,
         **rest,
     )

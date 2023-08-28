@@ -191,7 +191,7 @@ def test_resume_tool_ruvsearch(tmp_path, testdata):
         assert_frame_equal(
             resume_tool_res.summary_individuals_count, run_tool_res.summary_individuals_count
         )
-        assert resume_tool_res.final_model_name == run_tool_res.final_model_name
+        assert resume_tool_res.final_model.name == run_tool_res.final_model.name
         assert_frame_equal(resume_tool_res.summary_models, run_tool_res.summary_models)
         assert_frame_equal(resume_tool_res.summary_tool, run_tool_res.summary_tool)
         assert_frame_equal(resume_tool_res.summary_errors, run_tool_res.summary_errors)

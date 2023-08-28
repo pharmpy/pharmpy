@@ -158,7 +158,7 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff, keep
         sum_errs.append(res.summary_errors)
 
         final_model = next(
-            filter(lambda model: model.name == res.final_model_name, res.models), base_model
+            filter(lambda model: model.name == res.final_model.name, res.models), base_model
         )
 
         base_model = final_model
@@ -178,8 +178,8 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff, keep
     res_modelfit_input = input_model.modelfit_results
     res_modelfit_final = final_model.modelfit_results
 
-    # NOTE Compute name of final model
-    final_model_name = last_res.final_model_name
+    # NOTE Compute final final model
+    final_final_model = last_res.final_model
     if res_modelfit_input and res_modelfit_final:
         bic_input = calculate_bic(input_model, res_modelfit_input.ofv, type='iiv')
         bic_final = calculate_bic(final_model, res_modelfit_final.ofv, type='iiv')
@@ -189,7 +189,7 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff, keep
                 f'({bic_final}) than {input_model.name} ({bic_input}), selecting '
                 f'input model'
             )
-            final_model_name = input_model.name
+            final_final_model = input_model
 
     keys = list(range(1, len(list_of_algorithms) + 1))
 
@@ -199,7 +199,7 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff, keep
         summary_individuals=_concat_summaries(sum_inds, keys),
         summary_individuals_count=_concat_summaries(sum_inds_count, keys),
         summary_errors=_concat_summaries(sum_errs, keys),
-        final_model_name=final_model_name,
+        final_model=final_final_model,
         models=models,
         tool_database=last_res.tool_database,
     )
