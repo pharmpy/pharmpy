@@ -133,8 +133,8 @@ def run_pkpd(context, model, emax_init, ec50_init):
     return create_results(
         StructSearchResults,
         model,
-        model,
-        list(pd_baseline_fit + pkpd_models_fit),
+        pd_baseline_fit[0],
+        list(pkpd_models_fit),
         rank_type='bic',
         cutoff=None,
         summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"]),
