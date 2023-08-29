@@ -39,6 +39,8 @@ def run_amd(
     cl_init: float = 0.01,
     vc_init: float = 1.0,
     mat_init: float = 0.1,
+    emax_init: Optional[float] = None,
+    ec50_init: Optional[float] = None,
     search_space: Optional[str] = None,
     lloq_method: Optional[str] = None,
     lloq_limit: Optional[str] = None,
@@ -47,6 +49,7 @@ def run_amd(
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,
     resume: Optional[bool] = False,
+    dv: Optional[bool] = None,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -59,7 +62,7 @@ def run_amd(
     results : ModelfitResults
         Reults of input if input is a model
     modeltype : str
-        Type of model to build. Either 'basic_pk'
+        Type of model to build. Valid strings are 'basic_pk' or 'pkpd'
     administration : str
         Route of administration. Either 'iv', 'oral' or 'ivoral'
     cl_init : float
@@ -68,6 +71,31 @@ def run_amd(
         Initial estimate for the central compartment population volume
     mat_init : float
         Initial estimate for the mean absorption time (not for iv models)
+    emax_init : float
+        Initial estimate for E_max (PKPD model)
+    ec50_init : float
+        Initial estimate for EC_50 (PKPD model)
+    search_space : str
+        MFL for search space for structural model
+    lloq_method : str
+        Method for how to remove LOQ data. See `transform_blq` for list of available methods
+    lloq_limit : float
+        Lower limit of quantification. If None LLOQ column from dataset will be used
+    order : list
+        Runorder of components
+    allometric_variable: str or Symbol
+        Variable to use for allometry
+    occasion : str
+        Name of occasion column
+    path : str or Path
+        Path to run AMD in
+    resume : bool
+        Whether to allow resuming previous run
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
     search_space : str
         MFL for search space for structural model
     lloq_method : str
@@ -110,6 +138,9 @@ def run_amd(
         raise ValueError(f'Invalid input: "{administration}" as administration is not supported')
     if modeltype not in ['basic_pk']:
         raise ValueError(f'Invalid input: "{modeltype}" as modeltype is not supported')
+
+    if modeltype == 'pkpd':
+        dv = 2
 
     if type(input) is str:
         from pharmpy.modeling import create_basic_pk_model
@@ -198,8 +229,18 @@ def run_amd(
     run_subfuncs = {}
     for section in order:
         if section == 'structural':
-            func = _subfunc_modelsearch(search_space=modelsearch_features, path=db.path)
-            run_subfuncs['modelsearch'] = func
+            if modeltype == 'pkpd':
+                func = _subfunc_structsearch(
+                    route=administration,
+                    modeltype=modeltype,
+                    emax_init=emax_init,
+                    ec50_init=ec50_init,
+                    path=db.path,
+                )
+                run_subfuncs['structsearch'] = func
+            else:
+                func = _subfunc_modelsearch(search_space=modelsearch_features, path=db.path)
+                run_subfuncs['modelsearch'] = func
         elif section == 'iivsearch':
             func = _subfunc_iiv(path=db.path)
             run_subfuncs['iivsearch'] = func
@@ -207,7 +248,7 @@ def run_amd(
             func = _subfunc_iov(amd_start_model=model, occasion=occasion, path=db.path)
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
-            func = _subfunc_ruvsearch(path=db.path)
+            func = _subfunc_ruvsearch(dv=dv, path=db.path)
             run_subfuncs['ruvsearch'] = func
         elif section == 'allometry':
             func = _subfunc_allometry(
@@ -224,7 +265,10 @@ def run_amd(
                 f"Unrecognized section {section} in order. Must be one of {default_order}"
             )
 
-    model = run_tool('modelfit', model, path=db.path / 'modelfit', resume=resume)
+    if results is None:
+        model = run_tool('modelfit', model, path=db.path / 'modelfit', resume=resume)
+    else:
+        model = model.replace(modelfit_results=results)
     next_model = model
     sum_subtools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
     sum_subtools.append(_create_sum_subtool('start', model))
@@ -339,12 +383,29 @@ def _subfunc_modelsearch(search_space: Tuple[Statement, ...], path) -> SubFunc:
     return _run_modelsearch
 
 
+def _subfunc_structsearch(route, modeltype, emax_init, ec50_init, path) -> SubFunc:
+    def _run_structsearch(model):
+        res = run_tool(
+            'structsearch',
+            route=route,
+            type=modeltype,
+            emax_init=emax_init,
+            ec50_init=ec50_init,
+            model=model,
+            path=path / 'structsearch',
+        )
+        assert isinstance(res, Results)
+        return res
+
+    return _run_structsearch
+
+
 def _subfunc_iiv(path) -> SubFunc:
     def _run_iiv(model):
         res = run_tool(
             'iivsearch',
             'brute_force',
-            iiv_strategy='fullblock',
+            iiv_strategy='no_add',
             model=model,
             path=path / 'iivsearch',
         )
@@ -354,13 +415,15 @@ def _subfunc_iiv(path) -> SubFunc:
     return _run_iiv
 
 
-def _subfunc_ruvsearch(path) -> SubFunc:
+def _subfunc_ruvsearch(dv, path) -> SubFunc:
     def _run_ruvsearch(model):
         if has_blq_transformation(model):
             skip, max_iter = ['IIV_on_RUV', 'time_varying'], 1
         else:
             skip, max_iter = [], 3
-        res = run_tool('ruvsearch', model, skip=skip, max_iter=max_iter, path=path / 'ruvsearch')
+        res = run_tool(
+            'ruvsearch', model, skip=skip, max_iter=max_iter, dv=dv, path=path / 'ruvsearch'
+        )
         assert isinstance(res, Results)
         return res
 

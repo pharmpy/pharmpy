@@ -56,7 +56,7 @@ fp_wildcard: WILDCARD
 
 WILDCARD: "*"
 
-VARIABLE_NAME: /[a-zA-Z]+/
+VARIABLE_NAME: /[a-zA-Z_]+/
 
 values: value | _value_array
 _value_array: "[" [value ("," value)*] "]"
