@@ -39,6 +39,7 @@ from pharmpy.modeling import (
     set_zero_order_absorption,
     set_zero_order_elimination,
     set_zero_order_input,
+    unload_dataset,
 )
 from pharmpy.modeling.odes import CompartmentalSystem, CompartmentalSystemBuilder
 
@@ -1010,6 +1011,12 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
+
+
+def test_mm_elimination_no_data(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    model = unload_dataset(model)
+    set_michaelis_menten_elimination(model)
 
 
 def test_fo_mm_eta(create_model_for_test):

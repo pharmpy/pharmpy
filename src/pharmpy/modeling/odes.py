@@ -647,7 +647,11 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
     km_init, clmm_init = _get_mm_inits(model, numer, combined)
 
     model, km = _add_parameter(model, 'KM', init=km_init)
-    model = set_upper_bounds(model, {'POP_KM': 20 * get_observations(model).max()})
+    if model.dataset is not None:
+        maxobs = get_observations(model).max()
+    else:
+        maxobs = 1.0
+    model = set_upper_bounds(model, {'POP_KM': 20 * maxobs})
 
     if denom != 1:
         if combined:
@@ -752,7 +756,10 @@ def _get_mm_inits(model: Model, rate_numer, combined):
     if combined:
         clmm_init /= 2
 
-    dv_max = get_observations(model).max()
+    if model.dataset is not None:
+        dv_max = get_observations(model).max()
+    else:
+        dv_max = 1.0
     km_init = dv_max * 2
     # FIXME: cap initial estimate, this is NONMEM specific and should be handled more generally
     #  (https://github.com/pharmpy/pharmpy/issues/1395)
