@@ -96,27 +96,6 @@ def run_amd(
     -------
     Model
         Reference to the same model object
-    search_space : str
-        MFL for search space for structural model
-    lloq_method : str
-        Method for how to remove LOQ data. See `transform_blq` for list of available methods
-    lloq_limit : float
-        Lower limit of quantification. If None LLOQ column from dataset will be used
-    order : list
-        Runorder of components
-    allometric_variable: str or Symbol
-        Variable to use for allometry
-    occasion : str
-        Name of occasion column
-    path : str or Path
-        Path to run AMD in
-    resume : bool
-        Whether to allow resuming previous run
-
-    Returns
-    -------
-    Model
-        Reference to the same model object
 
     Examples
     --------
