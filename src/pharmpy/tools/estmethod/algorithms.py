@@ -102,8 +102,16 @@ def _create_base_model(model):
 
     base_model = model.replace(name='base_model')
     est_method, eval_method = est_settings['method'], eval_settings['method']
+
+    if eval_method is not None:
+        cov = eval_settings['cov']
+    else:
+        cov = est_settings['cov']
+
     base_model = base_model.replace(
-        description=_create_description([est_method, eval_method], solver=None, update=False)
+        description=_create_description(
+            [est_method, eval_method], cov=cov, solver=None, update=False
+        )
     )
 
     while len(base_model.estimation_steps) > 0:
