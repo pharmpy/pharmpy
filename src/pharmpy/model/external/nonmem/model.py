@@ -264,7 +264,8 @@ class Model(BaseModel):
             datapath = model.datainfo.path
             if datapath is None:
                 dir_path = Path(model.name + ".csv") if path is None else path.parent
-                datapath = write_csv(model, path=dir_path, force=force)
+                model = write_csv(model, path=dir_path, force=force)
+                datapath = model.datainfo.path
                 replace_dict['datainfo'] = model.datainfo.replace(path=datapath)
             assert (
                 not datapath.exists() or datapath.is_file()
