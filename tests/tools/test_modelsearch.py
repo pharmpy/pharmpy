@@ -162,8 +162,9 @@ $ESTIMATION METHOD=1 INTERACTION
         )
     )
 
-    with pytest.raises(ValueError, match='Invalid `model`'):
-        validate_input(MINIMAL_VALID_MFL_STRING, 'exhaustive', model=model)
+    # TODO : CMT column now supported, add some other test?
+    # with pytest.raises(ValueError, match='Invalid `model`'):
+    #    validate_input(MINIMAL_VALID_MFL_STRING, 'exhaustive', model=model)
 
 
 def test_is_allowed():

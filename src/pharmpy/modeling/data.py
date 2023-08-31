@@ -937,6 +937,33 @@ def add_admid(model: Model):
     return model.update_source()
 
 
+def set_admid(model: Model, column_name: str):
+    """
+    Set the specified column in the dataset to the admid data type.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    column_name : str
+        name of column to set as admid
+
+    Returns
+    -------
+    model : Model
+        Pharmpy model
+
+    See also
+    --------
+    get_admid : Get or create an admid column
+    add_admid : Add an admid column to the dataset
+    """
+    di = model.datainfo
+    colinfo = di[column_name].replace(type="admid")
+    model = model.replace(datainfo=di.set_column(colinfo))
+    return model.update_source()
+
+
 def get_cmt(model: Model):
     """Get the cmt (compartment) column from the model dataset
 

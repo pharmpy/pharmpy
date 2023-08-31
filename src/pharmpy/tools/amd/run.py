@@ -59,9 +59,9 @@ def run_amd(
     results : ModelfitResults
         Reults of input if input is a model
     modeltype : str
-        Type of model to build. Either 'basic_pk' or 'tmdd'
+        Type of model to build. Either 'basic_pk'
     administration : str
-        Route of administration. Either 'iv' or 'oral'
+        Route of administration. Either 'iv', 'oral' or 'ivoral'
     cl_init : float
         Initial estimate for the population clearance
     vc_init : float
@@ -106,17 +106,20 @@ def run_amd(
     """
     from pharmpy.model.external import nonmem  # FIXME We should not depend on NONMEM
 
-    # FIXME: temporary until modeltype and administration is fully supported in e.g. create_start_model
-    if modeltype == 'basic_pk' and administration == 'iv':
-        modeltype = 'pk_iv'
-    elif modeltype == 'basic_pk' and administration == 'oral':
-        modeltype = 'pk_oral'
+    if administration not in ['iv', 'oral', 'ivoral']:
+        raise ValueError(f'Invalid input: "{administration}" as administration is not supported')
+    if modeltype not in ['basic_pk']:
+        raise ValueError(f'Invalid input: "{modeltype}" as modeltype is not supported')
 
     if type(input) is str:
-        from pharmpy.tools.amd.funcs import create_start_model
+        from pharmpy.modeling import create_basic_pk_model
 
-        model = create_start_model(
-            input, modeltype=modeltype, cl_init=cl_init, vc_init=vc_init, mat_init=mat_init
+        model = create_basic_pk_model(
+            administration,
+            dataset_path=input,
+            cl_init=cl_init,
+            vc_init=vc_init,
+            mat_init=mat_init,
         )
         model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
     elif type(input) is nonmem.model.Model:
@@ -151,13 +154,21 @@ def run_amd(
         )
     )
     if not modelsearch_features:
-        if modeltype == 'pk_oral':
+        if modeltype == 'basic_pk' and administration == 'oral':
             modelsearch_features = (
                 Absorption((Name('ZO'), Name('SEQ-ZO-FO'))),
                 Elimination((Name('MM'), Name('MIX-FO-MM'))),
                 LagTime(),
                 Transits((1, 3, 10), Wildcard()),
                 Peripherals((1,)),
+            )
+        elif modeltype == 'basic_pk' and administration == 'ivoral':
+            modelsearch_features = (
+                Absorption((Name('ZO'), Name('SEQ-ZO-FO'))),
+                Elimination((Name('MM'), Name('MIX-FO-MM'))),
+                LagTime(),
+                Transits((1, 3, 10), Wildcard()),
+                Peripherals((1, 2)),
             )
         else:
             modelsearch_features = (
@@ -172,10 +183,16 @@ def run_amd(
         )
     )
     if not any(map(lambda statement: isinstance(statement, Covariate), covsearch_features)):
-        covsearch_features = (
+        def_cov_search_feature = (
             Covariate(Ref('IIV'), Ref('CONTINUOUS'), ('exp',), '*'),
             Covariate(Ref('IIV'), Ref('CATEGORICAL'), ('cat',), '*'),
-        ) + covsearch_features
+        )
+        if modeltype == 'basic_pk' and administration == 'ivoral':
+            def_cov_search_feature = def_cov_search_feature + (
+                Covariate(('RUV',), ('ADMID',), ('cat',), '*'),
+            )
+
+        covsearch_features = def_cov_search_feature + covsearch_features
 
     db = default_tool_database(toolname='amd', path=path, exist_ok=resume)
     run_subfuncs = {}
