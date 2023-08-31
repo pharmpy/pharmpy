@@ -56,7 +56,7 @@ a model like this:
 
    import numpy as np
 
-   df['DV'] = np.log(df['DV'], where=(df['DV'] != 0))
+   df['DV'] = np.log(df['DV'], where=(df['DV'] != 0).values)
    model = model.replace(dataset=df)
 
 The :py:mod:`pharmpy.modeling` module has several functions to examine and modify the dataset, see the user guide for
