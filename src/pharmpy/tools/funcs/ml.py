@@ -296,6 +296,6 @@ def _predict_with_tflite(model_path: Union[str, Path], data: pd.DataFrame):
         interpreter.set_tensor(input_details[0]['index'], npdata[i : (i + 1), :])
         interpreter.invoke()
         output_data = interpreter.get_tensor(output_details[0]['index'])
-        output[i] = output_data
+        output[i] = output_data[0][0]
 
     return output
