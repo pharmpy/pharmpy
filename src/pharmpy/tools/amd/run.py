@@ -49,7 +49,6 @@ def run_amd(
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,
     resume: Optional[bool] = False,
-    dv: Optional[bool] = None,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -120,6 +119,8 @@ def run_amd(
 
     if modeltype == 'pkpd':
         dv = 2
+    else:
+        dv = None
 
     if type(input) is str:
         from pharmpy.modeling import create_basic_pk_model
@@ -384,7 +385,7 @@ def _subfunc_iiv(path) -> SubFunc:
         res = run_tool(
             'iivsearch',
             'brute_force',
-            iiv_strategy='no_add',
+            iiv_strategy='fullblock',
             model=model,
             path=path / 'iivsearch',
         )

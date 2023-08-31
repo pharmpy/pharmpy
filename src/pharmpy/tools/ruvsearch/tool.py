@@ -347,9 +347,10 @@ def _create_combined_model(input_model, current_iteration):
 def _create_dataset(input_model, dv):
     # Non-observations have already been filtered
     residuals = input_model.modelfit_results.residuals
-    if dv:
+    if dv is not None:
         input_dataset = input_model.dataset
-        input_dataset = input_dataset[input_dataset['DV'] != 0].reset_index(
+        observation_label = input_model.datainfo.dv_column.name
+        input_dataset = input_dataset.query(f'{observation_label} != 0').reset_index(
             drop=True
         )  # filter non-observations
         indices = input_dataset.index[input_dataset['DVID'] == dv].tolist()
