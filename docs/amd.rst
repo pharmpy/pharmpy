@@ -23,13 +23,14 @@ To initiate AMD in Python/R:
     dataset_path = 'path/to/dataset'
     order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
     res = run_amd(input=dataset_path,
-                  modeltype='pk_oral',
+                  modeltype='basic_pk',
+                  administration='oral',
                   order=order,
                   search_space='LET(CATEGORICAL, [SEX]); LET(CONTINUOUS, [AGE])',
                   allometric_variable='WGT',
                   occasion='VISI')
 
-This will take a dataset as ``input``, where the ``modeltype`` has been specified to be a PK oral drug. AMD will search
+This will take a dataset as ``input``, where the ``modeltype`` has been specified to be a PK model and ``administration`` is oral. AMD will search
 for the best structural model, IIV structure, and residual model in the specified ``order``. We specify the column SEX
 as a ``categorical`` covariate and AGE as a ``continuous`` covariate. Finally, we declare the WGT-column as our
 ``allometric_variable``, VISI as our ``occasion`` column.
@@ -47,7 +48,9 @@ Arguments
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``results``                                       | ModelfitResults if input is a model                                                                             |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``modeltype``                                     | Type of model to build. Either 'pk_oral' or 'pk_iv' (default is 'pk_oral')                                      |
+| ``modeltype``                                     | Type of model to build. Currently 'basic_pk'                                                                    |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+| ``administration``                                | Route of administration. One of 'iv', 'oral' or 'ivoral'                                                        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``cl_init``                                       | Initial estimate for the population clearance (default is 0.01)                                                 |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -77,8 +80,8 @@ Input
 The AMD tool can use both a dataset and a model as input. If the input is a dataset (with corresponding
 :ref:`datainfo file<datainfo>`), Pharmpy will create a model with the following attributes:
 
-* Structural: one compartment, first order absorption (if ``model_type`` is ``'pk_oral'``), first order elimination
-* IIV: CL and VC with covariance (``'pk_iv'``) or CL and VC with covariance and MAT (``'pk_oral'``)
+* Structural: one compartment, first order absorption (if ``administration`` is ``'oral'``), first order elimination
+* IIV: CL and VC with covariance (``'iv'``) or CL and VC with covariance and MAT (``'oral'``)
 * Residual: proportional error model
 * Estimation steps: FOCE with interaction
 
@@ -420,5 +423,3 @@ See :py:func:`pharmpy.tools.summarize_errors` for information on the content of 
     import pandas as pd
     pd.set_option('display.max_colwidth', None)
     res.summary_errors
-
-
