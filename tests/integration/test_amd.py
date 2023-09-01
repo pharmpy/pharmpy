@@ -27,7 +27,8 @@ def test_amd(tmp_path, testdata):
         input = 'moxo_simulated_amd.csv'
         res = run_amd(
             input,
-            modeltype='pk_oral',
+            modeltype='basic_pk',
+            administration='oral',
             search_space='PERIPHERALS(1)',
             occasion='VISI',
         )
