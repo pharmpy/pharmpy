@@ -15,9 +15,9 @@ from pharmpy.tools.common import ToolResults
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
-EST_METHODS = ('FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES')
+METHODS = ('FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES')
 SOLVERS = ('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI')
-COVS = ('SANDWICH', 'CPG', 'OFIM')
+PARAMETER_UNCERTAINTY_METHODS = ('SANDWICH', 'CPG', 'OFIM')
 
 ALGORITHMS = frozenset(['exhaustive', 'exhaustive_with_update', 'exhaustive_only_eval'])
 
@@ -26,46 +26,47 @@ def create_workflow(
     algorithm: str,
     methods: Optional[Union[List[str], str]] = None,
     solvers: Optional[Union[List[str], str]] = None,
-    covs: Optional[Union[List[str], str]] = None,
+    parameter_uncertainty_methods: Optional[Union[List[str], str]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):
     """Run estmethod tool.
 
-    Parameters
-    ----------
-    algorithm : str
-        The algorithm to use (can be 'exhaustive', 'exhaustive_with_update' or 'exhaustive_only_eval')
+     Parameters
+     ----------
+     algorithm : str
+         The algorithm to use (can be 'exhaustive', 'exhaustive_with_update' or 'exhaustive_only_eval')
     methods : list or None
-        List of estimation methods to test. Can be specified as 'all', a list of methods, or
-        None (to not test any estimation method)
-    solvers : list, str or None
-        List of solver to test. Can be specified as 'all', a list of solvers, or None (to
-        not test any solver)
-    covs : list, str or None
-        List of covariance to test. Can be specified as 'all', a list of covs, or None (to
-        not evaluate any covariance)
-    results : ModelfitResults
-        Results for model
-    model : Model
-        Pharmpy model
+         List of estimation methods to test.
+         Can be specified as 'all', a list of estimation methods, or None (to not test any estimation method)
+     solvers : list, str or None
+         List of solver to test. Can be specified as 'all', a list of solvers, or None (to
+         not test any solver)
+     parameter_uncertainty_methods : list, str or None
+         List of parameter uncertainty methods to test.
+         Can be specified as 'all', a list of uncertainty methods, or None (to not evaluate any uncertainty)
+     results : ModelfitResults
+         Results for model
+     model : Model
+         Pharmpy model
 
     Returns
     -------
     EstMethodResults
         Estmethod tool result object
 
-    Examples
-    --------
-    >>> from pharmpy.modeling import *
-    >>> from pharmpy.tools import run_estmethod, load_example_modelfit_results
-    >>> model = load_example_model("pheno")
-    >>> results = load_example_modelfit_results("pheno")
-    >>> methods = ['imp', 'saem']
-    >>> covs = None
-    >>> run_estmethod( # doctest: +SKIP
-    >>>     'reduced', methods=methods, solvers='all', covs=covs, results=results, model=model # doctest: +SKIP
-    >>> ) # doctest: +SKIP
+     Examples
+     --------
+     >>> from pharmpy.modeling import *
+     >>> from pharmpy.tools import run_estmethod, load_example_modelfit_results
+     >>> model = load_example_model("pheno")
+     >>> results = load_example_modelfit_results("pheno")
+     >>> methods = ['imp', 'saem']
+     >>> parameter_uncertainty_methods = None
+     >>> run_estmethod( # doctest: +SKIP
+     >>>     'reduced', methods=methods, solvers='all', # doctest: +SKIP
+     >>>      parameter_uncertainty_methods=parameter_uncertainty_methods, results=results, model=model # doctest: +SKIP
+     >>> ) # doctest: +SKIP
 
     """
     wb = WorkflowBuilder(name="estmethod")
@@ -83,9 +84,9 @@ def create_workflow(
         methods = [model.estimation_steps[-1].method]
 
     wf_algorithm, task_base_model_fit = algorithm_func(
-        _format_input(methods, EST_METHODS),
+        _format_input(methods, METHODS),
         _format_input(solvers, SOLVERS),
-        _format_input(covs, COVS),
+        _format_input(parameter_uncertainty_methods, PARAMETER_UNCERTAINTY_METHODS),
     )
     wb.insert_workflow(wf_algorithm, predecessors=start_task)
 
@@ -186,7 +187,7 @@ def summarize_estimation_steps(models):
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(algorithm, methods, solvers, covs, model):
+def validate_input(algorithm, methods, solvers, parameter_uncertainty_methods, model):
     if solvers is not None and has_linear_odes(model):
         raise ValueError(
             'Invalid input `model`: testing non-linear solvers on linear system is not supported'
@@ -197,19 +198,24 @@ def validate_input(algorithm, methods, solvers, covs, model):
             f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'
         )
 
-    if methods is None and solvers is None and covs is None:
+    if methods is None and solvers is None and parameter_uncertainty_methods is None:
         raise ValueError(
-            'Invalid search space options: please specify at least one of `methods`, `solvers`, or `covs`'
+            'Invalid search space options: please specify at least '
+            'one of `methods`, `solvers`, or `parameter_uncertainty_methods`'
         )
 
     if methods is not None:
-        _validate_search_space(methods, EST_METHODS, 'methods')
+        _validate_search_space(methods, METHODS, 'methods')
 
     if solvers is not None:
         _validate_search_space(solvers, SOLVERS, 'solvers')
 
-    if covs is not None:
-        _validate_search_space(covs, COVS, 'covs')
+    if parameter_uncertainty_methods is not None:
+        _validate_search_space(
+            parameter_uncertainty_methods,
+            PARAMETER_UNCERTAINTY_METHODS,
+            'parameter_uncertainty_methods',
+        )
 
 
 def _validate_search_space(input_search_space, allowed_search_space, option_name):

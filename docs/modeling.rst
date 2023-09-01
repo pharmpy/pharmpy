@@ -436,10 +436,10 @@ If we then examine the model code:
 
 List of functions to change the estimation steps:
 
-* :py:func:`pharmpy.modeling.add_covariance_step`
+* :py:func:`pharmpy.modeling.add_parameter_uncertainty_step`
 * :py:func:`pharmpy.modeling.add_estimation_step`
 * :py:func:`pharmpy.modeling.append_estimation_step_options`
-* :py:func:`pharmpy.modeling.remove_covariance_step`
+* :py:func:`pharmpy.modeling.remove_parameter_uncertainty_step`
 * :py:func:`pharmpy.modeling.remove_estimation_step`
 * :py:func:`pharmpy.modeling.set_estimation_step`
 * :py:func:`pharmpy.modeling.set_evaluation_step`

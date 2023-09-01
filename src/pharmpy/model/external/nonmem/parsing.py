@@ -385,7 +385,7 @@ def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
         interaction = False
         evaluation = False
         maximum_evaluations = None
-        cov = None
+        parameter_uncertainty_method = None
         laplace = False
         isample = None
         niter = None
@@ -404,7 +404,7 @@ def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
         if eval_opt is not None and int(eval_opt) == 1:
             evaluation = True
         if covrec:
-            cov = 'SANDWICH'
+            parameter_uncertainty_method = 'SANDWICH'
         if record.has_option('LAPLACIAN') or record.has_option('LAPLACE'):
             laplace = True
         if record.has_option('ISAMPLE'):
@@ -449,7 +449,7 @@ def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
             meth = EstimationStep.create(
                 name,
                 interaction=interaction,
-                cov=cov,
+                parameter_uncertainty_method=parameter_uncertainty_method,
                 evaluation=evaluation,
                 maximum_evaluations=maximum_evaluations,
                 laplace=laplace,
