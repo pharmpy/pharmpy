@@ -2,7 +2,7 @@ from typing import Tuple
 
 import pytest
 
-from pharmpy.modeling import set_direct_effect
+from pharmpy.modeling import create_basic_pk_model, set_direct_effect
 from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
@@ -311,6 +311,10 @@ from pharmpy.tools.mfl.stringify import stringify
                 ('COVARIATE', 'V', 'WGT', 'exp', '*'),
             ),
         ),
+        (
+            'COVARIATE(@BIOAVAIL, APGR, CAT)',
+            (),
+        ),
     ),
     ids=repr,
 )
@@ -361,6 +365,24 @@ def test_all_funcs(load_model_for_test, pheno_path, source, expected):
 def test_all_funcs_pd(load_model_for_test, pheno_path, source, expected):
     model = load_model_for_test(pheno_path)
     model = set_direct_effect(model, 'linear')
+    statements = parse(source)
+    funcs = all_funcs(model, statements)
+    keys = funcs.keys()
+    assert set(keys) == set(expected)
+
+
+@pytest.mark.parametrize(
+    ('source', 'expected'),
+    (
+        (
+            'COVARIATE(@BIOAVAIL, APGR, CAT, +)',
+            (('COVARIATE', 'BIO', 'APGR', 'cat', '+'),),
+        ),
+    ),
+    ids=repr,
+)
+def test_funcs_ivoral(source, expected):
+    model = create_basic_pk_model(administration='ivoral')
     statements = parse(source)
     funcs = all_funcs(model, statements)
     keys = funcs.keys()

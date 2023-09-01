@@ -1,7 +1,9 @@
 from itertools import product
 from typing import Dict, Iterable, List, Sequence, Tuple, TypeVar, Union
 
+from pharmpy.deps import sympy
 from pharmpy.model import Model
+from pharmpy.modeling import get_bioavailability
 from pharmpy.modeling.covariate_effect import EffectType, OperationType, add_covariate_effect
 from pharmpy.modeling.expressions import (
     get_individual_parameters,
@@ -143,6 +145,8 @@ def _interpret_symbol(model: Model, definition, symbol: Symbol) -> Tuple[str, ..
                 return tuple(get_pd_parameters(model))
             elif symbol.name == 'PK':
                 return tuple(get_pk_parameters(model))
+            elif symbol.name == 'BIOAVAIL':
+                return tuple(_get_bioaval_parameters(model))
             else:
                 return ()
 
@@ -154,3 +158,23 @@ def _interpret_symbol(model: Model, definition, symbol: Symbol) -> Tuple[str, ..
     assert symbol is CovariateWildcard
 
     return tuple(column.name for column in model.datainfo if column.type == 'covariate')
+
+
+def _get_bioaval_parameters(model):
+    """Find all bioavail individual parameters
+    Handle the case where one statements is only a logistic transformation
+    """
+    all_bio = get_bioavailability(model)
+    pk = model.statements.before_odes
+    found = []
+    for _, bio in all_bio.items():
+        if isinstance(bio, sympy.Symbol):
+            ass = pk.find_assignment(bio)
+            rhs_symbs = ass.rhs_symbols
+            if len(rhs_symbs) == 1:
+                symb = rhs_symbs.pop()
+                ass2 = pk.find_assignment(symb)
+                found.append(ass2.symbol.name)
+            else:
+                found += [s.name for s in rhs_symbs]
+    return found
