@@ -38,7 +38,6 @@ from pharmpy.modeling import (
     set_zero_order_input,
 )
 from pharmpy.tools import read_modelfit_results
-from pharmpy.tools.amd.funcs import create_start_model
 
 
 def _ensure_trailing_newline(buf):
@@ -922,7 +921,7 @@ def test_convert_model_iv(testdata, tmp_path):
     # FIXME move to unit test for amd?
     with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_rate.dta', '.')
-        start_model = create_start_model('pheno_rate.dta', modeltype='pk_iv')
+        start_model = create_basic_pk_model(administration='iv', dataset_path='pheno_rate.dta')
         convert_model(start_model)
 
 

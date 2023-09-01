@@ -208,9 +208,10 @@ def set_first_order_elimination(model: Model):
     return model
 
 
-def add_bioavailability(model: Model, add_parameter: bool = True):
+def add_bioavailability(model: Model, add_parameter: bool = True, logit_transform: bool = False):
     """Add bioavailability statement for the first dose compartment of the model.
-    Can be added as a new parameter or otherwise it will be set to 1.
+    Can be added as a new parameter or otherwise it will be set to 1. If added as a parameter,
+    a logit transformation can also be applied.
 
     Parameters
     ----------
@@ -218,6 +219,8 @@ def add_bioavailability(model: Model, add_parameter: bool = True):
         Pharmpy model
     add_parameter : bool
         Add new parameter representing bioavailability or not
+    logit_transform : bool
+        Logit transform the added bioavailability parameter.
 
     Return
     ------
@@ -245,8 +248,16 @@ def add_bioavailability(model: Model, add_parameter: bool = True):
     if isinstance(bio, sympy.Number):
         # Bio not defined
         if add_parameter:
-            model, bio_symb = _add_parameter(model, 'BIO', init=float(bio))
-            f_ass = Assignment.create(sympy.Symbol('F_BIO'), bio_symb)
+            model, bio_symb = _add_parameter(model, 'BIO', init=float(bio), upper=sympy.Number(1))
+            if logit_transform:
+                model = model.replace(
+                    statements=model.statements.reassign(
+                        bio_symb, sympy.log(sympy.Symbol("POP_BIO") / (1 - sympy.Symbol("POP_BIO")))
+                    )
+                )
+                f_ass = Assignment.create(sympy.Symbol('F_BIO'), 1 / (1 + sympy.exp(-bio_symb)))
+            else:
+                f_ass = Assignment.create(sympy.Symbol('F_BIO'), bio_symb)
 
             new_before_odes = model.statements.before_odes + f_ass
 
@@ -1028,12 +1039,31 @@ def add_lag_time(model: Model):
     old_lag_time = dosing_comp.lag_time
     model, mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
     cb = CompartmentalSystemBuilder(odes)
-    cb.set_lag_time(dosing_comp, mdt_symb)
-    model = model.replace(
-        statements=(
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+    dosing_comp = cb.set_lag_time(dosing_comp, mdt_symb)
+
+    # FIXME : Very temporary until new zo absorption logic is implemented
+    if len(dosing_comp.doses) > 1:
+        cb.set_lag_time(dosing_comp, sympy.Symbol("lag_time"))
+        doses = dosing_comp.sorted_doses(model)
+        oral_admid = doses[0].admid
+        admid = sympy.Symbol("ADMID")
+        model = model.replace(
+            statements=(
+                model.statements.before_odes
+                + Assignment(
+                    sympy.Symbol("lag_time"),
+                    sympy.Piecewise((mdt_symb, sympy.Eq(admid, oral_admid)), (0, sympy.true)),
+                )
+                + CompartmentalSystem(cb)
+                + model.statements.after_odes
+            )
         )
-    )
+    else:
+        model = model.replace(
+            statements=(
+                model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+            )
+        )
     if old_lag_time:
         model = model.replace(
             statements=model.statements.remove_symbol_definitions(old_lag_time.free_symbols, odes)
@@ -1160,6 +1190,10 @@ def set_zero_order_absorption(model: Model):
             model, dose, odes.dosing_compartments[0], 'MAT', lag_time
         )
         model = model.update_source()
+    # FIXME : Very temporary until new zo absorption logic is implemented
+    if lag_time != 0 and len(model.statements.ode_system.dosing_compartments[0].doses) > 1:
+        model = remove_lag_time(model)
+        model = add_lag_time(model)
     return model
 
 

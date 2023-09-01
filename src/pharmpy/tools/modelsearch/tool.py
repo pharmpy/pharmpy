@@ -159,18 +159,6 @@ def validate_input(
             f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
         )
 
-    if model is not None:
-        try:
-            cmt = model.datainfo.typeix['compartment']
-        except IndexError:
-            pass
-        else:
-            raise ValueError(
-                f"Invalid `model`: found compartment column {cmt.names} in dataset. "
-                f"This is currently not supported by modelsearch. "
-                f"Please remove or drop this column and try again"
-            )
-
 
 @dataclass(frozen=True)
 class ModelSearchResults(ToolResults):

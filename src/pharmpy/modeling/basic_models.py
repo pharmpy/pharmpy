@@ -9,7 +9,6 @@ from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import (
     Assignment,
-    Bolus,
     ColumnInfo,
     Compartment,
     CompartmentalSystem,
@@ -17,7 +16,6 @@ from pharmpy.model import (
     DataInfo,
     EstimationStep,
     EstimationSteps,
-    Infusion,
     Model,
     NormalDistribution,
     Parameter,
@@ -27,15 +25,15 @@ from pharmpy.model import (
     output,
 )
 
-from .data import read_dataset_from_datainfo
+from .data import add_admid, read_dataset_from_datainfo
 from .error import set_proportional_error_model
-from .odes import set_first_order_absorption
+from .odes import add_bioavailability, set_first_order_absorption
 from .parameter_variability import add_iiv, create_joint_distribution
 from .parameters import set_initial_estimates
 
 
 def create_basic_pk_model(
-    modeltype: str,
+    administration: str = 'iv',
     dataset_path: Optional[str] = None,
     cl_init: float = 0.01,
     vc_init: float = 1.0,
@@ -46,8 +44,8 @@ def create_basic_pk_model(
 
     Parameters
     ----------
-    modeltype : str
-        Type of PK model to create. Supported are 'oral' and 'iv'
+    administration : str
+        Type of PK model to create. Supported are 'iv', 'oral' and 'ivoral'
     dataset_path : str
         Optional path to a dataset
     cl_init : float
@@ -76,6 +74,13 @@ def create_basic_pk_model(
         di = DataInfo()
         df = None
 
+    if administration not in [
+        'iv',
+        'oral',
+        'ivoral',
+    ]:
+        raise ValueError(f'Invalid input: `{administration}` as administration is not supported.')
+
     pop_cl = Parameter('POP_CL', cl_init, lower=0)
     pop_vc = Parameter('POP_VC', vc_init, lower=0)
     iiv_cl = Parameter('IIV_CL', 0.1)
@@ -95,7 +100,11 @@ def create_basic_pk_model(
     vc_ass = Assignment(VC, pop_vc.symbol * sympy.exp(sympy.Symbol(eta_vc_name)))
 
     cb = CompartmentalSystemBuilder()
-    central = Compartment.create('CENTRAL', doses=(dosing(di, df, 1),))
+    # FIXME: This shouldn't be used here
+    from pharmpy.model.external.nonmem.advan import dosing, find_dose
+
+    doses = dosing(di, df, 1)
+    central = Compartment.create('CENTRAL', doses=find_dose(doses, 1))
     cb.add_compartment(central)
     cb.add_flow(central, output, CL / VC)
 
@@ -134,10 +143,78 @@ def create_basic_pk_model(
         if model.modelfit_results is not None
         else None,
     )
-    if modeltype == 'oral':
+
+    if administration == 'oral' or administration == 'ivoral':
         model = set_first_order_absorption(model)
         model = set_initial_estimates(model, {'POP_MAT': mat_init})
         model = add_iiv(model, list_of_parameters='MAT', expression='exp', initial_estimate=0.1)
+    if administration == 'ivoral':
+        # FIXME : Dependent on CMT column having 1 and 2 as values otherwise
+        # compartment structure don't match
+        model = add_bioavailability(model, logit_transform=True)
+        model = set_initial_estimates(model, {'POP_BIO': 0.5})
+
+        # Add IIV to BIO
+        # TODO ? Should there be another initial estimate?
+        model = add_iiv(model, list_of_parameters="BIO", expression='add', initial_estimate=0.1)
+
+        # Set dosing to the CENTRAL compartment as well
+        ode = model.statements.ode_system
+        cb = CompartmentalSystemBuilder(ode)
+        if df is None:
+            doses = dosing(di, df, 2)
+            central_dose = find_dose(doses, comp_number=2, admid=2)
+        else:
+            # doses = dosing(di, df, 1)
+            central_dose = find_dose(doses, comp_number=2, admid=2)
+            if not central_dose:
+                raise ValueError(
+                    (
+                        "Could not determine IV dose from dataset. "
+                        "Currently require CMT column with values 1 and 2 "
+                    )
+                )
+        cb.set_dose(cb.find_compartment("CENTRAL"), dose=central_dose)
+
+        ode = CompartmentalSystem(cb)
+        model = model.replace(
+            statements=model.statements.before_odes + ode + model.statements.after_odes
+        )
+        if df is not None:
+            model = add_admid(model)
+
+            # Change bioavailability to piecewise for oral/iv doses
+            model = model.replace(
+                statements=model.statements.reassign(
+                    sympy.Symbol("F_BIO"),
+                    sympy.Piecewise(
+                        (
+                            1 / (1 + sympy.exp(-sympy.Symbol("BIO"))),
+                            sympy.Eq(sympy.Symbol('ADMID'), 1),
+                        ),
+                        (1, sympy.true),
+                    ),
+                )
+            )
+
+        # Add covariate to error model with the following logic
+        # RUV = 1 * covariate
+        # Y = F + F*EPS*RUV
+        ruv_ass = Assignment(sympy.Symbol("RUV"), sympy.Number(1))
+        model = model.replace(
+            statements=model.statements.before_odes
+            + ruv_ass
+            + model.statements.ode_system
+            + model.statements.after_odes
+        )
+        Y_ass = model.statements.find_assignment("Y")
+        ipred = Y_ass.expression.make_args(Y_ass.expression)[0]
+        error = Y_ass.expression.make_args(Y_ass.expression)[1]
+        new_Y_ass = Assignment(Y_ass.symbol, ipred + error * ruv_ass.symbol)
+
+        model = model.replace(
+            statements=model.statements.reassign(Y_ass.symbol, new_Y_ass.expression)
+        )
 
     return model
 
@@ -194,22 +271,3 @@ def _create_default_datainfo(path_or_df):
         column_info.append(info)
     di = DataInfo.create(column_info, path=path, separator=separator)
     return di
-
-
-def dosing(di: DataInfo, dataset, dose_comp: int):
-    # FIXME: Copied from plugins.nonmem.advan
-    if di is None:
-        return Bolus(sympy.Symbol('AMT'))
-
-    if 'RATE' not in di.names or di['RATE'].drop:
-        return Bolus(sympy.Symbol('AMT'))
-
-    df = dataset
-    if (df['RATE'] == 0).all():
-        return Bolus(sympy.Symbol('AMT'))
-    elif (df['RATE'] == -1).any():
-        return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol(f'R{dose_comp}'))
-    elif (df['RATE'] == -2).any():
-        return Infusion(sympy.Symbol('AMT'), duration=sympy.Symbol(f'D{dose_comp}'))
-    else:
-        return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol('RATE'))

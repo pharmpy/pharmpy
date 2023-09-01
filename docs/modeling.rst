@@ -96,7 +96,7 @@ As a starting point for this user guide, we will create a basic PK model using t
    :hide-output:
 
     dataset_path = path / 'pheno.dta'
-    model_start = create_basic_pk_model(modeltype='oral',
+    model_start = create_basic_pk_model(administration='oral',
                                         dataset_path=dataset_path,
                                         cl_init=0.01,
                                         vc_init=1.0,

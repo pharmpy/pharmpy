@@ -415,7 +415,8 @@ def update_cmt_column(model, old, new):
 
             d = {}
             for dose_comp in model.statements.ode_system.dosing_compartments:
-                d[dose_comp.doses[0].admid] = newmap[dose_comp.name]
+                for admid in [d.admid for d in dose_comp.doses]:
+                    d[admid] = newmap[dose_comp.name]
 
             cmt_col = get_admid(model)
             cmt_col = cmt_col.replace(d)
@@ -795,11 +796,25 @@ def update_bio(model, old, new):
             not isinstance(dose.bioavailability, sympy.Number)
             and dose.bioavailability != f'F{newmap[dose.name]}'
         ):
-            model = model.replace(
-                statements=model.statements.subs(
-                    {sympy.Symbol(f'{dose.bioavailability}'): sympy.Symbol(f'F{newmap[dose.name]}')}
+            if re.match("F[0-9]", str(dose.bioavailability)):
+                model = model.replace(
+                    statements=model.statements.subs(
+                        {
+                            sympy.Symbol(f'{dose.bioavailability}'): sympy.Symbol(
+                                f'F{newmap[dose.name]}'
+                            )
+                        }
+                    )
                 )
-            )
+            else:
+                odes = CompartmentalSystemBuilder(new)
+                odes.set_bioavailability(dose, sympy.Symbol(f'F{newmap[dose.name]}'))
+                model = model.replace(
+                    statements=model.statements.before_odes
+                    + Assignment(sympy.Symbol(f'F{newmap[dose.name]}'), dose.bioavailability)
+                    + CompartmentalSystem(odes)
+                    + model.statements.after_odes
+                )
 
     return model
 
