@@ -5,7 +5,7 @@ from pharmpy.tools.estmethod.tool import SOLVERS, create_workflow, validate_inpu
 
 
 @pytest.mark.parametrize(
-    'algorithm, est_methods, solvers, covs, no_of_models',
+    'algorithm, est_methods, solvers, uncert_methods, no_of_models',
     [
         ('exhaustive', ['foce'], None, None, 1),
         ('exhaustive', ['foce', 'laplace'], None, None, 2),
@@ -20,8 +20,10 @@ from pharmpy.tools.estmethod.tool import SOLVERS, create_workflow, validate_inpu
         ('exhaustive', ['foce', 'imp'], None, ['sandwich', 'cpg'], 4),
     ],
 )
-def test_algorithm(algorithm, est_methods, solvers, covs, no_of_models):
-    wf = create_workflow(algorithm, est_methods=est_methods, solvers=solvers, covs=covs)
+def test_algorithm(algorithm, est_methods, solvers, uncert_methods, no_of_models):
+    wf = create_workflow(
+        algorithm, est_methods=est_methods, solvers=solvers, uncert_methods=uncert_methods
+    )
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models

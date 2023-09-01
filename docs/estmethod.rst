@@ -45,7 +45,7 @@ For a more detailed description of each argument, see their respective chapter o
 +=================================================+==================================================================+
 | :ref:`algorithm<algorithms_estmethod>`          | Algorithm to use (e.g. ``'reduced'``                             |
 +-------------------------------------------------+------------------------------------------------------------------+
-| :ref:`methods<methods_estmethod>`               | Which methods to test (e.g. ``['IMP']``)                         |
+| :ref:`methods<est_methods_estmethod>`           | Which estimation methods to test (e.g. ``['IMP']``)              |
 +-------------------------------------------------+------------------------------------------------------------------+
 | :ref:`solvers<solvers_estmethod>`               | Which solvers to test (e.g. ``['LSODA']``)                       |
 +-------------------------------------------------+------------------------------------------------------------------+
@@ -113,7 +113,7 @@ Settings for evaluation step is the same as for estimation step, with the follow
 +---------------------------+----------------------------------------------------------------------------------------+
 | Setting                   | Value                                                                                  |
 +===========================+========================================================================================+
-| ``est_method``                | ``IMP``                                                                                |
+| ``est_method``            | ``IMP``                                                                                |
 +---------------------------+----------------------------------------------------------------------------------------+
 | ``isample``               | ``100000``                                                                             |
 +---------------------------+----------------------------------------------------------------------------------------+
@@ -165,11 +165,11 @@ candidate models it only evaluates.
 
 Settings are the same as for ``exhaustive`` evaluation step, where the method is the method being examined.
 
-.. _methods_estmethod:
+.. _est_methods_estmethod:
 
-~~~~~~~
+~~~~~~~~~~~~~~~~~~
 Estimation methods
-~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
 For a list of supported estimation methods, see :py:func:`pharmpy.model.EstimationStep.supported_est_methods` (to test ``FOCE`` with
 ``LAPLACE``, simply specify ``LAPLACE`` as input argument in the tool).

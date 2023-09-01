@@ -6,16 +6,18 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 
-def exhaustive(est_methods, solvers, covs):
+def exhaustive(est_methods, solvers, uncert_methods):
     wb = WorkflowBuilder()
 
     task_start = Task('start', start)
     wb.add_task(task_start)
 
     candidate_no = 1
-    for est_method, solver, cov in itertools.product(est_methods, solvers, covs):
+    for est_method, solver, uncert_method in itertools.product(
+        est_methods, solvers, uncert_methods
+    ):
         wf_estmethod = _create_candidate_model_wf(
-            candidate_no, est_method, solver, cov, update=False
+            candidate_no, est_method, solver, uncert_method, update=False
         )
         wb.insert_workflow(wf_estmethod, predecessors=task_start)
         candidate_no += 1
@@ -23,7 +25,7 @@ def exhaustive(est_methods, solvers, covs):
     return Workflow(wb), None
 
 
-def exhaustive_with_update(est_methods, solvers, covs):
+def exhaustive_with_update(est_methods, solvers, uncert_methods):
     wb = WorkflowBuilder()
 
     task_base_model = Task('create_base_model', _create_base_model)
@@ -33,19 +35,21 @@ def exhaustive_with_update(est_methods, solvers, covs):
     task_base_model_fit = wb.output_tasks
 
     candidate_no = 1
-    for est_method, solver, cov in itertools.product(est_methods, solvers, covs):
+    for est_method, solver, uncert_method in itertools.product(
+        est_methods, solvers, uncert_methods
+    ):
         # This is equivalent to the base model
         if not (est_method == 'FOCE' and solver is None):
             # Create model with original estimates
             wf_estmethod_original = _create_candidate_model_wf(
-                candidate_no, est_method, solver, cov, update=False
+                candidate_no, est_method, solver, uncert_method, update=False
             )
             wb.insert_workflow(wf_estmethod_original, predecessors=task_base_model_fit)
             candidate_no += 1
 
         # Create model with updated estimates from FOCE
         wf_estmethod_update = _create_candidate_model_wf(
-            candidate_no, est_method, solver, cov, update=True
+            candidate_no, est_method, solver, uncert_method, update=True
         )
         wb.insert_workflow(wf_estmethod_update, predecessors=task_base_model_fit)
         candidate_no += 1
@@ -53,16 +57,18 @@ def exhaustive_with_update(est_methods, solvers, covs):
     return Workflow(wb), task_base_model_fit
 
 
-def exhaustive_only_eval(est_methods, solvers, covs):
+def exhaustive_only_eval(est_methods, solvers, uncert_methods):
     wb = WorkflowBuilder()
 
     task_start = Task('start', start)
     wb.add_task(task_start)
 
     candidate_no = 1
-    for est_method, solver, cov in itertools.product(est_methods, solvers, covs):
+    for est_method, solver, uncert_method in itertools.product(
+        est_methods, solvers, uncert_methods
+    ):
         wf_estmethod = _create_candidate_model_wf(
-            candidate_no, est_method, solver, cov, update=False, is_eval_candidate=True
+            candidate_no, est_method, solver, uncert_method, update=False, is_eval_candidate=True
         )
         wb.insert_workflow(wf_estmethod, predecessors=task_start)
         candidate_no += 1
@@ -75,7 +81,7 @@ def start(model):
 
 
 def _create_candidate_model_wf(
-    candidate_no, est_method, solver, cov, update, is_eval_candidate=False
+    candidate_no, est_method, solver, uncert_method, update, is_eval_candidate=False
 ):
     wb = WorkflowBuilder()
 
@@ -94,7 +100,7 @@ def _create_candidate_model_wf(
         _create_candidate_model,
         est_method,
         solver,
-        cov,
+        uncert_method,
         update,
         is_eval_candidate,
     )
@@ -114,13 +120,13 @@ def _create_base_model(model):
     est_method, eval_method = est_settings['est_method'], eval_settings['est_method']
 
     if eval_method is not None:
-        cov = eval_settings['cov']
+        uncert_method = eval_settings['uncert_method']
     else:
-        cov = est_settings['cov']
+        uncert_method = est_settings['uncert_method']
 
     base_model = base_model.replace(
         description=_create_description(
-            [est_method, eval_method], cov=cov, solver=None, update=False
+            [est_method, eval_method], uncert_method=uncert_method, solver=None, update=False
         )
     )
 
@@ -132,15 +138,15 @@ def _create_base_model(model):
     return base_model
 
 
-def _create_candidate_model(est_method, solver, cov, update, is_eval_candidate, model):
+def _create_candidate_model(est_method, solver, uncert_method, update, is_eval_candidate, model):
     est_settings = _create_est_settings(est_method, is_eval_candidate)
     laplace = True if est_method == 'LAPLACE' else False
-    eval_settings = _create_eval_settings(laplace, cov)
+    eval_settings = _create_eval_settings(laplace, uncert_method)
 
     eval_method = eval_settings['est_method']
     model = model.replace(
         description=_create_description(
-            [est_method, eval_method], solver=solver, cov=cov, update=update
+            [est_method, eval_method], solver=solver, uncert_method=uncert_method, update=update
         )
     )
 
@@ -161,7 +167,7 @@ def _create_est_settings(est_method, is_eval_candidate=False):
         'laplace': False,
         'auto': True,
         'keep_every_nth_iter': 10,
-        'cov': None,
+        'uncert_method': None,
     }
 
     if est_method == 'LAPLACE':
@@ -176,7 +182,7 @@ def _create_est_settings(est_method, is_eval_candidate=False):
     return est_settings
 
 
-def _create_eval_settings(laplace=False, cov=None):
+def _create_eval_settings(laplace=False, uncert_method=None):
     eval_settings = {
         'est_method': 'IMP',
         'interaction': True,
@@ -186,7 +192,7 @@ def _create_eval_settings(laplace=False, cov=None):
         'isample': 10000,
         'niter': 10,
         'keep_every_nth_iter': 10,
-        'cov': cov,
+        'uncert_method': uncert_method,
     }
 
     if laplace:
@@ -195,12 +201,12 @@ def _create_eval_settings(laplace=False, cov=None):
     return eval_settings
 
 
-def _create_description(est_methods, solver, cov, update=False):
+def _create_description(est_methods, solver, uncert_method, update=False):
     model_description = ','.join(est_methods)
     if solver:
         model_description += f';{solver}'
-    if cov:
-        model_description += f';{cov}'
+    if uncert_method:
+        model_description += f';{uncert_method}'
     if update:
         model_description += ' (update)'
     return model_description

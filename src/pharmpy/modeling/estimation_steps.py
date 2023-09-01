@@ -33,7 +33,7 @@ def set_estimation_step(model: Model, est_method: str, idx: int = 0, **kwargs):
     >>> opts = {'NITER': 1000, 'ISAMPLE': 100}
     >>> model = set_estimation_step(model, 'IMP', evaluation=True, tool_options=opts)
     >>> model.estimation_steps[0]   # doctest: +ELLIPSIS
-    EstimationStep('IMP', interaction=True, cov='SANDWICH', evaluation=True, ..., tool_options=...
+    EstimationStep('IMP', interaction=True, uncert_method='SANDWICH', evaluation=True, ..., tool_options=...
 
     See also
     --------
@@ -91,7 +91,7 @@ def add_estimation_step(model: Model, est_method: str, idx: Optional[int] = None
     >>> len(ests)
     2
     >>> ests[1]   # doctest: +ELLIPSIS
-    EstimationStep('IMP', interaction=False, cov=None, ..., tool_options={'NITER': 1000,...
+    EstimationStep('IMP', interaction=False, uncert_method=None, ..., tool_options={'NITER': 1000,...
 
     See also
     --------
@@ -217,16 +217,15 @@ def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], i
     return model.update_source()
 
 
-def add_covariance_step(model: Model, cov: str):
+def add_covariance_step(model: Model, uncert_method: str):
     """Adds covariance step to the final estimation step
 
     Parameters
     ----------
     model : Model
         Pharmpy model
-    cov : str
-        covariance method to use
-        covariance est_method to use
+    uncert_method : str
+        parameter uncertainty method to use
 
     Returns
     -------
@@ -237,11 +236,11 @@ def add_covariance_step(model: Model, cov: str):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = set_estimation_step(model, 'FOCE', cov=None)
+    >>> model = set_estimation_step(model, 'FOCE', uncert_method=None)
     >>> model = add_covariance_step(model, 'SANDWICH')
     >>> ests = model.estimation_steps
     >>> ests[0]   # doctest: +ELLIPSIS
-    EstimationStep('FOCE', interaction=True, cov='SANDWICH', ...)
+    EstimationStep('FOCE', interaction=True, uncert_method='SANDWICH', ...)
 
     See also
     --------
@@ -254,7 +253,7 @@ def add_covariance_step(model: Model, cov: str):
 
     """
     steps = model.estimation_steps
-    newstep = steps[-1].replace(cov=f'{cov}')
+    newstep = steps[-1].replace(uncert_method=f'{uncert_method}')
     newsteps = steps[0:-1] + newstep
     model = model.replace(estimation_steps=newsteps)
     return model.update_source()
@@ -280,7 +279,7 @@ def remove_covariance_step(model: Model):
     >>> model = remove_covariance_step(model)
     >>> ests = model.estimation_steps
     >>> ests[0]   # doctest: +ELLIPSIS
-    EstimationStep('FOCE', interaction=True, cov=None, ...)
+    EstimationStep('FOCE', interaction=True, uncert_method=None, ...)
 
     See also
     --------
@@ -293,7 +292,7 @@ def remove_covariance_step(model: Model):
 
     """
     steps = model.estimation_steps
-    newstep = steps[-1].replace(cov=None)
+    newstep = steps[-1].replace(uncert_method=None)
     newsteps = steps[:-1] + newstep
     model = model.replace(estimation_steps=newsteps)
     return model.update_source()
@@ -323,7 +322,7 @@ def set_evaluation_step(model: Model, idx: int = -1):
     >>> model = load_example_model("pheno")
     >>> model = set_evaluation_step(model)
     >>> model.estimation_steps[0]   # doctest: +ELLIPSIS
-    EstimationStep('FOCE', interaction=True, cov='SANDWICH', evaluation=True, ...
+    EstimationStep('FOCE', interaction=True, uncert_method='SANDWICH', evaluation=True, ...
 
     See also
     --------

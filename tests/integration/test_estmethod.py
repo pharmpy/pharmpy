@@ -5,7 +5,7 @@ from pharmpy.tools import run_estmethod
 
 
 @pytest.mark.parametrize(
-    'algorithm, est_methods, covs, no_of_candidates, advan_ref',
+    'algorithm, est_methods, uncert_methods, no_of_candidates, advan_ref',
     [
         ('exhaustive', ['foce', 'imp'], None, 2, 'ADVAN2'),
         ('exhaustive_only_eval', ['foce', 'imp'], None, 2, 'ADVAN2'),
@@ -20,12 +20,14 @@ def test_estmethod(
     testdata,
     algorithm,
     est_methods,
-    covs,
+    uncert_methods,
     no_of_candidates,
     advan_ref,
 ):
     with chdir(tmp_path):
-        res = run_estmethod(algorithm, est_methods=est_methods, covs=covs, model=start_model)
+        res = run_estmethod(
+            algorithm, est_methods=est_methods, uncert_methods=uncert_methods, model=start_model
+        )
 
         assert len(res.summary_tool) == no_of_candidates
         assert len(res.models) == no_of_candidates

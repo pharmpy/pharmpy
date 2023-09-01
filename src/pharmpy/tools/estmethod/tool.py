@@ -17,7 +17,7 @@ from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 EST_METHODS = ('FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES')
 SOLVERS = ('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI')
-COVS = ('SANDWICH', 'CPG', 'OFIM')
+UNCERT_METHODS = ('SANDWICH', 'CPG', 'OFIM')
 
 ALGORITHMS = frozenset(['exhaustive', 'exhaustive_with_update', 'exhaustive_only_eval'])
 
@@ -26,7 +26,7 @@ def create_workflow(
     algorithm: str,
     est_methods: Optional[Union[List[str], str]] = None,
     solvers: Optional[Union[List[str], str]] = None,
-    covs: Optional[Union[List[str], str]] = None,
+    uncert_methods: Optional[Union[List[str], str]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):
@@ -37,14 +37,14 @@ def create_workflow(
      algorithm : str
          The algorithm to use (can be 'exhaustive', 'exhaustive_with_update' or 'exhaustive_only_eval')
     est_ methods : list or None
-         List of estimation methods to test. Can be specified as 'all', a list of estimation methods, or
-         None (to not test any estimation method)
+         List of estimation methods to test.
+         Can be specified as 'all', a list of estimation methods, or None (to not test any estimation method)
      solvers : list, str or None
          List of solver to test. Can be specified as 'all', a list of solvers, or None (to
          not test any solver)
-     covs : list, str or None
-         List of covariance to test. Can be specified as 'all', a list of covs, or None (to
-         not evaluate any covariance)
+     uncert_method : list, str or None
+         List of parameter uncertainty methods to test.
+         Can be specified as 'all', a list of uncertainty methods, or None (to not evaluate any uncertainty)
      results : ModelfitResults
          Results for model
      model : Model
@@ -62,9 +62,10 @@ def create_workflow(
      >>> model = load_example_model("pheno")
      >>> results = load_example_modelfit_results("pheno")
      >>> est_methods = ['imp', 'saem']
-     >>> covs = None
+     >>> uncert_methods = None
      >>> run_estmethod( # doctest: +SKIP
-     >>>     'reduced', est_methods=est_methods, solvers='all', covs=covs, results=results, model=model # doctest: +SKIP
+     >>>     'reduced', est_methods=est_methods, solvers='all', # doctest: +SKIP
+     >>>      uncert_methods=uncert_methods, results=results, model=model # doctest: +SKIP
      >>> ) # doctest: +SKIP
 
     """
@@ -85,7 +86,7 @@ def create_workflow(
     wf_algorithm, task_base_model_fit = algorithm_func(
         _format_input(est_methods, EST_METHODS),
         _format_input(solvers, SOLVERS),
-        _format_input(covs, COVS),
+        _format_input(uncert_methods, UNCERT_METHODS),
     )
     wb.insert_workflow(wf_algorithm, predecessors=start_task)
 
@@ -186,7 +187,7 @@ def summarize_estimation_steps(models):
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(algorithm, est_methods, solvers, covs, model):
+def validate_input(algorithm, est_methods, solvers, uncert_methods, model):
     if solvers is not None and has_linear_odes(model):
         raise ValueError(
             'Invalid input `model`: testing non-linear solvers on linear system is not supported'
@@ -197,9 +198,9 @@ def validate_input(algorithm, est_methods, solvers, covs, model):
             f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'
         )
 
-    if est_methods is None and solvers is None and covs is None:
+    if est_methods is None and solvers is None and uncert_methods is None:
         raise ValueError(
-            'Invalid search space options: please specify at least one of `est_methods`, `solvers`, or `covs`'
+            'Invalid search space options: please specify at least one of `est_methods`, `solvers`, or `uncert_methods`'
         )
 
     if est_methods is not None:
@@ -208,8 +209,8 @@ def validate_input(algorithm, est_methods, solvers, covs, model):
     if solvers is not None:
         _validate_search_space(solvers, SOLVERS, 'solvers')
 
-    if covs is not None:
-        _validate_search_space(covs, COVS, 'covs')
+    if uncert_methods is not None:
+        _validate_search_space(uncert_methods, UNCERT_METHODS, 'uncert_methods')
 
 
 def _validate_search_space(input_search_space, allowed_search_space, option_name):

@@ -1546,29 +1546,29 @@ def update_estimation(control_stream, model):
             newrec = create_record(str(rec))
             control_stream = control_stream.insert_record(newrec)
 
-    # Initiate old_cov
-    old_cov = None
+    # Initiate old_uncert_method
+    old_uncert_method = None
     for est in old:
-        old_cov = est.cov
+        old_uncert_method = est.uncert_method
 
-    # Initiate new_cov
-    new_cov = None
+    # Initiate new_uncert_method
+    new_uncert_method = None
     for est in new:
-        new_cov = est.cov
+        new_uncert_method = est.uncert_method
 
-    if old_cov is None and new_cov is not None:
+    if old_uncert_method is None and new_uncert_method is not None:
         # Add $COV
         last_est_rec = control_stream.get_records('ESTIMATION')[-1]
         idx_cov = control_stream.records.index(last_est_rec)
-        if new_cov == 'SANDWICH':
+        if new_uncert_method == 'SANDWICH':
             covrec_ = '$COVARIANCE'
-        elif new_cov == 'CPG':
+        elif new_uncert_method == 'CPG':
             covrec_ = '$COVARIANCE MATRIX=S'
-        elif new_cov == 'OFIM':
+        elif new_uncert_method == 'OFIM':
             covrec_ = '$COVARIANCE MATRIX=R'
         covrec = create_record(f'{covrec_}\n')
         control_stream = control_stream.insert_record(covrec, at_index=idx_cov + 1)
-    elif old_cov is not None and new_cov is None:
+    elif old_uncert_method is not None and new_uncert_method is None:
         # Remove $COV
         covrecs = control_stream.get_records('COVARIANCE')
         control_stream = control_stream.remove_records(covrecs)
