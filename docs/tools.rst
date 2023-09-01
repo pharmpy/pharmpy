@@ -270,6 +270,8 @@ declaring covariate effects via the syntax `COVARIATE(@SYMBOL, ...)`.
 +-----------------+-------------+---------------------------------------------+
 | `@DISTRIBUTION` | Parameter   | All PK distribution parameters              |
 +-----------------+-------------+---------------------------------------------+
+| `@BIOAVAIL`     | Parameter   | All bioavailability parameters              |
++-----------------+-------------+---------------------------------------------+
 | `@CONTINUOUS`   | Covariate   | All continuous covariates                   |
 +-----------------+-------------+---------------------------------------------+
 | `@CATEGORICAL`  | Covariate   | All categorical covariates                  |

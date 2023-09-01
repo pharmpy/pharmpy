@@ -5,6 +5,7 @@ New features
 ============
 
 * Add modeling.load_dataset and modeling.unload_dataset
+* Add @BIOAVAIL to MFL
 
 
 0.100.0 (2023-08-25)
