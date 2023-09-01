@@ -681,26 +681,26 @@ $SIGMA 1
 $ESTIMATION METHOD=1 SADDLE_RESET=1
 '''
     model = Model.parse_model_from_string(code)
-    assert model.estimation_steps[0].method == 'FOCE'
+    assert model.estimation_steps[0].est_method == 'FOCE'
     assert model.estimation_steps[0].tool_options['SADDLE_RESET'] == '1'
 
 
 @pytest.mark.parametrize(
     'estcode,kwargs,rec_ref',
     [
-        ('$EST METH=COND INTER', {'method': 'fo'}, '$ESTIMATION METHOD=ZERO INTER'),
+        ('$EST METH=COND INTER', {'est_method': 'fo'}, '$ESTIMATION METHOD=ZERO INTER'),
         ('$EST METH=COND INTER', {'interaction': False}, '$ESTIMATION METHOD=COND'),
         ('$EST METH=COND INTER', {'cov': 'sandwich'}, '$COVARIANCE'),
         ('$EST METH=COND INTER', {'cov': 'cpg'}, '$COVARIANCE MATRIX=S'),
         ('$EST METH=COND INTER', {'cov': 'ofim'}, '$COVARIANCE MATRIX=R'),
         (
             '$EST METH=COND INTER MAXEVAL=99999',
-            {'method': 'fo'},
+            {'est_method': 'fo'},
             '$ESTIMATION METHOD=ZERO INTER MAXEVAL=99999',
         ),
         (
             '$EST METH=COND INTER POSTHOC',
-            {'method': 'fo'},
+            {'est_method': 'fo'},
             '$ESTIMATION METHOD=ZERO INTER POSTHOC',
         ),
         ('$EST METH=COND INTER', {'laplace': True}, '$ESTIMATION METHOD=COND LAPLACE INTER'),

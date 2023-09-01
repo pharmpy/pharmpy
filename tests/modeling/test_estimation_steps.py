@@ -12,7 +12,7 @@ from pharmpy.modeling import (
 
 
 @pytest.mark.parametrize(
-    'method,kwargs,code_ref',
+    'est_method,kwargs,code_ref',
     [
         (
             'fo',
@@ -41,9 +41,9 @@ from pharmpy.modeling import (
         ),
     ],
 )
-def test_set_estimation_step(testdata, load_model_for_test, method, kwargs, code_ref):
+def test_set_estimation_step(testdata, load_model_for_test, est_method, kwargs, code_ref):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    model = set_estimation_step(model, method, **kwargs)
+    model = set_estimation_step(model, est_method, **kwargs)
     assert model.model_code.split('\n')[-2] == code_ref
 
 

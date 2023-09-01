@@ -19,7 +19,7 @@ def check_model(
     model: pharmpy.model.Model, skip_error_model_check: bool = False
 ) -> pharmpy.model.Model:
     """
-    Perform all neccessary checks to see if there are any issues with the input
+    Perform all necessary checks to see if there are any issues with the input
     model. Such as if the error model is unknown, or if there are other limitations
     in the handling of the model.
     Skipping checking the error model has no effect on the translation.
@@ -69,11 +69,11 @@ def check_model(
         print_warning("Omega with value same not supported. Parameters are updated")
         model = change_rvs_same(model, omega=True)
 
-    # Checks regarding esimation method
-    method = model.estimation_steps[0].method
-    if not known_estimation_method(method):
+    # Checks regarding est_method
+    est_method = model.estimation_steps[0].est_method
+    if not known_est_method(est_method):
         print_warning(
-            f"Estimation method {method} unknown to nlmixr2. Using 'FOCEI' as placeholder"
+            f"Estimation method {est_method} unknown to nlmixr2. Using 'FOCEI' as placeholder"
         )
 
     return model
@@ -86,9 +86,9 @@ def add_time(model):
     return model
 
 
-def known_estimation_method(method):
-    nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
-    if method in nonmem_method_to_nlmixr.keys():
+def known_est_method(est_method):
+    nonmem_est_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
+    if est_method in nonmem_est_method_to_nlmixr.keys():
         return True
     else:
         return False
@@ -243,8 +243,8 @@ def rvs_same(model: pharmpy.model.Model, sigma: bool = False, omega: bool = Fals
     Returns
     -------
     bool
-        True if there are random variables referenceing the same distribution
-        value. Otherwise False.
+        True if there are random variables referencing the same distribution
+        value. Otherwise, False.
 
     """
     if sigma:
@@ -266,7 +266,7 @@ def change_rvs_same(
     model: pharmpy.model.Model, sigma: bool = False, omega: bool = False
 ) -> pharmpy.model.Model:
     """
-    Add more distribution parameters if mutiple random variables are referencing
+    Add more distribution parameters if multiple random variables are referencing
     the same distribution. Done for sigma and omega values.
     Prints conversion to console.
 

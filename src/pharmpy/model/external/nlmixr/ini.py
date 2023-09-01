@@ -19,7 +19,7 @@ def add_theta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     cg.add("# --- THETAS ---")
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
     for theta in thetas:
-        if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
+        if model.estimation_steps[0].est_method not in ["SAEM", "NLME"]:
             add_ini_parameter(cg, theta, boundary=True)
         else:
             add_ini_parameter(cg, theta)
@@ -84,12 +84,12 @@ def add_sigma(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
         if len(dist.names) == 1:
             sigma_param = model.parameters[sigma]
             if sigma_param.init != 1:
-                if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
+                if model.estimation_steps[0].est_method not in ["SAEM", "NLME"]:
                     add_ini_parameter(cg, sigma_param, boundary=True)
                 else:
                     add_ini_parameter(cg, sigma_param)
             elif not sigma_param.fix:
-                if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
+                if model.estimation_steps[0].est_method not in ["SAEM", "NLME"]:
                     add_ini_parameter(cg, sigma_param, boundary=True)
                 else:
                     add_ini_parameter(cg, sigma_param)
@@ -97,12 +97,12 @@ def add_sigma(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
             for row, col in zip(range(sigma.rows), range(sigma.rows + 1)):
                 sigma_param = model.parameters[sigma[row, col]]
                 if sigma_param.init != 1:
-                    if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
+                    if model.estimation_steps[0].est_method not in ["SAEM", "NLME"]:
                         add_ini_parameter(cg, sigma_param, boundary=True)
                     else:
                         add_ini_parameter(cg, sigma_param)
                 elif not sigma_param.fix:
-                    if model.estimation_steps[0].method not in ["SAEM", "NLME"]:
+                    if model.estimation_steps[0].est_method not in ["SAEM", "NLME"]:
                         add_ini_parameter(cg, sigma_param, boundary=True)
                     else:
                         add_ini_parameter(cg, sigma_param)

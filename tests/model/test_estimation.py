@@ -16,14 +16,14 @@ def test_init():
 
 def test_estimation_method():
     a = EstimationStep.create('foce', cov='sandwich')
-    assert a.method == 'FOCE'
+    assert a.est_method == 'FOCE'
     assert a.cov == 'SANDWICH'
 
     with pytest.raises(ValueError):
         EstimationStep.create('sklarfs')
 
-    a = a.replace(method='fo')
-    assert a.method == 'FO'
+    a = a.replace(est_method='fo')
+    assert a.est_method == 'FO'
     assert a.cov == 'SANDWICH'
 
     assert a == EstimationStep.create('fo', interaction=False, cov='sandwich')
@@ -105,7 +105,7 @@ def test_dict():
     a = EstimationStep.create('foce')
     d = a.to_dict()
     assert d == {
-        'method': 'FOCE',
+        'est_method': 'FOCE',
         'interaction': False,
         'cov': None,
         'evaluation': False,
@@ -129,7 +129,7 @@ def test_dict():
     assert d == {
         'steps': (
             {
-                'method': 'FOCE',
+                'est_method': 'FOCE',
                 'interaction': False,
                 'cov': None,
                 'evaluation': False,
@@ -145,7 +145,7 @@ def test_dict():
                 'tool_options': {},
             },
             {
-                'method': 'FO',
+                'est_method': 'FO',
                 'interaction': False,
                 'cov': None,
                 'evaluation': False,
@@ -170,8 +170,8 @@ def test_getitem():
     a = EstimationStep.create('foce')
     b = EstimationStep.create('fo')
     s = EstimationSteps.create([a, b])
-    assert s[0].method == 'FOCE'
-    assert s[1].method == 'FO'
+    assert s[0].est_method == 'FOCE'
+    assert s[1].est_method == 'FO'
 
     assert len(s[1:]) == 1
 
@@ -189,8 +189,8 @@ def test_properties():
 
 def test_replace():
     a = EstimationStep.create('foce')
-    b = a.replace(method='fo')
-    assert b.method == 'FO'
+    b = a.replace(est_method='fo')
+    assert b.est_method == 'FO'
     c = a.replace(solver_atol=0.01)
     assert c.solver_atol == 0.01
 

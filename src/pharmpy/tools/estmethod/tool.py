@@ -24,7 +24,7 @@ ALGORITHMS = frozenset(['exhaustive', 'exhaustive_with_update', 'exhaustive_only
 
 def create_workflow(
     algorithm: str,
-    methods: Optional[Union[List[str], str]] = None,
+    est_methods: Optional[Union[List[str], str]] = None,
     solvers: Optional[Union[List[str], str]] = None,
     covs: Optional[Union[List[str], str]] = None,
     results: Optional[ModelfitResults] = None,
@@ -32,40 +32,40 @@ def create_workflow(
 ):
     """Run estmethod tool.
 
-    Parameters
-    ----------
-    algorithm : str
-        The algorithm to use (can be 'exhaustive', 'exhaustive_with_update' or 'exhaustive_only_eval')
-    methods : list or None
-        List of estimation methods to test. Can be specified as 'all', a list of methods, or
-        None (to not test any estimation method)
-    solvers : list, str or None
-        List of solver to test. Can be specified as 'all', a list of solvers, or None (to
-        not test any solver)
-    covs : list, str or None
-        List of covariance to test. Can be specified as 'all', a list of covs, or None (to
-        not evaluate any covariance)
-    results : ModelfitResults
-        Results for model
-    model : Model
-        Pharmpy model
+     Parameters
+     ----------
+     algorithm : str
+         The algorithm to use (can be 'exhaustive', 'exhaustive_with_update' or 'exhaustive_only_eval')
+    est_ methods : list or None
+         List of estimation methods to test. Can be specified as 'all', a list of estimation methods, or
+         None (to not test any estimation method)
+     solvers : list, str or None
+         List of solver to test. Can be specified as 'all', a list of solvers, or None (to
+         not test any solver)
+     covs : list, str or None
+         List of covariance to test. Can be specified as 'all', a list of covs, or None (to
+         not evaluate any covariance)
+     results : ModelfitResults
+         Results for model
+     model : Model
+         Pharmpy model
 
-    Returns
-    -------
-    EstMethodResults
-        Estmethod tool result object
+     Returns
+     -------
+     EstMethodResults
+         Estmethod tool result object
 
-    Examples
-    --------
-    >>> from pharmpy.modeling import *
-    >>> from pharmpy.tools import run_estmethod, load_example_modelfit_results
-    >>> model = load_example_model("pheno")
-    >>> results = load_example_modelfit_results("pheno")
-    >>> methods = ['imp', 'saem']
-    >>> covs = None
-    >>> run_estmethod( # doctest: +SKIP
-    >>>     'reduced', methods=methods, solvers='all', covs=covs, results=results, model=model # doctest: +SKIP
-    >>> ) # doctest: +SKIP
+     Examples
+     --------
+     >>> from pharmpy.modeling import *
+     >>> from pharmpy.tools import run_estmethod, load_example_modelfit_results
+     >>> model = load_example_model("pheno")
+     >>> results = load_example_modelfit_results("pheno")
+     >>> est_methods = ['imp', 'saem']
+     >>> covs = None
+     >>> run_estmethod( # doctest: +SKIP
+     >>>     'reduced', est_methods=est_methods, solvers='all', covs=covs, results=results, model=model # doctest: +SKIP
+     >>> ) # doctest: +SKIP
 
     """
     wb = WorkflowBuilder(name="estmethod")
@@ -79,11 +79,11 @@ def create_workflow(
 
     wb.add_task(start_task)
 
-    if methods is None:
-        methods = [model.estimation_steps[-1].method]
+    if est_methods is None:
+        est_methods = [model.estimation_steps[-1].est_method]
 
     wf_algorithm, task_base_model_fit = algorithm_func(
-        _format_input(methods, EST_METHODS),
+        _format_input(est_methods, EST_METHODS),
         _format_input(solvers, SOLVERS),
         _format_input(covs, COVS),
     )
@@ -186,7 +186,7 @@ def summarize_estimation_steps(models):
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(algorithm, methods, solvers, covs, model):
+def validate_input(algorithm, est_methods, solvers, covs, model):
     if solvers is not None and has_linear_odes(model):
         raise ValueError(
             'Invalid input `model`: testing non-linear solvers on linear system is not supported'
@@ -197,13 +197,13 @@ def validate_input(algorithm, methods, solvers, covs, model):
             f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'
         )
 
-    if methods is None and solvers is None and covs is None:
+    if est_methods is None and solvers is None and covs is None:
         raise ValueError(
-            'Invalid search space options: please specify at least one of `methods`, `solvers`, or `covs`'
+            'Invalid search space options: please specify at least one of `est_methods`, `solvers`, or `covs`'
         )
 
-    if methods is not None:
-        _validate_search_space(methods, EST_METHODS, 'methods')
+    if est_methods is not None:
+        _validate_search_space(est_methods, EST_METHODS, 'est_methods')
 
     if solvers is not None:
         _validate_search_space(solvers, SOLVERS, 'solvers')

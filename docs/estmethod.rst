@@ -24,17 +24,17 @@ To initiate Estmethod in Python/R:
     res = run_estmethod(algorithm='exhaustive',
                         model=start_model,
                         results=start_model_results,
-                        methods='all',
+                        est_methods='all',
                         solvers=['LSODA', 'LSODI'])
 
 This will take an input model ``start_model``. The tool will use the 'exhaustive' ``algorithm`` and try all combinations
-between all available ``methods`` and ``solvers`` LSODA and LSODI.
+between all available ``est_methods`` and ``solvers`` LSODA and LSODI.
 
 To run Estmethod from the command line, the example code is redefined accordingly:
 
 .. code::
 
-    pharmpy run estmethod path/to/model 'exhaustive' --methods 'all' --solvers 'LSODA LSODI'
+    pharmpy run estmethod path/to/model 'exhaustive' --est_methods 'all' --solvers 'LSODA LSODI'
 
 Arguments
 ~~~~~~~~~
@@ -113,7 +113,7 @@ Settings for evaluation step is the same as for estimation step, with the follow
 +---------------------------+----------------------------------------------------------------------------------------+
 | Setting                   | Value                                                                                  |
 +===========================+========================================================================================+
-| ``method``                | ``IMP``                                                                                |
+| ``est_method``                | ``IMP``                                                                                |
 +---------------------------+----------------------------------------------------------------------------------------+
 | ``isample``               | ``100000``                                                                             |
 +---------------------------+----------------------------------------------------------------------------------------+
@@ -168,10 +168,10 @@ Settings are the same as for ``exhaustive`` evaluation step, where the method is
 .. _methods_estmethod:
 
 ~~~~~~~
-Methods
+Estimation methods
 ~~~~~~~
 
-For a list of supported methods, see :py:func:`pharmpy.model.EstimationStep.supported_methods` (to test ``FOCE`` with
+For a list of supported estimation methods, see :py:func:`pharmpy.model.EstimationStep.supported_est_methods` (to test ``FOCE`` with
 ``LAPLACE``, simply specify ``LAPLACE`` as input argument in the tool).
 
 .. _solvers_estmethod:
@@ -196,7 +196,7 @@ Consider a Estmethod run with the ``exhaustive`` algorithm and testing ``FO`` an
     res = run_estmethod(algorithm='exhaustive',
                         model=start_model,
                         results=start_model_results,
-                        methods=['FO', 'IMP'])
+                        est_methods=['FO', 'IMP'])
 
 The ``summary_tool`` table contains information such as which feature each model candidate has, the OFV, estimation
 runtime, and parent model:

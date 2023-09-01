@@ -425,7 +425,7 @@ how many iterations to output (the ``PRINT`` option in NONMEM) using the :py:fun
 function:
 
 .. pharmpy-execute::
-    run1 = set_estimation_step(model_start, method='imp', keep_every_nth_iter=10)
+    run1 = set_estimation_step(model_start, est_method='imp', keep_every_nth_iter=10)
     run1.estimation_steps
 
 If we then examine the model code:

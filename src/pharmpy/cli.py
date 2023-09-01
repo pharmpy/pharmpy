@@ -222,9 +222,9 @@ def run_estmethod(args):
     from pharmpy.tools import run_tool
 
     try:
-        methods = args.methods.split(" ")
+        est_methods = args.est_methods.split(" ")
     except AttributeError:
-        methods = args.methods
+        est_methods = args.est_methods
     try:
         solvers = args.solvers.split(" ")
     except AttributeError:
@@ -233,7 +233,7 @@ def run_estmethod(args):
     run_tool(
         'estmethod',
         args.algorithm,
-        methods=methods,
+        est_methods=est_methods,
         solvers=solvers,
         model=args.model,
         path=args.path,
@@ -1281,10 +1281,10 @@ parser_definition = [
                                 'help': 'Algorithm to use',
                             },
                             {
-                                'name': '--methods',
+                                'name': '--est_methods',
                                 'type': str,
                                 'default': None,
-                                'help': 'List of methods to try, mark group of methods in single '
+                                'help': 'List of estimation methods to try, mark group of estimation methods in single '
                                 'quote separated by spaces. Supported are: FOCE, FO, IMP, '
                                 'IMPMAP, ITS, SAEM, LAPLACE, BAYES, or \'all\'. Default is None.',
                             },
@@ -1292,7 +1292,7 @@ parser_definition = [
                                 'name': '--solvers',
                                 'type': str,
                                 'default': None,
-                                'help': 'List of solvers to try, mark group of methods in single '
+                                'help': 'List of solvers to try, mark group of solvers in single '
                                 'quote separated by spaces. Supported are: CVODES '
                                 '(ADVAN14), DGEAR (ADVAN8), DVERK (ADVAN6), IDA '
                                 '(ADVAN15), LSODA (ADVAN13) and LSODI (ADVAN9), or \'all\'. '

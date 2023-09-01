@@ -211,7 +211,7 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         A pharmpy.model.Model object.
 
     """
-    # FIXME : rasie error if the method does not match when evaluating
+    # FIXME : raise error if the method does not match when evaluating
     estimation_steps = model.estimation_steps[0]
     if "fix_eta" in estimation_steps.tool_options:
         fix_eta = True
@@ -223,32 +223,32 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     else:
         max_eval = estimation_steps.maximum_evaluations
 
-    method = estimation_steps.method
+    est_method = estimation_steps.est_method
     interaction = estimation_steps.interaction
 
-    nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
+    nonmem_est_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
 
-    if method not in nonmem_method_to_nlmixr.keys():
-        nlmixr_method = "focei"
+    if est_method not in nonmem_est_method_to_nlmixr.keys():
+        nlmixr_est_method = "focei"
     else:
-        nlmixr_method = nonmem_method_to_nlmixr[method]
+        nlmixr_est_method = nonmem_est_method_to_nlmixr[est_method]
 
-    if interaction and nlmixr_method != "saem":
-        nlmixr_method += "i"
+    if interaction and nlmixr_est_method != "saem":
+        nlmixr_est_method += "i"
 
     if max_eval is not None:
-        if max_eval == 0 and nlmixr_method not in ["fo", "foi", "foce", "focei"]:
-            nlmixr_method = "posthoc"
-            cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}"')
+        if max_eval == 0 and nlmixr_est_method not in ["fo", "foi", "foce", "focei"]:
+            nlmixr_est_method = "posthoc"
+            cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_est_method}"')
         else:
-            f = f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}", '
+            f = f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_est_method}", '
             if fix_eta:
                 f += f'control=foceiControl(maxOuterIterations={max_eval}, maxInnerIterations=0, etaMat = etas))'
             else:
                 f += f'control=foceiControl(maxOuterIterations={max_eval}))'
             cg.add(f)
     else:
-        cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_method}")')
+        cg.add(f'fit <- nlmixr2({model.name}, dataset, est = "{nlmixr_est_method}")')
 
 
 def add_evid(model: pharmpy.model.Model) -> pharmpy.model.Model:

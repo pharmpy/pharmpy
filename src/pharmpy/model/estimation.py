@@ -12,13 +12,13 @@ class EstimationStep(Immutable):
 
     """Supported estimation methods
     """
-    supported_methods = frozenset(('FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'))
+    supported_est_methods = frozenset(('FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'))
     supported_solvers = frozenset(('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'))
     supported_covs = frozenset(('SANDWICH', 'CPG', 'OFIM'))
 
     def __init__(
         self,
-        method,
+        est_method,
         interaction=False,
         cov=None,
         evaluation=False,
@@ -37,7 +37,7 @@ class EstimationStep(Immutable):
         eta_derivatives=None,
         epsilon_derivatives=None,
     ):
-        self._method = method
+        self._est_method = est_method
         self._interaction = interaction
         self._cov = cov
         self._evaluation = evaluation
@@ -59,7 +59,7 @@ class EstimationStep(Immutable):
     @classmethod
     def create(
         cls,
-        method,
+        est_method,
         interaction=False,
         cov=None,
         evaluation=False,
@@ -78,7 +78,7 @@ class EstimationStep(Immutable):
         eta_derivatives=None,
         epsilon_derivatives=None,
     ):
-        method = EstimationStep._canonicalize_and_check_method(method)
+        est_method = EstimationStep._canonicalize_and_check_est_method(est_method)
         if maximum_evaluations is not None and maximum_evaluations < 1:
             raise ValueError(
                 'Number of maximum evaluations must be more than one, use '
@@ -118,7 +118,7 @@ class EstimationStep(Immutable):
         else:
             epsilon_derivatives = tuple(epsilon_derivatives)
         return cls(
-            method=method,
+            est_method=est_method,
             interaction=interaction,
             cov=cov,
             evaluation=evaluation,
@@ -146,18 +146,21 @@ class EstimationStep(Immutable):
         return new
 
     @staticmethod
-    def _canonicalize_and_check_method(method):
-        method = method.upper()
-        if method not in EstimationStep.supported_methods:
+    def _canonicalize_and_check_est_method(est_method):
+        est_method = est_method.upper()
+        if est_method not in EstimationStep.supported_est_methods:
             raise ValueError(
-                f'EstimationStep: {method} not recognized. Use any of {sorted(EstimationStep.supported_methods)}.'
+                (
+                    f'EstimationStep: {est_method} unknown. '
+                    f'Use any of {sorted(EstimationStep.supported_est_methods)}.'
+                )
             )
-        return method
+        return est_method
 
     @property
-    def method(self):
+    def est_method(self):
         """Name of the estimation method"""
-        return self._method
+        return self._est_method
 
     @property
     def maximum_evaluations(self):
@@ -193,17 +196,17 @@ class EstimationStep(Immutable):
 
     @property
     def laplace(self):
-        """Use the laplacian method"""
+        """Use the laplacian estimation method"""
         return self._laplace
 
     @property
     def isample(self):
-        """Number of samples per subject (or similar) for EM methods"""
+        """Number of samples per subject (or similar) for EM estimation methods"""
         return self._isample
 
     @property
     def niter(self):
-        """Number of iterations for EM methods"""
+        """Number of iterations for EM estimation methods"""
         return self._niter
 
     @property
@@ -277,7 +280,7 @@ class EstimationStep(Immutable):
     def __eq__(self, other):
         return (
             isinstance(other, EstimationStep)
-            and self.method == other.method
+            and self.est_method == other.est_method
             and self.interaction == other.interaction
             and self.cov == other.cov
             and self.evaluation == other.evaluation
@@ -296,7 +299,7 @@ class EstimationStep(Immutable):
     def __hash__(self):
         return hash(
             (
-                self._method,
+                self._est_method,
                 self._interaction,
                 self._cov,
                 self._evaluation,
@@ -315,7 +318,7 @@ class EstimationStep(Immutable):
 
     def to_dict(self):
         return {
-            'method': self._method,
+            'est_method': self._est_method,
             'interaction': self._interaction,
             'cov': self._cov,
             'evaluation': self._evaluation,
@@ -340,7 +343,7 @@ class EstimationStep(Immutable):
         cov = f"'{self.cov}'" if self.cov is not None else self.cov
         solver = f"'{self.solver}'" if self.solver is not None else self.solver
         return (
-            f"EstimationStep('{self.method}', interaction={self.interaction}, "
+            f"EstimationStep('{self.est_method}', interaction={self.interaction}, "
             f"cov={cov}, evaluation={self.evaluation}, "
             f"maximum_evaluations={self.maximum_evaluations}, laplace={self.laplace}, "
             f"isample={self.isample}, niter={self.niter}, auto={self.auto}, "
@@ -435,10 +438,10 @@ class EstimationSteps(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.estimation_steps.to_dataframe()   # doctest: +ELLIPSIS
-          method  interaction       cov  ...  auto keep_every_nth_iter  tool_options
+          est_method  interaction       cov  ...  auto keep_every_nth_iter  tool_options
         0   FOCE         True  SANDWICH  ...  None                None            {}
         """
-        method = [s.method for s in self._steps]
+        est_method = [s.est_method for s in self._steps]
         interaction = [s.interaction for s in self._steps]
         cov = [s.cov for s in self._steps]
         evaluation = [s.evaluation for s in self._steps]
@@ -451,7 +454,7 @@ class EstimationSteps(Sequence, Immutable):
         tool_options = [dict(s.tool_options) for s in self._steps]
         df = pd.DataFrame(
             {
-                'method': method,
+                'est_method': est_method,
                 'interaction': interaction,
                 'cov': cov,
                 'evaluation': evaluation,

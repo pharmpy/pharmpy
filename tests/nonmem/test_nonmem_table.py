@@ -31,7 +31,7 @@ def test_ext_table(pheno_ext):
     assert ext_table.problem == 1
     assert ext_table.subproblem == 0
     assert ext_table.iteration2 == 0
-    assert ext_table.method == "First Order Conditional Estimation with Interaction"
+    assert ext_table.est_method == "First Order Conditional Estimation with Interaction"
     assert ext_table.goal_function == "MINIMUM VALUE OF OBJECTIVE FUNCTION"
     assert ext_table.final_parameter_estimates['THETA(1)'] == 0.00469555
     assert list(ext_table.fixed) == [False, False, False, False, True, False, False]
@@ -46,7 +46,7 @@ def test_phi_table(pheno_phi):
     assert phi_table.problem == 1
     assert phi_table.subproblem == 0
     assert phi_table.iteration2 == 0
-    assert phi_table.method == "First Order Conditional Estimation with Interaction"
+    assert phi_table.est_method == "First Order Conditional Estimation with Interaction"
     assert phi_table.goal_function is None
 
 

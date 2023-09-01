@@ -87,7 +87,7 @@ class NONMEMTableFile:
                 table_line,
             )
             if m:
-                table.method = m.group(1)
+                table.est_method = m.group(1)
                 table.goal_function = m.group(2)
                 table.problem = int(m.group(3))
                 table.subproblem = int(m.group(4))
@@ -139,7 +139,7 @@ class NONMEMTable:
 
     number: Optional[int] = None
     is_evaluation: Optional[bool] = None
-    method: Optional[str] = None
+    est_method: Optional[str] = None
     goal_function: Optional[str] = None
     problem: Optional[int] = None
     subproblem: Optional[int] = None

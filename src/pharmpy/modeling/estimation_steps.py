@@ -4,7 +4,7 @@ from pharmpy.model import EstimationStep, Model
 from pharmpy.modeling.help_functions import _as_integer
 
 
-def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
+def set_estimation_step(model: Model, est_method: str, idx: int = 0, **kwargs):
     """Set estimation step
 
     Sets estimation step for a model. Methods currently supported are:
@@ -14,8 +14,8 @@ def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
     ----------
     model : Model
         Pharmpy model
-    method : str
-        estimation method to change to
+    est_method : str
+        Estimation method to change to
     idx : int
         index of estimation step, default is 0 (first estimation step)
     kwargs
@@ -51,7 +51,7 @@ def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
         raise TypeError(f'Index must be integer: {idx}')
 
     d = kwargs
-    d['method'] = method
+    d['est_method'] = est_method
     steps = model.estimation_steps
     newstep = steps[idx].replace(**d)
     newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
@@ -59,7 +59,7 @@ def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
     return model.update_source()
 
 
-def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **kwargs):
+def add_estimation_step(model: Model, est_method: str, idx: Optional[int] = None, **kwargs):
     """Add estimation step
 
     Adds estimation step for a model in a given index. Methods currently supported are:
@@ -69,8 +69,8 @@ def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **
     ----------
     model : Model
         Pharmpy model
-    method : str
-        estimation method to change to
+    est_method : str
+        Estimation method to change to
     idx : int
         index of estimation step (starting from 0), default is None (adds step at the end)
     kwargs
@@ -103,7 +103,7 @@ def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **
     set_evaluation_step
 
     """
-    meth = EstimationStep.create(method, **kwargs)
+    meth = EstimationStep.create(est_method, **kwargs)
 
     if idx is not None:
         try:
@@ -226,6 +226,7 @@ def add_covariance_step(model: Model, cov: str):
         Pharmpy model
     cov : str
         covariance method to use
+        covariance est_method to use
 
     Returns
     -------
@@ -301,7 +302,7 @@ def remove_covariance_step(model: Model):
 def set_evaluation_step(model: Model, idx: int = -1):
     """Set estimation step
 
-    Sets estimation step for a model. Methods currently supported are:
+    Sets estimation step for a model. Estimation methods currently supported are:
         FO, FOCE, ITS, LAPLACE, IMPMAP, IMP, SAEM, BAYES
 
     Parameters
@@ -309,7 +310,7 @@ def set_evaluation_step(model: Model, idx: int = -1):
     model : Model
         Pharmpy model
     idx : int
-        index of estimation step, default is -1 (last estimation step)
+        Index of estimation step, default is -1 (last estimation step)
 
     Returns
     -------

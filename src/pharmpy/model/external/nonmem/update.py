@@ -1471,13 +1471,13 @@ def update_estimation(control_stream, model):
         if op == 1:
             est_code = '$ESTIMATION'
             protected_attributes = []
-            if est.method == 'FO':
-                method = 'ZERO'
-            elif est.method == 'FOCE':
-                method = 'COND'
+            if est.est_method == 'FO':
+                est_method = 'ZERO'
+            elif est.est_method == 'FOCE':
+                est_method = 'COND'
             else:
-                method = est.method
-            est_code += f' METHOD={method}'
+                est_method = est.est_method
+            est_code += f' METHOD={est_method}'
             if est.laplace:
                 est_code += ' LAPLACE'
                 protected_attributes += ['LAPLACE']
@@ -1485,7 +1485,7 @@ def update_estimation(control_stream, model):
                 est_code += ' INTER'
                 protected_attributes += ['INTERACTION', 'INTER']
             if est.evaluation:
-                if est.method == 'FO' or est.method == 'FOCE':
+                if est.est_method == 'FO' or est.est_method == 'FOCE':
                     est_code += ' MAXEVAL=0'
                     protected_attributes += ['MAXEVALS', 'MAXEVAL']
                 else:
@@ -1494,7 +1494,7 @@ def update_estimation(control_stream, model):
             if est.maximum_evaluations is not None:
                 op_prev, est_prev = prev
                 if not (
-                    est.method.startswith('FO')
+                    est.est_method.startswith('FO')
                     and op_prev == -1
                     and est.evaluation
                     and est_prev is not None
