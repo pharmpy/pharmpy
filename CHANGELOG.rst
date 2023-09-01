@@ -1,11 +1,12 @@
-Next version
-------------
+0.101.0 (2023-09-01)
+--------------------
 
 New features
 ============
 
 * Add modeling.load_dataset and modeling.unload_dataset
 * Add @BIOAVAIL to MFL
+* Add support for iv-oral administration for amd tool
 
 
 0.100.0 (2023-08-25)
