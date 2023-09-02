@@ -34,23 +34,36 @@ https://pharmpy.github.io
 
 .. start-longdesc
 
-Pharmpy is a library and toolkit for pharmacometrics. It can be used as a regular Python package, in R
-via the `pharmr <https://github.com/pharmpy/pharmr>`_ package or via its built in command
-line interface.
+Simplify and Accelerate Your Pharmacometric Workflows with Pharmpy
+==================================================================
 
-Current features:
+Developed by `Uppsala University Pharmacometrics Group <https://www.farmaci.uu.se/research/pharmacometrics/>`_, Pharmpy is an open-source toolkit designed for pharmacometrics. It supports Python, R via `pharmr <https://github.com/pharmpy/pharmr>`_, and CLI. Get to know the `Pharmpy Team <https://pharmpy.github.io/latest/contributors.html>`_!
 
-* A model abstraction as a foundation for higher level operations on models
-* Functions for manipulation of models, e.g. changing model components like elimination or absorption
-* Reading NONMEM models and results
-* Running models and complex workflows (with NONMEM or to some extent nlmixr)
+Switch Effortlessly Between Software with Pharmpy's Software-Agnostic Model Abstraction
+---------------------------------------------------------------------------------------
 
-This is the `team behind Pharmpy <https://pharmpy.github.io/latest/contributors.html>`_
+* **Model Abstraction**: Pharmpy acts as a middle layer, enabling seamless transitions between different software for pharmacometrics.
+* **Model Manipulation**: Make changes to your model's components without worrying about software compatibility.
+* **Result Extraction**: Retrieve your model's estimation results, regardless of the original software used.
+
+Current support for NONMEM, nlmixr2, and rxODE2
+-----------------------------------------------
+
+* **NONMEM Support**: Read and interpret NONMEM models seamlessly.
+* **Workflow Automation**: Automate complex workflows in NONMEM and partially in nlmixr2.
+* **Plugin System**: Extend support for model formats like NONMEM, nlmixr2, and rxODE2.
+* **Model Conversion**: Convert models between supported formats effortlessly.
 
 .. end-longdesc
 
+Getting started
+===============
+
+Pharmpy can be used in a Python program as a library or via its command line interface.
+It can also be used via its R wrapper package: `pharmr <https://github.com/pharmpy/pharmr>`_.
+
 Installation
-============
+------------
 
 Install the latest stable version from PyPI::
 
@@ -62,7 +75,7 @@ be installed using::
     pip install --index-url https://google-coral.github.io/py-repo/ tflite_runtime
 
 Python Example
-==============
+--------------
 
 >>> from pharmpy.modeling import read_model
 >>> model = read_model("run1.mod")
@@ -85,7 +98,7 @@ Name: 2, dtype: float64
 >>>
 
 CLI Example
-===========
+-----------
 
 .. code-block:: none
 
@@ -97,3 +110,27 @@ CLI Example
 
     # Extract and print ofvs from multiple model runs
     pharmpy results ofv run*.mod
+
+User Guide
+==========
+
+In the `User Guide <https://pharmpy.github.io/latest/user_guide.html>`_ you can find information on how to use Pharmpy in Python and R as well as from the command line.
+This guide covers basic use cases in Pharmpy.
+
+Contact Information
+===================
+
+We love hearing from the community! For general questions, feel free to reach out to one of our maintainers:
+
+- **Rikard Nordgren**: `rikard.nordgren@farmaci.uu.se <mailto:rikard.nordgren@farmaci.uu.se>`_ (Maintainer)
+- **Stella Belin**: `stella.belin@farmaci.uu.se <mailto:stella.belin@farmaci.uu.se>`_ (Maintainer)
+
+Support or Technical Questions
+------------------------------
+
+You can report issues and post suggestions of features via GitHub issues (to `Pharmpy <https://github.com/pharmpy/pharmpy/issues>`_ or to `pharmr <https://github.com/pharmpy/pharmr/issues>`_).
+
+Contributing
+------------
+
+If you want to contribute with code, you can find more information under `Contribute <https://pharmpy.github.io/latest/contribute.html#contribute>`_.
