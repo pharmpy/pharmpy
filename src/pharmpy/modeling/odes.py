@@ -1145,46 +1145,49 @@ def set_zero_order_absorption(model: Model):
     odes = get_and_check_odes(model)
     _disallow_infusion(model, odes)
     assert isinstance(odes, CompartmentalSystem)
-    depot = odes.find_depot(statements)
 
-    dose_comp = odes.dosing_compartments[0]
-    symbols = dose_comp.free_symbols
-    dose = dose_comp.sorted_doses(model)[0]
-    lag_time = dose_comp.lag_time
-    if depot:
-        to_comp, _ = odes.get_compartment_outflows(depot)[0]
-        ka = odes.get_flow(depot, odes.central_compartment)
-        assert ka is not None
-        cb = CompartmentalSystemBuilder(odes)
-        cb.remove_compartment(depot)
-        to_comp = cb.set_dose(to_comp, dose, replace=False)
-        to_comp = cb.set_lag_time(to_comp, depot.lag_time)
-        cb.set_bioavailability(to_comp, depot.bioavailability)
-        statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        symbols = ka.free_symbols
-    new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
-    mat_idx = statements.find_assignment_index('MAT')
-    if mat_idx is not None:
-        # FIXME: Causes issue if mat_assign statement is dependent on previously
-        # removed parameters/statements
-        mat_assign = statements[mat_idx]
-        new_statements = new_statements[0:mat_idx] + mat_assign + new_statements[mat_idx:]
-    model = model.replace(statements=new_statements)
+    if has_zero_order_absorption(model) and not has_seq_zo_fo_absorption(model):
+        pass
+    else:
+        _disallow_infusion(model, odes)
+        depot = odes.find_depot(statements)
 
-    model = remove_unused_parameters_and_rvs(model)
-    if not has_zero_order_absorption(model):
-        odes = model.statements.ode_system
-        assert isinstance(odes, CompartmentalSystem)
-        model = _add_zero_order_absorption(
-            model, dose, odes.dosing_compartments[0], 'MAT', lag_time
-        )
-        model = model.update_source()
-    # FIXME: Very temporary until new zo absorption logic is implemented
-    odes = model.statements.ode_system
-    assert isinstance(odes, CompartmentalSystem)
-    if lag_time != 0 and len(odes.dosing_compartments[0].doses) > 1:
-        model = remove_lag_time(model)
-        model = add_lag_time(model)
+        dose_comp = odes.dosing_compartments[0]
+        symbols = dose_comp.free_symbols
+        dose = dose_comp.sorted_doses(model)[0]
+        lag_time = dose_comp.lag_time
+        if depot:
+            to_comp, _ = odes.get_compartment_outflows(depot)[0]
+            ka = odes.get_flow(depot, odes.central_compartment)
+            assert ka is not None
+            cb = CompartmentalSystemBuilder(odes)
+            cb.remove_compartment(depot)
+            to_comp = cb.set_dose(to_comp, dose, replace=False)
+            to_comp = cb.set_lag_time(to_comp, depot.lag_time)
+            cb.set_bioavailability(to_comp, depot.bioavailability)
+            statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+            symbols = ka.free_symbols
+        new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
+        mat_idx = statements.find_assignment_index('MAT')
+        if mat_idx is not None:
+            # FIXME : Causes issue if mat_assign statement is dependent on previously
+            # removed parameters/statements
+            mat_assign = statements[mat_idx]
+            new_statements = new_statements[0:mat_idx] + mat_assign + new_statements[mat_idx:]
+        model = model.replace(statements=new_statements)
+
+        model = remove_unused_parameters_and_rvs(model)
+        if not has_zero_order_absorption(model):
+            odes = model.statements.ode_system
+            assert odes is not None
+            model = _add_zero_order_absorption(
+                model, dose, odes.dosing_compartments[0], 'MAT', lag_time
+            )
+            model = model.update_source()
+        # FIXME : Very temporary until new zo absorption logic is implemented
+        if lag_time != 0 and len(model.statements.ode_system.dosing_compartments[0].doses) > 1:
+            model = remove_lag_time(model)
+            model = add_lag_time(model)
     return model
 
 
@@ -1226,50 +1229,54 @@ def set_first_order_absorption(model: Model):
     """
     statements = model.statements
     cs = get_and_check_odes(model)
-    depot = cs.find_depot(statements)
-    dose_comp = cs.dosing_compartments[0]
 
-    amount = dose_comp.doses[0].amount
-    symbols = dose_comp.free_symbols
-    lag_time = dose_comp.lag_time
-    bio = dose_comp.bioavailability
-    cb = CompartmentalSystemBuilder(cs)
-    if depot and depot == dose_comp:
-        dose_comp = cb.set_dose(
-            dose_comp, Bolus(dose_comp.doses[0].amount), admid=dose_comp.doses[0].admid
-        )
-        dose_comp = cb.set_lag_time(dose_comp, sympy.Integer(0))
-    if not depot:
-        # TODO: Add another way of removing dependencies
-        dose_admid = dose_comp.sorted_doses(model)[0].admid
-        if len(dose_comp.doses) == 1:
-            dose_comp = cb.set_dose(dose_comp, Bolus(amount))
-            remove_dose = True
-        else:
-            dose_comp = cb.set_dose(dose_comp, dose_comp.sorted_doses(model)[1:])
-            remove_dose = False
+    if has_first_order_absorption(model) and not has_seq_zo_fo_absorption(model):
+        pass
+    else:
+        depot = cs.find_depot(statements)
+        dose_comp = cs.dosing_compartments[0]
 
-    statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-    new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
-    mat_idx = statements.find_assignment_index('MAT')
-    if mat_idx is not None:
-        mat_assign = statements[mat_idx]
-        new_statements = new_statements[0:mat_idx] + mat_assign + new_statements[mat_idx:]
+        amount = dose_comp.doses[0].amount
+        symbols = dose_comp.free_symbols
+        lag_time = dose_comp.lag_time
+        bio = dose_comp.bioavailability
+        cb = CompartmentalSystemBuilder(cs)
+        if depot and depot == dose_comp:
+            dose_comp = cb.set_dose(
+                dose_comp, Bolus(dose_comp.doses[0].amount), admid=dose_comp.doses[0].admid
+            )
+            dose_comp = cb.set_lag_time(dose_comp, sympy.Integer(0))
+        if not depot:
+            # TODO : Add another way of removing dependencies
+            dose_admid = dose_comp.sorted_doses(model)[0].admid
+            if len(dose_comp.doses) == 1:
+                dose_comp = cb.set_dose(dose_comp, Bolus(amount))
+                remove_dose = True
+            else:
+                dose_comp = cb.set_dose(dose_comp, dose_comp.sorted_doses(model)[1:])
+                remove_dose = False
 
-    model = model.replace(statements=new_statements)
+        statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+        new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
+        mat_idx = statements.find_assignment_index('MAT')
+        if mat_idx is not None:
+            mat_assign = statements[mat_idx]
+            new_statements = new_statements[0:mat_idx] + mat_assign + new_statements[mat_idx:]
 
-    model = remove_unused_parameters_and_rvs(model)
-    if not depot:
-        # The new dose is created here
-        model, _ = _add_first_order_absorption(
-            model,
-            Bolus(amount, admid=dose_admid),
-            dose_comp,
-            lag_time,
-            bio,
-            remove_dose=remove_dose,
-        )
-        model = model.update_source()
+        model = model.replace(statements=new_statements)
+
+        model = remove_unused_parameters_and_rvs(model)
+        if not depot:
+            # The new dose is created here
+            model, _ = _add_first_order_absorption(
+                model,
+                Bolus(amount, admid=dose_admid),
+                dose_comp,
+                lag_time,
+                bio,
+                remove_dose=remove_dose,
+            )
+            model = model.update_source()
     return model
 
 
@@ -1307,34 +1314,39 @@ def set_bolus_absorption(model: Model):
     """
     statements = model.statements
     cs = get_and_check_odes(model)
-    depot = cs.find_depot(statements)
-    if depot:
-        to_comp, _ = cs.get_compartment_outflows(depot)[0]
-        cb = CompartmentalSystemBuilder(cs)
-        cb.set_dose(to_comp, depot.doses[0])
-        ka = cs.get_flow(depot, cs.central_compartment)
-        cb.remove_compartment(depot)
-        symbols = ka.free_symbols
-        statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        model = model.replace(
-            statements=statements.remove_symbol_definitions(symbols, statements.ode_system)
-        )
-        model = remove_unused_parameters_and_rvs(model)
-    if has_zero_order_absorption(model):
-        dose_comp = cs.dosing_compartments[0]
-        old_symbols = dose_comp.free_symbols
-        cb = CompartmentalSystemBuilder(cs)
-        new_dose = Bolus(dose_comp.sorted_doses(model)[0].amount)
-        if len(dose_comp.doses) > 1:
-            cb.set_dose(dose_comp, (new_dose,) + dose_comp.sorted_doses(model)[1:])
-        else:
-            cb.set_dose(dose_comp, new_dose)
-        unneeded_symbols = old_symbols - new_dose.free_symbols
-        statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        model = model.replace(
-            statements=statements.remove_symbol_definitions(unneeded_symbols, statements.ode_system)
-        )
-        model = remove_unused_parameters_and_rvs(model)
+    if has_bolus_absorption(model):
+        pass
+    else:
+        depot = cs.find_depot(statements)
+        if depot:
+            to_comp, _ = cs.get_compartment_outflows(depot)[0]
+            cb = CompartmentalSystemBuilder(cs)
+            cb.set_dose(to_comp, depot.doses[0])
+            ka = cs.get_flow(depot, cs.central_compartment)
+            cb.remove_compartment(depot)
+            symbols = ka.free_symbols
+            statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+            model = model.replace(
+                statements=statements.remove_symbol_definitions(symbols, statements.ode_system)
+            )
+            model = remove_unused_parameters_and_rvs(model)
+        if has_zero_order_absorption(model):
+            dose_comp = cs.dosing_compartments[0]
+            old_symbols = dose_comp.free_symbols
+            cb = CompartmentalSystemBuilder(cs)
+            new_dose = Bolus(dose_comp.sorted_doses(model)[0].amount)
+            if len(dose_comp.doses) > 1:
+                cb.set_dose(dose_comp, (new_dose,) + dose_comp.sorted_doses(model)[1:])
+            else:
+                cb.set_dose(dose_comp, new_dose)
+            unneeded_symbols = old_symbols - new_dose.free_symbols
+            statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+            model = model.replace(
+                statements=statements.remove_symbol_definitions(
+                    unneeded_symbols, statements.ode_system
+                )
+            )
+            model = remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -1378,33 +1390,41 @@ def set_seq_zo_fo_absorption(model: Model):
     """
     statements = model.statements
     cs = get_and_check_odes(model)
-    _disallow_infusion(model, cs)
-    depot = cs.find_depot(statements)
 
-    dose_comp = cs.dosing_compartments[0]
-    have_ZO = has_zero_order_absorption(model)
-    if depot and not have_ZO:
-        model = _add_zero_order_absorption(model, dose_comp.doses[0], depot, 'MDT')
-    elif not depot and have_ZO:
-        if len(dose_comp.doses) == 1:
-            fo_dose = dose_comp.doses[0]
-            remove_dose = True
-        else:
-            fo_dose = dose_comp.sorted_doses(model)[0]
-            cb = CompartmentalSystemBuilder(model.statements.ode_system)
-            dose_comp = cb.set_dose(dose_comp, dose_comp.sorted_doses(model)[1:])
-            model = model.replace(
-                statements=model.statements.before_odes
-                + CompartmentalSystem(cb)
-                + model.statements.after_odes
+    if has_seq_zo_fo_absorption(model):
+        pass
+    else:
+        _disallow_infusion(model, cs)
+        depot = cs.find_depot(statements)
+
+        dose_comp = cs.dosing_compartments[0]
+        have_ZO = has_zero_order_absorption(model)
+        if depot and not have_ZO:
+            model = _add_zero_order_absorption(model, dose_comp.doses[0], depot, 'MDT')
+        elif not depot and have_ZO:
+            if len(dose_comp.doses) == 1:
+                fo_dose = dose_comp.doses[0]
+                remove_dose = True
+            else:
+                fo_dose = dose_comp.sorted_doses(model)[0]
+                cb = CompartmentalSystemBuilder(model.statements.ode_system)
+                dose_comp = cb.set_dose(dose_comp, dose_comp.sorted_doses(model)[1:])
+                model = model.replace(
+                    statements=model.statements.before_odes
+                    + CompartmentalSystem(cb)
+                    + model.statements.after_odes
+                )
+                remove_dose = False
+            model, _ = _add_first_order_absorption(
+                model, fo_dose, dose_comp, remove_dose=remove_dose
             )
-            remove_dose = False
-        model, _ = _add_first_order_absorption(model, fo_dose, dose_comp, remove_dose=remove_dose)
-    elif not depot and not have_ZO:
-        model = set_first_order_absorption(model)
-        depot = model.statements.ode_system.find_depot(model.statements)
-        model = _add_zero_order_absorption(model, Bolus(dose_comp.doses[0].amount), depot, 'MDT')
-    model = model.update_source()
+        elif not depot and not have_ZO:
+            model = set_first_order_absorption(model)
+            depot = model.statements.ode_system.find_depot(model.statements)
+            model = _add_zero_order_absorption(
+                model, Bolus(dose_comp.doses[0].amount), depot, 'MDT'
+            )
+        model = model.update_source()
     return model
 
 
@@ -1466,6 +1486,158 @@ def _dose_zo(model, dose):
             names = {symb.name for symb in value.free_symbols}
             if not all(name in model.datainfo.names for name in names):
                 return True
+    return False
+
+
+def has_first_order_absorption(model: Model):
+    """Check if ode system describes a first order absorption
+
+    Currently defined as the central compartment having a unidirectional input
+    flow from another compartment (such as depot or transit)
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    -------
+        Bool : True if model has first order absorption
+
+    """
+
+    odes = model.statements.ode_system
+    if odes is None:
+        raise ValueError(f'Model {model.name} has no ODE system')
+    dosing = odes.dosing_compartments[0]
+    central = odes.central_compartment
+    if dosing == central:
+        return False
+
+    in_flow = [flow[0] for flow in odes.get_compartment_inflows(central) if flow[0] != output]
+    out_flow = [flow[0] for flow in odes.get_compartment_outflows(central) if flow[0] != output]
+
+    unidirectional_flow = [uni_flow for uni_flow in in_flow if uni_flow not in out_flow]
+
+    if len(unidirectional_flow) == 1:
+        return True
+    return False
+
+
+def has_bolus_absorption(model: Model):
+    """Check if ode system describes a bolus absorption
+
+    Defined as being a bolus dose directly into the central compartment
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    -------
+        Bool : True if model has bolus absorption
+    """
+    odes = model.statements.ode_system
+    if odes is None:
+        raise ValueError(f'Model {model.name} has no ODE system')
+    dosing = odes.dosing_compartments[0]
+    central = odes.central_compartment
+    if dosing != central:
+        return False
+    if isinstance(dosing.doses[0], Bolus):
+        return True
+    return False
+
+
+def has_seq_zo_fo_absorption(model: Model):
+    """Check if ode system describes a sequential zero-order, first-order absorption
+
+    Defined as the model having both zero- and first-order absorption.
+
+    Parameters
+    ----------
+    model : Model
+        DPharmpy model
+
+    See also
+    --------
+    has_zero_order_absorption
+    has_first_order_absorption
+
+    """
+    odes = model.statements.ode_system
+    if odes is None:
+        raise ValueError(f'Model {model.name} has no ODE system')
+    if has_zero_order_absorption(model) and has_first_order_absorption(model):
+        return True
+    else:
+        return False
+
+
+def number_of_peripheral_compartments(model: Model):
+    """Return the number of peripherals compartments connected to the central
+    compartment
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    int
+        Number of peripherals compartments
+    """
+    # Redundant function ?
+    odes = model.statements.ode_system
+    if odes is None:
+        raise ValueError(f'Model {model.name} has no ODE system')
+
+    return len(odes.find_peripheral_compartments())
+
+
+def number_of_transit_compartments(model: Model):
+    """Return the number of transit compartments in the model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    int
+        Number of transit compartments
+    """
+    # Redundant function ?
+    odes = model.statements.ode_system
+    if odes is None:
+        raise ValueError(f'Model {model.name} has no ODE system')
+
+    return len(odes.find_transit_compartments(model.statements))
+
+
+def has_lag_time(model: Model):
+    """Check if ode system is defined with absorption lag time
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    -------
+        Bool : True if model is defined with lagtime
+    """
+    # Redundant function ?
+    odes = model.statements.ode_system
+    if odes is None:
+        raise ValueError(f'Model {model.name} has no ODE system')
+
+    dosing = odes.dosing_compartments[0]
+    if dosing.lag_time:
+        return True
     return False
 
 

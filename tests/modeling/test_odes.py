@@ -2639,7 +2639,7 @@ def test_multi_dose_change_absorption(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     ode = model.statements.ode_system
     cb = CompartmentalSystemBuilder(ode)
-    cb.set_dose(cb.find_compartment("CENTRAL"), Bolus(sympy.Symbol('AMT'), admid=1), replace=False)
+    cb.set_dose(cb.find_compartment("CENTRAL"), Bolus(sympy.Symbol('AMT'), admid=2), replace=False)
     ode = CompartmentalSystem(cb)
     model = model.replace(
         statements=model.statements.before_odes + ode + model.statements.after_odes
@@ -2652,7 +2652,7 @@ def test_multi_dose_change_absorption(load_model_for_test, testdata):
     central = model.statements.ode_system.find_compartment("CENTRAL")
 
     assert depot.doses[0] == Bolus(sympy.Symbol('AMT'), admid=1)
-    assert central.doses[0] == Bolus(sympy.Symbol('AMT'), admid=1)
+    assert central.doses[0] == Bolus(sympy.Symbol('AMT'), admid=2)
 
     model = set_zero_order_absorption(model)
     central = model.statements.ode_system.find_compartment("CENTRAL")
