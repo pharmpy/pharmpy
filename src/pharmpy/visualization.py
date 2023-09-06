@@ -144,8 +144,11 @@ def histogram(values, title=""):
     df = pd.DataFrame({values.name: values, 'num': list(range(1, len(values) + 1))})
 
     slider = alt.binding_range(min=1, max=len(values), step=1, name='Number of samples: ')
-    selection = alt.selection_single(
-        bind=slider, fields=['num'], name="num", init={'num': len(values)}
+    selection = alt.selection_point(
+        bind=slider,
+        fields=['num'],
+        name="num",
+        value=len(values),
     )
 
     base = alt.Chart(df).transform_filter('datum.num <= num_num')
@@ -155,7 +158,7 @@ def histogram(values, title=""):
         .transform_calculate(pct='1 / datum.total')
         .mark_bar()
         .encode(alt.X(f'{values.name}:Q', bin=True), alt.Y('sum(pct):Q', axis=alt.Axis(format='%')))
-        .add_selection(selection)
+        .add_params(selection)
         .properties(title=title)
     )
 
@@ -166,7 +169,7 @@ def histogram(values, title=""):
 
 def facetted_histogram(df):
     """Facet of one histogram per column with cross filter interaction"""
-    brush = alt.selection(type='interval', encodings=['x'])
+    brush = alt.selection_interval(encodings=['x'])
 
     base = (
         alt.Chart()
@@ -178,7 +181,7 @@ def facetted_histogram(df):
         .properties(width=200, height=150)
     )
 
-    background = base.encode(color=alt.value('#ddd')).add_selection(brush)
+    background = base.encode(color=alt.value('#ddd')).add_params(brush)
 
     highlight = base.transform_filter(brush)
 

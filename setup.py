@@ -73,7 +73,7 @@ setup(
         'symengine>=0.9.2',
         'pandas>=1.4, !=2.1.0',
         'numexpr',
-        'altair>=4.2.0',
+        'altair>=5.0.0',
         'jsonschema',
         'sphinx',
         'csscompressor',
