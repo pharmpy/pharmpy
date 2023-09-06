@@ -1,6 +1,6 @@
+from itertools import product
 from typing import List, Optional, Union
 
-from itertools import product
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.modeling import (
@@ -10,9 +10,9 @@ from pharmpy.modeling import (
     fix_parameters_to,
     set_direct_effect,
     set_initial_estimates,
+    set_lower_bounds,
     set_name,
     unconstrain_parameters,
-    set_lower_bounds,
 )
 
 
