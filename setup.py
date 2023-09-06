@@ -82,7 +82,7 @@ setup(
         'numpy>=1.17',
         'scipy',
         'dask>=2022.12.1, <=2023.7.0',
-        'distributed>=2022.12.1, <=2023.7.0',
+        'distributed>=2022.12.1, <=2023.9.0',
         'networkx',
         'appdirs',
         'rich',
