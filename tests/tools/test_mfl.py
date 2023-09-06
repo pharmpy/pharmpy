@@ -347,11 +347,11 @@ def test_all_funcs(load_model_for_test, pheno_path, source, expected):
         (
             'COVARIATE(@PD, @CONTINUOUS, *);' 'COVARIATE(@PD, @CATEGORICAL, CAT, *)',
             (
-                ('COVARIATE', 'E0', 'APGR', 'cat', '*'),
-                ('COVARIATE', 'E0', 'WGT', 'exp', '*'),
-                ('COVARIATE', 'E0', 'WGT', 'lin', '*'),
-                ('COVARIATE', 'E0', 'WGT', 'pow', '*'),
-                ('COVARIATE', 'E0', 'WGT', 'piece_lin', '*'),
+                ('COVARIATE', 'B', 'APGR', 'cat', '*'),
+                ('COVARIATE', 'B', 'WGT', 'exp', '*'),
+                ('COVARIATE', 'B', 'WGT', 'lin', '*'),
+                ('COVARIATE', 'B', 'WGT', 'pow', '*'),
+                ('COVARIATE', 'B', 'WGT', 'piece_lin', '*'),
                 ('COVARIATE', 'SLOPE', 'APGR', 'cat', '*'),
                 ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*'),
                 ('COVARIATE', 'SLOPE', 'WGT', 'lin', '*'),
