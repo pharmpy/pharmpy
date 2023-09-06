@@ -71,7 +71,7 @@ setup(
         'lark>=1.1.4',
         'sympy>=1.9',
         'symengine>=0.9.2',
-        'pandas>=1.4',
+        'pandas>=1.4, !=2.1.0',
         'numexpr',
         'altair>=4.2.0',
         'jsonschema',
