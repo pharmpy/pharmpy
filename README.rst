@@ -4,7 +4,7 @@
 .. image:: https://img.shields.io/pypi/l/pharmpy-core.svg
    :target: https://github.com/pharmpy/pharmpy/blob/main/LICENSE.LESSER
 
-.. image:: https://github.com/pharmpy/pharmpy/workflows/CI/badge.svg
+.. image:: https://github.com/pharmpy/pharmpy/workflows/main.yml/badge.svg
     :target: https://github.com/pharmpy/pharmpy/actions
 
 .. image:: https://img.shields.io/pypi/pyversions/pharmpy-core
@@ -16,14 +16,13 @@
 .. image:: https://codecov.io/gh/pharmpy/pharmpy/branch/main/graph/badge.svg?token=JZTHXXQPII
     :target: https://codecov.io/gh/pharmpy/pharmpy
 
-.. image:: https://pepy.tech/badge/pharmpy-core/month
-   :target: https://pepy.tech/project/pharmpy-core
+.. image:: https://img.shields.io/pypi/dm/pharmpy-core.svg
+   :target: https://pypistats.org/packages/pharmpy-core
 
 .. _README:
 
 .. highlight:: console
 
-======
 |logo|
 ======
 
@@ -45,12 +44,16 @@ Current features:
 * Reading NONMEM models and results
 * Running models and complex workflows (with NONMEM or to some extent nlmixr)
 
-This is the `team behind Pharmpy <https://pharmpy.github.io/latest/contributors.html>`_
 
 .. end-longdesc
 
+Getting started
+===============
+
 Installation
-============
+------------
+
+For installation in R see `pharmr <https://github.com/pharmpy/pharmr>`_. 
 
 Install the latest stable version from PyPI::
 
@@ -62,11 +65,12 @@ be installed using::
     pip install --index-url https://google-coral.github.io/py-repo/ tflite_runtime
 
 Python Example
-==============
+--------------
 
->>> from pharmpy.modeling import read_model
+>>> from pharmpy.modeling import read_model, read_modelfit_results
 >>> model = read_model("run1.mod")
->>> print(model.modelfit_results.parameter_estimates)
+>>> res = read_modelfit_results("run1.mod")
+>>> res.parameter_estimates
 THETA(1)      0.004696
 THETA(2)      0.984258
 THETA(3)      0.158920
@@ -85,7 +89,7 @@ Name: 2, dtype: float64
 >>>
 
 CLI Example
-===========
+-----------
 
 .. code-block:: none
 
@@ -97,3 +101,16 @@ CLI Example
 
     # Extract and print ofvs from multiple model runs
     pharmpy results ofv run*.mod
+
+
+Contact
+=======
+
+This is the `team behind Pharmpy <https://pharmpy.github.io/latest/contributors.html>`_
+
+Please ask a question in an issue or contact one of the maintainers if you have any questions.
+
+Contributing
+------------
+
+If you interested in contributing to Pharmpy, you can find more information under `Contribute <https://pharmpy.github.io/latest/contribute.html#contribute>`_.
