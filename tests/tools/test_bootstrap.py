@@ -15,11 +15,9 @@ def test_bootstrap():
     orig_mod = MyModel()
     orig_mod.modelfit_results = orig
     res1_mod = MyModel()
-    res1_mod.modelfit_results = res1
     res2_mod = MyModel()
-    res2_mod.modelfit_results = res2
 
-    boot = calculate_results([res1_mod, res2_mod], original_model=orig_mod)
+    boot = calculate_results([res1_mod, res2_mod], [res1, res2], original_model=orig_mod)
     correct_statistics = pd.DataFrame(
         {
             'mean': [1.25, 2.5],
