@@ -81,7 +81,7 @@ scipy==1.11.2
 six==1.16.0
 snowballstemmer==2.2.0
 sortedcontainers==2.4.0
-soupsieve==2.4.1
+soupsieve==2.5
 Sphinx==7.2.5
 sphinxcontrib-applehelp==1.0.7
 sphinxcontrib-devhelp==1.0.5
