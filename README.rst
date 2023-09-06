@@ -4,7 +4,7 @@
 .. image:: https://img.shields.io/pypi/l/pharmpy-core.svg
    :target: https://github.com/pharmpy/pharmpy/blob/main/LICENSE.LESSER
 
-.. image:: https://github.com/pharmpy/pharmpy/workflows/main.yml/badge.svg
+.. image:: https://github.com/pharmpy/pharmpy/actions/workflows/main.yml/badge.svg
     :target: https://github.com/pharmpy/pharmpy/actions
 
 .. image:: https://img.shields.io/pypi/pyversions/pharmpy-core
