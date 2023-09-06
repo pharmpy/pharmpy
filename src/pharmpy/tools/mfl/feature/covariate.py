@@ -7,6 +7,7 @@ from pharmpy.modeling import get_bioavailability
 from pharmpy.modeling.covariate_effect import EffectType, OperationType, add_covariate_effect
 from pharmpy.modeling.expressions import (
     get_individual_parameters,
+    get_parameter_rv,
     get_pd_parameters,
     get_pk_parameters,
 )
@@ -143,10 +144,22 @@ def _interpret_symbol(model: Model, definition, symbol: Symbol) -> Tuple[str, ..
                 return tuple(get_individual_parameters(model, level='iiv'))
             elif symbol.name == 'PD':
                 return tuple(get_pd_parameters(model))
+            elif symbol.name == 'PD_IIV':
+                return [
+                    pd_param
+                    for pd_param in get_pd_parameters(model)
+                    if len(get_parameter_rv(model, pd_param)) > 0
+                ]
             elif symbol.name == 'PK':
                 return tuple(get_pk_parameters(model))
             elif symbol.name == 'BIOAVAIL':
                 return tuple(_get_bioaval_parameters(model))
+            elif symbol.name == 'PK_IIV':
+                return [
+                    pk_param
+                    for pk_param in get_pk_parameters(model)
+                    if len(get_parameter_rv(model, pk_param)) > 0
+                ]
             else:
                 return ()
 

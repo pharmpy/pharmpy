@@ -25,7 +25,7 @@ def create_baseline_pd_model(model: Model, ests: pd.Series):
     Baseline PD model
     """
     baseline_model = set_direct_effect(model, expr='baseline')
-    baseline_model = set_name(baseline_model, "baseline_pd_model")
+    baseline_model = set_name(baseline_model, "baseline_model")
     baseline_model = baseline_model.replace(parent_model='baseline_model')
     baseline_model = baseline_model.replace(description="direct_effect_baseline")
     baseline_model = fix_parameters_to(baseline_model, ests)
