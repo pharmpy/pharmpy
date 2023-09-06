@@ -29,7 +29,7 @@ def longdesc(text_str):
 
 setup(
     name='pharmpy-core',
-    version='0.101.0',
+    version='0.101.2',
     license='GNU Lesser General Public License v3 (LGPLv3)',
     description='Pharmacometric modeling',
     long_description='%s\n\n%s'
@@ -71,7 +71,7 @@ setup(
         'lark>=1.1.4',
         'sympy>=1.9',
         'symengine>=0.9.2',
-        'pandas>=1.4',
+        'pandas>=1.4, !=2.1.0',
         'numexpr',
         'altair>=4.2.0',
         'jsonschema',
