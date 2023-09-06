@@ -29,7 +29,7 @@ def sub(a, b):
 @pytest.mark.xdist_group(name="workflow")
 def f(context, a, b):
     wf = sub(a, b)
-    name = uuid4()
+    name = str(uuid4())
     with warnings.catch_warnings():
         ignore_scratch_warning()
         res = call_workflow(wf, name, context)
