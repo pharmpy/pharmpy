@@ -9,7 +9,6 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import stats
 from pharmpy.model import Model, Results
 from pharmpy.results import ModelfitResults
-from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.psn_helpers import cmd_line_model_path, model_paths
 
 
@@ -92,8 +91,9 @@ def plot_parameter_estimates_histogram(res):
 
 
 def calculate_results(
-    bootstrap_models, results, original_model=None, included_individuals=None, dofv_results=None
+    bootstrap_models, original_model=None, included_individuals=None, dofv_results=None
 ):
+    results = [m.modelfit_results for m in bootstrap_models if m.modelfit_results is not None]
     if original_model:
         original_results = original_model.modelfit_results
     else:
@@ -212,14 +212,9 @@ def psn_bootstrap_results(path):
     """
     path = Path(path)
 
-    paths = list(model_paths(path, 'bs_pr1_*.mod'))
-    models = [Model.parse_model(p) for p in paths]
+    models = [Model.parse_model(p) for p in model_paths(path, 'bs_pr1_*.mod')]
     # Read the results already now to give an appropriate error if no results exists
-    results = []
-    for p in paths:
-        res = read_modelfit_results(p)
-        if res is not None:
-            results.append(res)
+    results = [m.modelfit_results for m in models if m.modelfit_results is not None]
     if not results:
         raise FileNotFoundError("No model results available in m1")
     try:
@@ -249,10 +244,6 @@ def psn_bootstrap_results(path):
 
     incinds = pd.read_csv(path / 'included_individuals1.csv', header=None).values.tolist()
     res = calculate_results(
-        models,
-        results,
-        original_model=base_model,
-        included_individuals=incinds,
-        dofv_results=dofv_results,
+        models, original_model=base_model, included_individuals=incinds, dofv_results=dofv_results
     )
     return res
