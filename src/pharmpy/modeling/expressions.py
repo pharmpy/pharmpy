@@ -1231,11 +1231,9 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
 
     pk_symbols = _filter_symbols(dependency_graph, free_symbols)
 
-    if model.statements.ode_system.find_compartment("EFFECT") is not None:
-        pd_outflow = model.statements.ode_system.get_flow(
-            model.statements.ode_system.find_compartment("EFFECT"), output
-        )
-        pk_symbols.remove(pd_outflow)
+    odes = model.statements.ode_system
+    if odes.find_compartment("EFFECT") is not None or odes.find_compartment('RESPONSE') is not None:
+        pk_symbols = [param for param in pk_symbols if str(param) not in get_pd_parameters(model)]
 
     return sorted(map(str, pk_symbols))
 
@@ -1267,18 +1265,10 @@ def get_pd_parameters(model: Model) -> List[str]:
 
     """
     # FIXME: this function needs to be updated. Currently uses fixed parameter names.
-
-    pd_symbols = []
-    sset = model.statements
-    if sympy.Symbol('Y_2') in model.dependent_variables:
-        parameters_in_e = sset.find_assignment('E').free_symbols
-        pk_parameters = get_pk_parameters(model)
-        parameters_in_e = {x for x in parameters_in_e if str(x) not in pk_parameters}
-        pd_symbols = {statement.symbol for statement in sset.before_odes}
-        pd_symbols = pd_symbols.intersection(parameters_in_e)
-        if sset.ode_system.find_compartment("EFFECT") is not None:
-            pd_symbols.add("KE0")
-    return sorted(map(str, pd_symbols))
+    pd_symbols = ['B', 'SLOPE', 'E_MAX', 'EC_50', 'N', 'sigma', 'K_OUT', 'K_IN', 'KE0']
+    return sorted(
+        [param for param in pd_symbols if sympy.Symbol(param) in model.statements.free_symbols]
+    )
 
 
 def _get_natural_assignments(before_odes):

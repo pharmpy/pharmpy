@@ -39,10 +39,10 @@ def run_amd(
     cl_init: float = 0.01,
     vc_init: float = 1.0,
     mat_init: float = 0.1,
-    b_init: Optional[float] = None,
-    emax_init: Optional[float] = None,
-    ec50_init: Optional[float] = None,
-    met_init: Optional[float] = None,
+    b_init: Optional[Union[int, float]] = None,
+    emax_init: Optional[Union[int, float]] = None,
+    ec50_init: Optional[Union[int, float]] = None,
+    met_init: Optional[Union[int, float]] = None,
     search_space: Optional[str] = None,
     lloq_method: Optional[str] = None,
     lloq_limit: Optional[str] = None,
@@ -125,8 +125,10 @@ def run_amd(
 
     if modeltype == 'pkpd':
         dv = 2
+        iiv_strategy = 'pd_fullblock'
     else:
         dv = None
+        iiv_strategy = 'fullblock'
 
     if type(input) is str:
         from pharmpy.modeling import create_basic_pk_model
@@ -230,7 +232,7 @@ def run_amd(
                 func = _subfunc_modelsearch(search_space=modelsearch_features, path=db.path)
                 run_subfuncs['modelsearch'] = func
         elif section == 'iivsearch':
-            func = _subfunc_iiv(path=db.path)
+            func = _subfunc_iiv(iiv_strategy=iiv_strategy, path=db.path)
             run_subfuncs['iivsearch'] = func
         elif section == 'iovsearch':
             func = _subfunc_iov(amd_start_model=model, occasion=occasion, path=db.path)
@@ -392,12 +394,12 @@ def _subfunc_structsearch(
     return _run_structsearch
 
 
-def _subfunc_iiv(path) -> SubFunc:
+def _subfunc_iiv(iiv_strategy, path) -> SubFunc:
     def _run_iiv(model):
         res = run_tool(
             'iivsearch',
             'brute_force',
-            iiv_strategy='fullblock',
+            iiv_strategy=iiv_strategy,
             model=model,
             path=path / 'iivsearch',
         )

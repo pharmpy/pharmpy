@@ -13,6 +13,7 @@ from pharmpy.model import (
 )
 from pharmpy.modeling import (
     add_effect_compartment,
+    add_indirect_effect,
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
     cleanup_model,
@@ -371,6 +372,31 @@ def test_get_pd_parameters(load_model_for_test, testdata, model_path, kind, expe
     assert not set(
         set(get_pd_parameters(add_effect_compartment(model, kind))).intersection(
             get_pk_parameters(add_effect_compartment(model, kind))
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    ('model_path', 'kind', 'prod', 'expected'),
+    (
+        ('nonmem/pheno.mod', 'linear', True, ['B', 'SLOPE', 'K_IN', 'K_OUT']),
+        ('nonmem/pheno.mod', 'linear', False, ['B', 'SLOPE', 'K_IN', 'K_OUT']),
+        ('nonmem/pheno.mod', 'Emax', True, ['B', 'E_MAX', 'EC_50', 'K_IN', 'K_OUT']),
+        ('nonmem/pheno.mod', 'Emax', False, ['B', 'E_MAX', 'EC_50', 'K_IN', 'K_OUT']),
+        ('nonmem/pheno.mod', 'sigmoid', True, ['B', 'EC_50', 'E_MAX', 'N', 'K_IN', 'K_OUT']),
+        ('nonmem/pheno.mod', 'sigmoid', False, ['B', 'EC_50', 'E_MAX', 'N', 'K_IN', 'K_OUT']),
+    ),
+    ids=repr,
+)
+def test_get_pd_parameters_indirect(
+    load_model_for_test, testdata, model_path, kind, prod, expected
+):
+    model = load_model_for_test(testdata / model_path)
+    assert set(get_pd_parameters(add_indirect_effect(model, kind, prod=prod))) == set(expected)
+    assert get_pk_parameters(add_indirect_effect(model, kind, prod=prod)) == ['CL', 'V']
+    assert not set(
+        set(get_pd_parameters(add_indirect_effect(model, kind, prod=prod))).intersection(
+            get_pk_parameters(add_indirect_effect(model, kind, prod=prod))
         )
     )
 

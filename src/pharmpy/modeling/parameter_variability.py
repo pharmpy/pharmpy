@@ -26,7 +26,7 @@ from pharmpy.model import (
 )
 
 from .common import remove_unused_parameters_and_rvs
-from .expressions import create_symbol, get_pk_parameters, has_random_effect
+from .expressions import create_symbol, get_pd_parameters, get_pk_parameters, has_random_effect
 from .help_functions import _format_input_list, _format_options, _get_etas
 
 ADD_IOV_DISTRIBUTION = frozenset(('disjoint', 'joint', 'explicit', 'same-as-iiv'))
@@ -452,6 +452,51 @@ def add_pk_iiv(model: Model, initial_estimate: float = 0.09):
     """
     params_to_add_etas = [
         param for param in get_pk_parameters(model) if not has_random_effect(model, param, 'iiv')
+    ]
+
+    if params_to_add_etas:
+        model = add_iiv(model, params_to_add_etas, 'exp', initial_estimate=initial_estimate)
+
+    return model.update_source()
+
+
+def add_pd_iiv(model: Model, initial_estimate: float = 0.09):
+    """Adds IIVs to all PD parameters in :class:`pharmpy.model`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to add new IIVs to.
+    initial_estimate : float
+        Value of initial estimate of parameter. Default is 0.09
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = set_direct_effect(model, 'Emax')
+    >>> model.statements.find_assignment("EC_50")
+    EC₅₀ = POP_EC_50
+    >>> model = add_pd_iiv(model)
+    >>> model.statements.find_assignment("EC_50")
+                      ETA_EC_50
+    EC₅₀ = POP_EC_50⋅ℯ
+
+    See also
+    --------
+    add_iiv
+    add_iov
+    remove_iiv
+    remove_iov
+
+    """
+    params_to_add_etas = [
+        param for param in get_pd_parameters(model) if not has_random_effect(model, param, 'iiv')
     ]
 
     if params_to_add_etas:
