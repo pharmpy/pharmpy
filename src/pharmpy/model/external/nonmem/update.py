@@ -37,7 +37,6 @@ if TYPE_CHECKING:
 
 from .nmtran_parser import NMTranControlStream
 from .parsing import parse_column_info
-from .records import code_record
 from .records.code_record import CodeRecord
 from .records.etas_record import EtasRecord
 from .records.factory import create_record
@@ -1476,7 +1475,7 @@ def update_estimation(control_stream, model):
     if old == new:
         return control_stream
 
-    delta = code_record.diff(old, new)
+    delta = diff(old, new)
     old_records = control_stream.get_records('ESTIMATION')
     i = 0
     new_records = []
