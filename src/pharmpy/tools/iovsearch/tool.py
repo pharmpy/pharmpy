@@ -12,10 +12,10 @@ from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_su
 from pharmpy.model import Assignment, Model, RandomVariables
 from pharmpy.modeling import add_iov, get_omegas, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.parameter_variability import ADD_IOV_DISTRIBUTION
-from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import rank_models, summarize_modelfit_results
 from pharmpy.tools.common import (
+    RANK_TYPES,
     ToolResults,
     create_results,
     summarize_tool,

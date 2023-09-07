@@ -23,8 +23,6 @@ from .data import get_ids, get_observations
 from .odes import get_initial_conditions
 from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
 
-RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic'))
-
 
 def calculate_eta_shrinkage(
     model: Model,

@@ -14,6 +14,8 @@ from .funcs import summarize_individuals, summarize_individuals_count_table
 
 DataFrame = Any  # NOTE should be pd.DataFrame but we want lazy loading
 
+RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic'))
+
 
 def update_initial_estimates(model):
     if model.modelfit_results is None:
