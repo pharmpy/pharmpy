@@ -104,10 +104,10 @@ def test_parameters(pheno):
     assert pheno.parameters['PTVCL'] == Parameter('PTVCL', 0.00469307, lower=0, upper=1000000)
     assert pheno.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=1000000)
     assert pheno.parameters['THETA_3'] == Parameter('THETA_3', 0.1, lower=-0.99, upper=1000000)
-    assert pheno.parameters['IVCL'] == Parameter('IVCL', 0.0309626, lower=0, upper=sympy.oo)
-    assert pheno.parameters['IVV'] == Parameter('IVV', 0.031128, lower=0, upper=sympy.oo)
+    assert pheno.parameters['IVCL'] == Parameter('IVCL', 0.0309626, lower=0, upper=float("inf"))
+    assert pheno.parameters['IVV'] == Parameter('IVV', 0.031128, lower=0, upper=float("inf"))
     assert pheno.parameters['SIGMA_1_1'] == Parameter(
-        'SIGMA_1_1', 0.013241, lower=0, upper=sympy.oo
+        'SIGMA_1_1', 0.013241, lower=0, upper=float("inf")
     )
 
 
@@ -126,9 +126,9 @@ def test_set_parameters(pheno_path, load_model_for_test):
     assert model.parameters['PTVCL'] == Parameter('PTVCL', 0.75, lower=0, upper=1000000)
     assert model.parameters['PTVV'] == Parameter('PTVV', 0.5, lower=0, upper=1000000)
     assert model.parameters['THETA_3'] == Parameter('THETA_3', 0.25, lower=-0.99, upper=1000000)
-    assert model.parameters['IVCL'] == Parameter('IVCL', 0.1, lower=0, upper=sympy.oo)
-    assert model.parameters['IVV'] == Parameter('IVV', 0.2, lower=0, upper=sympy.oo)
-    assert model.parameters['SIGMA_1_1'] == Parameter('SIGMA_1_1', 0.3, lower=0, upper=sympy.oo)
+    assert model.parameters['IVCL'] == Parameter('IVCL', 0.1, lower=0, upper=float("inf"))
+    assert model.parameters['IVV'] == Parameter('IVV', 0.2, lower=0, upper=float("inf"))
+    assert model.parameters['SIGMA_1_1'] == Parameter('SIGMA_1_1', 0.3, lower=0, upper=float("inf"))
     model = model.update_source()
     thetas = model.internals.control_stream.get_records('THETA')
     assert str(thetas[0]) == '$THETA (0,0.75) ; PTVCL\n'
