@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import replace
 from typing import TypeVar
 
@@ -78,6 +79,11 @@ def execute_workflow(
         if hasattr(res, 'rst_path'):
             from pharmpy.tools.reporting import create_report
 
+            if os.name == 'nt':
+                # Workaround for issue with dask versions >= 2023.7.0 on Windows
+                import asyncio
+
+                asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
             create_report(res, database.path)
     elif isinstance(res, Model):
         # original_input_models[0].modelfit_results = res.modelfit_results
