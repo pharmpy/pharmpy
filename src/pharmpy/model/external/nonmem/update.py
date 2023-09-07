@@ -1483,6 +1483,7 @@ def update_estimation(control_stream, model):
 
     prev = (None, None)
     for op, est in delta:
+        # If op (="operation") is 1, a new element found in 'new' but not in 'old' is being processed
         if op == 1:
             est_code = '$ESTIMATION'
             protected_attributes = []
@@ -1547,8 +1548,10 @@ def update_estimation(control_stream, model):
             est_code += '\n'
             newrec = create_record(est_code)
             new_records.append(newrec)
+        # If op is -1, an element found in 'old' but not in 'new' is being processed
         elif op == -1:
             i += 1
+        # If op is 0, an element found in both 'old' and 'new' is being processed
         else:
             new_records.append(old_records[i])
             i += 1
