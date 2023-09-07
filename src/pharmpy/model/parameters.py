@@ -247,9 +247,9 @@ class Parameters(CollectionsSequence, Immutable):
 
     def __getitem__(self, ind):
         if isinstance(ind, slice):
-            return Parameters.create(self._params[ind])
+            return Parameters(self._params[ind])
         elif not isinstance(ind, str) and isinstance(ind, CollectionsSequence):
-            return Parameters.create((self._lookup_param(i)[1] for i in ind))
+            return Parameters(tuple(self._lookup_param(i)[1] for i in ind))
         else:
             _, param = self._lookup_param(ind)
             return param
