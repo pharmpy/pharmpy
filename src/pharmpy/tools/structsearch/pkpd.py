@@ -1,16 +1,22 @@
+from itertools import product
+from typing import List, Optional, Union
+
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_effect_compartment,
     add_iiv,
+    add_indirect_effect,
     fix_parameters_to,
     set_direct_effect,
     set_initial_estimates,
+    set_lower_bounds,
     set_name,
+    unconstrain_parameters,
 )
 
 
-def create_baseline_pd_model(model: Model, ests: pd.Series):
+def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: Optional[float] = None):
     """Create baseline pkpd model
 
     Parameters
@@ -19,6 +25,8 @@ def create_baseline_pd_model(model: Model, ests: pd.Series):
         Pharmpy PK model
     ests : pd.Series
        List of estimated PK parameters
+    b_init : float
+        Initial estimate for baseline
 
     Returns
     -------
@@ -27,14 +35,22 @@ def create_baseline_pd_model(model: Model, ests: pd.Series):
     baseline_model = set_direct_effect(model, expr='baseline')
     baseline_model = set_name(baseline_model, "baseline_model")
     baseline_model = baseline_model.replace(parent_model='baseline_model')
-    baseline_model = baseline_model.replace(description="direct_effect_baseline")
+    baseline_model = baseline_model.replace(description="baseline_model")
     baseline_model = fix_parameters_to(baseline_model, ests)
-    baseline_model = add_iiv(baseline_model, ["E0"], "exp")
+    baseline_model = add_iiv(baseline_model, ["B"], "exp")
+    if b_init is not None:
+        baseline_model = set_initial_estimates(baseline_model, {'POP_B': b_init})
     return baseline_model
 
 
 def create_pkpd_models(
-    model: Model, e0_init: pd.Series, ests: pd.Series, emax_init=None, ec50_init=None
+    model: Model,
+    b_init: Optional[float] = None,
+    ests: pd.Series = None,
+    emax_init: Optional[float] = None,
+    ec50_init: Optional[float] = None,
+    mat_init: Optional[float] = None,
+    response_type: Union[str, List] = 'all',
 ):
     """Create pkpd models
 
@@ -42,47 +58,96 @@ def create_pkpd_models(
     ----------
     model : Model
         Pharmpy PK model
+    b_init : float
+       Initial estimate for baseline
     ests : pd.Series
        List of estimated PK parameters
     emax_init : float
         Initial estimate for E_max
     ec50_init : float
         Initial estimate for EC_50
+    mat_init : float
+        Initial estimate for MAT (mean equilibration time)
+    response_type : str
+        type of model (e.g. direct effect)
 
     Returns
     -------
     List of pharmpy models
     """
+
+    print(response_type)
+    if response_type == 'all':
+        models_list = ['direct', 'effect_compartment', 'indirect']
+    elif isinstance(response_type, str):
+        models_list = [response_type]
+    elif isinstance(response_type, list):
+        models_list = response_type
+
+    pd_types = ["linear", "Emax", "sigmoid"]
+
     models = []
-    index = 1
-    pd_types = ["linear", "Emax", "sigmoid", "step"]
-    for model_type in ["direct_effect", "effect_compartment"]:
-        for pd_type in pd_types:
-            if model_type == "direct_effect":
-                pkpd_model = set_direct_effect(model, expr=pd_type)
-            elif model_type == "effect_compartment":
-                pkpd_model = add_effect_compartment(model, expr=pd_type)
+    for modeltype in models_list:
+        if modeltype in ['direct', 'effect_compartment']:
+            for pd_type in pd_types:
+                pkpd_model = _create_model(model, modeltype, expr=pd_type)
+                pkpd_model = pkpd_model.replace(description=f"{modeltype}_{pd_type}")
+                models.append(pkpd_model)
+        elif modeltype == 'indirect':
+            for argument in list(product(pd_types, [True, False])):
+                pkpd_model = add_indirect_effect(model, *argument)
+                pkpd_model = pkpd_model.replace(
+                    description=f"{modeltype}_{argument[0]}_prod={argument[1]}"
+                )
+                models.append(pkpd_model)
 
+        final_models = []
+        index = 1
+        for pkpd_model in models:
             pkpd_model = set_name(pkpd_model, f"structsearch_run{index}")
-            pkpd_model = pkpd_model.replace(description=f"{model_type}_{pd_type}")
             index += 1
-            pkpd_model = add_iiv(pkpd_model, ["E0"], "exp")
-            pkpd_model = set_initial_estimates(pkpd_model, e0_init)
-            pkpd_model = fix_parameters_to(pkpd_model, ests)
 
-            if emax_init is not None:
+            # initial values
+            if b_init is not None:
+                pkpd_model = set_initial_estimates(pkpd_model, b_init)
+            if ests is not None:
+                pkpd_model = fix_parameters_to(pkpd_model, ests)
+
+            if emax_init is not None and ec50_init is not None:
                 pkpd_model = set_initial_estimates(pkpd_model, {'POP_E_MAX': emax_init})
-            if ec50_init is not None:
                 pkpd_model = set_initial_estimates(pkpd_model, {'POP_EC_50': ec50_init})
+                pkpd_model = set_initial_estimates(pkpd_model, {'POP_SLOPE': emax_init / ec50_init})
+            if mat_init is not None:
+                pkpd_model = set_initial_estimates(
+                    pkpd_model, {'POP_KE0': 1 / mat_init, 'POP_K_OUT': 1 / mat_init}
+                )
 
-            for parameter in ["SLOPE", "E_MAX"]:
+            pkpd_model = unconstrain_parameters(pkpd_model, ['SLOPE'])
+            pkpd_model = set_lower_bounds(pkpd_model, {'POP_E_MAX': -1})
+
+            # set iiv
+            for parameter in ["B", "SLOPE"]:
                 try:
                     pkpd_model = add_iiv(pkpd_model, [parameter], "exp")
                 except ValueError:
                     pass
+            try:
+                pkpd_model = add_iiv(pkpd_model, ['E_MAX'], "prop")
+            except ValueError:
+                pass
+
             pkpd_model = pkpd_model.replace(parent_model='baseline_model')
-            models.append(pkpd_model)
-    return models
+            final_models.append(pkpd_model)
+
+    return final_models
+
+
+def _create_model(model, modeltype, expr):
+    if modeltype == 'direct':
+        model = set_direct_effect(model, expr)
+    elif modeltype == 'effect_compartment':
+        model = add_effect_compartment(model, expr)
+    return model
 
 
 def create_pk_model(model: Model):

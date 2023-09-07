@@ -11,6 +11,7 @@ from pharmpy.model import (
     Statements,
     output,
 )
+from pharmpy.modeling import set_initial_condition
 
 from .error import set_proportional_error_model
 from .odes import add_individual_parameter, set_initial_estimates
@@ -22,25 +23,27 @@ def add_effect_compartment(model: Model, expr: str):
     Implemented PD models are:
 
     * Baseline:
-    .. math:: E = E_0
+    .. math:: E = B
     * Linear:
-    .. math:: E = E_0 + \text{slope} \cdot C
+    .. math:: E = B + \text{slope} \cdot C
     * Emax:
-    .. math:: E = E_0 + \frac {E_{max} \cdot C } { EC_{50} + C }
+    .. math:: E = B + \frac {E_{max} \cdot C } { EC_{50} + C }
     * Step effect:
-    .. math:: E = \Biggl \lbrace {E_0 \quad \text{if C} \leq 0 \atop E_0 + E_{max} \quad \text{else}}
+    .. math:: E = \Biggl \lbrace {B \quad \text{if C} \leq 0 \atop B + E_{max} \quad \text{else}}
     * Sigmoidal:
-    .. math::  E=\Biggl \lbrace {E_0+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n} \quad \text{if C}>0 \atop \
-            E_0 \quad \text{else}}
+    .. math::  E=\Biggl \lbrace {B+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n} \quad \text{if C}>0 \atop \
+            B \quad \text{else}}
     * Log-linear:
     .. math:: E = \text{slope} \cdot \text{log}(C + C_0)
+
+    :math:`B` is the baseline effect
 
     Parameters
     ----------
     model : Model
         Pharmpy model
     expr : str
-        Name of the PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step, loglin
+        Name of the PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step and loglin
 
     Return
     ------
@@ -87,25 +90,27 @@ def set_direct_effect(model: Model, expr: str):
     Implemented PD models are:
 
     * Baseline:
-    .. math:: E = E_0
+    .. math:: E = B
     * Linear:
-    .. math:: E = E_0 + \text{slope} \cdot C
+    .. math:: E = B + \text{slope} \cdot C
     * Emax:
-    .. math:: E = E_0 + \frac {E_{max} \cdot C } { EC_{50} + C }
+    .. math:: E = B + \frac {E_{max} \cdot C } { EC_{50} + C }
     * Step effect:
-    .. math:: E = \Biggl \lbrace {E_0 \quad \text{if C} \leq 0 \atop E_0 + E_{max} \quad \text{else}}
+    .. math:: E = \Biggl \lbrace {B \quad \text{if C} \leq 0 \atop B + E_{max} \quad \text{else}}
     * Sigmoidal:
-    .. math::  E=\Biggl \lbrace {E_0+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n} \quad \text{if C}>0 \atop \
-            E_0 \quad \text{else}}
+    .. math::  E=\Biggl \lbrace {B+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n} \quad \text{if C}>0 \atop \
+            B \quad \text{else}}
     * Log-linear:
     .. math:: E = \text{slope} \cdot \text{log}(C + C_0)
+
+    :math:`B` is the baseline effect
 
     Parameters
     ----------
     model : Model
         Pharmpy model
     expr : str
-        Name of PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step, loglin
+        Name of PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step and loglin
 
     Return
     ------
@@ -119,7 +124,7 @@ def set_direct_effect(model: Model, expr: str):
     >>> model = set_direct_effect(model, "linear")
     >>> model.statements.find_assignment("E")
         A_CENTRAL⋅SLOPE
-        ─────────────── + E₀
+        ─────────────── + B
     E =         V
 
     """
@@ -145,7 +150,7 @@ def _get_central_volume_and_cl(model):
 
 
 def _add_effect(model: Model, expr: str, conc):
-    e0 = sympy.Symbol("E0")
+    e0 = sympy.Symbol("B")
     model = add_individual_parameter(model, e0.name)
     if expr in ["Emax", "sigmoid", "step"]:
         emax = sympy.Symbol("E_MAX")
@@ -166,9 +171,9 @@ def _add_effect(model: Model, expr: str, conc):
     elif expr == "step":
         E = Assignment(sympy.Symbol("E"), sympy.Piecewise((e0, conc <= 0), (e0 + emax, True)))
     elif expr == "sigmoid":
-        n = sympy.Symbol("n")  # Hill coefficient
+        n = sympy.Symbol("N")  # Hill coefficient
         model = add_individual_parameter(model, n.name)
-        model = set_initial_estimates(model, {"POP_n": 1})
+        model = set_initial_estimates(model, {"POP_N": 1})
         E = Assignment(
             sympy.Symbol("E"),
             sympy.Piecewise(
@@ -190,4 +195,125 @@ def _add_effect(model: Model, expr: str, conc):
 
     # Add error model
     model = set_proportional_error_model(model, dv=2, zero_protection=False)
+
     return model
+
+
+def add_indirect_effect(
+    model: Model,
+    expr: str,
+    prod: bool = True,
+):
+    r"""Add indirect (turnover) effect
+
+    The concentration :math:`C_c` has an impact on the production or degradation rate of the response  R:
+
+    * Production:
+    .. math:: \frac {dR}{dt} = k_{in} \cdot f(C_c) - k_{out} \cdot R
+    * Degradation:
+    .. math:: \frac {dR}{dt} = k_{in} - k_{out} \cdot f(C_c) \cdot R
+
+    :math:`k_{in}` and :math:`k_{out}` can either be inhibited or stimulated.
+    Baseline :math:`B = R(0) = R_0 = k_{in}/k_{out}`.
+
+    Models:
+
+    * Linear:
+    .. math:: f(C_c) = \text{slope} \cdot C_c
+    * Emax:
+    .. math:: f(C_c) = \frac {E_{max} \cdot C_c } { EC_{50} + C_c }
+    * Sigmoidal:
+    .. math::  f(C_c) = \frac{E_{max} \cdot C_c^n}{EC_{50}^n+C^n}
+
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    prod : bool
+        Production (True) (default) or degradation (False)
+    expr : str
+        Name of PD effect function. Valid names are: linear, Emax, sigmoid and step
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = add_indirect_effect(model, expr='linear', prod=True)
+
+    """
+    vc, cl = _get_central_volume_and_cl(model)
+    odes = model.statements.ode_system
+    central = odes.central_compartment
+    central_amount = sympy.Function(central.amount.name)(sympy.Symbol('t'))
+    conc_c = central_amount / vc
+
+    response = Compartment.create("RESPONSE")
+    A_response = response.amount
+
+    kin = sympy.Symbol("K_IN")
+    kout = sympy.Symbol("K_OUT")
+    model = add_individual_parameter(model, kout.name)
+    b = sympy.Symbol("B")  # baseline
+    model = add_individual_parameter(model, b.name)
+
+    kin_ass = Assignment(kin, kout * b)
+
+    if expr == 'linear':
+        s = sympy.Symbol("SLOPE")
+        model = add_individual_parameter(model, s.name)
+        R = sympy.Symbol("SLOPE") * conc_c
+    elif expr == 'Emax':
+        emax = sympy.Symbol("E_MAX")
+        model = add_individual_parameter(model, emax.name)
+        ec50 = sympy.Symbol("EC_50")
+        model = add_individual_parameter(model, ec50.name)
+        R = emax * conc_c / (ec50 + conc_c)
+    elif expr == 'sigmoid':
+        emax = sympy.Symbol("E_MAX")
+        ec50 = sympy.Symbol("EC_50")
+        n = sympy.Symbol("N")
+        model = set_initial_estimates(model, {"POP_N": 1})
+        model = add_individual_parameter(model, n.name)
+        model = add_individual_parameter(model, ec50.name)
+        model = add_individual_parameter(model, emax.name)
+        R = emax * conc_c**n / (ec50**n + conc_c**n)
+    else:
+        raise ValueError(f'Unknown model "{expr}".')
+
+    cb = CompartmentalSystemBuilder(odes)
+    if prod:
+        response = Compartment.create("RESPONSE", input=kin * (1 + R))
+        cb.add_compartment(response)
+        cb.add_flow(response, output, kout)
+    elif not prod:
+        response = Compartment.create("RESPONSE", input=kin)
+        cb.add_compartment(response)
+        cb.add_flow(response, output, kout * (1 + R))
+
+    model = model.replace(
+        statements=Statements(
+            model.statements.before_odes
+            + kin_ass
+            + CompartmentalSystem(cb)
+            + model.statements.after_odes
+        )
+    )
+
+    model = set_initial_condition(model, "RESPONSE", b)
+
+    # Add dependent variable Y_2
+    y_2 = sympy.Symbol('Y_2')
+    y = Assignment(y_2, A_response)
+    dvs = model.dependent_variables.replace(y_2, 2)
+    model = model.replace(statements=model.statements + y, dependent_variables=dvs)
+
+    # Add error model
+    model = set_proportional_error_model(model, dv=2, zero_protection=False)
+
+    return model.update_source()

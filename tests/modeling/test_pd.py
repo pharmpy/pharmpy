@@ -8,7 +8,7 @@ from pharmpy.model import (
     CompartmentalSystemBuilder,
     output,
 )
-from pharmpy.modeling import add_effect_compartment, set_direct_effect
+from pharmpy.modeling import add_effect_compartment, add_indirect_effect, set_direct_effect
 
 
 def S(x):
@@ -51,50 +51,70 @@ def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
 
 def _test_effect_models(model, expr, conc):
     e = S("E")
-    e0 = S("E0")
+    e0 = S("B")
     emax = S("E_MAX")
     ec50 = S("EC_50")
 
     if expr == 'baseline':
-        assert model.statements[0] == Assignment(e0, S("POP_E0"))
+        assert model.statements[0] == Assignment(e0, S("POP_B"))
         assert model.statements.after_odes[-2] == Assignment(e, e0)
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
     elif expr == 'linear':
-        assert model.statements[1] == Assignment(e0, S("POP_E0"))
+        assert model.statements[1] == Assignment(e0, S("POP_B"))
         assert model.statements[0] == Assignment(S("SLOPE"), S("POP_SLOPE"))
         assert model.statements.after_odes[-2] == Assignment(e, e0 + S("SLOPE") * conc)
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
     elif expr == "Emax":
         assert model.statements[0] == Assignment(ec50, S("POP_EC_50"))
-        assert model.statements[2] == Assignment(e0, S("POP_E0"))
+        assert model.statements[2] == Assignment(e0, S("POP_B"))
         assert model.statements[1] == Assignment(emax, S("POP_E_MAX"))
         assert model.statements.after_odes[-2] == Assignment(e, e0 + (emax * conc) / (ec50 + conc))
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
     elif expr == "sigmoid":
-        assert model.statements[0] == Assignment(S("n"), S("POP_n"))
+        assert model.statements[0] == Assignment(S("N"), S("POP_N"))
         assert model.statements[1] == Assignment(ec50, S("POP_EC_50"))
-        assert model.statements[3] == Assignment(e0, S("POP_E0"))
+        assert model.statements[3] == Assignment(e0, S("POP_B"))
         assert model.statements[2] == Assignment(emax, S("POP_E_MAX"))
         assert model.statements.after_odes[-2] == Assignment(
             e,
             sympy.Piecewise(
-                (e0 + ((emax * conc ** S("n")) / (ec50 ** S("n") + conc ** S("n"))), conc > 0),
+                (e0 + ((emax * conc ** S("N")) / (ec50 ** S("N") + conc ** S("N"))), conc > 0),
                 (e0, True),
             ),
         )
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
-        assert model.parameters["POP_n"].init == 1
+        assert model.parameters["POP_N"].init == 1
     elif expr == "step":
-        assert model.statements[1] == Assignment(e0, S("POP_E0"))
+        assert model.statements[1] == Assignment(e0, S("POP_B"))
         assert model.statements[0] == Assignment(emax, S("POP_E_MAX"))
         assert model.statements.after_odes[-2] == Assignment(
             e, sympy.Piecewise((e0, conc <= 0), (e0 + emax, True))
         )
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
     elif expr == "loglin":
-        assert model.statements[1] == Assignment(e0, S("POP_E0"))
+        assert model.statements[1] == Assignment(e0, S("POP_B"))
         assert model.statements[0] == Assignment(S("SLOPE"), S("POP_SLOPE"))
         assert model.statements.after_odes[-2] == Assignment(
             e, S("SLOPE") * sympy.log(conc + sympy.exp(e0 / S("SLOPE")))
         )
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
+
+
+@pytest.mark.parametrize(
+    'prod, expr',
+    [
+        (True, 'linear'),
+        (True, 'Emax'),
+        (True, 'sigmoid'),
+        (False, 'linear'),
+        (False, 'Emax'),
+        (False, 'sigmoid'),
+    ],
+)
+def test_indirect_effect(load_model_for_test, testdata, prod, expr):
+    model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
+    model = add_indirect_effect(
+        model,
+        prod=prod,
+        expr=expr,
+    )

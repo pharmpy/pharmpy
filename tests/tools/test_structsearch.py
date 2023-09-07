@@ -71,35 +71,28 @@ def test_create_remaining_models(load_example_model_for_test):
 def test_pkpd(load_model_for_test, testdata):
     res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
     ests = res.parameter_estimates
-    e0_init = pd.Series({'POP_E0': 5.75, 'IIV_E0': 0.01, 'sigma': 0.33})
+    e0_init = pd.Series({'POP_B': 5.75, 'IIV_B': 0.01, 'sigma': 0.33})
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    pkpd_models = create_pkpd_models(model, e0_init, ests)
+    pkpd_models = create_pkpd_models(
+        model, e0_init, ests, emax_init=2.0, ec50_init=1.0, mat_init=0.5
+    )
 
-    assert len(pkpd_models) == 8
+    assert len(pkpd_models) == 12
     assert pkpd_models[0].name == "structsearch_run1"
     assert pkpd_models[1].name == "structsearch_run2"
-    assert pkpd_models[4].name == "structsearch_run5"
-    assert pkpd_models[5].name == "structsearch_run6"
-    assert pkpd_models[0].parameters[0].name == 'TVCL'
-    assert pkpd_models[5].parameters[0].name == 'TVCL'
-    assert pkpd_models[0].parameters[1].name == 'TVV'
-    assert pkpd_models[5].parameters[1].name == 'TVV'
+    assert pkpd_models[1].parameters['POP_B'].init == 5.75
+    assert pkpd_models[1].parameters['POP_E_MAX'].init == 2.0
+    assert pkpd_models[1].parameters['POP_E_MAX'].fix is False
+    assert pkpd_models[1].parameters['POP_EC_50'].init == 1.0
+    assert pkpd_models[1].parameters['POP_EC_50'].fix is False
+    assert pkpd_models[3].parameters['POP_KE0'].init == 1 / 0.5
+    assert pkpd_models[6].parameters['POP_K_OUT'].init == 1 / 0.5
 
-    models2 = create_pkpd_models(model, e0_init, ests, emax_init=2.0, ec50_init=1.0)
-    param_emax = models2[1].parameters['POP_E_MAX']
-    param_ec50 = models2[1].parameters['POP_EC_50']
-    assert param_emax.init == 2.0
-    assert param_emax.fix is False
-    assert param_ec50.init == 1.0
-    assert param_ec50.fix is False
-
-    models3 = create_pkpd_models(model, e0_init, ests)
-    param_emax = models3[1].parameters['POP_E_MAX']
-    param_ec50 = models3[1].parameters['POP_EC_50']
-    assert param_emax.init == 0.1
-    assert param_emax.fix is False
-    assert param_ec50.init == 0.1
-    assert param_ec50.fix is False
+    models3 = create_pkpd_models(model)
+    assert models3[1].parameters['POP_E_MAX'].init == 0.1
+    assert models3[1].parameters['POP_E_MAX'].fix is False
+    assert models3[1].parameters['POP_EC_50'].init == 0.1
+    assert models3[1].parameters['POP_EC_50'].fix is False
 
 
 def test_create_workflow():

@@ -39,8 +39,10 @@ def run_amd(
     cl_init: float = 0.01,
     vc_init: float = 1.0,
     mat_init: float = 0.1,
+    b_init: Optional[float] = None,
     emax_init: Optional[float] = None,
     ec50_init: Optional[float] = None,
+    met_init: Optional[float] = None,
     search_space: Optional[str] = None,
     lloq_method: Optional[str] = None,
     lloq_limit: Optional[str] = None,
@@ -70,10 +72,14 @@ def run_amd(
         Initial estimate for the central compartment population volume
     mat_init : float
         Initial estimate for the mean absorption time (not for iv models)
+    b_init : float
+        Initial estimate for the baseline (PKPD model)
     emax_init : float
         Initial estimate for E_max (PKPD model)
     ec50_init : float
         Initial estimate for EC_50 (PKPD model)
+    met_init : float
+        Initial estimate for mean equilibration time (PKPD model)
     search_space : str
         MFL for search space for structural model
     lloq_method : str
@@ -114,7 +120,7 @@ def run_amd(
 
     if administration not in ['iv', 'oral', 'ivoral']:
         raise ValueError(f'Invalid input: "{administration}" as administration is not supported')
-    if modeltype not in ['basic_pk']:
+    if modeltype not in ['basic_pk', 'pkpd']:
         raise ValueError(f'Invalid input: "{modeltype}" as modeltype is not supported')
 
     if modeltype == 'pkpd':
@@ -213,8 +219,10 @@ def run_amd(
                 func = _subfunc_structsearch(
                     route=administration,
                     modeltype=modeltype,
+                    b_init=b_init,
                     emax_init=emax_init,
                     ec50_init=ec50_init,
+                    met_init=met_init,
                     path=db.path,
                 )
                 run_subfuncs['structsearch'] = func
@@ -363,14 +371,18 @@ def _subfunc_modelsearch(search_space: Tuple[Statement, ...], path) -> SubFunc:
     return _run_modelsearch
 
 
-def _subfunc_structsearch(route, modeltype, emax_init, ec50_init, path) -> SubFunc:
+def _subfunc_structsearch(
+    route, modeltype, b_init, emax_init, ec50_init, met_init, path
+) -> SubFunc:
     def _run_structsearch(model):
         res = run_tool(
             'structsearch',
             route=route,
             type=modeltype,
+            b_init=b_init,
             emax_init=emax_init,
             ec50_init=ec50_init,
+            met_init=met_init,
             model=model,
             path=path / 'structsearch',
         )

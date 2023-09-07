@@ -24,8 +24,10 @@ TYPES = frozenset(('tmdd', 'pkpd'))
 def create_workflow(
     route: str,
     type: str,
+    b_init: Optional[float] = None,
     emax_init: Optional[float] = None,
     ec50_init: Optional[float] = None,
+    met_init: Optional[float] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):
@@ -37,10 +39,14 @@ def create_workflow(
         Route of administration. Either 'pk' or 'oral'
     type : str
         Type of model. Currently only 'tmdd' and 'pkpd'
+    b_init: float
+        Initial estimate for the baseline for pkpd models. The default value is 0.1
     emax_init: float
-        Initial estimate for E_MAX. The default value is 0.1
+        Initial estimate for E_MAX (for pkpd models only). The default value is 0.1
     ec50_init: float
-        Initial estimate for EC_50. The default value is 0.1
+        Initial estimate for EC_50 (for pkpd models only). The default value is 0.1
+    met_init: float
+        Initial estimate for MET (for pkpd models only). The default value is 0.1
     results : ModelfitResults
         Results for the start model
     model : Model
@@ -64,7 +70,7 @@ def create_workflow(
     if type == 'tmdd':
         start_task = Task('run_tmdd', run_tmdd, model)
     elif type == 'pkpd':
-        start_task = Task('run_pkpd', run_pkpd, model, emax_init, ec50_init)
+        start_task = Task('run_pkpd', run_pkpd, model, b_init, emax_init, ec50_init, met_init)
     wb.add_task(start_task)
     return Workflow(wb)
 
@@ -103,8 +109,10 @@ def run_tmdd(context, model):
     )
 
 
-def run_pkpd(context, model, emax_init, ec50_init):
-    baseline_pd_model = create_baseline_pd_model(model, model.modelfit_results.parameter_estimates)
+def run_pkpd(context, model, b_init, emax_init, ec50_init, met_init):
+    baseline_pd_model = create_baseline_pd_model(
+        model, model.modelfit_results.parameter_estimates, b_init
+    )
     wf = create_fit_workflow(baseline_pd_model)
     wb = WorkflowBuilder(wf)
     task_results = Task('results2', bundle_results)
@@ -117,6 +125,7 @@ def run_pkpd(context, model, emax_init, ec50_init):
         model.modelfit_results.parameter_estimates,
         emax_init,
         ec50_init,
+        met_init,
     )
 
     wf2 = create_fit_workflow(pkpd_models)

@@ -349,11 +349,11 @@ def test_get_pk_parameters(load_model_for_test, testdata, model_path, kind, expe
 @pytest.mark.parametrize(
     ('model_path', 'kind', 'expected'),
     (
-        ('nonmem/pheno.mod', 'baseline', ['E0']),
-        ('nonmem/pheno.mod', 'linear', ['E0', 'SLOPE']),
-        ('nonmem/pheno.mod', 'Emax', ['E0', 'E_MAX', 'EC_50']),
-        ('nonmem/pheno.mod', 'step', ['E0', 'E_MAX']),
-        ('nonmem/pheno.mod', 'sigmoid', ['E0', 'EC_50', 'E_MAX', 'n']),
+        ('nonmem/pheno.mod', 'baseline', ['B']),
+        ('nonmem/pheno.mod', 'linear', ['B', 'SLOPE']),
+        ('nonmem/pheno.mod', 'Emax', ['B', 'E_MAX', 'EC_50']),
+        ('nonmem/pheno.mod', 'step', ['B', 'E_MAX']),
+        ('nonmem/pheno.mod', 'sigmoid', ['B', 'EC_50', 'E_MAX', 'N']),
     ),
     ids=repr,
 )
