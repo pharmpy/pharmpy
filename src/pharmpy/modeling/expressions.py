@@ -1265,7 +1265,7 @@ def get_pd_parameters(model: Model) -> List[str]:
 
     """
     # FIXME: this function needs to be updated. Currently uses fixed parameter names.
-    pd_symbols = ['B', 'SLOPE', 'E_MAX', 'EC_50', 'N', 'sigma', 'K_OUT', 'K_IN', 'KE0']
+    pd_symbols = ['B', 'SLOPE', 'E_MAX', 'EC_50', 'N', 'K_OUT', 'KE0']
     return sorted(
         [param for param in pd_symbols if sympy.Symbol(param) in model.statements.free_symbols]
     )

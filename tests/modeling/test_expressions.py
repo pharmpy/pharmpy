@@ -379,12 +379,12 @@ def test_get_pd_parameters(load_model_for_test, testdata, model_path, kind, expe
 @pytest.mark.parametrize(
     ('model_path', 'kind', 'prod', 'expected'),
     (
-        ('nonmem/pheno.mod', 'linear', True, ['B', 'SLOPE', 'K_IN', 'K_OUT']),
-        ('nonmem/pheno.mod', 'linear', False, ['B', 'SLOPE', 'K_IN', 'K_OUT']),
-        ('nonmem/pheno.mod', 'Emax', True, ['B', 'E_MAX', 'EC_50', 'K_IN', 'K_OUT']),
-        ('nonmem/pheno.mod', 'Emax', False, ['B', 'E_MAX', 'EC_50', 'K_IN', 'K_OUT']),
-        ('nonmem/pheno.mod', 'sigmoid', True, ['B', 'EC_50', 'E_MAX', 'N', 'K_IN', 'K_OUT']),
-        ('nonmem/pheno.mod', 'sigmoid', False, ['B', 'EC_50', 'E_MAX', 'N', 'K_IN', 'K_OUT']),
+        ('nonmem/pheno.mod', 'linear', True, ['B', 'SLOPE', 'K_OUT']),
+        ('nonmem/pheno.mod', 'linear', False, ['B', 'SLOPE', 'K_OUT']),
+        ('nonmem/pheno.mod', 'Emax', True, ['B', 'E_MAX', 'EC_50', 'K_OUT']),
+        ('nonmem/pheno.mod', 'Emax', False, ['B', 'E_MAX', 'EC_50', 'K_OUT']),
+        ('nonmem/pheno.mod', 'sigmoid', True, ['B', 'EC_50', 'E_MAX', 'N', 'K_OUT']),
+        ('nonmem/pheno.mod', 'sigmoid', False, ['B', 'EC_50', 'E_MAX', 'N', 'K_OUT']),
     ),
     ids=repr,
 )
