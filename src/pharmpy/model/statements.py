@@ -13,7 +13,7 @@ from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
 from pharmpy.internals.expr.ode import canonical_ode_rhs
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
-from pharmpy.internals.immutable import Immutable
+from pharmpy.internals.immutable import Immutable, cache_method
 
 
 def is_zero_matrix(A):
@@ -164,12 +164,15 @@ class Assignment(Statement):
         return self.expression.free_symbols
 
     def __eq__(self, other):
+        if hash(self) != hash(other):
+            return False
         return (
             isinstance(other, Assignment)
             and self.symbol == other.symbol
             and self.expression == other.expression
         )
 
+    @cache_method
     def __hash__(self):
         return hash((self.symbol, self.expression))
 

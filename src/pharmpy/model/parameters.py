@@ -6,7 +6,7 @@ from typing import Any, Optional, Sequence, Union, overload
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.immutable import Immutable
+from pharmpy.internals.immutable import Immutable, cache_method
 
 
 class Parameter(Immutable):
@@ -118,6 +118,7 @@ class Parameter(Immutable):
         """Initial parameter estimate or value"""
         return self._init
 
+    @cache_method
     def __hash__(self):
         return hash((self.name, self.init, self.lower, self.upper, self.fix))
 
@@ -136,6 +137,8 @@ class Parameter(Immutable):
 
     def __eq__(self, other):
         """Two parameters are equal if they have the same name, init and constraints"""
+        if hash(self) != hash(other):
+            return False
         return (
             isinstance(other, Parameter)
             and self._init == other._init
@@ -394,6 +397,8 @@ class Parameters(CollectionsSequence, Immutable):
             raise ValueError(f"Cannot add {other} to Parameters")
 
     def __eq__(self, other):
+        if hash(self) != hash(other):
+            return False
         if not isinstance(other, Parameters):
             return False
         if len(self) != len(other):
@@ -403,6 +408,7 @@ class Parameters(CollectionsSequence, Immutable):
                 return False
         return True
 
+    @cache_method
     def __hash__(self):
         return hash(self._params)
 
