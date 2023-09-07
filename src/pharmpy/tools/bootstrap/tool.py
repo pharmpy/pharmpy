@@ -57,6 +57,10 @@ def resample_model(model, name):
 
 def post_process_results(original_model, *models):
     res = calculate_results(
-        models, original_model=original_model, included_individuals=None, dofv_results=None
+        models,
+        results=[m.modelfit_results for m in models],
+        original_model=original_model,
+        included_individuals=None,
+        dofv_results=None,
     )
     return res
