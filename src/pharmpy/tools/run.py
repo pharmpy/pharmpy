@@ -1036,7 +1036,7 @@ def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
     ModelfitResults
         Results object
     """
-    path = Path(path)
+    path = normalize_user_given_path(path)
     model = read_model(path)
     res = parse_modelfit_results(model, path)
     return res
