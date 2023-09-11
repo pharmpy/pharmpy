@@ -573,8 +573,8 @@ def calculate_bic(
     model: Model,
     likelihood: float,
     type: Optional[str] = None,
-    mult_test_p: Optional[int] = None,
-    mult_test_e: Optional[int] = None,
+    mult_test_p: int = 1,
+    mult_test_e: int = 1,
 ):
     """Calculate BIC
 
@@ -674,10 +674,6 @@ def calculate_bic(
         nobs = len(get_observations(model))
         penalty = dim_theta_r * math.log(nsubs) + dim_theta_f * math.log(nobs)
         if type == 'mult_test':
-            if not mult_test_e or not mult_test_p:
-                raise ValueError(
-                    'Options `mult_test_p` and `mult_test_e` must be set for method `mult_test`'
-                )
             if mult_test_p <= 0 or mult_test_e <= 0:
                 raise ValueError(
                     'Options `mult_test_p` and `mult_test_e` must be >= 0 for method `mult_test`'

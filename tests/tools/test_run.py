@@ -10,8 +10,7 @@ import pytest
 import pharmpy
 from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
-
-# from pharmpy.results import read_results
+from pharmpy.modeling import add_iiv
 from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_common,
     _create_metadata_tool,
@@ -339,6 +338,20 @@ def test_rank_models():
     df = rank_models(base_nan, models, errors_allowed=['rounding_errors'], rank_type='ofv')
     assert df.iloc[0].name == 'm1'
     assert df.nunique()['ofv'] == df.nunique()['rank']
+
+
+def test_rank_models_bic(load_model_for_test, testdata):
+    model_base = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model_iiv = add_iiv(model_base, ['S1'], 'exp')
+    model_iiv = model_iiv.replace(name='pheno_iiv')
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    model_base = model_base.replace(modelfit_results=res)
+    model_iiv = model_iiv.replace(modelfit_results=res)
+    df_mixed = rank_models(model_base, [model_iiv], rank_type='bic', bic_type='mixed')
+    df_mult_test = rank_models(
+        model_base, [model_iiv], rank_type='bic', bic_type='mult_test', mult_test_p=2
+    )
+    assert df_mixed.loc['pheno_iiv', 'bic'] != df_mult_test.loc['pheno_iiv', 'bic']
 
 
 def test_summarize_modelfit_results(
