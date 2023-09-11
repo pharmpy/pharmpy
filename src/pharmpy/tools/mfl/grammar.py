@@ -31,7 +31,7 @@ absorption: "ABSORPTION"i "(" (_absorption_option) ")"
 elimination: "ELIMINATION"i "(" (_elimination_option) ")"
 peripherals: "PERIPHERALS"i "(" (_counts) ")"
 transits: "TRANSITS"i "(" _counts ["," depot_option] ")"
-lagtime: "LAGTIME"i "(" ")"
+lagtime: "LAGTIME"i "(" (_lagtime_option) ")"
 covariate: "COVARIATE"i "(" parameter_option "," covariate_option "," fp_option ["," op_option] ")"
 
 _absorption_option: absorption_modes | absorption_wildcard
@@ -45,6 +45,10 @@ ELIMINATION_MODE: "FO"i | "ZO"i | "MM"i | "MIX-FO-MM"i
 depot_option: DEPOT | NODEPOT | WILDCARD
 DEPOT: "DEPOT"i
 NODEPOT: "NODEPOT"i
+_lagtime_option: lagtime_modes | lagtime_wildcard
+lagtime_modes: LAGTIME_MODE | "[" [LAGTIME_MODE ("," LAGTIME_MODE)*] "]"
+lagtime_wildcard: WILDCARD
+LAGTIME_MODE: "ON"i | "OFF"i
 parameter_option: values | ref | parameter_wildcard
 covariate_option: values | ref | covariate_wildcard
 fp_option: values | fp_wildcard

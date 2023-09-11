@@ -22,7 +22,7 @@ from pharmpy.tools.modelsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
-MINIMAL_VALID_MFL_STRING = 'LAGTIME()'
+MINIMAL_VALID_MFL_STRING = 'LAGTIME(ON)'
 
 
 def test_exhaustive_algorithm():
@@ -54,22 +54,22 @@ def test_exhaustive_algorithm():
             8,
         ),
         (
-            'ABSORPTION(SEQ-ZO-FO);LAGTIME()',
+            'ABSORPTION(SEQ-ZO-FO);LAGTIME(ON)',
             'no_add',
             2,
         ),
         (
-            'ABSORPTION(ZO);LAGTIME();PERIPHERALS(1)',
+            'ABSORPTION(ZO);LAGTIME(ON);PERIPHERALS(1)',
             'no_add',
             15,
         ),
         (
-            'ABSORPTION(ZO);LAGTIME();PERIPHERALS([1,2]);ELIMINATION(ZO)',
+            'ABSORPTION(ZO);LAGTIME(ON);PERIPHERALS([1,2]);ELIMINATION(ZO)',
             'no_add',
             170,
         ),
         (
-            'LAGTIME();TRANSITS(1);PERIPHERALS(1)',
+            'LAGTIME(ON);TRANSITS(1);PERIPHERALS(1)',
             'diagonal',
             7,
         ),
@@ -80,7 +80,7 @@ def test_exhaustive_algorithm():
         ),
         ('ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)', 0, 7),
         (
-            'LAGTIME();TRANSITS(1)',
+            'LAGTIME(ON);TRANSITS(1)',
             'no_add',
             2,
         ),
@@ -90,7 +90,7 @@ def test_exhaustive_algorithm():
             3,
         ),
         (
-            'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME();TRANSITS([1,3,10],*);'
+            'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME(ON);TRANSITS([1,3,10],*);'
             'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])',
             'no_add',
             246,
@@ -109,16 +109,16 @@ def test_exhaustive_stepwise_algorithm(mfl: str, iiv_strategy: str, no_of_models
     'mfl, no_of_models',
     [
         (
-            'ABSORPTION(ZO);LAGTIME();PERIPHERALS(1)',
+            'ABSORPTION(ZO);LAGTIME(ON);PERIPHERALS(1)',
             12,
         ),
         (
-            'ABSORPTION(ZO);LAGTIME();PERIPHERALS([1,2]);ELIMINATION(ZO)',
+            'ABSORPTION(ZO);LAGTIME(ON);PERIPHERALS([1,2]);ELIMINATION(ZO)',
             52,
         ),
         ('ABSORPTION([ZO,SEQ-ZO-FO]);ELIMINATION(MM)', 7),
         (
-            'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME();TRANSITS([1,3,10],*);'
+            'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME(ON);TRANSITS([1,3,10],*);'
             'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])',
             143,
         ),

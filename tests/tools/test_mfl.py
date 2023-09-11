@@ -212,8 +212,10 @@ from pharmpy.tools.mfl.stringify import stringify
                 ('PERIPHERALS', 5),
             ),
         ),
-        ('LAGTIME()', (('LAGTIME',),)),
-        ('LAGTIME ( )', (('LAGTIME',),)),
+        ('LAGTIME(ON)', (('LAGTIME', 'ON'),)),
+        ('LAGTIME ( ON )', (('LAGTIME', 'ON'),)),
+        ('LAGTIME(OFF)', (('LAGTIME', 'OFF'),)),
+        ('LAGTIME([ON, OFF])', (('LAGTIME', 'OFF'), ('LAGTIME', 'ON'))),
         (
             'TRANSITS(1, *)',
             (
@@ -480,13 +482,13 @@ def test_illegal_mfl(code):
             (
                 Absorption((Name('ZO'), Name('SEQ-ZO-FO'))),
                 Elimination((Name('MM'), Name('MIX-FO-MM'))),
-                LagTime(),
+                LagTime((Name('ON'),)),
                 Transits((1, 3, 10), Wildcard()),
                 Peripherals((1,)),
             ),
             'ABSORPTION([ZO,SEQ-ZO-FO]);'
             'ELIMINATION([MM,MIX-FO-MM]);'
-            'LAGTIME();'
+            'LAGTIME(ON);'
             'TRANSITS([1,3,10],*);'
             'PERIPHERALS(1)',
         ),
