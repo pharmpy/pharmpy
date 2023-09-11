@@ -7,7 +7,7 @@ from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.expr.tree import prune
 from pharmpy.internals.graph.directed.reachability import reachable_from
-from pharmpy.model import Assignment, Model, ODESystem
+from pharmpy.model import Assignment, CompartmentalSystem, Model
 
 T = TypeVar('T')
 
@@ -80,7 +80,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
                     unit_eqs.append(s.symbol - _extract_minus(term))
             else:
                 unit_eqs.append(s.symbol - _extract_minus(expr))
-        elif isinstance(s, ODESystem):
+        elif isinstance(s, CompartmentalSystem):
             amt_unit = di[di.typeix['dose'][0].name].unit
             time_unit = di[di.idv_column.name].unit
             for e in s.compartmental_matrix.diagonal():

@@ -1156,6 +1156,7 @@ def set_zero_order_absorption(model: Model):
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
     _disallow_infusion(model, odes)
+    assert isinstance(odes, CompartmentalSystem)
     depot = odes.find_depot(statements)
 
     dose_comp = odes.dosing_compartments[0]
