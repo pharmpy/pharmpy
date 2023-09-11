@@ -21,6 +21,31 @@ def test_add_metabolite(testdata, load_model_for_test):
 
     assert odes.central_compartment.name == 'CENTRAL'
 
+    model = add_peripheral_compartment(model, "METABOLITE")
+    odes = model.statements.ode_system
+
+    assert odes.find_peripheral_compartments("METABOLITE")
+    assert not odes.find_peripheral_compartments()
+
+    model = add_peripheral_compartment(model)
+    odes = model.statements.ode_system
+
+    assert odes.find_peripheral_compartments("METABOLITE")
+    assert odes.find_peripheral_compartments()
+
+    model = remove_peripheral_compartment(model, "METABOLITE")
+    odes = model.statements.ode_system
+
+    assert not odes.find_peripheral_compartments("METABOLITE")
+    assert odes.find_peripheral_compartments()
+
+    model = remove_peripheral_compartment(model)
+    odes = model.statements.ode_system
+
+    assert not odes.find_peripheral_compartments("METABOLITE")
+    assert not odes.find_peripheral_compartments()
+
+
 def test_presystemic_metabolite(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_conc.mod')
     model = add_metabolite(model, presystemic=True)
@@ -38,3 +63,27 @@ def test_presystemic_metabolite(testdata, load_model_for_test):
     assert odes.get_flow(central, metabolite)
 
     assert odes.central_compartment.name == 'CENTRAL'
+
+    model = add_peripheral_compartment(model, "METABOLITE")
+    odes = model.statements.ode_system
+
+    assert odes.find_peripheral_compartments("METABOLITE")
+    assert not odes.find_peripheral_compartments()
+
+    model = add_peripheral_compartment(model)
+    odes = model.statements.ode_system
+
+    assert odes.find_peripheral_compartments("METABOLITE")
+    assert odes.find_peripheral_compartments()
+
+    model = remove_peripheral_compartment(model, "METABOLITE")
+    odes = model.statements.ode_system
+
+    assert not odes.find_peripheral_compartments("METABOLITE")
+    assert odes.find_peripheral_compartments()
+
+    model = remove_peripheral_compartment(model)
+    odes = model.statements.ode_system
+
+    assert not odes.find_peripheral_compartments("METABOLITE")
+    assert not odes.find_peripheral_compartments()

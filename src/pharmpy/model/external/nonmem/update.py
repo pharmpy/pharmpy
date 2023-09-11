@@ -1296,13 +1296,13 @@ def add_needed_pk_parameters(model: Model, advan, trans):
         model = add_parameters_ratio(model, 'CL', 'V', central, output)
     elif advan == 'ADVAN3' and trans == 'TRANS4':
         central = odes.central_compartment
-        peripheral = odes.peripheral_compartments[0]
+        peripheral = odes.find_peripheral_compartments()[0]
         model = add_parameters_ratio(model, 'CL', 'V1', central, output)
         model = add_parameters_ratio(model, 'Q', 'V2', peripheral, central)
         model = add_parameters_ratio(model, 'Q', 'V1', central, peripheral)
     elif advan == 'ADVAN4':
         central = odes.central_compartment
-        peripheral = odes.peripheral_compartments[0]
+        peripheral = odes.find_peripheral_compartments()[0]
         if trans == 'TRANS1':
             rate1 = odes.get_flow(central, peripheral)
             model = add_rate_assignment_if_missing(model, 'K23', rate1, central, peripheral)
@@ -1313,15 +1313,15 @@ def add_needed_pk_parameters(model: Model, advan, trans):
             model = add_parameters_ratio(model, 'Q', 'V3', peripheral, central)
     elif advan == 'ADVAN12' and trans == 'TRANS4':
         central = odes.central_compartment
-        peripheral1 = odes.peripheral_compartments[0]
-        peripheral2 = odes.peripheral_compartments[1]
+        peripheral1 = odes.find_peripheral_compartments()[0]
+        peripheral2 = odes.find_peripheral_compartments()[1]
         model = add_parameters_ratio(model, 'CL', 'V2', central, output)
         model = add_parameters_ratio(model, 'Q3', 'V3', peripheral1, central)
         model = add_parameters_ratio(model, 'Q4', 'V4', peripheral2, central)
     elif advan == 'ADVAN11' and trans == 'TRANS4':
         central = odes.central_compartment
-        peripheral1 = odes.peripheral_compartments[0]
-        peripheral2 = odes.peripheral_compartments[1]
+        peripheral1 = odes.find_peripheral_compartments()[0]
+        peripheral2 = odes.find_peripheral_compartments()[1]
         model = add_parameters_ratio(model, 'CL', 'V1', central, output)
         model = add_parameters_ratio(model, 'Q2', 'V2', peripheral1, central)
         model = add_parameters_ratio(model, 'Q3', 'V3', peripheral2, central)

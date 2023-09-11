@@ -90,7 +90,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
     odes = model.statements.ode_system
     central = odes.central_compartment
-    periph = odes.peripheral_compartments[0]
+    periph = odes.find_peripheral_compartments()[0]
     rate = model.statements.ode_system.get_flow(central, periph)
     assert rate == sympy.Symbol('Q') / sympy.Symbol('V1')
 
@@ -2439,12 +2439,12 @@ def test_mm_then_periph(pheno):
     model = add_peripheral_compartment(model)
     odes = model.statements.ode_system
     central = odes.central_compartment
-    periph = odes.peripheral_compartments[0]
+    periph = odes.find_peripheral_compartments()[0]
     assert odes.get_flow(central, periph) == sympy.Symbol('QP1') / sympy.Symbol('V')
     assert odes.get_flow(periph, central) == sympy.Symbol('QP1') / sympy.Symbol('VP1')
     model = add_peripheral_compartment(model)
     odes = model.statements.ode_system
-    newperiph = odes.peripheral_compartments[1]
+    newperiph = odes.find_peripheral_compartments()[1]
     central = odes.central_compartment
     assert odes.get_flow(central, newperiph) == sympy.Symbol('QP2') / sympy.Symbol('V')
     assert odes.get_flow(newperiph, central) == sympy.Symbol('QP2') / sympy.Symbol('VP2')

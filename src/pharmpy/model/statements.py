@@ -1010,12 +1010,14 @@ class CompartmentalSystem(ODESystem):
             raise ValueError('Cannot find central compartment')
         return central
 
-    @property
-    def peripheral_compartments(self):
+    def find_peripheral_compartments(self, name=None):
         """Find perihperal compartments
 
         A peripheral compartment is defined as having one flow to the central compartment and
         one flow from the central compartment.
+
+        If name is set, peripheral compartments connected to the compartment
+        with the associated name is returned.
 
         Returns
         -------
@@ -1026,10 +1028,15 @@ class CompartmentalSystem(ODESystem):
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.ode_system.peripheral_compartments
+        >>> model.statements.ode_system.peripheral_compartments()
         []
         """
-        central = self.central_compartment
+        if name is not None:
+            central = self.find_compartment(name)
+            if central is None:
+                raise ValueError(f"{name} is not a name of a connected compartment")
+        else:
+            central = self.central_compartment
         oneout = {node for node, out_degree in self._g.out_degree() if out_degree == 1}
         onein = {node for node, in_degree in self._g.in_degree() if in_degree == 1}
         cout = {comp for comp in oneout if self.get_flow(comp, central) != 0}
