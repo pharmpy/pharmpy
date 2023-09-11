@@ -14,11 +14,12 @@ from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
 
+from .drugmetabolite import create_drug_metabolite_models
 from .pkpd import create_baseline_pd_model, create_pkpd_models
 from .tmdd import create_qss_models, create_remaining_models
 
 ROUTES = frozenset(('iv', 'oral'))
-TYPES = frozenset(('tmdd', 'pkpd'))
+TYPES = frozenset(('tmdd', 'pkpd', 'drug_metabolite'))
 
 
 def create_workflow(
@@ -71,6 +72,8 @@ def create_workflow(
         start_task = Task('run_tmdd', run_tmdd, model)
     elif type == 'pkpd':
         start_task = Task('run_pkpd', run_pkpd, model, b_init, emax_init, ec50_init, met_init)
+    elif type == 'drug_metabolite':
+        start_task = Task('run_drug_metabolite', run_drug_metabolite, model)
     wb.add_task(start_task)
     return Workflow(wb)
 
@@ -147,6 +150,34 @@ def run_pkpd(context, model, b_init, emax_init, ec50_init, met_init):
         rank_type='bic',
         cutoff=None,
         summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"]),
+    )
+
+
+def run_drug_metabolite(context, model):
+    drug_metabolite_models = create_drug_metabolite_models(model)
+
+    wf = create_fit_workflow(drug_metabolite_models)
+    task_results = Task('results', bundle_results)
+    wf.add_task(task_results, predecessors=wf.output_tasks)
+    drug_metabolite_models_fit = call_workflow(wf, 'results_remaining', context)
+
+    summary_input = summarize_modelfit_results(model.modelfit_results)
+    summary_candidates = summarize_modelfit_results(
+        [model.modelfit_results for model in drug_metabolite_models_fit]
+    )
+
+    return create_results(
+        StructSearchResults,
+        model,
+        model,
+        drug_metabolite_models,
+        rank_type='bic',
+        cutoff=None,
+        summary_models=pd.concat(
+            [summary_input, summary_candidates],
+            keys=[0, 1],
+            names=['step'],
+        ),
     )
 
 
