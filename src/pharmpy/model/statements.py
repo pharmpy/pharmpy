@@ -999,8 +999,13 @@ class CompartmentalSystem(ODESystem):
         Compartment(CENTRAL, amount=A_CENTRAL, doses=Bolus(AMT, admid=1))
         """
         try:
-            # E.g. TMDD models have more than one input
+            # E.g. TMDD models have more than one output
+            # FIXME : Relying heavily on compartment naming for drug metabolite
             central = list(self._g.predecessors(output))[-1]
+            if central.name == "METABOLITE":
+                central = self.find_compartment("CENTRAL")
+                if central is None:
+                    raise ValueError('Cannot find central compartment')
         except IndexError:
             raise ValueError('Cannot find central compartment')
         return central
@@ -1092,6 +1097,10 @@ class CompartmentalSystem(ODESystem):
         The depot compartment is defined to be the compartment that only has out flow to the
         central compartment, but no flow from the central compartment.
 
+        For drug metabolite models however, it is possible to have outflow with
+        unidirectional flow to both the central and metabolite compartment. In this case,
+        the central compartment is found based on name.
+
         Returns
         -------
         Compartment
@@ -1116,7 +1125,11 @@ class CompartmentalSystem(ODESystem):
         depot = None
         for to_central, _ in self.get_compartment_inflows(central):
             outflows = self.get_compartment_outflows(to_central)
-            if len(outflows) == 1:
+            if len(outflows) == 1 or len(outflows) == 2:
+                if len(outflows) == 2:
+                    # FIXME : Use antoher method than compartment name
+                    if not self.get_flow(to_central, self.find_compartment("METABOLITE")):
+                        break
                 inflows = self.get_compartment_inflows(to_central)
                 for in_comp, _ in inflows:
                     if in_comp == central:

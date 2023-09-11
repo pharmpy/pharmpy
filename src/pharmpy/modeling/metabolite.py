@@ -12,15 +12,19 @@ from pharmpy.model import (
 )
 
 from .error import set_proportional_error_model
-from .odes import _find_noncov_theta, add_individual_parameter
-from .parameters import set_initial_estimates
+from .odes import _find_noncov_theta, add_individual_parameter, set_first_order_absorption
+from .parameters import set_initial_estimates, set_lower_bounds, set_upper_bounds
 
 
-def add_metabolite(model: Model, drug_dvid: int = 1):
+def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
     """Adds a metabolite compartment to a model
 
     The flow from the central compartment to the metabolite compartment
     will be unidirectional.
+
+    Presystemic indicate that the metabolite compartment will be
+    directly connected to the DEPOT. If a depot compartment is not present,
+    one will be created.
 
     Parameters
     ----------
@@ -28,6 +32,8 @@ def add_metabolite(model: Model, drug_dvid: int = 1):
         Pharmpy model
     drug_dvid : int
         DVID for drug (assuming all other DVIDs being for metabolites)
+    presystemic : bool
+        Decide wether or not to add metabolite as a presystemetic fixed drug.
 
     Return
     ------
@@ -41,6 +47,15 @@ def add_metabolite(model: Model, drug_dvid: int = 1):
     >>> model = add_metabolite(model)
 
     """
+
+    if presystemic:
+        depot = model.statements.ode_system.find_depot(model.statements)
+        if not depot:
+            model = set_first_order_absorption(model)
+            depot = model.statements.ode_system.find_depot(model.statements)
+
+    # TODO : Implement possibility of converting plain metabolite to presystemic
+
     clm = sympy.Symbol('CLM')
     model = add_individual_parameter(model, clm.name)
     vm = sympy.Symbol('VM')
@@ -61,15 +76,39 @@ def add_metabolite(model: Model, drug_dvid: int = 1):
     cb = CompartmentalSystemBuilder(odes)
     metacomp = Compartment.create(name="METABOLITE")
     cb.add_compartment(metacomp)
-    cb.add_flow(central, metacomp, ke)
     cb.add_flow(metacomp, output, clm / vm)
-    cb.remove_flow(central, output)
-    cs = CompartmentalSystem(cb)
 
+    cb.add_flow(central, metacomp, ke)
+    cb.remove_flow(central, output)
+    if presystemic:
+        fpre = sympy.Symbol('FPRE')
+        model = add_individual_parameter(model, fpre.name)
+        model = set_lower_bounds(model, {'POP_FPRE': sympy.Number(0)})
+        model = set_upper_bounds(model, {'POP_FPRE': sympy.Number(1)})
+        ka = odes.get_flow(depot, central)
+        cb.add_flow(depot, metacomp, fpre * ka)
+        cb.remove_flow(depot, central)
+        cb.add_flow(depot, central, ka * (1 - fpre))
+
+    # FIXME : drug_dvid is never used, use it here?
     # dvid_col = model.datainfo.typeix['dvid'][0]
     # dvids = dvid_col.categories
 
-    conc = Assignment(sympy.Symbol('CONC_M'), metacomp.amount / vm)
+    if presystemic:
+        # QUESTION : Add bioavailability to depot?
+        cb.set_bioavailability(depot, 1 / (1 - fpre))
+        model = model.replace(
+            statements=model.statements.before_odes
+            + CompartmentalSystem(cb)
+            + model.statements.after_odes
+        )
+        model = model.update_source()
+        cs = model.statements.ode_system
+        bio = model.statements.ode_system.find_compartment(depot.name).bioavailability
+        conc = Assignment(sympy.Symbol('CONC_M'), metacomp.amount / vm / bio)
+    else:
+        cs = CompartmentalSystem(cb)
+        conc = Assignment(sympy.Symbol('CONC_M'), metacomp.amount / vm)
     y_m = sympy.Symbol('Y_M')
     y = Assignment(y_m, conc.symbol)
     original_y = next(iter(model.dependent_variables))
@@ -77,9 +116,25 @@ def add_metabolite(model: Model, drug_dvid: int = 1):
     old_after = model.statements.after_odes
     new_after = old_after[: ind + 1] + y + old_after[ind + 1 :]
     error = conc + new_after
-
     dvs = model.dependent_variables.replace(y_m, 2)  # FIXME: Should be next DVID in categories
     statements = model.statements.before_odes + cs + error
     model = model.replace(statements=statements, dependent_variables=dvs)
     model = set_proportional_error_model(model, dv=2, zero_protection=False)
     return model
+
+
+def has_presystemic_metabolite(model: Model):
+    """If presystemic drug there will be a flow from DEPOT to METABOLITE as well
+    as being a flow from the CENTRAL to METABOLITE"""
+    odes = model.statements.ode_system
+    central = odes.central_compartment
+    metabolite = odes.find_compartment("METABOLITE")
+    depot = odes.find_depot(model.statements)
+
+    CM = odes.get_flow(central, metabolite)
+    DM = odes.get_flow(depot, metabolite)
+
+    if CM != sympy.Number(0) and DM != sympy.Number(0):
+        return True
+    else:
+        return False
