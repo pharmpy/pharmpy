@@ -2,6 +2,7 @@ from typing import Iterable
 
 from pharmpy.model import Model
 from pharmpy.modeling import (
+    set_bolus_absorption,
     set_first_order_absorption,
     set_seq_zo_fo_absorption,
     set_zero_order_absorption,
@@ -17,7 +18,7 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
     for statement in statements:
         if isinstance(statement, Absorption):
             modes = (
-                [Name('FO'), Name('ZO'), Name('SEQ-ZO-FO')]
+                [Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'), Name('INST')]
                 if isinstance(statement.modes, Wildcard)
                 else statement.modes
             )
@@ -28,5 +29,7 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
                     yield ('ABSORPTION', mode.name), set_zero_order_absorption
                 elif mode.name == 'SEQ-ZO-FO':
                     yield ('ABSORPTION', mode.name), set_seq_zo_fo_absorption
+                elif mode.name == "INST":
+                    yield ('ABSORPTION', mode.name), set_bolus_absorption
                 else:
                     raise ValueError(f'Absorption {mode} not supported')

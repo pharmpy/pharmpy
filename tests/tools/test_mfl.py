@@ -20,12 +20,21 @@ from pharmpy.tools.mfl.stringify import stringify
     ('source', 'expected'),
     (
         (
+            'ABSORPTION(INST)',
+            (('ABSORPTION', 'INST'),),
+        ),
+        (
             'ABSORPTION(FO)',
             (('ABSORPTION', 'FO'),),
         ),
         (
             'ABSORPTION(* )',
-            (('ABSORPTION', 'FO'), ('ABSORPTION', 'ZO'), ('ABSORPTION', 'SEQ-ZO-FO')),
+            (
+                ('ABSORPTION', 'FO'),
+                ('ABSORPTION', 'ZO'),
+                ('ABSORPTION', 'SEQ-ZO-FO'),
+                ('ABSORPTION', 'INST'),
+            ),
         ),
         (
             'ABSORPTION([ZO,FO])',

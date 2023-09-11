@@ -37,7 +37,7 @@ covariate: "COVARIATE"i "(" parameter_option "," covariate_option "," fp_option 
 _absorption_option: absorption_modes | absorption_wildcard
 absorption_modes: ABSORPTION_MODE | "[" [ABSORPTION_MODE ("," ABSORPTION_MODE)*] "]"
 absorption_wildcard: WILDCARD
-ABSORPTION_MODE: "FO"i | "ZO"i | "SEQ-ZO-FO"i
+ABSORPTION_MODE: "FO"i | "ZO"i | "SEQ-ZO-FO"i | "INST"i
 _elimination_option: elimination_modes | elimination_wildcard
 elimination_modes: ELIMINATION_MODE | "[" [ELIMINATION_MODE ("," ELIMINATION_MODE)*] "]"
 elimination_wildcard: WILDCARD
