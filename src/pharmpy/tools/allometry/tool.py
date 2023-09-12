@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import partial
-from typing import Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Iterable, List, Optional, Union
 
-from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
@@ -21,6 +19,13 @@ from pharmpy.tools import (
 from pharmpy.tools.common import ToolResults, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+
+if TYPE_CHECKING:
+    import pandas as pd
+    import sympy
+else:
+    from pharmpy.deps import pandas as pd
+    from pharmpy.deps import sympy
 
 
 def create_workflow(

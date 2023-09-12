@@ -1,6 +1,13 @@
-from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
+from typing import TYPE_CHECKING
+
 from pharmpy.internals.math import cov2corr
+
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import pandas as pd
 
 
 def calculate_se_from_cov(cov: pd.DataFrame):

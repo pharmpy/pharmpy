@@ -3,11 +3,9 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Collection, Hashable, Sized
 from math import sqrt
-from typing import Dict, List, Set, Tuple
+from typing import TYPE_CHECKING, Dict, List, Set, Tuple
 
 import pharmpy.internals.unicode as unicode
-from pharmpy.deps import numpy as np
-from pharmpy.deps import symengine, sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.immutable import Immutable
@@ -15,6 +13,14 @@ from pharmpy.internals.immutable import Immutable
 from .numeric import MultivariateNormalDistribution as NumericMultivariateNormalDistribution
 from .numeric import NormalDistribution as NumericNormalDistribution
 from .numeric import NumericDistribution
+
+if TYPE_CHECKING:
+    import numpy as np
+    import symengine
+    import sympy
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import symengine, sympy
 
 
 class Distribution(Sized, Hashable, Immutable):

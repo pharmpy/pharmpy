@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-from typing import List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, List, Mapping, Optional, Union
 
-from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
-from pharmpy.deps.scipy import linalg
 from pharmpy.internals.expr.eval import eval_expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
@@ -17,6 +13,18 @@ from .expressions import (
     get_individual_prediction_expression,
     get_population_prediction_expression,
 )
+
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
+    import sympy
+    from scipy import linalg
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import pandas as pd
+    from pharmpy.deps import sympy
+    from pharmpy.deps.scipy import linalg
+
 
 ParameterMap = Mapping[Union[str, 'sympy.Symbol'], Union[float, 'sympy.Float']]
 
