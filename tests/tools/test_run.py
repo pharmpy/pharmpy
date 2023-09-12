@@ -349,7 +349,12 @@ def test_rank_models_bic(load_model_for_test, testdata):
     model_iiv = model_iiv.replace(modelfit_results=res)
     df_mixed = rank_models(model_base, [model_iiv], rank_type='bic', bic_type='mixed')
     df_mult_test = rank_models(
-        model_base, [model_iiv], rank_type='bic', bic_type='mult_test', mult_test_p=2
+        model_base,
+        [model_iiv],
+        rank_type='bic',
+        bic_type='mixed',
+        multiple_testing=True,
+        mult_test_p=2,
     )
     assert df_mixed.loc['pheno_iiv', 'bic'] != df_mult_test.loc['pheno_iiv', 'bic']
 

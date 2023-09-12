@@ -579,6 +579,7 @@ def calculate_bic(
     model: Model,
     likelihood: float,
     type: Optional[str] = None,
+    multiple_testing: bool = False,
     mult_test_p: int = 1,
     mult_test_e: int = 1,
 ):
@@ -595,10 +596,10 @@ def calculate_bic(
       | BIC = -2LL + n_estimated_parameters * log(n_individals)
     * | iiv
       | BIC = -2LL + n_estimated_iiv_omega_parameters * log(n_individals)
-    * | mult_test
-      | BIC = -2LL + n_random_parameters * log(n_individuals) +
-      |       n_fixed_parameters * log(n_observations) +
-      |       2*(n_random_parameters + n_fixed_parameters)*log(n_predictors/n_expected_models)
+
+    If multiple_testing option is set to true an additional penalty will be added:
+
+    * | mBIC = BIC + 2*(n_estimated_parameters)*log(n_predictors/n_expected_models)
 
     Parameters
     ----------
@@ -608,6 +609,8 @@ def calculate_bic(
         -2LL to use
     type : str
         Type of BIC to calculate. Default is the mixed effects.
+    multiple_testing : bool
+        Whether to use penalty for multiple testing (default is False)
     mult_test_p : int
         Number of predictors if using type `mult_test`
     mult_test_e : int
@@ -679,12 +682,12 @@ def calculate_bic(
         nsubs = len(get_ids(model))
         nobs = len(get_observations(model))
         penalty = dim_theta_r * math.log(nsubs) + dim_theta_f * math.log(nobs)
-        if type == 'mult_test':
-            if mult_test_p <= 0 or mult_test_e <= 0:
-                raise ValueError(
-                    'Options `mult_test_p` and `mult_test_e` must be >= 0 for method `mult_test`'
-                )
-            penalty += 2 * (dim_theta_r + dim_theta_f) * math.log(mult_test_p / mult_test_e)
+    if multiple_testing:
+        if mult_test_p <= 0 or mult_test_e <= 0:
+            raise ValueError(
+                'Options `mult_test_p` and `mult_test_e` must be >= 0 for method `mult_test`'
+            )
+        penalty += 2 * len(parameters) * math.log(mult_test_p / mult_test_e)
     return likelihood + penalty
 
 
