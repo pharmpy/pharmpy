@@ -30,8 +30,13 @@ V = TypeVar('V')
 
 class frozenmapping(Mapping[K, V]):
     def __init__(self, mapping):
-        self._mapping = mapping
-        self._hash = None
+        # Do not copy if already a frozenmapping
+        if isinstance(mapping, frozenmapping):
+            self._mapping = mapping._mapping
+            self._hash = mapping._hash
+        else:
+            self._mapping = dict(mapping)
+            self._hash = None
 
     def __getitem__(self, key: K) -> V:
         return self._mapping[key]
