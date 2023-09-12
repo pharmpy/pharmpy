@@ -6,10 +6,9 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling.results import RANK_TYPES
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
-from pharmpy.tools.common import ToolResults, create_results
+from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 from ..mfl.filter import modelsearch_statement_types

@@ -37,8 +37,7 @@ def run(workflow: Workflow[T]) -> T:
             res = get(dsk, 'results')
         else:
             import dask
-            from dask.distributed import LocalCluster  # pyright: ignore [reportPrivateImportUsage]
-            from dask.distributed import Client
+            from dask.distributed import Client, LocalCluster
 
             from ..optimize import optimize_task_graph_for_dask_distributed
 

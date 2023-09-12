@@ -22,7 +22,7 @@ def create_drug_metabolite_models(model: Model) -> List[Model]:
     """
     models = []
     for presystemic in [False, True]:
-        candidate_model = add_metabolite(model, presystemic_fixed_drug=presystemic)
+        candidate_model = add_metabolite(model, presystemic=presystemic)
         candidate_model = set_name(candidate_model, f'{"presystemic" if presystemic else "plain"}')
 
         models.append(candidate_model)

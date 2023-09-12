@@ -2,11 +2,8 @@ from __future__ import annotations
 
 import math
 from itertools import chain
-from typing import Iterable, Optional, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Union
 
-from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
 from pharmpy.internals.math import round_to_n_sigdig
@@ -23,7 +20,14 @@ from .data import get_ids, get_observations
 from .odes import get_initial_conditions
 from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
 
-RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic'))
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
+    import sympy
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import pandas as pd
+    from pharmpy.deps import sympy
 
 
 def calculate_eta_shrinkage(
@@ -571,7 +575,13 @@ def _random_etas(model):
     return model.random_variables.etas[keep]
 
 
-def calculate_bic(model: Model, likelihood: float, type: Optional[str] = None):
+def calculate_bic(
+    model: Model,
+    likelihood: float,
+    type: Optional[str] = None,
+    mult_test_p: int = 1,
+    mult_test_e: int = 1,
+):
     """Calculate BIC
 
     Different variations of the BIC can be calculated:
@@ -585,6 +595,10 @@ def calculate_bic(model: Model, likelihood: float, type: Optional[str] = None):
       | BIC = -2LL + n_estimated_parameters * log(n_individals)
     * | iiv
       | BIC = -2LL + n_estimated_iiv_omega_parameters * log(n_individals)
+    * | mult_test
+      | BIC = -2LL + n_random_parameters * log(n_individuals) +
+      |       n_fixed_parameters * log(n_observations) +
+      |       2*(n_random_parameters + n_fixed_parameters)*log(n_predictors/n_expected_models)
 
     Parameters
     ----------
@@ -594,6 +608,10 @@ def calculate_bic(model: Model, likelihood: float, type: Optional[str] = None):
         -2LL to use
     type : str
         Type of BIC to calculate. Default is the mixed effects.
+    mult_test_p : int
+        Number of predictors if using type `mult_test`
+    mult_test_e : int
+        Number of expected models if using type `mult_test`
 
     Returns
     -------
@@ -661,6 +679,12 @@ def calculate_bic(model: Model, likelihood: float, type: Optional[str] = None):
         nsubs = len(get_ids(model))
         nobs = len(get_observations(model))
         penalty = dim_theta_r * math.log(nsubs) + dim_theta_f * math.log(nobs)
+        if type == 'mult_test':
+            if mult_test_p <= 0 or mult_test_e <= 0:
+                raise ValueError(
+                    'Options `mult_test_p` and `mult_test_e` must be >= 0 for method `mult_test`'
+                )
+            penalty += 2 * (dim_theta_r + dim_theta_f) * math.log(mult_test_p / mult_test_e)
     return likelihood + penalty
 
 

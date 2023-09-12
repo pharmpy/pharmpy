@@ -1028,7 +1028,7 @@ class CompartmentalSystem(ODESystem):
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.ode_system.peripheral_compartments()
+        >>> model.statements.ode_system.find_peripheral_compartments()
         []
         """
         if name is not None:
@@ -2203,7 +2203,7 @@ class Statements(Sequence, Immutable):
                 if (
                     isinstance(statement, Assignment)
                     and statement.symbol in rhs
-                    or isinstance(statement, ODESystem)
+                    or isinstance(statement, CompartmentalSystem)
                     and not rhs.isdisjoint(statement.amounts)
                 ):
                     graph.add_edge(i, j)
@@ -2273,7 +2273,7 @@ class Statements(Sequence, Immutable):
                 if (
                     isinstance(statement, Assignment)
                     and statement.symbol == symbol
-                    or isinstance(statement, ODESystem)
+                    or isinstance(statement, CompartmentalSystem)
                     and symbol in statement.amounts
                 ):
                     break
@@ -2289,7 +2289,7 @@ class Statements(Sequence, Immutable):
             if isinstance(statement, Assignment):
                 symbs -= {statement.symbol}
             else:
-                assert isinstance(statement, ODESystem)
+                assert isinstance(statement, CompartmentalSystem)
                 symbs -= set(statement.amounts)
             symbs |= statement.rhs_symbols
         return symbs

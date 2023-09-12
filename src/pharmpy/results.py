@@ -11,11 +11,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 
 from pharmpy.deps import altair as alt
-from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Results
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from pharmpy.workflows import Log
+else:
+    from pharmpy.deps import pandas as pd
 
 
 def mfr(model: Model) -> ModelfitResults:

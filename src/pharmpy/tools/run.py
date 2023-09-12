@@ -732,6 +732,7 @@ def rank_models(
     rank_type: str = 'ofv',
     cutoff: Optional[float] = None,
     bic_type: str = 'mixed',
+    **kwargs,
 ) -> pd.DataFrame:
     """Ranks a list of models
 
@@ -752,6 +753,8 @@ def rank_models(
         Value to use as cutoff. If using LRT, cutoff denotes p-value. Default is None
     bic_type : str
         Type of BIC to calculate. Default is the mixed effects.
+    kwargs
+        Arguments to pass to calculate BIC (such as `mult_test_p` and `mult_test_p`)
 
     Return
     ------
@@ -773,13 +776,13 @@ def rank_models(
     rank_values, delta_values = {}, {}
     models_to_rank = []
 
-    ref_value = _get_rankval(base_model, errors_allowed, rank_type, bic_type)
+    ref_value = _get_rankval(base_model, errors_allowed, rank_type, bic_type, **kwargs)
     model_dict = {model.name: model for model in models_all}
 
     # Filter on strictness
     for model in models_all:
         # Exclude OFV etc. if model was not successful
-        rank_value = _get_rankval(model, errors_allowed, rank_type, bic_type)
+        rank_value = _get_rankval(model, errors_allowed, rank_type, bic_type, **kwargs)
         if np.isnan(rank_value):
             continue
 
@@ -867,7 +870,7 @@ def _is_valid_res(res, errors_allowed):
     return True
 
 
-def _get_rankval(model, errors_allowed, rank_type, bic_type):
+def _get_rankval(model, errors_allowed, rank_type, bic_type, **kwargs):
     if not _is_valid_res(model.modelfit_results, errors_allowed):
         return np.nan
     if rank_type in ['ofv', 'lrt']:
@@ -875,7 +878,7 @@ def _get_rankval(model, errors_allowed, rank_type, bic_type):
     elif rank_type == 'aic':
         return calculate_aic(model, model.modelfit_results.ofv)
     elif rank_type == 'bic':
-        return calculate_bic(model, model.modelfit_results.ofv, bic_type)
+        return calculate_bic(model, model.modelfit_results.ofv, bic_type, **kwargs)
     else:
         raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
 
@@ -1033,7 +1036,7 @@ def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
     ModelfitResults
         Results object
     """
-    path = Path(path)
+    path = normalize_user_given_path(path)
     model = read_model(path)
     res = parse_modelfit_results(model, path)
     return res

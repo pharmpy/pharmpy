@@ -37,6 +37,15 @@ from .parameters import (
 )
 
 
+def get_and_check_odes(model: Model) -> CompartmentalSystem:
+    # Get the ode_system from model and raise if not a CompartmentalSystem
+    odes = model.statements.ode_system
+    if isinstance(odes, CompartmentalSystem):
+        return odes
+    else:
+        raise ValueError(f'Model {model.name} has no ODE system')
+
+
 def _extract_params_from_symb(
     statements: Statements, symbol_name: str, pset: Parameters
 ) -> Parameter:
@@ -171,7 +180,7 @@ def set_first_order_elimination(model: Model):
         cl_ass = Assignment(sympy.Symbol('CL'), clmm_assignment.expression)
         statements = model.statements[0:ind] + cl_ass + model.statements[ind + 1 :]
         odes = statements.ode_system
-        assert odes is not None
+        assert isinstance(odes, CompartmentalSystem)
         central = odes.central_compartment
         v = sympy.Symbol('V')
         rate = odes.get_flow(central, output)
@@ -238,9 +247,7 @@ def add_bioavailability(model: Model, add_parameter: bool = True, logit_transfor
     remove_bioavailability
 
     """
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
 
     dose_comp = odes.dosing_compartments[0]
     bio = dose_comp.bioavailability
@@ -305,9 +312,7 @@ def remove_bioavailability(model: Model):
     --------
     set_bioavailability
     """
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     dosing_comp = odes.dosing_compartments[0]
     bio = dosing_comp.bioavailability
     if bio:
@@ -361,8 +366,7 @@ def set_zero_order_elimination(model: Model):
         model = fix_parameters(model, 'POP_KM')
     elif has_mixed_mm_fo_elimination(model):
         model = fix_parameters(model, 'POP_KM')
-        odes = model.statements.ode_system
-        assert odes is not None
+        odes = get_and_check_odes(model)
         central = odes.central_compartment
         rate = odes.get_flow(central, output)
         rate = subs(rate, {'CL': 0})
@@ -411,9 +415,7 @@ def has_michaelis_menten_elimination(model: Model):
     >>> has_michaelis_menten_elimination(model)
     True
     """
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
     is_nonlinear = odes.t in rate.free_symbols
@@ -448,9 +450,7 @@ def has_zero_order_elimination(model: Model):
     >>> has_zero_order_elimination(model)
     True
     """
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
     is_nonlinear = odes.t in rate.free_symbols
@@ -485,9 +485,7 @@ def has_mixed_mm_fo_elimination(model: Model):
     >>> has_mixed_mm_fo_elimination(model)
     True
     """
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
     is_nonlinear = odes.t in rate.free_symbols
@@ -520,9 +518,7 @@ def has_first_order_elimination(model: Model):
     True
 
     """
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
     is_nonlinear = odes.t in rate.free_symbols
@@ -566,8 +562,7 @@ def set_michaelis_menten_elimination(model: Model):
     elif has_zero_order_elimination(model):
         model = unfix_parameters(model, 'POP_KM')
     elif has_mixed_mm_fo_elimination(model):
-        odes = model.statements.ode_system
-        assert odes is not None
+        odes = get_and_check_odes(model)
         central = odes.central_compartment
         rate = odes.get_flow(central, output)
         rate = subs(rate, {'CL': 0})
@@ -624,8 +619,7 @@ def set_mixed_mm_fo_elimination(model: Model):
         pass
     elif has_michaelis_menten_elimination(model) or has_zero_order_elimination(model):
         model = unfix_parameters(model, 'POP_KM')
-        odes = model.statements.ode_system
-        assert odes is not None
+        odes = get_and_check_odes(model)
         central = odes.central_compartment
         model = add_individual_parameter(model, 'CL')
         rate = odes.get_flow(central, output)
@@ -1032,9 +1026,7 @@ def add_lag_time(model: Model):
     remove_lag_time
 
     """
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     dosing_comp = odes.dosing_compartments[0]
     old_lag_time = dosing_comp.lag_time
     model, mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
@@ -1100,9 +1092,7 @@ def remove_lag_time(model: Model):
 
 
     """
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     dosing_comp = odes.dosing_compartments[0]
     lag_time = dosing_comp.lag_time
     if lag_time:
@@ -1152,10 +1142,9 @@ def set_zero_order_absorption(model: Model):
 
     """
     statements = model.statements
-    odes = statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     _disallow_infusion(model, odes)
+    assert isinstance(odes, CompartmentalSystem)
     depot = odes.find_depot(statements)
 
     dose_comp = odes.dosing_compartments[0]
@@ -1185,13 +1174,15 @@ def set_zero_order_absorption(model: Model):
     model = remove_unused_parameters_and_rvs(model)
     if not has_zero_order_absorption(model):
         odes = model.statements.ode_system
-        assert odes is not None
+        assert isinstance(odes, CompartmentalSystem)
         model = _add_zero_order_absorption(
             model, dose, odes.dosing_compartments[0], 'MAT', lag_time
         )
         model = model.update_source()
     # FIXME : Very temporary until new zo absorption logic is implemented
-    if lag_time != 0 and len(model.statements.ode_system.dosing_compartments[0].doses) > 1:
+    odes = model.statements.ode_system
+    assert isinstance(odes, CompartmentalSystem)
+    if lag_time != 0 and len(odes.dosing_compartments[0].doses) > 1:
         model = remove_lag_time(model)
         model = add_lag_time(model)
     return model
@@ -1234,9 +1225,7 @@ def set_first_order_absorption(model: Model):
 
     """
     statements = model.statements
-    cs = statements.ode_system
-    if cs is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    cs = get_and_check_odes(model)
     depot = cs.find_depot(statements)
     dose_comp = cs.dosing_compartments[0]
 
@@ -1317,9 +1306,7 @@ def set_bolus_absorption(model: Model):
 
     """
     statements = model.statements
-    cs = statements.ode_system
-    if cs is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    cs = get_and_check_odes(model)
     depot = cs.find_depot(statements)
     if depot:
         to_comp, _ = cs.get_compartment_outflows(depot)[0]
@@ -1390,9 +1377,7 @@ def set_seq_zo_fo_absorption(model: Model):
 
     """
     statements = model.statements
-    cs = statements.ode_system
-    if cs is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    cs = get_and_check_odes(model)
     _disallow_infusion(model, cs)
     depot = cs.find_depot(statements)
 
@@ -1460,9 +1445,7 @@ def has_zero_order_absorption(model: Model):
     False
 
     """
-    cs = model.statements.ode_system
-    if cs is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    cs = get_and_check_odes(model)
     dosing = cs.dosing_compartments[0]
     dose = dosing.doses[0]
     return _dose_zo(model, dose)
@@ -1696,9 +1679,7 @@ def add_peripheral_compartment(model: Model, name: str = None):
 
     """
     statements = model.statements
-    odes = statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     if name:
         other_compartment = odes.find_compartment(name)
         if other_compartment is None:
@@ -1708,6 +1689,7 @@ def add_peripheral_compartment(model: Model, name: str = None):
     else:
         per = odes.find_peripheral_compartments()
         central = odes.central_compartment
+
     n = len(per) + 1
 
     elimination_rate = odes.get_flow(central, output)
@@ -1847,11 +1829,9 @@ def remove_peripheral_compartment(model: Model, name: str = None):
     add_peripheral_compartment
 
     """
-    statements = model.statements
-    odes = statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     peripherals = odes.find_peripheral_compartments(name)
+
     if peripherals:
         last_peripheral = peripherals[-1]
         if name:
@@ -1995,9 +1975,7 @@ def find_clearance_parameters(model: Model):
     """
     cls = set()
     sset = model.statements
-    odes = sset.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     t = odes.t
     rate_list = _find_rate(sset)
     for rate in rate_list:
@@ -2058,7 +2036,7 @@ def find_volume_parameters(model: Model):
 def _find_rate(sset: Statements):
     rate_list = []
     odes = sset.ode_system
-    assert odes is not None
+    assert isinstance(odes, CompartmentalSystem)
     central = odes.central_compartment
     elimination_rate = odes.get_flow(central, output)
     rate_list.append(elimination_rate)
@@ -2149,6 +2127,7 @@ def has_linear_odes(model: Model) -> bool:
         return False
 
     odes = model.statements.ode_system
+    assert isinstance(odes, CompartmentalSystem)
     symbs = odes.compartmental_matrix.free_symbols | odes.zero_order_inputs.free_symbols
     return odes.t not in symbs
 
@@ -2223,8 +2202,9 @@ def get_initial_conditions(
     """
     d = {}
     odes = model.statements.ode_system
-    if not odes:
+    if odes is None:
         return d
+    assert isinstance(odes, CompartmentalSystem)
     for amt in odes.amounts:
         d[sympy.Function(amt.name)(0)] = sympy.Integer(0)
     for s in model.statements:
