@@ -316,18 +316,21 @@ def _create_time_varying_model(input_model, groups, i, current_iteration, dv):
 def _create_combined_model(input_model, current_iteration):
     model = remove_error_model(input_model)
     sset = model.statements
-    s = sset[0]
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
     ipred = sympy.Symbol('IPRED')
+    s = sset[0]
+    assert isinstance(s, Assignment)
     s = Assignment(s.symbol, s.expression + ruv_prop + ruv_add / ipred)
 
     prop_name = 'sigma_prop'
     model = add_population_parameter(model, prop_name, 1, lower=0)
-    df = model.dataset.copy()
+    df = model.dataset
+    assert df is not None
+    df = df.copy()
     df['IPRED'].replace(0, 2.225e-307, inplace=True)
     model = model.replace(dataset=df)
-    ipred_min = model.dataset['IPRED'].min()
+    ipred_min = df['IPRED'].min()
     sigma_add_init = ipred_min / 2
     add_name = 'sigma_add'
     model = add_population_parameter(model, add_name, sigma_add_init, lower=0)
@@ -344,11 +347,15 @@ def _create_combined_model(input_model, current_iteration):
     return model
 
 
-def _create_dataset(input_model, dv):
+def _create_dataset(input_model: Model, dv):
     # Non-observations have already been filtered
-    residuals = input_model.modelfit_results.residuals
+    results = input_model.modelfit_results
+    assert results is not None
+    residuals = results.residuals
+    assert residuals is not None
+    input_dataset = input_model.dataset
+    assert input_dataset is not None
     if dv is not None:
-        input_dataset = input_model.dataset
         observation_label = input_model.datainfo.dv_column.name
         input_dataset = input_dataset.query(f'{observation_label} != 0').reset_index(
             drop=True
@@ -358,7 +365,8 @@ def _create_dataset(input_model, dv):
     cwres = residuals['CWRES'].reset_index(drop=True)
     if has_blq_transformation(input_model):
         cwres = cwres.loc[cwres != 0]
-    predictions = input_model.modelfit_results.predictions
+    predictions = results.predictions
+    assert predictions is not None
     if 'CIPREDI' in predictions:
         ipredcol = 'CIPREDI'
     elif 'IPRED' in predictions:
@@ -369,7 +377,7 @@ def _create_dataset(input_model, dv):
     mdv = get_mdv(input_model)
     mdv = mdv.reset_index(drop=True)
     label_id = input_model.datainfo.id_column.name
-    input_id = input_model.dataset[label_id].astype('int64').squeeze().reset_index(drop=True)
+    input_id = input_dataset[label_id].astype('int64').squeeze().reset_index(drop=True)
     input_model = add_time_after_dose(input_model)
     tad_label = input_model.datainfo.descriptorix['time after dose'][0].name
     tad = input_model.dataset[tad_label].squeeze().reset_index(drop=True)
