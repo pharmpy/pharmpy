@@ -637,6 +637,9 @@ def calculate_bic(
     >>> calculate_bic(model, ofv, type='iiv')
     594.431131169692
     """
+    supported_types = ('mixed', 'fixed', 'random', 'iiv')
+    if isinstance(type, str) and type not in supported_types:
+        raise ValueError(f'Unknown `type` \'{type}\', must be one of: {supported_types}')
     parameters = model.parameters.nonfixed
     if type == 'fixed':
         penalty = len(parameters) * math.log(len(get_observations(model)))

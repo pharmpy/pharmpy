@@ -162,6 +162,9 @@ def test_bic(load_model_for_test, testdata):
     model = set_iiv_on_ruv(model)
     assert calculate_bic(model, ofv) == 755.359951477165
 
+    with pytest.raises(ValueError, match='Unknown `type`'):
+        calculate_bic(model, ofv, type='x')
+
 
 def test_check_parameters_near_bounds(load_model_for_test, testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
