@@ -1061,7 +1061,8 @@ def match_advan3(odes):
     return True
 
 
-def match_advan4(odes):
+def match_advan4(statements):
+    odes = statements.ode_system
     if len(odes) != 3:
         return False
     dosing = odes.dosing_compartments[0]
@@ -1069,6 +1070,19 @@ def match_advan4(odes):
     if len(outflows) != 1:
         return False
     central = outflows[0][0]
+    central_rate = outflows[0][1]
+
+    # Check if rate is depending on CL or V assignments
+    dep_assigns = set()
+    expr = central_rate
+    for s in reversed(statements.before_odes):
+        if s.symbol in expr.free_symbols:
+            dep_assigns.add(s.symbol)
+            expr = expr.subs(s.symbol, s.expression)
+
+    if {sympy.Symbol('CL'), sympy.Symbol('V')} & dep_assigns:
+        # Cannot use reserved symbols
+        return False
     bidir = odes.get_bidirectionals(central)
     if len(bidir) != 1:
         return False
@@ -1132,7 +1146,7 @@ def new_advan_trans(model: Model):
         advan = 'ADVAN2'
     elif match_advan3(odes):
         advan = 'ADVAN3'
-    elif match_advan4(odes):
+    elif match_advan4(model.statements):
         advan = 'ADVAN4'
     elif match_advan11(odes):
         advan = 'ADVAN11'
@@ -1282,13 +1296,13 @@ def add_needed_pk_parameters(model: Model, advan, trans):
         model = add_parameters_ratio(model, 'CL', 'V', central, output)
     elif advan == 'ADVAN3' and trans == 'TRANS4':
         central = odes.central_compartment
-        peripheral = odes.peripheral_compartments[0]
+        peripheral = odes.find_peripheral_compartments()[0]
         model = add_parameters_ratio(model, 'CL', 'V1', central, output)
         model = add_parameters_ratio(model, 'Q', 'V2', peripheral, central)
         model = add_parameters_ratio(model, 'Q', 'V1', central, peripheral)
     elif advan == 'ADVAN4':
         central = odes.central_compartment
-        peripheral = odes.peripheral_compartments[0]
+        peripheral = odes.find_peripheral_compartments()[0]
         if trans == 'TRANS1':
             rate1 = odes.get_flow(central, peripheral)
             model = add_rate_assignment_if_missing(model, 'K23', rate1, central, peripheral)
@@ -1299,15 +1313,15 @@ def add_needed_pk_parameters(model: Model, advan, trans):
             model = add_parameters_ratio(model, 'Q', 'V3', peripheral, central)
     elif advan == 'ADVAN12' and trans == 'TRANS4':
         central = odes.central_compartment
-        peripheral1 = odes.peripheral_compartments[0]
-        peripheral2 = odes.peripheral_compartments[1]
+        peripheral1 = odes.find_peripheral_compartments()[0]
+        peripheral2 = odes.find_peripheral_compartments()[1]
         model = add_parameters_ratio(model, 'CL', 'V2', central, output)
         model = add_parameters_ratio(model, 'Q3', 'V3', peripheral1, central)
         model = add_parameters_ratio(model, 'Q4', 'V4', peripheral2, central)
     elif advan == 'ADVAN11' and trans == 'TRANS4':
         central = odes.central_compartment
-        peripheral1 = odes.peripheral_compartments[0]
-        peripheral2 = odes.peripheral_compartments[1]
+        peripheral1 = odes.find_peripheral_compartments()[0]
+        peripheral2 = odes.find_peripheral_compartments()[1]
         model = add_parameters_ratio(model, 'CL', 'V1', central, output)
         model = add_parameters_ratio(model, 'Q2', 'V2', peripheral1, central)
         model = add_parameters_ratio(model, 'Q3', 'V3', peripheral2, central)

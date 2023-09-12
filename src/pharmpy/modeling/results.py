@@ -455,7 +455,7 @@ def calculate_pk_parameters_statistics(
     odes = statements.ode_system
     central = odes.central_compartment
     depot = odes.find_depot(statements)
-    peripherals = odes.peripheral_compartments
+    peripherals = odes.find_peripheral_compartments()
     elimination_rate = odes.get_flow(central, output)
 
     expressions = []  # Eq(name, expr)

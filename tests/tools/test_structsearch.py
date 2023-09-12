@@ -1,6 +1,7 @@
 import pandas as pd
 
 from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.structsearch.drugmetabolite import create_drug_metabolite_models
 from pharmpy.tools.structsearch.pkpd import create_pkpd_models
 from pharmpy.tools.structsearch.tmdd import (
     create_cr_models,
@@ -95,6 +96,12 @@ def test_pkpd(load_model_for_test, testdata):
     assert models3[1].parameters['POP_EC_50'].fix is False
 
 
+def test_drug_metabolite(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    models = create_drug_metabolite_models(model)
+    assert len(models) == 4
+
+
 def test_create_workflow():
     assert isinstance(create_workflow('oral', 'pkpd'), Workflow)
 
@@ -107,3 +114,8 @@ def test_create_workflow_pkpd(load_model_for_test, testdata):
 def test_create_workflow_tmdd(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
     assert isinstance(create_workflow('oral', 'pkpd', model=model), Workflow)
+
+
+def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
+    assert isinstance(create_workflow('oral', 'drug_metabolite', model=model), Workflow)

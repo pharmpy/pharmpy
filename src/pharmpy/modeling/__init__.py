@@ -121,7 +121,7 @@ from .math import (
     calculate_se_from_cov,
     calculate_se_from_prec,
 )
-from .metabolite import add_metabolite
+from .metabolite import add_metabolite, has_presystemic_metabolite
 from .odes import (
     add_bioavailability,
     add_individual_parameter,
@@ -322,6 +322,7 @@ __all__ = [
     'has_michaelis_menten_elimination',
     'has_mixed_mm_fo_elimination',
     'has_odes',
+    'has_presystemic_metabolite',
     'has_proportional_error_model',
     'has_random_effect',
     'has_zero_order_absorption',

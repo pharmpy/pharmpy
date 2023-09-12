@@ -999,18 +999,25 @@ class CompartmentalSystem(ODESystem):
         Compartment(CENTRAL, amount=A_CENTRAL, doses=Bolus(AMT, admid=1))
         """
         try:
-            # E.g. TMDD models have more than one input
+            # E.g. TMDD models have more than one output
+            # FIXME : Relying heavily on compartment naming for drug metabolite
             central = list(self._g.predecessors(output))[-1]
+            if central.name == "METABOLITE":
+                central = self.find_compartment("CENTRAL")
+                if central is None:
+                    raise ValueError('Cannot find central compartment')
         except IndexError:
             raise ValueError('Cannot find central compartment')
         return central
 
-    @property
-    def peripheral_compartments(self):
+    def find_peripheral_compartments(self, name=None):
         """Find perihperal compartments
 
         A peripheral compartment is defined as having one flow to the central compartment and
         one flow from the central compartment.
+
+        If name is set, peripheral compartments connected to the compartment
+        with the associated name is returned.
 
         Returns
         -------
@@ -1021,10 +1028,15 @@ class CompartmentalSystem(ODESystem):
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.ode_system.peripheral_compartments
+        >>> model.statements.ode_system.find_peripheral_compartments()
         []
         """
-        central = self.central_compartment
+        if name is not None:
+            central = self.find_compartment(name)
+            if central is None:
+                raise ValueError(f"{name} is not a name of a connected compartment")
+        else:
+            central = self.central_compartment
         oneout = {node for node, out_degree in self._g.out_degree() if out_degree == 1}
         onein = {node for node, in_degree in self._g.in_degree() if in_degree == 1}
         cout = {comp for comp in oneout if self.get_flow(comp, central) != 0}
@@ -1092,6 +1104,10 @@ class CompartmentalSystem(ODESystem):
         The depot compartment is defined to be the compartment that only has out flow to the
         central compartment, but no flow from the central compartment.
 
+        For drug metabolite models however, it is possible to have outflow with
+        unidirectional flow to both the central and metabolite compartment. In this case,
+        the central compartment is found based on name.
+
         Returns
         -------
         Compartment
@@ -1116,7 +1132,11 @@ class CompartmentalSystem(ODESystem):
         depot = None
         for to_central, _ in self.get_compartment_inflows(central):
             outflows = self.get_compartment_outflows(to_central)
-            if len(outflows) == 1:
+            if len(outflows) == 1 or len(outflows) == 2:
+                if len(outflows) == 2:
+                    # FIXME : Use antoher method than compartment name
+                    if not self.get_flow(to_central, self.find_compartment("METABOLITE")):
+                        break
                 inflows = self.get_compartment_inflows(to_central)
                 for in_comp, _ in inflows:
                     if in_comp == central:

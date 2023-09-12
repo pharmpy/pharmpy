@@ -316,7 +316,7 @@ def test_find_depot(load_model_for_test, testdata):
 
 def test_peripheral_compartments(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    assert model.statements.ode_system.peripheral_compartments == []
+    assert model.statements.ode_system.find_peripheral_compartments() == []
 
 
 def test_find_transit_compartments(load_model_for_test, testdata):

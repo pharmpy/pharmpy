@@ -1610,7 +1610,7 @@ def set_peripheral_compartments(model: Model, n: int):
     except TypeError:
         raise TypeError(f'Number of compartments must be integer: {n}')
 
-    per = len(odes.peripheral_compartments)
+    per = len(odes.find_peripheral_compartments())
     if per < n:
         for _ in range(n - per):
             model = add_peripheral_compartment(model)
@@ -1620,7 +1620,7 @@ def set_peripheral_compartments(model: Model, n: int):
     return model
 
 
-def add_peripheral_compartment(model: Model):
+def add_peripheral_compartment(model: Model, name: str = None):
     r"""Add a peripheral distribution compartment to model
 
     The rate of flow from the central to the peripheral compartment
@@ -1628,6 +1628,9 @@ def add_peripheral_compartment(model: Model):
     The rate of flow from the peripheral to the central compartment
     will be parameterized as QPn / VPn where VPn is the volumne of the added peripheral
     compartment.
+
+    If name is set, the peripheral compartment will be added to the compartment
+    with the specified name instead.
 
     Initial estimates:
 
@@ -1644,6 +1647,8 @@ def add_peripheral_compartment(model: Model):
     ----------
     model : Model
         Pharmpy model
+    name : str
+        Name of compartment to add peripheral to.
 
     Return
     ------
@@ -1675,10 +1680,18 @@ def add_peripheral_compartment(model: Model):
     """
     statements = model.statements
     odes = get_and_check_odes(model)
-    per = odes.peripheral_compartments
+    if name:
+        other_compartment = odes.find_compartment(name)
+        if other_compartment is None:
+            raise ValueError(f'{name} is not a compartment name.')
+        per = odes.find_peripheral_compartments(name)
+        central = other_compartment
+    else:
+        per = odes.find_peripheral_compartments()
+        central = odes.central_compartment
+
     n = len(per) + 1
 
-    central = odes.central_compartment
     elimination_rate = odes.get_flow(central, output)
     assert elimination_rate is not None
     cl, vc = elimination_rate.as_numer_denom()
@@ -1698,14 +1711,7 @@ def add_peripheral_compartment(model: Model):
     vp_init = 0.1
 
     if n == 1:
-        if vc == 1:
-            model, kpc = _add_parameter(model, f'KPC{n}', init=0.1)
-            model, kcp = _add_parameter(model, f'KCP{n}', init=0.1)
-            peripheral = cb.add_compartment(f'PERIPHERAL{n}')
-            central = model.statements.ode_system.central_compartment
-            cb.add_flow(central, peripheral, kcp)
-            cb.add_flow(peripheral, central, kpc)
-        else:
+        if vc != 1:
             # Heurstic to handle the Mixed MM-FO case
             if cl.is_Add:
                 cl1 = cl.args[0]
@@ -1718,30 +1724,48 @@ def add_peripheral_compartment(model: Model):
             qp_init = pop_cl_init
             vp_init = pop_vc_init * 0.05
     elif n == 2:
-        per1 = per[0]
-        from_rate = odes.get_flow(per1, central)
-        assert from_rate is not None
-        qp1, vp1 = from_rate.as_numer_denom()
-        full_qp1 = statements.before_odes.full_expression(qp1)
-        full_vp1 = statements.before_odes.full_expression(vp1)
-        if full_vp1 == 1:
-            full_qp1, full_vp1 = full_qp1.as_numer_denom()
-        pop_qp1 = _find_noncov_theta(model, full_qp1, full=True)
-        pop_vp1 = _find_noncov_theta(model, full_vp1, full=True)
-        pop_qp1_init = model.parameters[pop_qp1].init
-        pop_vp1_init = model.parameters[pop_vp1].init
-        model = set_initial_estimates(model, {pop_qp1.name: pop_qp1_init * 0.10})
-        qp_init = pop_qp1_init * 0.90
-        vp_init = pop_vp1_init
+        if vc != 1:
+            per1 = per[0]
+            from_rate = odes.get_flow(per1, central)
+            assert from_rate is not None
+            qp1, vp1 = from_rate.as_numer_denom()
+            if qp1.is_Symbol and vc == 1:
+                # If K = CL / V
+                s = statements.find_assignment(qp1.name)
+                assert s is not None
+                qp1, vp1 = s.expression.as_numer_denom()
+            full_qp1 = statements.before_odes.full_expression(qp1)
+            full_vp1 = statements.before_odes.full_expression(vp1)
+            if full_vp1 == 1:
+                full_qp1, full_vp1 = full_qp1.as_numer_denom()
+            pop_qp1 = _find_noncov_theta(model, full_qp1, full=True)
+            pop_vp1 = _find_noncov_theta(model, full_vp1, full=True)
+            pop_qp1_init = model.parameters[pop_qp1].init
+            pop_vp1_init = model.parameters[pop_vp1].init
+            model = set_initial_estimates(model, {pop_qp1.name: pop_qp1_init * 0.10})
+            qp_init = pop_qp1_init * 0.90
+            vp_init = pop_vp1_init
 
     if vc != 1:
         model, qp = _add_parameter(model, f'QP{n}', init=qp_init)
         model, vp = _add_parameter(model, f'VP{n}', init=vp_init)
-        peripheral = Compartment.create(f'PERIPHERAL{n}')
+        if name:
+            peripheral = Compartment.create(f'{name}_PERIPHERAL{n}')
+        else:
+            peripheral = Compartment.create(f'PERIPHERAL{n}')
         cb.add_compartment(peripheral)
-        central = model.statements.ode_system.central_compartment
         cb.add_flow(central, peripheral, qp / vc)
         cb.add_flow(peripheral, central, qp / vp)
+    elif vc == 1:
+        model, kpc = _add_parameter(model, f'KPC{n}', init=0.1)
+        model, kcp = _add_parameter(model, f'KCP{n}', init=0.1)
+        if name:
+            peripheral = Compartment.create(f'{name}_PERIPHERAL{n}')
+        else:
+            peripheral = Compartment.create(f'PERIPHERAL{n}')
+        cb.add_compartment(peripheral)
+        cb.add_flow(central, peripheral, kcp)
+        cb.add_flow(peripheral, central, kpc)
 
     model = model.replace(
         statements=Statements(
@@ -1752,8 +1776,11 @@ def add_peripheral_compartment(model: Model):
     return model.update_source()
 
 
-def remove_peripheral_compartment(model: Model):
+def remove_peripheral_compartment(model: Model, name: str = None):
     r"""Remove a peripheral distribution compartment from model
+
+    If name is set, a peripheral compartment will be removed from the compartment
+    with the specified name.
 
     Initial estimates:
 
@@ -1770,6 +1797,8 @@ def remove_peripheral_compartment(model: Model):
     ----------
     model : Model
         Pharmpy model
+    name : str
+        Name of compartment to remove peripheral compartment from.
 
     Return
     ------
@@ -1801,27 +1830,37 @@ def remove_peripheral_compartment(model: Model):
 
     """
     odes = get_and_check_odes(model)
-    peripherals = odes.peripheral_compartments
+    peripherals = odes.find_peripheral_compartments(name)
+
     if peripherals:
         last_peripheral = peripherals[-1]
-        central = odes.central_compartment
+        if name:
+            central = odes.find_compartment(name)
+        else:
+            central = odes.central_compartment
+
         if len(peripherals) == 1:
+            # TODO : elimnation can be zero (drug metabolite)
             elimination_rate = odes.get_flow(central, output)
-            assert elimination_rate is not None
-            cl, vc = elimination_rate.as_numer_denom()
-            from_rate = odes.get_flow(last_peripheral, central)
-            assert from_rate is not None
-            qp1, vp1 = from_rate.as_numer_denom()
-            pop_cl = _find_noncov_theta(model, cl)
-            pop_vc = _find_noncov_theta(model, vc)
-            pop_qp1 = _find_noncov_theta(model, qp1)
-            pop_vp1 = _find_noncov_theta(model, vp1)
-            pop_vc_init = model.parameters[pop_vc].init
-            pop_cl_init = model.parameters[pop_cl].init
-            pop_qp1_init = model.parameters[pop_qp1].init
-            pop_vp1_init = model.parameters[pop_vp1].init
-            new_vc_init = pop_vc_init + pop_qp1_init / pop_cl_init * pop_vp1_init
-            model = set_initial_estimates(model, {pop_vc.name: new_vc_init})
+            if elimination_rate is sympy.Number(0):
+                pass
+            else:
+                cl, vc = elimination_rate.as_numer_denom()
+                if vc != 1:
+                    from_rate = odes.get_flow(last_peripheral, central)
+                    assert from_rate is not None
+
+                    qp1, vp1 = from_rate.as_numer_denom()
+                    pop_cl = _find_noncov_theta(model, cl)
+                    pop_vc = _find_noncov_theta(model, vc)
+                    pop_qp1 = _find_noncov_theta(model, qp1)
+                    pop_vp1 = _find_noncov_theta(model, vp1)
+                    pop_vc_init = model.parameters[pop_vc].init
+                    pop_cl_init = model.parameters[pop_cl].init
+                    pop_qp1_init = model.parameters[pop_qp1].init
+                    pop_vp1_init = model.parameters[pop_vp1].init
+                    new_vc_init = pop_vc_init + pop_qp1_init / pop_cl_init * pop_vp1_init
+                    model = set_initial_estimates(model, {pop_vc.name: new_vc_init})
         elif len(peripherals) == 2:
             first_peripheral = peripherals[0]
             from1_rate = odes.get_flow(first_peripheral, central)
@@ -2001,7 +2040,7 @@ def _find_rate(sset: Statements):
     central = odes.central_compartment
     elimination_rate = odes.get_flow(central, output)
     rate_list.append(elimination_rate)
-    for periph in odes.peripheral_compartments:
+    for periph in odes.find_peripheral_compartments():
         rate1 = odes.get_flow(central, periph)
         rate_list.append(rate1)
         rate2 = odes.get_flow(periph, central)
