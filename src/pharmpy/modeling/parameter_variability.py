@@ -613,7 +613,7 @@ def remove_iiv(model: Model, to_remove: Optional[Union[List[str], str]] = None):
                 if len(expr.args) == 0:
                     sset = sset.subs({expr: 0})
                 elif len(expr.args) == 1 and expr.fun == sympy.exp:
-                    sset = sset(subs({eta_sym: 0}))
+                    sset = sset.subs({eta_sym: 0})
                 else:
                     for i in range(len(expr.args)):
                         if eta_sym in expr.args[i].free_symbols:
