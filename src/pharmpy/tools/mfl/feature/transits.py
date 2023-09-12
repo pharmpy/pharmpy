@@ -17,7 +17,7 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
             depots = (
                 [Name('DEPOT'), Name('NODEPOT')]
                 if isinstance(statement.depot, Wildcard)
-                else [statement.depot]
+                else statement.depot
             )
             for count, depot in product(statement.counts, depots):
                 if depot.name == 'DEPOT':
