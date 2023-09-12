@@ -606,7 +606,24 @@ def remove_iiv(model: Model, to_remove: Optional[Union[List[str], str]] = None):
     etas = _get_etas(model, to_remove, include_symbols=True)
 
     for eta in etas:
-        sset = sset.subs({sympy.Symbol(eta): 0})
+        eta_sym = sympy.Symbol(eta)
+        for s in sset:
+            if eta_sym in s.free_symbols:
+                expr = s.expression.expand()
+                if len(expr.args) == 0:
+                    sset = sset.subs({expr: 0})
+                elif len(expr.args) == 1 and expr.fun == sympy.exp:
+                    sset = sset(subs({eta_sym: 0}))
+                else:
+                    for i in range(len(expr.args)):
+                        if eta_sym in expr.args[i].free_symbols:
+                            if expr.func == sympy.Mul:
+                                sset = sset.subs({expr.args[i]: 1})
+                            elif expr.func == sympy.Add:
+                                if len(expr.args[i].args) == 1 and expr.args[i].func == sympy.exp:
+                                    sset = sset.subs({expr.args[i]: 0})
+                                else:
+                                    sset = sset.subs({eta_sym: 0})
 
     keep = [name for name in model.random_variables.names if name not in etas]
     model = model.replace(random_variables=rvs[keep], statements=sset)

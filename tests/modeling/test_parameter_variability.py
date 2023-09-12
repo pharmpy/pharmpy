@@ -8,9 +8,10 @@ from sympy import Symbol as S
 
 from pharmpy.deps import sympy
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.model import NormalDistribution
+from pharmpy.model import Assignment, NormalDistribution
 from pharmpy.modeling import (
     add_iiv,
+    add_individual_parameter,
     add_iov,
     add_peripheral_compartment,
     add_pk_iiv,
@@ -789,6 +790,68 @@ def test_remove_iiv(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega == omega_ref
+
+
+def test_remove_iiv2(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem/pheno_real.mod')
+    model = add_individual_parameter(model, 'A')
+    model = add_iiv(model, 'A', 'add')
+    model = add_individual_parameter(model, 'B')
+    model = add_iiv(model, 'B', 'prop')
+    model = add_individual_parameter(model, 'C')
+    model = add_iiv(model, 'C', 'log')
+    model = add_individual_parameter(model, 'D')
+    model = add_iiv(model, 'D', 'exp')
+    model = add_individual_parameter(model, 'E')
+    model = add_iiv(model, 'E', 'exp', '+')
+    model = add_iiv(model, "TVCL", "add")
+
+    model = remove_iiv(model, 'A')
+    assert model.statements.find_assignment('A') == Assignment(
+        sympy.Symbol('A'), sympy.Symbol('POP_A')
+    )
+    model = remove_iiv(model, 'B')
+    assert model.statements.find_assignment('B') == Assignment(
+        sympy.Symbol('B'), sympy.Symbol('POP_B')
+    )
+    model = remove_iiv(model, 'C')
+    assert model.statements.find_assignment('C') == Assignment(
+        sympy.Symbol('C'), sympy.Symbol('POP_C')
+    )
+    model = remove_iiv(model, 'TVCL')
+    assert model.statements.find_assignment('TVCL') == Assignment(
+        sympy.Symbol('TVCL'), sympy.Symbol('PTVCL') * sympy.Symbol('WGT')
+    )
+    model = remove_iiv(model, 'D')
+    assert model.statements.find_assignment('D') == Assignment(
+        sympy.Symbol('D'), sympy.Symbol('POP_D')
+    )
+    model = remove_iiv(model, 'E')
+    assert model.statements.find_assignment('E') == Assignment(
+        sympy.Symbol('E'), sympy.Symbol('POP_E')
+    )
+
+    # Test with two different ETAs
+    model6 = add_iiv(model, 'CL', 'add')
+    model6 = remove_iiv(model6, 'CL')
+    assert model6.statements.find_assignment('CL') == Assignment(
+        sympy.Symbol('CL'), sympy.Symbol('TVCL')
+    )
+
+    model7 = add_iiv(model, 'Y', 'exp')
+    model7 = remove_iiv(model7, 'Y')
+    assert model7.statements.find_assignment('Y') == model.statements.find_assignment('Y')
+
+    model8 = add_iiv(model, 'Y', 'add')
+    model8 = remove_iiv(model7, 'Y')
+    assert model8.statements.find_assignment('Y') == model.statements.find_assignment('Y')
+
+    # check that exp(ETA + IOV) becomes exp(IOV) after removing iiv
+    model = load_model_for_test(testdata / 'nonmem/models/fviii6.mod')
+    model = remove_iiv(model, 'CL')
+    assert model.statements.find_assignment('CL') == Assignment(
+        sympy.Symbol('CL'), sympy.Symbol('TVCL') * sympy.exp(sympy.Symbol('IOVCL'))
+    )
 
 
 def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
