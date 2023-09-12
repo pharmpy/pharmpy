@@ -1,18 +1,24 @@
 from __future__ import annotations
 
 import uuid
-from typing import Generic, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Generic, List, Optional, TypeVar, Union
 
-from pharmpy.deps import networkx as nx
 from pharmpy.internals.immutable import Immutable
 
 from .task import Task
+
+if TYPE_CHECKING:
+    import networkx as nx
+else:
+    from pharmpy.deps import networkx as nx
 
 T = TypeVar('T')
 
 
 class WorkflowBase:
     """Common base class for Workflow and WorkflowBuilder"""
+
+    _g: nx.DiGraph
 
     @property
     def tasks(self) -> List[Task]:
@@ -212,6 +218,7 @@ class Workflow(WorkflowBase, Generic[T], Immutable):
         """
         ids = {}
         for task in self._g.nodes():
+            assert isinstance(task, Task)
             ids[task] = f'{task.name}-{uuid.uuid4()}'
 
         if len(self.output_tasks) == 1:

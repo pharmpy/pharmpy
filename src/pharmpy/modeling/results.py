@@ -2,11 +2,8 @@ from __future__ import annotations
 
 import math
 from itertools import chain
-from typing import Iterable, Optional, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Union
 
-from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
 from pharmpy.internals.math import round_to_n_sigdig
@@ -22,6 +19,15 @@ from pharmpy.model.random_variables import (
 from .data import get_ids, get_observations
 from .odes import get_initial_conditions
 from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
+
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
+    import sympy
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import pandas as pd
+    from pharmpy.deps import sympy
 
 
 def calculate_eta_shrinkage(
