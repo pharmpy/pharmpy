@@ -14,7 +14,7 @@ from .funcs import summarize_individuals, summarize_individuals_count_table
 
 DataFrame = Any  # NOTE should be pd.DataFrame but we want lazy loading
 
-RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic'))
+RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic', 'mbic'))
 
 
 def update_initial_estimates(model):
@@ -58,7 +58,17 @@ def create_results(
     bic_type='mixed',
     **rest,
 ) -> T:
-    summary_tool = summarize_tool(res_models, base_model, rank_type, cutoff, bic_type)
+    if rank_type == 'mbic':
+        rank_type = 'bic'
+        multiple_testing = True
+        n_expected_models = len(res_models)
+    else:
+        multiple_testing = False
+        n_expected_models = None
+
+    summary_tool = summarize_tool(
+        res_models, base_model, rank_type, cutoff, bic_type, multiple_testing, n_expected_models
+    )
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
         [base_model] + res_models,
         summary_tool['description'],
@@ -96,6 +106,8 @@ def summarize_tool(
     rank_type,
     cutoff,
     bic_type='mixed',
+    multiple_testing=False,
+    n_expected_models=None,
 ) -> DataFrame:
     models_all = [start_model] + models
 
@@ -106,6 +118,8 @@ def summarize_tool(
         rank_type=rank_type,
         cutoff=cutoff,
         bic_type=bic_type,
+        multiple_testing=multiple_testing,
+        mult_test_p=n_expected_models,
     )
 
     model_dict = {model.name: model for model in models_all}

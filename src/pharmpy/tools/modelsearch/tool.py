@@ -36,7 +36,7 @@ def create_workflow(
         If/how IIV should be added to candidate models. Possible strategies are 'no_add',
         'add_diagonal', 'fullblock', or 'absorption_delay'. Default is 'absorption_delay'
     rank_type : str
-        Which ranking type should be used (OFV, AIC, BIC). Default is BIC
+        Which ranking type should be used (OFV, AIC, BIC, mBIC). Default is BIC
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
