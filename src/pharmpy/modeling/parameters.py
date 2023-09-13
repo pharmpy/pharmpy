@@ -121,7 +121,7 @@ def set_initial_estimates(model: Model, inits: Dict[str, float]):
     >>> model = load_example_model("pheno")
     >>> model = set_initial_estimates(model, {'PTVCL': 2})
     >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 2, lower=0.0, upper=1000000.0, fix=False)
+    Parameter("PTVCL", 2.0, lower=0.0, upper=1000000.0, fix=False)
 
     See also
     --------
