@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
-from pharmpy.deps import sympy
+if TYPE_CHECKING:
+    import sympy
+else:
+    from pharmpy.deps import sympy
 
 
 def parse(expr: Union[int, float, str, sympy.Expr]) -> sympy.Expr:

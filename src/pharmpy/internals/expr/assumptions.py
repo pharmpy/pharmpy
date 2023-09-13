@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from functools import reduce
 from operator import __and__
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
-from pharmpy.deps import sympy
+if TYPE_CHECKING:
+    import sympy
+else:
+    from pharmpy.deps import sympy
 
 
 def assume_all(predicate: sympy.assumptions.Predicate, expressions: Iterable[sympy.Expr]):
