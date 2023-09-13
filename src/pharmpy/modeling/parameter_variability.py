@@ -46,7 +46,6 @@ def add_iiv(
 
     - Additive (*add*)
     - Proportional (*prop*)
-    - Proportional Additive (*prop_add*)
     - Exponential (*exp*)
     - Logit (*log*)
     - Rescaled logit (*re_log*)
@@ -59,8 +58,7 @@ def add_iiv(
     Assuming a statement :math:`CL = \Theta`, IIVs are added in the following ways:
 
     - Additive: :math:`CL = \Theta + \eta`
-    - Proportional: :math:`CL = \Theta \cdot \eta`
-    - Proportional Additive: :math:`CL = \Theta \cdot (1 + \eta)`
+    - Proportional: :math:`CL = \Theta \cdot (1 + \eta)`
     - Exponential: :math:`CL = \Theta +/\cdot e^{\eta}`
     - Logit: :math:`CL = \Theta \cdot e^{\eta}/ (e^{\eta} + 1)`
     - Rescaled logit: :math:`CL = e^{\Phi \cdot \eta}/(1+e^{\Phi \cdot \eta})`
@@ -530,8 +528,6 @@ def _create_template(expression, operation):
         return EtaAddition.logit()
     elif expression == 're_log':
         return EtaAddition.re_logit()
-    elif expression == 'prop_add':
-        return EtaAddition.prop_add()
     else:
         expression = parse_expr(f'original {operation} {expression}')
         return EtaAddition(expression)
@@ -597,12 +593,6 @@ class EtaAddition:
 
     @classmethod
     def proportional(cls):
-        template = sympy.Symbol('original') * sympy.Symbol('eta_new')
-
-        return cls(template)
-
-    @classmethod
-    def prop_add(cls):
         template = sympy.Symbol('original') * (1 + sympy.Symbol('eta_new'))
 
         return cls(template)

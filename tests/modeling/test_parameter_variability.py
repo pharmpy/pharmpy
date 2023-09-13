@@ -42,7 +42,7 @@ from pharmpy.tools import read_modelfit_results
         ('S1', 'exp', '*', None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA_S1)', 2),
         ('V', 'exp', '+', None, 'V = TVV*EXP(ETA(2)) + EXP(ETA_V)\nS1=V', 2),
         ('S1', 'add', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA_S1', 2),
-        ('S1', 'prop', None, None, 'V=TVV*EXP(ETA(2))\nS1 = ETA_S1*V', 2),
+        ('S1', 'prop', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V*(ETA_S1 + 1)', 2),
         ('S1', 'log', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA_S1)/(EXP(ETA_S1) + 1)', 2),
         ('S1', 'eta_new', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA_S1', 2),
         ('S1', 'eta_new**2', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA_S1**2', 2),
@@ -800,7 +800,6 @@ def test_remove_iiv(load_model_for_test, testdata, etas, pk_ref, omega_ref):
         ('log', '*'),
         ('exp', '*'),
         ('exp', '+'),
-        ('prop_add', '*'),
     ],
 )
 def test_remove_iiv2(load_model_for_test, testdata, iiv_type, operation):
