@@ -9,7 +9,9 @@ def cache_method(func):
             if hasattr(self, '_hash'):
                 return self._hash
             else:
-                return func(self)
+                h = func(self)
+                self._hash = h
+                return h
 
         return wrapper
     else:
