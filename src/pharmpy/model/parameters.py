@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Sequence as CollectionsSequence
-from typing import Any, Optional, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Union, overload
 
-from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.internals.immutable import Immutable, cache_method
+
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
+    import sympy
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import pandas as pd
+    from pharmpy.deps import sympy
 
 
 class Parameter(Immutable):
@@ -62,7 +68,8 @@ class Parameter(Immutable):
         """Alternative constructor for Parameter with error checking"""
         if not isinstance(name, str):
             raise ValueError("Name of parameter must be of type string")
-        if init is sympy.nan or np.isnan(init):
+        init = float(init)
+        if np.isnan(init):
             raise ValueError('Initial estimate cannot be NaN')
         if lower is None:
             lower = -float('inf')
@@ -221,7 +228,7 @@ class Parameters(CollectionsSequence, Immutable):
 
     def _lookup_param(self, ind: Union[int, str, sympy.Symbol, Parameter]):
         if isinstance(ind, sympy.Symbol):
-            ind = ind.name  # pyright: ignore [reportGeneralTypeIssues]
+            ind = ind.name
         if isinstance(ind, str):
             for i, param in enumerate(self._params):
                 if ind == param.name:
