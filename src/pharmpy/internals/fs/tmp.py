@@ -44,7 +44,7 @@ class TemporaryDirectory:
 
                 def resetperms(path):
                     try:
-                        _os.chflags(path, 0)
+                        _os.chflags(path, 0)  # pyright: ignore [reportGeneralTypeIssues]
                     except AttributeError:
                         pass
                     _os.chmod(path, 0o700)

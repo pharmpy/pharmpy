@@ -64,7 +64,7 @@ def _parse_create_input(rule: Optional[str], items):
         if isinstance(items, str):
             raise TypeError(str)
         length = len(items)
-        names: Tuple[Optional[str]] = (None,) * length
+        names: Tuple[Optional[str], ...] = (None,) * length
     if not items:
         raise ValueError(f'refusing empty tree {repr(rule)} (only tokens are childless)')
 

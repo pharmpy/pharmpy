@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from operator import is_
-from typing import TYPE_CHECKING, Callable, List
+from typing import TYPE_CHECKING, Callable, List, Type
 
 if TYPE_CHECKING:
     import sympy
@@ -9,14 +9,14 @@ else:
     from pharmpy.deps import sympy
 
 
-def replace_root_children(expr: sympy.Expr, args: List[sympy.Expr]):
+def replace_root_children(expr: sympy.Basic, args: List[sympy.Basic]):
     # NOTE This creates a new tree by replacing the children of the root node.
     # If the children have not changed it returns the original tree which
     # allows certain downstream optimizations.
     return expr if all(map(is_, expr.args, args)) else expr.func(*args)
 
 
-def prune(predicate: Callable[[sympy.Expr], bool], expr: sympy.Expr):
+def prune(predicate: Callable[[sympy.Basic], bool], expr: sympy.Basic):
     """Create a new expression by removing subexpressions nodes from an input
     expression.
 
@@ -79,7 +79,7 @@ def prune(predicate: Callable[[sympy.Expr], bool], expr: sympy.Expr):
     return output[0][0]
 
 
-def _neutral(fn: sympy.Function) -> sympy.Integer:
+def _neutral(fn: Type[sympy.Basic]) -> sympy.Integer:
     if fn is sympy.Add:
         return sympy.Integer(0)
     if fn is sympy.Mul:

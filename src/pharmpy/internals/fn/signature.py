@@ -51,7 +51,7 @@ def with_same_arguments_as(ref: Callable):
         # declarations of `ref` and `fn` have the same locals() and
         # globals().
         _wrapped.__annotations__ = ref.__annotations__
-        _wrapped.__signature__ = ref_signature
+        _wrapped.__signature__ = ref_signature  # pyright: ignore [reportGeneralTypeIssues]
 
         return _wrapped
 

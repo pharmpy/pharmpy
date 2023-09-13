@@ -14,9 +14,9 @@ else:
 
 
 def eval_expr(
-    expr: sympy.Expr,
+    expr: sympy.Basic,
     datasize: int,
-    datamap: Mapping[sympy.Symbol, np.ndarray],
+    datamap: Mapping[sympy.Basic, np.ndarray],
 ) -> np.ndarray:
     # NOTE We avoid querying for free_symbols if we know none are expected
     fs = _free_symbols(expr) if datamap else set()
@@ -30,12 +30,12 @@ def eval_expr(
 
 
 @lru_cache(maxsize=256)
-def _free_symbols(expr: sympy.Expr) -> Set[sympy.Symbol]:
+def _free_symbols(expr: sympy.Basic) -> Set[sympy.Basic]:
     return expr.free_symbols
 
 
 @lru_cache(maxsize=256)
-def _lambdify_canonical(expr: sympy.Expr):
+def _lambdify_canonical(expr: sympy.Basic):
     fs = _free_symbols(expr)
     ordered_symbols = sorted(fs, key=str)
     # NOTE Substitution allows to use cse. Otherwise weird things happen with

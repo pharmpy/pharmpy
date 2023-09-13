@@ -60,11 +60,13 @@ def _item_range(x: Union[Tree, Token]) -> Tuple[int, int]:
     return (i, j)
 
 
-def _get_new_end_pos(x):
+def _get_new_end_pos(x) -> int:
     # FIXME: temporary workaround, see https://github.com/lark-parser/lark/issues/1304
     x = x.children[-1]
     if isinstance(x, Token):
-        return x.end_pos
+        endpos = x.end_pos
+        assert isinstance(endpos, int)
+        return endpos
     return _get_new_end_pos(x)
 
 

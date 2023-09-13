@@ -10,12 +10,12 @@ else:
     from pharmpy.deps import sympy
 
 
-def canonical_ode_rhs(expr: sympy.Expr):
+def canonical_ode_rhs(expr: sympy.Basic):
     fi = free_images(expr)
     return sympy.collect(_expand_rates(expr, fi), sorted(fi, key=str))
 
 
-def _expand_rates(expr: sympy.Expr, free_images: Set[sympy.Expr]):
+def _expand_rates(expr: sympy.Basic, free_images: Set[sympy.Basic]):
     if isinstance(expr, sympy.Add):
         return sympy.expand(
             sympy.Add(*map(lambda x: _expand_rates(x, free_images), expr.args)), deep=False

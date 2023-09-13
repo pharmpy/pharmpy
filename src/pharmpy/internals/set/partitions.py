@@ -19,10 +19,10 @@ def partitions(elements: Iterable[T]) -> Iterator[Tuple[Tuple[T, ...], ...]]:
                 tuple,
                 map(
                     _shortlexsorted,
-                    _partitions(_elements, n),  # pyright: ignore [reportGeneralTypeIssues]
+                    _partitions(_elements, n),
                 ),
             ),
-            key=_partitionkey,
+            key=_partitionkey,  # pyright: ignore [reportGeneralTypeIssues]
         )
     )
 

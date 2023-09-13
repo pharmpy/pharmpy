@@ -11,7 +11,7 @@ else:
 from .tree import replace_root_children
 
 
-def subs(expr: sympy.Expr, mapping: Mapping[sympy.Expr, sympy.Expr], simultaneous: bool = False):
+def subs(expr: sympy.Basic, mapping: Mapping[sympy.Basic, sympy.Basic], simultaneous: bool = False):
     _mapping = xreplace_dict(mapping)
     if (simultaneous or _mapping_is_not_recursive(_mapping)) and all(
         map(_old_does_not_need_generic_subs, _mapping.keys())
@@ -25,11 +25,11 @@ def subs(expr: sympy.Expr, mapping: Mapping[sympy.Expr, sympy.Expr], simultaneou
     return expr.subs(_mapping, simultaneous=simultaneous)
 
 
-def xreplace_dict(dictlike) -> Dict[sympy.Expr, sympy.Expr]:
+def xreplace_dict(dictlike) -> Dict[sympy.Basic, sympy.Basic]:
     return {_sympify_old(key): _sympify_new(value) for key, value in dictlike.items()}
 
 
-def _sympify_old(old) -> sympy.Expr:
+def _sympify_old(old) -> sympy.Basic:
     # NOTE This mimics sympy's input coercion in subs
     return (
         sympy.Symbol(old)
@@ -39,23 +39,23 @@ def _sympify_old(old) -> sympy.Expr:
 
 
 @lru_cache(maxsize=256)
-def _sympify_new(new) -> sympy.Expr:
+def _sympify_new(new) -> sympy.Basic:
     # NOTE This mimics sympy's input coercion in subs
     return sympy.sympify(new, strict=not isinstance(new, (str, type)))
 
 
-def _mapping_is_not_recursive(mapping: Dict[sympy.Expr, sympy.Expr]):
+def _mapping_is_not_recursive(mapping: Dict[sympy.Basic, sympy.Basic]):
     return set(mapping.keys()).isdisjoint(
         set().union(*map(lambda e: e.free_symbols, mapping.values()))
     )
 
 
-def _old_does_not_need_generic_subs(expr: sympy.Expr):
+def _old_does_not_need_generic_subs(expr: sympy.Basic):
     return isinstance(expr, sympy.Symbol) or expr is sympy.exp
 
 
 def _subs_atoms_simultaneously(
-    subs_new_args: Callable[[sympy.Expr, List[sympy.Expr]], sympy.Expr], expr: sympy.Expr
+    subs_new_args: Callable[[sympy.Basic, List[sympy.Basic]], sympy.Basic], expr: sympy.Basic
 ):
     stack = [expr]
     output = [[], []]
@@ -81,15 +81,15 @@ def _subs_atoms_simultaneously(
     return output[0][0]
 
 
-def _subs_atom(mapping: Dict[sympy.Expr, sympy.Expr]):
-    def _subs(expr: sympy.Expr, args: List[sympy.Expr]):
+def _subs_atom(mapping: Dict[sympy.Basic, sympy.Basic]):
+    def _subs(expr: sympy.Basic, args: List[sympy.Basic]):
         return replace_root_children(expr, args) if args else mapping.get(expr, expr)
 
     return _subs
 
 
-def _subs_atom_or_func(mapping: Dict[sympy.Expr, sympy.Expr]):
-    def _subs(expr: sympy.Expr, args: List[sympy.Expr]):
+def _subs_atom_or_func(mapping: Dict[sympy.Basic, sympy.Basic]):
+    def _subs(expr: sympy.Basic, args: List[sympy.Basic]):
         if not args:
             return mapping.get(expr, expr)
 
