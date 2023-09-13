@@ -281,7 +281,7 @@ class CompartmentalSystemBuilder:
         --------
         >>> from pharmpy.model import CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
-        >>> central = Compartment("CENTRAL")
+        >>> central = Compartment.create("CENTRAL")
         >>> cb.add_compartment(central)
         >>> cb.remove_compartment(central)
         """
@@ -303,9 +303,9 @@ class CompartmentalSystemBuilder:
         --------
         >>> from pharmpy.model import Compartment, CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
-        >>> depot = Compartment("DEPOT")
+        >>> depot = Compartment.create("DEPOT")
         >>> cb.add_compartment(depot)
-        >>> central = Compartment("CENTRAL")
+        >>> central = Compartment.create("CENTRAL")
         >>> cb.add_compartment(central)
         >>> cb.add_flow(depot, central, "KA")
         """
@@ -325,9 +325,9 @@ class CompartmentalSystemBuilder:
         --------
         >>> from pharmpy.model import CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
-        >>> depot = Compartment("DEPOT")
+        >>> depot = Compartment.create("DEPOT")
         >>> cb.add_compartment(depot)
-        >>> central = Compartment("CENTRAL")
+        >>> central = Compartment.create("CENTRAL")
         >>> cb.add_compartment(central)
         >>> cb.add_flow(depot, central, "KA")
         >>> cb.remove_flow(depot, central)
@@ -574,9 +574,9 @@ class CompartmentalSystem(ODESystem):
     >>> from pharmpy.model import CompartmentalSystemBuilder, CompartmentalSystem
     >>> cb = CompartmentalSystemBuilder()
     >>> dose = Bolus.create("AMT")
-    >>> central = Compartment("CENTRAL", dose)
+    >>> central = Compartment.create("CENTRAL", doses=(dose,))
     >>> cb.add_compartment(central)
-    >>> peripheral = Compartment("PERIPHERAL")
+    >>> peripheral = Compartment.create("PERIPHERAL")
     >>> cb.add_compartment(peripheral)
     >>> cb.add_flow(central, peripheral, "K12")
     >>> cb.add_flow(peripheral, central, "K21")
@@ -790,9 +790,9 @@ class CompartmentalSystem(ODESystem):
         --------
         >>> from pharmpy.model import CompartmentalSystem, Compartment
         >>> cb = CompartmentalSystemBuilder()
-        >>> depot = Compartment("DEPOT")
+        >>> depot = Compartment.create("DEPOT")
         >>> cb.add_compartment(depot)
-        >>> central = Compartment("CENTRAL")
+        >>> central = Compartment.create("CENTRAL")
         >>> cb.add_compartment(central)
         >>> cb.add_flow(depot, central, "KA")
         >>> odes = CompartmentalSystem(cb)
