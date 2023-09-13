@@ -125,13 +125,13 @@ def create_pkpd_models(
             pkpd_model = set_lower_bounds(pkpd_model, {'POP_E_MAX': -1})
 
             # set iiv
-            for parameter in ["B", "SLOPE"]:
+            for parameter in ["E_MAX", "SLOPE"]:
                 try:
-                    pkpd_model = add_iiv(pkpd_model, [parameter], "exp")
+                    pkpd_model = add_iiv(pkpd_model, [parameter], "prop_add")
                 except ValueError:
                     pass
             try:
-                pkpd_model = add_iiv(pkpd_model, ['E_MAX'], "prop")
+                pkpd_model = add_iiv(pkpd_model, 'B', "exp")
             except ValueError:
                 pass
 
