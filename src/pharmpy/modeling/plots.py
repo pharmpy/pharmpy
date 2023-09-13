@@ -1,15 +1,24 @@
 import re
 import warnings
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import pharmpy.visualization
-from pharmpy.deps import altair as alt
-from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
-from pharmpy.deps import scipy, sympy, sympy_stats
 from pharmpy.model import Assignment, Model
 
 from .data import get_observations
+
+if TYPE_CHECKING:
+    import altair as alt
+    import numpy as np
+    import pandas as pd
+    import scipy
+    import sympy
+    import sympy.stats as sympy_stats
+else:
+    from pharmpy.deps import altair as alt
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import pandas as pd
+    from pharmpy.deps import scipy, sympy, sympy_stats
 
 norm = scipy.stats.norm
 

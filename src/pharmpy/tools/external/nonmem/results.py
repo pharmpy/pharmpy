@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 import pharmpy.modeling as modeling
-from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
 from pharmpy.model import EstimationSteps, Model, Parameters, RandomVariables
 from pharmpy.model.external.nonmem.nmtran_parser import NMTranControlStream
 from pharmpy.model.external.nonmem.parsing import parse_table_columns
@@ -15,6 +13,13 @@ from pharmpy.results import ModelfitResults
 from pharmpy.workflows.log import Log
 
 from .results_file import NONMEMResultsFile
+
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import pandas as pd
 
 
 def _parse_modelfit_results(

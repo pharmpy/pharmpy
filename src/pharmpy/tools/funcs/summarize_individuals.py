@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import importlib.util
 import warnings
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
-from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, ModelfitResultsError
+
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import pandas as pd
 
 from .ml import predict_influential_individuals, predict_outliers
 
