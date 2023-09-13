@@ -40,18 +40,31 @@ def add_iiv(
     initial_estimate: float = 0.09,
     eta_names: Optional[List[str]] = None,
 ):
-    """Adds IIVs to :class:`pharmpy.model`.
+    r"""Adds IIVs to :class:`pharmpy.model`.
 
     Effects that currently have templates are:
 
     - Additive (*add*)
     - Proportional (*prop*)
+    - Proportional Additive (*prop_add*)
     - Exponential (*exp*)
     - Logit (*log*)
     - Rescaled logit (*re_log*)
 
     For all except exponential the operation input is not needed. Otherwise user specified
     input is supported. Initial estimates for new etas are 0.09.
+
+
+
+    Assuming a statement :math:`CL = \Theta`, IIVs are added in the following ways:
+
+    - Additive: :math:`CL = \Theta + \eta`
+    - Proportional: :math:`CL = \Theta \cdot \eta`
+    - Proportional Additive: :math:`CL = \cdot (1 + \eta)`
+    - Exponential: :math:`CL = \Theta +/\cdot e^{\eta}`
+    - Logit: :math:`CL = \Theta \cdot e^{\eta}/ (e^{\eta} + 1)`
+    - Rescaled logit: :math:`CL = e^{\Phi \cdot \eta}/(1+e^{\Phi \cdot \eta})`
+      with :math:`\Phi = log(\Theta/(1-\Theta))`
 
     Parameters
     ----------
@@ -517,6 +530,8 @@ def _create_template(expression, operation):
         return EtaAddition.logit()
     elif expression == 're_log':
         return EtaAddition.re_logit()
+    elif expression == 'prop_add':
+        return EtaAddition.prop_add()
     else:
         expression = parse_expr(f'original {operation} {expression}')
         return EtaAddition(expression)
@@ -583,6 +598,12 @@ class EtaAddition:
     @classmethod
     def proportional(cls):
         template = sympy.Symbol('original') * sympy.Symbol('eta_new')
+
+        return cls(template)
+
+    @classmethod
+    def prop_add(cls):
+        template = sympy.Symbol('original') * (1 + sympy.Symbol('eta_new'))
 
         return cls(template)
 
