@@ -238,3 +238,6 @@ class ModelfitResults(Results):
     log_likelihood: Optional[float] = None
     log: Optional['Log'] = None
     evaluation: Optional[pd.Series] = None
+
+    def __repr__(self):
+        return f'<Pharmpy modelfit results object {self.name}>'
