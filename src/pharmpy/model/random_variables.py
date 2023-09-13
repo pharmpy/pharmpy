@@ -3,10 +3,20 @@ from __future__ import annotations
 from collections.abc import Container as CollectionsContainer
 from collections.abc import Sequence as CollectionsSequence
 from itertools import chain, product
-from typing import Container, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Container,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    overload,
+)
 
-from pharmpy.deps import numpy as np
-from pharmpy.deps import symengine, sympy, sympy_stats
 from pharmpy.internals.expr.eval import eval_expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
@@ -15,6 +25,15 @@ from pharmpy.internals.math import cov2corr, is_positive_semidefinite, nearest_p
 
 from .distributions.numeric import NumericDistribution
 from .distributions.symbolic import Distribution, JointNormalDistribution, NormalDistribution
+
+if TYPE_CHECKING:
+    import numpy as np
+    import symengine
+    import sympy
+    import sympy.stats as sympy_stats
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import symengine, sympy, sympy_stats
 
 
 def _create_rng(seed=None) -> np.random.Generator:
@@ -811,7 +830,13 @@ class RandomVariables(CollectionsSequence, Immutable):
                         else:
                             newdict[name] = np.sqrt(sigma[i, j])
             else:
-                name = dist.variance.name
+                variance = dist.variance
+                if isinstance(variance, sympy.Symbol):
+                    name = dist.variance.name
+                else:
+                    raise NotImplementedError(
+                        "parameters_sdcorr only supports pure" " symbols as variances"
+                    )
                 if name in newdict:
                     newdict[name] = np.sqrt(
                         np.array(subs(dist.variance, values)).astype(np.float64)
@@ -860,7 +885,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         for i, rv in enumerate(rvs_in_expr):
             if isinstance(rv, JointNormalDistribution):
                 # sympy.stats.MultivariateNormal uses variance, sympy.stats.Normal takes std
-                dist = sympy.stats.MultivariateNormal(f'__rv{i}', rv.mean, rv.variance)
+                dist = sympy_stats.MultivariateNormal(f'__rv{i}', rv.mean, rv.variance)
                 for j in range(0, len(rv.names)):
                     subs_dict[rv.names[j]] = dist[j]
             else:
