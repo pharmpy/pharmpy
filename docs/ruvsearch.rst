@@ -38,7 +38,7 @@ Arguments
 +===================================================+=========================================================================================+
 | ``groups``                                        | Number of groups to use for the time varying model (default is 4)                       |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| ``p_value``                                       | p-value for model selection (default is 0.05)                                           |
+| ``p_value``                                       | p-value for model selection (default is 0.001)                                           |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``skip``                                          | List of residual error models to not consider                                           |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
@@ -110,7 +110,7 @@ E.g., if the power error model is selected in the current iteration, the combine
       better -> ruvsearch [label = "Yes (max 3 times)"]
     }
 
-Selection is done using the likelihood ratio test and a default p-value of 0.05.
+Selection is done using the likelihood ratio test and a default p-value of 0.001.
 
 ~~~~~~~~~~~~~~~~~~~~~
 The RUVsearch results

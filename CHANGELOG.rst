@@ -1,3 +1,11 @@
+next version
+------------
+
+Changes
+=======
+
+* Change default p-value in ruvsearch from 0.05 to 0.001
+
 0.101.0 (2023-09-01)
 --------------------
 

@@ -49,7 +49,7 @@ def create_workflow(
     model: Optional[Model] = None,
     results: Optional[ModelfitResults] = None,
     groups: int = 4,
-    p_value: float = 0.05,
+    p_value: float = 0.001,
     skip: Optional[List[str]] = None,
     max_iter: Optional[int] = 3,
     dv: Optional[int] = None,
