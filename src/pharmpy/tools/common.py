@@ -58,21 +58,17 @@ def create_results(
     bic_type='mixed',
     **rest,
 ) -> T:
-    if rank_type == 'mbic':
-        rank_type = 'bic'
-        multiple_testing = True
-        n_expected_models = len(res_models)
+    summary_tool = summarize_tool(res_models, base_model, rank_type, cutoff, bic_type)
+    if rank_type == 'lrt':
+        delta_name = 'dofv'
+    elif rank_type == 'mbic':
+        delta_name = 'dbic'
     else:
-        multiple_testing = False
-        n_expected_models = None
-
-    summary_tool = summarize_tool(
-        res_models, base_model, rank_type, cutoff, bic_type, multiple_testing, n_expected_models
-    )
+        delta_name = f'd{rank_type}'
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
         [base_model] + res_models,
         summary_tool['description'],
-        summary_tool[f'd{"ofv" if rank_type == "lrt" else rank_type}'],
+        summary_tool[delta_name],
     )
     summary_errors = summarize_errors(
         [base_model.modelfit_results] + [m.modelfit_results for m in res_models]
@@ -106,9 +102,15 @@ def summarize_tool(
     rank_type,
     cutoff,
     bic_type='mixed',
-    multiple_testing=False,
-    n_expected_models=None,
 ) -> DataFrame:
+    if rank_type == 'mbic':
+        rank_type = 'bic'
+        multiple_testing = True
+        n_expected_models = len(models)
+    else:
+        multiple_testing = False
+        n_expected_models = None
+
     models_all = [start_model] + models
 
     df_rank = rank_models(

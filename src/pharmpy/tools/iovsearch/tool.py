@@ -13,7 +13,7 @@ from pharmpy.model import Assignment, Model, RandomVariables
 from pharmpy.modeling import add_iov, get_omegas, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.parameter_variability import ADD_IOV_DISTRIBUTION
 from pharmpy.results import ModelfitResults
-from pharmpy.tools import rank_models, summarize_modelfit_results
+from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
@@ -252,7 +252,7 @@ def best_model(
     bic_type: Union[None, str],
 ):
     candidates = [base, *models]
-    df = rank_models(base, candidates, rank_type=rank_type, cutoff=cutoff, bic_type=bic_type)
+    df = summarize_tool(models, base, rank_type=rank_type, cutoff=cutoff, bic_type=bic_type)
     best_model_name = df['rank'].idxmin()
 
     try:
