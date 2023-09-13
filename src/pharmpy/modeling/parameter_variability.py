@@ -60,7 +60,7 @@ def add_iiv(
 
     - Additive: :math:`CL = \Theta + \eta`
     - Proportional: :math:`CL = \Theta \cdot \eta`
-    - Proportional Additive: :math:`CL = \cdot (1 + \eta)`
+    - Proportional Additive: :math:`CL = \Theta \cdot (1 + \eta)`
     - Exponential: :math:`CL = \Theta +/\cdot e^{\eta}`
     - Logit: :math:`CL = \Theta \cdot e^{\eta}/ (e^{\eta} + 1)`
     - Rescaled logit: :math:`CL = e^{\Phi \cdot \eta}/(1+e^{\Phi \cdot \eta})`
