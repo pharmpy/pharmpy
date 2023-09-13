@@ -100,8 +100,8 @@ ALGORITHMS = frozenset(['scm-forward', 'scm-forward-then-backward'])
 
 def create_workflow(
     effects: Union[str, Sequence[InputSpec]],
-    p_forward: float = 0.05,
-    p_backward: float = 0.01,
+    p_forward: float = 0.01,
+    p_backward: float = 0.001,
     max_steps: int = -1,
     algorithm: str = 'scm-forward-then-backward',
     results: Optional[ModelfitResults] = None,
