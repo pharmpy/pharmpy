@@ -86,8 +86,8 @@ def test_pkpd(load_model_for_test, testdata):
     assert pkpd_models[1].parameters['POP_E_MAX'].fix is False
     assert pkpd_models[1].parameters['POP_EC_50'].init == 1.0
     assert pkpd_models[1].parameters['POP_EC_50'].fix is False
-    assert pkpd_models[3].parameters['POP_KE0'].init == 1 / 0.5
-    assert pkpd_models[6].parameters['POP_K_OUT'].init == 1 / 0.5
+    assert pkpd_models[3].parameters['POP_MET'].init == 0.5
+    assert pkpd_models[6].parameters['POP_MET'].init == 0.5
 
     models3 = create_pkpd_models(model)
     assert models3[1].parameters['POP_E_MAX'].init == 0.1

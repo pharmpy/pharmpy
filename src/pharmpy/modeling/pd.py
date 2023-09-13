@@ -66,7 +66,9 @@ def add_effect_compartment(model: Model, expr: str):
     cb = CompartmentalSystemBuilder(odes)
 
     ke0 = sympy.Symbol("KE0")
-    model = add_individual_parameter(model, ke0.name)
+    met = sympy.Symbol('MET')
+    model = add_individual_parameter(model, met.name)
+    ke0_ass = Assignment(ke0, 1 / met)
 
     effect = Compartment.create("EFFECT", input=ke0 * central_amount / vc)
     cb.add_compartment(effect)
@@ -74,7 +76,10 @@ def add_effect_compartment(model: Model, expr: str):
 
     model = model.replace(
         statements=Statements(
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+            model.statements.before_odes
+            + ke0_ass
+            + CompartmentalSystem(cb)
+            + model.statements.after_odes
         )
     )
 
@@ -123,10 +128,9 @@ def set_direct_effect(model: Model, expr: str):
     >>> model = load_example_model("pheno")
     >>> model = set_direct_effect(model, "linear")
     >>> model.statements.find_assignment("E")
-        A_CENTRAL⋅SLOPE
-        ─────────────── + B
-    E =         V
-
+          ⎛A_CENTRAL⋅SLOPE    ⎞
+        B⋅⎜─────────────── + 1⎟
+    E =   ⎝       V           ⎠
     """
     vc, cl = _get_central_volume_and_cl(model)
     conc = model.statements.ode_system.central_compartment.amount / vc
@@ -165,11 +169,11 @@ def _add_effect(model: Model, expr: str, conc):
     elif expr == "linear":
         s = sympy.Symbol("SLOPE")
         model = add_individual_parameter(model, s.name)
-        E = Assignment(sympy.Symbol('E'), e0 + s * conc)
+        E = Assignment(sympy.Symbol('E'), e0 * (1 + (s * conc)))
     elif expr == "Emax":
-        E = Assignment(sympy.Symbol("E"), e0 + emax * conc / (ec50 + conc))
+        E = Assignment(sympy.Symbol("E"), e0 * (1 + (emax * conc / (ec50 + conc))))
     elif expr == "step":
-        E = Assignment(sympy.Symbol("E"), sympy.Piecewise((e0, conc <= 0), (e0 + emax, True)))
+        E = Assignment(sympy.Symbol("E"), sympy.Piecewise((e0, conc <= 0), (e0 * (1 + emax), True)))
     elif expr == "sigmoid":
         n = sympy.Symbol("N")  # Hill coefficient
         model = add_individual_parameter(model, n.name)
@@ -177,7 +181,7 @@ def _add_effect(model: Model, expr: str, conc):
         E = Assignment(
             sympy.Symbol("E"),
             sympy.Piecewise(
-                ((e0 + emax * conc**n / (ec50**n + conc**n)), conc > 0), (e0, True)
+                ((e0 * (1 + (emax * conc**n / (ec50**n + conc**n)))), conc > 0), (e0, True)
             ),
         )
     elif expr == "loglin":
@@ -254,14 +258,16 @@ def add_indirect_effect(
     conc_c = central_amount / vc
 
     response = Compartment.create("RESPONSE")
-    A_response = response.amount
+    a_response = response.amount
 
     kin = sympy.Symbol("K_IN")
     kout = sympy.Symbol("K_OUT")
-    model = add_individual_parameter(model, kout.name)
+    met = sympy.Symbol('MET')
+    model = add_individual_parameter(model, met.name)
     b = sympy.Symbol("B")  # baseline
     model = add_individual_parameter(model, b.name)
 
+    kout_ass = Assignment(kout, 1 / met)
     kin_ass = Assignment(kin, kout * b)
 
     if expr == 'linear':
@@ -299,6 +305,7 @@ def add_indirect_effect(
     model = model.replace(
         statements=Statements(
             model.statements.before_odes
+            + kout_ass
             + kin_ass
             + CompartmentalSystem(cb)
             + model.statements.after_odes
@@ -309,7 +316,7 @@ def add_indirect_effect(
 
     # Add dependent variable Y_2
     y_2 = sympy.Symbol('Y_2')
-    y = Assignment(y_2, A_response)
+    y = Assignment(y_2, a_response)
     dvs = model.dependent_variables.replace(y_2, 2)
     model = model.replace(statements=model.statements + y, dependent_variables=dvs)
 
