@@ -1407,7 +1407,7 @@ class Compartment:
     def __init__(
         self,
         name,
-        amount=None,
+        amount,
         doses=tuple(),
         input=sympy.Integer(0),
         lag_time=sympy.Integer(0),
