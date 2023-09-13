@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from hashlib import sha256
-from typing import Iterator, Union
+from typing import TYPE_CHECKING, Iterator, Union
 
-from pharmpy.deps import pandas as pd
+if TYPE_CHECKING:
+    import pandas as pd
+else:
+    from pharmpy.deps import pandas as pd
 
 
 def _pd_hash_values(obj: Union[pd.Index, pd.Series, pd.DataFrame]) -> pd.Series:

@@ -588,7 +588,7 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
         dataset = dataset[dataset['AMT'] != 0]
 
     cmt_loop = False
-    admid_loop = False
+    admid_name = None
     return_dose = False
     if dataset is None:
         return_dose = True
@@ -598,7 +598,6 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
             if len(dataset['CMT']) == 1:
                 warnings.warn("CMT column present with only one value")
             cmt_loop = True
-        admid_loop = True
     elif 'CMT' in di.names and not di['CMT'].drop:
         if len(dataset['CMT']) == 1:
             warnings.warn("CMT column present with only one value")
@@ -618,7 +617,7 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
         )
 
     doses = tuple()
-    if admid_loop and cmt_loop:
+    if admid_name is not None and cmt_loop:
         for comp_number in dataset['CMT'].unique():
             cmt_dataset = dataset[dataset['CMT'] == comp_number]
             for admid in cmt_dataset[admid_name].unique():
@@ -629,7 +628,7 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
                         'admid': admid,
                     },
                 )
-    elif admid_loop:
+    elif admid_name is not None:
         for admid in dataset[admid_name].unique():
             doses += (
                 {

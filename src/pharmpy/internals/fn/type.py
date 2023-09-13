@@ -62,11 +62,7 @@ def _annotation_to_types(annotation):
 
 
 def _value_type(value):
-    return (
-        Type[value]  # pyright: ignore [reportGeneralTypeIssues]
-        if isinstance(value, type)
-        else type(value)
-    )
+    return Type[value] if isinstance(value, type) else type(value)
 
 
 def _kwargs(parameter, kwargs):

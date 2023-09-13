@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Mapping, Set
-
-from pharmpy.deps import numpy as np
-from pharmpy.deps import sympy
+from typing import TYPE_CHECKING, Mapping, Set
 
 from .subs import subs
+
+if TYPE_CHECKING:
+    import numpy as np
+    import sympy
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import sympy
 
 
 def eval_expr(
