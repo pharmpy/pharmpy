@@ -45,11 +45,11 @@ def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: Optional[flo
 
 def create_pkpd_models(
     model: Model,
-    b_init: Optional[float] = None,
+    b_init: Optional[Union[int, float]] = None,
     ests: pd.Series = None,
-    emax_init: Optional[float] = None,
-    ec50_init: Optional[float] = None,
-    mat_init: Optional[float] = None,
+    emax_init: Optional[Union[int, float]] = None,
+    ec50_init: Optional[Union[int, float]] = None,
+    mat_init: Optional[Union[int, float]] = None,
     response_type: Union[str, List] = 'all',
 ):
     """Create pkpd models
@@ -76,7 +76,6 @@ def create_pkpd_models(
     List of pharmpy models
     """
 
-    print(response_type)
     if response_type == 'all':
         models_list = ['direct', 'effect_compartment', 'indirect']
     elif isinstance(response_type, str):

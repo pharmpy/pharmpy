@@ -167,6 +167,7 @@ from .parameter_sampling import (
 from .parameter_variability import (
     add_iiv,
     add_iov,
+    add_pd_iiv,
     add_pk_iiv,
     create_joint_distribution,
     remove_iiv,
@@ -230,6 +231,7 @@ __all__ = [
     'add_metabolite',
     'add_peripheral_compartment',
     'add_pk_iiv',
+    'add_pd_iiv',
     'add_population_parameter',
     'add_time_after_dose',
     'append_estimation_step_options',

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -25,10 +25,10 @@ TYPES = frozenset(('tmdd', 'pkpd', 'drug_metabolite'))
 def create_workflow(
     route: str,
     type: str,
-    b_init: Optional[float] = None,
-    emax_init: Optional[float] = None,
-    ec50_init: Optional[float] = None,
-    met_init: Optional[float] = None,
+    b_init: Optional[Union[int, float]] = None,
+    emax_init: Optional[Union[int, float]] = None,
+    ec50_init: Optional[Union[int, float]] = None,
+    met_init: Optional[Union[int, float]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):

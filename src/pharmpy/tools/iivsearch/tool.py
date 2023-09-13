@@ -9,7 +9,13 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import add_pk_iiv, calculate_bic, create_joint_distribution, has_random_effect
+from pharmpy.modeling import (
+    add_pd_iiv,
+    add_pk_iiv,
+    calculate_bic,
+    create_joint_distribution,
+    has_random_effect,
+)
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results, update_initial_estimates
@@ -17,7 +23,9 @@ from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
 
-IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock'))
+IIV_STRATEGIES = frozenset(
+    ('no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock')
+)
 IIV_ALGORITHMS = frozenset(('brute_force',) + tuple(dir(algorithms)))
 
 
@@ -218,12 +226,19 @@ def _start_algorithm(model):
 
 
 def _add_iiv(iiv_strategy, model):
-    assert iiv_strategy in ['add_diagonal', 'fullblock']
-    model = add_pk_iiv(model)
-    if iiv_strategy == 'fullblock':
-        model = create_joint_distribution(
-            model, individual_estimates=model.modelfit_results.individual_estimates
-        )
+    assert iiv_strategy in ['add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock']
+    if iiv_strategy in ['add_diagonal', 'fullblock']:
+        model = add_pk_iiv(model)
+        if iiv_strategy == 'fullblock':
+            model = create_joint_distribution(
+                model, individual_estimates=model.modelfit_results.individual_estimates
+            )
+    elif iiv_strategy in ['pd_add_diagonal', 'pd_fullblock']:
+        model = add_pd_iiv(model)
+        if iiv_strategy == 'pd_fullblock':
+            model = create_joint_distribution(
+                model, individual_estimates=model.modelfit_results.individual_estimates
+            )
     return model
 
 

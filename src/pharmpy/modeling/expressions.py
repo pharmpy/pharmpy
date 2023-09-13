@@ -1246,11 +1246,10 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
 
     pk_symbols = _filter_symbols(dependency_graph, free_symbols)
 
-    if model.statements.ode_system.find_compartment("EFFECT") is not None:
-        pd_outflow = model.statements.ode_system.get_flow(
-            model.statements.ode_system.find_compartment("EFFECT"), output
-        )
-        pk_symbols.remove(pd_outflow)
+    odes = model.statements.ode_system
+    # Remove PD parameters if model has an effect or response compartment
+    if odes.find_compartment("EFFECT") is not None or odes.find_compartment('RESPONSE') is not None:
+        pk_symbols = [param for param in pk_symbols if str(param) not in get_pd_parameters(model)]
 
     return sorted(map(str, pk_symbols))
 
@@ -1281,18 +1280,34 @@ def get_pd_parameters(model: Model) -> List[str]:
     get_pk_parameters
 
     """
-    # FIXME: this function needs to be updated. Currently uses fixed parameter names.
+    natural_assignments = _get_natural_assignments(model.statements.before_odes)
+    dependency_graph = _dependency_graph(natural_assignments)
 
-    pd_symbols = []
-    sset = model.statements
-    if sympy.Symbol('Y_2') in model.dependent_variables:
-        parameters_in_e = sset.find_assignment('E').free_symbols
-        pk_parameters = get_pk_parameters(model)
-        parameters_in_e = {x for x in parameters_in_e if str(x) not in pk_parameters}
-        pd_symbols = {statement.symbol for statement in sset.before_odes}
-        pd_symbols = pd_symbols.intersection(parameters_in_e)
-        if sset.ode_system.find_compartment("EFFECT") is not None:
-            pd_symbols.add("KE0")
+    pk_symbols = model.statements.ode_system.eqs[0].free_symbols
+
+    ass_e = model.statements.find_assignment('E')
+    if ass_e is not None:
+        pd_symbols = [symbol for symbol in ass_e.free_symbols if symbol not in pk_symbols]
+    else:
+        pd_symbols = []
+
+    odes = model.statements.ode_system
+    effect = odes.find_compartment("EFFECT")
+    response = odes.find_compartment("RESPONSE")
+    if effect is not None:
+        output_sym = list(odes.get_flow(effect, output).free_symbols)
+        input_sym = list(effect.free_symbols)
+        ode_sym = output_sym + input_sym
+        ode_sym = [sym for sym in ode_sym if sym not in pk_symbols]
+        pd_symbols = list(pd_symbols) + ode_sym
+    if response is not None:
+        output_sym = list(odes.get_flow(response, output).free_symbols)
+        input_sym = list(response.free_symbols)
+        ode_sym = output_sym + input_sym
+        ode_sym = [sym for sym in ode_sym if sym not in pk_symbols]
+        pd_symbols = set(pd_symbols + ode_sym + [sympy.Symbol('B')])
+
+    pd_symbols = _filter_symbols(dependency_graph, set(pd_symbols))
     return sorted(map(str, pd_symbols))
 
 
