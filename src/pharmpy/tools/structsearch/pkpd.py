@@ -130,7 +130,7 @@ def create_pkpd_models(
         # set iiv
         for parameter in ["E_MAX", "SLOPE"]:
             try:
-                pkpd_model = add_iiv(pkpd_model, [parameter], "prop_add")
+                pkpd_model = add_iiv(pkpd_model, [parameter], "prop")
             except ValueError:
                 pass
         try:
