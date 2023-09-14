@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING, Callable, Dict, List, Mapping
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping
 
 if TYPE_CHECKING:
     import sympy
@@ -11,7 +11,7 @@ else:
 from .tree import replace_root_children
 
 
-def subs(expr: sympy.Basic, mapping: Mapping[sympy.Basic, sympy.Basic], simultaneous: bool = False):
+def subs(expr: sympy.Basic, mapping: Mapping[Any, Any], simultaneous: bool = False):
     _mapping = xreplace_dict(mapping)
     if (simultaneous or _mapping_is_not_recursive(_mapping)) and all(
         map(_old_does_not_need_generic_subs, _mapping.keys())
@@ -25,7 +25,7 @@ def subs(expr: sympy.Basic, mapping: Mapping[sympy.Basic, sympy.Basic], simultan
     return expr.subs(_mapping, simultaneous=simultaneous)
 
 
-def xreplace_dict(dictlike) -> Dict[sympy.Basic, sympy.Basic]:
+def xreplace_dict(dictlike) -> Dict[Any, Any]:
     return {_sympify_old(key): _sympify_new(value) for key, value in dictlike.items()}
 
 
@@ -88,8 +88,8 @@ def _subs_atom(mapping: Dict[sympy.Basic, sympy.Basic]):
     return _subs
 
 
-def _subs_atom_or_func(mapping: Dict[sympy.Basic, sympy.Basic]):
-    def _subs(expr: sympy.Basic, args: List[sympy.Basic]):
+def _subs_atom_or_func(mapping: Dict[Any, Any]):
+    def _subs(expr: sympy.Basic, args: List[Any]):
         if not args:
             return mapping.get(expr, expr)
 
