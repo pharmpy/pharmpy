@@ -1,7 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Sequence as CollectionsSequence
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    overload,
+)
 
 from pharmpy.internals.immutable import Immutable, cache_method
 
@@ -63,7 +74,7 @@ class Parameter(Immutable):
         init: Union[float, sympy.Float],
         lower: Optional[Union[float, sympy.Float]] = None,
         upper: Optional[Union[float, sympy.Float]] = None,
-        fix: Any = False,
+        fix: bool = False,
     ):
         """Alternative constructor for Parameter with error checking"""
         if not isinstance(name, str):
@@ -96,32 +107,32 @@ class Parameter(Immutable):
         return new
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Parameter name"""
         return self._name
 
     @property
-    def fix(self):
+    def fix(self) -> bool:
         """Should parameter be fixed or not"""
         return self._fix
 
     @property
-    def symbol(self):
+    def symbol(self) -> sympy.Symbol:
         """Symbol representing the parameter"""
         return sympy.Symbol(self._name)
 
     @property
-    def lower(self):
+    def lower(self) -> float:
         """Lower bound of the parameter"""
         return self._lower
 
     @property
-    def upper(self):
+    def upper(self) -> float:
         """Upper bound of the parameter"""
         return self._upper
 
     @property
-    def init(self):
+    def init(self) -> float:
         """Initial parameter estimate or value"""
         return self._init
 
@@ -129,7 +140,7 @@ class Parameter(Immutable):
     def __hash__(self):
         return hash((self.name, self.init, self.lower, self.upper, self.fix))
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             'name': self.name,
             'init': self.init,
@@ -139,7 +150,7 @@ class Parameter(Immutable):
         }
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: Dict[str, Any]):
         return cls(**d)
 
     def __eq__(self, other):
@@ -194,13 +205,13 @@ class Parameters(CollectionsSequence, Immutable):
 
     """
 
-    def __init__(self, parameters=()):
+    def __init__(self, parameters: Tuple[Parameter, ...] = ()):
         self._params = parameters
 
     @classmethod
-    def create(cls, parameters=None):
+    def create(cls, parameters: Optional[Union[Parameters, Sequence[Parameter]]] = None):
         if isinstance(parameters, Parameters):
-            pass
+            return parameters
         elif parameters is None:
             parameters = ()
         else:
@@ -268,7 +279,7 @@ class Parameters(CollectionsSequence, Immutable):
         except KeyError:
             return False
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> pd.DataFrame:
         """Create a dataframe with a summary of all Parameters
 
         Returns
@@ -300,31 +311,31 @@ class Parameters(CollectionsSequence, Immutable):
         )
 
     @property
-    def names(self):
+    def names(self) -> List[str]:
         """List of all parameter names"""
         return [p.name for p in self._params]
 
     @property
-    def symbols(self):
+    def symbols(self) -> List[sympy.Symbol]:
         """List of all parameter symbols"""
         return [p.symbol for p in self._params]
 
     @property
-    def lower(self):
+    def lower(self) -> Dict[str, float]:
         """Lower bounds of all parameters as a dictionary"""
         return {p.name: p.lower for p in self._params}
 
     @property
-    def upper(self):
+    def upper(self) -> Dict[str, float]:
         """Upper bounds of all parameters as a dictionary"""
         return {p.name: p.upper for p in self._params}
 
     @property
-    def inits(self):
+    def inits(self) -> Dict[str, float]:
         """Initial estimates of parameters as dict"""
         return {p.name: p.init for p in self._params}
 
-    def set_initial_estimates(self, inits):
+    def set_initial_estimates(self, inits: Mapping[str, float]):
         """Create a new Parameters with changed initial estimates
 
         Parameters
@@ -347,11 +358,11 @@ class Parameters(CollectionsSequence, Immutable):
         return Parameters(tuple(new))
 
     @property
-    def fix(self):
+    def fix(self) -> Dict[str, bool]:
         """Fixedness of parameters as dict"""
         return {p.name: p.fix for p in self._params}
 
-    def set_fix(self, fix):
+    def set_fix(self, fix: Mapping[str, bool]):
         """Create a new Parameters with changed fix state
 
         Parameters
@@ -374,18 +385,18 @@ class Parameters(CollectionsSequence, Immutable):
         return Parameters(tuple(new))
 
     @property
-    def fixed(self):
+    def fixed(self) -> Parameters:
         """All fixed parameters"""
         fixed = [p for p in self._params if p.fix]
         return Parameters(tuple(fixed))
 
     @property
-    def nonfixed(self):
+    def nonfixed(self) -> Parameters:
         """All non-fixed parameters"""
         nonfixed = [p for p in self._params if not p.fix]
         return Parameters(tuple(nonfixed))
 
-    def __add__(self, other):
+    def __add__(self, other: Union[Parameter, Parameters, Sequence[Parameter]]) -> Parameters:
         if isinstance(other, Parameter):
             return Parameters.create(self._params + (other,))
         elif isinstance(other, Parameters):
@@ -395,7 +406,7 @@ class Parameters(CollectionsSequence, Immutable):
         else:
             raise ValueError(f"Cannot add {other} to Parameters")
 
-    def __radd__(self, other):
+    def __radd__(self, other: Union[Parameter, Sequence[Parameter]]) -> Parameters:
         if isinstance(other, Parameter):
             return Parameters.create((other,) + self._params)
         elif isinstance(other, Sequence):
