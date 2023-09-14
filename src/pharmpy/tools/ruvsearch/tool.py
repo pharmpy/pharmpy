@@ -22,10 +22,12 @@ from pharmpy.modeling import (
     add_time_after_dose,
     create_symbol,
     get_mdv,
+    has_proportional_error_model,
     set_combined_error_model,
     set_iiv_on_ruv,
     set_initial_estimates,
     set_power_on_ruv,
+    set_proportional_error_model,
 )
 from pharmpy.modeling.blq import has_blq_transformation
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
@@ -152,13 +154,47 @@ def create_iteration_workflow(model, groups, cutoff, skip, current_iteration, dv
     return Workflow(wb)
 
 
+def proportional_error_workflow(model):
+    wb = WorkflowBuilder()
+
+    prop_start = Task('Check_proportional', _start_iteration, model)
+    wb.add_task(prop_start)
+
+    if not has_proportional_error_model(model):
+        change_name_task = Task("Change_proportional_description", _change_proportional_name)
+        wb.add_task(change_name_task, predecessors=prop_start)
+
+        convert_to_prop_task = Task("Convert_to_proportional", set_proportional_error_model)
+        wb.add_task(convert_to_prop_task, predecessors=change_name_task)
+
+        fit_wf = create_fit_workflow(n=1)
+        wb.insert_workflow(fit_wf, predecessors=convert_to_prop_task)
+    return Workflow(wb)
+
+
+def _change_proportional_name(model):
+    model = model.replace(
+        name='prop_error',
+        description='Input model with proportional error model',
+    )
+    return model
+
+
 def start(context, model, groups, p_value, skip, max_iter, dv):
     cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
 
+    input_model = model
+    # Check if model has a proportional error
+    proportional_workflow = proportional_error_workflow(input_model)
+    model = call_workflow(proportional_workflow, 'Convert_error_model', context)
+
     sum_models = []
-    selected_models = [model]
+    if model == input_model:
+        selected_models = [model]
+    else:
+        selected_models = [input_model, model]
     cwres_models = []
     tool_database = None
     last_iteration = 0
@@ -186,6 +222,11 @@ def start(context, model, groups, p_value, skip, max_iter, dv):
             skip.append('time_varying')
         else:
             skip.append(selected_model_name)
+
+    # Check that there actually occured an improvement from the initial model.
+    delta_ofv = input_model.modelfit_results.ofv - model.modelfit_results.ofv
+    if delta_ofv < cutoff:
+        model = input_model
 
     sumind = summarize_individuals(selected_models)
     sumcount = summarize_individuals_count_table(df=sumind)
