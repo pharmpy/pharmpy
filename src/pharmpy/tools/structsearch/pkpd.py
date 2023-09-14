@@ -93,23 +93,21 @@ def create_pkpd_models(
                 pkpd_model = pkpd_model.replace(description=f"{modeltype}_{pd_type}")
                 models.append(pkpd_model)
         elif modeltype == 'indirect':
-            for argument in list(product(pd_types, [True, False])):
-                pkpd_model = add_indirect_effect(model, *argument)
-                if argument[1]:
+            for pd_type, is_production in list(product(pd_types, [True, False])):
+                pkpd_model = add_indirect_effect(model, pd_type, is_production)
+                if is_production:
                     pkpd_model = pkpd_model.replace(
-                        description=f"{modeltype}_{argument[0]}_production"
+                        description=f"{modeltype}_{pd_type}_production"
                     )
                 else:
                     pkpd_model = pkpd_model.replace(
-                        description=f"{modeltype}_{argument[0]}_degradation"
+                        description=f"{modeltype}_{pd_type}_degradation"
                     )
                 models.append(pkpd_model)
 
     final_models = []
-    index = 1
-    for pkpd_model in models:
+    for index, pkpd_model in enumerate(models, 1):
         pkpd_model = set_name(pkpd_model, f"structsearch_run{index}")
-        index += 1
 
         # initial values
         if b_init is not None:
