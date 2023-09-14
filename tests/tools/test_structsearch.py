@@ -99,7 +99,7 @@ def test_pkpd(load_model_for_test, testdata):
 def test_drug_metabolite(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     models = create_drug_metabolite_models(model)
-    assert len(models) == 4
+    assert len(models) == 3
 
 
 def test_create_workflow():

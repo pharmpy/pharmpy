@@ -14,7 +14,7 @@ from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
 
-from .drugmetabolite import create_drug_metabolite_models
+from .drugmetabolite import create_base_metabolite, create_drug_metabolite_models
 from .pkpd import create_baseline_pd_model, create_pkpd_models
 from .tmdd import create_qss_models, create_remaining_models
 
@@ -83,6 +83,7 @@ def run_tmdd(context, model):
 
     wf = create_fit_workflow(qss_candidate_models)
     task_results = Task('results', bundle_results)
+    # FIXME : wf (Workflow) has no attribute called add_task
     wf.add_task(task_results, predecessors=wf.output_tasks)
     qss_run_models = call_workflow(wf, 'results_QSS', context)
 
@@ -154,23 +155,33 @@ def run_pkpd(context, model, b_init, emax_init, ec50_init, met_init):
 
 
 def run_drug_metabolite(context, model):
-    drug_metabolite_models = create_drug_metabolite_models(model)
+    base_drug_metabolite = create_base_metabolite(model)
+    candidate_drug_metabolite = create_drug_metabolite_models(model)
 
-    wf = create_fit_workflow(drug_metabolite_models)
+    # Run workflow for base model
+    wf = create_fit_workflow(base_drug_metabolite)
+    wb = WorkflowBuilder(wf)
     task_results = Task('results', bundle_results)
-    wf.add_task(task_results, predecessors=wf.output_tasks)
-    drug_metabolite_models_fit = call_workflow(wf, 'results_remaining', context)
+    wb.add_task(task_results, predecessors=wf.output_tasks)
+    base_drug_metabolite_fit = call_workflow(wb, 'results_remaining', context)
+
+    # Run workflow for candidate models
+    wf = create_fit_workflow(candidate_drug_metabolite)
+    wb = WorkflowBuilder(wf)
+    task_results = Task('results', bundle_results)
+    wb.add_task(task_results, predecessors=wf.output_tasks)
+    drug_metabolite_models_fit = call_workflow(wb, 'results_remaining', context)
 
     summary_input = summarize_modelfit_results(model.modelfit_results)
     summary_candidates = summarize_modelfit_results(
-        [model.modelfit_results for model in drug_metabolite_models_fit]
+        [model.modelfit_results for model in base_drug_metabolite_fit + drug_metabolite_models_fit]
     )
 
     return create_results(
         StructSearchResults,
         model,
-        model,
-        drug_metabolite_models,
+        base_drug_metabolite_fit[0],
+        candidate_drug_metabolite,
         rank_type='bic',
         cutoff=None,
         summary_models=pd.concat(
