@@ -3,17 +3,22 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Iterable, List, Optional, Set, Tuple, Union, overload
+from typing import TYPE_CHECKING, Iterable, List, Optional, Set, Tuple, Union, overload
 
 import pharmpy.internals.unicode as unicode
-from pharmpy.deps import networkx as nx
-from pharmpy.deps import sympy
 from pharmpy.internals.expr.assumptions import assume_all
 from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
 from pharmpy.internals.expr.ode import canonical_ode_rhs
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.immutable import Immutable, cache_method
+
+if TYPE_CHECKING:
+    import networkx as nx
+    import sympy
+else:
+    from pharmpy.deps import networkx as nx
+    from pharmpy.deps import sympy
 
 
 def is_zero_matrix(A):
@@ -695,6 +700,7 @@ class CompartmentalSystem(ODESystem):
         """
         cb = CompartmentalSystemBuilder(self)
         for u, v, rate in cb._g.edges.data('rate'):
+            assert isinstance(rate, sympy.Basic)
             rate_sub = subs(rate, substitutions, simultaneous=True)
             cb._g.edges[u, v]['rate'] = rate_sub
         mapping = {comp: comp.subs(substitutions) for comp in _comps(self._g)}
@@ -1406,12 +1412,12 @@ class Compartment:
 
     def __init__(
         self,
-        name,
-        amount,
-        doses=tuple(),
-        input=sympy.Integer(0),
-        lag_time=sympy.Integer(0),
-        bioavailability=sympy.Integer(1),
+        name: str,
+        amount: sympy.Basic,
+        doses: tuple(Dose) = tuple(),
+        input: sympy.Basic = sympy.Integer(0),
+        lag_time: sympy.Basic = sympy.Integer(0),
+        bioavailability: sympy.Basic = sympy.Integer(1),
     ):
         self._name = name
         self._amount = amount
@@ -1666,7 +1672,7 @@ class Bolus(Dose):
     Bolus(AMT, admid=1)
     """
 
-    def __init__(self, amount, admid=1):
+    def __init__(self, amount: sympy.Basic, admid=1):
         self._amount = amount
         self._admid = admid
 
@@ -1765,14 +1771,26 @@ class Infusion(Dose):
     Infusion(AMT, admid=1, rate=R1)
     """
 
-    def __init__(self, amount, admid=1, rate=None, duration=None):
+    def __init__(
+        self,
+        amount: sympy.Basic,
+        admid=1,
+        rate: Optional[sympy.Basic] = None,
+        duration: Optional[sympy.Basic] = None,
+    ):
         self._amount = amount
         self._admid = admid
         self._rate = rate
         self._duration = duration
 
     @classmethod
-    def create(cls, amount, admid=1, rate=None, duration=None):
+    def create(
+        cls,
+        amount=Union[str, sympy.Basic],
+        admid=1,
+        rate: Optional[Union[str, sympy.Basic]] = None,
+        duration: Optional[Union[str, sympy.Basic]] = None,
+    ):
         if rate is None and duration is None:
             raise ValueError('Need rate or duration for Infusion')
         if rate is not None and duration is not None:
