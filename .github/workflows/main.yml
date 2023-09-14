@@ -87,6 +87,23 @@ jobs:
         run: tox -e lint
 
 
+  type-check:
+    strategy:
+      matrix:
+        platform: [ubuntu-22.04]
+        python-version: ['3.11']
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-tox
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Type checking
+        run: tox -e type-check
+
+
   docs-build:
     strategy:
       matrix:
