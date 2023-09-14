@@ -96,9 +96,7 @@ def create_pkpd_models(
             for pd_type, is_production in list(product(pd_types, [True, False])):
                 pkpd_model = add_indirect_effect(model, pd_type, is_production)
                 if is_production:
-                    pkpd_model = pkpd_model.replace(
-                        description=f"{modeltype}_{pd_type}_production"
-                    )
+                    pkpd_model = pkpd_model.replace(description=f"{modeltype}_{pd_type}_production")
                 else:
                     pkpd_model = pkpd_model.replace(
                         description=f"{modeltype}_{pd_type}_degradation"
