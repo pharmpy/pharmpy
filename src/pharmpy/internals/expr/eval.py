@@ -26,7 +26,7 @@ def eval_expr(
         data = [datamap[rv] for rv in ordered_symbols]
         return fn(*data)
 
-    return np.full(datasize, float(expr.evalf()))
+    return np.full(datasize, float(expr.evalf()))  # pyright: ignore [reportGeneralTypeIssues]
 
 
 @lru_cache(maxsize=256)

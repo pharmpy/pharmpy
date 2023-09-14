@@ -16,10 +16,8 @@ def subsets(iterable: Iterable[T], min_size: int = 0, max_size: int = -1) -> Ite
     """
     s = list(iterable)
     max_size = len(s) + max_size + 1 if max_size < 0 else max_size
-    combs = (
-        combinations(s, r) for r in range(min_size, max_size + 1)
-    )  # pyright: ignore [reportGeneralTypeIssues]
-    return chain.from_iterable(combs)
+    combs = (combinations(s, r) for r in range(min_size, max_size + 1))
+    return chain.from_iterable(combs)  # pyright: ignore [reportGeneralTypeIssues]
 
 
 def non_empty_proper_subsets(iterable: Iterable[T]) -> Iterable[Tuple[T]]:
