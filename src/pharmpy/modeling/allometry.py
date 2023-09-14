@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
-from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.model import Assignment, Model, Parameter, Parameters
 
 from .expressions import _create_symbol
 from .odes import find_clearance_parameters, find_volume_parameters
+
+if TYPE_CHECKING:
+    import sympy
+else:
+    from pharmpy.deps import sympy
 
 
 def add_allometry(
