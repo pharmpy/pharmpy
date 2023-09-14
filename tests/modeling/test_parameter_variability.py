@@ -42,7 +42,7 @@ from pharmpy.tools import read_modelfit_results
         ('S1', 'exp', '*', None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA_S1)', 2),
         ('V', 'exp', '+', None, 'V = TVV*EXP(ETA(2)) + EXP(ETA_V)\nS1=V', 2),
         ('S1', 'add', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA_S1', 2),
-        ('S1', 'prop', None, None, 'V=TVV*EXP(ETA(2))\nS1 = ETA_S1*V', 2),
+        ('S1', 'prop', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V*(ETA_S1 + 1)', 2),
         ('S1', 'log', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA_S1)/(EXP(ETA_S1) + 1)', 2),
         ('S1', 'eta_new', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA_S1', 2),
         ('S1', 'eta_new**2', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA_S1**2', 2),
@@ -792,43 +792,29 @@ def test_remove_iiv(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     assert rec_omega == omega_ref
 
 
-def test_remove_iiv2(load_model_for_test, testdata):
+@pytest.mark.parametrize(
+    'iiv_type, operation',
+    [
+        ('add', '*'),
+        ('prop', '*'),
+        ('log', '*'),
+        ('exp', '*'),
+        ('exp', '+'),
+    ],
+)
+def test_remove_iiv2(load_model_for_test, testdata, iiv_type, operation):
     model = load_model_for_test(testdata / 'nonmem/pheno_real.mod')
-    model = add_individual_parameter(model, 'A')
-    model = add_iiv(model, 'A', 'add')
-    model = add_individual_parameter(model, 'B')
-    model = add_iiv(model, 'B', 'prop')
-    model = add_individual_parameter(model, 'C')
-    model = add_iiv(model, 'C', 'log')
-    model = add_individual_parameter(model, 'D')
-    model = add_iiv(model, 'D', 'exp')
-    model = add_individual_parameter(model, 'E')
-    model = add_iiv(model, 'E', 'exp', '+')
-    model = add_iiv(model, "TVCL", "add")
 
+    model = add_individual_parameter(model, 'A')
+    without_iiv = model.statements.find_assignment('A')
+    model = add_iiv(model, 'A', iiv_type, operation)
     model = remove_iiv(model, 'A')
-    assert model.statements.find_assignment('A') == Assignment(
-        sympy.Symbol('A'), sympy.Symbol('POP_A')
-    )
-    model = remove_iiv(model, 'B')
-    assert model.statements.find_assignment('B') == Assignment(
-        sympy.Symbol('B'), sympy.Symbol('POP_B')
-    )
-    model = remove_iiv(model, 'C')
-    assert model.statements.find_assignment('C') == Assignment(
-        sympy.Symbol('C'), sympy.Symbol('POP_C')
-    )
+    assert model.statements.find_assignment('A') == without_iiv
+
+    model = add_iiv(model, "TVCL", "add")
     model = remove_iiv(model, 'TVCL')
     assert model.statements.find_assignment('TVCL') == Assignment(
         sympy.Symbol('TVCL'), sympy.Symbol('PTVCL') * sympy.Symbol('WGT')
-    )
-    model = remove_iiv(model, 'D')
-    assert model.statements.find_assignment('D') == Assignment(
-        sympy.Symbol('D'), sympy.Symbol('POP_D')
-    )
-    model = remove_iiv(model, 'E')
-    assert model.statements.find_assignment('E') == Assignment(
-        sympy.Symbol('E'), sympy.Symbol('POP_E')
     )
 
     # Test with two different ETAs

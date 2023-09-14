@@ -93,50 +93,49 @@ def create_pkpd_models(
                 pkpd_model = pkpd_model.replace(description=f"{modeltype}_{pd_type}")
                 models.append(pkpd_model)
         elif modeltype == 'indirect':
-            for argument in list(product(pd_types, [True, False])):
-                pkpd_model = add_indirect_effect(model, *argument)
-                pkpd_model = pkpd_model.replace(
-                    description=f"{modeltype}_{argument[0]}_prod={argument[1]}"
-                )
+            for pd_type, is_production in list(product(pd_types, [True, False])):
+                pkpd_model = add_indirect_effect(model, pd_type, is_production)
+                if is_production:
+                    pkpd_model = pkpd_model.replace(description=f"{modeltype}_{pd_type}_production")
+                else:
+                    pkpd_model = pkpd_model.replace(
+                        description=f"{modeltype}_{pd_type}_degradation"
+                    )
                 models.append(pkpd_model)
 
-        final_models = []
-        index = 1
-        for pkpd_model in models:
-            pkpd_model = set_name(pkpd_model, f"structsearch_run{index}")
-            index += 1
+    final_models = []
+    for index, pkpd_model in enumerate(models, 1):
+        pkpd_model = set_name(pkpd_model, f"structsearch_run{index}")
 
-            # initial values
-            if b_init is not None:
-                pkpd_model = set_initial_estimates(pkpd_model, b_init)
-            if ests is not None:
-                pkpd_model = fix_parameters_to(pkpd_model, ests)
+        # initial values
+        if b_init is not None:
+            pkpd_model = set_initial_estimates(pkpd_model, b_init)
+        if ests is not None:
+            pkpd_model = fix_parameters_to(pkpd_model, ests)
 
-            if emax_init is not None and ec50_init is not None:
-                pkpd_model = set_initial_estimates(pkpd_model, {'POP_E_MAX': emax_init})
-                pkpd_model = set_initial_estimates(pkpd_model, {'POP_EC_50': ec50_init})
-                pkpd_model = set_initial_estimates(pkpd_model, {'POP_SLOPE': emax_init / ec50_init})
-            if mat_init is not None:
-                pkpd_model = set_initial_estimates(
-                    pkpd_model, {'POP_KE0': 1 / mat_init, 'POP_K_OUT': 1 / mat_init}
-                )
+        if emax_init is not None and ec50_init is not None:
+            pkpd_model = set_initial_estimates(pkpd_model, {'POP_E_MAX': emax_init})
+            pkpd_model = set_initial_estimates(pkpd_model, {'POP_EC_50': ec50_init})
+            pkpd_model = set_initial_estimates(pkpd_model, {'POP_SLOPE': emax_init / ec50_init})
+        if mat_init is not None:
+            pkpd_model = set_initial_estimates(pkpd_model, {'POP_MET': mat_init})
 
-            pkpd_model = unconstrain_parameters(pkpd_model, ['SLOPE'])
-            pkpd_model = set_lower_bounds(pkpd_model, {'POP_E_MAX': -1})
+        pkpd_model = unconstrain_parameters(pkpd_model, ['SLOPE'])
+        pkpd_model = set_lower_bounds(pkpd_model, {'POP_E_MAX': -1})
 
-            # set iiv
-            for parameter in ["B", "SLOPE"]:
-                try:
-                    pkpd_model = add_iiv(pkpd_model, [parameter], "exp")
-                except ValueError:
-                    pass
+        # set iiv
+        for parameter in ["E_MAX", "SLOPE"]:
             try:
-                pkpd_model = add_iiv(pkpd_model, ['E_MAX'], "prop")
+                pkpd_model = add_iiv(pkpd_model, [parameter], "prop")
             except ValueError:
                 pass
+        try:
+            pkpd_model = add_iiv(pkpd_model, 'B', "exp")
+        except ValueError:
+            pass
 
-            pkpd_model = pkpd_model.replace(parent_model='baseline_model')
-            final_models.append(pkpd_model)
+        pkpd_model = pkpd_model.replace(parent_model='baseline_model')
+        final_models.append(pkpd_model)
 
     return final_models
 

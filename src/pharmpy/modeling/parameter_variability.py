@@ -40,7 +40,7 @@ def add_iiv(
     initial_estimate: float = 0.09,
     eta_names: Optional[List[str]] = None,
 ):
-    """Adds IIVs to :class:`pharmpy.model`.
+    r"""Adds IIVs to :class:`pharmpy.model`.
 
     Effects that currently have templates are:
 
@@ -52,6 +52,17 @@ def add_iiv(
 
     For all except exponential the operation input is not needed. Otherwise user specified
     input is supported. Initial estimates for new etas are 0.09.
+
+
+
+    Assuming a statement :math:`CL = \Theta`, IIVs are added in the following ways:
+
+    - Additive: :math:`CL = \Theta + \eta`
+    - Proportional: :math:`CL = \Theta \cdot (1 + \eta)`
+    - Exponential: :math:`CL = \Theta +/\cdot e^{\eta}`
+    - Logit: :math:`CL = \Theta \cdot e^{\eta}/ (e^{\eta} + 1)`
+    - Rescaled logit: :math:`CL = e^{\Phi \cdot \eta}/(1+e^{\Phi \cdot \eta})`
+      with :math:`\Phi = log(\Theta/(1-\Theta))`
 
     Parameters
     ----------
@@ -582,7 +593,7 @@ class EtaAddition:
 
     @classmethod
     def proportional(cls):
-        template = sympy.Symbol('original') * sympy.Symbol('eta_new')
+        template = sympy.Symbol('original') * (1 + sympy.Symbol('eta_new'))
 
         return cls(template)
 

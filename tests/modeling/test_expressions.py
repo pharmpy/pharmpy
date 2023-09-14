@@ -361,7 +361,7 @@ def test_get_pk_parameters(load_model_for_test, testdata, model_path, kind, expe
 def test_get_pd_parameters(load_model_for_test, testdata, model_path, kind, expected):
     model = load_model_for_test(testdata / model_path)
     assert set(get_pd_parameters(set_direct_effect(model, kind))) == set(expected)
-    assert set(get_pd_parameters(add_effect_compartment(model, kind))) == set(expected + ["KE0"])
+    assert set(get_pd_parameters(add_effect_compartment(model, kind))) == set(expected + ["MET"])
     assert get_pk_parameters(add_effect_compartment(model, kind)) == ['CL', 'V']
     assert get_pk_parameters(set_direct_effect(model, kind)) == ['CL', 'V']
     assert not set(
@@ -379,12 +379,12 @@ def test_get_pd_parameters(load_model_for_test, testdata, model_path, kind, expe
 @pytest.mark.parametrize(
     ('model_path', 'kind', 'prod', 'expected'),
     (
-        ('nonmem/pheno.mod', 'linear', True, ['B', 'SLOPE', 'K_OUT']),
-        ('nonmem/pheno.mod', 'linear', False, ['B', 'SLOPE', 'K_OUT']),
-        ('nonmem/pheno.mod', 'Emax', True, ['B', 'E_MAX', 'EC_50', 'K_OUT']),
-        ('nonmem/pheno.mod', 'Emax', False, ['B', 'E_MAX', 'EC_50', 'K_OUT']),
-        ('nonmem/pheno.mod', 'sigmoid', True, ['B', 'EC_50', 'E_MAX', 'N', 'K_OUT']),
-        ('nonmem/pheno.mod', 'sigmoid', False, ['B', 'EC_50', 'E_MAX', 'N', 'K_OUT']),
+        ('nonmem/pheno.mod', 'linear', True, ['B', 'SLOPE', 'MET']),
+        ('nonmem/pheno.mod', 'linear', False, ['B', 'SLOPE', 'MET']),
+        ('nonmem/pheno.mod', 'Emax', True, ['B', 'E_MAX', 'EC_50', 'MET']),
+        ('nonmem/pheno.mod', 'Emax', False, ['B', 'E_MAX', 'EC_50', 'MET']),
+        ('nonmem/pheno.mod', 'sigmoid', True, ['B', 'EC_50', 'E_MAX', 'N', 'MET']),
+        ('nonmem/pheno.mod', 'sigmoid', False, ['B', 'EC_50', 'E_MAX', 'N', 'MET']),
     ),
     ids=repr,
 )

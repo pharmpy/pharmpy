@@ -1299,13 +1299,13 @@ def get_pd_parameters(model: Model) -> List[str]:
         input_sym = list(effect.free_symbols)
         ode_sym = output_sym + input_sym
         ode_sym = [sym for sym in ode_sym if sym not in pk_symbols]
-        pd_symbols = list(pd_symbols) + ode_sym
+        pd_symbols = list(pd_symbols) + ode_sym + [sympy.Symbol('MET')]
     if response is not None:
         output_sym = list(odes.get_flow(response, output).free_symbols)
         input_sym = list(response.free_symbols)
         ode_sym = output_sym + input_sym
         ode_sym = [sym for sym in ode_sym if sym not in pk_symbols]
-        pd_symbols = set(pd_symbols + ode_sym + [sympy.Symbol('B')])
+        pd_symbols = set(pd_symbols + ode_sym + [sympy.Symbol('B'), sympy.Symbol('MET')])
 
     pd_symbols = _filter_symbols(dependency_graph, set(pd_symbols))
     return sorted(map(str, pd_symbols))

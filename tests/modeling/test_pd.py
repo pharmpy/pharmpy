@@ -62,13 +62,15 @@ def _test_effect_models(model, expr, conc):
     elif expr == 'linear':
         assert model.statements[1] == Assignment(e0, S("POP_B"))
         assert model.statements[0] == Assignment(S("SLOPE"), S("POP_SLOPE"))
-        assert model.statements.after_odes[-2] == Assignment(e, e0 + S("SLOPE") * conc)
+        assert model.statements.after_odes[-2] == Assignment(e, e0 * (1 + S("SLOPE") * conc))
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
     elif expr == "Emax":
         assert model.statements[0] == Assignment(ec50, S("POP_EC_50"))
         assert model.statements[2] == Assignment(e0, S("POP_B"))
         assert model.statements[1] == Assignment(emax, S("POP_E_MAX"))
-        assert model.statements.after_odes[-2] == Assignment(e, e0 + (emax * conc) / (ec50 + conc))
+        assert model.statements.after_odes[-2] == Assignment(
+            e, e0 * (1 + (emax * conc) / (ec50 + conc))
+        )
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
     elif expr == "sigmoid":
         assert model.statements[0] == Assignment(S("N"), S("POP_N"))
@@ -78,7 +80,10 @@ def _test_effect_models(model, expr, conc):
         assert model.statements.after_odes[-2] == Assignment(
             e,
             sympy.Piecewise(
-                (e0 + ((emax * conc ** S("N")) / (ec50 ** S("N") + conc ** S("N"))), conc > 0),
+                (
+                    e0 * (1 + ((emax * conc ** S("N")) / (ec50 ** S("N") + conc ** S("N")))),
+                    conc > 0,
+                ),
                 (e0, True),
             ),
         )
@@ -88,7 +93,7 @@ def _test_effect_models(model, expr, conc):
         assert model.statements[1] == Assignment(e0, S("POP_B"))
         assert model.statements[0] == Assignment(emax, S("POP_E_MAX"))
         assert model.statements.after_odes[-2] == Assignment(
-            e, sympy.Piecewise((e0, conc <= 0), (e0 + emax, True))
+            e, sympy.Piecewise((e0, conc <= 0), (e0 * (1 + emax), True))
         )
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
     elif expr == "loglin":
