@@ -102,7 +102,7 @@ tzdata==2023.3
 urllib3==2.0.4
 wcwidth==0.2.6
 webencodings==0.5.1
-widgetsnbextension==4.0.8
+widgetsnbextension==4.0.9
 zict==3.0.0
 zipp==3.16.2
 tflite-runtime==2.13.0; sys_platform == 'linux' and python_version == '3.9'
