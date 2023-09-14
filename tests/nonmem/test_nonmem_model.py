@@ -696,9 +696,21 @@ $ESTIMATION METHOD=1 SADDLE_RESET=1
     [
         ('$EST METH=COND INTER', {'method': 'fo'}, '$ESTIMATION METHOD=ZERO INTER'),
         ('$EST METH=COND INTER', {'interaction': False}, '$ESTIMATION METHOD=COND'),
-        ('$EST METH=COND INTER', {'parameter_uncertainty_method': 'sandwich'}, '$COVARIANCE'),
-        ('$EST METH=COND INTER', {'parameter_uncertainty_method': 'cpg'}, '$COVARIANCE MATRIX=S'),
-        ('$EST METH=COND INTER', {'parameter_uncertainty_method': 'ofim'}, '$COVARIANCE MATRIX=R'),
+        (
+            '$EST METH=COND INTER',
+            {'parameter_uncertainty_method': 'sandwich'},
+            '$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1',
+        ),
+        (
+            '$EST METH=COND INTER',
+            {'parameter_uncertainty_method': 'cpg'},
+            '$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1',
+        ),
+        (
+            '$EST METH=COND INTER',
+            {'parameter_uncertainty_method': 'ofim'},
+            '$COVARIANCE MATRIX=R UNCONDITIONAL PRINT=E PRECOND=1',
+        ),
         (
             '$EST METH=COND INTER MAXEVAL=99999',
             {'method': 'fo'},

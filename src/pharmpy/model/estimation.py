@@ -193,6 +193,11 @@ class EstimationStep(Immutable):
         +----------------------------+-----------------------+
         | Observed FIM               | $COVARIANCE MATRIX=R  |
         +----------------------------+-----------------------+
+
+        by default the following options are appended:
+        UNCONDITIONAL: The uncertainty step is implemented regardless of how the estimation step terminates.
+        PRINT=E: Print the eigenvalues of the correlation matrix.
+        PRECOND=1: Perform up to 1 preconditioning cycle on the R matrix.
         """
         return self._parameter_uncertainty_method
 
