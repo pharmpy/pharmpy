@@ -25,7 +25,7 @@ def check_covariates(input_model, covariates):
     """Perform checks of covariates and filter out inappropriate ones
 
     1. A covariate has the same baseline value for all individuals
-    2. Two or more covariates have the exact same base line values
+    2. Two or more covariates have the exact same baseline values
     3. Warn for time varying covariates
 
     Return a new list of covariates with "bad" ones removed

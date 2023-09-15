@@ -1712,7 +1712,7 @@ def add_peripheral_compartment(model: Model, name: str = None):
 
     if n == 1:
         if vc != 1:
-            # Heurstic to handle the Mixed MM-FO case
+            # Heuristic to handle the Mixed MM-FO case
             if cl.is_Add:
                 cl1 = cl.args[0]
                 if cl1.is_Mul:

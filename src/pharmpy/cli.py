@@ -8,7 +8,7 @@ The CLI interface of Pharmpy
 Examples
 --------
 
-Example argument lines (only preceeded by ``pharmpy`` or ``python3 -m pharmpy``)::
+Example argument lines (only preceded by ``pharmpy`` or ``python3 -m pharmpy``)::
 
     # filter data (as model prescribes) and output to file 'output.csv'
     pharmpy data write run1.mod -o output.csv
@@ -41,7 +41,7 @@ On Logging
 ----------
 
 As a CLI we are at the top, interacting with the user. All of Pharmpy will get messages
-filtered through here (loggers organize themselves in a hiearchy based on their period-split names).
+filtered through here (loggers organize themselves in a hierarchy based on their period-split names).
 
 .. warning::
     Loggers **mustn't** be configured if imported as library (e.g. set handlers and such),

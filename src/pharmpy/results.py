@@ -168,7 +168,7 @@ class ModelfitResults(Results):
         Precision matrix of the population parameter estimates
     evaluation_ofv : float
         The objective function value as if the model was evaluated. Currently
-        workfs for classical estimation methods by taking the OFV of the first
+        works for classical estimation methods by taking the OFV of the first
         iteration.
     individual_ofv : pd.Series
         OFV for each individual

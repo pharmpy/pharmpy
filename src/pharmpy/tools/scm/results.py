@@ -172,7 +172,7 @@ def parse_runtable_block(block, parcov_dictionary=None, included_relations=None)
 
     if gof == 'pvalue':
         if np.all([np.isnan(v) or v is None for v in rawtable['pval'].values]):
-            # No model signficant, signif column is empty and missed by read_fwf
+            # No model significant, signif column is empty and missed by read_fwf
             rawtable['pval'] = rawtable['signif']
             rawtable['signif'] = False
     else:
@@ -347,7 +347,7 @@ def step_data_frame(step, included_relations):
     is_backward = df['is_backward'].iloc[0]
     if is_backward and included_relations:
         if np.all(np.isnan(df['extended_state'].values.flatten())):
-            # This must be a backward step without preceeding steps of any kind
+            # This must be a backward step without preceding steps of any kind
             # and where included_relations was not found from conf file
             df['extended_state'] = extended_states(df['model'], included_relations)
     df['step'] = step['number']

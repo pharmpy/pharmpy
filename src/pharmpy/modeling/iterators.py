@@ -37,7 +37,7 @@ class DatasetIterator:
         self._name_pattern = name_pattern
 
     def _check_exhausted(self):
-        """Check if the iterator is exhaused. Raise StopIteration in that case"""
+        """Check if the iterator is exhausted. Raise StopIteration in that case"""
         if self._next > self._iterations:
             raise StopIteration
 
@@ -115,7 +115,7 @@ def omit_data(
     Returns
     -------
     iterator
-        Iterator yielding tuples of models/dataframes and the omited group
+        Iterator yielding tuples of models/dataframes and the omitted group
     """
     return Omit(dataset_or_model, group, name_pattern)
 

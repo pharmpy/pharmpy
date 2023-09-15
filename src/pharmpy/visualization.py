@@ -4,7 +4,7 @@
 # evolving and there are many different modules to choose from
 # all visualization API calls should be made from this module so
 # that we could start using another API more easily.
-# Design conciderations:
+# Design considerations:
 # We would like to be able to have interactive plots which currently
 # means to select a package that can render to html. The two main
 # contenders that can do this are the altair and the bokeh libraries.

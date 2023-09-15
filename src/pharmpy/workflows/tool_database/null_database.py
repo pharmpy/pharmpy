@@ -6,7 +6,7 @@ class NullToolDatabase(ToolDatabase):
     """Dummy tool database
 
     No operation does anything. This database can be used if no storing of files
-    is desireable.
+    is desirable.
     """
 
     def __init__(self, toolname, **kwargs):
