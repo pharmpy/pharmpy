@@ -20,20 +20,20 @@ def with_runtime_arguments_type_check(fn):
     type_hints = None
 
     def _wrapped(*args, **kwargs):
-        # NOTE This delays loading annotations until first use
+        # NOTE: This delays loading annotations until first use
         nonlocal type_hints
         if type_hints is None:
             type_hints = get_type_hints(fn)
 
         for i, parameter in enumerate(parameters):
             if parameter.annotation is parameter.empty:
-                # NOTE Do not check anything if there is no annotation
+                # NOTE: Do not check anything if there is no annotation
                 continue
 
             name = parameter.name
             value = _arg(parameter, i, args, kwargs)
 
-            # NOTE We cannot use parameter.annotation as this does not work
+            # NOTE: We cannot use parameter.annotation as this does not work
             # in combination with `from __future__ import annotations`.
             # See https://peps.python.org/pep-0563/#introducing-a-new-dictionary-for-the-string-literal-form-instead
             expected_types = _annotation_to_types(type_hints[name])
@@ -109,7 +109,7 @@ def _match(typing, value):
         return isinstance(value, typing)
 
     if origin is Literal:
-        # NOTE Empty literals return False
+        # NOTE: Empty literals return False
         return any(map(lambda t: value == t, get_args(typing)))
 
     if origin is list or origin is List:
@@ -131,7 +131,7 @@ def _match(typing, value):
             return len(value) == n and all(map(_match, args, value))
 
     if origin is Union:
-        # NOTE Empty unions return False
+        # NOTE: Empty unions return False
         return any(map(lambda t: _match(t, value), get_args(typing)))
 
     if origin is Optional:
@@ -150,15 +150,15 @@ def _match(typing, value):
             return False
 
     if origin is Container:
-        # NOTE Cannot check value type because we do not know any candidate key
+        # NOTE: Cannot check value type because we do not know any candidate key
         return hasattr(value, '__contains__')
 
     if origin is Iterator:
-        # NOTE Cannot check value type because we do not know any candidate key
+        # NOTE: Cannot check value type because we do not know any candidate key
         return hasattr(value, '__next__') and hasattr(value, '__iter__')
 
     if origin is Iterable:
-        # NOTE Cannot check value type because of risk of side-effect
+        # NOTE: Cannot check value type because of risk of side-effect
         try:
             iter(value)
             return True

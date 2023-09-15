@@ -30,7 +30,7 @@ def test_allometry(tmp_path, testdata):
         path = db.retrieve_file(model_name, f'{model_name}.lst')
         with open(path, 'r') as fh:
             while line := fh.readline():
-                # NOTE skip date, time, description etc
+                # NOTE: Skip date, time, description etc
                 if line[:6] == '$DATA ':
                     assert line == f'$DATA ..{sep}.datasets{sep}input_model.csv IGNORE=@\n'
                     break

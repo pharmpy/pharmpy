@@ -18,7 +18,7 @@ def eval_expr(
     datasize: int,
     datamap: Mapping[sympy.Basic, np.ndarray],
 ) -> np.ndarray:
-    # NOTE We avoid querying for free_symbols if we know none are expected
+    # NOTE: We avoid querying for free_symbols if we know none are expected
     fs = _free_symbols(expr) if datamap else set()
 
     if fs:
@@ -38,7 +38,7 @@ def _free_symbols(expr: sympy.Basic) -> Set[sympy.Basic]:
 def _lambdify_canonical(expr: sympy.Basic):
     fs = _free_symbols(expr)
     ordered_symbols = sorted(fs, key=str)
-    # NOTE Substitution allows to use cse. Otherwise weird things happen with
+    # NOTE: Substitution allows to use cse. Otherwise weird things happen with
     # symbols that look like function eval (e.g. ETA(1), THETA(3), OMEGA(1,1)).
     ordered_substitutes = [sympy.Symbol(f'__tmp{i}') for i in range(len(ordered_symbols))]
     substituted_expr = subs(

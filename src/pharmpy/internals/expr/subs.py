@@ -30,7 +30,7 @@ def xreplace_dict(dictlike) -> Dict[Any, Any]:
 
 
 def _sympify_old(old) -> sympy.Basic:
-    # NOTE This mimics sympy's input coercion in subs
+    # NOTE: This mimics sympy's input coercion in subs
     return (
         sympy.Symbol(old)
         if isinstance(old, str)
@@ -40,7 +40,7 @@ def _sympify_old(old) -> sympy.Basic:
 
 @lru_cache(maxsize=256)
 def _sympify_new(new) -> sympy.Basic:
-    # NOTE This mimics sympy's input coercion in subs
+    # NOTE: This mimics sympy's input coercion in subs
     return sympy.sympify(new, strict=not isinstance(new, (str, type)))
 
 
@@ -74,7 +74,7 @@ def _subs_atoms_simultaneously(
             output.pop()
             output[-1].append(subs_new_args(e, new_args))
         else:
-            # NOTE Push the next argument on the stack
+            # NOTE: Push the next argument on the stack
             stack.append(old_args[i])
             output.append([])
 

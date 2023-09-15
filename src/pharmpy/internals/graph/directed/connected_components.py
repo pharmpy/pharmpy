@@ -10,7 +10,7 @@ def strongly_connected_component_of(
 ):
     forward_reachable = reachable_from({vertex}, successors)
 
-    # NOTE This searches for backward reachable vertices on the graph induced
+    # NOTE: This searches for backward reachable vertices on the graph induced
     # by the forward reachable vertices and is equivalent to (but less wasteful
     # than) first computing the backward reachable vertices on the original
     # graph and then computing the intersection with the forward reachable

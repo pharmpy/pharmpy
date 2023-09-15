@@ -60,7 +60,7 @@ def create_linearized_model(model):
     error_terms = Assignment(sympy.Symbol('ERROR_TERMS'), err_terms_sum)
     ms.append(error_terms)
 
-    # FIXME: handle other DVs?
+    # FIXME: Handle other DVs?
     y = list(model.dependent_variables.keys())[0]
     Assignment(y, ipred.symbol + error_terms.symbol)
 

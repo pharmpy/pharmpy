@@ -141,14 +141,14 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
     pred.rename(columns={f"{dv}": 'PRED', "id": "ID", "time": "TIME"}, inplace=True)
     pred = pred.set_index(["ID", "TIME"])
 
-    # TODO : extract thetas, omegas and sigmas
+    # TODO: Extract thetas, omegas and sigmas
 
     predictions = pred
     predictions.index = predictions.index.set_levels(
         predictions.index.levels[0].astype("float64"), level=0
     )
 
-    # TODO : Add more variables such as name and description and parameter estimates
+    # TODO: Add more variables such as name and description and parameter estimates
     res = ModelfitResults(predictions=predictions)
     return res
 

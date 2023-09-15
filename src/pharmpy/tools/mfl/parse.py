@@ -12,7 +12,7 @@ def parse(code: str) -> List[Statement]:
         grammar,
         start='start',
         parser='lalr',
-        # lexer='standard',  # NOTE This does not work because lexing for the
+        # lexer='standard',  # NOTE: This does not work because lexing for the
         #      MFL grammar is context-dependent
         propagate_positions=False,
         maybe_placeholders=False,

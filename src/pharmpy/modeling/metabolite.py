@@ -54,7 +54,7 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
             model = set_first_order_absorption(model)
             depot = model.statements.ode_system.find_depot(model.statements)
 
-    # TODO : Implement possibility of converting plain metabolite to presystemic
+    # TODO: Implement possibility of converting plain metabolite to presystemic
 
     clm = sympy.Symbol('CLM')
     model = add_individual_parameter(model, clm.name)
@@ -90,12 +90,12 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
         cb.remove_flow(depot, central)
         cb.add_flow(depot, central, ka * (1 - fpre))
 
-    # FIXME : drug_dvid is never used, use it here?
+    # FIXME: drug_dvid is never used, use it here?
     # dvid_col = model.datainfo.typeix['dvid'][0]
     # dvids = dvid_col.categories
 
     if presystemic:
-        # QUESTION : Add bioavailability to depot?
+        # QUESTION: Add bioavailability to depot?
         cb.set_bioavailability(depot, 1 / (1 - fpre))
         model = model.replace(
             statements=model.statements.before_odes
@@ -124,7 +124,7 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
 
 
 def has_presystemic_metabolite(model: Model):
-    """If presystemic drug there will be a flow from DEPOT to METABOLITE as well
+    """If pre-systemic drug there will be a flow from DEPOT to METABOLITE as well
     as being a flow from the CENTRAL to METABOLITE"""
     odes = model.statements.ode_system
     central = odes.central_compartment

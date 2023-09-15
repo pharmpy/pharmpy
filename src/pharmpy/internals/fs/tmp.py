@@ -5,7 +5,7 @@ import weakref as _weakref
 from tempfile import mkdtemp
 
 
-# NOTE This is copied from the Python 3.10 implementation to expose the
+# NOTE: This is copied from the Python 3.10 implementation to expose the
 # ignore_cleanup_errors flag and patch PermissionError handling for Windows
 # lock files. Here is the original source link:
 #
@@ -64,7 +64,7 @@ class TemporaryDirectory:
                         try:
                             cls._rmtree(path, ignore_errors=ignore_errors)
                         except NotADirectoryError:
-                            # NOTE This is raised if PermissionError did not
+                            # NOTE: This is raised if PermissionError did not
                             # correspond to a IsADirectoryError, e.g. on
                             # Windows.
                             if not ignore_errors:

@@ -1070,7 +1070,7 @@ def add_time_after_dose(model: Model):
     except IndexError:
         addl = None
     else:
-        # FIXME: temp workaround, should be canonicalized in Model.replace
+        # FIXME: Temp workaround, should be canonicalized in Model.replace
         di = update_datainfo(temp.datainfo, df)
         new_idvcol = di.idv_column.replace(type='unknown')
         new_timecol = di['_NEWTIME'].replace(type='idv')
@@ -1120,7 +1120,7 @@ def add_time_after_dose(model: Model):
 
     df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
 
-    # FIXME: temp workaround, should be canonicalized in Model.replace
+    # FIXME: Temp workaround, should be canonicalized in Model.replace
     di = update_datainfo(model.datainfo, df)
     colinfo = di['TAD'].replace(descriptor='time after dose', unit=di[idv].unit)
     model = model.replace(datainfo=di.set_column(colinfo), dataset=df)

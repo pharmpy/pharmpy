@@ -193,7 +193,7 @@ class NormalDistribution(Distribution):
             sigma = 0 if variance == 0 else sqrt(float(parameters[variance]))
             return NumericNormalDistribution(mu, sigma)
         except KeyError as e:
-            # NOTE This handles missing parameter substitutions
+            # NOTE: This handles missing parameter substitutions
             raise ValueError(e)
 
     def __getitem__(self, index):
@@ -406,7 +406,7 @@ class JointNormalDistribution(Distribution):
             sigma = np.array(self._symengine_variance.xreplace(parameters)).astype(np.float64)
             return NumericMultivariateNormalDistribution(mu, sigma)
         except RuntimeError as e:
-            # NOTE This handles missing parameter substitutions
+            # NOTE: This handles missing parameter substitutions
             raise ValueError(e)
 
     def __getitem__(self, index):

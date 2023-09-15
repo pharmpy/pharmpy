@@ -3,7 +3,7 @@ Iterators generating new datasets from a dataset. The dataset could either be st
 or connected to a model. If a model is used the same model will be updated with different
 datasets for each iteration.
 
-Currenly contains:
+Currently, contains:
 
 1. Omit - Can be used for cdd
 2. Resample - Can be used by bootstrap
@@ -37,7 +37,7 @@ class DatasetIterator:
         self._name_pattern = name_pattern
 
     def _check_exhausted(self):
-        """Check if the iterator is exhaused. Raise StopIteration in that case"""
+        """Check if the iterator is exhausted. Raise StopIteration in that case"""
         if self._next > self._iterations:
             raise StopIteration
 
@@ -115,7 +115,7 @@ def omit_data(
     Returns
     -------
     iterator
-        Iterator yielding tuples of models/dataframes and the omited group
+        Iterator yielding tuples of models/dataframes and the omitted group
     """
     return Omit(dataset_or_model, group, name_pattern)
 
@@ -138,8 +138,8 @@ class Resample(DatasetIterator):
         can be uniquely determined. A ValueError exception will be raised otherwise.
     :param Int sample_size: The number of groups that should be sampled. The default is
         the number of groups. If using stratification the default is to sample using the
-        proportion of the stratas in the dataset. A dictionary of specific sample sizes
-        for each strata can also be supplied.
+        proportion of the strata in the dataset. A dictionary of specific sample sizes
+        for each stratum can also be supplied.
     :param bool replace: A boolean controlling whether sampling should be done with or
         without replacement
     :param name_pattern: Name to use for generated datasets. A number starting from 1 will
@@ -272,8 +272,8 @@ def resample_data(
     sample_size : int
         The number of groups that should be sampled. The default is
         the number of groups. If using stratification the default is to sample using the
-        proportion of the stratas in the dataset. A dictionary of specific sample sizes
-        for each strata can also be supplied.
+        proportion of the strata in the dataset. A dictionary of specific sample sizes
+        for each stratum can also be supplied.
     replace : bool
         A boolean controlling whether sampling should be done with or
         without replacement

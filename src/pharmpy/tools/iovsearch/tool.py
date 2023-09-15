@@ -123,7 +123,7 @@ def task_brute_force_search(
     distribution: str,
     model: Model,
 ):
-    # NOTE Default is to try all IIV ETAs.
+    # NOTE: Default is to try all IIV ETAs.
     if list_of_parameters is None:
         iiv = _get_nonfixed_iivs(model)
         iiv_before_odes = iiv.free_symbols.intersection(model.statements.before_odes.free_symbols)
@@ -132,25 +132,25 @@ def task_brute_force_search(
     current_step = 0
     step_mapping = {current_step: [model.name]}
 
-    # NOTE Check that model has at least one IIV.
+    # NOTE: Check that model has at least one IIV.
     if not list_of_parameters:
         return step_mapping, [model]
 
-    # NOTE Add IOVs on given parameters or all parameters with IIVs.
+    # NOTE: Add IOVs on given parameters or all parameters with IIVs.
     name = 'iovsearch_run1'
     model_with_iov = model.replace(name=name, parent_model=model.name)
     model_with_iov = update_initial_estimates(model_with_iov)
-    # TODO should we exclude already present IOVs?
+    # TODO: Should we exclude already present IOVs?
     model_with_iov = add_iov(model_with_iov, occ, list_of_parameters, distribution=distribution)
     model_with_iov = model_with_iov.replace(description=_create_description(model_with_iov))
-    # NOTE Fit the new model.
+    # NOTE: Fit the new model.
     wf = create_fit_workflow(models=[model_with_iov])
     model_with_iov = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs', context)
 
-    # NOTE Remove IOVs. Test all subsets (~2^n).
-    # TODO should we exclude already present IOVs?
+    # NOTE: Remove IOVs. Test all subsets (~2^n).
+    # TODO: Should we exclude already present IOVs?
     iov = model_with_iov.random_variables.iov
-    # NOTE We only need to remove the IOV ETA corresponding to the first
+    # NOTE: We only need to remove the IOV ETA corresponding to the first
     # category in order to remove all IOV ETAs of the other categories
     all_iov_parameters = list(filter(lambda name: name.endswith('_1'), iov.names))
     no_of_models = 1
@@ -159,7 +159,7 @@ def task_brute_force_search(
     )
     iov_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs', context)
 
-    # NOTE Keep best candidate.
+    # NOTE: Keep the best candidate.
     best_model_so_far = best_model(
         model,
         [model_with_iov, *iov_candidates],
@@ -171,18 +171,18 @@ def task_brute_force_search(
     current_step += 1
     step_mapping[current_step] = [model_with_iov.name] + [model.name for model in iov_candidates]
 
-    # NOTE If no improvement with respect to input model, STOP.
+    # NOTE: If no improvement with respect to input model, STOP.
     if best_model_so_far is model:
         return step_mapping, [model, model_with_iov, *iov_candidates]
 
-    # NOTE Remove IIV with corresponding IOVs. Test all subsets (~2^n).
+    # NOTE: Remove IIV with corresponding IOVs. Test all subsets (~2^n).
     iiv_parameters_with_associated_iov = list(
         map(
             lambda s: s.name,
             _get_iiv_etas_with_corresponding_iov(best_model_so_far),
         )
     )
-    # TODO should we exclude already present IOVs?
+    # TODO: Should we exclude already present IOVs?
     no_of_models = len(iov_candidates) + 1
     wf = wf_etas_removal(
         remove_iiv,
@@ -288,7 +288,7 @@ def task_results(rank_type, cutoff, bic_type, models):
         summary_models=pd.concat(sum_mod, keys=[0] + keys, names=['step']),
     )
 
-    # NOTE This overwrites the default summary_tool field
+    # NOTE: This overwrites the default summary_tool field
     res = replace(res, summary_tool=pd.concat(sum_tool, keys=keys, names=['step']))
 
     return res
@@ -344,7 +344,7 @@ def _get_iov_piecewise_assignment_symbols(model: Model):
             try:
                 expression_symbols = [p[0] for p in statement.expression.as_expr_set_pairs()]
             except (ValueError, NotImplementedError):
-                pass  # NOTE These exceptions are raised by complex Piecewise
+                pass  # NOTE: These exceptions are raised by complex Piecewise
                 # statements that can be present in user code.
             else:
                 if all(s in iovs for s in expression_symbols):

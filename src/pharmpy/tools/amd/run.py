@@ -116,7 +116,7 @@ def run_amd(
     run_tool
 
     """
-    from pharmpy.model.external import nonmem  # FIXME We should not depend on NONMEM
+    from pharmpy.model.external import nonmem  # FIXME: We should not depend on NONMEM
 
     if administration not in ['iv', 'oral', 'ivoral']:
         raise ValueError(f'Invalid input: "{administration}" as administration is not supported')

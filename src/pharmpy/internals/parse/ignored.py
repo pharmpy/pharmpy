@@ -9,7 +9,7 @@ LF = {'\r', '\n'}
 
 
 def _tokenize_ignored_characters(s: str, i: int, j: int) -> Iterable[Token]:
-    # TODO propagate line/column information
+    # TODO: Propagate line/column information
     head = i
     while i < j:
         first = s[head]
@@ -61,7 +61,7 @@ def _item_range(x: Union[Tree, Token]) -> Tuple[int, int]:
 
 
 def _get_new_end_pos(x) -> int:
-    # FIXME: temporary workaround, see https://github.com/lark-parser/lark/issues/1304
+    # FIXME: Temporary workaround, see https://github.com/lark-parser/lark/issues/1304
     x = x.children[-1]
     if isinstance(x, Token):
         endpos = x.end_pos
@@ -113,7 +113,7 @@ def with_ignored_tokens(source, tree):
         new_tree.meta.end_pos = _get_new_end_pos(new_tree)
 
     final_meta = Meta()
-    # TODO propagate line/column information
+    # TODO: Propagate line/column information
     final_meta.start_pos = 0
     final_meta.end_pos = len(source)
     final_meta.empty = False

@@ -166,7 +166,7 @@ class OptionRecord(Record):
     def _append_option_args(self) -> Tuple[int, int, AttrToken]:
         children = self.root.children
         n = len(children)
-        # NOTE Pop trailing whitespace if any
+        # NOTE: Pop trailing whitespace if any
         j = n - 1 if children[-1].rule == 'WS' else n
         for i, child in zip(reversed(range(n)), reversed(children)):
             rule = child.rule
@@ -300,7 +300,7 @@ class OptionRecord(Record):
         min_prefix_len = 3
 
         if len(query) < min_prefix_len:
-            # NOTE This keeps the original implementation's behavior but maybe
+            # NOTE: This keeps the original implementation's behavior but maybe
             # this could be changed?
             return None
 

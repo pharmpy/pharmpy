@@ -95,7 +95,7 @@ def test_run_tool_modelsearch_resume_flag(
 ):
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
-    # FIXME: temporary workaround so that read in parameter estimates use the Pharmpy name
+    # FIXME: Temporary workaround so that read in parameter estimates use the Pharmpy name
     with chdir(tmp_path):
         model_start = Model.parse_model('mox2.mod')
         model_start = model_start.replace(

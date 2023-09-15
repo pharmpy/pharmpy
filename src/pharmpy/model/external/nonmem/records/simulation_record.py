@@ -14,5 +14,5 @@ class SimulationRecord(Record):
     def nsubs(self):
         """Number of subproblems"""
         n = cast(int, eval_token(self.root.subtree('nsubs').leaf('INT')))
-        # NOTE According to NONMEM documentation 0 means 1 here
+        # NOTE: According to NONMEM documentation 0 means 1 here
         return 1 if n == 0 else n

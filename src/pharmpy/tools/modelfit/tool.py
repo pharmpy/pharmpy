@@ -20,7 +20,7 @@ def create_workflow(
     n : int
         Number of models to fit. This is only used if the tool is going to be combined with other tools.
     tool : str
-        Which tool to use for fitting. Currently 'nonmem' or 'nlmixr' can be used.
+        Which tool to use for fitting. Currently, 'nonmem' or 'nlmixr' can be used.
 
     Returns
     -------
@@ -86,24 +86,24 @@ def retrieve_from_database_or_execute_model_with_tool(tool):
             db_results = None
 
         if db_results is not None:
-            # NOTE We have the results
+            # NOTE: We have the results
             try:
                 db_model = context.model_database.retrieve_model(model.name)
             except (KeyError, AttributeError, FileNotFoundError):
                 db_model = None
 
-            # NOTE Here we could invalidate cached results if certain errors
+            # NOTE: Here we could invalidate cached results if certain errors
             # happened such as a missing or outdated license. We do not do that
             # at the moment.
 
-            # NOTE Right now we only rely on model name comparison
+            # NOTE: Right now we only rely on model name comparison
             # if db_model == model and model.has_same_dataset_as(db_model):
             if db_model and model.has_same_dataset_as(db_model):
-                # NOTE Inputs are identical so we can reuse the results
+                # NOTE: Inputs are identical so we can reuse the results
                 model = model.replace(modelfit_results=db_results)
                 return model
 
-        # NOTE Fallback to executing the model
+        # NOTE: Fallback to executing the model
         execute_model = get_execute_model(tool)
         return execute_model(model, context)
 

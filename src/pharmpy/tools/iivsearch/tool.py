@@ -144,12 +144,12 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff, keep
 
     for i, algorithm_cur in enumerate(list_of_algorithms):
         state = State(algorithm_cur, models_set, input_model.name)
-        # NOTE Execute algorithm
+        # NOTE: Execute algorithm
         wf = create_algorithm_workflow(
             input_model, base_model, state, iiv_strategy, rank_type, cutoff, keep
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
-        # NOTE Append results
+        # NOTE: Append results
         new_models = list(filter(lambda model: model.name not in models_set, res.models))
         models.extend(new_models)
         models_set.update(model.name for model in new_models)
@@ -185,7 +185,7 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff, keep
     res_modelfit_input = input_model.modelfit_results
     res_modelfit_final = final_model.modelfit_results
 
-    # NOTE Compute final final model
+    # NOTE: Compute final final model
     final_final_model = last_res.final_model
     if res_modelfit_input and res_modelfit_final:
         bic_input = calculate_bic(input_model, res_modelfit_input.ofv, type='iiv')

@@ -35,7 +35,7 @@ def execute_workflow(
     Results
         Results object created by workflow
     """
-    # FIXME Return type is not always Results
+    # FIXME: Return type is not always Results
     if dispatcher is None:
         from pharmpy.workflows import default_dispatcher
 

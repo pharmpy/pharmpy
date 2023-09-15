@@ -145,13 +145,13 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
         self.file_extension = file_extension
 
     def _read_lock(self):
-        # NOTE Obtain shared (blocking) lock on the entire database
+        # NOTE: Obtain shared (blocking) lock on the entire database
         path = self.path / FILE_LOCK
         path.touch(exist_ok=True)
         return path_lock(str(path), shared=True)
 
     def _write_lock(self):
-        # NOTE Obtain exclusive (blocking) lock on the entire database
+        # NOTE: Obtain exclusive (blocking) lock on the entire database
         path = self.path / FILE_LOCK
         path.touch(exist_ok=True)
         return path_lock(str(path), shared=False)
@@ -162,10 +162,10 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
         destination = model_path / DIRECTORY_PHARMPY_METADATA
         destination.mkdir(parents=True, exist_ok=True)
         with self._read_lock():
-            # NOTE Check that no pending transaction exists
+            # NOTE: Check that no pending transaction exists
             path = destination / FILE_PENDING
             if path.exists():
-                # TODO finish pending transaction from journal if possible
+                # TODO: Finish pending transaction from journal if possible
                 raise PendingTransactionError()
 
             yield LocalModelDirectoryDatabaseSnapshot(self, model_name)
@@ -176,17 +176,17 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
         destination = model_path / DIRECTORY_PHARMPY_METADATA
         destination.mkdir(parents=True, exist_ok=True)
         with self._write_lock():
-            # NOTE Mark state as pending
+            # NOTE: Mark state as pending
             path = destination / FILE_PENDING
             try:
                 path.touch(exist_ok=False)
             except FileExistsError:
-                # TODO finish pending transaction from journal if possible
+                # TODO: Finish pending transaction from journal if possible
                 raise PendingTransactionError()
 
             yield LocalModelDirectoryDatabaseTransaction(self, model)
 
-            # NOTE Commit transaction (only if no exception was raised)
+            # NOTE: Commit transaction (only if no exception was raised)
             path.unlink()
 
     def list_models(self):
@@ -208,30 +208,30 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
         model = self.model
         datasets_path = self.db.path / DIRECTORY_DATASETS
 
-        # NOTE Get the hash of the dataset and list filenames with contents
+        # NOTE: Get the hash of the dataset and list filenames with contents
         # matching this hash only
         h = hash_df_fs(model.dataset)
         h_dir = datasets_path / DIRECTORY_INDEX / h
         h_dir.mkdir(parents=True, exist_ok=True)
         for hpath in h_dir.iterdir():
-            # NOTE This variable holds a string similar to "run1.csv"
+            # NOTE: This variable holds a string similar to "run1.csv"
             matching_model_filename = hpath.name
             data_path = datasets_path / matching_model_filename
             dipath = data_path.with_suffix('.datainfo')
-            # TODO Maybe catch FileNotFoundError and similar here (pass)
+            # TODO: Maybe catch FileNotFoundError and similar here (pass)
             curdi = DataInfo.read_json(dipath)
-            # NOTE paths are not compared here
+            # NOTE: Paths are not compared here
             if curdi == model.datainfo:
                 df = read_dataset_from_datainfo(curdi)
                 if df.equals(model.dataset):
-                    # NOTE Update datainfo path
+                    # NOTE: Update datainfo path
                     datainfo = model.datainfo.replace(path=curdi.path)
                     model = model.replace(datainfo=datainfo)
                     break
         else:
             model_filename = model.name + '.csv'
 
-            # NOTE Create the index file at .datasets/.hash/<hash>/<model_filename>
+            # NOTE: Create the index file at .datasets/.hash/<hash>/<model_filename>
             index_path = h_dir / model_filename
             index_path.touch()
 
@@ -240,11 +240,11 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             model = model.replace(datainfo=datainfo)
             model = write_csv(model, path=data_path, force=True)
 
-            # NOTE Write datainfo last so that we are "sure" dataset is there
+            # NOTE: Write datainfo last so that we are "sure" dataset is there
             # if datainfo is there
             model.datainfo.to_json(datasets_path / (model.name + '.datainfo'))
 
-        # NOTE Write the model
+        # NOTE: Write the model
         model_path = self.db.path / model.name
         model_path.mkdir(exist_ok=True)
         write_model(model, str(model_path / (model.name + model.filename_extension)), force=True)
@@ -304,7 +304,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
             filename = self.name + extension
             path = root / filename
             try:
-                # NOTE this will guess the model type
+                # NOTE: This will guess the model type
                 model = Model.parse_model(path)
                 break
             except FileNotFoundError as e:
@@ -324,7 +324,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         if res is not None:
             return res
 
-        # FIXME The following does not work because deserialization of modelfit
+        # FIXME: The following does not work because deserialization of modelfit
         # results is not generic enough. We only use it to make the resume_tool
         # test pass.
         path = self.db.path / self.name / DIRECTORY_PHARMPY_METADATA / FILE_MODELFIT_RESULTS

@@ -64,7 +64,7 @@ def fit(
     # Do not fit model if already fit
     for model in models:
         try:
-            # FIXME model.database should be removed
+            # FIXME: model.database should be removed
             db_model = retrieve_models(model.database, model.name)[0]
         except (KeyError, AttributeError):
             db_model = None
@@ -167,7 +167,7 @@ def run_tool(name: str, *args, **kwargs) -> Union[Model, List[Model], Tuple[Mode
     >>> res = run_tool("ruvsearch", model)   # doctest: +SKIP
 
     """
-    # NOTE The implementation of run_tool is split into those two functions to
+    # NOTE: The implementation of run_tool is split into those two functions to
     # allow for individual testing and mocking.
     tool = import_tool(name)
     return run_tool_with_name(name, tool, args, kwargs)
@@ -180,7 +180,7 @@ def import_tool(name: str):
 def run_tool_with_name(
     name: str, tool, args: Sequence, kwargs: Mapping[str, Any]
 ) -> Union[Model, List[Model], Tuple[Model], Results]:
-    # FIXME: workaround until ModelfitResults is disentangled with
+    # FIXME: Workaround until ModelfitResults is disentangled with
     #  Model object
     if 'model' in kwargs and 'results' in kwargs:
         model = kwargs['model']
@@ -246,7 +246,7 @@ def _create_metadata(
 
 
 def _update_metadata(tool_metadata, res):
-    # FIXME Make metadata immutable
+    # FIXME: Make metadata immutable
     tool_metadata['stats']['end_time'] = _now()
     return tool_metadata
 
@@ -311,7 +311,7 @@ def _parse_tool_options_from_json_metadata(
     tool_database,
 ):
     tool_options = tool_metadata['tool_options']
-    # NOTE Load models to memory
+    # NOTE: Load models to memory
     for model_key in _input_model_param_keys(tool_params, tool_param_types):
         model_metadata = tool_options.get(model_key)
         if model_metadata is None:
@@ -336,7 +336,7 @@ def _parse_tool_options_from_json_metadata(
         tool_options = tool_options.copy()
         tool_options[model_key] = model
 
-    # NOTE Load results to memory
+    # NOTE: Load results to memory
     for results_key in _results_param_keys(tool_params, tool_param_types):
         results_json = tool_options.get(results_key)
         if results_json is not None:
@@ -369,7 +369,7 @@ def _create_metadata_tool(
     args: Sequence,
     kwargs: Mapping[str, Any],
 ):
-    # FIXME: add config file dump, estimation tool etc.
+    # FIXME: Add config file dump, estimation tool etc.
     tool_metadata = {
         'pharmpy_version': pharmpy.__version__,
         'tool_name': tool_name,
@@ -412,7 +412,7 @@ def _create_metadata_common(
 ):
     setup_metadata = {}
     setup_metadata['dispatcher'] = dispatcher.__name__
-    # FIXME: naming of workflows/tools should be consistent (db and input name of tool)
+    # FIXME: Naming of workflows/tools should be consistent (db and input name of tool)
     setup_metadata['database'] = {
         'class': type(database).__name__,
         'toolname': toolname,
@@ -441,7 +441,7 @@ def _filter_params(kind, params, types):
         param = params[param_key]
         param_type = types.get(param_key)
         if param_type in (kind, Optional[kind]):
-            # NOTE We do not handle *{param_key}, or **{param_key}
+            # NOTE: We do not handle *{param_key}, or **{param_key}
             assert param.kind != param.VAR_POSITIONAL
             assert param.kind != param.VAR_KEYWORD
             yield i, param_key
@@ -460,7 +460,7 @@ def _results_param_keys(params, types):
 def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
     for i, param_key in _filter_params(Model, params, types):
         model = args[i] if i < len(args) else kwargs.get(param_key)
-        # NOTE We do not handle missing optional models
+        # NOTE: We do not handle missing optional models
         assert model is not None
         yield param_key, model
 
@@ -701,7 +701,7 @@ def summarize_errors(results: Union[ModelfitResults, List[ModelfitResults]]) -> 
     >>> model = load_example_model("pheno")
     >>> summarize_errors(model)      # doctest: +SKIP
     """
-    # FIXME: have example with errors
+    # FIXME: Have example with errors
     if isinstance(results, ModelfitResults):
         results = [results]
 
@@ -1051,10 +1051,10 @@ def _get_run_setup_from_metadata(path):
     tool_name = tool_metadata['tool_name']
     common_options = tool_metadata['common_options']
 
-    # TODO be more general
+    # TODO: Be more general
     dispatcher = getattr(workflows, common_options['dispatcher'].split('.')[-1])
 
-    # TODO be more general
+    # TODO: Be more general
     assert common_options['database']['class'] == 'LocalDirectoryToolDatabase'
     assert common_options['database']['toolname'] == tool_name
 

@@ -70,7 +70,7 @@ def get_observation_expression(model: Model):
     ) + EPS₁⋅(D_EPS1 + D_EPSETA1_1⋅(ETA₁ - OETA₁)) + OPRED
     """
     stats = model.statements
-    # FIXME: handle other DVs
+    # FIXME: Handle other DVs
     dv = list(model.dependent_variables.keys())[0]
     for i, s in enumerate(stats):
         if s.symbol == dv:
@@ -274,7 +274,7 @@ def _create_symbol(statements, parameters, random_variables, datainfo, stem, for
 
 
 def _find_eta_assignments(model):
-    # NOTE This locates all assignment to ETAs of symbols that do not depend on
+    # NOTE: This locates all assignment to ETAs of symbols that do not depend on
     # any other ETA
     statements = model.statements.before_odes
     etas = {sympy.Symbol(eta) for eta in model.random_variables.etas.names}
@@ -341,7 +341,7 @@ def mu_reference_model(model: Model):
 
     statements = model.statements
     for old_ind, assignment in _find_eta_assignments(model):
-        # NOTE The sequence of old_ind must be increasing
+        # NOTE: The sequence of old_ind must be increasing
         eta = next(iter(etas.intersection(assignment.expression.free_symbols)))
         old_def = assignment.expression
         dep = old_def.as_independent(eta)[1]
@@ -359,7 +359,7 @@ def mu_reference_model(model: Model):
                 + Assignment(assignment.symbol, new_def)
                 + statements[insertion_ind + 1 :]
             )
-            offset += 1  # NOTE We need this offset because we replace one
+            offset += 1  # NOTE: We need this offset because we replace one
             # statement by two statements
     model = model.replace(statements=statements).update_source()
     return model
@@ -819,7 +819,7 @@ def _depends_on_any_of(
     if symbol not in dependency_graph:
         raise KeyError(symbol)
 
-    # NOTE Could be faster by returning immediately once found
+    # NOTE: Could be faster by returning immediately once found
     return not reachable_from({symbol}, lambda x: dependency_graph.get(x, [])).isdisjoint(symbols)
 
 
@@ -1103,7 +1103,7 @@ def _remove_covariate_effect_from_statements_recursive(
 ) -> ExpressionTreeNode:
     if not expression.args:
         if expression in assignments:
-            # NOTE expression is a symbol and is defined in a previous assignment
+            # NOTE: expression is a symbol and is defined in a previous assignment
             graph_node = assignments[expression]
             tree_node = _remove_covariate_effect_from_statements_recursive(
                 thetas,
@@ -1122,18 +1122,18 @@ def _remove_covariate_effect_from_statements_recursive(
             )
 
         if expression == covariate:
-            # NOTE expression is the covariate symbol for which we want to
+            # NOTE: expression is the covariate symbol for which we want to
             # remove all effects
             return ExpressionTreeNode(_neutral(parent), True, True, False)
 
-        # NOTE other atom
+        # NOTE: Other atom
         return ExpressionTreeNode(
             expression, False, _is_constant(thetas, expression), _depends_on_any(thetas, expression)
         )
 
     if isinstance(expression, sympy.Piecewise):
         if any(map(lambda t: covariate in t[1].free_symbols, expression.args)):
-            # NOTE At least one condition depends on the covariate
+            # NOTE: At least one condition depends on the covariate
             if all(
                 map(
                     lambda t: _is_univariate(
@@ -1142,7 +1142,7 @@ def _remove_covariate_effect_from_statements_recursive(
                     expression.args,
                 )
             ):
-                # NOTE If expression is piecewise univariate and condition depends on
+                # NOTE: If expression is piecewise univariate and condition depends on
                 # covariate, return simplest expression from cases
                 expr = min(
                     (t[0] for t in expression.args),
@@ -1168,7 +1168,7 @@ def _remove_covariate_effect_from_statements_recursive(
         )
     )
 
-    # TODO Take THETA limits into account. Currently we assume any
+    # TODO: Take THETA limits into account. Currently we assume any
     # offset/factor can be compensated but this is not true in general.
     can_be_scaled_or_offset = any(map(lambda n: not n.changed and n.contains_theta, children))
 
@@ -1327,9 +1327,9 @@ def _remap_compartmental_system(sset, natural_assignments):
 
     assignments = list(_assignments(sset.before_odes))
     for assignment in reversed(assignments):
-        # FIXME can be made more general, doesn't cover cases with recursively defined symbols (e.g. V=V/2)
+        # FIXME: Can be made more general, doesn't cover cases with recursively defined symbols (e.g. V=V/2)
         if assignment not in natural_assignments:
-            # NOTE Substitution must be made in this order
+            # NOTE: Substitution must be made in this order
             cs = cs.subs({assignment.symbol: assignment.expression})
     return cs
 
@@ -1399,11 +1399,11 @@ def _get_component_free_symbols(
     edges: Iterable[Tuple[Compartment, Compartment, sympy.Expr]],
 ) -> Iterable[sympy.Symbol]:
     for u, v, rate in edges:
-        # NOTE These must not necessarily be outgoing edges
+        # NOTE: These must not necessarily be outgoing edges
         assert u in vertices or v in vertices
 
         if u not in vertices or v not in vertices:
-            # NOTE This handles splitting the rate K = CL / V
+            # NOTE: This handles splitting the rate K = CL / V
             if len(rate.free_symbols) == 2:
                 a, b = rate.free_symbols
                 if rate == a / b:
@@ -1414,7 +1414,7 @@ def _get_component_free_symbols(
                     continue
 
         if (u in vertices and v in vertices) or not is_central:
-            # NOTE This handles all internal edges, and in/out rates (KA, CL/V)
+            # NOTE: This handles all internal edges, and in/out rates (KA, CL/V)
             yield from rate.free_symbols
 
     for node in vertices:
@@ -1462,7 +1462,7 @@ def _classify_assignments(assignments: Sequence[Assignment]):
         expression = assignment.expression
         fs = expression.free_symbols
 
-        if symbol not in fs:  # NOTE We skip redefinitions (e.g. CL=CL+1)
+        if symbol not in fs:  # NOTE: We skip redefinitions (e.g. CL=CL+1)
             if sympy.Symbol('t') in fs:  # FIXME: Should use ode.t here at some point
                 yield 'synthetic', assignment
                 continue
@@ -1529,7 +1529,7 @@ def _dependency_graph(assignments: Sequence[Assignment]):
         dependencies[symbol] = fs
 
         if previous_def is not None:
-            # NOTE This handles redefinition of symbols by expanding
+            # NOTE: This handles redefinition of symbols by expanding
             # the previous definition of symbol into existing definitions
             for key, value in dependencies.items():
                 if symbol in value:

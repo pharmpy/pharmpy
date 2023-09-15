@@ -86,7 +86,7 @@ def brute_force_block_structure(base_model, index_offset=0):
 
 
 def _rv_block_structures(etas: RandomVariables):
-    # NOTE All possible partitions of etas into block structures
+    # NOTE: All possible partitions of etas into block structures
     return partitions(etas)
 
 
@@ -108,7 +108,7 @@ def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
         parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix
     }
     param_dict = {}
-    # FIXME temporary workaround, should handle IIV on eps
+    # FIXME: Temporary workaround, should handle IIV on eps
     symbs_before_ode = [symb.name for symb in model.statements.before_odes.free_symbols]
     for eta in dists.names:
         if subs(dists[eta].get_variance(eta), param_subs, simultaneous=True) != 0:

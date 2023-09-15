@@ -38,7 +38,7 @@ def all_funcs(model: Model, statements: Iterable[Statement]):
 def funcs(
     model: Model, statements: Iterable[Statement], generators: Iterable[FeatureGenerator]
 ) -> Dict[FeatureKey, FeatureFn]:
-    statements_list = list(statements)  # TODO Only read statements once
+    statements_list = list(statements)  # TODO: Only read statements once
 
     features = chain.from_iterable(
         map(

@@ -274,7 +274,7 @@ class Model(BaseModel):
             try:
                 filename = str(path_relative_to(parent_path, datapath))
             except ValueError:
-                # NOTE if parent path and datapath are in different drives absolute path
+                # NOTE: If parent path and datapath are in different drives absolute path
                 # needs to be used
                 filename = str(path_absolute(datapath))
                 warnings.warn('Cannot resolve relative path, falling back to absolute path')
@@ -314,8 +314,8 @@ def parse_model(
     control_stream = parser.parse(code)
     di = parse_datainfo(control_stream, path)
     old_datainfo = di
-    # FIXME temporary workaround remove when changing constructor
-    # NOTE inputting the dataset is needed for IV models when using convert_model, since it needs to read the
+    # FIXME: Temporary workaround remove when changing constructor
+    # NOTE: Inputting the dataset is needed for IV models when using convert_model, since it needs to read the
     # RATE column to decide dosing, meaning it needs the dataset before parsing statements
     if dataset is not None:
         di = update_datainfo(di.replace(path=None), dataset)

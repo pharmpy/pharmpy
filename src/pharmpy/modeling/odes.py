@@ -728,7 +728,7 @@ def _rename_parameter(model: Model, old_name, new_name):
             for p in pars:
                 if p != diag:
                     if p.name.startswith('IIV'):
-                        # FIXME: in some cases, parameters are read as symbols, this is
+                        # FIXME: In some cases, parameters are read as symbols, this is
                         #  a workaround
                         try:
                             symb = p.symbol
@@ -766,7 +766,7 @@ def _get_mm_inits(model: Model, rate_numer, combined):
     else:
         dv_max = 1.0
     km_init = dv_max * 2
-    # FIXME: cap initial estimate, this is NONMEM specific and should be handled more generally
+    # FIXME: Cap initial estimate, this is NONMEM specific and should be handled more generally
     #  (https://github.com/pharmpy/pharmpy/issues/1395)
     if km_init >= 10**6:
         km_init = 5 * 10**5
@@ -1033,7 +1033,7 @@ def add_lag_time(model: Model):
     cb = CompartmentalSystemBuilder(odes)
     dosing_comp = cb.set_lag_time(dosing_comp, mdt_symb)
 
-    # FIXME : Very temporary until new zo absorption logic is implemented
+    # FIXME: Very temporary until new zo absorption logic is implemented
     if len(dosing_comp.doses) > 1:
         cb.set_lag_time(dosing_comp, sympy.Symbol("lag_time"))
         doses = dosing_comp.sorted_doses(model)
@@ -1165,7 +1165,7 @@ def set_zero_order_absorption(model: Model):
     new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
     mat_idx = statements.find_assignment_index('MAT')
     if mat_idx is not None:
-        # FIXME : Causes issue if mat_assign statement is dependent on previously
+        # FIXME: Causes issue if mat_assign statement is dependent on previously
         # removed parameters/statements
         mat_assign = statements[mat_idx]
         new_statements = new_statements[0:mat_idx] + mat_assign + new_statements[mat_idx:]
@@ -1179,7 +1179,7 @@ def set_zero_order_absorption(model: Model):
             model, dose, odes.dosing_compartments[0], 'MAT', lag_time
         )
         model = model.update_source()
-    # FIXME : Very temporary until new zo absorption logic is implemented
+    # FIXME: Very temporary until new zo absorption logic is implemented
     odes = model.statements.ode_system
     assert isinstance(odes, CompartmentalSystem)
     if lag_time != 0 and len(odes.dosing_compartments[0].doses) > 1:
@@ -1240,7 +1240,7 @@ def set_first_order_absorption(model: Model):
         )
         dose_comp = cb.set_lag_time(dose_comp, sympy.Integer(0))
     if not depot:
-        # TODO : Add another way of removing dependencies
+        # TODO: Add another way of removing dependencies
         dose_admid = dose_comp.sorted_doses(model)[0].admid
         if len(dose_comp.doses) == 1:
             dose_comp = cb.set_dose(dose_comp, Bolus(amount))
@@ -1706,13 +1706,13 @@ def add_peripheral_compartment(model: Model, name: str = None):
 
     cb = CompartmentalSystemBuilder(odes)
 
-    # NOTE Only used if vc != 1
+    # NOTE: Only used if vc != 1
     qp_init = 0.1
     vp_init = 0.1
 
     if n == 1:
         if vc != 1:
-            # Heurstic to handle the Mixed MM-FO case
+            # Heuristic to handle the Mixed MM-FO case
             if cl.is_Add:
                 cl1 = cl.args[0]
                 if cl1.is_Mul:
@@ -1840,7 +1840,7 @@ def remove_peripheral_compartment(model: Model, name: str = None):
             central = odes.central_compartment
 
         if len(peripherals) == 1:
-            # TODO : elimnation can be zero (drug metabolite)
+            # TODO: Elimination can be zero (drug metabolite)
             elimination_rate = odes.get_flow(central, output)
             if elimination_rate is sympy.Number(0):
                 pass
@@ -2061,7 +2061,7 @@ def _get_dependent_assignments(sset, assignment):
     """Finds dependent assignments one layer deep"""
     return list(
         filter(
-            None,  # NOTE filters out falsy values
+            None,  # NOTE: filters out falsy values
             (sset.find_assignment(symb) for symb in assignment.expression.free_symbols),
         )
     )

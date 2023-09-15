@@ -23,7 +23,7 @@ def model_search_funcs(mfl_statements: List[Statement]):
 
 
 def exhaustive(mfl_statements: List[Statement], iiv_strategy: str):
-    # TODO: rewrite using _create_model_workflow
+    # TODO: Rewrite using _create_model_workflow
     wb_search = WorkflowBuilder()
 
     model_tasks = []
@@ -158,7 +158,7 @@ def _get_best_model(*models):
     models_with_res = [model for model in models if model.modelfit_results]
     if models_with_res:
         return min(models_with_res, key=lambda x: x.modelfit_results.ofv)
-    # FIXME: should be None, maybe dynamic workflows are needed
+    # FIXME: Should be None, maybe dynamic workflows are needed
     return models[0]
 
 

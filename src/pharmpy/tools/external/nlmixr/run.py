@@ -189,7 +189,7 @@ def verification(
     nonmem_model = model
 
     try:
-        # Save results from the nonmem model
+        # Save results from the NONMEM model
         if nonmem_model.modelfit_results is None:
             if not ignore_print:
                 print_step("Calculating NONMEM predictions... (this might take a while)")
@@ -210,7 +210,7 @@ def verification(
     if [s.evaluation for s in nonmem_model.estimation_steps._steps][0] is False:
         nonmem_model = set_evaluation_step(nonmem_model)
 
-    # Update the nonmem model with new estimates
+    # Update the NONMEM model with new estimates
     # and convert to nlmixr
     if not ignore_print:
         print_step("Converting NONMEM model to nlmixr2...")
@@ -618,7 +618,7 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
         name=name,
         description=description,
         ofv=ofv,
-        minimization_successful=True,  # FIXME: parse minimization status
+        minimization_successful=True,  # FIXME: Parse minimization status
         parameter_estimates=pe,
         predictions=predictions,
         log=Log(),

@@ -464,12 +464,12 @@ def _index_statements_diff(
         except StopIteration:
             break
 
-        # NOTE We forward standalone insertions
+        # NOTE: We forward standalone insertions
         if op == 1:
             yield op, [s], last_node_index, last_node_index
             continue
 
-        # NOTE We fetch the index entry for this group of statements
+        # NOTE: We fetch the index entry for this group of statements
         assert index_index < len(index)
         ni, nj, si, sj = index[index_index]
         index_index += 1
@@ -478,10 +478,10 @@ def _index_statements_diff(
         statements = [s]
         expected = sj - si - 1
 
-        # NOTE We retrieve all statements for this index entry, as well as
+        # NOTE: We retrieve all statements for this index entry, as well as
         # interleaved insertion statements
         while expected > 0:
-            op, s = next(it)  # NOTE We do not expect this to raise
+            op, s = next(it)  # NOTE: We do not expect this to raise
 
             operations.append(op)
             statements.append(s)
@@ -489,13 +489,13 @@ def _index_statements_diff(
                 expected -= 1
 
         if all(op == 0 for op in operations):
-            # NOTE If this group of statements contains no changes, we can keep
+            # NOTE: If this group of statements contains no changes, we can keep
             # the associated nodes.
             yield 0, statements, ni, nj
         else:
-            # NOTE Otherwise we remove all associated nodes
+            # NOTE: Otherwise we remove all associated nodes
             yield -1, [s for s, op in zip(statements, operations) if op != 1], ni, nj
-            # NOTE And generate new nodes for kept statements
+            # NOTE: And generate new nodes for kept statements
             new_statements = [s for s, op in zip(statements, operations) if op != -1]
             if new_statements:
                 yield 1, new_statements, nj, nj
@@ -505,7 +505,7 @@ def _index_statements_diff(
 
 class CodeRecord(Record):
     def __init__(self, name, raw_name, content, index=None, statements=None):
-        # NOTE self._index establishes a correspondance between self.root
+        # NOTE: self._index establishes a correspondance between self.root
         # nodes and self.statements statements. self._index consists of
         # (ni, nj, si, sj) tuples which maps the nodes
         # self.root.children[ni:nj] to the statements self.statements[si:sj]
@@ -534,28 +534,28 @@ class CodeRecord(Record):
         new_children = []
         last_node_index = 0
         new_index = []
-        defined_symbols: Set[sympy.Symbol] = set()  # NOTE Set of all defined symbols so far
-        si = 0  # NOTE We keep track of progress in the "new" statements sequence
+        defined_symbols: Set[sympy.Symbol] = set()  # NOTE: Set of all defined symbols so far
+        si = 0  # NOTE: We keep track of progress in the "new" statements sequence
 
         first_statement_index = (
-            self._index[0][0]  # NOTE start insertion just before the first statement
+            self._index[0][0]  # NOTE: Start insertion just before the first statement
             if self._index
             else (
-                first_verbatim  # NOTE start insertion just before the first verbatim
+                first_verbatim  # NOTE: Start insertion just before the first verbatim
                 if (first_verbatim := self.root.first_index('verbatim')) != -1
-                else len(self.root.children)  # NOTE start insertion after all blanks
+                else len(self.root.children)  # NOTE: Start insertion after all blanks
             )
         )
         for op, statements, ni, nj in _index_statements_diff(
             first_statement_index, self._index, diff(old, new)
         ):
-            # NOTE We copy interleaved non-statement nodes
+            # NOTE: We copy interleaved non-statement nodes
             new_children.extend(self.root.children[last_node_index:ni])
             if op == 1:
                 for s in statements:
                     assert isinstance(s, Assignment)
                     statement_nodes = self._statement_to_nodes(defined_symbols, s, rvs, trans)
-                    # NOTE We insert the generated nodes just before the next
+                    # NOTE: We insert the generated nodes just before the next
                     # existing statement node
                     insert_pos = len(new_children)
                     new_index.append((insert_pos, insert_pos + len(statement_nodes), si, si + 1))
@@ -563,7 +563,7 @@ class CodeRecord(Record):
                     new_children.extend(statement_nodes)
                     defined_symbols.add(s.symbol)
             elif op == 0:
-                # NOTE We keep the nodes but insert them at an updated position
+                # NOTE: We keep the nodes but insert them at an updated position
                 insert_pos = len(new_children)
                 insert_len = nj - ni
                 new_index.append((insert_pos, insert_pos + insert_len, si, si + len(statements)))
@@ -573,7 +573,7 @@ class CodeRecord(Record):
                     if isinstance(s, Assignment):
                         defined_symbols.add(s.symbol)
             last_node_index = nj
-        # NOTE We copy any non-statement nodes that are remaining
+        # NOTE: We copy any non-statement nodes that are remaining
         new_children.extend(self.root.children[last_node_index:])
         new_root = AttrTree(self.root.rule, tuple(new_children))
         return CodeRecord(self.name, self.raw_name, new_root, index=new_index, statements=new)
@@ -662,7 +662,7 @@ def _parse_tree(tree: AttrTree):
         if not isinstance(child, AttrTree) or child.rule != 'statement':
             continue
         for node in child.children:
-            # NOTE why does this iterate over the children?
+            # NOTE: Why does this iterate over the children?
             # Right now it looks like it could add the same statement
             # multiple times because there is no break on a match.
             if not isinstance(node, AttrTree):

@@ -130,7 +130,7 @@ def test_add_allometry_tmdd(pheno_path, load_model_for_test):
         reference_value=70,
     )
 
-    # FIXME: currently adds to CL and LAFREE, is this correct?
+    # FIXME: Currently adds to CL and LAFREE, is this correct?
     model = load_model_for_test(pheno_path)
     model = set_tmdd(model, type="qss")
     add_allometry(

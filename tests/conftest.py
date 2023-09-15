@@ -32,14 +32,14 @@ def load_model_for_test(tmp_path_factory):
     _cache: Dict[Hashable, Model] = {}
 
     def _load(given_path: Union[str, Path]) -> Model:
-        # TODO Cache based on file contents instead.
+        # TODO: Cache based on file contents instead.
 
         def _parse_model():
             model = Model.parse_model(given_path)
             try:
-                model.dataset  # NOTE Force parsing of dataset
+                model.dataset  # NOTE: Force parsing of dataset
             except FileNotFoundError:
-                pass  # NOTE The error will resurface later if needed
+                pass  # NOTE: The error will resurface later if needed
             return model
 
         basetemp = tmp_path_factory.getbasetemp().resolve()
@@ -47,12 +47,12 @@ def load_model_for_test(tmp_path_factory):
         resolved_path = Path(given_path).resolve()
 
         try:
-            # NOTE This skips caching when we are reading from a temporary
+            # NOTE: This skips caching when we are reading from a temporary
             # directory.
             resolved_path.relative_to(basetemp)
             return _parse_model()
         except ValueError:
-            # NOTE This is raised when resolved_path is not descendant of
+            # NOTE: This is raised when resolved_path is not descendant of
             # basetemp. With Python >= 3.9 we could use is_relative_to instead.
             pass
 
@@ -99,7 +99,7 @@ def create_model_for_test(load_example_model_for_test):
         model = Model.parse_model_from_string(code)
         datapath = model.datainfo.path
         if dataset is not None:
-            # NOTE This yields a copy of the dataset through Model#copy
+            # NOTE: This yields a copy of the dataset through Model#copy
             model = model.replace(
                 dataset=load_example_model_for_test(dataset).dataset,
                 datainfo=model.datainfo.replace(path=datapath),

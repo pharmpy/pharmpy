@@ -373,7 +373,7 @@ def calculate_individual_parameter_statistics(
             mean = np.mean(values)
             variance = np.var(values)
 
-            # NOTE This is NaN for empty inputs, dtype is required for those.
+            # NOTE: This is NaN for empty inputs, dtype is required for those.
             cov_expr = subs(full_expr, cov_values, simultaneous=True)
             stderr = pd.Series(
                 chain.from_iterable(eval_expr(cov_expr, batchsize, batch) for batch in batches),
@@ -477,7 +477,7 @@ def calculate_pk_parameters_statistics(
     if not peripherals and odes.t not in elimination_rate.free_symbols:
         elimination_system = statements.ode_system
         for name in elimination_system.compartment_names:
-            if name != central.name:  # NOTE keep central
+            if name != central.name:  # NOTE: Keep central
                 cb = CompartmentalSystemBuilder(elimination_system)
                 cb.remove_compartment(elimination_system.find_compartment(name))
                 elimination_system = CompartmentalSystem(cb)
@@ -661,7 +661,7 @@ def calculate_bic(
                         symbols = {p.symbol for p in parameters if p.symbol in expr.free_symbols}
                         random_thetas.update(symbols)
                         break
-        # FIXME: handle other DVs?
+        # FIXME: Handle other DVs?
         dv = list(model.dependent_variables.keys())[0]
         yexpr = model.statements.after_odes.full_expression(dv)
         for eta in _random_etas(model).names:

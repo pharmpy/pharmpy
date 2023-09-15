@@ -49,7 +49,7 @@ def create_rng(seed: Optional[Union[np.random.Generator, int]] = None):
 
 
 def _sample_truncated_joint_normal(sigma, mu, a, b, n, rng):
-    """Give an array of samples from the truncated joint normal distributon using sample rejection
+    """Give an array of samples from the truncated joint normal distribution using sample rejection
     - mu, sigma - parameters for the normal distribution
     - a, b - vectors of lower and upper limits for each random variable
     - n - number of samples

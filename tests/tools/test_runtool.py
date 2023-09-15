@@ -63,13 +63,13 @@ class MockedToolWithInputValidation(MockedTool):
             lambda res: isinstance(res, Results),
         ),
         (
-            'modelfit',  # NOTE This triggers the modelfit-specific (non-)branches
+            'modelfit',  # NOTE: This triggers the modelfit-specific (non-)branches
             MockedTool(create_workflow_rename),
             ('y',),
             lambda res: isinstance(res, Model) and res.name == 'y',
         ),
         (
-            'modelfit',  # NOTE This triggers the modelfit-specific (non-)branches
+            'modelfit',  # NOTE: This triggers the modelfit-specific (non-)branches
             MockedToolWithInputValidation(create_workflow_rename, validate_input_rename),
             ('y',),
             lambda res: isinstance(res, Model) and res.name == 'y',

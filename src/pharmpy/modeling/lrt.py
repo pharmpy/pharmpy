@@ -38,7 +38,7 @@ def best_of_two(parent: Model, child: Model, parent_ofv, child_ofv, alpha: float
 def best_of_many(
     parent: Model, models: Iterable[Model], parent_ofv, model_ofvs, alpha: float
 ) -> Model:
-    # NOTE numpy.nanargmin ignores NaN values and raises a ValueError when all
+    # NOTE: numpy.nanargmin ignores NaN values and raises a ValueError when all
     # values are NaN.
     # See https://numpy.org/doc/stable/reference/generated/numpy.nanargmin.html
     try:

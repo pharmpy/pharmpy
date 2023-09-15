@@ -12,7 +12,7 @@ T = TypeVar('T')
 
 
 def run(workflow: Workflow[T]) -> T:
-    # NOTE We change to a new temporary directory so that all files generated
+    # NOTE: We change to a new temporary directory so that all files generated
     # by the workflow end-up in the same root directory. Each task of a
     # workflow has the responsibility to avoid collisions on the file system
     # (using UUIDs as filenames for instance). This also allows tasks to share
@@ -41,21 +41,21 @@ def run(workflow: Workflow[T]) -> T:
 
             from ..optimize import optimize_task_graph_for_dask_distributed
 
-            # NOTE We set the dask temporary directory to avoid permission
+            # NOTE: We set the dask temporary directory to avoid permission
             # errors in the dask-worker-space directory in case for
-            # instance different users run dask on the same filesystem (e.g. on
+            # instance different users run dask on the same filesystem (e.g., on
             # a cluster node).
-            # An attempt at solving this kind of problems was introduced two
+            # An attempt at solving this kind of problem was introduced two
             # months ago, by suffixing the directory name with the user id on
             # POSIX. It should fix the problem, except maybe on Windows. Since
-            # we experienced issues before that change, maybe this is it and we
+            # we experienced issues before that change, maybe this is it, and we
             # could instead set temporary_directory to tempfile.gettempdir().
             # Note that if this is done, then our custom patch of
-            # TemporaryDirectory can gotten rid of. See:
+            # TemporaryDirectory can be removed. See:
             #   - https://github.com/dask/distributed/blob/cff33d500f24b67efbd94ce39b15cb36473cd9f6/distributed/diskutils.py#L132-L153 # noqa: E501
             #   - https://github.com/dask/distributed/issues/6748
             #   - https://github.com/dask/distributed/pull/7054
-            # NOTE We also ignore cleanup errors that can occur on Windows. We
+            # NOTE: We also ignore cleanup errors that can occur on Windows. We
             # must do so because dask also ignore those, see for instance:
             #   - https://github.com/dask/distributed/issues/6052#issue-1189891052
             #   - https://github.com/dask/distributed/issues/966#issuecomment-353265964
@@ -69,7 +69,7 @@ def run(workflow: Workflow[T]) -> T:
                 {'temporary_directory': dasktempdir}
             ):
                 with warnings.catch_warnings():
-                    # NOTE Catch deprecation warning from python 3.10 via tornado.
+                    # NOTE: Catch deprecation warning from python 3.10 via tornado.
                     # Should be fixed with tornado 6.2
                     warnings.filterwarnings("ignore", message="There is no current event loop")
                     with LocalCluster(

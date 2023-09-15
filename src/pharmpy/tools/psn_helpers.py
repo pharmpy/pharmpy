@@ -60,10 +60,10 @@ def psn_command(path):
                 if row.startswith('command_line: '):
                     cmd = row.strip()
                 elif cmd is not None:
-                    # command can be split over multiple lines
+                    # Command can be split over multiple lines
                     if row.startswith('common_options:'):
                         return cmd
-                    elif re.match(r'\s', row):  # continuation is indented
+                    elif re.match(r'\s', row):  # Continuation is indented
                         cmd += row.strip()
             if cmd is not None:
                 return cmd

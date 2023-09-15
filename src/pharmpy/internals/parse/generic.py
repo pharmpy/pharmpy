@@ -116,7 +116,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
             rule_name, args, children = stack[-1]
             i = len(children)
             if i == len(args):
-                # NOTE We flatten anonymous trees
+                # NOTE: We flatten anonymous trees
                 flattened = tuple(
                     chain.from_iterable(
                         child if isinstance(child, tuple) else (child,) for child in children
@@ -132,7 +132,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
                 )
                 stack.pop()
                 if stack:
-                    # NOTE We had this tree as child of parent
+                    # NOTE: We had this tree as child of parent
                     stack[-1][-1].append(tree)
                     continue
                 else:
@@ -141,16 +141,16 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
             name, thing = args[i]
 
             if isinstance(thing, (AttrTree, AttrToken)):
-                # NOTE Do not convert existing nodes
+                # NOTE: Do not convert existing nodes
                 children.append(thing)
             elif isinstance(thing, (str, int, float, type(None))):
-                # NOTE leaf
+                # NOTE: leaf
                 if not name:
                     _anon_count += 1
                     name = '__ANON_%d' % (_anon_count,)
                 children.append(AttrToken(name, str(thing)))
             else:
-                # NOTE recurse
+                # NOTE: recurse
                 stack.append(_parse_create_input(name, thing))
 
     # -- public interface ----------------------------------------------

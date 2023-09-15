@@ -536,7 +536,7 @@ def to_compartmental_system(names, eqs):
                                     to_comp = compartments[names[eq.lhs.args[0].func]]
 
                     if from_comp is not None and to_comp is not None:
-                        # FIXME : get current flow from builder instead?
+                        # FIXME: Get current flow from builder instead?
                         cs = CompartmentalSystem(cb)
                         current_flow = cs.get_flow(from_comp, to_comp)
 
@@ -1006,7 +1006,7 @@ class CompartmentalSystem(ODESystem):
         """
         try:
             # E.g. TMDD models have more than one output
-            # FIXME : Relying heavily on compartment naming for drug metabolite
+            # FIXME: Relying heavily on compartment naming for drug metabolite
             central = list(self._g.predecessors(output))[-1]
             if central.name == "METABOLITE":
                 central = self.find_compartment("CENTRAL")
@@ -1140,7 +1140,7 @@ class CompartmentalSystem(ODESystem):
             outflows = self.get_compartment_outflows(to_central)
             if len(outflows) == 1 or len(outflows) == 2:
                 if len(outflows) == 2:
-                    # FIXME : Use antoher method than compartment name
+                    # FIXME: Use another method than compartment name
                     if not self.get_flow(to_central, self.find_compartment("METABOLITE")):
                         break
                 inflows = self.get_compartment_inflows(to_central)
@@ -1490,7 +1490,7 @@ class Compartment:
 
     @property
     def doses(self):
-        # FIXME : return in defined order with oral doses coming first!
+        # FIXME: Return in defined order with oral doses coming first!
         # Only do this for multiple doses.
         if len(self._doses) > 1:
             return tuple(sorted(self._doses, key=lambda d: isinstance(d, Infusion), reverse=True))

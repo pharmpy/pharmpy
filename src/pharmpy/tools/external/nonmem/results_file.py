@@ -124,7 +124,7 @@ class NONMEMResultsFile:
     @staticmethod
     def parse_termination(rows):
         result = NONMEMResultsFile.unknown_termination()
-        if len(rows) < 1:  # will happen if e.g. TERMINATED BY OBJ during estimation
+        if len(rows) < 1:  # Will happen if e.g. TERMINATED BY OBJ during estimation
             result['minimization_successful'] = False
             return result
         result['estimate_near_boundary'] = False
@@ -150,7 +150,7 @@ class NONMEMResultsFile:
             r' (REDUCED STOCHASTIC PORTION|OPTIMIZATION|'
             + r'BURN-IN|EXPECTATION ONLY PROCESS)'
             + r'( WAS | )NOT COMPLETED'
-        )  # success only if next line USER INTERRUPT
+        )  # Success only if next line USER INTERRUPT
         misc = {
             'estimate_near_boundary': re.compile(
                 r'0(ESTIMATE OF THETA IS NEAR THE BOUNDARY AND|'
@@ -160,11 +160,11 @@ class NONMEMResultsFile:
             'maxevals_exceeded': re.compile(r' DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED'),
             'warning': re.compile(r' HOWEVER, PROBLEMS OCCURRED WITH THE MINIMIZATION.'),
         }
-        sig_digits = re.compile(r' NO. OF SIG. DIGITS IN FINAL EST.:\s*(\S+)')  # only classical est
+        sig_digits = re.compile(r' NO. OF SIG. DIGITS IN FINAL EST.:\s*(\S+)')  # Only classical est
         sig_digits_unreport = re.compile(
             r'\w*(NO. OF SIG. DIGITS UNREPORTABLE)\w*\n'
         )  # only classical est
-        feval = re.compile(r' NO. OF FUNCTION EVALUATIONS USED:\s*(\S+)')  # only classical est
+        feval = re.compile(r' NO. OF FUNCTION EVALUATIONS USED:\s*(\S+)')  # Only classical est
         ofv_with_constant = re.compile(r' OBJECTIVE FUNCTION VALUE WITH CONSTANT:\s*(\S+)')
 
         maybe_success = False
@@ -209,7 +209,7 @@ class NONMEMResultsFile:
 
     @staticmethod
     def parse_runtime(row, row_next=None):
-        # TODO: support AM/PM
+        # TODO: Support AM/PM
         weekday_month_en = re.compile(
             r'^\s*(Sun|Mon|Tue|Wed|Thu|Fri|Sat)'
             r'\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'  # Month
@@ -397,7 +397,7 @@ class NONMEMResultsFile:
             if m:
                 version_number = NONMEMResultsFile.cleanup_version(m.group(1))
                 yield ('nonmem_version', version_number)
-                break  # we will stay at current file position
+                break  # We will stay at current file position
 
         self.log_items(lines)
 
@@ -420,7 +420,7 @@ class NONMEMResultsFile:
                         TERM = []
                     elif found_TERE:
                         found_TERE = False
-                        # raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
+                        # Raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
                     else:
                         v = cleanup.sub('', m.group(2))
                         yield (m.group(1), v.strip())

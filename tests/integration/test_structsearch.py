@@ -8,7 +8,7 @@ def test_pkpd(tmp_path, load_model_for_test, testdata):
     with chdir(tmp_path):
         model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
         model = convert_model(model, 'nonmem')
-        pk_model = create_pk_model(model)  # NOTE: this step needs to be removed later
+        pk_model = create_pk_model(model)  # NOTE: This step needs to be removed later
         fit(pk_model)
     #    res = run_structsearch(type='pkpd', route='iv', results=pk_res, model=model)
 

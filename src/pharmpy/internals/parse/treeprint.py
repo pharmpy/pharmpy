@@ -53,7 +53,7 @@ class Node(Generic[T]):
         self._style = style
         self._parent = None
         self._children = children
-        # NOTE This links the children to the new parent and forces to build
+        # NOTE: This links the children to the new parent and forces to build
         # the tree from bottom to top
         for child in children:
             child._parent = self

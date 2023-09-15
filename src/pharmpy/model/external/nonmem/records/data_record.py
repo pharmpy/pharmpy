@@ -63,7 +63,7 @@ class DataRecord(OptionRecord):
             ]
             if not any(x in filename for x in quoted):
                 node = AttrTree.create('filename', {'FILENAME': filename})
-            # NOTE filename in $DATA may be max 80 characters
+            # NOTE: Filename in $DATA may be max 80 characters
             elif len(filename) > 80:
                 raise ValueError(f'Filename for data record too long (>80 characters): {filename}')
             else:

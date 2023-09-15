@@ -188,7 +188,7 @@ def test_skip_iovsearch_missing_occasion_raises(tmp_path, testdata):
 def _load_model(testdata: Path, with_datainfo: bool = False):
     models = testdata / 'nonmem' / 'models'
 
-    # NOTE We need to make a local copy and read the model locally to avoid
+    # NOTE: We need to make a local copy and read the model locally to avoid
     # reading the .datainfo which contains allometry information we do not want
     # to ignore.
 
@@ -203,14 +203,14 @@ def _load_model(testdata: Path, with_datainfo: bool = False):
     model = Model.parse_model('mox2.mod')
     model = model.replace(name='start')
 
-    # NOTE Load results directly in DB to skip fitting
+    # NOTE: Load results directly in DB to skip fitting
     db_tool = default_tool_database(toolname='amd', path='amd_dir1')
     db_fit = default_tool_database(toolname='modelfit', path=db_tool.path / 'modelfit')
 
     with db_fit.model_database.transaction(model) as txn:
         txn.store_model()
         txn.store_modelfit_results()
-        # NOTE This are needed because currently caching of the results cannot
+        # NOTE: This are needed because currently caching of the results cannot
         # read from the JSON file created above.
         txn.store_local_file(models / 'mox2.ext', 'start.ext')
         txn.store_local_file(models / 'mox2.lst', 'start.lst')

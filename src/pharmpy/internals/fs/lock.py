@@ -100,7 +100,7 @@ if is_windows:
     import msvcrt
     import sys
 
-    # NOTE lock the entire file
+    # NOTE: lock the entire file
     _lock_length = -1 if sys.version_info.major == 2 else int(2**31 - 1)
 
     def _is_process_level_lock_timeout_error(error: OSError) -> bool:
@@ -122,7 +122,7 @@ if is_windows:
         )
 
     def _process_level_lock(fd: int, shared: bool = False, blocking: bool = True):
-        # NOTE Simulates shared lock using an exclusive lock. This
+        # NOTE: Simulates shared lock using an exclusive lock. This
         # implementation does not allow to lock the same fd multiple times.
         # This does not matter a we make sure we do not do that.
         if blocking:
@@ -149,7 +149,7 @@ if is_windows:
                     raise error
 
     def _process_level_unlock(fd: int):
-        # NOTE This implementation (Windows) will raise an error if attempting
+        # NOTE: This implementation (Windows) will raise an error if attempting
         # to unlock an already unlocked fd. This does not matter as we make
         # sure we do not do that.
         msvcrt.locking(  # pyright: ignore [reportGeneralTypeIssues]
@@ -187,7 +187,7 @@ else:
                     raise error
 
     def _process_level_unlock(fd: int):
-        # NOTE This implementation (UNIX) will NOT raise an error if attempting
+        # NOTE: This implementation (UNIX) will NOT raise an error if attempting
         # to unlock an already unlocked fd. This does not matter as we make
         # sure we do not do that.
         fcntl.lockf(fd, fcntl.LOCK_UN)
@@ -236,7 +236,7 @@ class ShareableProcessLock:
                 is_held = is_held_shared or is_held_exclusively
 
                 if not is_held or (is_held_shared and not shared and not is_windows):
-                    # NOTE We only lock when the first locking attempt is made, or
+                    # NOTE: We only lock when the first locking attempt is made, or
                     # if we want to upgrade the lock to an exclusive lock, but only on
                     # UNIX since current implementation always uses exclusive locks on
                     # Windows.
@@ -270,11 +270,11 @@ class ShareableProcessLock:
                 is_held = is_held_shared or is_held_exclusively
 
                 if not is_held:
-                    # NOTE We only release the lock once we have exhausted all
+                    # NOTE: We only release the lock once we have exhausted all
                     # locking attempts
                     _process_level_unlock(self._fd)
                 elif not is_held_exclusively and not shared and not is_windows:
-                    # NOTE We downgrade the lock from exclusive to shared if we
+                    # NOTE: We downgrade the lock from exclusive to shared if we
                     # are not on Windows and we just released an exclusive
                     # lock, and no exclusive lock is left.
                     _process_level_lock(self._fd, shared=True, blocking=True)
@@ -312,7 +312,7 @@ class ShareableThreadLock:
             try:
                 self._acquired_by[thread_id] -= 1
                 if not self._acquired_by[thread_id]:
-                    del self._acquired_by[thread_id]  # NOTE GC
+                    del self._acquired_by[thread_id]  # NOTE: GC
                     if not self._acquired_by:
                         self._condition.notify_all()
             finally:
@@ -326,20 +326,20 @@ class ShareableThreadLock:
             try:
                 this_thread_count = Counter({thread_id: self._acquired_by[thread_id]})
                 if blocking:
-                    # NOTE We could use self._acquired_by != this_thread_count in
+                    # NOTE: We could use self._acquired_by != this_thread_count in
                     # Python >= 3.10
                     while self._acquired_by - this_thread_count:
                         self._condition.wait()
                 else:
-                    # NOTE We could use self._acquired_by != this_thread_count in
+                    # NOTE: We could use self._acquired_by != this_thread_count in
                     # Python >= 3.10
                     if self._acquired_by - this_thread_count:
                         raise AcquiringThreadLevelLockWouldBlockError()
 
-                # NOTE The following check also works for Python < 3.10 because we
+                # NOTE: The following check also works for Python < 3.10 because we
                 # systematically get rid of zero-count entries.
                 if self._acquired_by:
-                    # NOTE The following two checks can be replaced by
+                    # NOTE: The following two checks can be replaced by
                     # assert self._acquired_by == this_thread_count
                     # in Python >= 3.10
                     assert len(self._acquired_by) == 1
@@ -356,7 +356,7 @@ class ShareableThreadLock:
                 if acquired:
                     self._acquired_by[thread_id] -= 1
                     if not self._acquired_by[thread_id]:
-                        del self._acquired_by[thread_id]  # NOTE GC
+                        del self._acquired_by[thread_id]  # NOTE: GC
                 self._condition.release()
         else:
             raise AcquiringThreadLevelLockWouldBlockError()
@@ -374,11 +374,11 @@ class ThreadSafeKeyedRefPool(Generic[T]):
         with self._lock:
             entry = self._refs.get(key)
             if entry is None:
-                # NOTE We create a new object if none exists
+                # NOTE: We create a new object if none exists
                 obj = self._factory(key)
                 self._refs[key] = (obj, 1)
             else:
-                # NOTE Otherwise we count one ref more
+                # NOTE: Otherwise we count one ref more
                 (obj, refcount) = entry
                 self._refs[key] = (obj, refcount + 1)
 
@@ -389,13 +389,13 @@ class ThreadSafeKeyedRefPool(Generic[T]):
             with self._lock:
                 (_, refcount) = self._refs[key]
                 if refcount == 1:
-                    # NOTE We remove the object from the pool since nobody
+                    # NOTE: We remove the object from the pool since nobody
                     # else holds a reference to it.
                     del self._refs[key]
                     if self._destructor is not None:
                         self._destructor(obj)
                 else:
-                    # NOTE Otherwise we count one ref less
+                    # NOTE: Otherwise we count one ref less
                     self._refs[key] = (obj, refcount - 1)
 
 

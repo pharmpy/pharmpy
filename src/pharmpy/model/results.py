@@ -16,18 +16,18 @@ from .model import Model
 class Results(Immutable):
     """Base class for all result classes"""
 
-    __version__: str = pharmpy.__version__  # NOTE Default version if not overridden
+    __version__: str = pharmpy.__version__  # NOTE: Default version if not overridden
 
     @classmethod
     def from_dict(cls, d):
         """Create results object from dictionary"""
         removed_keys = {
             '__version__',
-            'best_model',  # NOTE Was removed in d5b3503 and 8578c8b
-            'input_model',  # NOTE Was removed in d5b3503 and 8578c8b
+            'best_model',  # NOTE: Was removed in d5b3503 and 8578c8b
+            'input_model',  # NOTE: Was removed in d5b3503 and 8578c8b
         }
         return cls(
-            __version__=d.get('__version__', 'unknown'),  # NOTE Override default version
+            __version__=d.get('__version__', 'unknown'),  # NOTE: Override default version
             **{k: v for k, v in d.items() if k not in removed_keys},
         )
 
@@ -163,7 +163,7 @@ def _index_to_json(index):
 
 class ResultsJSONEncoder(json.JSONEncoder):
     def default(self, obj):
-        # NOTE this function is called when the base JSONEncoder does not know
+        # NOTE: This function is called when the base JSONEncoder does not know
         # how to encode the given object, so it will not be called on int,
         # float, str, list, tuple, and dict. It could be called on set for
         # instance, or any custom class.
@@ -180,7 +180,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
             return d
         elif isinstance(obj, pd.Series):
             if obj.size >= 1 and isinstance(obj.iloc[0], pd.DataFrame):
-                # NOTE Hack special case for Series of DataFrame objects
+                # NOTE: Hack special case for Series of DataFrame objects
                 return {
                     'data': [{'__class__': 'DataFrame', **_df_to_json(df)} for df in obj.values],
                     'index': _index_to_json(obj.index),
@@ -189,7 +189,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
                     '__class__': 'Series[DataFrame]',
                 }
 
-            # NOTE Hack to work around poor support of to_json/read_json of
+            # NOTE: Hack to work around poor support of to_json/read_json of
             # pd.Series with MultiIndex
             df = obj.to_frame()
             d = _df_to_json(df)
@@ -197,7 +197,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
             return d
         elif obj.__class__.__module__.startswith('altair.'):
             with warnings.catch_warnings():
-                # FIXME Remove filter once altair stops relying on deprecated APIs
+                # FIXME: Remove filter once altair stops relying on deprecated APIs
                 warnings.filterwarnings(
                     "ignore",
                     message=".*iteritems is deprecated and will be removed in a future version. Use .items instead.",
@@ -208,7 +208,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
             d['__class__'] = obj.__class__.__qualname__
             return d
         elif isinstance(obj, Model):
-            # TODO consider using other representation, e.g. path
+            # TODO: Consider using other representation, e.g. path
             return None
         elif isinstance(obj, Log):
             d: Dict[Any, Any] = obj.to_dict()
@@ -223,5 +223,5 @@ class ResultsJSONEncoder(json.JSONEncoder):
             d = {'path': str(obj), '__class__': 'PosixPath'}
             return d
         else:
-            # NOTE this will raise a proper TypeError
+            # NOTE: This will raise a proper TypeError
             return super().default(obj)

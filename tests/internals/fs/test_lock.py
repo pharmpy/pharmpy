@@ -194,7 +194,7 @@ def test_many_shared_one_exclusive_blocking(tmp_path, parallelization):
         with parallelization(n) as [executor, m]:
             results_queue = m.Queue()
 
-            # NOTE We run the test twice to reuse workers to catch errors where
+            # NOTE: We run the test twice to reuse workers to catch errors where
             # some workers are left in a locked state.
             for _ in range(2):
                 are_locked = m.Barrier(n)
@@ -369,7 +369,7 @@ def test_chained_shared_one_exclusive_blocking(tmp_path, parallelization):
         with parallelization(n) as [executor, m]:
             results_queue = m.Queue()
 
-            # NOTE We run the test twice to reuse workers to catch errors where
+            # NOTE: We run the test twice to reuse workers to catch errors where
             # some workers are left in a locked state.
             for _ in range(2):
                 first_is_locked = m.Barrier(2)
@@ -470,7 +470,7 @@ def test_synchronized_reads_blocking(tmp_path, parallelization):
 
                 while (
                     not q.empty() or len(messages) < i - k
-                ):  # NOTE We empty the queue as much as possible
+                ):  # NOTE: We empty the queue as much as possible
                     messages.append(q.get())
                     if messages[-1]['type'] == 'write':
                         w -= 1
@@ -485,12 +485,12 @@ def test_synchronized_reads_blocking(tmp_path, parallelization):
                 i = message['id']
                 g = group[i]
                 counter = message['contents']['counter']
-                # NOTE counter is the same for the whole group
+                # NOTE: counter is the same for the whole group
                 assert values.setdefault(g, counter) == counter
-                # NOTE copy is identical to counter
+                # NOTE: copy is identical to counter
                 assert message['contents']['copy'] == counter
             else:
                 assert t == 'write'
-                # NOTE check nobody else wrote to file while we held the lock
+                # NOTE: check nobody else wrote to file while we held the lock
                 assert message['id'] == message['contents']['id']
                 assert message['contents']['copy'] == message['contents']['counter']

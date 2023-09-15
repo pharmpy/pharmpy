@@ -169,7 +169,7 @@ def update_inits(
     {'PTVCL': 0.00469555, 'PTVV': 0.984258, 'THETA_3': 0.15892, 'IVCL': 0.0293508, 'IVV': 0.027906, ...}
 
     """
-    # FIXME: can be combined with set_initial_estimates
+    # FIXME: Can be combined with set_initial_estimates
     if move_est_close_to_bounds:
         parameter_estimates = _move_est_close_to_bounds(model, parameter_estimates)
 

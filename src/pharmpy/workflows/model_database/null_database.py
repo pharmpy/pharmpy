@@ -5,7 +5,7 @@ class NullModelDatabase(NonTransactionalModelDatabase):
     """Dummy model database implementation
 
     No operation does anything. This database can be used if no storing of files
-    is desireable.
+    is desirable.
     """
 
     def __init__(self, **kwargs):
