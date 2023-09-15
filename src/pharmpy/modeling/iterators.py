@@ -1,5 +1,5 @@
 """
-Iterators generating new datasets from a dataset. The dataset could either be stood alone
+Iterators generating new datasets from a dataset. The dataset could either be stand alone
 or connected to a model. If a model is used the same model will be updated with different
 datasets for each iteration.
 
