@@ -24,6 +24,8 @@ def _preparations(model, y=None):
     # FIXME: Handle other DVs?
     if y is None:
         y = list(model.dependent_variables.keys())[0]
+    if not model.statements.find_assignment(y.name):
+        raise ValueError(f'Could not find assignment for \'{y}\'')
     f = subs(
         model.statements.find_assignment(y.name).expression,
         {sympy.Symbol(eps): 0 for eps in model.random_variables.epsilons.names},
@@ -952,6 +954,9 @@ def set_power_on_ruv(
     eps = [e for e in eps]
     dv_symb = get_dv_symbol(model, dv)
     y = model.statements.find_assignment(dv_symb)
+    if not y:
+        raise ValueError(f'Could not find assignment for \'{dv_symb}\'')
+
     pset, sset = list(model.parameters), model.statements
 
     if ipred is None:

@@ -6,10 +6,9 @@ import importlib
 import re
 import warnings
 from pathlib import Path
-from typing import Dict, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 import pharmpy.config as config
-from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import (
     CompartmentalSystem,
@@ -21,6 +20,11 @@ from pharmpy.model import (
     Parameters,
     RandomVariables,
 )
+
+if TYPE_CHECKING:
+    import sympy
+else:
+    from pharmpy.deps import sympy
 
 
 def read_model(path: Union[str, Path]):
@@ -277,7 +281,7 @@ def set_name(model: Model, new_name: str):
     return model
 
 
-def bump_model_number(model: Model, path: Union[str, Path] = None):
+def bump_model_number(model: Model, path: Optional[Union[str, Path]] = None):
     """If the model name ends in a number increase it
 
     If path is set increase the number until no file exists
