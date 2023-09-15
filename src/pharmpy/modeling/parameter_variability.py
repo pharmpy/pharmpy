@@ -270,9 +270,9 @@ def add_iov(
     if len(categories) == 1:
         raise ValueError(f'Only one value in {occ} column.')
 
-    # NOTE This declares the ETAS and their corresponding OMEGAs
+    # NOTE: This declares the ETAS and their corresponding OMEGAs
     if distribution == 'same-as-iiv':
-        # NOTE We filter existing IIV distributions for selected ETAs and then
+        # NOTE: We filter existing IIV distributions for selected ETAs and then
         # let the explicit distribution logic handle the rest
         assert len(etas) == 1
         etas_set = set(etas[0])
@@ -364,7 +364,7 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
 
     for i in indices:
         eta = etas[i - 1]
-        # NOTE This declares IOV-ETA case assignments and replaces the existing
+        # NOTE: This declares IOV-ETA case assignments and replaces the existing
         # ETA with its sum with the new IOV ETA
 
         iov = sympy.Symbol(iov_name(i))
@@ -398,7 +398,7 @@ def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name,
 def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
     _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name)
 
-    # NOTE Declare off-diagonal OMEGAs
+    # NOTE: Declare off-diagonal OMEGAs
     for i, j in combinations(indices, r=2):
         omega_iov = sympy.Symbol(omega_iov_name(i, j))
         omega_iiv = rvs.get_covariance(etas[i - 1], etas[j - 1])
@@ -739,10 +739,10 @@ def _get_iov_etas(model: Model, list_of_etas):
     if list_of_etas is None:
         return set(rvs.iov.names)
 
-    # NOTE Include all directly referenced ETAs
+    # NOTE: Include all directly referenced ETAs
     direct_etas = set(list_of_etas)
 
-    # NOTE Include all IOV ETAs that are identically distributed to the ones
+    # NOTE: Include all IOV ETAs that are identically distributed to the ones
     # directly referenced
     indirect_etas = set()
     for group in _get_iov_groups(model):
@@ -1159,7 +1159,7 @@ def _choose_cov_param_init(model, individual_estimates, rvs, parent1, parent2):
                 return init_default
         except KeyError:
             return init_default
-        # NOTE Use pd.corr() and not pd.cov(). SD is chosen from the final estimates, if cov is used
+        # NOTE: Use pd.corr() and not pd.cov(). SD is chosen from the final estimates, if cov is used
         # it will be calculated from the EBEs.
         eta_corr = ie[etas].corr()
         if eta_corr.isnull().values.any():

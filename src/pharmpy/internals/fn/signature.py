@@ -47,7 +47,7 @@ def with_same_arguments_as(ref: Callable):
 
             return fn(*permuted)
 
-        # NOTE Lazy annotations can only be resolved properly if the
+        # NOTE: Lazy annotations can only be resolved properly if the
         # declarations of `ref` and `fn` have the same locals() and
         # globals().
         _wrapped.__annotations__ = ref.__annotations__
@@ -62,8 +62,8 @@ def _signature_map(ref_signature: Signature):
     ref_args = []
     ref_defaults = {}
     for param in ref_signature.parameters.values():
-        assert param.kind != param.VAR_POSITIONAL  # TODO handle varargs
-        assert param.kind != param.VAR_KEYWORD  # TODO handle kwargs
+        assert param.kind != param.VAR_POSITIONAL  # TODO: Handle varargs
+        assert param.kind != param.VAR_KEYWORD  # TODO: Handle kwargs
         name = param.name
         ref_args.append(name)
         default = param.default

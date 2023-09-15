@@ -21,7 +21,7 @@ from .parameters import add_population_parameter, fix_parameters, set_initial_es
 
 def _preparations(model, y=None):
     stats = model.statements
-    # FIXME: handle other DVs?
+    # FIXME: Handle other DVs?
     if y is None:
         y = list(model.dependent_variables.keys())[0]
     f = subs(
@@ -313,7 +313,7 @@ def _get_updated_blq_statements(model, expr_dummy, f, f_dummy, eps_new):
     f_above_lloq = _get_f_above_lloq(model, f)
     expr_above_lloq = expr_dummy.subs({f_dummy: f_above_lloq})
     expr = f.subs({f_above_lloq: expr_above_lloq})
-    # FIXME: make more general
+    # FIXME: Make more general
     sd = model.statements.find_assignment('SD')
     sd_new = get_sd_expr(expr_above_lloq, model.random_variables + eps_new, model.parameters)
     stats_new = model.statements.reassign(sd.symbol, sd_new)
@@ -408,7 +408,7 @@ def set_combined_error_model(
     eps_prop = NormalDistribution.create(ruv_prop.name, 'RUV', 0, sigma_prop)
     eps_add = NormalDistribution.create(ruv_add.name, 'RUV', 0, sigma_add)
 
-    # FIXME: handle other DVs
+    # FIXME: Handle other DVs
     dv = list(model.dependent_variables.keys())[0]
     f_dummy = sympy.Dummy('x')
     if data_trans == sympy.log(dv):
@@ -742,7 +742,7 @@ def has_weighted_error_model(model: Model):
 def get_weighted_error_model_weight(model: Model):
     # Defines weighted error model as e.g.: Y = F + EPS(1)*W
     stats, y, f = _preparations(model)
-    # FIXME: handle multiple DVs? Handle piecewise?
+    # FIXME: Handle multiple DVs? Handle piecewise?
     y_expr = stats.error.find_assignment(y).expression
     rvs = model.random_variables.epsilons
     rvs_in_y = {
@@ -1067,7 +1067,7 @@ def set_power_on_ruv(
                 sset = sset.reassign(y.symbol, y.expression)
 
         if has_blq_transformation(model):
-            # FIXME: make more general
+            # FIXME: Make more general
             y_above_lloq, _ = sset.find_assignment('Y').expression.args[0]
             sd = model.statements.find_assignment('SD')
             sd_new = get_sd_expr(y_above_lloq, model.random_variables, Parameters.create(pset))
@@ -1078,7 +1078,7 @@ def set_power_on_ruv(
 
 
 def get_ipred(model, dv=None):
-    # FIXME: handle other DVs?
+    # FIXME: Handle other DVs?
     if dv is None:
         dv = list(model.dependent_variables.keys())[0]
     expr = model.statements.after_odes.full_expression(dv)
@@ -1165,7 +1165,7 @@ def set_iiv_on_ruv(
             sympy.Symbol(e.names[0]): sympy.Symbol(e.names[0])
             * sympy.exp(sympy.Symbol(eta_dict[e].names[0]))
         }
-        # FIXME: this is needed if you e.g. have Y and IPRED, with multiple DVs, how should this be handled?
+        # FIXME: This is needed if you e.g. have Y and IPRED, with multiple DVs, how should this be handled?
         if not dv:
             sset = sset.subs(subs_dict)
         else:

@@ -149,13 +149,13 @@ def create_basic_pk_model(
         model = set_initial_estimates(model, {'POP_MAT': mat_init})
         model = add_iiv(model, list_of_parameters='MAT', expression='exp', initial_estimate=0.1)
     if administration == 'ivoral':
-        # FIXME : Dependent on CMT column having 1 and 2 as values otherwise
+        # FIXME: Dependent on CMT column having 1 and 2 as values otherwise
         # compartment structure don't match
         model = add_bioavailability(model, logit_transform=True)
         model = set_initial_estimates(model, {'POP_BIO': 0.5})
 
         # Add IIV to BIO
-        # TODO ? Should there be another initial estimate?
+        # TODO: ? Should there be another initial estimate?
         model = add_iiv(model, list_of_parameters="BIO", expression='add', initial_estimate=0.1)
 
         # Set dosing to the CENTRAL compartment as well

@@ -8,7 +8,7 @@ def optimize_task_graph_for_dask_distributed(client, graph):
 
 
 def _scatter_computation(Future, client, computation):
-    # NOTE According to dask's graph spec (https://docs.dask.org/en/stable/spec.html):
+    # NOTE: According to dask's graph spec (https://docs.dask.org/en/stable/spec.html):
     # A computation may be one of the following:
     #  - Any key present in the Dask graph like 'x'
     #  - Any other value like 1, to be interpreted literally
@@ -28,7 +28,7 @@ def _scatter_computation(Future, client, computation):
 
 
 def _scatter_value(Future, client, value):
-    # TODO We could automatically compute whether object size is above
+    # TODO: We could automatically compute whether object size is above
     # threshold with a slight twist on https://stackoverflow.com/a/30316760
     if isinstance(value, (int, str, float, bool, range, Future)) or callable(value):
         return value

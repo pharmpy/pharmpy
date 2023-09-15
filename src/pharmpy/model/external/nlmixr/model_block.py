@@ -64,13 +64,13 @@ def add_statements(
 
     """
 
-    # FIXME: handle other DVs?
+    # FIXME: Handle other DVs?
     dv = list(model.dependent_variables.keys())[0]
 
     for s in statements:
         if isinstance(s, Assignment):
             if s.symbol == dv and not s.expression.is_Piecewise:
-                # FIXME : Find another way to assert that a sigma exist
+                # FIXME: Find another way to assert that a sigma exist
                 sigma = None
                 for dist in model.random_variables.epsilons:
                     sigma = dist.variance
@@ -144,7 +144,7 @@ def add_statements(
                         elif s.symbol == dv:
                             if value != dv:
                                 t = res_error_term(model, value)
-                                # FIXME : Remove sigma here instead of in ini
+                                # FIXME: Remove sigma here instead of in ini
                                 # also remove aliases for sigma
                                 cg.add(f"res <- {t.res}")
                                 cg.add(f'add_error <- {t.add.expr}')
@@ -160,7 +160,7 @@ def add_statements(
                     cg.add('}')
                 elif s.symbol in dependencies:
                     add, prop = extract_add_prop(s.expression, res_alias, model)
-                    cg.add(f'{s.symbol.name} <- {expr}')  # TODO : Remove ?
+                    cg.add(f'{s.symbol.name} <- {expr}')  # TODO: Remove?
                     cg.add(f'add_error <- {add}')
                     cg.add(f'prop_error <- {prop}')
                 else:
@@ -419,7 +419,7 @@ def find_parentheses(s: str) -> dict:
                 d[start.pop()] = i
             except IndexError:
                 print('Too many closing parentheses')
-    if start:  # check if stack is empty afterwards
+    if start:  # Check if stack is empty afterward
         print('Too many opening parentheses')
 
     return d

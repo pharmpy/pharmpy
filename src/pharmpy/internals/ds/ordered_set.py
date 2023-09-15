@@ -13,19 +13,19 @@ def _map(iterable: Iterable[T]) -> Iterable[Tuple[T, Literal[0]]]:
 
 class OrderedSet(Generic[T], MutableSet, AbstractSet[T]):
     def __init__(self, iterable: Optional[Iterable[T]] = None):
-        # NOTE A dictionary guarantees iteration order to be insertion order since
+        # NOTE: A dictionary guarantees iteration order to be insertion order since
         # Python 3.6 in CPython and since Python 3.7 for all compliant
         # implementations. This implementation tries to work with these version
         # constraints.
         self._dict: Dict[T, Literal[0]] = {} if iterable is None else dict(_map(iterable))
 
-    # NOTE The following are required by the MutableSet ABC
+    # NOTE: The following are required by the MutableSet ABC
 
     def __contains__(self, key: T):
         return key in self._dict
 
     def __iter__(self):
-        # NOTE This follows insertion order
+        # NOTE: This follows insertion order
         return iter(self._dict)
 
     def __len__(self):
@@ -37,7 +37,7 @@ class OrderedSet(Generic[T], MutableSet, AbstractSet[T]):
     def discard(self, key: T):
         self._dict.pop(key, NIL)
 
-    # NOTE The following are required by the ordered nature of OrderedSet
+    # NOTE: The following are required by the ordered nature of OrderedSet
 
     def __reversed__(self):
         return reversed(self._dict.keys())
@@ -45,7 +45,7 @@ class OrderedSet(Generic[T], MutableSet, AbstractSet[T]):
     def pop(self):
         return self._dict.popitem()[0]
 
-    # NOTE The following are only required if performance matters
+    # NOTE: The following are only required if performance matters
 
     def remove(self, key: T):
         del self._dict[key]
@@ -53,7 +53,7 @@ class OrderedSet(Generic[T], MutableSet, AbstractSet[T]):
     def clear(self):
         self._dict.clear()
 
-    # NOTE The following mimic the behavior of native sets
+    # NOTE: The following mimic the behavior of native sets
 
     def update(self, *iterables: Iterable[T]):
         self._dict.update(_map(chain(*iterables)))

@@ -33,7 +33,7 @@ def _filter_attributes(statement: Statement) -> Iterable[Stringifiable]:
         yield value
 
     for field in it:
-        # FIXME Better handling
+        # FIXME: Better handling
         value = getattr(statement, field.name)
         assert value == field.default
 

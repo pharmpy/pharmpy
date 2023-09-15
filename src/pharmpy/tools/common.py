@@ -17,7 +17,7 @@ else:
     from pharmpy.deps import numpy as np
     from pharmpy.deps import pandas as pd
 
-DataFrame = Any  # NOTE should be pd.DataFrame but we want lazy loading
+DataFrame = Any  # NOTE: Should be pd.DataFrame but we want lazy loading
 
 RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic', 'mbic'))
 
@@ -87,7 +87,7 @@ def create_results(
     else:
         models = res_models
 
-    # FIXME: remove best_model, input_model, models when there is function to read db
+    # FIXME: Remove best_model, input_model, models when there is function to read db
     res = res_class(
         summary_tool=summary_tool,
         summary_individuals=summary_individuals,

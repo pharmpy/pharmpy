@@ -602,7 +602,7 @@ def _get_fixed_parameters(table: ExtTable, parameters: Parameters, pe_translatio
         # NM 7.2 does not have row -1000000006 indicating FIXED status
         ests = table.final_parameter_estimates
         fixed = pd.Series(parameters.fix)
-        # NOTE parameters in result file haven't been renamed yet
+        # NOTE: Parameters in result file haven't been renamed yet
         fixed = fixed.rename({value: key for key, value in pe_translation.items()})
         return pd.concat([fixed, pd.Series(True, index=ests.index.difference(fixed.index))])
 

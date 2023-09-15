@@ -82,7 +82,7 @@ class res_error_term:
                     self.res = term
                     self.create_res_alias()
                 else:
-                    # FIXME : Should this be allowed??
+                    # FIXME: Should this be allowed?
                     self.res += term
                     self.create_res_alias()
 

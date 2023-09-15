@@ -10,7 +10,7 @@ else:
 
 
 def replace_root_children(expr: sympy.Basic, args: List[sympy.Basic]):
-    # NOTE This creates a new tree by replacing the children of the root node.
+    # NOTE: This creates a new tree by replacing the children of the root node.
     # If the children have not changed it returns the original tree which
     # allows certain downstream optimizations.
     return expr if all(map(is_, expr.args, args)) else expr.func(*args)
@@ -69,10 +69,10 @@ def prune(predicate: Callable[[sympy.Basic], bool], expr: sympy.Basic):
         else:
             old_arg = old_args[i]
             if predicate(old_arg):
-                # NOTE Replace node without recursing
+                # NOTE: Replace node without recursing
                 new_args.append(_neutral(e.func))
             else:
-                # NOTE Push the next argument on the stack
+                # NOTE: Push the next argument on the stack
                 stack.append(old_arg)
                 output.append([])
 

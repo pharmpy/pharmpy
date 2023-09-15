@@ -946,7 +946,7 @@ def sample_rvs(
     for symbols, distribution in sampling_rvs:
         cursample = distribution.sample(rng, nsamples)
         if len(symbols) > 1:
-            # NOTE this makes column iteration faster
+            # NOTE: This makes column iteration faster
             cursample = np.array(cursample, order='F')
             for j, s in enumerate(symbols):
                 data[s] = cursample[:, j]

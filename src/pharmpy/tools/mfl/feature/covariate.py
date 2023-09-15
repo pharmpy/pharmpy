@@ -74,12 +74,12 @@ def spec(model: Model, statements: Iterable[Statement]) -> Iterable[Spec]:
 
     for effect in effects:
         t = _effect_to_tuple(model, definitions, effect)
-        if all(t):  # NOTE We do not yield empty products
+        if all(t):  # NOTE: We do not yield empty products
             yield t
 
 
 def covariates(model: Model, statements: Iterable[Statement]) -> Iterable[str]:
-    # NOTE This yields the covariates present in the COVARIATE statements
+    # NOTE: This yields the covariates present in the COVARIATE statements
     effects, definition = _partition_statements(statements)
 
     for effect in effects:

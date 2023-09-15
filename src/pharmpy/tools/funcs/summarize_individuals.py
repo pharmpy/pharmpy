@@ -96,7 +96,7 @@ def model_name(model: Model) -> str:
 
 
 def outlier_count_func(df: pd.DataFrame) -> float:
-    # NOTE this returns a float because we will potentially concat this
+    # NOTE: This returns a float because we will potentially concat this
     # with NaNs
     return float((abs(df) > 5).sum())
 

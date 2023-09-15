@@ -39,7 +39,7 @@ def _compartmental_model(
     des=None,
 ):
     if advan == 'ADVAN1':
-        # FIXME : Require multiple doses per comp before IV+ORAL
+        # FIXME: Require multiple doses per comp before IV+ORAL
         doses = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         central = Compartment.create(
@@ -74,7 +74,7 @@ def _compartmental_model(
         ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN3':
-        # FIXME : Multiple doses per compartment IV+ORAL
+        # FIXME: Multiple doses per compartment IV+ORAL
         doses = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         central = Compartment.create(
@@ -188,7 +188,7 @@ def _compartmental_model(
             cb.add_flow(compartments[from_n - 1], compartments[to_n - 1], rate)
         ass = _f_link_assignment(control_stream, obscomp, defobs[1])
     elif advan == 'ADVAN10':
-        # FIXME : Multiple doses per compartment needed
+        # FIXME: Multiple doses per compartment needed
         doses = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
         central = Compartment.create(
@@ -277,7 +277,7 @@ def _compartmental_model(
         ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
     elif des:
-        # FIXME : Add dose based on presence of CMT column
+        # FIXME: Add dose based on presence of CMT column
 
         rec_model = control_stream.get_records('MODEL')[0]
 

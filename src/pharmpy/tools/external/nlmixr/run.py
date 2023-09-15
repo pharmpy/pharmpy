@@ -618,7 +618,7 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
         name=name,
         description=description,
         ofv=ofv,
-        minimization_successful=True,  # FIXME: parse minimization status
+        minimization_successful=True,  # FIXME: Parse minimization status
         parameter_estimates=pe,
         predictions=predictions,
         log=Log(),

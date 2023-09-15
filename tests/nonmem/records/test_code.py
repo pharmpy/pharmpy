@@ -7,7 +7,7 @@ from pharmpy.model.external.nonmem.records.code_record import CodeRecord
 
 
 def _ensure_trailing_newline(buf):
-    # FIXME This should not be necessary
+    # FIXME: This should not be necessary
     return buf if buf[-1] == '\n' else buf + '\n'
 
 
@@ -24,7 +24,7 @@ def S(x):
             S('Y'),
             S('THETA(1)') + S('ETA(1)') + S('EPS(1)'),
         ),
-        (  # NOTE github issue #1362
+        (  # NOTE: github issue #1362
             '$PRED\nY = THETA (1) + ETA(1) + EPS(1)',
             S('Y'),
             S('THETA(1)') + S('ETA(1)') + S('EPS(1)'),
@@ -230,7 +230,7 @@ def S(x):
         ('$PRED\nGROK(1,3) = 0\n', S('GROK(1,3)'), 0),
         ('$PRED\n X = &  \n  23\n', S('X'), 23),
         ('$PRED\nX=2\nDO WHILE (X < 23)\n CL = 2\nEND DO\n', S('X'), 2),
-        (  # NOTE regression when we switched to LALR(1)
+        (  # NOTE: Regression when we switched to LALR(1)
             '$PK\nALAG1 = EXP(PHI+KPLAG)/(1+EXP(PHI+KPLAG))',
             S('ALAG1'),
             sympy.exp(S('PHI') + S('KPLAG'))

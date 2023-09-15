@@ -83,7 +83,7 @@ def ofv_summary_dataframe(steps, final_included=True, iterations=True):
             ]
         if final_included:
             if steps['is_backward'].iloc[-1]:
-                # all rows from last step where selected is False
+                # All rows from last step where selected is False
                 last_stepnum = steps.index[-1][steps.index.names.index('step')]
                 try:
                     final = steps[~steps['selected']].loc[last_stepnum, :, :, :].copy()
@@ -91,7 +91,7 @@ def ofv_summary_dataframe(steps, final_included=True, iterations=True):
                     # No final
                     final = None
             else:
-                # all selected rows without ofv info
+                # All selected rows without ofv info
                 final = pd.DataFrame(columns=steps.columns, index=steps[steps['selected']].index)
             if final is not None:
                 final['is_backward'] = 'Final included'
@@ -451,7 +451,7 @@ def log_steps(path, options, parcov_dictionary=None):
 
     for block in file_blocks(path):
         if pattern['runtable'].match(block[0]):
-            # can be empty table with header, only set table if have content
+            # Can be empty table with header, only set table if have content
             if len(block) > 1:
                 step['runtable'] = parse_runtable_block(
                     block, parcov_dictionary, included_relations
@@ -471,21 +471,21 @@ def log_steps(path, options, parcov_dictionary=None):
                 step = empty_step(step['number'], step['criterion'])
             step['m1'] = Path(match.group('m1folder')).relative_to(basepath)
         else:
-            # complex block, either gof ofv or scmplus. May contain m1
+            # Complex block, either gof ofv or scmplus. May contain m1.
             m1, readded, stashed, included = parse_mixed_block(block)
             if stashed:
-                # stashing belongs to previously read runtable: do not yield
+                # Stashing belongs to previously read runtable: do not yield
                 step['stashed'] = stashed
             if included:
                 included_relations = included
             if readded:
-                # readding is done first in new step: yield if have a runtable
+                # Reading is done first in new step: yield if have a runtable
                 if have(step['runtable']):
                     yield step_data_frame(step, included_relations)
                     step = empty_step(step['number'], step['criterion'])
                 step['readded'] = readded
             if m1:
-                # Writing m1 is done first in step, unless readding was done first
+                # Writing m1 is done first in step, unless reading was done first
                 # in which case runtable will be empty
                 if have(step['runtable']):
                     yield step_data_frame(step, included_relations)
@@ -510,7 +510,7 @@ def split_merged_base_and_new_ofv(rawtable):
         # case where a run has ofv 'FAILED' by skipping whitespace
         # in second part after string split.
         if not all(pd.isna(rawtable.iloc[:, -1])):
-            # expect all values in last column to be NaN if ofv columns are merged
+            # Expect all values in last column to be NaN if ofv columns are merged
             raise Exception
         # Save names and then drop last column. Names are unique so this drops 1 col
         column_names = list(rawtable.columns)
@@ -522,12 +522,12 @@ def split_merged_base_and_new_ofv(rawtable):
         subdf = rawtable.base.str.extract(pattern, expand=True)
         subdf.replace('FAILED', np.nan, inplace=True)
         if len(subdf.base.unique()) > 1:
-            # all base values should be identical now
+            # All base values should be identical now
             raise Exception
-        # replace base column and insert newfixed
+        # Replace base column and insert newfixed
         rawtable.base = subdf.base
         rawtable.insert(3, 'newfixed', subdf.newfixed)
-        # rename columns to get original labels at correct positions
+        # Rename columns to get original labels at correct positions
         old = list(rawtable.columns)
         rawtable.rename(columns=dict(zip(old, column_names)), inplace=True)
 
@@ -567,11 +567,11 @@ def relations_from_config_file(path, files):
                     if section == 'included_relations':
                         scanning_included = True
                         scanning_test = False
-                        included_lines = []  # NOTE This potentially resets?
+                        included_lines = []  # NOTE: This potentially resets?
                     elif section == 'test_relations':
                         scanning_included = False
                         scanning_test = True
-                        test_lines = []  # NOTE This potentially resets?
+                        test_lines = []  # NOTE: This potentially resets?
                     else:
                         scanning_included = False
                         scanning_test = False
@@ -582,7 +582,7 @@ def relations_from_config_file(path, files):
                     if not empty_line.match(row) and not comment_line.match(row):
                         test_lines.append(row.strip())
         if test_lines is not None and len(test_lines) > 0:
-            break  # do not check any other file, if more than one
+            break  # Do not check any other file, if more than one
 
     if included_lines:
         included_relations = {}
@@ -624,10 +624,10 @@ def psn_scm_options(path):
         cmd = None
         for row in meta:
             if cmd is not None:
-                if re.match(r'\s', row):  # continuation is indented
-                    cmd += row  # must not strip
+                if re.match(r'\s', row):  # Continuation is indented
+                    cmd += row  # Must not strip
                     continue
-                else:  # no continuation: parse and remove
+                else:  # No continuation: parse and remove
                     if tool_from_command(cmd) == 'scmplus':
                         scmplus = True
                     for k, v in options_from_command(cmd).items():
@@ -635,7 +635,7 @@ def psn_scm_options(path):
                             config_files = [v]
                             break
                     if config_files is None:
-                        # not option -config_file, must have been given as argument
+                        # Not option -config_file, must have been given as argument
                         config_files = psn_config_file_argument_from_command(cmd, path)
                     cmd = None
             row = row.strip()

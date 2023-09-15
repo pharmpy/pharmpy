@@ -235,7 +235,7 @@ def html_visit_altair_plot(self, node):
             node.extend([repr_literal])
     elif output == "plot":
         if isinstance(chart, alt.TopLevelMixin):
-            assert chart is not None  # NOTE This is needed because of lazy
+            assert chart is not None  # NOTE: This is needed because of lazy
             # loading of alt
 
             # Last line should be a chart; convert to spec dict
@@ -245,8 +245,8 @@ def html_visit_altair_plot(self, node):
                 raise ValueError("Invalid chart: {0}".format(node["code"]))
             actions = node["links"]
 
-            # TODO: add an option to save spects to file & load from there.
-            # TODO: add renderer option
+            # TODO: Add an option to save spects to file & load from there.
+            # TODO: Add renderer option
 
             # Write spec to a *.vl.json file
             # dest_dir = os.path.join(self.builder.outdir, node['relpath'])
@@ -276,7 +276,7 @@ def html_visit_altair_plot(self, node):
 
 
 def generic_visit_altair_plot(self, node):
-    # TODO: generate PNGs and insert them here
+    # TODO: Generate PNGs and insert them here
     if "alt" in node.attributes:
         self.body.append(_("[ graph: %s ]") % node["alt"])
     else:

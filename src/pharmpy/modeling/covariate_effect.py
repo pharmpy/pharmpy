@@ -249,7 +249,7 @@ def add_covariate_effect(
     covariate_effect = _create_template(effect, model, covariate)
     pset, thetas = _create_thetas(model, parameter, effect, covariate, covariate_effect.template)
     covariate_effect.apply(parameter, covariate, thetas, statistics)
-    # NOTE We hoist the statistic statements to avoid referencing variables
+    # NOTE: We hoist the statistic statements to avoid referencing variables
     # before declaring them. We also avoid duplicate statements.
     sset = [s for s in covariate_effect.statistic_statements if s not in sset] + sset
 
@@ -257,7 +257,7 @@ def add_covariate_effect(
     assert last_existing_parameter_assignment is not None
     insertion_index = sset.index(last_existing_parameter_assignment) + 1
 
-    # NOTE We can use any assignment to the parameter since we currently only
+    # NOTE: We can use any assignment to the parameter since we currently only
     # use its symbol to create the new effect statement.
     effect_statement = covariate_effect.create_effect_statement(
         operation, last_existing_parameter_assignment
@@ -272,7 +272,7 @@ def add_covariate_effect(
         sympy.Symbol(f'{parameter}{col_name}') for col_name in model.datainfo.names
     }
 
-    # NOTE This is a heuristic that simplifies the NONMEM statements by
+    # NOTE: This is a heuristic that simplifies the NONMEM statements by
     # grouping multiple effect statements in a single statement.
     if last_existing_parameter_assignment.expression.args and all(
         map(cov_possible.__contains__, last_existing_parameter_assignment.expression.args)

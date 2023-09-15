@@ -162,7 +162,7 @@ $ESTIMATION METHOD=1 INTERACTION
         )
     )
 
-    # TODO : CMT column now supported, add some other test?
+    # TODO: CMT column now supported, add some other test?
     # with pytest.raises(ValueError, match='Invalid `model`'):
     #    validate_input(MINIMAL_VALID_MFL_STRING, 'exhaustive', model=model)
 

@@ -33,7 +33,7 @@ from .results import COVSearchResults
 
 NAME_WF = 'covsearch'
 
-DataFrame = Any  # NOTE should be pd.DataFrame but we want lazy loading
+DataFrame = Any  # NOTE: should be pd.DataFrame but we want lazy loading
 
 
 @dataclass(frozen=True)
@@ -264,7 +264,7 @@ def _greedy_search(
     max_steps: int,
 ) -> SearchState:
     best_candidate_so_far = state.best_candidate_so_far
-    all_candidates_so_far = list(state.all_candidates_so_far)  # NOTE this includes start model
+    all_candidates_so_far = list(state.all_candidates_so_far)  # NOTE: This includes start model
 
     steps = range(1, max_steps + 1) if max_steps >= 0 else count(1)
 
@@ -284,7 +284,7 @@ def _greedy_search(
             np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
             for model in new_candidate_models
         ]
-        # NOTE We assume parent.modelfit_results is not None
+        # NOTE: We assume parent.modelfit_results is not None
         assert parent.modelfit_results is not None
         best_model_so_far = lrt_best_of_many(
             parent, new_candidate_models, parent.modelfit_results.ofv, ofvs, alpha
@@ -297,7 +297,7 @@ def _greedy_search(
             filter(lambda candidate: candidate.model is best_model_so_far, all_candidates_so_far)
         )
 
-        # NOTE Filter out incompatible effects
+        # NOTE: Filter out incompatible effects
         last_step_effect = best_candidate_so_far.steps[-1].effect
 
         candidate_effects = [

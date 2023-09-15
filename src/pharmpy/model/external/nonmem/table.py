@@ -57,7 +57,7 @@ class NONMEMTableFile:
         notitle: bool = False,
         nolabel: bool = False,
     ) -> NONMEMTable:
-        # NOTE Content lines must contain endlines!
+        # NOTE: Content lines must contain endlines!
 
         table_line = None if notitle else content.pop(0)
 

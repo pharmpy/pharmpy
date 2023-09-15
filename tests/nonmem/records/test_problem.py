@@ -1,7 +1,7 @@
 import pytest
 
 
-# FIXME: Change parsing of $PROBLEM. First row is free form. Rest can be comments or empty lines
+# FIXME: Change parsing of $PROBLEM. First row is free form. Rest can be comments or empty lines.
 @pytest.mark.parametrize(
     'buf,title,new_title,new_str',
     [

@@ -616,7 +616,7 @@ class Model(Immutable):
         if other.dataset is None:
             return False
 
-        # NOTE rely on duck-typing here (?)
+        # NOTE: Rely on duck-typing here (?)
         return self.dataset.equals(other.dataset)
 
     @property
@@ -675,7 +675,7 @@ class Model(Immutable):
 
 
 def compare_before_after_params(old, new):
-    # FIXME Move this to the right module
+    # FIXME: Move this to the right module
     before = {}
     after = {}
     for key, value in old.items():
@@ -697,5 +697,5 @@ def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame):
         columns.append(col)
     newdi = curdi.replace(columns=columns)
 
-    # NOTE Remove path if dataset has been updated
+    # NOTE: Remove path if dataset has been updated
     return curdi if newdi == curdi else newdi.replace(path=None)

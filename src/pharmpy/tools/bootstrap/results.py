@@ -178,7 +178,7 @@ def calculate_results(
     return replace(
         res,
         ofv_plot=plot_ofv(res),
-        # FIXME: plot broken
+        # FIXME: Plot broken
         # parameter_estimates_correlation_plot = plot_parameter_estimates_correlation(res)
         dofv_quantiles_plot=plot_dofv_quantiles(res),
         parameter_estimates_histogram=plot_parameter_estimates_histogram(res),
@@ -231,7 +231,7 @@ def psn_bootstrap_results(path):
     # Create proper result objects to pass to calculate_results
     dofv_results = None
     if (path / 'm1' / 'dofv_1.mod').is_file():
-        # FIXME We should not depend on NONMEM here
+        # FIXME: We should not depend on NONMEM here
         from pharmpy.plugins.nonmem.table import ExtTable, NONMEMTableFile
 
         dofv_results = []

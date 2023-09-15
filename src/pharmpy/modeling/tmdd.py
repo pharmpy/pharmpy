@@ -142,7 +142,7 @@ def set_tmdd(model: Model, type: str):
             - (kint - kdeg) * target_amount * lafree_symb / (kd + lafree_symb),
         )
 
-        # FIXME: should others also have flows?
+        # FIXME: Should others also have flows?
         central = cb.find_compartment('CENTRAL')
         cb.add_flow(central, output, lafree_symb * elimination_rate)
 

@@ -47,7 +47,7 @@ class ResultsJSONDecoder(json.JSONDecoder):
         json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, obj):
-        # NOTE this hook will be called for every dict produced by the
+        # NOTE: This hook will be called for every dict produced by the
         # base JSONDecoder. It will not be called on int, float, str, or list.
         module = None
         cls = None
@@ -60,7 +60,7 @@ class ResultsJSONDecoder(json.JSONDecoder):
             cls = obj['__class__']
             del obj['__class__']
 
-        # NOTE handling cls not None and module is None is kept for backwards
+        # NOTE: Handling cls not None and module is None is kept for backwards
         # compatibility
 
         if cls is None and module is not None:
@@ -70,13 +70,13 @@ class ResultsJSONDecoder(json.JSONDecoder):
             if cls == 'DataFrame':
                 return _df_read_json(obj)
             elif cls == 'Series':
-                # NOTE Hack to work around poor support of to_json/read_json of
+                # NOTE: Hack to work around poor support of to_json/read_json of
                 # pd.Series with MultiIndex
                 df = _df_read_json(obj)
-                series = df.iloc[:, 0]  # NOTE First and only column.
+                series = df.iloc[:, 0]  # NOTE: First and only column.
                 return series
             elif cls == 'Series[DataFrame]':
-                # NOTE Hack to work around poor support of Series of DataFrame
+                # NOTE: Hack to work around poor support of Series of DataFrame
                 # objects. All subobjects have already been converted.
                 return pd.Series(
                     obj['data'], index=obj['index'], dtype=obj['dtype'], name=obj['name']
@@ -88,11 +88,11 @@ class ResultsJSONDecoder(json.JSONDecoder):
 
         if module is None:
             if cls == 'vega-lite':
-                # NOTE Slow parsing for parsing PsN frem output and old format
+                # NOTE: Slow parsing for parsing PsN frem output and old format
                 return alt.Chart.from_dict(obj, validate=True)
 
         if module is not None and module.startswith('altair.'):
-            # NOTE Fast parsing when reading own output
+            # NOTE: Fast parsing when reading own output
             assert cls is not None
             try:
                 class_ = getattr(alt, cls)
@@ -102,9 +102,9 @@ class ResultsJSONDecoder(json.JSONDecoder):
 
         if cls is not None and cls.endswith('Results'):
             if module is None:
-                # NOTE kept for backwards compatibility: we guess the module
+                # NOTE: Kept for backwards compatibility: we guess the module
                 # path based on the class name.
-                tool_name = cls[:-7].lower()  # NOTE trim "Results" suffix
+                tool_name = cls[:-7].lower()  # NOTE: Trim "Results" suffix
                 tool_module = importlib.import_module(f'pharmpy.tools.{tool_name}')
                 results_class = tool_module.results_class
             else:
@@ -127,7 +127,7 @@ class ResultsJSONDecoder(json.JSONDecoder):
 
 
 def _is_likely_to_be_json(source: str):
-    # NOTE Heuristic to determine if path or buffer: first non-space character
+    # NOTE: Heuristic to determine if path or buffer: first non-space character
     # is '{'.
     match = re.match(r'\s*([^\s])', source)
     return match is not None and match.group(1) == '{'

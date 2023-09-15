@@ -41,7 +41,7 @@ from pharmpy.tools import read_modelfit_results
 
 
 def _ensure_trailing_newline(buf):
-    # FIXME This should not be necessary
+    # FIXME: This should not be necessary
     return buf if buf[-1] == '\n' else buf + '\n'
 
 
@@ -80,7 +80,7 @@ def test_update_inits(load_model_for_test, pheno_path):
 
 
 def test_empty_ext_file(testdata):
-    # assert existing but empty ext-file does not give modelfit_results
+    # Assert existing but empty ext-file does not give modelfit_results
     res = read_modelfit_results(
         testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'noESTwithSIM' / 'onlysim.mod'
     )
@@ -918,7 +918,7 @@ def test_table_long_ids(testdata):
 
 
 def test_convert_model_iv(testdata, tmp_path):
-    # FIXME move to unit test for amd?
+    # FIXME: Move to unit test for amd?
     with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_rate.dta', '.')
         start_model = create_basic_pk_model(administration='iv', dataset_path='pheno_rate.dta')

@@ -283,7 +283,7 @@ class OmegaRecord(Record):
                         node = node.replace_first(init)
                         new_nodes.append(node)
                     else:
-                        # NOTE Split xn
+                        # NOTE: Split xn
                         new_children = []
                         for child in node.children:
                             if child.rule not in ('n', 'LPAR', 'RPAR'):
@@ -298,7 +298,7 @@ class OmegaRecord(Record):
                                 init = init.replace_first(AttrToken('NUMERIC', str(new_init)))
                             node = node.replace_first(init)
                             new_nodes.append(node)
-                            if j != n - 1:  # NOTE Not the last
+                            if j != n - 1:  # NOTE: Not the last
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
                     i += n
             tree = AttrTree(self.root.rule, tuple(new_nodes))

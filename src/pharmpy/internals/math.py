@@ -188,7 +188,7 @@ def conditional_joint_normal(mu, sigma, a):
 
 
 def conditional_joint_normal_lambda(mu, sigma, n):
-    # NOTE Same as conditional_joint_normal but for fixed mu, sigma, and len(a)
+    # NOTE: Same as conditional_joint_normal but for fixed mu, sigma, and len(a)
     S11 = sigma[0:n, 0:n]
     S12 = sigma[0:n, n:]
     S21 = sigma[n:, 0:n]

@@ -152,7 +152,7 @@ def _m3_m4_method(model, indicator, indicator_type, level, level_type, method):
     est_steps_new = EstimationSteps([est_step.replace(laplace=True) for est_step in est_steps])
     model = model.replace(estimation_steps=est_steps_new)
 
-    # FIXME: handle other DVs?
+    # FIXME: Handle other DVs?
     y_symb = list(model.dependent_variables.keys())[0]
     y = sset.find_assignment(y_symb)
     ipred = y.expression.subs({rv: 0 for rv in model.random_variables.epsilons.names})
@@ -213,7 +213,7 @@ def _m3_m4_method(model, indicator, indicator_type, level, level_type, method):
 
 
 def has_blq_transformation(model: Model):
-    # FIXME: make more general
+    # FIXME: Make more general
     y = list(model.dependent_variables.keys())[0]
     y_expr = model.statements.error.find_assignment(y).expression
     if not isinstance(y_expr, sympy.Piecewise):

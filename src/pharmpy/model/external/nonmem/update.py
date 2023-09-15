@@ -1334,7 +1334,7 @@ def add_needed_pk_parameters(model: Model, advan, trans):
             if source == 'OUTPUT':
                 continue
             for dest in newmap.keys():
-                if source != dest:  # NOTE Skip same
+                if source != dest:  # NOTE: Skip same
                     source_comp = odes.find_compartment(source)
                     if dest == 'OUTPUT':
                         dest_comp = output
@@ -1637,14 +1637,14 @@ def solver_to_advan(solver):
 
 
 def update_ccontra(model: Model, path=None, force=False):
-    # FIXME: handle multiple DVs
+    # FIXME: Handle multiple DVs
     if len(model.observation_transformation) > 1:
         raise ValueError('Cannot create ccontra for multiple DVs')
 
     obs_trans = model.observation_transformation
     h = model.observation_transformation[next(iter(obs_trans))]
 
-    # FIXME: handle other DVs?
+    # FIXME: Handle other DVs?
     y = list(model.dependent_variables.keys())[0]
     dhdy = sympy.diff(h, y)
     ll = -2 * sympy.log(dhdy)
@@ -1657,7 +1657,7 @@ def update_ccontra(model: Model, path=None, force=False):
     ll = ll.subs(tr)
     h = h.subs(tr)
 
-    # FIXME: break out into method to get path
+    # FIXME: Break out into method to get path
     if path is None:
         path = Path('.')
     else:

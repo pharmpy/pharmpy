@@ -45,7 +45,7 @@ def rank_models(rank_type, base, candidates, cutoff=None, bic_type: Union[None, 
 def _create_diff_dict(rank_type, base, candidates, bic_type):
     diff_dict = {}
     for model in candidates:
-        # FIXME: way to handle if start model fails
+        # FIXME: Way to handle if start model fails
         if base.modelfit_results is None or model.modelfit_results is None:
             diff = np.nan
         elif rank_type == 'aic':

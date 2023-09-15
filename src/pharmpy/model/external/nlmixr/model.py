@@ -57,7 +57,7 @@ def convert_model(
     # Update dataset
     if model.dataset is not None:
         nlmixr_model = translate_nmtran_time(nlmixr_model)
-        # FIXME: dropping columns runs update source which becomes redundant.
+        # FIXME: Dropping columns runs update source which becomes redundant.
         # drop_dropped_columns(nlmixr_model)
         if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
             nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
@@ -211,7 +211,7 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         A pharmpy.model.Model object.
 
     """
-    # FIXME : rasie error if the method does not match when evaluating
+    # FIXME: Raise error if the method does not match when evaluating
     estimation_steps = model.estimation_steps[0]
     if "fix_eta" in estimation_steps.tool_options:
         fix_eta = True

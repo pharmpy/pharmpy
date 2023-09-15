@@ -30,23 +30,23 @@ def test_data_filename_set(parser):
     assert record.filename == 'DUMMY'
     assert str(record) == '$DATA DUMMY ; comment'
 
-    # simple replace
+    # Simple replace
     record = record.set_filename('/new/path/to_file.txt')
     assert record.filename == '/new/path/to_file.txt'
     assert str(record) == '$DATA /new/path/to_file.txt ; comment'
 
-    # force quoting
+    # Force quoting
     record = record.set_filename('MUST=QUOTE')
     assert record.filename == 'MUST=QUOTE'
     assert str(record) == "$DATA 'MUST=QUOTE' ; comment"
 
-    # more complex example
+    # More complex example
     text = '$DATA ; comment\n ; some comment line\n pheno.dta\n\n'
     record = parser.parse(text).records[0]
     assert record.filename == 'pheno.dta'
     assert str(record) == text
 
-    # more complex replace
+    # More complex replace
     record = record.set_filename("'IGNORE'")
     assert record.filename == "'IGNORE'"
     assert str(record) == text.replace('pheno.dta', '"\'IGNORE\'"')

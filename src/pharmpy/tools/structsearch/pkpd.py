@@ -107,7 +107,7 @@ def create_pkpd_models(
     for index, pkpd_model in enumerate(models, 1):
         pkpd_model = set_name(pkpd_model, f"structsearch_run{index}")
 
-        # initial values
+        # Initial values
         if b_init is not None:
             pkpd_model = set_initial_estimates(pkpd_model, b_init)
         if ests is not None:
@@ -123,7 +123,7 @@ def create_pkpd_models(
         pkpd_model = unconstrain_parameters(pkpd_model, ['SLOPE'])
         pkpd_model = set_lower_bounds(pkpd_model, {'POP_E_MAX': -1})
 
-        # set iiv
+        # Set iiv
         for parameter in ["E_MAX", "SLOPE"]:
             try:
                 pkpd_model = add_iiv(pkpd_model, [parameter], "prop")
@@ -150,7 +150,7 @@ def _create_model(model, modeltype, expr):
 
 def create_pk_model(model: Model):
     # Create copy of model with filtered dataset.
-    # FIXME: this function needs to be removed later
+    # FIXME: This function needs to be removed later
     pk_dataset = model.dataset
     pk_dataset = pk_dataset[pk_dataset["DVID"] != 2]
     pk_model = model.replace(

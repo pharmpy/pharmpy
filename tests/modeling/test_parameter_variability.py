@@ -487,7 +487,7 @@ def test_add_iov_compose(load_model_for_test, pheno_path):
     model2 = add_iov(model2, 'FA1', 'ETA_2')
 
     assert set(model1.random_variables.etas.names) == set(model2.random_variables.etas.names)
-    # FIXME find better way to assert models are equivalent
+    # FIXME: Find a better way to assert that models are equivalent
     assert sorted(str(model1.internals.control_stream.get_pred_pk_record()).split('\n')) == sorted(
         str(model2.internals.control_stream.get_pred_pk_record()).split('\n')
     )
@@ -634,13 +634,13 @@ def test_add_iov_regression_code_record(load_model_for_test, testdata, eta_iov_1
     model_no_iov = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = add_iov(model_no_iov, occ="VISI")
 
-    # remove the first IOV, can reproduce the same issue
+    # Remove the first IOV, can reproduce the same issue
     model_r1 = remove_iov(model, to_remove=[eta_iov_1])
 
-    # remove the second IOV, can reproduce the same issue
+    # Remove the second IOV, can reproduce the same issue
     model_r1r2 = remove_iov(model_r1, to_remove=[eta_iov_2])
 
-    # remove the first and second IOV
+    # Remove the first and second IOV
     model_r12 = remove_iov(model, to_remove=[eta_iov_1, eta_iov_2])
 
     assert model_r12 == model_r1r2
@@ -832,7 +832,7 @@ def test_remove_iiv2(load_model_for_test, testdata, iiv_type, operation):
     model8 = remove_iiv(model7, 'Y')
     assert model8.statements.find_assignment('Y') == model.statements.find_assignment('Y')
 
-    # check that exp(ETA + IOV) becomes exp(IOV) after removing iiv
+    # Check that exp(ETA + IOV) becomes exp(IOV) after removing iiv
     model = load_model_for_test(testdata / 'nonmem/models/fviii6.mod')
     model = remove_iiv(model, 'CL')
     assert model.statements.find_assignment('CL') == Assignment(
