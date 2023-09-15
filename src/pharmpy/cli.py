@@ -44,7 +44,7 @@ As a CLI we are at the top, interacting with the user. All of Pharmpy will get m
 filtered through here (loggers organize themselves in a hiearchy based on their period-split names).
 
 .. warning::
-    Loggers **mustn't** be configurated if imported as library (e.g. set handlers and such),
+    Loggers **mustn't** be configured if imported as library (e.g. set handlers and such),
     since that should bubble up into the lap of whomever is at the top (of the Python
     period-separated namespace).
 

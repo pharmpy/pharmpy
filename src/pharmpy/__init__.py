@@ -3,7 +3,7 @@
 Pharmpy
 =======
 
-Pharmpy is a python package for pharmacometrics modeling.
+Pharmpy is a python package for pharmacometric modeling.
 
 Definitions
 ===========

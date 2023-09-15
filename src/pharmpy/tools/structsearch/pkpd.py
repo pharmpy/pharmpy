@@ -69,7 +69,7 @@ def create_pkpd_models(
     mat_init : float
         Initial estimate for MAT (mean equilibration time)
     response_type : str
-        type of model (e.g. direct effect)
+        Type of model (e.g. direct effect)
 
     Returns
     -------

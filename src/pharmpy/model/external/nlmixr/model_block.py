@@ -432,7 +432,7 @@ def piecewise_replace(expr: str, piecewise: sympy.Piecewise, s: str) -> str:
     Parameters
     ----------
     expr : str
-        A string representive a sympy expression
+        A string representing a sympy expression
     piecewise : sympy.Piecewise
         A sympy Piecewise statement to be changed
     s : str

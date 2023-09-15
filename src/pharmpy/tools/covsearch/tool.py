@@ -120,7 +120,7 @@ def create_workflow(
     max_steps : int
         The maximum number of search steps to make
     algorithm : str
-        The search algorithm to use. Currently 'scm-forward' and
+        The search algorithm to use. Currently, 'scm-forward' and
         'scm-forward-then-backward' are supported.
     results : ModelfitResults
         Results of model

@@ -43,15 +43,15 @@ def run(workflow: Workflow[T]) -> T:
 
             # NOTE: We set the dask temporary directory to avoid permission
             # errors in the dask-worker-space directory in case for
-            # instance different users run dask on the same filesystem (e.g. on
+            # instance different users run dask on the same filesystem (e.g., on
             # a cluster node).
-            # An attempt at solving this kind of problems was introduced two
+            # An attempt at solving this kind of problem was introduced two
             # months ago, by suffixing the directory name with the user id on
             # POSIX. It should fix the problem, except maybe on Windows. Since
-            # we experienced issues before that change, maybe this is it and we
+            # we experienced issues before that change, maybe this is it, and we
             # could instead set temporary_directory to tempfile.gettempdir().
             # Note that if this is done, then our custom patch of
-            # TemporaryDirectory can gotten rid of. See:
+            # TemporaryDirectory can be removed. See:
             #   - https://github.com/dask/distributed/blob/cff33d500f24b67efbd94ce39b15cb36473cd9f6/distributed/diskutils.py#L132-L153 # noqa: E501
             #   - https://github.com/dask/distributed/issues/6748
             #   - https://github.com/dask/distributed/pull/7054
