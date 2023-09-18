@@ -5,10 +5,12 @@ from collections.abc import Sequence as CollectionsSequence
 from itertools import chain, product
 from typing import (
     TYPE_CHECKING,
+    Any,
     Container,
     Dict,
     Iterable,
     List,
+    Mapping,
     Optional,
     Sequence,
     Set,
@@ -63,7 +65,7 @@ class VariabilityLevel(Immutable):
         self._group = group
 
     @classmethod
-    def create(cls, name: str, reference=False, group: Optional[str] = None):
+    def create(cls, name: str, reference: bool = False, group: Optional[str] = None):
         return VariabilityLevel(name, bool(reference), group)
 
     def replace(self, **kwargs):
@@ -83,11 +85,11 @@ class VariabilityLevel(Immutable):
     def __hash__(self):
         return hash((self._name, self._reference, self._group))
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {'name': self._name, 'reference': self._reference, 'group': self._group}
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: Dict[str, Any]):
         return cls(**d)
 
     @property
@@ -101,7 +103,7 @@ class VariabilityLevel(Immutable):
         return self._reference
 
     @property
-    def group(self):
+    def group(self) -> Optional[str]:
         """Group variable for variability level"""
         return self._group
 
@@ -112,15 +114,17 @@ class VariabilityLevel(Immutable):
 class VariabilityHierarchy(Immutable):
     """Description of a variability hierarchy"""
 
-    def __init__(self, levels=()):
+    def __init__(self, levels: Tuple[VariabilityLevel, ...] = ()):
         self._levels = levels
 
     @classmethod
-    def create(cls, levels=None):
+    def create(
+        cls, levels: Optional[Union[Sequence[VariabilityLevel], VariabilityHierarchy]] = None
+    ):
         if levels is None:
             levels = ()
         elif isinstance(levels, VariabilityHierarchy):
-            levels = levels._levels
+            return levels
         else:
             found_ref = False
             for level in levels:
@@ -157,12 +161,12 @@ class VariabilityHierarchy(Immutable):
     def __hash__(self):
         return hash(self._levels)
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         levels = tuple(level.to_dict() for level in self._levels)
         return {'levels': levels}
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: Mapping[str, Any]):
         levels = tuple(VariabilityLevel.from_dict(vl) for vl in d['levels'])
         return cls(levels=levels)
 
@@ -201,7 +205,7 @@ class VariabilityHierarchy(Immutable):
         new = [self._lookup(level) for level in levels]
         return VariabilityHierarchy.create(new)
 
-    def __add__(self, other):
+    def __add__(self, other: VariabilityLevel):
         if isinstance(other, VariabilityLevel):
             levels = (other,)
         else:
@@ -209,7 +213,7 @@ class VariabilityHierarchy(Immutable):
         new = VariabilityHierarchy.create(self._levels + levels)
         return new
 
-    def __radd__(self, other):
+    def __radd__(self, other: VariabilityLevel):
         if isinstance(other, VariabilityLevel):
             return VariabilityHierarchy.create((other,) + self._levels)
         else:
@@ -228,7 +232,7 @@ class VariabilityHierarchy(Immutable):
         )
 
     @property
-    def levels(self):
+    def levels(self) -> Dict[str, int]:
         """Dictionary of variability level name to numerical level"""
         ind = self._find_reference()
         d = {}
@@ -280,7 +284,12 @@ class RandomVariables(CollectionsSequence, Immutable):
         self._epsilon_levels = epsilon_levels
 
     @classmethod
-    def create(cls, dists=None, eta_levels=None, epsilon_levels=None):
+    def create(
+        cls,
+        dists: Optional[Union[Sequence[Distribution], Distribution]] = None,
+        eta_levels: Optional[VariabilityHierarchy] = None,
+        epsilon_levels: Optional[VariabilityHierarchy] = None,
+    ):
         if dists is None:
             dists = ()
         elif isinstance(dists, Distribution):
@@ -327,16 +336,16 @@ class RandomVariables(CollectionsSequence, Immutable):
         return RandomVariables.create(dists, eta_levels, epsilon_levels)
 
     @property
-    def eta_levels(self):
+    def eta_levels(self) -> VariabilityHierarchy:
         """VariabilityHierarchy for all etas"""
         return self._eta_levels
 
     @property
-    def epsilon_levels(self):
+    def epsilon_levels(self) -> VariabilityHierarchy:
         """VariabilityHierarchy for all epsilons"""
         return self._epsilon_levels
 
-    def __add__(self, other):
+    def __add__(self, other: Union[Distribution, RandomVariables, Sequence[Distribution]]):
         if isinstance(other, Distribution):
             if other.level not in self._eta_levels and other.level not in self._epsilon_levels:
                 raise ValueError(
@@ -360,7 +369,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             else:
                 return RandomVariables(self._dists + dists, self._eta_levels, self._epsilon_levels)
 
-    def __radd__(self, other):
+    def __radd__(self, other: Union[Distribution, Sequence[Distribution]]):
         if isinstance(other, Distribution):
             if other.level not in self._eta_levels and other.level not in self._epsilon_levels:
                 raise ValueError(
@@ -379,7 +388,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return len(self._dists)
 
     @property
-    def nrvs(self):
+    def nrvs(self) -> int:
         n = 0
         for dist in self._dists:
             n += len(dist)
@@ -399,7 +408,7 @@ class RandomVariables(CollectionsSequence, Immutable):
     def __hash__(self):
         return hash((self._dists, self._eta_levels, self._epsilon_levels))
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         dists = tuple(d.to_dict() for d in self._dists)
         return {
             'dists': dists,
@@ -408,7 +417,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         }
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: Mapping[str, Any]):
         eta_levels = VariabilityHierarchy.from_dict(d['eta_levels'])
         epsilon_levels = VariabilityHierarchy.from_dict(d['epsilon_levels'])
         dists = []
@@ -420,7 +429,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             dists.append(dist)
         return cls(dists=tuple(dists), eta_levels=eta_levels, epsilon_levels=epsilon_levels)
 
-    def _lookup_rv(self, ind):
+    def _lookup_rv(self, ind: Union[sympy.Basic, str]):
         if isinstance(ind, sympy.Symbol):
             ind = ind.name
         if isinstance(ind, str):
@@ -430,7 +439,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         raise KeyError(f'Could not find {ind} in RandomVariables')
 
     @overload
-    def __getitem__(self, ind: Union[int, str, sympy.Symbol]) -> Distribution:
+    def __getitem__(self, ind: Union[int, str, sympy.Basic]) -> Distribution:
         ...
 
     @overload
@@ -461,12 +470,12 @@ class RandomVariables(CollectionsSequence, Immutable):
             return False
 
     @property
-    def names(self):
+    def names(self) -> List[str]:
         """List of the names of all random variables"""
         return list(chain.from_iterable(dist.names for dist in self._dists))
 
     @property
-    def epsilons(self):
+    def epsilons(self) -> RandomVariables:
         """Get only the epsilons"""
         return RandomVariables(
             tuple(dist for dist in self._dists if dist.level in self._epsilon_levels.names),
@@ -475,7 +484,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
-    def etas(self):
+    def etas(self) -> RandomVariables:
         """Get only the etas"""
         return RandomVariables(
             tuple(dist for dist in self._dists if dist.level in self._eta_levels.names),
@@ -484,7 +493,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
-    def iiv(self):
+    def iiv(self) -> RandomVariables:
         """Get only the iiv etas, i.e. etas with variability level 0"""
         return RandomVariables(
             tuple(dist for dist in self._dists if dist.level == self._eta_levels[0].name),
@@ -493,7 +502,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
-    def iov(self):
+    def iov(self) -> RandomVariables:
         """Get only the iov etas, i.e. etas with variability level 1"""
         return RandomVariables(
             tuple(dist for dist in self._dists if dist.level == self._eta_levels[1].name),
@@ -502,7 +511,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
-    def free_symbols(self):
+    def free_symbols(self) -> Set[sympy.Basic]:
         """Set of free symbols for all random variables"""
         return set().union(*(dist.free_symbols for dist in self._dists))
 
@@ -513,7 +522,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return tuple(sorted(map(str, params)))
 
     @property
-    def variance_parameters(self):
+    def variance_parameters(self) -> List[str]:
         """List of all parameters representing variance for all random variables"""
         parameters = []
         for dist in self._dists:
@@ -522,6 +531,7 @@ class RandomVariables(CollectionsSequence, Immutable):
                 if p not in parameters:
                     parameters.append(p)
             else:
+                assert isinstance(dist, JointNormalDistribution)
                 for p in dist.variance.diagonal():
                     if p not in parameters:
                         parameters.append(p)
@@ -596,17 +606,21 @@ class RandomVariables(CollectionsSequence, Immutable):
             ):
                 for i, name in enumerate(dist.names):
                     if name in inds:  # unjoin  this
-                        new = NormalDistribution(
-                            name, dist.level, dist.mean[i], dist.variance[i, i]
-                        )
+                        mean = dist.mean[i]
+                        assert isinstance(mean, sympy.Basic)
+                        variance = dist.variance[i, i]
+                        assert isinstance(variance, sympy.Basic)
+                        new = NormalDistribution(name, dist.level, mean, variance)
                         newdists.append(new)
                     elif first:  # first of the ones to keep
                         first = False
                         remove = [i for i, n in enumerate(dist.names) if n in inds]
                         if len(dist) - len(remove) == 1:
-                            keep = NormalDistribution(
-                                name, dist.level, dist.mean[i], dist.variance[i, i]
-                            )
+                            mean = dist.mean[i]
+                            assert isinstance(mean, sympy.Basic)
+                            variance = dist.variance[i, i]
+                            assert isinstance(variance, sympy.Basic)
+                            keep = NormalDistribution(name, dist.level, mean, variance)
                         else:
                             names = list(dist.names)
                             mean = sympy.Matrix(dist.mean)
@@ -616,7 +630,12 @@ class RandomVariables(CollectionsSequence, Immutable):
                                 mean.row_del(i)
                                 variance.row_del(i)
                                 variance.col_del(i)
-                            keep = JointNormalDistribution(tuple(names), dist.level, mean, variance)
+                            keep = JointNormalDistribution(
+                                tuple(names),
+                                dist.level,
+                                sympy.ImmutableMatrix(mean),
+                                sympy.ImmutableMatrix(variance),
+                            )
                 if keep is not None:
                     newdists.append(keep)
             else:
@@ -687,7 +706,10 @@ class RandomVariables(CollectionsSequence, Immutable):
                     cov_to_params[cov_name] = (str(param_1), str(param_2))
                     M[row, col], M[col, row] = sympy.Symbol(cov_name), sympy.Symbol(cov_name)
         joined_dist = JointNormalDistribution(
-            tuple(names), joined_rvs[0].level, sympy.Matrix(means), M
+            tuple(names),
+            joined_rvs[0].level,
+            sympy.ImmutableMatrix(means),
+            sympy.ImmutableMatrix(M),
         )
 
         unjoined_rvs = self.unjoin(inds)
@@ -713,7 +735,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         """
         nearest = parameter_values.copy()
         for dist in self._dists:
-            if len(dist) > 1:
+            if isinstance(dist, JointNormalDistribution):
                 symb_sigma = dist.variance
                 sigma = symb_sigma.subs(dict(parameter_values))
                 A = np.array(sigma).astype(np.float64)
@@ -721,7 +743,9 @@ class RandomVariables(CollectionsSequence, Immutable):
                 if B is not A:
                     for row in range(len(A)):
                         for col in range(row + 1):
-                            nearest[symb_sigma[row, col].name] = B[row, col]
+                            elt = symb_sigma[row, col]
+                            assert isinstance(elt, sympy.Symbol)
+                            nearest[elt.name] = B[row, col]
         return nearest
 
     def validate_parameters(self, parameter_values):
@@ -761,7 +785,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             _create_rng(rng),
         )
 
-    def _calc_covariance_matrix(self):
+    def _calc_covariance_matrix(self) -> Tuple[List[sympy.Basic], sympy.ImmutableMatrix, List[str]]:
         means = []
         names = []
         n = 0
@@ -782,8 +806,9 @@ class RandomVariables(CollectionsSequence, Immutable):
                 M[row, col] = dist.variance
                 row += 1
                 col += 1
-            else:  # isinstance(dist, JointNormalDistribution):
-                means.extend(dist.mean)
+            else:
+                assert isinstance(dist, JointNormalDistribution)
+                means.extend(dist.mean)  # pyright: ignore [reportGeneralTypeIssues]
                 var = dist.variance
                 for i in range(var.rows):
                     for j in range(var.cols):
@@ -793,7 +818,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return means, M, names
 
     @property
-    def covariance_matrix(self):
+    def covariance_matrix(self) -> sympy.ImmutableMatrix:
         """Covariance matrix of all random variables"""
         _, M, _ = self._calc_covariance_matrix()
         return M
@@ -805,7 +830,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         lines = (dist.latex_string(aligned=True) for dist in self._dists)
         return '\\begin{align*}\n' + r' \\ '.join(lines) + '\\end{align*}'
 
-    def parameters_sdcorr(self, values):
+    def parameters_sdcorr(self, values: Mapping[str, float]):
         """Convert parameter values to sd/corr form
 
         All parameter values will be converted to sd/corr assuming
@@ -816,34 +841,37 @@ class RandomVariables(CollectionsSequence, Immutable):
         values : dict
             Dict of parameter names to values
         """
-        newdict = values.copy()
+        newdict = dict(values)
         for dist in self._dists:
-            if len(dist) > 1:
+            if isinstance(dist, JointNormalDistribution):
                 sigma_sym = dist.variance
                 sigma = np.array(sigma_sym.subs(values)).astype(np.float64)
                 corr = cov2corr(sigma)
                 for i in range(sigma_sym.rows):
                     for j in range(sigma_sym.cols):
-                        name = sigma_sym[i, j].name
+                        elt = sigma_sym[i, j]
+                        assert isinstance(elt, sympy.Symbol)
+                        name = elt.name
                         if i != j:
                             newdict[name] = corr[i, j]
                         else:
                             newdict[name] = np.sqrt(sigma[i, j])
             else:
+                assert isinstance(dist, NormalDistribution)
                 variance = dist.variance
                 if isinstance(variance, sympy.Symbol):
-                    name = dist.variance.name
+                    name = variance.name
                 else:
                     raise NotImplementedError(
                         "parameters_sdcorr only supports pure" " symbols as variances"
                     )
                 if name in newdict:
-                    newdict[name] = np.sqrt(
-                        np.array(subs(dist.variance, values)).astype(np.float64)
+                    newdict[name] = float(
+                        np.sqrt(np.array(subs(variance, values)).astype(np.float64))
                     )
         return newdict
 
-    def get_rvs_with_same_dist(self, rv):
+    def get_rvs_with_same_dist(self, rv: Union[str, sympy.Symbol]) -> RandomVariables:
         """Gets random variables with the same distribution as input random variable
 
         The resulting RandomVariables objects includes the input random variable.
@@ -864,7 +892,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         return RandomVariables.create(rvs)
 
-    def replace_with_sympy_rvs(self, expr):
+    def replace_with_sympy_rvs(self, expr: sympy.Basic) -> sympy.Basic:
         """Replaces Pharmpy RVs in a Sympy expression with Sympy RVs
 
         Takes a Sympy expression and replaces all RVs with Sympy RVs, resulting expression
@@ -872,12 +900,12 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         Parameters
         ----------
-        expr : sympy.Expr
+        expr : sympy.Basic
             Expression which will get RVs replaced
 
         Returns
         -------
-        sympy.Expr
+        sympy.Basic
             Expression with replaced RVs
         """
         rvs_in_expr = {self[rv] for rv in expr.free_symbols.intersection(self.free_symbols)}
@@ -928,8 +956,8 @@ def subs_distributions(
 
 
 def sample_expr_from_rvs(
-    sampling_rvs: Iterable[Tuple[Tuple[sympy.Symbol, ...], NumericDistribution]],
-    expr: sympy.Expr,
+    sampling_rvs: Iterable[Tuple[Tuple[sympy.Basic, ...], NumericDistribution]],
+    expr: sympy.Basic,
     nsamples: int,
     rng,
 ):
@@ -938,10 +966,10 @@ def sample_expr_from_rvs(
 
 
 def sample_rvs(
-    sampling_rvs: Iterable[Tuple[Tuple[sympy.Symbol, ...], NumericDistribution]],
+    sampling_rvs: Iterable[Tuple[Tuple[sympy.Basic, ...], NumericDistribution]],
     nsamples: int,
     rng,
-) -> Dict[sympy.Symbol, np.ndarray]:
+) -> Dict[sympy.Basic, np.ndarray]:
     data = {}
     for symbols, distribution in sampling_rvs:
         cursample = distribution.sample(rng, nsamples)
