@@ -118,65 +118,126 @@ def set_tmdd(model: Model, type: str):
         ksyn, ksyn_ass = _create_ksyn()
         kd_ass = Assignment(kd, kdc * vc)
 
-        lafree_symb = sympy.Symbol('LAFREE')
-        lafree_expr = sympy.Rational(1, 2) * (
-            central_amount
-            - target_amount
-            - kd
-            + sympy.sqrt((central_amount - target_amount - kd) ** 2 + 4 * kd * central_amount)
-        )
-        lafree_ass = Assignment(lafree_symb, lafree_expr)
+        num_peripheral_comp = len(odes.find_peripheral_compartments())
+        if num_peripheral_comp == 0:
+            lafree_symb = sympy.Symbol('LAFREE')
+            lafree_expr = sympy.Rational(1, 2) * (
+                central_amount
+                - target_amount
+                - kd
+                + sympy.sqrt((central_amount - target_amount - kd) ** 2 + 4 * kd * central_amount)
+            )
+            lafree_ass = Assignment(lafree_symb, lafree_expr)
 
-        # FIXME: Support two and three compartment distribution
-        elimination_rate = odes.get_flow(central, output)
-        cb.remove_flow(central, output)
-        cb.set_input(
-            central,
-            -lafree_symb * elimination_rate
-            - target_amount * kint * lafree_symb / (kd + lafree_symb),
-        )
-        cb.set_input(
-            target_comp,
-            ksyn * vc
-            - kdeg * target_amount
-            - (kint - kdeg) * target_amount * lafree_symb / (kd + lafree_symb),
-        )
+            # FIXME: Support two and three compartment distribution
+            elimination_rate = odes.get_flow(central, output)
+            cb.remove_flow(central, output)
+            cb.set_input(
+                central,
+                -lafree_symb * elimination_rate
+                - target_amount * kint * lafree_symb / (kd + lafree_symb),
+            )
+            cb.set_input(
+                target_comp,
+                ksyn * vc
+                - kdeg * target_amount
+                - (kint - kdeg) * target_amount * lafree_symb / (kd + lafree_symb),
+            )
 
-        # FIXME: Should others also have flows?
-        central = cb.find_compartment('CENTRAL')
-        cb.add_flow(central, output, lafree_symb * elimination_rate)
+            # FIXME: Should others also have flows?
+            central = cb.find_compartment('CENTRAL')
+            cb.add_flow(central, output, lafree_symb * elimination_rate)
 
-        lafreef = sympy.Symbol("LAFREEF")
-        lafree_final = Assignment(lafreef, lafree_expr)
-        before = model.statements.before_odes + (ksyn_ass, kd_ass, lafree_ass)
-        after = lafree_final + model.statements.after_odes
-        ipred = lafreef / vc
-        after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
+            lafreef = sympy.Symbol("LAFREEF")
+            lafree_final = Assignment(lafreef, lafree_expr)
+            before = model.statements.before_odes + (ksyn_ass, kd_ass, lafree_ass)
+            after = lafree_final + model.statements.after_odes
+            ipred = lafreef / vc
+            after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
+        elif num_peripheral_comp > 0 and num_peripheral_comp <= 2:
+            peripheral1 = odes.find_peripheral_compartments()[0]
+            flow_central_peripheral1 = odes.get_flow(central, peripheral1)
+            if num_peripheral_comp == 2:
+                peripheral2 = odes.find_peripheral_compartments()[1]
+                flow_central_peripheral2 = odes.get_flow(central, peripheral2)
+
+            lcfree_symb = sympy.Symbol('LCFREE')
+            lcfree_expr = sympy.Rational(1, 2) * (
+                central_amount
+                - target_amount
+                - kd
+                + sympy.sqrt((central_amount - target_amount - kd) ** 2 + 4 * kd * central_amount)
+            )
+            lcfree_ass = Assignment(lcfree_symb, lcfree_expr)
+
+            elimination_rate = odes.get_flow(central, output)
+            cb.remove_flow(central, peripheral1)
+            cb.remove_flow(central, output)
+            if num_peripheral_comp == 1:
+                cb.set_input(
+                    central,
+                    -target_amount * kint * lcfree_symb / (kd + lcfree_symb)
+                    - lcfree_symb * flow_central_peripheral1,
+                )
+                cb.set_input(
+                    target_comp,
+                    ksyn
+                    - kdeg * target_amount
+                    - (kint - kdeg) * target_amount * lcfree_symb / (kd + lcfree_symb),
+                )
+                cb.set_input(peripheral1, lcfree_symb * flow_central_peripheral1)
+            elif num_peripheral_comp == 2:
+                cb.remove_flow(central, peripheral2)
+                cb.set_input(
+                    central,
+                    -target_amount * kint * lcfree_symb / (kd + lcfree_symb)
+                    - lcfree_symb * flow_central_peripheral1
+                    - lcfree_symb * flow_central_peripheral2,
+                )
+                cb.set_input(
+                    target_comp,
+                    ksyn
+                    - kdeg * target_amount
+                    - (kint - kdeg) * target_amount * lcfree_symb / (kd + lcfree_symb),
+                )
+                cb.set_input(peripheral1, lcfree_symb * flow_central_peripheral1)
+                cb.set_input(peripheral2, lcfree_symb * flow_central_peripheral2)
+
+            central = cb.find_compartment('CENTRAL')
+            cb.add_flow(central, output, lcfree_symb * elimination_rate / central_amount)
+
+            lcfreef = sympy.Symbol("LCFREEF")
+            lcfree_final = Assignment(lcfreef, lcfree_expr)
+            before = model.statements.before_odes + (ksyn_ass, kd_ass, lcfree_ass)
+            after = lcfree_final + model.statements.after_odes
+            ipred = lcfreef / vc
+            after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
+        else:
+            raise ValueError('More than 2 peripheral compartments are not supported.')
     elif type == 'WAGNER':
         model, km = _create_parameters(model, ['KM'])
 
-        ke = odes.get_flow(central, output)
         kd = km * vc
         rinit = r_0 * vc
 
-        lafree_symb = sympy.Symbol('LAFREE')
-        lafree_expr = sympy.Rational(1, 2) * (
+        elimination_rate = odes.get_flow(central, output)
+
+        init_cond_expr = sympy.Rational(1, 2) * (
             central_amount
             - rinit
             - kd
             + sympy.sqrt((central_amount - rinit - kd) ** 2 + 4 * kd * central_amount)
         )
-        lafree_ass = Assignment(lafree_symb, lafree_expr)
 
-        cb.add_flow(central, output, -kint)
-        cb.set_input(central, -(ke - kint) * lafree_symb)
+        cb.add_flow(
+            central,
+            output,
+            (elimination_rate + kint * rinit / (kd + central_amount))
+            / ((kd * rinit / (kd + central_amount) ** 2) + 1),
+        )
 
-        lafreef = sympy.Symbol("LAFREEF")
-        lafree_final = Assignment(lafreef, lafree_expr)
-        before = model.statements.before_odes + lafree_ass
-        after = lafree_final + model.statements.after_odes
-        ipred = lafreef / vc
-        after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
+        before = model.statements.before_odes
+        after = model.statements.after_odes
     elif type == 'MMAPP':
         model, kmc, kdeg = _create_parameters(model, ['KMC', 'KDEG'])
         target_comp, target_amount = _create_compartments(cb, ['TARGET'])
@@ -197,7 +258,7 @@ def set_tmdd(model: Model, type: str):
 
     model = model.replace(statements=before + CompartmentalSystem(cb) + after)
     if type == 'WAGNER':
-        model = set_initial_condition(model, central.name, r_0 * vc)
+        model = set_initial_condition(model, central.name, init_cond_expr)
     elif type not in ['CR', 'CRIB']:
         model = set_initial_condition(model, "TARGET", r_0 * vc)
 
