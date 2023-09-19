@@ -23,6 +23,7 @@ else:
 
 def is_zero_matrix(A: sympy.Matrix) -> bool:
     for e in A:
+        assert isinstance(e, sympy.Basic)
         if not e.is_zero:
             return False
     return True
@@ -507,7 +508,7 @@ def _comps(graph):
     return {comp for comp in graph.nodes if not isinstance(comp, Output)}
 
 
-def to_compartmental_system(names, eqs: Sequence[sympy.Basic]):
+def to_compartmental_system(names, eqs: Sequence[sympy.Eq]):
     """Convert an list of odes to a compartmental system
 
     names : func to compartment name map
@@ -928,7 +929,7 @@ class CompartmentalSystem(ODESystem):
                 comps.append(node)
         return comps
 
-    def find_compartment(self, name: str) -> Compartment:
+    def find_compartment(self, name: str) -> Optional[Compartment]:
         """Find a compartment using its name
 
         Parameters
@@ -1409,6 +1410,274 @@ class CompartmentalSystem(ODESystem):
         return s
 
 
+class Dose(ABC):
+    """Abstract base class for different types of doses"""
+
+    @property
+    def admid(self) -> int:
+        """Administration ID of dose"""
+        return self._admid
+
+    @abstractmethod
+    def subs(self, substitutions):
+        ...
+
+    @property
+    @abstractmethod
+    def free_symbols(self):
+        ...
+
+
+class Bolus(Dose):
+    """A Bolus dose
+
+    Parameters
+    ----------
+    amount : symbol
+        Symbolic amount of dose
+    admid : int
+        Administration ID
+
+    Examples
+    --------
+    >>> from pharmpy.model import Bolus
+    >>> dose = Bolus.create("AMT")
+    >>> dose
+    Bolus(AMT, admid=1)
+    """
+
+    def __init__(self, amount: sympy.Basic, admid: int = 1):
+        self._amount = amount
+        self._admid = admid
+
+    @classmethod
+    def create(cls, amount: Union[sympy.Basic, str], admid: int = 1):
+        return cls(parse_expr(amount), admid=admid)
+
+    def replace(self, **kwargs):
+        amount = kwargs.get("amount", self._amount)
+        admid = kwargs.get("admid", self._admid)
+        return Bolus.create(amount=amount, admid=admid)
+
+    @property
+    def amount(self) -> sympy.Basic:
+        """Symbolic amount of dose"""
+        return self._amount
+
+    @property
+    def free_symbols(self) -> set[sympy.Basic]:
+        """Get set of all free symbols in the dose
+
+        Examples
+        --------
+        >>> from pharmpy.model import Bolus
+        >>> dose = Bolus.create("AMT")
+        >>> dose.free_symbols
+        {AMT}
+        """
+        return {self.amount}
+
+    def subs(self, substitutions: Mapping[sympy.Basic, sympy.Basic]) -> Bolus:
+        """Substitute expressions or symbols in dose
+
+        Parameters
+        ----------
+        substitutions : dict
+            Dictionary of from, to pairs
+
+        Examples
+        --------
+        >>> from pharmpy.model import Bolus
+        >>> dose = Bolus.create("AMT")
+        >>> dose.subs({'AMT': 'DOSE'})
+        Bolus(DOSE, admid=1)
+        """
+        return Bolus(subs(self.amount, substitutions, simultaneous=True), admid=self._admid)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, Bolus)
+            and self._amount == other._amount
+            and self._admid == other._admid
+        )
+
+    def __hash__(self):
+        return hash((self._amount, self._admid))
+
+    def to_dict(self) -> dict[str, Any]:
+        return {'class': 'Bolus', 'amount': sympy.srepr(self._amount), 'admid': self._admid}
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> Bolus:
+        return cls(amount=sympy.parse_expr(d['amount']), admid=d['admid'])
+
+    def __repr__(self):
+        return f'Bolus({self.amount}, admid={self._admid})'
+
+
+class Infusion(Dose):
+    """An infusion dose
+
+    Parameters
+    ----------
+    amount : expression
+        Symbolic amount of dose
+    admid : int
+        Administration ID
+    rate : expression
+        Symbolic rate. Mutually exclusive with duration
+    duration : expression
+        Symbolic duration. Mutually excluseive with rate
+
+    Examples
+    --------
+    >>> from pharmpy.model import Infusion
+    >>> dose = Infusion("AMT", duration="D1")
+    >>> dose
+    Infusion(AMT, admid=1, duration=D1)
+    >>> dose = Infusion("AMT", rate="R1")
+    >>> dose
+    Infusion(AMT, admid=1, rate=R1)
+    """
+
+    def __init__(
+        self,
+        amount: sympy.Basic,
+        admid: int = 1,
+        rate: Optional[sympy.Basic] = None,
+        duration: Optional[sympy.Basic] = None,
+    ):
+        self._amount = amount
+        self._admid = admid
+        self._rate = rate
+        self._duration = duration
+
+    @classmethod
+    def create(
+        cls,
+        amount=Union[str, sympy.Basic],
+        admid: int = 1,
+        rate: Optional[Union[str, sympy.Basic]] = None,
+        duration: Optional[Union[str, sympy.Basic]] = None,
+    ):
+        if rate is None and duration is None:
+            raise ValueError('Need rate or duration for Infusion')
+        if rate is not None and duration is not None:
+            raise ValueError('Cannot have both rate and duration for Infusion')
+        if rate is not None:
+            rate = parse_expr(rate)
+        else:
+            duration = parse_expr(duration)
+        return cls(parse_expr(amount), admid=admid, rate=rate, duration=duration)
+
+    def replace(self, **kwargs):
+        amount = kwargs.get("amount", self._amount)
+        admid = kwargs.get("admid", self._admid)
+        rate = kwargs.get("rate", self._rate)
+        duration = kwargs.get("duration", self._duration)
+        return Infusion.create(amount=amount, admid=admid, rate=rate, duration=duration)
+
+    @property
+    def amount(self) -> sympy.Basic:
+        """Symbolic amount of dose"""
+        return self._amount
+
+    @property
+    def rate(self) -> Optional[sympy.Basic]:
+        """Symbolic rate
+
+        Mutually exclusive with duration.
+        """
+        return self._rate
+
+    @property
+    def duration(self) -> Optional[sympy.Basic]:
+        """Symbolc duration
+
+        Mutually exclusive with rate.
+        """
+        return self._duration
+
+    @property
+    def free_symbols(self) -> set[sympy.Basic]:
+        """Get set of all free symbols in the dose
+
+        Examples
+        --------
+        >>> from pharmpy.model import Infusion
+        >>> dose = Infusion.create("AMT", rate="RATE")
+        >>> dose.free_symbols   # doctest: +SKIP
+        {AMT, RATE}
+        """
+        if self.rate is not None:
+            symbs = self.rate.free_symbols
+        else:
+            assert self.duration is not None
+            symbs = self.duration.free_symbols
+        return symbs | self.amount.free_symbols
+
+    def subs(self, substitutions: Mapping[sympy.Basic, sympy.Basic]) -> Infusion:
+        """Substitute expressions or symbols in dose
+
+        Parameters
+        ----------
+        substitutions : dict
+            Dictionary of from, to pairs
+
+        Examples
+        --------
+        >>> from pharmpy.model import Infusion
+        >>> dose = Infusion.create("AMT", duration="DUR")
+        >>> dose.subs({'DUR': 'D1'})
+        Infusion(AMT, admid=1, duration=D1)
+        """
+        amount = subs(self.amount, substitutions, simultaneous=True)
+        if self.rate is not None:
+            rate = subs(self.rate, substitutions, simultaneous=True)
+            duration = None
+        else:
+            rate = None
+            duration = subs(self.duration, substitutions, simultaneous=True)
+        return Infusion(amount, admid=self._admid, rate=rate, duration=duration)
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, Infusion)
+            and self._admid == other._admid
+            and self._rate == other._rate
+            and self._duration == other._duration
+            and self._amount == other._amount
+        )
+
+    def __hash__(self):
+        return hash((self._admid, self._rate, self._duration, self._amount))
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            'class': 'Infusion',
+            'amount': sympy.srepr(self._amount),
+            'rate': sympy.srepr(self._rate),
+            'duration': sympy.srepr(self._duration),
+            'admid': self._admid,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> Infusion:
+        return cls(
+            amount=sympy.parse_expr(d['amount']),
+            admid=d['admid'],
+            rate=sympy.parse_expr(d['rate']),
+            duration=sympy.parse_expr(d['duration']),
+        )
+
+    def __repr__(self):
+        if self.rate is not None:
+            arg = f'rate={self.rate}'
+        else:
+            arg = f'duration={self.duration}'
+        return f'Infusion({self.amount}, admid={self._admid}, {arg})'
+
+
 class Compartment:
     """Compartment for a compartmental system
 
@@ -1669,279 +1938,6 @@ class Compartment:
         return (
             f'Compartment({self.name}, amount={self._amount}{doses}{input}{lag}{bioavailability})'
         )
-
-
-class Dose(ABC):
-    """Abstract base class for different types of doses"""
-
-    @abstractmethod
-    def subs(self, substitutions):
-        ...
-
-    @property
-    @abstractmethod
-    def free_symbols(self):
-        ...
-
-
-class Bolus(Dose):
-    """A Bolus dose
-
-    Parameters
-    ----------
-    amount : symbol
-        Symbolic amount of dose
-    admid : int
-        Administration ID
-
-    Examples
-    --------
-    >>> from pharmpy.model import Bolus
-    >>> dose = Bolus.create("AMT")
-    >>> dose
-    Bolus(AMT, admid=1)
-    """
-
-    def __init__(self, amount: sympy.Basic, admid: int = 1):
-        self._amount = amount
-        self._admid = admid
-
-    @classmethod
-    def create(cls, amount: Union[sympy.Basic, str], admid: int = 1):
-        return cls(parse_expr(amount), admid=admid)
-
-    def replace(self, **kwargs):
-        amount = kwargs.get("amount", self._amount)
-        admid = kwargs.get("admid", self._admid)
-        return Bolus.create(amount=amount, admid=admid)
-
-    @property
-    def amount(self) -> sympy.Basic:
-        """Symbolic amount of dose"""
-        return self._amount
-
-    @property
-    def admid(self) -> int:
-        """Administration ID of dose"""
-        return self._admid
-
-    @property
-    def free_symbols(self) -> set[sympy.Basic]:
-        """Get set of all free symbols in the dose
-
-        Examples
-        --------
-        >>> from pharmpy.model import Bolus
-        >>> dose = Bolus.create("AMT")
-        >>> dose.free_symbols
-        {AMT}
-        """
-        return {self.amount}
-
-    def subs(self, substitutions: Mapping[sympy.Basic, sympy.Basic]) -> Bolus:
-        """Substitute expressions or symbols in dose
-
-        Parameters
-        ----------
-        substitutions : dict
-            Dictionary of from, to pairs
-
-        Examples
-        --------
-        >>> from pharmpy.model import Bolus
-        >>> dose = Bolus.create("AMT")
-        >>> dose.subs({'AMT': 'DOSE'})
-        Bolus(DOSE, admid=1)
-        """
-        return Bolus(subs(self.amount, substitutions, simultaneous=True), admid=self._admid)
-
-    def __eq__(self, other):
-        return (
-            isinstance(other, Bolus)
-            and self._amount == other._amount
-            and self._admid == other._admid
-        )
-
-    def __hash__(self):
-        return hash((self._amount, self._admid))
-
-    def to_dict(self) -> dict[str, Any]:
-        return {'class': 'Bolus', 'amount': sympy.srepr(self._amount), 'admid': self._admid}
-
-    @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> Bolus:
-        return cls(amount=sympy.parse_expr(d['amount']), admid=d['admid'])
-
-    def __repr__(self):
-        return f'Bolus({self.amount}, admid={self._admid})'
-
-
-class Infusion(Dose):
-    """An infusion dose
-
-    Parameters
-    ----------
-    amount : expression
-        Symbolic amount of dose
-    admid : int
-        Administration ID
-    rate : expression
-        Symbolic rate. Mutually exclusive with duration
-    duration : expression
-        Symbolic duration. Mutually excluseive with rate
-
-    Examples
-    --------
-    >>> from pharmpy.model import Infusion
-    >>> dose = Infusion("AMT", duration="D1")
-    >>> dose
-    Infusion(AMT, admid=1, duration=D1)
-    >>> dose = Infusion("AMT", rate="R1")
-    >>> dose
-    Infusion(AMT, admid=1, rate=R1)
-    """
-
-    def __init__(
-        self,
-        amount: sympy.Basic,
-        admid: int = 1,
-        rate: Optional[sympy.Basic] = None,
-        duration: Optional[sympy.Basic] = None,
-    ):
-        self._amount = amount
-        self._admid = admid
-        self._rate = rate
-        self._duration = duration
-
-    @classmethod
-    def create(
-        cls,
-        amount=Union[str, sympy.Basic],
-        admid: int = 1,
-        rate: Optional[Union[str, sympy.Basic]] = None,
-        duration: Optional[Union[str, sympy.Basic]] = None,
-    ):
-        if rate is None and duration is None:
-            raise ValueError('Need rate or duration for Infusion')
-        if rate is not None and duration is not None:
-            raise ValueError('Cannot have both rate and duration for Infusion')
-        if rate is not None:
-            rate = parse_expr(rate)
-        else:
-            duration = parse_expr(duration)
-        return cls(parse_expr(amount), admid=admid, rate=rate, duration=duration)
-
-    def replace(self, **kwargs):
-        amount = kwargs.get("amount", self._amount)
-        admid = kwargs.get("admid", self._admid)
-        rate = kwargs.get("rate", self._rate)
-        duration = kwargs.get("duration", self._duration)
-        return Infusion.create(amount=amount, admid=admid, rate=rate, duration=duration)
-
-    @property
-    def amount(self) -> sympy.Basic:
-        """Symbolic amount of dose"""
-        return self._amount
-
-    @property
-    def admid(self) -> int:
-        """Administration ID"""
-        return self._admid
-
-    @property
-    def rate(self) -> Optional[sympy.Basic]:
-        """Symbolic rate
-
-        Mutually exclusive with duration.
-        """
-        return self._rate
-
-    @property
-    def duration(self) -> Optional[sympy.Basic]:
-        """Symbolc duration
-
-        Mutually exclusive with rate.
-        """
-        return self._duration
-
-    @property
-    def free_symbols(self) -> set[sympy.Basic]:
-        """Get set of all free symbols in the dose
-
-        Examples
-        --------
-        >>> from pharmpy.model import Infusion
-        >>> dose = Infusion.create("AMT", rate="RATE")
-        >>> dose.free_symbols   # doctest: +SKIP
-        {AMT, RATE}
-        """
-        if self.rate is not None:
-            symbs = self.rate.free_symbols
-        else:
-            assert self.duration is not None
-            symbs = self.duration.free_symbols
-        return symbs | self.amount.free_symbols
-
-    def subs(self, substitutions: Mapping[sympy.Basic, sympy.Basic]) -> Infusion:
-        """Substitute expressions or symbols in dose
-
-        Parameters
-        ----------
-        substitutions : dict
-            Dictionary of from, to pairs
-
-        Examples
-        --------
-        >>> from pharmpy.model import Infusion
-        >>> dose = Infusion.create("AMT", duration="DUR")
-        >>> dose.subs({'DUR': 'D1'})
-        Infusion(AMT, admid=1, duration=D1)
-        """
-        amount = subs(self.amount, substitutions, simultaneous=True)
-        if self.rate is not None:
-            rate = subs(self.rate, substitutions, simultaneous=True)
-            duration = None
-        else:
-            rate = None
-            duration = subs(self.duration, substitutions, simultaneous=True)
-        return Infusion(amount, admid=self._admid, rate=rate, duration=duration)
-
-    def __eq__(self, other):
-        return (
-            isinstance(other, Infusion)
-            and self._admid == other._admid
-            and self._rate == other._rate
-            and self._duration == other._duration
-            and self._amount == other._amount
-        )
-
-    def __hash__(self):
-        return hash((self._admid, self._rate, self._duration, self._amount))
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            'class': 'Infusion',
-            'amount': sympy.srepr(self._amount),
-            'rate': sympy.srepr(self._rate),
-            'duration': sympy.srepr(self._duration),
-            'admid': self._admid,
-        }
-
-    @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> Infusion:
-        return cls(
-            amount=sympy.parse_expr(d['amount']),
-            admid=d['admid'],
-            rate=sympy.parse_expr(d['rate']),
-            duration=sympy.parse_expr(d['duration']),
-        )
-
-    def __repr__(self):
-        if self.rate is not None:
-            arg = f'rate={self.rate}'
-        else:
-            arg = f'duration={self.duration}'
-        return f'Infusion({self.amount}, admid={self._admid}, {arg})'
 
 
 class Statements(Sequence, Immutable):
