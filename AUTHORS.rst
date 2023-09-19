@@ -6,14 +6,17 @@ Contributors
 Development
 ~~~~~~~~~~~
 
+The following have contributed by writing and/or designing the code base of Pharmpy.
+
 * Rikard Nordgren, rikard.nordgren@farmaci.uu.se (maintainer)
 * Stella Belin, stella.belin@farmaci.uu.se (maintainer)
 * Kajsa Harling
-* Zhe Huang, zhe.huang@farmaci.uu.se
+* Zhe Huang
 * Aurelien Ooms
-* Gunnar Yngman, gunnar.yngman@farmaci.uu.se
+* Gunnar Yngman
 * Johan Borg
 * Antonia Hufnagl
+* Viktor Rognås
 
 Scientific input
 ~~~~~~~~~~~~~~~~
