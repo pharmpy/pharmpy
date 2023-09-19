@@ -160,7 +160,6 @@ def validate_parameters(model: Model, parameters: Optional[Iterable[Union[str, s
         allowed_parameters = set(get_pk_parameters(model) + get_pd_parameters(model)).union(
             str(statement.symbol) for statement in model.statements.before_odes
         )
-        print(allowed_parameters)
         if not set().union(*map(_parse_fs, parameters)).issubset(allowed_parameters):
             raise ValueError(
                 f'Invalid `parameters`: got `{parameters}`,'
