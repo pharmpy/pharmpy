@@ -1585,19 +1585,19 @@ def update_estimation(control_stream, model):
         new_parameter_uncertainty_method = est.parameter_uncertainty_method
 
     if old_parameter_uncertainty_method is None and new_parameter_uncertainty_method is not None:
-        # Add $COV
+        # Add $COVARIANCE
         last_est_rec = control_stream.get_records('ESTIMATION')[-1]
         idx_cov = control_stream.records.index(last_est_rec)
         if new_parameter_uncertainty_method == 'SANDWICH':
-            covrec_ = '$COVARIANCE'
+            covrec_ = '$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1'
         elif new_parameter_uncertainty_method == 'CPG':
-            covrec_ = '$COVARIANCE MATRIX=S'
+            covrec_ = '$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1'
         elif new_parameter_uncertainty_method == 'OFIM':
-            covrec_ = '$COVARIANCE MATRIX=R'
+            covrec_ = '$COVARIANCE MATRIX=R UNCONDITIONAL PRINT=E PRECOND=1'
         covrec = create_record(f'{covrec_}\n')
         control_stream = control_stream.insert_record(covrec, at_index=idx_cov + 1)
     elif old_parameter_uncertainty_method is not None and new_parameter_uncertainty_method is None:
-        # Remove $COV
+        # Remove $COVARIANCE
         covrecs = control_stream.get_records('COVARIANCE')
         control_stream = control_stream.remove_records(covrecs)
 
