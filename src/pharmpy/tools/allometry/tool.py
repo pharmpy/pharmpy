@@ -8,7 +8,7 @@ from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import add_allometry, get_pk_parameters
+from pharmpy.modeling import add_allometry, get_pd_parameters, get_pk_parameters
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import (
     summarize_errors,
@@ -157,9 +157,10 @@ def validate_allometric_variable(model: Model, allometric_variable: str):
 
 def validate_parameters(model: Model, parameters: Optional[Iterable[Union[str, sympy.Expr]]]):
     if parameters is not None:
-        allowed_parameters = set(get_pk_parameters(model)).union(
+        allowed_parameters = set(get_pk_parameters(model) + get_pd_parameters(model)).union(
             str(statement.symbol) for statement in model.statements.before_odes
         )
+        print(allowed_parameters)
         if not set().union(*map(_parse_fs, parameters)).issubset(allowed_parameters):
             raise ValueError(
                 f'Invalid `parameters`: got `{parameters}`,'
