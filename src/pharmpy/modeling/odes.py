@@ -2038,13 +2038,29 @@ def _find_rate(sset: Statements):
     odes = sset.ode_system
     assert isinstance(odes, CompartmentalSystem)
     central = odes.central_compartment
-    elimination_rate = odes.get_flow(central, output)
-    rate_list.append(elimination_rate)
-    for periph in odes.find_peripheral_compartments():
-        rate1 = odes.get_flow(central, periph)
-        rate_list.append(rate1)
-        rate2 = odes.get_flow(periph, central)
-        rate_list.append(rate2)
+    # FIXME : How to specify metabolite compartment?
+    metacomp = odes.find_compartment("METABOLITE")
+    if metacomp:
+        central_to_metabolite = odes.get_flow(central, metacomp)
+        rate_list.append(central_to_metabolite)
+        elimination_rate = odes.get_flow(metacomp, output)
+        rate_list.append(elimination_rate)
+
+    else:
+        elimination_rate = odes.get_flow(central, output)
+        rate_list.append(elimination_rate)
+
+    comp_peripherals = {}
+    comp_peripherals[central] = odes.find_peripheral_compartments()
+    if metacomp:
+        comp_peripherals[metacomp] = odes.find_peripheral_compartments(name=metacomp.name)
+
+    for comp, peripherals in comp_peripherals.items():
+        for periph in peripherals:
+            rate1 = odes.get_flow(comp, periph)
+            rate_list.append(rate1)
+            rate2 = odes.get_flow(periph, comp)
+            rate_list.append(rate2)
     return rate_list
 
 

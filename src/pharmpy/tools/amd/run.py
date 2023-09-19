@@ -25,6 +25,7 @@ from pharmpy.tools.mfl.statement.feature.symbols import Name, Wildcard
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.mfl.statement.statement import Statement
 from pharmpy.tools.mfl.stringify import stringify as mfl_stringify
+from pharmpy.tools.structsearch.pkpd import create_pk_model
 from pharmpy.workflows import default_tool_database
 
 from ..run import run_tool
@@ -63,7 +64,7 @@ def run_amd(
     results : ModelfitResults
         Reults of input if input is a model
     modeltype : str
-        Type of model to build. Valid strings are 'basic_pk' or 'pkpd'
+        Type of model to build. Valid strings are 'basic_pk', 'pkpd', 'drug_metabolite'
     administration : str
         Route of administration. Either 'iv', 'oral' or 'ivoral'
     cl_init : float
@@ -120,7 +121,7 @@ def run_amd(
 
     if administration not in ['iv', 'oral', 'ivoral']:
         raise ValueError(f'Invalid input: "{administration}" as administration is not supported')
-    if modeltype not in ['basic_pk', 'pkpd']:
+    if modeltype not in ['basic_pk', 'pkpd', 'drug_metabolite']:
         raise ValueError(f'Invalid input: "{modeltype}" as modeltype is not supported')
 
     if modeltype == 'pkpd':
@@ -220,7 +221,7 @@ def run_amd(
             if modeltype == 'pkpd':
                 func = _subfunc_structsearch(
                     route=administration,
-                    modeltype=modeltype,
+                    type=modeltype,
                     b_init=b_init,
                     emax_init=emax_init,
                     ec50_init=ec50_init,
@@ -231,6 +232,10 @@ def run_amd(
             else:
                 func = _subfunc_modelsearch(search_space=modelsearch_features, path=db.path)
                 run_subfuncs['modelsearch'] = func
+            # Perfomed 'after' modelsearch
+            if modeltype == 'drug_metabolite':
+                func = _subfunc_structsearch(route=administration, type=modeltype, path=db.path)
+                run_subfuncs['structsearch'] = func
         elif section == 'iivsearch':
             func = _subfunc_iiv(iiv_strategy=iiv_strategy, path=db.path)
             run_subfuncs['iivsearch'] = func
@@ -238,8 +243,18 @@ def run_amd(
             func = _subfunc_iov(amd_start_model=model, occasion=occasion, path=db.path)
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
-            func = _subfunc_ruvsearch(dv=dv, path=db.path)
-            run_subfuncs['ruvsearch'] = func
+            if modeltype == 'drug_metabolite':
+                # FIXME : Assume the dv number?
+                # Perform two searches
+                # One for the drug
+                func = _subfunc_ruvsearch(dv=1, path=db.path / 'ruvsearch_drug')
+                run_subfuncs['ruvsearch_drug'] = func
+                # And one for the metabolite
+                func = _subfunc_ruvsearch(dv=2, path=db.path / 'ruvsearch_metabolite')
+                run_subfuncs['ruvsearch_metabolite'] = func
+            else:
+                func = _subfunc_ruvsearch(dv=dv, path=db.path)
+                run_subfuncs['ruvsearch'] = func
         elif section == 'allometry':
             func = _subfunc_allometry(
                 amd_start_model=model, input_allometric_variable=allometric_variable, path=db.path
@@ -263,6 +278,13 @@ def run_amd(
     sum_subtools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
     sum_subtools.append(_create_sum_subtool('start', model))
     for tool_name, func in run_subfuncs.items():
+        if modeltype == 'drug_metabolite':
+            # FIXME : remove alongside create_pk_model
+            if tool_name == "modelsearch":
+                # Filter data to only contain dvid=1
+                next_model = create_pk_model(next_model)
+            elif tool_name == "structsearch":
+                next_model = next_model.replace(dataset=model.dataset)
         subresults = func(next_model)
         if subresults is None:
             sum_models.append(None)
@@ -373,19 +395,12 @@ def _subfunc_modelsearch(search_space: Tuple[Statement, ...], path) -> SubFunc:
     return _run_modelsearch
 
 
-def _subfunc_structsearch(
-    route, modeltype, b_init, emax_init, ec50_init, met_init, path
-) -> SubFunc:
+def _subfunc_structsearch(path, **kwargs) -> SubFunc:
     def _run_structsearch(model):
         res = run_tool(
             'structsearch',
-            route=route,
-            type=modeltype,
-            b_init=b_init,
-            emax_init=emax_init,
-            ec50_init=ec50_init,
-            met_init=met_init,
             model=model,
+            **kwargs,
             path=path / 'structsearch',
         )
         assert isinstance(res, Results)
