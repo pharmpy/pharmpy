@@ -85,7 +85,11 @@ def create_results(
     if base_model.name != input_model.name:
         models = [base_model] + res_models
     else:
-        models = res_models
+        # Check if any resulting models exist
+        if res_models:
+            models = res_models
+        else:
+            models = None
 
     # FIXME: Remove best_model, input_model, models when there is function to read db
     res = res_class(
