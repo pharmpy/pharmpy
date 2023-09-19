@@ -3,7 +3,7 @@ import shutil
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.modeling import (  # convert_model,; create_basic_pk_model,
-    remove_covariance_step,
+    remove_parameter_uncertainty_step,
     transform_blq,
 )
 from pharmpy.tools import (  # fit,; run_structsearch,
@@ -43,7 +43,7 @@ def test_ruvsearch(tmp_path, testdata):
 
         model = Model.parse_model('mox3.mod')
         results = read_modelfit_results('mox3.mod')
-        model = remove_covariance_step(model)
+        model = remove_parameter_uncertainty_step(model)
         model = model.replace(
             datainfo=model.datainfo.replace(path=tmp_path / 'moxo_simulated_resmod.csv')
         )

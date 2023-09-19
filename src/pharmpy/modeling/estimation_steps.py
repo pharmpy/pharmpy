@@ -33,15 +33,16 @@ def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
     >>> opts = {'NITER': 1000, 'ISAMPLE': 100}
     >>> model = set_estimation_step(model, 'IMP', evaluation=True, tool_options=opts)
     >>> model.estimation_steps[0]   # doctest: +ELLIPSIS
-    EstimationStep('IMP', interaction=True, cov='SANDWICH', evaluation=True, ..., tool_options=...
+    EstimationStep('IMP', interaction=True, parameter_uncertainty_method='SANDWICH', evaluation=True, ...,
+    tool_options=...
 
     See also
     --------
     add_estimation_step
     remove_estimation_step
     append_estimation_step_options
-    add_covariance_step
-    remove_covariance_step
+    add_parameter_uncertainty_step
+    remove_parameter_uncertainty_step
     set_evaluation_step
 
     """
@@ -91,15 +92,15 @@ def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **
     >>> len(ests)
     2
     >>> ests[1]   # doctest: +ELLIPSIS
-    EstimationStep('IMP', interaction=False, cov=None, ..., tool_options={'NITER': 1000,...
+    EstimationStep('IMP', interaction=False, parameter_uncertainty_method=None, ..., tool_options={'NITER': 1000,...
 
     See also
     --------
     set_estimation_step
     remove_estimation_step
     append_estimation_step_options
-    add_covariance_step
-    remove_covariance_step
+    add_parameter_uncertainty_step
+    remove_parameter_uncertainty_step
     set_evaluation_step
 
     """
@@ -148,8 +149,8 @@ def remove_estimation_step(model: Model, idx: int):
     add_estimation_step
     set_estimation_step
     append_estimation_step_options
-    add_covariance_step
-    remove_covariance_step
+    add_parameter_uncertainty_step
+    remove_parameter_uncertainty_step
     set_evaluation_step
 
     """
@@ -198,8 +199,8 @@ def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], i
     add_estimation_step
     set_estimation_step
     remove_estimation_step
-    add_covariance_step
-    remove_covariance_step
+    add_parameter_uncertainty_step
+    remove_parameter_uncertainty_step
     set_evaluation_step
 
     """
@@ -217,15 +218,15 @@ def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], i
     return model.update_source()
 
 
-def add_covariance_step(model: Model, cov: str):
-    """Adds covariance step to the final estimation step
+def add_parameter_uncertainty_step(model: Model, parameter_uncertainty_method: str):
+    """Adds parameter uncertainty step to the final estimation step
 
     Parameters
     ----------
     model : Model
         Pharmpy model
-    cov : str
-        covariance method to use
+    parameter_uncertainty_method : str
+        Parameter uncertainty method to use
 
     Returns
     -------
@@ -236,11 +237,11 @@ def add_covariance_step(model: Model, cov: str):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = set_estimation_step(model, 'FOCE', cov=None)
-    >>> model = add_covariance_step(model, 'SANDWICH')
+    >>> model = set_estimation_step(model, 'FOCE', parameter_uncertainty_method=None)
+    >>> model = add_parameter_uncertainty_step(model, 'SANDWICH')
     >>> ests = model.estimation_steps
     >>> ests[0]   # doctest: +ELLIPSIS
-    EstimationStep('FOCE', interaction=True, cov='SANDWICH', ...)
+    EstimationStep('FOCE', interaction=True, parameter_uncertainty_method='SANDWICH', ...)
 
     See also
     --------
@@ -248,19 +249,19 @@ def add_covariance_step(model: Model, cov: str):
     set_estimation_step
     remove_estimation_step
     append_estimation_step_options
-    remove_covariance_step
+    remove_parameter_uncertainty_step
     set_evaluation_step
 
     """
     steps = model.estimation_steps
-    newstep = steps[-1].replace(cov=f'{cov}')
+    newstep = steps[-1].replace(parameter_uncertainty_method=f'{parameter_uncertainty_method}')
     newsteps = steps[0:-1] + newstep
     model = model.replace(estimation_steps=newsteps)
     return model.update_source()
 
 
-def remove_covariance_step(model: Model):
-    """Removes covariance step to the final estimation step
+def remove_parameter_uncertainty_step(model: Model):
+    """Removes parameter uncertainty step from the final estimation step
 
     Parameters
     ----------
@@ -276,10 +277,10 @@ def remove_covariance_step(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = remove_covariance_step(model)
+    >>> model = remove_parameter_uncertainty_step(model)
     >>> ests = model.estimation_steps
     >>> ests[0]   # doctest: +ELLIPSIS
-    EstimationStep('FOCE', interaction=True, cov=None, ...)
+    EstimationStep('FOCE', interaction=True, parameter_uncertainty_method=None, ...)
 
     See also
     --------
@@ -287,12 +288,12 @@ def remove_covariance_step(model: Model):
     set_estimation_step
     remove_estimation_step
     append_estimation_step_options
-    add_covariance_step
+    add_parameter_uncertainty_step
     set_evaluation_step
 
     """
     steps = model.estimation_steps
-    newstep = steps[-1].replace(cov=None)
+    newstep = steps[-1].replace(parameter_uncertainty_method=None)
     newsteps = steps[:-1] + newstep
     model = model.replace(estimation_steps=newsteps)
     return model.update_source()
@@ -309,7 +310,7 @@ def set_evaluation_step(model: Model, idx: int = -1):
     model : Model
         Pharmpy model
     idx : int
-        index of estimation step, default is -1 (last estimation step)
+        Index of estimation step, default is -1 (last estimation step)
 
     Returns
     -------
@@ -322,7 +323,7 @@ def set_evaluation_step(model: Model, idx: int = -1):
     >>> model = load_example_model("pheno")
     >>> model = set_evaluation_step(model)
     >>> model.estimation_steps[0]   # doctest: +ELLIPSIS
-    EstimationStep('FOCE', interaction=True, cov='SANDWICH', evaluation=True, ...
+    EstimationStep('FOCE', interaction=True, parameter_uncertainty_method='SANDWICH', evaluation=True, ...
 
     See also
     --------
@@ -330,8 +331,8 @@ def set_evaluation_step(model: Model, idx: int = -1):
     add_estimation_step
     remove_estimation_step
     append_estimation_step_options
-    add_covariance_step
-    remove_covariance_step
+    add_parameter_uncertainty_step
+    remove_parameter_uncertainty_step
 
     """
     try:

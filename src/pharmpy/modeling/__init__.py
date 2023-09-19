@@ -72,11 +72,11 @@ from .error import (
 )
 from .estimation import calculate_parameters_from_ucp, calculate_ucp_scale
 from .estimation_steps import (
-    add_covariance_step,
     add_estimation_step,
+    add_parameter_uncertainty_step,
     append_estimation_step_options,
-    remove_covariance_step,
     remove_estimation_step,
+    remove_parameter_uncertainty_step,
     set_estimation_step,
     set_evaluation_step,
 )
@@ -218,7 +218,7 @@ from .write_csv import write_csv
 __all__ = [
     'add_admid',
     'add_allometry',
-    'add_covariance_step',
+    'add_parameter_uncertainty_step',
     'add_covariate_effect',
     'add_estimation_step',
     'add_effect_compartment',
@@ -347,7 +347,7 @@ __all__ = [
     'read_model',
     'read_model_from_string',
     'rename_symbols',
-    'remove_covariance_step',
+    'remove_parameter_uncertainty_step',
     'remove_covariate_effect',
     'remove_error_model',
     'remove_estimation_step',

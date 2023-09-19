@@ -15,20 +15,23 @@ def test_init():
 
 
 def test_estimation_method():
-    a = EstimationStep.create('foce', cov='sandwich')
+    a = EstimationStep.create('foce', parameter_uncertainty_method='sandwich')
     assert a.method == 'FOCE'
-    assert a.cov == 'SANDWICH'
+    assert a.parameter_uncertainty_method == 'SANDWICH'
 
     with pytest.raises(ValueError):
         EstimationStep.create('sklarfs')
 
     a = a.replace(method='fo')
     assert a.method == 'FO'
-    assert a.cov == 'SANDWICH'
+    assert a.parameter_uncertainty_method == 'SANDWICH'
 
-    assert a == EstimationStep.create('fo', interaction=False, cov='sandwich')
+    assert a == EstimationStep.create(
+        'fo', interaction=False, parameter_uncertainty_method='sandwich'
+    )
     assert (
-        repr(a) == "EstimationStep('FO', interaction=False, cov='SANDWICH', evaluation=False, "
+        repr(a)
+        == "EstimationStep('FO', interaction=False, parameter_uncertainty_method='SANDWICH', evaluation=False, "
         "maximum_evaluations=None, laplace=False, isample=None, niter=None, auto=None, "
         "keep_every_nth_iter=None, solver=None, solver_rtol=None, solver_atol=None, "
         "tool_options={})"
@@ -107,7 +110,7 @@ def test_dict():
     assert d == {
         'method': 'FOCE',
         'interaction': False,
-        'cov': None,
+        'parameter_uncertainty_method': None,
         'evaluation': False,
         'maximum_evaluations': None,
         'laplace': False,
@@ -131,7 +134,7 @@ def test_dict():
             {
                 'method': 'FOCE',
                 'interaction': False,
-                'cov': None,
+                'parameter_uncertainty_method': None,
                 'evaluation': False,
                 'maximum_evaluations': None,
                 'laplace': False,
@@ -147,7 +150,7 @@ def test_dict():
             {
                 'method': 'FO',
                 'interaction': False,
-                'cov': None,
+                'parameter_uncertainty_method': None,
                 'evaluation': False,
                 'maximum_evaluations': None,
                 'laplace': False,

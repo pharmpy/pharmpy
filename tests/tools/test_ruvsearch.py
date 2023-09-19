@@ -4,7 +4,7 @@ from dataclasses import replace
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.modeling import remove_covariance_step, transform_blq
+from pharmpy.modeling import remove_parameter_uncertainty_step, transform_blq
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
 from pharmpy.tools.ruvsearch.tool import _create_dataset, create_workflow, validate_input
@@ -56,7 +56,7 @@ def test_create_workflow():
 
 def test_create_workflow_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    remove_covariance_step(model)
+    remove_parameter_uncertainty_step(model)
     assert isinstance(create_workflow(model=model), Workflow)
 
 
@@ -68,7 +68,7 @@ def test_validate_input_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     model = model.replace(modelfit_results=res)
-    model = remove_covariance_step(model)
+    model = remove_parameter_uncertainty_step(model)
     validate_input(model=model)
 
 
@@ -194,7 +194,7 @@ def test_validate_input_raises_modelfit_results(load_model_for_test, testdata):
 def test_validate_input_raises_cwres(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    model = remove_covariance_step(model)
+    model = remove_parameter_uncertainty_step(model)
     modelfit_results = replace(res, residuals=res.residuals.drop(columns=['CWRES']))
     model = model.replace(modelfit_results=modelfit_results)
 
@@ -205,7 +205,7 @@ def test_validate_input_raises_cwres(load_model_for_test, testdata):
 def test_validate_input_raises_cipredi(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    model = remove_covariance_step(model)
+    model = remove_parameter_uncertainty_step(model)
     modelfit_results = replace(res, predictions=res.predictions.drop(columns=['CIPREDI']))
     model = model.replace(modelfit_results=modelfit_results)
 
@@ -216,7 +216,7 @@ def test_validate_input_raises_cipredi(load_model_for_test, testdata):
 def test_validate_input_raises_ipred(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
-    model = remove_covariance_step(model)
+    model = remove_parameter_uncertainty_step(model)
     modelfit_results = replace(res, predictions=res.predictions.drop(columns=['IPRED']))
     model = model.replace(modelfit_results=modelfit_results)
 

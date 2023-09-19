@@ -1,11 +1,11 @@
 import pytest
 
 from pharmpy.modeling import (
-    add_covariance_step,
     add_estimation_step,
+    add_parameter_uncertainty_step,
     append_estimation_step_options,
-    remove_covariance_step,
     remove_estimation_step,
+    remove_parameter_uncertainty_step,
     set_estimation_step,
     set_evaluation_step,
 )
@@ -49,7 +49,9 @@ def test_set_estimation_step(testdata, load_model_for_test, method, kwargs, code
 
 def test_set_estimation_step_est_middle(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    model = set_estimation_step(model, 'FOCE', interaction=True, cov='SANDWICH', idx=0)
+    model = set_estimation_step(
+        model, 'FOCE', interaction=True, parameter_uncertainty_method='SANDWICH', idx=0
+    )
     assert (
         '$ESTIMATION METHOD=COND INTER MAXEVAL=9990 PRINT=2 POSTHOC\n$COVARIANCE'
         in model.model_code
@@ -85,23 +87,23 @@ def test_remove_estimation_step(testdata, load_model_for_test):
     assert model.model_code.split('\n')[-2] == '$SIGMA 1'
 
 
-def test_add_covariance_step(testdata, load_model_for_test):
+def test_add_parameter_uncertainty_step(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
-    model = add_covariance_step(model, 'SANDWICH')
+    model = add_parameter_uncertainty_step(model, 'SANDWICH')
     assert len(model.estimation_steps) == 1
     assert model.model_code.split('\n')[-2] == '$COVARIANCE'
-    model = remove_covariance_step(model)
-    model = add_covariance_step(model, 'CPG')
+    model = remove_parameter_uncertainty_step(model)
+    model = add_parameter_uncertainty_step(model, 'CPG')
     assert len(model.estimation_steps) == 1
     assert model.model_code.split('\n')[-2] == '$COVARIANCE MATRIX=S'
 
 
-def test_remove_covariance_step(testdata, load_model_for_test):
+def test_remove_parameter_uncertainty_step(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    model = add_covariance_step(model, 'SANDWICH')
+    model = add_parameter_uncertainty_step(model, 'SANDWICH')
     assert model.model_code.split('\n')[-2] == '$COVARIANCE'
-    model = remove_covariance_step(model)
+    model = remove_parameter_uncertainty_step(model)
     assert (
         model.model_code.split('\n')[-2]
         == '$ESTIMATION METHOD=COND INTER MAXEVAL=9990 PRINT=2 POSTHOC'

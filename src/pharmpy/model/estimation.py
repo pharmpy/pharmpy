@@ -14,13 +14,13 @@ class EstimationStep(Immutable):
     """
     supported_methods = frozenset(('FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'))
     supported_solvers = frozenset(('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'))
-    supported_covs = frozenset(('SANDWICH', 'CPG', 'OFIM'))
+    supported_parameter_uncertainty_methods = frozenset(('SANDWICH', 'CPG', 'OFIM'))
 
     def __init__(
         self,
         method,
         interaction=False,
-        cov=None,
+        parameter_uncertainty_method=None,
         evaluation=False,
         maximum_evaluations=None,
         laplace=False,
@@ -39,7 +39,7 @@ class EstimationStep(Immutable):
     ):
         self._method = method
         self._interaction = interaction
-        self._cov = cov
+        self._parameter_uncertainty_method = parameter_uncertainty_method
         self._evaluation = evaluation
         self._maximum_evaluations = maximum_evaluations
         self._laplace = laplace
@@ -61,7 +61,7 @@ class EstimationStep(Immutable):
         cls,
         method,
         interaction=False,
-        cov=None,
+        parameter_uncertainty_method=None,
         evaluation=False,
         maximum_evaluations=None,
         laplace=False,
@@ -93,11 +93,16 @@ class EstimationStep(Immutable):
             predictions = ()
         else:
             predictions = tuple(predictions)
-        if cov is not None:
-            cov = cov.upper()
-        if not (cov is None or cov in EstimationStep.supported_covs):
+        if parameter_uncertainty_method is not None:
+            parameter_uncertainty_method = parameter_uncertainty_method.upper()
+        if not (
+            parameter_uncertainty_method is None
+            or parameter_uncertainty_method
+            in EstimationStep.supported_parameter_uncertainty_methods
+        ):
             raise ValueError(
-                f"Unknown cov {cov}. Recognized covs are {sorted(EstimationStep.supported_covs)}."
+                f"Unknown parameter uncertainty method {parameter_uncertainty_method}. "
+                f"Recognized methods are {sorted(EstimationStep.supported_parameter_uncertainty_methods)}."
             )
         if solver is not None:
             solver = solver.upper()
@@ -120,7 +125,7 @@ class EstimationStep(Immutable):
         return cls(
             method=method,
             interaction=interaction,
-            cov=cov,
+            parameter_uncertainty_method=parameter_uncertainty_method,
             evaluation=evaluation,
             maximum_evaluations=maximum_evaluations,
             laplace=laplace,
@@ -175,21 +180,21 @@ class EstimationStep(Immutable):
         return self._evaluation
 
     @property
-    def cov(self):
+    def parameter_uncertainty_method(self):
         """Method to use when estimating parameter uncertainty
         Supported methods and their corresponding NMTRAN code:
 
-        +----------------------------+------------------+
-        | Method                     | NMTRAN           |
-        +============================+==================+
-        | Sandwich                   | $COV             |
-        +----------------------------+------------------+
-        | Cross-product gradient     | $COV MATRIX=S    |
-        +----------------------------+------------------+
-        | Observed FIM               | $COV MATRIX=R    |
-        +----------------------------+------------------+
+        +----------------------------+-----------------------+
+        | Method                     | NMTRAN                |
+        +============================+=======================+
+        | Sandwich                   | $COVARIANCE           |
+        +----------------------------+-----------------------+
+        | Cross-product gradient     | $COVARIANCE MATRIX=S  |
+        +----------------------------+-----------------------+
+        | Observed FIM               | $COVARIANCE MATRIX=R  |
+        +----------------------------+-----------------------+
         """
-        return self._cov
+        return self._parameter_uncertainty_method
 
     @property
     def laplace(self):
@@ -279,7 +284,7 @@ class EstimationStep(Immutable):
             isinstance(other, EstimationStep)
             and self.method == other.method
             and self.interaction == other.interaction
-            and self.cov == other.cov
+            and self.parameter_uncertainty_method == other.parameter_uncertainty_method
             and self.evaluation == other.evaluation
             and self.maximum_evaluations == other.maximum_evaluations
             and self.laplace == other.laplace
@@ -298,7 +303,7 @@ class EstimationStep(Immutable):
             (
                 self._method,
                 self._interaction,
-                self._cov,
+                self._parameter_uncertainty_method,
                 self._evaluation,
                 self._maximum_evaluations,
                 self._laplace,
@@ -317,7 +322,7 @@ class EstimationStep(Immutable):
         return {
             'method': self._method,
             'interaction': self._interaction,
-            'cov': self._cov,
+            'parameter_uncertainty_method': self._parameter_uncertainty_method,
             'evaluation': self._evaluation,
             'maximum_evaluations': self._maximum_evaluations,
             'laplace': self._laplace,
@@ -337,11 +342,15 @@ class EstimationStep(Immutable):
         return cls(**d)
 
     def __repr__(self):
-        cov = f"'{self.cov}'" if self.cov is not None else self.cov
+        parameter_uncertainty_method = (
+            f"'{self.parameter_uncertainty_method}'"
+            if self.parameter_uncertainty_method is not None
+            else self.parameter_uncertainty_method
+        )
         solver = f"'{self.solver}'" if self.solver is not None else self.solver
         return (
             f"EstimationStep('{self.method}', interaction={self.interaction}, "
-            f"cov={cov}, evaluation={self.evaluation}, "
+            f"parameter_uncertainty_method={parameter_uncertainty_method}, evaluation={self.evaluation}, "
             f"maximum_evaluations={self.maximum_evaluations}, laplace={self.laplace}, "
             f"isample={self.isample}, niter={self.niter}, auto={self.auto}, "
             f"keep_every_nth_iter={self.keep_every_nth_iter}, solver={solver}, "
@@ -435,12 +444,12 @@ class EstimationSteps(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.estimation_steps.to_dataframe()   # doctest: +ELLIPSIS
-          method  interaction       cov  ...  auto keep_every_nth_iter  tool_options
+        method  interaction       parameter_uncertainty_method  ...  auto keep_every_nth_iter  tool_options
         0   FOCE         True  SANDWICH  ...  None                None            {}
         """
         method = [s.method for s in self._steps]
         interaction = [s.interaction for s in self._steps]
-        cov = [s.cov for s in self._steps]
+        parameter_uncertainty_method = [s.parameter_uncertainty_method for s in self._steps]
         evaluation = [s.evaluation for s in self._steps]
         maximum_evaluations = [s.maximum_evaluations for s in self._steps]
         laplace = [s.laplace for s in self._steps]
@@ -453,7 +462,7 @@ class EstimationSteps(Sequence, Immutable):
             {
                 'method': method,
                 'interaction': interaction,
-                'cov': cov,
+                'parameter_uncertainty_method': parameter_uncertainty_method,
                 'evaluation': evaluation,
                 'maximum_evaluations': maximum_evaluations,
                 'laplace': laplace,

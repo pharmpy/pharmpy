@@ -624,7 +624,14 @@ def test_zero_order_cmt(load_model_for_test, testdata):
         ('$ESTIMA METH=0', [EstimationStep.create('fo')]),
         ('$ESTIMA METH=ZERO', [EstimationStep.create('fo')]),
         ('$ESTIMA INTER', [EstimationStep.create('fo', interaction=True)]),
-        ('$ESTIMA INTER\n$COV', [EstimationStep.create('fo', interaction=True, cov='sandwich')]),
+        (
+            '$ESTIMA INTER\n$COV',
+            [
+                EstimationStep.create(
+                    'fo', interaction=True, parameter_uncertainty_method='sandwich'
+                )
+            ],
+        ),
         (
             '$ESTIMA METH=COND INTER\n$EST METH=COND',
             [
@@ -689,9 +696,9 @@ $ESTIMATION METHOD=1 SADDLE_RESET=1
     [
         ('$EST METH=COND INTER', {'method': 'fo'}, '$ESTIMATION METHOD=ZERO INTER'),
         ('$EST METH=COND INTER', {'interaction': False}, '$ESTIMATION METHOD=COND'),
-        ('$EST METH=COND INTER', {'cov': 'sandwich'}, '$COVARIANCE'),
-        ('$EST METH=COND INTER', {'cov': 'cpg'}, '$COVARIANCE MATRIX=S'),
-        ('$EST METH=COND INTER', {'cov': 'ofim'}, '$COVARIANCE MATRIX=R'),
+        ('$EST METH=COND INTER', {'parameter_uncertainty_method': 'sandwich'}, '$COVARIANCE'),
+        ('$EST METH=COND INTER', {'parameter_uncertainty_method': 'cpg'}, '$COVARIANCE MATRIX=S'),
+        ('$EST METH=COND INTER', {'parameter_uncertainty_method': 'ofim'}, '$COVARIANCE MATRIX=R'),
         (
             '$EST METH=COND INTER MAXEVAL=99999',
             {'method': 'fo'},

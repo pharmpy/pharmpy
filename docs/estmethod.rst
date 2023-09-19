@@ -45,7 +45,7 @@ For a more detailed description of each argument, see their respective chapter o
 +=================================================+==================================================================+
 | :ref:`algorithm<algorithms_estmethod>`          | Algorithm to use (e.g. ``'reduced'``                             |
 +-------------------------------------------------+------------------------------------------------------------------+
-| :ref:`methods<methods_estmethod>`               | Which methods to test (e.g. ``['IMP']``)                         |
+| :ref:`methods<methods_estmethod>`               | Which estimation methods to test (e.g. ``['IMP']``)              |
 +-------------------------------------------------+------------------------------------------------------------------+
 | :ref:`solvers<solvers_estmethod>`               | Which solvers to test (e.g. ``['LSODA']``)                       |
 +-------------------------------------------------+------------------------------------------------------------------+
@@ -167,9 +167,9 @@ Settings are the same as for ``exhaustive`` evaluation step, where the method is
 
 .. _methods_estmethod:
 
-~~~~~~~
-Methods
-~~~~~~~
+~~~~~~~~~~~~~~~~~~
+Estimation methods
+~~~~~~~~~~~~~~~~~~
 
 For a list of supported methods, see :py:func:`pharmpy.model.EstimationStep.supported_methods` (to test ``FOCE`` with
 ``LAPLACE``, simply specify ``LAPLACE`` as input argument in the tool).
