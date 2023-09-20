@@ -12,12 +12,19 @@ def exhaustive(methods, solvers, parameter_uncertainty_methods):
     task_start = Task('start', start)
     wb.add_task(task_start)
 
+    add_eval_after_est = len(methods) > 1
+
     candidate_no = 1
     for method, solver, parameter_uncertainty_method in itertools.product(
         methods, solvers, parameter_uncertainty_methods
     ):
         wf_estmethod = _create_candidate_model_wf(
-            candidate_no, method, solver, parameter_uncertainty_method, update_inits=False
+            candidate_no,
+            method,
+            solver,
+            parameter_uncertainty_method,
+            add_eval_after_est,
+            update_inits=False,
         )
         wb.insert_workflow(wf_estmethod, predecessors=task_start)
         candidate_no += 1
@@ -28,7 +35,18 @@ def exhaustive(methods, solvers, parameter_uncertainty_methods):
 def exhaustive_with_update(methods, solvers, parameter_uncertainty_methods):
     wb = WorkflowBuilder()
 
-    task_base_model = Task('create_base_model', _create_base_model)
+    add_eval_after_est = len(methods) > 1
+
+    parameter_uncertainty_method_base = (
+        parameter_uncertainty_methods[0] if 'FOCE' in methods else None
+    )
+
+    task_base_model = Task(
+        'create_base_model',
+        _create_base_model,
+        parameter_uncertainty_method_base,
+        add_eval_after_est,
+    )
     wb.add_task(task_base_model)
     wf_fit = create_fit_workflow(n=1)
     wb.insert_workflow(wf_fit, predecessors=task_base_model)
@@ -39,17 +57,31 @@ def exhaustive_with_update(methods, solvers, parameter_uncertainty_methods):
         methods, solvers, parameter_uncertainty_methods
     ):
         # This is equivalent to the base model
-        if not (method == 'FOCE' and solver is None):
+        if not (
+            method == 'FOCE'
+            and solver is None
+            and parameter_uncertainty_method == parameter_uncertainty_methods[0]
+        ):
             # Create model with original estimates
             wf_estmethod_original = _create_candidate_model_wf(
-                candidate_no, method, solver, parameter_uncertainty_method, update_inits=False
+                candidate_no,
+                method,
+                solver,
+                parameter_uncertainty_method,
+                add_eval_after_est,
+                update_inits=False,
             )
             wb.insert_workflow(wf_estmethod_original, predecessors=task_base_model_fit)
             candidate_no += 1
 
         # Create model with updated estimates from FOCE
         wf_estmethod_update = _create_candidate_model_wf(
-            candidate_no, method, solver, parameter_uncertainty_method, update_inits=True
+            candidate_no,
+            method,
+            solver,
+            parameter_uncertainty_method,
+            add_eval_after_est,
+            update_inits=True,
         )
         wb.insert_workflow(wf_estmethod_update, predecessors=task_base_model_fit)
         candidate_no += 1
@@ -63,6 +95,8 @@ def exhaustive_only_eval(methods, solvers, parameter_uncertainty_methods):
     task_start = Task('start', start)
     wb.add_task(task_start)
 
+    add_eval_after_est = len(methods) > 1
+
     candidate_no = 1
     for method, solver, parameter_uncertainty_method in itertools.product(
         methods, solvers, parameter_uncertainty_methods
@@ -72,6 +106,7 @@ def exhaustive_only_eval(methods, solvers, parameter_uncertainty_methods):
             method,
             solver,
             parameter_uncertainty_method,
+            add_eval_after_est,
             update_inits=False,
             only_evaluation=True,
         )
@@ -90,6 +125,7 @@ def _create_candidate_model_wf(
     method,
     solver,
     parameter_uncertainty_method,
+    add_eval_after_est,
     update_inits,
     only_evaluation=False,
 ):
@@ -111,6 +147,7 @@ def _create_candidate_model_wf(
         method,
         solver,
         parameter_uncertainty_method,
+        add_eval_after_est,
         update_inits,
         only_evaluation,
     )
@@ -122,21 +159,25 @@ def _copy_model(name, model):
     return model.replace(name=name)
 
 
-def _create_base_model(model):
-    est_settings = _create_est_settings('FOCE')
-    eval_settings = _create_eval_settings()
+def _create_base_model(parameter_uncertainty_method, add_eval_after_est, model):
+    est_settings = _create_est_settings("FOCE", parameter_uncertainty_method, add_eval_after_est)
+    est_method = est_settings["method"]
+    all_methods = [est_method]
 
-    base_model = model.replace(name='base_model')
-    est_method, eval_method = est_settings['method'], eval_settings['method']
-
-    if eval_method is not None:
-        parameter_uncertainty_method = eval_settings['parameter_uncertainty_method']
+    if add_eval_after_est:
+        eval_settings = _create_eval_settings(
+            laplace=False, parameter_uncertainty_method=parameter_uncertainty_method
+        )
+        eval_method = eval_settings["method"]
+        all_methods.append(eval_method)
     else:
-        parameter_uncertainty_method = est_settings['parameter_uncertainty_method']
+        eval_settings = eval_method = None
+
+    base_model = model.replace(name="base_model")
 
     base_model = base_model.replace(
         description=_create_description(
-            [est_method, eval_method],
+            methods=all_methods,
             parameter_uncertainty_method=parameter_uncertainty_method,
             solver=None,
             update_inits=False,
@@ -147,21 +188,43 @@ def _create_base_model(model):
         base_model = remove_estimation_step(base_model, 0)
 
     base_model = add_estimation_step(base_model, **est_settings)
-    base_model = add_estimation_step(base_model, **eval_settings)
+    if add_eval_after_est:
+        base_model = add_estimation_step(base_model, **eval_settings)
+
     return base_model
 
 
 def _create_candidate_model(
-    method, solver, parameter_uncertainty_method, update_inits, only_evaluation, model
+    method,
+    solver,
+    parameter_uncertainty_method,
+    add_eval_after_est,
+    update_inits,
+    only_evaluation,
+    model,
 ):
-    est_settings = _create_est_settings(method, only_evaluation)
-    laplace = True if method == 'LAPLACE' else False
-    eval_settings = _create_eval_settings(laplace, parameter_uncertainty_method)
+    est_settings = None
+    eval_settings = None
+    all_methods = []
 
-    eval_method = eval_settings['method']
+    laplace = True if method == 'LAPLACE' else False
+
+    if only_evaluation:
+        eval_settings = _create_eval_settings(laplace, parameter_uncertainty_method)
+        all_methods = [eval_settings['method']]
+    else:
+        est_settings = _create_est_settings(
+            method, parameter_uncertainty_method, add_eval_after_est
+        )
+        all_methods = [est_settings['method']]
+
+        if add_eval_after_est:
+            eval_settings = _create_eval_settings(laplace, parameter_uncertainty_method)
+            all_methods.append(eval_settings['method'])
+
     model = model.replace(
         description=_create_description(
-            [method, eval_method],
+            methods=all_methods,
             solver=solver,
             parameter_uncertainty_method=parameter_uncertainty_method,
             update_inits=update_inits,
@@ -171,31 +234,35 @@ def _create_candidate_model(
     while len(model.estimation_steps) > 0:
         model = remove_estimation_step(model, 0)
 
-    model = add_estimation_step(model, **est_settings)
-    model = add_estimation_step(model, **eval_settings)
+    if est_settings:
+        model = add_estimation_step(model, **est_settings)
+    if eval_settings:
+        model = add_estimation_step(model, **eval_settings)
+
     if solver:
         model = set_ode_solver(model, solver)
+
     return model
 
 
-def _create_est_settings(method, only_evaluation=False):
+def _create_est_settings(method, parameter_uncertainty_method=None, add_eval_after_est=False):
     est_settings = {
         'method': method,
         'interaction': True,
         'laplace': False,
         'auto': True,
         'keep_every_nth_iter': 10,
-        'parameter_uncertainty_method': None,
+        'maximum_evaluations': 9999,
     }
 
     if method == 'LAPLACE':
         est_settings['method'] = 'FOCE'
         est_settings['laplace'] = True
 
-    if only_evaluation:
-        est_settings['evaluation'] = True
+    if add_eval_after_est:
+        est_settings['parameter_uncertainty_method'] = None
     else:
-        est_settings['maximum_evaluations'] = 9999
+        est_settings['parameter_uncertainty_method'] = parameter_uncertainty_method
 
     return est_settings
 

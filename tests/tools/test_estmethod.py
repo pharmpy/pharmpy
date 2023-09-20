@@ -48,11 +48,25 @@ def test_algorithm(algorithm, methods, solvers, parameter_uncertainty_methods, n
         ),
     ],
 )
-def test_create_candidate_model(load_model_for_test, pheno_path, method, est_rec, eval_rec):
+def test_create_candidate_model(
+    load_model_for_test,
+    pheno_path,
+    method,
+    est_rec,
+    eval_rec,
+    parameter_uncertainty_method=None,
+    add_eval_after_est=True,
+):
     model = load_model_for_test(pheno_path)
     assert len(model.estimation_steps) == 1
     candidate_model = _create_candidate_model(
-        method, None, None, model=model, update_inits=False, only_evaluation=False
+        method,
+        None,
+        parameter_uncertainty_method,
+        add_eval_after_est,
+        update_inits=False,
+        only_evaluation=False,
+        model=model,
     )
     assert len(candidate_model.estimation_steps) == 2
     assert candidate_model.model_code.split('\n')[-5] == est_rec
