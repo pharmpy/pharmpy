@@ -649,3 +649,17 @@ def rename_symbols(
     )
     return model.update_source()
     # FIXME: Only handles parameters, statements and random_variables and no clashes and circular renaming
+
+
+def filter_dataset(model, dv=1):
+    """Filter dataset and only keep rows with dv = dv.
+    Returns a model object
+    """
+    original_dataset = model.dataset
+    new_dataset = original_dataset[original_dataset["DVID"] == dv]
+    new_model = model.replace(
+        dataset=new_dataset,
+        description=model.description + ". Filtered dataset.",
+        name=model.name + "_filtered",
+    )
+    return new_model
