@@ -5,7 +5,18 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Literal,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+    overload,
+)
 
 from pharmpy.internals.expr.units import parse as parse_units
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
@@ -96,7 +107,7 @@ class ColumnInfo(Immutable):
     )
 
     @staticmethod
-    def convert_pd_dtype_to_datatype(dtype):
+    def convert_pd_dtype_to_datatype(dtype) -> str:
         """Convert pandas dtype to Pharmpy datatype
 
         Parameters
@@ -118,7 +129,7 @@ class ColumnInfo(Immutable):
         return dtype if dtype in ColumnInfo._all_dtypes else 'str'
 
     @staticmethod
-    def convert_datatype_to_pd_dtype(datatype):
+    def convert_datatype_to_pd_dtype(datatype) -> str:
         """Convert Pharmpy datatype to pandas dtype
 
         Parameters
@@ -167,7 +178,9 @@ class ColumnInfo(Immutable):
         self._descriptor = descriptor
 
     @staticmethod
-    def _canonicalize_categories(categories: Union[Mapping[str, str], Sequence[str], None]):
+    def _canonicalize_categories(
+        categories: Union[Mapping[str, str], Sequence[str], None]
+    ) -> Union[frozenmapping[str, str], tuple[str, ...], None]:
         if isinstance(categories, dict):
             return frozenmapping(categories)
         elif isinstance(categories, frozenmapping):
@@ -186,7 +199,7 @@ class ColumnInfo(Immutable):
         cls,
         name: str,
         type: str = 'unknown',
-        unit: Optional[Union[str, sympy.Expr]] = None,
+        unit: Optional[Union[str, Literal[1], sympy.Expr]] = None,
         scale: str = 'ratio',
         continuous: Optional[bool] = None,
         categories: Optional[Union[Mapping[str, str], Sequence[str]]] = None,
@@ -209,7 +222,13 @@ class ColumnInfo(Immutable):
             raise TypeError(
                 f"Unknown scale of measurement {scale}. Only {ColumnInfo._all_scales} are possible."
             )
-        unit = sympy.Integer(1) if unit is None else parse_units(unit)
+        if unit is None:
+            unit = sympy.Integer(1)
+        elif unit == 1:
+            unit = sympy.Integer(unit)
+        else:
+            unit = parse_units(unit)
+        assert isinstance(unit, sympy.Expr)
         if datatype not in ColumnInfo._all_dtypes:
             raise ValueError(
                 f"{datatype} is not a valid datatype. Valid datatypes are {ColumnInfo._all_dtypes}"
@@ -230,7 +249,7 @@ class ColumnInfo(Immutable):
             descriptor=descriptor,
         )
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> ColumnInfo:
         """Replace properties and create a new ColumnInfo"""
         d = {key[1:]: value for key, value in self.__dict__.items()}
         d.update(kwargs)
@@ -266,7 +285,7 @@ class ColumnInfo(Immutable):
             )
         )
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return {
             'name': self._name,
             'type': self._type,
@@ -280,11 +299,13 @@ class ColumnInfo(Immutable):
         }
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
+    def from_dict(cls, d: Dict[str, Any]) -> ColumnInfo:
+        unit = parse_units(d['unit'])
+        assert isinstance(unit, sympy.Expr)
         return cls(
             name=d['name'],
             type=d['type'],
-            unit=parse_units(d['unit']),
+            unit=unit,
             scale=d['scale'],
             continuous=d['continuous'],
             categories=d['categories'],
@@ -294,12 +315,12 @@ class ColumnInfo(Immutable):
         )
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Column name"""
         return self._name
 
     @property
-    def type(self):
+    def type(self) -> str:
         """Type of column
 
         ============  =============
@@ -328,7 +349,7 @@ class ColumnInfo(Immutable):
         return self._type
 
     @property
-    def descriptor(self):
+    def descriptor(self) -> Union[str, None]:
         """Kind of data
 
         ====================== ============================================
@@ -349,7 +370,7 @@ class ColumnInfo(Immutable):
         return self._descriptor
 
     @property
-    def unit(self):
+    def unit(self) -> sympy.Expr:
         """Unit of the column data
 
         Custom units are allowed, but units that are available in sympy.physics.units can be
@@ -358,7 +379,7 @@ class ColumnInfo(Immutable):
         return self._unit
 
     @property
-    def scale(self):
+    def scale(self) -> str:
         """Scale of measurement
 
         The statistical scale of measurement for the column data. Can be one of
@@ -367,7 +388,7 @@ class ColumnInfo(Immutable):
         return self._scale
 
     @property
-    def continuous(self):
+    def continuous(self) -> Union[bool, None]:
         """Is the column data continuous
 
         True for continuous data and False for discrete. Note that nominal and ordinal data have to
@@ -376,17 +397,17 @@ class ColumnInfo(Immutable):
         return self._continuous
 
     @property
-    def categories(self):
+    def categories(self) -> Union[frozenmapping[str, str], tuple[str, ...], None]:
         """List or dict of allowed categories"""
         return self._categories
 
     @property
-    def drop(self):
+    def drop(self) -> bool:
         """Should this column be dropped"""
         return self._drop
 
     @property
-    def datatype(self):
+    def datatype(self) -> str:
         """Column datatype
 
         ============ ================ ======== ================================= ===========
@@ -414,7 +435,7 @@ class ColumnInfo(Immutable):
         """
         return self._datatype
 
-    def is_categorical(self):
+    def is_categorical(self) -> bool:
         """Check if the column data is categorical
 
         Returns
@@ -439,7 +460,7 @@ class ColumnInfo(Immutable):
         """
         return self.scale in ['nominal', 'ordinal']
 
-    def is_numerical(self):
+    def is_numerical(self) -> bool:
         """Check if the column data is numerical
 
         Returns
@@ -464,7 +485,7 @@ class ColumnInfo(Immutable):
         """
         return self.scale in ['interval', 'ratio']
 
-    def is_integer(self):
+    def is_integer(self) -> bool:
         """Check if the column datatype is integral
 
         Returns
@@ -494,7 +515,7 @@ class ColumnInfo(Immutable):
             'uint64',
         ]
 
-    def get_all_categories(self):
+    def get_all_categories(self) -> list[str]:
         """Get a list of all categories"""
         if isinstance(self._categories, tuple):
             return list(self._categories)
@@ -583,7 +604,7 @@ class DataInfo(Sequence, Immutable):
         assert not force_absolute_path or path is None or path.is_absolute()
         return cls(columns=cols, path=path, separator=separator)
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> DataInfo:
         if 'columns' in kwargs:
             columns = tuple(kwargs['columns'])
         else:
@@ -598,7 +619,7 @@ class DataInfo(Sequence, Immutable):
         separator = kwargs.get('separator', self._separator)
         return DataInfo.create(columns=columns, path=path, separator=separator)
 
-    def __add__(self, other: DataInfo):
+    def __add__(self, other: DataInfo) -> DataInfo:
         if isinstance(other, DataInfo):
             return DataInfo.create(
                 columns=self._columns + other._columns, path=self.path, separator=self.separator
@@ -612,7 +633,7 @@ class DataInfo(Sequence, Immutable):
                 columns=self._columns + tuple(other), path=self.path, separator=self.separator
             )
 
-    def __radd__(self, other: DataInfo):
+    def __radd__(self, other: DataInfo) -> DataInfo:
         if isinstance(other, ColumnInfo):
             return DataInfo.create(
                 columns=(other,) + self._columns, path=self.path, separator=self.separator
@@ -638,7 +659,7 @@ class DataInfo(Sequence, Immutable):
     def __len__(self):
         return len(self._columns)
 
-    def _getindex(self, i: Union[int, str]):
+    def _getindex(self, i: Union[int, str]) -> int:
         if isinstance(i, str):
             for n, col in enumerate(self._columns):
                 if col.name == i:
@@ -657,7 +678,7 @@ class DataInfo(Sequence, Immutable):
     def __getitem__(self, i: Union[int, str]) -> ColumnInfo:
         ...
 
-    def __getitem__(self, i: Union[list, slice, int, str]):
+    def __getitem__(self, i: Union[list, slice, int, str]) -> Union[DataInfo, ColumnInfo]:
         if isinstance(i, list):
             cols = []
             for ind in i:
@@ -670,7 +691,7 @@ class DataInfo(Sequence, Immutable):
         return self._columns[self._getindex(i)]
 
     @property
-    def path(self):
+    def path(self) -> Union[Path, None]:
         r"""Path of dataset file
 
         Examples
@@ -683,7 +704,7 @@ class DataInfo(Sequence, Immutable):
         return self._path
 
     @property
-    def separator(self):
+    def separator(self) -> str:
         """Separator for dataset file
 
         Can be a single character or a regular expression
@@ -692,7 +713,7 @@ class DataInfo(Sequence, Immutable):
         return self._separator
 
     @property
-    def typeix(self):
+    def typeix(self) -> TypeIndexer:
         """Type indexer
 
         Example
@@ -705,7 +726,7 @@ class DataInfo(Sequence, Immutable):
         return TypeIndexer(self)
 
     @property
-    def descriptorix(self):
+    def descriptorix(self) -> DescriptorIndexer:
         """Descriptor indexer
 
         Example
@@ -717,7 +738,7 @@ class DataInfo(Sequence, Immutable):
         """
         return DescriptorIndexer(self)
 
-    def set_column(self, col: ColumnInfo):
+    def set_column(self, col: ColumnInfo) -> DataInfo:
         """Set ColumnInfo of an existing column of the same name
 
         Parameters
@@ -739,7 +760,7 @@ class DataInfo(Sequence, Immutable):
         return self.replace(columns=newcols)
 
     @property
-    def id_column(self):
+    def id_column(self) -> ColumnInfo:
         """The id column
 
         Examples
@@ -751,7 +772,7 @@ class DataInfo(Sequence, Immutable):
         """
         return self.typeix['id'][0]
 
-    def _set_column_type(self, name: str, type: str):
+    def _set_column_type(self, name: str, type: str) -> DataInfo:
         for i, col in enumerate(self):
             if col.name != name and col.type == type:
                 raise ValueError(
@@ -770,11 +791,11 @@ class DataInfo(Sequence, Immutable):
         cols = self._columns[0:ind] + (newcol,) + self._columns[ind + 1 :]
         return DataInfo.create(cols, path=self._path, separator=self._separator)
 
-    def set_id_column(self, name: str):
+    def set_id_column(self, name: str) -> DataInfo:
         return self._set_column_type(name, 'id')
 
     @property
-    def dv_column(self):
+    def dv_column(self) -> ColumnInfo:
         """The dv column
 
         Examples
@@ -786,11 +807,11 @@ class DataInfo(Sequence, Immutable):
         """
         return self.typeix['dv'][0]
 
-    def set_dv_column(self, name: str):
+    def set_dv_column(self, name: str) -> DataInfo:
         return self._set_column_type(name, 'dv')
 
     @property
-    def idv_column(self):
+    def idv_column(self) -> ColumnInfo:
         """The idv column
 
         Examples
@@ -802,11 +823,11 @@ class DataInfo(Sequence, Immutable):
         """
         return self.typeix['idv'][0]
 
-    def set_idv_column(self, name: str):
+    def set_idv_column(self, name: str) -> DataInfo:
         return self._set_column_type(name, 'idv')
 
     @property
-    def names(self):
+    def names(self) -> list[str]:
         """All column names
 
         Examples
@@ -819,11 +840,11 @@ class DataInfo(Sequence, Immutable):
         return [col.name for col in self._columns]
 
     @property
-    def types(self):
+    def types(self) -> list[str]:
         """All column types"""
         return [col.type for col in self._columns]
 
-    def set_types(self, value: Union[list[str], str]):
+    def set_types(self, value: Union[list[str], str]) -> DataInfo:
         """Set types for all columns
 
         Parameters
@@ -851,7 +872,7 @@ class DataInfo(Sequence, Immutable):
             newcols.append(newcol)
         return DataInfo.create(columns=newcols, path=self._path, separator=self._separator)
 
-    def get_dtype_dict(self):
+    def get_dtype_dict(self) -> dict[str, str]:
         """Create a dictionary from column names to pandas dtypes
 
         This can be used as input to some pandas functions to convert
@@ -883,15 +904,15 @@ class DataInfo(Sequence, Immutable):
             for col in self
         }
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return self._to_dict(path=None)
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]):
+    def from_dict(cls, d: dict[str, Any]) -> DataInfo:
         columns = tuple(ColumnInfo.from_dict(col) for col in d['columns'])
         return cls(columns=columns, path=d['path'], separator=d['separator'])
 
-    def _to_dict(self, path: Optional[str]):
+    def _to_dict(self, path: Optional[str]) -> dict[str, Any]:
         a = []
         for col in self._columns:
             d = {
@@ -928,7 +949,7 @@ class DataInfo(Sequence, Immutable):
                 )
 
     @staticmethod
-    def from_json(s: str):
+    def from_json(s: str) -> DataInfo:
         """Create DataInfo from JSON string
 
         Parameters
@@ -964,7 +985,7 @@ class DataInfo(Sequence, Immutable):
         return di
 
     @staticmethod
-    def read_json(path: Union[Path, str]):
+    def read_json(path: Union[Path, str]) -> DataInfo:
         """Read DataInfo from JSON file
 
         Parameters
@@ -1016,7 +1037,7 @@ class TypeIndexer:
     def __init__(self, obj):
         self._obj = obj
 
-    def __getitem__(self, i):
+    def __getitem__(self, i) -> DataInfo:
         cols = [col for col in self._obj if col.type == i and not col.drop]
         if not cols:
             raise IndexError(f"No columns of type {i} available")
@@ -1027,7 +1048,7 @@ class DescriptorIndexer:
     def __init__(self, obj):
         self._obj = obj
 
-    def __getitem__(self, i):
+    def __getitem__(self, i) -> DataInfo:
         cols = [col for col in self._obj if col.descriptor == i and not col.drop]
         if not cols:
             raise IndexError(f"No columns with descriptor {i} available")
