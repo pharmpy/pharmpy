@@ -1,10 +1,15 @@
-from pharmpy.deps import sympy
+from typing import TYPE_CHECKING, Union
 
 from .parse import parse as parse_expr
 from .subs import subs
 
+if TYPE_CHECKING:
+    import sympy
+else:
+    from pharmpy.deps import sympy
 
-def parse(s):
+
+def parse(s: Union[str, sympy.Expr, sympy.Basic]) -> Union[sympy.Expr, sympy.Basic]:
     return subs(parse_expr(s), _unit_subs(), simultaneous=True) if isinstance(s, str) else s
 
 

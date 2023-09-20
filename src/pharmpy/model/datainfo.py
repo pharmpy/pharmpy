@@ -5,13 +5,18 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union, cast, overload
 
-from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.internals.expr.units import parse as parse_units
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.internals.immutable import Immutable, frozenmapping
+
+if TYPE_CHECKING:
+    import pandas as pd
+    import sympy
+else:
+    from pharmpy.deps import pandas as pd
+    from pharmpy.deps import sympy
 
 
 class ColumnInfo(Immutable):
@@ -141,15 +146,15 @@ class ColumnInfo(Immutable):
 
     def __init__(
         self,
-        name,
-        type='unknown',
-        unit=sympy.Integer(1),
-        scale='ratio',
-        continuous=None,
-        categories=None,
-        drop=False,
-        datatype="float64",
-        descriptor=None,
+        name: str,
+        type: str = 'unknown',
+        unit: sympy.Expr = sympy.Integer(1),
+        scale: str = 'ratio',
+        continuous: Optional[bool] = None,
+        categories: Optional[Union[frozenmapping[str, str], tuple[str, ...]]] = None,
+        drop: bool = False,
+        datatype: str = "float64",
+        descriptor: Optional[str] = None,
     ):
         self._name = name
         self._type = type
@@ -162,15 +167,15 @@ class ColumnInfo(Immutable):
         self._descriptor = descriptor
 
     @staticmethod
-    def _canonicalize_categories(categories):
+    def _canonicalize_categories(categories: Union[Mapping[str, str], Sequence[str], None]):
         if isinstance(categories, dict):
             return frozenmapping(categories)
         elif isinstance(categories, frozenmapping):
             return categories
-        elif isinstance(categories, list):
-            return tuple(categories)
         elif isinstance(categories, tuple):
             return categories
+        elif isinstance(categories, Sequence):
+            return tuple(categories)
         elif categories is None:
             return categories
         else:
@@ -179,15 +184,15 @@ class ColumnInfo(Immutable):
     @classmethod
     def create(
         cls,
-        name,
-        type='unknown',
-        unit=None,
-        scale='ratio',
-        continuous=None,
-        categories=None,
-        drop=False,
-        datatype="float64",
-        descriptor=None,
+        name: str,
+        type: str = 'unknown',
+        unit: Optional[Union[str, sympy.Expr]] = None,
+        scale: str = 'ratio',
+        continuous: Optional[bool] = None,
+        categories: Optional[Union[Mapping[str, str], Sequence[str]]] = None,
+        drop: bool = False,
+        datatype: str = "float64",
+        descriptor: Optional[str] = None,
     ):
         if scale in ('nominal', 'ordinal'):
             if continuous is True:
@@ -232,7 +237,7 @@ class ColumnInfo(Immutable):
         new = ColumnInfo.create(**d)
         return new
 
-    def __eq__(self, other):
+    def __eq__(self, other: DataInfo):
         return (
             isinstance(other, ColumnInfo)
             and self._name == other._name
@@ -275,7 +280,7 @@ class ColumnInfo(Immutable):
         }
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: Dict[str, Any]):
         return cls(
             name=d['name'],
             type=d['type'],
@@ -493,6 +498,8 @@ class ColumnInfo(Immutable):
         """Get a list of all categories"""
         if isinstance(self._categories, tuple):
             return list(self._categories)
+        elif self._categories is None:
+            return []
         else:
             return list(self._categories.keys())
 
@@ -558,16 +565,23 @@ class DataInfo(Sequence, Immutable):
         separator: str = ',',
         force_absolute_path: bool = True,
     ):
-        if columns is None:
-            columns: Tuple[ColumnInfo, ...] = ()
-        elif len(columns) > 0 and isinstance(columns[0], str):
-            columns = tuple(ColumnInfo.create(col) for col in columns)
+        if columns and not all(
+            isinstance(col, str) or isinstance(col, ColumnInfo) for col in columns
+        ):
+            raise ValueError(
+                'Argument `columns` need to consist of either type `str` or `ColumnInfo`'
+            )
+        if columns is None or len(columns) == 0:
+            cols: Tuple[ColumnInfo, ...] = ()
+        elif len(columns) > 0 and any(isinstance(col, str) for col in columns):
+            cols = tuple(ColumnInfo.create(col) if isinstance(col, str) else col for col in columns)
         else:
-            columns = cast(Tuple[ColumnInfo, ...], tuple(columns))
+            cols = cast(Tuple[ColumnInfo, ...], tuple(columns))
+        assert isinstance(cols, tuple)
         if path is not None:
             path = Path(path)
         assert not force_absolute_path or path is None or path.is_absolute()
-        return cls(columns=columns, path=path, separator=separator)
+        return cls(columns=cols, path=path, separator=separator)
 
     def replace(self, **kwargs):
         if 'columns' in kwargs:
@@ -584,7 +598,7 @@ class DataInfo(Sequence, Immutable):
         separator = kwargs.get('separator', self._separator)
         return DataInfo.create(columns=columns, path=path, separator=separator)
 
-    def __add__(self, other):
+    def __add__(self, other: DataInfo):
         if isinstance(other, DataInfo):
             return DataInfo.create(
                 columns=self._columns + other._columns, path=self.path, separator=self.separator
@@ -598,7 +612,7 @@ class DataInfo(Sequence, Immutable):
                 columns=self._columns + tuple(other), path=self.path, separator=self.separator
             )
 
-    def __radd__(self, other):
+    def __radd__(self, other: DataInfo):
         if isinstance(other, ColumnInfo):
             return DataInfo.create(
                 columns=(other,) + self._columns, path=self.path, separator=self.separator
@@ -608,7 +622,7 @@ class DataInfo(Sequence, Immutable):
                 columns=tuple(other) + self._columns, path=self.path, separator=self.separator
             )
 
-    def __eq__(self, other):
+    def __eq__(self, other: DataInfo):
         if not isinstance(other, DataInfo):
             return False
         if len(self) != len(other):
@@ -624,7 +638,7 @@ class DataInfo(Sequence, Immutable):
     def __len__(self):
         return len(self._columns)
 
-    def _getindex(self, i):
+    def _getindex(self, i: Union[int, str]):
         if isinstance(i, str):
             for n, col in enumerate(self._columns):
                 if col.name == i:
@@ -643,7 +657,7 @@ class DataInfo(Sequence, Immutable):
     def __getitem__(self, i: Union[int, str]) -> ColumnInfo:
         ...
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: Union[list, slice, int, str]):
         if isinstance(i, list):
             cols = []
             for ind in i:
@@ -703,7 +717,7 @@ class DataInfo(Sequence, Immutable):
         """
         return DescriptorIndexer(self)
 
-    def set_column(self, col):
+    def set_column(self, col: ColumnInfo):
         """Set ColumnInfo of an existing column of the same name
 
         Parameters
@@ -737,7 +751,7 @@ class DataInfo(Sequence, Immutable):
         """
         return self.typeix['id'][0]
 
-    def _set_column_type(self, name, type):
+    def _set_column_type(self, name: str, type: str):
         for i, col in enumerate(self):
             if col.name != name and col.type == type:
                 raise ValueError(
@@ -756,7 +770,7 @@ class DataInfo(Sequence, Immutable):
         cols = self._columns[0:ind] + (newcol,) + self._columns[ind + 1 :]
         return DataInfo.create(cols, path=self._path, separator=self._separator)
 
-    def set_id_column(self, name):
+    def set_id_column(self, name: str):
         return self._set_column_type(name, 'id')
 
     @property
@@ -772,7 +786,7 @@ class DataInfo(Sequence, Immutable):
         """
         return self.typeix['dv'][0]
 
-    def set_dv_column(self, name):
+    def set_dv_column(self, name: str):
         return self._set_column_type(name, 'dv')
 
     @property
@@ -788,7 +802,7 @@ class DataInfo(Sequence, Immutable):
         """
         return self.typeix['idv'][0]
 
-    def set_idv_column(self, name):
+    def set_idv_column(self, name: str):
         return self._set_column_type(name, 'idv')
 
     @property
@@ -809,7 +823,7 @@ class DataInfo(Sequence, Immutable):
         """All column types"""
         return [col.type for col in self._columns]
 
-    def set_types(self, value):
+    def set_types(self, value: Union[list[str], str]):
         """Set types for all columns
 
         Parameters
@@ -873,8 +887,8 @@ class DataInfo(Sequence, Immutable):
         return self._to_dict(path=None)
 
     @classmethod
-    def from_dict(cls, d):
-        columns = [ColumnInfo.from_dict(col) for col in d['columns']]
+    def from_dict(cls, d: dict[str, Any]):
+        columns = tuple(ColumnInfo.from_dict(col) for col in d['columns'])
         return cls(columns=columns, path=d['path'], separator=d['separator'])
 
     def _to_dict(self, path: Optional[str]):
@@ -899,7 +913,7 @@ class DataInfo(Sequence, Immutable):
             "separator": self._separator,
         }
 
-    def to_json(self, path=None):
+    def to_json(self, path: Optional[Union[Path, str]] = None):
         if path is None:
             return json.dumps(self._to_dict(str(self.path) if self.path is not None else None))
         else:
@@ -914,7 +928,7 @@ class DataInfo(Sequence, Immutable):
                 )
 
     @staticmethod
-    def from_json(s):
+    def from_json(s: str):
         """Create DataInfo from JSON string
 
         Parameters
@@ -950,7 +964,7 @@ class DataInfo(Sequence, Immutable):
         return di
 
     @staticmethod
-    def read_json(path):
+    def read_json(path: Union[Path, str]):
         """Read DataInfo from JSON file
 
         Parameters
