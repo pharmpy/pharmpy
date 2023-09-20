@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Set, Tuple, 
 import pharmpy.internals.unicode as unicode
 from pharmpy.internals.expr.assumptions import assume_all
 from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
+from pharmpy.internals.expr.matrix import is_zero_matrix
 from pharmpy.internals.expr.ode import canonical_ode_rhs
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
@@ -19,14 +20,6 @@ if TYPE_CHECKING:
 else:
     from pharmpy.deps import networkx as nx
     from pharmpy.deps import sympy
-
-
-def is_zero_matrix(A: sympy.Matrix) -> bool:
-    for e in A:
-        assert isinstance(e, sympy.Basic)
-        if not e.is_zero:
-            return False
-    return True
 
 
 class Statement(Immutable):
@@ -1424,7 +1417,7 @@ class Dose(ABC):
 
     @property
     @abstractmethod
-    def free_symbols(self):
+    def free_symbols(self) -> set[sympy.Basic]:
         ...
 
 
