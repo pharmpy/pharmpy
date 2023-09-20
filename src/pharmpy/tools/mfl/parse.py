@@ -488,7 +488,7 @@ def get_model_features(model: Model, supress_warnings=False) -> str:
     if elimination:
         elimination = f'ELIMINATION({elimination})'
     if lagtime:
-        lagtime = "LAGTIME()"
+        lagtime = "LAGTIME(ON)"
     if transits != 0:
         transits = f'TRANSITS({transits}{","+depot})'
     if peripherals != 0:
