@@ -3,8 +3,9 @@ from typing import Tuple
 import pytest
 
 from pharmpy.modeling import add_iiv, create_basic_pk_model, set_direct_effect
+from pharmpy.modeling.common import get_model_attributes
 from pharmpy.tools.mfl.helpers import all_funcs
-from pharmpy.tools.mfl.parse import parse
+from pharmpy.tools.mfl.parse import ModelFeatures, parse
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate, Ref
 from pharmpy.tools.mfl.statement.feature.elimination import Elimination
@@ -20,12 +21,21 @@ from pharmpy.tools.mfl.stringify import stringify
     ('source', 'expected'),
     (
         (
+            'ABSORPTION(INST)',
+            (('ABSORPTION', 'INST'),),
+        ),
+        (
             'ABSORPTION(FO)',
             (('ABSORPTION', 'FO'),),
         ),
         (
             'ABSORPTION(* )',
-            (('ABSORPTION', 'FO'), ('ABSORPTION', 'ZO'), ('ABSORPTION', 'SEQ-ZO-FO')),
+            (
+                ('ABSORPTION', 'FO'),
+                ('ABSORPTION', 'ZO'),
+                ('ABSORPTION', 'SEQ-ZO-FO'),
+                ('ABSORPTION', 'INST'),
+            ),
         ),
         (
             'ABSORPTION([ZO,FO])',
@@ -203,8 +213,10 @@ from pharmpy.tools.mfl.stringify import stringify
                 ('PERIPHERALS', 5),
             ),
         ),
-        ('LAGTIME()', (('LAGTIME',),)),
-        ('LAGTIME ( )', (('LAGTIME',),)),
+        ('LAGTIME(ON)', (('LAGTIME', 'ON'),)),
+        ('LAGTIME ( ON )', (('LAGTIME', 'ON'),)),
+        ('LAGTIME(OFF)', (('LAGTIME', 'OFF'),)),
+        ('LAGTIME([ON, OFF])', (('LAGTIME', 'OFF'), ('LAGTIME', 'ON'))),
         (
             'TRANSITS(1, *)',
             (
@@ -471,13 +483,13 @@ def test_illegal_mfl(code):
             (
                 Absorption((Name('ZO'), Name('SEQ-ZO-FO'))),
                 Elimination((Name('MM'), Name('MIX-FO-MM'))),
-                LagTime(),
+                LagTime((Name('ON'),)),
                 Transits((1, 3, 10), Wildcard()),
                 Peripherals((1,)),
             ),
             'ABSORPTION([ZO,SEQ-ZO-FO]);'
             'ELIMINATION([MM,MIX-FO-MM]);'
-            'LAGTIME();'
+            'LAGTIME(ON);'
             'TRANSITS([1,3,10],*);'
             'PERIPHERALS(1)',
         ),
@@ -502,3 +514,105 @@ def test_stringify(statements: Tuple[Statement, ...], expected: str):
     assert result == expected
     parsed = parse(result)
     assert tuple(parsed) == statements
+
+
+def test_get_model_attributes(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    assert 'ABSORPTION(INST);ELIMINATION(FO)' == get_model_attributes(model)
+
+
+def test_ModelFeatures(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    model_string = get_model_attributes(model)
+    model_mfl = ModelFeatures.create_from_mfl_string(model_string)
+    assert model_mfl.absorption == Absorption(modes=(Name(name='INST'),))
+    assert model_mfl.elimination == Elimination(modes=(Name(name='FO'),))
+    assert model_mfl.transits == (Transits(counts=(0,), depot=(Name(name='DEPOT'),)),)
+    assert model_mfl.peripherals == Peripherals(counts=(0,))
+    assert model_mfl.lagtime == LagTime(modes=(Name(name='OFF'),))
+
+
+def test_ModelFeatures_eq(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    model_string = get_model_attributes(model)
+    model_mfl = ModelFeatures.create_from_mfl_string(model_string)
+    assert ModelFeatures() == model_mfl
+
+
+def test_ModelFeatures_add(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    model_string = get_model_attributes(model)
+    model_mfl = ModelFeatures.create_from_mfl_string(model_string)
+    mfl = ModelFeatures.create(
+        absorption=Absorption(
+            (Name("FO"), Name("ZO")),
+        ),
+        peripherals=Peripherals(counts=(1,)),
+    )
+
+    expected_mfl = ModelFeatures.create(
+        absorption=Absorption(
+            (Name("INST"), Name("FO"), Name("ZO")),
+        ),
+        elimination=Elimination(modes=(Name(name='FO'),)),
+        transits=(Transits(counts=(0,), depot=(Name(name='DEPOT'),)),),
+        peripherals=Peripherals(counts=(0, 1)),
+        lagtime=LagTime(modes=(Name(name='OFF'),)),
+    )
+
+    assert mfl + model_mfl == expected_mfl
+
+
+def test_ModelFeatures_sub(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    model_string = get_model_attributes(model)
+    model_mfl = ModelFeatures.create_from_mfl_string(model_string)
+    mfl = ModelFeatures.create(
+        absorption=Absorption(
+            (Name("INST"), Name("ZO")),
+        ),
+        peripherals=Peripherals(counts=(0, 1)),
+    )
+
+    expected_mfl = ModelFeatures.create(
+        absorption=Absorption(modes=(Name(name='ZO'),)),
+        elimination=Elimination(modes=(Name(name='FO'),)),
+        transits=(Transits(counts=(0,), depot=(Name(name='DEPOT'),)),),
+        peripherals=Peripherals(counts=(1,)),
+        lagtime=LagTime(modes=(Name(name='OFF'),)),
+    )
+
+    res_mfl = mfl - model_mfl
+    assert res_mfl == expected_mfl
+
+    mfl = ModelFeatures.create(
+        absorption=Absorption(
+            (Name("INST"), Name("ZO")),
+        ),
+        peripherals=Peripherals(counts=(0, 1)),
+    )
+
+    expected_mfl = ModelFeatures.create(
+        absorption=Absorption((Name("INST"),)),
+        elimination=Elimination(modes=(Name(name='FO'),)),
+        transits=(Transits(counts=(0,), depot=(Name(name='DEPOT'),)),),
+        peripherals=Peripherals(counts=(0,)),
+        lagtime=LagTime(modes=(Name(name='OFF'),)),
+    )
+
+    res_mfl = model_mfl - mfl
+    assert res_mfl == expected_mfl
+
+
+def test_least_number_of_transformations(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    model_string = get_model_attributes(model)
+    model_mfl = ModelFeatures.create_from_mfl_string(model_string)
+    ss = "ABSORPTION([FO,ZO]);ELIMINATION(ZO);PERIPHERALS(1)"
+    ss_mfl = parse(ss, mfl_class=True)
+
+    lnt = model_mfl.least_number_of_transformations(ss_mfl)
+    assert ('ABSORPTION', 'FO') in lnt
+    assert ('ELIMINATION', 'ZO') in lnt
+    assert ('PERIPHERALS', 1) in lnt
+    assert len(lnt) == 3

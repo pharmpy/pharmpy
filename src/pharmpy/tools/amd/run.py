@@ -178,7 +178,7 @@ def run_amd(
             modelsearch_features = (
                 Absorption((Name('ZO'), Name('SEQ-ZO-FO'))),
                 Elimination((Name('MM'), Name('MIX-FO-MM'))),
-                LagTime(),
+                LagTime((Name('ON'),)),
                 Transits((1, 3, 10), Wildcard()),
                 Peripherals((1,)),
             )
@@ -186,7 +186,7 @@ def run_amd(
             modelsearch_features = (
                 Absorption((Name('ZO'), Name('SEQ-ZO-FO'))),
                 Elimination((Name('MM'), Name('MIX-FO-MM'))),
-                LagTime(),
+                LagTime((Name('ON'),)),
                 Transits((1, 3, 10), Wildcard()),
                 Peripherals((1, 2)),
             )

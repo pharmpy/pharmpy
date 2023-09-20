@@ -9,7 +9,44 @@ from .symbols import Name, Wildcard
 
 @dataclass(frozen=True)
 class Absorption(ModelFeature):
-    modes: Union[Tuple[Name[Literal['FO', 'ZO', 'SEQ-FO-ZO']], ...], Wildcard]
+    modes: Union[Tuple[Name[Literal['FO', 'ZO', 'SEQ-ZO-FO', 'INST']], ...], Wildcard]
+
+    def __add__(self, other):
+        if isinstance(self.modes, Wildcard) or isinstance(other.modes, Wildcard):
+            return Absorption(Wildcard())
+        else:
+            return Absorption(
+                tuple(set(self.modes + tuple([a for a in other.modes if a not in self.modes])))
+            )
+
+    def __sub__(self, other):
+        if isinstance(other.modes, Wildcard):
+            return Absorption((Name('INST')))
+        elif isinstance(self.modes, Wildcard):
+            default = self._wildcard
+            all_modes = tuple([a for a in default if a not in other.modes])
+        else:
+            # NOTE : WILDCARD should not be used here to future proof the method
+            all_modes = tuple(set([a for a in self.modes if a not in other.modes]))
+
+        if len(all_modes) == 0:
+            all_modes = (Name('INST'),)
+
+        return Absorption(all_modes)
+
+    def __eq__(self, other):
+        return set(self.modes) == set(other.modes)
+
+    @property
+    def eval(self):
+        if isinstance(self.modes, Wildcard):
+            return Absorption(self._wildcard)
+        else:
+            return self
+
+    @property
+    def _wildcard(self):
+        return tuple([Name(x) for x in ['FO', 'ZO', 'SEQ-ZO-FO', 'INST']])
 
 
 class AbsorptionInterpreter(Interpreter):

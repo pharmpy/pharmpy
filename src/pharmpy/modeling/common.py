@@ -649,3 +649,88 @@ def rename_symbols(
     )
     return model.update_source()
     # FIXME: Only handles parameters, statements and random_variables and no clashes and circular renaming
+
+
+def get_model_attributes(model: Model, supress_warnings=False) -> str:
+    # FIXME : Circular import. Do we want to have this function elsewhere?
+    from .odes import (
+        has_bolus_absorption,
+        has_first_order_absorption,
+        has_first_order_elimination,
+        has_lag_time,
+        has_michaelis_menten_elimination,
+        has_mixed_mm_fo_elimination,
+        has_seq_zo_fo_absorption,
+        has_zero_order_absorption,
+        has_zero_order_elimination,
+        number_of_peripheral_compartments,
+        number_of_transit_compartments,
+    )
+
+    # ABSORPTION
+    absorption = None
+    if has_seq_zo_fo_absorption(model):
+        absorption = "SEQ-ZO-FO"
+    elif has_zero_order_absorption(model):
+        absorption = "ZO"
+    elif has_first_order_absorption(model):
+        absorption = "FO"
+    elif has_bolus_absorption(model):
+        absorption = "INST"
+
+    if not supress_warnings:
+        if absorption is None:
+            warnings.warn("Could not determine absorption of model.")
+
+    # ElIMINATION
+    elimination = None
+    if has_mixed_mm_fo_elimination(model):
+        elimination = "MIX_FO_MM"
+    elif has_zero_order_elimination(model):
+        elimination = "ZO"
+    elif has_first_order_elimination(model):
+        elimination = "FO"
+    elif has_michaelis_menten_elimination(model):
+        elimination = "MM"
+
+    if not supress_warnings:
+        if elimination is None:
+            warnings.warn("Could not determine elimination of model.")
+
+    # ABSORPTION DELAY (TRANSIT AND LAGTIME)
+    # TRANSITS
+    transits = number_of_transit_compartments(model)
+
+    # TODO : DEPOT
+    if not model.statements.ode_system.find_depot(model.statements):
+        depot = "NODEPOT"
+    else:
+        depot = "DEPOT"
+
+    lagtime = has_lag_time(model)
+    if not lagtime:
+        lagtime = None
+
+    # DISTRIBUTION (PERIPHERALS)
+    peripherals = number_of_peripheral_compartments(model)
+
+    if absorption:
+        absorption = f'ABSORPTION({absorption})'
+    if elimination:
+        elimination = f'ELIMINATION({elimination})'
+    if lagtime:
+        lagtime = "LAGTIME()"
+    if transits != 0:
+        transits = f'TRANSITS({transits}{","+depot})'
+    if peripherals != 0:
+        peripherals = f'PERIPHERALS({peripherals})'
+
+    # TODO : Implement more features such as covariates and IIV
+
+    return ";".join(
+        [
+            e
+            for e in [absorption, elimination, lagtime, transits, peripherals]
+            if (e is not None and e != 0)
+        ]
+    )

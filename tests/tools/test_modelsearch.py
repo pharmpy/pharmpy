@@ -2,6 +2,7 @@ import functools
 
 import pytest
 
+from pharmpy.model import Model
 from pharmpy.modeling import (
     add_peripheral_compartment,
     set_mixed_mm_fo_elimination,
@@ -9,6 +10,7 @@ from pharmpy.modeling import (
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
+from pharmpy.tools.mfl.helpers import funcs, modelsearch_features
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelsearch.algorithms import (
@@ -22,12 +24,13 @@ from pharmpy.tools.modelsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
-MINIMAL_VALID_MFL_STRING = 'LAGTIME()'
+MINIMAL_VALID_MFL_STRING = 'LAGTIME(ON)'
 
 
 def test_exhaustive_algorithm():
     mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
     search_space = mfl_parse(mfl)
+    search_space = funcs(Model(), search_space, modelsearch_features)
     wf, _ = exhaustive(search_space, iiv_strategy='no_add')
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
@@ -54,22 +57,22 @@ def test_exhaustive_algorithm():
             8,
         ),
         (
-            'ABSORPTION(SEQ-ZO-FO);LAGTIME()',
+            'ABSORPTION(SEQ-ZO-FO);LAGTIME(ON)',
             'no_add',
             2,
         ),
         (
-            'ABSORPTION(ZO);LAGTIME();PERIPHERALS(1)',
+            'ABSORPTION(ZO);LAGTIME(ON);PERIPHERALS(1)',
             'no_add',
             15,
         ),
         (
-            'ABSORPTION(ZO);LAGTIME();PERIPHERALS([1,2]);ELIMINATION(ZO)',
+            'ABSORPTION(ZO);LAGTIME(ON);PERIPHERALS([1,2]);ELIMINATION(ZO)',
             'no_add',
             170,
         ),
         (
-            'LAGTIME();TRANSITS(1);PERIPHERALS(1)',
+            'LAGTIME(ON);TRANSITS(1);PERIPHERALS(1)',
             'diagonal',
             7,
         ),
@@ -80,7 +83,7 @@ def test_exhaustive_algorithm():
         ),
         ('ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)', 0, 7),
         (
-            'LAGTIME();TRANSITS(1)',
+            'LAGTIME(ON);TRANSITS(1)',
             'no_add',
             2,
         ),
@@ -90,7 +93,7 @@ def test_exhaustive_algorithm():
             3,
         ),
         (
-            'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME();TRANSITS([1,3,10],*);'
+            'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME(ON);TRANSITS([1,3,10],*);'
             'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])',
             'no_add',
             246,
@@ -99,6 +102,7 @@ def test_exhaustive_algorithm():
 )
 def test_exhaustive_stepwise_algorithm(mfl: str, iiv_strategy: str, no_of_models: int):
     search_space = mfl_parse(mfl)
+    search_space = funcs(Model(), search_space, modelsearch_features)
     wf, _ = exhaustive_stepwise(search_space, iiv_strategy=iiv_strategy)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
@@ -109,16 +113,16 @@ def test_exhaustive_stepwise_algorithm(mfl: str, iiv_strategy: str, no_of_models
     'mfl, no_of_models',
     [
         (
-            'ABSORPTION(ZO);LAGTIME();PERIPHERALS(1)',
+            'ABSORPTION(ZO);LAGTIME(ON);PERIPHERALS(1)',
             12,
         ),
         (
-            'ABSORPTION(ZO);LAGTIME();PERIPHERALS([1,2]);ELIMINATION(ZO)',
+            'ABSORPTION(ZO);LAGTIME(ON);PERIPHERALS([1,2]);ELIMINATION(ZO)',
             52,
         ),
         ('ABSORPTION([ZO,SEQ-ZO-FO]);ELIMINATION(MM)', 7),
         (
-            'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME();TRANSITS([1,3,10],*);'
+            'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME(ON);TRANSITS([1,3,10],*);'
             'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])',
             143,
         ),
@@ -126,6 +130,7 @@ def test_exhaustive_stepwise_algorithm(mfl: str, iiv_strategy: str, no_of_models
 )
 def test_reduced_stepwise_algorithm(mfl: str, no_of_models: int):
     search_space = mfl_parse(mfl)
+    search_space = funcs(Model(), search_space, modelsearch_features)
     wf, _ = reduced_stepwise(search_space, iiv_strategy='no_add')
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
@@ -169,12 +174,14 @@ $ESTIMATION METHOD=1 INTERACTION
 
 def test_is_allowed():
     features = parse('ABSORPTION(ZO);PERIPHERALS(1)')
+    features = funcs(Model(), features, modelsearch_features)
     feat_previous = []
     feat_current, func_current = 'ABSORPTION(ZO)', set_zero_order_absorption
     assert _is_allowed(feat_current, func_current, feat_previous, features)
     assert _is_allowed(feat_current, func_current, feat_current, features) is False
 
     features = parse('ABSORPTION([ZO,SEQ-ZO-FO])')
+    features = funcs(Model(), features, modelsearch_features)
     feat_previous = [
         (
             'ABSORPTION',
@@ -185,6 +192,7 @@ def test_is_allowed():
     assert _is_allowed(feat_current, func_current, feat_previous, features) is False
 
     features = parse('PERIPHERALS([1,2])')
+    features = funcs(Model(), features, modelsearch_features)
     feat_previous = []
     feat_current, func_current = ('PERIPHERALS', 1), functools.partial(
         set_peripheral_compartments, n=1
@@ -197,6 +205,7 @@ def test_is_allowed():
     assert _is_allowed(feat_current, func_current, feat_previous, features)
 
     features = parse('PERIPHERALS([1,2])')
+    features = funcs(Model(), features, modelsearch_features)
     feat_previous = [('PERIPHERALS', 1)]
     feat_current, func_current = ('PERIPHERALS', 1), functools.partial(
         set_peripheral_compartments, n=1
@@ -204,6 +213,7 @@ def test_is_allowed():
     assert _is_allowed(feat_current, func_current, feat_previous, features) is False
 
     features = parse('PERIPHERALS([1,2])')
+    features = funcs(Model(), features, modelsearch_features)
     feat_previous = []
     feat_current, func_current = ('PERIPHERALS', 2), functools.partial(
         set_peripheral_compartments, n=2
@@ -211,6 +221,7 @@ def test_is_allowed():
     assert _is_allowed(feat_current, func_current, feat_previous, features) is False
 
     features = parse('PERIPHERALS(2)')
+    features = funcs(Model(), features, modelsearch_features)
     feat_previous = []
     feat_current, func_current = ('PERIPHERALS', 2), functools.partial(
         set_peripheral_compartments, n=2

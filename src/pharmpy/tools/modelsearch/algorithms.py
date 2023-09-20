@@ -1,35 +1,22 @@
 from typing import Any, List
 
-from pharmpy.model import Model
 from pharmpy.modeling import add_iiv, add_pk_iiv, create_joint_distribution, set_upper_bounds
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
-from ..mfl.helpers import (
-    all_combinations,
-    funcs,
-    get_funcs_same_type,
-    key_to_str,
-    modelsearch_features,
-)
-from ..mfl.statement.statement import Statement
+from ..mfl.helpers import all_combinations, get_funcs_same_type, key_to_str
 
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock', 'absorption_delay'))
 
 
-def model_search_funcs(mfl_statements: List[Statement]):
-    return funcs(Model(), mfl_statements, modelsearch_features)
-
-
-def exhaustive(mfl_statements: List[Statement], iiv_strategy: str):
-    # TODO: Rewrite using _create_model_workflow
+def exhaustive(mfl_funcs, iiv_strategy: str):
+    # TODO: rewrite using _create_model_workflow
     wb_search = WorkflowBuilder()
 
     model_tasks = []
 
-    funcs = model_search_funcs(mfl_statements)
-    combinations = list(all_combinations(funcs))
+    combinations = list(all_combinations(mfl_funcs))
 
     for i, combo in enumerate(combinations, 1):
         model_name = f'modelsearch_run{i}'
@@ -39,7 +26,7 @@ def exhaustive(mfl_statements: List[Statement], iiv_strategy: str):
 
         task_previous = task_copy
         for feat in combo:
-            func = funcs[feat]
+            func = mfl_funcs[feat]
             task_function = Task(key_to_str(feat), func)
             wb_search.add_task(task_function, predecessors=task_previous)
             if iiv_strategy != 'no_add':
@@ -57,15 +44,13 @@ def exhaustive(mfl_statements: List[Statement], iiv_strategy: str):
     return Workflow(wb_search), model_tasks
 
 
-def exhaustive_stepwise(mfl_statements: List[Statement], iiv_strategy: str):
-    mfl_funcs = model_search_funcs(mfl_statements)
-
+def exhaustive_stepwise(mfl_funcs, iiv_strategy: str):
     wb_search = WorkflowBuilder()
     model_tasks = []
 
     while True:
         no_of_trans = 0
-        actions = _get_possible_actions(wb_search, mfl_statements)
+        actions = _get_possible_actions(wb_search, mfl_funcs)
         for task_parent, feat_new in actions.items():
             for feat in feat_new:
                 model_no = len(model_tasks) + 1
@@ -89,15 +74,13 @@ def exhaustive_stepwise(mfl_statements: List[Statement], iiv_strategy: str):
     return Workflow(wb_search), model_tasks
 
 
-def reduced_stepwise(mfl_statements: List[Statement], iiv_strategy: str):
-    mfl_funcs = model_search_funcs(mfl_statements)
-
+def reduced_stepwise(mfl_funcs, iiv_strategy: str):
     wb_search = WorkflowBuilder()
     model_tasks = []
 
     while True:
         no_of_trans = 0
-        actions = _get_possible_actions(wb_search, mfl_statements)
+        actions = _get_possible_actions(wb_search, mfl_funcs)
         groups = _find_same_model_groups(wb_search, mfl_funcs)
         if len(groups) > 1:
             for group in groups:
@@ -106,7 +89,7 @@ def reduced_stepwise(mfl_statements: List[Statement], iiv_strategy: str):
                     task_best_model = Task('choose_best_model', _get_best_model)
                     wb_search.add_task(task_best_model, predecessors=group)
             # Overwrite actions with new collector nodes
-            actions = _get_possible_actions(wb_search, mfl_statements)
+            actions = _get_possible_actions(wb_search, mfl_funcs)
 
         for task_parent, feat_new in actions.items():
             for feat in feat_new:
@@ -162,23 +145,21 @@ def _get_best_model(*models):
     return models[0]
 
 
-def _get_possible_actions(wf, mfl_statements):
+def _get_possible_actions(wf, mfl_funcs):
     actions = {}
     if wf.output_tasks:
         tasks = wf.output_tasks
     else:
         tasks = ['']
     for task in tasks:
-        mfl_funcs = model_search_funcs(mfl_statements)
         if task:
             feat_previous = _get_previous_features(wf, task, mfl_funcs)
         else:
             feat_previous = []
-
         trans_possible = [
             feat
             for feat, func in mfl_funcs.items()
-            if _is_allowed(feat, func, feat_previous, mfl_statements)
+            if _is_allowed(feat, func, feat_previous, mfl_funcs)
         ]
 
         actions[task] = trans_possible
@@ -235,8 +216,7 @@ def _apply_transformation(feat, func, model):
     return model
 
 
-def _is_allowed(feat_current, func_current, feat_previous, mfl_statements):
-    mfl_funcs = model_search_funcs(mfl_statements)
+def _is_allowed(feat_current, func_current, feat_previous, mfl_funcs):
     func_type = get_funcs_same_type(mfl_funcs, feat_current)
     # Check if current function is in previous transformations
     if feat_current in feat_previous:
@@ -246,7 +226,8 @@ def _is_allowed(feat_current, func_current, feat_previous, mfl_statements):
         peripheral_previous = [
             mfl_funcs[feat] for feat in feat_previous if feat[0] == 'PERIPHERALS'
         ]
-        return _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements)
+        allowed_p = _is_allowed_peripheral(func_current, peripheral_previous, mfl_funcs)
+        return allowed_p
     # Check if any functions of the same type has been used
     if any(mfl_funcs[feat] in func_type for feat in feat_previous):
         return False
@@ -270,10 +251,8 @@ def _is_allowed(feat_current, func_current, feat_previous, mfl_statements):
     return True
 
 
-def _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements):
-    n_all: List[Any] = list(
-        args[0] for (kind, *args) in model_search_funcs(mfl_statements) if kind == 'PERIPHERALS'
-    )
+def _is_allowed_peripheral(func_current, peripheral_previous, mfl_funcs):
+    n_all: List[Any] = list(args[0] for (kind, *args) in mfl_funcs if kind == 'PERIPHERALS')
     n = func_current.keywords['n']
     if peripheral_previous:
         n_prev = [func.keywords['n'] for func in peripheral_previous]
