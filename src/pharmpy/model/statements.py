@@ -1832,9 +1832,8 @@ class Compartment:
         {A_CENTRAL, ALAG, AMT}
         """
         symbs = set()
-        if self.doses is not None:
-            for d in self.doses:
-                symbs |= d.free_symbols
+        for d in self.doses:
+            symbs |= d.free_symbols
         symbs |= self.input.free_symbols
         symbs |= self.lag_time.free_symbols
         symbs |= self.bioavailability.free_symbols
