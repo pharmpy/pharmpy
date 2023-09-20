@@ -3,6 +3,7 @@ import warnings
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import pharmpy.visualization
+from pharmpy.internals.expr.units import unit_string
 from pharmpy.model import Assignment, Model
 
 from .data import get_observations
@@ -183,3 +184,71 @@ def plot_transformed_eta_distributions(
 
     facet = layer.facet(facet='eta:N', columns=3)
     return facet
+
+
+def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
+    """Plot DV vs IPRED
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    predictions : pd.DataFrame
+        DataFrame containing the predictions
+
+    Returns
+    -------
+    alt.Chart
+        Plot
+    """
+
+    obs = get_observations(model)
+
+    if 'CIPREDI' in predictions.columns:
+        ipred = 'CIPREDI'
+    elif 'IPRED' in predictions.columns:
+        ipred = 'IPRED'
+    else:
+        raise ValueError("Cannot find individual predictions")
+    di = model.datainfo
+    idv = di.idv_column.name
+    dvcol = di.dv_column
+    dv = dvcol.name
+    dv_unit = dvcol.unit
+    idname = di.id_column.name
+
+    predictions = predictions[[ipred]]
+    df = predictions.join(obs, how='inner').reset_index()
+
+    if dv_unit == 1:
+        unit = ""
+    else:
+        unit = f" ({unit_string(dv_unit)})"
+
+    chart = (
+        alt.Chart(df)
+        .mark_circle(size=100)
+        .encode(
+            alt.X(ipred).title(f"Individual prediction{unit}"),
+            alt.Y(dv).title(f"Observation{unit}"),
+            tooltip=[ipred, dv, idname, idv],
+        )
+        .properties(title="Observations vs. Individual predictions")
+        .interactive()
+    )
+
+    line = (
+        alt.Chart(
+            pd.DataFrame(
+                {'var1': [df[ipred].min(), df[ipred].max()], 'var2': [df[dv].min(), df[dv].max()]}
+            )
+        )
+        .mark_line()
+        .encode(
+            alt.X('var1'),
+            alt.Y('var2'),
+        )
+        .interactive()
+    )
+
+    return chart + line

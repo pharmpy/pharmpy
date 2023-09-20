@@ -196,6 +196,7 @@ from .parameters import (
 )
 from .pd import add_effect_compartment, add_indirect_effect, set_direct_effect
 from .plots import (
+    plot_dv_vs_ipred,
     plot_individual_predictions,
     plot_iofv_vs_iofv,
     plot_transformed_eta_distributions,
@@ -338,6 +339,7 @@ __all__ = [
     'make_declarative',
     'mu_reference_model',
     'omit_data',
+    'plot_dv_vs_ipred',
     'plot_individual_predictions',
     'plot_iofv_vs_iofv',
     'plot_transformed_eta_distributions',

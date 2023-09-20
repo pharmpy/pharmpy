@@ -1,6 +1,11 @@
 next version
 ------------
 
+New features
+============
+
+* Add modeling.plot_dv_vs_ipred
+
 Changes
 =======
 
