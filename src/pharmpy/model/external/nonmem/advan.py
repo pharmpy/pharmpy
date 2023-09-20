@@ -302,8 +302,10 @@ def _compartmental_model(
         cs = to_compartmental_system(func_to_name, eqs)
         cb = CompartmentalSystemBuilder(cs)
         doses = dosing(di, dataset, 1)
+        comp_map = {}
         for i, comp_name in enumerate(comps, start=1):
             comp = cs.find_compartment(comp_name)
+            comp_map[comp_name] = i
             if comp is None:  # Compartments can be in $MODEL but not used in $DES
                 continue
             cb.set_dose(comp, find_dose(doses, i))
@@ -322,8 +324,6 @@ def _compartmental_model(
                 defobs = (name, i)
 
         ass = _f_link_assignment(control_stream, sympy.Symbol(f'A_{defobs[0]}'), defobs[1])
-        odes = CompartmentalSystem(cb)
-        return odes, ass, None
     else:
         return None
     return CompartmentalSystem(cb), ass, comp_map
