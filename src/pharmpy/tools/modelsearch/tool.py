@@ -6,9 +6,8 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling.common import get_model_attributes
 from pharmpy.results import ModelfitResults
-from pharmpy.tools import summarize_modelfit_results
+from pharmpy.tools import get_model_features, summarize_modelfit_results
 from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -103,7 +102,7 @@ def start(
         mfl_statements = search_space
 
     # Add base model task
-    model_mfl = get_model_attributes(model, supress_warnings=True)
+    model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
     if not mfl_statements.contain_subset(model_mfl):
         base_task = Task("create_base_model", create_base_model, mfl_statements)
@@ -165,7 +164,7 @@ def clear_description(model):
 
 def filter_mfl_statements(mfl_statements: ModelFeatures, model: Model):
     ss_funcs = mfl_statements.convert_to_funcs()
-    model_mfl = ModelFeatures.create_from_mfl_string(get_model_attributes(model))
+    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
     model_funcs = model_mfl.convert_to_funcs()
     res = {k: ss_funcs[k] for k in set(ss_funcs) - set(model_funcs)}
     return {k: v for k, v in sorted(res.items(), key=lambda x: (x[0][0], x[0][1]))}
@@ -218,7 +217,7 @@ def _update_results(base):
 def create_base_model(ss, model):
     base = model
 
-    model_mfl = get_model_attributes(model, supress_warnings=True)
+    model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
     added_features = ""
     lnt = model_mfl.least_number_of_transformations(ss)

@@ -1,5 +1,7 @@
 from threading import Lock
 
+from .mfl.parse import get_model_features
+
 __all__ = (
     'create_report',  # pyright: ignore [reportUnsupportedDunderAll]
     'create_results',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -32,6 +34,7 @@ __all__ = (
     'summarize_individuals_count_table',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'write_results',  # pyright: ignore [reportUnsupportedDunderAll]
+    'get_model_features',
 )
 
 
