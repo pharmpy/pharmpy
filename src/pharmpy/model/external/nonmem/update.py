@@ -19,7 +19,6 @@ from pharmpy.model import (
     CompartmentalSystemBuilder,
     Distribution,
     Infusion,
-    ODESystem,
     Parameter,
     Parameters,
     RandomVariables,
@@ -475,7 +474,7 @@ def has_zero_order_inputs(model: Model):
     return not all(a == 0 for a in zo)
 
 
-def update_infusion(model: Model, old: ODESystem):
+def update_infusion(model: Model, old: CompartmentalSystem):
     statements = model.statements
     new = statements.ode_system
     assert new is not None
@@ -562,7 +561,7 @@ def from_des(model, advan):
     return model
 
 
-def to_des(model: Model, new: ODESystem):
+def to_des(model: Model, new: CompartmentalSystem):
     cs = model.internals.control_stream
     old_des = cs.get_records('DES')
     cs = cs.remove_records(old_des)

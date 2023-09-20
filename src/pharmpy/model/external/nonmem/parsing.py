@@ -19,7 +19,6 @@ from pharmpy.model import (
     JointNormalDistribution,
     ModelSyntaxError,
     NormalDistribution,
-    ODESystem,
     Parameter,
     Parameters,
     RandomVariables,
@@ -241,9 +240,7 @@ def parse_statements(
         comp = _compartmental_model(di, dataset, control_stream, sub.advan, sub.trans, des)
         trans_amounts = {}
         if comp is None:
-            statements += ODESystem()
-            # FIXME: Dummy link statement
-            statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
+            raise ValueError("Error in parsing ODE System")
         else:
             cm, link, comp_map = comp
             statements += [cm, link]

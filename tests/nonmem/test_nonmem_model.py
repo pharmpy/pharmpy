@@ -8,12 +8,12 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import (
     Assignment,
+    CompartmentalSystem,
     EstimationStep,
     EstimationSteps,
     Model,
     ModelSyntaxError,
     NormalDistribution,
-    ODESystem,
     Parameter,
     Parameters,
     Statements,
@@ -231,7 +231,7 @@ def test_add_statements(pheno, statement_new, buf_new, param_new):
     # Insert new statement before ODE system.
     new_sset = []
     for s in sset:
-        if isinstance(s, ODESystem):
+        if isinstance(s, CompartmentalSystem):
             new_sset.append(statement_new)
         new_sset.append(s)
 
@@ -279,7 +279,7 @@ def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new)
     # Insert new statement before ODE system.
     new_sset = []
     for s in sset:
-        if isinstance(s, ODESystem):
+        if isinstance(s, CompartmentalSystem):
             new_sset.append(statement_new)
         new_sset.append(s)
 

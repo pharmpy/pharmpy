@@ -16,7 +16,6 @@ from pharmpy.model import (
     Infusion,
     Model,
     ModelError,
-    ODESystem,
     Parameter,
     Parameters,
     Statements,
@@ -2476,7 +2475,7 @@ def solve_ode_system(model: Model):
     sol = sympy.dsolve(odes.eqs, ics=ics)
     new = []
     for s in model.statements:
-        if isinstance(s, ODESystem):
+        if isinstance(s, CompartmentalSystem):
             for eq in sol:
                 ass = Assignment(eq.lhs, eq.rhs)
                 new.append(ass)

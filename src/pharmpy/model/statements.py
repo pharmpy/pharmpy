@@ -212,12 +212,6 @@ class Assignment(Statement):
         return f'${sym} = {expr}$'
 
 
-class ODESystem(Statement):
-    """Abstract base class for ODE systems of different forms"""
-
-    pass
-
-
 class Output(Immutable):
     def __new__(cls):
         # Singleton class
@@ -584,7 +578,7 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]):
     return cs
 
 
-class CompartmentalSystem(ODESystem):
+class CompartmentalSystem(Statement):
     """System of ODEs descibed as a compartmental system
 
     Examples
@@ -651,7 +645,7 @@ class CompartmentalSystem(ODESystem):
 
     @property
     def t(self) -> sympy.Symbol:
-        """Independent variable of ODESystem"""
+        """Independent variable of CompartmentalSystem"""
         return self._t
 
     @property
@@ -1935,8 +1929,8 @@ class Compartment:
 class Statements(Sequence, Immutable):
     """A sequence of symbolic statements describing the model
 
-    Two types of statements are supported: Assignment and ODESystem.
-    A Statements object can have 0 or 1 ODESystem. The order of
+    Two types of statements are supported: Assignment and CompartmentalSystem.
+    A Statements object can have 0 or 1 CompartmentalSystem. The order of
     the statements is significant and the same symbol can be assigned
     to multiple times.
 
@@ -2005,11 +1999,15 @@ class Statements(Sequence, Immutable):
 
     def _get_ode_system_index(self):
         return next(
-            map(lambda t: t[0], filter(lambda t: isinstance(t[1], ODESystem), enumerate(self))), -1
+            map(
+                lambda t: t[0],
+                filter(lambda t: isinstance(t[1], CompartmentalSystem), enumerate(self)),
+            ),
+            -1,
         )
 
     @property
-    def ode_system(self) -> Optional[ODESystem]:
+    def ode_system(self) -> Optional[CompartmentalSystem]:
         """Returns the ODE system of the model or None if the model doesn't have an ODE system
 
         Examples
@@ -2024,7 +2022,6 @@ class Statements(Sequence, Immutable):
         """
         i = self._get_ode_system_index()
         ret = None if i == -1 else self[i]
-        assert ret is None or isinstance(ret, ODESystem)
         return ret
 
     @property
@@ -2398,9 +2395,9 @@ class Statements(Sequence, Immutable):
         if isinstance(expression, str):
             expression = parse_expr(expression)
         for statement in reversed(self):
-            if isinstance(statement, ODESystem):
+            if isinstance(statement, CompartmentalSystem):
                 raise ValueError(
-                    "ODESystem not supported by full_expression. Use the properties before_odes "
+                    "CompartmentalSystem not supported by full_expression. Use the properties before_odes "
                     "or after_odes."
                 )
             expression = subs(

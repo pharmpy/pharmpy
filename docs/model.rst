@@ -156,7 +156,7 @@ Statements
 
 The model statements represent the mathematical description of the model. All statements can be retrieved via the
 statements property as a :py:class:`pharmpy.model.Statements` object, which is a list of model statements of either the
-class :py:class:`pharmpy.model.Assignment` or :py:class:`pharmpy.model.ODESystem`.
+class :py:class:`pharmpy.model.Assignment` or :py:class:`pharmpy.model.CompartmentalSystem`.
 
 .. pharmpy-execute::
 

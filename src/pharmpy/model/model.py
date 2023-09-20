@@ -27,7 +27,7 @@ from .datainfo import ColumnInfo, DataInfo
 from .estimation import EstimationSteps
 from .parameters import Parameters
 from .random_variables import RandomVariables
-from .statements import ODESystem, Statements
+from .statements import CompartmentalSystem, Statements
 
 
 class ModelError(Exception):
@@ -198,7 +198,7 @@ class Model(Immutable):
             symbs_all = symbs_all.union({statements.ode_system.t})
         sset_prev = []
         for i, statement in enumerate(statements):
-            if isinstance(statement, ODESystem):
+            if isinstance(statement, CompartmentalSystem):
                 continue
 
             symbs = statement.expression.free_symbols

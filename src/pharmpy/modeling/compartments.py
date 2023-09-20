@@ -1,4 +1,4 @@
-from pharmpy.model import Model, ODESystem
+from pharmpy.model import Model
 
 
 def get_lag_times(model: Model):
@@ -15,7 +15,7 @@ def get_lag_times(model: Model):
         Dictionary from compartment name to lag time expression
     """
     odes = model.statements.ode_system
-    assert isinstance(odes, ODESystem)
+    assert odes is not None
     names = odes.compartment_names
     d = {}
     for name in names:
@@ -39,7 +39,7 @@ def get_bioavailability(model: Model):
         Dictionary from compartment name to bioavailability expression
     """
     odes = model.statements.ode_system
-    assert isinstance(odes, ODESystem)
+    assert odes is not None
     names = odes.compartment_names
     d = {}
     for name in names:
