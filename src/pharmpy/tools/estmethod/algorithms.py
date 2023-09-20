@@ -73,7 +73,7 @@ def exhaustive_only_eval(methods, solvers, parameter_uncertainty_methods):
             solver,
             parameter_uncertainty_method,
             update_inits=False,
-            is_eval_candidate=True,
+            only_evaluation=True,
         )
         wb.insert_workflow(wf_estmethod, predecessors=task_start)
         candidate_no += 1
@@ -91,7 +91,7 @@ def _create_candidate_model_wf(
     solver,
     parameter_uncertainty_method,
     update_inits,
-    is_eval_candidate=False,
+    only_evaluation=False,
 ):
     wb = WorkflowBuilder()
 
@@ -112,7 +112,7 @@ def _create_candidate_model_wf(
         solver,
         parameter_uncertainty_method,
         update_inits,
-        is_eval_candidate,
+        only_evaluation,
     )
     wb.add_task(task_create_candidate, predecessors=task_prev)
     return Workflow(wb)
@@ -152,9 +152,9 @@ def _create_base_model(model):
 
 
 def _create_candidate_model(
-    method, solver, parameter_uncertainty_method, update_inits, is_eval_candidate, model
+    method, solver, parameter_uncertainty_method, update_inits, only_evaluation, model
 ):
-    est_settings = _create_est_settings(method, is_eval_candidate)
+    est_settings = _create_est_settings(method, only_evaluation)
     laplace = True if method == 'LAPLACE' else False
     eval_settings = _create_eval_settings(laplace, parameter_uncertainty_method)
 
@@ -178,7 +178,7 @@ def _create_candidate_model(
     return model
 
 
-def _create_est_settings(method, is_eval_candidate=False):
+def _create_est_settings(method, only_evaluation=False):
     est_settings = {
         'method': method,
         'interaction': True,
@@ -192,7 +192,7 @@ def _create_est_settings(method, is_eval_candidate=False):
         est_settings['method'] = 'FOCE'
         est_settings['laplace'] = True
 
-    if is_eval_candidate:
+    if only_evaluation:
         est_settings['evaluation'] = True
     else:
         est_settings['maximum_evaluations'] = 9999
