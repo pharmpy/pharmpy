@@ -70,12 +70,13 @@ def test_create_remaining_models(load_example_model_for_test):
 
 
 def test_pkpd(load_model_for_test, testdata):
+    search_space = "DIRECTEFFECT(*); EFFECTCOMP(*); INDIRECTEFFECT(*,*)"
     res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
     ests = res.parameter_estimates
     e0_init = pd.Series({'POP_B': 5.75, 'IIV_B': 0.01, 'sigma': 0.33})
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
     pkpd_models = create_pkpd_models(
-        model, e0_init, ests, emax_init=2.0, ec50_init=1.0, mat_init=0.5
+        model, search_space, e0_init, ests, emax_init=2.0, ec50_init=1.0, mat_init=0.5
     )
 
     assert len(pkpd_models) == 12
@@ -89,7 +90,7 @@ def test_pkpd(load_model_for_test, testdata):
     assert pkpd_models[3].parameters['POP_MET'].init == 0.5
     assert pkpd_models[6].parameters['POP_MET'].init == 0.5
 
-    models3 = create_pkpd_models(model)
+    models3 = create_pkpd_models(model, search_space)
     assert models3[1].parameters['POP_E_MAX'].init == 0.1
     assert models3[1].parameters['POP_E_MAX'].fix is False
     assert models3[1].parameters['POP_EC_50'].init == 0.1

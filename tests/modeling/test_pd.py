@@ -17,7 +17,7 @@ def S(x):
 
 @pytest.mark.parametrize(
     'pd_model',
-    [('baseline'), ('linear'), ('Emax'), ('sigmoid'), ('step'), ('loglin')],
+    [('baseline'), ('linear'), ('emax'), ('sigmoid'), ('step'), ('loglin')],
 )
 def test_set_direct_effect(load_model_for_test, pd_model, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
@@ -27,7 +27,7 @@ def test_set_direct_effect(load_model_for_test, pd_model, testdata):
 
 @pytest.mark.parametrize(
     'pd_model',
-    [('baseline'), ('linear'), ('Emax'), ('sigmoid'), ('step'), ('loglin')],
+    [('baseline'), ('linear'), ('emax'), ('sigmoid'), ('step'), ('loglin')],
 )
 def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
@@ -64,7 +64,7 @@ def _test_effect_models(model, expr, conc):
         assert model.statements[0] == Assignment(S("SLOPE"), S("POP_SLOPE"))
         assert model.statements.after_odes[-2] == Assignment(e, e0 * (1 + S("SLOPE") * conc))
         assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
-    elif expr == "Emax":
+    elif expr == "emax":
         assert model.statements[0] == Assignment(ec50, S("POP_EC_50"))
         assert model.statements[2] == Assignment(e0, S("POP_B"))
         assert model.statements[1] == Assignment(emax, S("POP_E_MAX"))
@@ -109,10 +109,10 @@ def _test_effect_models(model, expr, conc):
     'prod, expr',
     [
         (True, 'linear'),
-        (True, 'Emax'),
+        (True, 'emax'),
         (True, 'sigmoid'),
         (False, 'linear'),
-        (False, 'Emax'),
+        (False, 'emax'),
         (False, 'sigmoid'),
     ],
 )

@@ -1,12 +1,9 @@
-from itertools import product
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.modeling import (
-    add_effect_compartment,
     add_iiv,
-    add_indirect_effect,
     fix_parameters_to,
     set_direct_effect,
     set_initial_estimates,
@@ -14,6 +11,9 @@ from pharmpy.modeling import (
     set_name,
     unconstrain_parameters,
 )
+from pharmpy.tools.mfl.helpers import funcs, structsearch_pd_features
+
+from ..mfl.parse import parse as mfl_parse
 
 
 def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: Optional[float] = None):
@@ -45,12 +45,12 @@ def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: Optional[flo
 
 def create_pkpd_models(
     model: Model,
+    search_space: str,
     b_init: Optional[Union[int, float]] = None,
     ests: pd.Series = None,
     emax_init: Optional[Union[int, float]] = None,
     ec50_init: Optional[Union[int, float]] = None,
     mat_init: Optional[Union[int, float]] = None,
-    response_type: Union[str, List] = 'all',
 ):
     """Create pkpd models
 
@@ -58,6 +58,8 @@ def create_pkpd_models(
     ----------
     model : Model
         Pharmpy PK model
+    search_space : str
+        search space for pkpd models
     b_init : float
        Initial estimate for baseline
     ests : pd.Series
@@ -68,40 +70,20 @@ def create_pkpd_models(
         Initial estimate for EC_50
     mat_init : float
         Initial estimate for MAT (mean equilibration time)
-    response_type : str
-        Type of model (e.g. direct effect)
 
     Returns
     -------
     List of pharmpy models
     """
-
-    if response_type == 'all':
-        models_list = ['direct', 'effect_compartment', 'indirect']
-    elif isinstance(response_type, str):
-        models_list = [response_type]
-    elif isinstance(response_type, list):
-        models_list = response_type
-
-    pd_types = ["linear", "Emax", "sigmoid"]
+    mfl_statements = mfl_parse(search_space)
+    functions = funcs(model, mfl_statements, structsearch_pd_features)
 
     models = []
-    for modeltype in models_list:
-        if modeltype in ['direct', 'effect_compartment']:
-            for pd_type in pd_types:
-                pkpd_model = _create_model(model, modeltype, expr=pd_type)
-                pkpd_model = pkpd_model.replace(description=f"{modeltype}_{pd_type}")
-                models.append(pkpd_model)
-        elif modeltype == 'indirect':
-            for pd_type, is_production in list(product(pd_types, [True, False])):
-                pkpd_model = add_indirect_effect(model, pd_type, is_production)
-                if is_production:
-                    pkpd_model = pkpd_model.replace(description=f"{modeltype}_{pd_type}_production")
-                else:
-                    pkpd_model = pkpd_model.replace(
-                        description=f"{modeltype}_{pd_type}_degradation"
-                    )
-                models.append(pkpd_model)
+    for key, func in functions.items():
+        pkpd_model = func
+        description = '_'.join(key)
+        pkpd_model = pkpd_model.replace(description=description)
+        models.append(pkpd_model)
 
     final_models = []
     for index, pkpd_model in enumerate(models, 1):
@@ -138,14 +120,6 @@ def create_pkpd_models(
         final_models.append(pkpd_model)
 
     return final_models
-
-
-def _create_model(model, modeltype, expr):
-    if modeltype == 'direct':
-        model = set_direct_effect(model, expr)
-    elif modeltype == 'effect_compartment':
-        model = add_effect_compartment(model, expr)
-    return model
 
 
 def create_pk_model(model: Model):

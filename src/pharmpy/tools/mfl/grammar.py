@@ -25,7 +25,8 @@ _statement: definition | _feature
 
 definition: "LET"i "(" VARIABLE_NAME "," values ")"
 
-_feature: absorption | elimination | peripherals | transits | lagtime | covariate
+_feature: absorption | elimination | peripherals | transits | lagtime
+            | covariate | direct_effect | effect_comp | indirect_effect
 
 absorption: "ABSORPTION"i "(" (_absorption_option) ")"
 elimination: "ELIMINATION"i "(" (_elimination_option) ")"
@@ -33,6 +34,20 @@ peripherals: "PERIPHERALS"i "(" (_counts) ")"
 transits: "TRANSITS"i "(" _counts ["," _depot_option] ")"
 lagtime: "LAGTIME"i "(" (_lagtime_option) ")"
 covariate: "COVARIATE"i "(" parameter_option "," covariate_option "," fp_option ["," op_option] ")"
+
+direct_effect: "DIRECTEFFECT"i "(" (_pdtype_option) ")"
+effect_comp: "EFFECTCOMP"i "(" (_pdtype_option) ")"
+indirect_effect: "INDIRECTEFFECT"i "(" _pdtype_option "," _production_option ")"
+
+_pdtype_option: pdtype_modes | pdtype_wildcard
+pdtype_modes: PDTYPE_MODE | "[" [PDTYPE_MODE ("," PDTYPE_MODE)*] "]"
+PDTYPE_MODE: "linear"i | "Emax"i | "sigmoid"i
+pdtype_wildcard: WILDCARD
+
+_production_option: production_modes | production_wildcard
+production_modes: PRODUCTION_MODE
+PRODUCTION_MODE: "production"i | "degradation"i
+production_wildcard: WILDCARD
 
 _absorption_option: absorption_modes | absorption_wildcard
 absorption_modes: ABSORPTION_MODE | "[" [ABSORPTION_MODE ("," ABSORPTION_MODE)*] "]"
