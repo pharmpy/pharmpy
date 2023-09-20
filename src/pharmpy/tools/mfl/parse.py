@@ -435,7 +435,27 @@ class ModelFeatures:
         )
 
 
-def get_model_features(model: Model, supress_warnings=False) -> str:
+def get_model_features(model: Model, supress_warnings: bool = False) -> str:
+    """Create an MFL representation of an input model
+
+    Given an input model. Create a model feature language (MFL) string
+    representation. Can currently extract absorption, elimination, transits,
+    peripherals and lagtime.
+
+    Parameters
+    ----------
+    model : Model
+        Model to extract features from.
+    supress_warnings : TYPE, optional
+        Choose to supress warnings if absorption/elimination type cannot be
+        determined. The default is False.
+
+    Returns
+    -------
+    str
+        A MFL string representation of the input model.
+
+    """
     # ABSORPTION
     absorption = None
     if has_seq_zo_fo_absorption(model):
