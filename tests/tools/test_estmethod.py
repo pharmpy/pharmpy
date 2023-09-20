@@ -48,15 +48,15 @@ def test_algorithm(algorithm, methods, solvers, parameter_uncertainty_methods, n
         ),
     ],
 )
-def test_create_est_model(load_model_for_test, pheno_path, method, est_rec, eval_rec):
+def test_create_candidate_model(load_model_for_test, pheno_path, method, est_rec, eval_rec):
     model = load_model_for_test(pheno_path)
     assert len(model.estimation_steps) == 1
-    est_model = _create_candidate_model(
+    candidate_model = _create_candidate_model(
         method, None, None, model=model, update_inits=False, only_evaluation=False
     )
-    assert len(est_model.estimation_steps) == 2
-    assert est_model.model_code.split('\n')[-5] == est_rec
-    assert est_model.model_code.split('\n')[-4] == eval_rec
+    assert len(candidate_model.estimation_steps) == 2
+    assert candidate_model.model_code.split('\n')[-5] == est_rec
+    assert candidate_model.model_code.split('\n')[-4] == eval_rec
 
 
 @pytest.mark.parametrize(
