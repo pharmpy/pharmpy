@@ -52,7 +52,7 @@ def test_create_est_model(load_model_for_test, pheno_path, method, est_rec, eval
     model = load_model_for_test(pheno_path)
     assert len(model.estimation_steps) == 1
     est_model = _create_candidate_model(
-        method, None, None, model=model, update=False, is_eval_candidate=False
+        method, None, None, model=model, update_inits=False, is_eval_candidate=False
     )
     assert len(est_model.estimation_steps) == 2
     assert est_model.model_code.split('\n')[-5] == est_rec

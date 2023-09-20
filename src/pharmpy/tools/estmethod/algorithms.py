@@ -17,7 +17,7 @@ def exhaustive(methods, solvers, parameter_uncertainty_methods):
         methods, solvers, parameter_uncertainty_methods
     ):
         wf_estmethod = _create_candidate_model_wf(
-            candidate_no, method, solver, parameter_uncertainty_method, update=False
+            candidate_no, method, solver, parameter_uncertainty_method, update_inits=False
         )
         wb.insert_workflow(wf_estmethod, predecessors=task_start)
         candidate_no += 1
@@ -42,14 +42,14 @@ def exhaustive_with_update(methods, solvers, parameter_uncertainty_methods):
         if not (method == 'FOCE' and solver is None):
             # Create model with original estimates
             wf_estmethod_original = _create_candidate_model_wf(
-                candidate_no, method, solver, parameter_uncertainty_method, update=False
+                candidate_no, method, solver, parameter_uncertainty_method, update_inits=False
             )
             wb.insert_workflow(wf_estmethod_original, predecessors=task_base_model_fit)
             candidate_no += 1
 
         # Create model with updated estimates from FOCE
         wf_estmethod_update = _create_candidate_model_wf(
-            candidate_no, method, solver, parameter_uncertainty_method, update=True
+            candidate_no, method, solver, parameter_uncertainty_method, update_inits=True
         )
         wb.insert_workflow(wf_estmethod_update, predecessors=task_base_model_fit)
         candidate_no += 1
@@ -72,7 +72,7 @@ def exhaustive_only_eval(methods, solvers, parameter_uncertainty_methods):
             method,
             solver,
             parameter_uncertainty_method,
-            update=False,
+            update_inits=False,
             is_eval_candidate=True,
         )
         wb.insert_workflow(wf_estmethod, predecessors=task_start)
@@ -86,7 +86,12 @@ def start(model):
 
 
 def _create_candidate_model_wf(
-    candidate_no, method, solver, parameter_uncertainty_method, update, is_eval_candidate=False
+    candidate_no,
+    method,
+    solver,
+    parameter_uncertainty_method,
+    update_inits,
+    is_eval_candidate=False,
 ):
     wb = WorkflowBuilder()
 
@@ -94,7 +99,7 @@ def _create_candidate_model_wf(
     task_copy = Task('copy_model', _copy_model, model_name)
     wb.add_task(task_copy)
 
-    if update:
+    if update_inits:
         task_update_inits = Task('update_inits', update_initial_estimates)
         wb.add_task(task_update_inits, predecessors=task_copy)
         task_prev = task_update_inits
@@ -106,7 +111,7 @@ def _create_candidate_model_wf(
         method,
         solver,
         parameter_uncertainty_method,
-        update,
+        update_inits,
         is_eval_candidate,
     )
     wb.add_task(task_create_candidate, predecessors=task_prev)
@@ -134,7 +139,7 @@ def _create_base_model(model):
             [est_method, eval_method],
             parameter_uncertainty_method=parameter_uncertainty_method,
             solver=None,
-            update=False,
+            update_inits=False,
         )
     )
 
@@ -147,7 +152,7 @@ def _create_base_model(model):
 
 
 def _create_candidate_model(
-    method, solver, parameter_uncertainty_method, update, is_eval_candidate, model
+    method, solver, parameter_uncertainty_method, update_inits, is_eval_candidate, model
 ):
     est_settings = _create_est_settings(method, is_eval_candidate)
     laplace = True if method == 'LAPLACE' else False
@@ -159,7 +164,7 @@ def _create_candidate_model(
             [method, eval_method],
             solver=solver,
             parameter_uncertainty_method=parameter_uncertainty_method,
-            update=update,
+            update_inits=update_inits,
         )
     )
 
@@ -214,12 +219,12 @@ def _create_eval_settings(laplace=False, parameter_uncertainty_method=None):
     return eval_settings
 
 
-def _create_description(methods, solver, parameter_uncertainty_method, update=False):
+def _create_description(methods, solver, parameter_uncertainty_method, update_inits=False):
     model_description = ','.join(methods)
     if solver:
         model_description += f';{solver}'
     if parameter_uncertainty_method:
         model_description += f';{parameter_uncertainty_method}'
-    if update:
-        model_description += ' (update)'
+    if update_inits:
+        model_description += ' (update_inits)'
     return model_description
