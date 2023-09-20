@@ -230,3 +230,34 @@ def bracket(a):
         a[i] = '⎪' + a[i]
     a[-1] = '⎩' + a[-1]
     return '\n'.join(a) + '\n'
+
+
+def _character_to_superscript(ch: str) -> str:
+    if ch == "0":
+        return "⁰"
+    elif ch == "1":
+        return "¹"
+    elif ch == "2":
+        return "²"
+    elif ch == "3":
+        return "³"
+    elif ch == "4":
+        return "⁴"
+    elif ch == "5":
+        return "⁵"
+    elif ch == "6":
+        return "⁶"
+    elif ch == "7":
+        return "⁷"
+    elif ch == "8":
+        return "⁸"
+    elif ch == "9":
+        return "⁹"
+    elif ch == "-":
+        return "⁻"
+    else:
+        return ""
+
+
+def int_to_superscript(x: int) -> str:
+    return ''.join(_character_to_superscript(d) for d in str(x))
