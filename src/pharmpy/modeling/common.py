@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
 import pharmpy.config as config
+from pharmpy.deps import pandas
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import (
     CompartmentalSystem,
@@ -651,15 +652,33 @@ def rename_symbols(
     # FIXME: Only handles parameters, statements and random_variables and no clashes and circular renaming
 
 
-def filter_dataset(model, dv=1):
-    """Filter dataset and only keep rows with dv = dv.
-    Returns a model object
+def filter_dataset(model: Model, expr: str):
+    """Filter dataset according to expr.
+
+    Example: expr = "DVID == 1" will filter the dataset so that
+    only the rows with DVID = 1 remain.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    expr : str
+        expression for dataset query
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
     """
     original_dataset = model.dataset
-    new_dataset = original_dataset[original_dataset["DVID"] == dv]
-    new_model = model.replace(
-        dataset=new_dataset,
-        description=model.description + ". Filtered dataset.",
-        name=model.name + "_filtered",
-    )
+    new_model = None
+    try:
+        new_dataset = original_dataset.query(expr)
+        new_model = model.replace(
+            dataset=new_dataset,
+            description=model.description + ". Filtered dataset.",
+            name=model.name + "_filtered",
+        )
+    except pandas.errors.UndefinedVariableError:
+        warnings.warn(""" The expression is invalid""")
     return new_model

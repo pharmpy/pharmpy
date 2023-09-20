@@ -11,6 +11,7 @@ from pharmpy.modeling import (
     convert_model,
     create_basic_pk_model,
     create_joint_distribution,
+    filter_dataset,
     fix_parameters,
     get_config_path,
     get_model_code,
@@ -145,3 +146,10 @@ def test_remove_unused_parameters_and_rvs(load_model_for_test, pheno_path):
     model = model.replace(statements=model.statements[0:i] + model.statements[i + 1 :])
     model = remove_unused_parameters_and_rvs(model)
     assert len(model.random_variables['ETA_2'].names) == 1
+
+
+def test_filter_dataset(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem/pheno_pd.mod')
+    assert 2 in model.dataset['DVID'].values
+    model_filtered = filter_dataset(model, 'DVID == 1')
+    assert 2 not in model_filtered.dataset['DVID'].values
