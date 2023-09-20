@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, overload
 
 from .parse import parse as parse_expr
 from .subs import subs
@@ -7,6 +7,16 @@ if TYPE_CHECKING:
     import sympy
 else:
     from pharmpy.deps import sympy
+
+
+@overload
+def parse(s: Union[str, sympy.Expr]) -> sympy.Expr:
+    ...
+
+
+@overload
+def parse(s: sympy.Basic) -> sympy.Basic:
+    ...
 
 
 def parse(s: Union[str, sympy.Expr, sympy.Basic]) -> Union[sympy.Expr, sympy.Basic]:

@@ -228,7 +228,6 @@ class ColumnInfo(Immutable):
             unit = sympy.Integer(unit)
         else:
             unit = parse_units(unit)
-        assert isinstance(unit, sympy.Expr)
         if datatype not in ColumnInfo._all_dtypes:
             raise ValueError(
                 f"{datatype} is not a valid datatype. Valid datatypes are {ColumnInfo._all_dtypes}"
