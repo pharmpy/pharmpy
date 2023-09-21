@@ -248,6 +248,13 @@ MFL support the following model features:
 | COVARIATE     | `parameter`, `covariate`,     | Covariate effects                                                  |
 |               | `effect`                      |                                                                    |
 +---------------+-------------------------------+--------------------------------------------------------------------+
+| DIRECTEFFECT  | `model`                       | Direct effect PD models.                                           |
++---------------+-------------------------------+--------------------------------------------------------------------+
+| EFFECTCOMP    | `model`                       | Effect comprtment PD models.                                       |
++---------------+-------------------------------+--------------------------------------------------------------------+
+| INDIRECTEFFECT| `model`, `option`             | Indirect effect PD models. `option` can be                         |
+|               |                               | either production or degradation.                                  |
++---------------+-------------------------------+--------------------------------------------------------------------+
 
 
 .. _mfl_symbols:
@@ -259,23 +266,29 @@ The MFL supports certain automatically defined symbols that help with
 automating feature declaration. Currently, the only use of such symbols lies in
 declaring covariate effects via the syntax `COVARIATE(@SYMBOL, ...)`.
 
-+-----------------+-------------+---------------------------------------------+
-| Symbol          | Type        | Description of automatic definition         |
-+=================+=============+=============================================+
-| `@IIV`          | Parameter   | All parameters with a corresponding IIV ETA |
-+-----------------+-------------+---------------------------------------------+
-| `@ABSORPTION`   | Parameter   | All PK absorption parameters                |
-+-----------------+-------------+---------------------------------------------+
-| `@ELIMINATION`  | Parameter   | All PK elimination parameters               |
-+-----------------+-------------+---------------------------------------------+
-| `@DISTRIBUTION` | Parameter   | All PK distribution parameters              |
-+-----------------+-------------+---------------------------------------------+
-| `@BIOAVAIL`     | Parameter   | All bioavailability parameters              |
-+-----------------+-------------+---------------------------------------------+
-| `@CONTINUOUS`   | Covariate   | All continuous covariates                   |
-+-----------------+-------------+---------------------------------------------+
-| `@CATEGORICAL`  | Covariate   | All categorical covariates                  |
-+-----------------+-------------+---------------------------------------------+
++-----------------+-------------+------------------------------------------------+
+| Symbol          | Type        | Description of automatic definition            |
++=================+=============+================================================+
+| `@IIV`          | Parameter   | All parameters with a corresponding IIV ETA    |
++-----------------+-------------+------------------------------------------------+
+| `@PK_IIV`       | Parameter   | All PK parameters with a corresponding IIV ETA |
++-----------------+-------------+------------------------------------------------+
+| `@PD_IIV`       | Parameter   | All PD parameters with a corresponding IIV ETA |
++-----------------+-------------+------------------------------------------------+
+| `@PD`           | Parameter   | All PD parameters                              |
++-----------------+-------------+------------------------------------------------+
+| `@ABSORPTION`   | Parameter   | All PK absorption parameters                   |
++-----------------+-------------+------------------------------------------------+
+| `@ELIMINATION`  | Parameter   | All PK elimination parameters                  |
++-----------------+-------------+------------------------------------------------+
+| `@DISTRIBUTION` | Parameter   | All PK distribution parameters                 |
++-----------------+-------------+------------------------------------------------+
+| `@BIOAVAIL`     | Parameter   | All bioavailability parameters                 |
++-----------------+-------------+------------------------------------------------+
+| `@CONTINUOUS`   | Covariate   | All continuous covariates                      |
++-----------------+-------------+------------------------------------------------+
+| `@CATEGORICAL`  | Covariate   | All categorical covariates                     |
++-----------------+-------------+------------------------------------------------+
 
 
 New symbols can be manually defined via the syntax `LET(SYMBOL, [...])`. The
@@ -394,3 +407,10 @@ All continuous covariate effects of WGT on distribution parameters:
 .. code::
 
    COVARIATE(@DISTRIBUTION, WGT, *)
+
+Example for a PD model search space:
+
+.. code::
+
+    DIRECTEFFECT([linear, emax])
+    EFFECTCOMP(*)
