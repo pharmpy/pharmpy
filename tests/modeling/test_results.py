@@ -56,9 +56,9 @@ def test_calculate_individual_parameter_statistics(load_model_for_test, testdata
         rng=rng,
     )
 
-    assert stats['mean'][0] == pytest.approx(0.004700589484324183)
-    assert stats['variance'][0] == pytest.approx(8.086653508585209e-06)
-    assert stats['stderr'][0] == pytest.approx(0.0035089729730046304, abs=1e-6)
+    assert stats['mean'].iloc[0] == pytest.approx(0.004700589484324183)
+    assert stats['variance'].iloc[0] == pytest.approx(8.086653508585209e-06)
+    assert stats['stderr'].iloc[0] == pytest.approx(0.0035089729730046304, abs=1e-6)
 
     model = load_model_for_test(testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod')
@@ -70,9 +70,9 @@ def test_calculate_individual_parameter_statistics(load_model_for_test, testdata
         res.covariance_matrix,
         rng=rng,
     )
-    assert stats['mean'][0] == pytest.approx(0.0049100899539843)
-    assert stats['variance'][0] == pytest.approx(7.391076132098555e-07)
-    assert stats['stderr'][0] == pytest.approx(0.0009425952783595735, abs=1e-6)
+    assert stats['mean'].iloc[0] == pytest.approx(0.0049100899539843)
+    assert stats['variance'].iloc[0] == pytest.approx(7.391076132098555e-07)
+    assert stats['stderr'].iloc[0] == pytest.approx(0.0009425952783595735, abs=1e-6)
 
     covmodel = load_model_for_test(testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod')

@@ -35,7 +35,7 @@ def _df_read_json(obj) -> pd.DataFrame:
             row['time'] = pd.to_datetime(row['time']).tz_localize(None)
             row['time'] = row['time'].isoformat()
 
-    return pd.read_json(json.dumps(obj), typ='frame', orient='table', precise_float=True)
+    return pd.read_json(StringIO(json.dumps(obj)), typ='frame', orient='table', precise_float=True)
 
 
 def _multi_index_read_json(obj) -> pd.MultiIndex:

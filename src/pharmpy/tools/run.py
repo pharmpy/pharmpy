@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union, get_type_hints
@@ -933,7 +934,15 @@ def summarize_modelfit_results(
             summary.insert(0, 'description', res.description)
             summaries.append(summary)
 
-    df = pd.concat(summaries)
+    with warnings.catch_warnings():
+        # Needed because of warning in pandas 2.1.1
+        warnings.filterwarnings(
+            "ignore",
+            message="The behavior of DataFrame concatenation with empty or all-NA entries is deprecated",
+            category=FutureWarning,
+        )
+
+        df = pd.concat(summaries)
 
     return df
 

@@ -203,6 +203,11 @@ class ResultsJSONEncoder(json.JSONEncoder):
                     message=".*iteritems is deprecated and will be removed in a future version. Use .items instead.",
                     category=FutureWarning,
                 )
+                warnings.filterwarnings(
+                    "ignore",
+                    message=".*the convert_dtype parameter is deprecated",
+                    category=FutureWarning,
+                )
                 d = obj.to_dict()
             d['__module__'] = obj.__class__.__module__
             d['__class__'] = obj.__class__.__qualname__

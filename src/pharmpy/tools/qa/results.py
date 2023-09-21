@@ -136,6 +136,8 @@ def influential_individuals(cdd_res):
     influentials = pd.DataFrame({'delta_ofv': df['delta_ofv']}, index=skipped)
     influentials.index.name = 'ID'
     top_three = influentials.sort_values(by=['delta_ofv']).iloc[:3]
+    if len(top_three) == 0:
+        return None, dofv_tab
     dofv_tab = pd.DataFrame(
         {
             'section': ['influential_individuals'] * len(top_three),

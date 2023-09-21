@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
@@ -414,9 +415,13 @@ def _create_failed_ofv_iterations(n: int):
 def create_ofv_iterations_series(ofv, steps, iterations):
     step_series = pd.Series(steps, dtype='int32', name='steps')
     iteration_series = pd.Series(iterations, dtype='int32', name='iteration')
-    ofv_iterations = pd.Series(
-        ofv, name='OFV', dtype='float64', index=[step_series, iteration_series]
-    )
+    with warnings.catch_warnings():
+        # Needed because pandas 2.1.1 uses the _data attribute that it
+        # also has deprecated
+        warnings.simplefilter("ignore")
+        ofv_iterations = pd.Series(
+            ofv, name='OFV', dtype='float64', index=[step_series, iteration_series]
+        )
     return ofv_iterations
 
 
