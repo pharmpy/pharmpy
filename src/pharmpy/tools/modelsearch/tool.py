@@ -224,8 +224,7 @@ def create_base_model(ss, model):
     lnt = model_mfl.least_number_of_transformations(ss)
     for name, func in lnt.items():
         base = func(base)
-        added_features = f';{name[0]}({name[1]})'
-
+        added_features += f';{name[0]}({name[1]})'
     # UPDATE_DESCRIPTION
     # FIXME : Need to be its own parent if the input model shouldn't be ranked with the others
     base = base.replace(name="BASE", description=added_features[1:], parent_model="BASE")
