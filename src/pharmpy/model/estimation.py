@@ -471,7 +471,7 @@ class EstimationSteps(Sequence, Immutable):
         niter = [s.niter for s in self._steps]
         auto = [s.auto for s in self._steps]
         keep_every_nth_iter = [s.keep_every_nth_iter for s in self._steps]
-        tool_options = [dict(s.tool_options) if s.tool_options else None for s in self._steps]
+        tool_options = [dict(s.tool_options) if s.tool_options else dict() for s in self._steps]
         df = pd.DataFrame(
             {
                 'method': method,
