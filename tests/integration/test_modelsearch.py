@@ -13,7 +13,7 @@ from pharmpy.workflows import ModelDatabase
 def test_exhaustive(tmp_path, model_count, start_model):
     with chdir(tmp_path):
         res = run_modelsearch(
-            'ABSORPTION(ZO);PERIPHERALS(1)',
+            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
             'exhaustive',
             results=start_model.modelfit_results,
             model=start_model,
@@ -36,14 +36,14 @@ def test_exhaustive(tmp_path, model_count, start_model):
     'search_space, no_of_models, last_model_parent_name, model_with_error, ref',
     [
         (
-            'ABSORPTION(ZO);PERIPHERALS(1)',
+            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
             4,
             'modelsearch_run2',
             'modelsearch_run3',
             ('modelsearch_run2', ['PERIPHERALS(1)', 'VP1 = ']),
         ),
         (
-            'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);PERIPHERALS([0,1])',
             7,
             'modelsearch_run3',
             'modelsearch_run5',
@@ -108,9 +108,9 @@ def test_exhaustive_stepwise_basic(
 @pytest.mark.parametrize(
     'search_space, iiv_strategy, no_of_models, no_of_added_etas',
     [
-        ('ABSORPTION(ZO);PERIPHERALS(1)', 'add_diagonal', 4, 2),
-        ('ABSORPTION(ZO);PERIPHERALS(1)', 'fullblock', 4, 2),
-        ('PERIPHERALS(1);LAGTIME()', 'absorption_delay', 4, 1),
+        ('ABSORPTION([FO,ZO]);PERIPHERALS([0,1])', 'add_diagonal', 4, 2),
+        ('ABSORPTION([FO,ZO]);PERIPHERALS([0,1])', 'fullblock', 4, 2),
+        ('ABSORPTION(FO);PERIPHERALS([0,1]);LAGTIME([OFF,ON])', 'absorption_delay', 4, 1),
     ],
 )
 def test_exhaustive_stepwise_iiv_strategies(
@@ -177,7 +177,7 @@ def test_exhaustive_stepwise_iiv_strategies(
 def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_model):
     with chdir(tmp_path):
         res = run_modelsearch(
-            'PERIPHERALS(1)',
+            'PERIPHERALS([0,1])',
             'exhaustive_stepwise',
             results=start_model.modelfit_results,
             model=start_model,
