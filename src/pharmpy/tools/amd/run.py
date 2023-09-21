@@ -5,10 +5,12 @@ from typing import Callable, List, Optional, Tuple, Union
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Model, Results
+from pharmpy.modeling import plot_dv_vs_ipred
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.parameter_variability import get_occasion_levels
+from pharmpy.reporting import generate_report
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import retrieve_final_model, summarize_errors, write_results
 from pharmpy.tools.allometry.tool import validate_allometric_variable
@@ -331,16 +333,30 @@ def run_amd(
             'a summary.'
         )
 
-    summary_errors = summarize_errors(next_model.modelfit_results)
+    final_model = next_model
+    final_results = next_model.modelfit_results
+    summary_errors = summarize_errors(final_results)
+    if final_results.predictions is not None:
+        dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions)
+    else:
+        dv_vs_ipred_plot = None
     res = AMDResults(
-        final_model=next_model.name,
+        final_model=final_model.name,
         summary_tool=summary_tool,
         summary_models=summary_models,
         summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
+        final_model_dv_vs_ipred_plot=dv_vs_ipred_plot,
     )
-    write_results(results=res, path=db.path / 'results.json')
+    # Since we are outside of the regular tools machinery the following is needed
+    results_path = db.path / 'results.json'
+    write_results(results=res, path=results_path)
     write_results(results=res, path=db.path / 'results.csv', csv=True)
+    rst_path = Path(__file__).parent / 'report.rst'
+    target_path = db.path / 'results.html'
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        generate_report(rst_path, results_path, target_path)
     return res
 
 
