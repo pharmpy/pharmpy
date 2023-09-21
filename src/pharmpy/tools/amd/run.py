@@ -274,8 +274,8 @@ def run_amd(
     # Filter data to only contain dvid=1
     if modeltype == "drug_metabolite":
         orig_dataset = model.dataset
-        # FIXME : remove alongside create_pk_model
-        model = create_pk_model(model)
+        # FIXME : remove
+        model = filter_dataset(model, 'DVID == 1')
 
     if results is None:
         model = run_tool('modelfit', model, path=db.path / 'modelfit', resume=resume)
