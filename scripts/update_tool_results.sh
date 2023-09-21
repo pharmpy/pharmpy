@@ -91,7 +91,7 @@ if [ "$TOOL" == 'ruvsearch' ] || [ "$TOOL" == 'all' ]; then
 fi
 
 if [ "$TOOL" == 'amd' ] || [ "$TOOL" == 'all' ]; then
-  pharmpy run amd $TESTPATH/moxo_simulated_amd.csv --modeltype 'pk_oral' --search_space 'PERIPHERALS(1);LET(CATEGORICAL, [SEX]);LET(CONTINUOUS, [AGE])' --occasion 'VISI' --allometric_variable 'WT' --path $TESTPATH/amd/
+  pharmpy run amd $TESTPATH/moxo_simulated_amd.csv --modeltype 'basic_pk' --administration 'oral' --search_space 'PERIPHERALS(1);LET(CATEGORICAL, [SEX]);LET(CONTINUOUS, [AGE])' --occasion 'VISI' --allometric_variable 'WT' --path $TESTPATH/amd/
   cp_results $TESTPATH/amd/results.json $DEST/amd_results.json
 fi
 
