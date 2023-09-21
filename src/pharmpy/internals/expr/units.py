@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Union, overload
+from typing import TYPE_CHECKING, Union
 
 from ..unicode import int_to_superscript
 from .parse import parse as parse_expr
@@ -11,18 +11,12 @@ else:
     from pharmpy.deps import sympy, sympy_printing
 
 
-@overload
-def parse(s: Union[str, sympy.Expr]) -> sympy.Expr:
-    ...
-
-
-@overload
-def parse(s: sympy.Basic) -> sympy.Basic:
-    ...
-
-
-def parse(s: Union[str, sympy.Expr, sympy.Basic]) -> Union[sympy.Expr, sympy.Basic]:
-    return subs(parse_expr(s), _unit_subs(), simultaneous=True) if isinstance(s, str) else s
+def parse(s: Union[str, int, float, sympy.Basic]) -> sympy.Basic:
+    return (
+        subs(parse_expr(s), _unit_subs(), simultaneous=True)
+        if not isinstance(s, sympy.Basic)
+        else s
+    )
 
 
 _unit_subs_cache = None

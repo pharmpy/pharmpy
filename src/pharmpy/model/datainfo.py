@@ -5,18 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Literal,
-    Mapping,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union, cast, overload
 
 from pharmpy.internals.expr.units import parse as parse_units
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
@@ -159,7 +148,7 @@ class ColumnInfo(Immutable):
         self,
         name: str,
         type: str = 'unknown',
-        unit: sympy.Expr = sympy.Integer(1),
+        unit: sympy.Basic = sympy.Integer(1),
         scale: str = 'ratio',
         continuous: Optional[bool] = None,
         categories: Optional[Union[frozenmapping[str, str], tuple[str, ...]]] = None,
@@ -199,7 +188,7 @@ class ColumnInfo(Immutable):
         cls,
         name: str,
         type: str = 'unknown',
-        unit: Optional[Union[str, Literal[1], sympy.Expr]] = None,
+        unit: Optional[Union[str, int, float, sympy.Basic]] = None,
         scale: str = 'ratio',
         continuous: Optional[bool] = None,
         categories: Optional[Union[Mapping[str, str], Sequence[str]]] = None,
@@ -224,8 +213,6 @@ class ColumnInfo(Immutable):
             )
         if unit is None:
             unit = sympy.Integer(1)
-        elif unit == 1:
-            unit = sympy.Integer(unit)
         else:
             unit = parse_units(unit)
         if datatype not in ColumnInfo._all_dtypes:
@@ -369,7 +356,7 @@ class ColumnInfo(Immutable):
         return self._descriptor
 
     @property
-    def unit(self) -> sympy.Expr:
+    def unit(self) -> sympy.Basic:
         """Unit of the column data
 
         Custom units are allowed, but units that are available in sympy.physics.units can be
