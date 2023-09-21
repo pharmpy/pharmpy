@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import overload
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Union, overload
 
-from pharmpy.deps import pandas as pd
 from pharmpy.internals.immutable import Immutable, frozenmapping
+
+if TYPE_CHECKING:
+    import pandas as pd
+else:
+    from pharmpy.deps import pandas as pd
 
 
 class EstimationStep(Immutable):
@@ -18,24 +22,24 @@ class EstimationStep(Immutable):
 
     def __init__(
         self,
-        method,
-        interaction=False,
-        parameter_uncertainty_method=None,
-        evaluation=False,
-        maximum_evaluations=None,
-        laplace=False,
-        isample=None,
-        niter=None,
-        auto=None,
-        keep_every_nth_iter=None,
-        residuals=None,
-        predictions=None,
-        solver=None,
-        solver_rtol=None,
-        solver_atol=None,
-        tool_options=None,
-        eta_derivatives=None,
-        epsilon_derivatives=None,
+        method: str,
+        interaction: bool = False,
+        parameter_uncertainty_method: Optional[str] = None,
+        evaluation: bool = False,
+        maximum_evaluations: Optional[int] = None,
+        laplace: bool = False,
+        isample: Optional[int] = None,
+        niter: Optional[int] = None,
+        auto: Optional[bool] = None,
+        keep_every_nth_iter: Optional[int] = None,
+        residuals: Optional[tuple[str, ...]] = None,
+        predictions: Optional[tuple[str, ...]] = None,
+        solver: Optional[str] = None,
+        solver_rtol: Optional[int] = None,
+        solver_atol: Optional[int] = None,
+        tool_options: Optional[frozenmapping[str, Any]] = None,
+        eta_derivatives: Optional[tuple[str, ...]] = None,
+        epsilon_derivatives: Optional[tuple[str, ...]] = None,
     ):
         self._method = method
         self._interaction = interaction
@@ -59,24 +63,24 @@ class EstimationStep(Immutable):
     @classmethod
     def create(
         cls,
-        method,
-        interaction=False,
-        parameter_uncertainty_method=None,
-        evaluation=False,
-        maximum_evaluations=None,
-        laplace=False,
-        isample=None,
-        niter=None,
-        auto=None,
-        keep_every_nth_iter=None,
-        residuals=None,
-        predictions=None,
-        solver=None,
-        solver_rtol=None,
-        solver_atol=None,
-        tool_options=None,
-        eta_derivatives=None,
-        epsilon_derivatives=None,
+        method: str,
+        interaction: bool = False,
+        parameter_uncertainty_method: Optional[str] = None,
+        evaluation: bool = False,
+        maximum_evaluations: Optional[int] = None,
+        laplace: bool = False,
+        isample: Optional[int] = None,
+        niter: Optional[int] = None,
+        auto: Optional[bool] = None,
+        keep_every_nth_iter: Optional[int] = None,
+        residuals: Optional[Sequence[str]] = None,
+        predictions: Optional[Sequence[str]] = None,
+        solver: Optional[str] = None,
+        solver_rtol: Optional[int] = None,
+        solver_atol: Optional[int] = None,
+        tool_options: Optional[Mapping[str, Any]] = None,
+        eta_derivatives: Optional[Sequence[str]] = None,
+        epsilon_derivatives: Optional[Sequence[str]] = None,
     ):
         method = EstimationStep._canonicalize_and_check_method(method)
         if maximum_evaluations is not None and maximum_evaluations < 1:
@@ -151,7 +155,7 @@ class EstimationStep(Immutable):
         return new
 
     @staticmethod
-    def _canonicalize_and_check_method(method):
+    def _canonicalize_and_check_method(method: str):
         method = method.upper()
         if method not in EstimationStep.supported_methods:
             raise ValueError(
@@ -324,6 +328,10 @@ class EstimationStep(Immutable):
         )
 
     def to_dict(self):
+        if self._tool_options:
+            tool_options = dict(self._tool_options)
+        else:
+            tool_options = self._tool_options  # self._tool_options is None
         return {
             'method': self._method,
             'interaction': self._interaction,
@@ -338,12 +346,13 @@ class EstimationStep(Immutable):
             'solver': self._solver,
             'solver_rtol': self._solver_rtol,
             'solver_atol': self._solver_atol,
-            'tool_options': dict(self._tool_options),
+            'tool_options': tool_options,
         }
 
     @classmethod
-    def from_dict(cls, d):
-        d['tool_options'] = frozenmapping(d['tool_options'])
+    def from_dict(cls, d: dict[str, Any]):
+        if isinstance(d['tool_options'], dict):
+            d['tool_options'] = frozenmapping(d['tool_options'])
         return cls(**d)
 
     def __repr__(self):
@@ -373,11 +382,11 @@ class EstimationSteps(Sequence, Immutable):
         Used for initialization
     """
 
-    def __init__(self, steps=()):
+    def __init__(self, steps: tuple[EstimationStep, ...] = ()):
         self._steps = steps
 
     @classmethod
-    def create(cls, steps=None):
+    def create(cls, steps: Optional[Sequence[EstimationStep]] = None):
         if steps is None:
             steps = ()
         else:
@@ -396,7 +405,7 @@ class EstimationSteps(Sequence, Immutable):
     def __getitem__(self, i: slice) -> EstimationSteps:
         ...
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: Union[int, slice]):
         if isinstance(i, slice):
             return EstimationSteps(self._steps[i])
         return self._steps[i]
@@ -433,7 +442,7 @@ class EstimationSteps(Sequence, Immutable):
         return {'steps': tuple(step.to_dict() for step in self._steps)}
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict[str, Any]):
         return cls(steps=tuple(EstimationStep.from_dict(s) for s in d['steps']))
 
     def to_dataframe(self):
@@ -462,7 +471,7 @@ class EstimationSteps(Sequence, Immutable):
         niter = [s.niter for s in self._steps]
         auto = [s.auto for s in self._steps]
         keep_every_nth_iter = [s.keep_every_nth_iter for s in self._steps]
-        tool_options = [dict(s.tool_options) for s in self._steps]
+        tool_options = [dict(s.tool_options) if s.tool_options else None for s in self._steps]
         df = pd.DataFrame(
             {
                 'method': method,
