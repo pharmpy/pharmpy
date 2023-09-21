@@ -32,22 +32,22 @@ def create_workflow(
 ):
     """Run estmethod tool.
 
-     Parameters
-     ----------
-     algorithm : str
+    Parameters
+    ----------
+    algorithm : str
          The algorithm to use (can be 'exhaustive', 'exhaustive_with_update' or 'exhaustive_only_eval')
     methods : list or None
          List of estimation methods to test.
          Can be specified as 'all', a list of estimation methods, or None (to not test any estimation method)
-     solvers : list, str or None
+    solvers : list, str or None
          List of solver to test. Can be specified as 'all', a list of solvers, or None (to
          not test any solver)
-     parameter_uncertainty_methods : list, str or None
+    parameter_uncertainty_methods : list, str or None
          List of parameter uncertainty methods to test.
          Can be specified as 'all', a list of uncertainty methods, or None (to not evaluate any uncertainty)
-     results : ModelfitResults
+    results : ModelfitResults
          Results for model
-     model : Model
+    model : Model
          Pharmpy model
 
     Returns
