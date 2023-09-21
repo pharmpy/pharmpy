@@ -272,6 +272,12 @@ def run_amd(
                 f"Unrecognized section {section} in order. Must be one of {default_order}"
             )
 
+    # Filter data to only contain dvid=1
+    if modeltype == "drug_metabolite":
+        orig_dataset = model.dataset
+        # FIXME : remove alongside create_pk_model
+        model = create_pk_model(model)
+
     if results is None:
         model = run_tool('modelfit', model, path=db.path / 'modelfit', resume=resume)
     else:
@@ -280,13 +286,8 @@ def run_amd(
     sum_subtools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
     sum_subtools.append(_create_sum_subtool('start', model))
     for tool_name, func in run_subfuncs.items():
-        if modeltype == 'drug_metabolite':
-            # FIXME : remove alongside create_pk_model
-            if tool_name == "modelsearch":
-                # Filter data to only contain dvid=1
-                next_model = create_pk_model(next_model)
-            elif tool_name == "structsearch":
-                next_model = next_model.replace(dataset=model.dataset)
+        if modeltype == 'drug_metabolite' and tool_name == "structsearch":
+            next_model = next_model.replace(dataset=orig_dataset)
         subresults = func(next_model)
         if subresults is None:
             sum_models.append(None)
