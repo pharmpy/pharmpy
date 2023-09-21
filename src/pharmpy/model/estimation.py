@@ -147,7 +147,7 @@ class EstimationStep(Immutable):
             epsilon_derivatives=epsilon_derivatives,
         )
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> EstimationStep:
         """Derive a new EstimationStep with new properties"""
         d = {key[1:]: value for key, value in self.__dict__.items()}
         d.update(kwargs)
@@ -155,7 +155,7 @@ class EstimationStep(Immutable):
         return new
 
     @staticmethod
-    def _canonicalize_and_check_method(method: str):
+    def _canonicalize_and_check_method(method: str) -> str:
         method = method.upper()
         if method not in EstimationStep.supported_methods:
             raise ValueError(
@@ -164,27 +164,27 @@ class EstimationStep(Immutable):
         return method
 
     @property
-    def method(self):
+    def method(self) -> str:
         """Name of the estimation method"""
         return self._method
 
     @property
-    def maximum_evaluations(self):
+    def maximum_evaluations(self) -> Union[int, None]:
         """Maximum allowable number of evaluations of the objective function"""
         return self._maximum_evaluations
 
     @property
-    def interaction(self):
+    def interaction(self) -> bool:
         """Preserve eta-epsilon interaction in the computation of the objective function"""
         return self._interaction
 
     @property
-    def evaluation(self):
+    def evaluation(self) -> bool:
         """Only perform model evaluation"""
         return self._evaluation
 
     @property
-    def parameter_uncertainty_method(self):
+    def parameter_uncertainty_method(self) -> Union[str, None]:
         """Method to use when estimating parameter uncertainty
         Supported methods and their corresponding NMTRAN code:
 
@@ -206,42 +206,42 @@ class EstimationStep(Immutable):
         return self._parameter_uncertainty_method
 
     @property
-    def laplace(self):
+    def laplace(self) -> bool:
         """Use the laplacian method"""
         return self._laplace
 
     @property
-    def isample(self):
+    def isample(self) -> Union[int, None]:
         """Number of samples per subject (or similar) for EM methods"""
         return self._isample
 
     @property
-    def niter(self):
+    def niter(self) -> Union[int, None]:
         """Number of iterations for EM methods"""
         return self._niter
 
     @property
-    def auto(self):
+    def auto(self) -> Union[bool, None]:
         """Let estimation tool automatically add settings"""
         return self._auto
 
     @property
-    def keep_every_nth_iter(self):
+    def keep_every_nth_iter(self) -> Union[int, None]:
         """Keep results for every nth iteration"""
         return self._keep_every_nth_iter
 
     @property
-    def residuals(self):
+    def residuals(self) -> Union[tuple[str, ...], None]:
         """List of residuals to calculate"""
         return self._residuals
 
     @property
-    def predictions(self):
+    def predictions(self) -> Union[tuple[str, ...], None]:
         """List of predictions to estimate"""
         return self._predictions
 
     @property
-    def solver(self):
+    def solver(self) -> Union[str, None]:
         """Numerical solver to use when numerically solving the ODE system
         Supported solvers and their corresponding NONMEM ADVAN
 
@@ -264,27 +264,27 @@ class EstimationStep(Immutable):
         return self._solver
 
     @property
-    def solver_rtol(self):
+    def solver_rtol(self) -> Union[int, None]:
         """Relative tolerance for numerical ODE system solver"""
         return self._solver_rtol
 
     @property
-    def solver_atol(self):
+    def solver_atol(self) -> Union[int, None]:
         """Absolute tolerance for numerical ODE system solver"""
         return self._solver_atol
 
     @property
-    def eta_derivatives(self):
+    def eta_derivatives(self) -> Union[tuple[str, ...], None]:
         """List of names of etas for which to calculate derivatives"""
         return self._eta_derivatives
 
     @property
-    def epsilon_derivatives(self):
+    def epsilon_derivatives(self) -> Union[tuple[str, ...], None]:
         """List of names of epsilons for which to calculate derivatives"""
         return self._epsilon_derivatives
 
     @property
-    def tool_options(self):
+    def tool_options(self) -> Union[frozenmapping[str, Any], None]:
         """Dictionary of tool specific options"""
         return self._tool_options
 
@@ -327,7 +327,7 @@ class EstimationStep(Immutable):
             )
         )
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         if self._tool_options:
             tool_options = dict(self._tool_options)
         else:
@@ -350,7 +350,7 @@ class EstimationStep(Immutable):
         }
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]):
+    def from_dict(cls, d: dict[str, Any]) -> EstimationStep:
         if isinstance(d['tool_options'], dict):
             d['tool_options'] = frozenmapping(d['tool_options'])
         return cls(**d)
@@ -393,7 +393,7 @@ class EstimationSteps(Sequence, Immutable):
             steps = tuple(steps)
         return EstimationSteps(steps=steps)
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> EstimationSteps:
         steps = kwargs.get('steps', self._steps)
         return EstimationSteps.create(steps)
 
@@ -405,12 +405,12 @@ class EstimationSteps(Sequence, Immutable):
     def __getitem__(self, i: slice) -> EstimationSteps:
         ...
 
-    def __getitem__(self, i: Union[int, slice]):
+    def __getitem__(self, i: Union[int, slice]) -> Union[EstimationStep, EstimationSteps]:
         if isinstance(i, slice):
             return EstimationSteps(self._steps[i])
         return self._steps[i]
 
-    def __add__(self, other):
+    def __add__(self, other) -> EstimationSteps:
         if isinstance(other, EstimationSteps):
             return EstimationSteps(self._steps + other._steps)
         elif isinstance(other, EstimationStep):
@@ -418,7 +418,7 @@ class EstimationSteps(Sequence, Immutable):
         else:
             return EstimationSteps(self._steps + tuple(other))
 
-    def __radd__(self, other):
+    def __radd__(self, other) -> EstimationSteps:
         if isinstance(other, EstimationStep):
             return EstimationSteps((other,) + self._steps)
         else:
@@ -438,14 +438,14 @@ class EstimationSteps(Sequence, Immutable):
     def __hash__(self):
         return hash(self._steps)
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return {'steps': tuple(step.to_dict() for step in self._steps)}
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]):
+    def from_dict(cls, d: dict[str, Any]) -> EstimationSteps:
         return cls(steps=tuple(EstimationStep.from_dict(s) for s in d['steps']))
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> pd.DataFrame:
         """Convert to DataFrame
 
         Use this to create an overview of all estimation steps
