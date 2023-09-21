@@ -30,7 +30,7 @@ ipython==8.15.0
 ipywidgets==8.1.1
 jedi==0.19.0
 Jinja2==3.1.2
-jsonschema==4.19.0
+jsonschema==4.19.1
 jsonschema-specifications==2023.7.1
 jupyter-client==8.3.1
 jupyter-core==5.3.1
