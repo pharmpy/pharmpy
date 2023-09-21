@@ -246,6 +246,7 @@ def run_amd(args):
     run_amd(
         args.input_path,
         modeltype=args.modeltype,
+        administration=args.administration,
         cl_init=args.cl_init,
         vc_init=args.vc_init,
         mat_init=args.mat_init,
@@ -1319,8 +1320,14 @@ parser_definition = [
                             {
                                 'name': '--modeltype',
                                 'type': str,
-                                'default': 'pk_oral',
-                                'help': 'Type of model to build. Either "pk_oral" or "pk_iv"',
+                                'default': 'basic_pk',
+                                'help': 'Type of model to build. Currently only "basic_pk"',
+                            },
+                            {
+                                'name': '--administration',
+                                'type': str,
+                                'default': 'oral',
+                                'help': 'Type of model to build. One of "iv", "oral" or "ivoral"',
                             },
                             {
                                 'name': '--cl_init',
