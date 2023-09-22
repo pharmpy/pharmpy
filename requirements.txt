@@ -46,7 +46,7 @@ matplotlib-inline==0.1.6
 mdurl==0.1.2
 mistune==3.0.1
 mpmath==1.3.0
-msgpack==1.0.5
+msgpack==1.0.6
 nbclient==0.8.0
 nbconvert==7.8.0
 nbformat==5.9.2
