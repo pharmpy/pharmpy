@@ -1505,9 +1505,7 @@ def has_first_order_absorption(model: Model):
 
     """
 
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     dosing = odes.dosing_compartments[0]
     central = odes.central_compartment
     if dosing == central:
@@ -1537,9 +1535,7 @@ def has_bolus_absorption(model: Model):
     -------
         Bool : True if model has bolus absorption
     """
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     dosing = odes.dosing_compartments[0]
     central = odes.central_compartment
     if dosing != central:
@@ -1565,9 +1561,6 @@ def has_seq_zo_fo_absorption(model: Model):
     has_first_order_absorption
 
     """
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
     if has_zero_order_absorption(model) and has_first_order_absorption(model):
         return True
     else:
@@ -1589,10 +1582,7 @@ def number_of_peripheral_compartments(model: Model):
         Number of peripherals compartments
     """
     # Redundant function ?
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
-
+    odes = get_and_check_odes(model)
     return len(odes.find_peripheral_compartments())
 
 
@@ -1610,10 +1600,7 @@ def number_of_transit_compartments(model: Model):
         Number of transit compartments
     """
     # Redundant function ?
-    odes = model.statements.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
-
+    odes = get_and_check_odes(model)
     return len(odes.find_transit_compartments(model.statements))
 
 
