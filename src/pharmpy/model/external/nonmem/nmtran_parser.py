@@ -89,14 +89,14 @@ class NMTranControlStream:
         self._active_problem = 0
         self.abbreviated = Abbreviated(self)
 
-    def get_records(self, name):
+    def get_records(self, name, problem_no=0):
         """Return a list of all records of a certain type in the current $PROBLEM"""
         current_problem = -1
         found = []
         for record in self.records:
             if record.name == 'PROBLEM':
                 current_problem += 1
-            if current_problem == self._active_problem and record.name == name:
+            if current_problem == problem_no and record.name == name:
                 found.append(record)
         return found
 
