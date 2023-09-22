@@ -18,7 +18,7 @@ class EstimationStep(Immutable):
     """
     supported_methods = frozenset(('FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'))
     supported_solvers = frozenset(('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'))
-    supported_parameter_uncertainty_methods = frozenset(('SANDWICH', 'CPG', 'OFIM'))
+    supported_parameter_uncertainty_methods = frozenset(('SANDWICH', 'CPG', 'OFIM', 'EFIM'))
 
     def __init__(
         self,
@@ -196,6 +196,8 @@ class EstimationStep(Immutable):
         | Cross-product gradient     | $COVARIANCE MATRIX=S  |
         +----------------------------+-----------------------+
         | Observed FIM               | $COVARIANCE MATRIX=R  |
+        +----------------------------+-----------------------+
+        | Expected FIM               | $DESIGN               |
         +----------------------------+-----------------------+
 
         by default the following options are appended:

@@ -100,11 +100,40 @@ def test_add_parameter_uncertainty_step(testdata, load_model_for_test):
         model.model_code.split('\n')[-2] == '$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1'
     )
 
+    model = remove_parameter_uncertainty_step(model)
+
+    model = add_parameter_uncertainty_step(model, "EFIM")
+    assert len(model.estimation_steps) == 1
+    assert (
+        "$ESTIMATION METHOD=COND INTER MAXEVAL=9990 PRINT=2 POSTHOC MSFO=efim.msf\n"
+        "$PROBLEM DESIGN\n"
+        "$DATA file.csv IGNORE=@ REWIND\n"
+        "$INPUT ID DV TIME\n"
+        "$MSFI efim.msf\n"
+        "$DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1\n" in model.model_code
+    )
+
 
 def test_remove_parameter_uncertainty_step(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     model = add_parameter_uncertainty_step(model, 'SANDWICH')
     assert model.model_code.split('\n')[-2] == '$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1'
+    model = remove_parameter_uncertainty_step(model)
+    assert (
+        model.model_code.split('\n')[-2]
+        == '$ESTIMATION METHOD=COND INTER MAXEVAL=9990 PRINT=2 POSTHOC'
+    )
+
+    model = add_parameter_uncertainty_step(model, "EFIM")
+    assert len(model.estimation_steps) == 1
+    assert (
+        "$ESTIMATION METHOD=COND INTER MAXEVAL=9990 PRINT=2 POSTHOC MSFO=efim.msf\n"
+        "$PROBLEM DESIGN\n"
+        "$DATA file.csv IGNORE=@ REWIND\n"
+        "$INPUT ID DV TIME\n"
+        "$MSFI efim.msf\n"
+        "$DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1\n" in model.model_code
+    )
     model = remove_parameter_uncertainty_step(model)
     assert (
         model.model_code.split('\n')[-2]

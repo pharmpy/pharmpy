@@ -1395,7 +1395,7 @@ def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
 def define_parameter(
     model: Model, name: str, value: sympy.Expr, synonyms: Optional[List[str]] = None
 ):
-    """Define a parameter in statments if not defined
+    """Define a parameter in statements if not defined
     Update if already defined as other value
     return True if new assignment was added
     """
@@ -1480,6 +1480,44 @@ def update_abbr_record(model: Model, rv_trans):
 
     model = model.replace(internals=model.internals.replace(control_stream=control_stream))
     return model, trans
+
+
+def add_efim_records(control_stream, idx_cov, last_est_rec):
+    data_record = str(control_stream.get_records("DATA")[0]).rstrip()
+    input_record = str(control_stream.get_records("INPUT")[0]).rstrip()
+    efim_records = [
+        "$PROBLEM DESIGN",
+        f"{data_record} REWIND",
+        f"{input_record}",
+        "$MSFI efim.msf",
+        "$DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1",
+    ]
+
+    for i, rec in enumerate(efim_records, start=1):
+        new_record = create_record(f"{rec}\n")
+        control_stream = control_stream.insert_record(new_record, at_index=idx_cov + i)
+
+    last_est_rec_msfo = last_est_rec.append_option("MSFO", "efim.msf")
+    control_stream = control_stream.replace_records([last_est_rec], [last_est_rec_msfo])
+
+    return control_stream
+
+
+def add_covariance_record(control_stream, idx_cov, method):
+    method_to_cov = {
+        "SANDWICH": "$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1",
+        "CPG": "$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1",
+        "OFIM": "$COVARIANCE MATRIX=R UNCONDITIONAL PRINT=E PRECOND=1",
+    }
+
+    try:
+        covrec_str = method_to_cov[method]
+        covrec = create_record(covrec_str + "\n")
+        control_stream = control_stream.insert_record(covrec, at_index=idx_cov + 1)
+    except KeyError:
+        raise ValueError(f"Unsupported parameter uncertainty method: {method}")
+
+    return control_stream
 
 
 def update_estimation(control_stream, model):
@@ -1584,21 +1622,29 @@ def update_estimation(control_stream, model):
         new_parameter_uncertainty_method = est.parameter_uncertainty_method
 
     if old_parameter_uncertainty_method is None and new_parameter_uncertainty_method is not None:
-        # Add $COVARIANCE
+        # Add parameter uncertainty step
         last_est_rec = control_stream.get_records('ESTIMATION')[-1]
         idx_cov = control_stream.records.index(last_est_rec)
-        if new_parameter_uncertainty_method == 'SANDWICH':
-            covrec_ = '$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1'
-        elif new_parameter_uncertainty_method == 'CPG':
-            covrec_ = '$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1'
-        elif new_parameter_uncertainty_method == 'OFIM':
-            covrec_ = '$COVARIANCE MATRIX=R UNCONDITIONAL PRINT=E PRECOND=1'
-        covrec = create_record(f'{covrec_}\n')
-        control_stream = control_stream.insert_record(covrec, at_index=idx_cov + 1)
+
+        if new_parameter_uncertainty_method == "EFIM":
+            control_stream = add_efim_records(control_stream, idx_cov, last_est_rec)
+        else:
+            control_stream = add_covariance_record(
+                control_stream, idx_cov, new_parameter_uncertainty_method
+            )
+
     elif old_parameter_uncertainty_method is not None and new_parameter_uncertainty_method is None:
-        # Remove $COVARIANCE
-        covrecs = control_stream.get_records('COVARIANCE')
-        control_stream = control_stream.remove_records(covrecs)
+        if old_parameter_uncertainty_method == "EFIM":
+            record_types = ["PROBLEM", "DATA", "INPUT", "MSFI", "DESIGN"]
+
+            # Reverse order to preserve $PROBLEM records for correct identification.
+            for rec_type in reversed(record_types):
+                last_rec = control_stream.get_records(rec_type, problem_no=1)[-1]
+                control_stream = control_stream.remove_records([last_rec])
+
+        else:
+            covrecs = control_stream.get_records('COVARIANCE')
+            control_stream = control_stream.remove_records(covrecs)
 
     # Update $TABLE
     # Currently only adds if did not exist before
