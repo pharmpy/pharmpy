@@ -11,11 +11,13 @@ from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.parameter_variability import get_occasion_levels
 from pharmpy.reporting import generate_report
-from pharmpy.tools import retrieve_final_model, summarize_errors, write_results
+from pharmpy.results import ModelfitResults
+from pharmpy.tools import retrieve_final_model, retrieve_models, summarize_errors, write_results
 from pharmpy.tools.allometry.tool import validate_allometric_variable
 from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
 from pharmpy.tools.mfl.feature.covariate import spec as covariate_spec
 from pharmpy.tools.mfl.filter import covsearch_statement_types, modelsearch_statement_types
+from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate, Ref
@@ -65,7 +67,7 @@ def run_amd(
     results : ModelfitResults
         Reults of input if input is a model
     modeltype : str
-        Type of model to build. Valid strings are 'basic_pk', 'pkpd', 'drug_metabolite'
+        Type of model to build. Valid strings are 'basic_pk', 'pkpd', 'drug_metabolite' and 'tmdd'
     administration : str
         Route of administration. Either 'iv', 'oral' or 'ivoral'
     cl_init : float
@@ -122,7 +124,7 @@ def run_amd(
 
     if administration not in ['iv', 'oral', 'ivoral']:
         raise ValueError(f'Invalid input: "{administration}" as administration is not supported')
-    if modeltype not in ['basic_pk', 'pkpd', 'drug_metabolite']:
+    if modeltype not in ['basic_pk', 'pkpd', 'drug_metabolite', 'tmdd']:
         raise ValueError(f'Invalid input: "{modeltype}" as modeltype is not supported')
 
     if modeltype == 'pkpd':
@@ -236,6 +238,14 @@ def run_amd(
                     emax_init=emax_init,
                     ec50_init=ec50_init,
                     met_init=met_init,
+                    path=db.path,
+                )
+                run_subfuncs['structsearch'] = func
+            elif modeltype == 'tmdd':
+                func = _subfunc_structsearch_tmdd(
+                    route=administration,
+                    search_space=modelsearch_features,
+                    type=modeltype,
                     path=db.path,
                 )
                 run_subfuncs['structsearch'] = func
@@ -437,6 +447,50 @@ def _subfunc_structsearch(path, **kwargs) -> SubFunc:
         return res
 
     return _run_structsearch
+
+
+def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
+    def _run_structsearch_tmdd(model):
+        res = run_tool(
+            'modelsearch',
+            search_space=mfl_stringify(search_space),
+            algorithm='reduced_stepwise',
+            model=model,
+            path=path / 'modelsearch',
+        )
+        final_model = res.final_model
+        n_peripherals = len(final_model.statements.ode_system.find_peripheral_compartments())
+        modelfeatures = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
+        # Model features - 1 peripheral compartment
+        modelfeatures_minus = modelfeatures.replace(peripherals=Peripherals((n_peripherals - 1,)))
+        # Loop through all models and find one with same features
+        models = [
+            model.name
+            for model in res.models
+            if ModelFeatures.create_from_mfl_string(get_model_features(model))
+            == modelfeatures_minus
+        ]
+        # Find highest ranked model
+        rank_all_dict = res.summary_tool.dropna().to_dict()['rank']
+        rank_dict = {key: rank_all_dict[key] for key in models if key in rank_all_dict}
+        if len(rank_dict) > 0:
+            highest_ranked = min(rank_dict, key=rank_dict.get)
+            extra_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
+        else:
+            extra_model = None
+
+        res = run_tool(
+            'structsearch',
+            model=final_model,
+            extra_model=extra_model,
+            **kwargs,
+            path=path / 'structsearch',
+        )
+        assert isinstance(res, Results)
+        print(res)
+        return res
+
+    return _run_structsearch_tmdd
 
 
 def _subfunc_iiv(iiv_strategy, path) -> SubFunc:

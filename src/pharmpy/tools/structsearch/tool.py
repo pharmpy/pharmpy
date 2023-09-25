@@ -30,6 +30,7 @@ def create_workflow(
     met_init: Optional[Union[int, float]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
+    extra_model=None,
 ):
     """Run the structsearch tool. For more details, see :ref:`structsearch`.
 
@@ -68,7 +69,7 @@ def create_workflow(
 
     wb = WorkflowBuilder(name="structsearch")
     if type == 'tmdd':
-        start_task = Task('run_tmdd', run_tmdd, model)
+        start_task = Task('run_tmdd', run_tmdd, model, extra_model)
     elif type == 'pkpd':
         start_task = Task(
             'run_pkpd', run_pkpd, model, b_init, emax_init, ec50_init, met_init, search_space
@@ -79,14 +80,17 @@ def create_workflow(
     return Workflow(wb)
 
 
-def run_tmdd(context, model):
-    qss_candidate_models = create_qss_models(model)
+def run_tmdd(context, model, extra_model):
+    if extra_model is not None:
+        qss_candidate_models = create_qss_models(model) + create_qss_models(extra_model, index=9)
+    else:
+        qss_candidate_models = create_qss_models(model)
 
     wf = create_fit_workflow(qss_candidate_models)
+    wb = WorkflowBuilder(wf)
     task_results = Task('results', bundle_results)
-    # FIXME : wf (Workflow) has no attribute called add_task
-    wf.add_task(task_results, predecessors=wf.output_tasks)
-    qss_run_models = call_workflow(wf, 'results_QSS', context)
+    wb.add_task(task_results, predecessors=wf.output_tasks)
+    qss_run_models = call_workflow(Workflow(wb), 'results_QSS', context)
 
     ofvs = [m.modelfit_results.ofv for m in qss_run_models]
     minindex = ofvs.index(np.nanmin(ofvs))
@@ -94,9 +98,10 @@ def run_tmdd(context, model):
 
     models = create_remaining_models(model, best_qss_model.modelfit_results.parameter_estimates)
     wf2 = create_fit_workflow(models)
+    wb2 = WorkflowBuilder(wf2)
     task_results = Task('results', bundle_results)
-    wf.add_task(task_results, predecessors=wf2.output_tasks)
-    run_models = call_workflow(wf, 'results_remaining', context)
+    wb2.add_task(task_results, predecessors=wf2.output_tasks)
+    run_models = call_workflow(Workflow(wb2), 'results_remaining', context)
 
     summary_input = summarize_modelfit_results(model.modelfit_results)
     summary_candidates = summarize_modelfit_results(
@@ -114,7 +119,7 @@ def run_tmdd(context, model):
     )
 
 
-def run_pkpd(context, model, b_init, emax_init, ec50_init, met_init, search_space):
+def run_pkpd(context, model, b_init, **kwargs):
     baseline_pd_model = create_baseline_pd_model(
         model, model.modelfit_results.parameter_estimates, b_init
     )
@@ -129,9 +134,7 @@ def run_pkpd(context, model, b_init, emax_init, ec50_init, met_init, search_spac
         search_space,
         b_init,
         model.modelfit_results.parameter_estimates,
-        emax_init,
-        ec50_init,
-        met_init,
+        **kwargs,
     )
 
     wf2 = create_fit_workflow(pkpd_models)
