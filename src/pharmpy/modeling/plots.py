@@ -252,3 +252,63 @@ def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
     )
 
     return chart + line
+
+
+def plot_cwres_vs_idv(model: Model, residuals: pd.DataFrame) -> alt.Chart:
+    """Plot CWRES vs idv
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    residuals : pd.DataFrame
+        DataFrame containing CWRES
+
+    Returns
+    -------
+    alt.Chart
+        Plot
+    """
+
+    if 'CWRES' not in residuals.columns:
+        raise ValueError("CWRES not available in residuals")
+    di = model.datainfo
+    idv = di.idv_column.name
+    idv_unit = di.idv_column.unit
+    dv_unit = di.dv_column.unit
+    idname = di.id_column.name
+
+    df = residuals[['CWRES']].reset_index()
+
+    if dv_unit == 1:
+        cwres_unit_string = ""
+    else:
+        cwres_unit_string = f" ({unit_string(dv_unit)})"
+
+    if idv_unit == 1:
+        time_unit_string = ""
+    else:
+        time_unit_string = f" ({unit_string(idv_unit)})"
+
+    chart = (
+        alt.Chart(df)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X(idv).title(f"Time{time_unit_string}"),
+            y=alt.Y('CWRES').title(f"CWRES{cwres_unit_string}"),
+            detail='ID:N',
+            tooltip=['CWRES', idv, idname],
+        )
+        .properties(title="Conditional weighted residuals vs. time", width=600, height=300)
+        .interactive()
+    )
+
+    zero_line = alt.Chart().mark_rule().encode(y=alt.datum(0), color=alt.value("#000000"))
+    loess_smooth = (
+        chart.transform_loess(idv, 'CWRES').mark_line().encode(color=alt.value("#FF0000"))
+    )
+
+    layer = chart + loess_smooth + zero_line
+    layer = layer.configure_point(size=60)
+
+    return layer

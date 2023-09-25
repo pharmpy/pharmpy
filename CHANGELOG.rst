@@ -5,6 +5,7 @@ New features
 ============
 
 * Add modeling.plot_dv_vs_ipred
+* Add modeling.plot_cwres_vs_idv
 
 Changes
 =======

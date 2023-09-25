@@ -1,4 +1,5 @@
 from pharmpy.modeling import (
+    plot_cwres_vs_idv,
     plot_dv_vs_ipred,
     plot_individual_predictions,
     plot_iofv_vs_iofv,
@@ -35,4 +36,11 @@ def test_plot_dv_vs_ipred(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
     plot = plot_dv_vs_ipred(model, res.predictions)
+    assert plot
+
+
+def test_plot_cwres_vs_idv(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    plot = plot_cwres_vs_idv(model, res.residuals)
     assert plot
