@@ -10,7 +10,8 @@ from pharmpy.tools import run_estmethod
         ('exhaustive', ['foce', 'imp'], None, 2, 'ADVAN2'),
         ('exhaustive_only_eval', ['foce', 'imp'], None, 2, 'ADVAN2'),
         ('exhaustive', ['foce'], ['sandwich', 'cpg'], 2, 'ADVAN2'),
-        ('exhaustive_with_update', ['foce'], ['sandwich', 'cpg'], 3, 'ADVAN2'),
+        ('exhaustive_with_update', ['foce'], ['sandwich', 'cpg'], 4, 'ADVAN2'),
+        ('exhaustive_with_update', ['imp'], ['sandwich', 'cpg'], 5, 'ADVAN2'),
     ],
 )
 def test_estmethod(

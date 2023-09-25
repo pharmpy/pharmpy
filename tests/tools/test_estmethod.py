@@ -12,6 +12,7 @@ from pharmpy.tools.estmethod.tool import SOLVERS, create_workflow, validate_inpu
         ('exhaustive', ['foce', 'imp'], ['lsoda'], None, 2),
         ('exhaustive', ['foce'], 'all', None, len(SOLVERS)),
         ('exhaustive_with_update', ['foce'], None, None, 2),
+        ('exhaustive_with_update', ['foce'], None, 'all', 6),
         ('exhaustive_with_update', ['foce', 'laplace'], None, None, 4),
         ('exhaustive_with_update', ['laplace'], None, None, 3),
         ('exhaustive_with_update', ['foce'], ['lsoda'], None, 3),
