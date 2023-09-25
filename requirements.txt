@@ -21,7 +21,7 @@ distributed==2023.9.2
 docutils==0.20.1
 executing==1.2.0
 fastjsonschema==2.18.0
-fsspec==2023.9.1
+fsspec==2023.9.2
 idna==3.4
 imagesize==1.4.1
 importlib_metadata==6.8.0
