@@ -227,13 +227,14 @@ def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
 
     chart = (
         alt.Chart(df)
-        .mark_circle(size=100)
+        .mark_line(point=True, opacity=0.7)
         .encode(
-            alt.X(ipred).title(f"Individual prediction{unit}"),
-            alt.Y(dv).title(f"Observation{unit}"),
+            x=alt.X(ipred).title(f"Individual prediction{unit}"),
+            y=alt.Y(dv).title(f"Observation{unit}"),
+            detail=f"{idname}:N",
             tooltip=[ipred, dv, idname, idv],
         )
-        .properties(title="Observations vs. Individual predictions")
+        .properties(title="Observations vs. Individual predictions", width=600, height=300)
         .interactive()
     )
 
@@ -244,14 +245,15 @@ def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
             )
         )
         .mark_line()
-        .encode(
-            alt.X('var1'),
-            alt.Y('var2'),
-        )
-        .interactive()
+        .encode(x=alt.X('var1'), y=alt.Y('var2'), color=alt.value("#000000"))
     )
 
-    return chart + line
+    loess_smooth = chart.transform_loess(ipred, dv).mark_line().encode(color=alt.value("#FF0000"))
+
+    layer = chart + loess_smooth + line
+    layer = layer.configure_point(size=60)
+
+    return layer
 
 
 def plot_cwres_vs_idv(model: Model, residuals: pd.DataFrame) -> alt.Chart:
