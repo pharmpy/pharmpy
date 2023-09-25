@@ -460,6 +460,10 @@ def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
         )
         final_model = res.final_model
         n_peripherals = len(final_model.statements.ode_system.find_peripheral_compartments())
+<<<<<<< HEAD
+=======
+        # Get model features
+>>>>>>> 7a02c675 (Fix merge conflicts + small changes)
         modelfeatures = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
         # Model features - 1 peripheral compartment
         modelfeatures_minus = modelfeatures.replace(peripherals=Peripherals((n_peripherals - 1,)))
