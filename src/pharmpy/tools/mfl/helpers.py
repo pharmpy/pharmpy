@@ -6,8 +6,11 @@ from pharmpy.model import Model
 
 from .feature.absorption import features as absorption_features
 from .feature.covariate import features as covariate_features
+from .feature.direct_effect import features as direct_effect_features
+from .feature.effect_comp import features as effect_comp_features
 from .feature.elimination import features as elimination_features
 from .feature.feature import Feature, FeatureFn, FeatureKey
+from .feature.indirect_effect import features as indirect_effect_features
 from .feature.lagtime import features as lagtime_features
 from .feature.peripherals import features as peripherals_features
 from .feature.transits import features as transits_features
@@ -22,16 +25,14 @@ modelsearch_features = (
     peripherals_features,
     lagtime_features,
 )
+structsearch_pd_features = (direct_effect_features, effect_comp_features, indirect_effect_features)
 
 
 def all_funcs(model: Model, statements: Iterable[Statement]):
     return funcs(
         model,
         statements,
-        (
-            *modelsearch_features,
-            covariate_features,
-        ),
+        (*modelsearch_features, covariate_features, *structsearch_pd_features),
     )
 
 

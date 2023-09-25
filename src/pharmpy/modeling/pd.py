@@ -43,7 +43,7 @@ def add_effect_compartment(model: Model, expr: str):
     model : Model
         Pharmpy model
     expr : str
-        Name of the PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step and loglin
+        Name of the PD effect function. Valid names are: baseline, linear, emax, sigmoid, step and loglin
 
     Return
     ------
@@ -115,7 +115,7 @@ def set_direct_effect(model: Model, expr: str):
     model : Model
         Pharmpy model
     expr : str
-        Name of PD effect function. Valid names are: baseline, linear, Emax, sigmoid, step and loglin
+        Name of PD effect function. Valid names are: baseline, linear, emax, sigmoid, step and loglin
 
     Return
     ------
@@ -156,10 +156,10 @@ def _get_central_volume_and_cl(model):
 def _add_effect(model: Model, expr: str, conc):
     e0 = sympy.Symbol("B")
     model = add_individual_parameter(model, e0.name)
-    if expr in ["Emax", "sigmoid", "step"]:
+    if expr in ["emax", "sigmoid", "step"]:
         emax = sympy.Symbol("E_MAX")
         model = add_individual_parameter(model, emax.name)
-    if expr in ["Emax", "sigmoid"]:
+    if expr in ["emax", "sigmoid"]:
         ec50 = sympy.Symbol("EC_50")
         model = add_individual_parameter(model, ec50.name)
 
@@ -170,7 +170,7 @@ def _add_effect(model: Model, expr: str, conc):
         s = sympy.Symbol("SLOPE")
         model = add_individual_parameter(model, s.name)
         E = Assignment(sympy.Symbol('E'), e0 * (1 + (s * conc)))
-    elif expr == "Emax":
+    elif expr == "emax":
         E = Assignment(sympy.Symbol("E"), e0 * (1 + (emax * conc / (ec50 + conc))))
     elif expr == "step":
         E = Assignment(sympy.Symbol("E"), sympy.Piecewise((e0, conc <= 0), (e0 * (1 + emax), True)))
@@ -237,7 +237,7 @@ def add_indirect_effect(
     prod : bool
         Production (True) (default) or degradation (False)
     expr : str
-        Name of PD effect function. Valid names are: linear, Emax, sigmoid and step
+        Name of PD effect function. Valid names are: linear, emax, sigmoid and step
 
     Return
     ------
@@ -274,7 +274,7 @@ def add_indirect_effect(
         s = sympy.Symbol("SLOPE")
         model = add_individual_parameter(model, s.name)
         R = sympy.Symbol("SLOPE") * conc_c
-    elif expr == 'Emax':
+    elif expr == 'emax':
         emax = sympy.Symbol("E_MAX")
         model = add_individual_parameter(model, emax.name)
         ec50 = sympy.Symbol("EC_50")

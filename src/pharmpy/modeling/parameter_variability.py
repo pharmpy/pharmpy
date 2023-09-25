@@ -490,7 +490,7 @@ def add_pd_iiv(model: Model, initial_estimate: float = 0.09):
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = set_direct_effect(model, 'Emax')
+    >>> model = set_direct_effect(model, 'emax')
     >>> model.statements.find_assignment("EC_50")
     EC₅₀ = POP_EC_50
     >>> model = add_pd_iiv(model)

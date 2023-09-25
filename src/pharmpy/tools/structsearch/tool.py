@@ -25,6 +25,7 @@ TYPES = frozenset(('tmdd', 'pkpd', 'drug_metabolite'))
 def create_workflow(
     route: str,
     type: str,
+    search_space: Optional[str] = None,
     b_init: Optional[Union[int, float]] = None,
     emax_init: Optional[Union[int, float]] = None,
     ec50_init: Optional[Union[int, float]] = None,
@@ -40,6 +41,8 @@ def create_workflow(
         Route of administration. Either 'pk' or 'oral'
     type : str
         Type of model. Currently only 'tmdd' and 'pkpd'
+    search_space : str
+        Search space to test
     b_init: float
         Initial estimate for the baseline for pkpd models. The default value is 0.1
     emax_init: float
@@ -71,7 +74,9 @@ def create_workflow(
     if type == 'tmdd':
         start_task = Task('run_tmdd', run_tmdd, model)
     elif type == 'pkpd':
-        start_task = Task('run_pkpd', run_pkpd, model, b_init, emax_init, ec50_init, met_init)
+        start_task = Task(
+            'run_pkpd', run_pkpd, model, b_init, emax_init, ec50_init, met_init, search_space
+        )
     elif type == 'drug_metabolite':
         start_task = Task('run_drug_metabolite', run_drug_metabolite, model)
     wb.add_task(start_task)
@@ -113,7 +118,7 @@ def run_tmdd(context, model):
     )
 
 
-def run_pkpd(context, model, b_init, emax_init, ec50_init, met_init):
+def run_pkpd(context, model, b_init, emax_init, ec50_init, met_init, search_space):
     baseline_pd_model = create_baseline_pd_model(
         model, model.modelfit_results.parameter_estimates, b_init
     )
@@ -125,6 +130,7 @@ def run_pkpd(context, model, b_init, emax_init, ec50_init, met_init):
 
     pkpd_models = create_pkpd_models(
         model,
+        search_space,
         pd_baseline_fit[0].modelfit_results.parameter_estimates,
         model.modelfit_results.parameter_estimates,
         emax_init,

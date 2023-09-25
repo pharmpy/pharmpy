@@ -352,7 +352,7 @@ def test_get_pk_parameters(load_model_for_test, testdata, model_path, kind, expe
     (
         ('nonmem/pheno.mod', 'baseline', ['B']),
         ('nonmem/pheno.mod', 'linear', ['B', 'SLOPE']),
-        ('nonmem/pheno.mod', 'Emax', ['B', 'E_MAX', 'EC_50']),
+        ('nonmem/pheno.mod', 'emax', ['B', 'E_MAX', 'EC_50']),
         ('nonmem/pheno.mod', 'step', ['B', 'E_MAX']),
         ('nonmem/pheno.mod', 'sigmoid', ['B', 'EC_50', 'E_MAX', 'N']),
     ),
@@ -381,8 +381,8 @@ def test_get_pd_parameters(load_model_for_test, testdata, model_path, kind, expe
     (
         ('nonmem/pheno.mod', 'linear', True, ['B', 'SLOPE', 'MET']),
         ('nonmem/pheno.mod', 'linear', False, ['B', 'SLOPE', 'MET']),
-        ('nonmem/pheno.mod', 'Emax', True, ['B', 'E_MAX', 'EC_50', 'MET']),
-        ('nonmem/pheno.mod', 'Emax', False, ['B', 'E_MAX', 'EC_50', 'MET']),
+        ('nonmem/pheno.mod', 'emax', True, ['B', 'E_MAX', 'EC_50', 'MET']),
+        ('nonmem/pheno.mod', 'emax', False, ['B', 'E_MAX', 'EC_50', 'MET']),
         ('nonmem/pheno.mod', 'sigmoid', True, ['B', 'EC_50', 'E_MAX', 'N', 'MET']),
         ('nonmem/pheno.mod', 'sigmoid', False, ['B', 'EC_50', 'E_MAX', 'N', 'MET']),
     ),

@@ -616,3 +616,34 @@ def test_least_number_of_transformations(load_model_for_test, pheno_path):
     assert ('ELIMINATION', 'ZO') in lnt
     assert ('PERIPHERALS', 1) in lnt
     assert len(lnt) == 3
+
+
+@pytest.mark.parametrize(
+    ('source', 'expected'),
+    (
+        (
+            'DIRECTEFFECT(*); EFFECTCOMP(*); INDIRECTEFFECT(*, *)',
+            (
+                ('DIRECT', 'LINEAR'),
+                ('DIRECT', 'EMAX'),
+                ('DIRECT', 'SIGMOID'),
+                ('EFFECTCOMP', 'LINEAR'),
+                ('EFFECTCOMP', 'EMAX'),
+                ('EFFECTCOMP', 'SIGMOID'),
+                ('INDIRECT', 'LINEAR', 'PRODUCTION'),
+                ('INDIRECT', 'LINEAR', 'DEGRADATION'),
+                ('INDIRECT', 'EMAX', 'PRODUCTION'),
+                ('INDIRECT', 'EMAX', 'DEGRADATION'),
+                ('INDIRECT', 'SIGMOID', 'PRODUCTION'),
+                ('INDIRECT', 'SIGMOID', 'DEGRADATION'),
+            ),
+        ),
+    ),
+    ids=repr,
+)
+def test_mfl_structsearch(load_model_for_test, pheno_path, source, expected):
+    model = load_model_for_test(pheno_path)
+    statements = parse(source)
+    funcs = all_funcs(model, statements)
+    keys = funcs.keys()
+    assert set(keys) == set(expected)
