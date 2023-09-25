@@ -25,10 +25,10 @@ from pharmpy.modeling import (
     remove_bioavailability,
     remove_lag_time,
     remove_peripheral_compartment,
-    set_bolus_absorption,
     set_first_order_absorption,
     set_first_order_elimination,
     set_initial_condition,
+    set_instantaneous_absorption,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
     set_ode_solver,
@@ -1908,38 +1908,38 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_absorption_rate(load_model_for_test, testdata, tmp_path):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     advan1_before = model.model_code
-    model = set_bolus_absorption(model)
+    model = set_instantaneous_absorption(model)
     assert advan1_before == model.model_code
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    model = set_bolus_absorption(model)
+    model = set_instantaneous_absorption(model)
     assert model.model_code == advan1_before
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan3.mod')
     advan3_before = model.model_code
-    model = set_bolus_absorption(model)
+    model = set_instantaneous_absorption(model)
     assert model.model_code == advan3_before
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan4.mod')
-    model = set_bolus_absorption(model)
+    model = set_instantaneous_absorption(model)
     assert model.model_code == advan3_before
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan11.mod')
     advan11_before = model.model_code
-    model = set_bolus_absorption(model)
+    model = set_instantaneous_absorption(model)
     assert model.model_code == advan11_before
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan12.mod')
-    model = set_bolus_absorption(model)
+    model = set_instantaneous_absorption(model)
     assert model.model_code == advan11_before
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
     advan5_nodepot_before = model.model_code
-    model = set_bolus_absorption(model)
+    model = set_instantaneous_absorption(model)
     assert model.model_code == advan5_nodepot_before
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
-    model = set_bolus_absorption(model)
+    model = set_instantaneous_absorption(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -1989,7 +1989,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
     # 0-order to Bolus
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
-    model = set_bolus_absorption(model)
+    model = set_instantaneous_absorption(model)
     assert model.model_code.split('\n')[2:] == advan1_before.split('\n')[2:]
 
     # 1st order to 1st order

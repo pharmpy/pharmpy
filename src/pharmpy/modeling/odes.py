@@ -1136,7 +1136,7 @@ def set_zero_order_absorption(model: Model):
 
     See also
     --------
-    set_bolus_order_absorption
+    set_instantaneous_absorption
     set_first_order_absorption
 
     """
@@ -1222,7 +1222,7 @@ def set_first_order_absorption(model: Model):
 
     See also
     --------
-    set_bolus_order_absorption
+    set_instantaneous_absorption
     set_zero_order_absorption
 
     """
@@ -1279,10 +1279,10 @@ def set_first_order_absorption(model: Model):
     return model
 
 
-def set_bolus_absorption(model: Model):
-    """Set or change to bolus absorption rate.
+def set_instantaneous_absorption(model: Model):
+    """Set or change to instantaneous absorption rate.
 
-    Currently lagtime together with bolus absorption is not supported.
+    Currently lagtime together with instantaneous absorption is not supported.
 
     Parameters
     ----------
@@ -1298,7 +1298,7 @@ def set_bolus_absorption(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = set_bolus_absorption(model)
+    >>> model = set_instantaneous_absorption(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1) → CENTRAL
     ┌───────┐
@@ -1313,7 +1313,7 @@ def set_bolus_absorption(model: Model):
     """
     statements = model.statements
     cs = get_and_check_odes(model)
-    if has_bolus_absorption(model):
+    if has_instantaneous_absorption(model):
         pass
     else:
         depot = cs.find_depot(statements)
@@ -1382,7 +1382,7 @@ def set_seq_zo_fo_absorption(model: Model):
 
     See also
     --------
-    set_bolus_order_absorption
+    set_instantaneous_absorption
     set_zero_order_absorption
     set_first_order_absorption
 
@@ -1521,10 +1521,10 @@ def has_first_order_absorption(model: Model):
     return False
 
 
-def has_bolus_absorption(model: Model):
-    """Check if ode system describes a bolus absorption
+def has_instantaneous_absorption(model: Model):
+    """Check if ode system describes a instantaneous absorption
 
-    Defined as being a bolus dose directly into the central compartment
+    Defined as being a instantaneous dose directly into the central compartment
 
     Parameters
     ----------
@@ -1533,7 +1533,7 @@ def has_bolus_absorption(model: Model):
 
     Return
     -------
-        Bool : True if model has bolus absorption
+        Bool : True if model has instantaneous absorption
     """
     odes = get_and_check_odes(model)
     dosing = odes.dosing_compartments[0]

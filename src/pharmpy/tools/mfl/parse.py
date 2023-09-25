@@ -5,9 +5,9 @@ from lark import Lark
 
 from pharmpy.model import Model
 from pharmpy.modeling.odes import (
-    has_bolus_absorption,
     has_first_order_absorption,
     has_first_order_elimination,
+    has_instantaneous_absorption,
     has_lag_time,
     has_michaelis_menten_elimination,
     has_mixed_mm_fo_elimination,
@@ -464,7 +464,7 @@ def get_model_features(model: Model, supress_warnings: bool = False) -> str:
         absorption = "ZO"
     elif has_first_order_absorption(model):
         absorption = "FO"
-    elif has_bolus_absorption(model):
+    elif has_instantaneous_absorption(model):
         absorption = "INST"
 
     if not supress_warnings:
