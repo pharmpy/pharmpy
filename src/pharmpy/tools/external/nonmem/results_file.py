@@ -106,7 +106,7 @@ class NONMEMResultsFile:
             r'( INTERPRET VARIANCE-COVARIANCE OF ESTIMATES WITH CARE)|'
             r'(R|S) MATRIX ALGORITHMICALLY SINGULAR'
         )
-        cov_ok = re.compile(r' Elapsed covariance\s+time in seconds: ')  # need variable whitespace
+        cov_ok = re.compile(r' Elapsed covariance\s+time in seconds: ')  # Need variable whitespace
         est_time = re.compile(r' Elapsed estimation\s+time in seconds:\s+(\d+\.*\d+)')
 
         for row in rows:
@@ -163,7 +163,7 @@ class NONMEMResultsFile:
         sig_digits = re.compile(r' NO. OF SIG. DIGITS IN FINAL EST.:\s*(\S+)')  # Only classical est
         sig_digits_unreport = re.compile(
             r'\w*(NO. OF SIG. DIGITS UNREPORTABLE)\w*\n'
-        )  # only classical est
+        )  # Only classical est
         feval = re.compile(r' NO. OF FUNCTION EVALUATIONS USED:\s*(\S+)')  # Only classical est
         ofv_with_constant = re.compile(r' OBJECTIVE FUNCTION VALUE WITH CONSTANT:\s*(\S+)')
 
@@ -356,7 +356,9 @@ class NONMEMResultsFile:
     def tag_items(self, path):
         nmversion = re.compile(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION\s+(\S+)')
         tag = re.compile(r'\s*#([A-Z]{4}):\s*(.*)')
-        end_TERE = re.compile(r'(0|1)')  # The part we need after #TERE: will preceed next ^1 or ^0
+        end_TERE = re.compile(
+            r'(0|1)'
+        )  # The part we need after #TERE: will precede the next ^1 or ^0
         cleanup = re.compile(r'\*+\s*')
         TERM = []
         TERE = []

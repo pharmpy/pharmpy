@@ -621,7 +621,7 @@ class Model(Immutable):
 
     @property
     def description(self):
-        """A free text discription of the model"""
+        """A free text description of the model"""
         return self._description
 
     @staticmethod
