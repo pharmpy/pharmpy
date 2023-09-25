@@ -474,7 +474,7 @@ def get_model_features(model: Model, supress_warnings: bool = False) -> str:
     # ElIMINATION
     elimination = None
     if has_mixed_mm_fo_elimination(model):
-        elimination = "MIX_FO_MM"
+        elimination = "MIX-FO-MM"
     elif has_zero_order_elimination(model):
         elimination = "ZO"
     elif has_first_order_elimination(model):
