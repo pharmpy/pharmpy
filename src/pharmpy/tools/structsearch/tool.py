@@ -30,7 +30,7 @@ def create_workflow(
     met_init: Optional[Union[int, float]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
-    extra_model=None,
+    extra_model: Optional[Model] = None,
 ):
     """Run the structsearch tool. For more details, see :ref:`structsearch`.
 
@@ -81,10 +81,14 @@ def create_workflow(
 
 
 def run_tmdd(context, model, extra_model):
-    if extra_model is not None:
+    if extra_model != model:
         qss_candidate_models = create_qss_models(model) + create_qss_models(extra_model, index=9)
     else:
         qss_candidate_models = create_qss_models(model)
+
+    for m in qss_candidate_models:
+        print(m.name)
+    assert False
 
     wf = create_fit_workflow(qss_candidate_models)
     wb = WorkflowBuilder(wf)

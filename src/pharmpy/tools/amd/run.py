@@ -481,7 +481,7 @@ def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
             highest_ranked = min(rank_dict, key=rank_dict.get)
             extra_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
         else:
-            extra_model = None
+            extra_model = final_model
 
         res = run_tool(
             'structsearch',
@@ -491,7 +491,6 @@ def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
             path=path / 'structsearch',
         )
         assert isinstance(res, Results)
-        print(res)
         return res
 
     return _run_structsearch_tmdd
