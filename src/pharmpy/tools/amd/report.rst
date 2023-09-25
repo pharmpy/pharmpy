@@ -18,3 +18,9 @@ Final model
 
     res = read_results('results.json')
     res.final_model_dv_vs_ipred_plot
+
+
+.. altair-plot::
+    :hide-code:
+
+    res.final_model_cwres_vs_idv_plot

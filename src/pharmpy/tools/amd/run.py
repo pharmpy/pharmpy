@@ -5,7 +5,7 @@ from typing import Callable, List, Optional, Tuple, Union
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Model, Results
-from pharmpy.modeling import plot_dv_vs_ipred
+from pharmpy.modeling import plot_cwres_vs_idv, plot_dv_vs_ipred
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
@@ -341,6 +341,10 @@ def run_amd(
         dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions)
     else:
         dv_vs_ipred_plot = None
+    if final_results.residuals is not None:
+        cwres_vs_idv_plot = plot_cwres_vs_idv(model, final_results.residuals)
+    else:
+        cwres_vs_idv_plot = None
     res = AMDResults(
         final_model=final_model.name,
         summary_tool=summary_tool,
@@ -348,6 +352,7 @@ def run_amd(
         summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
         final_model_dv_vs_ipred_plot=dv_vs_ipred_plot,
+        final_model_cwres_vs_idv=cwres_vs_idv_plot,
     )
     # Since we are outside of the regular tools machinery the following is needed
     results_path = db.path / 'results.json'
