@@ -3,7 +3,7 @@ from typing import Tuple
 import pytest
 
 from pharmpy.modeling import add_iiv, create_basic_pk_model, set_direct_effect
-from pharmpy.modeling.common import get_model_attributes
+from pharmpy.tools import get_model_features
 from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import ModelFeatures, parse
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
@@ -516,14 +516,14 @@ def test_stringify(statements: Tuple[Statement, ...], expected: str):
     assert tuple(parsed) == statements
 
 
-def test_get_model_attributes(load_model_for_test, pheno_path):
+def test_get_model_features(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    assert 'ABSORPTION(INST);ELIMINATION(FO)' == get_model_attributes(model)
+    assert 'ABSORPTION(INST);ELIMINATION(FO)' == get_model_features(model)
 
 
 def test_ModelFeatures(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    model_string = get_model_attributes(model)
+    model_string = get_model_features(model)
     model_mfl = ModelFeatures.create_from_mfl_string(model_string)
     assert model_mfl.absorption == Absorption(modes=(Name(name='INST'),))
     assert model_mfl.elimination == Elimination(modes=(Name(name='FO'),))
@@ -534,14 +534,14 @@ def test_ModelFeatures(load_model_for_test, pheno_path):
 
 def test_ModelFeatures_eq(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    model_string = get_model_attributes(model)
+    model_string = get_model_features(model)
     model_mfl = ModelFeatures.create_from_mfl_string(model_string)
     assert ModelFeatures() == model_mfl
 
 
 def test_ModelFeatures_add(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    model_string = get_model_attributes(model)
+    model_string = get_model_features(model)
     model_mfl = ModelFeatures.create_from_mfl_string(model_string)
     mfl = ModelFeatures.create(
         absorption=Absorption(
@@ -565,7 +565,7 @@ def test_ModelFeatures_add(load_model_for_test, pheno_path):
 
 def test_ModelFeatures_sub(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    model_string = get_model_attributes(model)
+    model_string = get_model_features(model)
     model_mfl = ModelFeatures.create_from_mfl_string(model_string)
     mfl = ModelFeatures.create(
         absorption=Absorption(
@@ -606,7 +606,7 @@ def test_ModelFeatures_sub(load_model_for_test, pheno_path):
 
 def test_least_number_of_transformations(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    model_string = get_model_attributes(model)
+    model_string = get_model_features(model)
     model_mfl = ModelFeatures.create_from_mfl_string(model_string)
     ss = "ABSORPTION([FO,ZO]);ELIMINATION(ZO);PERIPHERALS(1)"
     ss_mfl = parse(ss, mfl_class=True)
