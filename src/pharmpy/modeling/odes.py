@@ -1567,7 +1567,7 @@ def has_seq_zo_fo_absorption(model: Model):
         return False
 
 
-def number_of_peripheral_compartments(model: Model):
+def get_number_of_peripheral_compartments(model: Model):
     """Return the number of peripherals compartments connected to the central
     compartment
 
@@ -1586,7 +1586,7 @@ def number_of_peripheral_compartments(model: Model):
     return len(odes.find_peripheral_compartments())
 
 
-def number_of_transit_compartments(model: Model):
+def get_number_of_transit_compartments(model: Model):
     """Return the number of transit compartments in the model
 
     Parameters

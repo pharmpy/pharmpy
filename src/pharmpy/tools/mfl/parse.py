@@ -5,6 +5,8 @@ from lark import Lark
 
 from pharmpy.model import Model
 from pharmpy.modeling.odes import (
+    get_number_of_peripheral_compartments,
+    get_number_of_transit_compartments,
     has_first_order_absorption,
     has_first_order_elimination,
     has_instantaneous_absorption,
@@ -14,8 +16,6 @@ from pharmpy.modeling.odes import (
     has_seq_zo_fo_absorption,
     has_zero_order_absorption,
     has_zero_order_elimination,
-    number_of_peripheral_compartments,
-    number_of_transit_compartments,
 )
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
@@ -488,7 +488,7 @@ def get_model_features(model: Model, supress_warnings: bool = False) -> str:
 
     # ABSORPTION DELAY (TRANSIT AND LAGTIME)
     # TRANSITS
-    transits = number_of_transit_compartments(model)
+    transits = get_number_of_transit_compartments(model)
 
     # TODO : DEPOT
     if not model.statements.ode_system.find_depot(model.statements):
@@ -501,7 +501,7 @@ def get_model_features(model: Model, supress_warnings: bool = False) -> str:
         lagtime = None
 
     # DISTRIBUTION (PERIPHERALS)
-    peripherals = number_of_peripheral_compartments(model)
+    peripherals = get_number_of_peripheral_compartments(model)
 
     if absorption:
         absorption = f'ABSORPTION({absorption})'
