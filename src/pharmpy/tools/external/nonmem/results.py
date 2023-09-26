@@ -469,12 +469,12 @@ def _parse_ofv(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
     iteration = []
     ofv = []
     final_table = None
-    for i, table in enumerate(ext_tables.tables, start=1):
+    for table_number, table in enumerate(ext_tables.tables, start=1):
         if subproblem and table.subproblem != subproblem:
             continue
         df = _get_iter_df(table.data_frame)
         n = len(df)
-        step += [i] * n
+        step += [table_number] * n
         iteration += list(df['ITERATION'])
         ofv += list(df['OBJ'])
         final_table = table
@@ -536,7 +536,7 @@ def _parse_parameter_estimates(
     fixed_param_names = []
     final_table = None
     fix = None
-    for i, table in enumerate(ext_tables.tables, start=1):
+    for table_number, table in enumerate(ext_tables.tables, start=1):
         if subproblem and table.subproblem != subproblem:
             continue
         df = _get_iter_df(table.data_frame)
@@ -544,7 +544,7 @@ def _parse_parameter_estimates(
         fix = _get_fixed_parameters(table, parameters, name_map)
         fixed_param_names = [name for name in list(df.columns)[1:-1] if fix[name]]
         df = df.drop(fixed_param_names + ['OBJ'], axis=1)
-        df['step'] = i
+        df['step'] = table_number
         df = df.rename(columns=name_map)
         pe = pd.concat([pe, df])
         final_table = table
