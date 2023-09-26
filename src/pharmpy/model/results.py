@@ -3,13 +3,17 @@ import warnings
 from dataclasses import dataclass
 from lzma import open as lzma_open
 from pathlib import Path
-from typing import Any, Dict, Literal, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, overload
 
 import pharmpy
-from pharmpy.deps import pandas as pd
 from pharmpy.internals.immutable import Immutable
 
 from .model import Model
+
+if TYPE_CHECKING:
+    import pandas as pd
+else:
+    from pharmpy.deps import pandas as pd
 
 
 @dataclass(frozen=True)
@@ -19,7 +23,7 @@ class Results(Immutable):
     __version__: str = pharmpy.__version__  # NOTE: Default version if not overridden
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict[str, Any]):
         """Create results object from dictionary"""
         removed_keys = {
             '__version__',
@@ -36,10 +40,10 @@ class Results(Immutable):
         ...
 
     @overload
-    def to_json(self, path: Union[str, Path], lzma: bool = False) -> None:
+    def to_json(self, path: Path, lzma: bool = False) -> None:
         ...
 
-    def to_json(self, path=None, lzma=False):
+    def to_json(self, path: Optional[Path] = None, lzma: bool = False) -> Union[str, None]:
         """Serialize results object as json
 
         Parameters
@@ -66,7 +70,7 @@ class Results(Immutable):
         else:
             return s
 
-    def get_and_reset_index(self, attr, **kwargs):
+    def get_and_reset_index(self, attr: str, **kwargs) -> pd.DataFrame:
         """Wrapper to reset index of attribute or result from method.
 
         Used to facilitate importing multiindex dataframes into R
@@ -78,7 +82,7 @@ class Results(Immutable):
             df = val
         return df.reset_index()
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Convert results object to a dictionary"""
         return vars(self).copy()
 
@@ -103,7 +107,7 @@ class Results(Immutable):
             s += '\n\n'
         return s
 
-    def to_csv(self, path):
+    def to_csv(self, path: Path):
         """Save results as a human readable csv file
 
         Index will not be printed if it is a basic range.
@@ -128,11 +132,11 @@ class Results(Immutable):
                     use_index = False
                 else:
                     use_index = True
-                csv = value.to_csv(index=use_index)  # pyright: ignore [reportGeneralTypeIssues]
+                csv = value.to_csv(index=use_index)
                 assert isinstance(csv, str)
                 s += csv
             elif isinstance(value, pd.Series):
-                csv = value.to_csv()  # pyright: ignore [reportGeneralTypeIssues]
+                csv = value.to_csv()
                 assert isinstance(csv, str)
                 s += csv
             elif isinstance(value, list):  # Print list of lists as table
@@ -146,23 +150,25 @@ class Results(Immutable):
             print(s, file=fh)
 
 
-def _df_to_json(df):
+def _df_to_json(df: pd.DataFrame) -> dict[str, Any]:
     if str(df.columns.dtype) == 'int64':
         # Workaround for https://github.com/pandas-dev/pandas/issues/46392
         df.columns = df.columns.map(str)
     # Set double precision to 15 to remove some round-trip errors, however 17 should be set when its possible
     # See: https://github.com/pandas-dev/pandas/issues/38437
-    return json.loads(df.to_json(orient='table', double_precision=15))
+    df_json = df.to_json(orient='table', double_precision=15)
+    assert df_json is not None
+    return json.loads(df_json)
 
 
-def _index_to_json(index):
+def _index_to_json(index: Union[pd.Index, pd.MultiIndex]) -> dict[str, Any]:
     if isinstance(index, pd.MultiIndex):
         return {'__class__': 'MultiIndex', **_df_to_json(index.to_frame(index=False))}
     return {'__class__': 'Index', **_df_to_json(index.to_frame(index=False))}
 
 
 class ResultsJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def default(self, obj) -> Union[dict[str, Any], None]:
         # NOTE: This function is called when the base JSONEncoder does not know
         # how to encode the given object, so it will not be called on int,
         # float, str, list, tuple, and dict. It could be called on set for
