@@ -552,11 +552,11 @@ def _parse_parameter_estimates(
     assert fix is not None
     assert final_table is not None
     if pe.iloc[-1].drop(['ITERATION', 'step']).isnull().all():
-        final = pe.iloc[-1].drop(['ITERATION', 'step']).rename('estimates')
+        final_pe = pe.iloc[-1].drop(['ITERATION', 'step']).rename('estimates')
     else:
-        final = final_table.final_parameter_estimates
-        final = final.drop(fixed_param_names)
-        final = final.rename(index=name_map)
+        final_pe = final_table.final_parameter_estimates
+        final_pe = final_pe.drop(fixed_param_names)
+        final_pe = final_pe.rename(index=name_map)
     pe = pe.rename(columns={'ITERATION': 'iteration'}).set_index(['step', 'iteration'])
 
     try:
@@ -565,9 +565,9 @@ def _parse_parameter_estimates(
         sdcorr_ests = pd.Series(np.nan, index=pe.index)
     else:
         sdcorr = sdcorr.rename(index=name_map)
-        sdcorr_ests = final.copy()
+        sdcorr_ests = final_pe.copy()
         sdcorr_ests.update(sdcorr)
-    return final, sdcorr_ests, pe
+    return final_pe, sdcorr_ests, pe
 
 
 def _parse_standard_errors(
