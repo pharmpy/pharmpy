@@ -106,9 +106,8 @@ def embed_css_and_js(html, target):
     for script in scripts:
         source = script.attrs['src']
         if source.startswith('http'):
-            infile = urlopen(source)
-            content = infile.read().decode('utf-8')
-            infile.close()
+            with urlopen(source) as infile:
+                content = infile.read().decode('utf-8')
         else:
             path = html.parent / source
             if path.name == 'thebelab-helper.js':  # This file wasn't created
