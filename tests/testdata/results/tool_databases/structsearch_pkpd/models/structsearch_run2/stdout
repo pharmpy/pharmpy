@@ -1,0 +1,37 @@
+Starting NMTRAN
+  
+ WARNINGS AND ERRORS (IF ANY) FOR PROBLEM    1
+             
+ (WARNING  2) NM-TRAN INFERS THAT THE DATA ARE POPULATION.
+  
+Note: Analytical 2nd Derivatives are constructed in FSUBS but are never used.
+      You may insert $ABBR DERIV2=NO after the first $PROB to save FSUBS construction and compilation time
+  
+Recompiling certain components
+Building NONMEM Executable
+Starting nonmem execution ...
+License Registered to: Uppsala University
+Expiration Date:    14 MAR 2024
+Current Date:       27 SEP 2023
+Days until program expires : 172
+
+
+ First Order Conditional Estimation with Interaction
+ MONITORING OF SEARCH:
+
+
+0ITERATION NO.:    0    OBJECTIVE VALUE:   34.3441130494979        NO. OF FUNC. EVALS.:   6
+ CUMULATIVE NO. OF FUNC. EVALS.:        6
+ NPARAMETR:  1.0000E-01  5.7500E+00  1.0000E-01  9.0000E-02  9.0000E-02  3.3836E-01
+ PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01
+ GRADIENT:   1.6253E-03  1.3187E+01  8.4734E+00 -1.0424E+00 -2.4647E+00 -1.5189E+00
+
+0ITERATION NO.:   24    OBJECTIVE VALUE:   17.5698198727022        NO. OF FUNC. EVALS.: 245
+ CUMULATIVE NO. OF FUNC. EVALS.:      251
+ NPARAMETR:  9.9993E-02  9.4083E-02  2.4754E+00  9.0000E-06  9.0000E-06  9.3266E-02
+ PARAMETER:  9.9929E-02 -4.0128E+00  3.3090E+00 -4.5136E+00 -4.8288E+00 -5.4433E-01
+ GRADIENT:   5.0807E-06 -9.5880E-04 -9.2328E-04  0.0000E+00  0.0000E+00 -2.8356E-04
+ Elapsed estimation  time in seconds:     1.90
+ Elapsed postprocess time in seconds:     0.02
+ Elapsed finaloutput time in seconds:     0.00
+Done with nonmem execution

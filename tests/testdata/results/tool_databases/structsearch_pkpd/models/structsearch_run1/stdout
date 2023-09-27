@@ -1,0 +1,41 @@
+Starting NMTRAN
+  
+ WARNINGS AND ERRORS (IF ANY) FOR PROBLEM    1
+             
+ (WARNING  2) NM-TRAN INFERS THAT THE DATA ARE POPULATION.
+             
+ (WARNING  23) $PK DOES NOT DEFINE A SCALE PARAMETER FOR THE CENTRAL
+ COMPARTMENT.  WITH THIS TRANS, IT MAY NOT BE POSSIBLE TO SEPARATELY
+ OBTAIN ESTIMATES OF PARAMETERS AFFECTING CLEARANCE AND VOLUME.
+  
+Note: Analytical 2nd Derivatives are constructed in FSUBS but are never used.
+      You may insert $ABBR DERIV2=NO after the first $PROB to save FSUBS construction and compilation time
+  
+Recompiling certain components
+Building NONMEM Executable
+Starting nonmem execution ...
+License Registered to: Uppsala University
+Expiration Date:    14 MAR 2024
+Current Date:       27 SEP 2023
+Days until program expires : 172
+
+
+ First Order Conditional Estimation with Interaction
+ MONITORING OF SEARCH:
+
+
+0ITERATION NO.:    0    OBJECTIVE VALUE:   25.1404686874887        NO. OF FUNC. EVALS.:   6
+ CUMULATIVE NO. OF FUNC. EVALS.:        6
+ NPARAMETR:  5.7500E+00  1.0000E-01  1.0000E-01  9.0000E-02  9.0000E-02  3.3836E-01
+ PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01
+ GRADIENT:   2.1101E+00  2.2116E+00 -3.5356E-03  1.3649E-02  1.6621E+00 -1.2915E-01
+
+0ITERATION NO.:   43    OBJECTIVE VALUE:   17.5722206488840        NO. OF FUNC. EVALS.: 403
+ CUMULATIVE NO. OF FUNC. EVALS.:      409
+ NPARAMETR:  5.7501E-02  1.4457E+05  3.5394E+04  9.0000E-06  9.0000E-06  9.3417E-02
+ PARAMETER: -7.7536E+00  1.1886E+01  1.2877E+01 -4.5829E+01 -6.6430E+02 -5.4352E-01
+ GRADIENT:   0.0000E+00 -7.7412E-02  7.7308E-02  0.0000E+00  0.0000E+00 -5.4216E-03
+ Elapsed estimation  time in seconds:     0.04
+ Elapsed postprocess time in seconds:     0.01
+ Elapsed finaloutput time in seconds:     0.00
+Done with nonmem execution
