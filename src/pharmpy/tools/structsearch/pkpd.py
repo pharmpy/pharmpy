@@ -69,7 +69,7 @@ def create_pkpd_models(
     ec50_init : float
         Initial estimate for EC_50
     met_init : float
-        Initial estimate for MAT (mean equilibration time)
+        Initial estimate for MET (mean equilibration time)
 
     Returns
     -------
