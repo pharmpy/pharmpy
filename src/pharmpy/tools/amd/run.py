@@ -177,24 +177,24 @@ def run_amd(
     if not modelsearch_features:
         if modeltype == 'basic_pk' and administration == 'oral':
             modelsearch_features = (
-                Absorption((Name('ZO'), Name('SEQ-ZO-FO'))),
-                Elimination((Name('MM'), Name('MIX-FO-MM'))),
-                LagTime((Name('ON'),)),
-                Transits((1, 3, 10), Wildcard()),
-                Peripherals((1,)),
+                Absorption((Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'))),
+                Elimination((Name('FO'), Name('MM'), Name('MIX-FO-MM'))),
+                LagTime((Name('OFF'), Name('ON'))),
+                Transits((0, 1, 3, 10), Wildcard()),
+                Peripherals((0, 1)),
             )
         elif modeltype == 'basic_pk' and administration == 'ivoral':
             modelsearch_features = (
-                Absorption((Name('ZO'), Name('SEQ-ZO-FO'))),
-                Elimination((Name('MM'), Name('MIX-FO-MM'))),
-                LagTime((Name('ON'),)),
-                Transits((1, 3, 10), Wildcard()),
-                Peripherals((1, 2)),
+                Absorption((Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'))),
+                Elimination((Name('FO'), Name('MM'), Name('MIX-FO-MM'))),
+                LagTime((Name('OFF'), Name('ON'))),
+                Transits((0, 1, 3, 10), Wildcard()),
+                Peripherals((0, 1, 2)),
             )
         else:
             modelsearch_features = (
-                Elimination((Name('MM'), Name('MIX-FO-MM'))),
-                Peripherals((1, 2)),
+                Elimination((Name('FO'), Name('MM'), Name('MIX-FO-MM'))),
+                Peripherals((0, 1, 2)),
             )
 
     covsearch_features = tuple(
