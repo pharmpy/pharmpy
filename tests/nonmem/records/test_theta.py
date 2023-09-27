@@ -1,6 +1,7 @@
 import pytest
 
 from pharmpy.model import Parameter
+from pharmpy.modeling import set_lower_bounds, set_upper_bounds
 
 
 @pytest.mark.usefixtures('parser')
@@ -136,3 +137,53 @@ def test_remove_theta(parser, buf, remove, expected):
     rec = parser.parse(buf).records[0]
     rec = rec.remove(remove)
     assert str(rec) == expected
+
+
+def test_update_lower_bounds(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem/pheno.mod')
+    model = set_lower_bounds(model, {'TVCL': -1})
+    model = set_upper_bounds(model, {'TVCL': 30})
+    expected = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+
+$ERROR
+Y=F+F*EPS(1)
+
+$THETA (-1,0.00469307,30) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=1 INTERACTION\n"""
+    assert model.model_code == expected
+
+    model = set_lower_bounds(model, {'TVCL': 0})
+    expected = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+
+$ERROR
+Y=F+F*EPS(1)
+
+$THETA (0,0.00469307,30) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=1 INTERACTION\n"""
+    assert model.model_code == expected

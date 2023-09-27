@@ -133,7 +133,7 @@ def test_set_parameters(pheno_path, load_model_for_test):
     thetas = model.internals.control_stream.get_records('THETA')
     assert str(thetas[0]) == '$THETA (0,0.75) ; PTVCL\n'
     assert str(thetas[1]) == '$THETA (0,0.5) ; PTVV\n'
-    assert str(thetas[2]) == '$THETA (-.99,0.25)\n'
+    assert str(thetas[2]) == '$THETA (-0.99,0.25)\n'
     omegas = model.internals.control_stream.get_records('OMEGA')
     assert str(omegas[0]) == '$OMEGA DIAGONAL(2)\n 0.1  ;       IVCL\n 0.2  ;        IVV\n\n'
     sigmas = model.internals.control_stream.get_records('SIGMA')
