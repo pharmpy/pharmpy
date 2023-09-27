@@ -1,3 +1,4 @@
+import math
 import re
 from typing import Union, cast
 
@@ -133,6 +134,22 @@ class ThetaRecord(Record):
                         if node.rule == 'init':
                             keep.extend((comma, up_node))
                     theta = AttrTree(theta.rule, tuple(keep))
+
+            low = theta.find('low')
+            if low != param.lower:
+                comma = AttrToken('COMMA', ',')
+                if not math.isinf(param.lower) and int(param.lower) == param.lower:
+                    lower = AttrToken('NUMERIC', int(param.lower))
+                else:
+                    lower = AttrToken('NUMERIC', param.lower)
+                low_node = AttrTree('low', (lower,))
+                keep = []
+                for node in theta.children:
+                    keep.append(node)
+                    if node.rule == 'low':
+                        keep.remove(node)
+                        keep.extend((low_node,))
+                theta = AttrTree(theta.rule, tuple(keep))
 
             i += self._multiple(theta)
 
