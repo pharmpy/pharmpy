@@ -25,14 +25,14 @@ def add_effect_compartment(model: Model, expr: str):
     * Baseline:
     .. math:: E = B
     * Linear:
-    .. math:: E = B + \text{slope} \cdot C
+    .. math:: E = B \cdot (1 + \text{slope} \cdot C)
     * Emax:
-    .. math:: E = B + \frac {E_{max} \cdot C } { EC_{50} + C }
+    .. math:: E = B \cdot \Bigg(1 + \frac {E_{max} \cdot C } { EC_{50} + C}  \Bigg)
     * Step effect:
-    .. math:: E = \Biggl \lbrace {B \quad \text{if C} \leq 0 \atop B + E_{max} \quad \text{else}}
+    .. math:: E = \Biggl \lbrace {B \quad \text{if C} \leq 0 \atop B \cdot (1+ E_{max}) \quad \text{else}}
     * Sigmoidal:
-    .. math::  E=\Biggl \lbrace {B+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n} \quad \text{if C}>0 \atop \
-            B \quad \text{else}}
+    .. math::  E=\Biggl \lbrace {B \cdot \Bigl(1+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n}\Bigl) \quad
+            \text{if C}>0 \atop B \quad \text{else}}
     * Log-linear:
     .. math:: E = \text{slope} \cdot \text{log}(C + C_0)
 
@@ -97,14 +97,14 @@ def set_direct_effect(model: Model, expr: str):
     * Baseline:
     .. math:: E = B
     * Linear:
-    .. math:: E = B + \text{slope} \cdot C
+    .. math:: E = B \cdot (1 + \text{slope} \cdot C)
     * Emax:
-    .. math:: E = B + \frac {E_{max} \cdot C } { EC_{50} + C }
+    .. math:: E = B \cdot \Bigg(1 + \frac {E_{max} \cdot C } { EC_{50} + C}  \Bigg)
     * Step effect:
-    .. math:: E = \Biggl \lbrace {B \quad \text{if C} \leq 0 \atop B + E_{max} \quad \text{else}}
+    .. math:: E = \Biggl \lbrace {B \quad \text{if C} \leq 0 \atop B \cdot (1+ E_{max}) \quad \text{else}}
     * Sigmoidal:
-    .. math::  E=\Biggl \lbrace {B+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n} \quad \text{if C}>0 \atop \
-            B \quad \text{else}}
+    .. math::  E=\Biggl \lbrace {B \cdot \Bigl(1+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n}\Bigl) \quad
+            \text{if C}>0 \atop B \quad \text{else}}
     * Log-linear:
     .. math:: E = \text{slope} \cdot \text{log}(C + C_0)
 
@@ -213,9 +213,9 @@ def add_indirect_effect(
     The concentration :math:`C_c` has an impact on the production or degradation rate of the response  R:
 
     * Production:
-    .. math:: \frac {dR}{dt} = k_{in} \cdot f(C_c) - k_{out} \cdot R
+    .. math:: \frac {dR}{dt} = k_{in} \cdot (1 + f(C_c)) - k_{out} \cdot R
     * Degradation:
-    .. math:: \frac {dR}{dt} = k_{in} - k_{out} \cdot f(C_c) \cdot R
+    .. math:: \frac {dR}{dt} = k_{in} - k_{out} \cdot (1 + f(C_c)) \cdot R
 
     :math:`k_{in}` and :math:`k_{out}` can either be inhibited or stimulated.
     Baseline :math:`B = R(0) = R_0 = k_{in}/k_{out}`.
