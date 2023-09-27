@@ -7,7 +7,7 @@ from pharmpy.deps import sympy
 from pharmpy.model import Model, Results
 from pharmpy.modeling import plot_cwres_vs_idv, plot_dv_vs_ipred
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
-from pharmpy.modeling.common import convert_model
+from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.parameter_variability import get_occasion_levels
 from pharmpy.reporting import generate_report
@@ -27,7 +27,6 @@ from pharmpy.tools.mfl.statement.feature.symbols import Name, Wildcard
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.mfl.statement.statement import Statement
 from pharmpy.tools.mfl.stringify import stringify as mfl_stringify
-from pharmpy.tools.structsearch.pkpd import create_pk_model
 from pharmpy.workflows import default_tool_database
 
 from ..run import run_tool
@@ -275,8 +274,8 @@ def run_amd(
     # Filter data to only contain dvid=1
     if modeltype == "drug_metabolite":
         orig_dataset = model.dataset
-        # FIXME : remove alongside create_pk_model
-        model = create_pk_model(model)
+        # FIXME : remove
+        model = filter_dataset(model, 'DVID == 1')
 
     if results is None:
         model = run_tool('modelfit', model, path=db.path / 'modelfit', resume=resume)
