@@ -469,12 +469,12 @@ def _parse_ofv(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
     iteration = []
     ofv = []
     final_table = None
-    for i, table in enumerate(ext_tables.tables, start=1):
+    for table_number, table in enumerate(ext_tables.tables, start=1):
         if subproblem and table.subproblem != subproblem:
             continue
         df = _get_iter_df(table.data_frame)
         n = len(df)
-        step += [i] * n
+        step += [table_number] * n
         iteration += list(df['ITERATION'])
         ofv += list(df['OBJ'])
         final_table = table
@@ -536,7 +536,7 @@ def _parse_parameter_estimates(
     fixed_param_names = []
     final_table = None
     fix = None
-    for i, table in enumerate(ext_tables.tables, start=1):
+    for table_number, table in enumerate(ext_tables.tables, start=1):
         if subproblem and table.subproblem != subproblem:
             continue
         df = _get_iter_df(table.data_frame)
@@ -544,7 +544,7 @@ def _parse_parameter_estimates(
         fix = _get_fixed_parameters(table, parameters, name_map)
         fixed_param_names = [name for name in list(df.columns)[1:-1] if fix[name]]
         df = df.drop(fixed_param_names + ['OBJ'], axis=1)
-        df['step'] = i
+        df['step'] = table_number
         df = df.rename(columns=name_map)
         pe = pd.concat([pe, df])
         final_table = table
@@ -552,11 +552,11 @@ def _parse_parameter_estimates(
     assert fix is not None
     assert final_table is not None
     if pe.iloc[-1].drop(['ITERATION', 'step']).isnull().all():
-        final = pe.iloc[-1].drop(['ITERATION', 'step']).rename('estimates')
+        final_pe = pe.iloc[-1].drop(['ITERATION', 'step']).rename('estimates')
     else:
-        final = final_table.final_parameter_estimates
-        final = final.drop(fixed_param_names)
-        final = final.rename(index=name_map)
+        final_pe = final_table.final_parameter_estimates
+        final_pe = final_pe.drop(fixed_param_names)
+        final_pe = final_pe.rename(index=name_map)
     pe = pe.rename(columns={'ITERATION': 'iteration'}).set_index(['step', 'iteration'])
 
     try:
@@ -565,9 +565,9 @@ def _parse_parameter_estimates(
         sdcorr_ests = pd.Series(np.nan, index=pe.index)
     else:
         sdcorr = sdcorr.rename(index=name_map)
-        sdcorr_ests = final.copy()
+        sdcorr_ests = final_pe.copy()
         sdcorr_ests.update(sdcorr)
-    return final, sdcorr_ests, pe
+    return final_pe, sdcorr_ests, pe
 
 
 def _parse_standard_errors(
