@@ -50,7 +50,7 @@ def create_pkpd_models(
     ests: pd.Series = None,
     emax_init: Optional[Union[int, float]] = None,
     ec50_init: Optional[Union[int, float]] = None,
-    mat_init: Optional[Union[int, float]] = None,
+    met_init: Optional[Union[int, float]] = None,
 ):
     """Create pkpd models
 
@@ -68,7 +68,7 @@ def create_pkpd_models(
         Initial estimate for E_max
     ec50_init : float
         Initial estimate for EC_50
-    mat_init : float
+    met_init : float
         Initial estimate for MAT (mean equilibration time)
 
     Returns
@@ -91,28 +91,29 @@ def create_pkpd_models(
 
         # Initial values
         if b_init is not None:
-            pkpd_model = set_initial_estimates(pkpd_model, b_init)
+            pkpd_model = set_initial_estimates(pkpd_model, {'POP_B': b_init})
         if ests is not None:
             pkpd_model = fix_parameters_to(pkpd_model, ests)
-
-        if emax_init is not None and ec50_init is not None:
+        if emax_init is not None:
             pkpd_model = set_initial_estimates(pkpd_model, {'POP_E_MAX': emax_init})
+        if ec50_init is not None:
             pkpd_model = set_initial_estimates(pkpd_model, {'POP_EC_50': ec50_init})
+        if emax_init is not None and ec50_init is not None:
             pkpd_model = set_initial_estimates(pkpd_model, {'POP_SLOPE': emax_init / ec50_init})
-        if mat_init is not None:
-            pkpd_model = set_initial_estimates(pkpd_model, {'POP_MET': mat_init})
+        if met_init is not None:
+            pkpd_model = set_initial_estimates(pkpd_model, {'POP_MET': met_init})
 
-        pkpd_model = unconstrain_parameters(pkpd_model, ['SLOPE'])
-        pkpd_model = set_lower_bounds(pkpd_model, {'POP_E_MAX': -1})
+        pkpd_model = unconstrain_parameters(pkpd_model, ['POP_SLOPE'])
+        pkpd_model = set_lower_bounds(pkpd_model, {'POP_E_MAX': -1.0})
 
         # Set iiv
         for parameter in ["E_MAX", "SLOPE"]:
             try:
-                pkpd_model = add_iiv(pkpd_model, [parameter], "prop")
+                pkpd_model = add_iiv(pkpd_model, [parameter], "prop", initial_estimate=0.1)
             except ValueError:
                 pass
         try:
-            pkpd_model = add_iiv(pkpd_model, 'B', "exp")
+            pkpd_model = add_iiv(pkpd_model, 'B', "exp", initial_estimate=0.1)
         except ValueError:
             pass
 
