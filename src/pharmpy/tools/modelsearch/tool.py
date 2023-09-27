@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 import pharmpy.tools.modelsearch.algorithms as algorithms
-from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
@@ -250,24 +249,17 @@ def post_process(rank_type, cutoff, *models):
     if not input_model:
         raise ValueError('Error in workflow: No input model')
 
-    summary_user_input = summarize_modelfit_results(user_input_model.modelfit_results)
+    results_to_summarize = [user_input_model.modelfit_results]
+
     if user_input_model != base_model:
-        summary_base = summarize_modelfit_results(base_model.modelfit_results)
-        summary_models = [summary_user_input, summary_base]
-        keys = [0, 1]
-    else:
-        summary_models = [summary_user_input]
-        keys = [0]
+        results_to_summarize.append(base_model.modelfit_results)
 
     if res_models:
-        summary_candidates = summarize_modelfit_results(
-            [model.modelfit_results for model in res_models]
-        )
-        summary_models = pd.concat(
-            summary_models + [summary_candidates], keys=keys + [keys[-1] + 1], names=['step']
-        )
-    else:
-        summary_models = pd.concat(summary_models, keys=keys + [keys[-1] + 1], names=['step'])
+        results_to_summarize.extend(model.modelfit_results for model in res_models)
+
+    summary_models = summarize_modelfit_results(results_to_summarize)
+    summary_models['step'] = [0] + [1] * (len(results_to_summarize) - 1)
+    summary_models.reset_index().set_index(['step', 'model'])
 
     return create_results(
         ModelSearchResults,
