@@ -6,7 +6,7 @@ import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Results
-from pharmpy.modeling import set_bolus_absorption
+from pharmpy.modeling import set_instantaneous_absorption
 from pharmpy.results import ModelfitResults
 from pharmpy.tools import read_results
 from pharmpy.workflows import (
@@ -106,13 +106,13 @@ def test_execute_workflow_map_reduce(tmp_path):
 
 
 @pytest.mark.xdist_group(name="workflow")
-def test_execute_workflow_set_bolus_absorption(load_model_for_test, testdata, tmp_path):
+def test_execute_workflow_set_instantaneous_absorption(load_model_for_test, testdata, tmp_path):
     model1 = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     model2 = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     advan1_before = model1.model_code
 
     t1 = Task('init', lambda x: x, model2)
-    t2 = Task('update', set_bolus_absorption)
+    t2 = Task('update', set_instantaneous_absorption)
     t3 = Task('postprocess', lambda x: x)
     wb = WorkflowBuilder(tasks=[t1], name='test-workflow')
     wb.insert_workflow(WorkflowBuilder(tasks=[t2]))
