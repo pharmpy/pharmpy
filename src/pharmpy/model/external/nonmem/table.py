@@ -80,21 +80,24 @@ class NONMEMTableFile:
             table.is_evaluation = False
             if re.search(r'(Evaluation)', table_line):
                 table.is_evaluation = True  # No estimation step was run
+
             m = re.match(
-                r'TABLE NO.\s+\d+: (.*?): (?:Goal Function=(.*): )?Problem=(\d+) '
+                r'TABLE NO.\s+\d+: (.*?)(?:: ([\w-]+))?: (?:Goal Function=(.*): )?Problem=(\d+) '
                 r'Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) '
                 r'Iteration2=(\d+)',
                 table_line,
             )
+
             if m:
                 table.method = m.group(1)
-                table.goal_function = m.group(2)
-                table.problem = int(m.group(3))
-                table.subproblem = int(m.group(4))
-                table.superproblem1 = int(m.group(5))
-                table.iteration1 = int(m.group(6))
-                table.superproblem2 = int(m.group(7))
-                table.iteration2 = int(m.group(8))
+                table.design_optimality = m.group(2)
+                table.goal_function = m.group(3)
+                table.problem = int(m.group(4))
+                table.subproblem = int(m.group(5))
+                table.superproblem1 = int(m.group(6))
+                table.iteration1 = int(m.group(7))
+                table.superproblem2 = int(m.group(8))
+                table.iteration2 = int(m.group(9))
 
         return table
 
@@ -140,6 +143,7 @@ class NONMEMTable:
     number: Optional[int] = None
     is_evaluation: Optional[bool] = None
     method: Optional[str] = None
+    design_optimality: Optional[str] = None
     goal_function: Optional[str] = None
     problem: Optional[int] = None
     subproblem: Optional[int] = None
