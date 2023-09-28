@@ -143,7 +143,7 @@ def has_presystemic_metabolite(model: Model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = add_metabolite(model)
+    >>> model = add_metabolite(model, presystemic=True)
     >>> has_presystemic_metabolite(model)
     True
 
