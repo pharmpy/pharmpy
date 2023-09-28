@@ -190,23 +190,21 @@ def start(context, model, groups, p_value, skip, max_iter, dv):
     proportional_workflow = proportional_error_workflow(input_model)
     model = call_workflow(proportional_workflow, 'Convert_error_model', context)
 
-    sum_models = []
+    model_results = []
     if model == input_model:
         selected_models = [model]
     else:
         selected_models = [input_model, model]
     cwres_models = []
     tool_database = None
-    last_iteration = 0
     for current_iteration in range(1, max_iter + 1):
-        last_iteration = current_iteration
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration, dv=dv)
         res, best_model, selected_model_name = call_workflow(
             wf, f'results{current_iteration}', context
         )
         if current_iteration == 1:
-            sum_models.append(summarize_modelfit_results(model.modelfit_results))
-        sum_models.append(summarize_modelfit_results(best_model.modelfit_results))
+            model_results.append(model.modelfit_results)
+        model_results.append(best_model.modelfit_results)
 
         cwres_models.append(res.cwres_models)
         tool_database = res.tool_database
@@ -230,7 +228,9 @@ def start(context, model, groups, p_value, skip, max_iter, dv):
 
     sumind = summarize_individuals(selected_models)
     sumcount = summarize_individuals_count_table(df=sumind)
-    summf = pd.concat(sum_models, keys=list(range(last_iteration)), names=['step'])
+    sum_models = summarize_modelfit_results(model_results)
+    sum_models['step'] = list(range(len(sum_models)))
+    summf = sum_models.reset_index().set_index(['step', 'model'])
     summary_tool = _create_summary_tool(selected_models, cutoff)
     summary_errors = summarize_errors(m.modelfit_results for m in selected_models)
 
