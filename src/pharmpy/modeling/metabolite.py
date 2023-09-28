@@ -124,8 +124,30 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
 
 
 def has_presystemic_metabolite(model: Model):
-    """If pre-systemic drug there will be a flow from DEPOT to METABOLITE as well
-    as being a flow from the CENTRAL to METABOLITE"""
+    """Checks whether a model has a presystemic metabolite
+
+    If pre-systemic drug there will be a flow from DEPOT to METABOLITE as well
+    as being a flow from the CENTRAL to METABOLITE
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    bool
+        Whether a model has presystemic metabolite
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = add_metabolite(model)
+    >>> has_presystemic_metabolite(model)
+    True
+
+    """
     odes = model.statements.ode_system
     central = odes.central_compartment
     metabolite = odes.find_compartment("METABOLITE")
