@@ -131,7 +131,7 @@ def run_pkpd(context, model, b_init, emax_init, ec50_init, met_init, search_spac
     pkpd_models = create_pkpd_models(
         model,
         search_space,
-        pd_baseline_fit[0].modelfit_results.parameter_estimates,
+        b_init,
         model.modelfit_results.parameter_estimates,
         emax_init,
         ec50_init,

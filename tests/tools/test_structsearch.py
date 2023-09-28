@@ -73,10 +73,9 @@ def test_pkpd(load_model_for_test, testdata):
     search_space = "DIRECTEFFECT(*); EFFECTCOMP(*); INDIRECTEFFECT(*,*)"
     res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
     ests = res.parameter_estimates
-    e0_init = pd.Series({'POP_B': 5.75, 'IIV_B': 0.01, 'sigma': 0.33})
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
     pkpd_models = create_pkpd_models(
-        model, search_space, e0_init, ests, emax_init=2.0, ec50_init=1.0, mat_init=0.5
+        model, search_space, b_init=5.75, ests=ests, emax_init=2.0, ec50_init=1.0, met_init=0.5
     )
 
     assert len(pkpd_models) == 12
