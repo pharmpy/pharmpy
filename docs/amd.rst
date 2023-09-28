@@ -298,9 +298,12 @@ Structsearch
 The structsearch tool selects the best structural model from a set of models. Currently implemented
 model types are PKPD and drug-metabolite.
 
-Please note that it is only possible to run the AMD tool for the PD part of PKPD models. The tool
-expects a fully build PK model as input. 
-In order to run AMD for a pkpd model the ``modeltype`` needs to be set to `pkpd`.
+In order to run AMD for a pkpd model the ``modeltype`` needs to be set to `pkpd`. For running drug metabolite models, 
+the expected ``modeltype`` needs to be set to `drug_metabolite`
+
+.. note::
+    Please note that it is only possible to run the AMD tool for the PD part of PKPD models. The tool
+    expects a fully build PK model as input. 
 
 
 IIVsearch

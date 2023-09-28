@@ -26,7 +26,7 @@ from pharmpy.tools import (  # fit,; run_structsearch,
 #        pk_res = fit(pk_model)
 
 # structsearch
-#        res_struct = run_structsearch(type='pkpd', route='iv', results=pk_res, model=model)
+#        res_struct = run_structsearch(type='pkpd', results=pk_res, model=model)
 #        model = res_struct.models[1]
 
 # ruvsearch

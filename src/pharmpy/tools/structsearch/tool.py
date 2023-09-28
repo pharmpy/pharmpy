@@ -18,12 +18,10 @@ from .drugmetabolite import create_base_metabolite, create_drug_metabolite_model
 from .pkpd import create_baseline_pd_model, create_pkpd_models
 from .tmdd import create_qss_models, create_remaining_models
 
-ROUTES = frozenset(('iv', 'oral'))
-TYPES = frozenset(('tmdd', 'pkpd', 'drug_metabolite'))
+TYPES = frozenset(('pkpd', 'drug_metabolite'))
 
 
 def create_workflow(
-    route: str,
     type: str,
     search_space: Optional[str] = None,
     b_init: Optional[Union[int, float]] = None,
@@ -37,10 +35,8 @@ def create_workflow(
 
     Parameters
     ----------
-    route : str
-        Route of administration. Either 'pk' or 'oral'
     type : str
-        Type of model. Currently only 'tmdd' and 'pkpd'
+        Type of model. Currently only 'drug_metabolite' and 'pkpd'
     search_space : str
         Search space to test
     b_init: float
@@ -67,7 +63,7 @@ def create_workflow(
     >>> from pharmpy.tools import run_structsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
-    >>> run_structsearch(model_type='tmdd', results=results, model=model)   # doctest: +SKIP
+    >>> run_structsearch(model_type='pkpd', results=results, model=model)   # doctest: +SKIP
     """
 
     wb = WorkflowBuilder(name="structsearch")
@@ -209,12 +205,8 @@ def _results(model):
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
-    route,
     type,
 ):
-    if route not in ROUTES:
-        raise ValueError(f'Invalid `route`: got `{route}`, must be one of {sorted(ROUTES)}.')
-
     if type not in TYPES:
         raise ValueError(f'Invalid `type`: got `{type}`, must be one of {sorted(TYPES)}.')
 

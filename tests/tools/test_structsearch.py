@@ -103,19 +103,19 @@ def test_drug_metabolite(load_example_model_for_test):
 
 
 def test_create_workflow():
-    assert isinstance(create_workflow('oral', 'pkpd'), Workflow)
+    assert isinstance(create_workflow('pkpd'), Workflow)
 
 
 def test_create_workflow_pkpd(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    assert isinstance(create_workflow('oral', 'pkpd', model=model), Workflow)
+    assert isinstance(create_workflow('pkpd', model=model), Workflow)
 
 
 def test_create_workflow_tmdd(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    assert isinstance(create_workflow('oral', 'pkpd', model=model), Workflow)
+    assert isinstance(create_workflow('pkpd', model=model), Workflow)
 
 
 def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    assert isinstance(create_workflow('oral', 'drug_metabolite', model=model), Workflow)
+    assert isinstance(create_workflow('drug_metabolite', model=model), Workflow)
