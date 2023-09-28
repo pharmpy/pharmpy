@@ -482,8 +482,26 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
 def test_read_modelfit_results(testdata):
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
     assert res.ofv == 586.27605628188053
+    expected_rse = {
+        'PTVCL': 0.04473086219931638,
+        'PTVV': 0.027325355750219965,
+        'THETA_3': 0.5270721117543418,
+        'IVCL': 0.4570676097414721,
+        'IVV': 0.2679176521178241,
+        'SIGMA_1_1': 0.17214711879767391,
+    }
+    assert res.relative_standard_errors.to_dict() == expected_rse
+
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno_design.mod')
     assert res.ofv == 730.9699060285753
+    expected_rse = {
+        'TVCL': 0.07540090004436839,
+        'TVV': 0.06030486531634996,
+        'IVCL': 0.3895984361000244,
+        'IVV': 0.19632785003247685,
+        'SIGMA_1_1': 0.1865063481541913,
+    }
+    assert res.relative_standard_errors.to_dict() == expected_rse
 
 
 def test_load_example_modelfit_results():
