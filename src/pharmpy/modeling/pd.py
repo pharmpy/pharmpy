@@ -31,7 +31,7 @@ def add_effect_compartment(model: Model, expr: str):
     * Step effect:
     .. math:: E = \Biggl \lbrace {B \quad \text{if C} \leq 0 \atop B \cdot (1+ E_{max}) \quad \text{else}}
     * Sigmoidal:
-    .. math::  E=\Biggl \lbrace {B \cdot \Bigl(1+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n}\Bigl) \quad
+    .. math::  E=\Biggl \lbrace {B \cdot \Bigl(1+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n}\Bigl) \quad \
             \text{if C}>0 \atop B \quad \text{else}}
     * Log-linear:
     .. math:: E = \text{slope} \cdot \text{log}(C + C_0)
@@ -103,7 +103,7 @@ def set_direct_effect(model: Model, expr: str):
     * Step effect:
     .. math:: E = \Biggl \lbrace {B \quad \text{if C} \leq 0 \atop B \cdot (1+ E_{max}) \quad \text{else}}
     * Sigmoidal:
-    .. math::  E=\Biggl \lbrace {B \cdot \Bigl(1+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n}\Bigl) \quad
+    .. math::  E=\Biggl \lbrace {B \cdot \Bigl(1+\frac{E_{max} \cdot C^n}{EC_{50}^n+C^n}\Bigl) \quad \
             \text{if C}>0 \atop B \quad \text{else}}
     * Log-linear:
     .. math:: E = \text{slope} \cdot \text{log}(C + C_0)
