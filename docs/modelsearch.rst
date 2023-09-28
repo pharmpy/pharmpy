@@ -42,10 +42,6 @@ To run modelsearch from the command line, the example code is redefined accordin
 
     pharmpy run modelsearch path/to/model 'PERIPHERALS(1);LAGTIME()' 'reduced_stepwise' --iiv_strategy 'absorption_delay' --rank_type 'bic'
 
-.. warning::
-
-    Currently modelsearch does not support a CMT-column, make sure it is dropped before starting the tool.
-
 
 Arguments
 ~~~~~~~~~
