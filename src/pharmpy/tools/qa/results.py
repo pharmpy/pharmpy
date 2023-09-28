@@ -9,8 +9,8 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Model, Results
-from pharmpy.results import read_results
 from pharmpy.tools import read_modelfit_results
+from pharmpy.workflows.results import read_results
 
 
 @dataclass(frozen=True)

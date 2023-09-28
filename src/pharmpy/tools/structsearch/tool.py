@@ -8,11 +8,11 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows.results import ModelfitResults
 
 from .drugmetabolite import create_base_metabolite, create_drug_metabolite_models
 from .pkpd import create_baseline_pd_model, create_pkpd_models

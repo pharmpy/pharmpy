@@ -12,7 +12,6 @@ from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_su
 from pharmpy.model import Assignment, Model, RandomVariables
 from pharmpy.modeling import add_iov, get_omegas, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.parameter_variability import ADD_IOV_DISTRIBUTION
-from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import (
     RANK_TYPES,
@@ -23,6 +22,7 @@ from pharmpy.tools.common import (
 )
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows.results import ModelfitResults
 
 NAME_WF = 'iovsearch'
 

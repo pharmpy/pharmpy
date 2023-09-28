@@ -9,7 +9,7 @@ from pharmpy.internals.df import hash_df_fs
 from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import DataInfo, Model
-from pharmpy.results import read_results
+from pharmpy.workflows.results import read_results
 
 from .baseclass import (
     ModelSnapshot,

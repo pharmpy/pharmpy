@@ -5,13 +5,13 @@ import pandas as pd
 import pytest
 
 from pharmpy.modeling import read_model
-from pharmpy.results import ModelfitResults
 from pharmpy.tools import (
     read_modelfit_results,
     summarize_individuals,
     summarize_individuals_count_table,
 )
 from pharmpy.tools.funcs.summarize_individuals import dofv
+from pharmpy.workflows.results import ModelfitResults
 
 
 def test_summarize_individuals_count_table():

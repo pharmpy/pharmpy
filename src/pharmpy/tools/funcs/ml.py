@@ -13,7 +13,7 @@ from pharmpy.modeling import (
     get_number_of_observations,
     get_number_of_observations_per_individual,
 )
-from pharmpy.results import ModelfitResults
+from pharmpy.workflows.results import ModelfitResults
 
 
 def _all_parameters(model: Model, res: ModelfitResults):

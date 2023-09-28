@@ -14,7 +14,7 @@ Final model
 .. altair-plot::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
 
     res = read_results('results.json')
     res.final_model_dv_vs_ipred_plot

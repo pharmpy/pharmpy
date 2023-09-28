@@ -5,12 +5,12 @@ import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.results import ModelfitResults
 from pharmpy.tools import get_model_features, summarize_modelfit_results
 from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows.results import ModelfitResults
 
 from ..mfl.filter import modelsearch_statement_types
 from ..mfl.parse import parse as mfl_parse

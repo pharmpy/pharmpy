@@ -19,9 +19,9 @@ from pharmpy.modeling import (
     update_inits,
     write_csv,
 )
-from pharmpy.results import ModelfitResults
 from pharmpy.tools import fit
 from pharmpy.workflows.log import Log
+from pharmpy.workflows.results import ModelfitResults
 
 
 def execute_model(model: pharmpy.model.Model, db, evaluate=False, path=None) -> pharmpy.model.Model:

@@ -14,7 +14,7 @@ Distribution of parameter estimates
 .. altair-plot::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
 
     res = read_results('results.json')
     res.parameter_estimates_histogram

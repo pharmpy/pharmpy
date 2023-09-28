@@ -6,9 +6,9 @@ import pytest
 
 from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.results import read_results
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.external.nonmem.results import simfit_results
+from pharmpy.workflows.results import read_results
 
 
 def test_ofv(pheno_path):

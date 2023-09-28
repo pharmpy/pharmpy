@@ -24,7 +24,7 @@ Settings
 .. jupyter-execute::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
 
     res = read_results('results.json')
     res.summary_settings
