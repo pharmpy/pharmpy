@@ -209,7 +209,7 @@ class PhiTable(NONMEMTable):
     @property
     def iofv(self):
         df = self._df.copy(deep=True)
-        # Remove all zero lines. These are from individuals with no observations
+        # Remove all zero lines. These are from individuals with no observations.
         df = df.loc[df.iloc[:, 2:].any(axis=1)]
         iofv = df[['ID', 'OBJ']]
         iofv.set_index('ID', inplace=True)
