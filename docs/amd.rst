@@ -129,6 +129,18 @@ For a PK IV model, the default is:
     PERIPHERALS([1,2])
     COVARIATE(@IIV, @CONTINUOUS, *)
     COVARIATE(@IIV, @CATEGORICAL, CAT)
+    
+For a PK IV+ORAL model, the default is:
+
+.. code-block::
+
+    ABSORPTION([FO,ZO,SEQ-ZO-FO])
+    ELIMINATION([FO,MM,MIX-FO-MM])
+    LAGTIME([OFF,ON])
+    TRANSITS([0,1,3,10],*)
+    PERIPHERALS([0,1,2])
+    COVARIATE(@IIV, @CONTINUOUS, *)
+    COVARIATE(@IIV, @CATEGORICAL, CAT)
 
 Note that defaults are overriden selectively: structural model features
 defaults will be ignored as soon as one structural model feature is explicitly
