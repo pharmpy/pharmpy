@@ -21,10 +21,8 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 if TYPE_CHECKING:
-    import pandas as pd
     import sympy
 else:
-    from pharmpy.deps import pandas as pd
     from pharmpy.deps import sympy
 
 
@@ -172,9 +170,11 @@ def results(start_model, allometry_model):
     allometry_model_failed = allometry_model.modelfit_results is None
     best_model = start_model if allometry_model_failed else allometry_model
 
-    summod_start = summarize_modelfit_results(start_model.modelfit_results)
-    summod_allometry = summarize_modelfit_results(allometry_model.modelfit_results)
-    summods = pd.concat([summod_start, summod_allometry], keys=[0, 1], names=['step'])
+    summod = summarize_modelfit_results(
+        [start_model.modelfit_results, allometry_model.modelfit_results]
+    )
+    summod['step'] = [0, 1]
+    summods = summod.reset_index().set_index(['step', 'model'])
     suminds = summarize_individuals([start_model, allometry_model])
     sumcount = summarize_individuals_count_table(df=suminds)
     sumerrs = summarize_errors([start_model.modelfit_results, allometry_model.modelfit_results])
