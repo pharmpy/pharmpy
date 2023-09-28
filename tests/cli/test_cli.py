@@ -267,3 +267,17 @@ def test_main():
     import pharmpy.__main__ as main
 
     main
+
+
+def test_reference(datadir, tmp_path):
+    shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
+
+    with chdir(tmp_path):
+        args = ['data', 'reference', 'run1.mod', 'WGT=70', 'APGR=4', '--output', 'run2.mod']
+        cli.main(args)
+
+        with open('run2.mod', 'r') as f_new:
+            mod_new = f_new.read()
+
+        assert re.search(r'run2\.csv', mod_new)

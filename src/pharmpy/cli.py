@@ -289,11 +289,9 @@ def data_print(args):
 
 def data_filter(args):
     """Subcommand to filter a dataset"""
-    from pharmpy.plugins.utils import PluginError
-
     try:
         df = args.model_or_dataset.dataset
-    except PluginError:
+    except TypeError:
         df = args.model_or_dataset
     expression = ' '.join(args.expressions)
     try:
@@ -307,11 +305,9 @@ def data_filter(args):
 
 def data_append(args):
     """Subcommand to append a column to a dataset"""
-    from pharmpy.plugins.utils import PluginError
-
     try:
         df = args.model_or_dataset.dataset
-    except PluginError:
+    except TypeError:
         df = args.model_or_dataset
     try:
         df = df.eval(args.expression)
@@ -402,6 +398,16 @@ def data_deidentify(args):
     else:
         output_file = path
     write_model_or_dataset(df, df, output_file, args.force)
+
+
+def data_reference(args):
+    """Subcommand to replace columns with reference values"""
+    from pharmpy.modeling import set_reference_values
+
+    d = key_vals(args.colrefs)
+    model = args.model
+    model = set_reference_values(model, d)
+    write_model_or_dataset(model, model.dataset, args.output_file, args.force)
 
 
 def info(args):
@@ -905,13 +911,11 @@ def input_model(path):
 def input_model_or_dataset(path):
     """Returns :class:`~pharmpy.model.Model` or pd.DataFrame from *path*"""
     path = check_input_path(path)
-    from pharmpy.plugins.utils import PluginError
-
     try:
         from pharmpy.model import Model
 
         obj = Model.parse_model(path)
-    except PluginError:
+    except TypeError:
         obj = pd.read_csv(path)
     return obj
 
@@ -926,6 +930,14 @@ def semicolon_list(s):
     if s == '':
         return []
     return s.split(';')
+
+
+def key_vals(a):
+    d = {}
+    for arg in a:
+        pair = arg.split('=')
+        d[pair[0]] = float(pair[1])
+    return d
 
 
 def random_seed(seed):
@@ -1529,6 +1541,24 @@ parser_definition = [
                                 'metavar': 'COLUMNS',
                                 'default': '',
                                 'help': 'Comma separated list of date column names',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'reference': {
+                        'help': 'Set reference values in dataset',
+                        'description': 'Set values in specific columns to provided reference values',
+                        'parents': [args_model_input, args_output],
+                        'func': data_reference,
+                        'args': [
+                            {
+                                'name': 'colrefs',
+                                'type': str,
+                                'nargs': '+',
+                                'metavar': 'COLNAME=VALUE',
+                                'default': '',
+                                'help': 'List of pairs of column names and reference values',
                             },
                         ],
                     }
