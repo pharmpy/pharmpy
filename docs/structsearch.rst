@@ -23,8 +23,7 @@ The code to initiate structsearch for a PKPD model in Python/R is stated below:
 
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
-    res = run_structsearch(route='oral',
-                            type='pkpd',
+    res = run_structsearch(type='pkpd',
                             search_space="DIRECTEFFECT(*)",
                             model=start_model,
                             results=start_model_results)
@@ -41,8 +40,6 @@ The arguments of the structsearch tool are listed below.
 +-------------------------------------------------+------------------------------------------------------------------+
 | Argument                                        | Description                                                      |
 +=================================================+==================================================================+
-| route                                           | Route of administration. Either iv or oral                       |
-+-------------------------------------------------+------------------------------------------------------------------+
 | :ref:`type<the model types>`                    | Type of model. Can be either pkpd or drug_metabolite             |
 +-------------------------------------------------+------------------------------------------------------------------+
 | :ref:`search_space<the search space>`           | Search space of models to test (currently only for PKPD models)  |
@@ -177,8 +174,7 @@ The results object contains various summary tables which can be accessed in the 
 
 .. pharmpy-code::
 
-    res = run_structsearch(route='oral',
-                            type='pkpd',
+    res = run_structsearch(type='pkpd',
                             search_space=DIRECTEFFECT(emax);EFFECTCOMP([linear,emax])",
                             model=start_model,
                             results=start_model_results)

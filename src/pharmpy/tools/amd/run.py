@@ -221,7 +221,6 @@ def run_amd(
         if section == 'structural':
             if modeltype == 'pkpd':
                 func = _subfunc_structsearch(
-                    route=administration,
                     type=modeltype,
                     b_init=b_init,
                     emax_init=emax_init,
@@ -235,7 +234,7 @@ def run_amd(
                 run_subfuncs['modelsearch'] = func
             # Perfomed 'after' modelsearch
             if modeltype == 'drug_metabolite':
-                func = _subfunc_structsearch(route=administration, type=modeltype, path=db.path)
+                func = _subfunc_structsearch(type=modeltype, path=db.path)
                 run_subfuncs['structsearch'] = func
         elif section == 'iivsearch':
             func = _subfunc_iiv(iiv_strategy=iiv_strategy, path=db.path)
