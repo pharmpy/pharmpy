@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional, Union
@@ -182,7 +183,14 @@ def summarize_estimation_steps(models):
         df.index = range(1, len(df) + 1)
         dfs[model.name] = df.drop(columns=['tool_options'])
 
-    return pd.concat(dfs.values(), keys=dfs.keys())
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="The behavior of DataFrame concatenation with empty or all-NA",
+            category=FutureWarning,
+        )
+        summary = pd.concat(list(dfs.values()), keys=list(dfs.keys()))
+    return summary
 
 
 @with_runtime_arguments_type_check
