@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Results
 from pharmpy.tools import read_modelfit_results
+from pharmpy.workflows import Results
 
 
 @dataclass(frozen=True)

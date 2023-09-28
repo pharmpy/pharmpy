@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Results
+from pharmpy.workflows import Results
 
 
 @dataclass(frozen=True)

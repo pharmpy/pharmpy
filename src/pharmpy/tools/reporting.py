@@ -26,5 +26,4 @@ def create_report(results: Results, path: Union[Path, str]):
         tmp_path = Path(tmpdirname)
         json_path = tmp_path / 'results.json'
         results.to_json(json_path)
-        print(results.rst_path)
         reporting.generate_report(results.rst_path, json_path, path)

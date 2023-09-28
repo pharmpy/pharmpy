@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
 from pharmpy.tools.external.nonmem.results import simfit_results
+from pharmpy.workflows import Results
 
 
 @dataclass(frozen=True)

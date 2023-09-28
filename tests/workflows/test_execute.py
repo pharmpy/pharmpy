@@ -5,10 +5,10 @@ from typing import Optional
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.model import Results
 from pharmpy.modeling import set_instantaneous_absorption
 from pharmpy.tools import read_results
 from pharmpy.workflows import (
+    Results,
     Task,
     ToolDatabase,
     Workflow,

@@ -4,9 +4,10 @@ import os
 from dataclasses import replace
 from typing import TypeVar
 
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
 
 from .context import insert_context
+from .results import Results
 from .workflow import Workflow, WorkflowBuilder
 
 T = TypeVar('T')

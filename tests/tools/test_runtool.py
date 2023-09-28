@@ -5,9 +5,9 @@ import pytest
 
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
 from pharmpy.tools.run import import_tool, run_tool_with_name
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import Results, Task, Workflow, WorkflowBuilder
 
 
 def test_import_tool():
