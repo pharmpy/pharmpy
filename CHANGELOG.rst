@@ -1,17 +1,32 @@
-next version
-------------
+0.102.0 (2023-09-28)
+--------------------
 
 New features
 ============
 
 * Add modeling.plot_dv_vs_ipred
 * Add modeling.plot_cwres_vs_idv
+* Add modeling.add_indirect_effect
+* Add option for presystemic circulation for modeling.add_metabolite
+* Add bic for multiple testing in modeling.calculate_bic
+* Support PKPD models in the amd tool
+* Support Drug-metabolite models in the amd tool
+* Add first version of report for amd
+* Add PKPD models to MFL
+* Add modeling.filter_dataset
 
 Changes
 =======
 
 * Change default p-value in ruvsearch from 0.05 to 0.001
 * Change default p-values in covsearch from 0.05 and 0.01 to 0.01 and 0.001 
+* Change the mfl for modelsearch to mean search space and not which transformations to do 
+* Change the syntax for LAGTIME in the MFL
+
+Bugfixes
+========
+
+* Allow ~ for home directory in read_modelfit_results
 
 0.101.0 (2023-09-01)
 --------------------
