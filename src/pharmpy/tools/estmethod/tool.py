@@ -56,18 +56,18 @@ def create_workflow(
     EstMethodResults
         Estmethod tool result object
 
-     Examples
-     --------
-     >>> from pharmpy.modeling import *
-     >>> from pharmpy.tools import run_estmethod, load_example_modelfit_results
-     >>> model = load_example_model("pheno")
-     >>> results = load_example_modelfit_results("pheno")
-     >>> methods = ['imp', 'saem']
-     >>> parameter_uncertainty_methods = None
-     >>> run_estmethod( # doctest: +SKIP
-     >>>     'reduced', methods=methods, solvers='all', # doctest: +SKIP
-     >>>      parameter_uncertainty_methods=parameter_uncertainty_methods, results=results, model=model # doctest: +SKIP
-     >>> ) # doctest: +SKIP
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import run_estmethod, load_example_modelfit_results
+    >>> model = load_example_model("pheno")
+    >>> results = load_example_modelfit_results("pheno")
+    >>> methods = ['imp', 'saem']
+    >>> parameter_uncertainty_methods = None
+    >>> run_estmethod( # doctest: +SKIP
+    >>>     'reduced', methods=methods, solvers='all', # doctest: +SKIP
+    >>>      parameter_uncertainty_methods=parameter_uncertainty_methods, results=results, model=model # doctest: +SKIP
+    >>> ) # doctest: +SKIP
 
     """
     wb = WorkflowBuilder(name="estmethod")
