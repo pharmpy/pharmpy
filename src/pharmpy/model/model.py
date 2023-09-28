@@ -299,12 +299,15 @@ class Model(Immutable):
             datainfo = kwargs['datainfo']
             if not isinstance(datainfo, DataInfo):
                 raise TypeError("model.datainfo must be of DataInfo type")
+            new_datainfo = True
         else:
             datainfo = self._datainfo
+            new_datainfo = False
 
         if new_dataset and dataset is not None:
             datainfo = update_datainfo(datainfo, dataset)
-            datainfo = datainfo.replace(path=None)
+            if not new_datainfo:
+                datainfo = datainfo.replace(path=None)
 
         # Has to be checked after datainfo is updated since it looks for symbols in datainfo as well
         if 'statements' in kwargs:
