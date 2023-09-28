@@ -304,6 +304,7 @@ class Model(Immutable):
 
         if new_dataset and dataset is not None:
             datainfo = update_datainfo(datainfo, dataset)
+            datainfo = datainfo.replace(path=None)
 
         # Has to be checked after datainfo is updated since it looks for symbols in datainfo as well
         if 'statements' in kwargs:
