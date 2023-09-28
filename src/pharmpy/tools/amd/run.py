@@ -134,7 +134,7 @@ def run_amd(
             raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
 
         if search_space is None:
-            structsearch_features = "DIRECTEFFECT(*);EFFECTCOMP(*)"
+            structsearch_features = "DIRECTEFFECT(*);EFFECTCOMP(*);INDIRECTEFFECT(*,*)"
         else:
             structsearch_features = search_space
     else:
