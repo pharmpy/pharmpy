@@ -461,6 +461,8 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
 def test_read_modelfit_results(testdata):
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
     assert res.ofv == 586.27605628188053
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_design.mod')
+    assert res.ofv == 730.9699060285753
 
 
 def test_load_example_modelfit_results():
