@@ -128,6 +128,15 @@ def run_amd(
     if modeltype == 'pkpd':
         dv = 2
         iiv_strategy = 'pd_fullblock'
+        try:
+            input_search_space_features = [] if search_space is None else mfl_parse(search_space)
+        except:  # noqa E722
+            raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
+
+        if search_space is None:
+            structsearch_features = "DIRECTEFFECT(*);EFFECTCOMP(*)"
+        else:
+            structsearch_features = search_space
     else:
         dv = None
         iiv_strategy = 'fullblock'
@@ -223,6 +232,7 @@ def run_amd(
                 func = _subfunc_structsearch(
                     route=administration,
                     type=modeltype,
+                    search_space=structsearch_features,
                     b_init=b_init,
                     emax_init=emax_init,
                     ec50_init=ec50_init,
