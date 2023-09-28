@@ -65,7 +65,7 @@ class NONMEMTableFile:
             table = ExtTable(''.join(content))
         elif suffix == '.phi':
             table = PhiTable(''.join(content))
-        elif suffix == '.cov' or suffix == '.cor' or suffix == '.coi':
+        elif suffix in ['.cov', '.cor', '.coi']:
             table = CovTable(''.join(content))
         else:
             # Remove repeated header lines, but not the first
