@@ -1542,7 +1542,7 @@ class Infusion(Dose):
     @classmethod
     def create(
         cls,
-        amount=Union[str, sympy.Basic],
+        amount: Union[str, sympy.Basic],
         admid: int = 1,
         rate: Optional[Union[str, sympy.Basic]] = None,
         duration: Optional[Union[str, sympy.Basic]] = None,
@@ -1553,7 +1553,7 @@ class Infusion(Dose):
             raise ValueError('Cannot have both rate and duration for Infusion')
         if rate is not None:
             rate = parse_expr(rate)
-        else:
+        if duration is not None:
             duration = parse_expr(duration)
         return cls(parse_expr(amount), admid=admid, rate=rate, duration=duration)
 
