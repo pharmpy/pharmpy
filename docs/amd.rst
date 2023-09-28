@@ -48,7 +48,7 @@ Arguments
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``results``                                       | ModelfitResults if input is a model                                                                             |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``modeltype``                                     | Type of model to build. Currently 'basic_pk'                                                                    |
+| ``modeltype``                                     | Type of model to build. Currently 'basic_pk', 'pkpd' or 'drug_metabolite'                                       |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``administration``                                | Route of administration. One of 'iv', 'oral' or 'ivoral'                                                        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -57,6 +57,14 @@ Arguments
 | ``vc_init``                                       | Initial estimate for the central compartment population volume (default is 1)                                   |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``mat_init``                                      | Initial estimate for the mean absorption time (only for oral models, default is 0.1)                            |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+| ``b_init``                                        | Initial estimate for the baseline effect (only for pkpd models, default is 0.1)                                 |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+| ``emax_init``                                     | Initial estimate for the Emax (only for pkpd models, default is 0.1)                                            |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+| ``ec50_init``                                     | Initial estimate for the EC50 (only for pkpd models, default is 0.1)                                            |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+| ``met_init``                                      | Initial estimate for the mean equilibration time (only for pkpd models, default is 0.1)                         |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | :ref:`search_space<search_space_amd>`             | MFL for search space of structural and covariate models (default depends on ``modeltype``)                      |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -245,6 +253,8 @@ for each subtool, see the respective subheading.
 | modelsearch      | Search for best structural model for a PK model, includes absorption, distribution, and         |
 |                  | elimination                                                                                     |
 +------------------+-------------------------------------------------------------------------------------------------+
+| structsearch     | Search for best structural model. Includes PKPD and drug metabolite models                      |
++------------------+-------------------------------------------------------------------------------------------------+
 | iivsearch        | Search for best IIV structure, both in terms of number of IIVs to keep as well as covariance    |
 |                  | structure                                                                                       |
 +------------------+-------------------------------------------------------------------------------------------------+
@@ -261,8 +271,12 @@ for each subtool, see the respective subheading.
 Structural
 ~~~~~~~~~~
 
-This subtool selects the best structural model, see :ref:`modelsearch` for more details about the tool. The settings
-that the AMD tool uses for this subtool can be seen in the table below.
+This subtool selects the best structural model, see :ref:`modelsearch` or :ref:`structsearch` for more details about the tool.
+
+Modelsearch
+===========
+
+The settings that the AMD tool uses for the modelsearch subtool can be seen in the table below.
 
 +---------------+----------------------------------------------------------------------------------------------------+
 | Argument      | Setting                                                                                            |
@@ -277,6 +291,17 @@ that the AMD tool uses for this subtool can be seen in the table below.
 +---------------+----------------------------------------------------------------------------------------------------+
 | cutoff        | ``None``                                                                                           |
 +---------------+----------------------------------------------------------------------------------------------------+
+
+Structsearch
+============
+
+The structsearch tool selects the best structural model from a set of models. Currently implemented
+model types are PKPD and drug-metabolite.
+
+Please note that it is only possible to run the AMD tool for the PD part of PKPD models. The tool
+expects a fully build PK model as input. 
+In order to run AMD for a pkpd model the ``modeltype`` needs to be set to `pkpd`.
+
 
 IIVsearch
 ~~~~~~~~~

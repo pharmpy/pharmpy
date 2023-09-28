@@ -29,6 +29,7 @@ Tools in Pharmpy
 
    AMD - automatic model development <amd>
    Modelsearch - search for best structural model for a PK model <modelsearch>
+   Structsearch - search for best structural model for PKPD and drug metabolite models <structsearch>
    IIVsearch - search for best IIV structure (both variance and covariance) <iivsearch>
    IOVsearch - search for best IOV structure and trim IIV <iovsearch>
    COVsearch - identify covariates that explain some of the IIV <covsearch>

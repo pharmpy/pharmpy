@@ -1,0 +1,14 @@
+{
+  "commands": [
+    {
+      "args": [
+        "/home/antonia/nonmem/run/nmfe75",
+        "structsearch_run3.mod",
+        "results.lst"
+      ],
+      "returncode": 0,
+      "stdout": "stdout",
+      "stderr": "stderr"
+    }
+  ]
+}

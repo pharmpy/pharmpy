@@ -1,0 +1,55 @@
+__version__
+0.101.2
+
+summary_tool
+model,description,n_params,d_params,dbic,bic,rank,parent_model
+structsearch_run2,EFFECTCOMP_LINEAR,6,3,1.215004173200981,27.745012543166936,1,baseline_model
+structsearch_run1,DIRECT_EMAX,6,3,1.2126033970191088,27.74741331934881,2,baseline_model
+baseline_model,baseline_model,3,0,0.0,28.960016716367917,3,baseline_model
+structsearch_run3,EFFECTCOMP_EMAX,7,4,-0.9843797265917722,29.94439644295969,4,baseline_model
+
+summary_models
+step,model,description,minimization_successful,errors_found,warnings_found,ofv,runtime_total,estimation_runtime,TVCL_estimate,TVV_estimate,IVCL_estimate,IVV_estimate,SIGMA_1_1_estimate,POP_B_estimate,IIV_B_estimate,sigma_estimate,POP_E_MAX_estimate,POP_EC_50_estimate,IIV_E_MAX_estimate,POP_MET_estimate,POP_SLOPE_estimate,IIV_SLOPE_estimate
+0,pheno_pd_filtered,PHENOBARB SIMPLE MODEL. Filtered dataset.,True,0,2,10.213076580177807,3.0,0.0,0.00273872,1.44718,3.09626e-06,3.1128e-06,0.00630754,,,,,,,,,
+1,baseline_model,baseline_model,True,0,2,23.872420381135534,3.0,0.02,,,,,,5.75005,9e-06,0.338363,,,,,,
+1,structsearch_run1,DIRECT_EMAX,True,0,2,17.572220648884038,6.0,0.04,,,,,,0.0575005,9e-06,0.0934173,144566.0,35393.8,9e-06,,,
+1,structsearch_run2,EFFECTCOMP_LINEAR,True,0,2,17.569819872702165,7.0,1.9,,,,,,0.0940825,9e-06,0.0932658,,,,0.0999929,2.47537,9e-06
+1,structsearch_run3,EFFECTCOMP_EMAX,True,0,2,17.5719791951587,8.0,3.55,,,,,,0.0575005,9e-06,0.0933228,177469.0,43433.8,9e-06,0.101217,,
+
+summary_individuals
+model,ID,description,parent_model,outlier_count,ofv,dofv_vs_parent,predicted_dofv,predicted_residual
+baseline_model,1,baseline_model,baseline_model,0.0,11.337360131437972,0.0,,
+baseline_model,2,baseline_model,baseline_model,0.0,12.535060249697562,0.0,,
+structsearch_run1,1,DIRECT_EMAX,baseline_model,0.0,9.328655148615054,2.008704982822918,,
+structsearch_run1,2,DIRECT_EMAX,baseline_model,0.0,8.243565500268982,4.29149474942858,,
+structsearch_run2,1,EFFECTCOMP_LINEAR,baseline_model,0.0,9.355828248477632,1.9815318829603399,,
+structsearch_run2,2,EFFECTCOMP_LINEAR,baseline_model,0.0,8.213991624224533,4.321068625473028,,
+structsearch_run3,1,EFFECTCOMP_EMAX,baseline_model,0.0,9.330942538243184,2.0064175931947883,,
+structsearch_run3,2,EFFECTCOMP_EMAX,baseline_model,0.0,8.241036656915515,4.294023592782047,,
+
+summary_individuals_count
+model,description,dbic,inf_selection,inf_params,out_obs,out_ind,inf_outlier,parent_model
+structsearch_run2,EFFECTCOMP_LINEAR,1.215004173200981,1,0,0,0,0,baseline_model
+structsearch_run1,DIRECT_EMAX,1.2126033970191088,1,0,0,0,0,baseline_model
+baseline_model,baseline_model,0.0,0,0,0,0,0,baseline_model
+structsearch_run3,EFFECTCOMP_EMAX,-0.9843797265917722,1,0,0,0,0,baseline_model
+
+summary_errors
+model,category,error_no,time,message
+baseline_model,WARNING,0,2023-09-27 14:01:01.779582,"THE NUMBER OF PARAMETERS TO BE ESTIMATED
+EXCEEDS THE NUMBER OF INDIVIDUALS WITH DATA."
+baseline_model,WARNING,1,2023-09-27 14:01:01.779582,PARAMETER ESTIMATE IS NEAR ITS BOUNDARY
+structsearch_run1,WARNING,0,2023-09-27 14:01:01.779582,"THE NUMBER OF PARAMETERS TO BE ESTIMATED
+EXCEEDS THE NUMBER OF INDIVIDUALS WITH DATA."
+structsearch_run1,WARNING,1,2023-09-27 14:01:01.779582,PARAMETER ESTIMATE IS NEAR ITS BOUNDARY
+structsearch_run2,WARNING,0,2023-09-27 14:01:01.779582,"THE NUMBER OF PARAMETERS TO BE ESTIMATED
+EXCEEDS THE NUMBER OF INDIVIDUALS WITH DATA."
+structsearch_run2,WARNING,1,2023-09-27 14:01:01.779582,PARAMETER ESTIMATE IS NEAR ITS BOUNDARY
+structsearch_run3,WARNING,0,2023-09-27 14:01:01.779582,"THE NUMBER OF PARAMETERS TO BE ESTIMATED
+EXCEEDS THE NUMBER OF INDIVIDUALS WITH DATA."
+structsearch_run3,WARNING,1,2023-09-27 14:01:01.779582,PARAMETER ESTIMATE IS NEAR ITS BOUNDARY
+
+tool_database
+<pharmpy.workflows.tool_database.local_directory.LocalDirectoryToolDatabase object at 0x7fe673fcead0>
+
+
