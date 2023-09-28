@@ -73,10 +73,10 @@ class NONMEMTableFile:
             table = NONMEMTable(''.join(content))  # Fallback to non-specific table type
 
         if table_title_line is not None:
-            m = re.match(r'TABLE NO.\s+(\d+)', table_title_line)
-            if not m:
+            table_number_match = re.match(r'TABLE NO.\s+(\d+)', table_title_line)
+            if not table_number_match:
                 raise ValueError(f"Illegal {suffix}-file: missing TABLE NO.")
-            table.number = int(m.group(1))
+            table.number = int(table_number_match.group(1))
             table.is_evaluation = False
             if re.search(r'(Evaluation)', table_title_line):
                 table.is_evaluation = True  # No estimation step was run
