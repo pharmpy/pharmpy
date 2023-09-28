@@ -2021,8 +2021,12 @@ class Statements(Sequence, Immutable):
         └───────┘
         """
         i = self._get_ode_system_index()
-        ret = None if i == -1 else self[i]
-        return ret
+        if i == -1:
+            return None
+        else:
+            cs = self[i]
+            assert isinstance(cs, CompartmentalSystem)
+            return cs
 
     @property
     def before_odes(self) -> Statements:
