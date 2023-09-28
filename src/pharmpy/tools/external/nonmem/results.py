@@ -86,8 +86,8 @@ def _parse_modelfit_results(
     (
         runtime_total,
         log_likelihood,
-        covstatus,
-        covstatus_table_number,
+        parameter_uncertainty_status,
+        parameter_uncertainty_table_number,
         minimization_successful,
         function_evaluations,
         significant_digits,
@@ -111,7 +111,7 @@ def _parse_modelfit_results(
     termcause_iters = pd.Series(termination_cause, index=eststeps, name='termination_cause')
     sigdigs_iters = pd.Series(significant_digits, index=eststeps, name='significant_digits')
 
-    if covstatus and ses is not None:
+    if parameter_uncertainty_status and ses is not None:
         cov = _parse_matrix(path.with_suffix(".cov"), control_stream, name_map, table_numbers)
         cor = _parse_matrix(path.with_suffix(".cor"), control_stream, name_map, table_numbers)
         if cor is not None:
@@ -244,7 +244,7 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
     runtime_total = rfile.runtime_total
 
     log_likelihood_table_number = None
-    covstatus_table_number = table_numbers[-1]
+    parameter_uncertainty_table_number = table_numbers[-1]
 
     for table_number in reversed(table_numbers):
         if "OPTIMALITY" not in rfile.table[table_number]['METH']:
@@ -256,7 +256,9 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
     except (KeyError, FileNotFoundError):
         log_likelihood = np.nan
 
-    covstatus = rfile.covariance_status(covstatus_table_number)['covariance_step_ok']
+    parameter_uncertainty_status = rfile.parameter_uncertainty_status(
+        parameter_uncertainty_table_number
+    )['parameter_uncertainty_step_ok']
 
     est_table_numbers = [
         table_number
@@ -276,8 +278,8 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
     return (
         runtime_total,
         log_likelihood,
-        covstatus,
-        covstatus_table_number,
+        parameter_uncertainty_status,
+        parameter_uncertainty_table_number,
         minimization_successful,
         function_evaluations,
         significant_digits,

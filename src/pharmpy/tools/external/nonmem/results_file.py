@@ -43,14 +43,14 @@ class NONMEMResultsFile:
                 result['minimization_successful'] = False
         return result
 
-    def covariance_status(self, table_number):
-        result = NONMEMResultsFile.unknown_covariance()
+    def parameter_uncertainty_status(self, table_number):
+        result = NONMEMResultsFile.unknown_parameter_uncertainty()
         if self._supported_nonmem_version:
             if table_number in self.table.keys():
                 for key in result.keys():
                     result[key] = self.table[table_number].get(key)
             else:
-                result['covariance_step_ok'] = False
+                result['parameter_uncertainty_step_ok'] = False
         return result
 
     def ofv(self, table_number):
@@ -71,8 +71,8 @@ class NONMEMResultsFile:
         )
 
     @staticmethod
-    def unknown_covariance() -> Dict[str, Optional[Union[bool, float]]]:
-        return {'covariance_step_ok': None}
+    def unknown_parameter_uncertainty() -> Dict[str, Optional[Union[bool, float]]]:
+        return {'parameter_uncertainty_step_ok': None}
 
     @staticmethod
     def unknown_termination() -> Dict[str, Optional[Union[bool, float]]]:
@@ -96,26 +96,28 @@ class NONMEMResultsFile:
 
     @staticmethod
     def parse_tere(rows):
-        result = NONMEMResultsFile.unknown_covariance()
-        result['covariance_step_ok'] = False
+        result = NONMEMResultsFile.unknown_parameter_uncertainty()
+        result['parameter_uncertainty_step_ok'] = False
         result['estimation_runtime'] = np.nan
         if len(rows) < 1:
             return result
 
-        cov_not_ok = re.compile(
+        parameter_uncertainty_not_ok = re.compile(
             r'( INTERPRET VARIANCE-COVARIANCE OF ESTIMATES WITH CARE)|'
             r'(R|S) MATRIX ALGORITHMICALLY SINGULAR'
         )
         # Need variable whitespace
-        cov_ok = re.compile(r' Elapsed (covariance|opt\. design)\s+time in seconds: ')
+        parameter_uncertainty_ok = re.compile(
+            r' Elapsed (covariance|opt\. design)\s+time in seconds: '
+        )
         est_time = re.compile(r' Elapsed estimation\s+time in seconds:\s+(\d+\.*\d+)')
 
         for row in rows:
-            if cov_not_ok.match(row):
-                result['covariance_step_ok'] = False
+            if parameter_uncertainty_not_ok.match(row):
+                result['parameter_uncertainty_step_ok'] = False
                 break
-            if cov_ok.match(row):
-                result['covariance_step_ok'] = True
+            if parameter_uncertainty_ok.match(row):
+                result['parameter_uncertainty_step_ok'] = True
                 break
             m = est_time.match(row)
             if m:
