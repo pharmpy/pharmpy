@@ -59,7 +59,7 @@ class NONMEMTableFile:
     ) -> NONMEMTable:
         # NOTE: Content lines must contain endlines!
 
-        table_line = None if notitle else content.pop(0)
+        table_title_line = None if notitle else content.pop(0)
 
         if suffix == '.ext':
             table = ExtTable(''.join(content))
@@ -72,19 +72,19 @@ class NONMEMTableFile:
             content[1:] = [line for line in content[1:] if not re.match(r'\s[A-Za-z_]', line)]
             table = NONMEMTable(''.join(content))  # Fallback to non-specific table type
 
-        if table_line is not None:
-            m = re.match(r'TABLE NO.\s+(\d+)', table_line)
+        if table_title_line is not None:
+            m = re.match(r'TABLE NO.\s+(\d+)', table_title_line)
             if not m:
                 raise ValueError(f"Illegal {suffix}-file: missing TABLE NO.")
             table.number = int(m.group(1))
             table.is_evaluation = False
-            if re.search(r'(Evaluation)', table_line):
+            if re.search(r'(Evaluation)', table_title_line):
                 table.is_evaluation = True  # No estimation step was run
             m = re.match(
                 r'TABLE NO.\s+\d+: (.*?): (?:Goal Function=(.*): )?Problem=(\d+) '
                 r'Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) '
                 r'Iteration2=(\d+)',
-                table_line,
+                table_title_line,
             )
             if m:
                 table.method = m.group(1)
