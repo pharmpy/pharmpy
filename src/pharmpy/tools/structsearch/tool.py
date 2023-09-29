@@ -137,10 +137,10 @@ def run_pkpd(context, model, search_space, b_init, emax_init, ec50_init, met_ini
         model,
         search_space,
         b_init,
-        ests=model.modelfit_results.parameter_estimates,
-        emax_init=emax_init,
-        ec50_init=ec50_init,
-        met_init=met_init,
+        model.modelfit_results.parameter_estimates,
+        emax_init,
+        ec50_init,
+        met_init,
     )
 
     wf2 = create_fit_workflow(pkpd_models)

@@ -11,7 +11,6 @@ from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.parameter_variability import get_occasion_levels
 from pharmpy.reporting import generate_report
-from pharmpy.results import ModelfitResults
 from pharmpy.tools import retrieve_final_model, retrieve_models, summarize_errors, write_results
 from pharmpy.tools.allometry.tool import validate_allometric_variable
 from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
@@ -460,10 +459,6 @@ def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
         )
         final_model = res.final_model
         n_peripherals = len(final_model.statements.ode_system.find_peripheral_compartments())
-<<<<<<< HEAD
-=======
-        # Get model features
->>>>>>> 7a02c675 (Fix merge conflicts + small changes)
         modelfeatures = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
         # Model features - 1 peripheral compartment
         modelfeatures_minus = modelfeatures.replace(peripherals=Peripherals((n_peripherals - 1,)))
