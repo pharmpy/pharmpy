@@ -42,7 +42,6 @@ To run modelsearch from the command line, the example code is redefined accordin
 
     pharmpy run modelsearch path/to/model 'PERIPHERALS(1);LAGTIME()' 'reduced_stepwise' --iiv_strategy 'absorption_delay' --rank_type 'bic'
 
-
 Arguments
 ~~~~~~~~~
 For a more detailed description of each argument, see their respective chapter on this page.
@@ -74,9 +73,90 @@ For a more detailed description of each argument, see their respective chapter o
 The search space
 ~~~~~~~~~~~~~~~~
 
-The model feature search space is a set of possible combinations of model features that will be applied and tested on
-the input model. The supported features cover absorption, absorption delay, elimination, and distribution. The search
-space is given as a string with a specific grammar, according to the `Model Feature Language` (MFL) (see :ref:`detailed description<mfl>`).
+The model feature search space is a set of all possible combinations of model features that is allowed for the final model. The supported 
+features cover absorption, absorption delay, elimination, and distribution. The search space is given as a string with a specific 
+grammar, according to the `Model Feature Language` (MFL) (see :ref:`detailed description<mfl>`). If an attribute is not given, the default
+value for that attribute will be used as seen below. If the input model is not part of the given search space, a base model will be created. This is 
+done by performing the least amount of transformations to the input model in order to make the base model a part of the given search 
+space.
+
++---------------+-------------------------------+
+| Category      | DEFAULT                       |
++===============+===============================+
+| ABSORPTION    | :code:`INST`                  |
++---------------+-------------------------------+
+| ELIMINATION   | :code:`FO`                    |
+|               |                               |
++---------------+-------------------------------+
+| PERIPHERALS   | :code:`0`                     |
++---------------+-------------------------------+
+| TRANSITS      | :code:`0`, :code:`DEPOT`      |
+|               |                               |
++---------------+-------------------------------+
+| LAGTIME       | :code:`OFF`                   |
++---------------+-------------------------------+
+
+The logical flow for the creation of the base model can be seen below. In summary, given an input model and a search space, the first step is 
+to examine if the input model is a part of the search space. If so, the model features for the input model is filtered from the search space. 
+As these are already present in the input model, they are not needed in the search space. After filtration, all transformations that are left will 
+be examined. However, if the input model is not part of the search space, the base model is created by which will be part of the search space. 
+Following this, the model features from the base model is filtered from the search space which leaves the transformations left to be examined.
+
+
+.. graphviz::
+
+    digraph G {
+    splines = false
+      input_model [
+        label = "Input model";
+      ];
+      
+      search_space [
+        label = "Search space";
+      ];
+      
+      input_ss [
+        label = "Input + search space";
+      ];
+      
+      filter_model [
+        label = "Filter model features from search space";
+      ];
+      
+      create_base [
+        label = "Create a base";
+      ];
+
+      input_model -> input_ss;
+      search_space -> input_ss;
+      input_ss -> create_base [label = "Input model &notin; search space"];
+      create_base -> filter_model;
+      input_ss -> filter_model [label = "Input model &isin; search space"];
+    }
+    
+Some examples of this workflow :
+
++---------------------------+------------------+---------------------+--------------------------+
+| Search space              | Input model      | Base model          | Transformations to apply |
++===========================+==================+=====================+==========================+
+| ABSORPTION([FO,ZO])       | ABSORPTION(FO)   | ABSORPTION(FO)      | ABSORPTION(ZO)           |
+| ELIMINATION(FO)           | ELIMINATION(ZO)  | ELIMINATION(FO)     | PERIPHERALS(2)           |
+| PERIPHERALS([1,2])        | TRANSITS(0)      | TRANSITS(0)         |                          |
+|                           | PERIPHERALS(0)   | PERIPHERALS(1)      |                          |
+|                           | LAGTIME(ON)      | LAGTIME(OFF)        |                          |
++---------------------------+------------------+---------------------+--------------------------+
+| ABSORPTION(FO)            | ABSORPTION(FO)   | ABSORPTION(FO)      | TRANSITS(2)              |
+| ELIMINATION(FO)           | ELIMINATION(ZO)  | ELIMINATION(FO)     |                          |
+| TRANSITS([1,2])           | TRANSITS(0)      | TRANSITS(1)         |                          |
+|                           | PERIPHERALS(2)   | PERIPHERALS(0)      |                          |
+|                           | LAGTIME(OFF)     | LAGTIME(OFF)        |                          |
++---------------------------+------------------+---------------------+--------------------------+
+| ABSORPTION([FO,ZO])       | ABSORPTION(FO)   | Not needed since    | ABSORPTION(ZO)           |
+| ELIMINATION([FO,ZO,MM])   | ELIMINATION(FO)  | input model is part | ELIMINATION([ZO,MM])     |
+| PERIPHERALS([0,1,2])      | TRANSITS(0)      | of search space     | PERIPHERALS([1,2]        |
+| LAGTIME([OFF,ON])         | PERIPHERALS(0)   |                     | LAGTIME(ON)              |
+|                           | LAGTIME(OFF)     |                     |                          |
++---------------------------+------------------+---------------------+--------------------------+
 
 .. _algorithms_modelsearch:
 
@@ -114,9 +194,9 @@ never run:
 +-----------------------+-------------------+
 | ABSORPTION(SEQ-ZO-FO) | TRANSITS          |
 +-----------------------+-------------------+
-| ABSORPTION(SEQ-ZO-FO) | LAGTIME           |
+| ABSORPTION(SEQ-ZO-FO) | LAGTIME(ON)       |
 +-----------------------+-------------------+
-| LAGTIME               | TRANSITS          |
+| LAGTIME(ON)           | TRANSITS          |
 +-----------------------+-------------------+
 
 Additionally, peripheral compartments are always run sequentially, i.e. the algorithm will never add more than one
@@ -317,7 +397,7 @@ start model (in this case comparing BIC), and final ranking:
 .. pharmpy-execute::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
     res = read_results('tests/testdata/results/modelsearch_results.json')
     res.summary_tool
 

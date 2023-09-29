@@ -30,7 +30,7 @@ Column              Description
 .. pharmpy-execute::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
     res = read_results('tests/testdata/results/bootstrap_results.json')
     res.parameter_statistics
 

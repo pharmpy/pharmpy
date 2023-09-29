@@ -10,8 +10,8 @@ from pharmpy.model.external.nonmem.nmtran_parser import NMTranControlStream
 from pharmpy.model.external.nonmem.parsing import parse_table_columns
 from pharmpy.model.external.nonmem.table import ExtTable, NONMEMTableFile, PhiTable
 from pharmpy.model.external.nonmem.update import create_name_map
-from pharmpy.results import ModelfitResults
 from pharmpy.workflows.log import Log
+from pharmpy.workflows.results import ModelfitResults
 
 from .results_file import NONMEMResultsFile
 

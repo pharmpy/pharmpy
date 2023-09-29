@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from pharmpy.model import Model, Results
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+from pharmpy.model import Model
+from pharmpy.workflows import Results, Task, Workflow, WorkflowBuilder
 
 
 def create_workflow(model: Model):

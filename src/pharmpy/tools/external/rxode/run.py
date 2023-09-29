@@ -11,7 +11,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model.external.rxode import convert_model
 from pharmpy.modeling import get_omegas, get_sigmas, write_csv
-from pharmpy.results import ModelfitResults
+from pharmpy.workflows.results import ModelfitResults
 
 
 def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:

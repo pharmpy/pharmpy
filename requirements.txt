@@ -46,7 +46,7 @@ matplotlib-inline==0.1.6
 mdurl==0.1.2
 mistune==3.0.1
 mpmath==1.3.0
-msgpack==1.0.6
+msgpack==1.0.7
 nbclient==0.8.0
 nbconvert==7.8.0
 nbformat==5.9.2
@@ -100,7 +100,7 @@ traitlets==5.10.1
 typing-extensions==4.8.0
 tzdata==2023.3
 urllib3==2.0.5
-wcwidth==0.2.6
+wcwidth==0.2.7
 webencodings==0.5.1
 widgetsnbextension==4.0.9
 zict==3.0.0

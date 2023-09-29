@@ -16,7 +16,7 @@ The OFVs of the base model and the linearized model before and after estimation 
 .. pharmpy-execute::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
     res = read_results('tests/testdata/results/linearize_results.json')
     res.ofv
 

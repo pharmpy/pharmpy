@@ -93,7 +93,7 @@ you can look at the ``summary_models`` table. The table is generated with
 .. pharmpy-execute::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
     res = read_results('tests/testdata/results/allometry_results.json')
     res.summary_models
 

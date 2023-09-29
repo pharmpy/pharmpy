@@ -8,14 +8,14 @@ from typing import Any, Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Model, Results
-from pharmpy.results import ModelfitResults
+from pharmpy.model import Model
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.psn_helpers import (
     arguments_from_command,
     options_from_command,
     tool_from_command,
 )
+from pharmpy.workflows.results import ModelfitResults, Results
 
 
 @dataclass(frozen=True)

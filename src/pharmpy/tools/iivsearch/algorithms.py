@@ -12,9 +12,9 @@ from pharmpy.modeling import (
     split_joint_distribution,
 )
 from pharmpy.modeling.expressions import get_rv_parameters
-from pharmpy.results import mfr
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+from pharmpy.workflows.results import mfr
 
 
 def brute_force_no_of_etas(base_model, index_offset=0, keep=None):

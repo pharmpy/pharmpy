@@ -31,7 +31,6 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.blq import has_blq_transformation
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
-from pharmpy.results import ModelfitResults
 from pharmpy.tools import (
     summarize_errors,
     summarize_individuals,
@@ -41,6 +40,7 @@ from pharmpy.tools import (
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows.results import ModelfitResults
 
 from .results import RUVSearchResults, calculate_results
 

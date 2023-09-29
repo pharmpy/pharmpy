@@ -2,10 +2,10 @@ from typing import Optional
 
 from pharmpy.model import Model
 from pharmpy.modeling import resample_data
-from pharmpy.results import ModelfitResults
 from pharmpy.tools.bootstrap.results import calculate_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+from pharmpy.workflows.results import ModelfitResults
 
 
 def create_workflow(model: Model, results: Optional[ModelfitResults] = None, resamples: int = 1):

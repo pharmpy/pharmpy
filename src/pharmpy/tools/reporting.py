@@ -3,7 +3,7 @@ from typing import Union
 
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.internals.fs.tmp import TemporaryDirectory
-from pharmpy.results import Results
+from pharmpy.workflows.results import Results
 
 
 def create_report(results: Results, path: Union[Path, str]):
@@ -26,5 +26,4 @@ def create_report(results: Results, path: Union[Path, str]):
         tmp_path = Path(tmpdirname)
         json_path = tmp_path / 'results.json'
         results.to_json(json_path)
-
         reporting.generate_report(results.rst_path, json_path, path)

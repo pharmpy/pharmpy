@@ -8,19 +8,19 @@ from pathlib import Path
 from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union, get_type_hints
 
 import pharmpy
-import pharmpy.results
 import pharmpy.tools.modelfit
+import pharmpy.workflows.results
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import normalize_user_given_path
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
 from pharmpy.modeling import calculate_aic, calculate_bic, check_high_correlations, read_model
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
-from pharmpy.results import ModelfitResults, mfr
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
-from pharmpy.workflows import Workflow, execute_workflow, split_common_options
+from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
 from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
+from pharmpy.workflows.results import ModelfitResults, mfr
 from pharmpy.workflows.tool_database import ToolDatabase
 
 from .external import parse_modelfit_results
@@ -139,7 +139,7 @@ def read_results(path: Union[str, Path]) -> Results:
 
     """
     path = normalize_user_given_path(path)
-    res = pharmpy.results.read_results(path)
+    res = pharmpy.workflows.results.read_results(path)
     return res
 
 
@@ -342,7 +342,7 @@ def _parse_tool_options_from_json_metadata(
         results_json = tool_options.get(results_key)
         if results_json is not None:
             tool_options = tool_options.copy()
-            tool_options[results_key] = pharmpy.results.read_results(results_json)
+            tool_options[results_key] = pharmpy.workflows.results.read_results(results_json)
 
     return tool_options
 

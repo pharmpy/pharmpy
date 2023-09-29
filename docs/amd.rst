@@ -120,11 +120,11 @@ default is:
 
 .. code-block::
 
-    ABSORPTION([ZO,SEQ-ZO-FO])
-    ELIMINATION([MM,MIX-FO-MM])
-    LAGTIME()
-    TRANSITS([1,3,10],*)
-    PERIPHERALS(1)
+    ABSORPTION([FO,ZO,SEQ-ZO-FO])
+    ELIMINATION([FO,MM,MIX-FO-MM])
+    LAGTIME([OFF,ON])
+    TRANSITS([0,1,3,10],*)
+    PERIPHERALS(0,1)
     COVARIATE(@IIV, @CONTINUOUS, *)
     COVARIATE(@IIV, @CATEGORICAL, CAT)
 
@@ -132,8 +132,8 @@ For a PK IV model, the default is:
 
 .. code-block::
 
-    ELIMINATION([MM,MIX-FO-MM])
-    PERIPHERALS([1,2])
+    ELIMINATION([FO,MM,MIX-FO-MM])
+    PERIPHERALS([0,1,2])
     COVARIATE(@IIV, @CONTINUOUS, *)
     COVARIATE(@IIV, @CATEGORICAL, CAT)
     
@@ -440,7 +440,7 @@ start model (in this case comparing BIC), and final ranking:
 .. pharmpy-execute::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
     res = read_results('tests/testdata/results/amd_results.json')
     res.summary_tool
 
