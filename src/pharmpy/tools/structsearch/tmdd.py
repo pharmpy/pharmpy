@@ -9,7 +9,7 @@ def product_dict(**kwargs):
         yield dict(zip(keys, instance))
 
 
-def create_qss_models(model):
+def create_qss_models(model, index=1):
     # Create qss models with different initial estimates from basic pk model
     qss_base_model = set_tmdd(model, type="QSS")
     cmax = get_observations(model).max()
@@ -18,7 +18,7 @@ def create_qss_models(model):
     )
     qss_candidate_models = [
         set_initial_estimates(set_name(qss_base_model, f"QSS{i}"), inits)
-        for i, inits in enumerate(all_inits, start=1)
+        for i, inits in enumerate(all_inits, start=index)
     ]
     return qss_candidate_models
 
