@@ -1,20 +1,45 @@
 import datetime
-from dataclasses import dataclass
-from typing import Optional
 
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.immutable import Immutable
+
+CATEGORIES = ('ERROR', 'WARNING', 'INFORMATION')
 
 
-@dataclass(frozen=True)
-class LogEntry:
-    category: Optional[str] = None
-    time: datetime.datetime = datetime.datetime.now()
-    message: str = ""
+class LogEntry(Immutable):
+    def __init__(self, category: str, message: str, time: datetime.datetime):
+        self._category = category
+        self._message = message
+        self._time = time
+
+    @classmethod
+    def create(cls, category: str, message: str):
+        if category not in CATEGORIES:
+            raise ValueError(f"Unknown category {category}")
+        return cls(category=category, message=message, time=datetime.datetime.now())
+
+    @property
+    def category(self):
+        """Category of message. One of ERROR, WARNING and INFORMATION"""
+        return self._category
+
+    @property
+    def message(self):
+        """The logged message"""
+        return self._message
+
+    @property
+    def time(self):
+        """Time stamp of log entry
+        """
+        return self._time
 
     def to_dict(self):
-        log_vars = vars(self).copy()
-        log_vars['time'] = self.time.isoformat()
-        return log_vars
+        return {
+            'category': self._category,
+            'message': self._message,
+            'time': self._time.isoformat(),
+        }
 
     @classmethod
     def from_dict(cls, d):
@@ -51,7 +76,7 @@ class Log:
         message : str
             Error message
         """
-        entry = LogEntry(category='ERROR', message=message)
+        entry = LogEntry.create(category='ERROR', message=message)
         self._log.append(entry)
 
     def log_warning(self, message):
@@ -62,7 +87,7 @@ class Log:
         message : str
             Warning message
         """
-        entry = LogEntry(category='WARNING', message=message)
+        entry = LogEntry.create(category='WARNING', message=message)
         self._log.append(entry)
 
     def to_dataframe(self):
