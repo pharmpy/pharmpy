@@ -48,14 +48,14 @@ def _parse_modelfit_results(
             ext_path = path.with_suffix('.ext')
             ext_tables = NONMEMTableFile(ext_path)
         except ValueError:
-            log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
+            log = log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
             return None
 
         for table in ext_tables:
             try:
                 table.data_frame
             except ValueError:
-                log.log_error(
+                log = log.log_error(
                     f"Broken table in ext-file {path.with_suffix('.ext')}, "
                     f"table no. {table.number}"
                 )
@@ -87,6 +87,7 @@ def _parse_modelfit_results(
         significant_digits,
         termination_cause,
         estimation_runtime,
+        log,
     ) = _parse_lst(len(estimation_steps), path, table_numbers, log)
 
     if table_numbers:
@@ -196,21 +197,21 @@ def _parse_matrix(
     return df
 
 
-def _empty_lst_results(n: int):
+def _empty_lst_results(n: int, log):
     false_vec = [False] * n
     nan_vec = [np.nan] * n
     none_vec = [None] * n
-    return None, np.nan, False, false_vec, nan_vec, nan_vec, none_vec, nan_vec
+    return None, np.nan, False, false_vec, nan_vec, nan_vec, none_vec, nan_vec, log
 
 
 def _parse_lst(n: int, path: Path, table_numbers, log: Log):
     try:
         rfile = NONMEMResultsFile(path.with_suffix('.lst'), log=log)
     except OSError:
-        return _empty_lst_results(n)
+        return _empty_lst_results(n, log)
 
     if not table_numbers:
-        return _empty_lst_results(n)
+        return _empty_lst_results(n, log)
 
     runtime_total = rfile.runtime_total
 
@@ -239,6 +240,7 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
         significant_digits,
         termination_cause,
         estimation_runtime,
+        rfile.log,
     )
 
 

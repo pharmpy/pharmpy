@@ -30,8 +30,7 @@ class LogEntry(Immutable):
 
     @property
     def time(self):
-        """Time stamp of log entry
-        """
+        """Time stamp of log entry"""
         return self._time
 
     def to_dict(self):
@@ -50,23 +49,35 @@ class LogEntry(Immutable):
 class Log:
     """Timestamped error and warning log"""
 
-    def __init__(self):
-        self._log = []  # list of LogEntry
+    def __init__(self, entries: tuple[LogEntry, ...] = ()):
+        self._entries = entries
+
+    def __len__(self):
+        return len(self._entries)
+
+    def __iter__(self):
+        return iter(self._entries)
 
     def to_dict(self):
-        return {i: entry.to_dict() for i, entry in enumerate(self._log)}
+        return {i: entry.to_dict() for i, entry in enumerate(self._entries)}
 
     @classmethod
     def from_dict(cls, d):
-        log = cls()
+        entries = []
         for entry in d.values():
             log_entry = LogEntry.from_dict(entry)
-            log._log.append(log_entry)
-        return log
+            entries.append(log_entry)
+        return cls(tuple(entries))
 
     @property
-    def log(self):
-        return self._log
+    def errors(self):
+        entries = [e for e in self._entries if e.category == 'ERROR']
+        return Log(tuple(entries))
+
+    @property
+    def warnings(self):
+        entries = [e for e in self._entries if e.category == 'WARNING']
+        return Log(tuple(entries))
 
     def log_error(self, message):
         """Log an error
@@ -77,7 +88,8 @@ class Log:
             Error message
         """
         entry = LogEntry.create(category='ERROR', message=message)
-        self._log.append(entry)
+        entries = self._entries + (entry,)
+        return Log(entries)
 
     def log_warning(self, message):
         """Log a warning
@@ -88,7 +100,8 @@ class Log:
             Warning message
         """
         entry = LogEntry.create(category='WARNING', message=message)
-        self._log.append(entry)
+        entries = self._entries + (entry,)
+        return Log(entries)
 
     def to_dataframe(self):
         """Create an overview dataframe from log
@@ -98,9 +111,9 @@ class Log:
         pd.DataFrame
             Dataframe with overview of log entries
         """
-        categories = [entry.category for entry in self._log]
-        times = [entry.time for entry in self._log]
-        messages = [entry.message for entry in self._log]
+        categories = [entry.category for entry in self._entries]
+        times = [entry.time for entry in self._entries]
+        messages = [entry.message for entry in self._entries]
         df = pd.DataFrame(
             {
                 'category': categories,
@@ -112,7 +125,7 @@ class Log:
 
     def __repr__(self):
         s = ''
-        for entry in self._log:
+        for entry in self._entries:
             s += f'{entry.category:<8} {entry.time.strftime("%Y-%m-%d %H:%M:%S")}\n'
             for line in entry.message.split('\n'):
                 s += f'    {line}\n'

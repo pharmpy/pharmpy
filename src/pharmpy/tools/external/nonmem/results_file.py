@@ -349,9 +349,9 @@ class NONMEMResultsFile:
 
         if self.log is not None:
             for message in warnings:
-                self.log.log_warning(message)
+                self.log = self.log.log_warning(message)
             for message in errors:
-                self.log.log_error(message)
+                self.log = self.log.log_error(message)
 
     def tag_items(self, path):
         nmversion = re.compile(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION\s+(\S+)')

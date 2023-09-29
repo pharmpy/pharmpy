@@ -709,8 +709,8 @@ def summarize_errors(results: Union[ModelfitResults, List[ModelfitResults]]) -> 
     idcs, rows = [], []
 
     for res in results:
-        if res is not None and len(res.log.log) > 0:
-            for i, entry in enumerate(res.log.log):
+        if res is not None and len(res.log) > 0:
+            for i, entry in enumerate(res.log):
                 idcs.append((res.name, entry.category, i))
                 rows.append([entry.time, entry.message])
 
@@ -968,10 +968,8 @@ def _get_model_result_summary(res, include_all_estimation_steps=False):
         index = pd.MultiIndex.from_tuples(tuples, names=['model', 'step'])
         summary_df = pd.DataFrame(summary_dicts, index=index)
 
-    log_df = res.log.to_dataframe()
-
-    no_of_errors = len(log_df[log_df['category'] == 'ERROR'])
-    no_of_warnings = len(log_df[log_df['category'] == 'WARNING'])
+    no_of_errors = len(res.log.errors)
+    no_of_warnings = len(res.log.warnings)
 
     minimization_idx = summary_df.columns.get_loc('minimization_successful')
     summary_df.insert(loc=minimization_idx + 1, column='errors_found', value=no_of_errors)
