@@ -293,7 +293,7 @@ def run_amd(
     if modeltype == "drug_metabolite":
         orig_dataset = model.dataset
         # FIXME : remove
-        model = filter_dataset(model, 'DVID == 1')
+        model = filter_dataset(model, 'DVID != 2')
 
     if results is None:
         model = run_tool('modelfit', model, path=db.path / 'modelfit', resume=resume)
