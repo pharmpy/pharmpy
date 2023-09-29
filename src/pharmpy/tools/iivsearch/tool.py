@@ -16,12 +16,12 @@ from pharmpy.modeling import (
     create_joint_distribution,
     has_random_effect,
 )
-from pharmpy.results import ModelfitResults
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results, update_initial_estimates
 from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows.results import ModelfitResults
 
 IIV_STRATEGIES = frozenset(
     ('no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock')

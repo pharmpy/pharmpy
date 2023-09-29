@@ -15,7 +15,7 @@ Covariate effects
 .. altair-plot::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
 
     res = read_results('results.json')
     res.covariate_effects_plot

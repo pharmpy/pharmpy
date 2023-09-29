@@ -5,11 +5,10 @@ from typing import Optional
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.model import Results
 from pharmpy.modeling import set_instantaneous_absorption
-from pharmpy.results import ModelfitResults
 from pharmpy.tools import read_results
 from pharmpy.workflows import (
+    Results,
     Task,
     ToolDatabase,
     Workflow,
@@ -17,6 +16,7 @@ from pharmpy.workflows import (
     execute_workflow,
     local_dask,
 )
+from pharmpy.workflows.results import ModelfitResults
 
 # All workflow tests are run by the same xdist test worker
 # This is to limit the number of sporadic failures on GHA on Windows

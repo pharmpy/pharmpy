@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeVar
 
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
 from pharmpy.modeling import update_inits
 from pharmpy.tools import rank_models, summarize_errors
-from pharmpy.workflows import ToolDatabase
+from pharmpy.workflows import Results, ToolDatabase
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 

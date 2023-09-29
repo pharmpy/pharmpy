@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import Model
-from pharmpy.results import ModelfitResults
+from pharmpy.workflows.results import ModelfitResults
 
 from ..model_database import LocalModelDirectoryDatabase
 from .baseclass import ToolDatabase

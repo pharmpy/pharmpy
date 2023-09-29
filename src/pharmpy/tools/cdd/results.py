@@ -7,10 +7,11 @@ from typing import Any, Dict, List, Optional, Union
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import linalg
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
 from pharmpy.modeling import plot_individual_predictions
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
+from pharmpy.workflows import Results
 
 
 @dataclass(frozen=True)

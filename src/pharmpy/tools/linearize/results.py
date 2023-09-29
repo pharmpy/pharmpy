@@ -5,9 +5,10 @@ from pathlib import Path
 from typing import Any, Optional
 
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
 from pharmpy.modeling import plot_iofv_vs_iofv
 from pharmpy.tools import read_modelfit_results
+from pharmpy.workflows import Results
 
 
 @dataclass(frozen=True)

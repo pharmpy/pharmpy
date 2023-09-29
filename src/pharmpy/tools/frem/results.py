@@ -14,7 +14,7 @@ from pharmpy.internals.math import (
     conditional_joint_normal_lambda,
     is_posdef,
 )
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
 from pharmpy.modeling import (
     calculate_individual_shrinkage,
     create_rng,
@@ -26,7 +26,7 @@ from pharmpy.modeling import (
     set_covariates,
 )
 from pharmpy.tools import read_modelfit_results
-from pharmpy.workflows import ToolDatabase
+from pharmpy.workflows import Results, ToolDatabase
 
 
 @dataclass(frozen=True)

@@ -3,7 +3,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import ContextManager, Union
 
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
+
+from ..results import Results
 
 
 class ModelTransaction(ABC):

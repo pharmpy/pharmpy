@@ -831,7 +831,7 @@ def results_print(args):
         path = args.dir
     else:
         error(FileNotFoundError(str(args.dir)))
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
 
     res = read_results(path)
     print(res)
@@ -852,7 +852,7 @@ def results_report(args):
     results_path = args.psn_dir / 'results.json'
     if not results_path.is_file():
         error(FileNotFoundError(results_path))
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
 
     res = read_results(results_path)
     from pharmpy.tools.reporting import create_report

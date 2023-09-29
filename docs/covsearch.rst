@@ -237,7 +237,7 @@ comparing BIC), and final ranking:
     :hide-code:
     :hide-output:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
     res = read_results('tests/testdata/results/covsearch_results.json')
 
 .. pharmpy-execute::

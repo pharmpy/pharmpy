@@ -4,10 +4,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from pharmpy.results import read_results
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.qa.results import calculate_results, psn_qa_results
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
+from pharmpy.workflows.results import read_results
 
 
 def test_add_etas(load_model_for_test, testdata):

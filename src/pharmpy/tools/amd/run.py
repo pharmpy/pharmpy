@@ -4,14 +4,13 @@ from typing import Callable, List, Optional, Tuple, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.model import Model, Results
+from pharmpy.model import Model
 from pharmpy.modeling import plot_cwres_vs_idv, plot_dv_vs_ipred
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.parameter_variability import get_occasion_levels
 from pharmpy.reporting import generate_report
-from pharmpy.results import ModelfitResults
 from pharmpy.tools import retrieve_final_model, summarize_errors, write_results
 from pharmpy.tools.allometry.tool import validate_allometric_variable
 from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
@@ -27,7 +26,8 @@ from pharmpy.tools.mfl.statement.feature.symbols import Name, Wildcard
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.mfl.statement.statement import Statement
 from pharmpy.tools.mfl.stringify import stringify as mfl_stringify
-from pharmpy.workflows import default_tool_database
+from pharmpy.workflows import Results, default_tool_database
+from pharmpy.workflows.results import ModelfitResults
 
 from ..run import run_tool
 from .results import AMDResults

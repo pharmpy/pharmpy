@@ -73,7 +73,7 @@ The effects of each covariate on each parameter is calculated with uncertainty a
 .. pharmpy-execute::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
     res = read_results('tests/testdata/frem/results.json')
     res.covariate_effects
 
