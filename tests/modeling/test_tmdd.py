@@ -25,7 +25,7 @@ def test_qss_1c(pheno_path, load_model_for_test):
     tmdd_model = set_tmdd(model, type="qss")
     assert (
         str(tmdd_model.statements.ode_system.eqs[0].rhs)
-        == """-CL*LCFREE/V1 - KINT*LCFREE*A_TARGET(t)/(KD + LCFREE) - LCFREE*Q/V1 + Q*A_PERIPHERAL1(t)/V2"""
+        == """-CL*LAFREE/V1 - KINT*LAFREE*A_TARGET(t)/(KD + LAFREE) - LAFREE*Q/V1 + Q*A_PERIPHERAL1(t)/V2"""
     )
 
     model2 = add_peripheral_compartment(model)
