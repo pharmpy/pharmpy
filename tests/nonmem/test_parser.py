@@ -61,8 +61,7 @@ def test_round_trip(pheno_path):
 def test_table_columns(buf, columns):
     parser = NMTranParser()
 
-    cs = parser.parse(buf)
-    cs._active_problem = -1  # To trick cs.get_records
+    cs = parser.parse(f'$PROBLEM\n{buf}')
     parsed_columns = parse_table_columns(cs, netas=2)
     assert parsed_columns == columns
 
