@@ -23,6 +23,7 @@ from .compartments import get_bioavailability, get_lag_times
 from .covariate_effect import add_covariate_effect, has_covariate_effect, remove_covariate_effect
 from .data import (
     add_admid,
+    add_cmt,
     add_time_after_dose,
     check_dataset,
     deidentify_data,
@@ -225,6 +226,7 @@ from .write_csv import write_csv
 # Must be set directly, otherwise errors about unused imports
 __all__ = [
     'add_admid',
+    'add_cmt',
     'add_allometry',
     'add_parameter_uncertainty_step',
     'add_covariate_effect',
