@@ -95,8 +95,15 @@ The AMD tool can use both a dataset and a model as input. If the input is a data
 
 If the input is a model, the model needs to be a PK model.
 
+When running the tool for modeltype 'ivoral' with a dataset as input, the dataset is required to have a CMT column with values 1 
+(oral doses) and 2 (IV doses). This is required for the creation of the initial one-compartment model with first order absorption. 
+In order to easily differentiate the two doses, an administration ID (ADMID) column will be added to the data as well. This will be 
+used in order to differentiate the different doses from one another with respect to the applied error model. If a model is used as 
+input instead, this is not applied as it is assumed to have the correct CMT values for the connected model, along with a way of 
+differentiating the doses from one another.
+
 .. warning::
-    The AMD tool, or more specifically the :ref:`modelsearch` tool, does not support NONMEM models with a CMT or RATE
+    The AMD tool, or more specifically the :ref:`modelsearch` tool, does not support NONMEM models with a RATE
     column. This needs to be dropped (either via model or datainfo file) or excluded from the dataset.
 
 .. _search_space_amd:
@@ -126,6 +133,18 @@ For a PK IV model, the default is:
 .. code-block::
 
     ELIMINATION([FO,MM,MIX-FO-MM])
+    PERIPHERALS([0,1,2])
+    COVARIATE(@IIV, @CONTINUOUS, *)
+    COVARIATE(@IIV, @CATEGORICAL, CAT)
+    
+For a PK IV+ORAL model, the default is:
+
+.. code-block::
+
+    ABSORPTION([FO,ZO,SEQ-ZO-FO])
+    ELIMINATION([FO,MM,MIX-FO-MM])
+    LAGTIME([OFF,ON])
+    TRANSITS([0,1,3,10],*)
     PERIPHERALS([0,1,2])
     COVARIATE(@IIV, @CONTINUOUS, *)
     COVARIATE(@IIV, @CATEGORICAL, CAT)
