@@ -196,7 +196,7 @@ def set_tmdd(model: Model, type: str):
             central = cb.find_compartment('CENTRAL')
             cb.add_flow(central, output, lafree_symb * elimination_rate / central_amount)
 
-            lafreef = sympy.Symbol("LCFREEF")
+            lafreef = sympy.Symbol("LAFREEF")
             lafree_final = Assignment(lafreef, lafree_expr)
             before = model.statements.before_odes + (ksyn_ass, kd_ass, lafree_ass)
             after = lafree_final + model.statements.after_odes
@@ -212,7 +212,7 @@ def set_tmdd(model: Model, type: str):
         rinit = r_0 * vc
         rinit_ass = Assignment(sympy.Symbol('RINIT'), rinit)
 
-        lafree_symb = sympy.Symbol('LCFREE')
+        lafree_symb = sympy.Symbol('LAFREE')
         lafree_expr = sympy.Rational(1, 2) * (
             central_amount
             - rinit
@@ -248,7 +248,7 @@ def set_tmdd(model: Model, type: str):
             cb.set_input(peripheral1, kcp1 * lafree_symb)
             cb.set_input(peripheral2, kcp2 * lafree_symb)
 
-        lafreef = sympy.Symbol("LCFREEF")
+        lafreef = sympy.Symbol("LAFREEF")
         lafree_final = Assignment(lafreef, lafree_expr)
         before = model.statements.before_odes + lafree_ass + rinit_ass
         after = lafree_final + model.statements.after_odes
@@ -273,7 +273,6 @@ def set_tmdd(model: Model, type: str):
         raise ValueError(f'Unknown TMDD type "{type}".')
 
     model = model.replace(statements=before + CompartmentalSystem(cb) + after)
-    #    model = set_initial_condition(model, central.name, r_0 * vc)
     if type not in ['CR', 'CRIB', 'WAGNER']:
         model = set_initial_condition(model, "TARGET", r_0 * vc)
 
