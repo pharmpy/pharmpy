@@ -230,32 +230,32 @@ Model features
 
 MFL support the following model features:
 
-+---------------+-------------------------------+--------------------------------------------------------------------+
-| Category      | Options                       | Description                                                        |
-+===============+===============================+====================================================================+
-| ABSORPTION    | :code:`FO, ZO, SEQ-ZO-FO`     | Absorption rate (first order, zero order, sequential               |
-|               |                               | zero order first order)                                            |
-+---------------+-------------------------------+--------------------------------------------------------------------+
-| ELIMINATION   | :code:`FO, ZO, MM, MIX-FO-MM` | Elimination rate (first order, zero order, Michaelis-Menten,       |
-|               |                               | mixed first order Michaelis-Menten)                                |
-+---------------+-------------------------------+--------------------------------------------------------------------+
-| PERIPHERALS   | `number`                      | Number of peripheral compartments                                  |
-+---------------+-------------------------------+--------------------------------------------------------------------+
-| TRANSITS      | `number`, DEPOT/NODEPOT       | Number of absorption transit compartments. Whether convert depot   |
-|               |                               | compartment into a transit compartment                             |
-+---------------+-------------------------------+--------------------------------------------------------------------+
-| LAGTIME       | None                          | Absorption lagtime                                                 |
-+---------------+-------------------------------+--------------------------------------------------------------------+
-| COVARIATE     | `parameter`, `covariate`,     | Covariate effects                                                  |
-|               | `effect`                      |                                                                    |
-+---------------+-------------------------------+--------------------------------------------------------------------+
-| DIRECTEFFECT  | `model`                       | Direct effect PD models.                                           |
-+---------------+-------------------------------+--------------------------------------------------------------------+
-| EFFECTCOMP    | `model`                       | Effect comprtment PD models.                                       |
-+---------------+-------------------------------+--------------------------------------------------------------------+
-| INDIRECTEFFECT| `model`, `option`             | Indirect effect PD models. `option` can be                         |
-|               |                               | either production or degradation.                                  |
-+---------------+-------------------------------+--------------------------------------------------------------------+
++---------------+--------------------------------+--------------------------------------------------------------------+
+| Category      | Options                        | Description                                                        |
++===============+================================+====================================================================+
+| ABSORPTION    | :code:`INST, FO, ZO, SEQ-ZO-FO`| Absorption rate (instantaneous, first order, zero order, sequential|
+|               |                                | zero order first order)                                            |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| ELIMINATION   | :code:`FO, ZO, MM, MIX-FO-MM`  | Elimination rate (first order, zero order, Michaelis-Menten,       |
+|               |                                | mixed first order Michaelis-Menten)                                |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| PERIPHERALS   | `number`                       | Number of peripheral compartments                                  |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| TRANSITS      | `number`, DEPOT/NODEPOT        | Number of absorption transit compartments. Whether convert depot   |
+|               |                                | compartment into a transit compartment                             |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| LAGTIME       | :code:`OFF, ON`                | Absorption lagtime                                                 |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| COVARIATE     | `parameter`, `covariate`,      | Covariate effects                                                  |
+|               | `effect`                       |                                                                    |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| DIRECTEFFECT  | `model`                        | Direct effect PD models.                                           |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| EFFECTCOMP    | `model`                        | Effect comprtment PD models.                                       |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| INDIRECTEFFECT| `model`, `option`              | Indirect effect PD models. `option` can be                         |
+|               |                                | either production or degradation.                                  |
++---------------+--------------------------------+--------------------------------------------------------------------+
 
 
 .. _mfl_symbols:
@@ -362,7 +362,7 @@ An example of a search space for PK models with oral data:
 
     ABSORPTION([ZO,SEQ-ZO-FO])
     ELIMINATION([MM,MIX-FO-MM])
-    LAGTIME()
+    LAGTIME(ON)
     TRANSITS([1,3,10],*)
     PERIPHERALS(1)
 
