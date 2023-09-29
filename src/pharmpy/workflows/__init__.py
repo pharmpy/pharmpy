@@ -37,6 +37,7 @@ from .model_database import (
     ModelDatabase,
     NullModelDatabase,
 )
+from .model_entry import ModelEntry
 from .results import ModelfitResults, Results
 from .task import Task
 from .tool_database import LocalDirectoryToolDatabase, NullToolDatabase, ToolDatabase
@@ -89,6 +90,7 @@ __all__ = [
     'NullModelDatabase',
     'NullToolDatabase',
     'ModelDatabase',
+    'ModelEntry',
     'ModelfitResults',
     'Results',
     'Task',
