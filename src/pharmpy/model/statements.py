@@ -133,6 +133,11 @@ class Assignment(Statement):
 
         """
         symbol = subs(self.symbol, substitutions, simultaneous=True)
+        assert (
+            isinstance(symbol, sympy.Symbol)
+            or isinstance(symbol, sympy.Derivative)
+            or isinstance(symbol, sympy.Function)
+        )
         expression = subs(self.expression, substitutions, simultaneous=True)
         return Assignment(symbol, expression)
 
@@ -485,9 +490,12 @@ class CompartmentalSystemBuilder:
                 return comp
 
 
-def _is_positive(expr: sympy.Expr) -> bool:
-    return sympy.ask(
-        sympy.Q.positive(expr), assume_all(sympy.Q.positive, free_images_and_symbols(expr))
+def _is_positive(expr: sympy.Basic) -> bool:
+    return (
+        sympy.ask(
+            sympy.Q.positive(expr), assume_all(sympy.Q.positive, free_images_and_symbols(expr))
+        )
+        is True
     )
 
 
@@ -880,10 +888,14 @@ class CompartmentalSystem(Statement):
         [(Compartment(CENTRAL, amount=A_CENTRAL, doses=Bolus(AMT, admid=1)), CL/V)]
         """
         if isinstance(compartment, str):
-            compartment = self.find_compartment(compartment)
+            destination = self.find_compartment(compartment)
+            if destination is None:
+                raise ValueError(f"Cannot find compartment {compartment}")
+        else:
+            destination = compartment
         flows = []
-        for node in self._g.predecessors(compartment):
-            flow = self.get_flow(node, compartment)
+        for node in self._g.predecessors(destination):
+            flow = self.get_flow(node, destination)
             flows.append((node, flow))
         return flows
 
@@ -1400,6 +1412,9 @@ class CompartmentalSystem(Statement):
 class Dose(ABC):
     """Abstract base class for different types of doses"""
 
+    def __init__(self, admid: int):
+        self._admid = admid
+
     @property
     def admid(self) -> int:
         """Administration ID of dose"""
@@ -1412,6 +1427,10 @@ class Dose(ABC):
     @property
     @abstractmethod
     def free_symbols(self) -> set[sympy.Basic]:
+        ...
+
+    @abstractmethod
+    def to_dict(self) -> dict[str, Any]:
         ...
 
 
@@ -1700,7 +1719,7 @@ class Compartment:
         self,
         name: str,
         amount: sympy.Basic,
-        doses: tuple(Dose) = tuple(),
+        doses: tuple[Dose, ...] = tuple(),
         input: sympy.Basic = sympy.Integer(0),
         lag_time: sympy.Basic = sympy.Integer(0),
         bioavailability: sympy.Basic = sympy.Integer(1),
