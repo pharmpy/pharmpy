@@ -321,7 +321,7 @@ start model (in this case comparing BIC), and final ranking:
 .. pharmpy-execute::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
     res = read_results('tests/testdata/results/modelsearch_results.json')
     res.summary_tool
 

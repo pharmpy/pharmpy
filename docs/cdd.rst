@@ -17,7 +17,7 @@ The ``case_results`` table contains the different results and metrics for each c
 .. pharmpy-execute::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
     res = read_results('tests/testdata/results/cdd_results.json')
     res.case_results
 

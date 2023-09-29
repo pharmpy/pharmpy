@@ -131,7 +131,7 @@ The ``cwres_models`` table contains information on the residual error models, su
 .. pharmpy-execute::
     :hide-code:
 
-    from pharmpy.results import read_results
+    from pharmpy.workflows.results import read_results
     res = read_results('tests/testdata/results/ruvsearch_results.json')
     res.cwres_models
 
