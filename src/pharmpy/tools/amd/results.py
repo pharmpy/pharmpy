@@ -15,5 +15,6 @@ class AMDResults(Results):
     summary_models: Optional[Any] = None
     summary_individuals_count: Optional[pd.DataFrame] = None
     summary_errors: Optional[pd.DataFrame] = None
+    final_model_parameter_estimates: Optional[pd.DataFrame] = None
     final_model_dv_vs_ipred_plot: Optional[alt.Chart] = None
-    final_model_cwres_vs_idv: Optional[alt.Chart] = None
+    final_model_cwres_vs_idv_plot: Optional[alt.Chart] = None

@@ -368,8 +368,11 @@ def run_amd(
         summary_models=summary_models,
         summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
+        final_model_parameter_estimates=_table_final_parameter_estimates(
+            model, final_results.parameter_estimates_sdcorr, final_results.standard_errors_sdcorr
+        ),
         final_model_dv_vs_ipred_plot=dv_vs_ipred_plot,
-        final_model_cwres_vs_idv=cwres_vs_idv_plot,
+        final_model_cwres_vs_idv_plot=cwres_vs_idv_plot,
     )
     # Since we are outside of the regular tools machinery the following is needed
     results_path = db.path / 'results.json'
@@ -381,6 +384,13 @@ def run_amd(
         warnings.simplefilter("ignore")
         generate_report(rst_path, results_path, target_path)
     return res
+
+
+def _table_final_parameter_estimates(model: Model, parameter_estimates, ses):
+    rse = ses / parameter_estimates
+    rse.name = "RSE"
+    df = pd.concat([parameter_estimates, rse], axis=1)
+    return df
 
 
 def _create_sum_subtool(tool_name, selected_model):
