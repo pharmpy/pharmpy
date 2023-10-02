@@ -20,7 +20,7 @@ defusedxml==0.7.1
 distributed==2023.9.2
 docutils==0.20.1
 executing==1.2.0
-fastjsonschema==2.18.0
+fastjsonschema==2.18.1
 fsspec==2023.9.2
 idna==3.4
 imagesize==1.4.1
