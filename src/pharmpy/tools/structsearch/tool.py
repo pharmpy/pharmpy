@@ -18,7 +18,7 @@ from .drugmetabolite import create_base_metabolite, create_drug_metabolite_model
 from .pkpd import create_baseline_pd_model, create_pkpd_models
 from .tmdd import create_qss_models, create_remaining_models
 
-TYPES = frozenset(('pkpd', 'drug_metabolite'))
+TYPES = frozenset(('pkpd', 'drug_metabolite', 'tmdd'))
 
 
 def create_workflow(
@@ -85,10 +85,6 @@ def run_tmdd(context, model, extra_model):
         qss_candidate_models = create_qss_models(model) + create_qss_models(extra_model, index=9)
     else:
         qss_candidate_models = create_qss_models(model)
-
-    for m in qss_candidate_models:
-        print(m.name)
-    assert False
 
     wf = create_fit_workflow(qss_candidate_models)
     wb = WorkflowBuilder(wf)
