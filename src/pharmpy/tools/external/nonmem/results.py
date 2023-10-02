@@ -444,7 +444,9 @@ def _parse_ext(
     final_pe, sdcorr, pe_iterations = _parse_parameter_estimates(
         control_stream, name_map, ext_tables, subproblem, parameters
     )
-    ses, ses_sdcorr = _parse_standard_errors(control_stream, name_map, ext_tables, parameters)
+    ses, ses_sdcorr = _parse_standard_errors(
+        control_stream, name_map, ext_tables, parameters, final_pe
+    )
     return (
         table_numbers,
         final_ofv,
@@ -577,13 +579,16 @@ def _parse_standard_errors(
     name_map,
     ext_tables: NONMEMTableFile,
     parameters: Parameters,
+    pe: pd.Series,
 ):
     table = ext_tables.tables[-1]
     assert isinstance(table, ExtTable)
     try:
         ses = table.standard_errors
     except KeyError:
-        return None, None
+        ses = pd.Series(np.nan, index=pe.index, name="SE")
+        sdcorr_ses = pd.Series(np.nan, index=pe.index, name="SE_sdcorr")
+        return ses, sdcorr_ses
 
     fix = _get_fixed_parameters(table, parameters, name_map)
     ses = ses[~fix]

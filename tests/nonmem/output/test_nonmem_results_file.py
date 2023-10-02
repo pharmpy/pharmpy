@@ -432,7 +432,7 @@ def test_covariance_status(testdata):
     res = read_modelfit_results(
         testdata / 'nonmem' / 'modelfit_results' / 'covariance' / 'pheno_nocovariance.mod'
     )
-    assert res.standard_errors is None
+    assert all(res.standard_errors.isna())
     assert res.covariance_matrix is None
     assert res.correlation_matrix is None
     assert res.precision_matrix is None
