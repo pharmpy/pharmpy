@@ -121,7 +121,7 @@ default is:
 .. code-block::
 
     ABSORPTION([FO,ZO,SEQ-ZO-FO])
-    ELIMINATION([FO,MM,MIX-FO-MM])
+    ELIMINATION(FO)
     LAGTIME([OFF,ON])
     TRANSITS([0,1,3,10],*)
     PERIPHERALS(0,1)
@@ -132,7 +132,7 @@ For a PK IV model, the default is:
 
 .. code-block::
 
-    ELIMINATION([FO,MM,MIX-FO-MM])
+    ELIMINATION(FO)
     PERIPHERALS([0,1,2])
     COVARIATE(@IIV, @CONTINUOUS, *)
     COVARIATE(@IIV, @CATEGORICAL, CAT)
@@ -142,7 +142,7 @@ For a PK IV+ORAL model, the default is:
 .. code-block::
 
     ABSORPTION([FO,ZO,SEQ-ZO-FO])
-    ELIMINATION([FO,MM,MIX-FO-MM])
+    ELIMINATION(FO)
     LAGTIME([OFF,ON])
     TRANSITS([0,1,3,10],*)
     PERIPHERALS([0,1,2])

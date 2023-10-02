@@ -188,7 +188,7 @@ def run_amd(
         if modeltype == 'basic_pk' and administration == 'oral':
             modelsearch_features = (
                 Absorption((Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'))),
-                Elimination((Name('FO'), Name('MM'), Name('MIX-FO-MM'))),
+                Elimination((Name('FO'),)),
                 LagTime((Name('OFF'), Name('ON'))),
                 Transits((0, 1, 3, 10), Wildcard()),
                 Peripherals((0, 1)),
@@ -196,14 +196,14 @@ def run_amd(
         elif modeltype == 'basic_pk' and administration == 'ivoral':
             modelsearch_features = (
                 Absorption((Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'))),
-                Elimination((Name('FO'), Name('MM'), Name('MIX-FO-MM'))),
+                Elimination((Name('FO'),)),
                 LagTime((Name('OFF'), Name('ON'))),
                 Transits((0, 1, 3, 10), Wildcard()),
                 Peripherals((0, 1, 2)),
             )
         else:
             modelsearch_features = (
-                Elimination((Name('FO'), Name('MM'), Name('MIX-FO-MM'))),
+                Elimination((Name('FO'),)),
                 Peripherals((0, 1, 2)),
             )
 
