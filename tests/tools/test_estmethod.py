@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.tools.estmethod.algorithms import _create_candidate_model
+from pharmpy.tools.estmethod.algorithms import _create_base_model, _create_candidate_model
 from pharmpy.tools.estmethod.tool import SOLVERS, create_workflow, validate_input
 
 
@@ -12,6 +12,7 @@ from pharmpy.tools.estmethod.tool import SOLVERS, create_workflow, validate_inpu
         ('exhaustive', ['foce', 'imp'], ['lsoda'], None, 2),
         ('exhaustive', ['foce'], 'all', None, len(SOLVERS)),
         ('exhaustive_with_update', ['foce'], None, None, 2),
+        ('exhaustive_with_update', ['foce'], None, 'all', 6),
         ('exhaustive_with_update', ['foce', 'laplace'], None, None, 4),
         ('exhaustive_with_update', ['laplace'], None, None, 3),
         ('exhaustive_with_update', ['foce'], ['lsoda'], None, 3),
@@ -33,6 +34,35 @@ def test_algorithm(algorithm, methods, solvers, parameter_uncertainty_methods, n
 
 
 @pytest.mark.parametrize(
+    'est_rec, eval_rec',
+    [
+        (
+            '$ESTIMATION METHOD=COND INTER MAXEVAL=9999 AUTO=1 PRINT=10',
+            '$ESTIMATION METHOD=IMP INTER EONLY=1 MAXEVAL=9999 ISAMPLE=10000 ' 'NITER=10 PRINT=10',
+        ),
+    ],
+)
+def test_create_base_model(
+    load_model_for_test,
+    pheno_path,
+    est_rec,
+    eval_rec,
+    parameter_uncertainty_method=None,
+    add_eval_after_est=True,
+):
+    model = load_model_for_test(pheno_path)
+    assert len(model.estimation_steps) == 1
+    base_model = _create_base_model(
+        parameter_uncertainty_method,
+        add_eval_after_est,
+        model=model,
+    )
+    assert len(base_model.estimation_steps) == 2
+    assert base_model.model_code.split('\n')[-5] == est_rec
+    assert base_model.model_code.split('\n')[-4] == eval_rec
+
+
+@pytest.mark.parametrize(
     'method, est_rec, eval_rec',
     [
         (
@@ -48,15 +78,29 @@ def test_algorithm(algorithm, methods, solvers, parameter_uncertainty_methods, n
         ),
     ],
 )
-def test_create_est_model(load_model_for_test, pheno_path, method, est_rec, eval_rec):
+def test_create_candidate_model(
+    load_model_for_test,
+    pheno_path,
+    method,
+    est_rec,
+    eval_rec,
+    parameter_uncertainty_method=None,
+    add_eval_after_est=True,
+):
     model = load_model_for_test(pheno_path)
     assert len(model.estimation_steps) == 1
-    est_model = _create_candidate_model(
-        method, None, None, model=model, update_inits=False, only_evaluation=False
+    candidate_model = _create_candidate_model(
+        method,
+        None,
+        parameter_uncertainty_method,
+        add_eval_after_est,
+        update_inits=False,
+        only_evaluation=False,
+        model=model,
     )
-    assert len(est_model.estimation_steps) == 2
-    assert est_model.model_code.split('\n')[-5] == est_rec
-    assert est_model.model_code.split('\n')[-4] == eval_rec
+    assert len(candidate_model.estimation_steps) == 2
+    assert candidate_model.model_code.split('\n')[-5] == est_rec
+    assert candidate_model.model_code.split('\n')[-4] == eval_rec
 
 
 @pytest.mark.parametrize(
