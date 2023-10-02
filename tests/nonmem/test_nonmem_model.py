@@ -4,7 +4,6 @@ import pytest
 import sympy
 from sympy import Symbol as symbol
 
-from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import (
     Assignment,
@@ -27,13 +26,13 @@ from pharmpy.modeling import (
     create_basic_pk_model,
     create_joint_distribution,
     read_model,
+    read_model_from_string,
     remove_iiv,
     set_direct_effect,
     set_estimation_step,
     set_initial_condition,
     set_initial_estimates,
     set_transit_compartments,
-    set_zero_order_absorption,
     set_zero_order_elimination,
     set_zero_order_input,
 )
@@ -590,28 +589,40 @@ def test_des(load_model_for_test, testdata, model_path, transformation):
     assert model_ref.statements.ode_system == model_des.statements.ode_system
 
 
-def test_cmt_update(load_model_for_test, testdata):
+def test_cmt_update(load_model_for_test, testdata, tmp_path):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
     old_cmt = model.dataset["CMT"]
-    old_cmt = pd.to_numeric(old_cmt)
 
-    model = set_transit_compartments(model, 2)
-    updated_cmt = model.dataset["CMT"]
+    # CMT is dropped --> No update
+    model_transits = set_transit_compartments(model, 2)
+    updated_cmt = model_transits.dataset["CMT"]
+    assert all(old_cmt == updated_cmt)
 
-    assert old_cmt[0] == 1 and updated_cmt[0] == 1
-    assert old_cmt[1] == 2 and updated_cmt[1] == 4
+    # CMT undropped. Require generation of new column
+    from pharmpy.modeling import undrop_columns
 
+    model = undrop_columns(model, 'CMT')
+    model_transits = set_transit_compartments(model, 2)
+    updated_cmt = model_transits.dataset["CMT"]
+    assert set(updated_cmt.unique()) == {0, 1}
 
-def test_zero_order_cmt(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
-    old_cmt = model.dataset["CMT"]
-    old_cmt = pd.to_numeric(old_cmt)
+    with chdir(tmp_path):
+        dataset = model.dataset.copy()
+        dataset["CMT"] = 2
+        dataset.loc[(dataset["ID"] <= 573) & (dataset["AMT"] != 0), "CMT"] = 1
+        dataset.to_csv(str(tmp_path / 'temp_dataset.csv'), index=False)
+        model_string = model.model_code
+        model_string = model_string.replace("DUMMYPATH", str(tmp_path / 'temp_dataset.csv'))
+        model_string = model_string.replace("CMT=DROP", "CMT")
 
-    model = set_zero_order_absorption(model)
-    updated_cmt = model.dataset["CMT"]
+        model = read_model_from_string(model_string)
+        assert set(model.dataset.CMT.unique()) == {1, 2}
 
-    assert old_cmt[0] == 1 and updated_cmt[0] == 1
-    assert old_cmt[1] == 2 and updated_cmt[1] == 1
+        model = set_transit_compartments(model, 2)
+        assert (set(model.dataset.CMT.unique())) == {1, 4}
+
+        model = set_transit_compartments(model, 1)
+        assert (set(model.dataset.CMT.unique())) == {1, 3}
 
 
 @pytest.mark.parametrize(

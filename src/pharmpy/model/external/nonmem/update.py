@@ -27,7 +27,7 @@ from pharmpy.model import (
     output,
 )
 from pharmpy.model.model import update_datainfo
-from pharmpy.modeling import get_admid, get_ids, simplify_expression
+from pharmpy.modeling import get_admid, get_cmt, get_ids, simplify_expression
 
 from .records.parsers import CodeRecordParser
 
@@ -373,7 +373,7 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
         old = CompartmentalSystem(CompartmentalSystemBuilder())
     model = update_lag_time(model, old, new)
     model = update_bio(model, old, new)
-    model, updated_dataset = update_cmt_column(model, old, new)
+    model, updated_dataset = check_and_update_cmt_column(model, old, new)
 
     advan, trans, nonlin, haszo = new_advan_trans(model)
 
@@ -402,7 +402,45 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
     return model, updated_dataset
 
 
-def update_cmt_column(model, old, new):
+def check_and_update_cmt_column(model, old, new):
+    try:
+        cmt = model.datainfo['CMT']
+        cmt_exist = True
+    except IndexError:
+        cmt_exist = False
+
+    # TODO : Add admid column if non-existent?
+
+    if len(new.dosing_compartments) > 1:
+        # Add CMT if non-existent else update existing
+        if cmt_exist and not cmt.drop:
+            model, updated_dataset = update_cmt(model, old, new)
+        else:
+            model = _add_cmt(model)
+            updated_dataset = True
+    elif cmt_exist and not cmt.drop:
+        model, updated_dataset = update_cmt(model, old, new)
+    else:
+        # Single dose compartment without existing CMT column.
+        updated_dataset = False
+    return model, updated_dataset
+
+
+def _add_cmt(model):
+    """Add a CMT column, overwriting column name CMT if existing"""
+    # NOTE : pharmpy.modeling.add_cmt not used due to recursion of update_source()
+    di = model.datainfo
+    cmt_name = "CMT"
+    cmt = get_cmt(model)
+    dataset = model.dataset
+    dataset[cmt_name] = cmt
+    di = update_datainfo(model.datainfo, dataset)
+    colinfo = di[cmt_name].replace(type='compartment')
+    model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
+    return model
+
+
+def update_cmt(model, old, new):
     if model.dataset is not None:
         if (
             "admid" in model.datainfo.types
@@ -641,6 +679,18 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         new_solver = model.estimation_steps[0].solver
     if len(model.internals.old_estimation_steps) > 0:
         old_solver = model.internals.old_estimation_steps[0].solver
+
+    # If CMT previously dropped, generate new CMT column
+    # Perform regardless of if ODE system has been updated
+    if (
+        model.dataset is not None
+        and 'CMT' in model.datainfo.names
+        and not model.datainfo['CMT'].drop
+        and 'CMT' in model.internals.old_datainfo.names
+        and model.internals.old_datainfo['CMT'].drop
+    ):
+        model = _add_cmt(model)
+        updated_dataset = True
 
     if old == new and old_solver == new_solver:
         return model, updated_dataset

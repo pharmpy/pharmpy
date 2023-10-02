@@ -990,13 +990,6 @@ def get_cmt(model: Model):
     else:
         return model.dataset[cmtcols[0].name]
 
-    try:
-        cmtcols = model.dataset["CMT"]
-    except KeyError:
-        pass
-    else:
-        return cmtcols
-
     # See if admid exist
     try:
         admidcols = di.typeix["admid"]
@@ -1030,6 +1023,43 @@ def get_cmt(model: Model):
         admidcols.loc[get_evid(model) == 0] = central_number
         admidcols.name = "ADMID"
         return admidcols
+
+
+def add_cmt(model: Model):
+    """Add a CMT column to the model dataset and datainfo if not existed
+
+    In case of multiple doses, this method is dependent on the presence of an
+    admid column to correctly number each dose.
+
+    NOTE : Existing CMT is based on datainfo type being set to 'compartment'
+    and a column named 'CMT' can be replaced
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    model : Model
+        Pharmpy model
+
+    See also
+    --------
+    get_admid : Get or create an admid column
+    get_cmt : Get or create a cmt column
+    """
+    di = model.datainfo
+    if "compartment" not in di.types:
+        cmt_name = "CMT"
+        cmt = get_cmt(model)
+        dataset = model.dataset
+        dataset[cmt_name] = cmt
+        di = update_datainfo(model.datainfo, dataset)
+        colinfo = di[cmt_name].replace(type='compartment')
+        model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
+
+    return model.update_source()
 
 
 def add_time_after_dose(model: Model):

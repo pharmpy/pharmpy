@@ -320,7 +320,6 @@ $SIGMA  0.273617  ;   RUV_PROP
     ],
 )
 def test_multiple_doses_different_compartments(
-    pheno,
     advan,
     trans,
     compmat,
@@ -333,15 +332,16 @@ def test_multiple_doses_different_compartments(
     create_model_for_test,
 ):
     with chdir(tmp_path):
-        dataset = pheno.dataset.copy()
+        model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+        dataset = model.dataset.copy()
         dataset["CMT"] = 2
         dataset.loc[(dataset["ID"] <= 20) & (dataset["AMT"] != 0), "CMT"] = 1
         dataset.to_csv(tmp_path / "data_iv_oral.csv", index=False)
-        pheno = pheno.replace(dataset=dataset)
-        pheno = pheno.replace(datainfo=pheno.datainfo.replace(path=tmp_path / "data_iv_oral.csv"))
-        pheno = pheno.update_source()
+        model = model.replace(dataset=dataset)
+        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / "data_iv_oral.csv"))
+        model = model.update_source()
 
-        model = write_model(pheno, tmp_path / "temp_pheno.ctl", force=True)
+        model = write_model(model, tmp_path / "temp_pheno.ctl", force=True)
         cm, ass, _ = compartmental_model(model, advan, trans)
         statements = model.statements.before_odes + cm + model.statements.after_odes
         model = model.replace(statements=statements)
@@ -505,7 +505,6 @@ def test_multiple_doses_different_compartments(
     ],
 )
 def test_multiple_doses_same_compartment(
-    pheno,
     advan,
     trans,
     compmat,
@@ -518,20 +517,19 @@ def test_multiple_doses_same_compartment(
     create_model_for_test,
 ):
     with chdir(tmp_path):
-        dataset = pheno.dataset.copy()
-        dataset["CMT"] = 2
-        dataset.loc[(dataset["ID"] <= 20) & (dataset["AMT"] != 0), "CMT"] = 1
-        pheno = pheno.replace(dataset=dataset)
-        colinfo = pheno.datainfo['CMT'].replace(drop=True)
-        pheno = pheno.replace(datainfo=pheno.datainfo.set_column(colinfo))
+        model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+        model = add_admid(model)
+        dataset = model.dataset.copy()
+        dataset["ADMID"] = 2
+        dataset.loc[(dataset["ID"] <= 20), "ADMID"] = 1
+        model = model.replace(dataset=dataset)
 
-        pheno = add_admid(pheno)
         dataset.to_csv(tmp_path / "data_iv_oral.csv", index=False)
-        pheno = pheno.replace(datainfo=pheno.datainfo.replace(path=tmp_path / "data_iv_oral.csv"))
-        pheno.datainfo.to_json(pheno.datainfo.path.stem)
-        pheno = pheno.update_source()
+        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / "data_iv_oral.csv"))
+        model.datainfo.to_json(model.datainfo.path.stem)
+        model = model.update_source()
 
-        model = write_model(pheno, tmp_path / "temp_pheno.ctl", force=True)
+        model = write_model(model, tmp_path / "temp_pheno.ctl", force=True)
         cm, ass, _ = compartmental_model(model, advan, trans)
         statements = model.statements.before_odes + cm + model.statements.after_odes
         model = model.replace(statements=statements)
