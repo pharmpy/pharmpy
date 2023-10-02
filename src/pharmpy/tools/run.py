@@ -461,8 +461,8 @@ def _results_param_keys(params, types):
 def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
     for i, param_key in _filter_params(Model, params, types):
         model = args[i] if i < len(args) else kwargs.get(param_key)
-        # NOTE: We do not handle missing optional models
-        assert model is not None
+        if model is None:
+            continue
         yield param_key, model
 
 
