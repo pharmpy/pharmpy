@@ -55,6 +55,8 @@ def create_drug_metabolite_models(model: Model) -> List[Model]:
         candidate_model = set_name(
             candidate_model, f'{"presystemic" if presystemic else "base_metabolite"}_peripheral'
         )
+        if presystemic:
+            candidate_model = candidate_model.replace(parent_model='presystemic')
 
         models.append(candidate_model)
 

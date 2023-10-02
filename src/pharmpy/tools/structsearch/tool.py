@@ -188,7 +188,7 @@ def run_drug_metabolite(context, model):
         StructSearchResults,
         model,
         base_drug_metabolite_fit[0],
-        candidate_drug_metabolite,
+        list(drug_metabolite_models_fit),
         rank_type='bic',
         cutoff=None,
         summary_models=pd.concat(
