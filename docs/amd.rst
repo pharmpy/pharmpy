@@ -470,3 +470,29 @@ See :py:func:`pharmpy.tools.summarize_errors` for information on the content of 
     import pandas as pd
     pd.set_option('display.max_colwidth', None)
     res.summary_errors
+
+
+Final model
+~~~~~~~~~~~
+
+Some plots and tables on the final model can be found both in the amd report and in the results object.
+
+.. pharmpy-execute::
+   :hide-code:
+
+   res.final_model_parameter_estimates.style.format({
+       'estimates': '{:,.4f}'.format,
+       'RSE': '{:,.1%}'.format,
+   })
+
+
+.. pharmpy-execute::
+   :hide-code:
+
+   res.final_model_dv_vs_ipred_plot
+
+
+.. pharmpy-execute::
+   :hide-code:
+
+   res.final_model_cwres_vs_idv_plot
