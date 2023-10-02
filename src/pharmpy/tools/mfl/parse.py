@@ -320,7 +320,8 @@ class ModelFeatures:
                         lnt[('TRANSITS', diff[0], depot.name)] = func_dict[
                             ('TRANSITS', diff[0], depot.name)
                         ]
-                        break
+
+                        return lnt
 
             # else take first count value of non matching depot
             depot = next(d for d in rhs_depot if d not in lhs_depot)
