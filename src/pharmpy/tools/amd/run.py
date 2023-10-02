@@ -476,7 +476,7 @@ def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
             highest_ranked = min(rank_dict, key=rank_dict.get)
             extra_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
         else:
-            extra_model = final_model
+            extra_model = None
 
         res = run_tool(
             'structsearch',
