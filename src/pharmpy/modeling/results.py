@@ -651,8 +651,14 @@ def calculate_bic(
         )
         penalty = nomegas_iiv * math.log(len(get_ids(model)))
     else:
+        # NOTE: This approach assumes a well-behaved model where each parameter is identifiable
+        possible_params = model.statements.ode_system.free_symbols
+        for dv in model.dependent_variables.keys():
+            yexpr = model.statements.after_odes.full_expression(dv)
+            possible_params.update(yexpr.free_symbols)
+
         random_thetas = set()
-        for param in model.statements.ode_system.free_symbols:
+        for param in possible_params:
             assignment = model.statements.find_assignment(param)
             if assignment:
                 expr = model.statements.before_odes.full_expression(assignment.symbol)
@@ -661,15 +667,12 @@ def calculate_bic(
                         symbols = {p.symbol for p in parameters if p.symbol in expr.free_symbols}
                         random_thetas.update(symbols)
                         break
-        # FIXME: Handle other DVs?
-        dv = list(model.dependent_variables.keys())[0]
-        yexpr = model.statements.after_odes.full_expression(dv)
         for eta in _random_etas(model).names:
-            if sympy.Symbol(eta) in yexpr.free_symbols:
-                symbols = {p.symbol for p in parameters if p.symbol in yexpr.free_symbols}
+            if sympy.Symbol(eta) in possible_params:
+                symbols = {p.symbol for p in parameters if p.symbol in possible_params}
                 random_thetas.update(symbols)
                 for eps in model.random_variables.epsilons.names:
-                    if sympy.Symbol(eps) in yexpr.free_symbols:
+                    if sympy.Symbol(eps) in possible_params:
                         params = {
                             p.symbol
                             for p in parameters
