@@ -5,7 +5,7 @@ import pytest
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment, Model
 from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
-from pharmpy.modeling import convert_model, create_symbol, load_example_model
+from pharmpy.modeling import convert_model, create_basic_pk_model, create_symbol, load_example_model
 
 tabpath = Path(__file__).resolve().parent.parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
 lincorrect = read_nonmem_dataset(
@@ -88,3 +88,9 @@ def test_dict(load_model_for_test, testdata):
     d = model.to_dict()
     model2 = Model.from_dict(d)
     assert model == model2
+
+
+def test_dict_generic(load_model_for_test, testdata):
+    path = testdata / 'nonmem' / 'pheno.dta'
+    model = create_basic_pk_model('iv', dataset_path=path)
+    assert model.model_code

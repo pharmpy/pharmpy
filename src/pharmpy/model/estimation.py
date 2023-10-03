@@ -330,7 +330,7 @@ class EstimationStep(Immutable):
         )
 
     def to_dict(self) -> dict[str, Any]:
-        if self._tool_options:
+        if self._tool_options is not None:
             tool_options = dict(self._tool_options)
         else:
             tool_options = self._tool_options  # self._tool_options is None
