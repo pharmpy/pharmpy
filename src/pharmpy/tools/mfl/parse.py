@@ -90,8 +90,8 @@ class ModelFeatures:
 
         if not isinstance(transits, tuple):
             raise ValueError("Transits need to be given within a tuple")
-            if not all(isinstance(t, Transits) for t in transits):
-                raise ValueError("All given elements of transits must be of type Transits")
+        if not all(isinstance(t, Transits) for t in transits):
+            raise ValueError("All given elements of transits must be of type Transits")
 
         if not isinstance(peripherals, Peripherals):
             raise ValueError(f"Peripherals : {peripherals} is not supported")
@@ -275,7 +275,6 @@ class ModelFeatures:
             name, func = list(other.convert_to_funcs(["elimination"]).items())[0]
             lnt[name] = func
 
-        # FIXME : ! Currently not working
         lnt = self._lnt_transits(other, lnt)
 
         if not any(p in other.peripherals.counts for p in self.peripherals.counts):
