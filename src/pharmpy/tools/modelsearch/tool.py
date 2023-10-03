@@ -258,8 +258,8 @@ def post_process(rank_type, cutoff, *models):
         results_to_summarize.extend(model.modelfit_results for model in res_models)
 
     summary_models = summarize_modelfit_results(results_to_summarize)
-    summary_models['step'] = [0] + [1] * (len(results_to_summarize) - 1)
-    summary_models.reset_index().set_index(['step', 'model'])
+    summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
+    summary_models = summary_models.reset_index().set_index(['step', 'model'])
 
     return create_results(
         ModelSearchResults,
