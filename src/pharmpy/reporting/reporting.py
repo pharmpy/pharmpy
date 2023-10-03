@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+import ssl
 import warnings
 from pathlib import Path
 from urllib.request import urlopen
@@ -106,7 +107,10 @@ def embed_css_and_js(html, target):
     for script in scripts:
         source = script.attrs['src']
         if source.startswith('http'):
-            with urlopen(source) as infile:
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE  # To avoid CERTIFICATE_VERIFY_FAILED
+            with urlopen(source, context=ctx) as infile:
                 content = infile.read().decode('utf-8')
         else:
             path = html.parent / source
