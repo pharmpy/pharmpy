@@ -171,7 +171,11 @@ class Assignment(Statement):
         {ETA_CL, POP_CL}
 
         """
-        funcs = self._expression.atoms(sympy.FunctionClass)
+        prefuncs = self._expression.atoms(sympy.Function)
+        from sympy.core.function import AppliedUndef
+
+        # Allow applied undefined functions
+        funcs = {f for f in prefuncs if isinstance(f, AppliedUndef)}
         symbols = self._expression.free_symbols
         return funcs | symbols
 
