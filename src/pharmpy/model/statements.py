@@ -2258,13 +2258,15 @@ class Statements(Sequence, Immutable):
             rhs = self[i].rhs_symbols
             for j in range(i - 1, -1, -1):
                 statement = self[j]
-                if (
-                    isinstance(statement, Assignment)
-                    and statement.symbol in rhs
-                    or isinstance(statement, CompartmentalSystem)
-                    and not rhs.isdisjoint(statement.amounts)
-                ):
-                    graph.add_edge(i, j)
+                if isinstance(statement, Assignment):
+                    if statement.symbol in rhs:
+                        graph.add_edge(i, j)
+                elif isinstance(statement, CompartmentalSystem):
+                    amts = {
+                        sympy.Function(amt.name)(statement.t) for amt in statement.amounts
+                    } | set(statement.amounts)
+                    if not rhs.isdisjoint(amts):
+                        graph.add_edge(i, j)
         return graph
 
     def direct_dependencies(self, statement: Statement) -> Statements:
