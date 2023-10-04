@@ -52,6 +52,8 @@ def create_workflow(
         Results for the start model
     model : Model
         Pharmpy start model
+    extra_model : Model
+        Optional extra Pharmpy model to use in TMDD structsearch
 
     Returns
     -------
