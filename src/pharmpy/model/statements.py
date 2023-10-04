@@ -171,7 +171,9 @@ class Assignment(Statement):
         {ETA_CL, POP_CL}
 
         """
-        return self.expression.free_symbols
+        funcs = self._expression.atoms(sympy.FunctionClass)
+        symbols = self._expression.free_symbols
+        return funcs | symbols
 
     def __eq__(self, other):
         if hash(self) != hash(other):
