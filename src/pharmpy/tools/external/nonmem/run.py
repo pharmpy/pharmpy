@@ -14,11 +14,16 @@ from pharmpy.model.external.nonmem import convert_model
 from pharmpy.model.external.nonmem.records.factory import create_record
 from pharmpy.modeling import write_csv, write_model
 from pharmpy.tools.external.nonmem import conf, parse_modelfit_results
+from pharmpy.workflows import ModelEntry
 
 PARENT_DIR = f'..{os.path.sep}'
 
 
-def execute_model(model, db):
+def execute_model(model_or_model_entry, db):
+    if isinstance(model_or_model_entry, ModelEntry):
+        model = model_or_model_entry.model
+    else:
+        model = model_or_model_entry
     database = db.model_database
     parent_model = model.parent_model
     model = convert_model(model)
@@ -107,9 +112,14 @@ def execute_model(model, db):
         ]
     }
 
-    with database.transaction(model) as txn:
-        txn.store_model()
+    modelfit_results = parse_modelfit_results(model, model_path / basename)
+    if isinstance(model_or_model_entry, ModelEntry):
+        log = modelfit_results.log if modelfit_results else None
+        model_or_model_entry = model_or_model_entry.attach_results(
+            modelfit_results=modelfit_results, log=log
+        )
 
+    with database.transaction(model_or_model_entry) as txn:
         if (
             not (model_path / basename).with_suffix('.lst').is_file()
             or not (model_path / basename).with_suffix('.ext').is_file()
@@ -135,14 +145,16 @@ def execute_model(model, db):
         txn.store_local_file(plugin_path)
 
         txn.store_metadata(metadata)
-        if len(model.estimation_steps) > 0 or True:
+
+        if isinstance(model_or_model_entry, ModelEntry):
+            txn.store_model_entry()
+            return model_or_model_entry
+        else:
+            txn.store_model()
             txn.store_modelfit_results()
 
             # Read in results for the server side
-            model = model.replace(
-                modelfit_results=parse_modelfit_results(model, model_path / basename)
-            )
-
+            model = model.replace(modelfit_results=modelfit_results)
     return model
 
 
