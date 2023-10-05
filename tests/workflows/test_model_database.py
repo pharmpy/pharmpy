@@ -100,7 +100,7 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             assert line == f'$DATA ..{sep}.datasets{sep}run2.csv IGNORE=@\n'
 
 
-def test_store_model_entry(tmp_path, load_model_for_test, testdata):
+def test_store_and_retrieve_model_entry(tmp_path, load_model_for_test, testdata):
     sep = os.path.sep
     with chdir(tmp_path):
         datadir = testdata / 'nonmem'
@@ -133,3 +133,8 @@ def test_store_model_entry(tmp_path, load_model_for_test, testdata):
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
             assert line == f'$DATA ..{sep}.datasets{sep}pheno_real.csv IGNORE=@\n'
+
+        model_entry_retrieve = db.retrieve_model_entry(model.name)
+
+        assert model_entry_retrieve.model == model
+        assert model_entry_retrieve.modelfit_results.name == modelfit_results.name

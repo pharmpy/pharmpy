@@ -10,7 +10,7 @@ from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import DataInfo, Model
 from pharmpy.workflows.model_entry import ModelEntry
-from pharmpy.workflows.results import read_results
+from pharmpy.workflows.results import ModelfitResults, read_results
 
 from .baseclass import (
     ModelSnapshot,
@@ -48,6 +48,21 @@ def get_modelfit_results(model, path):
 
     model = model.replace(modelfit_results=res)
     return model
+
+
+def create_model_entry(model, modelfit_results):
+    # FIXME: This function is to avoid duplication of this logic, this can be removed once
+    #  parent_model has been moved from Model and log has been moved from modelfit_results
+    #  and each database implementation has methods for retrieving these
+    if not isinstance(modelfit_results, ModelfitResults):
+        modelfit_results = None
+        log = None
+    else:
+        log = modelfit_results.log
+
+    parent_model = model.parent_model
+
+    return ModelEntry(model=model, modelfit_results=modelfit_results, parent=parent_model, log=log)
 
 
 class LocalDirectoryDatabase(NonTransactionalModelDatabase):
@@ -113,6 +128,11 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
 
     def retrieve_modelfit_results(self, name):
         return self.retrieve_model(name).modelfit_results
+
+    def retrieve_model_entry(self, name):
+        model = self.retrieve_model(name)
+        modelfit_results = self.retrieve_modelfit_results(name)
+        return create_model_entry(model, modelfit_results)
 
     def store_metadata(self, model, metadata):
         pass
@@ -356,3 +376,8 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         # test pass.
         path = self.db.path / self.name / DIRECTORY_PHARMPY_METADATA / FILE_MODELFIT_RESULTS
         return read_results(path)
+
+    def retrieve_model_entry(self):
+        model = self.retrieve_model()
+        modelfit_results = self.retrieve_modelfit_results()
+        return create_model_entry(model, modelfit_results)

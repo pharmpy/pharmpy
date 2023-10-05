@@ -110,6 +110,17 @@ class ModelSnapshot(ABC):
         """
         pass
 
+    @abstractmethod
+    def retrieve_model_entry(self) -> ModelEntry:
+        """Read model entry from the database
+
+        Returns
+        -------
+        ModelEntry
+            Retrieved model entry object
+        """
+        pass
+
 
 class ModelDatabase(ABC):
     """Baseclass for databases for models and results of model runs
@@ -252,6 +263,22 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
+    def retrieve_model_entry(self, model_name: str) -> ModelEntry:
+        """Read model entry from the database
+
+        Parameters
+        ----------
+        model_name : str
+            Name of the model
+
+        Returns
+        -------
+        ModelEntry
+            Retrieved model entry object
+        """
+        pass
+
+    @abstractmethod
     def snapshot(self, model_name: str) -> ContextManager[ModelSnapshot]:
         """Creates a readable snapshot context for a given model.
 
@@ -329,6 +356,9 @@ class DummySnapshot(ModelSnapshot):
     def retrieve_modelfit_results(self) -> Results:
         return self.db.retrieve_modelfit_results(self.name)
 
+    def retrieve_model_entry(self) -> ModelEntry:
+        return self.db.retrieve_model_entry(self.name)
+
 
 class TransactionalModelDatabase(ModelDatabase):
     def store_model(self, model: Model) -> None:
@@ -368,6 +398,10 @@ class TransactionalModelDatabase(ModelDatabase):
     def retrieve_modelfit_results(self, model_name: str) -> Results:
         with self.snapshot(model_name) as sn:
             return sn.retrieve_modelfit_results()
+
+    def retrieve_model_entry(self, model_name: str) -> ModelEntry:
+        with self.snapshot(model_name) as sn:
+            return sn.retrieve_model_entry()
 
 
 class PendingTransactionError(Exception):
