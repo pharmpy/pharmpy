@@ -36,8 +36,10 @@ from pharmpy.model import (
 from .parameters import get_thetas
 
 if TYPE_CHECKING:
+    import networkx as nx
     import sympy
 else:
+    from pharmpy.deps import networkx as nx
     from pharmpy.deps import sympy
 
 T = TypeVar('T')
@@ -740,14 +742,18 @@ def greekify_model(model: Model, named_subscripts: bool = False):
 
 
 def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
-    """Retrieves all parameters with IIV or IOV in :class:`pharmpy.model`.
+    """Retrieves all individual parameters in a :class:`pharmpy.model`.
+
+    By default all individual parameters will be found even ones having no random effect. The level
+    arguments makes it possible to find only those having any random effect or only those having a certain
+    random effect.
 
     Parameters
     ----------
     model : Model
         Pharmpy model to retrieve the individuals parameters from
     level : str
-        The variability level to look for: 'iiv', 'iov', or 'all' (default)
+        The variability level to look for: 'iiv', 'iov', 'random' or 'all' (default)
 
     Return
     ------
@@ -772,38 +778,196 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
     has_random_effect
 
     """
+    # FIXME: Support multiple DVs
 
-    rvs = _rvs(model, level)
+    model = make_declarative(model)
+    model = _replace_trivial_redefinitions(model)
+    statements = model.statements
 
-    assignments = _get_natural_assignments(model.statements.before_odes)
+    # Arrow means is depending on
+    g = statements._create_dependency_graph()
 
-    free_symbols = {assignment.symbol for assignment in assignments}
+    # Find subgraph of all connected to Y
+    y = list(model.dependent_variables.keys())[0]
+    ind = statements.find_assignment_index(y)
 
-    dependency_graph = _dependency_graph(assignments)
+    gsub = g.subgraph(nx.descendants(g, ind) | {ind})
 
-    return sorted(
-        map(
-            str,
-            _filter_symbols(
-                dependency_graph,
-                free_symbols,
-                set().union(
-                    *(rvs[rv].free_symbols for rv in rvs.names if rvs[rv].get_variance(rv) != 0)
-                ),
-            ),
-        )
-    )
+    candidates = set(gsub.nodes)
+    candidates = candidates - _find_trivial_exclusions(model, candidates)
+
+    pop_deps = _find_pop_parameter_dependents(model, gsub, candidates)
+    candidates = candidates.intersection(pop_deps)
+    time_deps = _find_time_dependents(model, g)
+    candidates -= time_deps
+    separable = _find_separable_statements(model)
+    candidates -= separable
+
+    parameter_indices = _find_individual_parameters(gsub, candidates)
+
+    parameter_symbs = {statements[i].symbol for i in parameter_indices}
+    if level == 'random':
+        wanted_levels = {'iov', 'iiv'}
+    elif level == 'iiv':
+        wanted_levels = {'iiv'}
+    elif level == 'iov':
+        wanted_levels = {'iov'}
+    else:
+        wanted_levels = None
+
+    if wanted_levels is not None:
+        filtered = set()
+        for param in parameter_symbs:
+            levels = _random_levels_of_parameter(model, g, param)
+            if not wanted_levels.isdisjoint(levels):
+                filtered.add(param)
+    else:
+        filtered = parameter_symbs
+
+    return sorted([s.name for s in filtered])
 
 
-def _rvs(model: Model, level: str):
-    if level == 'iiv':
-        return model.random_variables.iiv
-    if level == 'iov':
-        return model.random_variables.iov
-    if level == 'all':
-        return model.random_variables.etas
+#        assignments = _get_natural_assignments(model.statements.before_odes)
+#        dependency_graph = _dependency_graph(assignments)
+#                _filter_symbols(
 
-    raise ValueError(f'Cannot handle level `{level}`')
+
+def _random_levels_of_parameter(model, g, param):
+    ind = model.statements.find_assignment_index(param)
+    iiv_symbs = {sympy.Symbol(name) for name in model.random_variables.iiv.names}
+    iov_symbs = {sympy.Symbol(name) for name in model.random_variables.iov.names}
+    levels = set()
+    for node in nx.dfs_preorder_nodes(g, ind):
+        if not model.statements[node].rhs_symbols.isdisjoint(iiv_symbs):
+            levels.add('iiv')
+        if not model.statements[node].rhs_symbols.isdisjoint(iov_symbs):
+            levels.add('iov')
+    return sorted(levels)
+
+
+def _find_separable_statements(model):
+    # Statements with only assignment dependencies
+    # where these are dependencies of other assignments
+    statements = model.statements
+    all_assigned_symbols = _get_all_assigned_symbols(model)
+    candidates = {
+        i
+        for i, s in enumerate(statements)
+        if isinstance(s, Assignment) and s.rhs_symbols.issubset(all_assigned_symbols)
+    }
+    separable = set()
+    for i in candidates:
+        rhs = statements[i].rhs_symbols
+        for j, s in enumerate(statements):
+            if i != j and not rhs.isdisjoint(s.rhs_symbols):
+                separable.add(i)
+                break
+    return separable
+
+
+def _get_all_assigned_symbols(model):
+    statements = model.statements
+    all_assigned_symbols = {
+        statement.symbol for statement in statements if isinstance(statement, Assignment)
+    }
+    return all_assigned_symbols
+
+
+def _replace_trivial_redefinitions(model):
+    # Remove and replace X = Y and X = 1/Y
+    statements = model.statements
+    all_assigned_symbols = _get_all_assigned_symbols(model)
+
+    d = {}
+    keep = []
+    for s in statements:
+        if isinstance(s, Assignment) and (
+            s.expression in all_assigned_symbols or 1 / s.expression in all_assigned_symbols
+        ):
+            d[s.symbol] = s.expression
+        else:
+            keep.append(s)
+    new = Statements(tuple(keep)).subs(d)
+    return model.replace(statements=new)
+
+
+def _find_individual_parameters(g, candidates):
+    # Starting from all sinks of g find all deepest candidate nodes
+    keep = set()
+    current_step = _sinks(g)
+
+    while current_step:
+        next_step = set()
+        for node in current_step:
+            pred = set(g.predecessors(node))
+            if node in candidates:
+                if pred.isdisjoint(candidates):
+                    keep.add(node)
+                else:
+                    next_step.update(pred)
+            else:
+                next_step.update(pred)
+        current_step = next_step
+    return keep
+
+
+def _sinks(g):
+    return (node for node, out_degree in g.out_degree() if out_degree == 0)
+
+
+def _find_pop_parameter_dependents(model, g, candidates):
+    direct = _find_direct_pop_param_dependents(model, candidates)
+    return _find_dependents(g, direct)
+
+
+def _find_time_dependents(model, g):
+    direct = _find_direct_time_dependents(model)
+    return _find_dependents(g, direct)
+
+
+def _find_dependents(g, nodes):
+    deps = nodes.copy()
+    for i in nodes:
+        ancestors = nx.ancestors(g, i)
+        deps.update(ancestors)
+    return deps
+
+
+def _find_direct_pop_param_dependents(model, candidates):
+    # Look for statements that are directly depending on population parameters or etas
+    deps = set()
+    pop_params = set(model.parameters.symbols)
+    rvs = {sympy.Symbol(name) for name in model.random_variables.etas.names}
+    for i in candidates:
+        s = model.statements[i]
+        if not (pop_params | rvs).isdisjoint(s.rhs_symbols):
+            deps.add(i)
+    return deps
+
+
+def _find_direct_time_dependents(model):
+    statements = model.statements
+    odes = statements.ode_system
+    if odes is None:
+        return set()
+    return {i for i, s in enumerate(statements) if odes.t in s.rhs_symbols}
+
+
+def _find_trivial_exclusions(model, candidates):
+    # Finds CompartmentalSystem, Ys and time dependent statements
+    exclude = set()
+    statements = model.statements
+    ys = model.dependent_variables.keys()
+    odes = statements.ode_system
+    if odes is not None:
+        t = odes.t
+    else:
+        t = None
+    for i in candidates:
+        s = statements[i]
+        if isinstance(s, CompartmentalSystem) or s.symbol in ys or t in s.rhs_symbols:
+            exclude.add(i)
+    return exclude
 
 
 def depends_on(model: Model, symbol: str, other: str):
@@ -1309,6 +1473,17 @@ def get_pd_parameters(model: Model) -> List[str]:
 
     pd_symbols = _filter_symbols(dependency_graph, set(pd_symbols))
     return sorted(map(str, pd_symbols))
+
+
+def _rvs(model: Model, level: str):
+    if level == 'iiv':
+        return model.random_variables.iiv
+    if level == 'iov':
+        return model.random_variables.iov
+    if level == 'all':
+        return model.random_variables.etas
+
+    raise ValueError(f'Cannot handle level `{level}`')
 
 
 def _get_natural_assignments(before_odes):
