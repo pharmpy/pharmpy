@@ -834,8 +834,8 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
 
 def _random_levels_of_parameter(model, g, param):
     ind = model.statements.find_assignment_index(param)
-    iiv_symbs = {sympy.Symbol(name) for name in model.random_variables.iiv.names}
-    iov_symbs = {sympy.Symbol(name) for name in model.random_variables.iov.names}
+    iiv_symbs = model.random_variables.iiv.symbols
+    iov_symbs = model.random_variables.iov.symbols
     levels = set()
     for node in nx.dfs_preorder_nodes(g, ind):
         if not model.statements[node].rhs_symbols.isdisjoint(iiv_symbs):

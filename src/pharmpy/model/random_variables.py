@@ -470,9 +470,14 @@ class RandomVariables(CollectionsSequence, Immutable):
             return False
 
     @property
-    def names(self) -> List[str]:
+    def names(self) -> list[str]:
         """List of the names of all random variables"""
         return list(chain.from_iterable(dist.names for dist in self._dists))
+
+    @property
+    def symbols(self) -> list(sympy.Symbol):
+        """List with symbols for all random variables"""
+        return [sympy.Symbol(name) for name in self.names]
 
     @property
     def epsilons(self) -> RandomVariables:
