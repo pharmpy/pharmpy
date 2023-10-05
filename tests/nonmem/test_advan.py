@@ -162,7 +162,9 @@ def test_pheno(pheno, advan, trans, compmat, amounts, strodes, corrics):
     model = pheno.replace(statements=statements)
 
     assert ass.symbol == S('F')
-    assert ass.expression == S('A_CENTRAL') / S('S1') or ass.expression == S('A_CENTRAL')
+    assert ass.expression == sympy.Function('A_CENTRAL')('t') / S(
+        'S1'
+    ) or ass.expression == sympy.Function('A_CENTRAL')('t')
     assert cm.compartmental_matrix == sympy.Matrix(compmat)
     assert cm.amounts == sympy.Matrix(amounts)
     odes, ics = cm.eqs, get_initial_conditions(model, dosing=True)
@@ -175,7 +177,7 @@ def test_advan5(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'DDMODEL00000130')
     cm, ass, _ = compartmental_model(model, 'ADVAN5', 'TRANS1')
     assert ass.symbol == S('F')
-    assert ass.expression == S('A_CMS1')
+    assert ass.expression == sympy.Function('A_CMS1')('t')
     assert cm.amounts == sympy.Matrix(
         [S('A_CMS1'), S('A_CMS2'), S('A_INTM'), S('A_INTM2'), S('A_COL1')]
     )
@@ -350,7 +352,9 @@ def test_multiple_doses_different_compartments(
         assert len(odes.dosing_compartments) == 2
 
         assert ass.symbol == S('F')
-        assert ass.expression == S('A_CENTRAL') / S('S1') or ass.expression == S('A_CENTRAL')
+        assert ass.expression == sympy.Function('A_CENTRAL')('t') / S(
+            'S1'
+        ) or ass.expression == sympy.Function('A_CENTRAL')('t')
         assert cm.compartmental_matrix == sympy.Matrix(compmat)
         assert cm.amounts == sympy.Matrix(amounts)
         odes, ics = cm.eqs, get_initial_conditions(model, dosing=True)
@@ -539,7 +543,9 @@ def test_multiple_doses_same_compartment(
         assert len(odes.dosing_compartments[0].doses) == 2
 
         assert ass.symbol == S('F')
-        assert ass.expression == S('A_CENTRAL') / S('S1') or ass.expression == S('A_CENTRAL')
+        assert ass.expression == sympy.Function('A_CENTRAL')('t') / S(
+            'S1'
+        ) or ass.expression == sympy.Function('A_CENTRAL')('t')
         assert cm.compartmental_matrix == sympy.Matrix(compmat)
         assert cm.amounts == sympy.Matrix(amounts)
         odes, ics = cm.eqs, get_initial_conditions(model, dosing=True)

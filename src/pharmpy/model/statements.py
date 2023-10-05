@@ -2089,9 +2089,9 @@ class Statements(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.after_odes
-            A_CENTRAL
-            ─────────
-        F =     S₁
+            A_CENTRAL(t)
+            ────────────
+        F =      S₁
         W = F
         Y = EPS₁⋅W + F
         IPRED = F
@@ -2112,9 +2112,9 @@ class Statements(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.error
-            A_CENTRAL
-            ─────────
-        F =     S₁
+            A_CENTRAL(t)
+            ────────────
+        F =      S₁
         W = F
         Y = EPS₁⋅W + F
         IPRED = F

@@ -556,9 +556,9 @@ def cleanup_model(model: Model):
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
-        A_CENTRAL
-        ─────────
-    F =     S₁
+        A_CENTRAL(t)
+        ────────────
+    F =      S₁
     W = F
     Y = EPS₁⋅W + F
     IPRED = F
@@ -584,9 +584,9 @@ def cleanup_model(model: Model):
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
-        A_CENTRAL
-        ─────────
-    F =     V
+        A_CENTRAL(t)
+        ────────────
+    F =      V
     Y = EPS₁⋅F + F
     IRES = DV - F
             IRES
@@ -646,9 +646,9 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
-        A_CENTRAL
-        ─────────
-    F =     S₁
+        A_CENTRAL(t)
+        ────────────
+    F =      S₁
     W = F
     Y = EPS₁⋅W + F
     IPRED = F
@@ -675,9 +675,9 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
-        A_CENTRAL
-        ─────────
-    F =     V
+        A_CENTRAL(t)
+        ────────────
+    F =      V
     Y = F⋅ε₁ + F
     IRES = DV - F
             IRES

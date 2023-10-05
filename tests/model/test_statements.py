@@ -402,6 +402,7 @@ def test_dependencies(load_model_for_test, pheno_path):
         S('WGT'),
         S('ETA_2'),
         S('ETA_1'),
+        sympy.Function('A_CENTRAL')('t'),
     }
     depscl = model.statements.dependencies(S('CL'))
     assert depscl == {S('PTVCL'), S('WGT'), S('ETA_1')}

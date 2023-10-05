@@ -362,6 +362,7 @@ def _f_link_assignment(control_stream: NMTranControlStream, compartment: Compart
         fexpr = compartment.amount
     except AttributeError:
         fexpr = compartment
+    fexpr = sympy.Function(fexpr.name)(sympy.Symbol('t'))
     pkrec = control_stream.get_records('PK')[0]
     scaling = f'S{compno}'
     if pkrec.statements.find_assignment(scaling):

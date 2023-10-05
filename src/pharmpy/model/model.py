@@ -214,6 +214,9 @@ class Model(Immutable):
                     if str(symb) == 'NaN':
                         continue
                     if statements.find_assignment(symb) is None:
+                        if symb == sympy.Symbol('t'):
+                            # FIXME: Hack because t is not defined on model
+                            continue
                         if statements.ode_system and symb in statements.ode_system.amounts:
                             continue
                         raise ValueError(f'Symbol {symb} is not defined')

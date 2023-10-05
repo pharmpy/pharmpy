@@ -220,9 +220,9 @@ def set_proportional_error_model(
     >>> model = remove_error_model(load_example_model("pheno"))
     >>> model = set_proportional_error_model(model)
     >>> model.statements.after_odes
-        A_CENTRAL
-        ─────────
-    F =     S₁
+        A_CENTRAL(t)
+        ────────────
+    F =      S₁
     W = F
                ⎧2.225e-16  for F = 0
                ⎨
@@ -241,9 +241,9 @@ def set_proportional_error_model(
     ...     data_trans="log(Y)"
     ... )
     >>> model.statements.after_odes
-        A_CENTRAL
-        ─────────
-    F =     S₁
+        A_CENTRAL(t)
+        ────────────
+    F =      S₁
     W = F
                ⎧2.225e-16  for F = 0
                ⎨

@@ -92,7 +92,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
                 else:
                     unit_eqs.append(amt_unit / time_unit - _extract_minus(e))
             for a in s.amounts:
-                unit_eqs.append(amt_unit - a)
+                unit_eqs.append(amt_unit - sympy.Function(a.name)(s.t))
 
     # NOTE: This keeps only the equations required to solve for "symbol"
     filtered_unit_eqs = _filter_equations(unit_eqs, symbol)

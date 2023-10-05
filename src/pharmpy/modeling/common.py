@@ -367,9 +367,9 @@ def load_example_model(name: str):
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
-        A_CENTRAL
-        ─────────
-    F =     S₁
+        A_CENTRAL(t)
+        ────────────
+    F =      S₁
     W = F
     Y = EPS₁⋅W + F
     IPRED = F
