@@ -91,6 +91,9 @@ class Assignment(Statement):
             expression = sympy.Float(expression)
         if isinstance(expression, int):
             expression = sympy.Integer(expression)
+        if expression.is_Piecewise:
+            # To avoid nested piecewises
+            expression = sympy.piecewise_fold(expression)
         return cls(symbol, expression)
 
     def replace(self, **kwargs):
@@ -139,6 +142,9 @@ class Assignment(Statement):
             or isinstance(symbol, sympy.Function)
         )
         expression = subs(self.expression, substitutions, simultaneous=True)
+        if expression.is_Piecewise:
+            # To avoid nested piecewises
+            expression = sympy.piecewise_fold(expression)
         return Assignment(symbol, expression)
 
     @property
