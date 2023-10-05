@@ -22,16 +22,20 @@ DataFrame = Any  # NOTE: Should be pd.DataFrame but we want lazy loading
 RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic', 'mbic'))
 
 
-def update_initial_estimates(model):
-    if model.modelfit_results is None:
+def update_initial_estimates(model, modelfit_results=None):
+    # FIXME: Remove once modelfit_results have been removed from Model object
+    if modelfit_results is None:
+        modelfit_results = model.modelfit_results
+
+    if modelfit_results is None:
         return model
-    if not model.modelfit_results.minimization_successful:
-        if model.modelfit_results.termination_cause != 'rounding_errors':
+    if not modelfit_results.minimization_successful:
+        if modelfit_results.termination_cause != 'rounding_errors':
             return model
 
     try:
         model = update_inits(
-            model, model.modelfit_results.parameter_estimates, move_est_close_to_bounds=True
+            model, modelfit_results.parameter_estimates, move_est_close_to_bounds=True
         )
     except (ValueError, np.linalg.LinAlgError):
         pass

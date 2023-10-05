@@ -17,7 +17,7 @@ from pharmpy.tools import (
 )
 from pharmpy.tools.common import ToolResults, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 if TYPE_CHECKING:
@@ -77,7 +77,7 @@ def create_workflow(
 
     wb = WorkflowBuilder(name="allometry")
     if model is not None:
-        start_task = Task('start_allometry', start, model)
+        start_task = Task('start_allometry', start, results, model)
     else:
         start_task = Task('start_allometry', start)
     _add_allometry = partial(
@@ -99,12 +99,16 @@ def create_workflow(
     return Workflow(wb)
 
 
-def start(model):
-    return model
+def start(modelfit_results, model_or_model_entry):
+    if isinstance(model_or_model_entry, ModelEntry):
+        return model_or_model_entry
+    log = modelfit_results.log if modelfit_results else None
+    model_entry = ModelEntry(model_or_model_entry, modelfit_results=modelfit_results, log=log)
+    return model_entry
 
 
 def _add_allometry_on_model(
-    input_model,
+    input_model_entry,
     allometric_variable,
     reference_value,
     parameters,
@@ -113,7 +117,8 @@ def _add_allometry_on_model(
     upper_bounds,
     fixed,
 ):
-    model = update_initial_estimates(input_model)
+    input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
+    model = update_initial_estimates(input_model, input_res)
     model = add_allometry(
         model,
         allometric_variable=allometric_variable,
@@ -126,7 +131,8 @@ def _add_allometry_on_model(
     )
 
     model = model.replace(name="scaled_model", description="Allometry model")
-    return model
+    model_entry = ModelEntry(model, parent=input_model)
+    return model_entry
 
 
 @with_runtime_arguments_type_check
@@ -166,18 +172,21 @@ def validate_parameters(model: Model, parameters: Optional[Iterable[Union[str, s
             )
 
 
-def results(start_model, allometry_model):
-    allometry_model_failed = allometry_model.modelfit_results is None
+def results(start_model_entry, allometry_model_entry):
+    start_model = start_model_entry.model
+    start_res = start_model_entry.modelfit_results
+    allometry_model = allometry_model_entry.model
+    allometry_res = allometry_model_entry.modelfit_results
+
+    allometry_model_failed = allometry_res is None
     best_model = start_model if allometry_model_failed else allometry_model
 
-    summod = summarize_modelfit_results(
-        [start_model.modelfit_results, allometry_model.modelfit_results]
-    )
+    summod = summarize_modelfit_results([start_res, allometry_res])
     summod['step'] = [0, 1]
     summods = summod.reset_index().set_index(['step', 'model'])
     suminds = summarize_individuals([start_model, allometry_model])
     sumcount = summarize_individuals_count_table(df=suminds)
-    sumerrs = summarize_errors([start_model.modelfit_results, allometry_model.modelfit_results])
+    sumerrs = summarize_errors([start_res, allometry_res])
 
     return AllometryResults(
         summary_models=summods,

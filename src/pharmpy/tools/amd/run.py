@@ -604,7 +604,11 @@ def _subfunc_allometry(amd_start_model: Model, input_allometric_variable, path) 
             return None
 
         res = run_tool(
-            'allometry', model, allometric_variable=allometric_variable, path=path / 'allometry'
+            'allometry',
+            model,
+            results=model.modelfit_results,
+            allometric_variable=allometric_variable,
+            path=path / 'allometry',
         )
         assert isinstance(res, Results)
         return res
