@@ -1,3 +1,4 @@
+from ...workflows.model_entry import ModelEntry
 from .baseclass import NonTransactionalModelDatabase
 
 
@@ -21,6 +22,9 @@ class NullModelDatabase(NonTransactionalModelDatabase):
         pass
 
     def store_modelfit_results(self, model):
+        pass
+
+    def store_model_entry(self, model_entry: ModelEntry) -> None:
         pass
 
     def retrieve_file(self, model_name, filename):

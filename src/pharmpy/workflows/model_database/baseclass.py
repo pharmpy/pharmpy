@@ -5,6 +5,7 @@ from typing import ContextManager, Union
 
 from pharmpy.model import Model
 
+from ...workflows.model_entry import ModelEntry
 from ..results import Results
 
 
@@ -43,6 +44,11 @@ class ModelTransaction(ABC):
     @abstractmethod
     def store_modelfit_results(self) -> None:
         """Store modelfit results of the model bound to this transaction"""
+        pass
+
+    @abstractmethod
+    def store_model_entry(self) -> None:
+        """Store model entry of the model entry bound to this transaction"""
         pass
 
 
@@ -169,6 +175,17 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
+    def store_model_entry(self, model_entry: ModelEntry) -> None:
+        """Store model entry of the model entry bound to this transaction
+
+        Parameters
+        ----------
+        model_entry : ModelEntry
+            Pharmpy ModelEntry object
+        """
+        pass
+
+    @abstractmethod
     def retrieve_local_files(self, model_name: str, destination_path: Path):
         """Retrieve all files related to a model
 
@@ -246,13 +263,15 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
-    def transaction(self, model: Model) -> ContextManager[ModelTransaction]:
+    def transaction(
+        self, model_or_model_entry: Union[Model, ModelEntry]
+    ) -> ContextManager[ModelTransaction]:
         """Creates a writable transaction context for a given model.
 
         Parameters
         ----------
-        model : Model
-            Pharmpy model object
+        model_or_model_entry : Model | ModelEntry
+            Pharmpy model or ModelEntry object
         """
         pass
 
@@ -263,14 +282,19 @@ class NonTransactionalModelDatabase(ModelDatabase):
         yield DummySnapshot(self, model_name)
 
     @contextmanager
-    def transaction(self, model: Model):
-        yield DummyTransaction(self, model)
+    def transaction(self, model_or_model_entry: Union[Model, ModelEntry]):
+        yield DummyTransaction(self, model_or_model_entry)
 
 
 class DummyTransaction(ModelTransaction):
-    def __init__(self, database: ModelDatabase, model: Model):
+    def __init__(self, database: ModelDatabase, model_or_model_entry: Union[Model, ModelEntry]):
         self.db = database
-        self.model = model
+        if isinstance(model_or_model_entry, ModelEntry):
+            self.model = model_or_model_entry.model
+            self.model_entry = model_or_model_entry
+        else:
+            self.model = model_or_model_entry
+            self.model_entry = None
 
     def store_model(self) -> None:
         return self.db.store_model(self.model)
@@ -283,6 +307,9 @@ class DummyTransaction(ModelTransaction):
 
     def store_modelfit_results(self) -> None:
         return self.db.store_modelfit_results(self.model)
+
+    def store_model_entry(self) -> None:
+        return self.db.store_model_entry(self.model_entry)
 
 
 class DummySnapshot(ModelSnapshot):
@@ -321,6 +348,10 @@ class TransactionalModelDatabase(ModelDatabase):
     def store_modelfit_results(self, model: Model) -> None:
         with self.transaction(model) as txn:
             return txn.store_modelfit_results()
+
+    def store_model_entry(self, model_entry: ModelEntry) -> None:
+        with self.transaction(model_entry) as txn:
+            return txn.store_model_entry()
 
     def retrieve_file(self, model_name: str, filename: str) -> Path:
         with self.snapshot(model_name) as sn:
