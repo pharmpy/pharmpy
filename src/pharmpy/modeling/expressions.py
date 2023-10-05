@@ -787,25 +787,26 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
     # Arrow means is depending on
     g = statements._create_dependency_graph()
 
-    # Find subgraph of all connected to Y
-    y = list(model.dependent_variables.keys())[0]
-    ind = statements.find_assignment_index(y)
+    parameter_symbs = set()
+    for y in model.dependent_variables.keys():
+        # Find subgraph of all connected to Y
+        ind = statements.find_assignment_index(y)
+        gsub = g.subgraph(nx.descendants(g, ind) | {ind})
 
-    gsub = g.subgraph(nx.descendants(g, ind) | {ind})
+        candidates = set(gsub.nodes)
+        candidates = candidates - _find_trivial_exclusions(model, candidates)
 
-    candidates = set(gsub.nodes)
-    candidates = candidates - _find_trivial_exclusions(model, candidates)
+        pop_deps = _find_pop_parameter_dependents(model, gsub, candidates)
+        candidates = candidates.intersection(pop_deps)
+        time_deps = _find_time_dependents(model, g)
+        candidates -= time_deps
+        separable = _find_separable_statements(model)
+        candidates -= separable
 
-    pop_deps = _find_pop_parameter_dependents(model, gsub, candidates)
-    candidates = candidates.intersection(pop_deps)
-    time_deps = _find_time_dependents(model, g)
-    candidates -= time_deps
-    separable = _find_separable_statements(model)
-    candidates -= separable
+        parameter_indices = _find_individual_parameters(gsub, candidates)
 
-    parameter_indices = _find_individual_parameters(gsub, candidates)
+        parameter_symbs |= {statements[i].symbol for i in parameter_indices}
 
-    parameter_symbs = {statements[i].symbol for i in parameter_indices}
     if level == 'random':
         wanted_levels = {'iov', 'iiv'}
     elif level == 'iiv':
