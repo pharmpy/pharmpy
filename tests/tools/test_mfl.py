@@ -518,7 +518,10 @@ def test_stringify(statements: Tuple[Statement, ...], expected: str):
 
 def test_get_model_features(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    assert 'ABSORPTION(INST);ELIMINATION(FO)' == get_model_features(model)
+    assert (
+        'ABSORPTION(INST);ELIMINATION(FO);COVARIATE([CL, V],WGT,custom,*);COVARIATE([V],APGR,custom,*)'
+        == get_model_features(model)
+    )
 
 
 def test_ModelFeatures(load_model_for_test, pheno_path):
@@ -558,9 +561,29 @@ def test_ModelFeatures_add(load_model_for_test, pheno_path):
         transits=(Transits(counts=(0,), depot=(Name(name='DEPOT'),)),),
         peripherals=Peripherals(counts=(0, 1)),
         lagtime=LagTime(modes=(Name(name='OFF'),)),
+        covariate=(
+            Covariate(parameter=('CL', 'V'), covariate=('APGR', 'WGT'), fp=('CUSTOM',), op=('*',)),
+        ),
     )
 
     assert mfl + model_mfl == expected_mfl
+
+    m1 = ModelFeatures.create_from_mfl_string("COVARIATE(V, WGT, *)")
+    m2 = ModelFeatures.create_from_mfl_string("COVARIATE(@ELIMINATION, WGT, *)")
+
+    with pytest.raises(
+        ValueError,
+        match=r'Cannot be performed with reference value. Try using .expand\(model\) first.',
+    ):
+        m1 + m2
+
+    m2 = m2.expand(model)
+    m3 = m1 + m2
+
+    assert set(m3.covariate[0].parameter) == {'CL', 'V'}
+    assert set(m3.covariate[0].covariate) == {'WGT'}
+    assert set(m3.covariate[0].fp) == {'lin', 'piece_lin', 'exp', 'pow'}
+    assert set(m3.covariate[0].op) == {'*'}
 
 
 def test_ModelFeatures_sub(load_model_for_test, pheno_path):
@@ -598,10 +621,30 @@ def test_ModelFeatures_sub(load_model_for_test, pheno_path):
         transits=(Transits(counts=(0,), depot=(Name(name='DEPOT'),)),),
         peripherals=Peripherals(counts=(0,)),
         lagtime=LagTime(modes=(Name(name='OFF'),)),
+        covariate=(
+            Covariate(parameter=('CL', 'V'), covariate=('APGR', 'WGT'), fp=('CUSTOM',), op=('*',)),
+        ),
     )
 
     res_mfl = model_mfl - mfl
     assert res_mfl == expected_mfl
+
+    m1 = ModelFeatures.create_from_mfl_string("COVARIATE([CL,V], WGT, *)")
+    m2 = ModelFeatures.create_from_mfl_string("COVARIATE(@ELIMINATION, WGT, *)")
+
+    with pytest.raises(
+        ValueError,
+        match=r'Cannot be performed with reference value. Try using .expand\(model\) first.',
+    ):
+        m1 + m2
+
+    m2 = m2.expand(model)
+    m3 = m1 - m2
+
+    assert set(m3.covariate[0].parameter) == {'V'}
+    assert set(m3.covariate[0].covariate) == {'WGT'}
+    assert set(m3.covariate[0].fp) == {'lin', 'piece_lin', 'exp', 'pow'}
+    assert set(m3.covariate[0].op) == {'*'}
 
 
 def test_least_number_of_transformations(load_model_for_test, pheno_path):
@@ -611,11 +654,15 @@ def test_least_number_of_transformations(load_model_for_test, pheno_path):
     ss = "ABSORPTION([FO,ZO]);ELIMINATION(ZO);PERIPHERALS(1)"
     ss_mfl = parse(ss, mfl_class=True)
 
-    lnt = model_mfl.least_number_of_transformations(ss_mfl)
+    lnt = model_mfl.least_number_of_transformations(ss_mfl, model)
     assert ('ABSORPTION', 'FO') in lnt
     assert ('ELIMINATION', 'ZO') in lnt
     assert ('PERIPHERALS', 1) in lnt
-    assert len(lnt) == 3
+    assert ('COVARIATE', 'CL', 'WGT', 'custom', '*') in lnt
+    assert ('COVARIATE', 'V', 'WGT', 'custom', '*') in lnt
+    assert ('COVARIATE', 'V', 'APGR', 'custom', '*') in lnt
+
+    assert len(lnt) == 6
 
 
 @pytest.mark.parametrize(

@@ -1,4 +1,6 @@
 import warnings
+from collections import defaultdict
+from itertools import product
 from typing import List, Optional
 
 from lark import Lark
@@ -17,6 +19,8 @@ from pharmpy.modeling.odes import (
     has_zero_order_absorption,
     has_zero_order_elimination,
 )
+from pharmpy.tools.mfl.feature.covariate import features as covariate_features
+from pharmpy.tools.mfl.statement.definition import Let
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.elimination import Elimination
@@ -26,8 +30,9 @@ from pharmpy.tools.mfl.statement.feature.symbols import Name
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 
 from .grammar import grammar
-from .helpers import funcs, modelsearch_features
+from .helpers import all_funcs, funcs, modelsearch_features
 from .interpreter import MFLInterpreter
+from .statement.feature.covariate import Ref
 from .statement.statement import Statement
 from .stringify import stringify as mfl_stringify
 
@@ -62,7 +67,7 @@ class ModelFeatures:
         transits=(Transits((0,), (Name('DEPOT'),)),),  # NOTE : This is a tuple
         peripherals=Peripherals((0,)),
         lagtime=LagTime((Name('OFF'),)),
-        covariate=tuple(),  # TODO : Covariates (Should be represented by tuple similar to transits)
+        covariate=tuple(),  # Note : Should always be tuple (empty meaning no covariates)
     ):
         self._absorption = absorption
         self._elimination = elimination
@@ -79,7 +84,7 @@ class ModelFeatures:
         transits=(Transits((0,), (Name('DEPOT'),)),),
         peripherals=Peripherals((0,)),
         lagtime=LagTime((Name('OFF'),)),
-        covariate=tuple(),  # TODO : Covariates
+        covariate=tuple(),
     ):
         # TODO : Check if allowed input value
         if not isinstance(absorption, Absorption):
@@ -99,7 +104,11 @@ class ModelFeatures:
         if not isinstance(lagtime, LagTime):
             raise ValueError(f"Lagtime : {lagtime} is not supported")
 
-        # TODO : Covariates
+        if not covariate == tuple():
+            if not isinstance(covariate, tuple):
+                raise ValueError("Covariates need to be given within a tuple")
+            if not all(isinstance(c, Covariate) for c in covariate):
+                raise ValueError(f"Covariate : {covariate} is not supported")
 
         return cls(
             absorption=absorption,
@@ -119,6 +128,7 @@ class ModelFeatures:
         peripherals = m._default_values()['peripherals']
         lagtime = m._default_values()['lagtime']
         covariate = m._default_values()['covariate']
+        let = {}
         for statement in mfl_list:
             if isinstance(statement, Absorption):
                 absorption = statement
@@ -131,9 +141,29 @@ class ModelFeatures:
             elif isinstance(statement, LagTime):
                 lagtime = statement
             elif isinstance(statement, Covariate):
-                covariate = statement
+                covariate += (statement,)
+            elif isinstance(statement, Let):
+                let[statement.name] = statement.value
             else:
                 raise ValueError(f'Unknown statement ({statement}) given.')
+
+        # Substitute all Let statements (if any)
+        if len(let) != 0:
+            # FIXME : Multiple let statements for the same reference value ?
+            def _let_subs(cov, let):
+                return Covariate(
+                    parameter=cov.parameter
+                    if not (isinstance(cov.parameter, Ref) and cov.parameter.name in let)
+                    else let[cov.parameter.name],
+                    covariate=cov.covariate
+                    if not (isinstance(cov.covariate, Ref) and cov.covariate.name in let)
+                    else let[cov.covariate.name],
+                    fp=cov.fp,
+                    op=cov.op,
+                )
+
+            covariate = tuple([_let_subs(cov, let) for cov in covariate])
+
         mfl = cls.create(
             absorption=absorption,
             elimination=elimination,
@@ -198,7 +228,17 @@ class ModelFeatures:
     def covariate(self):
         return self._covariate
 
-    def mfl_statement_list(self, attribute_type: Optional[List[str]] = None):
+    def expand(self, model):
+        return ModelFeatures.create(
+            absorption=self.absorption.eval,
+            elimination=self.elimination.eval,
+            transits=tuple([t.eval for t in self.transits]),
+            peripherals=self.peripherals,
+            lagtime=self.lagtime.eval,
+            covariate=tuple([c.eval(model) for c in self.covariate]),
+        )
+
+    def mfl_statement_list(self, attribute_type: Optional[List[str]] = []):
         """Add the repspective MFL attributes to a list"""
 
         # NOTE : This function is needed to be able to convert the classes to functions
@@ -225,8 +265,8 @@ class ModelFeatures:
         if "lagtime" in attribute_type:
             mfl_list.append(self.lagtime)
         if "covariate" in attribute_type:
-            # TODO : COVARIATES
-            mfl_list.append(self.covariate)
+            for c in self.covariate:
+                mfl_list.append(c)
 
         return [m for m in mfl_list if m]
 
@@ -236,9 +276,14 @@ class ModelFeatures:
         # The model argument is used for when extacting covariates.
         if not model:
             model = Model()
-        return funcs(model, self.mfl_statement_list(attribute_type), modelsearch_features)
+        # TODO : implement argument if we wish to use subset instead of all functions.
+        if self.covariate != tuple():
+            return all_funcs(model, self.mfl_statement_list(attribute_type))
+        else:
+            return funcs(model, self.mfl_statement_list(attribute_type), modelsearch_features)
 
-    def contain_subset(self, mfl):
+    def contain_subset(self, mfl, model: Optional[Model] = None):
+        """See if class contain specified subset"""
         transits = self._subset_transits(mfl)
 
         if (
@@ -247,8 +292,12 @@ class ModelFeatures:
             and transits
             and all([s in self.peripherals.counts for s in mfl.peripherals.counts])
             and all([s in self.lagtime.modes for s in mfl.lagtime.eval.modes])
-            # TODO : COVARIATES --> Require model (optional argument?)
         ):
+            if self.covariate != tuple() or mfl.covariate != tuple():
+                if model is None:
+                    warnings.warn("Need argument 'model' in order to compare covariates")
+                else:
+                    return True if self._subset_covariate else False
             return True
         else:
             return False
@@ -259,12 +308,37 @@ class ModelFeatures:
 
         rhs_counts = set([c for t in mfl.transits for c in t.counts])
         rhs_depot = set([d for t in mfl.transits for d in t.eval.depot])
-
+        # FIXME : Need to compare counts per depot individually when comparing two
+        # search spaces (Currenty working for model vs search space)
         return all([c in lhs_counts for c in rhs_counts]) and all(
             [d in lhs_depot for d in rhs_depot]
         )
 
-    def least_number_of_transformations(self, other):
+    def _subset_covariates(self, mfl, model):
+        lhs = defaultdict(list)
+        rhs = defaultdict(list)
+
+        for cov in self.covariate:
+            cov_eval = cov.eval(model)
+            for effect in cov_eval.fp:
+                for op in cov_eval.op:
+                    lhs[(effect, op)].append(product(cov_eval.parameter, cov_eval.covariate))
+        for cov in mfl.covariate:
+            cov_eval = cov.eval(model)
+            for effect in cov_eval.fp:
+                for op in cov_eval.op:
+                    rhs[(effect, op)].append(product(cov_eval.parameter, cov_eval.covariate))
+
+        for key in rhs.keys():
+            if key not in lhs.keys():
+                return False
+            if all(p in lhs[key] for p in rhs[key]):
+                continue
+            else:
+                return False
+        return True
+
+    def least_number_of_transformations(self, other, model: Optional[Model] = None):
         """The smallest set of transformations to become part of other"""
         lnt = {}
         if not any(a in other.absorption.eval.modes for a in self.absorption.eval.modes):
@@ -285,7 +359,11 @@ class ModelFeatures:
             name, func = list(other.convert_to_funcs(["lagtime"]).items())[0]
             lnt[name] = func
 
-        # TODO : Covariates
+        if model is not None:
+            lnt = self._lnt_covariates(other, lnt, model)
+        else:
+            if self.covariate != tuple() or other.covariate != tuple():
+                warnings.warn("Need argument 'model' in order to compare covariates")
 
         return lnt
 
@@ -330,12 +408,47 @@ class ModelFeatures:
 
         return lnt
 
+    def _lnt_covariates(self, other, lnt, model):
+        lhs = self._extract_covariates()
+        rhs = other._extract_covariates()
+
+        remove_cov_dict = dict(covariate_features(model, self.covariate, remove=True))
+        if not any(key in rhs.keys() for key in lhs.keys()):
+            # Remove all covariates
+            lnt.update(remove_cov_dict)
+            if len(rhs) != 0:
+                # No effect/operator combination matching
+                func_dict = other.convert_to_funcs(["covariate"])
+                key = list(func_dict.keys())[0]
+                lnt[key] = func_dict[key]
+        else:
+            # One (or more) effect/operator are overlapping
+            for key in lhs.keys():
+                if key in rhs.keys():
+                    if not any(p in rhs[key] for p in lhs[key]):
+                        # take the first value with this key.
+                        func_dict = other.convert_to_funcs(["covariate"], model)
+                        func_dict = {
+                            k: v
+                            for k, v in func_dict.items()
+                            if (k[3] == key[0] and k[4] == key[1])
+                        }
+                        key = list(func_dict.keys())[0]
+                        lnt[key] = func_dict[key]
+                    for p in [p for p in lhs[key] if p not in rhs[key]]:
+                        lnt[(p[0], p[1], key[0], key[1])] = remove_cov_dict[
+                            (p[0], p[1], key[0], key[1])
+                        ]
+
+        return lnt
+
     def __repr__(self):
         # TODO : Remove default values
         return mfl_stringify(self.mfl_statement_list())
 
     def __sub__(self, other):
         transits = self._add_sub_transits(other, add=False)
+        covariates = self._add_sub_covariates(other, add=False)
 
         return ModelFeatures.create(
             absorption=self.absorption - other.absorption,
@@ -343,11 +456,12 @@ class ModelFeatures:
             transits=transits,
             peripherals=self.peripherals - other.peripherals,
             lagtime=self.lagtime - other.lagtime,
-            # TODO : Covariate
+            covariate=covariates,
         )
 
     def __add__(self, other):
         transits = self._add_sub_transits(other, add=True)
+        covariates = self._add_sub_covariates(other, add=True)
 
         return ModelFeatures.create(
             absorption=self.absorption + other.absorption,
@@ -355,7 +469,7 @@ class ModelFeatures:
             transits=transits,
             peripherals=self.peripherals + other.peripherals,
             lagtime=self.lagtime + other.lagtime,
-            covariate=self.covariate,  # TODO : Covariate
+            covariate=covariates,
         )
 
     def _add_sub_transits(self, other, add=True):
@@ -406,6 +520,52 @@ class ModelFeatures:
 
         return tuple(transits)
 
+    def _add_sub_covariates(self, other, add=True):
+        lhs = self._extract_covariates()
+        rhs = other._extract_covariates()
+
+        res = []
+        if len(rhs) != 0 and len(lhs) != 0:
+            # Find the unique products in both lists with matching expression/operator
+            combined = lhs
+            for effop, prod in rhs.items():
+                if add:
+                    combined[effop].update(prod)
+                else:
+                    combined[effop].difference_update(prod)
+            combined = {k: v for k, v in combined.items() if v != set()}
+            res = combined
+        elif len(rhs) != 0 and len(lhs) == 0 and add:
+            res = rhs
+        elif len(lhs) != 0 and len(rhs) == 0:
+            res = lhs
+        else:
+            return tuple()
+
+        # Clean and combine all effect/operators with the same set of parameter and covariates
+        clean_res = defaultdict(list)
+        for effop, prod in res.items():
+            prod_key = tuple(sorted(prod))
+            if existing_effop := clean_res[prod_key]:
+                if effop[0] not in existing_effop[0]:
+                    existing_effop[0].append(effop[0])
+                if effop[1] not in existing_effop[1]:
+                    existing_effop[1].append(effop[1])
+                clean_res[prod_key] = existing_effop
+            else:
+                clean_res[prod_key] = [[effop[0]], [effop[1]]]
+
+        cov_res = []
+        for prod, effop in clean_res.items():
+            parameter = tuple(set([p[0] for p in prod]))
+            covariate = tuple(set([p[1] for p in prod]))
+            cov_res.append(Covariate(parameter, covariate, tuple(effop[0]), tuple(effop[1])))
+
+        if all(len(c.parameter) == 0 for c in cov_res):
+            return tuple()
+        else:
+            return tuple(cov_res)
+
     def __eq__(self, other):
         transits = self._eq_transits(other)
         return (
@@ -414,7 +574,7 @@ class ModelFeatures:
             and transits
             and self.peripherals == other.peripherals
             and self.lagtime == other.lagtime
-            and self.covariate == other.covariate
+            and self._eq_covariate(other)
         )
 
     def _eq_transits(self, other):
@@ -433,6 +593,36 @@ class ModelFeatures:
         return set(lhs_counts_depot) == set(rhs_counts_depot) and set(lhs_counts_nodepot) == set(
             rhs_counts_nodepot
         )
+
+    def _eq_covariate(self, other):
+        lhs = self._extract_covariates()
+        rhs = other._extract_covariates()
+
+        if all(key in rhs.keys() for key in lhs.keys()):
+            for key in lhs.keys():
+                if lhs[key] != rhs[key]:
+                    return False
+            return True
+        return False
+
+    def _extract_covariates(self):
+        lhs = defaultdict(set)
+        lhs_ref = []
+        for cov in self.covariate:
+            if isinstance(cov.parameter, Ref) or isinstance(cov.covariate, Ref):
+                lhs_ref.append(cov)
+                continue
+            for effect in cov.eval().fp:
+                for op in cov.op:
+                    # TODO : Ignore using PROD and simply use tuple with one value each
+                    lhs[(effect, op)].update(set(product(cov.parameter, cov.covariate)))
+
+        if len(lhs_ref) != 0:
+            raise ValueError(
+                'Cannot be performed with reference value. Try using .expand(model) first.'
+            )
+
+        return lhs
 
 
 def get_model_features(model: Model, supress_warnings: bool = False) -> str:
