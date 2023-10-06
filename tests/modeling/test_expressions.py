@@ -1,3 +1,5 @@
+from functools import partial
+
 import pytest
 import sympy
 
@@ -17,6 +19,7 @@ from pharmpy.modeling import (
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
     cleanup_model,
+    create_basic_pk_model,
     display_odes,
     get_dv_symbol,
     get_individual_parameters,
@@ -470,6 +473,42 @@ def test_get_pd_parameters_indirect(
 def test_get_individual_parameters(load_model_for_test, testdata, model_path, level, expected):
     model = load_model_for_test(testdata / model_path)
     assert set(get_individual_parameters(model, level)) == set(expected)
+
+
+basic_pk_model = create_basic_pk_model()
+
+
+@pytest.mark.parametrize(
+    ('func', 'level', 'expected'),
+    (
+        (partial(set_direct_effect, expr='baseline'), 'all', ['B', 'CL', 'VC']),
+        (partial(set_direct_effect, expr='baseline'), 'random', ['CL', 'VC']),
+        (partial(set_direct_effect, expr='linear'), 'all', ['B', 'CL', 'SLOPE', 'VC']),
+        (partial(set_direct_effect, expr='emax'), 'all', ['B', 'CL', 'EC_50', 'E_MAX', 'VC']),
+        (
+            partial(set_direct_effect, expr='sigmoid'),
+            'all',
+            ['B', 'CL', 'EC_50', 'E_MAX', 'N', 'VC'],
+        ),
+        (partial(add_effect_compartment, expr='baseline'), 'all', ['B', 'CL', 'MET', 'VC']),
+        (partial(add_effect_compartment, expr='baseline'), 'random', ['CL', 'VC']),
+        (
+            partial(add_effect_compartment, expr='sigmoid'),
+            'all',
+            ['B', 'CL', 'EC_50', 'E_MAX', 'MET', 'N', 'VC'],
+        ),
+        (partial(add_indirect_effect, expr='linear'), 'all', ['B', 'CL', 'MET', 'SLOPE', 'VC']),
+        (
+            partial(add_indirect_effect, expr='sigmoid'),
+            'all',
+            ['B', 'CL', 'EC_50', 'E_MAX', 'MET', 'N', 'VC'],
+        ),
+    ),
+)
+def test_get_individual_parameters_pkpd_models(func, level, expected):
+    model = func(basic_pk_model)
+    params = get_individual_parameters(model, level=level)
+    assert params == expected
 
 
 @pytest.mark.parametrize(
