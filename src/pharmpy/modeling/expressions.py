@@ -741,7 +741,9 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     return model
 
 
-def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
+def get_individual_parameters(
+    model: Model, level: str = 'all', dv: Union[sympy.Symbol, str, int, None] = None
+) -> List[str]:
     """Retrieves all individual parameters in a :class:`pharmpy.model`.
 
     By default all individual parameters will be found even ones having no random effect. The level
@@ -754,6 +756,8 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
         Pharmpy model to retrieve the individuals parameters from
     level : str
         The variability level to look for: 'iiv', 'iov', 'random' or 'all' (default)
+    dv : Union[sympy.Symbol, str, int, None]
+        Name or DVID of dependent variable. None for all (default)
 
     Return
     ------
@@ -803,7 +807,11 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
     )
 
     parameter_symbs = set()
-    for y in model.dependent_variables.keys():
+    if dv is None:
+        dvs = model.dependent_variables.keys()
+    else:
+        dvs = {get_dv_symbol(model, dv)}
+    for y in dvs:
         ind = statements.find_assignment_index(y)
         gsub = _subgraph_of(full_graph, ind)
 
