@@ -475,7 +475,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return list(chain.from_iterable(dist.names for dist in self._dists))
 
     @property
-    def symbols(self) -> list(sympy.Symbol):
+    def symbols(self) -> list[sympy.Symbol]:
         """List with symbols for all random variables"""
         return [sympy.Symbol(name) for name in self.names]
 
