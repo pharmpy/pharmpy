@@ -33,7 +33,7 @@ from pharmpy.model import (
     output,
 )
 
-from .parameters import get_thetas
+from .parameters import get_omegas, get_sigmas, get_thetas
 
 if TYPE_CHECKING:
     import networkx as nx
@@ -785,23 +785,29 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
     statements = model.statements
 
     # Arrow means is depending on
-    g = statements._create_dependency_graph()
+    full_graph = statements._create_dependency_graph()
+    all_statements = set(full_graph.nodes)
+    theta_eta_deps = _find_theta_eta_dependents(model, full_graph)
+    eps_deps = _find_eps_dependents(model, full_graph)
+    separable_statements = _find_separable_statements(model)
+    ode_statement = _find_ode_statement(model)
+    dv_statements = _find_dv_statements(model)
+    time_deps = _find_time_dependents(model, full_graph)
+    all_candidates = (
+        all_statements.intersection(theta_eta_deps)
+        - eps_deps
+        - separable_statements
+        - ode_statement
+        - dv_statements
+        - time_deps
+    )
 
     parameter_symbs = set()
     for y in model.dependent_variables.keys():
-        # Find subgraph of all connected to Y
         ind = statements.find_assignment_index(y)
-        gsub = g.subgraph(nx.descendants(g, ind) | {ind})
+        gsub = _subgraph_of(full_graph, ind)
 
-        candidates = set(gsub.nodes)
-        candidates = candidates - _find_trivial_exclusions(model, candidates)
-
-        pop_deps = _find_pop_parameter_dependents(model, gsub, candidates)
-        candidates = candidates.intersection(pop_deps)
-        time_deps = _find_time_dependents(model, g)
-        candidates -= time_deps
-        separable = _find_separable_statements(model)
-        candidates -= separable
+        candidates = set(gsub.nodes).intersection(all_candidates)
 
         parameter_indices = _find_individual_parameters(gsub, candidates)
 
@@ -819,7 +825,7 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
     if wanted_levels is not None:
         filtered = set()
         for param in parameter_symbs:
-            levels = _random_levels_of_parameter(model, g, param)
+            levels = _random_levels_of_parameter(model, full_graph, param)
             if not wanted_levels.isdisjoint(levels):
                 filtered.add(param)
     else:
@@ -828,9 +834,9 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
     return sorted([s.name for s in filtered])
 
 
-#        assignments = _get_natural_assignments(model.statements.before_odes)
-#        dependency_graph = _dependency_graph(assignments)
-#                _filter_symbols(
+def _subgraph_of(g, ind):
+    gsub = g.subgraph(nx.descendants(g, ind) | {ind})
+    return gsub
 
 
 def _random_levels_of_parameter(model, g, param):
@@ -844,6 +850,21 @@ def _random_levels_of_parameter(model, g, param):
         if not model.statements[node].rhs_symbols.isdisjoint(iov_symbs):
             levels.add('iov')
     return sorted(levels)
+
+
+def _find_ode_statement(model):
+    for i, s in enumerate(model.statements):
+        if isinstance(s, CompartmentalSystem):
+            return {i}
+    return set()
+
+
+def _find_dv_statements(model):
+    inds = set()
+    for i, s in enumerate(model.statements):
+        if isinstance(s, Assignment) and s.symbol in model.dependent_variables.keys():
+            inds.add(i)
+    return inds
 
 
 def _find_separable_statements(model):
@@ -916,11 +937,6 @@ def _sinks(g):
     return (node for node, out_degree in g.out_degree() if out_degree == 0)
 
 
-def _find_pop_parameter_dependents(model, g, candidates):
-    direct = _find_direct_pop_param_dependents(model, candidates)
-    return _find_dependents(g, direct)
-
-
 def _find_time_dependents(model, g):
     direct = _find_direct_time_dependents(model)
     return _find_dependents(g, direct)
@@ -934,16 +950,34 @@ def _find_dependents(g, nodes):
     return deps
 
 
-def _find_direct_pop_param_dependents(model, candidates):
-    # Look for statements that are directly depending on population parameters or etas
+def _find_direct_param_dependents(model, g, eps=False):
+    # Look for statements that are directly depending on
+    # either (thetas, omegas or etas) or (sigmas or epsilons)
     deps = set()
-    pop_params = set(model.parameters.symbols)
-    rvs = {sympy.Symbol(name) for name in model.random_variables.etas.names}
-    for i in candidates:
+    if not eps:
+        thetas_and_omegas = get_thetas(model) + get_omegas(model)
+        pop_params = set(thetas_and_omegas.symbols)
+        rvs = set(model.random_variables.etas.symbols)
+    else:
+        sigmas = get_sigmas(model)
+        pop_params = set(sigmas.symbols)
+        rvs = set(model.random_variables.epsilons.symbols)
+    all_symbs = pop_params | rvs
+    for i in g.nodes:
         s = model.statements[i]
-        if not (pop_params | rvs).isdisjoint(s.rhs_symbols):
+        if not all_symbs.isdisjoint(s.rhs_symbols):
             deps.add(i)
     return deps
+
+
+def _find_theta_eta_dependents(model, g):
+    direct = _find_direct_param_dependents(model, g)
+    return _find_dependents(g, direct)
+
+
+def _find_eps_dependents(model, g):
+    direct = _find_direct_param_dependents(model, g, eps=True)
+    return _find_dependents(g, direct)
 
 
 def _find_direct_time_dependents(model):
@@ -952,23 +986,6 @@ def _find_direct_time_dependents(model):
     if odes is None:
         return set()
     return {i for i, s in enumerate(statements) if odes.t in s.rhs_symbols}
-
-
-def _find_trivial_exclusions(model, candidates):
-    # Finds CompartmentalSystem, Ys and time dependent statements
-    exclude = set()
-    statements = model.statements
-    ys = model.dependent_variables.keys()
-    odes = statements.ode_system
-    if odes is not None:
-        t = odes.t
-    else:
-        t = None
-    for i in candidates:
-        s = statements[i]
-        if isinstance(s, CompartmentalSystem) or s.symbol in ys or t in s.rhs_symbols:
-            exclude.add(i)
-    return exclude
 
 
 def depends_on(model: Model, symbol: str, other: str):
