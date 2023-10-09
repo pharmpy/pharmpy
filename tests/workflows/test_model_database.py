@@ -8,10 +8,12 @@ import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import add_time_after_dose
+from pharmpy.tools import read_modelfit_results
 from pharmpy.workflows import (
     LocalDirectoryDatabase,
     LocalModelDirectoryDatabase,
     ModelDatabase,
+    ModelEntry,
     NullModelDatabase,
 )
 
@@ -96,3 +98,43 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
             assert line == f'$DATA ..{sep}.datasets{sep}run2.csv IGNORE=@\n'
+
+
+def test_store_and_retrieve_model_entry(tmp_path, load_model_for_test, testdata):
+    sep = os.path.sep
+    with chdir(tmp_path):
+        datadir = testdata / 'nonmem'
+        for path in (testdata / 'nonmem').glob('pheno_real.*'):
+            shutil.copy2(path, tmp_path)
+        shutil.copy(datadir / 'pheno.dta', 'pheno.dta')
+        model = load_model_for_test("pheno_real.mod")
+        modelfit_results = read_modelfit_results("pheno_real.mod")
+        model_entry = ModelEntry(
+            model=model,
+            modelfit_results=modelfit_results,
+            parent=model.parent_model,
+            log=modelfit_results.log,
+        )
+
+        db = LocalModelDirectoryDatabase("database")
+        db.store_model_entry(model_entry)
+
+        with open("database/.datasets/pheno_real.csv", "r") as fh:
+            line = fh.readline()
+            assert line == "ID,TIME,AMT,WGT,APGR,DV,FA1,FA2\n"
+
+        with open("database/.datasets/pheno_real.datainfo", "r") as fh:
+            obj = json.load(fh)
+            assert 'columns' in obj
+            assert obj['path'] == 'pheno_real.csv'
+
+        with open("database/pheno_real/pheno_real.mod", "r") as fh:
+            line = fh.readline()
+            assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
+            line = fh.readline()
+            assert line == f'$DATA ..{sep}.datasets{sep}pheno_real.csv IGNORE=@\n'
+
+        model_entry_retrieve = db.retrieve_model_entry(model.name)
+
+        assert model_entry_retrieve.model == model
+        assert model_entry_retrieve.modelfit_results.name == modelfit_results.name

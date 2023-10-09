@@ -1,7 +1,7 @@
 from typing import Iterable, Literal, Optional, Tuple, Union
 
 from pharmpy.model import Model
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
 SupportedPlugin = Literal['nonmem', 'nlmixr']
 
@@ -79,7 +79,25 @@ def post_process_results_many(context, *models: Model):
 
 
 def retrieve_from_database_or_execute_model_with_tool(tool):
-    def task(context, model):
+    def task(context, model_or_model_entry):
+        if isinstance(model_or_model_entry, ModelEntry):
+            model_entry = model_or_model_entry
+            model = model_or_model_entry.model
+            try:
+                db_model_entry = context.model_database.retrieve_model_entry(model.name)
+            except (KeyError, AttributeError, FileNotFoundError):
+                db_model_entry = None
+
+            if db_model_entry and db_model_entry.modelfit_results is not None:
+                if model.has_same_dataset_as(db_model_entry.model):
+                    return model_entry.attach_results(
+                        db_model_entry.modelfit_results, db_model_entry.log
+                    )
+
+            # NOTE: Fallback to executing the model
+            execute_model = get_execute_model(tool)
+            return execute_model(model_entry, context)
+        model = model_or_model_entry
         try:
             db_results = context.model_database.retrieve_modelfit_results(model.name)
         except (KeyError, AttributeError, FileNotFoundError):

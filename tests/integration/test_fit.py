@@ -9,6 +9,8 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.tools import fit
 from pharmpy.tools.external.nonmem import conf
+from pharmpy.tools.external.nonmem.run import execute_model
+from pharmpy.workflows import LocalDirectoryToolDatabase, ModelEntry
 
 
 def test_configuration():
@@ -96,3 +98,40 @@ def test_fit_nlmixr(tmp_path, testdata):
         res = fit(model, tool='nlmixr')
         assert res.ofv == pytest.approx(732.58813)
         assert res.parameter_estimates['TVCL'] == pytest.approx(0.0058686, abs=1e-6)
+
+
+def test_execute_model_nonmem(tmp_path, testdata):
+    with chdir(tmp_path):
+        datadir = testdata / 'nonmem'
+        for path in (testdata / 'nonmem').glob('pheno_real.*'):
+            shutil.copy2(path, tmp_path)
+        shutil.copy(datadir / 'pheno.dta', 'pheno.dta')
+        model = Model.parse_model('pheno_real.mod')
+        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
+
+        db = LocalDirectoryToolDatabase('db_model')
+
+        model = execute_model(model, db)
+
+        assert isinstance(model, Model)
+        assert model.modelfit_results
+        assert (db.path / 'models' / 'pheno_real').is_dir()
+
+        model = Model.parse_model('pheno_real.mod')
+        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
+
+        model_entry = ModelEntry.create(
+            model=model,
+            modelfit_results=None,
+            parent=model.parent_model,
+            log=None,
+        )
+
+        db = LocalDirectoryToolDatabase('db_model')
+
+        model_entry = execute_model(model_entry, db)
+
+        assert isinstance(model_entry, ModelEntry)
+        assert model_entry.modelfit_results
+        assert not model_entry.model.modelfit_results
+        assert (db.path / 'models' / 'pheno_real').is_dir()

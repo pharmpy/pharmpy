@@ -9,7 +9,8 @@ from pharmpy.internals.df import hash_df_fs
 from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import DataInfo, Model
-from pharmpy.workflows.results import read_results
+from pharmpy.workflows.model_entry import ModelEntry
+from pharmpy.workflows.results import ModelfitResults, read_results
 
 from .baseclass import (
     ModelSnapshot,
@@ -47,6 +48,21 @@ def get_modelfit_results(model, path):
 
     model = model.replace(modelfit_results=res)
     return model
+
+
+def create_model_entry(model, modelfit_results):
+    # FIXME: This function is to avoid duplication of this logic, this can be removed once
+    #  parent_model has been moved from Model and log has been moved from modelfit_results
+    #  and each database implementation has methods for retrieving these
+    if not isinstance(modelfit_results, ModelfitResults):
+        modelfit_results = None
+        log = None
+    else:
+        log = modelfit_results.log
+
+    parent_model = model.parent_model
+
+    return ModelEntry(model=model, modelfit_results=modelfit_results, parent=parent_model, log=log)
 
 
 class LocalDirectoryDatabase(NonTransactionalModelDatabase):
@@ -113,10 +129,18 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
     def retrieve_modelfit_results(self, name):
         return self.retrieve_model(name).modelfit_results
 
+    def retrieve_model_entry(self, name):
+        model = self.retrieve_model(name)
+        modelfit_results = self.retrieve_modelfit_results(name)
+        return create_model_entry(model, modelfit_results)
+
     def store_metadata(self, model, metadata):
         pass
 
     def store_modelfit_results(self, model):
+        pass
+
+    def store_model_entry(self, model_entry):
         pass
 
     def __repr__(self):
@@ -171,8 +195,12 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
             yield LocalModelDirectoryDatabaseSnapshot(self, model_name)
 
     @contextmanager
-    def transaction(self, model: Model):
-        model_path = self.path / model.name
+    def transaction(self, model_or_model_entry: Union[Model, ModelEntry]):
+        if isinstance(model_or_model_entry, ModelEntry):
+            model_name = model_or_model_entry.model.name
+        else:
+            model_name = model_or_model_entry.name
+        model_path = self.path / model_name
         destination = model_path / DIRECTORY_PHARMPY_METADATA
         destination.mkdir(parents=True, exist_ok=True)
         with self._write_lock():
@@ -184,7 +212,7 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
                 # TODO: Finish pending transaction from journal if possible
                 raise PendingTransactionError()
 
-            yield LocalModelDirectoryDatabaseTransaction(self, model)
+            yield LocalModelDirectoryDatabaseTransaction(self, model_or_model_entry)
 
             # NOTE: Commit transaction (only if no exception was raised)
             path.unlink()
@@ -198,9 +226,16 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
 
 
 class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
-    def __init__(self, database: LocalModelDirectoryDatabase, model: Model):
+    def __init__(
+        self, database: LocalModelDirectoryDatabase, model_or_model_entry: Union[Model, ModelEntry]
+    ):
         self.db = database
-        self.model = model
+        if isinstance(model_or_model_entry, ModelEntry):
+            self.model = model_or_model_entry.model
+            self.model_entry = model_or_model_entry
+        else:
+            self.model = model_or_model_entry
+            self.model_entry = None
 
     def store_model(self):
         from pharmpy.modeling import read_dataset_from_datainfo, write_csv, write_model
@@ -268,8 +303,20 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
         destination = self.db.path / self.model.name / DIRECTORY_PHARMPY_METADATA
         destination.mkdir(parents=True, exist_ok=True)
 
-        if self.model.modelfit_results:
-            self.model.modelfit_results.to_json(destination / FILE_MODELFIT_RESULTS)
+        if self.model_entry is not None:
+            modelfit_results = self.model_entry.modelfit_results
+        else:
+            modelfit_results = self.model.modelfit_results
+
+        if modelfit_results is not None:
+            modelfit_results.to_json(destination / FILE_MODELFIT_RESULTS)
+
+    def store_model_entry(self):
+        if self.model_entry is None:
+            raise ValueError('Transaction does not have `model_entry` attribute')
+        # FIXME: Store parent
+        self.store_model()
+        self.store_modelfit_results()
 
 
 class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
@@ -329,3 +376,8 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         # test pass.
         path = self.db.path / self.name / DIRECTORY_PHARMPY_METADATA / FILE_MODELFIT_RESULTS
         return read_results(path)
+
+    def retrieve_model_entry(self):
+        model = self.retrieve_model()
+        modelfit_results = self.retrieve_modelfit_results()
+        return create_model_entry(model, modelfit_results)
