@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass, replace
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Union
 
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
@@ -27,13 +27,6 @@ IIV_STRATEGIES = frozenset(
     ('no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock')
 )
 IIV_ALGORITHMS = frozenset(('brute_force',) + tuple(dir(algorithms)))
-
-
-@dataclass
-class State:
-    algorithm: str
-    model_names_so_far: Set[str]
-    input_model_name: List[str]
 
 
 def create_workflow(
@@ -88,11 +81,9 @@ def create_workflow(
     return Workflow(wb)
 
 
-def create_algorithm_workflow(
-    input_model, base_model, state, iiv_strategy, rank_type, cutoff, keep
-):
+def create_step_workflow(input_model, base_model, wf_algorithm, iiv_strategy, rank_type, cutoff):
     wb = WorkflowBuilder()
-    start_task = Task(f'start_{state.algorithm}', _start_algorithm, base_model)
+    start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model)
     wb.add_task(start_task)
 
     if iiv_strategy != 'no_add':
@@ -102,19 +93,9 @@ def create_algorithm_workflow(
     else:
         base_model_task = start_task
 
-    index_offset = len(
-        [model_name for model_name in state.model_names_so_far if 'base' not in model_name]
-    )
-    algorithm_func = getattr(algorithms, state.algorithm)
-    if state.algorithm == "brute_force_no_of_etas":
-        wf_method = algorithm_func(base_model, index_offset, keep)
-    else:
-        wf_method = algorithm_func(base_model, index_offset)
-    wb.insert_workflow(wf_method)
+    wb.insert_workflow(wf_algorithm)
 
-    task_result = Task(
-        'results', post_process, state, rank_type, cutoff, input_model, base_model.name
-    )
+    task_result = Task('results', post_process, rank_type, cutoff, input_model, base_model.name)
 
     post_process_tasks = [base_model_task] + wb.output_tasks
     wb.add_task(task_result, predecessors=post_process_tasks)
@@ -142,11 +123,17 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff, keep
     last_res = None
     final_model = None
 
-    for i, algorithm_cur in enumerate(list_of_algorithms):
-        state = State(algorithm_cur, models_set, input_model.name)
-        # NOTE: Execute algorithm
-        wf = create_algorithm_workflow(
-            input_model, base_model, state, iiv_strategy, rank_type, cutoff, keep
+    sum_models = [summarize_modelfit_results(input_model.modelfit_results)]
+
+    for algorithm_cur in list_of_algorithms:
+        algorithm_func = getattr(algorithms, algorithm_cur)
+        if algorithm_cur == "brute_force_no_of_etas":
+            wf_algorithm = algorithm_func(base_model, index_offset=len(models_set), keep=keep)
+        else:
+            wf_algorithm = algorithm_func(base_model, index_offset=len(models_set))
+
+        wf = create_step_workflow(
+            input_model, base_model, wf_algorithm, iiv_strategy, rank_type, cutoff
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
         # NOTE: Append results
@@ -154,12 +141,13 @@ def start(context, input_model, algorithm, iiv_strategy, rank_type, cutoff, keep
         models.extend(new_models)
         models_set.update(model.name for model in new_models)
 
-        if i == 0:
-            # Have input model as first row in summary of models as step 0
-            sum_models.append(summarize_modelfit_results(input_model.modelfit_results))
+        if base_model.name in sum_models[-1].index.values:
+            summary_models = res.summary_models.drop(base_model.name, axis=0)
+        else:
+            summary_models = res.summary_models
 
         sum_tools.append(res.summary_tool)
-        sum_models.append(res.summary_models)
+        sum_models.append(summary_models)
         sum_inds.append(res.summary_individuals)
         sum_inds_count.append(res.summary_individuals_count)
         sum_errs.append(res.summary_errors)
@@ -242,7 +230,7 @@ def _add_iiv(iiv_strategy, model):
     return model
 
 
-def post_process(state, rank_type, cutoff, input_model, base_model_name, *models):
+def post_process(rank_type, cutoff, input_model, base_model_name, *models):
     res_models = []
     base_model = None
     for model in models:
@@ -267,15 +255,7 @@ def post_process(state, rank_type, cutoff, input_model, base_model_name, *models
 
     summary_tool = res.summary_tool
     assert summary_tool is not None
-    summary_tool['algorithm'] = state.algorithm
-    # If base model is model from a previous step or is the input model to the full tool,
-    # it should be excluded in this step
-    if base_model_name in state.model_names_so_far or base_model_name == state.input_model_name:
-        summary_models = summarize_modelfit_results(
-            [model.modelfit_results for model in res_models]
-        )
-    else:
-        summary_models = summarize_modelfit_results([model.modelfit_results for model in models])
+    summary_models = summarize_modelfit_results([model.modelfit_results for model in models])
 
     return replace(res, summary_models=summary_models)
 

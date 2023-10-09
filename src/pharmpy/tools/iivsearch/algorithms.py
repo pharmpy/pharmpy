@@ -18,7 +18,7 @@ from pharmpy.workflows.results import mfr
 
 
 def brute_force_no_of_etas(base_model, index_offset=0, keep=None):
-    wb = WorkflowBuilder()
+    wb = WorkflowBuilder(name='brute_force_no_of_etas')
 
     base_model = base_model.replace(description=create_description(base_model))
 
@@ -51,7 +51,7 @@ def brute_force_no_of_etas(base_model, index_offset=0, keep=None):
 
 
 def brute_force_block_structure(base_model, index_offset=0):
-    wb = WorkflowBuilder()
+    wb = WorkflowBuilder(name='brute_force_block_structure')
 
     base_model = base_model.replace(description=create_description(base_model))
 
