@@ -34,6 +34,8 @@ This will take an input model ``model`` with a ``search_space`` that includes al
 
 .. note::
     For PKPD models the input model has to be a PK model with a PKPD dataset. 
+.. note::
+    For drug_metabolite models, the argument 'route' need to be set according to the table below.
 
 
 Arguments
@@ -44,6 +46,9 @@ The arguments of the structsearch tool are listed below.
 | Argument                                        | Description                                                         |
 +=================================================+=====================================================================+
 | :ref:`type<the model types>`                    | Type of model. Can be either pkpd or drug_metabolite                |
++-------------------------------------------------+---------------------------------------------------------------------+
+| route                                           | Type of administration. Currently 'oral', 'iv' and 'ivoral'         |
+|                                                 | (currently only for drug_metabolite models)                         |
 +-------------------------------------------------+---------------------------------------------------------------------+
 | :ref:`search_space<the search space>`           | Search space of models to test (currently only for PKPD models)     |
 +-------------------------------------------------+---------------------------------------------------------------------+
@@ -137,6 +142,9 @@ Currently implemented drug metabolite models are:
     * Presystemic metabolite compartment with parent -> metabolite conversion of 100%
 
 * Presystemic drug metabolite with a (metabolite) peripheral compartment
+
+.. note::
+    Presystemic drug metabolite models are only created if route is set to 'oral' or 'ivoral'
 
 .. graphviz::
 

@@ -19,10 +19,12 @@ from .pkpd import create_baseline_pd_model, create_pkpd_models
 from .tmdd import create_qss_models, create_remaining_models
 
 TYPES = frozenset(('pkpd', 'drug_metabolite', 'tmdd'))
+routes = frozenset(('iv', 'oral', 'ivoral'))
 
 
 def create_workflow(
     type: str,
+    route: Optional[str] = 'oral',
     search_space: Optional[str] = None,
     b_init: Optional[Union[int, float]] = None,
     emax_init: Optional[Union[int, float]] = None,
@@ -38,6 +40,8 @@ def create_workflow(
     ----------
     type : str
         Type of model. Currently only 'drug_metabolite' and 'pkpd'
+    route : str
+        Type of administration. Currently 'oral', 'iv' and 'ivoral'
     search_space : str
         Search space to test
     b_init: float
@@ -77,7 +81,7 @@ def create_workflow(
             'run_pkpd', run_pkpd, model, search_space, b_init, emax_init, ec50_init, met_init
         )
     elif type == 'drug_metabolite':
-        start_task = Task('run_drug_metabolite', run_drug_metabolite, model)
+        start_task = Task('run_drug_metabolite', run_drug_metabolite, model, route)
     wb.add_task(start_task)
     return Workflow(wb)
 
@@ -163,9 +167,9 @@ def run_pkpd(context, model, search_space, b_init, emax_init, ec50_init, met_ini
     )
 
 
-def run_drug_metabolite(context, model):
+def run_drug_metabolite(context, model, route):
     base_drug_metabolite = create_base_metabolite(model)
-    candidate_drug_metabolite = create_drug_metabolite_models(model)
+    candidate_drug_metabolite = create_drug_metabolite_models(model, route)
 
     # Run workflow for base model
     wf = create_fit_workflow(base_drug_metabolite)
@@ -211,11 +215,11 @@ def _results(model):
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(
-    type,
-):
+def validate_input(type, route):
     if type not in TYPES:
         raise ValueError(f'Invalid `type`: got `{type}`, must be one of {sorted(TYPES)}.')
+    if route not in routes:
+        raise ValueError(f'Invalid `route`: got `{route}`, must be one of {sorted(routes)}.')
 
 
 @dataclass(frozen=True)

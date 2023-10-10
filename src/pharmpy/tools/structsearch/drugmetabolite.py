@@ -26,7 +26,7 @@ def create_base_metabolite(model: Model) -> Model:
     return model
 
 
-def create_drug_metabolite_models(model: Model) -> List[Model]:
+def create_drug_metabolite_models(model: Model, route: str) -> List[Model]:
     """
     Create candidate models for drug metabolite model structsearch.
     Currently applies a PLAIN metabolite model with and without a connected
@@ -36,6 +36,8 @@ def create_drug_metabolite_models(model: Model) -> List[Model]:
     ----------
     model : Model
         Base model for search.
+    route : str
+        Type of administration. Currently 'oral', 'iv' and 'ivoral'
 
     Returns
     -------
@@ -43,7 +45,11 @@ def create_drug_metabolite_models(model: Model) -> List[Model]:
         A list of candidate models.
     """
     models = []
-    for presystemic in [False, True]:
+    if route not in ('oral', 'ivoral'):
+        presystemic_option = [False]
+    else:
+        presystemic_option = [False, True]
+    for presystemic in presystemic_option:
         candidate_model = add_metabolite(model, presystemic=presystemic)
         candidate_model = set_name(candidate_model, 'presystemic')
 
