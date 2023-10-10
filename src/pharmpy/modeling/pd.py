@@ -83,7 +83,9 @@ def add_effect_compartment(model: Model, expr: str):
         )
     )
 
-    conc_e = model.statements.ode_system.find_compartment("EFFECT").amount
+    conc_e = sympy.Function(model.statements.ode_system.find_compartment("EFFECT").amount.name)(
+        sympy.Symbol('t')
+    )
 
     model = _add_effect(model, expr, conc_e)
     return model
@@ -128,12 +130,12 @@ def set_direct_effect(model: Model, expr: str):
     >>> model = load_example_model("pheno")
     >>> model = set_direct_effect(model, "linear")
     >>> model.statements.find_assignment("E")
-          ⎛A_CENTRAL⋅SLOPE    ⎞
-        B⋅⎜─────────────── + 1⎟
-    E =   ⎝       V           ⎠
+          ⎛SLOPE⋅A_CENTRAL(t)    ⎞
+        B⋅⎜────────────────── + 1⎟
+    E =   ⎝        V             ⎠
     """
     vc, cl = _get_central_volume_and_cl(model)
-    conc = model.statements.ode_system.central_compartment.amount / vc
+    conc = sympy.Function(model.statements.ode_system.central_compartment.amount.name)('t') / vc
 
     model = _add_effect(model, expr, conc)
 
@@ -258,7 +260,7 @@ def add_indirect_effect(
     conc_c = central_amount / vc
 
     response = Compartment.create("RESPONSE")
-    a_response = response.amount
+    a_response = sympy.Function(response.amount.name)('t')
 
     kin = sympy.Symbol("K_IN")
     kout = sympy.Symbol("K_OUT")

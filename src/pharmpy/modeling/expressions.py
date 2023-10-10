@@ -748,7 +748,8 @@ def get_individual_parameters(
 
     By default all individual parameters will be found even ones having no random effect. The level
     arguments makes it possible to find only those having any random effect or only those having a certain
-    random effect.
+    random effect. Using the dv option will give all individual parameters affecting a certain dv. Note that
+    the DV for PD in a PKPD model often also is affected by the PK parameters.
 
     Parameters
     ----------
@@ -777,6 +778,7 @@ def get_individual_parameters(
 
     See also
     --------
+    get_pd_parameters
     get_pk_parameters
     get_rv_parameters
     has_random_effect
@@ -814,6 +816,7 @@ def get_individual_parameters(
     for y in dvs:
         ind = statements.find_assignment_index(y)
         gsub = _subgraph_of(full_graph, ind)
+        gsub = _cut_partial_odes(model, gsub, ind)
 
         candidates = set(gsub.nodes).intersection(all_candidates)
 
@@ -845,6 +848,79 @@ def get_individual_parameters(
 def _subgraph_of(g, ind):
     gsub = g.subgraph(nx.descendants(g, ind) | {ind})
     return gsub
+
+
+def _cut_partial_odes(model, g, dv):
+    # Cut not needed deps of the ode-system for this dv
+    # This prevents the entire ode-system to be needed in case
+    # of a disjoint system.
+
+    odes = model.statements.ode_system
+
+    if odes is None:
+        return g
+
+    def dep_funcs(eq):
+        from sympy.core.function import AppliedUndef
+
+        funcs = eq.atoms(AppliedUndef)
+        return funcs
+
+    def dep_amounts(ode_deps, amounts):
+        deps = set(amounts)
+        for amount in amounts:
+            deps |= set(nx.descendants(ode_deps, amount))
+        return deps
+
+    ode_deps = nx.DiGraph()
+    for eq in odes.eqs:
+        fn = dep_funcs(eq.lhs).pop()
+        ode_deps.add_node(fn)
+
+    for eq in odes.eqs:
+        lhs_func = dep_funcs(eq.lhs).pop()
+        rhs_funcs = dep_funcs(eq.rhs) - {lhs_func}
+        for fn in rhs_funcs:
+            ode_deps.add_edge(lhs_func, fn)
+
+    all_dep_funcs = set()
+    for i in g.nodes():
+        s = model.statements[i]
+        if isinstance(s, Assignment):
+            all_dep_funcs |= dep_funcs(s.expression)
+
+    deps = dep_amounts(ode_deps, all_dep_funcs)
+
+    dep_symbs = set()
+    nondep_symbs = set()
+
+    for eq in odes.eqs:
+        lhs_func = dep_funcs(eq.lhs).pop()
+        if lhs_func in deps:
+            dep_symbs |= eq.free_symbols
+        else:
+            nondep_symbs |= eq.free_symbols
+
+    not_needed_symbs = nondep_symbs - dep_symbs
+
+    for i, s in enumerate(model.statements):
+        if isinstance(s, CompartmentalSystem):
+            ode_index = i
+            break
+
+    g = g.copy()
+    for i, s in enumerate(model.statements):
+        if i in g and isinstance(s, Assignment) and s.symbol in not_needed_symbs:
+            try:
+                g.remove_edge(ode_index, i)
+            except nx.NetworkXError:
+                pass
+            try:
+                g.remove_edge(i, ode_index)
+            except nx.NetworkXError:
+                pass
+    g = _subgraph_of(g, dv)  # Remove all nodes no longer connected
+    return g
 
 
 def _random_levels_of_parameter(model, g, param):
@@ -1427,24 +1503,16 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
     get_rv_parameters
 
     """
-    natural_assignments = _get_natural_assignments(model.statements.before_odes)
-    cs_remapped = _remap_compartmental_system(model.statements, natural_assignments)
-
-    free_symbols = set(_pk_free_symbols(cs_remapped, kind))
-
-    dependency_graph = _dependency_graph(natural_assignments)
-
-    pk_symbols = _filter_symbols(dependency_graph, free_symbols)
-
-    odes = model.statements.ode_system
-    # Remove PD parameters if model has an effect or response compartment
-    if odes.find_compartment("EFFECT") is not None or odes.find_compartment('RESPONSE') is not None:
-        pk_symbols = [param for param in pk_symbols if str(param) not in get_pd_parameters(model)]
-
-    return sorted(map(str, pk_symbols))
+    pkparams = get_individual_parameters(model, dv=1)
+    model = make_declarative(model)
+    model = _replace_trivial_redefinitions(model)
+    if kind != 'all':
+        symbs = {str(symb) for symb in _pk_free_symbols(model, kind)}
+        pkparams = set(pkparams).intersection(symbs)
+    return sorted(pkparams)
 
 
-def get_pd_parameters(model: Model) -> List[str]:
+def get_pd_parameters(model: Model) -> list[str]:
     """Retrieves PD parameters in :class:`pharmpy.model.Model`.
 
     Parameters
@@ -1470,35 +1538,10 @@ def get_pd_parameters(model: Model) -> List[str]:
     get_pk_parameters
 
     """
-    natural_assignments = _get_natural_assignments(model.statements.before_odes)
-    dependency_graph = _dependency_graph(natural_assignments)
-
-    pk_symbols = model.statements.ode_system.eqs[0].free_symbols
-
-    ass_e = model.statements.find_assignment('E')
-    if ass_e is not None:
-        pd_symbols = [symbol for symbol in ass_e.free_symbols if symbol not in pk_symbols]
-    else:
-        pd_symbols = []
-
-    odes = model.statements.ode_system
-    effect = odes.find_compartment("EFFECT")
-    response = odes.find_compartment("RESPONSE")
-    if effect is not None:
-        output_sym = list(odes.get_flow(effect, output).free_symbols)
-        input_sym = list(effect.free_symbols)
-        ode_sym = output_sym + input_sym
-        ode_sym = [sym for sym in ode_sym if sym not in pk_symbols]
-        pd_symbols = list(pd_symbols) + ode_sym + [sympy.Symbol('MET')]
-    if response is not None:
-        output_sym = list(odes.get_flow(response, output).free_symbols)
-        input_sym = list(response.free_symbols)
-        ode_sym = output_sym + input_sym
-        ode_sym = [sym for sym in ode_sym if sym not in pk_symbols]
-        pd_symbols = set(pd_symbols + ode_sym + [sympy.Symbol('B'), sympy.Symbol('MET')])
-
-    pd_symbols = _filter_symbols(dependency_graph, set(pd_symbols))
-    return sorted(map(str, pd_symbols))
+    pkparams = get_individual_parameters(model, dv=1)
+    pkpdparams = get_individual_parameters(model, dv=2)
+    pdparams = sorted(set(pkpdparams) - set(pkparams))
+    return pdparams
 
 
 def _rvs(model: Model, level: str):
@@ -1535,25 +1578,48 @@ def _remap_compartmental_system(sset, natural_assignments):
     return cs
 
 
-def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[sympy.Symbol]:
-    if kind == 'all':
-        return cs.free_symbols
-
+def _pk_free_symbols(model, kind: str) -> Iterable[sympy.Symbol]:
+    cs = model.statements.ode_system
+    symbols = set()
     if kind == 'absorption':
-        return (
-            []
-            if cs.dosing_compartments[0] == cs.central_compartment
-            else _pk_free_symbols_from_compartment(cs, cs.dosing_compartments[0])
-        )
-
-    if kind == 'distribution':
-        return _pk_free_symbols_from_compartment(cs, cs.central_compartment)
-
-    if kind == 'elimination':
-        free_symbols = _pk_free_symbols_from_compartment(cs, output)
-        return free_symbols
-
-    raise ValueError(f'Cannot handle kind `{kind}`')
+        central = cs.central_compartment
+        for dosing in cs.dosing_compartments:
+            comp = dosing
+            while comp != central:
+                symbols |= comp.free_symbols
+                comp, rate = cs.get_compartment_outflows(comp)[0]  # Assumes only one flow
+                symbols |= rate.free_symbols
+    elif kind == 'distribution':
+        central = cs.central_compartment
+        periphs = cs.find_peripheral_compartments()
+        for p in periphs:
+            symbols |= cs.get_flow(central, p).free_symbols
+            symbols |= cs.get_flow(p, central).free_symbols
+        outflow = cs.get_flow(central, output)
+        cl, v = outflow.as_numer_denom()
+        if v != 1:
+            symbols |= {v}
+        else:
+            ass = model.statements.find_assignment(cl)
+            cl2, v2 = ass.expression.as_numer_denom()
+            if v2 != 1:
+                symbols |= {v2}
+    elif kind == 'elimination':
+        central = cs.central_compartment
+        outflow = cs.get_flow(central, output)
+        cl, v = outflow.as_numer_denom()
+        if v != 1:
+            symbols |= {cl}
+        else:
+            ass = model.statements.find_assignment(cl)
+            cl2, v2 = ass.expression.as_numer_denom()
+            if v2 != 1:
+                symbols |= {cl2}
+            else:
+                symbols |= {cl}
+    else:
+        raise ValueError(f'Cannot handle kind `{kind}`')
+    return symbols
 
 
 def _pk_free_symbols_from_compartment(

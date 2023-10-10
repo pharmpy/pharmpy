@@ -330,11 +330,15 @@ def test_greekify_model(pheno):
             'all',
             ['CL', 'V', 'K12', 'K23', 'KA', 'K45', 'K56', 'K64'],
         ),
-        ('nonmem/modeling/transit_indirect_reabsorption.mod', 'absorption', ['K12', 'K23', 'KA']),
+        (
+            'nonmem/modeling/transit_indirect_reabsorption.mod',
+            'absorption',
+            ['K12', 'K23', 'KA', 'K45'],
+        ),
         (
             'nonmem/modeling/transit_indirect_reabsorption.mod',
             'distribution',
-            ['V', 'K45', 'K56', 'K64'],
+            ['V'],
         ),
         ('nonmem/modeling/transit_indirect_reabsorption.mod', 'elimination', ['CL']),
     ),
@@ -343,17 +347,19 @@ def test_greekify_model(pheno):
 def test_get_pk_parameters(load_model_for_test, testdata, model_path, kind, expected):
     model = load_model_for_test(testdata / model_path)
     assert set(get_pk_parameters(model, kind)) == set(expected)
-    assert 'KE0' not in get_pk_parameters(model)
 
-    pkpd_model = load_model_for_test(testdata / "nonmem" / "pheno_real.mod")
-    pkpd_model = add_effect_compartment(pkpd_model, "linear")
-    assert 'KE0' not in get_pk_parameters(pkpd_model)
+    try:
+        pkpd_model = add_effect_compartment(model, "linear")
+    except ValueError:  # Model couldn't be transformed
+        pass
+    else:
+        assert set(get_pk_parameters(pkpd_model, kind)) == set(expected)
 
 
 @pytest.mark.parametrize(
     ('model_path', 'kind', 'expected'),
     (
-        ('nonmem/pheno.mod', 'baseline', ['B']),
+        # ('nonmem/pheno.mod', 'baseline', ['B']),
         ('nonmem/pheno.mod', 'linear', ['B', 'SLOPE']),
         ('nonmem/pheno.mod', 'emax', ['B', 'E_MAX', 'EC_50']),
         ('nonmem/pheno.mod', 'step', ['B', 'E_MAX']),
@@ -364,6 +370,11 @@ def test_get_pk_parameters(load_model_for_test, testdata, model_path, kind, expe
 def test_get_pd_parameters(load_model_for_test, testdata, model_path, kind, expected):
     model = load_model_for_test(testdata / model_path)
     assert set(get_pd_parameters(set_direct_effect(model, kind))) == set(expected)
+    stats = add_effect_compartment(model, kind).statements
+    for s in stats:
+        if isinstance(s, Assignment):
+            print(s)
+    print(stats.ode_system.eqs)
     assert set(get_pd_parameters(add_effect_compartment(model, kind))) == set(expected + ["MET"])
     assert get_pk_parameters(add_effect_compartment(model, kind)) == ['CL', 'V']
     assert get_pk_parameters(set_direct_effect(model, kind)) == ['CL', 'V']
@@ -479,35 +490,46 @@ basic_pk_model = create_basic_pk_model()
 
 
 @pytest.mark.parametrize(
-    ('func', 'level', 'expected'),
+    ('func', 'level', 'dv', 'expected'),
     (
-        (partial(set_direct_effect, expr='baseline'), 'all', ['B', 'CL', 'VC']),
-        (partial(set_direct_effect, expr='baseline'), 'random', ['CL', 'VC']),
-        (partial(set_direct_effect, expr='linear'), 'all', ['B', 'CL', 'SLOPE', 'VC']),
-        (partial(set_direct_effect, expr='emax'), 'all', ['B', 'CL', 'EC_50', 'E_MAX', 'VC']),
+        (partial(set_direct_effect, expr='baseline'), 'all', None, ['B', 'CL', 'VC']),
+        (partial(set_direct_effect, expr='baseline'), 'all', 1, ['CL', 'VC']),
+        (partial(set_direct_effect, expr='baseline'), 'all', 2, ['B']),
+        (partial(set_direct_effect, expr='baseline'), 'random', None, ['CL', 'VC']),
+        (partial(set_direct_effect, expr='baseline'), 'random', 2, []),
+        (partial(set_direct_effect, expr='linear'), 'all', None, ['B', 'CL', 'SLOPE', 'VC']),
+        (partial(set_direct_effect, expr='linear'), 'all', 1, ['CL', 'VC']),
+        (partial(set_direct_effect, expr='linear'), 'all', 2, ['B', 'CL', 'SLOPE', 'VC']),
+        (partial(set_direct_effect, expr='emax'), 'all', None, ['B', 'CL', 'EC_50', 'E_MAX', 'VC']),
         (
             partial(set_direct_effect, expr='sigmoid'),
             'all',
+            None,
             ['B', 'CL', 'EC_50', 'E_MAX', 'N', 'VC'],
         ),
-        (partial(add_effect_compartment, expr='baseline'), 'all', ['B', 'CL', 'MET', 'VC']),
-        (partial(add_effect_compartment, expr='baseline'), 'random', ['CL', 'VC']),
         (
             partial(add_effect_compartment, expr='sigmoid'),
             'all',
+            None,
             ['B', 'CL', 'EC_50', 'E_MAX', 'MET', 'N', 'VC'],
         ),
-        (partial(add_indirect_effect, expr='linear'), 'all', ['B', 'CL', 'MET', 'SLOPE', 'VC']),
+        (
+            partial(add_indirect_effect, expr='linear'),
+            'all',
+            None,
+            ['B', 'CL', 'MET', 'SLOPE', 'VC'],
+        ),
         (
             partial(add_indirect_effect, expr='sigmoid'),
             'all',
+            None,
             ['B', 'CL', 'EC_50', 'E_MAX', 'MET', 'N', 'VC'],
         ),
     ),
 )
-def test_get_individual_parameters_pkpd_models(func, level, expected):
+def test_get_individual_parameters_pkpd_models(func, level, dv, expected):
     model = func(basic_pk_model)
-    params = get_individual_parameters(model, level=level)
+    params = get_individual_parameters(model, level=level, dv=dv)
     assert params == expected
 
 

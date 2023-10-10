@@ -108,7 +108,7 @@ def create_basic_pk_model(
     cb.add_compartment(central)
     cb.add_flow(central, output, CL / VC)
 
-    ipred = Assignment(sympy.Symbol('IPRED'), central.amount / VC)
+    ipred = Assignment(sympy.Symbol('IPRED'), sympy.Function(central.amount.name)('t') / VC)
     y_ass = Assignment(sympy.Symbol('Y'), ipred.symbol)
 
     stats = Statements([cl_ass, vc_ass, CompartmentalSystem(cb), ipred, y_ass])

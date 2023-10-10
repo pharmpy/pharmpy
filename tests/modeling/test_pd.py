@@ -21,7 +21,7 @@ def S(x):
 )
 def test_set_direct_effect(load_model_for_test, pd_model, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    conc = model.statements.ode_system.central_compartment.amount / S("V")
+    conc = sympy.Function(model.statements.ode_system.central_compartment.amount.name)('t') / S("V")
     _test_effect_models(set_direct_effect(model, pd_model), pd_model, conc)
 
 
@@ -31,7 +31,7 @@ def test_set_direct_effect(load_model_for_test, pd_model, testdata):
 )
 def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    conc_e = S("A_EFFECT")
+    conc_e = sympy.Function("A_EFFECT")('t')
     ke0 = S("KE0")
     central_amount = sympy.Function("A_CENTRAL")(S('t'))
     comp_e = Compartment.create("EFFECT", input=ke0 * central_amount / S("V"))

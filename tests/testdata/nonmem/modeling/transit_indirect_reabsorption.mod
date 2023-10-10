@@ -21,7 +21,7 @@ K45 = THETA(7)
 K56 = THETA(8)
 K64 = THETA(9)
 K50 = K
-S1 = V
+S5 = V
 
 $ERROR
 W=F
