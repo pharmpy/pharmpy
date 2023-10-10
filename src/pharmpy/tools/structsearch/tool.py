@@ -9,7 +9,7 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.tools import summarize_modelfit_results
-from pharmpy.tools.common import ToolResults, create_results
+from pharmpy.tools.common import ToolResults, create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
@@ -168,6 +168,7 @@ def run_pkpd(context, model, search_space, b_init, emax_init, ec50_init, met_ini
 
 
 def run_drug_metabolite(context, model, route):
+    model = update_initial_estimates(model)
     base_drug_metabolite = create_base_metabolite(model)
     candidate_drug_metabolite = create_drug_metabolite_models(model, route)
 
