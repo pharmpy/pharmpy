@@ -282,7 +282,12 @@ def test_rank_models():
     assert list(best_model) == ['m2', 'm3']
 
     # Test if rounding errors are allowed
-    df = rank_models(base, models, errors_allowed=['rounding_errors'], rank_type='ofv')
+    df = rank_models(
+        base,
+        models,
+        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
+        rank_type='ofv',
+    )
     best_model = df.loc[df['rank'] == 1].index.values
     assert list(best_model) == ['m1']
     ranked_models = df.dropna().index.values
@@ -316,14 +321,24 @@ def test_rank_models():
         termination_cause='rounding_errors',
         significant_digits=np.nan,
     )
-    df = rank_models(base, models + [m6], errors_allowed=['rounding_errors'], rank_type='ofv')
+    df = rank_models(
+        base,
+        models + [m6],
+        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
+        rank_type='ofv',
+    )
     ranked_models = list(df.dropna().index.values)
     assert 'm6' not in ranked_models
     assert np.isnan(df.loc['m6']['rank'])
 
     # Test if base model failed, fall back to rank value
     base_nan = DummyModel('base_nan', parent='base_nan', parameter_names=['p1'], ofv=np.nan)
-    df = rank_models(base_nan, models, errors_allowed=['rounding_errors'], rank_type='ofv')
+    df = rank_models(
+        base_nan,
+        models,
+        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
+        rank_type='ofv',
+    )
     assert df.iloc[0].name == 'm1'
 
     # Test if base model failed but still has OFV with a very high value, fall back to rank value
@@ -335,7 +350,12 @@ def test_rank_models():
         minimization_successful=False,
         termination_cause='something',
     )
-    df = rank_models(base_nan, models, errors_allowed=['rounding_errors'], rank_type='ofv')
+    df = rank_models(
+        base_nan,
+        models,
+        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
+        rank_type='ofv',
+    )
     assert df.iloc[0].name == 'm1'
     assert df.nunique()['ofv'] == df.nunique()['rank']
 
