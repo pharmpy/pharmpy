@@ -185,7 +185,7 @@ def run_amd(
         )
     )
     if not modelsearch_features:
-        if modeltype == 'basic_pk' and administration == 'oral':
+        if modeltype in ('basic_pk', 'drug_metabolite') and administration == 'oral':
             modelsearch_features = (
                 Absorption((Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'))),
                 Elimination((Name('FO'),)),
@@ -193,7 +193,7 @@ def run_amd(
                 Transits((0, 1, 3, 10), Wildcard()),
                 Peripherals((0, 1)),
             )
-        elif modeltype == 'basic_pk' and administration == 'ivoral':
+        elif modeltype in ('basic_pk', 'drug_metabolite') and administration == 'ivoral':
             modelsearch_features = (
                 Absorption((Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'))),
                 Elimination((Name('FO'),)),
