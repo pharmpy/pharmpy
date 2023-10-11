@@ -94,11 +94,19 @@ def run_tmdd(context, model, extra_model):
     wb.add_task(task_results, predecessors=wf.output_tasks)
     qss_run_models = call_workflow(Workflow(wb), 'results_QSS', context)
 
-    ofvs = [m.modelfit_results.ofv for m in qss_run_models]
+    ofvs = [
+        m.modelfit_results.ofv if m.modelfit_results is not None else np.nan for m in qss_run_models
+    ]
     minindex = ofvs.index(np.nanmin(ofvs))
-    best_qss_model = qss_candidate_models[minindex]
+    best_qss_model = qss_run_models[minindex]
+    best_qss_model = best_qss_model.replace(parent_model=best_qss_model.name)
 
-    models = create_remaining_models(model, best_qss_model.modelfit_results.parameter_estimates)
+    models = create_remaining_models(
+        model,
+        best_qss_model.modelfit_results.parameter_estimates,
+        best_qss_model.name,
+        len(best_qss_model.statements.ode_system.find_peripheral_compartments()),
+    )
     wf2 = create_fit_workflow(models)
     wb2 = WorkflowBuilder(wf2)
     task_results = Task('results', bundle_results)
@@ -113,8 +121,8 @@ def run_tmdd(context, model, extra_model):
     return create_results(
         StructSearchResults,
         model,
-        model,
-        qss_run_models + run_models,
+        best_qss_model,
+        list(run_models),
         rank_type='bic',
         cutoff=None,
         summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step']),
