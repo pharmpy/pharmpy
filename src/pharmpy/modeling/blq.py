@@ -40,6 +40,13 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
     | Available   | Available   | Available  | DV < lloq         | lloq          | Columns overridden|
     +-------------+-------------+------------+-------------------+---------------+-------------------+
 
+    BLQ observations are defined as shown in the table above.
+    If both a BLQ and an LLOQ column exist in the dataset and no lloq is specified then all dv values in
+    rows with BLQ = 1 are counted as BLQ observations. If instead an lloq value is specified then all rows with
+    dv values below the lloq value are counted as BLQ observations.
+    If no lloq is specified and no BLQ column exists in the dataset then all rows with dv values below the value
+    specified in the DV column are counted as BLQ observations.
+
 
     M1 method:
         All BLQ observations are discarded.
@@ -66,14 +73,6 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
     M7 method:
         All BLQ observations are replaced by 0.
         This method may change entries in the dataset.
-
-
-    BLQ observations are defined as shown in the table above.
-    If both a BLQ and an LLOQ column exist in the dataset and no lloq is specified then all dv values in
-    rows with BLQ = 1 are counted as BLQ observations. If instead an lloq value is specified then all rows with
-    dv values below the lloq value are counted as BLQ observations.
-    If no lloq is specified and no BLQ column exists in the dataset then all rows with dv values below the value
-    specified in the DV column are counted as BLQ observations.
 
 
 
@@ -104,17 +103,6 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
 
     Examples
     --------
-    >>> from pharmpy.modeling import *
-    >>> model = load_example_model("pheno")
-    >>> model = transform_blq(model, method='m3', lloq=0.1)
-    >>> model.statements.find_assignment("Y")
-        ⎧  EPS₁⋅W + F    for DV ≥ LLOQ
-        ⎪
-        ⎨   ⎛-F + LLOQ⎞
-        ⎪PHI⎜─────────⎟    otherwise
-    Y = ⎩   ⎝    SD   ⎠
-
-
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model = transform_blq(model, method='m4', lloq=0.1)
