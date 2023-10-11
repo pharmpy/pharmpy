@@ -342,7 +342,9 @@ def task_add_covariate_effect(
 ):
     name = f'covsearch_run{effect_index}'
     description = _create_description(effect, candidate.steps)
-    model_with_added_effect = model.replace(name=name, description=description, parent_model=name)
+    model_with_added_effect = model.replace(
+        name=name, description=description, parent_model=candidate.model.name
+    )
     model_with_added_effect = update_initial_estimates(model_with_added_effect)
     model_with_added_effect = add_covariate_effect(
         model_with_added_effect, *effect, allow_nested=True
