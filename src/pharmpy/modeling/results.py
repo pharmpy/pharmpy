@@ -17,8 +17,10 @@ from pharmpy.model.random_variables import (
 )
 
 from .data import get_ids, get_observations
+from .expressions import get_individual_parameters
 from .odes import get_initial_conditions
 from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
+from .parameters import get_omegas
 
 if TYPE_CHECKING:
     import numpy as np
@@ -578,7 +580,7 @@ def _random_etas(model):
 def calculate_bic(
     model: Model,
     likelihood: float,
-    type: Optional[str] = None,
+    type: str = 'mixed',
     multiple_testing: bool = False,
     mult_test_p: int = 1,
     mult_test_e: int = 1,
@@ -637,9 +639,6 @@ def calculate_bic(
     >>> calculate_bic(model, ofv, type='iiv')
     594.431131169692
     """
-    supported_types = ('mixed', 'fixed', 'random', 'iiv')
-    if isinstance(type, str) and type not in supported_types:
-        raise ValueError(f'Unknown `type` \'{type}\', must be one of: {supported_types}')
     parameters = model.parameters.nonfixed
     if type == 'fixed':
         penalty = len(parameters) * math.log(len(get_observations(model)))
@@ -650,51 +649,57 @@ def calculate_bic(
             [name for name in model.random_variables.iiv.parameter_names if name in parameters]
         )
         penalty = nomegas_iiv * math.log(len(get_ids(model)))
-    else:
-        # NOTE: This approach assumes a well-behaved model where each parameter is identifiable
-        possible_params = model.statements.ode_system.free_symbols
-        for dv in model.dependent_variables.keys():
-            yexpr = model.statements.after_odes.full_expression(dv)
-            possible_params.update(yexpr.free_symbols)
-
-        random_thetas = set()
-        for param in possible_params:
-            assignment = model.statements.find_assignment(param)
-            if assignment:
-                expr = model.statements.before_odes.full_expression(assignment.symbol)
-                for eta in _random_etas(model).names:
-                    if sympy.Symbol(eta) in expr.free_symbols:
-                        symbols = {p.symbol for p in parameters if p.symbol in expr.free_symbols}
-                        random_thetas.update(symbols)
-                        break
-        for eta in _random_etas(model).names:
-            if sympy.Symbol(eta) in possible_params:
-                symbols = {p.symbol for p in parameters if p.symbol in possible_params}
-                random_thetas.update(symbols)
-                for eps in model.random_variables.epsilons.names:
-                    if sympy.Symbol(eps) in possible_params:
-                        params = {
-                            p.symbol
-                            for p in parameters
-                            if p.name in model.random_variables[eps].parameter_names
-                        }
-                        random_thetas.update(params)
-                break
-        nomegas = len(
-            [name for name in model.random_variables.etas.parameter_names if name in parameters]
-        )
-        dim_theta_r = nomegas + len(random_thetas)
-        dim_theta_f = len(parameters) - dim_theta_r
+    elif type == 'mixed':
+        theta_f, theta_r = _categorize_parameters(model)
         nsubs = len(get_ids(model))
         nobs = len(get_observations(model))
-        penalty = dim_theta_r * math.log(nsubs) + dim_theta_f * math.log(nobs)
+        penalty = len(theta_r) * math.log(nsubs) + len(theta_f) * math.log(nobs)
+    else:
+        supported_types = ('mixed', 'fixed', 'random', 'iiv')
+        raise ValueError(f'Unknown `type` \'{type}\', must be one of: {supported_types}')
+
     if multiple_testing:
         if mult_test_p <= 0 or mult_test_e <= 0:
             raise ValueError(
                 'Options `mult_test_p` and `mult_test_e` must be >= 0 for method `mult_test`'
             )
         penalty += 2 * len(parameters) * math.log(mult_test_p / mult_test_e)
+
     return likelihood + penalty
+
+
+def _categorize_parameters(model):
+    # Categorize parameters into random and fixed
+    indpars = get_individual_parameters(model)
+    all_pop_params = set(model.parameters.nonfixed.symbols)
+    omegas = set(get_omegas(model).symbols)
+    etas = set(model.random_variables.etas.symbols)
+    epsilons = set(model.random_variables.epsilons.symbols)
+    randpars = omegas
+    fixedpars = set()
+    for indpar in indpars:
+        expr = model.statements.before_odes.full_expression(indpar)
+        symbols = expr.free_symbols
+        param_symbols = symbols.intersection(all_pop_params)
+        if symbols.isdisjoint(etas):
+            fixedpars |= param_symbols - randpars
+        else:
+            fixedpars -= param_symbols
+            randpars |= param_symbols
+
+    for y in model.dependent_variables.keys():
+        expr = model.statements.after_odes.full_expression(y)
+        symbols = expr.free_symbols
+        param_symbols = symbols.intersection(all_pop_params)
+        cureps = symbols.intersection(epsilons)
+        cursigmas = model.random_variables[cureps].free_symbols - cureps
+        cursymbols = param_symbols | cursigmas
+        if symbols.isdisjoint(etas):
+            fixedpars |= cursymbols - randpars
+        else:
+            fixedpars -= cursymbols
+            randpars |= cursymbols
+    return fixedpars, randpars
 
 
 def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9):
