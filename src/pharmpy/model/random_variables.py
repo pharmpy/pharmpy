@@ -443,7 +443,9 @@ class RandomVariables(CollectionsSequence, Immutable):
         ...
 
     @overload
-    def __getitem__(self, ind: Union[slice, Container[str]]) -> RandomVariables:
+    def __getitem__(
+        self, ind: Union[slice, Container[Union[str, sympy.Symbol]]]
+    ) -> RandomVariables:
         ...
 
     def __getitem__(self, ind):
@@ -454,9 +456,15 @@ class RandomVariables(CollectionsSequence, Immutable):
                 self._dists[ind.start : ind.stop : ind.step], self._eta_levels, self._epsilon_levels
             )
         elif not isinstance(ind, str) and isinstance(ind, CollectionsContainer):
-            remove = [name for name in self.names if name not in ind]
+            remove = [
+                name for name in self.names if not ((name in ind) or (sympy.Symbol(name) in ind))
+            ]
             split = self.unjoin(remove)
-            keep = tuple(dist for dist in split._dists if dist.names[0] in ind)
+            keep = tuple(
+                dist
+                for dist in split._dists
+                if dist.names[0] in ind or sympy.Symbol(dist.names[0]) in ind
+            )
             return RandomVariables(keep, self._eta_levels, self._epsilon_levels)
         else:
             _, rv = self._lookup_rv(ind)
