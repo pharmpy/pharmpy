@@ -77,6 +77,9 @@ def _parse_modelfit_results(
     residuals = _parse_residuals(table_df)
     predictions = _parse_predictions(table_df)
     iofv, ie, iec = _parse_phi(path, control_stream, name_map, etas, subproblem)
+    gradients_iterations, has_zero_gradient, gradients = _parse_grd(
+        path, control_stream, parameters, subproblem
+    )
     rse = _calculate_relative_standard_errors(final_pe, ses)
     (
         runtime_total,
@@ -87,6 +90,7 @@ def _parse_modelfit_results(
         significant_digits,
         termination_cause,
         estimation_runtime,
+        estimate_near_boundary,
         log,
     ) = _parse_lst(len(estimation_steps), path, table_numbers, log)
 
@@ -115,6 +119,12 @@ def _parse_modelfit_results(
     cov, cor, coi, ses = calculate_cov_cor_coi_ses(cov, cor, coi, ses)
 
     evaluation = _parse_evaluation(estimation_steps)
+
+    warnings = []
+    if any(estimate_near_boundary):
+        warnings.append('estimate_near_boundary')
+    if has_zero_gradient:
+        warnings.append('has_zero_gradient')
 
     res = ModelfitResults(
         name=name,
@@ -149,6 +159,10 @@ def _parse_modelfit_results(
         residuals=residuals,
         evaluation=evaluation,
         log=log,
+        covstep_successful=covstatus,
+        gradients=gradients,
+        gradients_iterations=gradients_iterations,
+        warnings=warnings,
     )
     return res
 
@@ -201,7 +215,7 @@ def _empty_lst_results(n: int, log):
     false_vec = [False] * n
     nan_vec = [np.nan] * n
     none_vec = [None] * n
-    return None, np.nan, False, false_vec, nan_vec, nan_vec, none_vec, nan_vec, log
+    return None, np.nan, False, false_vec, nan_vec, nan_vec, none_vec, nan_vec, false_vec, log
 
 
 def _parse_lst(n: int, path: Path, table_numbers, log: Log):
@@ -229,6 +243,7 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
         significant_digits,
         termination_cause,
         estimation_runtime,
+        estimate_near_boundary,
     ) = parse_estimation_status(rfile, table_numbers)
 
     return (
@@ -240,6 +255,7 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
         significant_digits,
         termination_cause,
         estimation_runtime,
+        estimate_near_boundary,
         rfile.log,
     )
 
@@ -250,6 +266,7 @@ def parse_estimation_status(results_file, table_numbers):
     significant_digits = []
     termination_cause = []
     estimation_runtime = []
+    estimate_near_boundary = []
     for tabno in table_numbers:
         if results_file is not None:
             estimation_status = results_file.estimation_status(tabno)
@@ -258,6 +275,7 @@ def parse_estimation_status(results_file, table_numbers):
         minimization_successful.append(estimation_status['minimization_successful'])
         function_evaluations.append(estimation_status['function_evaluations'])
         significant_digits.append(estimation_status['significant_digits'])
+        estimate_near_boundary.append(estimation_status['estimate_near_boundary'])
         if estimation_status['maxevals_exceeded'] is True:
             tc = 'maxevals_exceeded'
         elif estimation_status['rounding_errors'] is True:
@@ -277,6 +295,7 @@ def parse_estimation_status(results_file, table_numbers):
         significant_digits,
         termination_cause,
         estimation_runtime,
+        estimate_near_boundary,
     )
 
 
@@ -328,6 +347,40 @@ def _parse_phi(
         return individual_ofv, individual_estimates, covs
     except KeyError:
         return None, None, None
+
+
+def _parse_grd(
+    path: Path,
+    control_stream: NMTranControlStream,
+    parameters: Parameters,
+    subproblem=None,
+):
+    try:
+        grd_tables = NONMEMTableFile(path.with_suffix('.grd'))
+    except FileNotFoundError:
+        return None, None, None
+    if subproblem is None:
+        table = grd_tables.tables[-1]
+    else:
+        table = grd_tables.tables[subproblem - 1]
+
+    if table is None:
+        return None, None, None
+
+    gradients_table = table.data_frame
+    old_col_names = table.data_frame.columns.to_list()[1::]
+    new_col_names = {old_col_names[i]: parameters.names[i] for i in range(len(old_col_names))}
+    gradients_table = gradients_table.rename(columns=new_col_names)
+    last_row = gradients_table.tail(1)
+    last_row = last_row.drop(columns=['ITERATION'])
+    last_row = last_row.squeeze(axis=0).rename('gradients')
+
+    if last_row.min() != 0:
+        has_zero_gradient = False
+    else:
+        has_zero_gradient = True
+
+    return gradients_table, has_zero_gradient, last_row
 
 
 def _parse_tables(path: Path, control_stream: NMTranControlStream, netas) -> pd.DataFrame:

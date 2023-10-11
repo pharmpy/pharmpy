@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from io import StringIO
 from lzma import open as lzma_open
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union, overload
 
 import pharmpy
 from pharmpy.deps import altair as alt
@@ -430,6 +430,14 @@ class ModelfitResults(Results):
         Number of function evaluations
     evaluation : pd.Series
         A bool for each estimation step. True if this was a model evaluation and False otherwise
+    covstatus : bool
+        Covariance status.
+    gradients : pd.Series
+        Final parameter gradients
+    gradients_iterations : pd.DataFrame
+        All recorded parameter gradients
+    warning : List
+        List of warnings
     """
 
     name: Optional[str] = None
@@ -464,6 +472,10 @@ class ModelfitResults(Results):
     log_likelihood: Optional[float] = None
     log: Optional['Log'] = None
     evaluation: Optional[pd.Series] = None
+    covstep_successful: Optional[bool] = None
+    gradients: Optional[pd.Series] = None
+    gradients_iterations: Optional[pd.DataFrame] = (None,)
+    warnings: Optional[List] = None
 
     def __repr__(self):
         return f'<Pharmpy modelfit results object {self.name}>'

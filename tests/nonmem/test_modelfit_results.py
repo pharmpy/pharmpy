@@ -50,6 +50,14 @@ def test_covariance(pheno_path):
     assert pytest.approx(cov.loc['IVV', 'PTVV'], 1e-13) == 7.17184e-05
 
 
+def test_gradients(testdata):
+    res = read_modelfit_results(testdata / 'nonmem/pheno.mod')
+    gradients = res.gradients
+    gradients_iterations = res.gradients_iterations
+    assert len(gradients) == 5
+    assert not gradients_iterations.empty
+
+
 def test_information(pheno_path):
     res = read_modelfit_results(pheno_path)
     m = res.precision_matrix
