@@ -16,6 +16,7 @@ from pharmpy.model import (
 from pharmpy.modeling import (
     add_effect_compartment,
     add_indirect_effect,
+    add_metabolite,
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
     cleanup_model,
@@ -528,6 +529,24 @@ basic_pk_model = create_basic_pk_model()
     ),
 )
 def test_get_individual_parameters_pkpd_models(func, level, dv, expected):
+    model = func(basic_pk_model)
+    params = get_individual_parameters(model, level=level, dv=dv)
+    assert params == expected
+
+
+@pytest.mark.parametrize(
+    ('func', 'level', 'dv', 'expected'),
+    (
+        (add_metabolite, 'all', None, ['CL', 'CLM', 'VC', 'VM']),
+        (
+            partial(add_metabolite, presystemic=True),
+            'all',
+            None,
+            ['CL', 'CLM', 'FPRE', 'MAT', 'VC', 'VM'],
+        ),
+    ),
+)
+def test_get_individual_parameters_drug_metabolite_models(func, level, dv, expected):
     model = func(basic_pk_model)
     params = get_individual_parameters(model, level=level, dv=dv)
     assert params == expected

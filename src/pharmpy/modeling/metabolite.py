@@ -94,6 +94,8 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
     # dvid_col = model.datainfo.typeix['dvid'][0]
     # dvids = dvid_col.categories
 
+    amount = sympy.Function(metacomp.amount.name)('t')
+
     if presystemic:
         # QUESTION: Add bioavailability to depot?
         cb.set_bioavailability(depot, 1 / (1 - fpre))
@@ -105,10 +107,10 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
         model = model.update_source()
         cs = model.statements.ode_system
         bio = model.statements.ode_system.find_compartment(depot.name).bioavailability
-        conc = Assignment(sympy.Symbol('CONC_M'), metacomp.amount / vm / bio)
+        conc = Assignment(sympy.Symbol('CONC_M'), amount / vm / bio)
     else:
         cs = CompartmentalSystem(cb)
-        conc = Assignment(sympy.Symbol('CONC_M'), metacomp.amount / vm)
+        conc = Assignment(sympy.Symbol('CONC_M'), amount / vm)
     y_m = sympy.Symbol('Y_M')
     y = Assignment(y_m, conc.symbol)
     original_y = next(iter(model.dependent_variables))
