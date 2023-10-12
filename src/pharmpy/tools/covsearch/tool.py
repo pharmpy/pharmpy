@@ -508,35 +508,51 @@ def _make_df_steps_row(
 ):
     model = candidate.model
     parent_model = models_dict[model.parent_model]
-    reduced_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
-    extended_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
-    ofv_drop = reduced_ofv - extended_ofv
     if candidate.steps:
         last_step = candidate.steps[-1]
         last_effect = last_step.effect
         parameter, covariate = last_effect.parameter, last_effect.covariate
         extended_state = f'{last_effect.operation} {last_effect.fp}'
         is_backward = isinstance(last_step, BackwardStep)
-        alpha = last_step.alpha
-        extended_significant = lrt_test(
-            parent_model,
-            candidate.model,
-            reduced_ofv,
-            extended_ofv,
-            alpha,
-        )
+        if not is_backward:
+            reduced_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
+            extended_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
+            alpha = last_step.alpha
+            extended_significant = lrt_test(
+                parent_model,
+                candidate.model,
+                reduced_ofv,
+                extended_ofv,
+                alpha,
+            )
+        else:
+            extended_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
+            reduced_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
+            alpha = last_step.alpha
+            extended_significant = lrt_test(
+                candidate.model,
+                parent_model,
+                reduced_ofv,
+                extended_ofv,
+                alpha,
+            )
+        ofv_drop = reduced_ofv - extended_ofv
     else:
         parameter, covariate, extended_state = '', '', ''
         is_backward = False
+        reduced_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
+        extended_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
+        ofv_drop = reduced_ofv - extended_ofv
         alpha, extended_significant = np.nan, np.nan
 
+    selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
     if not is_backward:
         p_value = lrt_p_value(parent_model, model, reduced_ofv, extended_ofv)
+        assert not selected or (model is parent_model) or extended_significant
     else:
-        p_value = lrt_p_value(model, parent_model, extended_ofv, reduced_ofv)
-    selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
+        p_value = lrt_p_value(model, parent_model, reduced_ofv, extended_ofv)
+        assert not selected or (model is parent_model) or not extended_significant
 
-    assert not selected or (model is parent_model) or extended_significant
     return {
         'step': len(candidate.steps)
         if candidate.steps == tuple() or isinstance(candidate.steps[-1], ForwardStep)
