@@ -1,3 +1,21 @@
+0.103.0 (2023-10-12)
+--------------------
+
+Changes
+=======
+
+* Update initial estimates in structsearch
+* Add option dv to modeling.get_individual_parameters
+* Add default search space for drug-metabolite models in AMD
+
+Bugfixes
+========
+
+* Fix bug in calculate_bic where parameters were incorrectly set to fixed for PKPD and drug-metabolite models
+* Fix bug in COVSearch step numbering
+* Fix bug in COVSearch where the final_model was set incorrectly
+* Fix bug in COVSearch where p-value wasn't displayed for backward models
+
 0.102.0 (2023-09-28)
 --------------------
 
