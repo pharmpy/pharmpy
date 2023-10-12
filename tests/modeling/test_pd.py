@@ -8,7 +8,12 @@ from pharmpy.model import (
     CompartmentalSystemBuilder,
     output,
 )
-from pharmpy.modeling import add_effect_compartment, add_indirect_effect, set_direct_effect
+from pharmpy.modeling import (
+    add_effect_compartment,
+    add_indirect_effect,
+    create_baseline_effect,
+    set_direct_effect,
+)
 
 
 def S(x):
@@ -17,7 +22,7 @@ def S(x):
 
 @pytest.mark.parametrize(
     'pd_model',
-    [('baseline'), ('linear'), ('emax'), ('sigmoid'), ('step'), ('loglin')],
+    [('linear'), ('emax'), ('sigmoid'), ('step'), ('loglin')],
 )
 def test_set_direct_effect(load_model_for_test, pd_model, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
@@ -27,7 +32,7 @@ def test_set_direct_effect(load_model_for_test, pd_model, testdata):
 
 @pytest.mark.parametrize(
     'pd_model',
-    [('baseline'), ('linear'), ('emax'), ('sigmoid'), ('step'), ('loglin')],
+    [('linear'), ('emax'), ('sigmoid'), ('step'), ('loglin')],
 )
 def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
@@ -36,7 +41,7 @@ def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
     central_amount = sympy.Function("A_CENTRAL")(S('t'))
     comp_e = Compartment.create("EFFECT", input=ke0 * central_amount / S("V"))
 
-    model1 = add_effect_compartment(model, "baseline")
+    model1 = add_effect_compartment(model, "linear")
     compartments = CompartmentalSystemBuilder(model1.statements.ode_system)
     odes = model1.statements.ode_system
     assert odes.find_compartment("EFFECT") == comp_e
@@ -55,11 +60,7 @@ def _test_effect_models(model, expr, conc):
     emax = S("E_MAX")
     ec50 = S("EC_50")
 
-    if expr == 'baseline':
-        assert model.statements[0] == Assignment(e0, S("POP_B"))
-        assert model.statements.after_odes[-2] == Assignment(e, e0)
-        assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
-    elif expr == 'linear':
+    if expr == 'linear':
         assert model.statements[1] == Assignment(e0, S("POP_B"))
         assert model.statements[0] == Assignment(S("SLOPE"), S("POP_SLOPE"))
         assert model.statements.after_odes[-2] == Assignment(e, e0 * (1 + S("SLOPE") * conc))
@@ -123,3 +124,13 @@ def test_indirect_effect(load_model_for_test, testdata, prod, expr):
         prod=prod,
         expr=expr,
     )
+
+
+def test_create_baseline_effect(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
+    baseline = create_baseline_effect(model)
+
+    e, e0 = S('E'), S('B')
+    assert baseline.statements[0] == Assignment(e0, S("POP_B"))
+    assert baseline.statements.after_odes[-2] == Assignment(e, e0)
+    assert baseline.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))

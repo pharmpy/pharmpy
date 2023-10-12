@@ -20,7 +20,7 @@ def S(x):
 
 def test_statements_effect_compartment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
-    model = add_effect_compartment(model, "baseline")
+    model = add_effect_compartment(model, "linear")
 
     with pytest.warns(UserWarning):
         print(model.statements)

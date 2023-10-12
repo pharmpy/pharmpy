@@ -201,7 +201,12 @@ from .parameters import (
     unfix_parameters_to,
     update_inits,
 )
-from .pd import add_effect_compartment, add_indirect_effect, set_direct_effect
+from .pd import (
+    add_effect_compartment,
+    add_indirect_effect,
+    create_baseline_effect,
+    set_direct_effect,
+)
 from .plots import (
     plot_cwres_vs_idv,
     plot_dv_vs_ipred,
@@ -269,6 +274,7 @@ __all__ = [
     'check_parameters_near_bounds',
     'cleanup_model',
     'convert_model',
+    'create_baseline_effect',
     'create_basic_pk_model',
     'create_config_template',
     'create_joint_distribution',

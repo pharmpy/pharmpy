@@ -493,11 +493,6 @@ basic_pk_model = create_basic_pk_model()
 @pytest.mark.parametrize(
     ('func', 'level', 'dv', 'expected'),
     (
-        (partial(set_direct_effect, expr='baseline'), 'all', None, ['B', 'CL', 'VC']),
-        (partial(set_direct_effect, expr='baseline'), 'all', 1, ['CL', 'VC']),
-        (partial(set_direct_effect, expr='baseline'), 'all', 2, ['B']),
-        (partial(set_direct_effect, expr='baseline'), 'random', None, ['CL', 'VC']),
-        (partial(set_direct_effect, expr='baseline'), 'random', 2, []),
         (partial(set_direct_effect, expr='linear'), 'all', None, ['B', 'CL', 'SLOPE', 'VC']),
         (partial(set_direct_effect, expr='linear'), 'all', 1, ['CL', 'VC']),
         (partial(set_direct_effect, expr='linear'), 'all', 2, ['B', 'CL', 'SLOPE', 'VC']),

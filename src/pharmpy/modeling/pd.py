@@ -22,9 +22,6 @@ def add_effect_compartment(model: Model, expr: str):
 
     Implemented PD models are:
 
-    * Baseline:
-
-        .. math:: E = B
 
     * Linear:
 
@@ -54,7 +51,7 @@ def add_effect_compartment(model: Model, expr: str):
     model : Model
         Pharmpy model
     expr : str
-        Name of the PD effect function. Valid names are: baseline, linear, emax, sigmoid, step and loglin
+        Name of the PD effect function. Valid names are: linear, emax, sigmoid, step and loglin
 
     Return
     ------
@@ -107,9 +104,6 @@ def set_direct_effect(model: Model, expr: str):
 
     Implemented PD models are:
 
-    * Baseline:
-
-        .. math:: E = B
 
     * Linear:
 
@@ -139,7 +133,7 @@ def set_direct_effect(model: Model, expr: str):
     model : Model
         Pharmpy model
     expr : str
-        Name of PD effect function. Valid names are: baseline, linear, emax, sigmoid, step and loglin
+        Name of PD effect function. Valid names are: linear, emax, sigmoid, step and loglin
 
     Return
     ------
@@ -188,9 +182,7 @@ def _add_effect(model: Model, expr: str, conc):
         model = add_individual_parameter(model, ec50.name)
 
     # Add effect E
-    if expr == "baseline":
-        E = Assignment(sympy.Symbol('E'), e0)
-    elif expr == "linear":
+    if expr == "linear":
         s = sympy.Symbol("SLOPE")
         model = add_individual_parameter(model, s.name)
         E = Assignment(sympy.Symbol('E'), e0 * (1 + (s * conc)))
@@ -356,3 +348,49 @@ def add_indirect_effect(
     model = set_proportional_error_model(model, dv=2, zero_protection=False)
 
     return model.update_source()
+
+
+def create_baseline_effect(model: Model, expr: str = 'const'):
+    r"""Create baseline effect model.
+
+    Currently implemented baseline effects are:
+
+    Constant baseline effect (const):
+
+        .. math:: E = B
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    expr : str
+        Name of baseline effect function.
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = create_baseline_effect(model, expr='const')
+    >>> model.statements.find_assignment("E")
+    E = B
+    """
+    e0 = sympy.Symbol("B")
+    model = add_individual_parameter(model, e0.name)
+
+    E = Assignment(sympy.Symbol('E'), e0)
+
+    # Add dependent variable Y_2
+    y_2 = sympy.Symbol('Y_2')
+    y = Assignment(y_2, E.symbol)
+    dvs = model.dependent_variables.replace(y_2, 2)
+    model = model.replace(statements=model.statements + E + y, dependent_variables=dvs)
+
+    # Add error model
+    model = set_proportional_error_model(model, dv=2, zero_protection=False)
+
+    return model
