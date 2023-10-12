@@ -508,7 +508,10 @@ def _make_df_steps_row(
         is_backward = False
         alpha, extended_significant = np.nan, np.nan
 
-    p_value = lrt_p_value(parent_model, model, reduced_ofv, extended_ofv)
+    if not is_backward:
+        p_value = lrt_p_value(parent_model, model, reduced_ofv, extended_ofv)
+    else:
+        p_value = lrt_p_value(model, parent_model, extended_ofv, reduced_ofv)
     selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
 
     assert not selected or (model is parent_model) or extended_significant
