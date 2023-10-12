@@ -342,7 +342,9 @@ def task_add_covariate_effect(
 ):
     name = f'covsearch_run{effect_index}'
     description = _create_description(effect, candidate.steps)
-    model_with_added_effect = model.replace(name=name, description=description, parent_model=name)
+    model_with_added_effect = model.replace(
+        name=name, description=description, parent_model=candidate.model.name
+    )
     model_with_added_effect = update_initial_estimates(model_with_added_effect)
     model_with_added_effect = add_covariate_effect(
         model_with_added_effect, *effect, allow_nested=True
@@ -435,6 +437,7 @@ def task_results(p_forward: float, p_backward: float, state: SearchState):
     steps = _make_df_steps(best_model, candidates)
     res = replace(
         res,
+        final_model=best_model,
         steps=steps,
         candidate_summary=candidate_summary_dataframe(steps),
         ofv_summary=ofv_summary_dataframe(steps, final_included=True, iterations=True),
@@ -467,8 +470,26 @@ def _make_df_steps(best_model: Model, candidates: List[Candidate]):
     models_dict = {candidate.model.name: candidate.model for candidate in candidates}
     children_count = Counter(candidate.model.parent_model for candidate in candidates)
 
+    # Find if longest forward is also the input for the backwards search
+    # otherwise add an index offset to _make_df_steps_function
+    forward_candidates = [
+        fc for fc in candidates if fc.steps == tuple() or isinstance(fc.steps[-1], ForwardStep)
+    ]
+    largest_forward_step = max([len(fc.steps) for fc in forward_candidates])
+    largest_forward_candidates = [
+        fc for fc in forward_candidates if len(fc.steps) == largest_forward_step
+    ]
+    index_offset = 0
+    if not any(
+        children_count[c.model.name] >= 1 or c.model is best_model
+        for c in largest_forward_candidates
+    ):
+        index_offset = 1
+
     data = (
-        _make_df_steps_row(models_dict, children_count, best_model, candidate)
+        _make_df_steps_row(
+            models_dict, children_count, best_model, candidate, index_offset=index_offset
+        )
         for candidate in candidates
     )
 
@@ -479,38 +500,63 @@ def _make_df_steps(best_model: Model, candidates: List[Candidate]):
 
 
 def _make_df_steps_row(
-    models_dict: dict, children_count: Counter, best_model: Model, candidate: Candidate
+    models_dict: dict,
+    children_count: Counter,
+    best_model: Model,
+    candidate: Candidate,
+    index_offset=0,
 ):
     model = candidate.model
     parent_model = models_dict[model.parent_model]
-    reduced_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
-    extended_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
-    ofv_drop = reduced_ofv - extended_ofv
     if candidate.steps:
         last_step = candidate.steps[-1]
         last_effect = last_step.effect
         parameter, covariate = last_effect.parameter, last_effect.covariate
         extended_state = f'{last_effect.operation} {last_effect.fp}'
         is_backward = isinstance(last_step, BackwardStep)
-        alpha = last_step.alpha
-        extended_significant = lrt_test(
-            parent_model,
-            candidate.model,
-            reduced_ofv,
-            extended_ofv,
-            alpha,
-        )
+        if not is_backward:
+            reduced_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
+            extended_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
+            alpha = last_step.alpha
+            extended_significant = lrt_test(
+                parent_model,
+                candidate.model,
+                reduced_ofv,
+                extended_ofv,
+                alpha,
+            )
+        else:
+            extended_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
+            reduced_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
+            alpha = last_step.alpha
+            extended_significant = lrt_test(
+                candidate.model,
+                parent_model,
+                reduced_ofv,
+                extended_ofv,
+                alpha,
+            )
+        ofv_drop = reduced_ofv - extended_ofv
     else:
         parameter, covariate, extended_state = '', '', ''
         is_backward = False
+        reduced_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
+        extended_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
+        ofv_drop = reduced_ofv - extended_ofv
         alpha, extended_significant = np.nan, np.nan
 
-    p_value = lrt_p_value(parent_model, model, reduced_ofv, extended_ofv)
     selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
+    if not is_backward:
+        p_value = lrt_p_value(parent_model, model, reduced_ofv, extended_ofv)
+        assert not selected or (model is parent_model) or extended_significant
+    else:
+        p_value = lrt_p_value(model, parent_model, reduced_ofv, extended_ofv)
+        assert not selected or (model is parent_model) or not extended_significant
 
-    assert not selected or (model is parent_model) or extended_significant
     return {
-        'step': len(candidate.steps),
+        'step': len(candidate.steps)
+        if candidate.steps == tuple() or isinstance(candidate.steps[-1], ForwardStep)
+        else len(candidate.steps) + index_offset,
         'parameter': parameter,
         'covariate': covariate,
         'extended_state': extended_state,

@@ -20,9 +20,9 @@ def cutoff(parent: Model, child: Model, alpha: float) -> float:
     )
 
 
-def p_value(parent: Model, child: Model, parent_ofv, child_ofv) -> float:
-    dofv = parent_ofv - child_ofv
-    df = degrees_of_freedom(parent, child)
+def p_value(reduced: Model, extended: Model, reduced_ofv, extended_ofv) -> float:
+    dofv = reduced_ofv - extended_ofv
+    df = degrees_of_freedom(reduced, extended)
     return float(stats.chi2.sf(x=dofv, df=df))
 
 
