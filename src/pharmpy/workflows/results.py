@@ -430,13 +430,13 @@ class ModelfitResults(Results):
         Number of function evaluations
     evaluation : pd.Series
         A bool for each estimation step. True if this was a model evaluation and False otherwise
-    covstatus : bool
+    covstep_successful : bool or None
         Covariance status.
     gradients : pd.Series
         Final parameter gradients
     gradients_iterations : pd.DataFrame
         All recorded parameter gradients
-    warning : List
+    warnings : List
         List of warnings
     """
 
@@ -472,10 +472,10 @@ class ModelfitResults(Results):
     log_likelihood: Optional[float] = None
     log: Optional['Log'] = None
     evaluation: Optional[pd.Series] = None
-    covstep_successful: Optional[bool] = None
+    covstep_successful: Optional[bool, None] = None
     gradients: Optional[pd.Series] = None
     gradients_iterations: Optional[pd.DataFrame] = (None,)
-    warnings: Optional[List] = None
+    warnings: Optional[List[str]] = None
 
     def __repr__(self):
         return f'<Pharmpy modelfit results object {self.name}>'

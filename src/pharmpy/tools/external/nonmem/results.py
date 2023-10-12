@@ -78,7 +78,7 @@ def _parse_modelfit_results(
     predictions = _parse_predictions(table_df)
     iofv, ie, iec = _parse_phi(path, control_stream, name_map, etas, subproblem)
     gradients_iterations, has_zero_gradient, gradients = _parse_grd(
-        path, control_stream, parameters, subproblem
+        path, control_stream, name_map, parameters, subproblem
     )
     rse = _calculate_relative_standard_errors(final_pe, ses)
     (
@@ -120,6 +120,13 @@ def _parse_modelfit_results(
 
     evaluation = _parse_evaluation(estimation_steps)
 
+    if model.estimation_steps[-1].parameter_uncertainty_method is None:
+        covstep_successful = None
+    elif covstatus:
+        covstep_successful = True
+    else:
+        covstep_successful = False
+
     warnings = []
     if any(estimate_near_boundary):
         warnings.append('estimate_near_boundary')
@@ -159,7 +166,7 @@ def _parse_modelfit_results(
         residuals=residuals,
         evaluation=evaluation,
         log=log,
-        covstep_successful=covstatus,
+        covstep_successful=covstep_successful,
         gradients=gradients,
         gradients_iterations=gradients_iterations,
         warnings=warnings,
@@ -352,6 +359,7 @@ def _parse_phi(
 def _parse_grd(
     path: Path,
     control_stream: NMTranControlStream,
+    name_map,
     parameters: Parameters,
     subproblem=None,
 ):
@@ -369,7 +377,8 @@ def _parse_grd(
 
     gradients_table = table.data_frame
     old_col_names = table.data_frame.columns.to_list()[1::]
-    new_col_names = {old_col_names[i]: parameters.names[i] for i in range(len(old_col_names))}
+    param_names = [name for name in list(name_map.values()) if name in parameters.names]
+    new_col_names = {old_col_names[i]: param_names[i] for i in range(len(old_col_names))}
     gradients_table = gradients_table.rename(columns=new_col_names)
     last_row = gradients_table.tail(1)
     last_row = last_row.drop(columns=['ITERATION'])
