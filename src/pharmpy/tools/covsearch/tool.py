@@ -437,6 +437,7 @@ def task_results(p_forward: float, p_backward: float, state: SearchState):
     steps = _make_df_steps(best_model, candidates)
     res = replace(
         res,
+        final_model=best_model,
         steps=steps,
         candidate_summary=candidate_summary_dataframe(steps),
         ofv_summary=ofv_summary_dataframe(steps, final_included=True, iterations=True),
