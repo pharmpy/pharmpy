@@ -614,9 +614,9 @@ def calculate_bic(
     multiple_testing : bool
         Whether to use penalty for multiple testing (default is False)
     mult_test_p : int
-        Number of predictors if using type `mult_test`
-    mult_test_e : int
         Number of expected models if using type `mult_test`
+    mult_test_e : int
+        E value if using type `mult_test`
 
     Returns
     -------
