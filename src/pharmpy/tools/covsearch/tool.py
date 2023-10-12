@@ -470,8 +470,26 @@ def _make_df_steps(best_model: Model, candidates: List[Candidate]):
     models_dict = {candidate.model.name: candidate.model for candidate in candidates}
     children_count = Counter(candidate.model.parent_model for candidate in candidates)
 
+    # Find if longest forward is also the input for the backwards search
+    # otherwise add an index offset to _make_df_steps_function
+    forward_candidates = [
+        fc for fc in candidates if fc.steps == tuple() or isinstance(fc.steps[-1], ForwardStep)
+    ]
+    largest_forward_step = max([len(fc.steps) for fc in forward_candidates])
+    largest_forward_candidates = [
+        fc for fc in forward_candidates if len(fc.steps) == largest_forward_step
+    ]
+    index_offset = 0
+    if not any(
+        children_count[c.model.name] >= 1 or c.model is best_model
+        for c in largest_forward_candidates
+    ):
+        index_offset = 1
+
     data = (
-        _make_df_steps_row(models_dict, children_count, best_model, candidate)
+        _make_df_steps_row(
+            models_dict, children_count, best_model, candidate, index_offset=index_offset
+        )
         for candidate in candidates
     )
 
@@ -482,7 +500,11 @@ def _make_df_steps(best_model: Model, candidates: List[Candidate]):
 
 
 def _make_df_steps_row(
-    models_dict: dict, children_count: Counter, best_model: Model, candidate: Candidate
+    models_dict: dict,
+    children_count: Counter,
+    best_model: Model,
+    candidate: Candidate,
+    index_offset=0,
 ):
     model = candidate.model
     parent_model = models_dict[model.parent_model]
@@ -516,7 +538,9 @@ def _make_df_steps_row(
 
     assert not selected or (model is parent_model) or extended_significant
     return {
-        'step': len(candidate.steps),
+        'step': len(candidate.steps)
+        if candidate.steps == tuple() or isinstance(candidate.steps[-1], ForwardStep)
+        else len(candidate.steps) + index_offset,
         'parameter': parameter,
         'covariate': covariate,
         'extended_state': extended_state,
