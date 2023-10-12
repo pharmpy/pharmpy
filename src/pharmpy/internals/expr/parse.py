@@ -9,7 +9,7 @@ else:
 
 
 def parse(expr: Union[int, float, str, sympy.Basic]) -> sympy.Basic:
-    ns = {'Q': sympy.Symbol('Q'), 'LT': sympy.Symbol('LT')}
+    ns = {'Q': sympy.Symbol('Q'), 'LT': sympy.Symbol('LT'), 'N': sympy.Symbol('N')}
     expr = sympy.sympify(expr, locals=ns)
     assert isinstance(expr, sympy.Basic)
     return expr
