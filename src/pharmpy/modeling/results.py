@@ -675,7 +675,7 @@ def _categorize_parameters(model):
     omegas = set(get_omegas(model).symbols)
     etas = set(model.random_variables.etas.symbols)
     epsilons = set(model.random_variables.epsilons.symbols)
-    randpars = omegas
+    randpars = omegas.intersection(all_pop_params)
     fixedpars = set()
     for indpar in indpars:
         expr = model.statements.before_odes.full_expression(indpar)
@@ -693,6 +693,7 @@ def _categorize_parameters(model):
         param_symbols = symbols.intersection(all_pop_params)
         cureps = symbols.intersection(epsilons)
         cursigmas = model.random_variables[cureps].free_symbols - cureps
+        cursigmas = cursigmas.intersection(all_pop_params)
         cursymbols = param_symbols | cursigmas
         if symbols.isdisjoint(etas):
             fixedpars |= cursymbols - randpars
