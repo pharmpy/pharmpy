@@ -229,7 +229,7 @@ def _empty_lst_results(n: int, log):
     false_vec = [False] * n
     nan_vec = [np.nan] * n
     none_vec = [None] * n
-    return None, np.nan, False, false_vec, nan_vec, nan_vec, none_vec, nan_vec, false_vec, log
+    return None, np.nan, False, None, false_vec, nan_vec, nan_vec, none_vec, nan_vec, false_vec, log, nan_vec
 
 
 def _parse_lst(n: int, path: Path, table_numbers, log: Log):
@@ -243,13 +243,15 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
 
     runtime_total = rfile.runtime_total
 
-    log_likelihood_table_number = None
     parameter_uncertainty_table_number = table_numbers[-1]
 
-    for table_number in reversed(table_numbers):
-        if "OPTIMALITY" not in rfile.table[table_number]['METH']:
-            log_likelihood_table_number = table_number
-            break
+    try:
+        for table_number in reversed(table_numbers):
+            if "OPTIMALITY" not in rfile.table[table_number]['METH']:
+                log_likelihood_table_number = table_number
+                break
+    except (KeyError, FileNotFoundError):
+        log_likelihood_table_number = None
 
     try:
         log_likelihood = rfile.table[log_likelihood_table_number]['ofv_with_constant']
@@ -260,11 +262,14 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
         parameter_uncertainty_table_number
     )['parameter_uncertainty_step_ok']
 
-    est_table_numbers = [
-        table_number
-        for table_number in table_numbers
-        if table_number <= log_likelihood_table_number
-    ]
+    if log_likelihood_table_number is not None:
+        est_table_numbers = [
+            table_number
+            for table_number in table_numbers
+            if table_number <= log_likelihood_table_number
+        ]
+    else:
+        est_table_numbers = [table_number for table_number in table_numbers]
 
     (
         minimization_successful,
