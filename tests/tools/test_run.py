@@ -15,6 +15,7 @@ from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_common,
     _create_metadata_tool,
     _get_run_setup,
+    _is_strictness_fulfilled,
     import_tool,
     load_example_modelfit_results,
     rank_models,
@@ -486,3 +487,48 @@ def test_read_modelfit_results(testdata):
 def test_load_example_modelfit_results():
     res = load_example_modelfit_results("pheno")
     assert res.ofv == 586.27605628188053
+
+
+@pytest.mark.parametrize(
+    'path, statement, expected',
+    [
+        (
+            'nonmem/modelfit_results/onePROB/oneEST/noSIM/near_bounds.mod',
+            'minimization_successful or (rounding_errors and sigdigs > 0)',
+            True,
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'condition_number < 1000',
+            False,
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'condition_number < 300000',
+            True,
+        ),
+        (
+            'nonmem/modelfit_results/onePROB/oneEST/noSIM/maxeval3.mod',
+            'rse < 30',
+            True,
+        ),
+        (
+            'nonmem/modelfit_results/onePROB/oneEST/noSIM/maxeval3.mod',
+            'rse < 30 and condition_number < 1000',
+            False,
+        ),
+        (
+            'nonmem/pheno.mod',
+            'minimization_successful and sigdigs > 0 and rse<2',
+            False,
+        ),
+        (
+            'nonmem/pheno.mod',
+            'minimization_successful and sigdigs > 3',
+            True,
+        ),
+    ],
+)
+def test_strictness(testdata, path, statement, expected):
+    res = read_modelfit_results(testdata / path)
+    assert _is_strictness_fulfilled(res, statement) == expected

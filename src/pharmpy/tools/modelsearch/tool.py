@@ -46,8 +46,8 @@ def create_workflow(
         Results for model
     model : Model
         Pharmpy model
-    strictness : str
-        Strcitness criteria
+    strictness : str or None
+        Strictness criteria
 
     Returns
     -------
@@ -319,9 +319,11 @@ def validate_input(
             f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
         )
 
-    if strictness is not None and "RSE" in strictness:
+    if strictness is not None and "rse" in strictness.lower():
         if model.estimation_steps[-1].parameter_uncertainty_method is None:
-            raise ValueError('Cannot calculate relative standard errors')
+            raise ValueError(
+                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+            )
 
 
 @dataclass(frozen=True)

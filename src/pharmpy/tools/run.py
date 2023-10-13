@@ -747,7 +747,7 @@ def rank_models(
     models : list
         List of models
     strictness : str or None
-        Strictness criteria that are allowed for ranking. Default is None.
+        Strictness criteria that are allowed for ranking. Default is "minimization_successful".
     rank_type : str
         Name of ranking type. Available options are 'ofv', 'aic', 'bic', 'lrt' (OFV with LRT)
     cutoff : float or None
@@ -876,19 +876,20 @@ class ArrayEvaluator:
         return all(e > value for e in self.x)
 
 
-def _strictness_filtering(res: ModelfitResults, statement: str) -> bool:
-    """Takes a model and a statement as input and returns True/False
+def _is_strictness_fulfilled(res: ModelfitResults, statement: str) -> bool:
+    """Takes a ModelfitResults object  and a statement as input and returns True/False
     if the evaluation of the statement is True/False.
     """
     if res is None or np.isnan(res.ofv):
         return False
     if statement is not None:
+        statement = statement.lower()
         allowed_args = [
             'minimization_successful',
             'rounding_errors',
             'sigdigs',
             'maxevals_exceeded',
-            'RSE',
+            'rse',
             'condition_number',
             'final_zero_gradient',
             'estimate_near_boundary',
@@ -907,13 +908,16 @@ def _strictness_filtering(res: ModelfitResults, statement: str) -> bool:
             rounding_errors = res.termination_cause == "rounding_errors"
             maxevals_exceeded = res.termination_cause == "maxevals_exceeded"
             sigdigs = ArrayEvaluator([res.significant_digits])
-            # condition_number = ArrayEvaluator([condition_number]) FIXME: add
-            # final_zero_gradient FIXME: add
-            # estimate_near_boundary FIXME: add
-            if "RSE" in args_in_statement:
-                RSE = ArrayEvaluator(res.relative_standard_errors)
+            if 'condition_number' in args_in_statement and res.covariance_matrix is not None:
+                condition_number = ArrayEvaluator([np.linalg.cond(res.covariance_matrix)])
             else:
-                RSE = None
+                condition_number = np.nan
+            if "rse" in args_in_statement:
+                rse = ArrayEvaluator(res.relative_standard_errors)
+            else:
+                rse = np.nan
+            # final_zero_gradient = 'has_zero_gradient' in res.warnings FIXME: add
+            # estimate_near_boundary = 'estimate_near_boundary' in res.warnings FIXME: add
 
         # dictionary needed because otherwise unused variables will cause lint error
         return eval(
@@ -923,7 +927,10 @@ def _strictness_filtering(res: ModelfitResults, statement: str) -> bool:
                 'rounding_errors': rounding_errors,
                 'maxevals_exceeded': maxevals_exceeded,
                 'sigdigs': sigdigs,
-                'RSE': RSE,
+                'rse': rse,
+                'condition_number': condition_number,
+                # 'final_zero_gradient':final_zero_gradient,
+                # 'estimate_near_boundary':estimate_near_boundary,
             },
         )
     else:
@@ -931,7 +938,7 @@ def _strictness_filtering(res: ModelfitResults, statement: str) -> bool:
 
 
 def _get_rankval(model, strictness, rank_type, bic_type, **kwargs):
-    if not _strictness_filtering(model.modelfit_results, strictness):
+    if not _is_strictness_fulfilled(model.modelfit_results, strictness):
         return np.nan
     if rank_type in ['ofv', 'lrt']:
         return model.modelfit_results.ofv

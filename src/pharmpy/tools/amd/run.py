@@ -100,7 +100,7 @@ def run_amd(
         Path to run AMD in
     resume : bool
         Whether to allow resuming previous run
-    strictness : str
+    strictness : str or None
         Strictness criteria
 
     Returns

@@ -59,7 +59,7 @@ def create_workflow(
         Pharmpy start model
     extra_model : Model
         Optional extra Pharmpy model to use in TMDD structsearch
-    strictness : str
+    strictness : str or None
         Strictness criteria
 
     Returns
@@ -190,7 +190,7 @@ def run_pkpd(context, model, search_space, b_init, emax_init, ec50_init, met_ini
     )
 
 
-def run_drug_metabolite(context, model, strictness):
+def run_drug_metabolite(context, model, route, strictness):
     model = update_initial_estimates(model)
     base_drug_metabolite = create_base_metabolite(model)
     candidate_drug_metabolite = create_drug_metabolite_models(model, route)
@@ -251,9 +251,11 @@ def validate_input(
     if route not in routes:
         raise ValueError(f'Invalid `route`: got `{route}`, must be one of {sorted(routes)}.')
 
-    if strictness is not None and "RSE" in strictness:
+    if strictness is not None and "rse" in strictness.lower():
         if model.estimation_steps[-1].parameter_uncertainty_method is None:
-            raise ValueError('Cannot calculate relative standard errors')
+            raise ValueError(
+                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+            )
 
 
 @dataclass(frozen=True)
