@@ -11,7 +11,7 @@ from pharmpy.model import (
 from pharmpy.modeling import (
     add_effect_compartment,
     add_indirect_effect,
-    create_baseline_effect,
+    set_baseline_effect,
     set_direct_effect,
 )
 
@@ -126,9 +126,9 @@ def test_indirect_effect(load_model_for_test, testdata, prod, expr):
     )
 
 
-def test_create_baseline_effect(load_model_for_test, testdata):
+def test_set_baseline_effect(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    baseline = create_baseline_effect(model)
+    baseline = set_baseline_effect(model)
 
     e, e0 = S('E'), S('B')
     assert baseline.statements[0] == Assignment(e0, S("POP_B"))

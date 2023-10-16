@@ -350,7 +350,7 @@ def add_indirect_effect(
     return model.update_source()
 
 
-def create_baseline_effect(model: Model, expr: str = 'const'):
+def set_baseline_effect(model: Model, expr: str = 'const'):
     r"""Create baseline effect model.
 
     Currently implemented baseline effects are:
@@ -375,7 +375,7 @@ def create_baseline_effect(model: Model, expr: str = 'const'):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = create_baseline_effect(model, expr='const')
+    >>> model = set_baseline_effect(model, expr='const')
     >>> model.statements.find_assignment("E")
     E = B
     """

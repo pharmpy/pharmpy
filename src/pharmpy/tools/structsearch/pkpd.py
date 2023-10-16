@@ -4,8 +4,8 @@ from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_iiv,
-    create_baseline_effect,
     fix_parameters_to,
+    set_baseline_effect,
     set_initial_estimates,
     set_lower_bounds,
     set_name,
@@ -32,7 +32,7 @@ def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: Optional[flo
     -------
     Baseline PD model
     """
-    baseline_model = create_baseline_effect(model, expr='const')
+    baseline_model = set_baseline_effect(model, expr='const')
     baseline_model = set_name(baseline_model, "baseline_model")
     baseline_model = baseline_model.replace(parent_model='baseline_model')
     baseline_model = baseline_model.replace(description="baseline_model")
