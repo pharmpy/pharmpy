@@ -2,7 +2,7 @@ from pharmpy.deps import sympy
 from pharmpy.model import Model, Parameters, RandomVariables
 
 
-def replace_non_random_rvs(model : Model):
+def replace_non_random_rvs(model: Model):
     """Replace all random variables that are not actually random
 
     Some random variables are constant. For example a normal
