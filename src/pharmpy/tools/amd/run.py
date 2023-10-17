@@ -508,6 +508,7 @@ def _subfunc_iiv(iiv_strategy, path) -> SubFunc:
             'brute_force',
             iiv_strategy=iiv_strategy,
             model=model,
+            results=model.modelfit_results,
             path=path / 'iivsearch',
         )
         assert isinstance(res, Results)

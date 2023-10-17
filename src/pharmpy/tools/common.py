@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeVar
 from pharmpy.model import Model
 from pharmpy.modeling import update_inits
 from pharmpy.tools import rank_models, summarize_errors
-from pharmpy.workflows import Results, ToolDatabase
+from pharmpy.workflows import ModelEntry, Results, ToolDatabase
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 
@@ -67,6 +67,12 @@ def create_results(
     bic_type='mixed',
     **rest,
 ) -> T:
+    # FIXME: Remove once modelfit_results have been removed from Model object
+    if isinstance(input_model, ModelEntry):
+        input_model = _model_entry_to_model(input_model)
+        base_model = _model_entry_to_model(base_model)
+        res_models = [_model_entry_to_model(model_entry) for model_entry in res_models]
+
     summary_tool = summarize_tool(res_models, base_model, rank_type, cutoff, bic_type)
     if rank_type == 'lrt':
         delta_name = 'dofv'
@@ -107,6 +113,13 @@ def create_results(
     )
 
     return res
+
+
+def _model_entry_to_model(model_entry):
+    parent_name = model_entry.parent.name if model_entry.parent else model_entry.model.name
+    return model_entry.model.replace(
+        modelfit_results=model_entry.modelfit_results, parent_model=parent_name
+    )
 
 
 def summarize_tool(
