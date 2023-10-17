@@ -6,6 +6,11 @@ New features
 
 * Add modeling.replace_non_random_rvs
 
+Bugfixes
+========
+
+* Properly handle 0 FIX etas in calculate_bic
+
 0.103.0 (2023-10-12)
 --------------------
 
