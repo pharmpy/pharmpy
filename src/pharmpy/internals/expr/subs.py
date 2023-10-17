@@ -21,11 +21,11 @@ def subs(expr: sympy.Expr, mapping: Mapping[Any, Any], simultaneous: bool = Fals
             _mapping[sympy.exp] = lambda x: new_base**x
             _mapping[sympy.Pow] = lambda a, x: new_base**x if a is sympy.S.Exp1 else a**x
             return _subs_atoms_simultaneously(
-                _subs_atom_or_func(_mapping), expr
-            )  # pyright: ignore [reportGeneralTypeIssues]
+                _subs_atom_or_func(_mapping), expr  # pyright: ignore [reportGeneralTypeIssues]
+            )
         return _subs_atoms_simultaneously(
-            _subs_atom(_mapping), expr
-        )  # pyright: ignore [reportGeneralTypeIssues]
+            _subs_atom(_mapping), expr  # pyright: ignore [reportGeneralTypeIssues]
+        )
     return expr.subs(
         _mapping, simultaneous=simultaneous
     )  # pyright: ignore [reportGeneralTypeIssues]
