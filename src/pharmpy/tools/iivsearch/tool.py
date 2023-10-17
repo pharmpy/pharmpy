@@ -129,8 +129,7 @@ def start(context, input_model, input_res, algorithm, iiv_strategy, rank_type, c
         list_of_algorithms = [algorithm]
     sum_tools, sum_models, sum_inds, sum_inds_count, sum_errs = [], [], [], [], []
 
-    models = []
-    models_set = set()
+    no_of_models = 0
     last_res = None
     final_model_entry = None
 
@@ -142,19 +141,15 @@ def start(context, input_model, input_res, algorithm, iiv_strategy, rank_type, c
             # NOTE: This does not need to be a model entry since it is only used as a start point for the
             # candidate models, when the workflow is run the input to this sub-workflow will be a model entry
             wf_algorithm = algorithm_func(
-                base_model_entry.model, index_offset=len(models_set), keep=keep
+                base_model_entry.model, index_offset=no_of_models, keep=keep
             )
         else:
-            wf_algorithm = algorithm_func(base_model_entry.model, index_offset=len(models_set))
+            wf_algorithm = algorithm_func(base_model_entry.model, index_offset=no_of_models)
 
         wf = create_step_workflow(
             input_model_entry, base_model_entry, wf_algorithm, iiv_strategy, rank_type, cutoff
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
-
-        new_models = list(filter(lambda model: model.name not in models_set, res.models))
-        models.extend(new_models)
-        models_set.update(model.name for model in new_models)
 
         if base_model_entry.model.name in sum_models[-1].index.values:
             summary_models = res.summary_models.drop(base_model_entry.model.name, axis=0)
@@ -171,6 +166,7 @@ def start(context, input_model, input_res, algorithm, iiv_strategy, rank_type, c
         base_model_entry = final_model_entry
         iiv_strategy = 'no_add'
         last_res = res
+        no_of_models = len(res.summary_tool) - 1
 
         assert base_model_entry is not None
         if (
@@ -211,7 +207,6 @@ def start(context, input_model, input_res, algorithm, iiv_strategy, rank_type, c
         summary_individuals_count=_concat_summaries(sum_inds_count, keys),
         summary_errors=_concat_summaries(sum_errs, keys),
         final_model=final_final_model,
-        models=models,
         tool_database=last_res.tool_database,
     )
 
