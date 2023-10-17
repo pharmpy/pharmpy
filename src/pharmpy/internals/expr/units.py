@@ -11,12 +11,14 @@ else:
     from pharmpy.deps import sympy, sympy_printing
 
 
-def parse(s: Union[str, int, float, sympy.Basic]) -> sympy.Basic:
-    return (
-        subs(parse_expr(s), _unit_subs(), simultaneous=True)
-        if not isinstance(s, sympy.Basic)
-        else s
-    )
+def parse(s: Union[str, int, float, sympy.Expr]) -> sympy.Expr:
+    if not isinstance(s, sympy.Expr):
+        return subs(parse_expr(s), _unit_subs(), simultaneous=True)
+    else:
+        return s
+    # return (
+    #    subs(parse_expr(s), _unit_subs(), simultaneous=True) if not isinstance(s, sympy.Expr) else s
+    # )
 
 
 _unit_subs_cache = None
@@ -66,6 +68,6 @@ class UnitPrinter(sympy_printing.str.StrPrinter):
             return str(expr.args[1])
 
 
-def unit_string(expr: sympy.Basic) -> str:
+def unit_string(expr: sympy.Expr) -> str:
     printer = UnitPrinter()
     return printer._print(expr)

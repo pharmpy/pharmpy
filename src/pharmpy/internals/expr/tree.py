@@ -9,20 +9,20 @@ else:
     from pharmpy.deps import sympy
 
 
-def replace_root_children(expr: sympy.Basic, args: List[sympy.Basic]):
+def replace_root_children(expr: sympy.Expr, args: List[sympy.Expr]):
     # NOTE: This creates a new tree by replacing the children of the root node.
     # If the children have not changed it returns the original tree which
     # allows certain downstream optimizations.
     return expr if all(map(is_, expr.args, args)) else expr.func(*args)
 
 
-def prune(predicate: Callable[[sympy.Basic], bool], expr: sympy.Basic):
+def prune(predicate: Callable[[sympy.Basic], bool], expr: sympy.Expr):
     """Create a new expression by removing subexpressions nodes from an input
     expression.
 
     Parameters
     ----------
-    predicate : (sympy.Expr) -> bool
+    predicate : (sympy.Basic) -> bool
         A function that takes a subexpression as input and returns a bool
         indicating whether this subexpression should be pruned.
     expr : sympy.Expr
@@ -73,7 +73,7 @@ def prune(predicate: Callable[[sympy.Basic], bool], expr: sympy.Basic):
                 new_args.append(_neutral(e.func))
             else:
                 # NOTE: Push the next argument on the stack
-                stack.append(old_arg)
+                stack.append(old_arg)  # pyright: ignore [reportGeneralTypeIssues]
                 output.append([])
 
     return output[0][0]

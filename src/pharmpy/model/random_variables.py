@@ -429,7 +429,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             dists.append(dist)
         return cls(dists=tuple(dists), eta_levels=eta_levels, epsilon_levels=epsilon_levels)
 
-    def _lookup_rv(self, ind: Union[sympy.Basic, str]):
+    def _lookup_rv(self, ind: Union[sympy.Expr, str]):
         if isinstance(ind, sympy.Symbol):
             ind = ind.name
         if isinstance(ind, str):
@@ -439,7 +439,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         raise KeyError(f'Could not find {ind} in RandomVariables')
 
     @overload
-    def __getitem__(self, ind: Union[int, str, sympy.Basic]) -> Distribution:
+    def __getitem__(self, ind: Union[int, str, sympy.Expr]) -> Distribution:
         ...
 
     @overload
@@ -524,7 +524,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
-    def free_symbols(self) -> Set[sympy.Basic]:
+    def free_symbols(self) -> Set[sympy.Expr]:
         """Set of free symbols for all random variables"""
         return set().union(*(dist.free_symbols for dist in self._dists))
 
@@ -620,9 +620,9 @@ class RandomVariables(CollectionsSequence, Immutable):
                 for i, name in enumerate(dist.names):
                     if name in inds:  # unjoin  this
                         mean = dist.mean[i]
-                        assert isinstance(mean, sympy.Basic)
+                        assert isinstance(mean, sympy.Expr)
                         variance = dist.variance[i, i]
-                        assert isinstance(variance, sympy.Basic)
+                        assert isinstance(variance, sympy.Expr)
                         new = NormalDistribution(name, dist.level, mean, variance)
                         newdists.append(new)
                     elif first:  # first of the ones to keep
@@ -630,9 +630,9 @@ class RandomVariables(CollectionsSequence, Immutable):
                         remove = [i for i, n in enumerate(dist.names) if n in inds]
                         if len(dist) - len(remove) == 1:
                             mean = dist.mean[i]
-                            assert isinstance(mean, sympy.Basic)
+                            assert isinstance(mean, sympy.Expr)
                             variance = dist.variance[i, i]
-                            assert isinstance(variance, sympy.Basic)
+                            assert isinstance(variance, sympy.Expr)
                             keep = NormalDistribution(name, dist.level, mean, variance)
                         else:
                             names = list(dist.names)
@@ -798,7 +798,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             _create_rng(rng),
         )
 
-    def _calc_covariance_matrix(self) -> Tuple[List[sympy.Basic], sympy.ImmutableMatrix, List[str]]:
+    def _calc_covariance_matrix(self) -> Tuple[List[sympy.Expr], sympy.ImmutableMatrix, List[str]]:
         means = []
         names = []
         n = 0
@@ -905,7 +905,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         return RandomVariables.create(rvs)
 
-    def replace_with_sympy_rvs(self, expr: sympy.Basic) -> sympy.Basic:
+    def replace_with_sympy_rvs(self, expr: sympy.Expr) -> sympy.Expr:
         """Replaces Pharmpy RVs in a Sympy expression with Sympy RVs
 
         Takes a Sympy expression and replaces all RVs with Sympy RVs, resulting expression
@@ -913,12 +913,12 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         Parameters
         ----------
-        expr : sympy.Basic
+        expr : sympy.Expr
             Expression which will get RVs replaced
 
         Returns
         -------
-        sympy.Basic
+        sympy.Expr
             Expression with replaced RVs
         """
         rvs_in_expr = {self[rv] for rv in expr.free_symbols.intersection(self.free_symbols)}
@@ -969,8 +969,8 @@ def subs_distributions(
 
 
 def sample_expr_from_rvs(
-    sampling_rvs: Iterable[Tuple[Tuple[sympy.Basic, ...], NumericDistribution]],
-    expr: sympy.Basic,
+    sampling_rvs: Iterable[Tuple[Tuple[sympy.Expr, ...], NumericDistribution]],
+    expr: sympy.Expr,
     nsamples: int,
     rng,
 ):
@@ -979,10 +979,10 @@ def sample_expr_from_rvs(
 
 
 def sample_rvs(
-    sampling_rvs: Iterable[Tuple[Tuple[sympy.Basic, ...], NumericDistribution]],
+    sampling_rvs: Iterable[Tuple[Tuple[sympy.Expr, ...], NumericDistribution]],
     nsamples: int,
     rng,
-) -> Dict[sympy.Basic, np.ndarray]:
+) -> Dict[sympy.Expr, np.ndarray]:
     data = {}
     for symbols, distribution in sampling_rvs:
         cursample = distribution.sample(rng, nsamples)

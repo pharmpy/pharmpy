@@ -148,7 +148,7 @@ class ColumnInfo(Immutable):
         self,
         name: str,
         type: str = 'unknown',
-        unit: sympy.Basic = sympy.Integer(1),
+        unit: sympy.Expr = sympy.Integer(1),
         scale: str = 'ratio',
         continuous: Optional[bool] = None,
         categories: Optional[Union[frozenmapping[str, str], tuple[str, ...]]] = None,
@@ -188,7 +188,7 @@ class ColumnInfo(Immutable):
         cls,
         name: str,
         type: str = 'unknown',
-        unit: Optional[Union[str, int, float, sympy.Basic]] = None,
+        unit: Optional[Union[str, int, float, sympy.Expr]] = None,
         scale: str = 'ratio',
         continuous: Optional[bool] = None,
         categories: Optional[Union[Mapping[str, str], Sequence[str]]] = None,
@@ -356,7 +356,7 @@ class ColumnInfo(Immutable):
         return self._descriptor
 
     @property
-    def unit(self) -> sympy.Basic:
+    def unit(self) -> sympy.Expr:
         """Unit of the column data
 
         Custom units are allowed, but units that are available in sympy.physics.units can be
