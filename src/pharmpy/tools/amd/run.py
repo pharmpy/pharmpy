@@ -5,7 +5,7 @@ from typing import Callable, List, Optional, Tuple, Union
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Model
-from pharmpy.modeling import plot_cwres_vs_idv, plot_dv_vs_ipred
+from pharmpy.modeling import has_mixed_mm_fo_elimination, plot_cwres_vs_idv, plot_dv_vs_ipred
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
@@ -467,7 +467,23 @@ def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
             model=model,
             path=path / 'modelsearch',
         )
+
         final_model = res.final_model
+        if not has_mixed_mm_fo_elimination(final_model):
+            # Only select models that have mixed MM FO elimination
+            # If no model with mixed MM FO then final model from modelsearch will be used
+            models_mixed_mm_fo_el = [
+                model.name for model in res.models if has_mixed_mm_fo_elimination(model)
+            ]
+            if len(models_mixed_mm_fo_el) > 0:
+                rank_all_dict = res.summary_tool.dropna().to_dict()['rank']
+                rank_dict = {
+                    key: rank_all_dict[key] for key in models_mixed_mm_fo_el if key in rank_all_dict
+                }
+                if len(rank_dict) > 0:
+                    highest_ranked = min(rank_dict, key=rank_dict.get)
+                    final_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
+
         n_peripherals = len(final_model.statements.ode_system.find_peripheral_compartments())
         modelfeatures = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
         # Model features - 1 peripheral compartment
