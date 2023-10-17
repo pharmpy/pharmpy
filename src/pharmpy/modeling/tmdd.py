@@ -211,6 +211,7 @@ def set_tmdd(model: Model, type: str):
         kd = km * vc
         rinit = r_0 * vc
         rinit_ass = Assignment(sympy.Symbol('RINIT'), rinit)
+        kd_ass = Assignment(sympy.Symbol('KD'), km * vc)
 
         lafree_symb = sympy.Symbol('LAFREE')
         lafree_expr = sympy.Rational(1, 2) * (
@@ -250,11 +251,11 @@ def set_tmdd(model: Model, type: str):
 
         lafreef = sympy.Symbol("LAFREEF")
         lafree_final = Assignment(lafreef, lafree_expr)
-        before = model.statements.before_odes + lafree_ass + rinit_ass
+        before = model.statements.before_odes + lafree_ass + kd_ass + rinit_ass
         after = lafree_final + model.statements.after_odes
         ipred = lafreef / vc
         after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
-    elif type == 'MMAPP':
+    elif type == 'MMAPP':  # FIXME: MMAPP does not work
         model, kmc, kdeg = _create_parameters(model, ['KMC', 'KDEG'])
         target_comp, target_amount = _create_compartments(cb, ['TARGET'])
         ksyn, ksyn_ass = _create_ksyn()

@@ -15,7 +15,7 @@ def product_dict(**kwargs):
         yield dict(zip(keys, instance))
 
 
-def create_qss_models(model, index=1):
+def create_qss_models(model, ests, index=1):
     # Create qss models with different initial estimates from basic pk model
     qss_base_model = set_tmdd(model, type="QSS")
     cmax = get_observations(model).max()
@@ -26,6 +26,31 @@ def create_qss_models(model, index=1):
         set_initial_estimates(set_name(qss_base_model, f"QSS{i}"), inits)
         for i, inits in enumerate(all_inits, start=index)
     ]
+    if "POP_KM" in ests.keys():
+        qss_candidate_models = [
+            set_initial_estimates(
+                model,
+                {
+                    "POP_KDC": ests["POP_KM"],
+                },
+            )
+            for model in qss_candidate_models
+        ]
+    if "POP_VM" in ests.keys() and "POP_R_0" in ests.keys():
+        qss_candidate_models = [
+            set_initial_estimates(
+                model,
+                {
+                    "POP_KINT": ests["POP_VM"] / ests["POP_R_0"],
+                },
+            )
+            for model in qss_candidate_models
+        ]
+    if "IIV_CLMM" in ests.keys():
+        qss_candidate_models = [
+            set_initial_estimates(model, {"IIV_R_0": ests["IIV_CLMM"]})
+            for model in qss_candidate_models
+        ]
     return qss_candidate_models
 
 
@@ -41,7 +66,7 @@ def create_remaining_models(model, ests, parent_model, num_peripherals_qss):
         + create_ib_models(model, ests, parent_model)
         + create_crib_models(model, ests, parent_model)
         + create_wagner_model(model, ests, parent_model)
-        + create_mmapp_model(model, ests, parent_model)
+        + create_mmapp_model(model, ests, parent_model)  # FIXME: Fix MMAPP model
     )
     return models
 
@@ -92,7 +117,12 @@ def create_crib_models(model, ests, parent_model):
     crib_base_model = set_tmdd(model, type="IB")
     crib_base_model = set_initial_estimates(
         crib_base_model,
-        {"POP_KINT": ests['POP_KINT'], "POP_R_0": ests['POP_R_0'], "IIV_R_0": ests['IIV_R_0']},
+        {
+            "POP_KINT": ests['POP_KINT'],
+            "POP_R_0": ests['POP_R_0'],
+            "IIV_R_0": ests['IIV_R_0'],
+            "POP_KDEG": ests['POP_KDEG'],
+        },
     )
     crib1 = set_name(crib_base_model, "structsearch_run9")
     crib1 = crib1.replace(description="CR+IB1", parent_model=parent_model)
@@ -113,11 +143,14 @@ def create_full_models(model, ests, parent_model):
             "POP_R_0": ests['POP_R_0'],
             "IIV_R_0": ests['IIV_R_0'],
             "POP_KDEG": ests['POP_KDEG'],
-            "POP_KON": 0.1 / (ests['POP_KDEG'] * ests['POP_VC']),
         },
     )
     candidates = [
         set_initial_estimates(full_base_model, {'POP_KOFF': koff}) for koff in (0.1, 1, 10, 100)
+    ]
+    candidates = [
+        set_initial_estimates(full_base_model, {'POP_KON': koff / ests['POP_KDC'] * ests['POP_VC']})
+        for koff in (0.1, 1, 10, 100)
     ]
     candidates = [set_name(model, f"structsearch_run{i}") for i, model in enumerate(candidates, 1)]
     candidates = [
