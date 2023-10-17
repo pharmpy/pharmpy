@@ -209,6 +209,7 @@ from .plots import (
     plot_iofv_vs_iofv,
     plot_transformed_eta_distributions,
 )
+from .random_variables import replace_non_random_rvs
 from .results import (
     calculate_aic,
     calculate_bic,
@@ -376,6 +377,7 @@ __all__ = [
     'remove_loq_data',
     'remove_peripheral_compartment',
     'remove_unused_parameters_and_rvs',
+    'replace_non_random_rvs',
     'resample_data',
     'sample_parameters_from_covariance_matrix',
     'sample_individual_estimates',

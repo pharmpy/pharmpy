@@ -1,3 +1,11 @@
+next release
+------------
+
+New features
+============
+
+* Add modeling.replace_non_random_rvs
+
 0.103.0 (2023-10-12)
 --------------------
 
