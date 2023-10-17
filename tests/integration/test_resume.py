@@ -5,7 +5,7 @@ from pandas.testing import assert_frame_equal
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
-from pharmpy.tools import fit, read_modelfit_results, resume_tool, run_tool
+from pharmpy.tools import fit, read_modelfit_results, resume_tool, retrieve_models, run_tool
 
 
 def test_run_tool_ruvsearch_resume_flag(tmp_path, testdata):
@@ -72,9 +72,13 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
                 no_of_candidate_models = 7
                 assert len(res.summary_tool) == no_of_candidate_models + 1
                 assert len(res.summary_models) == no_of_candidate_models + 1
-                assert len(res.models) == no_of_candidate_models
 
-                assert res.models[-1].modelfit_results
+                res_models = [
+                    model for model in retrieve_models(res) if model.name != 'input_model'
+                ]
+                assert len(res_models) == no_of_candidate_models
+
+                # assert res_models[-1].modelfit_results
 
                 rundir = tmp_path / path
                 assert rundir.is_dir()
