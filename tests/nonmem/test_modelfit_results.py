@@ -6,8 +6,10 @@ import pytest
 
 from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
+from pharmpy.model import Parameter, Parameters
+from pharmpy.modeling import read_model
 from pharmpy.tools import read_modelfit_results
-from pharmpy.tools.external.nonmem.results import simfit_results
+from pharmpy.tools.external.nonmem.results import parse_modelfit_results, simfit_results
 from pharmpy.workflows.results import read_results
 
 
@@ -42,12 +44,38 @@ def test_special_models(testdata, load_model_for_test):
     assert res.minimization_successful is False
 
 
-def test_covariance(pheno_path):
+def test_covariance(pheno_path, testdata):
     res = read_modelfit_results(pheno_path)
     cov = res.covariance_matrix
     assert len(cov) == 6
     assert pytest.approx(cov.loc['PTVCL', 'PTVCL'], 1e-13) == 4.41151e-08
     assert pytest.approx(cov.loc['IVV', 'PTVV'], 1e-13) == 7.17184e-05
+
+    res = read_modelfit_results(testdata / 'nonmem/models/pheno5.mod')
+    assert res.covstep_successful is True
+
+
+def test_gradients(testdata):
+    model = read_model(testdata / 'nonmem/pheno.mod')
+    res = read_modelfit_results(testdata / 'nonmem/pheno.mod')
+    gradients = res.gradients
+    gradients_iterations = res.gradients_iterations
+    assert len(gradients) == 5
+    assert not gradients_iterations.empty
+    assert gradients_iterations.columns.to_list()[1::] == model.parameters.names
+    assert res.covstep_successful is None
+
+    # test correct order of parameters
+    tvcl = Parameter.create('TVCL', 0.1)
+    tvv = Parameter.create('TVV', 0.1)
+    ivcl = Parameter.create('IVCL', 0.1)
+    ivv = Parameter.create('IVV', 0.1)
+    sigma = Parameter.create('SIGMA_1_1', 0.1)
+    params = Parameters.create([sigma, ivv, tvcl, ivcl, tvv])
+    params_before = model.parameters.names
+    model = model.replace(parameters=params)
+    res = parse_modelfit_results(model, path=testdata / 'nonmem/pheno.mod')
+    assert res.gradients_iterations.columns.to_list()[1::] == params_before
 
 
 def test_information(pheno_path):
