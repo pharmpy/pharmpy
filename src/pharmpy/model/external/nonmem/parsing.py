@@ -254,9 +254,7 @@ def parse_statements(
                     trans_amounts[sympy.Symbol(f"A_0({i})")] = sympy.Function(f'A_{c}')(0)
             else:
                 for i, amount in enumerate(cm.amounts, start=1):
-                    trans_amounts[sympy.Symbol(f"A({i})")] = sympy.Function(amount.name)(
-                        sympy.Symbol('t')
-                    )
+                    trans_amounts[sympy.Symbol(f"A({i})")] = amount
                     trans_amounts[sympy.Symbol(f"A_0({i})")] = sympy.Function(amount.name)(0)
 
         statements += error.statements

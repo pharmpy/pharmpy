@@ -739,7 +739,6 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
             amounts = list(new_ode_system.amounts)
             for i, amount in enumerate(amounts, start=1):
                 trans[amount] = sympy.Symbol(f"A({i})")
-                trans[sympy.Function(amount.name)(new_ode_system.t)] = sympy.Symbol(f"A({i})")
         new_error = error.update_statements(
             error_statements.subs(trans), model.random_variables, trans
         )

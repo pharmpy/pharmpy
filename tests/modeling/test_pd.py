@@ -21,7 +21,7 @@ def S(x):
 )
 def test_set_direct_effect(load_model_for_test, pd_model, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    conc = sympy.Function(model.statements.ode_system.central_compartment.amount.name)('t') / S("V")
+    conc = model.statements.ode_system.central_compartment.amount / S("V")
     _test_effect_models(set_direct_effect(model, pd_model), pd_model, conc)
 
 

@@ -67,13 +67,12 @@ def add_effect_compartment(model: Model, expr: str):
     >>> model = load_example_model("pheno")
     >>> model = add_effect_compartment(model, "linear")
     >>> model.statements.ode_system.find_compartment("EFFECT")
-    Compartment(EFFECT, amount=A_EFFECT, input=KE0*A_CENTRAL(t)/V)
+    Compartment(EFFECT, amount=A_EFFECT(t), input=KE0*A_CENTRAL(t)/V)
     """
     vc, cl = _get_central_volume_and_cl(model)
 
     odes = model.statements.ode_system
     central = odes.central_compartment
-    central_amount = sympy.Function(central.amount.name)(sympy.Symbol('t'))
     cb = CompartmentalSystemBuilder(odes)
 
     ke0 = sympy.Symbol("KE0")
@@ -81,7 +80,7 @@ def add_effect_compartment(model: Model, expr: str):
     model = add_individual_parameter(model, met.name)
     ke0_ass = Assignment(ke0, 1 / met)
 
-    effect = Compartment.create("EFFECT", input=ke0 * central_amount / vc)
+    effect = Compartment.create("EFFECT", input=ke0 * central.amount / vc)
     cb.add_compartment(effect)
     cb.add_flow(effect, output, ke0)
 
@@ -94,11 +93,7 @@ def add_effect_compartment(model: Model, expr: str):
         )
     )
 
-    conc_e = sympy.Function(model.statements.ode_system.find_compartment("EFFECT").amount.name)(
-        sympy.Symbol('t')
-    )
-
-    model = _add_effect(model, expr, conc_e)
+    model = _add_effect(model, expr, effect.amount)
     return model
 
 
@@ -157,7 +152,7 @@ def set_direct_effect(model: Model, expr: str):
     E =   ⎝        V             ⎠
     """
     vc, cl = _get_central_volume_and_cl(model)
-    conc = sympy.Function(model.statements.ode_system.central_compartment.amount.name)('t') / vc
+    conc = model.statements.ode_system.central_compartment.amount / vc
 
     model = _add_effect(model, expr, conc)
 
@@ -286,11 +281,10 @@ def add_indirect_effect(
     vc, cl = _get_central_volume_and_cl(model)
     odes = model.statements.ode_system
     central = odes.central_compartment
-    central_amount = sympy.Function(central.amount.name)(sympy.Symbol('t'))
-    conc_c = central_amount / vc
+    conc_c = central.amount / vc
 
     response = Compartment.create("RESPONSE")
-    a_response = sympy.Function(response.amount.name)('t')
+    a_response = response.amount
 
     kin = sympy.Symbol("K_IN")
     kout = sympy.Symbol("K_OUT")

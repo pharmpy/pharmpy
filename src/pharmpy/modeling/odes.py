@@ -690,8 +690,7 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
         else:
             model, clmm = _add_parameter(model, 'CLMM', init=clmm_init)
 
-    amount = sympy.Function(central.amount.name)(sympy.Symbol('t'))
-    rate = (clmm * km / (km + amount / vc) + cl) / vc
+    rate = (clmm * km / (km + central.amount / vc) + cl) / vc
     cb = CompartmentalSystemBuilder(odes)
     cb.add_flow(central, output, rate)
     statements = (

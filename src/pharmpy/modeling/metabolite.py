@@ -94,7 +94,7 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
     # dvid_col = model.datainfo.typeix['dvid'][0]
     # dvids = dvid_col.categories
 
-    amount = sympy.Function(metacomp.amount.name)('t')
+    amount = metacomp.amount
 
     if presystemic:
         # QUESTION: Add bioavailability to depot?
