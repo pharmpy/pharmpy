@@ -24,6 +24,7 @@ def create_workflow(
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0)",
 ):
     """Run Modelsearch tool. For more details, see :ref:`modelsearch`.
 
@@ -45,6 +46,8 @@ def create_workflow(
         Results for model
     model : Model
         Pharmpy model
+    strictness : str or None
+        Strictness criteria
 
     Returns
     -------
@@ -71,6 +74,7 @@ def create_workflow(
         cutoff,
         results,
         model,
+        strictness,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -87,6 +91,7 @@ def start(
     cutoff,
     results,
     model,
+    strictness,
 ):
     wb = WorkflowBuilder()
 
@@ -120,6 +125,7 @@ def start(
         post_process,
         rank_type,
         cutoff,
+        strictness,
     )
 
     # Filter the mfl_statements from base model attributes
@@ -230,7 +236,7 @@ def create_base_model(ss, model):
     return base
 
 
-def post_process(rank_type, cutoff, *models):
+def post_process(rank_type, cutoff, strictness, *models):
     res_models = []
     input_model = None
     base_model = False
@@ -269,6 +275,7 @@ def post_process(rank_type, cutoff, *models):
         rank_type,
         cutoff,
         summary_models=summary_models,
+        strictness=strictness,
     )
 
 
@@ -280,6 +287,7 @@ def validate_input(
     iiv_strategy,
     rank_type,
     model,
+    strictness,
 ):
     if not hasattr(algorithms, algorithm):
         raise ValueError(
@@ -310,6 +318,12 @@ def validate_input(
         raise ValueError(
             f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
         )
+
+    if strictness is not None and "rse" in strictness.lower():
+        if model.estimation_steps[-1].parameter_uncertainty_method is None:
+            raise ValueError(
+                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+            )
 
 
 @dataclass(frozen=True)

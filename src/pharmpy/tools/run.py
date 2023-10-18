@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
+import re
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -729,7 +730,7 @@ def summarize_errors(results: Union[ModelfitResults, List[ModelfitResults]]) -> 
 def rank_models(
     base_model: Model,
     models: List[Model],
-    errors_allowed: Optional[List[str]] = None,
+    strictness: Optional[str] = "minimization_successful",
     rank_type: str = 'ofv',
     cutoff: Optional[float] = None,
     bic_type: str = 'mixed',
@@ -745,9 +746,8 @@ def rank_models(
         Base model to compare to
     models : list
         List of models
-    errors_allowed : list or None
-        List of errors that are allowed for ranking. Currently available is: rounding_errors and
-        maxevals_exceeded. Default is None
+    strictness : str or None
+        Strictness criteria that are allowed for ranking. Default is "minimization_successful".
     rank_type : str
         Name of ranking type. Available options are 'ofv', 'aic', 'bic', 'lrt' (OFV with LRT)
     cutoff : float or None
@@ -769,7 +769,6 @@ def rank_models(
     >>> model_1 = load_example_model("pheno")
     >>> model_2 = load_example_model("pheno_linear")
     >>> rank_models(model_1, [model_2],
-    ...             errors_allowed=['rounding_errors'],
     ...             rank_type='lrt') # doctest: +SKIP
     """
     models_all = [base_model] + models
@@ -777,13 +776,13 @@ def rank_models(
     rank_values, delta_values = {}, {}
     models_to_rank = []
 
-    ref_value = _get_rankval(base_model, errors_allowed, rank_type, bic_type, **kwargs)
+    ref_value = _get_rankval(base_model, strictness, rank_type, bic_type, **kwargs)
     model_dict = {model.name: model for model in models_all}
 
     # Filter on strictness
     for model in models_all:
         # Exclude OFV etc. if model was not successful
-        rank_value = _get_rankval(model, errors_allowed, rank_type, bic_type, **kwargs)
+        rank_value = _get_rankval(model, strictness, rank_type, bic_type, **kwargs)
         if np.isnan(rank_value):
             continue
 
@@ -857,22 +856,89 @@ def rank_models(
         return df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
 
 
-def _is_valid_res(res, errors_allowed):
-    if not res or np.isnan(res.ofv):
+class ArrayEvaluator:
+    def __init__(self, x):
+        self.x = x
+
+    def __lt__(self, value):
+        return all(e < value for e in self.x)
+
+    def __eq__(self, value):
+        return all(e == value for e in self.x)
+
+    def __le__(self, value):
+        return all(e <= value for e in self.x)
+
+    def __ge__(self, value):
+        return all(e >= value for e in self.x)
+
+    def __gt__(self, value):
+        return all(e > value for e in self.x)
+
+
+def _is_strictness_fulfilled(res: ModelfitResults, statement: str) -> bool:
+    """Takes a ModelfitResults object  and a statement as input and returns True/False
+    if the evaluation of the statement is True/False.
+    """
+    if res is None or np.isnan(res.ofv):
         return False
-    if not res.minimization_successful:
-        if errors_allowed:
-            if res.termination_cause not in errors_allowed:
-                return False
-            if np.isnan(res.significant_digits):
-                return False
+    if statement is not None:
+        statement = statement.lower()
+        allowed_args = [
+            'minimization_successful',
+            'rounding_errors',
+            'sigdigs',
+            'maxevals_exceeded',
+            'rse',
+            'condition_number',
+            'final_zero_gradient',
+            'estimate_near_boundary',
+        ]
+        unwanted_args = ['and', 'or', 'not']
+        find_all_words = re.findall(r'[^\d\W]+', statement)
+        args_in_statement = [w for w in find_all_words if w not in unwanted_args]
+
+        # Check that only allowed arguments are in the statement
+        if not all(map(lambda x: x in allowed_args, args_in_statement)):
+            raise ValueError(
+                f'Some expressions were not correct. Valid arguments are: {allowed_args}'
+            )
         else:
-            return False
-    return True
+            minimization_successful = res.minimization_successful
+            rounding_errors = res.termination_cause == "rounding_errors"
+            maxevals_exceeded = res.termination_cause == "maxevals_exceeded"
+            sigdigs = ArrayEvaluator([res.significant_digits])
+            if 'condition_number' in args_in_statement and res.covariance_matrix is not None:
+                condition_number = ArrayEvaluator([np.linalg.cond(res.covariance_matrix)])
+            else:
+                condition_number = np.nan
+            if "rse" in args_in_statement:
+                rse = ArrayEvaluator(res.relative_standard_errors)
+            else:
+                rse = np.nan
+            # final_zero_gradient = 'has_zero_gradient' in res.warnings FIXME: add
+            # estimate_near_boundary = 'estimate_near_boundary' in res.warnings FIXME: add
+
+        # dictionary needed because otherwise unused variables will cause lint error
+        return eval(
+            statement,
+            {
+                'minimization_successful': minimization_successful,
+                'rounding_errors': rounding_errors,
+                'maxevals_exceeded': maxevals_exceeded,
+                'sigdigs': sigdigs,
+                'rse': rse,
+                'condition_number': condition_number,
+                # 'final_zero_gradient':final_zero_gradient,
+                # 'estimate_near_boundary':estimate_near_boundary,
+            },
+        )
+    else:
+        return True
 
 
-def _get_rankval(model, errors_allowed, rank_type, bic_type, **kwargs):
-    if not _is_valid_res(model.modelfit_results, errors_allowed):
+def _get_rankval(model, strictness, rank_type, bic_type, **kwargs):
+    if not _is_strictness_fulfilled(model.modelfit_results, strictness):
         return np.nan
     if rank_type in ['ofv', 'lrt']:
         return model.modelfit_results.ofv

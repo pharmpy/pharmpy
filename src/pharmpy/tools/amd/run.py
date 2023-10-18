@@ -54,6 +54,7 @@ def run_amd(
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,
     resume: Optional[bool] = False,
+    strictness: Optional[bool] = "minimization_successful or (rounding_errors and sigdigs>=0)",
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -99,6 +100,8 @@ def run_amd(
         Path to run AMD in
     resume : bool
         Whether to allow resuming previous run
+    strictness : str or None
+        Strictness criteria
 
     Returns
     -------

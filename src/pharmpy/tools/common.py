@@ -65,6 +65,7 @@ def create_results(
     rank_type,
     cutoff,
     bic_type='mixed',
+    strictness="minimization_successful or (rounding_errors and sigdigs >= 0)",  # FIXME: set default to None
     **rest,
 ) -> T:
     # FIXME: Remove once modelfit_results have been removed from Model object
@@ -73,7 +74,7 @@ def create_results(
         base_model = _model_entry_to_model(base_model)
         res_models = [_model_entry_to_model(model_entry) for model_entry in res_models]
 
-    summary_tool = summarize_tool(res_models, base_model, rank_type, cutoff, bic_type)
+    summary_tool = summarize_tool(res_models, base_model, rank_type, cutoff, bic_type, strictness)
     if rank_type == 'lrt':
         delta_name = 'dofv'
     elif rank_type == 'mbic':
@@ -128,6 +129,7 @@ def summarize_tool(
     rank_type,
     cutoff,
     bic_type='mixed',
+    strictness=None,
 ) -> DataFrame:
     if rank_type == 'mbic':
         rank_type = 'bic'
@@ -142,7 +144,7 @@ def summarize_tool(
     df_rank = rank_models(
         start_model,
         models,
-        errors_allowed=['rounding_errors'],
+        strictness=strictness,
         rank_type=rank_type,
         cutoff=cutoff,
         bic_type=bic_type,
