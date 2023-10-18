@@ -92,13 +92,8 @@ def plot_parameter_estimates_histogram(res):
 
 
 def calculate_results(
-    bootstrap_models, results, original_model=None, included_individuals=None, dofv_results=None
+    bootstrap_models, results, original_results=None, included_individuals=None, dofv_results=None
 ):
-    if original_model:
-        original_results = original_model.modelfit_results
-    else:
-        original_results = None
-
     if original_results is None:
         warnings.warn(
             'No results for the base model could be read. Cannot calculate bias and '
