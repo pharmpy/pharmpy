@@ -1520,17 +1520,27 @@ def _get_drug_metabolite_parameters(model, dv=2):
     statements = model.statements
     ode = statements.ode_system
 
-    dv1_deps = [s.name for s in statements.dependencies(get_dv_symbol(model, dv=1))]
+    dv1_deps = [
+        s
+        for s in model.statements.after_odes.full_expression(get_dv_symbol(model, dv=1)).atoms(
+            sympy.Function
+        )
+    ]
     dv1_comp = None
-    dv2_deps = [s.name for s in statements.dependencies(get_dv_symbol(model, dv=dv))]
+    dv2_deps = [
+        s
+        for s in model.statements.after_odes.full_expression(get_dv_symbol(model, dv=dv)).atoms(
+            sympy.Function
+        )
+    ]
     dv2_comp = None
 
     comp_names = ode.compartment_names
     for comp in [ode.find_compartment(name) for name in comp_names]:
         amounts = comp.amount
-        if amounts.name in dv1_deps:
+        if amounts in dv1_deps:
             dv1_comp = comp
-        if amounts.name in dv2_deps:
+        if amounts in dv2_deps:
             dv2_comp = comp
 
     if dv2_comp is not None:
