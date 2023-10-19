@@ -55,6 +55,10 @@ class ThetaRecord(Record):
         inits = []
         for theta in self.root.subtrees('theta'):
             init = eval_token(theta.subtree('init').leaf('NUMERIC'))
+            if init == MAX_UPPER_BOUND or init == MIN_LOWER_BOUND:
+                raise ModelSyntaxError(
+                    f"Initial estimate of THETA cannot be {MAX_UPPER_BOUND} or {MIN_LOWER_BOUND}"
+                )
             n = self._multiple(theta)
             inits.extend([init] * n)
         return inits

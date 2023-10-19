@@ -107,6 +107,8 @@ def test_parameters(parser, buf, expected):
         ('$THETA (0,1 FIX)'),
         ('$THETA (0,1,1 FIX)'),
         ('$THETA 0'),
+        ('$THETA -1000000'),
+        ('$THETA (0,1000000)'),
     ],
 )
 def test_bad_thetas(parser, buf):
