@@ -11,7 +11,7 @@ INF = float("inf")
 @pytest.mark.parametrize(
     'buf,expected',
     [
-        ('$THETA 0', [(None, 0, -INF, INF, False)]),
+        ('$THETA 0 FIX', [(None, 0, -INF, INF, True)]),
         ('$THETA (0,1,INF)', [(None, 1, 0, INF, False)]),
         ('$THETA    12.3 \n\n', [(None, 12.3, -INF, INF, False)]),
         ('$THETA  (0,0.00469) ; CL', [('CL', 0.00469, 0, INF, False)]),
@@ -106,6 +106,7 @@ def test_parameters(parser, buf, expected):
         ('$THETA (0,1,2000000)'),
         ('$THETA (0,1 FIX)'),
         ('$THETA (0,1,1 FIX)'),
+        ('$THETA 0'),
     ],
 )
 def test_bad_thetas(parser, buf):

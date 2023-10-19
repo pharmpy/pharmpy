@@ -64,6 +64,7 @@ class ThetaRecord(Record):
         # List of fixedness for all thetas
         fixs = []
         for theta in self.root.subtrees('theta'):
+            init = eval_token(theta.subtree('init').leaf('NUMERIC'))
             # Raise if FIX is within the parentheses and explicit bounds
             # are used that are not the same as the init
             inparens = False
@@ -77,7 +78,6 @@ class ThetaRecord(Record):
                     if inparens:
                         lowtok = lower_token(theta)
                         uptok = upper_token(theta)
-                        init = eval_token(theta.subtree('init').leaf('NUMERIC'))
                         if lowtok is not None:
                             message = (
                                 "FIX inside parentheses of $THETA requires all bounds to be"
@@ -93,6 +93,8 @@ class ThetaRecord(Record):
                                     raise ModelSyntaxError(f"{message}init={init}, lower={lowtok}")
                     fix = True
                     break
+            if not fix and init == 0:
+                raise ModelSyntaxError("Initial estimate of THETA cannot be 0 unless fixed")
             n = self._multiple(theta)
             fixs.extend([fix] * n)
         return fixs
