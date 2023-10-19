@@ -891,7 +891,7 @@ def _is_strictness_fulfilled(res: ModelfitResults, statement: str) -> bool:
             'maxevals_exceeded',
             'rse',
             'condition_number',
-            'final_zero_gradient',
+            'has_zero_gradient',
             'estimate_near_boundary',
         ]
         unwanted_args = ['and', 'or', 'not']
@@ -916,8 +916,8 @@ def _is_strictness_fulfilled(res: ModelfitResults, statement: str) -> bool:
                 rse = ArrayEvaluator(res.relative_standard_errors)
             else:
                 rse = np.nan
-            # final_zero_gradient = 'has_zero_gradient' in res.warnings FIXME: add
-            # estimate_near_boundary = 'estimate_near_boundary' in res.warnings FIXME: add
+            final_zero_gradient = 'has_zero_gradient' in res.warnings
+            estimate_near_boundary = 'estimate_near_boundary' in res.warnings
 
         # dictionary needed because otherwise unused variables will cause lint error
         return eval(
@@ -929,8 +929,8 @@ def _is_strictness_fulfilled(res: ModelfitResults, statement: str) -> bool:
                 'sigdigs': sigdigs,
                 'rse': rse,
                 'condition_number': condition_number,
-                # 'final_zero_gradient':final_zero_gradient,
-                # 'estimate_near_boundary':estimate_near_boundary,
+                'has_zero_gradient': final_zero_gradient,
+                'estimate_near_boundary': estimate_near_boundary,
             },
         )
     else:

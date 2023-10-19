@@ -252,13 +252,19 @@ class DummyModel:
 
 class DummyResults:
     def __init__(
-        self, ofv, minimization_successful=True, termination_cause=None, significant_digits=5
+        self,
+        ofv,
+        minimization_successful=True,
+        termination_cause=None,
+        significant_digits=5,
+        warnings=[],
     ):
         self.ofv = ofv
         self.minimization_successful = minimization_successful
         self.termination_cause = termination_cause
         # 5 is an arbitrary number, this is relevant in test if sig. digits is unreportable (NaN)
         self.significant_digits = significant_digits
+        self.warnings = warnings
 
 
 def test_rank_models():
@@ -525,6 +531,16 @@ def test_load_example_modelfit_results():
         (
             'nonmem/pheno.mod',
             'minimization_successful and sigdigs > 3',
+            True,
+        ),
+        (
+            'nonmem/pheno.mod',
+            'has_zero_gradient',
+            False,
+        ),
+        (
+            'nonmem/modelfit_results/onePROB/oneEST/noSIM/near_bounds.mod',
+            'estimate_near_boundary',
             True,
         ),
     ],

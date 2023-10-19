@@ -384,10 +384,10 @@ def _parse_grd(
     last_row = last_row.drop(columns=['ITERATION'])
     last_row = last_row.squeeze(axis=0).rename('gradients')
 
-    if last_row.min() != 0:
-        has_zero_gradient = False
-    else:
+    if (last_row == 0).any():
         has_zero_gradient = True
+    else:
+        has_zero_gradient = False
 
     return gradients_table, has_zero_gradient, last_row
 
