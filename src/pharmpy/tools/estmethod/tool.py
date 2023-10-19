@@ -13,7 +13,7 @@ from pharmpy.modeling import has_linear_odes
 from pharmpy.tools import summarize_errors, summarize_modelfit_results
 from pharmpy.tools.common import ToolResults
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 METHODS = ('FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES')
@@ -75,7 +75,7 @@ def create_workflow(
     algorithm_func = getattr(algorithms, algorithm)
 
     if model is not None:
-        start_task = Task('start_estmethod', start, model)
+        start_task = Task('start_estmethod', start, model, results)
     else:
         start_task = Task('start_estmethod', start)
 
@@ -94,12 +94,11 @@ def create_workflow(
     wf_fit = create_fit_workflow(n=len(wb.output_tasks))
     wb.insert_workflow(wf_fit, predecessors=wb.output_tasks)
 
+    model_tasks = [start_task] + wb.output_tasks
     if task_base_model_fit:
-        model_tasks = wb.output_tasks + task_base_model_fit
-    else:
-        model_tasks = wb.output_tasks
+        model_tasks.extend(task_base_model_fit)
 
-    task_post_process = Task('post_process', post_process, model)
+    task_post_process = Task('post_process', post_process)
     wb.add_task(task_post_process, predecessors=model_tasks)
 
     return Workflow(wb)
@@ -114,38 +113,30 @@ def _format_input(input_option, default_option):
         return [entry.upper() for entry in input_option]
 
 
-def start(model):
-    return model
+def start(model, modelfit_results):
+    log = modelfit_results.log if modelfit_results else None
+    model_entry = ModelEntry(model, modelfit_results=modelfit_results, log=log)
+    return model_entry
 
 
-def post_process(input_model, *models):
-    res_models = []
-    base_model = input_model
-    for model in models:
-        if model.name == 'base_model':
-            base_model = model
-        else:
-            res_models.append(model)
+def post_process(*model_entries):
+    summary_tool = summarize_tool(model_entries)
 
-    summary_tool = summarize_tool(models)
+    res_models = [model_entry.model for model_entry in model_entries]
+    res_modelfit_results = [model_entry.modelfit_results for model_entry in model_entries]
+
     summary_models = summarize_modelfit_results(
-        [base_model.modelfit_results] + [model.modelfit_results for model in res_models],
+        res_modelfit_results,
         include_all_estimation_steps=True,
     )
-    summary_errors = summarize_errors(m.modelfit_results for m in models)
-    summary_settings = summarize_estimation_steps([base_model] + res_models)
-
-    if base_model.name == input_model.name:
-        models = res_models
-    else:
-        models = [base_model] + res_models
+    summary_errors = summarize_errors(res_modelfit_results)
+    summary_settings = summarize_estimation_steps(res_models)
 
     return EstMethodResults(
         summary_tool=summary_tool,
         summary_models=summary_models,
         summary_settings=summary_settings,
         summary_errors=summary_errors,
-        models=models,
     )
 
 
@@ -156,12 +147,12 @@ class EstMethodResults(ToolResults):
     summary_settings: Optional[Any] = None
 
 
-def summarize_tool(models):
+def summarize_tool(model_entries):
     rows = {}
 
-    for model in models:
+    for model_entry in model_entries:
+        model, res = model_entry.model, model_entry.modelfit_results
         description, parent_model = model.description, model.parent_model
-        res = model.modelfit_results
         if res is not None:
             ofv = res.ofv
             runtime_est = res.estimation_runtime_iterations.iloc[0]

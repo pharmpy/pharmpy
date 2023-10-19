@@ -3,7 +3,7 @@ import itertools
 from pharmpy.modeling import add_estimation_step, remove_estimation_step, set_ode_solver
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
 
 def exhaustive(methods, solvers, parameter_uncertainty_methods):
@@ -18,15 +18,20 @@ def exhaustive(methods, solvers, parameter_uncertainty_methods):
     for method, solver, parameter_uncertainty_method in itertools.product(
         methods, solvers, parameter_uncertainty_methods
     ):
-        wf_estmethod = _create_candidate_model_wf(
-            candidate_no,
+        model_name = f'estmethod_run{candidate_no}'
+        task_create_candidate = Task(
+            'create_candidate',
+            _create_candidate_model,
+            model_name,
             method,
             solver,
             parameter_uncertainty_method,
             add_eval_after_est,
-            update_inits=False,
+            False,
+            False,
         )
-        wb.insert_workflow(wf_estmethod, predecessors=task_start)
+
+        wb.add_task(task_create_candidate, predecessors=task_start)
         candidate_no += 1
 
     return Workflow(wb), None
@@ -62,28 +67,35 @@ def exhaustive_with_update(methods, solvers, parameter_uncertainty_methods):
             and solver is None
             and parameter_uncertainty_method == parameter_uncertainty_methods[0]
         ):
-            # Create model with original estimates
-            wf_estmethod_original = _create_candidate_model_wf(
-                candidate_no,
+            model_name = f'estmethod_run{candidate_no}'
+            task_create_candidate = Task(
+                'create_candidate',
+                _create_candidate_model,
+                model_name,
                 method,
                 solver,
                 parameter_uncertainty_method,
                 add_eval_after_est,
-                update_inits=False,
+                False,
+                False,
             )
-            wb.insert_workflow(wf_estmethod_original, predecessors=task_base_model_fit)
+            wb.add_task(task_create_candidate, predecessors=task_base_model_fit)
             candidate_no += 1
 
         # Create model with updated estimates from FOCE
-        wf_estmethod_update = _create_candidate_model_wf(
-            candidate_no,
+        model_name = f'estmethod_run{candidate_no}'
+        task_create_candidate = Task(
+            'create_candidate',
+            _create_candidate_model,
+            model_name,
             method,
             solver,
             parameter_uncertainty_method,
             add_eval_after_est,
-            update_inits=True,
+            True,
+            False,
         )
-        wb.insert_workflow(wf_estmethod_update, predecessors=task_base_model_fit)
+        wb.add_task(task_create_candidate, predecessors=task_base_model_fit)
         candidate_no += 1
 
     return Workflow(wb), task_base_model_fit
@@ -101,65 +113,32 @@ def exhaustive_only_eval(methods, solvers, parameter_uncertainty_methods):
     for method, solver, parameter_uncertainty_method in itertools.product(
         methods, solvers, parameter_uncertainty_methods
     ):
-        wf_estmethod = _create_candidate_model_wf(
-            candidate_no,
+        model_name = f'estmethod_run{candidate_no}'
+        task_create_candidate = Task(
+            'create_candidate',
+            _create_candidate_model,
+            model_name,
             method,
             solver,
             parameter_uncertainty_method,
             add_eval_after_est,
-            update_inits=False,
-            only_evaluation=True,
+            False,
+            True,
         )
-        wb.insert_workflow(wf_estmethod, predecessors=task_start)
+
+        wb.add_task(task_create_candidate, predecessors=task_start)
         candidate_no += 1
 
     return Workflow(wb), None
 
 
-def start(model):
-    return model
+def start(model_entry):
+    return model_entry
 
 
-def _create_candidate_model_wf(
-    candidate_no,
-    method,
-    solver,
-    parameter_uncertainty_method,
-    add_eval_after_est,
-    update_inits,
-    only_evaluation=False,
-):
-    wb = WorkflowBuilder()
+def _create_base_model(parameter_uncertainty_method, add_eval_after_est, model_entry):
+    model = model_entry.model
 
-    model_name = f'estmethod_run{candidate_no}'
-    task_copy = Task('copy_model', _copy_model, model_name)
-    wb.add_task(task_copy)
-
-    if update_inits:
-        task_update_inits = Task('update_inits', update_initial_estimates)
-        wb.add_task(task_update_inits, predecessors=task_copy)
-        task_prev = task_update_inits
-    else:
-        task_prev = task_copy
-    task_create_candidate = Task(
-        'create_candidate',
-        _create_candidate_model,
-        method,
-        solver,
-        parameter_uncertainty_method,
-        add_eval_after_est,
-        update_inits,
-        only_evaluation,
-    )
-    wb.add_task(task_create_candidate, predecessors=task_prev)
-    return Workflow(wb)
-
-
-def _copy_model(name, model):
-    return model.replace(name=name)
-
-
-def _create_base_model(parameter_uncertainty_method, add_eval_after_est, model):
     est_settings = _create_est_settings("FOCE", parameter_uncertainty_method, add_eval_after_est)
     est_method = est_settings["method"]
     all_methods = [est_method]
@@ -191,21 +170,27 @@ def _create_base_model(parameter_uncertainty_method, add_eval_after_est, model):
     if add_eval_after_est:
         base_model = add_estimation_step(base_model, **eval_settings)
 
-    return base_model
+    base_entry = ModelEntry.create(base_model, modelfit_results=None, parent=model_entry.model)
+    return base_entry
 
 
 def _create_candidate_model(
+    model_name,
     method,
     solver,
     parameter_uncertainty_method,
     add_eval_after_est,
     update_inits,
     only_evaluation,
-    model,
+    model_entry,
 ):
+    if update_inits:
+        model = update_initial_estimates(model_entry.model, model_entry.modelfit_results)
+    else:
+        model = model_entry.model
+
     est_settings = None
     eval_settings = None
-    all_methods = []
 
     laplace = True if method == 'LAPLACE' else False
 
@@ -223,12 +208,13 @@ def _create_candidate_model(
             all_methods.append(eval_settings['method'])
 
     model = model.replace(
+        name=model_name,
         description=_create_description(
             methods=all_methods,
             solver=solver,
             parameter_uncertainty_method=parameter_uncertainty_method,
             update_inits=update_inits,
-        )
+        ),
     )
 
     while len(model.estimation_steps) > 0:
@@ -242,7 +228,8 @@ def _create_candidate_model(
     if solver:
         model = set_ode_solver(model, solver)
 
-    return model
+    candidate_entry = ModelEntry.create(model, modelfit_results=None, parent=model_entry.model)
+    return candidate_entry
 
 
 def _create_est_settings(method, parameter_uncertainty_method=None, add_eval_after_est=False):

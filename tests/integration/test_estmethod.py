@@ -1,7 +1,7 @@
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.tools import run_estmethod
+from pharmpy.tools import retrieve_models, run_estmethod
 
 
 @pytest.mark.parametrize(
@@ -31,11 +31,13 @@ def test_estmethod(
             methods=methods,
             parameter_uncertainty_methods=parameter_uncertainty_methods,
             model=start_model,
+            results=start_model.modelfit_results,  # FIXME: Use ModelEntry once implemented in conftest
         )
 
-        assert len(res.summary_tool) == no_of_candidates
-        assert len(res.models) == no_of_candidates
-        assert advan_ref in res.models[-1].model_code
+        assert len(res.summary_tool) == no_of_candidates + 1
+        res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
+        assert len(res_models) == no_of_candidates
+        assert advan_ref in res_models[-1].model_code
         rundir = tmp_path / 'estmethod_dir1'
         assert rundir.is_dir()
         assert model_count(rundir) == no_of_candidates
