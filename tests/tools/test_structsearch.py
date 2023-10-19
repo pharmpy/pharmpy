@@ -30,7 +30,7 @@ ests = pd.Series(
 
 def test_create_qss_models(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
-    models = create_qss_models(model)
+    models = create_qss_models(model, ests)
     assert len(models) == 8
 
 
