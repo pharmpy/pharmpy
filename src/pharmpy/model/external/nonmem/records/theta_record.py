@@ -4,11 +4,13 @@ from typing import Union, cast
 
 from pharmpy.internals.parse import AttrToken, AttrTree
 from pharmpy.internals.parse.generic import eval_token, remove_token_and_space
+from pharmpy.model import ModelSyntaxError
 
 from .record import Record
 
 MAX_UPPER_BOUND = 1000000
 MIN_LOWER_BOUND = -1000000
+INF = float("inf")
 
 
 class ThetaRecord(Record):
@@ -47,19 +49,27 @@ class ThetaRecord(Record):
             if theta.find('low'):
                 low = theta.subtree('low')
                 if low.find('NEG_INF'):
-                    lower = MIN_LOWER_BOUND
+                    lower = -INF
                 else:
                     lower = eval_token(next(iter(low.tokens)))
+                    if lower == MIN_LOWER_BOUND:
+                        lower = -INF
+                    elif lower < MIN_LOWER_BOUND:
+                        raise ModelSyntaxError(f"Too low lower bound: {lower} < {MIN_LOWER_BOUND}")
             else:
-                lower = MIN_LOWER_BOUND
+                lower = -INF
             if theta.find('up'):
                 up = theta.subtree('up')
                 if up.find('POS_INF'):
-                    upper = MAX_UPPER_BOUND
+                    upper = INF
                 else:
                     upper = eval_token(next(iter(up.tokens)))
+                    if upper == MAX_UPPER_BOUND:
+                        upper = INF
+                    elif upper > MAX_UPPER_BOUND:
+                        raise ModelSyntaxError(f"Too high upper bound: {upper} > {MAX_UPPER_BOUND}")
             else:
-                upper = MAX_UPPER_BOUND
+                upper = INF
             n = self._multiple(theta)
             bounds.extend([(lower, upper)] * n)
         return bounds

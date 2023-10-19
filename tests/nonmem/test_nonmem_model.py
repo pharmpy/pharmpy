@@ -100,9 +100,9 @@ def test_validate():
 def test_parameters(pheno):
     params = pheno.parameters
     assert len(params) == 6
-    assert pheno.parameters['PTVCL'] == Parameter('PTVCL', 0.00469307, lower=0, upper=1000000)
-    assert pheno.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=1000000)
-    assert pheno.parameters['THETA_3'] == Parameter('THETA_3', 0.1, lower=-0.99, upper=1000000)
+    assert pheno.parameters['PTVCL'] == Parameter('PTVCL', 0.00469307, lower=0, upper=float("inf"))
+    assert pheno.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=float("inf"))
+    assert pheno.parameters['THETA_3'] == Parameter('THETA_3', 0.1, lower=-0.99, upper=float("inf"))
     assert pheno.parameters['IVCL'] == Parameter('IVCL', 0.0309626, lower=0, upper=float("inf"))
     assert pheno.parameters['IVV'] == Parameter('IVV', 0.031128, lower=0, upper=float("inf"))
     assert pheno.parameters['SIGMA_1_1'] == Parameter(
@@ -122,9 +122,11 @@ def test_set_parameters(pheno_path, load_model_for_test):
         'SIGMA_1_1': 0.3,
     }
     model = set_initial_estimates(pheno, params)
-    assert model.parameters['PTVCL'] == Parameter('PTVCL', 0.75, lower=0, upper=1000000)
-    assert model.parameters['PTVV'] == Parameter('PTVV', 0.5, lower=0, upper=1000000)
-    assert model.parameters['THETA_3'] == Parameter('THETA_3', 0.25, lower=-0.99, upper=1000000)
+    assert model.parameters['PTVCL'] == Parameter('PTVCL', 0.75, lower=0, upper=float("inf"))
+    assert model.parameters['PTVV'] == Parameter('PTVV', 0.5, lower=0, upper=float("inf"))
+    assert model.parameters['THETA_3'] == Parameter(
+        'THETA_3', 0.25, lower=-0.99, upper=float("inf")
+    )
     assert model.parameters['IVCL'] == Parameter('IVCL', 0.1, lower=0, upper=float("inf"))
     assert model.parameters['IVV'] == Parameter('IVV', 0.2, lower=0, upper=float("inf"))
     assert model.parameters['SIGMA_1_1'] == Parameter('SIGMA_1_1', 0.3, lower=0, upper=float("inf"))
@@ -139,8 +141,8 @@ def test_set_parameters(pheno_path, load_model_for_test):
     assert str(sigmas[0]) == '$SIGMA 0.3\n'
 
     model = set_initial_estimates(pheno, {'PTVCL': 18})
-    assert model.parameters['PTVCL'] == Parameter('PTVCL', 18, lower=0, upper=1000000)
-    assert model.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=1000000)
+    assert model.parameters['PTVCL'] == Parameter('PTVCL', 18, lower=0, upper=float("inf"))
+    assert model.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=float("inf"))
 
     model = create_joint_distribution(pheno, individual_estimates=res.individual_estimates)
     with pytest.raises(UserWarning, match='Adjusting initial'):
