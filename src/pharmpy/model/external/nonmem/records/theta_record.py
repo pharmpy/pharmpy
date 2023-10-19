@@ -95,7 +95,6 @@ class ThetaRecord(Record):
                     break
             n = self._multiple(theta)
             fixs.extend([fix] * n)
-            theta.treeprint()
         return fixs
 
     @property
