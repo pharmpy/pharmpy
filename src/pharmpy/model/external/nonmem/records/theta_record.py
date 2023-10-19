@@ -7,8 +7,8 @@ from pharmpy.internals.parse.generic import eval_token, remove_token_and_space
 
 from .record import Record
 
-max_upper_bound = 1000000
-min_lower_bound = -1000000
+MAX_UPPER_BOUND = 1000000
+MIN_LOWER_BOUND = -1000000
 
 
 class ThetaRecord(Record):
@@ -47,19 +47,19 @@ class ThetaRecord(Record):
             if theta.find('low'):
                 low = theta.subtree('low')
                 if low.find('NEG_INF'):
-                    lower = min_lower_bound
+                    lower = MIN_LOWER_BOUND
                 else:
                     lower = eval_token(next(iter(low.tokens)))
             else:
-                lower = min_lower_bound
+                lower = MIN_LOWER_BOUND
             if theta.find('up'):
                 up = theta.subtree('up')
                 if up.find('POS_INF'):
-                    upper = max_upper_bound
+                    upper = MAX_UPPER_BOUND
                 else:
                     upper = eval_token(next(iter(up.tokens)))
             else:
-                upper = max_upper_bound
+                upper = MAX_UPPER_BOUND
             n = self._multiple(theta)
             bounds.extend([(lower, upper)] * n)
         return bounds
