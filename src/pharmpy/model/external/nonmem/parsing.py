@@ -41,7 +41,21 @@ def parse_thetas(control_stream):
         inits.extend(theta_record.inits)
         fixs.extend(theta_record.fixs)
         names.extend(theta_record.comment_names)
+    fixs = _fix_thetas_with_same_bounds(bounds, inits, fixs)
     return names, bounds, inits, fixs
+
+
+def _fix_thetas_with_same_bounds(bounds, inits, fixs):
+    # NONMEM will autofix thetas having all bounds equal
+    new_fix = []
+    for bound, init, fix in zip(bounds, inits, fixs):
+        lower = bound[0]
+        upper = bound[1]
+        if lower == upper == init:
+            new_fix.append(True)
+        else:
+            new_fix.append(fix)
+    return new_fix
 
 
 def parse_omegas_sigmas(control_stream, record_name):

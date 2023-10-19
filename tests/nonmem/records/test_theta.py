@@ -1,6 +1,7 @@
 import pytest
 
 from pharmpy.model import Parameter
+from pharmpy.model.external.nonmem.parsing import parse_thetas
 from pharmpy.modeling import set_lower_bounds, set_upper_bounds
 
 
@@ -66,26 +67,30 @@ from pharmpy.modeling import set_lower_bounds, set_upper_bounds
                 ('V', 2, -1000000, 1000000, True),
             ],
         ),
+        ('$THETA (1,1,1)\n', [(None, 1.0, 1.0, 1.0, True)]),
+        ('$THETA (1,1)\n', [(None, 1.0, 1.0, 1000000, False)]),
     ],
 )
 def test_parameters(parser, buf, expected):
-    control_stream = parser.parse(buf)
-    rec = control_stream.records[0]
+    control_stream = parser.parse("$PROB\n" + buf)
+    names, bounds, inits, fixs = parse_thetas(control_stream)
 
     correct_names = [name for name, _, _, _, _ in expected]
-    assert rec.comment_names == correct_names
+    assert names == correct_names
 
     correct_inits = [init for _, init, _, _, _ in expected]
-    assert rec.inits == correct_inits
+    assert inits == correct_inits
 
     correct_lower = [lower for _, _, lower, _, _ in expected]
-    assert [lower for lower, _ in rec.bounds] == correct_lower
+    lower = [b[0] for b in bounds]
+    assert lower == correct_lower
 
     correct_upper = [upper for _, _, _, upper, _ in expected]
-    assert [upper for _, upper in rec.bounds] == correct_upper
+    upper = [b[1] for b in bounds]
+    assert upper == correct_upper
 
     correct_fix = [fix for _, _, _, _, fix in expected]
-    assert rec.fixs == correct_fix
+    assert fixs == correct_fix
 
 
 @pytest.mark.usefixtures('parser')
