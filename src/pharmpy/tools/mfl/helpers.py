@@ -12,6 +12,7 @@ from .feature.elimination import features as elimination_features
 from .feature.feature import Feature, FeatureFn, FeatureKey
 from .feature.indirect_effect import features as indirect_effect_features
 from .feature.lagtime import features as lagtime_features
+from .feature.metabolite import features as metabolite_features
 from .feature.peripherals import features as peripherals_features
 from .feature.transits import features as transits_features
 from .statement.statement import Statement
@@ -26,13 +27,19 @@ modelsearch_features = (
     lagtime_features,
 )
 structsearch_pd_features = (direct_effect_features, effect_comp_features, indirect_effect_features)
+structsearch_metabolite_features = (metabolite_features, peripherals_features)
 
 
 def all_funcs(model: Model, statements: Iterable[Statement]):
     return funcs(
         model,
         statements,
-        (*modelsearch_features, covariate_features, *structsearch_pd_features),
+        (
+            *modelsearch_features,
+            covariate_features,
+            *structsearch_pd_features,
+            *structsearch_metabolite_features,
+        ),
     )
 
 

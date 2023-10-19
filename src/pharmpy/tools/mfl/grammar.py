@@ -27,6 +27,7 @@ definition: "LET"i "(" VARIABLE_NAME "," values ")"
 
 _feature: absorption | elimination | peripherals | transits | lagtime
             | covariate | direct_effect | effect_comp | indirect_effect
+            | metabolite
 
 absorption: "ABSORPTION"i "(" (_absorption_option) ")"
 elimination: "ELIMINATION"i "(" (_elimination_option) ")"
@@ -39,6 +40,8 @@ direct_effect: "DIRECTEFFECT"i "(" (_pdtype_option) ")"
 effect_comp: "EFFECTCOMP"i "(" (_pdtype_option) ")"
 indirect_effect: "INDIRECTEFFECT"i "(" _pdtype_option "," _production_option ")"
 
+metabolite: "METABOLITE"i "(" (_metabolite_option) ")"
+
 _pdtype_option: pdtype_modes | pdtype_wildcard
 pdtype_modes: PDTYPE_MODE | "[" [PDTYPE_MODE ("," PDTYPE_MODE)*] "]"
 PDTYPE_MODE: "linear"i | "Emax"i | "sigmoid"i
@@ -48,6 +51,11 @@ _production_option: production_modes | production_wildcard
 production_modes: PRODUCTION_MODE
 PRODUCTION_MODE: "production"i | "degradation"i
 production_wildcard: WILDCARD
+
+_metabolite_option: metabolite_modes | metabolite_wildcard
+metabolite_modes: METABOLITE_MODE | "[" [METABOLITE_MODE ("," METABOLITE_MODE)*] "]"
+METABOLITE_MODE: "basic"i | "psc"i
+metabolite_wildcard: WILDCARD
 
 _absorption_option: absorption_modes | absorption_wildcard
 absorption_modes: ABSORPTION_MODE | "[" [ABSORPTION_MODE ("," ABSORPTION_MODE)*] "]"
