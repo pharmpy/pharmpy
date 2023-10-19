@@ -37,6 +37,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     keep: Optional[List[str]] = None,
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0)",
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -58,6 +59,8 @@ def create_workflow(
         Pharmpy model
     keep :  List[str]
         List of IIVs to keep
+    strictness : str or None
+        Strictness criteria
 
     Returns
     -------
@@ -75,7 +78,16 @@ def create_workflow(
 
     wb = WorkflowBuilder(name='iivsearch')
     start_task = Task(
-        'start_iiv', start, model, results, algorithm, iiv_strategy, rank_type, cutoff, keep
+        'start_iiv',
+        start,
+        model,
+        results,
+        algorithm,
+        iiv_strategy,
+        rank_type,
+        cutoff,
+        keep,
+        strictness,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -84,7 +96,7 @@ def create_workflow(
 
 
 def create_step_workflow(
-    input_model_entry, base_model_entry, wf_algorithm, iiv_strategy, rank_type, cutoff
+    input_model_entry, base_model_entry, wf_algorithm, iiv_strategy, rank_type, cutoff, strictness
 ):
     wb = WorkflowBuilder()
     start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model_entry)
@@ -100,7 +112,13 @@ def create_step_workflow(
     wb.insert_workflow(wf_algorithm)
 
     task_result = Task(
-        'results', post_process, rank_type, cutoff, input_model_entry, base_model_entry.model.name
+        'results',
+        post_process,
+        rank_type,
+        cutoff,
+        strictness,
+        input_model_entry,
+        base_model_entry.model.name,
     )
 
     post_process_tasks = [base_model_task] + wb.output_tasks
@@ -109,7 +127,9 @@ def create_step_workflow(
     return Workflow(wb)
 
 
-def start(context, input_model, input_res, algorithm, iiv_strategy, rank_type, cutoff, keep):
+def start(
+    context, input_model, input_res, algorithm, iiv_strategy, rank_type, cutoff, keep, strictness
+):
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
 
     if iiv_strategy != 'no_add':
@@ -147,7 +167,13 @@ def start(context, input_model, input_res, algorithm, iiv_strategy, rank_type, c
             wf_algorithm = algorithm_func(base_model_entry.model, index_offset=no_of_models)
 
         wf = create_step_workflow(
-            input_model_entry, base_model_entry, wf_algorithm, iiv_strategy, rank_type, cutoff
+            input_model_entry,
+            base_model_entry,
+            wf_algorithm,
+            iiv_strategy,
+            rank_type,
+            cutoff,
+            strictness,
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
 
@@ -240,7 +266,7 @@ def _add_iiv(iiv_strategy, model, modelfit_results):
     return model
 
 
-def post_process(rank_type, cutoff, input_model_entry, base_model_name, *model_entries):
+def post_process(rank_type, cutoff, strictness, input_model_entry, base_model_name, *model_entries):
     res_model_entries = []
     base_model_entry = None
     for model_entry in model_entries:
@@ -272,6 +298,7 @@ def post_process(rank_type, cutoff, input_model_entry, base_model_name, *model_e
         rank_type,
         cutoff,
         bic_type='iiv',
+        strictness=strictness,
     )
 
     summary_tool = res.summary_tool
@@ -291,6 +318,7 @@ def validate_input(
     rank_type,
     model,
     keep,
+    strictness,
 ):
     if algorithm not in IIV_ALGORITHMS:
         raise ValueError(
@@ -314,6 +342,12 @@ def validate_input(
                 has_random_effect(model, parameter, "iiv")
             except KeyError:
                 raise ValueError(f"Parameter {parameter} has no iiv.")
+
+    if strictness is not None and "rse" in strictness.lower():
+        if model.estimation_steps[-1].parameter_uncertainty_method is None:
+            raise ValueError(
+                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+            )
 
 
 @dataclass(frozen=True)
