@@ -70,7 +70,6 @@ INF = float("inf")
             ],
         ),
         ('$THETA (1,1,1)\n', [(None, 1.0, 1.0, 1.0, True)]),
-        ('$THETA (1,1)\n', [(None, 1.0, 1.0, INF, False)]),
         ('$THETA (0,1) FIX\n', [(None, 1.0, 0.0, INF, True)]),
         ('$THETA (1,1 FIX)\n', [(None, 1.0, 1.0, INF, True)]),
         ('$THETA (1,1,1 FIX)\n', [(None, 1.0, 1.0, 1.0, True)]),
@@ -110,6 +109,7 @@ def test_parameters(parser, buf, expected):
         ('$THETA 0'),
         ('$THETA -1000000'),
         ('$THETA (0,1000000)'),
+        ('$THETA (1,1)'),
     ],
 )
 def test_bad_thetas(parser, buf):
