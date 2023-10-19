@@ -382,8 +382,11 @@ def set_zero_order_elimination(model: Model):
         model = remove_unused_parameters_and_rvs(model)
     else:
         model = _do_michaelis_menten_elimination(model)
-        obs = get_observations(model)
-        init = obs.min() / 100  # 1% of smallest observation
+        if model.dataset is not None:
+            obs = get_observations(model)
+            init = obs.min() / 100  # 1% of smallest observation
+        else:
+            init = 0.01
         model = fix_parameters_to(model, {'POP_KM': init})
     return model
 
