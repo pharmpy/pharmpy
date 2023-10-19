@@ -386,11 +386,6 @@ def test_get_pk_parameters_metabolite(load_model_for_test, testdata):
 def test_get_pd_parameters(load_model_for_test, testdata, model_path, kind, expected):
     model = load_model_for_test(testdata / model_path)
     assert set(get_pd_parameters(set_direct_effect(model, kind))) == set(expected)
-    stats = add_effect_compartment(model, kind).statements
-    for s in stats:
-        if isinstance(s, Assignment):
-            print(s)
-    print(stats.ode_system.eqs)
     assert set(get_pd_parameters(add_effect_compartment(model, kind))) == set(expected + ["MET"])
     assert get_pk_parameters(add_effect_compartment(model, kind)) == ['CL', 'V']
     assert get_pk_parameters(set_direct_effect(model, kind)) == ['CL', 'V']
