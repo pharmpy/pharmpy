@@ -162,7 +162,7 @@ Currently implemented drug metabolite models are:
             s3 -> s4
     }
 
-Regarding DVID, DVID=1 is connected to the parent metabolite while DVID=2 is representing the metabolite.
+Regarding DVID, DVID=1 is connected to the parent drug while DVID=2 is representing the metabolite.
 
 .. _the search space:
 
