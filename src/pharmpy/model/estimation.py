@@ -335,6 +335,7 @@ class EstimationStep(Immutable):
         else:
             tool_options = self._tool_options  # self._tool_options is None
         return {
+            'class': 'EstimationStep',
             'method': self._method,
             'interaction': self._interaction,
             'parameter_uncertainty_method': self._parameter_uncertainty_method,
@@ -353,6 +354,8 @@ class EstimationStep(Immutable):
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> EstimationStep:
+        d = dict(d)
+        del d['class']
         if isinstance(d['tool_options'], dict):
             d['tool_options'] = frozenmapping(d['tool_options'])
         return cls(**d)
@@ -375,6 +378,64 @@ class EstimationStep(Immutable):
         )
 
 
+class SimulationStep(Immutable):
+    """Definition of one simulation operation"""
+
+    def __init__(self, n: int = 1, seed: int = 64206):
+        self._n = n
+        self._seed = seed
+
+    @classmethod
+    def create(cls, n: int = 1, seed: int = 64206):
+        if n < 1:
+            raise ValueError("Need at least one replicate in SimulationStep")
+        return cls(n=n, seed=seed)
+
+    def replace(self, **kwargs) -> SimulationStep:
+        """Derive a new SimulationStep with new properties"""
+        d = {key[1:]: value for key, value in self.__dict__.items()}
+        d.update(kwargs)
+        new = SimulationStep.create(**d)
+        return new
+
+    @property
+    def n(self) -> int:
+        """Number of simulation replicates"""
+        return self._n
+
+    @property
+    def seed(self) -> int:
+        """Random seed"""
+        return self._seed
+
+    def __eq__(self, other):
+        return isinstance(other, SimulationStep) and self.n == other.n and self.seed == other.seed
+
+    def __hash__(self):
+        return hash(
+            (
+                self._n,
+                self._seed,
+            )
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            'class': 'SimulationStep',
+            'n': self._n,
+            'seed': self._seed,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> SimulationStep:
+        d = dict(d)
+        del d['class']
+        return cls(**d)
+
+    def __repr__(self):
+        return f"SimulationStep(n={self._n}, seed={self._seed})"
+
+
 class EstimationSteps(Sequence, Immutable):
     """A sequence of estimation steps
 
@@ -384,11 +445,11 @@ class EstimationSteps(Sequence, Immutable):
         Used for initialization
     """
 
-    def __init__(self, steps: tuple[EstimationStep, ...] = ()):
+    def __init__(self, steps: tuple[Union[EstimationStep, SimulationStep], ...] = ()):
         self._steps = steps
 
     @classmethod
-    def create(cls, steps: Optional[Sequence[EstimationStep]] = None):
+    def create(cls, steps: Optional[Sequence[Union[EstimationStep, SimulationStep]]] = None):
         if steps is None:
             steps = ()
         else:
@@ -407,7 +468,9 @@ class EstimationSteps(Sequence, Immutable):
     def __getitem__(self, i: slice) -> EstimationSteps:
         ...
 
-    def __getitem__(self, i: Union[int, slice]) -> Union[EstimationStep, EstimationSteps]:
+    def __getitem__(
+        self, i: Union[int, slice]
+    ) -> Union[EstimationStep, SimulationStep, EstimationSteps]:
         if isinstance(i, slice):
             return EstimationSteps(self._steps[i])
         return self._steps[i]
@@ -415,13 +478,13 @@ class EstimationSteps(Sequence, Immutable):
     def __add__(self, other) -> EstimationSteps:
         if isinstance(other, EstimationSteps):
             return EstimationSteps(self._steps + other._steps)
-        elif isinstance(other, EstimationStep):
+        elif isinstance(other, EstimationStep) or isinstance(other, SimulationStep):
             return EstimationSteps(self._steps + (other,))
         else:
             return EstimationSteps(self._steps + tuple(other))
 
     def __radd__(self, other) -> EstimationSteps:
-        if isinstance(other, EstimationStep):
+        if isinstance(other, EstimationStep) or isinstance(other, SimulationStep):
             return EstimationSteps((other,) + self._steps)
         else:
             return EstimationSteps(tuple(other) + self._steps)
@@ -445,7 +508,14 @@ class EstimationSteps(Sequence, Immutable):
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> EstimationSteps:
-        return cls(steps=tuple(EstimationStep.from_dict(s) for s in d['steps']))
+        steps = []
+        for sdict in d['steps']:
+            if sdict['class'] == 'EstimationStep':
+                s = EstimationStep.from_dict(sdict)
+            else:
+                s = SimulationStep.from_dict(sdict)
+            steps.append(s)
+        return cls(steps=tuple(steps))
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert to DataFrame

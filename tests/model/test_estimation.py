@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.model import EstimationStep, EstimationSteps
+from pharmpy.model import EstimationStep, EstimationSteps, SimulationStep
 
 
 def test_init():
@@ -117,6 +117,7 @@ def test_dict():
         'isample': None,
         'niter': None,
         'auto': None,
+        'class': 'EstimationStep',
         'keep_every_nth_iter': None,
         'solver': None,
         'solver_rtol': None,
@@ -141,6 +142,7 @@ def test_dict():
                 'isample': None,
                 'niter': None,
                 'auto': None,
+                'class': 'EstimationStep',
                 'keep_every_nth_iter': None,
                 'solver': None,
                 'solver_rtol': None,
@@ -157,6 +159,7 @@ def test_dict():
                 'isample': None,
                 'niter': None,
                 'auto': None,
+                'class': 'EstimationStep',
                 'keep_every_nth_iter': None,
                 'solver': None,
                 'solver_rtol': None,
@@ -201,3 +204,31 @@ def test_replace():
     steps2 = EstimationSteps((b,))
     steps3 = steps1.replace(steps=[steps2])
     assert len(steps3) == 1
+
+
+def test_simulation_step():
+    ss = SimulationStep(n=23)
+    assert ss.n == 23
+
+    with pytest.raises(ValueError):
+        SimulationStep.create(n=0)
+
+    ss = SimulationStep.create(n=2)
+    assert ss.n == 2
+    ss = ss.replace(n=19)
+    assert ss.n == 19
+
+    ss = SimulationStep(seed=1234)
+    assert ss.seed == 1234
+
+    ss1 = SimulationStep()
+    ss2 = SimulationStep(n=2)
+    assert ss1 != ss2
+    assert ss1 == ss1
+    assert hash(ss1) != hash(ss2)
+
+    d = ss2.to_dict()
+    assert d == {'class': 'SimulationStep', 'n': 2, 'seed': 64206}
+    assert ss2 == SimulationStep.from_dict(d)
+
+    assert repr(ss2) == 'SimulationStep(n=2, seed=64206)'
