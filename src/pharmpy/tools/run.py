@@ -876,7 +876,7 @@ class ArrayEvaluator:
         return all(e > value for e in self.x)
 
 
-def _is_strictness_fulfilled(res: ModelfitResults, statement: str) -> bool:
+def is_strictness_fulfilled(res: ModelfitResults, statement: str) -> bool:
     """Takes a ModelfitResults object  and a statement as input and returns True/False
     if the evaluation of the statement is True/False.
     """
@@ -938,7 +938,7 @@ def _is_strictness_fulfilled(res: ModelfitResults, statement: str) -> bool:
 
 
 def _get_rankval(model, strictness, rank_type, bic_type, **kwargs):
-    if not _is_strictness_fulfilled(model.modelfit_results, strictness):
+    if not is_strictness_fulfilled(model.modelfit_results, strictness):
         return np.nan
     if rank_type in ['ofv', 'lrt']:
         return model.modelfit_results.ofv

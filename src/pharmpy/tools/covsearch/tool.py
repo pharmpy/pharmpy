@@ -13,7 +13,7 @@ from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariat
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
-from pharmpy.tools import summarize_modelfit_results
+from pharmpy.tools import is_strictness_fulfilled, summarize_modelfit_results
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import (
     EffectLiteral,
@@ -24,7 +24,6 @@ from pharmpy.tools.mfl.feature.covariate import (
 )
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import _is_strictness_fulfilled
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
@@ -295,7 +294,7 @@ def _greedy_search(
         ofvs = [
             np.nan
             if (mfr := model.modelfit_results) is None
-            or not _is_strictness_fulfilled(mfr, strictness)
+            or not is_strictness_fulfilled(mfr, strictness)
             else mfr.ofv
             for model in new_candidate_models
         ]
@@ -444,7 +443,6 @@ def task_results(p_forward: float, p_backward: float, strictness: str, state: Se
     base_model, *res_models = models
     assert base_model is state.start_model
     best_model = state.best_candidate_so_far.model
-    is_strict = [_is_strictness_fulfilled(model.modelfit_results, strictness) for model in models]
 
     res = create_results(
         COVSearchResults, base_model, base_model, res_models, 'lrt', (p_forward, p_backward)
@@ -457,14 +455,14 @@ def task_results(p_forward: float, p_backward: float, strictness: str, state: Se
         steps=steps,
         candidate_summary=candidate_summary_dataframe(steps),
         ofv_summary=ofv_summary_dataframe(steps, final_included=True, iterations=True),
-        summary_tool=_modify_summary_tool(res.summary_tool, steps, is_strict),
+        summary_tool=_modify_summary_tool(res.summary_tool, steps),
         summary_models=_summarize_models(models, steps),
     )
 
     return res
 
 
-def _modify_summary_tool(summary_tool, steps, is_strict):
+def _modify_summary_tool(summary_tool, steps):
     step_cols_to_keep = ['step', 'pvalue', 'goal_pvalue', 'is_backward', 'selected', 'model']
     steps_df = steps.reset_index()[step_cols_to_keep].set_index(['step', 'model'])
 
@@ -472,7 +470,6 @@ def _modify_summary_tool(summary_tool, steps, is_strict):
     column_to_move = summary_tool_new.pop('description')
 
     summary_tool_new.insert(0, 'description', column_to_move)
-    summary_tool_new['strictness_fulfilled'] = is_strict
     return summary_tool_new.drop(['rank'], axis=1)
 
 
