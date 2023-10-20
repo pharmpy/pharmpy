@@ -47,7 +47,7 @@ def create_pkpd_models(
     model: Model,
     search_space: str,
     b_init: Optional[Union[int, float]] = None,
-    ests: pd.Series = None,
+    ests: Optional[pd.Series] = None,
     emax_init: Optional[Union[int, float]] = None,
     ec50_init: Optional[Union[int, float]] = None,
     met_init: Optional[Union[int, float]] = None,

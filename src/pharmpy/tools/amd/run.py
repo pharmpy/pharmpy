@@ -53,8 +53,8 @@ def run_amd(
     allometric_variable: Optional[Union[str, sympy.Symbol]] = None,
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,
-    resume: Optional[bool] = False,
-    strictness: Optional[bool] = "minimization_successful or (rounding_errors and sigdigs>=0)",
+    resume: bool = False,
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0)",
 ):
     """Run Automatic Model Development (AMD) tool
 

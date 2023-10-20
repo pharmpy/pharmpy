@@ -24,7 +24,7 @@ routes = frozenset(('iv', 'oral', 'ivoral'))
 
 def create_workflow(
     type: str,
-    route: Optional[str] = 'oral',
+    route: str = 'oral',
     search_space: Optional[str] = None,
     b_init: Optional[Union[int, float]] = None,
     emax_init: Optional[Union[int, float]] = None,

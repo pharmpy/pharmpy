@@ -53,7 +53,7 @@ def create_workflow(
     groups: int = 4,
     p_value: float = 0.001,
     skip: Optional[List[str]] = None,
-    max_iter: Optional[int] = 3,
+    max_iter: int = 3,
     dv: Optional[int] = None,
 ):
     """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.

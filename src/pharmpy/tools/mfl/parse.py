@@ -198,7 +198,7 @@ class ModelFeatures:
     def covariate(self):
         return self._covariate
 
-    def mfl_statement_list(self, attribute_type: Optional[List[str]] = []):
+    def mfl_statement_list(self, attribute_type: Optional[List[str]] = None):
         """Add the repspective MFL attributes to a list"""
 
         # NOTE : This function is needed to be able to convert the classes to functions
