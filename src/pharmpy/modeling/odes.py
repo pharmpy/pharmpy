@@ -184,7 +184,13 @@ def set_first_order_elimination(model: Model):
         v = sympy.Symbol('V')
         rate = odes.get_flow(central, output)
         if v not in rate.free_symbols:
-            v = sympy.Symbol('VC')
+            # take first parameter that starts with 'V' and is no longer than 2 characters
+            v = [
+                idx
+                for idx in list(map(lambda x: str(x), rate.free_symbols))
+                if idx[0] == 'V' and len(idx) <= 2
+            ]
+            v = sympy.Symbol(v[0])
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, sympy.Symbol('CL') / v)
@@ -201,7 +207,12 @@ def set_first_order_elimination(model: Model):
         v = sympy.Symbol('V')
         rate = odes.get_flow(central, output)
         if v not in rate.free_symbols:
-            v = sympy.Symbol('VC')
+            v = [
+                idx
+                for idx in list(map(lambda x: str(x), rate.free_symbols))
+                if idx[0] == 'V' and len(idx) <= 2
+            ]
+            v = sympy.Symbol(v[0])
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, sympy.Symbol('CL') / v)

@@ -11,6 +11,7 @@ from pharmpy.model import (
     output,
 )
 
+from .expressions import _replace_trivial_redefinitions
 from .odes import add_individual_parameter, set_first_order_elimination, set_initial_condition
 from .parameter_variability import add_iiv
 
@@ -44,6 +45,7 @@ def set_tmdd(model: Model, type: str):
     type = type.upper()
 
     if type != "MMAPP":
+        model = _replace_trivial_redefinitions(model)
         model = set_first_order_elimination(model)
 
     odes = model.statements.ode_system
