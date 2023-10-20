@@ -533,17 +533,18 @@ class EstimationSteps(Sequence, Immutable):
         method  interaction       parameter_uncertainty_method  ...  auto keep_every_nth_iter  tool_options
         0   FOCE         True  SANDWICH  ...  None                None            {}
         """
-        method = [s.method for s in self._steps]
-        interaction = [s.interaction for s in self._steps]
-        parameter_uncertainty_method = [s.parameter_uncertainty_method for s in self._steps]
-        evaluation = [s.evaluation for s in self._steps]
-        maximum_evaluations = [s.maximum_evaluations for s in self._steps]
-        laplace = [s.laplace for s in self._steps]
-        isample = [s.isample for s in self._steps]
-        niter = [s.niter for s in self._steps]
-        auto = [s.auto for s in self._steps]
-        keep_every_nth_iter = [s.keep_every_nth_iter for s in self._steps]
-        tool_options = [dict(s.tool_options) if s.tool_options else dict() for s in self._steps]
+        steps = [s for s in self._steps if isinstance(s, EstimationStep)]
+        method = [s.method for s in steps]
+        interaction = [s.interaction for s in steps]
+        parameter_uncertainty_method = [s.parameter_uncertainty_method for s in steps]
+        evaluation = [s.evaluation for s in steps]
+        maximum_evaluations = [s.maximum_evaluations for s in steps]
+        laplace = [s.laplace for s in steps]
+        isample = [s.isample for s in steps]
+        niter = [s.niter for s in steps]
+        auto = [s.auto for s in steps]
+        keep_every_nth_iter = [s.keep_every_nth_iter for s in steps]
+        tool_options = [dict(s.tool_options) if s.tool_options else dict() for s in steps]
         df = pd.DataFrame(
             {
                 'method': method,
