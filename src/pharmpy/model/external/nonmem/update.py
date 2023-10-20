@@ -1155,7 +1155,8 @@ def match_advan11(odes):
     return True
 
 
-def match_advan12(odes):
+def match_advan12(statements):
+    odes = statements.ode_system
     if len(odes) != 4:
         return False
     dosing = odes.dosing_compartments[0]
@@ -1163,6 +1164,19 @@ def match_advan12(odes):
     if len(outflows) != 1:
         return False
     central = outflows[0][0]
+    central_rate = outflows[0][1]
+
+    # Check if rate is depending on CL or V assignments
+    dep_assigns = set()
+    expr = central_rate
+    for s in reversed(statements.before_odes):
+        if s.symbol in expr.free_symbols:
+            dep_assigns.add(s.symbol)
+            expr = expr.subs(s.symbol, s.expression)
+
+    if {sympy.Symbol('CL'), sympy.Symbol('V')} & dep_assigns:
+        # Cannot use reserved symbols
+        return False
     bidir = odes.get_bidirectionals(central)
     if len(bidir) != 2:
         return False
@@ -1198,7 +1212,7 @@ def new_advan_trans(model: Model):
         advan = 'ADVAN4'
     elif match_advan11(odes):
         advan = 'ADVAN11'
-    elif match_advan12(odes):
+    elif match_advan12(model.statements):
         advan = 'ADVAN12'
     else:  # General linear
         # We could use ADVAN7 if has_linear_odes_with_real_eigenvalues
