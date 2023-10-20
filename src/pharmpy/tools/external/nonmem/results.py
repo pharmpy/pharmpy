@@ -129,7 +129,7 @@ def _parse_modelfit_results(
         or model.estimation_steps[-1].parameter_uncertainty_method is None
     ):
         covstep_successful = None
-    elif covstatus:
+    elif parameter_uncertainty_status:
         covstep_successful = True
     else:
         covstep_successful = False
@@ -229,7 +229,20 @@ def _empty_lst_results(n: int, log):
     false_vec = [False] * n
     nan_vec = [np.nan] * n
     none_vec = [None] * n
-    return None, np.nan, False, None, false_vec, nan_vec, nan_vec, none_vec, nan_vec, false_vec, log, nan_vec
+    return (
+        None,
+        np.nan,
+        False,
+        None,
+        false_vec,
+        nan_vec,
+        nan_vec,
+        none_vec,
+        nan_vec,
+        false_vec,
+        log,
+        nan_vec,
+    )
 
 
 def _parse_lst(n: int, path: Path, table_numbers, log: Log):
