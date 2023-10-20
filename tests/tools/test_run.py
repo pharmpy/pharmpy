@@ -535,7 +535,7 @@ def test_load_example_modelfit_results():
         ),
         (
             'nonmem/pheno.mod',
-            'has_zero_gradient',
+            'final_zero_gradient',
             False,
         ),
         (
