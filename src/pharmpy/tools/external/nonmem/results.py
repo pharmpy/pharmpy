@@ -120,7 +120,10 @@ def _parse_modelfit_results(
 
     evaluation = _parse_evaluation(estimation_steps)
 
-    if model.estimation_steps[-1].parameter_uncertainty_method is None:
+    if (
+        not model.estimation_steps
+        or model.estimation_steps[-1].parameter_uncertainty_method is None
+    ):
         covstep_successful = None
     elif covstatus:
         covstep_successful = True
