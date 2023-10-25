@@ -31,7 +31,7 @@ _feature: absorption | elimination | peripherals | transits | lagtime
 
 absorption: "ABSORPTION"i "(" (_absorption_option) ")"
 elimination: "ELIMINATION"i "(" (_elimination_option) ")"
-peripherals: "PERIPHERALS"i "(" (_counts) ")"
+peripherals: "PERIPHERALS"i "(" (_counts) ["," _peripheral_comp] ")"
 transits: "TRANSITS"i "(" _counts ["," _depot_option] ")"
 lagtime: "LAGTIME"i "(" (_lagtime_option) ")"
 covariate: "COVARIATE"i "(" parameter_option "," covariate_option "," fp_option ["," op_option] ")"
@@ -69,6 +69,10 @@ _depot_option: depot_modes | depot_wildcard
 depot_modes: DEPOT_MODE | "[" [DEPOT_MODE ("," DEPOT_MODE)*] "]"
 DEPOT_MODE: "DEPOT"i |"NODEPOT"i
 depot_wildcard: WILDCARD
+_peripheral_comp: peripheral_modes | peripheral_wildcard
+peripheral_modes: PERIPHERAL_MODE | "[" [PERIPHERAL_MODE ("," PERIPHERAL_MODE)*] "]"
+PERIPHERAL_MODE: "DRUG"i | "MET"i
+peripheral_wildcard: WILDCARD
 _lagtime_option: lagtime_modes | lagtime_wildcard
 lagtime_modes: LAGTIME_MODE | "[" [LAGTIME_MODE ("," LAGTIME_MODE)*] "]"
 lagtime_wildcard: WILDCARD
