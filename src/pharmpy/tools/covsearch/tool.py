@@ -13,7 +13,7 @@ from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariat
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
-from pharmpy.tools import summarize_modelfit_results
+from pharmpy.tools import is_strictness_fulfilled, summarize_modelfit_results
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import (
     EffectLiteral,
@@ -106,6 +106,7 @@ def create_workflow(
     algorithm: str = 'scm-forward-then-backward',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0)",
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -126,6 +127,8 @@ def create_workflow(
         Results of model
     model : Model
         Pharmpy model
+    strictness : str or None
+        Strictness criteria
 
     Returns
     -------
@@ -153,6 +156,7 @@ def create_workflow(
         effects,
         p_forward,
         max_steps,
+        strictness,
     )
 
     wb.add_task(forward_search_task, predecessors=init_task)
@@ -164,6 +168,7 @@ def create_workflow(
             task_greedy_backward_search,
             p_backward,
             max_steps,
+            strictness,
         )
 
         wb.add_task(backward_search_task, predecessors=search_output)
@@ -174,6 +179,7 @@ def create_workflow(
         task_results,
         p_forward,
         p_backward,
+        strictness,
     )
 
     wb.add_task(results_task, predecessors=search_output)
@@ -199,6 +205,7 @@ def task_greedy_forward_search(
     effects: str,
     p_forward: float,
     max_steps: int,
+    strictness: Optional[str],
     state: SearchState,
 ) -> SearchState:
     candidate = state.best_candidate_so_far
@@ -223,6 +230,7 @@ def task_greedy_forward_search(
         candidate_effects,
         p_forward,
         max_steps,
+        strictness,
     )
 
 
@@ -230,6 +238,7 @@ def task_greedy_backward_search(
     context,
     p_backward: float,
     max_steps: int,
+    strictness: Optional[str],
     state: SearchState,
 ) -> SearchState:
     def handle_effects(
@@ -253,6 +262,7 @@ def task_greedy_backward_search(
         candidate_effects,
         p_backward,
         min(max_steps, n_removable_effects) if max_steps >= 0 else n_removable_effects,
+        strictness,
     )
 
 
@@ -262,6 +272,7 @@ def _greedy_search(
     candidate_effects: List[EffectLiteral],
     alpha: float,
     max_steps: int,
+    strictness: Optional[str],
 ) -> SearchState:
     best_candidate_so_far = state.best_candidate_so_far
     all_candidates_so_far = list(state.all_candidates_so_far)  # NOTE: This includes start model
@@ -281,7 +292,10 @@ def _greedy_search(
 
         parent = best_candidate_so_far.model
         ofvs = [
-            np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
+            np.nan
+            if (mfr := model.modelfit_results) is None
+            or not is_strictness_fulfilled(mfr, strictness)
+            else mfr.ofv
             for model in new_candidate_models
         ]
         # NOTE: We assume parent.modelfit_results is not None
@@ -423,7 +437,7 @@ def task_remove_covariate_effect(
     return model_with_removed_effect
 
 
-def task_results(p_forward: float, p_backward: float, state: SearchState):
+def task_results(p_forward: float, p_backward: float, strictness: str, state: SearchState):
     candidates = state.all_candidates_so_far
     models = list(map(lambda candidate: candidate.model, candidates))
     base_model, *res_models = models
@@ -576,7 +590,7 @@ def _make_df_steps_row(
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(effects, p_forward, p_backward, algorithm, model):
+def validate_input(effects, p_forward, p_backward, algorithm, model, strictness):
     if algorithm not in ALGORITHMS:
         raise ValueError(
             f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'
@@ -645,3 +659,8 @@ def validate_input(effects, p_forward, p_backward, algorithm, model):
                     f' effects: got `{effect.operation}`,'
                     f' must be in {sorted(allowed_ops)}.'
                 )
+    if strictness is not None and "rse" in strictness.lower():
+        if model.estimation_steps[-1].parameter_uncertainty_method is None:
+            raise ValueError(
+                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+            )

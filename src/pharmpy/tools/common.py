@@ -90,8 +90,13 @@ def create_results(
         [base_model.modelfit_results] + [m.modelfit_results for m in res_models]
     )
 
-    best_model_name = summary_tool['rank'].idxmin()
-    best_model = next(filter(lambda model: model.name == best_model_name, res_models), base_model)
+    if summary_tool['rank'].isnull().all():
+        best_model = None
+    else:
+        best_model_name = summary_tool['rank'].idxmin()
+        best_model = next(
+            filter(lambda model: model.name == best_model_name, res_models), base_model
+        )
 
     if base_model.name != input_model.name:
         models = [base_model] + res_models

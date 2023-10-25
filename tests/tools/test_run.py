@@ -15,8 +15,8 @@ from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_common,
     _create_metadata_tool,
     _get_run_setup,
-    _is_strictness_fulfilled,
     import_tool,
+    is_strictness_fulfilled,
     load_example_modelfit_results,
     rank_models,
     read_modelfit_results,
@@ -531,4 +531,4 @@ def test_load_example_modelfit_results():
 )
 def test_strictness(testdata, path, statement, expected):
     res = read_modelfit_results(testdata / path)
-    assert _is_strictness_fulfilled(res, statement) == expected
+    assert is_strictness_fulfilled(res, statement) == expected

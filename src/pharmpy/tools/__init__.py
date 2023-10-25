@@ -6,6 +6,7 @@ __all__ = (
     'create_report',  # pyright: ignore [reportUnsupportedDunderAll]
     'create_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'fit',  # pyright: ignore [reportUnsupportedDunderAll]
+    'is_strictness_fulfilled',  # pyright: ignore [reportUnsupportedDunderAll]
     'load_example_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'predict_influential_individuals',  # pyright: ignore [reportUnsupportedDunderAll]
     'predict_influential_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -46,6 +47,7 @@ _not_wrapped = {
     '.run': (
         'create_results',
         'fit',
+        'is_strictness_fulfilled',
         'load_example_modelfit_results',
         'print_fit_summary',
         'rank_models',
