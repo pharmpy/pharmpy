@@ -228,7 +228,18 @@ def test_simulation_step():
     assert hash(ss1) != hash(ss2)
 
     d = ss2.to_dict()
-    assert d == {'class': 'SimulationStep', 'n': 2, 'seed': 64206}
+    assert d == {
+        'class': 'SimulationStep',
+        'n': 2,
+        'seed': 64206,
+        'solver': None,
+        'solver_atol': None,
+        'solver_rtol': None,
+        'tool_options': None,
+    }
     assert ss2 == SimulationStep.from_dict(d)
 
-    assert repr(ss2) == 'SimulationStep(n=2, seed=64206)'
+    assert (
+        repr(ss2)
+        == 'SimulationStep(n=2, seed=64206, solver=None, solver_rtol=None, solver_atol=None, tool_options=None)'
+    )

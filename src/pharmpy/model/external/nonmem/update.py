@@ -18,10 +18,12 @@ from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     Distribution,
+    EstimationStep,
     Infusion,
     Parameter,
     Parameters,
     RandomVariables,
+    SimulationStep,
     Statements,
     data,
     output,
@@ -1589,7 +1591,35 @@ def update_estimation(control_stream, model):
     if old == new:
         return control_stream
 
-    delta = diff(old, new)
+    old_ests = [step for step in old if isinstance(step, EstimationStep)]
+    new_ests = [step for step in new if isinstance(step, EstimationStep)]
+    old_sims = [step for step in old if isinstance(step, SimulationStep)]
+    new_sims = [step for step in new if isinstance(step, SimulationStep)]
+
+    delta = diff(old_sims, new_sims)
+    old_records = control_stream.get_records('SIMULATION')
+    i = 0
+    new_records = []
+
+    for op, sim in delta:
+        if op == 1:
+            sim_code = f'$SIMULATION ({sim.seed}) SUBPROBLEMS={sim.n}\n'
+            newrec = create_record(sim_code)
+            new_records.append(newrec)
+        elif op == -1:
+            i += 1
+        else:
+            new_records.append(old_records[i])
+            i += 1
+
+    if old_records:
+        control_stream = control_stream.replace_records(old_records, new_records)
+    else:
+        for rec in new_records:
+            newrec = create_record(str(rec))
+            control_stream = control_stream.insert_record(newrec)
+
+    delta = diff(old_ests, new_ests)
     old_records = control_stream.get_records('ESTIMATION')
     i = 0
     new_records = []
@@ -1676,12 +1706,12 @@ def update_estimation(control_stream, model):
 
     # Initiate old_parameter_uncertainty_method
     old_parameter_uncertainty_method = None
-    for est in old:
+    for est in old_ests:
         old_parameter_uncertainty_method = est.parameter_uncertainty_method
 
     # Initiate new_parameter_uncertainty_method
     new_parameter_uncertainty_method = None
-    for est in new:
+    for est in new_ests:
         new_parameter_uncertainty_method = est.parameter_uncertainty_method
 
     if old_parameter_uncertainty_method is None and new_parameter_uncertainty_method is not None:
@@ -1712,7 +1742,7 @@ def update_estimation(control_stream, model):
     # Update $TABLE
     # Currently only adds if did not exist before
     cols = set()
-    for estep in new:
+    for estep in new_ests:
         cols.update(estep.predictions)
         cols.update(estep.residuals)
     tables = control_stream.get_records('TABLE')
