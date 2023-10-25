@@ -81,6 +81,7 @@ from .estimation_steps import (
     remove_parameter_uncertainty_step,
     set_estimation_step,
     set_evaluation_step,
+    set_simulation,
 )
 from .evaluation import (
     evaluate_epsilon_gradient,
@@ -391,6 +392,7 @@ __all__ = [
     'set_dvid',
     'set_estimation_step',
     'set_evaluation_step',
+    'set_simulation',
     'set_first_order_absorption',
     'set_first_order_elimination',
     'set_iiv_on_ruv',
