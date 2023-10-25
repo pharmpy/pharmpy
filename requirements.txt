@@ -67,7 +67,7 @@ psutil==5.9.6
 ptyprocess==0.7.0
 pure-eval==0.2.2
 Pygments==2.16.1
-pyreadr==0.4.9
+pyreadr==0.5.0
 python-dateutil==2.8.2
 pytz==2023.3.post1
 pywin32>=302,!=304; sys_platform == 'win32' and platform_python_implementation != 'PyPy'
