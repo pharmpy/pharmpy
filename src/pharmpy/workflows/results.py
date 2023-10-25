@@ -90,6 +90,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
                     message=".*iteritems is deprecated and will be removed in a future version. Use .items instead.",
                     category=FutureWarning,
                 )
+                # This was fixed in altair v2.1.1 can be removed once we require that version
                 warnings.filterwarnings(
                     "ignore",
                     message=".*the convert_dtype parameter is deprecated",
