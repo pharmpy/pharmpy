@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Iterable
 
 from pharmpy.model import Model
@@ -18,4 +19,4 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
                 else statement.modes
             )
             for mode in modes:
-                yield ('DIRECT', mode.name), set_direct_effect(model, mode.name.lower())
+                yield ('DIRECT', mode.name), partial(set_direct_effect, expr=mode.name.lower())
