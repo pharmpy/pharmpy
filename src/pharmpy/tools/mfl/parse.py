@@ -6,6 +6,7 @@ from typing import List, Optional
 from lark import Lark
 
 from pharmpy.model import Model
+from pharmpy.modeling.covariate_effect import get_covariates
 from pharmpy.modeling.odes import (
     get_number_of_peripheral_compartments,
     get_number_of_transit_compartments,
@@ -693,6 +694,9 @@ def get_model_features(model: Model, supress_warnings: bool = False) -> str:
     # DISTRIBUTION (PERIPHERALS)
     peripherals = get_number_of_peripheral_compartments(model)
 
+    # COVARIATES
+    covariates = get_covariates(model)
+
     if absorption:
         absorption = f'ABSORPTION({absorption})'
     if elimination:
@@ -703,13 +707,27 @@ def get_model_features(model: Model, supress_warnings: bool = False) -> str:
         transits = f'TRANSITS({transits}{","+depot})'
     if peripherals != 0:
         peripherals = f'PERIPHERALS({peripherals})'
+    if len(covariates) != 0:
+        # FIXME : More extensive cleanup
+        clean_cov = defaultdict(list)
+        for key, value in covariates.items():
+            clean_cov[(key[1], value[0][0], value[0][1])].append(key[0])
 
-    # TODO : Implement more features such as covariates and IIV
+        cov_list = [
+            f'COVARIATE({value},{key[0]},{key[1]},{key[2]})' for key, value in clean_cov.items()
+        ]
 
+        covariates = ';'.join(cov_list)
+        # Remove quotes from parameter names
+        covariates = covariates.replace("'", '')
+    else:
+        covariates = None
+
+    # TODO : Implement IIV
     return ";".join(
         [
             e
-            for e in [absorption, elimination, lagtime, transits, peripherals]
+            for e in [absorption, elimination, lagtime, transits, peripherals, covariates]
             if (e is not None and e != 0)
         ]
     )
