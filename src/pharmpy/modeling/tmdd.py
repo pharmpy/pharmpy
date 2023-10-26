@@ -153,20 +153,20 @@ def set_tmdd(model: Model, type: str):
             ipred = lafreef / vc
             after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
         elif num_peripheral_comp > 0 and num_peripheral_comp <= 2:
-            peripheral1 = odes.find_peripheral_compartments()[0]
+            peripheral1 = _create_compartments(cb, ['PERIPHERAL1'])
             flow_central_peripheral1 = odes.get_flow(central, peripheral1)
             if num_peripheral_comp == 2:
-                peripheral2 = odes.find_peripheral_compartments()[1]
+                peripheral2 = _create_compartments(cb, ['PERIPHERAL2'])
                 flow_central_peripheral2 = odes.get_flow(central, peripheral2)
 
             elimination_rate = odes.get_flow(central, output)
-            cb.remove_flow(central, peripheral1)
             cb.remove_flow(central, output)
             if num_peripheral_comp == 1:
                 cb.set_input(
                     central,
                     -target_comp.amount * kint * lafree_symb / (kd + lafree_symb)
-                    - lafree_symb * flow_central_peripheral1,
+                    - lafree_symb * flow_central_peripheral1
+                    + flow_central_peripheral1 * central.amount,
                 )
                 cb.set_input(
                     target_comp,
@@ -174,14 +174,18 @@ def set_tmdd(model: Model, type: str):
                     - kdeg * target_comp.amount
                     - (kint - kdeg) * target_comp.amount * lafree_symb / (kd + lafree_symb),
                 )
-                cb.set_input(peripheral1, lafree_symb * flow_central_peripheral1)
+                cb.set_input(
+                    peripheral1,
+                    lafree_symb * flow_central_peripheral1
+                    - flow_central_peripheral1 * central.amount,
+                )
             elif num_peripheral_comp == 2:
-                cb.remove_flow(central, peripheral2)
                 cb.set_input(
                     central,
                     -target_comp.amount * kint * lafree_symb / (kd + lafree_symb)
                     - lafree_symb * flow_central_peripheral1
-                    - lafree_symb * flow_central_peripheral2,
+                    - lafree_symb * flow_central_peripheral2
+                    + flow_central_peripheral2 * central.amount,
                 )
                 cb.set_input(
                     target_comp,
@@ -189,8 +193,16 @@ def set_tmdd(model: Model, type: str):
                     - kdeg * target_comp.amount
                     - (kint - kdeg) * target_comp.amount * lafree_symb / (kd + lafree_symb),
                 )
-                cb.set_input(peripheral1, lafree_symb * flow_central_peripheral1)
-                cb.set_input(peripheral2, lafree_symb * flow_central_peripheral2)
+                cb.set_input(
+                    peripheral1,
+                    lafree_symb * flow_central_peripheral1
+                    - flow_central_peripheral1 * central.amount,
+                )
+                cb.set_input(
+                    peripheral2,
+                    lafree_symb * flow_central_peripheral2
+                    - flow_central_peripheral2 * central.amount,
+                )
 
             central = cb.find_compartment('CENTRAL')
             cb.add_flow(central, output, lafree_symb * elimination_rate / central.amount)
@@ -223,30 +235,46 @@ def set_tmdd(model: Model, type: str):
 
         num_peripheral_comp = len(odes.find_peripheral_compartments())
         if num_peripheral_comp == 0:
-            cb.add_flow(central, output, kint)
-            cb.set_input(central, +kint * lafree_symb - kel * lafree_symb)
-        elif num_peripheral_comp == 1:
-            peripheral = odes.find_peripheral_compartments()[0]
-            kcp = odes.get_flow(central, peripheral)
-            cb.remove_flow(central, peripheral)
-            cb.add_flow(central, output, kint)
-            cb.set_input(central, +kint * lafree_symb - kel * lafree_symb - kcp * lafree_symb)
-            cb.set_input(peripheral, kcp * lafree_symb)
-        elif num_peripheral_comp == 2:
-            peripheral1 = odes.find_peripheral_compartments()[0]
-            kcp1 = odes.get_flow(central, peripheral1)
-            peripheral2 = odes.find_peripheral_compartments()[1]
-            kcp2 = odes.get_flow(central, peripheral2)
-            cb.remove_flow(central, peripheral1)
-            cb.remove_flow(central, peripheral2)
-
-            cb.add_flow(central, output, kint)
+            cb.add_flow(central, output, kel)
             cb.set_input(
                 central,
-                +kint * lafree_symb - kel * lafree_symb - kcp1 * lafree_symb - kcp2 * lafree_symb,
+                kint * lafree_symb
+                - kint * central.amount
+                - kel * lafree_symb
+                + kel * central.amount,
             )
-            cb.set_input(peripheral1, kcp1 * lafree_symb)
-            cb.set_input(peripheral2, kcp2 * lafree_symb)
+        elif num_peripheral_comp == 1:
+            peripheral = _create_compartments(cb, ['PERIPHERAL1'])
+            kcp = odes.get_flow(central, peripheral)
+            cb.add_flow(central, output, kel)
+            cb.set_input(
+                central,
+                kint * lafree_symb
+                - kint * central.amount
+                - kel * lafree_symb
+                + kel * central.amount
+                - kcp * lafree_symb
+                + kcp * central.amount,
+            )
+            cb.set_input(peripheral, kcp * lafree_symb - kcp * central.amount)
+        elif num_peripheral_comp == 2:
+            peripheral1 = _create_compartments(cb, ['PERIPHERAL1'])
+            kcp1 = odes.get_flow(central, peripheral1)
+            peripheral2 = _create_compartments(cb, ['PERIPHERAL2'])
+            kcp2 = odes.get_flow(central, peripheral2)
+
+            cb.add_flow(central, output, kel)
+            cb.set_input(
+                central,
+                kint * lafree_symb
+                - kint * central.amount
+                - kel * lafree_symb
+                + kel * central.amount
+                - kcp1 * lafree_symb
+                - kcp2 * lafree_symb,
+            )
+            cb.set_input(peripheral1, kcp1 * lafree_symb - kcp1 * central.amount)
+            cb.set_input(peripheral2, kcp2 * lafree_symb - kcp2 * central.amount)
 
         lafreef = sympy.Symbol("LAFREEF")
         lafree_final = Assignment(lafreef, lafree_expr)

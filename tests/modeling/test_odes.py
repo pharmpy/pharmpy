@@ -2,6 +2,7 @@ import re
 import shutil
 from typing import Iterable
 
+import pytest
 import sympy
 
 from pharmpy.model import Assignment, Bolus, Infusion
@@ -2623,16 +2624,37 @@ def test_find_volume_parameters_github_issues_1053_and_1062_bis(load_example_mod
     assert find_volume_parameters(model) == _symbols(['V1', 'VP1', 'VP2'])
 
 
-def test_find_clearance_and_volume_parameters_tmdd(load_example_model_for_test):
+@pytest.mark.parametrize(
+    ('model_name', 'expected_cl', 'expected_v'),
+    (
+        ('full', ['CL'], ['V']),
+        ('ib', ['CL'], ['V']),
+        ('cr', ['CL'], ['V']),
+        ('crib', ['CL'], ['V']),
+        ('wagner', ['CL'], ['V']),
+        ('qss', ['CL'], ['V']),
+    ),
+    ids=repr,
+)
+def test_find_clearance_and_volume_parameters_tmdd(
+    load_example_model_for_test, model_name, expected_cl, expected_v
+):
     model = load_example_model_for_test('pheno')
-    model = set_tmdd(model, 'full')
-    assert find_clearance_parameters(model) == _symbols(['CL'])
-    assert find_volume_parameters(model) == _symbols(['V'])
+    model = set_tmdd(model, model_name)
+    assert find_clearance_parameters(model) == _symbols(expected_cl)
+    assert find_volume_parameters(model) == _symbols(expected_v)
 
     model = load_example_model_for_test('pheno')
+    model = add_peripheral_compartment(model)
     model = set_tmdd(model, 'qss')
-    assert find_clearance_parameters(model) == _symbols(['CL', 'LAFREE'])
-    assert find_volume_parameters(model) == _symbols(['V'])
+    assert find_volume_parameters(model) == _symbols(['V1', 'VP1'])
+    assert find_clearance_parameters(model) == _symbols(['CL', 'QP1'])
+
+    model = load_example_model_for_test('pheno')
+    model = add_peripheral_compartment(model)
+    model = set_tmdd(model, 'wagner')
+    assert find_volume_parameters(model) == _symbols(['V1', 'VP1'])
+    assert find_clearance_parameters(model) == _symbols(['CL', 'QP1'])
 
 
 def test_multi_dose_change_absorption(load_model_for_test, testdata):

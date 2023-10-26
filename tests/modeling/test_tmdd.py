@@ -27,6 +27,14 @@ def test_qss_1c(pheno_path, load_model_for_test):
         str(tmdd_model.statements.ode_system.eqs[0].rhs)
         == """-CL*LAFREE/V1 - KINT*LAFREE*A_TARGET(t)/(KD + LAFREE) - LAFREE*QP1/V1 + QP1*A_PERIPHERAL1(t)/VP1"""
     )
+    assert (
+        str(tmdd_model.statements.ode_system.eqs[1].rhs)
+        == """LAFREE*Q/V1 - Q*A_PERIPHERAL1(t)/V2"""
+    )
+    assert (
+        str(tmdd_model.statements.ode_system.eqs[2].rhs)
+        == """KSYN*V1 + (-KDEG - LAFREE*(-KDEG + KINT)/(KD + LAFREE))*A_TARGET(t)"""
+    )
 
     model2 = add_peripheral_compartment(model)
     tmdd_model = set_tmdd(model2, type="qss")
@@ -73,3 +81,20 @@ def test_tmdd_with_mixed_fo_mm_elimination(load_model_for_test, testdata):
     model = set_mixed_mm_fo_elimination(model)
     qss = set_tmdd(model, 'qss')
     assert qss
+
+
+def test_wagner_1c(pheno_path, load_model_for_test):
+    model = load_model_for_test(pheno_path)
+    model = add_peripheral_compartment(model)
+    wagner = set_tmdd(model, type="wagner")
+    assert (
+        str(wagner.statements.ode_system.eqs[0].rhs)
+        == """-CL*LAFREE/V1 + KINT*LAFREE - KINT*A_CENTRAL(t) - LAFREE*Q/V1 + Q*A_PERIPHERAL1(t)/V2"""
+    )
+    assert str(wagner.statements.ode_system.eqs[1].rhs) == """LAFREE*Q/V1 - Q*A_PERIPHERAL1(t)/V2"""
+
+    model = add_peripheral_compartment(model)
+    wagner = set_tmdd(model, type="wagner")
+    assert (
+        str(wagner.statements.ode_system.eqs[1].rhs) == """LAFREE*Q2/V1 - Q2*A_PERIPHERAL1(t)/V2"""
+    )
