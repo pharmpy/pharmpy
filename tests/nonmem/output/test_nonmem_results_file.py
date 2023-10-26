@@ -22,7 +22,7 @@ def test_data_io(pheno_lst):
 
 
 @pytest.mark.parametrize(
-    'file, table_number, expected, parameter_uncertainty_step_ok',
+    'file, table_number, expected, covariance_step_ok',
     [
         (
             'phenocorr.lst',
@@ -236,25 +236,19 @@ def test_data_io(pheno_lst):
         ),
     ],
 )
-def test_estimation_status(testdata, file, table_number, expected, parameter_uncertainty_step_ok):
+def test_estimation_status(testdata, file, table_number, expected, covariance_step_ok):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'noSIM')
     log = Log()
     rfile = rf.NONMEMResultsFile(p / file, log=log)
     assert rfile.estimation_status(table_number) == expected
-    if parameter_uncertainty_step_ok is None:
-        assert (
-            rfile.parameter_uncertainty_status(table_number)['parameter_uncertainty_step_ok']
-            is None
-        )
+    if covariance_step_ok is None:
+        assert rfile.covariance_status(table_number)['covariance_step_ok'] is None
     else:
-        assert (
-            rfile.parameter_uncertainty_status(table_number)['parameter_uncertainty_step_ok']
-            == parameter_uncertainty_step_ok
-        )
+        assert rfile.covariance_status(table_number)['covariance_step_ok'] == covariance_step_ok
 
 
 @pytest.mark.parametrize(
-    'file, table_number, expected, parameter_uncertainty_step_ok',
+    'file, table_number, expected, covariance_step_ok',
     [
         (
             'anneal2_V7_30_beta.lst',
@@ -286,16 +280,11 @@ def test_estimation_status(testdata, file, table_number, expected, parameter_unc
         ),
     ],
 )
-def test_estimation_status_multest(
-    testdata, file, table_number, expected, parameter_uncertainty_step_ok
-):
+def test_estimation_status_multest(testdata, file, table_number, expected, covariance_step_ok):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'multEST' / 'noSIM')
     rfile = rf.NONMEMResultsFile(p / file)
     assert rfile.estimation_status(table_number) == expected
-    assert (
-        rfile.parameter_uncertainty_status(table_number)['parameter_uncertainty_step_ok']
-        == parameter_uncertainty_step_ok
-    )
+    assert rfile.covariance_status(table_number)['covariance_step_ok'] == covariance_step_ok
 
 
 def test_estimation_status_empty():
@@ -317,7 +306,7 @@ def test_estimation_status_withsim(testdata):
         'function_evaluations': 192,
         'warning': False,
     }
-    assert rfile.parameter_uncertainty_status(45)['parameter_uncertainty_step_ok'] is False
+    assert rfile.covariance_status(45)['covariance_step_ok'] is False
 
     assert rfile.estimation_status(70) == {
         'minimization_successful': True,
@@ -328,7 +317,7 @@ def test_estimation_status_withsim(testdata):
         'function_evaluations': 202,
         'warning': False,
     }
-    assert rfile.parameter_uncertainty_status(70)['parameter_uncertainty_step_ok'] is False
+    assert rfile.covariance_status(70)['covariance_step_ok'] is False
 
     assert rfile.estimation_status(100) == {
         'minimization_successful': True,
@@ -339,7 +328,7 @@ def test_estimation_status_withsim(testdata):
         'function_evaluations': 100,
         'warning': False,
     }
-    assert rfile.parameter_uncertainty_status(100)['parameter_uncertainty_step_ok'] is True
+    assert rfile.covariance_status(100)['covariance_step_ok'] is True
 
 
 def test_ofv_table_gap(testdata):
@@ -439,7 +428,7 @@ def test_warnings(testdata, file_name, ref, idx):
     assert message == ref
 
 
-def test_parameter_uncertainty_status(testdata):
+def test_covariance_status(testdata):
     res = read_modelfit_results(
         testdata / 'nonmem' / 'modelfit_results' / 'covariance' / 'pheno_nocovariance.mod'
     )
