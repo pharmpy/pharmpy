@@ -66,6 +66,10 @@ For a more detailed description of each argument, see their respective chapter o
 +-------------------------------------------------+------------------------------------------------------------------+
 | ``results``                                     | ModelfitResults of the start model                               |
 +-------------------------------------------------+------------------------------------------------------------------+
+| :ref:`strictness<strictness>`                   | Strictness criteria for model selection.                         |
+|                                                 | Default is "minimization_successful or                           |
+|                                                 | (rounding_errors and sigdigs>= 0)"                               |
++-------------------------------------------------+------------------------------------------------------------------+
 
 .. _the search space:
 
