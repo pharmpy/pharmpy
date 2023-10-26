@@ -2159,7 +2159,8 @@ def find_clearance_parameters(model: Model):
             clearance_symbols = a - b - {t}
             for clearance in clearance_symbols:
                 clearance = _find_real_symbol(sset, clearance)
-                cls.add(clearance)
+                if clearance != sympy.Symbol('LAFREE'):
+                    cls.add(clearance)
     return sorted(cls, key=str)
 
 
