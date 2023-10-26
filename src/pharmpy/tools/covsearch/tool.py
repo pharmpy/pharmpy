@@ -8,7 +8,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import add_covariate_effect, get_pk_parameters
+from pharmpy.modeling import add_covariate_effect, get_pk_parameters, remove_covariate_effect
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
@@ -29,6 +29,7 @@ from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
 from ..mfl.filter import covsearch_statement_types
+from ..mfl.parse import ModelFeatures, get_model_features
 from .results import COVSearchResults
 
 NAME_WF = 'covsearch'
@@ -147,13 +148,12 @@ def create_workflow(
 
     wb = WorkflowBuilder(name=NAME_WF)
 
-    init_task = init(model)
+    init_task = init(effects, model)
     wb.add_task(init_task)
 
     forward_search_task = Task(
         'forward-search',
         task_greedy_forward_search,
-        effects,
         p_forward,
         max_steps,
         strictness,
@@ -187,30 +187,78 @@ def create_workflow(
     return Workflow(wb)
 
 
-def _init_search_state(model: Model) -> SearchState:
-    candidate = Candidate(model, ())
-    return SearchState(model, candidate, [candidate])
+def _init_search_state(context, effects: str, model: Model) -> SearchState:
+    effects, filtered_model = filter_search_space_and_model(effects, model)
+    if filtered_model != model:
+        filtered_fit_wf = create_fit_workflow(models=[filtered_model])
+        filtered_model = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
+    candidate = Candidate(filtered_model, ())
+    return (effects, SearchState(filtered_model, candidate, [candidate]))
 
 
-def init(model: Union[Model, None]):
+def init(effects, model: Union[Model, None]):
     return (
-        Task('init', _init_search_state)
+        Task('init', _init_search_state, effects)
         if model is None
-        else Task('init', _init_search_state, model)
+        else Task('init', _init_search_state, effects, model)
     )
+
+
+def filter_search_space_and_model(effects, model):
+    filtered_model = model.replace(name="filtered_input_model", parent_model="filtered_input_model")
+    ss_mfl = ModelFeatures.create_from_mfl_string(effects).expand(filtered_model)
+    ss_mfl = ss_mfl.expand(filtered_model)
+    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
+
+    # Remove all covariates not part of the search space
+    to_be_removed = model_mfl - ss_mfl
+    covariate_list = to_be_removed.mfl_statement_list(["covariate"])
+    if len(covariate_list) != 0:
+        description = ["REMOVED"]
+        for cov_effect in parse_spec(spec(filtered_model, covariate_list)):
+            if cov_effect[2].lower() == "custom":
+                try:
+                    filtered_model = remove_covariate_effect(
+                        filtered_model, cov_effect[0], cov_effect[1]
+                    )
+
+                except AssertionError:
+                    # All custom effects are grouped and therefor might not exist
+                    # FIXME : remove_covariate_effect not raise if non-existing ?
+                    pass
+            else:
+                filtered_model = remove_covariate_effect(
+                    filtered_model, cov_effect[0], cov_effect[1]
+                )
+                description.append(f'({cov_effect[0]}-{cov_effect[1]})')
+        filtered_model = filtered_model.replace(description=';'.join(description))
+        final_model = filtered_model
+    else:
+        final_model = model
+
+    # Filter search space from already present covariates
+    effects = ss_mfl - model_mfl
+    effects = effects.mfl_statement_list(["covariate"])
+
+    return (effects, final_model)
 
 
 def task_greedy_forward_search(
     context,
-    effects: str,
     p_forward: float,
     max_steps: int,
     strictness: Optional[str],
-    state: SearchState,
+    state_and_effect: Tuple[SearchState, ModelFeatures],
 ) -> SearchState:
+    for temp in state_and_effect:
+        if isinstance(temp, SearchState):
+            state = temp
+        else:
+            effects = temp
     candidate = state.best_candidate_so_far
     assert state.all_candidates_so_far == [candidate]
-    effect_spec = spec(candidate.model, mfl_parse(effects))
+
+    effect_spec = spec(candidate.model, effects)
     candidate_effects = sorted(set(parse_spec(effect_spec)))
 
     def handle_effects(

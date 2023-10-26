@@ -1,6 +1,11 @@
 import pytest
 
-from pharmpy.tools.covsearch.tool import create_workflow, validate_input
+from pharmpy.modeling import add_covariate_effect, get_covariates, remove_covariate_effect
+from pharmpy.tools.covsearch.tool import (
+    create_workflow,
+    filter_search_space_and_model,
+    validate_input,
+)
 from pharmpy.workflows import Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
@@ -142,3 +147,25 @@ def test_validate_input_raises(
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
+
+
+def test_covariate_filtering(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    orig_cov = get_covariates(model)
+    assert len(orig_cov) == 3
+
+    eff, filtered_model = filter_search_space_and_model(LARGE_VALID_MFL_STRING, model)
+    assert len(eff) == 2
+    assert len(eff[0].parameter) == 2
+    assert len(get_covariates(filtered_model)) == 0
+
+    for cov_effect in get_covariates(model):
+        model = remove_covariate_effect(model, cov_effect[0], cov_effect[1].name)
+
+    model = add_covariate_effect(model, 'CL', 'WGT', 'pow', '*')
+    assert len(get_covariates(model)) == 1
+    effects = 'COVARIATE([CL, V],WGT,pow,*)'
+    eff, filtered_model = filter_search_space_and_model(effects, model)
+    assert len(get_covariates(filtered_model)) == 1
+    assert len(eff) == 1
+    assert len(eff[0].parameter) == 1

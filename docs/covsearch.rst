@@ -120,6 +120,9 @@ For instance,
 would test an exponential covariate effect on clearance and volume for each
 continuous covariate.
 
+.. note::
+    Covariates that are already present in the model will be removed, unless they are also part of the search space. See :ref:`Algorithm<algorithm_covsearch>` for more.
+
 More automatic symbols are available. They are described in the :ref:`MFL
 symbols section<mfl_symbols>`.
 
@@ -146,8 +149,13 @@ continuous covariate effects of all covariates on all PK parameters".
 Algorithm
 ~~~~~~~~~
 
-The current default search algorithm `'scm-forward-then-backward'` consists in
-the SCM method with forward steps followed by backward steps.
+The current default search algorithm `'scm-forward-then-backward'` consists of
+the SCM method with forward steps followed by backward steps. The covariate effects that are added are 
+dependent on the effects that are already present in the input model. All covariate effects that are 
+initially part of the model but are *not* part of the search space will be removed before starting 
+the search. Covariate effects that are part of both the search space *and* the model will be left in 
+the model but are removed from the search space. If any filtration is done, a new "filtered_input_model" 
+is created, otherwise the input model will be used.
 
 .. graphviz::
 
