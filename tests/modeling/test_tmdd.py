@@ -1,6 +1,6 @@
 import sympy
 
-from pharmpy.modeling import add_peripheral_compartment, set_tmdd
+from pharmpy.modeling import add_peripheral_compartment, set_mixed_mm_fo_elimination, set_tmdd
 
 
 def test_full(pheno_path, load_model_for_test):
@@ -25,7 +25,7 @@ def test_qss_1c(pheno_path, load_model_for_test):
     tmdd_model = set_tmdd(model, type="qss")
     assert (
         str(tmdd_model.statements.ode_system.eqs[0].rhs)
-        == """-CL*LAFREE/V1 - KINT*LAFREE*A_TARGET(t)/(KD + LAFREE) - LAFREE*Q/V1 + Q*A_PERIPHERAL1(t)/V2"""
+        == """-CL*LAFREE/V1 - KINT*LAFREE*A_TARGET(t)/(KD + LAFREE) - LAFREE*QP1/V1 + QP1*A_PERIPHERAL1(t)/VP1"""
     )
 
     model2 = add_peripheral_compartment(model)
@@ -65,3 +65,11 @@ def test_wagner(pheno_path, load_model_for_test):
     model = load_model_for_test(pheno_path)
     model = add_peripheral_compartment(model)
     model = set_tmdd(model, type="wagner")
+
+
+def test_tmdd_with_mixed_fo_mm_elimination(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model = add_peripheral_compartment(model)
+    model = set_mixed_mm_fo_elimination(model)
+    qss = set_tmdd(model, 'qss')
+    assert qss
