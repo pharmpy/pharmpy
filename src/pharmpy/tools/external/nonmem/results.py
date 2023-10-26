@@ -77,7 +77,7 @@ def _parse_modelfit_results(
     residuals = _parse_residuals(table_df)
     predictions = _parse_predictions(table_df)
     iofv, ie, iec = _parse_phi(path, control_stream, name_map, etas, subproblem)
-    gradients_iterations, has_zero_gradient, gradients = _parse_grd(
+    gradients_iterations, final_zero_gradient, gradients = _parse_grd(
         path, control_stream, name_map, parameters, subproblem
     )
     rse = _calculate_relative_standard_errors(final_pe, ses)
@@ -133,8 +133,8 @@ def _parse_modelfit_results(
     warnings = []
     if any(estimate_near_boundary):
         warnings.append('estimate_near_boundary')
-    if has_zero_gradient:
-        warnings.append('has_zero_gradient')
+    if final_zero_gradient:
+        warnings.append('final_zero_gradient')
 
     res = ModelfitResults(
         name=name,
@@ -386,13 +386,8 @@ def _parse_grd(
     last_row = gradients_table.tail(1)
     last_row = last_row.drop(columns=['ITERATION'])
     last_row = last_row.squeeze(axis=0).rename('gradients')
-
-    if last_row.min() != 0:
-        has_zero_gradient = False
-    else:
-        has_zero_gradient = True
-
-    return gradients_table, has_zero_gradient, last_row
+    final_zero_gradient = (last_row == 0).any()
+    return gradients_table, final_zero_gradient, last_row
 
 
 def _parse_tables(path: Path, control_stream: NMTranControlStream, netas) -> pd.DataFrame:
