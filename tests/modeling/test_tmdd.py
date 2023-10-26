@@ -29,7 +29,7 @@ def test_qss_1c(pheno_path, load_model_for_test):
     )
     assert (
         str(tmdd_model.statements.ode_system.eqs[1].rhs)
-        == """LAFREE*Q/V1 - Q*A_PERIPHERAL1(t)/V2"""
+        == """LAFREE*QP1/V1 - QP1*A_PERIPHERAL1(t)/VP1"""
     )
     assert (
         str(tmdd_model.statements.ode_system.eqs[2].rhs)
@@ -89,12 +89,16 @@ def test_wagner_1c(pheno_path, load_model_for_test):
     wagner = set_tmdd(model, type="wagner")
     assert (
         str(wagner.statements.ode_system.eqs[0].rhs)
-        == """-CL*LAFREE/V1 + KINT*LAFREE - KINT*A_CENTRAL(t) - LAFREE*Q/V1 + Q*A_PERIPHERAL1(t)/V2"""
+        == """-CL*LAFREE/V1 + KINT*LAFREE - KINT*A_CENTRAL(t) - LAFREE*QP1/V1 + QP1*A_PERIPHERAL1(t)/VP1"""
     )
-    assert str(wagner.statements.ode_system.eqs[1].rhs) == """LAFREE*Q/V1 - Q*A_PERIPHERAL1(t)/V2"""
+    assert (
+        str(wagner.statements.ode_system.eqs[1].rhs)
+        == """LAFREE*QP1/V1 - QP1*A_PERIPHERAL1(t)/VP1"""
+    )
 
     model = add_peripheral_compartment(model)
     wagner = set_tmdd(model, type="wagner")
     assert (
-        str(wagner.statements.ode_system.eqs[1].rhs) == """LAFREE*Q2/V1 - Q2*A_PERIPHERAL1(t)/V2"""
+        str(wagner.statements.ode_system.eqs[1].rhs)
+        == """LAFREE*QP1/V1 - QP1*A_PERIPHERAL1(t)/VP1"""
     )
