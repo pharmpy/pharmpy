@@ -80,7 +80,7 @@ def create_pkpd_models(
 
     models = []
     for key, func in functions.items():
-        pkpd_model = func
+        pkpd_model = func(model)
         description = '_'.join(key)
         pkpd_model = pkpd_model.replace(description=description)
         models.append(pkpd_model)
