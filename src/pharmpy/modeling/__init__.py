@@ -202,7 +202,7 @@ from .parameters import (
     unfix_parameters_to,
     update_inits,
 )
-from .pd import add_effect_compartment, add_indirect_effect, set_direct_effect
+from .pd import add_effect_compartment, add_indirect_effect, set_baseline_effect, set_direct_effect
 from .plots import (
     plot_cwres_vs_idv,
     plot_dv_vs_ipred,
@@ -384,6 +384,7 @@ __all__ = [
     'sample_individual_estimates',
     'sample_parameters_uniformly',
     'set_additive_error_model',
+    'set_baseline_effect',
     'set_instantaneous_absorption',
     'set_combined_error_model',
     'set_covariates',
