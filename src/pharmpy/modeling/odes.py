@@ -926,13 +926,20 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         cb = CompartmentalSystemBuilder(cs)
 
         while nremove > 0:
-            from_comp, from_flow = cs.get_compartment_inflows(trans)[0]
-            cb.add_flow(from_comp, destination, from_flow)
+            try:
+                from_comp, from_flow = cs.get_compartment_inflows(trans)[0]
+            except IndexError:
+                # Final remaining transit
+                final_transit = True
+            else:
+                cb.add_flow(from_comp, destination, from_flow)
+                final_transit = False
             cb.remove_compartment(trans)
             remaining.remove(trans)
             removed_symbols |= flow.free_symbols
-            trans = from_comp
-            flow = from_flow
+            if not final_transit:
+                trans = from_comp
+                flow = from_flow
             nremove -= 1
 
         if n == 0:

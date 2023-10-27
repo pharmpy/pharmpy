@@ -1659,6 +1659,8 @@ $ESTIMATION METHOD=1 INTERACTION
 """  # noqa: E501
     assert model.model_code == correct
 
+    model = set_transit_compartments(model, 0)
+
 
 def test_transits_non_linear_elim_with_update(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
