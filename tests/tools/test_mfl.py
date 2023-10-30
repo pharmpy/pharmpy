@@ -11,7 +11,7 @@ from pharmpy.tools.mfl.statement.feature.covariate import Covariate, Ref
 from pharmpy.tools.mfl.statement.feature.elimination import Elimination
 from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
 from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
-from pharmpy.tools.mfl.statement.feature.symbols import Name, Wildcard
+from pharmpy.tools.mfl.statement.feature.symbols import Name, Option, Wildcard
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.mfl.statement.statement import Statement
 from pharmpy.tools.mfl.stringify import stringify
@@ -232,28 +232,37 @@ from pharmpy.tools.mfl.stringify import stringify
             'COVARIATE([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
             'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)',
             (
-                ('COVARIATE', 'CL', 'APGR', 'cat', '+'),
-                ('COVARIATE', 'CL', 'WGT', 'exp', '*'),
-                ('COVARIATE', 'MAT', 'APGR', 'cat', '+'),
-                ('COVARIATE', 'MAT', 'WGT', 'exp', '*'),
-                ('COVARIATE', 'VC', 'APGR', 'cat', '+'),
-                ('COVARIATE', 'VC', 'WGT', 'exp', '*'),
+                ('COVARIATE', 'CL', 'APGR', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'MAT', 'APGR', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'MAT', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'VC', 'APGR', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'VC', 'WGT', 'exp', '*', 'ADD'),
             ),
         ),
         (
             'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
-            'COVARIATE([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
-            'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)',
             (
-                ('COVARIATE', 'CL', 'AGE', 'exp', '*'),
-                ('COVARIATE', 'CL', 'SEX', 'cat', '+'),
-                ('COVARIATE', 'CL', 'WT', 'exp', '*'),
-                ('COVARIATE', 'MAT', 'AGE', 'exp', '*'),
-                ('COVARIATE', 'MAT', 'SEX', 'cat', '+'),
-                ('COVARIATE', 'MAT', 'WT', 'exp', '*'),
-                ('COVARIATE', 'VC', 'AGE', 'exp', '*'),
-                ('COVARIATE', 'VC', 'SEX', 'cat', '+'),
-                ('COVARIATE', 'VC', 'WT', 'exp', '*'),
+                ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'SEX', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'CL', 'WT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'MAT', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'MAT', 'SEX', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'MAT', 'WT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'VC', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'VC', 'SEX', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'VC', 'WT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'SEX', 'cat', '+', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'MAT', 'AGE', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'MAT', 'SEX', 'cat', '+', 'REMOVE'),
+                ('COVARIATE', 'MAT', 'WT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'VC', 'AGE', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'VC', 'SEX', 'cat', '+', 'REMOVE'),
+                ('COVARIATE', 'VC', 'WT', 'exp', '*', 'REMOVE'),
             ),
         ),
         (
@@ -261,57 +270,81 @@ from pharmpy.tools.mfl.stringify import stringify
             'COVARIATE([CL, MAT, VC], @CONTINUOUS, [EXP])\n'
             'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)',
             (
-                ('COVARIATE', 'CL', 'AGE', 'exp', '*'),
-                ('COVARIATE', 'CL', 'SEX', 'cat', '+'),
-                ('COVARIATE', 'CL', 'WT', 'exp', '*'),
-                ('COVARIATE', 'MAT', 'AGE', 'exp', '*'),
-                ('COVARIATE', 'MAT', 'SEX', 'cat', '+'),
-                ('COVARIATE', 'MAT', 'WT', 'exp', '*'),
-                ('COVARIATE', 'VC', 'AGE', 'exp', '*'),
-                ('COVARIATE', 'VC', 'SEX', 'cat', '+'),
-                ('COVARIATE', 'VC', 'WT', 'exp', '*'),
+                ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'SEX', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'CL', 'WT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'MAT', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'MAT', 'SEX', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'MAT', 'WT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'VC', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'VC', 'SEX', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'VC', 'WT', 'exp', '*', 'ADD'),
             ),
         ),
         (
             'LET(CONTINUOUS, AGE); LET(CATEGORICAL, SEX)\n'
-            'COVARIATE([CL], @CONTINUOUS, *)\n'
+            'COVARIATE?([CL], @CONTINUOUS, *)\n'
             'COVARIATE([VC], @CATEGORICAL, CAT, +)',
             (
-                ('COVARIATE', 'CL', 'AGE', 'exp', '*'),
-                ('COVARIATE', 'CL', 'AGE', 'lin', '*'),
-                ('COVARIATE', 'CL', 'AGE', 'piece_lin', '*'),
-                ('COVARIATE', 'CL', 'AGE', 'pow', '*'),
-                ('COVARIATE', 'VC', 'SEX', 'cat', '+'),
+                ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'AGE', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'AGE', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'AGE', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'AGE', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'AGE', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'AGE', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'VC', 'SEX', 'cat', '+', 'ADD'),
             ),
         ),
         (
-            'COVARIATE(@IIV, @CONTINUOUS, *);' 'COVARIATE(*, @CATEGORICAL, CAT, *)',
+            'COVARIATE?(@IIV, @CONTINUOUS, *);' 'COVARIATE?(*, @CATEGORICAL, CAT, *)',
             (
-                ('COVARIATE', 'CL', 'APGR', 'cat', '*'),
-                ('COVARIATE', 'CL', 'WGT', 'exp', '*'),
-                ('COVARIATE', 'CL', 'WGT', 'lin', '*'),
-                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*'),
-                ('COVARIATE', 'CL', 'WGT', 'pow', '*'),
-                ('COVARIATE', 'V', 'APGR', 'cat', '*'),
-                ('COVARIATE', 'V', 'WGT', 'exp', '*'),
-                ('COVARIATE', 'V', 'WGT', 'lin', '*'),
-                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*'),
-                ('COVARIATE', 'V', 'WGT', 'pow', '*'),
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'REMOVE'),
             ),
         ),
         (
-            'COVARIATE(@PK, @CONTINUOUS, *);' 'COVARIATE(@PK, @CATEGORICAL, CAT, *)',
+            'COVARIATE?(@PK, @CONTINUOUS, *);' 'COVARIATE?(@PK, @CATEGORICAL, CAT, *)',
             (
-                ('COVARIATE', 'CL', 'APGR', 'cat', '*'),
-                ('COVARIATE', 'CL', 'WGT', 'exp', '*'),
-                ('COVARIATE', 'CL', 'WGT', 'lin', '*'),
-                ('COVARIATE', 'CL', 'WGT', 'pow', '*'),
-                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*'),
-                ('COVARIATE', 'V', 'APGR', 'cat', '*'),
-                ('COVARIATE', 'V', 'WGT', 'exp', '*'),
-                ('COVARIATE', 'V', 'WGT', 'lin', '*'),
-                ('COVARIATE', 'V', 'WGT', 'pow', '*'),
-                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*'),
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'REMOVE'),
             ),
         ),
         (
@@ -319,8 +352,8 @@ from pharmpy.tools.mfl.stringify import stringify
             'COVARIATE(@DISTRIBUTION, WGT, EXP);'
             'COVARIATE(@ELIMINATION, SEX, CAT)',
             (
-                ('COVARIATE', 'CL', 'SEX', 'cat', '*'),
-                ('COVARIATE', 'V', 'WGT', 'exp', '*'),
+                ('COVARIATE', 'CL', 'SEX', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'ADD'),
             ),
         ),
         (
@@ -358,33 +391,51 @@ def test_all_funcs(load_model_for_test, pheno_path, source, expected):
     ('source', 'expected'),
     (
         (
-            'COVARIATE(@PK, @CONTINUOUS, *);' 'COVARIATE(@PK, @CATEGORICAL, CAT, *)',
+            'COVARIATE?(@PK, @CONTINUOUS, *);' 'COVARIATE?(@PK, @CATEGORICAL, CAT, *)',
             (
-                ('COVARIATE', 'CL', 'APGR', 'cat', '*'),
-                ('COVARIATE', 'CL', 'WGT', 'exp', '*'),
-                ('COVARIATE', 'CL', 'WGT', 'lin', '*'),
-                ('COVARIATE', 'CL', 'WGT', 'pow', '*'),
-                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*'),
-                ('COVARIATE', 'V', 'APGR', 'cat', '*'),
-                ('COVARIATE', 'V', 'WGT', 'exp', '*'),
-                ('COVARIATE', 'V', 'WGT', 'lin', '*'),
-                ('COVARIATE', 'V', 'WGT', 'pow', '*'),
-                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*'),
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'REMOVE'),
             ),
         ),
         (
-            'COVARIATE(@PD, @CONTINUOUS, *);' 'COVARIATE(@PD, @CATEGORICAL, CAT, *)',
+            'COVARIATE?(@PD, @CONTINUOUS, *);' 'COVARIATE(@PD, @CATEGORICAL, CAT, *)',
             (
-                ('COVARIATE', 'B', 'APGR', 'cat', '*'),
-                ('COVARIATE', 'B', 'WGT', 'exp', '*'),
-                ('COVARIATE', 'B', 'WGT', 'lin', '*'),
-                ('COVARIATE', 'B', 'WGT', 'pow', '*'),
-                ('COVARIATE', 'B', 'WGT', 'piece_lin', '*'),
-                ('COVARIATE', 'SLOPE', 'APGR', 'cat', '*'),
-                ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*'),
-                ('COVARIATE', 'SLOPE', 'WGT', 'lin', '*'),
-                ('COVARIATE', 'SLOPE', 'WGT', 'pow', '*'),
-                ('COVARIATE', 'SLOPE', 'WGT', 'piece_lin', '*'),
+                ('COVARIATE', 'B', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'B', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'B', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'B', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'B', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'B', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'B', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'B', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'B', 'WGT', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'piece_lin', '*', 'REMOVE'),
             ),
         ),
     ),
@@ -399,65 +450,91 @@ def test_all_funcs_pd(load_model_for_test, pheno_path, source, expected):
     assert set(keys) == set(expected)
 
 
-# @pytest.mark.parametrize(
-#    ('source', 'expected'),
-#    (
-#        (
-#            'COVARIATE(@PD_IIV, @CONTINUOUS, *);' 'COVARIATE(@PD_IIV, @CATEGORICAL, CAT, *)',
-#            (
-#                ('COVARIATE', 'SLOPE', 'APGR', 'cat', '*'),
-#                ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*'),
-#                ('COVARIATE', 'SLOPE', 'WGT', 'lin', '*'),
-#                ('COVARIATE', 'SLOPE', 'WGT', 'pow', '*'),
-#                ('COVARIATE', 'SLOPE', 'WGT', 'piece_lin', '*'),
-#            ),
-#        ),
-#        (
-#            'COVARIATE(@PK_IIV, @CONTINUOUS, *);' 'COVARIATE(@PK_IIV, @CATEGORICAL, CAT, *)',
-#            (
-#                ('COVARIATE', 'CL', 'APGR', 'cat', '*'),
-#                ('COVARIATE', 'CL', 'WGT', 'exp', '*'),
-#                ('COVARIATE', 'CL', 'WGT', 'lin', '*'),
-#                ('COVARIATE', 'CL', 'WGT', 'pow', '*'),
-#                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*'),
-#                ('COVARIATE', 'V', 'APGR', 'cat', '*'),
-#                ('COVARIATE', 'V', 'WGT', 'exp', '*'),
-#                ('COVARIATE', 'V', 'WGT', 'lin', '*'),
-#                ('COVARIATE', 'V', 'WGT', 'pow', '*'),
-#                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*'),
-#            ),
-#        ),
-#        (
-#            'COVARIATE(@IIV, @CONTINUOUS, *);' 'COVARIATE(@IIV, @CATEGORICAL, CAT, *)',
-#            (
-#                ('COVARIATE', 'SLOPE', 'APGR', 'cat', '*'),
-#                ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*'),
-#                ('COVARIATE', 'SLOPE', 'WGT', 'lin', '*'),
-#                ('COVARIATE', 'SLOPE', 'WGT', 'pow', '*'),
-#                ('COVARIATE', 'SLOPE', 'WGT', 'piece_lin', '*'),
-#                ('COVARIATE', 'CL', 'APGR', 'cat', '*'),
-#                ('COVARIATE', 'CL', 'WGT', 'exp', '*'),
-#                ('COVARIATE', 'CL', 'WGT', 'lin', '*'),
-#                ('COVARIATE', 'CL', 'WGT', 'pow', '*'),
-#                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*'),
-#                ('COVARIATE', 'V', 'APGR', 'cat', '*'),
-#                ('COVARIATE', 'V', 'WGT', 'exp', '*'),
-#                ('COVARIATE', 'V', 'WGT', 'lin', '*'),
-#                ('COVARIATE', 'V', 'WGT', 'pow', '*'),
-#                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*'),
-#            ),
-#        ),
-#    ),
-#    ids=repr,
-# )
-# def test_all_funcs_pd_iiv(load_model_for_test, pheno_path, source, expected):
-#    model = load_model_for_test(pheno_path)
-#    model = set_direct_effect(model, 'linear')
-#    model = add_iiv(model, 'SLOPE', 'exp')
-#    statements = parse(source)
-#    funcs = all_funcs(model, statements)
-#    keys = funcs.keys()
-#    assert set(keys) == set(expected)
+@pytest.mark.parametrize(
+    ('source', 'expected'),
+    (
+        (
+            'COVARIATE?(@PD_IIV, @CONTINUOUS, *);' 'COVARIATE(@PD_IIV, @CATEGORICAL, CAT, *)',
+            (
+                ('COVARIATE', 'SLOPE', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'piece_lin', '*', 'REMOVE'),
+            ),
+        ),
+        (
+            'COVARIATE?(@PK_IIV, @CONTINUOUS, *);' 'COVARIATE(@PK_IIV, @CATEGORICAL, CAT, *)',
+            (
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'REMOVE'),
+            ),
+        ),
+        (
+            'COVARIATE?(@IIV, @CONTINUOUS, *);' 'COVARIATE(@IIV, @CATEGORICAL, CAT, *)',
+            (
+                ('COVARIATE', 'SLOPE', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'SLOPE', 'WGT', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'REMOVE'),
+            ),
+        ),
+    ),
+    ids=repr,
+)
+def test_all_funcs_pd_iiv(load_model_for_test, pheno_path, source, expected):
+    from pharmpy.modeling import add_iiv
+
+    model = load_model_for_test(pheno_path)
+    model = set_direct_effect(model, 'linear')
+    model = add_iiv(model, 'SLOPE', 'exp')
+    statements = parse(source)
+    funcs = all_funcs(model, statements)
+    keys = funcs.keys()
+    assert set(keys) == set(expected)
 
 
 @pytest.mark.parametrize(
@@ -465,7 +542,7 @@ def test_all_funcs_pd(load_model_for_test, pheno_path, source, expected):
     (
         (
             'COVARIATE(@BIOAVAIL, APGR, CAT, +)',
-            (('COVARIATE', 'BIO', 'APGR', 'cat', '+'),),
+            (('COVARIATE', 'BIO', 'APGR', 'cat', '+', 'ADD'),),
         ),
     ),
     ids=repr,
@@ -479,13 +556,19 @@ def test_funcs_ivoral(source, expected):
 
 
 @pytest.mark.parametrize(
-    'code',
-    [
-        ('ABSORPTION(ILLEGAL)'),
-        ('ELIMINATION(ALSOILLEGAL)'),
-        ('LAGTIME(0)'),
-        ('TRANSITS(*)'),
-    ],
+    ('code'),
+    (
+        [
+            ('ABSORPTION(ILLEGAL)'),
+            ('ELIMINATION(ALSOILLEGAL)'),
+            ('LAGTIME(0)'),
+            ('TRANSITS(*)'),
+        ],
+        [
+            ('COVARIATE([V], WGT, *, +)'),
+            ('COVARIATE?(V, WGT, *, +)'),
+        ],
+    ),
 )
 def test_illegal_mfl(code):
     with pytest.raises(Exception):
@@ -522,6 +605,10 @@ def test_illegal_mfl(code):
                 Covariate(Ref('IIV'), Ref('CATEGORICAL'), ('CAT',), '*'),
             ),
             'COVARIATE(@IIV,@CONTINUOUS,EXP);' 'COVARIATE(@IIV,@CATEGORICAL,CAT)',
+        ),
+        (
+            (Covariate(('CL',), ('WGT',), Wildcard(), '+', Option(True)),),
+            'COVARIATE?(CL,WGT,*,+)',
         ),
     ),
 )
@@ -584,8 +671,8 @@ def test_ModelFeatures_add(load_model_for_test, pheno_path):
 
     assert mfl + model_mfl == expected_mfl
 
-    m1 = ModelFeatures.create_from_mfl_string("COVARIATE(V, WGT, *)")
-    m2 = ModelFeatures.create_from_mfl_string("COVARIATE(@ELIMINATION, WGT, *)")
+    m1 = ModelFeatures.create_from_mfl_string("COVARIATE?(V, WGT, *)")
+    m2 = ModelFeatures.create_from_mfl_string("COVARIATE?(@ELIMINATION, WGT, *)")
 
     with pytest.raises(
         ValueError,
@@ -645,8 +732,8 @@ def test_ModelFeatures_sub(load_model_for_test, pheno_path):
     res_mfl = model_mfl - mfl
     assert res_mfl == expected_mfl
 
-    m1 = ModelFeatures.create_from_mfl_string("COVARIATE([CL,V], WGT, *)")
-    m2 = ModelFeatures.create_from_mfl_string("COVARIATE(@ELIMINATION, WGT, *)")
+    m1 = ModelFeatures.create_from_mfl_string("COVARIATE?([CL,V], WGT, *)")
+    m2 = ModelFeatures.create_from_mfl_string("COVARIATE?(@ELIMINATION, WGT, *)")
 
     with pytest.raises(
         ValueError,
@@ -674,9 +761,9 @@ def test_least_number_of_transformations(load_model_for_test, pheno_path):
     assert ('ABSORPTION', 'FO') in lnt
     assert ('ELIMINATION', 'ZO') in lnt
     assert ('PERIPHERALS', 1) in lnt
-    assert ('COVARIATE', 'CL', 'WGT', 'custom', '*') in lnt
-    assert ('COVARIATE', 'V', 'WGT', 'custom', '*') in lnt
-    assert ('COVARIATE', 'V', 'APGR', 'custom', '*') in lnt
+    assert ('COVARIATE', 'CL', 'WGT', 'custom', '*', 'REMOVE') in lnt
+    assert ('COVARIATE', 'V', 'WGT', 'custom', '*', 'REMOVE') in lnt
+    assert ('COVARIATE', 'V', 'APGR', 'custom', '*', 'REMOVE') in lnt
 
     assert len(lnt) == 6
 

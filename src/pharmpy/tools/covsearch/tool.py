@@ -8,21 +8,18 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import add_covariate_effect, get_pk_parameters, remove_covariate_effect
+from pharmpy.modeling import get_pk_parameters, has_covariate_effect, remove_covariate_effect
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import is_strictness_fulfilled, summarize_modelfit_results
 from pharmpy.tools.common import create_results, update_initial_estimates
-from pharmpy.tools.mfl.feature.covariate import (
-    EffectLiteral,
-    InputSpec,
-    all_covariate_effects,
-    parse_spec,
-    spec,
-)
+from pharmpy.tools.mfl.feature.covariate import EffectLiteral, InputSpec, all_covariate_effects
+from pharmpy.tools.mfl.feature.covariate import features as covariate_features
+from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.parse import parse as mfl_parse
+from pharmpy.tools.mfl.statement.feature.symbols import Wildcard
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
@@ -91,6 +88,7 @@ class Candidate:
 
 @dataclass
 class SearchState:
+    user_input_model: Model
     start_model: Model
     best_candidate_so_far: Candidate
     all_candidates_so_far: List[Candidate]
@@ -188,12 +186,15 @@ def create_workflow(
 
 
 def _init_search_state(context, effects: str, model: Model) -> SearchState:
-    effects, filtered_model = filter_search_space_and_model(effects, model)
-    if filtered_model != model:
+    effect_funcs, filtered_model = filter_search_space_and_model(effects, model)
+    if filtered_model.description != model.description:
         filtered_fit_wf = create_fit_workflow(models=[filtered_model])
         filtered_model = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
+        # TODO : Handle case where model with mandatory covariates
+    else:
+        filtered_model = model
     candidate = Candidate(filtered_model, ())
-    return (effects, SearchState(filtered_model, candidate, [candidate]))
+    return (effect_funcs, SearchState(model, filtered_model, candidate, [candidate]))
 
 
 def init(effects, model: Union[Model, None]):
@@ -206,21 +207,24 @@ def init(effects, model: Union[Model, None]):
 
 def filter_search_space_and_model(effects, model):
     filtered_model = model.replace(name="filtered_input_model", parent_model="filtered_input_model")
-    ss_mfl = ModelFeatures.create_from_mfl_string(effects).expand(filtered_model)
-    ss_mfl = ss_mfl.expand(filtered_model)
+    ss_mfl = ModelFeatures.create_from_mfl_string(effects).expand(
+        filtered_model
+    )  # Expand to remove LET/REF
     model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
 
     # Remove all covariates not part of the search space
     to_be_removed = model_mfl - ss_mfl
     covariate_list = to_be_removed.mfl_statement_list(["covariate"])
+    description = []
     if len(covariate_list) != 0:
-        description = ["REMOVED"]
+        description.append("REMOVED")
         for cov_effect in parse_spec(spec(filtered_model, covariate_list)):
             if cov_effect[2].lower() == "custom":
                 try:
                     filtered_model = remove_covariate_effect(
                         filtered_model, cov_effect[0], cov_effect[1]
                     )
+                    description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
 
                 except AssertionError:
                     # All custom effects are grouped and therefor might not exist
@@ -230,17 +234,65 @@ def filter_search_space_and_model(effects, model):
                 filtered_model = remove_covariate_effect(
                     filtered_model, cov_effect[0], cov_effect[1]
                 )
-                description.append(f'({cov_effect[0]}-{cov_effect[1]})')
+                description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
         filtered_model = filtered_model.replace(description=';'.join(description))
-        final_model = filtered_model
+
+    ss_funcs = dict(covariate_features(filtered_model, mfl_parse(effects)))
+
+    remove_funcs = {k: v for k, v in ss_funcs.items() if k[-1] == "REMOVE"}
+    optional_funcs = {}
+    for key in remove_funcs.keys():
+        add_key = key[:-1] + ("ADD",)
+        optional_funcs[add_key] = ss_funcs[add_key]
+    mandatory_funcs = {
+        k: v
+        for k, v in ss_funcs.items()
+        if k[-1] != "REMOVE" and k[:-1] + ("REMOVE",) not in ss_funcs.keys()
+    }
+
+    def func_description(effect_funcs, model=None, add=True):
+        d = []
+        for eff_descriptor, _ in effect_funcs.items():
+            if model:
+                if (
+                    has_covariate_effect(model, eff_descriptor[1], eff_descriptor[2])
+                    if add
+                    else not has_covariate_effect(model, eff_descriptor[1], eff_descriptor[2])
+                ):
+                    d.append(f'({eff_descriptor[1]}-{eff_descriptor[2]}-{eff_descriptor[3]})')
+            else:
+                d.append(f'({eff_descriptor[1]}-{eff_descriptor[2]}-{eff_descriptor[3]})')
+        return d
+
+    # Remove all optional covariates
+    if len(remove_funcs) != 0:
+        potential_extension = func_description(remove_funcs, filtered_model, add=True)
+        for _, optional_func in remove_funcs.items():
+            filtered_model = optional_func(filtered_model)
+        if len(potential_extension) != 0:
+            if not description:
+                description.append("REMOVED")
+            description.extend(potential_extension)
+
+    # Add all mandatory covariates
+    if len(mandatory_funcs) != 0:
+        change_description = True
+        for eff_descriptor, mandatory_func in mandatory_funcs.items():
+            if not has_covariate_effect(filtered_model, eff_descriptor[1], eff_descriptor[2]):
+                if change_description:
+                    description.append("ADDED")
+                    description.extend(func_description(mandatory_funcs, filtered_model, add=False))
+                    change_description = False
+                filtered_model = mandatory_func(filtered_model)
+
+    # Filter unneccessary keys from fuctions
+    optional_funcs = {k[1:-1]: v for k, v in optional_funcs.items()}
+
+    if len(description) > 1:
+        filtered_model = filtered_model.replace(description=';'.join(description))
+        return (optional_funcs, filtered_model)
     else:
-        final_model = model
-
-    # Filter search space from already present covariates
-    effects = ss_mfl - model_mfl
-    effects = effects.mfl_statement_list(["covariate"])
-
-    return (effects, final_model)
+        return (optional_funcs, model)
 
 
 def task_greedy_forward_search(
@@ -248,34 +300,33 @@ def task_greedy_forward_search(
     p_forward: float,
     max_steps: int,
     strictness: Optional[str],
-    state_and_effect: Tuple[SearchState, ModelFeatures],
+    state_and_effect: Tuple[SearchState, dict],
 ) -> SearchState:
     for temp in state_and_effect:
         if isinstance(temp, SearchState):
             state = temp
         else:
-            effects = temp
+            candidate_effect_funcs = temp
     candidate = state.best_candidate_so_far
     assert state.all_candidates_so_far == [candidate]
 
-    effect_spec = spec(candidate.model, effects)
-    candidate_effects = sorted(set(parse_spec(effect_spec)))
-
     def handle_effects(
-        step: int, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
+        step: int,
+        parent: Candidate,
+        candidate_effect_funcs: dict,
+        index_offset: int,
     ):
-        wf = wf_effects_addition(parent.model, parent, candidate_effects, index_offset)
+        wf = wf_effects_addition(parent.model, parent, candidate_effect_funcs, index_offset)
         new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_addition-{step}', context)
-
         return [
             Candidate(model, parent.steps + (ForwardStep(p_forward, AddEffect(*effect)),))
-            for model, effect in zip(new_candidate_models, candidate_effects)
+            for model, effect in zip(new_candidate_models, candidate_effect_funcs.keys())
         ]
 
     return _greedy_search(
         state,
         handle_effects,
-        candidate_effects,
+        candidate_effect_funcs,
         p_forward,
         max_steps,
         strictness,
@@ -290,24 +341,40 @@ def task_greedy_backward_search(
     state: SearchState,
 ) -> SearchState:
     def handle_effects(
-        step: int, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
+        step: int,
+        parent: Candidate,
+        candidate_effect_funcs: List[EffectLiteral],
+        index_offset: int,
     ):
-        wf = wf_effects_removal(state.start_model, parent, candidate_effects, index_offset)
+        wf = wf_effects_removal(parent, candidate_effect_funcs, index_offset)
         new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}', context)
 
         return [
             Candidate(model, parent.steps + (BackwardStep(p_backward, RemoveEffect(*effect)),))
-            for model, effect in zip(new_candidate_models, candidate_effects)
+            for model, effect in zip(new_candidate_models, candidate_effect_funcs.keys())
         ]
 
-    candidate_effects = list(map(astuple, _added_effects(state.best_candidate_so_far.steps)))
+    optional_effects = list(map(astuple, _added_effects(state.best_candidate_so_far.steps)))
+    candidate_effect_funcs = dict(
+        covariate_features(
+            state.best_candidate_so_far.model,
+            ModelFeatures.create_from_mfl_string(
+                get_model_features(state.best_candidate_so_far.model)
+            ).covariate,
+            remove=True,
+        )
+    )
+
+    candidate_effect_funcs = {
+        k[1:-1]: v for k, v in candidate_effect_funcs.items() if (*k[1:-1],) in optional_effects
+    }
 
     n_removable_effects = max(0, len(state.best_candidate_so_far.steps) - 1)
 
     return _greedy_search(
         state,
         handle_effects,
-        candidate_effects,
+        candidate_effect_funcs,
         p_backward,
         min(max_steps, n_removable_effects) if max_steps >= 0 else n_removable_effects,
         strictness,
@@ -317,22 +384,24 @@ def task_greedy_backward_search(
 def _greedy_search(
     state: SearchState,
     handle_effects: Callable[[int, Candidate, List[EffectLiteral], int], List[Candidate]],
-    candidate_effects: List[EffectLiteral],
+    candidate_effect_funcs: dict,
     alpha: float,
     max_steps: int,
     strictness: Optional[str],
 ) -> SearchState:
     best_candidate_so_far = state.best_candidate_so_far
-    all_candidates_so_far = list(state.all_candidates_so_far)  # NOTE: This includes start model
+    all_candidates_so_far = list(
+        state.all_candidates_so_far
+    )  # NOTE: This includes start model/filtered model
 
     steps = range(1, max_steps + 1) if max_steps >= 0 else count(1)
 
     for step in steps:
-        if not candidate_effects:
+        if not candidate_effect_funcs:
             break
 
         new_candidates = handle_effects(
-            step, best_candidate_so_far, candidate_effects, len(all_candidates_so_far) - 1
+            step, best_candidate_so_far, candidate_effect_funcs, len(all_candidates_so_far) - 1
         )
 
         all_candidates_so_far.extend(new_candidates)
@@ -362,13 +431,15 @@ def _greedy_search(
         # NOTE: Filter out incompatible effects
         last_step_effect = best_candidate_so_far.steps[-1].effect
 
-        candidate_effects = [
-            effect
-            for effect in candidate_effects
-            if effect[0] != last_step_effect.parameter or effect[1] != last_step_effect.covariate
-        ]
+        candidate_effect_funcs = {
+            effect_description: effect_func
+            for effect_description, effect_func in candidate_effect_funcs.items()
+            if effect_description[0] != last_step_effect.parameter
+            or effect_description[1] != last_step_effect.covariate
+        }
 
     return SearchState(
+        state.user_input_model,
         state.start_model,
         best_candidate_so_far,
         all_candidates_so_far,
@@ -376,13 +447,16 @@ def _greedy_search(
 
 
 def wf_effects_addition(
-    model: Model, candidate: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
+    model: Model,
+    candidate: Candidate,
+    candidate_effect_funcs: dict,
+    index_offset: int,
 ):
     wb = WorkflowBuilder()
 
-    for i, effect in enumerate(candidate_effects, 1):
+    for i, effect in enumerate(candidate_effect_funcs.items(), 1):
         task = Task(
-            repr(effect),
+            repr(effect[0]),
             task_add_covariate_effect,
             model,
             candidate,
@@ -391,7 +465,7 @@ def wf_effects_addition(
         )
         wb.add_task(task)
 
-    wf_fit = create_fit_workflow(n=len(candidate_effects))
+    wf_fit = create_fit_workflow(n=len(candidate_effect_funcs))
     wb.insert_workflow(wf_fit)
 
     task_gather = Task('gather', lambda *models: models)
@@ -399,24 +473,19 @@ def wf_effects_addition(
     return Workflow(wb)
 
 
-def task_add_covariate_effect(
-    model: Model, candidate: Candidate, effect: EffectLiteral, effect_index: int
-):
+def task_add_covariate_effect(model: Model, candidate: Candidate, effect: dict, effect_index: int):
     name = f'covsearch_run{effect_index}'
-    description = _create_description(effect, candidate.steps)
+    description = _create_description(effect[0], candidate.steps)
     model_with_added_effect = model.replace(
         name=name, description=description, parent_model=candidate.model.name
     )
     model_with_added_effect = update_initial_estimates(model_with_added_effect)
-    model_with_added_effect = add_covariate_effect(
-        model_with_added_effect, *effect, allow_nested=True
-    )
+    func = effect[1]
+    model_with_added_effect = func(model_with_added_effect, allow_nested=True)
     return model_with_added_effect
 
 
-def _create_description(
-    effect_new: Union[Tuple, Effect], steps_prev: Tuple[Step, ...], forward: bool = True
-):
+def _create_description(effect_new: dict, steps_prev: Tuple[Step, ...], forward: bool = True):
     # Will create this type of description: '(CL-AGE-exp);(MAT-AGE-exp);(MAT-AGE-exp-+)'
     def _create_effect_str(effect):
         if isinstance(effect, Tuple):
@@ -443,22 +512,23 @@ def _create_description(
 
 
 def wf_effects_removal(
-    base_model: Model, parent: Candidate, candidate_effects: List[EffectLiteral], index_offset: int
+    parent: Candidate,
+    candidate_effect_funcs: dict,
+    index_offset: int,
 ):
     wb = WorkflowBuilder()
 
-    for i, effect in enumerate(candidate_effects, 1):
+    for i, effect in enumerate(candidate_effect_funcs.items(), 1):
         task = Task(
-            repr(effect),
+            repr(effect[0]),
             task_remove_covariate_effect,
-            base_model,
             parent,
             effect,
             index_offset + i,
         )
         wb.add_task(task)
 
-    wf_fit = create_fit_workflow(n=len(candidate_effects))
+    wf_fit = create_fit_workflow(n=len(candidate_effect_funcs))
     wb.insert_workflow(wf_fit)
 
     task_gather = Task('gather', lambda *models: models)
@@ -466,20 +536,16 @@ def wf_effects_removal(
     return Workflow(wb)
 
 
-def task_remove_covariate_effect(
-    base_model: Model, candidate: Candidate, effect: EffectLiteral, effect_index: int
-):
+def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_index: int):
     model = candidate.model
     name = f'covsearch_run{effect_index}'
-    description = _create_description(effect, candidate.steps, forward=False)
-    model_with_removed_effect = base_model.replace(
+    description = _create_description(effect[0], candidate.steps, forward=False)
+    model_with_removed_effect = model.replace(
         name=name, description=description, parent_model=model.name
     )
 
-    for kept_effect in _added_effects((*candidate.steps, BackwardStep(-1, RemoveEffect(*effect)))):
-        model_with_removed_effect = add_covariate_effect(
-            model_with_removed_effect, *astuple(kept_effect), allow_nested=True
-        )
+    func = effect[1]
+    model_with_removed_effect = func(model_with_removed_effect)
 
     model_with_removed_effect = update_initial_estimates(model_with_removed_effect)
     return model_with_removed_effect
@@ -491,6 +557,9 @@ def task_results(p_forward: float, p_backward: float, strictness: str, state: Se
     base_model, *res_models = models
     assert base_model is state.start_model
     best_model = state.best_candidate_so_far.model
+    user_input_model = state.user_input_model
+    if user_input_model != base_model:
+        models = [user_input_model] + models
 
     res = create_results(
         COVSearchResults, base_model, base_model, res_models, 'lrt', (p_forward, p_backward)
@@ -671,9 +740,20 @@ def validate_input(effects, p_forward, p_backward, algorithm, model, strictness)
             raise ValueError(
                 f'Invalid `effects`: found unknown statement of type {type(bad_statements[0]).__name__}.'
             )
+
+        for s in statements:
+            if isinstance(s.fp, Wildcard) and not s.optional.option:
+                raise ValueError(
+                    f'Invalid `effects` due to non-optional covariate'
+                    f' defined with WILDCARD as effect in {s}'
+                    f' Only single effect allowed for mandatory covariates'
+                )
+
         effect_spec = spec(model, statements)
 
-        candidate_effects = map(lambda x: Effect(*x), sorted(set(parse_spec(effect_spec))))
+        candidate_effects = map(
+            lambda x: Effect(*x[:-1]), sorted(set(parse_spec(effect_spec)))
+        )  # Ignore OPTIONAL attribute
 
         allowed_covariates = get_covariates_allowed_in_covariate_effect(model)
         allowed_parameters = set(get_pk_parameters(model)).union(

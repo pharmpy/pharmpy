@@ -7,7 +7,7 @@ from pharmpy.model import Model
 from pharmpy.modeling import get_pk_parameters
 
 from .feature import ModelFeature, feature
-from .symbols import Symbol, Wildcard
+from .symbols import Option, Symbol, Wildcard
 
 
 @dataclass(frozen=True)
@@ -16,6 +16,7 @@ class Covariate(ModelFeature):
     covariate: Union[Symbol, Tuple[str, ...]]
     fp: Tuple[str, ...]
     op: Literal['*', '+'] = '*'
+    optional: Option = Option(False)
 
     def eval(self, model: Optional[Model] = None):
         # Circular import issue
@@ -53,7 +54,9 @@ class Covariate(ModelFeature):
 
         op = self.op
 
-        return Covariate(parameter=parameter, covariate=covariate, fp=fp, op=op)
+        optional = self.optional
+
+        return Covariate(parameter=parameter, covariate=covariate, fp=fp, op=op, optional=optional)
 
 
 @dataclass(frozen=True)
@@ -69,7 +72,11 @@ EffectFunctionWildcard = Wildcard()
 class CovariateInterpreter(Interpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
-        assert 3 <= len(children) <= 4
+        assert 3 <= len(children) <= 5
+        if isinstance(children[0], Option):
+            if len(children) == 4:
+                children.append('*')
+            children.append(children.pop(0))
         return feature(Covariate, children)
 
     def option(self, tree):
@@ -86,6 +93,13 @@ class CovariateInterpreter(Interpreter):
 
     def fp_option(self, tree):
         return self.option(tree)
+
+    def optional_cov(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        value = children[0].value
+        assert isinstance(value, str)
+        return Option(True)
 
     def op_option(self, tree):
         children = self.visit_children(tree)

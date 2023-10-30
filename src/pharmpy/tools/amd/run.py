@@ -27,7 +27,7 @@ from pharmpy.tools.mfl.statement.feature.covariate import Covariate, Ref
 from pharmpy.tools.mfl.statement.feature.elimination import Elimination
 from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
 from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
-from pharmpy.tools.mfl.statement.feature.symbols import Name, Wildcard
+from pharmpy.tools.mfl.statement.feature.symbols import Name, Option, Wildcard
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.mfl.statement.statement import Statement
 from pharmpy.tools.mfl.stringify import stringify as mfl_stringify
@@ -238,18 +238,25 @@ def run_amd(
     )
     if not any(map(lambda statement: isinstance(statement, Covariate), covsearch_features)):
         def_cov_search_feature = (
-            Covariate(Ref('IIV'), Ref('CONTINUOUS'), ('exp',), '*'),
-            Covariate(Ref('IIV'), Ref('CATEGORICAL'), ('cat',), '*'),
+            Covariate(Ref('IIV'), Ref('CONTINUOUS'), ('exp',), '*', Option(True)),
+            Covariate(Ref('IIV'), Ref('CATEGORICAL'), ('cat',), '*', Option(True)),
         )
         if modeltype == 'basic_pk' and administration == 'ivoral':
             def_cov_search_feature = def_cov_search_feature + (
-                Covariate(('RUV',), ('ADMID',), ('cat',), '*'),
+                Covariate(('RUV',), ('ADMID',), ('cat',), '*', Option(True)),
             )
 
         covsearch_features = def_cov_search_feature + covsearch_features
 
     db = default_tool_database(toolname='amd', path=path, exist_ok=resume)
     run_subfuncs = {}
+    # Always add?
+    run_subfuncs['structural_covariates'] = _subfunc_structural_covariates(
+        amd_start_model=model,
+        search_space=covsearch_features,
+        strictness=strictness,
+        path=db.path,
+    )
     for section in order:
         if section == 'structural':
             if modeltype == 'pkpd':
