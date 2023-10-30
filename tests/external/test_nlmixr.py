@@ -1,3 +1,5 @@
+import pytest
+
 from pharmpy.model.external.nlmixr import convert_model
 
 
@@ -28,6 +30,7 @@ def test_prop_alias(testdata, load_model_for_test):
     assert "prop_error <- RUV_PROP" in model.model_code
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_remove_sigma(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
     model = convert_model(nmmodel)
@@ -46,6 +49,7 @@ def test_dataset_modifications(testdata, load_model_for_test):
     assert "EVID" in model.dataset.columns
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_w_error_model(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
     model = convert_model(nmmodel)
@@ -54,6 +58,7 @@ def test_w_error_model(testdata, load_model_for_test):
     assert "Y ~ add(add_error) + prop(prop_error)" in model.model_code
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_omega_same(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
     model = convert_model(nmmodel)

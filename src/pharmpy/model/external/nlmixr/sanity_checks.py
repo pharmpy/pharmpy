@@ -6,6 +6,8 @@ It serves purpose in catching known errors that are not yet solved, or limitatio
 that are found in the conversion software
 """
 
+import warnings
+
 import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.modeling import (
@@ -362,4 +364,4 @@ def print_warning(warning: str) -> None:
         Prints warning to console
 
     """
-    print(f'-------\nWARNING : \n{warning}\n-------')
+    warnings.warn(f'{warning}')
