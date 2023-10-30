@@ -13,11 +13,11 @@ click==8.1.7
 cloudpickle==3.0.0
 comm==0.1.4
 csscompressor==0.9.5
-dask==2023.10.0
+dask==2023.10.1
 debugpy==1.8.0
 decorator==5.1.1
 defusedxml==0.7.1
-distributed==2023.10.0
+distributed==2023.10.1
 docutils==0.20.1
 executing==2.0.1
 fastjsonschema==2.18.1
