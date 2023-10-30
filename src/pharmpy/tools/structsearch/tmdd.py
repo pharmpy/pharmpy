@@ -51,6 +51,11 @@ def create_qss_models(model, ests, index=1):
             set_initial_estimates(model, {"IIV_R_0": ests["IIV_CLMM"]})
             for model in qss_candidate_models
         ]
+    else:
+        qss_candidate_models = [
+            set_initial_estimates(model, {"IIV_R_0": 0.04}) for model in qss_candidate_models
+        ]
+
     return qss_candidate_models
 
 
