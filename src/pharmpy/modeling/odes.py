@@ -878,6 +878,11 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
 
     if len(transits) == n:
         return model
+    elif n == 1 and has_instantaneous_absorption(model):
+        raise ValueError(
+            "Cannot set the number of transits to 1 for model with instantaneous "
+            "absorption. The resulting model cannot be distinguished from first order absorption"
+        )
     elif len(transits) == 0:
         if mdt_assign:
             mdt_symb = mdt_assign.symbol

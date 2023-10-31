@@ -1478,11 +1478,10 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 '''
     )
     assert model.model_code == correct
-    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    model = set_transit_compartments(model, 1, keep_depot=False)
 
-    assert not re.search(r'K *= *', model.model_code)
-    assert re.search('KA = 1/MDT', model.model_code)
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    with pytest.raises(ValueError):
+        model = set_transit_compartments(model, 1, keep_depot=False)
 
 
 def test_transit_compartments_added_mdt(load_model_for_test, testdata):
