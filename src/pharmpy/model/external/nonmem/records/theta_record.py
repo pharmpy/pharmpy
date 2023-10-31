@@ -4,11 +4,41 @@ from typing import Union, cast
 
 from pharmpy.internals.parse import AttrToken, AttrTree
 from pharmpy.internals.parse.generic import eval_token, remove_token_and_space
+from pharmpy.model import ModelSyntaxError
 
 from .record import Record
 
-max_upper_bound = 1000000
-min_lower_bound = -1000000
+MAX_UPPER_BOUND = 1000000
+MIN_LOWER_BOUND = -1000000
+INF = float("inf")
+
+
+def lower_token(theta):
+    # Get raw lower bound for a theta subtree
+    # Either a float, None for non-existing or 'neginf' for -INF
+    if theta.find('low'):
+        low = theta.subtree('low')
+        if low.find('NEG_INF'):
+            lower = 'neginf'
+        else:
+            lower = eval_token(next(iter(low.tokens)))
+    else:
+        lower = None
+    return lower
+
+
+def upper_token(theta):
+    # Get raw upper bound for a theta subtree
+    # Either a float, None for non-existing or 'inf' for INF
+    if theta.find('up'):
+        up = theta.subtree('up')
+        if up.find('POS_INF'):
+            upper = 'inf'
+        else:
+            upper = eval_token(next(iter(up.tokens)))
+    else:
+        upper = None
+    return upper
 
 
 class ThetaRecord(Record):
@@ -25,6 +55,10 @@ class ThetaRecord(Record):
         inits = []
         for theta in self.root.subtrees('theta'):
             init = eval_token(theta.subtree('init').leaf('NUMERIC'))
+            if init == MAX_UPPER_BOUND or init == MIN_LOWER_BOUND:
+                raise ModelSyntaxError(
+                    f"Initial estimate of THETA cannot be {MAX_UPPER_BOUND} or {MIN_LOWER_BOUND}"
+                )
             n = self._multiple(theta)
             inits.extend([init] * n)
         return inits
@@ -34,7 +68,42 @@ class ThetaRecord(Record):
         # List of fixedness for all thetas
         fixs = []
         for theta in self.root.subtrees('theta'):
-            fix = bool(theta.find('FIX'))
+            init = eval_token(theta.subtree('init').leaf('NUMERIC'))
+            lowtok = lower_token(theta)
+            uptok = upper_token(theta)
+            # Raise if FIX is within the parentheses and explicit bounds
+            # are used that are not the same as the init
+            inparens = False
+            fix = False
+            for child in theta.children:
+                if child.rule == 'LPAR':
+                    inparens = True
+                elif child.rule == 'RPAR':
+                    inparens = False
+                elif child.rule == 'FIX':
+                    if inparens:
+                        if lowtok is not None:
+                            message = (
+                                "FIX inside parentheses of $THETA requires all bounds to be"
+                                " the same as the initial value. "
+                            )
+                            if uptok is not None:
+                                if not (lowtok == uptok == init):
+                                    raise ModelSyntaxError(
+                                        f"{message}init={init}, lower={lowtok}, upper={uptok}"
+                                    )
+                            else:
+                                if not (lowtok == init):
+                                    raise ModelSyntaxError(f"{message}init={init}, lower={lowtok}")
+                    fix = True
+                    break
+
+            if not fix and uptok is None and lowtok == init:
+                raise ModelSyntaxError(
+                    "Lower bound cannot be equal to initial estimate of THETA unless FIX"
+                )
+            if not fix and init == 0:
+                raise ModelSyntaxError("Initial estimate of THETA cannot be 0 unless fixed")
             n = self._multiple(theta)
             fixs.extend([fix] * n)
         return fixs
@@ -44,22 +113,28 @@ class ThetaRecord(Record):
         # List of tuples of lower, upper bounds for all thetas
         bounds = []
         for theta in self.root.subtrees('theta'):
-            if theta.find('low'):
-                low = theta.subtree('low')
-                if low.find('NEG_INF'):
-                    lower = min_lower_bound
+            lowtok = lower_token(theta)
+            if isinstance(lowtok, float):
+                if lowtok == MIN_LOWER_BOUND:
+                    lower = -INF
+                elif lowtok < MIN_LOWER_BOUND:
+                    raise ModelSyntaxError(f"Too low lower bound: {lowtok} < {MIN_LOWER_BOUND}")
                 else:
-                    lower = eval_token(next(iter(low.tokens)))
+                    lower = lowtok
             else:
-                lower = min_lower_bound
-            if theta.find('up'):
-                up = theta.subtree('up')
-                if up.find('POS_INF'):
-                    upper = max_upper_bound
+                lower = -INF
+
+            uptok = upper_token(theta)
+            if isinstance(uptok, float):
+                if uptok == MAX_UPPER_BOUND:
+                    upper = INF
+                elif uptok > MAX_UPPER_BOUND:
+                    raise ModelSyntaxError(f"Too high upper bound: {uptok} > {MAX_UPPER_BOUND}")
                 else:
-                    upper = eval_token(next(iter(up.tokens)))
+                    upper = uptok
             else:
-                upper = max_upper_bound
+                upper = INF
+
             n = self._multiple(theta)
             bounds.extend([(lower, upper)] * n)
         return bounds

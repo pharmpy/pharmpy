@@ -68,6 +68,8 @@ The arguments of the structsearch tool are listed below.
 |                                                 | Default is "minimization_successful or                              |
 |                                                 | (rounding_errors and sigdigs>= 0)"                                  |
 +-------------------------------------------------+---------------------------------------------------------------------+
+| ``extra_model``                                 | Extra model for TMDD structsearch (only for TMDD)                   |
++-------------------------------------------------+---------------------------------------------------------------------+
 
 .. _the model types:
 
@@ -83,6 +85,8 @@ Structsearch is currently available for PKPD and drug metabolite models.
 | :code:`pkpd`             | PKPD models                                |
 +--------------------------+--------------------------------------------+
 | :code:`drug_metabolite`  | Drug metabolite models                     |
++--------------------------+--------------------------------------------+
+| :code:`TMDD`             | TMDD models                                |
 +--------------------------+--------------------------------------------+
 
 When creating candidate models for the specified model type, some candidate models will be derived from the base model 
@@ -166,7 +170,71 @@ Currently implemented drug metabolite models are:
             s3 -> s4
     }
 
-Regarding DVID, DVID=1 is connected to the parent metabolite while DVID=2 is representing the metabolite.
+Regarding DVID, DVID=1 is connected to the parent drug while DVID=2 is representing the metabolite.
+
+
+TMDD models
+~~~~~~~~~~~
+
+Implemented target mediated drug disposition (TMDD) models are:
+
+- Full model
+- Irreversible binding approximation (IB)
+- Constant total receptor approximation (CR)
+- Irreversible binding and constant total receptor approximation (CR+IB)
+- Quasi steady-state approximation (QSS)
+- Wagner
+- Michaelis-Menten approximation (MMAPP)
+
+The structsearch procedure is as follows:
+
+1. Perform modelsearch
+2. Get the final model of the modelsearch and a model with the same features as the final model but with one
+   less peripheral compartment if one such model exists.
+3. Create 8 QSS models for the final model and 8 QSS models for the final model minus one compartment if it exists.
+   Otherwise only 8 QSS models are created.
+4. Find best QSS model of the 16(8) QSS models
+5. Create 4 full models, 2 CR+IB models, 1 Wagner model, 2 CR models,
+   2 IB models and 1 MMAPP model. Use parameter estimates from the best QSS model as initial estimates for the
+   generated models.
+6. Find the best model of these 12 models.
+
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial"];
+            base [label="Base model"]
+            s0 [label="Modelsearch"]
+            s1 [label="final model (+ final model -1 comp)"]
+            s2 [label="8 (+ 8) QSS models"]
+            s3 [label="best QSS model"]
+            s31 [label="4 full"]
+            s32 [label="2 CR+IB"]
+            s33 [label="1 Wagner"]
+            s34 [label="2 CR"]
+            s35 [label="2 IB"]
+            s36 [label="1 MMAPP"]
+
+            base -> s0
+            s0 -> s1
+            s1 -> s2
+            s2 -> s3
+            s3 -> s31
+            s3 -> s32
+            s3 -> s33
+            s3 -> s34
+            s3 -> s35
+            s3 -> s36
+    }
+
+
+.. note::
+
+    Please note that only steps 3-6 are performed inside the structsearch tool. The structsearch tool takes two models
+    as input arguments and creates the 16 QSS models from them. 
+    Steps 1 and 2 are performed outside of the structsearch tool. These steps are implemented in the AMD tool but can
+    alternatively be created by the user.
 
 .. _the search space:
 

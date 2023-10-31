@@ -42,20 +42,20 @@ class Distribution(Sized, Hashable, Immutable):
 
     @property
     @abstractmethod
-    def mean(self) -> sympy.Basic:
+    def mean(self) -> sympy.Expr:
         pass
 
     @property
     @abstractmethod
-    def variance(self) -> sympy.Basic:
+    def variance(self) -> sympy.Expr:
         pass
 
     @abstractmethod
-    def get_variance(self, name: str) -> sympy.Basic:
+    def get_variance(self, name: str) -> sympy.Expr:
         pass
 
     @abstractmethod
-    def get_covariance(self, name1: str, name2: str) -> sympy.Basic:
+    def get_covariance(self, name1: str, name2: str) -> sympy.Expr:
         pass
 
     @abstractmethod
@@ -68,7 +68,7 @@ class Distribution(Sized, Hashable, Immutable):
 
     @property
     @abstractmethod
-    def free_symbols(self) -> Set[sympy.Basic]:
+    def free_symbols(self) -> Set[sympy.Expr]:
         pass
 
     @property
@@ -78,7 +78,7 @@ class Distribution(Sized, Hashable, Immutable):
         return tuple(sorted(map(str, params)))
 
     @abstractmethod
-    def subs(self, d: Dict[sympy.Basic, sympy.Basic]) -> Distribution:
+    def subs(self, d: Dict[sympy.Expr, sympy.Expr]) -> Distribution:
         pass
 
     @abstractmethod
@@ -116,14 +116,14 @@ class NormalDistribution(Distribution):
     IIV_CL ~ N(0, OMEGA_CL)
     """
 
-    def __init__(self, name: str, level: str, mean: sympy.Basic, variance: sympy.Basic):
+    def __init__(self, name: str, level: str, mean: sympy.Expr, variance: sympy.Expr):
         self._name = name
         self._level = level
         self._mean = mean
         self._variance = variance
 
     @classmethod
-    def create(cls, name: str, level: str, mean: sympy.Basic, variance: sympy.Basic):
+    def create(cls, name: str, level: str, mean: sympy.Expr, variance: sympy.Expr):
         level = level.upper()
         mean = parse_expr(mean)
         variance = parse_expr(variance)
@@ -149,21 +149,21 @@ class NormalDistribution(Distribution):
         return self._level
 
     @property
-    def mean(self) -> sympy.Basic:
+    def mean(self) -> sympy.Expr:
         return self._mean
 
     @property
-    def variance(self) -> sympy.Basic:
+    def variance(self) -> sympy.Expr:
         return self._variance
 
     @property
-    def free_symbols(self) -> Set[sympy.Basic]:
+    def free_symbols(self) -> set[sympy.Expr]:
         """Free symbols including random variable itself"""
         fs = self._mean.free_symbols.union(self._variance.free_symbols)
         fs.add(sympy.Symbol(self._name))
         return fs
 
-    def subs(self, d: Mapping[Union[str, sympy.Basic], sympy.Basic]) -> NormalDistribution:
+    def subs(self, d: Mapping[Union[str, sympy.Expr], sympy.Expr]) -> NormalDistribution:
         """Substitute expressions
 
         Parameters
@@ -187,11 +187,11 @@ class NormalDistribution(Distribution):
         name = _subs_name(self._name, d)
         return NormalDistribution(name, self._level, mean, variance)
 
-    def evalf(self, parameters: Dict[sympy.Basic, float]):
+    def evalf(self, parameters: Dict[sympy.Expr, float]):
         # mu = float(symengine.sympify(rv._mean[0]).xreplace(parameters))
         # sigma = float(symengine.sympify(sympy.sqrt(rv._variance[0,0])).xreplace(parameters))
         mean = self.mean
-        assert isinstance(mean, sympy.Basic)
+        assert isinstance(mean, sympy.Expr)
         variance = self.variance
         assert isinstance(variance, sympy.Symbol)
         try:
@@ -228,12 +228,12 @@ class NormalDistribution(Distribution):
 
         return self
 
-    def get_variance(self, name: str) -> sympy.Basic:
+    def get_variance(self, name: str) -> sympy.Expr:
         if name != self._name:
             raise KeyError(name)
         return self._variance
 
-    def get_covariance(self, name1: str, name2: str) -> sympy.Basic:
+    def get_covariance(self, name1: str, name2: str) -> sympy.Expr:
         if name1 == name2 == self._name:
             return self._variance
         else:
@@ -374,13 +374,13 @@ class JointNormalDistribution(Distribution):
         return self._variance
 
     @property
-    def free_symbols(self) -> Set[sympy.Basic]:
+    def free_symbols(self) -> Set[sympy.Expr]:
         """Free symbols including random variable itself"""
         return self._mean.free_symbols.union(
             self._variance.free_symbols, (sympy.Symbol(name) for name in self._names)
         )
 
-    def subs(self, d: Mapping[Union[str, sympy.Basic], sympy.Basic]):
+    def subs(self, d: Mapping[Union[str, sympy.Expr], sympy.Expr]):
         """Substitute expressions
 
         Parameters
@@ -470,25 +470,25 @@ class JointNormalDistribution(Distribution):
         variance = self._variance[index, index]
 
         if len(names) == 1:
-            assert isinstance(mean, sympy.Basic)
-            assert isinstance(variance, sympy.Basic)
+            assert isinstance(mean, sympy.Expr)
+            assert isinstance(variance, sympy.Expr)
             return NormalDistribution(names[0], self._level, mean, variance)
         else:
             assert isinstance(mean, sympy.ImmutableMatrix)
             assert isinstance(variance, sympy.ImmutableMatrix)
             return JointNormalDistribution(names, self._level, mean, variance)
 
-    def get_variance(self, name: str) -> sympy.Basic:
+    def get_variance(self, name: str) -> sympy.Expr:
         i = self._names.index(name)
         var = self._variance[i, i]
-        assert isinstance(var, sympy.Basic)
+        assert isinstance(var, sympy.Expr)
         return var
 
-    def get_covariance(self, name1: str, name2: str) -> sympy.Basic:
+    def get_covariance(self, name1: str, name2: str) -> sympy.Expr:
         i1 = self._names.index(name1)
         i2 = self._names.index(name2)
         cov = self._variance[i1, i2]
-        assert isinstance(cov, sympy.Basic)
+        assert isinstance(cov, sympy.Expr)
         return cov
 
     def __eq__(self, other):
@@ -603,7 +603,7 @@ class JointNormalDistribution(Distribution):
         self._symengine_variance = symengine.sympify(self._variance)
 
 
-def _subs_name(name: str, d: Mapping[Union[str, sympy.Basic], sympy.Basic]) -> str:
+def _subs_name(name: str, d: Mapping[Union[str, sympy.Expr], sympy.Expr]) -> str:
     if name in d:
         new_name = d[name]
     elif (name_symbol := sympy.Symbol(name)) in d:

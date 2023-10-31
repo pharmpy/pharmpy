@@ -1504,12 +1504,50 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
 
     """
     pkparams = get_individual_parameters(model, dv=1)
+    if len(model.dependent_variables) == 2:
+        dmparams = _get_drug_metabolite_parameters(model, dv=2)
+        if dmparams:
+            pkparams = list(set(pkparams).union(dmparams))
     model = make_declarative(model)
     model = _replace_trivial_redefinitions(model)
     if kind != 'all':
         symbs = {str(symb) for symb in _pk_free_symbols(model, kind)}
         pkparams = set(pkparams).intersection(symbs)
     return sorted(pkparams)
+
+
+def _get_drug_metabolite_parameters(model, dv=2):
+    statements = model.statements
+    ode = statements.ode_system
+
+    dv1_deps = [
+        s
+        for s in model.statements.after_odes.full_expression(get_dv_symbol(model, dv=1)).atoms(
+            sympy.Function
+        )
+    ]
+    dv1_comp = None
+    dv2_deps = [
+        s
+        for s in model.statements.after_odes.full_expression(get_dv_symbol(model, dv=dv)).atoms(
+            sympy.Function
+        )
+    ]
+    dv2_comp = None
+
+    comp_names = ode.compartment_names
+    for comp in [ode.find_compartment(name) for name in comp_names]:
+        amounts = comp.amount
+        if amounts in dv1_deps:
+            dv1_comp = comp
+        if amounts in dv2_deps:
+            dv2_comp = comp
+
+    if dv2_comp is not None:
+        if ode.get_flow(dv1_comp, dv2_comp):
+            return get_individual_parameters(model, dv=2)
+    else:
+        None
 
 
 def get_pd_parameters(model: Model) -> list[str]:

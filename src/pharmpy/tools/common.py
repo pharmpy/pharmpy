@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeVar
 from pharmpy.model import Model
 from pharmpy.modeling import update_inits
 from pharmpy.tools import rank_models, summarize_errors
-from pharmpy.workflows import Results, ToolDatabase
+from pharmpy.workflows import ModelEntry, Results, ToolDatabase
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 
@@ -65,9 +65,16 @@ def create_results(
     rank_type,
     cutoff,
     bic_type='mixed',
+    strictness="minimization_successful or (rounding_errors and sigdigs >= 0)",  # FIXME: set default to None
     **rest,
 ) -> T:
-    summary_tool = summarize_tool(res_models, base_model, rank_type, cutoff, bic_type)
+    # FIXME: Remove once modelfit_results have been removed from Model object
+    if isinstance(input_model, ModelEntry):
+        input_model = _model_entry_to_model(input_model)
+        base_model = _model_entry_to_model(base_model)
+        res_models = [_model_entry_to_model(model_entry) for model_entry in res_models]
+
+    summary_tool = summarize_tool(res_models, base_model, rank_type, cutoff, bic_type, strictness)
     if rank_type == 'lrt':
         delta_name = 'dofv'
     elif rank_type == 'mbic':
@@ -83,8 +90,13 @@ def create_results(
         [base_model.modelfit_results] + [m.modelfit_results for m in res_models]
     )
 
-    best_model_name = summary_tool['rank'].idxmin()
-    best_model = next(filter(lambda model: model.name == best_model_name, res_models), base_model)
+    if summary_tool['rank'].isnull().all():
+        best_model = None
+    else:
+        best_model_name = summary_tool['rank'].idxmin()
+        best_model = next(
+            filter(lambda model: model.name == best_model_name, res_models), base_model
+        )
 
     if base_model.name != input_model.name:
         models = [base_model] + res_models
@@ -109,12 +121,20 @@ def create_results(
     return res
 
 
+def _model_entry_to_model(model_entry):
+    parent_name = model_entry.parent.name if model_entry.parent else model_entry.model.name
+    return model_entry.model.replace(
+        modelfit_results=model_entry.modelfit_results, parent_model=parent_name
+    )
+
+
 def summarize_tool(
     models,
     start_model,
     rank_type,
     cutoff,
     bic_type='mixed',
+    strictness=None,
 ) -> DataFrame:
     if rank_type == 'mbic':
         rank_type = 'bic'
@@ -129,7 +149,7 @@ def summarize_tool(
     df_rank = rank_models(
         start_model,
         models,
-        errors_allowed=['rounding_errors'],
+        strictness=strictness,
         rank_type=rank_type,
         cutoff=cutoff,
         bic_type=bic_type,

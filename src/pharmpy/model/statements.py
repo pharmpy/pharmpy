@@ -671,7 +671,7 @@ class CompartmentalSystem(Statement):
     @property
     def eqs(self) -> Tuple[sympy.Eq, ...]:
         """Tuple of equations"""
-        amount_funcs = sympy.Matrix([sympy.Function(amt.name)(self.t) for amt in self.amounts])
+        amount_funcs = sympy.Matrix(list(self.amounts))
         derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
         inputs = self.zero_order_inputs
         a = self.compartmental_matrix @ amount_funcs + inputs
@@ -897,7 +897,7 @@ class CompartmentalSystem(Statement):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.get_compartment_inflows(output)
-        [(Compartment(CENTRAL, amount=A_CENTRAL, doses=Bolus(AMT, admid=1)), CL/V)]
+        [(Compartment(CENTRAL, amount=A_CENTRAL(t), doses=Bolus(AMT, admid=1)), CL/V)]
         """
         if isinstance(compartment, str):
             destination = self.find_compartment(compartment)
@@ -959,7 +959,7 @@ class CompartmentalSystem(Statement):
         >>> model = load_example_model("pheno")
         >>> central = model.statements.ode_system.find_compartment("CENTRAL")
         >>> central
-        Compartment(CENTRAL, amount=A_CENTRAL, doses=Bolus(AMT, admid=1))
+        Compartment(CENTRAL, amount=A_CENTRAL(t), doses=Bolus(AMT, admid=1))
         """
         for comp in _comps(self._g):
             if comp.name == name:
@@ -1009,7 +1009,7 @@ class CompartmentalSystem(Statement):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.dosing_compartments
-        (Compartment(CENTRAL, amount=A_CENTRAL, doses=Bolus(AMT, admid=1)),)
+        (Compartment(CENTRAL, amount=A_CENTRAL(t), doses=Bolus(AMT, admid=1)),)
         """
         dosing_comps = tuple()
         for node in _comps(self._g):
@@ -1044,13 +1044,13 @@ class CompartmentalSystem(Statement):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.central_compartment
-        Compartment(CENTRAL, amount=A_CENTRAL, doses=Bolus(AMT, admid=1))
+        Compartment(CENTRAL, amount=A_CENTRAL(t), doses=Bolus(AMT, admid=1))
         """
         try:
             # E.g. TMDD models have more than one output
             # FIXME: Relying heavily on compartment naming for drug metabolite
             central = list(self._g.predecessors(output))[-1]
-            if central.name == "METABOLITE" or central.name == "EFFECT":
+            if central.name in ["METABOLITE", "EFFECT", "COMPLEX"]:
                 central = self.find_compartment("CENTRAL")
                 if central is None:
                     raise ValueError('Cannot find central compartment')
@@ -1167,7 +1167,7 @@ class CompartmentalSystem(Statement):
         >>> model = load_example_model("pheno")
         >>> model = set_first_order_absorption(model)
         >>> model.statements.ode_system.find_depot(model.statements)
-        Compartment(DEPOT, amount=A_DEPOT, doses=Bolus(AMT, admid=1))
+        Compartment(DEPOT, amount=A_DEPOT(t), doses=Bolus(AMT, admid=1))
         """
         transits = self.find_transit_compartments(statements)
         depot = self._find_depot()
@@ -1234,7 +1234,7 @@ class CompartmentalSystem(Statement):
         >>> import sympy
         >>> model = load_example_model("pheno")
         >>> sympy.pprint(model.statements.ode_system.amounts)
-        [A_CENTRAL]
+        [A_CENTRAL(t)]
         """
         ordered_cmts = self._order_compartments()
         amts = [cmt.amount for cmt in ordered_cmts]
@@ -1717,14 +1717,14 @@ class Compartment:
     >>> from pharmpy.model import Bolus, Compartment
     >>> comp = Compartment.create("CENTRAL")
     >>> comp
-    Compartment(CENTRAL, amount=A_CENTRAL)
+    Compartment(CENTRAL, amount=A_CENTRAL(t))
     >>> comp = Compartment.create("DEPOT", lag_time="ALAG")
     >>> comp
-    Compartment(DEPOT, amount=A_DEPOT, lag_time=ALAG)
+    Compartment(DEPOT, amount=A_DEPOT(t), lag_time=ALAG)
     >>> dose = Bolus.create("AMT")
     >>> comp = Compartment.create("DEPOT", doses=(dose,))
     >>> comp
-    Compartment(DEPOT, amount=A_DEPOT, doses=Bolus(AMT, admid=1))
+    Compartment(DEPOT, amount=A_DEPOT(t), doses=Bolus(AMT, admid=1))
     """
 
     def __init__(
@@ -1758,7 +1758,8 @@ class Compartment:
         if amount is not None:
             amount = parse_expr(amount)
         else:
-            amount = sympy.Symbol(f'A_{name}')
+            # NOTE: Uses a default idv
+            amount = sympy.Function(f'A_{name}')('t')
         if not isinstance(doses, tuple):
             try:
                 tuple(doses)
@@ -1866,7 +1867,7 @@ class Compartment:
         >>> dose = Bolus.create("AMT")
         >>> comp = Compartment.create("CENTRAL", doses=(dose,))
         >>> comp.subs({"AMT": "DOSE"})
-        Compartment(CENTRAL, amount=A_CENTRAL, doses=Bolus(DOSE, admid=1))
+        Compartment(CENTRAL, amount=A_CENTRAL(t), doses=Bolus(DOSE, admid=1))
         """
         if self.doses:
             new_doses = tuple()

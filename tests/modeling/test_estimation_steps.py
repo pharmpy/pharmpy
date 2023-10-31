@@ -1,5 +1,6 @@
 import pytest
 
+from pharmpy.model import SimulationStep
 from pharmpy.modeling import (
     add_estimation_step,
     add_parameter_uncertainty_step,
@@ -8,6 +9,7 @@ from pharmpy.modeling import (
     remove_parameter_uncertainty_step,
     set_estimation_step,
     set_evaluation_step,
+    set_simulation,
 )
 
 
@@ -158,3 +160,11 @@ def test_set_evaluation_step(testdata, load_model_for_test):
         model.model_code.split('\n')[-2]
         == '$ESTIMATION METHOD=COND INTER MAXEVAL=0 PRINT=2 POSTHOC'
     )
+
+
+def test_set_simulation(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
+    model = set_simulation(model, n=2, seed=1234)
+    assert len(model.estimation_steps) == 1
+    assert model.estimation_steps[0] == SimulationStep(n=2, seed=1234)
+    assert model.model_code.split('\n')[-2] == "$SIMULATION (1234) SUBPROBLEMS=2"

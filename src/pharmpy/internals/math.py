@@ -90,12 +90,7 @@ def se_delta_method(expr, values, cov):
     names = [y for x in cov.columns for y in names_unsorted if y == x]
     cov = cov[names].loc[names]
     symb_gradient = [sympy.diff(expr, sympy.Symbol(name)) for name in names]
-    num_gradient = np.array(
-        [
-            float(subs(x, values, simultaneous=True))  # pyright: ignore [reportGeneralTypeIssues]
-            for x in symb_gradient
-        ]
-    )
+    num_gradient = np.array([float(subs(x, values, simultaneous=True)) for x in symb_gradient])
     se = np.sqrt(num_gradient @ cov.values @ num_gradient.T)
     return se
 

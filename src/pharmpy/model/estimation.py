@@ -11,13 +11,128 @@ else:
     from pharmpy.deps import pandas as pd
 
 
-class EstimationStep(Immutable):
+SUPPORTED_SOLVERS = frozenset(('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'))
+
+
+class Step(Immutable):
+    def __init__(
+        self,
+        solver: Optional[str] = None,
+        solver_rtol: Optional[int] = None,
+        solver_atol: Optional[int] = None,
+        tool_options: Optional[frozenmapping[str, Any]] = None,
+    ):
+        self._solver = solver
+        self._solver_rtol = solver_rtol
+        self._solver_atol = solver_atol
+        self._tool_options = tool_options
+
+    @staticmethod
+    def _canonicalize_solver(solver):
+        if solver is not None:
+            solver = solver.upper()
+        if not (solver is None or solver in SUPPORTED_SOLVERS):
+            raise ValueError(
+                f"Unknown solver {solver}. Recognized solvers are {sorted(SUPPORTED_SOLVERS)}."
+            )
+        return solver
+
+    @staticmethod
+    def _canonicalize_tool_options(tool_options):
+        if tool_options is None:
+            tool_options = frozenmapping({})
+        else:
+            tool_options = frozenmapping(tool_options)
+        return tool_options
+
+    @property
+    def solver(self) -> Union[str, None]:
+        """Numerical solver to use when numerically solving the ODE system
+        Supported solvers and their corresponding NONMEM ADVAN
+
+        +----------------------------+------------------+
+        | Solver                     | NONMEM ADVAN     |
+        +============================+==================+
+        | CVODES                     | ADVAN14          |
+        +----------------------------+------------------+
+        | DGEAR                      | ADVAN8           |
+        +----------------------------+------------------+
+        | DVERK                      | ADVAN6           |
+        +----------------------------+------------------+
+        | IDA                        | ADVAN15          |
+        +----------------------------+------------------+
+        | LSODA                      | ADVAN13          |
+        +----------------------------+------------------+
+        | LSODI                      | ADVAN9           |
+        +----------------------------+------------------+
+        """
+        return self._solver
+
+    @property
+    def solver_rtol(self) -> Union[int, None]:
+        """Relative tolerance for numerical ODE system solver"""
+        return self._solver_rtol
+
+    @property
+    def solver_atol(self) -> Union[int, None]:
+        """Absolute tolerance for numerical ODE system solver"""
+        return self._solver_atol
+
+    @property
+    def tool_options(self) -> Union[frozenmapping[str, Any], None]:
+        """Dictionary of tool specific options"""
+        return self._tool_options
+
+    def _add_to_dict(self, d):
+        if self._tool_options is not None:
+            tool_options = dict(self._tool_options)
+        else:
+            tool_options = self._tool_options  # self._tool_options is None
+        d['solver'] = self._solver
+        d['solver_rtol'] = self._solver_rtol
+        d['solver_atol'] = self._solver_atol
+        d['tool_options'] = tool_options
+
+    @staticmethod
+    def _adjust_dict(d):
+        del d['class']
+        if isinstance(d['tool_options'], dict):
+            d['tool_options'] = frozenmapping(d['tool_options'])
+
+    def _partial_repr(self):
+        solver = f"'{self.solver}'" if self.solver is not None else self.solver
+        return (
+            f"solver={solver}, "
+            f"solver_rtol={self.solver_rtol}, solver_atol={self.solver_atol}, "
+            f"tool_options={self.tool_options}"
+        )
+
+    def __eq__(self, other):
+        # NOTE: No need to test class here
+        return (
+            self.solver == other.solver
+            and self.solver_rtol == other.solver_rtol
+            and self.solver_atol == other.solver_atol
+            and self.tool_options == other.tool_options
+        )
+
+    def __hash__(self):
+        return hash(
+            (
+                self._solver,
+                self._solver_rtol,
+                self._solver_atol,
+                self._tool_options,
+            )
+        )
+
+
+class EstimationStep(Step):
     """Definition of one estimation operation"""
 
     """Supported estimation methods
     """
     supported_methods = frozenset(('FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'))
-    supported_solvers = frozenset(('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'))
     supported_parameter_uncertainty_methods = frozenset(('SANDWICH', 'CPG', 'OFIM', 'EFIM'))
 
     def __init__(
@@ -53,12 +168,14 @@ class EstimationStep(Immutable):
         self._keep_every_nth_iter = keep_every_nth_iter
         self._residuals = residuals
         self._predictions = predictions
-        self._solver = solver
-        self._solver_rtol = solver_rtol
-        self._solver_atol = solver_atol
-        self._tool_options = tool_options
         self._eta_derivatives = eta_derivatives
         self._epsilon_derivatives = epsilon_derivatives
+        super().__init__(
+            solver=solver,
+            solver_rtol=solver_rtol,
+            solver_atol=solver_atol,
+            tool_options=tool_options,
+        )
 
     @classmethod
     def create(
@@ -108,16 +225,8 @@ class EstimationStep(Immutable):
                 f"Unknown parameter uncertainty method {parameter_uncertainty_method}. "
                 f"Recognized methods are {sorted(EstimationStep.supported_parameter_uncertainty_methods)}."
             )
-        if solver is not None:
-            solver = solver.upper()
-        if not (solver is None or solver in EstimationStep.supported_solvers):
-            raise ValueError(
-                f"Unknown solver {solver}. Recognized solvers are {sorted(EstimationStep.supported_solvers)}."
-            )
-        if tool_options is None:
-            tool_options = frozenmapping({})
-        else:
-            tool_options = frozenmapping(tool_options)
+        solver = Step._canonicalize_solver(solver)
+        tool_options = Step._canonicalize_tool_options(tool_options)
         if eta_derivatives is None:
             eta_derivatives = ()
         else:
@@ -243,39 +352,6 @@ class EstimationStep(Immutable):
         return self._predictions
 
     @property
-    def solver(self) -> Union[str, None]:
-        """Numerical solver to use when numerically solving the ODE system
-        Supported solvers and their corresponding NONMEM ADVAN
-
-        +----------------------------+------------------+
-        | Solver                     | NONMEM ADVAN     |
-        +============================+==================+
-        | CVODES                     | ADVAN14          |
-        +----------------------------+------------------+
-        | DGEAR                      | ADVAN8           |
-        +----------------------------+------------------+
-        | DVERK                      | ADVAN6           |
-        +----------------------------+------------------+
-        | IDA                        | ADVAN15          |
-        +----------------------------+------------------+
-        | LSODA                      | ADVAN13          |
-        +----------------------------+------------------+
-        | LSODI                      | ADVAN9           |
-        +----------------------------+------------------+
-        """
-        return self._solver
-
-    @property
-    def solver_rtol(self) -> Union[int, None]:
-        """Relative tolerance for numerical ODE system solver"""
-        return self._solver_rtol
-
-    @property
-    def solver_atol(self) -> Union[int, None]:
-        """Absolute tolerance for numerical ODE system solver"""
-        return self._solver_atol
-
-    @property
     def eta_derivatives(self) -> Union[tuple[str, ...], None]:
         """List of names of etas for which to calculate derivatives"""
         return self._eta_derivatives
@@ -303,10 +379,7 @@ class EstimationStep(Immutable):
             and self.niter == other.niter
             and self.auto == other.auto
             and self.keep_every_nth_iter == other.keep_every_nth_iter
-            and self.solver == other.solver
-            and self.solver_rtol == other.solver_rtol
-            and self.solver_atol == other.solver_atol
-            and self.tool_options == other.tool_options
+            and super().__eq__(other)
         )
 
     def __hash__(self):
@@ -322,19 +395,13 @@ class EstimationStep(Immutable):
                 self._niter,
                 self._auto,
                 self._keep_every_nth_iter,
-                self._solver,
-                self._solver_rtol,
-                self._solver_atol,
-                self._tool_options,
+                super().__hash__(),
             )
         )
 
     def to_dict(self) -> dict[str, Any]:
-        if self._tool_options is not None:
-            tool_options = dict(self._tool_options)
-        else:
-            tool_options = self._tool_options  # self._tool_options is None
-        return {
+        d = {
+            'class': 'EstimationStep',
             'method': self._method,
             'interaction': self._interaction,
             'parameter_uncertainty_method': self._parameter_uncertainty_method,
@@ -345,16 +412,14 @@ class EstimationStep(Immutable):
             'niter': self._niter,
             'auto': self._auto,
             'keep_every_nth_iter': self._keep_every_nth_iter,
-            'solver': self._solver,
-            'solver_rtol': self._solver_rtol,
-            'solver_atol': self._solver_atol,
-            'tool_options': tool_options,
         }
+        super()._add_to_dict(d)
+        return d
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> EstimationStep:
-        if isinstance(d['tool_options'], dict):
-            d['tool_options'] = frozenmapping(d['tool_options'])
+        d = dict(d)
+        Step._adjust_dict(d)
         return cls(**d)
 
     def __repr__(self):
@@ -363,16 +428,95 @@ class EstimationStep(Immutable):
             if self.parameter_uncertainty_method is not None
             else self.parameter_uncertainty_method
         )
-        solver = f"'{self.solver}'" if self.solver is not None else self.solver
         return (
             f"EstimationStep('{self.method}', interaction={self.interaction}, "
             f"parameter_uncertainty_method={parameter_uncertainty_method}, evaluation={self.evaluation}, "
             f"maximum_evaluations={self.maximum_evaluations}, laplace={self.laplace}, "
             f"isample={self.isample}, niter={self.niter}, auto={self.auto}, "
-            f"keep_every_nth_iter={self.keep_every_nth_iter}, solver={solver}, "
-            f"solver_rtol={self.solver_rtol}, solver_atol={self.solver_atol}, "
-            f"tool_options={self.tool_options})"
+            f"keep_every_nth_iter={self.keep_every_nth_iter}, {super()._partial_repr()})"
         )
+
+
+class SimulationStep(Step):
+    """Definition of one simulation operation"""
+
+    def __init__(
+        self,
+        n: int = 1,
+        seed: int = 64206,
+        solver: Optional[str] = None,
+        solver_rtol: Optional[int] = None,
+        solver_atol: Optional[int] = None,
+        tool_options: Optional[frozenmapping[str, Any]] = None,
+    ):
+        self._n = n
+        self._seed = seed
+        super().__init__(
+            solver=solver,
+            solver_rtol=solver_rtol,
+            solver_atol=solver_atol,
+            tool_options=tool_options,
+        )
+
+    @classmethod
+    def create(
+        cls,
+        n: int = 1,
+        seed: int = 64206,
+        solver: Optional[str] = None,
+        solver_rtol: Optional[int] = None,
+        solver_atol: Optional[int] = None,
+        tool_options: Optional[Mapping[str, Any]] = None,
+    ):
+        if n < 1:
+            raise ValueError("Need at least one replicate in SimulationStep")
+        return cls(n=n, seed=seed)
+
+    def replace(self, **kwargs) -> SimulationStep:
+        """Derive a new SimulationStep with new properties"""
+        d = {key[1:]: value for key, value in self.__dict__.items()}
+        d.update(kwargs)
+        new = SimulationStep.create(**d)
+        return new
+
+    @property
+    def n(self) -> int:
+        """Number of simulation replicates"""
+        return self._n
+
+    @property
+    def seed(self) -> int:
+        """Random seed"""
+        return self._seed
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, SimulationStep)
+            and self.n == other.n
+            and self.seed == other.seed
+            and super().__eq__(other)
+        )
+
+    def __hash__(self):
+        return hash((self._n, self._seed, super().__hash__()))
+
+    def to_dict(self) -> dict[str, Any]:
+        d = {
+            'class': 'SimulationStep',
+            'n': self._n,
+            'seed': self._seed,
+        }
+        super()._add_to_dict(d)
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> SimulationStep:
+        d = dict(d)
+        Step._adjust_dict(d)
+        return cls(**d)
+
+    def __repr__(self):
+        return f"SimulationStep(n={self._n}, seed={self._seed}, {super()._partial_repr()})"
 
 
 class EstimationSteps(Sequence, Immutable):
@@ -384,11 +528,11 @@ class EstimationSteps(Sequence, Immutable):
         Used for initialization
     """
 
-    def __init__(self, steps: tuple[EstimationStep, ...] = ()):
+    def __init__(self, steps: tuple[Union[EstimationStep, SimulationStep], ...] = ()):
         self._steps = steps
 
     @classmethod
-    def create(cls, steps: Optional[Sequence[EstimationStep]] = None):
+    def create(cls, steps: Optional[Sequence[Union[EstimationStep, SimulationStep]]] = None):
         if steps is None:
             steps = ()
         else:
@@ -407,7 +551,9 @@ class EstimationSteps(Sequence, Immutable):
     def __getitem__(self, i: slice) -> EstimationSteps:
         ...
 
-    def __getitem__(self, i: Union[int, slice]) -> Union[EstimationStep, EstimationSteps]:
+    def __getitem__(
+        self, i: Union[int, slice]
+    ) -> Union[EstimationStep, SimulationStep, EstimationSteps]:
         if isinstance(i, slice):
             return EstimationSteps(self._steps[i])
         return self._steps[i]
@@ -415,13 +561,13 @@ class EstimationSteps(Sequence, Immutable):
     def __add__(self, other) -> EstimationSteps:
         if isinstance(other, EstimationSteps):
             return EstimationSteps(self._steps + other._steps)
-        elif isinstance(other, EstimationStep):
+        elif isinstance(other, EstimationStep) or isinstance(other, SimulationStep):
             return EstimationSteps(self._steps + (other,))
         else:
             return EstimationSteps(self._steps + tuple(other))
 
     def __radd__(self, other) -> EstimationSteps:
-        if isinstance(other, EstimationStep):
+        if isinstance(other, EstimationStep) or isinstance(other, SimulationStep):
             return EstimationSteps((other,) + self._steps)
         else:
             return EstimationSteps(tuple(other) + self._steps)
@@ -445,7 +591,14 @@ class EstimationSteps(Sequence, Immutable):
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> EstimationSteps:
-        return cls(steps=tuple(EstimationStep.from_dict(s) for s in d['steps']))
+        steps = []
+        for sdict in d['steps']:
+            if sdict['class'] == 'EstimationStep':
+                s = EstimationStep.from_dict(sdict)
+            else:
+                s = SimulationStep.from_dict(sdict)
+            steps.append(s)
+        return cls(steps=tuple(steps))
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert to DataFrame
@@ -463,17 +616,18 @@ class EstimationSteps(Sequence, Immutable):
         method  interaction       parameter_uncertainty_method  ...  auto keep_every_nth_iter  tool_options
         0   FOCE         True  SANDWICH  ...  None                None            {}
         """
-        method = [s.method for s in self._steps]
-        interaction = [s.interaction for s in self._steps]
-        parameter_uncertainty_method = [s.parameter_uncertainty_method for s in self._steps]
-        evaluation = [s.evaluation for s in self._steps]
-        maximum_evaluations = [s.maximum_evaluations for s in self._steps]
-        laplace = [s.laplace for s in self._steps]
-        isample = [s.isample for s in self._steps]
-        niter = [s.niter for s in self._steps]
-        auto = [s.auto for s in self._steps]
-        keep_every_nth_iter = [s.keep_every_nth_iter for s in self._steps]
-        tool_options = [dict(s.tool_options) if s.tool_options else dict() for s in self._steps]
+        steps = [s for s in self._steps if isinstance(s, EstimationStep)]
+        method = [s.method for s in steps]
+        interaction = [s.interaction for s in steps]
+        parameter_uncertainty_method = [s.parameter_uncertainty_method for s in steps]
+        evaluation = [s.evaluation for s in steps]
+        maximum_evaluations = [s.maximum_evaluations for s in steps]
+        laplace = [s.laplace for s in steps]
+        isample = [s.isample for s in steps]
+        niter = [s.niter for s in steps]
+        auto = [s.auto for s in steps]
+        keep_every_nth_iter = [s.keep_every_nth_iter for s in steps]
+        tool_options = [dict(s.tool_options) if s.tool_options else dict() for s in steps]
         df = pd.DataFrame(
             {
                 'method': method,

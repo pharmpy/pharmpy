@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional
 
-from pharmpy.model import EstimationStep, Model
+from pharmpy.model import EstimationStep, EstimationSteps, Model, SimulationStep
 from pharmpy.modeling.help_functions import _as_integer
 
 
@@ -117,6 +117,52 @@ def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **
         newsteps = model.estimation_steps + meth
     model = model.replace(estimation_steps=newsteps)
 
+    return model.update_source()
+
+
+def set_simulation(model: Model, n: int = 1, seed: int = 64206):
+    """Change model into simulation model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    n : int
+        Number of replicates
+    seed : int
+        Random seed for the simulation
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = set_simulation(model, n=10, seed=1234)
+    >>> steps = model.estimation_steps
+    >>> steps[0]
+    SimulationStep(n=10, seed=1234, solver=None, solver_rtol=None, solver_atol=None, tool_options=None)
+
+    """
+    final_est = None
+    for step in model.estimation_steps:
+        if isinstance(step, EstimationStep):
+            final_est = step
+    if final_est is not None:
+        step = SimulationStep.create(
+            n=n,
+            seed=seed,
+            solver=final_est.solver,
+            solver_atol=final_est.solver_atol,
+            solver_rtol=final_est.solver_rtol,
+        )
+    else:
+        step = SimulationStep.create(n=n, seed=seed)
+    steps = EstimationSteps((step,))
+    model = model.replace(estimation_steps=steps)
     return model.update_source()
 
 

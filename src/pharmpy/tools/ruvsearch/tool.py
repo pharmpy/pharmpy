@@ -53,8 +53,9 @@ def create_workflow(
     groups: int = 4,
     p_value: float = 0.001,
     skip: Optional[List[str]] = None,
-    max_iter: Optional[int] = 3,
+    max_iter: int = 3,
     dv: Optional[int] = None,
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0)",
 ):
     """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 
@@ -74,6 +75,8 @@ def create_workflow(
         Number of iterations to run (1, 2, or 3). For models with BLQ only one iteration is supported.
     dv : int
         Which DV to assess the error model for.
+    strictness : str or None
+        Strictness criteria
 
     Returns
     -------
@@ -91,7 +94,9 @@ def create_workflow(
     """
 
     wb = WorkflowBuilder(name="ruvsearch")
-    start_task = Task('start_ruvsearch', start, model, groups, p_value, skip, max_iter, dv)
+    start_task = Task(
+        'start_ruvsearch', start, model, groups, p_value, skip, max_iter, dv, strictness
+    )
     wb.add_task(start_task)
     task_results = Task('results', _results)
     wb.add_task(task_results, predecessors=[start_task])
@@ -180,7 +185,7 @@ def _change_proportional_name(model):
     return model
 
 
-def start(context, model, groups, p_value, skip, max_iter, dv):
+def start(context, model, groups, p_value, skip, max_iter, dv, strictness):
     cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
@@ -231,7 +236,7 @@ def start(context, model, groups, p_value, skip, max_iter, dv):
     sum_models = summarize_modelfit_results(model_results)
     sum_models['step'] = list(range(len(sum_models)))
     summf = sum_models.reset_index().set_index(['step', 'model'])
-    summary_tool = _create_summary_tool(selected_models, cutoff)
+    summary_tool = _create_summary_tool(selected_models, cutoff, strictness)
     summary_errors = summarize_errors(m.modelfit_results for m in selected_models)
 
     res = RUVSearchResults(
@@ -247,14 +252,14 @@ def start(context, model, groups, p_value, skip, max_iter, dv):
     return res
 
 
-def _create_summary_tool(selected_models, cutoff):
+def _create_summary_tool(selected_models, cutoff, strictness):
     model_names = [model.name for model in selected_models]
     iteration_map = {model.name: model_names.index(model.name) for model in selected_models}
 
     base_model = selected_models[0]
     ruvsearch_models = selected_models[1:]
 
-    sum_tool = summarize_tool(ruvsearch_models, base_model, 'ofv', cutoff).reset_index()
+    sum_tool = summarize_tool(ruvsearch_models, base_model, 'ofv', cutoff, strictness).reset_index()
     sum_tool['step'] = sum_tool['model'].map(iteration_map)
     sum_tool_by_iter = sum_tool.set_index(['step', 'model']).sort_index()
 
@@ -372,7 +377,7 @@ def _create_combined_model(input_model, current_iteration):
     df['IPRED'].replace(0, 2.225e-307, inplace=True)
     model = model.replace(dataset=df)
     ipred_min = df['IPRED'].min()
-    sigma_add_init = ipred_min / 2
+    sigma_add_init = abs(ipred_min) / 2 if ipred_min != 0 else 0.001
     add_name = 'sigma_add'
     model = add_population_parameter(model, add_name, sigma_add_init, lower=0)
 
@@ -512,7 +517,7 @@ def _create_best_model(model, res, current_iteration, dv, groups=4, cutoff=3.84)
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(model, groups, p_value, skip, max_iter, dv):
+def validate_input(model, groups, p_value, skip, max_iter, dv, strictness):
     if groups <= 0:
         raise ValueError(f'Invalid `groups`: got `{groups}`, must be >= 1.')
 
@@ -555,3 +560,9 @@ def validate_input(model, groups, p_value, skip, max_iter, dv):
             else:
                 if dv not in set(model.dataset['DVID']):
                     raise ValueError(f"No DVID = {dv} in dataset.")
+
+    if strictness is not None and "rse" in strictness.lower():
+        if model.estimation_steps[-1].parameter_uncertainty_method is None:
+            raise ValueError(
+                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+            )

@@ -11,6 +11,7 @@ from pharmpy.model import (
     output,
 )
 
+from .expressions import _replace_trivial_redefinitions
 from .odes import add_individual_parameter, set_first_order_elimination, set_initial_condition
 from .parameter_variability import add_iiv
 
@@ -44,11 +45,11 @@ def set_tmdd(model: Model, type: str):
     type = type.upper()
 
     if type != "MMAPP":
+        model = _replace_trivial_redefinitions(model)
         model = set_first_order_elimination(model)
 
     odes = model.statements.ode_system
     central = odes.central_compartment
-    central_amount = sympy.Function(central.amount.name)(sympy.Symbol('t'))
     cb = CompartmentalSystemBuilder(odes)
 
     vc, cl = _get_central_volume_and_cl(model)
@@ -60,40 +61,38 @@ def set_tmdd(model: Model, type: str):
 
     if type == "FULL":
         model, kon, koff, kdeg = _create_parameters(model, ['KON', 'KOFF', 'KDEG'])
-        target_comp, target_amount, complex_comp, complex_amount = _create_compartments(
-            cb, ['TARGET', 'COMPLEX']
-        )
+        target_comp, complex_comp = _create_compartments(cb, ['TARGET', 'COMPLEX'])
         ksyn, ksyn_ass = _create_ksyn()
 
-        cb.add_flow(target_comp, complex_comp, kon * central_amount)
+        cb.add_flow(target_comp, complex_comp, kon * central.amount)
         cb.add_flow(complex_comp, target_comp, koff)
         cb.add_flow(target_comp, output, kdeg)
         cb.add_flow(complex_comp, output, kint)
         cb.set_input(target_comp, ksyn * vc)
-        cb.set_input(central, koff * complex_amount - kon * central_amount * target_amount)
+        cb.set_input(
+            central, koff * complex_comp.amount - kon * central.amount * target_comp.amount
+        )
 
         before = model.statements.before_odes + ksyn_ass
         after = model.statements.after_odes
     elif type == "IB":
         model, kdeg, kon = _create_parameters(model, ['KDEG', 'KON'])
-        target_comp, target_amount, complex_comp, complex_amount = _create_compartments(
-            cb, ['TARGET', 'COMPLEX']
-        )
+        target_comp, complex_comp = _create_compartments(cb, ['TARGET', 'COMPLEX'])
         ksyn, ksyn_ass = _create_ksyn()
 
-        cb.add_flow(target_comp, complex_comp, kon * central_amount / vc)
+        cb.add_flow(target_comp, complex_comp, kon * central.amount / vc)
         cb.add_flow(target_comp, output, kdeg)
         cb.add_flow(complex_comp, output, kint)
         cb.set_input(target_comp, ksyn * vc)
-        cb.set_input(central, -kon * central_amount * target_amount / vc)
+        cb.set_input(central, -kon * central.amount * target_comp.amount / vc)
 
         before = model.statements.before_odes + ksyn_ass
         after = model.statements.after_odes
     elif type == "CR":
         model, kon, koff = _create_parameters(model, ['KON', 'KOFF'])
-        complex_comp, complex_amount = _create_compartments(cb, ['COMPLEX'])
+        complex_comp = _create_compartments(cb, ['COMPLEX'])
 
-        cb.add_flow(complex_comp, central, koff + kon * central_amount / vc)
+        cb.add_flow(complex_comp, central, koff + kon * central.amount / vc)
         cb.add_flow(complex_comp, output, kint)
         cb.add_flow(central, complex_comp, kon * r_0)
 
@@ -101,17 +100,17 @@ def set_tmdd(model: Model, type: str):
         after = model.statements.after_odes
     elif type == "CRIB":
         model, kon = _create_parameters(model, ['KON'])
-        complex_comp, complex_amount = _create_compartments(cb, ['COMPLEX'])
+        complex_comp = _create_compartments(cb, ['COMPLEX'])
 
         cb.add_flow(complex_comp, output, kint)
         cb.add_flow(central, complex_comp, kon * r_0)
-        cb.add_flow(complex_comp, central, kon * central_amount / vc)
+        cb.add_flow(complex_comp, central, kon * central.amount / vc)
 
         before = model.statements.before_odes
         after = model.statements.after_odes
     elif type == "QSS":
         model, kdc, kdeg = _create_parameters(model, ['KDC', 'KDEG'])
-        target_comp, target_amount = _create_compartments(cb, ['TARGET'])
+        target_comp = _create_compartments(cb, ['TARGET'])
 
         kd = sympy.Symbol('KD')
 
@@ -120,10 +119,10 @@ def set_tmdd(model: Model, type: str):
 
         lafree_symb = sympy.Symbol('LAFREE')
         lafree_expr = sympy.Rational(1, 2) * (
-            central_amount
-            - target_amount
+            central.amount
+            - target_comp.amount
             - kd
-            + sympy.sqrt((central_amount - target_amount - kd) ** 2 + 4 * kd * central_amount)
+            + sympy.sqrt((central.amount - target_comp.amount - kd) ** 2 + 4 * kd * central.amount)
         )
         lafree_ass = Assignment(lafree_symb, lafree_expr)
 
@@ -134,13 +133,13 @@ def set_tmdd(model: Model, type: str):
             cb.set_input(
                 central,
                 -lafree_symb * elimination_rate
-                - target_amount * kint * lafree_symb / (kd + lafree_symb),
+                - target_comp.amount * kint * lafree_symb / (kd + lafree_symb),
             )
             cb.set_input(
                 target_comp,
                 ksyn * vc
-                - kdeg * target_amount
-                - (kint - kdeg) * target_amount * lafree_symb / (kd + lafree_symb),
+                - kdeg * target_comp.amount
+                - (kint - kdeg) * target_comp.amount * lafree_symb / (kd + lafree_symb),
             )
 
             # FIXME: Should others also have flows?
@@ -154,47 +153,59 @@ def set_tmdd(model: Model, type: str):
             ipred = lafreef / vc
             after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
         elif num_peripheral_comp > 0 and num_peripheral_comp <= 2:
-            peripheral1 = odes.find_peripheral_compartments()[0]
+            peripheral1 = _create_compartments(cb, ['PERIPHERAL1'])
             flow_central_peripheral1 = odes.get_flow(central, peripheral1)
             if num_peripheral_comp == 2:
-                peripheral2 = odes.find_peripheral_compartments()[1]
+                peripheral2 = _create_compartments(cb, ['PERIPHERAL2'])
                 flow_central_peripheral2 = odes.get_flow(central, peripheral2)
 
             elimination_rate = odes.get_flow(central, output)
-            cb.remove_flow(central, peripheral1)
             cb.remove_flow(central, output)
             if num_peripheral_comp == 1:
                 cb.set_input(
                     central,
-                    -target_amount * kint * lafree_symb / (kd + lafree_symb)
-                    - lafree_symb * flow_central_peripheral1,
+                    -target_comp.amount * kint * lafree_symb / (kd + lafree_symb)
+                    - lafree_symb * flow_central_peripheral1
+                    + flow_central_peripheral1 * central.amount,
                 )
                 cb.set_input(
                     target_comp,
                     ksyn * vc
-                    - kdeg * target_amount
-                    - (kint - kdeg) * target_amount * lafree_symb / (kd + lafree_symb),
+                    - kdeg * target_comp.amount
+                    - (kint - kdeg) * target_comp.amount * lafree_symb / (kd + lafree_symb),
                 )
-                cb.set_input(peripheral1, lafree_symb * flow_central_peripheral1)
+                cb.set_input(
+                    peripheral1,
+                    lafree_symb * flow_central_peripheral1
+                    - flow_central_peripheral1 * central.amount,
+                )
             elif num_peripheral_comp == 2:
-                cb.remove_flow(central, peripheral2)
                 cb.set_input(
                     central,
-                    -target_amount * kint * lafree_symb / (kd + lafree_symb)
+                    -target_comp.amount * kint * lafree_symb / (kd + lafree_symb)
                     - lafree_symb * flow_central_peripheral1
-                    - lafree_symb * flow_central_peripheral2,
+                    - lafree_symb * flow_central_peripheral2
+                    + flow_central_peripheral2 * central.amount,
                 )
                 cb.set_input(
                     target_comp,
                     ksyn * vc
-                    - kdeg * target_amount
-                    - (kint - kdeg) * target_amount * lafree_symb / (kd + lafree_symb),
+                    - kdeg * target_comp.amount
+                    - (kint - kdeg) * target_comp.amount * lafree_symb / (kd + lafree_symb),
                 )
-                cb.set_input(peripheral1, lafree_symb * flow_central_peripheral1)
-                cb.set_input(peripheral2, lafree_symb * flow_central_peripheral2)
+                cb.set_input(
+                    peripheral1,
+                    lafree_symb * flow_central_peripheral1
+                    - flow_central_peripheral1 * central.amount,
+                )
+                cb.set_input(
+                    peripheral2,
+                    lafree_symb * flow_central_peripheral2
+                    - flow_central_peripheral2 * central.amount,
+                )
 
             central = cb.find_compartment('CENTRAL')
-            cb.add_flow(central, output, lafree_symb * elimination_rate / central_amount)
+            cb.add_flow(central, output, lafree_symb * elimination_rate / central.amount)
 
             lafreef = sympy.Symbol("LAFREEF")
             lafree_final = Assignment(lafreef, lafree_expr)
@@ -211,59 +222,76 @@ def set_tmdd(model: Model, type: str):
         kd = km * vc
         rinit = r_0 * vc
         rinit_ass = Assignment(sympy.Symbol('RINIT'), rinit)
+        kd_ass = Assignment(sympy.Symbol('KD'), km * vc)
 
         lafree_symb = sympy.Symbol('LAFREE')
         lafree_expr = sympy.Rational(1, 2) * (
-            central_amount
+            central.amount
             - rinit
             - kd
-            + sympy.sqrt((central_amount - rinit - kd) ** 2 + 4 * kd * central_amount)
+            + sympy.sqrt((central.amount - rinit - kd) ** 2 + 4 * kd * central.amount)
         )
         lafree_ass = Assignment(lafree_symb, lafree_expr)
 
         num_peripheral_comp = len(odes.find_peripheral_compartments())
         if num_peripheral_comp == 0:
-            cb.add_flow(central, output, kint)
-            cb.set_input(central, +kint * lafree_symb - kel * lafree_symb)
-        elif num_peripheral_comp == 1:
-            peripheral = odes.find_peripheral_compartments()[0]
-            kcp = odes.get_flow(central, peripheral)
-            cb.remove_flow(central, peripheral)
-            cb.add_flow(central, output, kint)
-            cb.set_input(central, +kint * lafree_symb - kel * lafree_symb - kcp * lafree_symb)
-            cb.set_input(peripheral, kcp * lafree_symb)
-        elif num_peripheral_comp == 2:
-            peripheral1 = odes.find_peripheral_compartments()[0]
-            kcp1 = odes.get_flow(central, peripheral1)
-            peripheral2 = odes.find_peripheral_compartments()[1]
-            kcp2 = odes.get_flow(central, peripheral2)
-            cb.remove_flow(central, peripheral1)
-            cb.remove_flow(central, peripheral2)
-
-            cb.add_flow(central, output, kint)
+            cb.add_flow(central, output, kel)
             cb.set_input(
                 central,
-                +kint * lafree_symb - kel * lafree_symb - kcp1 * lafree_symb - kcp2 * lafree_symb,
+                kint * lafree_symb
+                - kint * central.amount
+                - kel * lafree_symb
+                + kel * central.amount,
             )
-            cb.set_input(peripheral1, kcp1 * lafree_symb)
-            cb.set_input(peripheral2, kcp2 * lafree_symb)
+        elif num_peripheral_comp == 1:
+            peripheral = _create_compartments(cb, ['PERIPHERAL1'])
+            kcp = odes.get_flow(central, peripheral)
+            cb.add_flow(central, output, kel)
+            cb.set_input(
+                central,
+                kint * lafree_symb
+                - kint * central.amount
+                - kel * lafree_symb
+                + kel * central.amount
+                - kcp * lafree_symb
+                + kcp * central.amount,
+            )
+            cb.set_input(peripheral, kcp * lafree_symb - kcp * central.amount)
+        elif num_peripheral_comp == 2:
+            peripheral1 = _create_compartments(cb, ['PERIPHERAL1'])
+            kcp1 = odes.get_flow(central, peripheral1)
+            peripheral2 = _create_compartments(cb, ['PERIPHERAL2'])
+            kcp2 = odes.get_flow(central, peripheral2)
+
+            cb.add_flow(central, output, kel)
+            cb.set_input(
+                central,
+                kint * lafree_symb
+                - kint * central.amount
+                - kel * lafree_symb
+                + kel * central.amount
+                - kcp1 * lafree_symb
+                - kcp2 * lafree_symb,
+            )
+            cb.set_input(peripheral1, kcp1 * lafree_symb - kcp1 * central.amount)
+            cb.set_input(peripheral2, kcp2 * lafree_symb - kcp2 * central.amount)
 
         lafreef = sympy.Symbol("LAFREEF")
         lafree_final = Assignment(lafreef, lafree_expr)
-        before = model.statements.before_odes + lafree_ass + rinit_ass
+        before = model.statements.before_odes + lafree_ass + kd_ass + rinit_ass
         after = lafree_final + model.statements.after_odes
         ipred = lafreef / vc
         after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
-    elif type == 'MMAPP':
+    elif type == 'MMAPP':  # FIXME: MMAPP does not work
         model, kmc, kdeg = _create_parameters(model, ['KMC', 'KDEG'])
-        target_comp, target_amount = _create_compartments(cb, ['TARGET'])
+        target_comp = _create_compartments(cb, ['TARGET'])
         ksyn, ksyn_ass = _create_ksyn()
 
-        target_elim = kdeg + (kint - kdeg) * (central_amount / vc) / (
-            kmc * vc + central_amount / vc
+        target_elim = kdeg + (kint - kdeg) * (central.amount / vc) / (
+            kmc * vc + central.amount / vc
         )
         cb.add_flow(target_comp, output, target_elim)
-        elim = (cl + target_amount * kint / (central_amount / vc + kmc * vc)) / vc
+        elim = (cl + target_comp.amount * kint / (central.amount / vc + kmc * vc)) / vc
         cb.add_flow(central, output, elim)
         cb.set_input(target_comp, ksyn * vc)
 
@@ -293,10 +321,11 @@ def _create_compartments(cb, names):
     for name in names:
         comp = Compartment.create(name=name)
         comps.append(comp)
-        amount_func = sympy.Function(comp.amount.name)(sympy.Symbol('t'))
-        comps.append(amount_func)
         cb.add_compartment(comp)
-    return comps
+    if len(comps) == 1:
+        return comps[0]
+    else:
+        return comps
 
 
 def _get_central_volume_and_cl(model):

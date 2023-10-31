@@ -184,7 +184,13 @@ def set_first_order_elimination(model: Model):
         v = sympy.Symbol('V')
         rate = odes.get_flow(central, output)
         if v not in rate.free_symbols:
-            v = sympy.Symbol('VC')
+            # take first parameter that starts with 'V' and is no longer than 2 characters
+            v = [
+                idx
+                for idx in list(map(lambda x: str(x), rate.free_symbols))
+                if idx[0] == 'V' and len(idx) <= 2
+            ]
+            v = sympy.Symbol(v[0])
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, sympy.Symbol('CL') / v)
@@ -201,7 +207,12 @@ def set_first_order_elimination(model: Model):
         v = sympy.Symbol('V')
         rate = odes.get_flow(central, output)
         if v not in rate.free_symbols:
-            v = sympy.Symbol('VC')
+            v = [
+                idx
+                for idx in list(map(lambda x: str(x), rate.free_symbols))
+                if idx[0] == 'V' and len(idx) <= 2
+            ]
+            v = sympy.Symbol(v[0])
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, sympy.Symbol('CL') / v)
@@ -382,8 +393,11 @@ def set_zero_order_elimination(model: Model):
         model = remove_unused_parameters_and_rvs(model)
     else:
         model = _do_michaelis_menten_elimination(model)
-        obs = get_observations(model)
-        init = obs.min() / 100  # 1% of smallest observation
+        if model.dataset is not None:
+            obs = get_observations(model)
+            init = obs.min() / 100  # 1% of smallest observation
+        else:
+            init = 0.01
         model = fix_parameters_to(model, {'POP_KM': init})
     return model
 
@@ -690,8 +704,7 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
         else:
             model, clmm = _add_parameter(model, 'CLMM', init=clmm_init)
 
-    amount = sympy.Function(central.amount.name)(sympy.Symbol('t'))
-    rate = (clmm * km / (km + amount / vc) + cl) / vc
+    rate = (clmm * km / (km + central.amount / vc) + cl) / vc
     cb = CompartmentalSystemBuilder(odes)
     cb.add_flow(central, output, rate)
     statements = (
@@ -865,6 +878,11 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
 
     if len(transits) == n:
         return model
+    elif n == 1 and has_instantaneous_absorption(model):
+        raise ValueError(
+            "Cannot set the number of transits to 1 for model with instantaneous "
+            "absorption. The resulting model cannot be distinguished from first order absorption"
+        )
     elif len(transits) == 0:
         if mdt_assign:
             mdt_symb = mdt_assign.symbol
@@ -913,13 +931,20 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         cb = CompartmentalSystemBuilder(cs)
 
         while nremove > 0:
-            from_comp, from_flow = cs.get_compartment_inflows(trans)[0]
-            cb.add_flow(from_comp, destination, from_flow)
+            try:
+                from_comp, from_flow = cs.get_compartment_inflows(trans)[0]
+            except IndexError:
+                # Final remaining transit
+                final_transit = True
+            else:
+                cb.add_flow(from_comp, destination, from_flow)
+                final_transit = False
             cb.remove_compartment(trans)
             remaining.remove(trans)
             removed_symbols |= flow.free_symbols
-            trans = from_comp
-            flow = from_flow
+            if not final_transit:
+                trans = from_comp
+                flow = from_flow
             nremove -= 1
 
         if n == 0:
@@ -2146,7 +2171,8 @@ def find_clearance_parameters(model: Model):
             clearance_symbols = a - b - {t}
             for clearance in clearance_symbols:
                 clearance = _find_real_symbol(sset, clearance)
-                cls.add(clearance)
+                if clearance != sympy.Symbol('LAFREE'):
+                    cls.add(clearance)
     return sorted(cls, key=str)
 
 

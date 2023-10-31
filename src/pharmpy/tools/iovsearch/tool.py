@@ -37,6 +37,7 @@ def create_workflow(
     distribution: str = 'same-as-iiv',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0)",
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
 
@@ -57,6 +58,8 @@ def create_workflow(
         Results for model
     model : Model
         Pharmpy model
+    strictness : str or None
+        Strictness criteria
 
     Returns
     -------
@@ -98,6 +101,7 @@ def create_workflow(
         rank_type,
         cutoff,
         bic_type,
+        strictness,
     )
 
     wb.add_task(results_task, predecessors=search_output)
@@ -261,7 +265,7 @@ def best_model(
         return base
 
 
-def task_results(rank_type, cutoff, bic_type, models):
+def task_results(rank_type, cutoff, bic_type, strictness, models):
     step_mapping, (base_model, *res_models) = models
 
     model_dict = {model.name: model for model in [base_model] + res_models}
@@ -286,6 +290,7 @@ def task_results(rank_type, cutoff, bic_type, models):
         cutoff,
         bic_type=bic_type,
         summary_models=pd.concat(sum_mod, keys=[0] + keys, names=['step']),
+        strictness=strictness,
     )
 
     # NOTE: This overwrites the default summary_tool field
@@ -302,6 +307,7 @@ def validate_input(
     list_of_parameters,
     rank_type,
     distribution,
+    strictness,
 ):
     if rank_type not in RANK_TYPES:
         raise ValueError(
@@ -330,6 +336,11 @@ def validate_input(
                     f'Invalid `list_of_parameters`: got `{list_of_parameters}`,'
                     f' must be NULL/None or a subset of {sorted(allowed_parameters)}.'
                 )
+    if strictness is not None and "rse" in strictness.lower():
+        if model.estimation_steps[-1].parameter_uncertainty_method is None:
+            raise ValueError(
+                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+            )
 
 
 @dataclass(frozen=True)

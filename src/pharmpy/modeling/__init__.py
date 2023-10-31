@@ -20,7 +20,12 @@ from .common import (
     write_model,
 )
 from .compartments import get_bioavailability, get_lag_times
-from .covariate_effect import add_covariate_effect, has_covariate_effect, remove_covariate_effect
+from .covariate_effect import (
+    add_covariate_effect,
+    get_covariates,
+    has_covariate_effect,
+    remove_covariate_effect,
+)
 from .data import (
     add_admid,
     add_cmt,
@@ -81,6 +86,7 @@ from .estimation_steps import (
     remove_parameter_uncertainty_step,
     set_estimation_step,
     set_evaluation_step,
+    set_simulation,
 )
 from .evaluation import (
     evaluate_epsilon_gradient,
@@ -201,7 +207,7 @@ from .parameters import (
     unfix_parameters_to,
     update_inits,
 )
-from .pd import add_effect_compartment, add_indirect_effect, set_direct_effect
+from .pd import add_effect_compartment, add_indirect_effect, set_baseline_effect, set_direct_effect
 from .plots import (
     plot_cwres_vs_idv,
     plot_dv_vs_ipred,
@@ -209,6 +215,7 @@ from .plots import (
     plot_iofv_vs_iofv,
     plot_transformed_eta_distributions,
 )
+from .random_variables import replace_non_random_rvs
 from .results import (
     calculate_aic,
     calculate_bic,
@@ -297,6 +304,7 @@ __all__ = [
     'get_cmt',
     'get_concentration_parameters_from_data',
     'get_config_path',
+    'get_covariates',
     'get_covariate_baselines',
     'get_doses',
     'get_doseid',
@@ -376,11 +384,13 @@ __all__ = [
     'remove_loq_data',
     'remove_peripheral_compartment',
     'remove_unused_parameters_and_rvs',
+    'replace_non_random_rvs',
     'resample_data',
     'sample_parameters_from_covariance_matrix',
     'sample_individual_estimates',
     'sample_parameters_uniformly',
     'set_additive_error_model',
+    'set_baseline_effect',
     'set_instantaneous_absorption',
     'set_combined_error_model',
     'set_covariates',
@@ -389,6 +399,7 @@ __all__ = [
     'set_dvid',
     'set_estimation_step',
     'set_evaluation_step',
+    'set_simulation',
     'set_first_order_absorption',
     'set_first_order_elimination',
     'set_iiv_on_ruv',

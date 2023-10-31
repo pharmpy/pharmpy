@@ -49,8 +49,9 @@ class ModelEntry(Immutable):
     ):
         if parent:
             ModelEntry._canonicalize_parent(model, parent)
-        if modelfit_results:
-            ModelEntry._canonicalize_modelfit_results(model, modelfit_results)
+        # FIXME: Should we require the same name?
+        # if modelfit_results:
+        #     ModelEntry._canonicalize_modelfit_results(model, modelfit_results)
         return cls(model=model, parent=parent, modelfit_results=modelfit_results, log=log)
 
     @staticmethod

@@ -21,6 +21,7 @@ from .expressions import get_individual_parameters
 from .odes import get_initial_conditions
 from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
 from .parameters import get_omegas
+from .random_variables import replace_non_random_rvs
 
 if TYPE_CHECKING:
     import numpy as np
@@ -670,6 +671,7 @@ def calculate_bic(
 
 def _categorize_parameters(model):
     # Categorize parameters into random and fixed
+    model = replace_non_random_rvs(model)  # To get rid of 0 FIX rvs
     indpars = get_individual_parameters(model)
     all_pop_params = set(model.parameters.nonfixed.symbols)
     omegas = set(get_omegas(model).symbols)

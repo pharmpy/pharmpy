@@ -17,6 +17,7 @@ from pharmpy.modeling import (
     add_effect_compartment,
     add_indirect_effect,
     add_metabolite,
+    add_peripheral_compartment,
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
     cleanup_model,
@@ -357,6 +358,20 @@ def test_get_pk_parameters(load_model_for_test, testdata, model_path, kind, expe
         assert set(get_pk_parameters(pkpd_model, kind)) == set(expected)
 
 
+def test_get_pk_parameters_metabolite(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
+    model = add_metabolite(model)
+
+    expected = ['CL', 'CLM', 'V', 'VM']
+
+    assert set(get_pk_parameters(model)) == set(expected)
+
+    model = add_peripheral_compartment(model, "METABOLITE")
+
+    expected.extend(['QP1', 'VP1'])
+    assert set(get_pk_parameters(model)) == set(expected)
+
+
 @pytest.mark.parametrize(
     ('model_path', 'kind', 'expected'),
     (
@@ -371,11 +386,6 @@ def test_get_pk_parameters(load_model_for_test, testdata, model_path, kind, expe
 def test_get_pd_parameters(load_model_for_test, testdata, model_path, kind, expected):
     model = load_model_for_test(testdata / model_path)
     assert set(get_pd_parameters(set_direct_effect(model, kind))) == set(expected)
-    stats = add_effect_compartment(model, kind).statements
-    for s in stats:
-        if isinstance(s, Assignment):
-            print(s)
-    print(stats.ode_system.eqs)
     assert set(get_pd_parameters(add_effect_compartment(model, kind))) == set(expected + ["MET"])
     assert get_pk_parameters(add_effect_compartment(model, kind)) == ['CL', 'V']
     assert get_pk_parameters(set_direct_effect(model, kind)) == ['CL', 'V']
@@ -493,11 +503,6 @@ basic_pk_model = create_basic_pk_model()
 @pytest.mark.parametrize(
     ('func', 'level', 'dv', 'expected'),
     (
-        (partial(set_direct_effect, expr='baseline'), 'all', None, ['B', 'CL', 'VC']),
-        (partial(set_direct_effect, expr='baseline'), 'all', 1, ['CL', 'VC']),
-        (partial(set_direct_effect, expr='baseline'), 'all', 2, ['B']),
-        (partial(set_direct_effect, expr='baseline'), 'random', None, ['CL', 'VC']),
-        (partial(set_direct_effect, expr='baseline'), 'random', 2, []),
         (partial(set_direct_effect, expr='linear'), 'all', None, ['B', 'CL', 'SLOPE', 'VC']),
         (partial(set_direct_effect, expr='linear'), 'all', 1, ['CL', 'VC']),
         (partial(set_direct_effect, expr='linear'), 'all', 2, ['B', 'CL', 'SLOPE', 'VC']),

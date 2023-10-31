@@ -16,6 +16,7 @@ from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_tool,
     _get_run_setup,
     import_tool,
+    is_strictness_fulfilled,
     load_example_modelfit_results,
     rank_models,
     read_modelfit_results,
@@ -251,13 +252,19 @@ class DummyModel:
 
 class DummyResults:
     def __init__(
-        self, ofv, minimization_successful=True, termination_cause=None, significant_digits=5
+        self,
+        ofv,
+        minimization_successful=True,
+        termination_cause=None,
+        significant_digits=5,
+        warnings=[],
     ):
         self.ofv = ofv
         self.minimization_successful = minimization_successful
         self.termination_cause = termination_cause
         # 5 is an arbitrary number, this is relevant in test if sig. digits is unreportable (NaN)
         self.significant_digits = significant_digits
+        self.warnings = warnings
 
 
 def test_rank_models():
@@ -282,7 +289,12 @@ def test_rank_models():
     assert list(best_model) == ['m2', 'm3']
 
     # Test if rounding errors are allowed
-    df = rank_models(base, models, errors_allowed=['rounding_errors'], rank_type='ofv')
+    df = rank_models(
+        base,
+        models,
+        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
+        rank_type='ofv',
+    )
     best_model = df.loc[df['rank'] == 1].index.values
     assert list(best_model) == ['m1']
     ranked_models = df.dropna().index.values
@@ -316,14 +328,24 @@ def test_rank_models():
         termination_cause='rounding_errors',
         significant_digits=np.nan,
     )
-    df = rank_models(base, models + [m6], errors_allowed=['rounding_errors'], rank_type='ofv')
+    df = rank_models(
+        base,
+        models + [m6],
+        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
+        rank_type='ofv',
+    )
     ranked_models = list(df.dropna().index.values)
     assert 'm6' not in ranked_models
     assert np.isnan(df.loc['m6']['rank'])
 
     # Test if base model failed, fall back to rank value
     base_nan = DummyModel('base_nan', parent='base_nan', parameter_names=['p1'], ofv=np.nan)
-    df = rank_models(base_nan, models, errors_allowed=['rounding_errors'], rank_type='ofv')
+    df = rank_models(
+        base_nan,
+        models,
+        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
+        rank_type='ofv',
+    )
     assert df.iloc[0].name == 'm1'
 
     # Test if base model failed but still has OFV with a very high value, fall back to rank value
@@ -335,7 +357,12 @@ def test_rank_models():
         minimization_successful=False,
         termination_cause='something',
     )
-    df = rank_models(base_nan, models, errors_allowed=['rounding_errors'], rank_type='ofv')
+    df = rank_models(
+        base_nan,
+        models,
+        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
+        rank_type='ofv',
+    )
     assert df.iloc[0].name == 'm1'
     assert df.nunique()['ofv'] == df.nunique()['rank']
 
@@ -466,3 +493,58 @@ def test_read_modelfit_results(testdata):
 def test_load_example_modelfit_results():
     res = load_example_modelfit_results("pheno")
     assert res.ofv == 586.27605628188053
+
+
+@pytest.mark.parametrize(
+    'path, statement, expected',
+    [
+        (
+            'nonmem/modelfit_results/onePROB/oneEST/noSIM/near_bounds.mod',
+            'minimization_successful or (rounding_errors and sigdigs > 0)',
+            True,
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'condition_number < 1000',
+            False,
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'condition_number < 300000',
+            True,
+        ),
+        (
+            'nonmem/modelfit_results/onePROB/oneEST/noSIM/maxeval3.mod',
+            'rse < 30',
+            True,
+        ),
+        (
+            'nonmem/modelfit_results/onePROB/oneEST/noSIM/maxeval3.mod',
+            'rse < 30 and condition_number < 1000',
+            False,
+        ),
+        (
+            'nonmem/pheno.mod',
+            'minimization_successful and sigdigs > 0 and rse<2',
+            False,
+        ),
+        (
+            'nonmem/pheno.mod',
+            'minimization_successful and sigdigs > 3',
+            True,
+        ),
+        (
+            'nonmem/pheno.mod',
+            'final_zero_gradient',
+            False,
+        ),
+        (
+            'nonmem/modelfit_results/onePROB/oneEST/noSIM/near_bounds.mod',
+            'estimate_near_boundary',
+            True,
+        ),
+    ],
+)
+def test_strictness(testdata, path, statement, expected):
+    res = read_modelfit_results(testdata / path)
+    assert is_strictness_fulfilled(res, statement) == expected

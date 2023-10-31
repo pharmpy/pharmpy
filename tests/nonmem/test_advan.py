@@ -18,7 +18,7 @@ def S(x):
             'ADVAN1',
             'TRANS1',
             [[-S('K')]],
-            [S('A_CENTRAL')],
+            [sympy.Function('A_CENTRAL')('t')],
             [
                 'Eq(Derivative(A_CENTRAL(t), t), -K*A_CENTRAL(t))',
             ],
@@ -28,7 +28,7 @@ def S(x):
             'ADVAN1',
             'TRANS2',
             [[-S('CL') / S('V')]],
-            [S('A_CENTRAL')],
+            [sympy.Function('A_CENTRAL')('t')],
             [
                 'Eq(Derivative(A_CENTRAL(t), t), -CL*A_CENTRAL(t)/V)',
             ],
@@ -38,7 +38,7 @@ def S(x):
             'ADVAN2',
             'TRANS1',
             [[-S('KA'), 0], [S('KA'), -S('K')]],
-            [S('A_DEPOT'), S('A_CENTRAL')],
+            [sympy.Function('A_DEPOT')('t'), sympy.Function('A_CENTRAL')('t')],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
                 'Eq(Derivative(A_CENTRAL(t), t), -K*A_CENTRAL(t) + KA*A_DEPOT(t))',
@@ -52,7 +52,7 @@ def S(x):
             'ADVAN2',
             'TRANS2',
             [[-S('KA'), 0], [S('KA'), -S('CL') / S('V')]],
-            [S('A_DEPOT'), S('A_CENTRAL')],
+            [sympy.Function('A_DEPOT')('t'), sympy.Function('A_CENTRAL')('t')],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
                 'Eq(Derivative(A_CENTRAL(t), t), -CL*A_CENTRAL(t)/V + KA*A_DEPOT(t))',
@@ -66,7 +66,7 @@ def S(x):
             'ADVAN3',
             'TRANS1',
             [[-S('K12') - S('K'), S('K21')], [S('K12'), -S('K21')]],
-            [S('A_CENTRAL'), S('A_PERIPHERAL')],
+            [sympy.Function('A_CENTRAL')('t'), sympy.Function('A_PERIPHERAL')('t')],
             [
                 'Eq(Derivative(A_CENTRAL(t), t), K21*A_PERIPHERAL(t) + (-K - K12)*A_CENTRAL(t))',
                 'Eq(Derivative(A_PERIPHERAL(t), t), K12*A_CENTRAL(t) - K21*A_PERIPHERAL(t))',
@@ -84,7 +84,11 @@ def S(x):
                 [S('KA'), -S('K23') - S('K'), S('K32')],
                 [0, S('K23'), -S('K32')],
             ],
-            [S('A_DEPOT'), S('A_CENTRAL'), S('A_PERIPHERAL')],
+            [
+                sympy.Function('A_DEPOT')('t'),
+                sympy.Function('A_CENTRAL')('t'),
+                sympy.Function('A_PERIPHERAL')('t'),
+            ],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
                 'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL(t) + '
@@ -103,7 +107,7 @@ def S(x):
             [
                 [-S('VM') / (S('KM') + sympy.Function('A_CENTRAL')(S('t')))],
             ],
-            [S('A_CENTRAL')],
+            [sympy.Function('A_CENTRAL')('t')],
             [
                 'Eq(Derivative(A_CENTRAL(t), t), -VM*A_CENTRAL(t)/(KM + A_CENTRAL(t)))',
             ],
@@ -117,7 +121,11 @@ def S(x):
                 [S('K12'), -S('K21'), 0],
                 [S('K13'), 0, -S('K31')],
             ],
-            [S('A_CENTRAL'), S('A_PERIPHERAL1'), S('A_PERIPHERAL2')],
+            [
+                sympy.Function('A_CENTRAL')('t'),
+                sympy.Function('A_PERIPHERAL1')('t'),
+                sympy.Function('A_PERIPHERAL2')('t'),
+            ],
             [
                 'Eq(Derivative(A_CENTRAL(t), t), K21*A_PERIPHERAL1(t) + K31*A_PERIPHERAL2(t) + '
                 '(-K - K12 - K13)*A_CENTRAL(t))',
@@ -139,7 +147,12 @@ def S(x):
                 [0, S('K23'), -S('K32'), 0],
                 [0, S('K24'), 0, -S('K42')],
             ],
-            [S('A_DEPOT'), S('A_CENTRAL'), S('A_PERIPHERAL1'), S('A_PERIPHERAL2')],
+            [
+                sympy.Function('A_DEPOT')('t'),
+                sympy.Function('A_CENTRAL')('t'),
+                sympy.Function('A_PERIPHERAL1')('t'),
+                sympy.Function('A_PERIPHERAL2')('t'),
+            ],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
                 'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL1(t) + '
@@ -179,7 +192,13 @@ def test_advan5(testdata, load_model_for_test):
     assert ass.symbol == S('F')
     assert ass.expression == sympy.Function('A_CMS1')('t')
     assert cm.amounts == sympy.Matrix(
-        [S('A_CMS1'), S('A_CMS2'), S('A_INTM'), S('A_INTM2'), S('A_COL1')]
+        [
+            sympy.Function('A_CMS1')('t'),
+            sympy.Function('A_CMS2')('t'),
+            sympy.Function('A_INTM')('t'),
+            sympy.Function('A_INTM2')('t'),
+            sympy.Function('A_COL1')('t'),
+        ]
     )
     # compmat = sympy.Matrix(
     #    [
@@ -250,7 +269,7 @@ $SIGMA  0.273617  ;   RUV_PROP
             'ADVAN2',
             'TRANS1',
             [[-S('KA'), 0], [S('KA'), -S('K')]],
-            [S('A_DEPOT'), S('A_CENTRAL')],
+            [sympy.Function('A_DEPOT')('t'), sympy.Function('A_CENTRAL')('t')],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
                 'Eq(Derivative(A_CENTRAL(t), t), -K*A_CENTRAL(t) + KA*A_DEPOT(t))',
@@ -264,7 +283,7 @@ $SIGMA  0.273617  ;   RUV_PROP
             'ADVAN2',
             'TRANS2',
             [[-S('KA'), 0], [S('KA'), -S('CL') / S('V')]],
-            [S('A_DEPOT'), S('A_CENTRAL')],
+            [sympy.Function('A_DEPOT')('t'), sympy.Function('A_CENTRAL')('t')],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
                 'Eq(Derivative(A_CENTRAL(t), t), -CL*A_CENTRAL(t)/V + KA*A_DEPOT(t))',
@@ -282,7 +301,11 @@ $SIGMA  0.273617  ;   RUV_PROP
                 [S('KA'), -S('K23') - S('K'), S('K32')],
                 [0, S('K23'), -S('K32')],
             ],
-            [S('A_DEPOT'), S('A_CENTRAL'), S('A_PERIPHERAL')],
+            [
+                sympy.Function('A_DEPOT')('t'),
+                sympy.Function('A_CENTRAL')('t'),
+                sympy.Function('A_PERIPHERAL')('t'),
+            ],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
                 'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL(t) + '
@@ -304,7 +327,12 @@ $SIGMA  0.273617  ;   RUV_PROP
                 [0, S('K23'), -S('K32'), 0],
                 [0, S('K24'), 0, -S('K42')],
             ],
-            [S('A_DEPOT'), S('A_CENTRAL'), S('A_PERIPHERAL1'), S('A_PERIPHERAL2')],
+            [
+                sympy.Function('A_DEPOT')('t'),
+                sympy.Function('A_CENTRAL')('t'),
+                sympy.Function('A_PERIPHERAL1')('t'),
+                sympy.Function('A_PERIPHERAL2')('t'),
+            ],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
                 'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL1(t) + '
@@ -370,7 +398,7 @@ def test_multiple_doses_different_compartments(
             'ADVAN1',
             'TRANS1',
             [[-S('K')]],
-            [S('A_CENTRAL')],
+            [sympy.Function('A_CENTRAL')('t')],
             [
                 'Eq(Derivative(A_CENTRAL(t), t), -K*A_CENTRAL(t))',
             ],
@@ -380,7 +408,7 @@ def test_multiple_doses_different_compartments(
             'ADVAN1',
             'TRANS2',
             [[-S('CL') / S('V')]],
-            [S('A_CENTRAL')],
+            [sympy.Function('A_CENTRAL')('t')],
             [
                 'Eq(Derivative(A_CENTRAL(t), t), -CL*A_CENTRAL(t)/V)',
             ],
@@ -390,7 +418,7 @@ def test_multiple_doses_different_compartments(
             'ADVAN2',
             'TRANS1',
             [[-S('KA'), 0], [S('KA'), -S('K')]],
-            [S('A_DEPOT'), S('A_CENTRAL')],
+            [sympy.Function('A_DEPOT')('t'), sympy.Function('A_CENTRAL')('t')],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
                 'Eq(Derivative(A_CENTRAL(t), t), -K*A_CENTRAL(t) + KA*A_DEPOT(t))',
@@ -404,7 +432,7 @@ def test_multiple_doses_different_compartments(
             'ADVAN2',
             'TRANS2',
             [[-S('KA'), 0], [S('KA'), -S('CL') / S('V')]],
-            [S('A_DEPOT'), S('A_CENTRAL')],
+            [sympy.Function('A_DEPOT')('t'), sympy.Function('A_CENTRAL')('t')],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
                 'Eq(Derivative(A_CENTRAL(t), t), -CL*A_CENTRAL(t)/V + KA*A_DEPOT(t))',
@@ -418,7 +446,7 @@ def test_multiple_doses_different_compartments(
             'ADVAN3',
             'TRANS1',
             [[-S('K12') - S('K'), S('K21')], [S('K12'), -S('K21')]],
-            [S('A_CENTRAL'), S('A_PERIPHERAL')],
+            [sympy.Function('A_CENTRAL')('t'), sympy.Function('A_PERIPHERAL')('t')],
             [
                 'Eq(Derivative(A_CENTRAL(t), t), K21*A_PERIPHERAL(t) + (-K - K12)*A_CENTRAL(t))',
                 'Eq(Derivative(A_PERIPHERAL(t), t), K12*A_CENTRAL(t) - K21*A_PERIPHERAL(t))',
@@ -436,7 +464,11 @@ def test_multiple_doses_different_compartments(
                 [S('KA'), -S('K23') - S('K'), S('K32')],
                 [0, S('K23'), -S('K32')],
             ],
-            [S('A_DEPOT'), S('A_CENTRAL'), S('A_PERIPHERAL')],
+            [
+                sympy.Function('A_DEPOT')('t'),
+                sympy.Function('A_CENTRAL')('t'),
+                sympy.Function('A_PERIPHERAL')('t'),
+            ],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
                 'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL(t) + '
@@ -455,7 +487,7 @@ def test_multiple_doses_different_compartments(
             [
                 [-S('VM') / (S('KM') + sympy.Function('A_CENTRAL')(S('t')))],
             ],
-            [S('A_CENTRAL')],
+            [sympy.Function('A_CENTRAL')('t')],
             [
                 'Eq(Derivative(A_CENTRAL(t), t), -VM*A_CENTRAL(t)/(KM + A_CENTRAL(t)))',
             ],
@@ -469,7 +501,11 @@ def test_multiple_doses_different_compartments(
                 [S('K12'), -S('K21'), 0],
                 [S('K13'), 0, -S('K31')],
             ],
-            [S('A_CENTRAL'), S('A_PERIPHERAL1'), S('A_PERIPHERAL2')],
+            [
+                sympy.Function('A_CENTRAL')('t'),
+                sympy.Function('A_PERIPHERAL1')('t'),
+                sympy.Function('A_PERIPHERAL2')('t'),
+            ],
             [
                 'Eq(Derivative(A_CENTRAL(t), t), K21*A_PERIPHERAL1(t) + K31*A_PERIPHERAL2(t) + '
                 '(-K - K12 - K13)*A_CENTRAL(t))',
@@ -491,7 +527,12 @@ def test_multiple_doses_different_compartments(
                 [0, S('K23'), -S('K32'), 0],
                 [0, S('K24'), 0, -S('K42')],
             ],
-            [S('A_DEPOT'), S('A_CENTRAL'), S('A_PERIPHERAL1'), S('A_PERIPHERAL2')],
+            [
+                sympy.Function('A_DEPOT')('t'),
+                sympy.Function('A_CENTRAL')('t'),
+                sympy.Function('A_PERIPHERAL1')('t'),
+                sympy.Function('A_PERIPHERAL2')('t'),
+            ],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
                 'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL1(t) + '

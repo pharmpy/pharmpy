@@ -18,6 +18,7 @@ include README.rst
 include TODO.rst
 
 include requirements.txt
+include test-requirements.txt
 include tox.ini
 
 exclude clean_cache.sh

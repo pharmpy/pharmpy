@@ -1,10 +1,16 @@
+from functools import partial
 from itertools import product
 from typing import Dict, Iterable, List, Sequence, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
 from pharmpy.model import Model
 from pharmpy.modeling import get_bioavailability
-from pharmpy.modeling.covariate_effect import EffectType, OperationType, add_covariate_effect
+from pharmpy.modeling.covariate_effect import (
+    EffectType,
+    OperationType,
+    add_covariate_effect,
+    remove_covariate_effect,
+)
 from pharmpy.modeling.expressions import (
     get_individual_parameters,
     get_parameter_rv,
@@ -49,9 +55,21 @@ all_categorical_covariate_effects = ('cat',)
 all_covariate_effects = all_continuous_covariate_effects + all_categorical_covariate_effects
 
 
-def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]:
+def features(model: Model, statements: Iterable[Statement], remove=False) -> Iterable[Feature]:
+    # Add remove_covariate_effect if optional argument
     for args in parse_spec(spec(model, statements)):
-        yield ('COVARIATE', *args), lambda model: add_covariate_effect(model, *args)
+        if remove:
+            yield ('COVARIATE', *args), partial(
+                remove_covariate_effect, parameter=args[0], covariate=args[1]
+            )
+        else:
+            yield ('COVARIATE', *args), partial(
+                add_covariate_effect,
+                parameter=args[0],
+                covariate=args[1],
+                effect=args[2],
+                operation=args[3],
+            )
 
 
 Definitions = Dict[str, Tuple[str, ...]]
@@ -126,42 +144,7 @@ def _interpret_symbol(model: Model, definition, symbol: Symbol) -> Tuple[str, ..
         try:
             return definition[symbol.name]
         except KeyError:
-            if symbol.name in ['ABSORPTION', 'ELIMINATION', 'DISTRIBUTION']:
-                return tuple(get_pk_parameters(model, kind=symbol.name.lower()))
-            elif symbol.name == 'CATEGORICAL':
-                return tuple(
-                    column.name
-                    for column in model.datainfo
-                    if column.type == 'covariate' and not column.continuous
-                )
-            elif symbol.name == 'CONTINUOUS':
-                return tuple(
-                    column.name
-                    for column in model.datainfo
-                    if column.type == 'covariate' and column.continuous
-                )
-            elif symbol.name == 'IIV':
-                return tuple(get_individual_parameters(model, level='iiv'))
-            elif symbol.name == 'PD':
-                return tuple(get_pd_parameters(model))
-            elif symbol.name == 'PD_IIV':
-                return [
-                    pd_param
-                    for pd_param in get_pd_parameters(model)
-                    if len(get_parameter_rv(model, pd_param)) > 0
-                ]
-            elif symbol.name == 'PK':
-                return tuple(get_pk_parameters(model))
-            elif symbol.name == 'BIOAVAIL':
-                return tuple(_get_bioaval_parameters(model))
-            elif symbol.name == 'PK_IIV':
-                return [
-                    pk_param
-                    for pk_param in get_pk_parameters(model)
-                    if len(get_parameter_rv(model, pk_param)) > 0
-                ]
-            else:
-                return ()
+            return _interpret_ref(model, symbol)
 
     assert isinstance(symbol, Wildcard)
 
@@ -171,6 +154,45 @@ def _interpret_symbol(model: Model, definition, symbol: Symbol) -> Tuple[str, ..
     assert symbol is CovariateWildcard
 
     return tuple(column.name for column in model.datainfo if column.type == 'covariate')
+
+
+def _interpret_ref(model, symbol):
+    if symbol.name in ['ABSORPTION', 'ELIMINATION', 'DISTRIBUTION']:
+        return tuple(get_pk_parameters(model, kind=symbol.name.lower()))
+    elif symbol.name == 'CATEGORICAL':
+        return tuple(
+            column.name
+            for column in model.datainfo
+            if column.type == 'covariate' and not column.continuous
+        )
+    elif symbol.name == 'CONTINUOUS':
+        return tuple(
+            column.name
+            for column in model.datainfo
+            if column.type == 'covariate' and column.continuous
+        )
+    elif symbol.name == 'IIV':
+        return tuple(get_individual_parameters(model, level='iiv'))
+    elif symbol.name == 'PD':
+        return tuple(get_pd_parameters(model))
+    elif symbol.name == 'PD_IIV':
+        return [
+            pd_param
+            for pd_param in get_pd_parameters(model)
+            if len(get_parameter_rv(model, pd_param)) > 0
+        ]
+    elif symbol.name == 'PK':
+        return tuple(get_pk_parameters(model))
+    elif symbol.name == 'BIOAVAIL':
+        return tuple(_get_bioaval_parameters(model))
+    elif symbol.name == 'PK_IIV':
+        return [
+            pk_param
+            for pk_param in get_pk_parameters(model)
+            if len(get_parameter_rv(model, pk_param)) > 0
+        ]
+    else:
+        return ()
 
 
 def _get_bioaval_parameters(model):

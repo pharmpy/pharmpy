@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from io import StringIO
 from lzma import open as lzma_open
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union, overload
 
 import pharmpy
 from pharmpy.deps import altair as alt
@@ -90,6 +90,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
                     message=".*iteritems is deprecated and will be removed in a future version. Use .items instead.",
                     category=FutureWarning,
                 )
+                # This was fixed in altair v2.1.1 can be removed once we require that version
                 warnings.filterwarnings(
                     "ignore",
                     message=".*the convert_dtype parameter is deprecated",
@@ -430,6 +431,14 @@ class ModelfitResults(Results):
         Number of function evaluations
     evaluation : pd.Series
         A bool for each estimation step. True if this was a model evaluation and False otherwise
+    covstep_successful : bool or None
+        Covariance status.
+    gradients : pd.Series
+        Final parameter gradients
+    gradients_iterations : pd.DataFrame
+        All recorded parameter gradients
+    warnings : List
+        List of warnings
     """
 
     name: Optional[str] = None
@@ -464,6 +473,10 @@ class ModelfitResults(Results):
     log_likelihood: Optional[float] = None
     log: Optional['Log'] = None
     evaluation: Optional[pd.Series] = None
+    covstep_successful: Optional[bool, None] = None
+    gradients: Optional[pd.Series] = None
+    gradients_iterations: Optional[pd.DataFrame] = (None,)
+    warnings: Optional[List[str]] = None
 
     def __repr__(self):
         return f'<Pharmpy modelfit results object {self.name}>'

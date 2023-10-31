@@ -31,6 +31,7 @@ def test_amd(tmp_path, testdata):
             administration='oral',
             search_space='PERIPHERALS(1)',
             occasion='VISI',
+            strictness='minimization_successful or rounding_errors',
         )
 
         rundir = tmp_path / 'amd_dir1'

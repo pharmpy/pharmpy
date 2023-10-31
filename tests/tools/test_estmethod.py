@@ -2,6 +2,7 @@ import pytest
 
 from pharmpy.tools.estmethod.algorithms import _create_base_model, _create_candidate_model
 from pharmpy.tools.estmethod.tool import SOLVERS, create_workflow, validate_input
+from pharmpy.workflows import ModelEntry
 
 
 @pytest.mark.parametrize(
@@ -52,11 +53,13 @@ def test_create_base_model(
 ):
     model = load_model_for_test(pheno_path)
     assert len(model.estimation_steps) == 1
-    base_model = _create_base_model(
+    model_entry = ModelEntry.create(model)
+    base_model_entry = _create_base_model(
         parameter_uncertainty_method,
         add_eval_after_est,
-        model=model,
+        model_entry=model_entry,
     )
+    base_model = base_model_entry.model
     assert len(base_model.estimation_steps) == 2
     assert base_model.model_code.split('\n')[-5] == est_rec
     assert base_model.model_code.split('\n')[-4] == eval_rec
@@ -89,15 +92,18 @@ def test_create_candidate_model(
 ):
     model = load_model_for_test(pheno_path)
     assert len(model.estimation_steps) == 1
-    candidate_model = _create_candidate_model(
+    model_entry = ModelEntry.create(model)
+    candidate_model_entry = _create_candidate_model(
+        '',
         method,
         None,
         parameter_uncertainty_method,
         add_eval_after_est,
         update_inits=False,
         only_evaluation=False,
-        model=model,
+        model_entry=model_entry,
     )
+    candidate_model = candidate_model_entry.model
     assert len(candidate_model.estimation_steps) == 2
     assert candidate_model.model_code.split('\n')[-5] == est_rec
     assert candidate_model.model_code.split('\n')[-4] == eval_rec

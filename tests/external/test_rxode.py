@@ -1,3 +1,5 @@
+import pytest
+
 from pharmpy.model.external.rxode import convert_model
 
 
@@ -34,12 +36,14 @@ def test_dataset_modifications(testdata, load_model_for_test):
     assert "EVID" in model.dataset.columns
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_w_error_model(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
     model = convert_model(nmmodel)
     assert 'W <- sqrt(IPRED**2*THETA_4**2 + THETA_3**2)' in model.model_code
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_omega_same(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'models' / 'fviii6.mod')
     model = convert_model(nmmodel)

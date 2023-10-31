@@ -5,7 +5,7 @@ from pharmpy.model import Model
 from pharmpy.modeling import (
     add_iiv,
     fix_parameters_to,
-    set_direct_effect,
+    set_baseline_effect,
     set_initial_estimates,
     set_lower_bounds,
     set_name,
@@ -32,7 +32,7 @@ def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: Optional[flo
     -------
     Baseline PD model
     """
-    baseline_model = set_direct_effect(model, expr='baseline')
+    baseline_model = set_baseline_effect(model, expr='const')
     baseline_model = set_name(baseline_model, "baseline_model")
     baseline_model = baseline_model.replace(parent_model='baseline_model')
     baseline_model = baseline_model.replace(description="baseline_model")
@@ -47,7 +47,7 @@ def create_pkpd_models(
     model: Model,
     search_space: str,
     b_init: Optional[Union[int, float]] = None,
-    ests: pd.Series = None,
+    ests: Optional[pd.Series] = None,
     emax_init: Optional[Union[int, float]] = None,
     ec50_init: Optional[Union[int, float]] = None,
     met_init: Optional[Union[int, float]] = None,
@@ -80,7 +80,7 @@ def create_pkpd_models(
 
     models = []
     for key, func in functions.items():
-        pkpd_model = func
+        pkpd_model = func(model)
         description = '_'.join(key)
         pkpd_model = pkpd_model.replace(description=description)
         models.append(pkpd_model)

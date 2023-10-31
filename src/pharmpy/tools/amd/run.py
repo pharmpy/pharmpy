@@ -5,7 +5,7 @@ from typing import Callable, List, Optional, Tuple, Union
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Model
-from pharmpy.modeling import plot_cwres_vs_idv, plot_dv_vs_ipred
+from pharmpy.modeling import has_mixed_mm_fo_elimination, plot_cwres_vs_idv, plot_dv_vs_ipred
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
@@ -53,7 +53,8 @@ def run_amd(
     allometric_variable: Optional[Union[str, sympy.Symbol]] = None,
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,
-    resume: Optional[bool] = False,
+    resume: bool = False,
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0)",
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -99,6 +100,8 @@ def run_amd(
         Path to run AMD in
     resume : bool
         Whether to allow resuming previous run
+    strictness : str or None
+        Strictness criteria
 
     Returns
     -------
@@ -237,6 +240,7 @@ def run_amd(
                     emax_init=emax_init,
                     ec50_init=ec50_init,
                     met_init=met_init,
+                    strictness=strictness,
                     path=db.path,
                 )
                 run_subfuncs['structsearch'] = func
@@ -245,34 +249,45 @@ def run_amd(
                     route=administration,
                     search_space=modelsearch_features,
                     type=modeltype,
+                    strictness=strictness,
                     path=db.path,
                 )
                 run_subfuncs['structsearch'] = func
             else:
-                func = _subfunc_modelsearch(search_space=modelsearch_features, path=db.path)
+                func = _subfunc_modelsearch(
+                    search_space=modelsearch_features, strictness=strictness, path=db.path
+                )
                 run_subfuncs['modelsearch'] = func
             # Perfomed 'after' modelsearch
             if modeltype == 'drug_metabolite':
-                func = _subfunc_structsearch(type=modeltype, route=administration, path=db.path)
+                func = _subfunc_structsearch(
+                    type=modeltype, route=administration, strictness=strictness, path=db.path
+                )
                 run_subfuncs['structsearch'] = func
         elif section == 'iivsearch':
-            func = _subfunc_iiv(iiv_strategy=iiv_strategy, path=db.path)
+            func = _subfunc_iiv(iiv_strategy=iiv_strategy, strictness=strictness, path=db.path)
             run_subfuncs['iivsearch'] = func
         elif section == 'iovsearch':
-            func = _subfunc_iov(amd_start_model=model, occasion=occasion, path=db.path)
+            func = _subfunc_iov(
+                amd_start_model=model, occasion=occasion, strictness=strictness, path=db.path
+            )
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
             if modeltype == 'drug_metabolite':
                 # FIXME : Assume the dv number?
                 # Perform two searches
                 # One for the drug
-                func = _subfunc_ruvsearch(dv=1, path=db.path / 'ruvsearch_drug')
+                func = _subfunc_ruvsearch(
+                    dv=1, strictness=strictness, path=db.path / 'ruvsearch_drug'
+                )
                 run_subfuncs['ruvsearch_drug'] = func
                 # And one for the metabolite
-                func = _subfunc_ruvsearch(dv=2, path=db.path / 'ruvsearch_metabolite')
+                func = _subfunc_ruvsearch(
+                    dv=2, strictness=strictness, path=db.path / 'ruvsearch_metabolite'
+                )
                 run_subfuncs['ruvsearch_metabolite'] = func
             else:
-                func = _subfunc_ruvsearch(dv=dv, path=db.path)
+                func = _subfunc_ruvsearch(dv=dv, strictness=strictness, path=db.path)
                 run_subfuncs['ruvsearch'] = func
         elif section == 'allometry':
             func = _subfunc_allometry(
@@ -281,7 +296,10 @@ def run_amd(
             run_subfuncs['allometry'] = func
         elif section == 'covariates':
             func = _subfunc_covariates(
-                amd_start_model=model, search_space=covsearch_features, path=db.path
+                amd_start_model=model,
+                search_space=covsearch_features,
+                strictness=strictness,
+                path=db.path,
             )
             run_subfuncs['covsearch'] = func
         else:
@@ -429,13 +447,14 @@ def noop_subfunc(_: Model):
     return None
 
 
-def _subfunc_modelsearch(search_space: Tuple[Statement, ...], path) -> SubFunc:
+def _subfunc_modelsearch(search_space: Tuple[Statement, ...], strictness, path) -> SubFunc:
     def _run_modelsearch(model):
         res = run_tool(
             'modelsearch',
             search_space=mfl_stringify(search_space),
             algorithm='reduced_stepwise',
             model=model,
+            strictness=strictness,
             path=path / 'modelsearch',
         )
         assert isinstance(res, Results)
@@ -465,9 +484,26 @@ def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
             search_space=mfl_stringify(search_space),
             algorithm='reduced_stepwise',
             model=model,
+            **kwargs,
             path=path / 'modelsearch',
         )
+
         final_model = res.final_model
+        if not has_mixed_mm_fo_elimination(final_model):
+            # Only select models that have mixed MM FO elimination
+            # If no model with mixed MM FO then final model from modelsearch will be used
+            models_mixed_mm_fo_el = [
+                model.name for model in res.models if has_mixed_mm_fo_elimination(model)
+            ]
+            if len(models_mixed_mm_fo_el) > 0:
+                rank_all_dict = res.summary_tool.dropna().to_dict()['rank']
+                rank_dict = {
+                    key: rank_all_dict[key] for key in models_mixed_mm_fo_el if key in rank_all_dict
+                }
+                if len(rank_dict) > 0:
+                    highest_ranked = min(rank_dict, key=rank_dict.get)
+                    final_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
+
         n_peripherals = len(final_model.statements.ode_system.find_peripheral_compartments())
         modelfeatures = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
         # Model features - 1 peripheral compartment
@@ -501,13 +537,15 @@ def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
     return _run_structsearch_tmdd
 
 
-def _subfunc_iiv(iiv_strategy, path) -> SubFunc:
+def _subfunc_iiv(iiv_strategy, strictness, path) -> SubFunc:
     def _run_iiv(model):
         res = run_tool(
             'iivsearch',
             'brute_force',
             iiv_strategy=iiv_strategy,
             model=model,
+            results=model.modelfit_results,
+            strictness=strictness,
             path=path / 'iivsearch',
         )
         assert isinstance(res, Results)
@@ -516,14 +554,20 @@ def _subfunc_iiv(iiv_strategy, path) -> SubFunc:
     return _run_iiv
 
 
-def _subfunc_ruvsearch(dv, path) -> SubFunc:
+def _subfunc_ruvsearch(dv, strictness, path) -> SubFunc:
     def _run_ruvsearch(model):
         if has_blq_transformation(model):
             skip, max_iter = ['IIV_on_RUV', 'time_varying'], 1
         else:
             skip, max_iter = [], 3
         res = run_tool(
-            'ruvsearch', model, skip=skip, max_iter=max_iter, dv=dv, path=path / 'ruvsearch'
+            'ruvsearch',
+            model,
+            skip=skip,
+            max_iter=max_iter,
+            dv=dv,
+            strictness=strictness,
+            path=path / 'ruvsearch',
         )
         assert isinstance(res, Results)
         return res
@@ -532,7 +576,7 @@ def _subfunc_ruvsearch(dv, path) -> SubFunc:
 
 
 def _subfunc_covariates(
-    amd_start_model: Model, search_space: Tuple[Statement, ...], path
+    amd_start_model: Model, search_space: Tuple[Statement, ...], strictness, path
 ) -> SubFunc:
     covariates = set(extract_covariates(amd_start_model, search_space))
     if covariates:
@@ -563,7 +607,11 @@ def _subfunc_covariates(
             return None
 
         res = run_tool(
-            'covsearch', mfl_stringify(search_space), model=model, path=path / 'covsearch'
+            'covsearch',
+            mfl_stringify(search_space),
+            model=model,
+            strictness=strictness,
+            path=path / 'covsearch',
         )
         assert isinstance(res, Results)
         return res
@@ -616,7 +664,7 @@ def _subfunc_allometry(amd_start_model: Model, input_allometric_variable, path) 
     return _run_allometry
 
 
-def _subfunc_iov(amd_start_model, occasion, path) -> SubFunc:
+def _subfunc_iov(amd_start_model, occasion, strictness, path) -> SubFunc:
     if occasion is None:
         warnings.warn('IOVsearch will be skipped because occasion is None.')
         return noop_subfunc
@@ -640,7 +688,13 @@ def _subfunc_iov(amd_start_model, occasion, path) -> SubFunc:
             )
             return None
 
-        res = run_tool('iovsearch', model=model, column=occasion, path=path / 'iovsearch')
+        res = run_tool(
+            'iovsearch',
+            model=model,
+            column=occasion,
+            strictness=strictness,
+            path=path / 'iovsearch',
+        )
         assert isinstance(res, Results)
         return res
 

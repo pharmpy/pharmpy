@@ -22,9 +22,6 @@ def add_effect_compartment(model: Model, expr: str):
 
     Implemented PD models are:
 
-    * Baseline:
-
-        .. math:: E = B
 
     * Linear:
 
@@ -54,7 +51,7 @@ def add_effect_compartment(model: Model, expr: str):
     model : Model
         Pharmpy model
     expr : str
-        Name of the PD effect function. Valid names are: baseline, linear, emax, sigmoid, step and loglin
+        Name of the PD effect function. Valid names are: linear, emax, sigmoid, step and loglin
 
     Return
     ------
@@ -67,13 +64,12 @@ def add_effect_compartment(model: Model, expr: str):
     >>> model = load_example_model("pheno")
     >>> model = add_effect_compartment(model, "linear")
     >>> model.statements.ode_system.find_compartment("EFFECT")
-    Compartment(EFFECT, amount=A_EFFECT, input=KE0*A_CENTRAL(t)/V)
+    Compartment(EFFECT, amount=A_EFFECT(t), input=KE0*A_CENTRAL(t)/V)
     """
     vc, cl = _get_central_volume_and_cl(model)
 
     odes = model.statements.ode_system
     central = odes.central_compartment
-    central_amount = sympy.Function(central.amount.name)(sympy.Symbol('t'))
     cb = CompartmentalSystemBuilder(odes)
 
     ke0 = sympy.Symbol("KE0")
@@ -81,7 +77,7 @@ def add_effect_compartment(model: Model, expr: str):
     model = add_individual_parameter(model, met.name)
     ke0_ass = Assignment(ke0, 1 / met)
 
-    effect = Compartment.create("EFFECT", input=ke0 * central_amount / vc)
+    effect = Compartment.create("EFFECT", input=ke0 * central.amount / vc)
     cb.add_compartment(effect)
     cb.add_flow(effect, output, ke0)
 
@@ -94,11 +90,7 @@ def add_effect_compartment(model: Model, expr: str):
         )
     )
 
-    conc_e = sympy.Function(model.statements.ode_system.find_compartment("EFFECT").amount.name)(
-        sympy.Symbol('t')
-    )
-
-    model = _add_effect(model, expr, conc_e)
+    model = _add_effect(model, expr, effect.amount)
     return model
 
 
@@ -107,9 +99,6 @@ def set_direct_effect(model: Model, expr: str):
 
     Implemented PD models are:
 
-    * Baseline:
-
-        .. math:: E = B
 
     * Linear:
 
@@ -139,7 +128,7 @@ def set_direct_effect(model: Model, expr: str):
     model : Model
         Pharmpy model
     expr : str
-        Name of PD effect function. Valid names are: baseline, linear, emax, sigmoid, step and loglin
+        Name of PD effect function. Valid names are: linear, emax, sigmoid, step and loglin
 
     Return
     ------
@@ -157,7 +146,7 @@ def set_direct_effect(model: Model, expr: str):
     E =   ⎝        V             ⎠
     """
     vc, cl = _get_central_volume_and_cl(model)
-    conc = sympy.Function(model.statements.ode_system.central_compartment.amount.name)('t') / vc
+    conc = model.statements.ode_system.central_compartment.amount / vc
 
     model = _add_effect(model, expr, conc)
 
@@ -188,9 +177,7 @@ def _add_effect(model: Model, expr: str, conc):
         model = add_individual_parameter(model, ec50.name)
 
     # Add effect E
-    if expr == "baseline":
-        E = Assignment(sympy.Symbol('E'), e0)
-    elif expr == "linear":
+    if expr == "linear":
         s = sympy.Symbol("SLOPE")
         model = add_individual_parameter(model, s.name)
         E = Assignment(sympy.Symbol('E'), e0 * (1 + (s * conc)))
@@ -286,11 +273,10 @@ def add_indirect_effect(
     vc, cl = _get_central_volume_and_cl(model)
     odes = model.statements.ode_system
     central = odes.central_compartment
-    central_amount = sympy.Function(central.amount.name)(sympy.Symbol('t'))
-    conc_c = central_amount / vc
+    conc_c = central.amount / vc
 
     response = Compartment.create("RESPONSE")
-    a_response = sympy.Function(response.amount.name)('t')
+    a_response = response.amount
 
     kin = sympy.Symbol("K_IN")
     kout = sympy.Symbol("K_OUT")
@@ -356,3 +342,49 @@ def add_indirect_effect(
     model = set_proportional_error_model(model, dv=2, zero_protection=False)
 
     return model.update_source()
+
+
+def set_baseline_effect(model: Model, expr: str = 'const'):
+    r"""Create baseline effect model.
+
+    Currently implemented baseline effects are:
+
+    Constant baseline effect (const):
+
+        .. math:: E = B
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    expr : str
+        Name of baseline effect function.
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = set_baseline_effect(model, expr='const')
+    >>> model.statements.find_assignment("E")
+    E = B
+    """
+    e0 = sympy.Symbol("B")
+    model = add_individual_parameter(model, e0.name)
+
+    E = Assignment(sympy.Symbol('E'), e0)
+
+    # Add dependent variable Y_2
+    y_2 = sympy.Symbol('Y_2')
+    y = Assignment(y_2, E.symbol)
+    dvs = model.dependent_variables.replace(y_2, 2)
+    model = model.replace(statements=model.statements + E + y, dependent_variables=dvs)
+
+    # Add error model
+    model = set_proportional_error_model(model, dv=2, zero_protection=False)
+
+    return model

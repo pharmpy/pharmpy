@@ -13,7 +13,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import mfr
 
 
@@ -33,17 +33,10 @@ def brute_force_no_of_etas(base_model, index_offset=0, keep=None):
 
     for i, to_remove in enumerate(non_empty_subsets(iiv_names), 1):
         model_name = f'iivsearch_run{i + index_offset}'
-        task_copy = Task('copy', copy, model_name)
-        wb.add_task(task_copy)
-
-        task_update_inits = Task('update_inits', update_initial_estimates)
-        wb.add_task(task_update_inits, predecessors=task_copy)
-
-        task_remove_eta = Task('remove_eta', remove_eta, to_remove)
-        wb.add_task(task_remove_eta, predecessors=task_update_inits)
-
-        task_update_description = Task('update_description', update_description)
-        wb.add_task(task_update_description, predecessors=task_remove_eta)
+        task_candidate_entry = Task(
+            'candidate_entry', create_no_of_etas_candidate_entry, model_name, to_remove
+        )
+        wb.add_task(task_candidate_entry)
 
     wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
     wb.insert_workflow(wf_fit)
@@ -66,23 +59,36 @@ def brute_force_block_structure(base_model, index_offset=0):
             continue
 
         model_name = f'iivsearch_run{model_no}'
-        task_copy = Task('copy', copy, model_name)
-        wb.add_task(task_copy)
-
-        task_update_inits = Task('update_inits', update_initial_estimates)
-        wb.add_task(task_update_inits, predecessors=task_copy)
-
-        task_joint_dist = Task('create_eta_blocks', create_eta_blocks, block_structure)
-        wb.add_task(task_joint_dist, predecessors=task_update_inits)
-
-        task_update_description = Task('update_description', update_description)
-        wb.add_task(task_update_description, predecessors=task_joint_dist)
+        task_candidate_entry = Task(
+            'candidate_entry', create_block_structure_candidate_entry, model_name, block_structure
+        )
+        wb.add_task(task_candidate_entry)
 
         model_no += 1
 
     wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
     wb.insert_workflow(wf_fit)
     return Workflow(wb)
+
+
+def create_no_of_etas_candidate_entry(name, to_remove, model_entry):
+    candidate_model = update_initial_estimates(model_entry.model, model_entry.modelfit_results)
+    candidate_model = remove_iiv(candidate_model, to_remove)
+    candidate_model = candidate_model.replace(
+        name=name, description=create_description(candidate_model)
+    )
+
+    return ModelEntry.create(model=candidate_model, modelfit_results=None, parent=model_entry.model)
+
+
+def create_block_structure_candidate_entry(name, block_structure, model_entry):
+    candidate_model = update_initial_estimates(model_entry.model, model_entry.modelfit_results)
+    candidate_model = create_eta_blocks(block_structure, candidate_model)
+    candidate_model = candidate_model.replace(
+        name=name, description=create_description(candidate_model)
+    )
+
+    return ModelEntry.create(model=candidate_model, modelfit_results=None, parent=model_entry.model)
 
 
 def _rv_block_structures(etas: RandomVariables):
@@ -147,11 +153,6 @@ def create_description(model: Model, iov: bool = False) -> str:
     return '+'.join(blocks)
 
 
-def remove_eta(etas, model):
-    model = remove_iiv(model, etas)
-    return model
-
-
 def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model):
     for part in partition:
         if len(part) == 1:
@@ -160,17 +161,6 @@ def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model):
             model = create_joint_distribution(
                 model, list(part), individual_estimates=mfr(model).individual_estimates
             )
-    return model
-
-
-def copy(name, model):
-    model_copy = model.replace(name=name)
-    return model_copy
-
-
-def update_description(model):
-    description = create_description(model)
-    model = model.replace(description=description)
     return model
 
 

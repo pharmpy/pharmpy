@@ -20,7 +20,7 @@ def S(x):
 
 def test_statements_effect_compartment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
-    model = add_effect_compartment(model, "baseline")
+    model = add_effect_compartment(model, "linear")
 
     with pytest.warns(UserWarning):
         print(model.statements)
@@ -161,7 +161,7 @@ def test_dict(load_model_for_test, testdata):
     assert d == {
         'class': 'Compartment',
         'name': 'CENTRAL',
-        'amount': "Symbol('A_CENTRAL')",
+        'amount': "Function('A_CENTRAL')(Symbol('t'))",
         'doses': ({'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},),
         'input': 'Integer(0)',
         'lag_time': 'Integer(0)',
@@ -185,7 +185,7 @@ def test_dict(load_model_for_test, testdata):
             {
                 'class': 'Compartment',
                 'name': 'CENTRAL',
-                'amount': "Symbol('A_CENTRAL')",
+                'amount': "Function('A_CENTRAL')(Symbol('t'))",
                 'doses': ({'class': 'Bolus', 'amount': "Symbol('AMT')", 'admid': 1},),
                 'input': 'Integer(0)',
                 'lag_time': 'Integer(0)',
@@ -354,7 +354,7 @@ def test_to_explicit_ode_system(load_model_for_test, pheno_path):
     cs = model.statements.ode_system
     assert len(cs.eqs) == 1
 
-    assert cs.amounts == sympy.Matrix([sympy.Symbol('A_CENTRAL')])
+    assert cs.amounts == sympy.Matrix([sympy.Function('A_CENTRAL')('t')])
 
 
 def test_repr_latex():
@@ -402,7 +402,6 @@ def test_dependencies(load_model_for_test, pheno_path):
         S('WGT'),
         S('ETA_2'),
         S('ETA_1'),
-        sympy.Function('A_CENTRAL')('t'),
     }
     depscl = model.statements.dependencies(S('CL'))
     assert depscl == {S('PTVCL'), S('WGT'), S('ETA_1')}
@@ -464,7 +463,7 @@ def test_infusion_create():
 
 def test_compartment_repr():
     comp = Compartment.create("CENTRAL", lag_time='LT')
-    assert repr(comp) == "Compartment(CENTRAL, amount=A_CENTRAL, lag_time=LT)"
+    assert repr(comp) == "Compartment(CENTRAL, amount=A_CENTRAL(t), lag_time=LT)"
 
 
 def test_compartment_names(load_model_for_test, testdata):

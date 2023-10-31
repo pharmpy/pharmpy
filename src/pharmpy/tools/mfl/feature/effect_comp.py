@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Iterable
 
 from pharmpy.modeling import add_effect_compartment
@@ -17,4 +18,6 @@ def features(model, statements: Iterable[Statement]) -> Iterable[Feature]:
                 else statement.modes
             )
             for mode in modes:
-                yield ('EFFECTCOMP', mode.name), add_effect_compartment(model, mode.name.lower())
+                yield ('EFFECTCOMP', mode.name), partial(
+                    add_effect_compartment, expr=mode.name.lower()
+                )

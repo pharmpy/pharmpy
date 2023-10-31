@@ -18,10 +18,12 @@ from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     Distribution,
+    EstimationStep,
     Infusion,
     Parameter,
     Parameters,
     RandomVariables,
+    SimulationStep,
     Statements,
     data,
     output,
@@ -739,7 +741,6 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
             amounts = list(new_ode_system.amounts)
             for i, amount in enumerate(amounts, start=1):
                 trans[amount] = sympy.Symbol(f"A({i})")
-                trans[sympy.Function(amount.name)(new_ode_system.t)] = sympy.Symbol(f"A({i})")
         new_error = error.update_statements(
             error_statements.subs(trans), model.random_variables, trans
         )
@@ -1156,7 +1157,8 @@ def match_advan11(odes):
     return True
 
 
-def match_advan12(odes):
+def match_advan12(statements):
+    odes = statements.ode_system
     if len(odes) != 4:
         return False
     dosing = odes.dosing_compartments[0]
@@ -1164,6 +1166,19 @@ def match_advan12(odes):
     if len(outflows) != 1:
         return False
     central = outflows[0][0]
+    central_rate = outflows[0][1]
+
+    # Check if rate is depending on CL or V assignments
+    dep_assigns = set()
+    expr = central_rate
+    for s in reversed(statements.before_odes):
+        if s.symbol in expr.free_symbols:
+            dep_assigns.add(s.symbol)
+            expr = expr.subs(s.symbol, s.expression)
+
+    if {sympy.Symbol('CL'), sympy.Symbol('V')} & dep_assigns:
+        # Cannot use reserved symbols
+        return False
     bidir = odes.get_bidirectionals(central)
     if len(bidir) != 2:
         return False
@@ -1199,7 +1214,7 @@ def new_advan_trans(model: Model):
         advan = 'ADVAN4'
     elif match_advan11(odes):
         advan = 'ADVAN11'
-    elif match_advan12(odes):
+    elif match_advan12(model.statements):
         advan = 'ADVAN12'
     else:  # General linear
         # We could use ADVAN7 if has_linear_odes_with_real_eigenvalues
@@ -1576,7 +1591,35 @@ def update_estimation(control_stream, model):
     if old == new:
         return control_stream
 
-    delta = diff(old, new)
+    old_ests = [step for step in old if isinstance(step, EstimationStep)]
+    new_ests = [step for step in new if isinstance(step, EstimationStep)]
+    old_sims = [step for step in old if isinstance(step, SimulationStep)]
+    new_sims = [step for step in new if isinstance(step, SimulationStep)]
+
+    delta = diff(old_sims, new_sims)
+    old_records = control_stream.get_records('SIMULATION')
+    i = 0
+    new_records = []
+
+    for op, sim in delta:
+        if op == 1:
+            sim_code = f'$SIMULATION ({sim.seed}) SUBPROBLEMS={sim.n}\n'
+            newrec = create_record(sim_code)
+            new_records.append(newrec)
+        elif op == -1:
+            i += 1
+        else:
+            new_records.append(old_records[i])
+            i += 1
+
+    if old_records:
+        control_stream = control_stream.replace_records(old_records, new_records)
+    else:
+        for rec in new_records:
+            newrec = create_record(str(rec))
+            control_stream = control_stream.insert_record(newrec)
+
+    delta = diff(old_ests, new_ests)
     old_records = control_stream.get_records('ESTIMATION')
     i = 0
     new_records = []
@@ -1663,12 +1706,12 @@ def update_estimation(control_stream, model):
 
     # Initiate old_parameter_uncertainty_method
     old_parameter_uncertainty_method = None
-    for est in old:
+    for est in old_ests:
         old_parameter_uncertainty_method = est.parameter_uncertainty_method
 
     # Initiate new_parameter_uncertainty_method
     new_parameter_uncertainty_method = None
-    for est in new:
+    for est in new_ests:
         new_parameter_uncertainty_method = est.parameter_uncertainty_method
 
     if old_parameter_uncertainty_method is None and new_parameter_uncertainty_method is not None:
@@ -1699,7 +1742,7 @@ def update_estimation(control_stream, model):
     # Update $TABLE
     # Currently only adds if did not exist before
     cols = set()
-    for estep in new:
+    for estep in new_ests:
         cols.update(estep.predictions)
         cols.update(estep.residuals)
     tables = control_stream.get_records('TABLE')

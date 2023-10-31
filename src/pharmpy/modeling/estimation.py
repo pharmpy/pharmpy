@@ -61,11 +61,13 @@ def calculate_ucp_scale(model: Model):
     for p in model.parameters:
         if not p.fix:
             if p.symbol not in model.random_variables.free_symbols:
-                range_ul = p.upper - p.lower
-                range_prop = (p.init - p.lower) / range_ul
+                upper = p.upper if p.upper < 1000000 else 1000000
+                lower = p.lower if p.lower > -1000000 else -1000000
+                range_ul = upper - lower
+                range_prop = (p.init - lower) / range_ul
                 scaled = 0.1 - math.log(range_prop / (1.0 - range_prop))
                 theta.append(scaled)
-                lb.append(p.lower)
+                lb.append(lower)
                 range_ul_vec.append(range_ul)
 
     return UCPScale(np.array(theta), scale_omega, scale_sigma, np.array(lb), np.array(range_ul_vec))

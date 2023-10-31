@@ -11,7 +11,7 @@ else:
 from .tree import replace_root_children
 
 
-def subs(expr: sympy.Basic, mapping: Mapping[Any, Any], simultaneous: bool = False):
+def subs(expr: sympy.Expr, mapping: Mapping[Any, Any], simultaneous: bool = False) -> sympy.Expr:
     _mapping = xreplace_dict(mapping)
     if (simultaneous or _mapping_is_not_recursive(_mapping)) and all(
         map(_old_does_not_need_generic_subs, _mapping.keys())
@@ -20,16 +20,22 @@ def subs(expr: sympy.Basic, mapping: Mapping[Any, Any], simultaneous: bool = Fal
             new_base = _mapping[sympy.exp]
             _mapping[sympy.exp] = lambda x: new_base**x
             _mapping[sympy.Pow] = lambda a, x: new_base**x if a is sympy.S.Exp1 else a**x
-            return _subs_atoms_simultaneously(_subs_atom_or_func(_mapping), expr)
-        return _subs_atoms_simultaneously(_subs_atom(_mapping), expr)
-    return expr.subs(_mapping, simultaneous=simultaneous)
+            return _subs_atoms_simultaneously(
+                _subs_atom_or_func(_mapping), expr  # pyright: ignore [reportGeneralTypeIssues]
+            )
+        return _subs_atoms_simultaneously(
+            _subs_atom(_mapping), expr  # pyright: ignore [reportGeneralTypeIssues]
+        )
+    return expr.subs(
+        _mapping, simultaneous=simultaneous
+    )  # pyright: ignore [reportGeneralTypeIssues]
 
 
 def xreplace_dict(dictlike) -> Dict[Any, Any]:
     return {_sympify_old(key): _sympify_new(value) for key, value in dictlike.items()}
 
 
-def _sympify_old(old) -> sympy.Basic:
+def _sympify_old(old) -> sympy.Expr:
     # NOTE: This mimics sympy's input coercion in subs
     return (
         sympy.Symbol(old)
@@ -39,23 +45,23 @@ def _sympify_old(old) -> sympy.Basic:
 
 
 @lru_cache(maxsize=256)
-def _sympify_new(new) -> sympy.Basic:
+def _sympify_new(new) -> sympy.Expr:
     # NOTE: This mimics sympy's input coercion in subs
     return sympy.sympify(new, strict=not isinstance(new, (str, type)))
 
 
-def _mapping_is_not_recursive(mapping: Dict[sympy.Basic, sympy.Basic]):
+def _mapping_is_not_recursive(mapping: Dict[sympy.Expr, sympy.Expr]):
     return set(mapping.keys()).isdisjoint(
         set().union(*map(lambda e: e.free_symbols, mapping.values()))
     )
 
 
-def _old_does_not_need_generic_subs(expr: sympy.Basic):
+def _old_does_not_need_generic_subs(expr: sympy.Expr):
     return isinstance(expr, sympy.Symbol) or expr is sympy.exp
 
 
 def _subs_atoms_simultaneously(
-    subs_new_args: Callable[[sympy.Basic, List[sympy.Basic]], sympy.Basic], expr: sympy.Basic
+    subs_new_args: Callable[[sympy.Expr, List[sympy.Expr]], sympy.Expr], expr: sympy.Expr
 ):
     stack = [expr]
     output = [[], []]
@@ -75,21 +81,21 @@ def _subs_atoms_simultaneously(
             output[-1].append(subs_new_args(e, new_args))
         else:
             # NOTE: Push the next argument on the stack
-            stack.append(old_args[i])
+            stack.append(old_args[i])  # pyright: ignore [reportGeneralTypeIssues]
             output.append([])
 
     return output[0][0]
 
 
-def _subs_atom(mapping: Dict[sympy.Basic, sympy.Basic]):
-    def _subs(expr: sympy.Basic, args: List[sympy.Basic]):
+def _subs_atom(mapping: Dict[sympy.Expr, sympy.Expr]):
+    def _subs(expr: sympy.Expr, args: List[sympy.Expr]):
         return replace_root_children(expr, args) if args else mapping.get(expr, expr)
 
     return _subs
 
 
 def _subs_atom_or_func(mapping: Dict[Any, Any]):
-    def _subs(expr: sympy.Basic, args: List[Any]):
+    def _subs(expr: sympy.Expr, args: List[Any]):
         if not args:
             return mapping.get(expr, expr)
 

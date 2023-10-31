@@ -24,7 +24,7 @@ routes = frozenset(('iv', 'oral', 'ivoral'))
 
 def create_workflow(
     type: str,
-    route: Optional[str] = 'oral',
+    route: str = 'oral',
     search_space: Optional[str] = None,
     b_init: Optional[Union[int, float]] = None,
     emax_init: Optional[Union[int, float]] = None,
@@ -33,6 +33,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     extra_model: Optional[Model] = None,
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0)",
 ):
     """Run the structsearch tool. For more details, see :ref:`structsearch`.
 
@@ -58,6 +59,8 @@ def create_workflow(
         Pharmpy start model
     extra_model : Model
         Optional extra Pharmpy model to use in TMDD structsearch
+    strictness : str or None
+        Strictness criteria
 
     Returns
     -------
@@ -75,10 +78,18 @@ def create_workflow(
 
     wb = WorkflowBuilder(name="structsearch")
     if type == 'tmdd':
-        start_task = Task('run_tmdd', run_tmdd, model, extra_model)
+        start_task = Task('run_tmdd', run_tmdd, model, extra_model, strictness)
     elif type == 'pkpd':
         start_task = Task(
-            'run_pkpd', run_pkpd, model, search_space, b_init, emax_init, ec50_init, met_init
+            'run_pkpd',
+            run_pkpd,
+            model,
+            search_space,
+            b_init,
+            emax_init,
+            ec50_init,
+            met_init,
+            strictness,
         )
     elif type == 'drug_metabolite':
         start_task = Task('run_drug_metabolite', run_drug_metabolite, model, route)
@@ -86,13 +97,15 @@ def create_workflow(
     return Workflow(wb)
 
 
-def run_tmdd(context, model, extra_model):
+def run_tmdd(context, model, extra_model, strictness):
     model = update_initial_estimates(model)
     if extra_model is not None:
         extra_model = update_initial_estimates(extra_model)
-        qss_candidate_models = create_qss_models(model) + create_qss_models(extra_model, index=9)
+        qss_candidate_models = create_qss_models(
+            model, model.modelfit_results.parameter_estimates
+        ) + create_qss_models(extra_model, model.modelfit_results.parameter_estimates, index=9)
     else:
-        qss_candidate_models = create_qss_models(model)
+        qss_candidate_models = create_qss_models(model, model.modelfit_results.parameter_estimates)
 
     wf = create_fit_workflow(qss_candidate_models)
     wb = WorkflowBuilder(wf)
@@ -132,10 +145,11 @@ def run_tmdd(context, model, extra_model):
         rank_type='bic',
         cutoff=None,
         summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step']),
+        strictness=strictness,
     )
 
 
-def run_pkpd(context, model, search_space, b_init, emax_init, ec50_init, met_init):
+def run_pkpd(context, model, search_space, b_init, emax_init, ec50_init, met_init, strictness):
     baseline_pd_model = create_baseline_pd_model(
         model, model.modelfit_results.parameter_estimates, b_init
     )
@@ -174,10 +188,11 @@ def run_pkpd(context, model, search_space, b_init, emax_init, ec50_init, met_ini
         rank_type='bic',
         cutoff=None,
         summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"]),
+        strictness=strictness,
     )
 
 
-def run_drug_metabolite(context, model, route):
+def run_drug_metabolite(context, model, route, strictness):
     model = update_initial_estimates(model)
     base_drug_metabolite = create_base_metabolite(model)
     candidate_drug_metabolite = create_drug_metabolite_models(model, route)
@@ -213,6 +228,7 @@ def run_drug_metabolite(context, model, route):
             keys=[0, 1],
             names=['step'],
         ),
+        strictness=strictness,
     )
 
 
@@ -226,11 +242,22 @@ def _results(model):
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(type, route):
+def validate_input(
+    type,
+    strictness,
+    model,
+    route,
+):
     if type not in TYPES:
         raise ValueError(f'Invalid `type`: got `{type}`, must be one of {sorted(TYPES)}.')
     if route not in routes:
         raise ValueError(f'Invalid `route`: got `{route}`, must be one of {sorted(routes)}.')
+
+    if strictness is not None and "rse" in strictness.lower():
+        if model.estimation_steps[-1].parameter_uncertainty_method is None:
+            raise ValueError(
+                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+            )
 
 
 @dataclass(frozen=True)

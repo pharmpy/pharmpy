@@ -1,3 +1,4 @@
+from functools import partial
 from itertools import product
 from typing import Iterable
 
@@ -29,6 +30,10 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
 
             for param in params:
                 if param[1] == 'PRODUCTION':
-                    yield ('INDIRECT', *param), add_indirect_effect(model, param[0].lower(), True)
+                    yield ('INDIRECT', *param), partial(
+                        add_indirect_effect, expr=param[0].lower(), prod=True
+                    )
                 elif param[1] == 'DEGRADATION':
-                    yield ('INDIRECT', *param), add_indirect_effect(model, param[0].lower(), False)
+                    yield ('INDIRECT', *param), partial(
+                        add_indirect_effect, expr=param[0].lower(), prod=False
+                    )
