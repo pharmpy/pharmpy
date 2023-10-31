@@ -5,6 +5,7 @@
 import math
 import re
 import warnings
+from collections import defaultdict
 from operator import add, mul
 from typing import List, Literal, Set, Union
 
@@ -14,11 +15,114 @@ from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model, Parameter, Parameters, Statement, Statements
 
+from .common import get_model_covariates
 from .data import get_baselines
-from .expressions import depends_on, remove_covariate_effect_from_statements, simplify_model
+from .expressions import (
+    depends_on,
+    get_individual_parameters,
+    remove_covariate_effect_from_statements,
+    simplify_model,
+)
+from .parameters import get_thetas
 
 EffectType = Union[Literal['lin', 'cat', 'piece_lin', 'exp', 'pow'], str]
 OperationType = Literal['*', '+']
+
+
+def get_covariates(model: Model) -> dict[list]:
+    """Return a dictionary of all used covariates within a model
+
+    The dictionary will have parameter name as key with a connected value as
+    a list of tuple(s) with (covariate, effect type, operator)
+
+    Parameters
+    ----------
+    model : Model
+        Model to extract covariates from.
+
+    Returns
+    -------
+        Dictionary : Dictionary of parameters and connected covariate(s)
+
+    """
+    parameters = get_individual_parameters(model)
+    covariates = get_model_covariates(model)
+
+    param_w_cov = defaultdict(list)
+
+    for p in parameters:
+        for c in covariates:
+            if has_covariate_effect(model, str(p), str(c)):
+                param_w_cov[p].append(c)
+
+    res = defaultdict(list)
+    for param, covariates in param_w_cov.items():
+        for cov in covariates:
+            eff, op = get_covariate_effect(model, param, str(cov))
+            res[(param, cov)].append((eff, op))
+
+    return res
+
+
+def get_covariate_effect(model: Model, symbol, covariate):
+    param_expr = model.statements.before_odes.full_expression(symbol)
+
+    eff = 'custom'
+    op = '*'
+    for effect in ['lin', 'cat', 'piece_lin', 'exp', 'pow']:
+        template = _create_template(effect, model, covariate)
+        template = template.template.expression
+        wild_dict = defaultdict(list)
+        for s in template.free_symbols:
+            wild_symbol = sympy.Wild(str(s))
+            template = template.subs({s: wild_symbol})
+            if str(s).startswith("theta"):
+                wild_dict["theta"].append(wild_symbol)
+            elif str(s).startswith("cov"):
+                wild_dict["cov"].append(wild_symbol)
+            elif str(s).startswith("median"):
+                wild_dict["median"].append(wild_symbol)
+        rest_of_expression = sympy.Wild('reo')
+
+        match = param_expr.match(rest_of_expression + template)
+        if match:
+            if _assert_cov_effect_match(wild_dict, match, model, effect=effect):
+                eff = effect
+                op = '+'
+                break
+        match = param_expr.match(rest_of_expression * template)
+        if match:
+            if _assert_cov_effect_match(wild_dict, match, model, effect=effect):
+                eff = effect
+                op = '*'
+                break
+
+    return eff, op
+
+
+def _assert_cov_effect_match(symbols, match, model, effect):
+    if effect == "pow":
+        if isinstance(match[sympy.Wild("cov")], sympy.Number) and isinstance(
+            match[sympy.Wild("median")], sympy.Pow
+        ):
+            temp = match[sympy.Wild("cov")]
+            match[sympy.Wild("cov")] = match[sympy.Wild("median")]
+            match[sympy.Wild("median")] = temp
+
+    for key, values in symbols.items():
+        if key == "theta":
+            thetas = get_thetas(model).symbols
+            if any(match[value] not in thetas for value in values):
+                return False
+        if key == "cov":
+            covariates = get_model_covariates(model)
+            covariates.extend([1 / c for c in covariates])
+            if all(match[value] not in covariates for value in values):
+                return False
+        if key == "median":
+            if not all(isinstance(match[value], sympy.Number) for value in values):
+                return False
+    return True
 
 
 def has_covariate_effect(model: Model, parameter: str, covariate: str):

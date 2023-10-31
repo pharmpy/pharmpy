@@ -1,7 +1,10 @@
 from dataclasses import dataclass
-from typing import Literal, Tuple, Union
+from typing import Literal, Optional, Tuple, Union
 
 from lark.visitors import Interpreter
+
+from pharmpy.model import Model
+from pharmpy.modeling import get_pk_parameters
 
 from .feature import ModelFeature, feature
 from .symbols import Symbol, Wildcard
@@ -13,6 +16,44 @@ class Covariate(ModelFeature):
     covariate: Union[Symbol, Tuple[str, ...]]
     fp: Tuple[str, ...]
     op: Literal['*', '+'] = '*'
+
+    def eval(self, model: Optional[Model] = None):
+        # Circular import issue
+        from ...feature.covariate import _interpret_ref
+
+        if model is not None:
+            if self.parameter is ParameterWildcard:
+                parameter = tuple(get_pk_parameters(model))
+            elif isinstance(self.parameter, Ref):
+                parameter = _interpret_ref(model, self.parameter)
+            else:
+                parameter = self.parameter
+
+            if self.covariate is CovariateWildcard:
+                covariate = tuple(
+                    column.name for column in model.datainfo if column.type == 'covariate'
+                )
+            elif isinstance(self.covariate, Ref):
+                covariate = _interpret_ref(model, self.covariate)
+            else:
+                covariate = self.covariate
+        else:
+            parameter = self.parameter
+            covariate = self.covariate
+
+        if self.fp == EffectFunctionWildcard:
+            fp = (
+                'lin',
+                'piece_lin',
+                'exp',
+                'pow',
+            )
+        else:
+            fp = self.fp
+
+        op = self.op
+
+        return Covariate(parameter=parameter, covariate=covariate, fp=fp, op=op)
 
 
 @dataclass(frozen=True)
