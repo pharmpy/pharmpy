@@ -30,7 +30,7 @@ from .external import parse_modelfit_results
 def fit(
     model_or_models: Union[Model, List[Model]],
     tool: Optional[str] = None,
-    path: Optional[Path, str] = None,
+    path: Optional[Union[Path, str]] = None,
 ) -> Union[ModelfitResults, List[ModelfitResults]]:
     """Fit models.
 
