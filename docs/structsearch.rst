@@ -64,6 +64,10 @@ The arguments of the structsearch tool are listed below.
 +-------------------------------------------------+---------------------------------------------------------------------+
 | ``results``                                     | ModelfitResults of the start model                                  |
 +-------------------------------------------------+---------------------------------------------------------------------+
+| :ref:`strictness<strictness>`                   | Strictness criteria for model selection.                            |
+|                                                 | Default is "minimization_successful or                              |
+|                                                 | (rounding_errors and sigdigs>= 0)"                                  |
++-------------------------------------------------+---------------------------------------------------------------------+
 | ``extra_model``                                 | Extra model for TMDD structsearch (only for TMDD)                   |
 +-------------------------------------------------+---------------------------------------------------------------------+
 

@@ -415,3 +415,67 @@ Example for a PD model search space:
 
     DIRECTEFFECT([linear, emax])
     EFFECTCOMP(*)
+    
+
+.. _strictness:
+
+Strictness
+~~~~~~~~~~
+
+Strictness criteria for model selection can be specified in the AMD tools.
+Models that do not fulfill the strictness criteria will be excluded from the model ranking and will therefore
+not be able to be selected as best models.
+The strictness argument in the AMD tools consists of a string of logically arranged criteria.
+Implemented strictness criteria are:
+
++---------------------------+-------------+-------------------------------------+
+| Strictness criterion      | Type        | Description                         |
++===========================+=============+=====================================+
+| minimization_successful   | Boolean     | True if minimization was successful |
++---------------------------+-------------+-------------------------------------+
+| rounding_errors           | Boolean     | True if minimization terminated due | 
+|                           |             | rounding errors                     |
++---------------------------+-------------+-------------------------------------+
+| sigidgs                   | Numeric     | Number of significant digits        |
++---------------------------+-------------+-------------------------------------+
+| maxevals_exceeded         | Boolean     | True if minimization terminated due |
+|                           |             | maximum evaluations exceeded.       |
++---------------------------+-------------+-------------------------------------+
+| rse                       | Numeric     | Relative standard errors of the     |
+|                           |             | parameters.                         |
++---------------------------+-------------+-------------------------------------+
+| condition_number          | Numeric     | Condition number of the covariance  |
+|                           |             | matrix                              |
++---------------------------+-------------+-------------------------------------+
+| final_zero_gradient       | Boolean     | True if at least one parameter has  |
+|                           |             | a final zero gradient               |
++---------------------------+-------------+-------------------------------------+
+| estimate_near_boundary    | Boolean     | True if at least one parameter      |
+|                           |             | estimate is near its boundary       |
++---------------------------+-------------+-------------------------------------+
+
+The strictness criteria can be arranged logically, e.g.:
+
+.. code::
+   
+   "(A or B) and C < n"
+
+where n is a number and A, B and C are strictness criteria.
+
+Allowed logical operators are: and, or, not, <, <=, =, >, >=.
+
+Examples
+========
+
+.. code::
+
+    strictness = "minimization_successful or (rounding_errors and sigidgs >= 0)"
+
+In this example the strictness criteria states that either the minimization must be successful or else the
+minimization was terminated due to rounding errors and the number of sigdigs is positive.
+
+.. code::
+
+    strictness = "minimization_successful and rse < 0.4"
+
+This means that the minimization must be successful and that no parameter must have an RSE larger than 0.4.
