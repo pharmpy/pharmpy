@@ -18,9 +18,11 @@ from .results_file import NONMEMResultsFile
 if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
+    import sympy
 else:
     from pharmpy.deps import numpy as np
     from pharmpy.deps import pandas as pd
+    from pharmpy.deps import sympy
 
 
 def _parse_modelfit_results(
@@ -76,7 +78,7 @@ def _parse_modelfit_results(
     table_df = _parse_tables(path, control_stream, netas=len(model.random_variables.etas.names))
     residuals = _parse_residuals(table_df)
     predictions = _parse_predictions(table_df)
-    iofv, ie, iec = _parse_phi(path, control_stream, name_map, etas, subproblem)
+    iofv, ie, iec = _parse_phi(path, control_stream, name_map, etas, model, final_pe, subproblem)
     gradients_iterations, final_zero_gradient, gradients = _parse_grd(
         path, control_stream, name_map, parameters, subproblem
     )
@@ -324,6 +326,8 @@ def _parse_phi(
     control_stream: NMTranControlStream,
     name_map,
     etas: RandomVariables,
+    model,
+    pe,
     subproblem=None,
 ):
     try:
@@ -344,19 +348,41 @@ def _parse_phi(
     rv_names = list(filter(eta_names.__contains__, etas.names))
     try:
         individual_ofv = table.iofv
-        individual_estimates = table.etas.rename(columns=name_map)[rv_names]
-        ids, eta_col_names, matrix_array = table.etc_data()
-        index = {name_map[x]: i for i, x in enumerate(eta_col_names)}
-        indices = tuple(map(index.__getitem__, rv_names))
-        selector = np.ix_(indices, indices)
-        etc_frames = [
-            pd.DataFrame(matrix[selector], columns=rv_names, index=rv_names)
-            for matrix in matrix_array
-        ]
-        covs = pd.Series(etc_frames, index=ids, dtype='object')
+        prefix, individual_estimates = _parse_individual_estimates(model, pe, table, rv_names)
+        if prefix != "PHI":
+            ids, eta_col_names, matrix_array = table.etc_data()
+            index = {name_map[x]: i for i, x in enumerate(eta_col_names)}
+            indices = tuple(map(index.__getitem__, rv_names))
+            selector = np.ix_(indices, indices)
+            etc_frames = [
+                pd.DataFrame(matrix[selector], columns=rv_names, index=rv_names)
+                for matrix in matrix_array
+            ]
+            covs = pd.Series(etc_frames, index=ids, dtype='object')
+        else:
+            covs = None
         return individual_ofv, individual_estimates, covs
     except KeyError:
         return None, None, None
+
+
+def _parse_individual_estimates(model, pe, table, rv_names):
+    df = table.etas
+    prefix = df.columns[0][0:3]  # PHI or ETA
+    d = {f"{prefix}({i})": name for i, name in enumerate(rv_names, start=1)}
+    df = df.rename(columns=d)  # [rv_names] needed?
+    if prefix == "PHI":
+        for i in range(1, len(rv_names) + 1):
+            mu = sympy.Symbol(f"MU_{i}")
+            expr = model.statements.before_odes.full_expression(mu)
+            if expr != mu:  # MU is defined in model code
+                value = expr.subs(dict(pe))
+                try:
+                    value = float(value)
+                except TypeError:
+                    raise ValueError("MU depends on something else than population parameters")
+                df.iloc[:, i - 1] -= value
+    return prefix, df
 
 
 def _parse_grd(

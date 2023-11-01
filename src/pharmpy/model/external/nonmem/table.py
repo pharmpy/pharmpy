@@ -220,7 +220,7 @@ class PhiTable(NONMEMTable):
     def etas(self):
         df = self._df
         df = df.loc[df.iloc[:, 2:].any(axis=1)]
-        eta_col_names = [col for col in df if col.startswith('ETA')]
+        eta_col_names = [col for col in df if col.startswith('ETA') or col.startswith('PHI')]
         etas = df[eta_col_names]
         etas.index = df['ID']
         return etas
