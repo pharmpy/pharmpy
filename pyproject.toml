@@ -15,3 +15,9 @@ include_trailing_comma = true
 venvPath = ".tox"
 venv = "py311-type-check"
 reportUnnecessaryTypeIgnoreComment = true
+
+[tool.pytest.ini_options]
+filterwarnings = [
+   "error",
+   "ignore:The --rsyncdir command line argument and rsyncdirs config variable are deprecated.:DeprecationWarning",
+]
