@@ -9,7 +9,7 @@ from pharmpy.tools import get_model_features, summarize_modelfit_results
 from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
 from ..mfl.filter import modelsearch_statement_types
@@ -95,7 +95,7 @@ def start(
 ):
     wb = WorkflowBuilder()
 
-    start_task = Task('start_modelsearch', _start, model)
+    start_task = Task('start_modelsearch', _start, model, results)
     wb.add_task(start_task)
 
     algorithm_func = getattr(algorithms, algorithm)
@@ -133,6 +133,7 @@ def start(
 
     # TODO : Implement task for filtering the search space instead
     wf_search, candidate_model_tasks = algorithm_func(mfl_funcs, iiv_strategy)
+
     if candidate_model_tasks:
         # Clear base description to not interfere with candidate models
         base_clear_task = Task("Clear_base_description", clear_description)
@@ -155,19 +156,21 @@ def start(
     return res
 
 
-def _start(model):
-    return model
+def _start(model, modelfit_results):
+    return ModelEntry.create(model, modelfit_results=modelfit_results)
 
 
 def _results(res):
     return res
 
 
-def clear_description(model):
-    return model.replace(description="")
+def clear_description(model_entry):
+    model, res, parent = model_entry.model, model_entry.modelfit_results, model_entry.parent
+    return ModelEntry.create(model.replace(description=""), modelfit_results=res, parent=parent)
 
 
-def filter_mfl_statements(mfl_statements: ModelFeatures, model: Model):
+def filter_mfl_statements(mfl_statements: ModelFeatures, model_entry: ModelEntry):
+    model = model_entry.model
     ss_funcs = mfl_statements.convert_to_funcs()
     model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
     model_funcs = model_mfl.convert_to_funcs()
@@ -219,7 +222,12 @@ def _update_results(base):
     )
 
 
-def create_base_model(ss, model):
+def create_base_model(ss, model_or_model_entry):
+    if isinstance(model_or_model_entry, ModelEntry):
+        model = model_or_model_entry.model
+    else:
+        model = model_or_model_entry
+
     base = model
 
     model_mfl = get_model_features(model, supress_warnings=True)
@@ -231,34 +239,34 @@ def create_base_model(ss, model):
         added_features += f';{name[0]}({name[1]})'
     # UPDATE_DESCRIPTION
     # FIXME : Need to be its own parent if the input model shouldn't be ranked with the others
-    base = base.replace(name="BASE", description=added_features[1:], parent_model="BASE")
+    base = base.replace(name="BASE", description=added_features[1:])
 
-    return base
+    return ModelEntry.create(base, modelfit_results=None, parent=None)
 
 
-def post_process(rank_type, cutoff, strictness, *models):
+def post_process(rank_type, cutoff, strictness, *model_entries):
     res_models = []
-    input_model = None
-    base_model = False
-    for model in models:
+    input_model_entry = None
+    base_model_entry = None
+    for model_entry in model_entries:
+        model = model_entry.model
         if not model.name.startswith('modelsearch_run') and model.name == "BASE":
-            base_model = True
-            input_model = model
-            base_model = model
+            input_model_entry = model_entry
+            base_model_entry = model_entry
         elif not model.name.startswith('modelsearch_run') and model.name != "BASE":
-            user_input_model = model
+            user_input_model_entry = model_entry
         else:
-            res_models.append(model)
-    if not base_model:
-        input_model = user_input_model
-        base_model = user_input_model
-    if not input_model:
+            res_models.append(model_entry)
+    if not base_model_entry:
+        input_model_entry = user_input_model_entry
+        base_model_entry = user_input_model_entry
+    if not input_model_entry:
         raise ValueError('Error in workflow: No input model')
 
-    results_to_summarize = [user_input_model.modelfit_results]
+    results_to_summarize = [user_input_model_entry.modelfit_results]
 
-    if user_input_model != base_model:
-        results_to_summarize.append(base_model.modelfit_results)
+    if user_input_model_entry != base_model_entry:
+        results_to_summarize.append(base_model_entry.modelfit_results)
 
     if res_models:
         results_to_summarize.extend(model.modelfit_results for model in res_models)
@@ -269,8 +277,8 @@ def post_process(rank_type, cutoff, strictness, *models):
 
     return create_results(
         ModelSearchResults,
-        input_model,
-        base_model,
+        input_model_entry,
+        base_model_entry,
         res_models,
         rank_type,
         cutoff,

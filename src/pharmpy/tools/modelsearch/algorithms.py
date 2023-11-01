@@ -3,7 +3,7 @@ from typing import Any, List
 from pharmpy.modeling import add_iiv, add_pk_iiv, create_joint_distribution, set_upper_bounds
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
 from ..mfl.helpers import all_combinations, get_funcs_same_type, key_to_str
 
@@ -21,23 +21,16 @@ def exhaustive(mfl_funcs, iiv_strategy: str):
     for i, combo in enumerate(combinations, 1):
         model_name = f'modelsearch_run{i}'
 
-        task_copy = Task('copy', _copy, model_name, combo)
-        wb_search.add_task(task_copy)
+        # NOTE: The different functions need to be extracted first otherwise an error is raised
+        funcs = set(mfl_funcs[feat] for feat in combo)
 
-        task_previous = task_copy
-        for feat in combo:
-            func = mfl_funcs[feat]
-            task_function = Task(key_to_str(feat), func)
-            wb_search.add_task(task_function, predecessors=task_previous)
-            if iiv_strategy != 'no_add':
-                task_add_iiv = Task('add_iivs', _add_iiv_to_func, iiv_strategy)
-                wb_search.add_task(task_add_iiv, predecessors=task_function)
-                task_previous = task_add_iiv
-            else:
-                task_previous = task_function
+        task_create_candidate = Task(
+            'create_candidate', create_candidate_exhaustive, model_name, combo, funcs, iiv_strategy
+        )
+        wb_search.add_task(task_create_candidate)
 
         wf_fit = create_fit_workflow(n=1)
-        wb_search.insert_workflow(wf_fit, predecessors=task_previous)
+        wb_search.insert_workflow(wf_fit, predecessors=task_create_candidate)
 
         model_tasks += wf_fit.output_tasks
 
@@ -56,16 +49,24 @@ def exhaustive_stepwise(mfl_funcs, iiv_strategy: str):
                 model_no = len(model_tasks) + 1
                 model_name = f'modelsearch_run{model_no}'
 
-                wf_create_model, _ = _create_model_workflow(
-                    model_name, feat, mfl_funcs[feat], iiv_strategy
+                task_create_candidate = Task(
+                    key_to_str(feat),
+                    create_candidate_stepwise,
+                    model_name,
+                    feat,
+                    mfl_funcs[feat],
+                    iiv_strategy,
                 )
 
                 if task_parent:
-                    wb_search.insert_workflow(wf_create_model, predecessors=[task_parent])
+                    wb_search.add_task(task_create_candidate, predecessors=[task_parent])
                 else:
-                    wb_search += WorkflowBuilder(wf_create_model)
+                    wb_search.add_task(task_create_candidate)
 
-                model_tasks += wf_create_model.output_tasks
+                wf_fit = create_fit_workflow(n=1)
+                wb_search.insert_workflow(wf_fit, predecessors=task_create_candidate)
+
+                model_tasks += wf_fit.output_tasks
 
                 no_of_trans += 1
         if no_of_trans == 0:
@@ -96,16 +97,24 @@ def reduced_stepwise(mfl_funcs, iiv_strategy: str):
                 model_no = len(model_tasks) + 1
                 model_name = f'modelsearch_run{model_no}'
 
-                wf_create_model, _ = _create_model_workflow(
-                    model_name, feat, mfl_funcs[feat], iiv_strategy
+                task_create_candidate = Task(
+                    key_to_str(feat),
+                    create_candidate_stepwise,
+                    model_name,
+                    feat,
+                    mfl_funcs[feat],
+                    iiv_strategy,
                 )
 
                 if task_parent:
-                    wb_search.insert_workflow(wf_create_model, predecessors=[task_parent])
+                    wb_search.add_task(task_create_candidate, predecessors=[task_parent])
                 else:
-                    wb_search += wf_create_model
+                    wb_search.add_task(task_create_candidate)
 
-                model_tasks += wf_create_model.output_tasks
+                wf_fit = create_fit_workflow(n=1)
+                wb_search.insert_workflow(wf_fit, predecessors=task_create_candidate)
+
+                model_tasks += wf_fit.output_tasks
 
                 no_of_trans += 1
         if no_of_trans == 0:
@@ -137,12 +146,12 @@ def _find_same_model_groups(wf, mfl_funcs):
     return all_groups
 
 
-def _get_best_model(*models):
-    models_with_res = [model for model in models if model.modelfit_results]
+def _get_best_model(*model_entries):
+    models_with_res = [model_entry for model_entry in model_entries if model_entry.modelfit_results]
     if models_with_res:
         return min(models_with_res, key=lambda x: x.modelfit_results.ofv)
     # FIXME: Should be None, maybe dynamic workflows are needed
-    return models[0]
+    return model_entries[0]
 
 
 def _get_possible_actions(wf, mfl_funcs):
@@ -176,29 +185,25 @@ def _get_previous_features(wf, task, mfl_funcs):
     return features_previous
 
 
-def _create_model_workflow(model_name, feat, func, iiv_strategy):
-    wb_stepwise_step = WorkflowBuilder()
+def create_candidate_exhaustive(model_name, combo, funcs, iiv_strategy, model_entry):
+    input_model, input_res = model_entry.model, model_entry.modelfit_results
+    model = _update_name_and_description(model_name, combo, input_model)
+    model = update_initial_estimates(model, input_res)
+    for feat, func in zip(combo, funcs):
+        model = func(model)
+        if iiv_strategy != 'no_add':
+            model = _add_iiv_to_func(iiv_strategy, model, model_entry)
+    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
 
-    task_copy = Task('copy', _copy, model_name, (feat,))
-    wb_stepwise_step.add_task(task_copy)
 
-    task_update_inits = Task('update_inits', update_initial_estimates)
-    wb_stepwise_step.add_task(task_update_inits, predecessors=task_copy)
-
-    task_function = Task(key_to_str(feat), _apply_transformation, feat, func)
-    wb_stepwise_step.add_task(task_function, predecessors=task_update_inits)
-
+def create_candidate_stepwise(model_name, feat, func, iiv_strategy, model_entry):
+    input_model, input_res = model_entry.model, model_entry.modelfit_results
+    model = _update_name_and_description(model_name, (feat,), input_model)
+    model = update_initial_estimates(model, input_res)
+    model = _apply_transformation(feat, func, model)
     if iiv_strategy != 'no_add':
-        task_add_iiv = Task('add_iivs', _add_iiv_to_func, iiv_strategy)
-        wb_stepwise_step.add_task(task_add_iiv, predecessors=task_function)
-        task_to_fit = task_add_iiv
-    else:
-        task_to_fit = task_function
-
-    wf_fit = create_fit_workflow(n=1)
-    wb_stepwise_step.insert_workflow(wf_fit, predecessors=task_to_fit)
-
-    return Workflow(wb_stepwise_step), task_function
+        model = _add_iiv_to_func(iiv_strategy, model, model_entry)
+    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
 
 
 def _apply_transformation(feat, func, model):
@@ -266,35 +271,37 @@ def _is_allowed_peripheral(func_current, peripheral_previous, mfl_funcs):
     return n_index > 0 and n_all[n_index - 1] < n
 
 
-def _copy(name, features, model):
+def _update_name_and_description(name, features, model):
     features_str = ';'.join(map(key_to_str, features))
     if not model.description or model.parent_model == model.name:
         description = features_str
     else:
         description = f'{model.description};{features_str}'
-    model_copy = model.replace(name=name, description=description, parent_model=model.name)
-    return model_copy
+    return model.replace(name=name, description=description)
 
 
-def _add_iiv_to_func(iiv_strategy, model):
+def _add_iiv_to_func(iiv_strategy, model, input_model_entry):
     sset, rvs = model.statements, model.random_variables
     if iiv_strategy == 'add_diagonal' or iiv_strategy == 'fullblock':
         try:
             model = add_pk_iiv(model, initial_estimate=0.01)
         except ValueError as e:
             if str(e) == 'New parameter inits are not valid':
-                raise ValueError(f'{model.name}: {e} (add_pk_iiv, parent: {model.parent_model})')
+                raise ValueError(
+                    f'{model.name}: {e} (add_pk_iiv, parent: {input_model_entry.model.name}'
+                )
         if iiv_strategy == 'fullblock':
             try:
                 model = create_joint_distribution(
-                    model, individual_estimates=model.modelfit_results.individual_estimates
+                    model,
+                    individual_estimates=input_model_entry.modelfit_results.individual_estimates,
                 )
             except ValueError as e:
                 if str(e) == 'New parameter inits are not valid':
                     raise ValueError(
                         f'{model.name}: {e} '
                         f'(create_joint_distribution, '
-                        f'parent: {model.parent_model})'
+                        f'parent: {input_model_entry.parent.name})'
                     )
     else:
         assert iiv_strategy == 'absorption_delay'

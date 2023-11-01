@@ -454,6 +454,7 @@ def _subfunc_modelsearch(search_space: Tuple[Statement, ...], strictness, path) 
             algorithm='reduced_stepwise',
             model=model,
             strictness=strictness,
+            results=model.modelfit_results,
             path=path / 'modelsearch',
         )
         assert isinstance(res, Results)

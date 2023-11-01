@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
+from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.mfl.helpers import funcs, modelsearch_features
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.mfl.parse import parse as mfl_parse
@@ -21,7 +22,7 @@ from pharmpy.tools.modelsearch.algorithms import (
     reduced_stepwise,
 )
 from pharmpy.tools.modelsearch.tool import create_workflow, validate_input
-from pharmpy.workflows import Workflow
+from pharmpy.workflows import ModelEntry, Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
 MINIMAL_VALID_MFL_STRING = 'LAGTIME(ON)'
@@ -252,10 +253,12 @@ def test_is_allowed():
 )
 def test_add_iiv_to_func(load_model_for_test, testdata, transform_funcs, no_of_added_etas):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_entry = ModelEntry.create(model, modelfit_results=res)
     no_of_etas_start = len(model.random_variables)
     for func in transform_funcs:
         model = func(model)
-    model = _add_iiv_to_func('add_diagonal', model)
+    model = _add_iiv_to_func('add_diagonal', model, model_entry)
     assert len(model.random_variables) - no_of_etas_start == no_of_added_etas
 
 

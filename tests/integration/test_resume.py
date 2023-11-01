@@ -118,6 +118,7 @@ def test_run_tool_modelsearch_resume_flag(
                     search_space,
                     'exhaustive_stepwise',
                     model=model_start,
+                    results=model_start.modelfit_results,
                     path=path,
                     resume=resume,
                 )
