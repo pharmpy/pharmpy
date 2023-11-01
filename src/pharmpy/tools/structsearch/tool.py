@@ -92,7 +92,7 @@ def create_workflow(
             strictness,
         )
     elif type == 'drug_metabolite':
-        start_task = Task('run_drug_metabolite', run_drug_metabolite, model, route)
+        start_task = Task('run_drug_metabolite', run_drug_metabolite, model, route, strictness)
     wb.add_task(start_task)
     return Workflow(wb)
 
