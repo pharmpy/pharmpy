@@ -98,7 +98,7 @@ def create_workflow(
 
 
 def run_tmdd(context, model, extra_model, strictness):
-    # model = update_initial_estimates(model)
+    model = update_initial_estimates(model)
     if extra_model is not None:
         extra_model = update_initial_estimates(extra_model)
         qss_candidate_models = create_qss_models(
