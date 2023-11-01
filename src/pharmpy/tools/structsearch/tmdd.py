@@ -36,12 +36,12 @@ def create_qss_models(model, ests, index=1):
             )
             for model in qss_candidate_models
         ]
-    if "POP_VM" in ests.keys() and "POP_R_0" in ests.keys():
+    if "POP_KM" in ests.keys() and "POP_R_0" in ests.keys() and "POP_CLMM" in ests.keys():
         qss_candidate_models = [
             set_initial_estimates(
                 model,
                 {
-                    "POP_KINT": ests["POP_VM"] / ests["POP_R_0"],
+                    "POP_KINT": ests["POP_KM"] * ests["POP_CLMM"] / ests["POP_R_0"],
                 },
             )
             for model in qss_candidate_models
@@ -55,7 +55,6 @@ def create_qss_models(model, ests, index=1):
         qss_candidate_models = [
             set_initial_estimates(model, {"IIV_R_0": 0.04}) for model in qss_candidate_models
         ]
-
     return qss_candidate_models
 
 
@@ -65,18 +64,23 @@ def create_remaining_models(model, ests, parent_model, num_peripherals_qss):
     if num_peripherals_qss < num_peripherals_model:
         model = remove_peripheral_compartment(model)
 
+    if 'POP_VC' in ests:
+        est_vc = ests['POP_VC']
+    else:
+        est_vc = 0.1
+
     models = (
-        create_full_models(model, ests, parent_model)
-        + create_cr_models(model, ests, parent_model)
-        + create_ib_models(model, ests, parent_model)
-        + create_crib_models(model, ests, parent_model)
-        + create_wagner_model(model, ests, parent_model)
-        + create_mmapp_model(model, ests, parent_model)  # FIXME: Fix MMAPP model
+        create_full_models(model, ests, parent_model, est_vc)
+        + create_cr_models(model, ests, parent_model, est_vc)
+        + create_ib_models(model, ests, parent_model, est_vc)
+        + create_crib_models(model, ests, parent_model, est_vc)
+        + create_wagner_model(model, ests, parent_model, est_vc)
+        + create_mmapp_model(model, ests, parent_model, est_vc)
     )
     return models
 
 
-def create_cr_models(model, ests, parent_model):
+def create_cr_models(model, ests, parent_model, est_vc):
     # Create cr models with different initial estimates from basic pk model and best qss ests
     cr_base_model = set_tmdd(model, type="CR")
     cr_base_model = set_initial_estimates(
@@ -96,7 +100,7 @@ def create_cr_models(model, ests, parent_model):
     return [cr1, cr2]
 
 
-def create_ib_models(model, ests, parent_model):
+def create_ib_models(model, ests, parent_model, est_vc):
     # Create ib models with different initial estimates from basic pk model and best qss ests
     ib_base_model = set_tmdd(model, type="IB")
     ib_base_model = set_initial_estimates(
@@ -117,9 +121,9 @@ def create_ib_models(model, ests, parent_model):
     return [ib1, ib2]
 
 
-def create_crib_models(model, ests, parent_model):
+def create_crib_models(model, ests, parent_model, est_vc):
     # Create crib models with different initial estimates from basic pk model and best qss ests
-    crib_base_model = set_tmdd(model, type="IB")
+    crib_base_model = set_tmdd(model, type="CRIB")
     crib_base_model = set_initial_estimates(
         crib_base_model,
         {
@@ -138,7 +142,7 @@ def create_crib_models(model, ests, parent_model):
     return [crib1, crib2]
 
 
-def create_full_models(model, ests, parent_model):
+def create_full_models(model, ests, parent_model, est_vc):
     # Create full models with different initial estimates from basic pk model and best qss ests
     full_base_model = set_tmdd(model, type="FULL")
     full_base_model = set_initial_estimates(
@@ -154,8 +158,10 @@ def create_full_models(model, ests, parent_model):
         set_initial_estimates(full_base_model, {'POP_KOFF': koff}) for koff in (0.1, 1, 10, 100)
     ]
     candidates = [
-        set_initial_estimates(full_base_model, {'POP_KON': koff / ests['POP_KDC'] * ests['POP_VC']})
-        for koff in (0.1, 1, 10, 100)
+        set_initial_estimates(
+            model, {'POP_KON': model.parameters['POP_KOFF'].init / ests['POP_KDC'] * ests['POP_VC']}
+        )
+        for model in candidates
     ]
     candidates = [set_name(model, f"structsearch_run{i}") for i, model in enumerate(candidates, 1)]
     candidates = [
@@ -165,7 +171,7 @@ def create_full_models(model, ests, parent_model):
     return candidates
 
 
-def create_wagner_model(model, ests, parent_model):
+def create_wagner_model(model, ests, parent_model, est_vc):
     wagner = set_tmdd(model, type="WAGNER")
     wagner = set_name(wagner, "structsearch_run11")
     wagner = wagner.replace(description="WAGNER", parent_model=parent_model)
@@ -181,7 +187,7 @@ def create_wagner_model(model, ests, parent_model):
     return [wagner]
 
 
-def create_mmapp_model(model, ests, parent_model):
+def create_mmapp_model(model, ests, parent_model, est_vc):
     mmapp = set_tmdd(model, type="MMAPP")
     mmapp = set_name(mmapp, "structsearch_run12")
     mmapp = mmapp.replace(description="MMAPP", parent_model=parent_model)
