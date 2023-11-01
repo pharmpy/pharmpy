@@ -2166,7 +2166,7 @@ def find_clearance_parameters(model: Model):
             clearance_symbols = a - b - {t}
             for clearance in clearance_symbols:
                 clearance = _find_real_symbol(sset, clearance)
-                if clearance != sympy.Symbol('LAFREE'):
+                if str(clearance) not in ['LAFREE', 'KINT', 'KON']:  # exclude TMDD parameters
                     cls.add(clearance)
     return sorted(cls, key=str)
 

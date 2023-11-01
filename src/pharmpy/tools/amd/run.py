@@ -246,7 +246,6 @@ def run_amd(
                 run_subfuncs['structsearch'] = func
             elif modeltype == 'tmdd':
                 func = _subfunc_structsearch_tmdd(
-                    route=administration,
                     search_space=modelsearch_features,
                     type=modeltype,
                     strictness=strictness,
@@ -484,7 +483,6 @@ def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
             search_space=mfl_stringify(search_space),
             algorithm='reduced_stepwise',
             model=model,
-            **kwargs,
             path=path / 'modelsearch',
         )
 
