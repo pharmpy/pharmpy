@@ -11,7 +11,7 @@ from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.parameter_variability import get_occasion_levels
 from pharmpy.reporting import generate_report
-from pharmpy.tools import retrieve_final_model, retrieve_models, summarize_errors, write_results
+from pharmpy.tools import retrieve_models, summarize_errors, write_results
 from pharmpy.tools.allometry.tool import validate_allometric_variable
 from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
 from pharmpy.tools.mfl.feature.covariate import spec as covariate_spec
@@ -328,7 +328,11 @@ def run_amd(
             sum_inds_counts.append(None)
         else:
             if subresults.final_model.name != next_model.name:
-                next_model = retrieve_final_model(subresults)
+                next_model = subresults.final_model
+                results = subresults.tool_database.model_database.retrieve_modelfit_results(
+                    subresults.final_model.name
+                )
+                next_model = next_model.replace(modelfit_results=results)
             sum_subtools.append(_create_sum_subtool(tool_name, next_model))
             sum_models.append(subresults.summary_models.reset_index())
             sum_inds_counts.append(subresults.summary_individuals_count.reset_index())
