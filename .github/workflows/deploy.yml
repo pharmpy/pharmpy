@@ -104,7 +104,7 @@ jobs:
           -X POST \
           -H "Accept: application/vnd.github.v3+json" \
           -u "$USERNAME:$REPO_KEY" \
-          https://api.github.com/repos/pharmpy/pharmr/actions/workflows/build_docs.yaml/dispatches \
+          https://api.github.com/repos/pharmpy/pharmr/actions/workflows/deploy.yaml/dispatches \
           -d '{"ref":"main"}'
         env:
             REPO_KEY: ${{secrets.DOC_TOKEN}}
