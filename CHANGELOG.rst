@@ -5,6 +5,7 @@ New features
 ============
 
 * Add modeling.replace_non_random_rvs
+* Add option keep_index to modeling.get_observations to allow keeping the original dataset index
 
 Bugfixes
 ========

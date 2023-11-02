@@ -206,13 +206,16 @@ def get_number_of_observations_per_individual(model: Model):
     return ser
 
 
-def get_observations(model: Model):
+def get_observations(model: Model, keep_index: bool = False) -> pd.Series:
     """Get observations from dataset
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    keep_index : bool
+        Set to True if the original index should be kept.
+        Otherwise a new index using ID and idv will be created.
 
     Returns
     -------
@@ -256,6 +259,7 @@ def get_observations(model: Model):
 
     idcol = model.datainfo.id_column.name
     idvcol = model.datainfo.idv_column.name
+    dvcol = model.datainfo.dv_column.name
 
     if label:
         df = model.dataset.query(f'{label} == 0')
@@ -265,15 +269,19 @@ def get_observations(model: Model):
     else:
         df = model.dataset.copy()
 
-    df = df[[idcol, idvcol, model.datainfo.dv_column.name]]
-    try:
-        # FIXME: This shouldn't be needed
-        df = df.astype({idvcol: np.float64})
-    except ValueError:
-        # TIME could not be converted to float (e.g. 10:15)
-        pass
-    df.set_index([idcol, idvcol], inplace=True)
-    return df.squeeze()
+    if not keep_index:
+        df = df[[idcol, idvcol, dvcol]]
+        try:
+            # FIXME: This shouldn't be needed
+            df = df.astype({idvcol: np.float64})
+        except ValueError:
+            # TIME could not be converted to float (e.g. 10:15)
+            pass
+        df.set_index([idcol, idvcol], inplace=True)
+        df = df.squeeze()
+    else:
+        df = df[dvcol]
+    return df
 
 
 def get_baselines(model: Model):

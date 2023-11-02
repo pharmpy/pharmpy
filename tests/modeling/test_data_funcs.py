@@ -67,6 +67,9 @@ def test_get_observations(load_example_model_for_test):
     assert ser.loc[1, 2.0] == 17.3
     assert ser.loc[2, 63.5] == 24.6
     assert len(ser) == 155
+    s2 = get_observations(model, keep_index=True)
+    assert s2.loc[1] == 17.3
+    assert s2.loc[11] == 31.0
 
 
 def test_number_of_observations(load_example_model_for_test):
