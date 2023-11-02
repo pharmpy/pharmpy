@@ -84,6 +84,8 @@ def add_allometry(
     S₁ = V
 
     """
+    from pharmpy.modeling import has_covariate_effect
+
     variable = parse_expr(allometric_variable)
     reference = parse_expr(reference_value)
 
@@ -121,15 +123,16 @@ def add_allometry(
     sset = model.statements
     params = list(model.parameters)
     for p, init, lower, upper in zip(parsed_parameters, initials, lower_bounds, upper_bounds):
-        symb = _create_symbol(
-            sset, params, model.random_variables, model.datainfo, f'ALLO_{p.name}', False
-        )
-        param = Parameter(symb.name, init=init, lower=lower, upper=upper, fix=fixed)
-        params.append(param)
-        expr = p * (variable / reference) ** param.symbol
-        new_ass = Assignment(p, expr)
-        ind = sset.find_assignment_index(p)
-        sset = sset[0 : ind + 1] + new_ass + sset[ind + 1 :]
+        if not has_covariate_effect(model, str(p), str(variable)):
+            symb = _create_symbol(
+                sset, params, model.random_variables, model.datainfo, f'ALLO_{p.name}', False
+            )
+            param = Parameter(symb.name, init=init, lower=lower, upper=upper, fix=fixed)
+            params.append(param)
+            expr = p * (variable / reference) ** param.symbol
+            new_ass = Assignment(p, expr)
+            ind = sset.find_assignment_index(p)
+            sset = sset[0 : ind + 1] + new_ass + sset[ind + 1 :]
     parameters = Parameters.create(params)
     model = model.replace(statements=sset, parameters=parameters)
     model = model.update_source()
