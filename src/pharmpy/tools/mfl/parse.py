@@ -339,32 +339,40 @@ class ModelFeatures:
                 return False
         return True
 
-    def least_number_of_transformations(self, other, model: Optional[Model] = None):
+    def least_number_of_transformations(
+        self, other, model: Optional[Model] = None, tool: Optional[str] = None
+    ):
         """The smallest set of transformations to become part of other"""
+        # Add more tools than "modelsearch" if support is needed
         lnt = {}
-        if not any(a in other.absorption.eval.modes for a in self.absorption.eval.modes):
-            name, func = list(other.convert_to_funcs(["absorption"]).items())[0]
-            lnt[name] = func
+        if tool is None or tool in ["modelsearch"]:
+            if (tool is None or "abs" in tool) and not any(
+                a in other.absorption.eval.modes for a in self.absorption.eval.modes
+            ):
+                name, func = list(other.convert_to_funcs(["absorption"]).items())[0]
+                lnt[name] = func
 
-        if not any(e in other.elimination.eval.modes for e in self.elimination.eval.modes):
-            name, func = list(other.convert_to_funcs(["elimination"]).items())[0]
-            lnt[name] = func
+            if not any(e in other.elimination.eval.modes for e in self.elimination.eval.modes):
+                name, func = list(other.convert_to_funcs(["elimination"]).items())[0]
+                lnt[name] = func
 
-        lnt = self._lnt_transits(other, lnt)
+            lnt = self._lnt_transits(other, lnt)
 
-        if not any(p in other.peripherals.counts for p in self.peripherals.counts):
-            name, func = list(other.convert_to_funcs(["peripherals"]).items())[0]
-            lnt[name] = func
+            if not any(p in other.peripherals.counts for p in self.peripherals.counts):
+                name, func = list(other.convert_to_funcs(["peripherals"]).items())[0]
+                lnt[name] = func
 
-        if not any(lt in other.lagtime.eval.modes for lt in self.lagtime.eval.modes):
-            name, func = list(other.convert_to_funcs(["lagtime"]).items())[0]
-            lnt[name] = func
+            if not any(lt in other.lagtime.eval.modes for lt in self.lagtime.eval.modes):
+                name, func = list(other.convert_to_funcs(["lagtime"]).items())[0]
+                lnt[name] = func
 
-        if model is not None:
-            lnt = self._lnt_covariates(other, lnt, model)
-        else:
-            if self.covariate != tuple() or other.covariate != tuple():
-                warnings.warn("Need argument 'model' in order to compare covariates")
+        # TODO : Use in covsearch instead of taking diff
+        if tool is None:
+            if model is not None:
+                lnt = self._lnt_covariates(other, lnt, model)
+            else:
+                if self.covariate != tuple() or other.covariate != tuple():
+                    warnings.warn("Need argument 'model' in order to compare covariates")
 
         return lnt
 

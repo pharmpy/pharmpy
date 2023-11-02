@@ -233,7 +233,7 @@ def create_base_model(ss, model_or_model_entry):
     model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
     added_features = ""
-    lnt = model_mfl.least_number_of_transformations(ss)
+    lnt = model_mfl.least_number_of_transformations(ss, tool="modelsearch")
     for name, func in lnt.items():
         base = func(base)
         added_features += f';{name[0]}({name[1]})'
