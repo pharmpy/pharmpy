@@ -103,7 +103,7 @@ def create_results(
     else:
         # Check if any resulting models exist
         if res_models:
-            models = res_models
+            models = [base_model] + res_models
         else:
             models = None
 
