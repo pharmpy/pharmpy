@@ -30,6 +30,9 @@ def add_allometry(
     P=P*(X/Z)**T where P is the parameter, X the allometric_variable, Z the reference_value
     and T is a theta. Default is to automatically use clearance and volume parameters.
 
+    If there already exists a covariate effect (or allometric scaling) on a parameter
+    with the specified allometric variable, nothing will be added.
+
     Parameters
     ----------
     model : Model
@@ -56,16 +59,18 @@ def add_allometry(
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, add_allometry
+    >>> from pharmpy.modeling import load_example_model, add_allometry, remove_covariate_effect
     >>> model = load_example_model("pheno")
+    >>> model = remove_covariate_effect(model, 'CL', 'WGT')
+    >>> model = remove_covariate_effect(model, 'V', 'WGT')
     >>> model = add_allometry(model, allometric_variable='WGT')
     >>> model.statements.before_odes
             ⎧TIME  for AMT > 0
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = PTVCL⋅WGT
-    TVV = PTVV⋅WGT
+    TVCL = PTVCL
+    TVV = PTVV
           ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
     TVV = ⎩      TVV           otherwise
