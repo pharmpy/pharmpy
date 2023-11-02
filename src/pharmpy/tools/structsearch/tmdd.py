@@ -36,12 +36,14 @@ def create_qss_models(model, ests, index=1):
             )
             for model in qss_candidate_models
         ]
-    if "POP_KM" in ests.keys() and "POP_R_0" in ests.keys() and "POP_CLMM" in ests.keys():
+    if "POP_KM" in ests.keys() and "POP_CLMM" in ests.keys():
         qss_candidate_models = [
             set_initial_estimates(
                 model,
                 {
-                    "POP_KINT": ests["POP_KM"] * ests["POP_CLMM"] / ests["POP_R_0"],
+                    "POP_KINT": ests["POP_KM"]
+                    * ests["POP_CLMM"]
+                    / model.parameters["POP_R_0"].init,
                 },
             )
             for model in qss_candidate_models
