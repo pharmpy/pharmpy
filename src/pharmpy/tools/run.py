@@ -881,8 +881,27 @@ class ArrayEvaluator:
 
 
 def is_strictness_fulfilled(res: ModelfitResults, statement: str) -> bool:
-    """Takes a ModelfitResults object  and a statement as input and returns True/False
+    """Takes a ModelfitResults object and a statement as input and returns True/False
     if the evaluation of the statement is True/False.
+
+    Parameters
+    ----------
+    results : ModelfitResults
+        ModelfitResults object
+    statement : str
+        A statement containing the strictness criteria
+
+    Return
+    ------
+    bool
+        A bool indicating whether the strictness criteria are fulfilled or not.
+
+    Examples
+    --------
+    >>> from pharmpy.tools import *
+    >>> res = load_example_modelfit_results('pheno')
+    >>> is_strictness_fulfilled(res, "minimization_successful or rounding_errors")
+    True
     """
     if res is None or np.isnan(res.ofv):
         return False
