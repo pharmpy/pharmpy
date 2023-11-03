@@ -183,6 +183,8 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     False
 
     """
+    if not has_covariate_effect(model, parameter, covariate):
+        return model
     kept_thetas, before_odes = simplify_model(
         model,
         model.statements.before_odes,
