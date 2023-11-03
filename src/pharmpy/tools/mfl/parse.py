@@ -346,9 +346,7 @@ class ModelFeatures:
         # Add more tools than "modelsearch" if support is needed
         lnt = {}
         if tool is None or tool in ["modelsearch"]:
-            if (tool is None or "abs" in tool) and not any(
-                a in other.absorption.eval.modes for a in self.absorption.eval.modes
-            ):
+            if not any(a in other.absorption.eval.modes for a in self.absorption.eval.modes):
                 name, func = list(other.convert_to_funcs(["absorption"]).items())[0]
                 lnt[name] = func
 
