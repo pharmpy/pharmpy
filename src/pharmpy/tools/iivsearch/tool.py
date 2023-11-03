@@ -238,7 +238,13 @@ def start(
 
 
 def _concat_summaries(summaries, keys):
-    return pd.concat(summaries, keys=keys, names=['step'])
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="The behavior of DataFrame concatenation with empty or all-NA",
+            category=FutureWarning,
+        )
+        return pd.concat(summaries, keys=keys, names=['step'])
 
 
 def _results(res):
