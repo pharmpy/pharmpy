@@ -65,7 +65,7 @@ def set_tmdd(model: Model, type: str):
         target_comp, complex_comp = _create_compartments(cb, ['TARGET', 'COMPLEX'])
         ksyn, ksyn_ass = _create_ksyn()
 
-        cb.add_flow(target_comp, complex_comp, kon * central.amount)
+        cb.add_flow(target_comp, complex_comp, kon * central.amount / vc)
         cb.add_flow(complex_comp, target_comp, koff)
         cb.add_flow(target_comp, output, kdeg)
         cb.add_flow(complex_comp, output, kint)
@@ -303,9 +303,12 @@ def set_tmdd(model: Model, type: str):
 
         target_elim = kdeg + (kint - kdeg) * central.amount / vc / (kmc + central.amount / vc)
         cb.add_flow(target_comp, output, target_elim)
-        elim = cl / vc + target_comp.amount * kint / (central.amount / vc + kmc)
+        elim = cl / vc
         cb.add_flow(central, output, elim)
         cb.set_input(target_comp, ksyn)
+        cb.set_input(
+            central, -target_comp.amount * central.amount * kint / (central.amount / vc + kmc)
+        )
 
         before = model.statements.before_odes + ksyn_ass
         after = model.statements.after_odes

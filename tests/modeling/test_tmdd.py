@@ -66,7 +66,12 @@ def test_ib(pheno_path, load_model_for_test):
 
 def test_mmapp(pheno_path, load_model_for_test):
     model = load_model_for_test(pheno_path)
+    model = add_peripheral_compartment(model)
     model = set_tmdd(model, type="mmapp")
+    assert (
+        str(model.statements.ode_system.eqs[0].rhs)
+        == """Q*A_PERIPHERAL1(t)/V2 + (-CL/V1 - KINT*A_TARGET(t)/(KMC + A_CENTRAL(t)/V1) - Q/V1)*A_CENTRAL(t)"""
+    )
 
 
 def test_wagner(pheno_path, load_model_for_test):

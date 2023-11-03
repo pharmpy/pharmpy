@@ -2634,6 +2634,7 @@ def test_find_volume_parameters_github_issues_1053_and_1062_bis(load_example_mod
         ('crib', ['CL'], ['V']),
         ('wagner', ['CL'], ['V']),
         ('qss', ['CL'], ['V']),
+        ('mmapp', ['CL'], ['V']),
     ),
     ids=repr,
 )
@@ -2656,6 +2657,13 @@ def test_find_clearance_and_volume_parameters_tmdd(
     model = set_tmdd(model, 'wagner')
     assert find_volume_parameters(model) == _symbols(['V1', 'VP1'])
     assert find_clearance_parameters(model) == _symbols(['CL', 'QP1'])
+
+    model = load_example_model_for_test('pheno')
+    model = add_peripheral_compartment(model)
+    model = set_mixed_mm_fo_elimination(model)
+    model = set_tmdd(model, 'mmapp')
+    assert find_volume_parameters(model) == _symbols(['V1', 'VP1'])
+    assert find_clearance_parameters(model) == _symbols(['CL', 'CLMM', 'QP1'])
 
 
 def test_multi_dose_change_absorption(load_model_for_test, testdata):
