@@ -623,7 +623,7 @@ class ModelFeatures:
             for effect in cov.eval().fp:
                 for op in cov.op:
                     # TODO : Ignore using PROD and simply use tuple with one value each
-                    lhs[(effect, op)].update(set(product(cov.parameter, cov.covariate)))
+                    lhs[(effect.lower(), op)].update(set(product(cov.parameter, cov.covariate)))
 
         if len(lhs_ref) != 0:
             raise ValueError(
