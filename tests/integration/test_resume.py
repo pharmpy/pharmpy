@@ -131,10 +131,10 @@ def test_run_tool_modelsearch_resume_flag(
             if i == 0 or resume:
                 assert len(res.summary_tool) == no_of_models + 1
                 assert len(res.summary_models) == no_of_models + 1
-                assert len(res.models) == no_of_models
+                assert len(res.models) == no_of_models + 1
                 assert res.models[-1].modelfit_results
 
-                assert res.models[0].parent_model == 'mox2'
+                assert res.models[1].parent_model == 'mox2'
                 assert res.models[-1].parent_model == last_model_parent_name
                 if last_model_parent_name != 'mox2':
                     last_model_features = res.summary_tool.loc[res.models[-1].name]['description']

@@ -21,7 +21,7 @@ def test_exhaustive(tmp_path, model_count, start_model):
 
         assert len(res.summary_tool) == 4
         assert len(res.summary_models) == 4
-        assert len(res.models) == 3
+        assert len(res.models) == 4
         assert all(model.modelfit_results for model in res.models)
         assert not all(np.isnan(model.modelfit_results.ofv) for model in res.models)
         rundir = tmp_path / 'modelsearch_dir1'
@@ -71,7 +71,7 @@ def test_exhaustive_stepwise_basic(
 
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
-        assert len(res.models) == no_of_models
+        assert len(res.models) == no_of_models + 1
         assert res.models[-1].modelfit_results
 
         assert res.models[0].parent_model == 'mox2'
@@ -133,7 +133,7 @@ def test_exhaustive_stepwise_iiv_strategies(
 
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
-        assert len(res.models) == no_of_models
+        assert len(res.models) == no_of_models + 1
         model_last = res.models[no_of_models - 1]
         assert (
             len(model_last.random_variables.etas.names)
@@ -183,8 +183,8 @@ def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_model):
             model=start_model,
         )
 
-        assert ',999999) ; POP_QP1' in res.models[0].model_code
-        assert ',999999) ; POP_VP1' in res.models[0].model_code
+        assert ',999999) ; POP_QP1' in res.models[-1].model_code
+        assert ',999999) ; POP_VP1' in res.models[-1].model_code
 
 
 def test_summary_individuals(tmp_path, testdata):
