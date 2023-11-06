@@ -30,9 +30,6 @@ def add_allometry(
     P=P*(X/Z)**T where P is the parameter, X the allometric_variable, Z the reference_value
     and T is a theta. Default is to automatically use clearance and volume parameters.
 
-    If there already exists a covariate effect (or allometric scaling) on a parameter
-    with the specified allometric variable, nothing will be added.
-
     Parameters
     ----------
     model : Model
@@ -59,18 +56,16 @@ def add_allometry(
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, add_allometry, remove_covariate_effect
+    >>> from pharmpy.modeling import load_example_model, add_allometry
     >>> model = load_example_model("pheno")
-    >>> model = remove_covariate_effect(model, 'CL', 'WGT')
-    >>> model = remove_covariate_effect(model, 'V', 'WGT')
     >>> model = add_allometry(model, allometric_variable='WGT')
     >>> model.statements.before_odes
             ⎧TIME  for AMT > 0
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = PTVCL
-    TVV = PTVV
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
           ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
           ⎨
     TVV = ⎩      TVV           otherwise
@@ -89,8 +84,6 @@ def add_allometry(
     S₁ = V
 
     """
-    from pharmpy.modeling import has_covariate_effect
-
     variable = parse_expr(allometric_variable)
     reference = parse_expr(reference_value)
 
@@ -128,16 +121,15 @@ def add_allometry(
     sset = model.statements
     params = list(model.parameters)
     for p, init, lower, upper in zip(parsed_parameters, initials, lower_bounds, upper_bounds):
-        if not has_covariate_effect(model, str(p), str(variable)):
-            symb = _create_symbol(
-                sset, params, model.random_variables, model.datainfo, f'ALLO_{p.name}', False
-            )
-            param = Parameter(symb.name, init=init, lower=lower, upper=upper, fix=fixed)
-            params.append(param)
-            expr = p * (variable / reference) ** param.symbol
-            new_ass = Assignment(p, expr)
-            ind = sset.find_assignment_index(p)
-            sset = sset[0 : ind + 1] + new_ass + sset[ind + 1 :]
+        symb = _create_symbol(
+            sset, params, model.random_variables, model.datainfo, f'ALLO_{p.name}', False
+        )
+        param = Parameter(symb.name, init=init, lower=lower, upper=upper, fix=fixed)
+        params.append(param)
+        expr = p * (variable / reference) ** param.symbol
+        new_ass = Assignment(p, expr)
+        ind = sset.find_assignment_index(p)
+        sset = sset[0 : ind + 1] + new_ass + sset[ind + 1 :]
     parameters = Parameters.create(params)
     model = model.replace(statements=sset, parameters=parameters)
     model = model.update_source()
