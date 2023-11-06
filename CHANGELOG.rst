@@ -1,16 +1,24 @@
-next release
-------------
+0.104.0 (2023-11-06)
+--------------------
 
 New features
 ============
 
 * Add modeling.replace_non_random_rvs
 * Add option keep_index to modeling.get_observations to allow keeping the original dataset index
+* Add path-option to tools.fit
+* Add function tools.is_strictness_fulfilled
+* Add strictness option to AMD and subtools
+* Add TMDD models to AMD
+* Add option for TMDD models in structsearch
+* MFL for COVSearch works the same way as for Modelsearch
 
 Bugfixes
 ========
 
 * Properly handle 0 FIX etas in calculate_bic
+* Fix crash when setting 0 transit compartments
+* Fix various bugs in TMDD models (including allometry)
 
 0.103.0 (2023-10-12)
 --------------------
