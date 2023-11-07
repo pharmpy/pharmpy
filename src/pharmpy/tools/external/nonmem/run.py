@@ -22,6 +22,11 @@ PARENT_DIR = f'..{os.path.sep}'
 def execute_model(model_or_model_entry, db):
     if isinstance(model_or_model_entry, ModelEntry):
         model = model_or_model_entry.model
+
+        # TODO : Remove after complete integration of ModelEntry
+        if model.modelfit_results is not None:
+            model = model.replace(modelfit_results=None)
+            model_or_model_entry = ModelEntry.create(model, parent=model_or_model_entry.parent)
     else:
         model = model_or_model_entry
     database = db.model_database
