@@ -16,7 +16,7 @@ else:
 
 def add_allometry(
     model: Model,
-    allometric_variable: Union[str, sympy.Expr] = 'WT',
+    allometric_variable: Optional[Union[str, sympy.Expr]] = None,
     reference_value: Union[str, int, float, sympy.Expr] = 70,
     parameters: Optional[List[Union[str, sympy.Expr]]] = None,
     initials: Optional[List[Union[int, float]]] = None,
@@ -29,6 +29,9 @@ def add_allometry(
     Add an allometric function to each listed parameter. The function will be
     P=P*(X/Z)**T where P is the parameter, X the allometric_variable, Z the reference_value
     and T is a theta. Default is to automatically use clearance and volume parameters.
+
+    If no allometric variable is specified, it will be extracted from the dataset based on
+    the descriptor "body weight".
 
     Parameters
     ----------
@@ -84,6 +87,14 @@ def add_allometry(
     S₁ = V
 
     """
+    if allometric_variable is None:
+        try:
+            allometric_variable = model.datainfo.descriptorix["body weight"][0].name
+        except IndexError:
+            raise ValueError(
+                "No allometric variable could be found. Try setting the allometric_variable argument"
+            )
+
     variable = parse_expr(allometric_variable)
     reference = parse_expr(reference_value)
 
