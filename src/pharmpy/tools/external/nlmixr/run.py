@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 import uuid
 import warnings
 from pathlib import Path
@@ -58,7 +59,11 @@ def execute_model(model: pharmpy.model.Model, db, evaluate=False, path=None) -> 
     model = model.replace(datainfo=model.datainfo.replace(path=path))
 
     dataname = f'{model.name}.csv'
-    pre = f'library(nlmixr2)\n\ndataset <- read.csv("{path / dataname}")\n'
+    if sys.platform == 'win32':
+        dataset_path = f"{path / dataname}".replace("\\", "\\\\")
+    else:
+        dataset_path = f"{path / dataname}"
+    pre = f'library(nlmixr2)\n\ndataset <- read.csv("{dataset_path}")\n'
 
     if "fix_eta" in model.estimation_steps[0].tool_options:
         pre += f'etas <- as.matrix(read.csv("{path}/fix_eta.csv"))'
@@ -74,9 +79,11 @@ def execute_model(model: pharmpy.model.Model, db, evaluate=False, path=None) -> 
     cg.add('runtime_total <- sum(fit$time)')
     cg.add('pred <- as.data.frame(fit[c("ID", "TIME", "PRED", "IPRED")])')
 
-    cg.add(
-        f'save(file="{path}/{model.name}.RDATA",ofv, thetas, omega, sigma, log_likelihood, runtime_total, pred)'
-    )
+    if sys.platform == 'win32':
+        p = f"{path / model.name}.RDATA".replace("\\", "\\\\")
+    else:
+        p = f"{path / model.name}.RDATA"
+    cg.add(f'save(file="{p}",ofv, thetas, omega, sigma, log_likelihood, runtime_total, pred)')
     code += f'\n{str(cg)}'
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
