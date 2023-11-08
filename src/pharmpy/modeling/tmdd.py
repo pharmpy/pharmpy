@@ -45,9 +45,8 @@ def set_tmdd(model: Model, type: str):
     """
     type = type.upper()
 
-    if type != "MMAPP":
-        model = _replace_trivial_redefinitions(model)
-        model = set_first_order_elimination(model)
+    model = _replace_trivial_redefinitions(model)
+    model = set_first_order_elimination(model)
 
     odes = model.statements.ode_system
     central = odes.central_compartment
@@ -295,11 +294,6 @@ def set_tmdd(model: Model, type: str):
         model, kmc, kdeg = _create_parameters(model, ['KMC', 'KDEG'])
         target_comp = _create_compartments(cb, ['TARGET'])
         ksyn, ksyn_ass = _create_ksyn()
-
-        if sympy.Symbol("VC") in model.statements.free_symbols:
-            vc = sympy.Symbol("VC")
-        elif sympy.Symbol("V") in model.statements.free_symbols:
-            vc = sympy.Symbol("V")
 
         target_elim = kdeg + (kint - kdeg) * central.amount / vc / (kmc + central.amount / vc)
         cb.add_flow(target_comp, output, target_elim)
