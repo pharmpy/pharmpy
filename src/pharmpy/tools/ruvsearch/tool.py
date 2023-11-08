@@ -55,7 +55,7 @@ def create_workflow(
     skip: Optional[List[str]] = None,
     max_iter: int = 3,
     dv: Optional[int] = None,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0)",
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
 ):
     """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 

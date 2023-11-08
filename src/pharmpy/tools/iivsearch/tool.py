@@ -37,7 +37,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     keep: Optional[List[str]] = None,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0)",
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 

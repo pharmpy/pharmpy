@@ -33,7 +33,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     extra_model: Optional[Model] = None,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0)",
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
 ):
     """Run the structsearch tool. For more details, see :ref:`structsearch`.
 
