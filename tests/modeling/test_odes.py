@@ -2663,7 +2663,7 @@ def test_find_clearance_and_volume_parameters_tmdd(
     model = set_mixed_mm_fo_elimination(model)
     model = set_tmdd(model, 'mmapp')
     assert find_volume_parameters(model) == _symbols(['V1', 'VP1'])
-    assert find_clearance_parameters(model) == _symbols(['CL', 'CLMM', 'QP1'])
+    assert find_clearance_parameters(model) == _symbols(['CL', 'QP1'])
 
 
 def test_multi_dose_change_absorption(load_model_for_test, testdata):
