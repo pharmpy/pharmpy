@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -2135,3 +2135,85 @@ def load_dataset(model: Model):
     df = read_dataset_from_datainfo(model.datainfo)
     model = model.replace(dataset=df)
     return model
+
+
+def bin_observations(
+    model: Model, method: Literal["equal_width", "equal_number"], nbins: int
+) -> pd.Series:
+    """Bin all observations on the independent variable
+
+    Available binning methods:
+
+    +---------------+-------------------------------------------------+
+    | Method        | Description                                     |
+    +===============+=================================================+
+    | equal_width   | Bins with equal width based on the idv          |
+    +---------------+-------------------------------------------------+
+    | equal_number  | Bins containing an equal number of observations |
+    +---------------+-------------------------------------------------+
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    method : str
+        Name of the binning method to use
+    nbins : int
+        The number of binns wanted
+
+    Returns
+    -------
+    pd.Series
+        A series of bin ids indexed on the original record index of the dataset
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, bin_observations
+    >>> model = load_example_model("pheno")
+    >>> bin_observations(model, method="equal_width", nbins=10)
+    421     1
+    527     1
+    118     1
+    135     1
+    512     1
+           ..
+    203     8
+    475     8
+    510     8
+    133     9
+    267    10
+    Length: 155, dtype: int32
+    """
+
+    observations = get_observations(model, keep_index=True)
+    obs = model.dataset.loc[observations.index]
+    idv = model.datainfo.idv_column.name
+    sorted_idvs = obs[idv].sort_values()
+    method_lower = method.lower()
+    if method_lower == "equal_width":
+        min_idv = sorted_idvs.iloc[0]
+        max_idv = sorted_idvs.iloc[-1]
+        step = (max_idv - min_idv) / nbins
+        next_cutoff = min_idv + step
+        binno = 1
+        bincol = pd.Series(0, index=sorted_idvs.index, dtype='int32')
+        for i in range(len(sorted_idvs)):
+            if sorted_idvs.iloc[i] > next_cutoff:
+                next_cutoff += step
+                binno += 1
+            bincol.iloc[i] = binno
+    elif method_lower == "equal_number":
+        bincol = pd.Series(0, index=sorted_idvs.index, dtype='int32')
+        nobs = len(sorted_idvs)
+        i = 0
+        binno = 1
+        while nobs > 0:
+            n = round(nobs / nbins)
+            bincol.iloc[i : i + n] = binno
+            binno += 1
+            i += n
+            nobs -= n
+            nbins -= 1
+    else:
+        raise ValueError(f"Unknown binning method {method}")
+    return bincol

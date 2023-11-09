@@ -1,3 +1,11 @@
+Next version
+------------
+
+New features
+============
+
+* Add modeling.bin_observations
+
 0.104.0 (2023-11-06)
 --------------------
 

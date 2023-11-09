@@ -4,6 +4,7 @@ import pytest
 
 from pharmpy.modeling import (
     add_time_after_dose,
+    bin_observations,
     check_dataset,
     deidentify_data,
     drop_columns,
@@ -534,3 +535,12 @@ def test_load_dataset(load_example_model_for_test):
     assert model.dataset is None
     model = load_dataset(model)
     assert model.dataset is not None
+
+
+def test_bin_observations(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    ser = bin_observations(model, method="equal_width", nbins=10)
+    assert ser.iloc[0] == 1
+    assert ser[267] == 10
+    assert ser.iloc[152] == 8
+    assert len(ser) == 155
