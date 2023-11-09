@@ -186,7 +186,7 @@ def run_amd(
     default_order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
     if order is None:
         if modeltype == 'pkpd':
-            order = ['structural', 'iivsearch', 'residual', 'covariates']
+            order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'covariates']
         else:
             order = default_order
 
