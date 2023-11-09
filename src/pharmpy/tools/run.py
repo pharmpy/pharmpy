@@ -920,6 +920,11 @@ def is_strictness_fulfilled(res: ModelfitResults, statement: str) -> bool:
         unwanted_args = ['and', 'or', 'not']
         find_all_words = re.findall(r'[^\d\W]+', statement)
         args_in_statement = [w for w in find_all_words if w not in unwanted_args]
+        find_all_non_allowed_operators = re.findall(r"[^\w\s\.\<\>\=\!\(\)]", statement)
+        if len(find_all_non_allowed_operators) > 0:
+            raise ValueError(
+                f"Unallowed operators found: {', '.join(find_all_non_allowed_operators)}"
+            )
 
         # Check that only allowed arguments are in the statement
         if not all(map(lambda x: x in allowed_args, args_in_statement)):
@@ -927,35 +932,22 @@ def is_strictness_fulfilled(res: ModelfitResults, statement: str) -> bool:
                 f'Some expressions were not correct. Valid arguments are: {allowed_args}'
             )
         else:
-            minimization_successful = res.minimization_successful
-            rounding_errors = res.termination_cause == "rounding_errors"
-            maxevals_exceeded = res.termination_cause == "maxevals_exceeded"
-            sigdigs = ArrayEvaluator([res.significant_digits])
+            minimization_successful = res.minimization_successful  # noqa
+            rounding_errors = res.termination_cause == "rounding_errors"  # noqa
+            maxevals_exceeded = res.termination_cause == "maxevals_exceeded"  # noqa
+            sigdigs = ArrayEvaluator([res.significant_digits])  # noqa
             if 'condition_number' in args_in_statement and res.covariance_matrix is not None:
-                condition_number = ArrayEvaluator([np.linalg.cond(res.covariance_matrix)])
+                condition_number = ArrayEvaluator([np.linalg.cond(res.covariance_matrix)])  # noqa
             else:
-                condition_number = np.nan
+                condition_number = np.nan  # noqa
             if "rse" in args_in_statement:
-                rse = ArrayEvaluator(res.relative_standard_errors)
+                rse = ArrayEvaluator(res.relative_standard_errors)  # noqa
             else:
-                rse = np.nan
-            final_zero_gradient = 'final_zero_gradient' in res.warnings
-            estimate_near_boundary = 'estimate_near_boundary' in res.warnings
+                rse = np.nan  # noqa
+            final_zero_gradient = 'final_zero_gradient' in res.warnings  # noqa
+            estimate_near_boundary = 'estimate_near_boundary' in res.warnings  # noqa
 
-        # dictionary needed because otherwise unused variables will cause lint error
-        return eval(
-            statement,
-            {
-                'minimization_successful': minimization_successful,
-                'rounding_errors': rounding_errors,
-                'maxevals_exceeded': maxevals_exceeded,
-                'sigdigs': sigdigs,
-                'rse': rse,
-                'condition_number': condition_number,
-                'final_zero_gradient': final_zero_gradient,
-                'estimate_near_boundary': estimate_near_boundary,
-            },
-        )
+        return eval(statement)
     else:
         return True
 

@@ -37,7 +37,7 @@ def create_workflow(
     distribution: str = 'same-as-iiv',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0)",
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
 

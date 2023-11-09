@@ -548,3 +548,11 @@ def test_load_example_modelfit_results():
 def test_strictness(testdata, path, statement, expected):
     res = read_modelfit_results(testdata / path)
     assert is_strictness_fulfilled(res, statement) == expected
+
+
+def test_strictness_unallowed_operators(testdata):
+    res = read_modelfit_results(testdata / 'nonmem/pheno.mod')
+    with pytest.raises(ValueError, match=r"Unallowed operators found: &"):
+        is_strictness_fulfilled(res, 'minimization_successful & rounding_errors')
+    with pytest.raises(ValueError, match=r"Unallowed operators found: &, |"):
+        is_strictness_fulfilled(res, 'minimization_successful & (rounding_errors | sigdigs>3)')

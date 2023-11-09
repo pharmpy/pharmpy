@@ -65,7 +65,7 @@ def create_results(
     rank_type,
     cutoff,
     bic_type='mixed',
-    strictness="minimization_successful or (rounding_errors and sigdigs >= 0)",  # FIXME: set default to None
+    strictness="minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     **rest,
 ) -> T:
     # FIXME: Remove once modelfit_results have been removed from Model object

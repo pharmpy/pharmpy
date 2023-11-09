@@ -24,7 +24,7 @@ def create_workflow(
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0)",
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
 ):
     """Run Modelsearch tool. For more details, see :ref:`modelsearch`.
 
