@@ -136,6 +136,12 @@ def summarize_tool(
     bic_type='mixed',
     strictness=None,
 ) -> DataFrame:
+    # FIXME: Remove once modelfit_results have been removed from Model object
+    # NOTE: This is needed since IOVSearch uses this standalone
+    if isinstance(start_model, ModelEntry):
+        start_model = _model_entry_to_model(start_model)
+        models = [_model_entry_to_model(model_entry) for model_entry in models]
+
     if rank_type == 'mbic':
         rank_type = 'bic'
         multiple_testing = True

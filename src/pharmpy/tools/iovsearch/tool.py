@@ -21,7 +21,7 @@ from pharmpy.tools.common import (
     update_initial_estimates,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
 NAME_WF = 'iovsearch'
@@ -77,7 +77,7 @@ def create_workflow(
 
     wb = WorkflowBuilder(name=NAME_WF)
 
-    init_task = init(model)
+    init_task = init(model, results)
     wb.add_task(init_task)
 
     bic_type = 'random'
@@ -109,12 +109,16 @@ def create_workflow(
     return Workflow(wb)
 
 
-def init(model):
+def init(model, modelfit_results):
     return (
-        Task('init', lambda model: model)
+        Task('init', _model_entry, model)
         if model is None
-        else Task('init', lambda model: model, model)
+        else Task('init', _model_entry, modelfit_results, model)
     )
+
+
+def _model_entry(modelfit_results, model):
+    return ModelEntry.create(model, modelfit_results=modelfit_results)
 
 
 def task_brute_force_search(
@@ -125,31 +129,35 @@ def task_brute_force_search(
     cutoff: Union[None, float],
     bic_type: Union[None, str],
     distribution: str,
-    model: Model,
+    input_model_entry: ModelEntry,
 ):
+    input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
     # NOTE: Default is to try all IIV ETAs.
     if list_of_parameters is None:
-        iiv = _get_nonfixed_iivs(model)
-        iiv_before_odes = iiv.free_symbols.intersection(model.statements.before_odes.free_symbols)
+        iiv = _get_nonfixed_iivs(input_model)
+        iiv_before_odes = iiv.free_symbols.intersection(
+            input_model.statements.before_odes.free_symbols
+        )
         list_of_parameters = [iiv.name for iiv in iiv_before_odes]
 
     current_step = 0
-    step_mapping = {current_step: [model.name]}
+    step_mapping = {current_step: [input_model.name]}
 
     # NOTE: Check that model has at least one IIV.
     if not list_of_parameters:
-        return step_mapping, [model]
+        return step_mapping, [input_model_entry]
 
     # NOTE: Add IOVs on given parameters or all parameters with IIVs.
     name = 'iovsearch_run1'
-    model_with_iov = model.replace(name=name, parent_model=model.name)
-    model_with_iov = update_initial_estimates(model_with_iov)
+    model_with_iov = input_model.replace(name=name)
+    model_with_iov = update_initial_estimates(model_with_iov, input_res)
     # TODO: Should we exclude already present IOVs?
     model_with_iov = add_iov(model_with_iov, occ, list_of_parameters, distribution=distribution)
     model_with_iov = model_with_iov.replace(description=_create_description(model_with_iov))
     # NOTE: Fit the new model.
-    wf = create_fit_workflow(models=[model_with_iov])
-    model_with_iov = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs', context)
+    model_with_iov_entry = ModelEntry.create(model_with_iov, parent=input_model)
+    wf = create_fit_workflow(models=[model_with_iov_entry])
+    model_with_iov_entry = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs', context)
 
     # NOTE: Remove IOVs. Test all subsets (~2^n).
     # TODO: Should we exclude already present IOVs?
@@ -159,46 +167,56 @@ def task_brute_force_search(
     all_iov_parameters = list(filter(lambda name: name.endswith('_1'), iov.names))
     no_of_models = 1
     wf = wf_etas_removal(
-        remove_iov, model_with_iov, non_empty_proper_subsets(all_iov_parameters), no_of_models + 1
+        remove_iov,
+        model_with_iov_entry,
+        non_empty_proper_subsets(all_iov_parameters),
+        no_of_models + 1,
     )
-    iov_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs', context)
+    iov_candidate_entries = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs', context)
 
     # NOTE: Keep the best candidate.
-    best_model_so_far = best_model(
-        model,
-        [model_with_iov, *iov_candidates],
+    best_model_entry_so_far = best_model(
+        input_model_entry,
+        [model_with_iov_entry, *iov_candidate_entries],
         rank_type=rank_type,
         cutoff=cutoff,
         bic_type=bic_type,
     )
 
     current_step += 1
-    step_mapping[current_step] = [model_with_iov.name] + [model.name for model in iov_candidates]
+    step_mapping[current_step] = [model_with_iov.name] + [
+        model_entry.model.name for model_entry in iov_candidate_entries
+    ]
 
     # NOTE: If no improvement with respect to input model, STOP.
-    if best_model_so_far is model:
-        return step_mapping, [model, model_with_iov, *iov_candidates]
+    if best_model_entry_so_far.model is input_model:
+        return step_mapping, [input_model_entry, model_with_iov_entry, *iov_candidate_entries]
 
     # NOTE: Remove IIV with corresponding IOVs. Test all subsets (~2^n).
     iiv_parameters_with_associated_iov = list(
         map(
             lambda s: s.name,
-            _get_iiv_etas_with_corresponding_iov(best_model_so_far),
+            _get_iiv_etas_with_corresponding_iov(best_model_entry_so_far.model),
         )
     )
     # TODO: Should we exclude already present IOVs?
-    no_of_models = len(iov_candidates) + 1
+    no_of_models = len(iov_candidate_entries) + 1
     wf = wf_etas_removal(
         remove_iiv,
-        best_model_so_far,
+        best_model_entry_so_far,
         non_empty_subsets(iiv_parameters_with_associated_iov),
         no_of_models + 1,
     )
-    iiv_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs', context)
+    iiv_candidate_entries = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs', context)
     current_step += 1
-    step_mapping[current_step] = [model.name for model in iiv_candidates]
+    step_mapping[current_step] = [model_entry.model.name for model_entry in iiv_candidate_entries]
 
-    return step_mapping, [model, model_with_iov, *iov_candidates, *iiv_candidates]
+    return step_mapping, [
+        input_model_entry,
+        model_with_iov_entry,
+        *iov_candidate_entries,
+        *iiv_candidate_entries,
+    ]
 
 
 def _create_description(model):
@@ -208,20 +226,23 @@ def _create_description(model):
 
 
 def task_remove_etas_subset(
-    remove: Callable[[Model, List[str]], None], model: Model, subset: List[str], n: int
+    remove: Callable[[Model, List[str]], None], model_entry: ModelEntry, subset: List[str], n: int
 ):
-    model_with_some_etas_removed = model.replace(name=f'iovsearch_run{n}', parent_model=model.name)
-    model_with_some_etas_removed = update_initial_estimates(model_with_some_etas_removed)
+    parent_model, parent_res = model_entry.model, model_entry.modelfit_results
+    model_with_some_etas_removed = parent_model.replace(name=f'iovsearch_run{n}')
+    model_with_some_etas_removed = update_initial_estimates(
+        model_with_some_etas_removed, parent_res
+    )
     model_with_some_etas_removed = remove(model_with_some_etas_removed, subset)
     model_with_some_etas_removed = model_with_some_etas_removed.replace(
         description=_create_description(model_with_some_etas_removed)
     )
-    return model_with_some_etas_removed
+    return ModelEntry.create(model_with_some_etas_removed, parent=parent_model)
 
 
 def wf_etas_removal(
     remove: Callable[[Model, List[str]], None],
-    model: Model,
+    model_entry: ModelEntry,
     etas_subsets: Iterable[Tuple[str]],
     i: int,
 ):
@@ -232,7 +253,7 @@ def wf_etas_removal(
             repr(subset_of_iiv_parameters),
             task_remove_etas_subset,
             remove,
-            model,
+            model_entry,
             list(subset_of_iiv_parameters),
             j,
         )
@@ -243,49 +264,66 @@ def wf_etas_removal(
     wf_fit = create_fit_workflow(n=n)
     wb.insert_workflow(wf_fit)
 
-    task_gather = Task('gather', lambda *models: models)
+    task_gather = Task('gather', lambda *model_entries: model_entries)
     wb.add_task(task_gather, predecessors=wb.output_tasks)
     return Workflow(wb)
 
 
 def best_model(
-    base: Model,
-    models: List[Model],
+    base_entry: ModelEntry,
+    model_entries: List[ModelEntry],
     rank_type: str,
     cutoff: Union[None, float],
     bic_type: Union[None, str],
 ):
-    candidates = [base, *models]
-    df = summarize_tool(models, base, rank_type=rank_type, cutoff=cutoff, bic_type=bic_type)
+    candidate_entries = [base_entry, *model_entries]
+    df = summarize_tool(
+        model_entries, base_entry, rank_type=rank_type, cutoff=cutoff, bic_type=bic_type
+    )
     best_model_name = df['rank'].idxmin()
 
     try:
-        return [model for model in candidates if model.name == best_model_name][0]
+        return [
+            model_entry
+            for model_entry in candidate_entries
+            if model_entry.model.name == best_model_name
+        ][0]
     except IndexError:
-        return base
+        return base_entry
 
 
-def task_results(rank_type, cutoff, bic_type, strictness, models):
-    step_mapping, (base_model, *res_models) = models
+def task_results(rank_type, cutoff, bic_type, strictness, step_mapping_and_model_entries):
+    step_mapping, (base_model_entry, *res_model_entries) = step_mapping_and_model_entries
 
-    model_dict = {model.name: model for model in [base_model] + res_models}
+    model_dict = {
+        model_entry.model.name: model_entry
+        for model_entry in [base_model_entry] + res_model_entries
+    }
     sum_mod, sum_tool = [], []
     for step, model_names in step_mapping.items():
-        candidates = [model for model in [base_model] + res_models if model.name in model_names]
-        sum_mod_step = summarize_modelfit_results([model.modelfit_results for model in candidates])
+        candidate_entries = [
+            model_entry
+            for model_name, model_entry in model_dict.items()
+            if model_name in model_names
+        ]
+        sum_mod_step = summarize_modelfit_results(
+            [model_entry.modelfit_results for model_entry in candidate_entries]
+        )
         sum_mod.append(sum_mod_step)
         if step >= 1:
-            ref_model = model_dict[candidates[0].parent_model]
-            sum_tool_step = summarize_tool(candidates, ref_model, rank_type, cutoff, bic_type)
+            ref_model_entry = model_dict[candidate_entries[0].parent.name]
+            sum_tool_step = summarize_tool(
+                candidate_entries, ref_model_entry, rank_type, cutoff, bic_type
+            )
             sum_tool.append(sum_tool_step)
 
     keys = list(range(1, len(step_mapping)))
 
     res = create_results(
         IOVSearchResults,
-        base_model,
-        base_model,
-        res_models,
+        base_model_entry,
+        base_model_entry,
+        res_model_entries,
         rank_type,
         cutoff,
         bic_type=bic_type,

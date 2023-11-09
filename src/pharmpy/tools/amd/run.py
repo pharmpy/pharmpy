@@ -694,6 +694,7 @@ def _subfunc_iov(amd_start_model, occasion, strictness, path) -> SubFunc:
         res = run_tool(
             'iovsearch',
             model=model,
+            results=model.modelfit_results,
             column=occasion,
             strictness=strictness,
             path=path / 'iovsearch',
