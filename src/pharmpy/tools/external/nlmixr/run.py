@@ -21,6 +21,7 @@ from pharmpy.modeling import (
     write_csv,
 )
 from pharmpy.tools import fit
+from pharmpy.workflows import default_tool_database
 from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults
 
@@ -33,8 +34,12 @@ def execute_model(model: pharmpy.model.Model, db, evaluate=False, path=None) -> 
     ----------
     model : pharmpy.model.Model
         An pharmpy model object.
-    db : str
+    db : database for storing model results
         Name of folder in home directory to store resulting files in.
+    evaluate : bool
+        Set to True to evaluate model instead of estimating
+    path : str
+        Set path of model files
 
     Returns
     -------
@@ -150,7 +155,6 @@ def execute_model(model: pharmpy.model.Model, db, evaluate=False, path=None) -> 
 
 def verification(
     model: pharmpy.model.Model,
-    db_name: str,
     error: float = 10**-3,
     return_comp: bool = False,
     return_stat: bool = False,
@@ -229,6 +233,7 @@ def verification(
         raise Exception("Could not convert model to nlmixr2")
 
     # Execute the nlmixr model
+    db = default_tool_database(toolname="comparison")
     if not ignore_print:
         print_step("Executing nlmixr2 model... (this might take a while)")
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
@@ -236,7 +241,8 @@ def verification(
     meta.mkdir(parents=True, exist_ok=True)
     write_fix_eta(nonmem_model, path=path)
     try:
-        nlmixr_model = execute_model(nlmixr_model, db_name, path=path)
+        # FIXME : use fit() instead and incorporate write_fix_eta
+        nlmixr_model = execute_model(nlmixr_model, db, path=path)
     except Exception:
         raise Exception("nlmixr2 model could not be fitted")
 
@@ -252,6 +258,8 @@ def verification(
         return_stat=return_stat,
         ignore_print=ignore_print,
     )
+
+    combined_result.to_csv(db.path / "comparison.csv", index=False)
 
     if not ignore_print:
         print_step("DONE")
