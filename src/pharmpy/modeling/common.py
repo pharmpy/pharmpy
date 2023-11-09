@@ -672,8 +672,39 @@ def filter_dataset(model: Model, expr: str):
     Example
     -------
     >>> from pharmpy.modeling import *
-    >>> model = load_example_model('pheno')
-    >>> model = filter_dataset(mode, "DVID != 2")  # doctest: +SKIP
+    >>> model = load_example_model("pheno")
+    >>> model.dataset
+         ID   TIME   AMT  WGT  APGR    DV  FA1  FA2
+    0     1    0.0  25.0  1.4   7.0   0.0  1.0  1.0
+    1     1    2.0   0.0  1.4   7.0  17.3  0.0  0.0
+    2     1   12.5   3.5  1.4   7.0   0.0  1.0  1.0
+    3     1   24.5   3.5  1.4   7.0   0.0  1.0  1.0
+    4     1   37.0   3.5  1.4   7.0   0.0  1.0  1.0
+    ..   ..    ...   ...  ...   ...   ...  ...  ...
+    739  59  108.3   3.0  1.1   6.0   0.0  1.0  1.0
+    740  59  120.5   3.0  1.1   6.0   0.0  1.0  1.0
+    741  59  132.3   3.0  1.1   6.0   0.0  1.0  1.0
+    742  59  144.8   3.0  1.1   6.0   0.0  1.0  1.0
+    743  59  146.8   0.0  1.1   6.0  40.2  0.0  0.0
+    <BLANKLINE>
+    [744 rows x 8 columns]
+    >>> model = filter_dataset(model, 'WGT < 1.4')
+    >>> model.dataset
+         ID   TIME   AMT  WGT  APGR    DV  FA1  FA2
+    42    4    0.0  18.6  0.9   6.0   0.0  1.0  1.0
+    43    4    1.8   0.0  0.9   6.0  20.8  0.0  0.0
+    44    4   12.0   2.3  0.9   6.0   0.0  1.0  1.0
+    45    4   24.3   2.3  0.9   6.0   0.0  1.0  1.0
+    46    4   35.8   2.3  0.9   6.0   0.0  1.0  1.0
+    ..   ..    ...   ...  ...   ...   ...  ...  ...
+    739  59  108.3   3.0  1.1   6.0   0.0  1.0  1.0
+    740  59  120.5   3.0  1.1   6.0   0.0  1.0  1.0
+    741  59  132.3   3.0  1.1   6.0   0.0  1.0  1.0
+    742  59  144.8   3.0  1.1   6.0   0.0  1.0  1.0
+    743  59  146.8   0.0  1.1   6.0  40.2  0.0  0.0
+    <BLANKLINE>
+    [400 rows x 8 columns]
+
     """
     original_dataset = model.dataset
     new_model = None
