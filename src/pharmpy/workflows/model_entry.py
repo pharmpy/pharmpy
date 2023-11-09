@@ -96,5 +96,5 @@ class ModelEntry(Immutable):
 
     @property
     def log(self):
-        """Lof of main model"""
+        """Log of main model"""
         return self._log
