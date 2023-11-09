@@ -653,10 +653,9 @@ def rename_symbols(
 
 
 def filter_dataset(model: Model, expr: str):
-    """Filter dataset according to expr.
+    """Filter dataset according to expr and return a model with the filtered dataset.
 
-    Example: expr = "DVID == 1" will filter the dataset so that
-    only the rows with DVID = 1 remain.
+    Example: "DVID == 1" will filter the dataset so that only the rows with DVID = 1 remain.
 
     Parameters
     ----------
@@ -669,6 +668,12 @@ def filter_dataset(model: Model, expr: str):
     -------
     Model
         Pharmpy model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model('pheno')
+    >>> model = filter_dataset(mode, "DVID != 2")  # doctest: +SKIP
     """
     original_dataset = model.dataset
     new_model = None
