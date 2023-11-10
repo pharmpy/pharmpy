@@ -117,6 +117,10 @@ def create_model(cg, model):
 
 
 def add_true_statements(model, cg, statements):
+    comp_name_dict = {}
+    for name in model.statements.ode_system.compartment_names:
+        comp = model.statements.ode_system.find_compartment(name)
+        comp_name_dict[comp.amount] = comp.amount.name
     for s in statements:
         if model.statements.ode_system is not None and (
             s.symbol in get_bioavailability(model).values()
@@ -124,7 +128,7 @@ def add_true_statements(model, cg, statements):
         ):
             pass
         else:
-            expr = s.expression
+            expr = s.expression.subs(comp_name_dict)
             expr = convert_eps_to_sigma(expr, model)
             if expr.is_Piecewise:
                 add_piecewise(model, cg, s)
