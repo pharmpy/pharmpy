@@ -34,6 +34,7 @@ from .grammar import grammar
 from .helpers import all_funcs, funcs, modelsearch_features
 from .interpreter import MFLInterpreter
 from .statement.feature.covariate import Ref
+from .statement.feature.symbols import Wildcard
 from .statement.statement import Statement
 from .stringify import stringify as mfl_stringify
 
@@ -67,12 +68,26 @@ def validate_mfl_list(mfl_statement_list):
     # TODO : Implement for other features as necessary
     optional_cov = set()
     mandatory_cov = set()
+    # FIXME (?) : Allow for same exact cov effect to be forced by multiple explicit statements
     for s in mfl_statement_list:
         if isinstance(s, Covariate):
-            if s.optional.option:
-                optional_cov.update(product(s.parameter, s.covariate))
-            else:
-                mandatory_cov.update(product(s.parameter, s.covariate))
+            if not s.optional.option and isinstance(s.fp, Wildcard):
+                raise ValueError(
+                    f"Error in {mfl_stringify([s])} :"
+                    f" Mandatory effects need to be explicit (not '*')"
+                )
+            if not isinstance(s.parameter, Ref) and not isinstance(s.covariate, Ref):
+                if s.optional.option:
+                    optional_cov.update(product(s.parameter, s.covariate))
+                else:
+                    if error := [
+                        e for e in product(s.parameter, s.covariate) if e in mandatory_cov
+                    ]:
+                        raise ValueError(
+                            f"Covariate effect(s) {error} is being forced by"
+                            f" multiple statements. Please force only once"
+                        )
+                    mandatory_cov.update(product(s.parameter, s.covariate))
     if error := [op for op in optional_cov if op in mandatory_cov]:
         raise ValueError(
             f"The covariate effect(s) {error} : are defined as both mandatory and optional"
@@ -249,13 +264,36 @@ class ModelFeatures:
         return self._covariate
 
     def expand(self, model):
+        explicit_covariates = set(
+            [
+                p
+                for c in self.covariate
+                if (not isinstance(c.parameter, Ref) and not isinstance(c.covariate, Ref))
+                for p in product(c.parameter, c.covariate)
+            ]
+        )  # Override @ reference with explicit value
+        covariate = tuple(
+            c for c in [c.eval(model, explicit_covariates) for c in self.covariate] if c is not None
+        )
+
+        param_cov = [
+            p for c in covariate for p in product(c.parameter, c.covariate) if not c.optional.option
+        ]
+        counts = [(c, param_cov.count(c)) for c in param_cov]
+        if any(c[1] > 1 for c in counts):
+            error = set(c[0] for c in filter(lambda c: c[1] > 1, counts))
+            raise ValueError(
+                f"Covariate effect(s) {error} is forced by multiple reference statements."
+                f" Please redefine the search space."
+            )
+
         return ModelFeatures.create(
             absorption=self.absorption.eval,
             elimination=self.elimination.eval,
             transits=tuple([t.eval for t in self.transits]),
             peripherals=self.peripherals,
             lagtime=self.lagtime.eval,
-            covariate=tuple([c.eval(model) for c in self.covariate]),
+            covariate=covariate,
         )
 
     def mfl_statement_list(self, attribute_type: Optional[List[str]] = []):

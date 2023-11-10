@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from itertools import product
 from typing import Literal, Optional, Tuple, Union
 
 from lark.visitors import Interpreter
@@ -18,7 +19,7 @@ class Covariate(ModelFeature):
     op: Literal['*', '+'] = '*'
     optional: Option = Option(False)
 
-    def eval(self, model: Optional[Model] = None):
+    def eval(self, model: Optional[Model] = None, explicit_covariates: Optional[set] = None):
         # Circular import issue
         from ...feature.covariate import _interpret_ref
 
@@ -56,6 +57,14 @@ class Covariate(ModelFeature):
 
         optional = self.optional
 
+        if explicit_covariates and isinstance(self.parameter, Ref):
+            param_cov = set(product(parameter, covariate))
+            explicit_to_remove = [
+                p for p, c in param_cov.intersection(explicit_covariates) if c in covariate
+            ]
+            parameter = tuple([p for p in parameter if p not in explicit_to_remove])
+            if len(parameter) == 0:
+                return None
         return Covariate(parameter=parameter, covariate=covariate, fp=fp, op=op, optional=optional)
 
 

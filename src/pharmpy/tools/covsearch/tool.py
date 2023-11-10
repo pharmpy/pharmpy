@@ -190,7 +190,6 @@ def _init_search_state(context, effects: str, model: Model) -> SearchState:
     if filtered_model.description != model.description:
         filtered_fit_wf = create_fit_workflow(models=[filtered_model])
         filtered_model = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
-        # TODO : Handle case where model with mandatory covariates
     else:
         filtered_model = model
     candidate = Candidate(filtered_model, ())
