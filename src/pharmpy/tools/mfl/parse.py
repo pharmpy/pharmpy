@@ -53,11 +53,30 @@ def parse(code: str, mfl_class=False) -> List[Statement]:
 
     tree = parser.parse(code)
 
+    mfl_statement_list = MFLInterpreter().interpret(tree)
+    validate_mfl_list(mfl_statement_list)
+
     # TODO : only return class once it has been implemented everywhere
     if mfl_class:
-        return ModelFeatures.create_from_mfl_statement_list(MFLInterpreter().interpret(tree))
+        return ModelFeatures.create_from_mfl_statement_list(mfl_statement_list)
     else:
-        return MFLInterpreter().interpret(tree)
+        return mfl_statement_list
+
+
+def validate_mfl_list(mfl_statement_list):
+    # TODO : Implement for other features as necessary
+    optional_cov = set()
+    mandatory_cov = set()
+    for s in mfl_statement_list:
+        if isinstance(s, Covariate):
+            if s.optional.option:
+                optional_cov.update(product(s.parameter, s.covariate))
+            else:
+                mandatory_cov.update(product(s.parameter, s.covariate))
+    if error := [op for op in optional_cov if op in mandatory_cov]:
+        raise ValueError(
+            f"The covariate effect(s) {error} : are defined as both mandatory and optional"
+        )
 
 
 class ModelFeatures:
