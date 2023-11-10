@@ -138,6 +138,8 @@ def get_execute_model(tool: Optional[SupportedPlugin]):
         from pharmpy.tools.external.nonmem.run import execute_model
     elif tool == 'nlmixr':
         from pharmpy.tools.external.nlmixr.run import execute_model
+    elif tool == 'rxode':
+        from pharmpy.tools.external.rxode.run import execute_model
     else:
         raise ValueError(f"Unknown estimation tool {tool}")
 

@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 import uuid
 import warnings
 from pathlib import Path
@@ -11,10 +12,11 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model.external.rxode import convert_model
 from pharmpy.modeling import get_omegas, get_sigmas, write_csv
+from pharmpy.workflows import default_tool_database
 from pharmpy.workflows.results import ModelfitResults
 
 
-def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
+def execute_model(model: pharmpy.model.Model, db) -> pharmpy.model.Model:
     """
     Executes a model using rxode2.
 
@@ -22,7 +24,7 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
     ----------
     model : pharmpy.model.Model
         An pharmpy model object.
-    db : str
+    db : database for storing model results
         Name of folder in home directory to store resulting files in.
 
     Returns
@@ -31,7 +33,6 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
         Model with accompanied results.
 
     """
-    db = pharmpy.workflows.LocalDirectoryToolDatabase(db)
     database = db.model_database
     model = convert_model(model)
     path = Path.cwd() / f'rxode_run_{model.name}-{uuid.uuid1()}'
@@ -44,7 +45,11 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
     model = model.replace(datainfo=model.datainfo.replace(path=path))
 
     dataname = f'{model.name}.csv'
-    pre = f'library(rxode2)\n\nev <- read.csv("{path / dataname}")\n'
+    if sys.platform == 'win32':
+        dataset_path = f"{path / dataname}".replace("\\", "\\\\")
+    else:
+        dataset_path = f"{path / dataname}"
+    pre = f'library(rxode2)\n\nev <- read.csv("{dataset_path}")\n'
 
     pre += "\n"
 
@@ -57,14 +62,18 @@ def execute_model(model: pharmpy.model.Model, db: str) -> pharmpy.model.Model:
     cg.add("omegas <- as.data.frame(omegas)")
     cg.add("params <- as.data.frame(fit$params)")
 
-    cg.add(f'save(file="{path}/{model.name}.RDATA", res, params)')
+    if sys.platform == 'win32':
+        p = f"{path / model.name}.RDATA".replace("\\", "\\\\")
+    else:
+        p = f"{path / model.name}.RDATA"
+    cg.add(f'save(file="{p}", res, params)')
 
     code += f'\n{str(cg)}'
 
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
 
-    from pharmpy.plugins.nlmixr import conf
+    from pharmpy.tools.external.nlmixr import conf
 
     rpath = conf.rpath / 'bin' / 'Rscript'
 
@@ -155,7 +164,6 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
 
 def verification(
     model: pharmpy.model.Model,
-    db_name: str,
     error: float = 10**-3,
     return_comp: bool = False,
     ignore_print=False,
@@ -193,11 +201,12 @@ def verification(
         print_step("Converting NONMEM model to RxODE...")
     rxode_model = convert_model(update_inits(nonmem_model, param_estimates))
 
-    # Execute the nlmixr model
+    # Execute the rxode model
+    db = default_tool_database(toolname="comparison")
     if not ignore_print:
         print_step("Executing RxODE model... (this might take a while)")
 
-    rxode_model = execute_model(rxode_model, db_name)
+    rxode_model = execute_model(rxode_model, db)
 
     from pharmpy.plugins.nlmixr.model import compare_models
 
