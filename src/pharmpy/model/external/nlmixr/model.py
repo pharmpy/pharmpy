@@ -191,6 +191,11 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         statements = model.statements
     else:
         statements = model.statements.after_odes
+        comp_name_dict = {}
+        for name in model.statements.ode_system.compartment_names:
+            comp = model.statements.ode_system.find_compartment(name)
+            comp_name_dict[comp.amount] = comp.amount.name
+        statements = statements.subs(comp_name_dict)
     add_statements(
         model, cg, statements, only_piecewise, dependencies=dependencies, res_alias=res_alias
     )
