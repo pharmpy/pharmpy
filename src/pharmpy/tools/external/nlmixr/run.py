@@ -71,7 +71,12 @@ def execute_model(model: pharmpy.model.Model, db, evaluate=False, path=None) -> 
     pre = f'library(nlmixr2)\n\ndataset <- read.csv("{dataset_path}")\n'
 
     if "fix_eta" in model.estimation_steps[0].tool_options:
-        pre += f'etas <- as.matrix(read.csv("{path}/fix_eta.csv"))'
+        fix_eta_filename = "fix_eta.csv"
+        if sys.platform == 'win32':
+            fix_eta_path = f"{path / fix_eta_filename}".replace("\\", "\\\\")
+        else:
+            fix_eta_path = f"{path / fix_eta_filename}"
+        pre += f'etas <- as.matrix(read.csv("{fix_eta_path}"))'
     pre += "\n"
 
     code = pre + model.model_code
