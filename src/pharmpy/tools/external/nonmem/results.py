@@ -51,7 +51,14 @@ def _parse_modelfit_results(
             ext_tables = NONMEMTableFile(ext_path)
         except ValueError:
             log = log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
-            return None
+            return ModelfitResults(
+                name=name,
+                description=description,
+                minimization_successful=False,
+                ofv=np.nan,
+                parameter_estimates=_create_failed_parameter_estimates(model.parameters),
+                log=log,
+            )
 
         for table in ext_tables:
             try:

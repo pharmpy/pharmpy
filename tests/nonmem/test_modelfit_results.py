@@ -304,3 +304,12 @@ def test_serialization(testdata):
 
     assert res.parameter_estimates.equals(res_decode.parameter_estimates)
     assert res.log.to_dataframe().equals(res_decode.log.to_dataframe())
+
+
+def test_empty_results(testdata, pheno_path):
+    model = read_model(pheno_path)
+    res = parse_modelfit_results(
+        model, testdata / 'nonmem' / 'errors' / 'no_header_error_only_iter.ext'
+    )
+    assert np.isnan(res.ofv)
+    assert res.parameter_estimates.isnull().all()
