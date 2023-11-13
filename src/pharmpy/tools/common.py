@@ -162,6 +162,8 @@ def summarize_tool(
         multiple_testing=multiple_testing,
         mult_test_p=n_expected_models,
     )
+    if df_rank.dropna(subset=rank_type).shape[0] == 0:
+        raise ValueError("All models fail the strictness criteria!")
 
     model_dict = {model.name: model for model in models_all}
     rows = {}
