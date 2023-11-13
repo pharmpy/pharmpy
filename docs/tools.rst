@@ -428,31 +428,31 @@ not be able to be selected as best models.
 The strictness argument in the AMD tools consists of a string of logically arranged criteria.
 Implemented strictness criteria are:
 
-+---------------------------+-------------+-------------------------------------+
-| Strictness criterion      | Type        | Description                         |
-+===========================+=============+=====================================+
-| minimization_successful   | Boolean     | True if minimization was successful |
-+---------------------------+-------------+-------------------------------------+
-| rounding_errors           | Boolean     | True if minimization terminated due | 
-|                           |             | rounding errors                     |
-+---------------------------+-------------+-------------------------------------+
-| sigidgs                   | Numeric     | Number of significant digits        |
-+---------------------------+-------------+-------------------------------------+
-| maxevals_exceeded         | Boolean     | True if minimization terminated due |
-|                           |             | maximum evaluations exceeded.       |
-+---------------------------+-------------+-------------------------------------+
-| rse                       | Numeric     | Relative standard errors of the     |
-|                           |             | parameters.                         |
-+---------------------------+-------------+-------------------------------------+
-| condition_number          | Numeric     | Condition number of the covariance  |
-|                           |             | matrix                              |
-+---------------------------+-------------+-------------------------------------+
-| final_zero_gradient       | Boolean     | True if at least one parameter has  |
-|                           |             | a final zero gradient               |
-+---------------------------+-------------+-------------------------------------+
-| estimate_near_boundary    | Boolean     | True if at least one parameter      |
-|                           |             | estimate is near its boundary       |
-+---------------------------+-------------+-------------------------------------+
++-----------------------------+-------------+-------------------------------------+
+| Strictness criterion        | Type        | Description                         |
++=============================+=============+=====================================+
+| ``minimization_successful`` | Boolean     | True if minimization was successful |
++-----------------------------+-------------+-------------------------------------+
+| ``rounding_errors``         | Boolean     | True if minimization terminated due | 
+|                             |             | rounding errors                     |
++-----------------------------+-------------+-------------------------------------+
+| ``sigdigs``                 | Numeric     | Number of significant digits        |
++-----------------------------+-------------+-------------------------------------+
+| ``maxevals_exceeded``       | Boolean     | True if minimization terminated due |
+|                             |             | maximum evaluations exceeded.       |
++-----------------------------+-------------+-------------------------------------+
+| ``rse``                     | Numeric     | Relative standard errors of the     |
+|                             |             | parameters.                         |
++-----------------------------+-------------+-------------------------------------+
+| ``condition_number``        | Numeric     | Condition number of the covariance  |
+|                             |             | matrix                              |
++-----------------------------+-------------+-------------------------------------+
+| ``final_zero_gradient``     | Boolean     | True if at least one parameter has  |
+|                             |             | a final zero gradient               |
++-----------------------------+-------------+-------------------------------------+
+| ``estimate_near_boundary``  | Boolean     | True if at least one parameter      |
+|                             |             | estimate is near its boundary       |
++-----------------------------+-------------+-------------------------------------+
 
 The strictness criteria can be arranged logically, e.g.:
 
@@ -462,20 +462,24 @@ The strictness criteria can be arranged logically, e.g.:
 
 where n is a number and A, B and C are strictness criteria.
 
-Allowed logical operators are: and, or, not, <, <=, =, >, >=.
+Allowed logical operators are: ``and``, ``or``, ``not``, ``<``, ``<=``, ``==``, ``>``, ``>=``, ``!=``.
+
+If the statement evaluates to ``False`` then the strictness criteria are not fulfilled and the model will be excluded
+from the results.
 
 Examples
 ========
 
 .. code::
 
-    strictness = "minimization_successful or (rounding_errors and sigidgs >= 0)"
+    strictness = "minimization_successful or (rounding_errors and sigdigs >= 0.1)"
 
 In this example the strictness criteria states that either the minimization must be successful or else the
-minimization was terminated due to rounding errors and the number of sigdigs is positive.
+minimization was terminated due to rounding errors and the number of sigdigs is greater or equal to 0.1.
+This example is the default strictness criterion for AMD and all subtools.
 
 .. code::
 
     strictness = "minimization_successful and rse < 0.4"
 
-This means that the minimization must be successful and that no parameter must have an RSE larger than 0.4.
+This means that the minimization must be successful and that all parameters must have an RSE smaller than 0.4.

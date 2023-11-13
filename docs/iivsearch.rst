@@ -62,7 +62,7 @@ Arguments
 +-----------------------------------------------+--------------------------------------------------------------------+
 | :ref:`strictness<strictness>`                 | Strictness criteria for model selection.                           |
 |                                               | Default is "minimization_successful or                             |
-|                                               | (rounding_errors and sigdigs>= 0)"                                 |
+|                                               | (rounding_errors and sigdigs>= 0.1)"                               |
 +-----------------------------------------------+--------------------------------------------------------------------+
 
 .. note::
