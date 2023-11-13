@@ -60,7 +60,7 @@ pandocfilters==1.5.0
 parso==0.8.3
 partd==1.4.1
 pexpect==4.8.0
-platformdirs==3.11.0
+platformdirs==4.0.0
 prompt-toolkit==3.0.40
 psutil==5.9.6
 ptyprocess==0.7.0
