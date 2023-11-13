@@ -481,13 +481,15 @@ def _subfunc_structsearch(path, **kwargs) -> SubFunc:
     return _run_structsearch
 
 
-def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
+def _subfunc_structsearch_tmdd(search_space, type, strictness, path) -> SubFunc:
     def _run_structsearch_tmdd(model):
         res = run_tool(
             'modelsearch',
             search_space=mfl_stringify(search_space),
             algorithm='reduced_stepwise',
             model=model,
+            strictness=strictness,
+            results=model.modelfit_results,
             path=path / 'modelsearch',
         )
 
@@ -529,9 +531,10 @@ def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
 
         res = run_tool(
             'structsearch',
+            type=type,
             model=final_model,
             extra_model=extra_model,
-            **kwargs,
+            strictness=strictness,
             path=path / 'structsearch',
         )
         assert isinstance(res, Results)
