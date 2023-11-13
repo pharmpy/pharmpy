@@ -287,12 +287,13 @@ class ModelFeatures:
         """See if class contain specified subset"""
         transits = self._subset_transits(mfl)
 
+        # FIXME : Add support for wildcard
         if (
-            all([s in self.absorption.modes for s in mfl.absorption.eval.modes])
-            and all([s in self.elimination.modes for s in mfl.elimination.eval.modes])
+            all([s in self.absorption.eval.modes for s in mfl.absorption.eval.modes])
+            and all([s in self.elimination.eval.modes for s in mfl.elimination.eval.modes])
             and transits
             and all([s in self.peripherals.counts for s in mfl.peripherals.counts])
-            and all([s in self.lagtime.modes for s in mfl.lagtime.eval.modes])
+            and all([s in self.lagtime.eval.modes for s in mfl.lagtime.eval.modes])
         ):
             if self.covariate != tuple() or mfl.covariate != tuple():
                 if model is None:
