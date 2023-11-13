@@ -92,12 +92,12 @@ def create_cr_models(model, ests, parent_model, est_vc):
     cr1 = set_name(cr_base_model, "structsearch_run5")
     cr1 = cr1.replace(description="CR1", parent_model=parent_model)
     cr1 = set_initial_estimates(
-        cr1, {"POP_KOFF": 0.5623, "POP_KON": 0.5623 / (ests['POP_KDC'] * ests['POP_VC'])}
+        cr1, {"POP_KOFF": 0.5623, "POP_KON": 0.5623 / (ests['POP_KDC'] * est_vc)}
     )
     cr2 = set_name(cr_base_model, "structsearch_run6")
     cr2 = cr2.replace(description="CR2", parent_model=parent_model)
     cr2 = set_initial_estimates(
-        cr2, {"POP_KOFF": 17.78, "POP_KON": 17.78 / (ests['POP_KDC'] * ests['POP_VC'])}
+        cr2, {"POP_KOFF": 17.78, "POP_KON": 17.78 / (ests['POP_KDC'] * est_vc)}
     )
     return [cr1, cr2]
 
@@ -116,10 +116,10 @@ def create_ib_models(model, ests, parent_model, est_vc):
     )
     ib1 = set_name(ib_base_model, "structsearch_run7")
     ib1 = ib1.replace(description="IB1", parent_model=parent_model)
-    ib1 = set_initial_estimates(ib1, {"POP_KON": 0.5623 / (ests['POP_KDC'] * ests['POP_VC'])})
+    ib1 = set_initial_estimates(ib1, {"POP_KON": 0.5623 / (ests['POP_KDC'] * est_vc)})
     ib2 = set_name(ib_base_model, "structsearch_run8")
     ib2 = ib2.replace(description="IB2", parent_model=parent_model)
-    ib2 = set_initial_estimates(ib2, {"POP_KON": 17.78 / (ests['POP_KDC'] * ests['POP_VC'])})
+    ib2 = set_initial_estimates(ib2, {"POP_KON": 17.78 / (ests['POP_KDC'] * est_vc)})
     return [ib1, ib2]
 
 
@@ -137,10 +137,10 @@ def create_crib_models(model, ests, parent_model, est_vc):
     )
     crib1 = set_name(crib_base_model, "structsearch_run9")
     crib1 = crib1.replace(description="CR+IB1", parent_model=parent_model)
-    crib1 = set_initial_estimates(crib1, {"POP_KON": 0.5623 / (ests['POP_KDC'] * ests['POP_VC'])})
+    crib1 = set_initial_estimates(crib1, {"POP_KON": 0.5623 / (ests['POP_KDC'] * est_vc)})
     crib2 = set_name(crib_base_model, "structsearch_run10")
     crib2 = crib2.replace(description="CR+IB2", parent_model=parent_model)
-    crib2 = set_initial_estimates(crib2, {"POP_KON": 17.78 / (ests['POP_KDC'] * ests['POP_VC'])})
+    crib2 = set_initial_estimates(crib2, {"POP_KON": 17.78 / (ests['POP_KDC'] * est_vc)})
     return [crib1, crib2]
 
 
@@ -161,7 +161,7 @@ def create_full_models(model, ests, parent_model, est_vc):
     ]
     candidates = [
         set_initial_estimates(
-            model, {'POP_KON': model.parameters['POP_KOFF'].init / ests['POP_KDC'] * ests['POP_VC']}
+            model, {'POP_KON': model.parameters['POP_KOFF'].init / ests['POP_KDC'] * est_vc}
         )
         for model in candidates
     ]
@@ -183,7 +183,7 @@ def create_wagner_model(model, ests, parent_model, est_vc):
             "POP_KINT": ests['POP_KINT'],
             "POP_R_0": ests['POP_R_0'],
             "IIV_R_0": ests['IIV_R_0'],
-            "POP_KM": ests['POP_KDC'] * ests['POP_VC'],
+            "POP_KM": ests['POP_KDC'] * est_vc,
         },
     )
     return [wagner]
