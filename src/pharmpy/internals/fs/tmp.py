@@ -1,5 +1,6 @@
 import os as _os
 import shutil as _shutil
+import sys
 import warnings as _warnings
 import weakref as _weakref
 from tempfile import mkdtemp
@@ -40,7 +41,12 @@ class TemporaryDirectory:
     @classmethod
     def _rmtree(cls, name, ignore_errors=False):
         def onerror(func, path, exc_info):
-            if issubclass(exc_info[0], PermissionError):
+            if sys.version_info.minor >= 12:
+                exc = exc_info
+            else:
+                # This was deprecated in Python 3.12
+                exc = exc_info[0]
+            if issubclass(exc, PermissionError):
 
                 def resetperms(path):
                     try:
@@ -71,13 +77,17 @@ class TemporaryDirectory:
                                 raise pe
                 except FileNotFoundError:
                     pass
-            elif issubclass(exc_info[0], FileNotFoundError):
+            elif issubclass(exc, FileNotFoundError):
                 pass
             else:
                 if not ignore_errors:
                     raise
 
-        _shutil.rmtree(name, onerror=onerror)
+        if sys.version_info.minor >= 12:
+            _shutil.rmtree(name, onexc=onerror)
+        else:
+            # This was deprecated in Python 3.12
+            _shutil.rmtree(name, onerror=onerror)
 
     @classmethod
     def _cleanup(cls, name, warn_message, ignore_errors=False):
