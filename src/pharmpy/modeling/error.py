@@ -550,7 +550,32 @@ def has_proportional_error_model(model: Model, dv: Union[sympy.Symbol, str, int,
     if len(rvs_in_y) != 1:
         return False
     eps = rvs_in_y.pop()
+
+    y_symbs = model.statements.error.find_assignment(y).expression.free_symbols - {eps}
+    ipredadj_symb, f_symb = _check_and_get_zero_protect(model.statements.error, y_symbs)
+    if ipredadj_symb:
+        ipredadj_expr = model.statements.error.full_expression(ipredadj_symb)
+        f_expr = model.statements.error.full_expression(f_symb)
+        expr = expr.subs({ipredadj_expr: f_expr})
+
     return eps not in (expr / (1 + eps)).simplify().free_symbols
+
+
+def _check_and_get_zero_protect(error_sset, y_symbs):
+    # FIXME: Support power_on_ruv (currently not needed since there is no has_power_on_ruv)
+    if len(y_symbs) > 2:
+        return None, None
+    f_cand, ipredadj_cand = None, None
+    for symb in y_symbs:
+        s = error_sset.find_assignment(symb)
+        if s and isinstance(s.expression, sympy.Piecewise):
+            ipredadj_cand = s
+        else:
+            f_cand = s
+    if ipredadj_cand:
+        if ipredadj_cand.expression.free_symbols == {f_cand.symbol}:
+            return ipredadj_cand.symbol, f_cand.symbol
+    return None, None
 
 
 def has_combined_error_model(model: Model, dv: Union[sympy.Symbol, str, int, None] = None):
@@ -993,7 +1018,7 @@ def set_power_on_ruv(
             if sympy.Symbol(e.names[0])
             in model.statements.after_odes.full_expression(dv_symb).free_symbols
         ]
-
+    print(model.statements.error)
     # Check for used DV, not just the first one
     if has_proportional_error_model(model, dv=dv_symb):
         theta_init = 1
