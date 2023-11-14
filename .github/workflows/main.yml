@@ -18,11 +18,14 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-22.04, macos-latest, windows-latest]
-        python-version: ['3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
         include:
           - tox-env: 'unit'
           - python-version: '3.9'
             tox-env: ${{ github.actor != 'dependabot[bot]' && 'unit-cover' || 'unit' }}
+        exclude:
+          - platform: windows-latest
+            python-version: '3.12'
 
     runs-on: ${{ matrix.platform }}
 
@@ -50,7 +53,10 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-22.04, macos-latest, windows-latest]
-        python-version: ['3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+        exclude:
+          - platform: windows-latest
+            python-version: '3.12'
 
     runs-on: ${{ matrix.platform }}
 
