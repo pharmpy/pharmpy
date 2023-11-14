@@ -21,7 +21,7 @@ jobs:
         python-version: ['3.9', '3.10', '3.11', '3.12']
         include:
           - tox-env: 'unit'
-          - python-version: '3.9'
+          - python-version: '3.11'
             tox-env: ${{ github.actor != 'dependabot[bot]' && 'unit-cover' || 'unit' }}
         exclude:
           - platform: windows-latest
