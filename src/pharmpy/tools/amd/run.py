@@ -499,14 +499,14 @@ def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
                 model.name for model in res.models if has_mixed_mm_fo_elimination(model)
             ]
             if len(models_mixed_mm_fo_el) > 0:
-                rank_all_dict = res.summary_tool.dropna().to_dict()['rank']
-                rank_dict = {
-                    key: rank_all_dict[key] for key in models_mixed_mm_fo_el if key in rank_all_dict
-                }
-                if len(rank_dict) > 0:
-                    highest_ranked = min(rank_dict, key=rank_dict.get)
+                rank_all = res.summary_tool.dropna(subset='bic')[['rank']]
+                rank_filtered = rank_all.query('model in @models_mixed_mm_fo_el')
+                if len(rank_filtered) > 0:
+                    rank_filtered = rank_filtered.sort_values(by=['rank'])
+                    highest_ranked = rank_filtered.index[0]
                     final_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
 
+        extra_model = None
         n_peripherals = len(final_model.statements.ode_system.find_peripheral_compartments())
         modelfeatures = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
         # Model features - 1 peripheral compartment
@@ -518,14 +518,14 @@ def _subfunc_structsearch_tmdd(search_space, path, **kwargs) -> SubFunc:
             if ModelFeatures.create_from_mfl_string(get_model_features(model))
             == modelfeatures_minus
         ]
-        # Find highest ranked model
-        rank_all_dict = res.summary_tool.dropna().to_dict()['rank']
-        rank_dict = {key: rank_all_dict[key] for key in models if key in rank_all_dict}
-        if len(rank_dict) > 0:
-            highest_ranked = min(rank_dict, key=rank_dict.get)
-            extra_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
-        else:
-            extra_model = None
+        if len(models) > 0:
+            # Find highest ranked model
+            rank_all = res.summary_tool.dropna(subset='bic')[['rank']]
+            rank_filtered = rank_all.query('model in @models')
+            if len(rank_filtered) > 0:
+                rank_filtered = rank_filtered.sort_values(by=['rank'])
+                highest_ranked = rank_filtered.index[0]
+                extra_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
 
         res = run_tool(
             'structsearch',
