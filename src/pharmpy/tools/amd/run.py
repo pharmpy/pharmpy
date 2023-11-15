@@ -15,7 +15,11 @@ from pharmpy.tools import retrieve_models, summarize_errors, write_results
 from pharmpy.tools.allometry.tool import validate_allometric_variable
 from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
 from pharmpy.tools.mfl.feature.covariate import spec as covariate_spec
-from pharmpy.tools.mfl.filter import covsearch_statement_types, modelsearch_statement_types
+from pharmpy.tools.mfl.filter import (
+    covsearch_statement_types,
+    modelsearch_statement_types,
+    structsearch_statement_types,
+)
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
@@ -132,15 +136,22 @@ def run_amd(
     if modeltype == 'pkpd':
         dv = 2
         iiv_strategy = 'pd_fullblock'
+
         try:
             input_search_space_features = [] if search_space is None else mfl_parse(search_space)
         except:  # noqa E722
             raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
 
-        if search_space is None:
+        structsearch_features = tuple(
+            filter(
+                lambda statement: isinstance(statement, structsearch_statement_types),
+                input_search_space_features,
+            )
+        )
+        if not structsearch_features:
             structsearch_features = "DIRECTEFFECT(*);EFFECTCOMP(*);INDIRECTEFFECT(*,*)"
         else:
-            structsearch_features = search_space
+            structsearch_features = mfl_stringify(structsearch_features)
     else:
         dv = None
         iiv_strategy = 'fullblock'
@@ -174,7 +185,10 @@ def run_amd(
 
     default_order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
     if order is None:
-        order = default_order
+        if modeltype == 'pkpd':
+            order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'covariates']
+        else:
+            order = default_order
 
     try:
         input_search_space_features = [] if search_space is None else mfl_parse(search_space)
