@@ -10,7 +10,6 @@ from pharmpy.model import (
     Model,
     output,
 )
-from pharmpy.modeling import get_thetas, rename_symbols
 
 from .expressions import _replace_trivial_redefinitions
 from .odes import add_individual_parameter, set_first_order_elimination, set_initial_condition
@@ -116,14 +115,6 @@ def set_tmdd(model: Model, type: str):
 
         ksyn, ksyn_ass = _create_ksyn()
         kd_ass = Assignment(kd, kdc * vc)
-
-        # Rename volume parameter to POP_VC
-        # Only works if parameter only has one theta
-        if 'POP_VC' not in get_thetas(model).names:
-            v_symbols = model.statements.before_odes.full_expression(vc).free_symbols
-            v_param = [str(sym) for sym in v_symbols if str(sym) in get_thetas(model).names]
-            if len(v_param) == 1:
-                model = rename_symbols(model, {v_param[0]: 'POP_VC'})
 
         lafree_symb = sympy.Symbol('LAFREE')
         lafree_expr = sympy.Rational(1, 2) * (
@@ -291,17 +282,17 @@ def set_tmdd(model: Model, type: str):
         ipred = lafreef / vc
         after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
     elif type == 'MMAPP':
-        model, kmc, kdeg = _create_parameters(model, ['KMC', 'KDEG'])
+        model, km, kdeg = _create_parameters(model, ['KM', 'KDEG'])
         target_comp = _create_compartments(cb, ['TARGET'])
         ksyn, ksyn_ass = _create_ksyn()
 
-        target_elim = kdeg + (kint - kdeg) * central.amount / vc / (kmc + central.amount / vc)
+        target_elim = kdeg + (kint - kdeg) * central.amount / vc / (km + central.amount / vc)
         cb.add_flow(target_comp, output, target_elim)
         elim = cl / vc
         cb.add_flow(central, output, elim)
         cb.set_input(target_comp, ksyn)
         cb.set_input(
-            central, -target_comp.amount * central.amount * kint / (central.amount / vc + kmc)
+            central, -target_comp.amount * central.amount * kint / (central.amount / vc + km)
         )
 
         before = model.statements.before_odes + ksyn_ass

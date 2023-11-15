@@ -70,7 +70,7 @@ def test_mmapp(pheno_path, load_model_for_test):
     model = set_tmdd(model, type="mmapp")
     assert (
         str(model.statements.ode_system.eqs[0].rhs)
-        == """QP1*A_PERIPHERAL1(t)/VP1 + (-CL/V1 - KINT*A_TARGET(t)/(KMC + A_CENTRAL(t)/V1) - QP1/V1)*A_CENTRAL(t)"""
+        == """QP1*A_PERIPHERAL1(t)/VP1 + (-CL/V1 - KINT*A_TARGET(t)/(KM + A_CENTRAL(t)/V1) - QP1/V1)*A_CENTRAL(t)"""
     )
 
 
