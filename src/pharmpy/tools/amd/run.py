@@ -195,12 +195,18 @@ def run_amd(
     except:  # noqa E722
         raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
 
-    modelsearch_features = tuple(
-        filter(
-            lambda statement: isinstance(statement, modelsearch_statement_types),
-            input_search_space_features,
-        )
-    )
+    modelsearch_features = mfl_filtering(input_search_space_features, "modelsearch")
+    if modeltype in ['pkpd', 'drug_metabolite']:
+        structsearch_features = mfl_filtering(input_search_space_features, "structsearch")
+        if search_space is None:
+            if modeltype == 'pkpd':
+                structsearch_features = "DIRECTEFFECT(*);EFFECTCOMP(*);INDIRECTEFFECT(*,*)"
+            else:
+                if administration in ['oral', 'ivoral']:
+                    structsearch_features = "METABOLITE([PSC, BASIC]);PERIPHERALS([0,1], MET)"
+                else:
+                    structsearch_features = "METABOLITE([BASIC]);PERIPHERALS([0,1], MET)"
+
     if not modelsearch_features:
         if modeltype in ('basic_pk', 'drug_metabolite') and administration == 'oral':
             modelsearch_features = (
@@ -274,7 +280,9 @@ def run_amd(
             # Perfomed 'after' modelsearch
             if modeltype == 'drug_metabolite':
                 func = _subfunc_structsearch(
-                    type=modeltype, route=administration, strictness=strictness, path=db.path
+                    type=modeltype,
+                    search_space=structsearch_features,
+                    path=db.path,
                 )
                 run_subfuncs['structsearch'] = func
         elif section == 'iivsearch':

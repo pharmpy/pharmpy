@@ -327,6 +327,22 @@ from pharmpy.tools.mfl.stringify import stringify
             'COVARIATE(@BIOAVAIL, APGR, CAT)',
             (),
         ),
+        (
+            'METABOLITE([BASIC, PSC]);' 'PERIPHERALS(1..2, MET)',
+            (
+                ('METABOLITE', 'BASIC'),
+                ('METABOLITE', 'PSC'),
+                ('PERIPHERALS', 1),
+                ('PERIPHERALS', 2),
+            ),
+        ),
+        (
+            'METABOLITE(*)',
+            (
+                ('METABOLITE', 'BASIC'),
+                ('METABOLITE', 'PSC'),
+            ),
+        ),
     ),
     ids=repr,
 )

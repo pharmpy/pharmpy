@@ -103,16 +103,27 @@ def test_pkpd(load_model_for_test, testdata):
     assert models3[1].parameters['POP_EC_50'].fix is False
 
 
-def test_drug_metabolite(load_example_model_for_test):
-    model = load_example_model_for_test("pheno")
-    models = create_drug_metabolite_models(model, "oral")
-    assert len(models) == 3
+def test_drug_metabolite(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
+    res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
+    search_space = "METABOLITE([PSC, BASIC]);PERIPHERALS([0,1], MET)"
+    wb, candidate_tasks, base_model_description = create_drug_metabolite_models(
+        model, res, search_space
+    )
+    assert base_model_description == "METABOLITE_BASIC;PERIPHERALS(0)"
+    assert len(candidate_tasks) == 4
 
-    models = create_drug_metabolite_models(model, "ivoral")
-    assert len(models) == 3
+    wb, candidate_tasks, base_model_description = create_drug_metabolite_models(
+        model, res, "METABOLITE([PSC, BASIC])"
+    )
+    assert base_model_description == "METABOLITE_BASIC"
+    assert len(candidate_tasks) == 2
 
-    models = create_drug_metabolite_models(model, "iv")
-    assert len(models) == 1
+    wb, candidate_tasks, base_model_description = create_drug_metabolite_models(
+        model, res, "METABOLITE(BASIC);PERIPHERALS([0,1], MET)"
+    )
+    assert base_model_description == "METABOLITE_BASIC;PERIPHERALS(0)"
+    assert len(candidate_tasks) == 2
 
 
 def test_create_workflow():
