@@ -1018,7 +1018,7 @@ def set_power_on_ruv(
             if sympy.Symbol(e.names[0])
             in model.statements.after_odes.full_expression(dv_symb).free_symbols
         ]
-    print(model.statements.error)
+
     # Check for used DV, not just the first one
     if has_proportional_error_model(model, dv=dv_symb):
         theta_init = 1
