@@ -88,7 +88,8 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.6
 sphinxcontrib-serializinghtml==1.1.9
 stack-data==0.6.3
-symengine==0.11.0
+symengine==0.11.0 ; python_version > '3.9'
+symengine==0.10.0 ; python_version == '3.9'
 sympy==1.12
 tblib==3.0.0
 tinycss2==1.2.1
