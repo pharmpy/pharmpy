@@ -106,7 +106,8 @@ class NONMEMResultsFile:
             r'( INTERPRET VARIANCE-COVARIANCE OF ESTIMATES WITH CARE)|'
             r'(R|S) MATRIX ALGORITHMICALLY SINGULAR'
         )
-        cov_ok = re.compile(r' Elapsed covariance\s+time in seconds: ')  # Need variable whitespace
+        # Need variable whitespace
+        cov_ok = re.compile(r' Elapsed (covariance|opt\. design)\s+time in seconds: ')
         est_time = re.compile(r' Elapsed estimation\s+time in seconds:\s+(\d+\.*\d+)')
 
         for row in rows:

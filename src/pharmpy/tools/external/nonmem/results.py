@@ -82,7 +82,9 @@ def _parse_modelfit_results(
         ses_sdcorr,
     ) = _parse_ext(control_stream, name_map, ext_tables, subproblem, parameters)
 
-    table_df = _parse_tables(path, control_stream, netas=len(model.random_variables.etas.names))
+    table_df = _parse_tables(
+        path, control_stream, netas=len(model.random_variables.etas.names)
+    )  # $TABLEs
     residuals = _parse_residuals(table_df)
     predictions = _parse_predictions(table_df)
     iofv, ie, iec = _parse_phi(path, control_stream, name_map, etas, model, final_pe, subproblem)
@@ -94,6 +96,7 @@ def _parse_modelfit_results(
         runtime_total,
         log_likelihood,
         covstatus,
+        covstatus_table_number,
         minimization_successful,
         function_evaluations,
         significant_digits,
@@ -101,10 +104,11 @@ def _parse_modelfit_results(
         estimation_runtime,
         estimate_near_boundary,
         log,
+        est_table_numbers,
     ) = _parse_lst(len(estimation_steps), path, table_numbers, log)
 
-    if table_numbers:
-        eststeps = table_numbers
+    if est_table_numbers:
+        eststeps = est_table_numbers
     else:
         eststeps = list(range(1, len(estimation_steps) + 1))
     last_est_ind = _get_last_est(estimation_steps)
@@ -234,7 +238,20 @@ def _empty_lst_results(n: int, log):
     false_vec = [False] * n
     nan_vec = [np.nan] * n
     none_vec = [None] * n
-    return None, np.nan, False, false_vec, nan_vec, nan_vec, none_vec, nan_vec, false_vec, log
+    return (
+        None,
+        np.nan,
+        False,
+        None,
+        false_vec,
+        nan_vec,
+        nan_vec,
+        none_vec,
+        nan_vec,
+        false_vec,
+        log,
+        nan_vec,
+    )
 
 
 def _parse_lst(n: int, path: Path, table_numbers, log: Log):
@@ -248,13 +265,31 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
 
     runtime_total = rfile.runtime_total
 
+    covstatus_table_number = table_numbers[-1]
+
     try:
-        log_likelihood = rfile.table[table_numbers[-1]]['ofv_with_constant']
+        for table_number in reversed(table_numbers):
+            if "OPTIMALITY" not in rfile.table[table_number]['METH']:
+                log_likelihood_table_number = table_number
+                break
+    except (KeyError, FileNotFoundError):
+        log_likelihood_table_number = None
+
+    try:
+        log_likelihood = rfile.table[log_likelihood_table_number]['ofv_with_constant']
     except (KeyError, FileNotFoundError):
         log_likelihood = np.nan
 
-    status = rfile.covariance_status(table_numbers[-1])
-    covstatus = status['covariance_step_ok']
+    covstatus = rfile.covariance_status(covstatus_table_number)['covariance_step_ok']
+
+    if log_likelihood_table_number is not None:
+        est_table_numbers = [
+            table_number
+            for table_number in table_numbers
+            if table_number <= log_likelihood_table_number
+        ]
+    else:
+        est_table_numbers = [table_number for table_number in table_numbers]
 
     (
         minimization_successful,
@@ -263,12 +298,13 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
         termination_cause,
         estimation_runtime,
         estimate_near_boundary,
-    ) = parse_estimation_status(rfile, table_numbers)
+    ) = parse_estimation_status(rfile, est_table_numbers)
 
     return (
         runtime_total,
         log_likelihood,
         covstatus,
+        covstatus_table_number,
         minimization_successful,
         function_evaluations,
         significant_digits,
@@ -276,6 +312,7 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
         estimation_runtime,
         estimate_near_boundary,
         rfile.log,
+        est_table_numbers,
     )
 
 
@@ -342,7 +379,12 @@ def _parse_phi(
     except FileNotFoundError:
         return None, None, None
     if subproblem is None:
-        table = phi_tables.tables[-1]
+        table = None
+
+        for t in reversed(phi_tables.tables):
+            if t.design_optimality is None:
+                table = t
+                break
     else:
         table = phi_tables.tables[subproblem - 1]
 
@@ -567,7 +609,7 @@ def _parse_ofv(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
     ofv = []
     final_table = None
     for table_number, table in enumerate(ext_tables.tables, start=1):
-        if subproblem and table.subproblem != subproblem:
+        if (subproblem and table.subproblem != subproblem) or table.design_optimality is not None:
             continue
         df = _get_iter_df(table.data_frame)
         n = len(df)
@@ -634,7 +676,7 @@ def _parse_parameter_estimates(
     final_table = None
     fix = None
     for table_number, table in enumerate(ext_tables.tables, start=1):
-        if subproblem and table.subproblem != subproblem:
+        if (subproblem and table.subproblem != subproblem) or table.design_optimality is not None:
             continue
         df = _get_iter_df(table.data_frame)
         assert isinstance(table, ExtTable)
