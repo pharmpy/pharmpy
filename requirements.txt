@@ -88,9 +88,7 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.6
 sphinxcontrib-serializinghtml==1.1.9
 stack-data==0.6.3
-symengine==0.10.0 ; python_version < '3.12'
-symengine @ https://github.com/symengine/symengine-wheels/releases/download/v0.11.0/symengine-0.11.0-cp312-cp312-manylinux_2_12_x86_64.manylinux2010_x86_64.whl ; sys_platform == 'linux' and python_version == '3.12'
-symengine @ https://github.com/symengine/symengine-wheels/releases/download/v0.11.0/symengine-0.11.0-cp312-cp312-macosx_10_9_x86_64.whl ; sys_platform == 'darwin' and python_version == '3.12'
+symengine==0.11.0
 sympy==1.12
 tblib==3.0.0
 tinycss2==1.2.1
