@@ -5,6 +5,7 @@ docutils==0.20.1
 flake8==6.1.0
 flake8-black==0.3.6
 isort==5.12.0
+pyright==1.1.335
 readme-renderer==42.0
 twine==4.0.2 
 # Indirect dependencies
@@ -25,6 +26,7 @@ mdurl==0.1.2
 more-itertools==10.1.0
 mypy-extensions==1.0.0
 nh3==0.2.14
+nodeenv==1.8.0
 packaging==23.2
 pathspec==0.11.2
 pkginfo==1.9.6
