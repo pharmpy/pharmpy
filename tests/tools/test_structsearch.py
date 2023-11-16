@@ -36,43 +36,43 @@ def test_create_qss_models(load_example_model_for_test):
 
 def test_create_wagner_model(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
-    models = create_wagner_model(model, ests, "parent")
+    models = create_wagner_model(model, ests)
     assert len(models) == 1
 
 
 def test_create_mmapp_model(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
-    models = create_mmapp_model(model, ests, "parent")
+    models = create_mmapp_model(model, ests)
     assert len(models) == 1
 
 
 def test_create_crib_models(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
-    models = create_crib_models(model, ests, "parent")
+    models = create_crib_models(model, ests)
     assert len(models) == 2
 
 
 def test_create_full_models(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
-    models = create_full_models(model, ests, "parent")
+    models = create_full_models(model, ests)
     assert len(models) == 4
 
 
 def test_create_ib_models(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
-    models = create_ib_models(model, ests, "parent")
+    models = create_ib_models(model, ests)
     assert len(models) == 2
 
 
 def test_create_cr_models(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
-    models = create_cr_models(model, ests, "parent")
+    models = create_cr_models(model, ests)
     assert len(models) == 2
 
 
 def test_create_remaining_models(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
-    models = create_remaining_models(model, ests, "parent", 2)
+    models = create_remaining_models(model, ests, 2)
     assert len(models) == 12
 
 

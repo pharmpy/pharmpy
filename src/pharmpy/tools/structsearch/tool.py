@@ -11,7 +11,7 @@ from pharmpy.model import Model
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
 from .drugmetabolite import create_base_metabolite, create_drug_metabolite_models
@@ -34,6 +34,7 @@ def create_workflow(
     model: Optional[Model] = None,
     extra_model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+    extra_model_results: Optional[ModelfitResults] = None,
 ):
     """Run the structsearch tool. For more details, see :ref:`structsearch`.
 
@@ -59,6 +60,8 @@ def create_workflow(
         Pharmpy start model
     extra_model : Model
         Optional extra Pharmpy model to use in TMDD structsearch
+    extra_model_results : ModelfitResults
+        Results for the extra model
     strictness : str or None
         Strictness criteria
 
@@ -78,12 +81,15 @@ def create_workflow(
 
     wb = WorkflowBuilder(name="structsearch")
     if type == 'tmdd':
-        start_task = Task('run_tmdd', run_tmdd, model, extra_model, strictness)
+        start_task = Task(
+            'run_tmdd', run_tmdd, model, results, extra_model, extra_model_results, strictness
+        )
     elif type == 'pkpd':
         start_task = Task(
             'run_pkpd',
             run_pkpd,
             model,
+            results,
             search_space,
             b_init,
             emax_init,
@@ -97,51 +103,68 @@ def create_workflow(
     return Workflow(wb)
 
 
-def run_tmdd(context, model, extra_model, strictness):
-    model = update_initial_estimates(model)
-    if extra_model is not None:
-        extra_model = update_initial_estimates(extra_model)
-        qss_candidate_models = create_qss_models(
-            model, model.modelfit_results.parameter_estimates
-        ) + create_qss_models(extra_model, model.modelfit_results.parameter_estimates, index=9)
-    else:
-        qss_candidate_models = create_qss_models(model, model.modelfit_results.parameter_estimates)
+def run_tmdd(context, model, results, extra_model, extra_model_results, strictness):
+    model = update_initial_estimates(model, results)
+    model_entry = ModelEntry.create(model, modelfit_results=results)
 
-    wf = create_fit_workflow(qss_candidate_models)
+    qss_candidate_models = create_qss_models(model, results.parameter_estimates)
+    qss_candidate_entries = [
+        ModelEntry.create(m, modelfit_results=None, parent=model) for m in qss_candidate_models
+    ]
+
+    if extra_model is not None:
+        extra_model = update_initial_estimates(extra_model, extra_model_results)
+        extra_qss_candidate_models = create_qss_models(
+            extra_model, extra_model_results.parameter_estimates, index=9
+        )
+        extra_qss_candidate_entries = [
+            ModelEntry.create(model, modelfit_results=None, parent=extra_model)
+            for model in extra_qss_candidate_models
+        ]
+        qss_candidate_entries += extra_qss_candidate_entries
+
+    wf = create_fit_workflow(qss_candidate_entries)
     wb = WorkflowBuilder(wf)
     task_results = Task('results', bundle_results)
     wb.add_task(task_results, predecessors=wf.output_tasks)
-    qss_run_models = call_workflow(Workflow(wb), 'results_QSS', context)
+    qss_run_entries = call_workflow(Workflow(wb), 'results_QSS', context)
 
     ofvs = [
-        m.modelfit_results.ofv if m.modelfit_results is not None else np.nan for m in qss_run_models
+        model_entry.modelfit_results.ofv if model_entry.modelfit_results is not None else np.nan
+        for model_entry in qss_run_entries
     ]
     minindex = ofvs.index(np.nanmin(ofvs))
-    best_qss_model = qss_run_models[minindex]
-    best_qss_model = best_qss_model.replace(parent_model=best_qss_model.name)
+    best_qss_entry = qss_run_entries[minindex]
+    best_qss_entry = ModelEntry.create(
+        best_qss_entry.model, modelfit_results=best_qss_entry.modelfit_results
+    )
 
     models = create_remaining_models(
         model,
-        best_qss_model.modelfit_results.parameter_estimates,
-        best_qss_model.name,
-        len(best_qss_model.statements.ode_system.find_peripheral_compartments()),
+        best_qss_entry.modelfit_results.parameter_estimates,
+        len(best_qss_entry.model.statements.ode_system.find_peripheral_compartments()),
     )
-    wf2 = create_fit_workflow(models)
+    remaining_model_entries = [
+        ModelEntry.create(model, modelfit_results=None, parent=best_qss_entry.model)
+        for model in models
+    ]
+
+    wf2 = create_fit_workflow(remaining_model_entries)
     wb2 = WorkflowBuilder(wf2)
     task_results = Task('results', bundle_results)
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
-    run_models = call_workflow(Workflow(wb2), 'results_remaining', context)
+    run_model_entries = call_workflow(Workflow(wb2), 'results_remaining', context)
 
-    summary_input = summarize_modelfit_results(model.modelfit_results)
+    summary_input = summarize_modelfit_results(results)
     summary_candidates = summarize_modelfit_results(
-        [model.modelfit_results for model in qss_run_models + run_models]
+        [model_entry.modelfit_results for model_entry in qss_run_entries + run_model_entries]
     )
 
     return create_results(
         StructSearchResults,
-        model,
-        best_qss_model,
-        list(run_models),
+        model_entry,
+        best_qss_entry,
+        list(run_model_entries),
         rank_type='bic',
         cutoff=None,
         summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step']),
@@ -149,40 +172,47 @@ def run_tmdd(context, model, extra_model, strictness):
     )
 
 
-def run_pkpd(context, model, search_space, b_init, emax_init, ec50_init, met_init, strictness):
-    baseline_pd_model = create_baseline_pd_model(
-        model, model.modelfit_results.parameter_estimates, b_init
-    )
-    wf = create_fit_workflow(baseline_pd_model)
+def run_pkpd(
+    context, input_model, results, search_space, b_init, emax_init, ec50_init, met_init, strictness
+):
+    model_entry = ModelEntry.create(input_model, modelfit_results=results)
+    baseline_pd_model = create_baseline_pd_model(input_model, results.parameter_estimates, b_init)
+    baseline_pd_model_entry = ModelEntry.create(baseline_pd_model, modelfit_results=None)
+
+    wf = create_fit_workflow(baseline_pd_model_entry)
     wb = WorkflowBuilder(wf)
     task_results = Task('results2', bundle_results)
     wb.add_task(task_results, predecessors=wf.output_tasks)
     pd_baseline_fit = call_workflow(Workflow(wb), 'results_remaining', context)
 
     pkpd_models = create_pkpd_models(
-        model,
+        input_model,
         search_space,
         b_init,
-        model.modelfit_results.parameter_estimates,
+        results.parameter_estimates,
         emax_init,
         ec50_init,
         met_init,
     )
+    pkpd_model_entries = [
+        ModelEntry.create(model, modelfit_results=None, parent=baseline_pd_model)
+        for model in pkpd_models
+    ]
 
-    wf2 = create_fit_workflow(pkpd_models)
+    wf2 = create_fit_workflow(pkpd_model_entries)
     wb2 = WorkflowBuilder(wf2)
     task_results = Task('results2', bundle_results)
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
     pkpd_models_fit = call_workflow(Workflow(wb2), 'results_remaining', context)
 
-    summary_input = summarize_modelfit_results(model.modelfit_results)
+    summary_input = summarize_modelfit_results(results)
     summary_candidates = summarize_modelfit_results(
-        [model.modelfit_results for model in pd_baseline_fit + pkpd_models_fit]
+        [model_entry.modelfit_results for model_entry in pd_baseline_fit + pkpd_models_fit]
     )
 
     return create_results(
         StructSearchResults,
-        model,
+        model_entry,
         pd_baseline_fit[0],
         list(pkpd_models_fit),
         rank_type='bic',

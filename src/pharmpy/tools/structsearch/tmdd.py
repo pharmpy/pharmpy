@@ -62,27 +62,31 @@ def create_qss_models(model, ests, index=1):
         qss_candidate_models = [
             set_initial_estimates(model, {"IIV_R_0": 0.04}) for model in qss_candidate_models
         ]
+    qss_candidate_models = [
+        model.replace(description=f"QSS{i}")
+        for i, model in enumerate(qss_candidate_models, start=index)
+    ]
     return qss_candidate_models
 
 
-def create_remaining_models(model, ests, parent_model, num_peripherals_qss):
+def create_remaining_models(model, ests, num_peripherals_qss):
     # if best qss model has fewer compartments than model, remove one compartment
     num_peripherals_model = len(model.statements.ode_system.find_peripheral_compartments())
     if num_peripherals_qss < num_peripherals_model:
         model = remove_peripheral_compartment(model)
 
     models = (
-        create_full_models(model, ests, parent_model)
-        + create_cr_models(model, ests, parent_model)
-        + create_ib_models(model, ests, parent_model)
-        + create_crib_models(model, ests, parent_model)
-        + create_wagner_model(model, ests, parent_model)
-        + create_mmapp_model(model, ests, parent_model)
+        create_full_models(model, ests)
+        + create_cr_models(model, ests)
+        + create_ib_models(model, ests)
+        + create_crib_models(model, ests)
+        + create_wagner_model(model, ests)
+        + create_mmapp_model(model, ests)
     )
     return models
 
 
-def create_cr_models(model, ests, parent_model):
+def create_cr_models(model, ests):
     # Create cr models with different initial estimates from basic pk model and best qss ests
     cr_base_model = set_tmdd(model, type="CR")
     cr_base_model = set_initial_estimates(
@@ -90,17 +94,17 @@ def create_cr_models(model, ests, parent_model):
         {"POP_KINT": ests['POP_KINT'], "POP_R_0": ests['POP_R_0'], "IIV_R_0": ests['IIV_R_0']},
     )
     cr1 = set_name(cr_base_model, "structsearch_run5")
-    cr1 = cr1.replace(description="CR1", parent_model=parent_model)
+    cr1 = cr1.replace(description="CR1")
     cr1 = set_initial_estimates(cr1, ests)
     cr1 = set_initial_estimates(cr1, {"POP_KOFF": 0.5623, "POP_KON": 0.5623 / ests['POP_KDC']})
     cr2 = set_name(cr_base_model, "structsearch_run6")
-    cr2 = cr2.replace(description="CR2", parent_model=parent_model)
+    cr2 = cr2.replace(description="CR2")
     cr2 = set_initial_estimates(cr2, ests)
     cr2 = set_initial_estimates(cr2, {"POP_KOFF": 17.78, "POP_KON": 17.78 / ests['POP_KDC']})
     return [cr1, cr2]
 
 
-def create_ib_models(model, ests, parent_model):
+def create_ib_models(model, ests):
     # Create ib models with different initial estimates from basic pk model and best qss ests
     ib_base_model = set_tmdd(model, type="IB")
     ib_base_model = set_initial_estimates(
@@ -113,17 +117,17 @@ def create_ib_models(model, ests, parent_model):
         },
     )
     ib1 = set_name(ib_base_model, "structsearch_run7")
-    ib1 = ib1.replace(description="IB1", parent_model=parent_model)
+    ib1 = ib1.replace(description="IB1")
     ib1 = set_initial_estimates(ib1, ests)
     ib1 = set_initial_estimates(ib1, {"POP_KON": 0.5623 / ests['POP_KDC']})
     ib2 = set_name(ib_base_model, "structsearch_run8")
-    ib2 = ib2.replace(description="IB2", parent_model=parent_model)
+    ib2 = ib2.replace(description="IB2")
     ib2 = set_initial_estimates(ib2, ests)
     ib2 = set_initial_estimates(ib2, {"POP_KON": 17.78 / ests['POP_KDC']})
     return [ib1, ib2]
 
 
-def create_crib_models(model, ests, parent_model):
+def create_crib_models(model, ests):
     # Create crib models with different initial estimates from basic pk model and best qss ests
     crib_base_model = set_tmdd(model, type="CRIB")
     crib_base_model = set_initial_estimates(
@@ -136,17 +140,17 @@ def create_crib_models(model, ests, parent_model):
         },
     )
     crib1 = set_name(crib_base_model, "structsearch_run9")
-    crib1 = crib1.replace(description="CR+IB1", parent_model=parent_model)
+    crib1 = crib1.replace(description="CR+IB1")
     crib1 = set_initial_estimates(crib1, ests)
     crib1 = set_initial_estimates(crib1, {"POP_KON": 0.5623 / ests['POP_KDC']})
     crib2 = set_name(crib_base_model, "structsearch_run10")
-    crib2 = crib2.replace(description="CR+IB2", parent_model=parent_model)
+    crib2 = crib2.replace(description="CR+IB2")
     crib2 = set_initial_estimates(crib2, ests)
     crib2 = set_initial_estimates(crib2, {"POP_KON": 17.78 / ests['POP_KDC']})
     return [crib1, crib2]
 
 
-def create_full_models(model, ests, parent_model):
+def create_full_models(model, ests):
     # Create full models with different initial estimates from basic pk model and best qss ests
     full_base_model = set_tmdd(model, type="FULL")
     full_base_model = set_initial_estimates(full_base_model, ests)
@@ -169,18 +173,14 @@ def create_full_models(model, ests, parent_model):
         for model in candidates
     ]
     candidates = [set_name(model, f"structsearch_run{i}") for i, model in enumerate(candidates, 1)]
-    candidates = [
-        m.replace(parent_model=parent_model, description=f"FULL{i}")
-        for i, m in enumerate(candidates, 1)
-    ]
+    candidates = [m.replace(description=f"FULL{i}") for i, m in enumerate(candidates, 1)]
     return candidates
 
 
-def create_wagner_model(model, ests, parent_model):
+def create_wagner_model(model, ests):
     wagner = set_tmdd(model, type="WAGNER")
     wagner = set_name(wagner, "structsearch_run11")
-    wagner = wagner.replace(description="WAGNER", parent_model=parent_model)
-    wagner = set_initial_estimates(wagner, ests)
+    wagner = wagner.replace(description="WAGNER")
     wagner = set_initial_estimates(
         wagner,
         {
@@ -193,11 +193,10 @@ def create_wagner_model(model, ests, parent_model):
     return [wagner]
 
 
-def create_mmapp_model(model, ests, parent_model):
+def create_mmapp_model(model, ests):
     mmapp = set_tmdd(model, type="MMAPP")
     mmapp = set_name(mmapp, "structsearch_run12")
-    mmapp = mmapp.replace(description="MMAPP", parent_model=parent_model)
-    mmapp = set_initial_estimates(mmapp, ests)
+    mmapp = mmapp.replace(description="MMAPP")
     mmapp = set_initial_estimates(
         mmapp,
         {

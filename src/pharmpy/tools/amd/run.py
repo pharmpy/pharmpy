@@ -486,6 +486,7 @@ def _subfunc_structsearch(path, **kwargs) -> SubFunc:
         res = run_tool(
             'structsearch',
             model=model,
+            results=model.modelfit_results,
             **kwargs,
             path=path / 'structsearch',
         )
@@ -523,6 +524,7 @@ def _subfunc_structsearch_tmdd(search_space, type, strictness, path) -> SubFunc:
                     final_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
 
         extra_model = None
+        extra_model_results = None
         n_peripherals = len(final_model.statements.ode_system.find_peripheral_compartments())
         modelfeatures = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
         # Model features - 1 peripheral compartment
@@ -542,12 +544,15 @@ def _subfunc_structsearch_tmdd(search_space, type, strictness, path) -> SubFunc:
                 rank_filtered = rank_filtered.sort_values(by=['rank'])
                 highest_ranked = rank_filtered.index[0]
                 extra_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
+                extra_model_results = extra_model.modelfit_results
 
         res = run_tool(
             'structsearch',
             type=type,
             model=final_model,
+            results=final_model.modelfit_results,
             extra_model=extra_model,
+            extra_model_results=extra_model_results,
             strictness=strictness,
             path=path / 'structsearch',
         )
