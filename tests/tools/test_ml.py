@@ -12,7 +12,7 @@ from pharmpy.tools import (
 tflite_condition = (
     sys.version_info >= (3, 10)
     and sys.platform != 'linux'
-    or sys.version_info >= (3, 11)
+    or sys.version_info >= (3, 12)
     and sys.platform == 'linux'
 )
 
