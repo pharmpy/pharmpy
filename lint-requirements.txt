@@ -39,7 +39,7 @@ pyproject_hooks==1.0.0
 requests==2.31.0
 requests-toolbelt==1.0.0
 rfc3986==2.0.0
-rich==13.6.0
+rich==13.7.0
 SecretStorage==3.3.3
 tomli==2.0.1
 typing-extensions==4.8.0
