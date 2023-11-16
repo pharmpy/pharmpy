@@ -12,7 +12,7 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
-from ..mfl.filter import modelsearch_statement_types
+from ..mfl.filter import MODELSEARCH_STATEMENT_TYPES
 from ..mfl.parse import parse as mfl_parse
 
 
@@ -319,7 +319,7 @@ def validate_input(
         raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
 
     bad_statements = list(
-        filter(lambda statement: not isinstance(statement, modelsearch_statement_types), statements)
+        filter(lambda statement: not isinstance(statement, MODELSEARCH_STATEMENT_TYPES), statements)
     )
 
     if bad_statements:

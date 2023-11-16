@@ -16,9 +16,9 @@ from pharmpy.tools.allometry.tool import validate_allometric_variable
 from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
 from pharmpy.tools.mfl.feature.covariate import spec as covariate_spec
 from pharmpy.tools.mfl.filter import (
-    covsearch_statement_types,
-    modelsearch_statement_types,
-    structsearch_statement_types,
+    COVSEARCH_STATEMENT_TYPES,
+    STRUCTSEARCH_STATEMENT_TYPES,
+    mfl_filtering,
 )
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.mfl.parse import parse as mfl_parse
@@ -144,7 +144,7 @@ def run_amd(
 
         structsearch_features = tuple(
             filter(
-                lambda statement: isinstance(statement, structsearch_statement_types),
+                lambda statement: isinstance(statement, STRUCTSEARCH_STATEMENT_TYPES),
                 input_search_space_features,
             )
         )
@@ -232,7 +232,7 @@ def run_amd(
 
     covsearch_features = tuple(
         filter(
-            lambda statement: isinstance(statement, covsearch_statement_types),
+            lambda statement: isinstance(statement, COVSEARCH_STATEMENT_TYPES),
             input_search_space_features,
         )
     )

@@ -28,7 +28,7 @@ from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_d
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
-from ..mfl.filter import covsearch_statement_types
+from ..mfl.filter import COVSEARCH_STATEMENT_TYPES
 from ..mfl.parse import ModelFeatures, get_model_features
 from .results import COVSearchResults
 
@@ -662,7 +662,7 @@ def validate_input(effects, p_forward, p_backward, algorithm, model, strictness)
 
         bad_statements = list(
             filter(
-                lambda statement: not isinstance(statement, covsearch_statement_types),
+                lambda statement: not isinstance(statement, COVSEARCH_STATEMENT_TYPES),
                 statements,
             )
         )

@@ -12,30 +12,30 @@ from pharmpy.tools.mfl.statement.feature.transits import Transits
 
 from .statement.feature.symbols import Name
 
-modelsearch_statement_types = (
+MODELSEARCH_STATEMENT_TYPES = (
     Absorption,
     Elimination,
     LagTime,
     Transits,
 )
 
-covsearch_statement_types = (
+COVSEARCH_STATEMENT_TYPES = (
     Let,
     Covariate,
 )
 
 
-structsearch_statement_types = (DirectEffect, EffectComp, IndirectEffect, Metabolite)
+STRUCTSEARCH_STATEMENT_TYPES = (DirectEffect, EffectComp, IndirectEffect, Metabolite)
 
 
 def mfl_filtering(statements, tool_name):
     assert tool_name in ["structsearch", "modelsearch"]
 
     if tool_name == "modelsearch":
-        statement_types = modelsearch_statement_types
+        statement_types = MODELSEARCH_STATEMENT_TYPES
         peripheral_name = Name('DRUG')
     elif tool_name == "structsearch":
-        statement_types = structsearch_statement_types
+        statement_types = STRUCTSEARCH_STATEMENT_TYPES
         peripheral_name = Name('MET')
 
     filtered_statements = []
