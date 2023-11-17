@@ -9,7 +9,12 @@ from pharmpy.tools import (
     predict_outliers,
 )
 
-tflite_condition = sys.version_info >= (3, 10) and sys.platform != 'linux'
+tflite_condition = (
+    sys.version_info >= (3, 10)
+    and sys.platform == 'win32'
+    or sys.version_info >= (3, 11)
+    and sys.platform == 'darwin'
+)
 
 
 @pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.10")
