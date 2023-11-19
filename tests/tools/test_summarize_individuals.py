@@ -38,7 +38,7 @@ def test_summarize_individuals_count_table():
 
 
 tflite_condition = (
-    sys.version_info >= (3, 10)
+    sys.version_info >= (3, 11)
     and sys.platform == 'win32'
     or sys.version_info >= (3, 12)
     and sys.platform == 'darwin'
