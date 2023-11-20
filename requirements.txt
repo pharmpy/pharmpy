@@ -75,7 +75,7 @@ referencing==0.31.0
 requests==2.31.0
 rich==13.7.0
 rpds-py==0.13.0
-scipy==1.11.3
+scipy==1.11.4
 six==1.16.0
 snowballstemmer==2.2.0
 sortedcontainers==2.4.0
