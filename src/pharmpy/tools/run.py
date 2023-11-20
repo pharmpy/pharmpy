@@ -994,13 +994,13 @@ def is_strictness_fulfilled(
                 grd = res.gradients
                 final_zero_gradient_theta = (  # noqa
                     grd[grd.index.isin(get_thetas(model).names)] == 0
-                ).any()
+                ).any() or grd[grd.index.isin(get_thetas(model).names)].isnull().any()
                 final_zero_gradient_omega = (  # noqa
                     grd[grd.index.isin(get_omegas(model).names)] == 0
-                ).any()
+                ).any() or grd[grd.index.isin(get_thetas(model).names)].isnull().any()
                 final_zero_gradient_sigma = (  # noqa
                     grd[grd.index.isin(get_sigmas(model).names)] == 0
-                ).any()
+                ).any() or grd[grd.index.isin(get_thetas(model).names)].isnull().any()
             if (
                 'estimate_near_boundary' in args_in_statement
                 or 'estimate_near_boundary_theta' in args_in_statement
