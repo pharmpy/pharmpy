@@ -10,7 +10,7 @@ readme-renderer==42.0
 twine==4.0.2 
 # Indirect dependencies
 build==1.0.3
-certifi==2023.7.22
+certifi==2023.11.17
 cffi==1.16.0
 charset-normalizer==3.3.2
 click==8.1.7
