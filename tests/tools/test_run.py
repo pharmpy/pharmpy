@@ -10,7 +10,7 @@ import pytest
 import pharmpy
 from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.modeling import add_iiv
+from pharmpy.modeling import add_iiv, load_example_model, read_model, set_lower_bounds
 from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_common,
     _create_metadata_tool,
@@ -519,11 +519,6 @@ def test_load_example_modelfit_results():
             True,
         ),
         (
-            'nonmem/modelfit_results/onePROB/oneEST/noSIM/maxeval3.mod',
-            'rse < 30 and condition_number < 1000',
-            False,
-        ),
-        (
             'nonmem/pheno.mod',
             'minimization_successful and sigdigs > 0 and rse<2',
             False,
@@ -539,20 +534,50 @@ def test_load_example_modelfit_results():
             False,
         ),
         (
-            'nonmem/modelfit_results/onePROB/oneEST/noSIM/near_bounds.mod',
-            'estimate_near_boundary',
-            True,
+            'nonmem/pheno.mod',
+            'final_zero_gradient_theta',
+            False,
+        ),
+        (
+            'nonmem/pheno.mod',
+            'final_zero_gradient_omega',
+            False,
+        ),
+        (
+            'nonmem/pheno.mod',
+            'final_zero_gradient_sigma',
+            False,
         ),
     ],
 )
 def test_strictness(testdata, path, statement, expected):
     res = read_modelfit_results(testdata / path)
-    assert is_strictness_fulfilled(res, statement) == expected
+    model = read_model(testdata / path)
+    assert is_strictness_fulfilled(res, model, statement) == expected
 
 
 def test_strictness_unallowed_operators(testdata):
     res = read_modelfit_results(testdata / 'nonmem/pheno.mod')
+    model = read_model(testdata / 'nonmem/pheno.mod')
     with pytest.raises(ValueError, match=r"Unallowed operators found: &"):
-        is_strictness_fulfilled(res, 'minimization_successful & rounding_errors')
+        is_strictness_fulfilled(res, model, 'minimization_successful & rounding_errors')
     with pytest.raises(ValueError, match=r"Unallowed operators found: &, |"):
-        is_strictness_fulfilled(res, 'minimization_successful & (rounding_errors | sigdigs>3)')
+        is_strictness_fulfilled(
+            res, model, 'minimization_successful & (rounding_errors | sigdigs>3)'
+        )
+
+
+def test_strictness_parameters(testdata):
+    res = load_example_modelfit_results('pheno')
+    model = load_example_model("pheno")
+    assert not is_strictness_fulfilled(res, model, 'rse_theta < 0.3')
+    assert is_strictness_fulfilled(res, model, 'rse_theta < 0.55')
+    assert not is_strictness_fulfilled(res, model, 'rse_omega < 0.3')
+    assert is_strictness_fulfilled(res, model, 'rse_omega < 0.5')
+    assert is_strictness_fulfilled(res, model, 'rse_sigma < 0.2')
+
+    res = read_modelfit_results(testdata / 'nonmem/pheno.mod')
+    model = read_model(testdata / 'nonmem/pheno.mod')
+    assert not is_strictness_fulfilled(res, model, 'estimate_near_boundary_theta')
+    model = set_lower_bounds(model, {'TVCL': 0.0058})
+    assert is_strictness_fulfilled(res, model, 'estimate_near_boundary_theta')
