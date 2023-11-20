@@ -14,7 +14,7 @@ from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import is_strictness_fulfilled, summarize_modelfit_results
-from pharmpy.tools.common import create_results, update_initial_estimates
+from pharmpy.tools.common import _model_entry_to_model, create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import EffectLiteral, InputSpec, all_covariate_effects
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
@@ -22,7 +22,7 @@ from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.mfl.statement.feature.symbols import Wildcard
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
 from ..mfl.filter import COVSEARCH_STATEMENT_TYPES
@@ -82,14 +82,14 @@ def _added_effects(steps: Tuple[Step, ...]) -> Iterable[Effect]:
 
 @dataclass
 class Candidate:
-    model: Model
+    modelentry: ModelEntry
     steps: Tuple[Step, ...]
 
 
 @dataclass
 class SearchState:
-    user_input_model: Model
-    start_model: Model
+    user_input_modelentry: ModelEntry
+    start_modelentry: ModelEntry
     best_candidate_so_far: Candidate
     all_candidates_so_far: List[Candidate]
 
@@ -146,8 +146,10 @@ def create_workflow(
 
     wb = WorkflowBuilder(name=NAME_WF)
 
-    init_task = init(effects, model)
-    wb.add_task(init_task)
+    # FIXME : Handle when model is None
+    start_task = Task("create_modelentry", _start, model, results)
+    init_task = Task("init", _init_search_state, effects)
+    wb.add_task(init_task, predecessors=start_task)
 
     forward_search_task = Task(
         'forward-search',
@@ -185,23 +187,23 @@ def create_workflow(
     return Workflow(wb)
 
 
-def _init_search_state(context, effects: str, model: Model) -> SearchState:
+def _start(model, results):
+    return ModelEntry.create(model=model, parent=None, modelfit_results=results)
+
+
+def _init_search_state(context, effects: str, modelentry: ModelEntry) -> SearchState:
+    model = modelentry.model
     effect_funcs, filtered_model = filter_search_space_and_model(effects, model)
-    if filtered_model.description != model.description:
+    if filtered_model != model:
         filtered_fit_wf = create_fit_workflow(models=[filtered_model])
         filtered_model = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
+        filtered_modelentry = ModelEntry.create(
+            model=filtered_model, parent=None, modelfit_results=filtered_model.modelfit_results
+        )
     else:
-        filtered_model = model
-    candidate = Candidate(filtered_model, ())
-    return (effect_funcs, SearchState(model, filtered_model, candidate, [candidate]))
-
-
-def init(effects, model: Union[Model, None]):
-    return (
-        Task('init', _init_search_state, effects)
-        if model is None
-        else Task('init', _init_search_state, effects, model)
-    )
+        filtered_modelentry = modelentry
+    candidate = Candidate(filtered_modelentry, ())
+    return (effect_funcs, SearchState(modelentry, filtered_modelentry, candidate, [candidate]))
 
 
 def filter_search_space_and_model(effects, model):
@@ -315,11 +317,13 @@ def task_greedy_forward_search(
         candidate_effect_funcs: dict,
         index_offset: int,
     ):
-        wf = wf_effects_addition(parent.model, parent, candidate_effect_funcs, index_offset)
-        new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_addition-{step}', context)
+        wf = wf_effects_addition(parent.modelentry, parent, candidate_effect_funcs, index_offset)
+        new_candidate_modelentries = call_workflow(
+            wf, f'{NAME_WF}-effects_addition-{step}', context
+        )
         return [
-            Candidate(model, parent.steps + (ForwardStep(p_forward, AddEffect(*effect)),))
-            for model, effect in zip(new_candidate_models, candidate_effect_funcs.keys())
+            Candidate(modelentry, parent.steps + (ForwardStep(p_forward, AddEffect(*effect)),))
+            for modelentry, effect in zip(new_candidate_modelentries, candidate_effect_funcs.keys())
         ]
 
     return _greedy_search(
@@ -346,19 +350,19 @@ def task_greedy_backward_search(
         index_offset: int,
     ):
         wf = wf_effects_removal(parent, candidate_effect_funcs, index_offset)
-        new_candidate_models = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}', context)
+        new_candidate_modelentries = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}', context)
 
         return [
-            Candidate(model, parent.steps + (BackwardStep(p_backward, RemoveEffect(*effect)),))
-            for model, effect in zip(new_candidate_models, candidate_effect_funcs.keys())
+            Candidate(modelentry, parent.steps + (BackwardStep(p_backward, RemoveEffect(*effect)),))
+            for modelentry, effect in zip(new_candidate_modelentries, candidate_effect_funcs.keys())
         ]
 
     optional_effects = list(map(astuple, _added_effects(state.best_candidate_so_far.steps)))
     candidate_effect_funcs = dict(
         covariate_features(
-            state.best_candidate_so_far.model,
+            state.best_candidate_so_far.modelentry.model,
             ModelFeatures.create_from_mfl_string(
-                get_model_features(state.best_candidate_so_far.model)
+                get_model_features(state.best_candidate_so_far.modelentry.model)
             ).covariate,
             remove=True,
         )
@@ -404,27 +408,31 @@ def _greedy_search(
         )
 
         all_candidates_so_far.extend(new_candidates)
-        new_candidate_models = list(map(lambda candidate: candidate.model, new_candidates))
+        new_candidate_modelentries = list(
+            map(lambda candidate: candidate.modelentry, new_candidates)
+        )
 
-        parent = best_candidate_so_far.model
+        parent = best_candidate_so_far.modelentry
         ofvs = [
             np.nan
-            if (mfr := model.modelfit_results) is None
-            or not is_strictness_fulfilled(mfr, model, strictness)
+            if (mfr := modelentry.modelfit_results) is None
+            or not is_strictness_fulfilled(mfr, strictness)
             else mfr.ofv
-            for model in new_candidate_models
+            for modelentry in new_candidate_modelentries
         ]
         # NOTE: We assume parent.modelfit_results is not None
         assert parent.modelfit_results is not None
         best_model_so_far = lrt_best_of_many(
-            parent, new_candidate_models, parent.modelfit_results.ofv, ofvs, alpha
+            parent, new_candidate_modelentries, parent.modelfit_results.ofv, ofvs, alpha
         )
 
         if best_model_so_far is parent:
             break
 
         best_candidate_so_far = next(
-            filter(lambda candidate: candidate.model is best_model_so_far, all_candidates_so_far)
+            filter(
+                lambda candidate: candidate.modelentry is best_model_so_far, all_candidates_so_far
+            )
         )
 
         # NOTE: Filter out incompatible effects
@@ -438,15 +446,15 @@ def _greedy_search(
         }
 
     return SearchState(
-        state.user_input_model,
-        state.start_model,
+        state.user_input_modelentry,
+        state.start_modelentry,
         best_candidate_so_far,
         all_candidates_so_far,
     )
 
 
 def wf_effects_addition(
-    model: Model,
+    modelentry: ModelEntry,
     candidate: Candidate,
     candidate_effect_funcs: dict,
     index_offset: int,
@@ -457,7 +465,7 @@ def wf_effects_addition(
         task = Task(
             repr(effect[0]),
             task_add_covariate_effect,
-            model,
+            modelentry,
             candidate,
             effect,
             index_offset + i,
@@ -472,16 +480,19 @@ def wf_effects_addition(
     return Workflow(wb)
 
 
-def task_add_covariate_effect(model: Model, candidate: Candidate, effect: dict, effect_index: int):
+def task_add_covariate_effect(
+    modelentry: ModelEntry, candidate: Candidate, effect: dict, effect_index: int
+):
+    model = modelentry.model
     name = f'covsearch_run{effect_index}'
     description = _create_description(effect[0], candidate.steps)
-    model_with_added_effect = model.replace(
-        name=name, description=description, parent_model=candidate.model.name
-    )
+    model_with_added_effect = model.replace(name=name, description=description)
     model_with_added_effect = update_initial_estimates(model_with_added_effect)
     func = effect[1]
     model_with_added_effect = func(model_with_added_effect, allow_nested=True)
-    return model_with_added_effect
+    return ModelEntry.create(
+        model=model_with_added_effect, parent=candidate.modelentry.model, modelfit_results=None
+    )
 
 
 def _create_description(effect_new: dict, steps_prev: Tuple[Step, ...], forward: bool = True):
@@ -536,7 +547,7 @@ def wf_effects_removal(
 
 
 def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_index: int):
-    model = candidate.model
+    model = candidate.modelentry.model
     name = f'covsearch_run{effect_index}'
     description = _create_description(effect[0], candidate.steps, forward=False)
     model_with_removed_effect = model.replace(
@@ -547,32 +558,39 @@ def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_inde
     model_with_removed_effect = func(model_with_removed_effect)
 
     model_with_removed_effect = update_initial_estimates(model_with_removed_effect)
-    return model_with_removed_effect
+    return ModelEntry.create(
+        model=model_with_removed_effect, parent=candidate.modelentry.model, modelfit_results=None
+    )
 
 
 def task_results(p_forward: float, p_backward: float, strictness: str, state: SearchState):
     candidates = state.all_candidates_so_far
-    models = list(map(lambda candidate: candidate.model, candidates))
-    base_model, *res_models = models
-    assert base_model is state.start_model
-    best_model = state.best_candidate_so_far.model
-    user_input_model = state.user_input_model
-    if user_input_model != base_model:
-        models = [user_input_model] + models
+    modelentries = list(map(lambda candidate: candidate.modelentry, candidates))
+    base_modelentry, *res_modelentries = modelentries
+    assert base_modelentry is state.start_modelentry
+    best_modelentry = state.best_candidate_so_far.modelentry
+    user_input_modelentry = state.user_input_modelentry
+    if user_input_modelentry != base_modelentry:
+        modelentries = [user_input_modelentry] + modelentries
 
     res = create_results(
-        COVSearchResults, base_model, base_model, res_models, 'lrt', (p_forward, p_backward)
+        COVSearchResults,
+        base_modelentry,
+        base_modelentry,
+        res_modelentries,
+        'lrt',
+        (p_forward, p_backward),
     )
 
-    steps = _make_df_steps(best_model, candidates)
+    steps = _make_df_steps(best_modelentry, candidates)
     res = replace(
         res,
-        final_model=best_model,
+        final_model=best_modelentry.model,
         steps=steps,
         candidate_summary=candidate_summary_dataframe(steps),
         ofv_summary=ofv_summary_dataframe(steps, final_included=True, iterations=True),
         summary_tool=_modify_summary_tool(res.summary_tool, steps),
-        summary_models=_summarize_models(models, steps),
+        summary_models=_summarize_models(modelentries, steps),
     )
 
     return res
@@ -589,16 +607,24 @@ def _modify_summary_tool(summary_tool, steps):
     return summary_tool_new.drop(['rank'], axis=1)
 
 
-def _summarize_models(models, steps):
-    summary_models = summarize_modelfit_results([model.modelfit_results for model in models])
+def _summarize_models(modelentries, steps):
+    summary_models = summarize_modelfit_results(
+        [modelentry.modelfit_results for modelentry in modelentries]
+    )
     summary_models['step'] = steps.reset_index().set_index(['model'])['step']
 
     return summary_models.reset_index().set_index(['step', 'model'])
 
 
-def _make_df_steps(best_model: Model, candidates: List[Candidate]):
-    models_dict = {candidate.model.name: candidate.model for candidate in candidates}
-    children_count = Counter(candidate.model.parent_model for candidate in candidates)
+def _make_df_steps(best_modelentry: ModelEntry, candidates: List[Candidate]):
+    best_model = _model_entry_to_model(best_modelentry)
+    models_dict = {
+        candidate.modelentry.model.name: _model_entry_to_model(candidate.modelentry)
+        for candidate in candidates
+    }
+    children_count = Counter(
+        candidate.modelentry.parent.name for candidate in candidates if candidate.modelentry.parent
+    )
 
     # Find if longest forward is also the input for the backwards search
     # otherwise add an index offset to _make_df_steps_function
@@ -611,7 +637,8 @@ def _make_df_steps(best_model: Model, candidates: List[Candidate]):
     ]
     index_offset = 0
     if not any(
-        children_count[c.model.name] >= 1 or c.model is best_model
+        children_count[c.modelentry.model.name] >= 1
+        or _model_entry_to_model(c.modelentry) is best_model
         for c in largest_forward_candidates
     ):
         index_offset = 1
@@ -636,7 +663,7 @@ def _make_df_steps_row(
     candidate: Candidate,
     index_offset=0,
 ):
-    model = candidate.model
+    model = _model_entry_to_model(candidate.modelentry)
     parent_model = models_dict[model.parent_model]
     if candidate.steps:
         last_step = candidate.steps[-1]
@@ -650,7 +677,7 @@ def _make_df_steps_row(
             alpha = last_step.alpha
             extended_significant = lrt_test(
                 parent_model,
-                candidate.model,
+                model,
                 reduced_ofv,
                 extended_ofv,
                 alpha,
@@ -660,7 +687,7 @@ def _make_df_steps_row(
             reduced_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
             alpha = last_step.alpha
             extended_significant = lrt_test(
-                candidate.model,
+                model,
                 parent_model,
                 reduced_ofv,
                 extended_ofv,
@@ -675,7 +702,7 @@ def _make_df_steps_row(
         ofv_drop = reduced_ofv - extended_ofv
         alpha, extended_significant = np.nan, np.nan
 
-    selected = children_count[candidate.model.name] >= 1 or candidate.model is best_model
+    selected = children_count[model.name] >= 1 or model.name == best_model.name
     if not is_backward:
         p_value = lrt_p_value(parent_model, model, reduced_ofv, extended_ofv)
         assert not selected or (model is parent_model) or extended_significant
