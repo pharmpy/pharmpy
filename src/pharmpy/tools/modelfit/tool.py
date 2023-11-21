@@ -60,7 +60,7 @@ def create_fit_workflow(models=None, n=None, tool=None):
             for i in range(n):
                 task = Task(f'run{i}', execute_model)
                 wb.add_task(task)
-    elif isinstance(models, Model):
+    elif isinstance(models, Model) or isinstance(models, ModelEntry):
         task = Task('run', execute_model, models)
         wb.add_task(task)
     else:
