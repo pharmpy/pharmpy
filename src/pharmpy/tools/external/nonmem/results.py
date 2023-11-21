@@ -461,7 +461,7 @@ def _parse_grd(
     last_row = gradients_table.tail(1)
     last_row = last_row.drop(columns=['ITERATION'])
     last_row = last_row.squeeze(axis=0).rename('gradients')
-    final_zero_gradient = (last_row == 0).any()
+    final_zero_gradient = (last_row == 0).any() or last_row.isnull().any()
     return gradients_table, final_zero_gradient, last_row
 
 
