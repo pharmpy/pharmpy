@@ -43,5 +43,5 @@ def mfl_filtering(statements, tool_name):
         if isinstance(statement, statement_types):
             filtered_statements.append(statement)
         elif isinstance(statement, Peripherals) and peripheral_name in statement.modes:
-            filtered_statements.append(Peripherals(statement.counts, peripheral_name))
+            filtered_statements.append(Peripherals(statement.counts, (peripheral_name,)))
     return tuple(filtered_statements)
