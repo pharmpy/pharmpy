@@ -234,6 +234,9 @@ def _is_allowed(feat_current, func_current, feat_previous, mfl_funcs):
         ]
         allowed_p = _is_allowed_peripheral(func_current, peripheral_previous, mfl_funcs)
         return allowed_p
+    # Equivalent to changing the absorption rate model to instantaneous absorption
+    if feat_current == ('TRANSITS', 0, 'NODEPOT'):
+        return False
     # Check if any functions of the same type has been used
     if any(mfl_funcs[feat] in func_type for feat in feat_previous):
         return False
@@ -242,6 +245,14 @@ def _is_allowed(feat_current, func_current, feat_previous, mfl_funcs):
         return True
     # Combinations to skip
     not_supported_combo = [
+        (
+            ('ABSORPTION', 'FO'),
+            (
+                'TRANSITS',
+                1,
+                'DEPOT',
+            ),
+        ),
         (('ABSORPTION', 'ZO'), ('TRANSITS',)),
         (('ABSORPTION', 'SEQ-ZO-FO'), ('TRANSITS',)),
         (('ABSORPTION', 'SEQ-ZO-FO'), ('LAGTIME', 'ON')),
