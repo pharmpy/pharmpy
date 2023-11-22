@@ -9,9 +9,7 @@ import warnings
 from itertools import repeat
 from pathlib import Path
 
-from pharmpy.model import EstimationSteps
 from pharmpy.model.external.nonmem import convert_model
-from pharmpy.model.external.nonmem.records.factory import create_record
 from pharmpy.modeling import write_csv, write_model
 from pharmpy.tools.external.nonmem import conf, parse_modelfit_results
 from pharmpy.workflows import ModelEntry
@@ -202,29 +200,3 @@ def nmfe(*args):
         *args,
         *conf_args,
     ]
-
-
-def evaluate_design(context, model):
-    # Prepare and run model for design evaluation
-    model = model.replace(estimation_steps=EstimationSteps(), name='_design_model')
-    stream = model.internals.control_stream
-    estrecs = stream.get_records('ESTIMATION')
-    stream = stream.remove_records(estrecs)
-
-    design_code = '$DESIGN APPROX=FOCEI MODE=1 NELDER FIMDIAG=0 DATASIM=1 GROUPSIZE=32 OFVTYPE=0'
-    design_record = create_record(design_code)
-    stream = stream.insert_record(design_record)
-    internals = model.internals.replace(control_stream=stream)
-    model = model.replace(internals=internals)
-
-    model = execute_model(model, context)
-
-    from pharmpy.tools.evaldesign import EvalDesignResults
-
-    mfr = model.modelfit_results
-    res = EvalDesignResults(
-        ofv=mfr.ofv,
-        individual_ofv=mfr.individual_ofv,
-        information_matrix=mfr.precision_matrix,
-    )
-    return res
