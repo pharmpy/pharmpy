@@ -239,7 +239,10 @@ MFL support the following model features:
 | ELIMINATION   | :code:`FO, ZO, MM, MIX-FO-MM`  | Elimination rate (first order, zero order, Michaelis-Menten,       |
 |               |                                | mixed first order Michaelis-Menten)                                |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| PERIPHERALS   | `number`                       | Number of peripheral compartments                                  |
+| PERIPHERALS   | `number`, DRUG/MET             | Number of peripheral compartments. If the peripherals compartment  |
+|               |                                | should be added for the drug compartment (default) or to the       |
+|               |                                | metabolite compartment (if any). Only applicable to drug_metabolite|
+|               |                                | models.                                                            |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | TRANSITS      | `number`, DEPOT/NODEPOT        | Number of absorption transit compartments. Whether convert depot   |
 |               |                                | compartment into a transit compartment                             |

@@ -14,17 +14,15 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
-from .drugmetabolite import create_base_metabolite, create_drug_metabolite_models
+from .drugmetabolite import create_drug_metabolite_models
 from .pkpd import create_baseline_pd_model, create_pkpd_models
 from .tmdd import create_qss_models, create_remaining_models
 
 TYPES = frozenset(('pkpd', 'drug_metabolite', 'tmdd'))
-routes = frozenset(('iv', 'oral', 'ivoral'))
 
 
 def create_workflow(
     type: str,
-    route: str = 'oral',
     search_space: Optional[str] = None,
     b_init: Optional[Union[int, float]] = None,
     emax_init: Optional[Union[int, float]] = None,
@@ -42,8 +40,6 @@ def create_workflow(
     ----------
     type : str
         Type of model. Currently only 'drug_metabolite' and 'pkpd'
-    route : str
-        Type of administration. Currently 'oral', 'iv' and 'ivoral'
     search_space : str
         Search space to test
     b_init: float
@@ -98,7 +94,9 @@ def create_workflow(
             strictness,
         )
     elif type == 'drug_metabolite':
-        start_task = Task('run_drug_metabolite', run_drug_metabolite, model, route, strictness)
+        start_task = Task(
+            'run_drug_metabolite', run_drug_metabolite, model, search_space, results, strictness
+        )
     wb.add_task(start_task)
     return Workflow(wb)
 
@@ -222,42 +220,83 @@ def run_pkpd(
     )
 
 
-def run_drug_metabolite(context, model, route, strictness):
-    model = update_initial_estimates(model)
-    base_drug_metabolite = create_base_metabolite(model)
-    candidate_drug_metabolite = create_drug_metabolite_models(model, route)
-
-    # Run workflow for base model
-    wf = create_fit_workflow(base_drug_metabolite)
-    wb = WorkflowBuilder(wf)
-    task_results = Task('results', bundle_results)
-    wb.add_task(task_results, predecessors=wf.output_tasks)
-    base_drug_metabolite_fit = call_workflow(wb, 'results_remaining', context)
-
-    # Run workflow for candidate models
-    wf = create_fit_workflow(candidate_drug_metabolite)
-    wb = WorkflowBuilder(wf)
-    task_results = Task('results', bundle_results)
-    wb.add_task(task_results, predecessors=wf.output_tasks)
-    drug_metabolite_models_fit = call_workflow(wb, 'results_remaining', context)
-
-    summary_input = summarize_modelfit_results(model.modelfit_results)
-    summary_candidates = summarize_modelfit_results(
-        [model.modelfit_results for model in base_drug_metabolite_fit + drug_metabolite_models_fit]
+def run_drug_metabolite(context, model, search_space, results, strictness):
+    model = update_initial_estimates(model, results)
+    wb, candidate_model_tasks, base_model_description = create_drug_metabolite_models(
+        model, results, search_space
     )
+
+    task_results = Task(
+        'Results',
+        post_process_drug_metabolite,
+        ModelEntry.create(model=model, modelfit_results=results),
+        base_model_description,
+        "bic",
+        None,
+        strictness,
+    )
+
+    wb.add_task(task_results, predecessors=candidate_model_tasks)
+    results = call_workflow(Workflow(wb), "results_remaining", context)
+
+    return results
+
+
+def post_process_drug_metabolite(
+    user_input_model_entry, base_model_description, rank_type, cutoff, strictness, *model_entries
+):
+    # NOTE : The base model is part of the model_entries but not the user_input_model
+    res_models = []
+    input_model_entry = None
+    base_model_entry = None
+    for model_entry in model_entries:
+        model = model_entry.model
+        if model.description == base_model_description:
+            model_entry = ModelEntry.create(
+                model=model_entry.model, parent=None, modelfit_results=model_entry.modelfit_results
+            )
+            input_model_entry = model_entry
+            base_model_entry = model_entry
+        else:
+            res_models.append(model_entry)
+    if not base_model_entry:
+        # No base model found indicate user_input_model is base
+        input_model_entry = user_input_model_entry
+        base_model_entry = user_input_model_entry
+    if not input_model_entry:
+        raise ValueError('Error in workflow: No input model')
+
+    if base_model_entry != user_input_model_entry:
+        # Change parent model to base model instead of temporary model names or input model
+        res_models = [
+            me
+            if me.parent.name
+            not in ("TEMP", user_input_model_entry.model.name)  # TEMP name for drug-met models
+            else ModelEntry.create(
+                model=me.model, parent=base_model_entry.model, modelfit_results=me.modelfit_results
+            )
+            for me in res_models
+        ]
+
+    results_to_summarize = [user_input_model_entry.modelfit_results]
+
+    if user_input_model_entry != base_model_entry:
+        results_to_summarize.append(base_model_entry.modelfit_results)
+    if res_models:
+        results_to_summarize.extend(me.modelfit_results for me in res_models)
+
+    summary_models = summarize_modelfit_results(results_to_summarize)
+    summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
+    summary_models = summary_models.reset_index().set_index(['step', 'model'])
 
     return create_results(
         StructSearchResults,
-        model,
-        base_drug_metabolite_fit[0],
-        list(drug_metabolite_models_fit),
-        rank_type='bic',
-        cutoff=None,
-        summary_models=pd.concat(
-            [summary_input, summary_candidates],
-            keys=[0, 1],
-            names=['step'],
-        ),
+        input_model_entry,
+        base_model_entry,
+        res_models,
+        rank_type,
+        cutoff,
+        summary_models=summary_models,
         strictness=strictness,
     )
 
@@ -276,12 +315,9 @@ def validate_input(
     type,
     strictness,
     model,
-    route,
 ):
     if type not in TYPES:
         raise ValueError(f'Invalid `type`: got `{type}`, must be one of {sorted(TYPES)}.')
-    if route not in routes:
-        raise ValueError(f'Invalid `route`: got `{route}`, must be one of {sorted(routes)}.')
 
     if strictness is not None and "rse" in strictness.lower():
         if model.estimation_steps[-1].parameter_uncertainty_method is None:

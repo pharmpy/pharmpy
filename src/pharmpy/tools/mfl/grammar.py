@@ -27,10 +27,11 @@ definition: "LET"i "(" VARIABLE_NAME "," values ")"
 
 _feature: absorption | elimination | peripherals | transits | lagtime
             | covariate | direct_effect | effect_comp | indirect_effect
+            | metabolite
 
 absorption: "ABSORPTION"i "(" (_absorption_option) ")"
 elimination: "ELIMINATION"i "(" (_elimination_option) ")"
-peripherals: "PERIPHERALS"i "(" (_counts) ")"
+peripherals: "PERIPHERALS"i "(" (_counts) ["," _peripheral_comp] ")"
 transits: "TRANSITS"i "(" _counts ["," _depot_option] ")"
 lagtime: "LAGTIME"i "(" (_lagtime_option) ")"
 covariate: "COVARIATE"i "(" parameter_option "," covariate_option "," fp_option ["," op_option] ")"
@@ -38,6 +39,8 @@ covariate: "COVARIATE"i "(" parameter_option "," covariate_option "," fp_option 
 direct_effect: "DIRECTEFFECT"i "(" (_pdtype_option) ")"
 effect_comp: "EFFECTCOMP"i "(" (_pdtype_option) ")"
 indirect_effect: "INDIRECTEFFECT"i "(" _pdtype_option "," _production_option ")"
+
+metabolite: "METABOLITE"i "(" (_metabolite_option) ")"
 
 _pdtype_option: pdtype_modes | pdtype_wildcard
 pdtype_modes: PDTYPE_MODE | "[" [PDTYPE_MODE ("," PDTYPE_MODE)*] "]"
@@ -48,6 +51,11 @@ _production_option: production_modes | production_wildcard
 production_modes: PRODUCTION_MODE
 PRODUCTION_MODE: "production"i | "degradation"i
 production_wildcard: WILDCARD
+
+_metabolite_option: metabolite_modes | metabolite_wildcard
+metabolite_modes: METABOLITE_MODE | "[" [METABOLITE_MODE ("," METABOLITE_MODE)*] "]"
+METABOLITE_MODE: "basic"i | "psc"i
+metabolite_wildcard: WILDCARD
 
 _absorption_option: absorption_modes | absorption_wildcard
 absorption_modes: ABSORPTION_MODE | "[" [ABSORPTION_MODE ("," ABSORPTION_MODE)*] "]"
@@ -61,6 +69,10 @@ _depot_option: depot_modes | depot_wildcard
 depot_modes: DEPOT_MODE | "[" [DEPOT_MODE ("," DEPOT_MODE)*] "]"
 DEPOT_MODE: "DEPOT"i |"NODEPOT"i
 depot_wildcard: WILDCARD
+_peripheral_comp: peripheral_modes | peripheral_wildcard
+peripheral_modes: PERIPHERAL_MODE | "[" [PERIPHERAL_MODE ("," PERIPHERAL_MODE)*] "]"
+PERIPHERAL_MODE: "DRUG"i | "MET"i
+peripheral_wildcard: WILDCARD
 _lagtime_option: lagtime_modes | lagtime_wildcard
 lagtime_modes: LAGTIME_MODE | "[" [LAGTIME_MODE ("," LAGTIME_MODE)*] "]"
 lagtime_wildcard: WILDCARD

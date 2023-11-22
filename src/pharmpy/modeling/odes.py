@@ -1742,8 +1742,11 @@ def _get_absorption_init(model, param_name) -> float:
     raise NotImplementedError('param_name must be MDT or MAT')
 
 
-def set_peripheral_compartments(model: Model, n: int):
-    """Sets the number of peripheral compartments to a specified number.
+def set_peripheral_compartments(model: Model, n: int, name: str = None):
+    """Sets the number of peripheral compartments for central compartment to a specified number.
+
+    If name is set, the peripheral compartment will be added to the compartment
+    with the specified name instead.
 
     Parameters
     ----------
@@ -1751,6 +1754,8 @@ def set_peripheral_compartments(model: Model, n: int):
         Pharmpy model
     n : int
         Number of transit compartments
+    name : str
+        Name of compartment to add peripheral to.
 
     Return
     ------
@@ -1796,10 +1801,10 @@ def set_peripheral_compartments(model: Model, n: int):
     per = len(odes.find_peripheral_compartments())
     if per < n:
         for _ in range(n - per):
-            model = add_peripheral_compartment(model)
+            model = add_peripheral_compartment(model, name=name)
     elif per > n:
         for _ in range(per - n):
-            model = remove_peripheral_compartment(model)
+            model = remove_peripheral_compartment(model, name=name)
     return model
 
 

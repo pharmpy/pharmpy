@@ -37,8 +37,9 @@ def exhaustive(mfl_funcs, iiv_strategy: str):
     return Workflow(wb_search), model_tasks
 
 
-def exhaustive_stepwise(mfl_funcs, iiv_strategy: str):
-    wb_search = WorkflowBuilder()
+def exhaustive_stepwise(mfl_funcs, iiv_strategy: str, wb_search=None, tool_name="modelsearch"):
+    if not wb_search:
+        wb_search = WorkflowBuilder()
     model_tasks = []
 
     while True:
@@ -47,7 +48,7 @@ def exhaustive_stepwise(mfl_funcs, iiv_strategy: str):
         for task_parent, feat_new in actions.items():
             for feat in feat_new:
                 model_no = len(model_tasks) + 1
-                model_name = f'modelsearch_run{model_no}'
+                model_name = f'{tool_name}_run{model_no}'
 
                 task_create_candidate = Task(
                     key_to_str(feat),

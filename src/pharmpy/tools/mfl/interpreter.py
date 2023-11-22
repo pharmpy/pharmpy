@@ -10,6 +10,7 @@ from .statement.feature.effect_comp import EffectCompInterpreter
 from .statement.feature.elimination import EliminationInterpreter
 from .statement.feature.indirect_effect import IndirectEffectInterpreter
 from .statement.feature.lagtime import LagTimeInterpreter
+from .statement.feature.metabolite import MetaboliteInterpreter
 from .statement.feature.peripherals import PeripheralsInterpreter
 from .statement.feature.transits import TransitsInterpreter
 from .statement.statement import Statement
@@ -48,3 +49,6 @@ class MFLInterpreter(Interpreter):
 
     def indirect_effect(self, tree):
         return IndirectEffectInterpreter().interpret(tree)
+
+    def metabolite(self, tree):
+        return MetaboliteInterpreter().interpret(tree)

@@ -16,9 +16,9 @@ from pharmpy.tools.allometry.tool import validate_allometric_variable
 from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
 from pharmpy.tools.mfl.feature.covariate import spec as covariate_spec
 from pharmpy.tools.mfl.filter import (
-    covsearch_statement_types,
-    modelsearch_statement_types,
-    structsearch_statement_types,
+    COVSEARCH_STATEMENT_TYPES,
+    STRUCTSEARCH_STATEMENT_TYPES,
+    mfl_filtering,
 )
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.mfl.parse import parse as mfl_parse
@@ -144,7 +144,7 @@ def run_amd(
 
         structsearch_features = tuple(
             filter(
-                lambda statement: isinstance(statement, structsearch_statement_types),
+                lambda statement: isinstance(statement, STRUCTSEARCH_STATEMENT_TYPES),
                 input_search_space_features,
             )
         )
@@ -195,12 +195,18 @@ def run_amd(
     except:  # noqa E722
         raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
 
-    modelsearch_features = tuple(
-        filter(
-            lambda statement: isinstance(statement, modelsearch_statement_types),
-            input_search_space_features,
-        )
-    )
+    modelsearch_features = mfl_filtering(input_search_space_features, "modelsearch")
+    if modeltype in ['pkpd', 'drug_metabolite']:
+        structsearch_features = mfl_filtering(input_search_space_features, "structsearch")
+        if search_space is None:
+            if modeltype == 'pkpd':
+                structsearch_features = "DIRECTEFFECT(*);EFFECTCOMP(*);INDIRECTEFFECT(*,*)"
+            else:
+                if administration in ['oral', 'ivoral']:
+                    structsearch_features = "METABOLITE([PSC, BASIC]);PERIPHERALS([0,1], MET)"
+                else:
+                    structsearch_features = "METABOLITE([BASIC]);PERIPHERALS([0,1], MET)"
+
     if not modelsearch_features:
         if modeltype in ('basic_pk', 'drug_metabolite') and administration == 'oral':
             modelsearch_features = (
@@ -226,7 +232,7 @@ def run_amd(
 
     covsearch_features = tuple(
         filter(
-            lambda statement: isinstance(statement, covsearch_statement_types),
+            lambda statement: isinstance(statement, COVSEARCH_STATEMENT_TYPES),
             input_search_space_features,
         )
     )
@@ -274,7 +280,9 @@ def run_amd(
             # Perfomed 'after' modelsearch
             if modeltype == 'drug_metabolite':
                 func = _subfunc_structsearch(
-                    type=modeltype, route=administration, strictness=strictness, path=db.path
+                    type=modeltype,
+                    search_space=structsearch_features,
+                    path=db.path,
                 )
                 run_subfuncs['structsearch'] = func
         elif section == 'iivsearch':
