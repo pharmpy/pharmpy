@@ -63,8 +63,8 @@ class Covariate(ModelFeature):
                 p for p, c in param_cov.intersection(explicit_covariates) if c in covariate
             ]
             parameter = tuple([p for p in parameter if p not in explicit_to_remove])
-            if len(parameter) == 0:
-                return None
+        if len(parameter) == 0 or len(covariate) == 0:
+            return None
         return Covariate(parameter=parameter, covariate=covariate, fp=fp, op=op, optional=optional)
 
 

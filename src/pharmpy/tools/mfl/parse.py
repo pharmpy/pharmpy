@@ -180,7 +180,7 @@ class ModelFeatures:
             elif isinstance(statement, Let):
                 let[statement.name] = statement.value
             else:
-                raise ValueError(f'Unknown statement ({statement}) given.')
+                raise ValueError(f'Unknown ({type(statement)} statement ({statement}) given.')
 
         # Substitute all Let statements (if any)
         if len(let) != 0:

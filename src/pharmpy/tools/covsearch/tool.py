@@ -106,6 +106,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    naming_index_offset: Optional[int] = 0,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -128,6 +129,8 @@ def create_workflow(
         Pharmpy model
     strictness : str or None
         Strictness criteria
+    naming_index_offset: int
+        index offset for naming of runs. Default is 0.
 
     Returns
     -------
@@ -156,6 +159,7 @@ def create_workflow(
         task_greedy_forward_search,
         p_forward,
         max_steps,
+        naming_index_offset,
         strictness,
     )
 
@@ -168,6 +172,7 @@ def create_workflow(
             task_greedy_backward_search,
             p_backward,
             max_steps,
+            naming_index_offset,
             strictness,
         )
 
@@ -300,6 +305,7 @@ def task_greedy_forward_search(
     context,
     p_forward: float,
     max_steps: int,
+    naming_index_offset: int,
     strictness: Optional[str],
     state_and_effect: Tuple[SearchState, dict],
 ) -> SearchState:
@@ -317,6 +323,7 @@ def task_greedy_forward_search(
         candidate_effect_funcs: dict,
         index_offset: int,
     ):
+        index_offset = index_offset + naming_index_offset
         wf = wf_effects_addition(parent.modelentry, parent, candidate_effect_funcs, index_offset)
         new_candidate_modelentries = call_workflow(
             wf, f'{NAME_WF}-effects_addition-{step}', context
@@ -340,6 +347,7 @@ def task_greedy_backward_search(
     context,
     p_backward: float,
     max_steps: int,
+    naming_index_offset,
     strictness: Optional[str],
     state: SearchState,
 ) -> SearchState:
@@ -349,6 +357,7 @@ def task_greedy_backward_search(
         candidate_effect_funcs: List[EffectLiteral],
         index_offset: int,
     ):
+        index_offset = index_offset + naming_index_offset
         wf = wf_effects_removal(parent, candidate_effect_funcs, index_offset)
         new_candidate_modelentries = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}', context)
 
@@ -733,7 +742,9 @@ def _make_df_steps_row(
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(effects, p_forward, p_backward, algorithm, model, strictness):
+def validate_input(
+    effects, p_forward, p_backward, algorithm, model, strictness, naming_index_offset
+):
     if algorithm not in ALGORITHMS:
         raise ValueError(
             f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'
@@ -818,3 +829,5 @@ def validate_input(effects, p_forward, p_backward, algorithm, model, strictness)
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
             )
+    if not isinstance(naming_index_offset, int) or naming_index_offset < 0:
+        raise ValueError('naming_index_offset need to be a postive (>=0) integer.')
