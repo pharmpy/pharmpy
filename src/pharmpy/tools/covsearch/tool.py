@@ -342,7 +342,7 @@ def _greedy_search(
         ofvs = [
             np.nan
             if (mfr := model.modelfit_results) is None
-            or not is_strictness_fulfilled(mfr, strictness)
+            or not is_strictness_fulfilled(mfr, model, strictness)
             else mfr.ofv
             for model in new_candidate_models
         ]
