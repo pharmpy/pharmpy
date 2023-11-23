@@ -109,7 +109,7 @@ def start(
     # Add base model task
     model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
-    if not mfl_statements.contain_subset(model_mfl):
+    if not mfl_statements.contain_subset(model_mfl, tool="modelsearch"):
         base_task = Task("create_base_model", create_base_model, mfl_statements)
         wb.add_task(base_task, predecessors=start_task)
 

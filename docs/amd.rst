@@ -21,17 +21,17 @@ To initiate AMD in Python/R:
     from pharmpy.tools import run_amd
 
     dataset_path = 'path/to/dataset'
-    order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
+    strategy = 'SIRIAC'
     res = run_amd(input=dataset_path,
                   modeltype='basic_pk',
                   administration='oral',
-                  order=order,
+                  strategy=strategy,
                   search_space='LET(CATEGORICAL, [SEX]); LET(CONTINUOUS, [AGE])',
                   allometric_variable='WGT',
                   occasion='VISI')
 
 This will take a dataset as ``input``, where the ``modeltype`` has been specified to be a PK model and ``administration`` is oral. AMD will search
-for the best structural model, IIV structure, and residual model in the specified ``order``. We specify the column SEX
+for the best structural model, IIV structure, and residual model in the order specified by ``strategy`` (see :ref:`strategy<strategy_amd>`). We specify the column SEX
 as a ``categorical`` covariate and AGE as a ``continuous`` covariate. Finally, we declare the WGT-column as our
 ``allometric_variable``, VISI as our ``occasion`` column.
 
@@ -73,8 +73,7 @@ Arguments
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``lloq_method``                                   | Method to use for handling lower limit of quantification. See :py:func:`pharmpy.modeling.transform_blq`.        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``order``                                         | Run :ref:`order<order_amd>` of tools (default is ['structural', 'iivsearch', 'residual', 'iovsearch',           |
-|                                                   | 'allometry', 'covariates'])                                                                                     |
+| :ref:`strategy<strategy_amd>`                     | Strategy defining run order of the different subtools valid arguments are SIRIAC (deafult) and SIRIACIR         |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``allometric_variable``                           | Variable to use for allometry (default is name of column described as body weight)                              |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -170,31 +169,31 @@ For a PK IV+ORAL model, the default is:
 Note that defaults are overriden selectively: structural model features
 defaults will be ignored as soon as one structural model feature is explicitly
 given, but the covariate model defaults will stay in place, and vice versa. For
-instance, if one defines ``search_space`` as ``LAGTIME()``, the effective
+instance, if one defines ``search_space`` as ``LAGTIME(ON)``, the effective
 search space will be as follows:
 
 .. code-block::
 
-    LAGTIME()
+    LAGTIME(ON)
     COVARIATE?(@IIV, @CONTINUOUS, *)
     COVARIATE?(@IIV, @CATEGORICAL, CAT)
 
-.. _order_amd:
+.. _strategy_amd:
 
 ~~~~~~~~~~~~~~~~~
-Order of subtools
+Strategy for running AMD
 ~~~~~~~~~~~~~~~~~
 
-The order of the subtools is specified in the ``order`` argument. Consider the default order:
+There are different strategies available for running the AMD tool which is specified
+in the ``strategy`` argument. They all use a combination of the different subtools
+described below and will be described below.
 
-.. pharmpy-code::
+SIRIAC (default)
+~~~~~~~~~~~~~
 
-    from pharmpy.tools import run_amd
-
-    dataset_path = 'path/to/dataset'
-    res = run_amd(input=dataset_path, order=None)
-
-This yields the following workflow:
+If no argument is specified, SIRIAC will be used as the default strategy. Each letter in the
+strategy is representing a specific subtool to be run and in what order. For example, "S" stands
+for "structural". A visualization of this can be seen below:
 
 .. graphviz::
 
@@ -219,50 +218,22 @@ This yields the following workflow:
             s5 -> s6
         }
 
-If you want to change the order, input a list of the desired order:
+
+SIRIACIR
+~~~~~~~~~~~~~
+
+The SIRIACIR strategy is an extension of the SIRIAC strategy. It is defined by the re-running
+of IIVsearch and RUVsearch. Just as for SIRIAC, each letter in the
+strategy is representing a specific subtool to be run and in what order.
 
 .. pharmpy-code::
 
     from pharmpy.tools import run_amd
 
     dataset_path = 'path/to/dataset'
-    order = ['structural', 'residual', 'iivsearch', 'iovsearch', 'allometry', 'covariates']
-    res = run_amd(input=dataset_path, order=order)
+    res = run_amd(input=dataset_path, order='SIRIACIR')
 
-Here, the residual model will be decided before `iivsearch`, which will yield:
-
-.. graphviz::
-
-    digraph BST {
-            node [fontname="Arial",shape="rect"];
-            rankdir="LR";
-            base [label="Input", shape="oval"]
-            s0 [label="structural"]
-            s1 [label="residual"]
-            s2 [label="iivsearch"]
-            s3 [label="iovsearch"]
-            s4 [label="allometry"]
-            s5 [label="covariates"]
-            s6 [label="results", shape="oval"]
-
-            base -> s0
-            s0 -> s1
-            s1 -> s2
-            s2 -> s3
-            s3 -> s4
-            s4 -> s5
-            s5 -> s6
-        }
-
-You can also run subsets of the subtools:
-
-.. pharmpy-code::
-
-    from pharmpy.tools import run_amd
-
-    dataset_path = 'path/to/dataset'
-    res = run_amd(input=dataset_path, order=['structural', 'iivsearch', 'residual'])
-
+The complete order of subtools hence become:
 
 .. graphviz::
 
@@ -273,12 +244,22 @@ You can also run subsets of the subtools:
             s0 [label="structural"]
             s1 [label="iivsearch"]
             s2 [label="residual"]
-            s3 [label="results", shape="oval"]
+            s3 [label="iovsearch"]
+            s4 [label="allometry"]
+            s5 [label="covariates"]
+            s6 [label="rerun_iivsearch"]
+            s7 [label="rerun_ruvsearch"]
+            s8 [label="results", shape="oval"]
 
             base -> s0
             s0 -> s1
             s1 -> s2
             s2 -> s3
+            s3 -> s4
+            s4 -> s5
+            s5 -> s6
+            s6 -> s7
+            s7 -> s8
         }
 
 The default algorithms for six tools in amd can be seen in the table below. For more details regarding the settings
@@ -352,17 +333,17 @@ This subtool selects the IIV structure, see :ref:`iivsearch` for more details ab
 that the AMD tool uses for this subtool can be seen in the table below.
 
 
-+---------------+----------------------------------------------------------------------------------------------------+
-| Argument      | Setting                                                                                            |
-+===============+====================================================================================================+
-| algorithm     | ``'brute_force'``                                                                                  |
-+---------------+----------------------------------------------------------------------------------------------------+
-| iiv_strategy  | ``'fullblock'``                                                                                    |
-+---------------+----------------------------------------------------------------------------------------------------+
-| rank_type     | ``'bic'`` (type: iiv)                                                                              |
-+---------------+----------------------------------------------------------------------------------------------------+
-| cutoff        | ``None``                                                                                           |
-+---------------+----------------------------------------------------------------------------------------------------+
++---------------+---------------------------+------------------------------------------------------------------------+
+| Argument      | Setting                   |   Setting (rerun)                                                      |
++===============+===========================+========================================================================+
+| algorithm     | ``'brute_force'``         |  ``'brute_force'``                                                     |
++---------------+---------------------------+------------------------------------------------------------------------+
+| iiv_strategy  | ``'fullblock'``           |  ``'no_add'``                                                          |
++---------------+---------------------------+------------------------------------------------------------------------+
+| rank_type     | ``'bic'`` (type: iiv)     |  ``'bic'`` (type: iiv)                                                 |
++---------------+---------------------------+------------------------------------------------------------------------+
+| cutoff        | ``None``                  |  ``None``                                                              |
++---------------+---------------------------+------------------------------------------------------------------------+
 
 IOVsearch
 ~~~~~~~~~
@@ -388,7 +369,8 @@ Residual
 ~~~~~~~~
 
 This subtool selects the residual model, see :ref:`ruvsearch` for more details about the tool. The settings
-that the AMD tool uses for this subtool can be seen in the table below.
+that the AMD tool uses for this subtool can be seen in the table below. When re-running the tool, the settings remain
+the same.
 
 
 +---------------+----------------------------------------------------------------------------------------------------+
@@ -407,6 +389,8 @@ Allometry
 This subtool tries to apply allometry, see :ref:`allometry` for more details about the tool. The settings
 that the AMD tool uses for this subtool can be seen in the table below.
 
+.. note::
+    This tool is skipped if ``modeltype = 'pkpd'`` 
 
 +----------------------+---------------------------------------------------------------------------------------------+
 | Argument             | Setting                                                                                     |

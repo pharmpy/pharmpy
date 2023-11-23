@@ -341,7 +341,7 @@ class ModelFeatures:
         else:
             return funcs(model, self.mfl_statement_list(attribute_type), modelsearch_features)
 
-    def contain_subset(self, mfl, model: Optional[Model] = None):
+    def contain_subset(self, mfl, model: Optional[Model] = None, tool: Optional[str] = None):
         """See if class contain specified subset"""
         transits = self._subset_transits(mfl)
 
@@ -353,12 +353,14 @@ class ModelFeatures:
             and all([s in self.peripherals.counts for s in mfl.peripherals.counts])
             and all([s in self.lagtime.eval.modes for s in mfl.lagtime.eval.modes])
         ):
-            if self.covariate != tuple() or mfl.covariate != tuple():
-                if model is None:
-                    warnings.warn("Need argument 'model' in order to compare covariates")
-                else:
-                    return True if self._subset_covariate else False
-            return True
+            if tool is None or tool in ["modelsearch"]:
+                return True
+            else:
+                if self.covariate != tuple() or mfl.covariate != tuple():
+                    if model is None:
+                        warnings.warn("Need argument 'model' in order to compare covariates")
+                    else:
+                        return True if self._subset_covariate(mfl, model) else False
         else:
             return False
 
