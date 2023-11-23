@@ -33,7 +33,10 @@ class Elimination(ModelFeature):
         return Elimination(all_modes)
 
     def __eq__(self, other):
-        return set(self.modes) == set(other.modes)
+        if isinstance(other, Elimination):
+            return set(self.modes) == set(other.modes)
+        else:
+            return False
 
     @property
     def eval(self):

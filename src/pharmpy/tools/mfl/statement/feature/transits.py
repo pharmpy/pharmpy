@@ -43,17 +43,20 @@ class Transits(ModelFeature):
         return Transits(counts=all_counts, depot=all_depot)
 
     def __eq__(self, other):
-        if isinstance(self.depot, Wildcard):
-            lhs_depot = self.depot
-        else:
-            lhs_depot = set(self.depot)
+        if isinstance(other, Transits):
+            if isinstance(self.depot, Wildcard):
+                lhs_depot = self.depot
+            else:
+                lhs_depot = set(self.depot)
 
-        if isinstance(other.depot, Wildcard):
-            rhs_depot = other.depot
-        else:
-            rhs_depot = set(other.depot)
+            if isinstance(other.depot, Wildcard):
+                rhs_depot = other.depot
+            else:
+                rhs_depot = set(other.depot)
 
-        return (set(self.counts) == set(other.counts), lhs_depot == rhs_depot)
+            return (set(self.counts) == set(other.counts), lhs_depot == rhs_depot)
+        else:
+            return False
 
     @property
     def eval(self):
