@@ -1,3 +1,4 @@
+import pytest
 import sympy
 
 from pharmpy.modeling import add_peripheral_compartment, set_mixed_mm_fo_elimination, set_tmdd
@@ -107,3 +108,51 @@ def test_wagner_1c(pheno_path, load_model_for_test):
         str(wagner.statements.ode_system.eqs[1].rhs)
         == """LAFREE*QP1/V1 - QP1*A_PERIPHERAL1(t)/VP1"""
     )
+
+
+@pytest.mark.parametrize(
+    ('model_name', 'dv_types', 'expected'),
+    (
+        (
+            'full',
+            {'drug': 1, 'target': 2, 'complex': 3},
+            {sympy.Symbol('Y'): 1, sympy.Symbol('Y_TARGET'): 2, sympy.Symbol('Y_COMPLEX'): 3},
+        ),
+        (
+            'qss',
+            {'drug': 1, 'target': 2, 'complex': 3},
+            {sympy.Symbol('Y'): 1, sympy.Symbol('Y_TARGET'): 2, sympy.Symbol('Y_COMPLEX'): 3},
+        ),
+        (
+            'ib',
+            {'drug': 1, 'target': 2, 'complex': 3},
+            {sympy.Symbol('Y'): 1, sympy.Symbol('Y_TARGET'): 2, sympy.Symbol('Y_COMPLEX'): 3},
+        ),
+        ('mmapp', {'drug': 1, 'target': 2}, {sympy.Symbol('Y'): 1, sympy.Symbol('Y_TARGET'): 2}),
+        ('cr', {'drug': 1, 'complex': 2}, {sympy.Symbol('Y'): 1, sympy.Symbol('Y_COMPLEX'): 2}),
+        ('wagner', {'drug': 1, 'complex': 2}, {sympy.Symbol('Y'): 1, sympy.Symbol('Y_COMPLEX'): 2}),
+        ('crib', {'drug': 1, 'complex': 2}, {sympy.Symbol('Y'): 1, sympy.Symbol('Y_COMPLEX'): 2}),
+        ('crib', {'drug': 1, 'complex': 3}, {sympy.Symbol('Y'): 1, sympy.Symbol('Y_COMPLEX'): 3}),
+        (
+            'full',
+            {'target': 2, 'complex': 3},
+            {sympy.Symbol('Y'): 1, sympy.Symbol('Y_TARGET'): 2, sympy.Symbol('Y_COMPLEX'): 3},
+        ),
+        (
+            'cr',
+            {'drug': 1, 'complex': 2, 'target': 3},
+            {sympy.Symbol('Y'): 1, sympy.Symbol('Y_COMPLEX'): 2},
+        ),
+        (
+            'mmapp',
+            {'drug': 1, 'target': 2, 'complex': 3},
+            {sympy.Symbol('Y'): 1, sympy.Symbol('Y_TARGET'): 2},
+        ),
+    ),
+    ids=repr,
+)
+def test_full_multiple_dvs(pheno_path, load_model_for_test, model_name, dv_types, expected):
+    model = load_model_for_test(pheno_path)
+    model = set_tmdd(model, model_name, dv_types)
+    assert model.dependent_variables == expected
+    assert len(model.random_variables.epsilons) > 1

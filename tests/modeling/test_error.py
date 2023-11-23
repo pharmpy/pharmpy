@@ -47,11 +47,8 @@ def test_set_additive_error_model(testdata, load_model_for_test):
 Y_1 = F + EPS(3)
 Y_2 = F + EPS(1)*F + EPS(2)
 
-IF (DVID.EQ.1) THEN
-    Y = Y_1
-ELSE
-    Y = Y_2
-END IF
+IF (DVID.EQ.1) Y = Y_1
+IF (DVID.EQ.2) Y = Y_2
 """
     assert str(rec) == correct
 
@@ -89,11 +86,8 @@ ELSE
 END IF
 Y_2 = F + EPS(2)*IPREDADJ
 
-IF (DVID.EQ.1) THEN
-    Y = Y_1
-ELSE
-    Y = Y_2
-END IF
+IF (DVID.EQ.1) Y = Y_1
+IF (DVID.EQ.2) Y = Y_2
 """
     assert str(rec) == correct
 
@@ -190,11 +184,8 @@ def test_set_combined_error_model_multiple_dvs(testdata, load_model_for_test):
 Y_1 = F + EPS(3)*F + EPS(4)
 Y_2 = F + EPS(1)*F + EPS(2)
 
-IF (DVID.EQ.1) THEN
-    Y = Y_1
-ELSE
-    Y = Y_2
-END IF
+IF (DVID.EQ.1) Y = Y_1
+IF (DVID.EQ.2) Y = Y_2
 """
     assert str(rec) == correct
 
@@ -896,11 +887,8 @@ ELSE
     Y_1 = F + EPS(1)*F
 END IF
 Y_2 = F + EPS(1)*F + EPS(2)
-IF (DVID.EQ.1) THEN
-    Y = Y_1
-ELSE
-    Y = Y_2
-END IF
+IF (DVID.EQ.1) Y = Y_1
+IF (DVID.EQ.2) Y = Y_2
 $THETA (0,0.00469307) ; TVCL
 $THETA (0,1.00916) ; TVV
 $THETA  0.1 ; time_varying
@@ -1022,11 +1010,8 @@ def test_set_iiv_on_ruv_multiple_dvs(load_model_for_test, testdata):
 Y_1 = F + EPS(1)*F*EXP(ETA_RV1)
 Y_2 = F + EPS(1)*F + EPS(2)
 
-IF (DVID.EQ.1) THEN
-    Y = Y_1
-ELSE
-    Y = Y_2
-END IF
+IF (DVID.EQ.1) Y = Y_1
+IF (DVID.EQ.2) Y = Y_2
 """
     assert str(rec) == correct
 
@@ -1039,11 +1024,8 @@ def test_set_power_on_ruv_multiple_dvs(load_model_for_test, testdata):
 Y_1 = F + EPS(1)*F**THETA(3)
 Y_2 = F + EPS(1)*F + EPS(2)
 
-IF (DVID.EQ.1) THEN
-    Y = Y_1
-ELSE
-    Y = Y_2
-END IF
+IF (DVID.EQ.1) Y = Y_1
+IF (DVID.EQ.2) Y = Y_2
 """
     assert str(rec) == correct
 
@@ -1053,11 +1035,8 @@ END IF
 Y_1 = F + EPS(1)*F
 Y_2 = F + EPS(1)*F**THETA(3) + EPS(2)*F**THETA(4)
 
-IF (DVID.EQ.1) THEN
-    Y = Y_1
-ELSE
-    Y = Y_2
-END IF
+IF (DVID.EQ.1) Y = Y_1
+IF (DVID.EQ.2) Y = Y_2
 """
     assert str(rec) == correct
 
@@ -1067,11 +1046,8 @@ END IF
 Y_1 = F + EPS(1)*F**THETA(3)
 Y_2 = F + EPS(1)*F**THETA(3) + EPS(2)*F**THETA(4)
 
-IF (DVID.EQ.1) THEN
-    Y = Y_1
-ELSE
-    Y = Y_2
-END IF
+IF (DVID.EQ.1) Y = Y_1
+IF (DVID.EQ.2) Y = Y_2
 """
     assert str(rec) == correct
 
@@ -1081,11 +1057,8 @@ END IF
 Y_1 = F + EPS(1)*F
 Y_2 = F + EPS(1)*F + EPS(2)*F**THETA(3)
 
-IF (DVID.EQ.1) THEN
-    Y = Y_1
-ELSE
-    Y = Y_2
-END IF
+IF (DVID.EQ.1) Y = Y_1
+IF (DVID.EQ.2) Y = Y_2
 """
     assert str(rec) == correct
 

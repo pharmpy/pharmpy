@@ -11,12 +11,13 @@ from pharmpy.model import (
     output,
 )
 
+from .error import set_proportional_error_model
 from .expressions import _replace_trivial_redefinitions
 from .odes import add_individual_parameter, set_first_order_elimination, set_initial_condition
 from .parameter_variability import add_iiv
 
 
-def set_tmdd(model: Model, type: str):
+def set_tmdd(model: Model, type: str, dv_types: dict = None):
     """Sets target mediated drug disposition
 
     Sets target mediated drug disposition to a PK model.
@@ -29,6 +30,8 @@ def set_tmdd(model: Model, type: str):
         Pharmpy model
     type : str
         Type of TMDD model
+    dv_types: dict
+        Dictionary of DV types for TMDD models with multiple DVs (e.g. dv_types = {'drug' : 1, 'target': 2})
 
     Return
     ------
@@ -305,6 +308,70 @@ def set_tmdd(model: Model, type: str):
         model = set_initial_condition(model, "TARGET", r_0 * vc)
     if type == 'MMAPP':
         model = set_initial_condition(model, "TARGET", r_0)
+
+    if dv_types is not None:
+        # Make sure that values are unique
+        assert len(dv_types.values()) == len(set(dv_types.values()))
+        if type in ['FULL', 'IB']:
+            if 'target' in dv_types.keys():
+                y_target = sympy.Symbol("Y_TARGET")
+                ytarget = Assignment(y_target, target_comp.amount / vc)
+                dvs = model.dependent_variables.replace(y_target, dv_types['target'])
+                model = model.replace(
+                    statements=model.statements + ytarget, dependent_variables=dvs
+                )
+            if 'complex' in dv_types.keys():
+                y_complex = sympy.Symbol("Y_COMPLEX")
+                ycomplex = Assignment(y_complex, complex_comp.amount / vc)
+                dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
+                model = model.replace(
+                    statements=model.statements + ycomplex, dependent_variables=dvs
+                )
+        elif type == 'QSS':
+            if 'target' in dv_types.keys():
+                y_target = sympy.Symbol("Y_TARGET")
+                ytarget = Assignment(y_target, (target_comp.amount - central.amount - lafreef) / vc)
+                dvs = model.dependent_variables.replace(y_target, dv_types['target'])
+                model = model.replace(
+                    statements=model.statements + ytarget, dependent_variables=dvs
+                )
+            if 'complex' in dv_types.keys():
+                y_complex = sympy.Symbol("Y_COMPLEX")
+                ycomplex = Assignment(y_complex, (central.amount - lafreef) / vc)
+                dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
+                model = model.replace(
+                    statements=model.statements + ycomplex, dependent_variables=dvs
+                )
+        elif type == 'MMAPP':
+            if 'target' in dv_types.keys():
+                y_target = sympy.Symbol("Y_TARGET")
+                ytarget = Assignment(y_target, target_comp.amount / vc)
+                dvs = model.dependent_variables.replace(y_target, dv_types['target'])
+                model = model.replace(
+                    statements=model.statements + ytarget, dependent_variables=dvs
+                )
+        elif type in ['CR', 'CRIB']:
+            if 'complex' in dv_types.keys():
+                y_complex = sympy.Symbol("Y_COMPLEX")
+                ycomplex = Assignment(y_complex, complex_comp.amount / vc)
+                dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
+                model = model.replace(
+                    statements=model.statements + ycomplex, dependent_variables=dvs
+                )
+        elif type == 'WAGNER':
+            if 'complex' in dv_types.keys():
+                y_complex = sympy.Symbol("Y_COMPLEX")
+                ycomplex = Assignment(y_complex, (central.amount - lafreef) / vc)
+                dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
+                model = model.replace(
+                    statements=model.statements + ycomplex, dependent_variables=dvs
+                )
+
+        # Add proportional error model
+        if sympy.Symbol('Y_TARGET') in list(model.dependent_variables):
+            model = set_proportional_error_model(model, dv=dv_types['target'])
+        if sympy.Symbol('Y_COMPLEX') in list(model.dependent_variables):
+            model = set_proportional_error_model(model, dv=dv_types['complex'])
 
     return model.update_source()
 

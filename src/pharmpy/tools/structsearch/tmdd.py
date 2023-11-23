@@ -15,9 +15,9 @@ def product_dict(**kwargs):
         yield dict(zip(keys, instance))
 
 
-def create_qss_models(model, ests, index=1):
+def create_qss_models(model, ests, dv_types, index=1):
     # Create qss models with different initial estimates from basic pk model
-    qss_base_model = set_tmdd(model, type="QSS")
+    qss_base_model = set_tmdd(model, type="QSS", dv_types=dv_types)
     cmax = get_observations(model).max()
     all_inits = product_dict(
         POP_KDEG=(0.5623, 17.28), POP_R_0=(0.001 * cmax, 0.01 * cmax, 0.1 * cmax, 1 * cmax)
@@ -69,26 +69,26 @@ def create_qss_models(model, ests, index=1):
     return qss_candidate_models
 
 
-def create_remaining_models(model, ests, num_peripherals_qss):
+def create_remaining_models(model, ests, num_peripherals_qss, dv_types):
     # if best qss model has fewer compartments than model, remove one compartment
     num_peripherals_model = len(model.statements.ode_system.find_peripheral_compartments())
     if num_peripherals_qss < num_peripherals_model:
         model = remove_peripheral_compartment(model)
 
     models = (
-        create_full_models(model, ests)
-        + create_cr_models(model, ests)
-        + create_ib_models(model, ests)
-        + create_crib_models(model, ests)
-        + create_wagner_model(model, ests)
-        + create_mmapp_model(model, ests)
+        create_full_models(model, ests, dv_types)
+        + create_cr_models(model, ests, dv_types)
+        + create_ib_models(model, ests, dv_types)
+        + create_crib_models(model, ests, dv_types)
+        + create_wagner_model(model, ests, dv_types)
+        + create_mmapp_model(model, ests, dv_types)
     )
     return models
 
 
-def create_cr_models(model, ests):
+def create_cr_models(model, ests, dv_types):
     # Create cr models with different initial estimates from basic pk model and best qss ests
-    cr_base_model = set_tmdd(model, type="CR")
+    cr_base_model = set_tmdd(model, type="CR", dv_types=dv_types)
     cr_base_model = set_initial_estimates(
         cr_base_model,
         {"POP_KINT": ests['POP_KINT'], "POP_R_0": ests['POP_R_0'], "IIV_R_0": ests['IIV_R_0']},
@@ -104,9 +104,9 @@ def create_cr_models(model, ests):
     return [cr1, cr2]
 
 
-def create_ib_models(model, ests):
+def create_ib_models(model, ests, dv_types):
     # Create ib models with different initial estimates from basic pk model and best qss ests
-    ib_base_model = set_tmdd(model, type="IB")
+    ib_base_model = set_tmdd(model, type="IB", dv_types=dv_types)
     ib_base_model = set_initial_estimates(
         ib_base_model,
         {
@@ -127,9 +127,9 @@ def create_ib_models(model, ests):
     return [ib1, ib2]
 
 
-def create_crib_models(model, ests):
+def create_crib_models(model, ests, dv_types):
     # Create crib models with different initial estimates from basic pk model and best qss ests
-    crib_base_model = set_tmdd(model, type="CRIB")
+    crib_base_model = set_tmdd(model, type="CRIB", dv_types=dv_types)
     crib_base_model = set_initial_estimates(
         crib_base_model,
         {
@@ -150,9 +150,9 @@ def create_crib_models(model, ests):
     return [crib1, crib2]
 
 
-def create_full_models(model, ests):
+def create_full_models(model, ests, dv_types):
     # Create full models with different initial estimates from basic pk model and best qss ests
-    full_base_model = set_tmdd(model, type="FULL")
+    full_base_model = set_tmdd(model, type="FULL", dv_types=dv_types)
     full_base_model = set_initial_estimates(full_base_model, ests)
     full_base_model = set_initial_estimates(
         full_base_model,
@@ -177,8 +177,8 @@ def create_full_models(model, ests):
     return candidates
 
 
-def create_wagner_model(model, ests):
-    wagner = set_tmdd(model, type="WAGNER")
+def create_wagner_model(model, ests, dv_types):
+    wagner = set_tmdd(model, type="WAGNER", dv_types=dv_types)
     wagner = set_name(wagner, "structsearch_run11")
     wagner = wagner.replace(description="WAGNER")
     wagner = set_initial_estimates(
@@ -193,8 +193,8 @@ def create_wagner_model(model, ests):
     return [wagner]
 
 
-def create_mmapp_model(model, ests):
-    mmapp = set_tmdd(model, type="MMAPP")
+def create_mmapp_model(model, ests, dv_types):
+    mmapp = set_tmdd(model, type="MMAPP", dv_types=dv_types)
     mmapp = set_name(mmapp, "structsearch_run12")
     mmapp = mmapp.replace(description="MMAPP")
     mmapp = set_initial_estimates(
