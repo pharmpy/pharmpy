@@ -25,7 +25,7 @@ Tools in Pharmpy
     can be found :ref:`here <config_page>`.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    AMD - automatic model development <amd>
    Modelsearch - search for best structural model for a PK model <modelsearch>
