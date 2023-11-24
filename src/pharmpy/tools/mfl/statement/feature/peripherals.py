@@ -28,7 +28,10 @@ class Peripherals(ModelFeature):
         return Peripherals(all_counts, all_modes)
 
     def __eq__(self, other):
-        return set(self.counts) == set(other.counts) and set(self.modes) == set(other.modes)
+        if isinstance(other, Peripherals):
+            return set(self.counts) == set(other.counts) and set(self.modes) == set(other.modes)
+        else:
+            return False
 
 
 class PeripheralsInterpreter(CountInterpreter):

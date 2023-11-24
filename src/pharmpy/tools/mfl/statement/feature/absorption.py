@@ -35,7 +35,10 @@ class Absorption(ModelFeature):
         return Absorption(all_modes)
 
     def __eq__(self, other):
-        return set(self.modes) == set(other.modes)
+        if isinstance(other, Absorption):
+            return set(self.modes) == set(other.modes)
+        else:
+            return False
 
     @property
     def eval(self):
