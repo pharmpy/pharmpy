@@ -579,6 +579,7 @@ def _subfunc_iiv(iiv_strategy, strictness, path) -> SubFunc:
             model=model,
             results=model.modelfit_results,
             strictness=strictness,
+            keep=['CL'],
             path=path / 'iivsearch',
         )
         assert isinstance(res, Results)
