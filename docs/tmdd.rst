@@ -226,7 +226,7 @@ Results
 The results object contains various summary tables which can be accessed in the results object, as well as files in
 .csv/.json format. The name of the selected best model (based on the input selection criteria) is also included.
 
-Below is an example for a PKPD run. Drug metabolite results follow the same structure.
+Below is an example for a TMDD run.
 
 .. pharmpy-code::
 

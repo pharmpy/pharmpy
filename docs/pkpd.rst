@@ -57,6 +57,12 @@ The arguments of the structsearch tool for PKPD models are listed below.
 |                                                 | (rounding_errors and sigdigs>= 0.1)"                                |
 +-------------------------------------------------+---------------------------------------------------------------------+
 
+.. _models:
+
+~~~~~~
+Models
+~~~~~~
+
 Currently implemented PKPD models are: 
 
 * :py:func:`Direct effect models<pharmpy.modeling.set_direct_effect>`.
@@ -117,7 +123,7 @@ MFL support the following model features:
 +---------------+-------------------------------+--------------------------------------------------------------------+
 
 The option `model` describes a PKPD model, such as E :sub:`max`. For more details
-check :ref:`model types<the model types>`.
+check :ref:`model types<models>`.
 
 To test all direct effect models the search space looks as follows:
 
@@ -141,12 +147,12 @@ Results
 The results object contains various summary tables which can be accessed in the results object, as well as files in
 .csv/.json format. The name of the selected best model (based on the input selection criteria) is also included.
 
-Below is an example for a PKPD run. Drug metabolite results follow the same structure.
+Below is an example for a PKPD run.
 
 .. pharmpy-code::
 
     res = run_structsearch(type='pkpd',
-                            search_space=DIRECTEFFECT(emax);EFFECTCOMP([linear,emax])",
+                            search_space="DIRECTEFFECT(emax);EFFECTCOMP([linear,emax])",
                             model=start_model,
                             results=start_model_results)
 
