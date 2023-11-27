@@ -665,7 +665,7 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
     km_init, clmm_init = _get_mm_inits(model, numer, combined)
 
     model, km = _add_parameter(model, 'KM', init=km_init)
-    if model.dataset is not None:
+    if model.dataset is not None and 'idv' in model.datainfo.types and 'dv' in model.datainfo.types:
         maxobs = get_observations(model).max()
     else:
         maxobs = 1.0
@@ -773,7 +773,7 @@ def _get_mm_inits(model: Model, rate_numer, combined):
     if combined:
         clmm_init /= 2
 
-    if model.dataset is not None:
+    if model.dataset is not None and 'idv' in model.datainfo.types and 'dv' in model.datainfo.types:
         dv_max = get_observations(model).max()
     else:
         dv_max = 1.0
