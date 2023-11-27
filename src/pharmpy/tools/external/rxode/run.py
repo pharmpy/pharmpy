@@ -11,7 +11,9 @@ import pharmpy.model
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model.external.rxode import convert_model
-from pharmpy.modeling import get_omegas, get_sigmas, write_csv
+from pharmpy.modeling import get_omegas, get_sigmas, update_inits, write_csv
+from pharmpy.tools import fit
+from pharmpy.tools.external.nlmixr.run import compare_models, print_step
 from pharmpy.workflows import default_tool_database
 from pharmpy.workflows.results import ModelfitResults
 
@@ -170,10 +172,6 @@ def verification(
 ) -> Union[bool, pd.DataFrame]:
     nonmem_model = model
 
-    from pharmpy.modeling import update_inits
-    from pharmpy.plugins.nlmixr.model import print_step
-    from pharmpy.tools import fit
-
     # Save results from the nonmem model
     if nonmem_model.modelfit_results is None:
         if not ignore_print:
@@ -207,8 +205,6 @@ def verification(
         print_step("Executing RxODE model... (this might take a while)")
 
     rxode_model = execute_model(rxode_model, db)
-
-    from pharmpy.plugins.nlmixr.model import compare_models
 
     combined_result = compare_models(
         nonmem_model, rxode_model, error=error, force_pred=True, ignore_print=ignore_print
