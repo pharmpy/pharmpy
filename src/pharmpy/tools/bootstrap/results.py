@@ -218,16 +218,16 @@ def psn_bootstrap_results(path):
     if not results:
         raise FileNotFoundError("No model results available in m1")
     try:
-        base_model = Model.parse_model(cmd_line_model_path(path))
+        base_results = read_modelfit_results(cmd_line_model_path(path))
     except FileNotFoundError:
-        base_model = None
+        base_results = None
 
     # Read dOFV results in NONMEM specific way. Models have multiple $PROBLEM
     # Create proper result objects to pass to calculate_results
     dofv_results = None
     if (path / 'm1' / 'dofv_1.mod').is_file():
         # FIXME: We should not depend on NONMEM here
-        from pharmpy.plugins.nonmem.table import ExtTable, NONMEMTableFile
+        from pharmpy.model.external.nonmem.table import ExtTable, NONMEMTableFile
 
         dofv_results = []
         for table_path in (path / 'm1').glob('dofv_*.ext'):
@@ -246,7 +246,7 @@ def psn_bootstrap_results(path):
     res = calculate_results(
         models,
         results,
-        original_model=base_model,
+        original_results=base_results,
         included_individuals=incinds,
         dofv_results=dofv_results,
     )
