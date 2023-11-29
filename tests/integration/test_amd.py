@@ -56,7 +56,7 @@ def test_amd(tmp_path, testdata):
         assert len(res.summary_individuals_count) >= 1
 
 
-def test_structura_mechanistic_exploratory(tmp_path, testdata):
+def test_structure_mechanistic_exploratory(tmp_path, testdata):
     with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.csv', '.')
         shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.datainfo', '.')

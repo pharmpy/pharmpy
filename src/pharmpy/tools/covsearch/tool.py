@@ -243,7 +243,7 @@ def filter_search_space_and_model(effects, model):
                 description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
         filtered_model = filtered_model.replace(description=';'.join(description))
 
-    ss_funcs = dict(covariate_features(filtered_model, mfl_parse(effects)))
+    ss_funcs = ss_mfl.convert_to_funcs(["covariate"])
 
     remove_funcs = {k: v for k, v in ss_funcs.items() if k[-1] == "REMOVE"}
     optional_funcs = {}
@@ -424,9 +424,11 @@ def _greedy_search(
         parent = best_candidate_so_far.modelentry
         ofvs = [
             np.nan
-            if (mfr := modelentry.modelfit_results) is None
-            or not is_strictness_fulfilled(mfr, strictness)
-            else mfr.ofv
+            if modelentry.modelfit_results is None
+            or not is_strictness_fulfilled(
+                modelentry.modelfit_results, modelentry.model, strictness
+            )
+            else modelentry.modelfit_results.ofv
             for modelentry in new_candidate_modelentries
         ]
         # NOTE: We assume parent.modelfit_results is not None

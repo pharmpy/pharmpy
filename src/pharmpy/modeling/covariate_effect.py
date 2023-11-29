@@ -47,6 +47,7 @@ def get_covariates(model: Model) -> dict[list]:
     """
     parameters = get_individual_parameters(model)
     covariates = get_model_covariates(model)
+    covariates = [c for c in covariates if model.datainfo[str(c)].type == "covariate"]
 
     param_w_cov = defaultdict(list)
 
@@ -87,8 +88,6 @@ def get_covariate_effect(model: Model, symbol, covariate):
 
     param_expr_list = extract_parameters_recursive([], param_expr, full_expr, function_counter)
     param_expr_list.append(param_expr)
-    for i in param_expr_list:
-        print(i)
 
     eff = 'custom'
     op = '*'

@@ -393,10 +393,11 @@ def run_amd(
                     cov_differences = (cov_after - cov_before).covariate
                     if cov_differences:
                         covsearch_features += cov_differences
-                        func = _subfunc_covariates(
+                        func = _subfunc_mechanistic_exploratory_covariates(
                             amd_start_model=model,
                             search_space=covsearch_features,
                             strictness=strictness,
+                            mechanistic_covariates=mechanistic_covariates,
                             path=db.path,
                         )
                         run_subfuncs['covsearch'] = func
