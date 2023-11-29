@@ -67,6 +67,29 @@ def get_covariates(model: Model) -> dict[list]:
 def get_covariate_effect(model: Model, symbol, covariate):
     param_expr = model.statements.before_odes.full_expression(symbol)
 
+    # Piecewise statement can interfer with .match() of expression
+    full_expr = param_expr
+    function_counter = 1
+
+    def extract_parameters_recursive(expr_list, expr, full_expr, counter):
+        for a in expr.args:
+            if a.is_Function:
+                full_expr = full_expr.subs({a: sympy.Wild(f"f{counter}")})
+                counter += 1
+                if a.is_Piecewise:
+                    for e, _ in a.args:
+                        extract_parameters_recursive(expr_list, e, e, counter)
+                else:
+                    for e in a.args:
+                        extract_parameters_recursive(expr_list, e, e, counter)
+        expr_list.insert(0, full_expr)
+        return expr_list
+
+    param_expr_list = extract_parameters_recursive([], param_expr, full_expr, function_counter)
+    param_expr_list.append(param_expr)
+    for i in param_expr_list:
+        print(i)
+
     eff = 'custom'
     op = '*'
     for effect in ['lin', 'cat', 'piece_lin', 'exp', 'pow']:
@@ -84,23 +107,30 @@ def get_covariate_effect(model: Model, symbol, covariate):
                 wild_dict["median"].append(wild_symbol)
         rest_of_expression = sympy.Wild('reo')
 
-        match = param_expr.match(rest_of_expression + template)
-        if match:
-            if _assert_cov_effect_match(wild_dict, match, model, effect=effect):
-                eff = effect
-                op = '+'
+        for pe in param_expr_list:
+            found_match = False
+            match = pe.match(rest_of_expression * template)
+            if match:
+                if _assert_cov_effect_match(wild_dict, match, model, covariate, effect=effect):
+                    eff = effect
+                    op = '*'
+                    found_match = True
+            if found_match:
                 break
-        match = param_expr.match(rest_of_expression * template)
-        if match:
-            if _assert_cov_effect_match(wild_dict, match, model, effect=effect):
-                eff = effect
-                op = '*'
+        for pe in param_expr_list:
+            found_match = False
+            match = pe.match(rest_of_expression + template)
+            if match:
+                if _assert_cov_effect_match(wild_dict, match, model, covariate, effect=effect):
+                    eff = effect
+                    op = '+'
+                    found_match = True
+            if found_match:
                 break
-
     return eff, op
 
 
-def _assert_cov_effect_match(symbols, match, model, effect):
+def _assert_cov_effect_match(symbols, match, model, covariate, effect):
     if effect == "pow":
         if isinstance(match[sympy.Wild("cov")], sympy.Number) and isinstance(
             match[sympy.Wild("median")], sympy.Pow
@@ -115,9 +145,8 @@ def _assert_cov_effect_match(symbols, match, model, effect):
             if any(match[value] not in thetas for value in values):
                 return False
         if key == "cov":
-            covariates = get_model_covariates(model)
-            covariates.extend([1 / c for c in covariates])
-            if all(match[value] not in covariates for value in values):
+            covariate = sympy.Symbol(covariate)
+            if all(match[value] not in [covariate, 1 / covariate] for value in values):
                 return False
         if key == "median":
             if not all(isinstance(match[value], sympy.Number) for value in values):

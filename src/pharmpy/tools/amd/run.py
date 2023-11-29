@@ -345,11 +345,29 @@ def run_amd(
         if modeltype == 'drug_metabolite' and tool_name == "structsearch":
             next_model = next_model.replace(dataset=orig_dataset)
         subresults = func(next_model)
+
         if subresults is None:
             sum_models.append(None)
             sum_inds_counts.append(None)
         else:
             if subresults.final_model.name != next_model.name:
+                if tool_name == "allometry" and 'allometry' in order[: order.index('covariates')]:
+                    cov_before = ModelFeatures.create_from_mfl_string(
+                        get_model_features(next_model)
+                    )
+                    cov_after = ModelFeatures.create_from_mfl_string(
+                        get_model_features(subresults.final_model)
+                    )
+                    cov_differences = (cov_after - cov_before).covariate
+                    if cov_differences:
+                        covsearch_features += cov_differences
+                        func = _subfunc_covariates(
+                            amd_start_model=model,
+                            search_space=covsearch_features,
+                            strictness=strictness,
+                            path=db.path,
+                        )
+                        run_subfuncs['covsearch'] = func
                 next_model = subresults.final_model
                 results = subresults.tool_database.model_database.retrieve_modelfit_results(
                     subresults.final_model.name
@@ -484,6 +502,7 @@ def _subfunc_modelsearch(search_space: Tuple[Statement, ...], strictness, path) 
             path=path / 'modelsearch',
         )
         assert isinstance(res, Results)
+
         return res
 
     return _run_modelsearch
@@ -653,18 +672,19 @@ def _subfunc_covariates(
     return _run_covariates
 
 
+def _allometric_variable(model: Model, input_allometric_variable):
+    if input_allometric_variable is not None:
+        return input_allometric_variable
+
+    for col in model.datainfo:
+        if col.descriptor == 'body weight':
+            return col.name
+
+    return None
+
+
 def _subfunc_allometry(amd_start_model: Model, input_allometric_variable, path) -> SubFunc:
-    def _allometric_variable(model: Model):
-        if input_allometric_variable is not None:
-            return input_allometric_variable
-
-        for col in model.datainfo:
-            if col.descriptor == 'body weight':
-                return col.name
-
-        return None
-
-    allometric_variable = _allometric_variable(amd_start_model)
+    allometric_variable = _allometric_variable(amd_start_model, input_allometric_variable)
 
     if allometric_variable is None:
         warnings.warn(
@@ -676,7 +696,7 @@ def _subfunc_allometry(amd_start_model: Model, input_allometric_variable, path) 
         validate_allometric_variable(amd_start_model, allometric_variable)
 
     def _run_allometry(model):
-        allometric_variable = _allometric_variable(model)
+        allometric_variable = _allometric_variable(model, input_allometric_variable)
 
         if allometric_variable is None:
             warnings.warn(
