@@ -614,14 +614,14 @@ class CodeRecord(Record):
         for ni, nj, _, _ in self._index:
             for n in range(curn, ni):
                 node = self.root.children[n]
-                if node.find('block_if'):
+                if node.find('block_if') or node.find('logical_if'):
                     found = n
                     break
             curn = nj
         if curn < len(self.root.children):
             for n in range(curn, len(self.root.children)):
                 node = self.root.children[n]
-                if node.find('block_if'):
+                if node.find('block_if') or node.find('logical_if'):
                     found = n
                     break
 
@@ -638,19 +638,16 @@ class CodeRecord(Record):
 
 def create_dvs_node(dvs):
     """Create special dvs AST node"""
-    cg = CodeGenerator()
     for i, (dv, dvid) in enumerate(dvs.items()):
+        cg = CodeGenerator()
+        cg.add(f'IF (DVID.EQ.{dvid}) Y = {dv}')
+
         if i == 0:
-            cg.add(f'IF (DVID.EQ.{dvid}) THEN')
-        elif i == 1 and len(dvs) == 2:
-            cg.add('ELSE')
+            node = CodeRecordParser(str(cg)).root.children[0]
+        elif i == len(dvs.items()) - 1:
+            node = node.add_node(CodeRecordParser(str(cg) + '\n').root.children[0])
         else:
-            cg.add(f'ELSE IF (DVID.EQ.{dvid}) THEN')
-        cg.indent()
-        cg.add(f'Y = {dv}')
-        cg.dedent()
-    cg.add('END IF')
-    node = CodeRecordParser(str(cg) + '\n').root.children[0]
+            node = node.add_node(CodeRecordParser(str(cg)).root.children[0])
     return node
 
 

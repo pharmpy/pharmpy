@@ -13,11 +13,8 @@ def test_add_metabolite(testdata, load_model_for_test):
     assert odes.compartment_names == ['CENTRAL', 'METABOLITE']
     assert not has_presystemic_metabolite(model)
     a = model.model_code.split('\n')
-    assert a[20] == 'IF (DVID.EQ.1) THEN'
-    assert a[21] == '    Y = Y'
-    assert a[22] == 'ELSE'
-    assert a[23] == '    Y = Y_M'
-    assert a[24] == 'END IF'
+    assert a[20] == 'IF (DVID.EQ.1) Y = Y'
+    assert a[21] == 'IF (DVID.EQ.2) Y = Y_M'
 
     assert odes.central_compartment.name == 'CENTRAL'
 

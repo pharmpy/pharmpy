@@ -19,7 +19,7 @@ verbatim: VERBATIM_STATEMENT NEWLINE
 VERBATIM_STATEMENT: /"[^\n]*/
 
 // NOTE trailing NEWLINE needs to be optional in case of EOF
-statement: _statement NEWLINE
+statement: _statement NEWLINE?
 
 _statement: assignment
           | logical_if

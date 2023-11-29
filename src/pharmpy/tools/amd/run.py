@@ -59,6 +59,7 @@ def run_amd(
     path: Optional[Union[str, Path]] = None,
     resume: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    dv_types: Optional[dict] = None,
     mechanistic_covariates: Optional[List[str]] = None,
 ):
     """Run Automatic Model Development (AMD) tool
@@ -107,6 +108,8 @@ def run_amd(
         Whether to allow resuming previous run
     strictness : str or None
         Strictness criteria
+    dv_types : dict or None
+        Dictionary of DV types for TMDD models with multiple DVs.
     mechanistic_covariates : list
         List of covariates to run in a separate proioritized covsearch run. The effects are extracted
         from the search space for covsearch
@@ -318,6 +321,23 @@ def run_amd(
                     dv=2, strictness=strictness, path=db.path / 'ruvsearch_metabolite'
                 )
                 run_subfuncs['ruvsearch_metabolite'] = func
+            elif modeltype == 'tmdd' and dv_types is not None:
+                # Run for DV = 1
+                func = _subfunc_ruvsearch(
+                    dv=1, strictness=strictness, path=db.path / 'ruvsearch_drug'
+                )
+                run_subfuncs['ruvsearch_drug'] = func
+                # Run for second dv which is the first key in dv_types that is not 'drug'
+                if list(dv_types.keys())[0] == 'drug':
+                    second_dv_type = list(dv_types.keys())[1]
+                else:
+                    second_dv_type = list(dv_types.keys())[0]
+                func = _subfunc_ruvsearch(
+                    dv=dv_types[second_dv_type],
+                    strictness=strictness,
+                    path=db.path / f"ruvsearch_{second_dv_type}",
+                )
+                run_subfuncs[f'ruvsearch_{second_dv_type}'] = func
             else:
                 func = _subfunc_ruvsearch(dv=dv, strictness=strictness, path=db.path)
                 run_subfuncs['ruvsearch'] = func
@@ -537,17 +557,21 @@ def _subfunc_structsearch(path, **kwargs) -> SubFunc:
 
 def _subfunc_structsearch_tmdd(search_space, type, strictness, path) -> SubFunc:
     def _run_structsearch_tmdd(model):
+        # Filter dataset to only contain 1 DV for modelsearch
+        model_with_one_dv = filter_dataset(model, "DVID == 1")
+
         res = run_tool(
             'modelsearch',
             search_space=mfl_stringify(search_space),
             algorithm='reduced_stepwise',
-            model=model,
+            model=model_with_one_dv,
             strictness=strictness,
             results=model.modelfit_results,
             path=path / 'modelsearch',
         )
 
         final_model = res.final_model
+
         if not has_mixed_mm_fo_elimination(final_model):
             # Only select models that have mixed MM FO elimination
             # If no model with mixed MM FO then final model from modelsearch will be used
@@ -583,7 +607,11 @@ def _subfunc_structsearch_tmdd(search_space, type, strictness, path) -> SubFunc:
                 rank_filtered = rank_filtered.sort_values(by=['rank'])
                 highest_ranked = rank_filtered.index[0]
                 extra_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
+                extra_model = extra_model.replace(dataset=model.dataset)
                 extra_model_results = extra_model.modelfit_results
+
+        # Replace original dataset
+        final_model = final_model.replace(dataset=model.dataset)
 
         res = run_tool(
             'structsearch',

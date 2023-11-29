@@ -33,6 +33,7 @@ def create_workflow(
     extra_model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     extra_model_results: Optional[ModelfitResults] = None,
+    dv_types: Optional[dict] = None,
 ):
     """Run the structsearch tool. For more details, see :ref:`structsearch`.
 
@@ -60,6 +61,8 @@ def create_workflow(
         Results for the extra model
     strictness : str or None
         Strictness criteria
+    dv_types : dict
+        Dictionary of DV types for TMDD models with multiple DVs
 
     Returns
     -------
@@ -78,7 +81,14 @@ def create_workflow(
     wb = WorkflowBuilder(name="structsearch")
     if type == 'tmdd':
         start_task = Task(
-            'run_tmdd', run_tmdd, model, results, extra_model, extra_model_results, strictness
+            'run_tmdd',
+            run_tmdd,
+            model,
+            results,
+            extra_model,
+            extra_model_results,
+            strictness,
+            dv_types,
         )
     elif type == 'pkpd':
         start_task = Task(
@@ -101,11 +111,11 @@ def create_workflow(
     return Workflow(wb)
 
 
-def run_tmdd(context, model, results, extra_model, extra_model_results, strictness):
+def run_tmdd(context, model, results, extra_model, extra_model_results, strictness, dv_types):
     model = update_initial_estimates(model, results)
     model_entry = ModelEntry.create(model, modelfit_results=results)
 
-    qss_candidate_models = create_qss_models(model, results.parameter_estimates)
+    qss_candidate_models = create_qss_models(model, results.parameter_estimates, dv_types)
     qss_candidate_entries = [
         ModelEntry.create(m, modelfit_results=None, parent=model) for m in qss_candidate_models
     ]
@@ -113,7 +123,7 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     if extra_model is not None:
         extra_model = update_initial_estimates(extra_model, extra_model_results)
         extra_qss_candidate_models = create_qss_models(
-            extra_model, extra_model_results.parameter_estimates, index=9
+            extra_model, extra_model_results.parameter_estimates, dv_types, index=9
         )
         extra_qss_candidate_entries = [
             ModelEntry.create(model, modelfit_results=None, parent=extra_model)
@@ -141,6 +151,7 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
         model,
         best_qss_entry.modelfit_results.parameter_estimates,
         len(best_qss_entry.model.statements.ode_system.find_peripheral_compartments()),
+        dv_types,
     )
     remaining_model_entries = [
         ModelEntry.create(model, modelfit_results=None, parent=best_qss_entry.model)
