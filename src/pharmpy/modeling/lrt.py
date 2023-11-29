@@ -1,12 +1,22 @@
-from typing import Iterable
+from typing import Iterable, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps.scipy import stats
 from pharmpy.model import Model
+from pharmpy.workflows import ModelEntry
 
 
-def degrees_of_freedom(parent: Model, child: Model) -> int:
-    return len(child.parameters) - len(parent.parameters)
+def degrees_of_freedom(parent: Union[Model, ModelEntry], child: Union[Model, ModelEntry]) -> int:
+    if isinstance(child, ModelEntry):
+        child_parameters = child.model.parameters
+    else:
+        child_parameters = child.parameters
+
+    if isinstance(child, ModelEntry):
+        parent_parameters = parent.model.parameters
+    else:
+        parent_parameters = parent.parameters
+    return len(child_parameters) - len(parent_parameters)
 
 
 def cutoff(parent: Model, child: Model, alpha: float) -> float:

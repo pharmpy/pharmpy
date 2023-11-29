@@ -2,7 +2,7 @@ from dataclasses import fields
 from typing import Iterable, Tuple, Union
 
 from .statement.feature.covariate import Ref
-from .statement.feature.symbols import Name, Wildcard
+from .statement.feature.symbols import Name, Option, Wildcard
 from .statement.statement import Statement
 
 StringifiableAtom = Union[int, str, Name, Wildcard, Ref]
@@ -16,6 +16,7 @@ def stringify(statements: Iterable[Statement]) -> str:
 def _stringify_statement(statement: Statement) -> str:
     return (
         f'{_stringify_statement_type(statement)}'
+        f'{_stringify_optional(statement)}'
         f'({",".join(map(_stringify_attribute, _filter_attributes(statement)))})'
     )
 
@@ -28,14 +29,16 @@ def _filter_attributes(statement: Statement) -> Iterable[Stringifiable]:
     it = iter(fields(statement))
     for field in it:
         value = getattr(statement, field.name)
-        if value == field.default:
-            break
-        yield value
+        if not isinstance(value, Option):
+            if value == field.default:
+                break
+            yield value
 
     for field in it:
         # FIXME: Better handling
         value = getattr(statement, field.name)
-        assert value == field.default
+        if not isinstance(value, Option):
+            assert value == field.default
 
 
 def _stringify_attribute(attribute: Stringifiable) -> str:
@@ -62,3 +65,12 @@ def _stringify_attribute(attribute: Stringifiable) -> str:
         return f'[{",".join(map(_stringify_attribute, attribute))}]'
     else:
         raise TypeError(type(attribute))
+
+
+def _stringify_optional(statement: Statement) -> str:
+    it = iter(fields(statement))
+    for field in it:
+        value = getattr(statement, field.name)
+        if isinstance(value, Option) and value.option is True:
+            return '?'
+    return ''

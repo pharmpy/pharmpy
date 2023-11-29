@@ -249,7 +249,10 @@ MFL support the following model features:
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | LAGTIME       | :code:`OFF, ON`                | Absorption lagtime                                                 |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| COVARIATE     | `parameter`, `covariate`,      | Covariate effects                                                  |
+| COVARIATE     | `parameter`, `covariate`,      | Structural covariate effects (will be tested)                     |
+|               | `effect`                       |                                                                    |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| COVARIATE?    | `parameter`, `covariate`,      | Exploratory covariate effects (will always be added)                |
 |               | `effect`                       |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | DIRECTEFFECT  | `model`                        | Direct effect PD models.                                           |

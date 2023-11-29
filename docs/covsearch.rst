@@ -25,7 +25,7 @@ To initiate COVsearch in Python/R:
     res = run_covsearch(algorithm='scm-forward-then-backward',
                         model=start_model,
                         results=start_model_results,
-                        effects='COVARIATE(@IIV, @CONTINUOUS, *); COVARIATE(@IIV, @CATEGORICAL, CAT)',
+                        effects='COVARIATE?(@IIV, @CONTINUOUS, *); COVARIATE?(@IIV, @CATEGORICAL, CAT)',
                         p_forward=0.05,
                         p_backward=0.01,
                         max_steps=5)
@@ -45,7 +45,7 @@ To run COVsearch from the command line, the example code is redefined accordingl
 
 .. code::
 
-    pharmpy run covsearch path/to/model --algorithm scm-forward-then-backward --effects 'COVARIATE(@IIV, @CONTINUOUS, *); COVARIATE(@IIV, @CATEGORICAL, CAT)' --p_forward 0.05 --p_backward 0.01 --max_steps 5
+    pharmpy run covsearch path/to/model --algorithm scm-forward-then-backward --effects 'COVARIATE?(@IIV, @CONTINUOUS, *); COVARIATE?(@IIV, @CATEGORICAL, CAT)' --p_forward 0.05 --p_backward 0.01 --max_steps 5
 
 ~~~~~~~~~
 Arguments
@@ -80,18 +80,22 @@ Arguments
 Effects
 ~~~~~~~
 
-Candidate effects can be defined through a model feature language (:ref:`MFL<mfl>`)
-sentence. For instance, given we want to add a exponential effects on
-clearance and volume with age and weight as covariates respectively, we can use the
-following MFL specification:
+There are two kinds of candidate effects that can be described through the model
+feature language (:ref:`MFL<mfl>`). For instance, say that we want to have want to forcefully
+add an exponential effect on volume through the weight covariate as well as testing
+adding an exponential effect on clearance with age as covariate. In this case, the following
+MFL specification can be used:
 
 .. pharmpy-code::
 
     run_covsearch(
         ...
-        effects='COVARIATE([CL, V], [AGE, WT], EXP)',
+        effects='COVARIATE(CL, WT, EXP);COVARIATE?(V,AGE,EXP)',
         ...
     )
+    
+.. note::
+    :code:`COVARIATE(...)` represent structural covariates while :code:`COVARIATE?(...)` represent exploratory. 
 
 The effect is specified by first writing the parameters, then the covariates of interest,
 which effect, and, optionally, the operation to use for the covariate effect (`'*'`
@@ -104,7 +108,7 @@ manually-defined symbols. For instance the example above can be rewritten as
 
     run_covsearch(
         ...
-        effects='LET(CONTINUOUS, [AGE,WT]);COVARIATE([CL, V], @CONTINUOUS, EXP)'
+        effects='LET(CONTINUOUS, [AGE,WT]);COVARIATE?([CL, V], @CONTINUOUS, EXP)'
         ...
     )
 
@@ -117,7 +121,7 @@ For instance,
 
     run_covsearch(
         ...
-        effects='COVARIATE([CL, V], @CONTINUOUS, EXP)'
+        effects='COVARIATE?([CL, V], @CONTINUOUS, EXP)'
         ...
     )
 
@@ -134,7 +138,7 @@ Wildcards
 ~~~~~~~~~
 
 In addition to symbols, using a wildcard `\*` can help refer to computed list
-of values. For instance the MFL sentence `COVARIATE(*, *, *)` represents "All
+of values. For instance the MFL sentence `COVARIATE?(*, *, *)` represents "All
 continuous covariate effects of all covariates on all PK parameters".
 
 +-------------+---------------------------------------------+
@@ -147,6 +151,10 @@ continuous covariate effects of all covariates on all PK parameters".
 | Parameter   | All PK parameters                           |
 +-------------+---------------------------------------------+
 
+.. note::
+    Wildcard for effects cannot be used with structural covariates as only a single
+    effect can be added per covariate for a certain parameter.
+
 .. _algorithm_covsearch:
 
 ~~~~~~~~~
@@ -158,8 +166,12 @@ the SCM method with forward steps followed by backward steps. The covariate effe
 dependent on the effects that are already present in the input model. All covariate effects that are 
 initially part of the model but are *not* part of the search space will be removed before starting 
 the search. Covariate effects that are part of both the search space *and* the model will be left in 
-the model but are removed from the search space. If any filtration is done, a new "filtered_input_model" 
-is created, otherwise the input model will be used.
+the model but are removed from the search space. In this initial stage, any structural covariates 
+defined within the search space (see :ref:`effects<effects_covsearch>`) will be added as well. If any
+filtration is done, a new "filtered_input_model" is created, otherwise the input model will be used.
+
+.. note::
+    If a filtered model is required, the changes made is reflected in its description. 
 
 .. graphviz::
 
@@ -238,7 +250,7 @@ Consider a `covsearch` run:
 .. pharmpy-code::
 
     res = run_covsearch(model=start_model, results=start_model_results,
-                        effects='COVARIATE([CL, MAT, VC], [AGE, WT], EXP);COVARIATE([CL, MAT, VC], [SEX], CAT)')
+                        effects='COVARIATE?([CL, MAT, VC], [AGE, WT], EXP);COVARIATE?([CL, MAT, VC], [SEX], CAT)')
 
 
 The ``summary_tool`` table contains information such as which feature each
