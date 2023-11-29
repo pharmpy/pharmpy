@@ -34,7 +34,7 @@ elimination: "ELIMINATION"i "(" (_elimination_option) ")"
 peripherals: "PERIPHERALS"i "(" (_counts) ["," _peripheral_comp] ")"
 transits: "TRANSITS"i "(" _counts ["," _depot_option] ")"
 lagtime: "LAGTIME"i "(" (_lagtime_option) ")"
-covariate: "COVARIATE"i "(" parameter_option "," covariate_option "," fp_option ["," op_option] ")"
+covariate: "COVARIATE"i [optional_cov] "(" parameter_option "," covariate_option "," fp_option ["," op_option] ")"
 
 direct_effect: "DIRECTEFFECT"i "(" (_pdtype_option) ")"
 effect_comp: "EFFECTCOMP"i "(" (_pdtype_option) ")"
@@ -61,32 +61,40 @@ _absorption_option: absorption_modes | absorption_wildcard
 absorption_modes: ABSORPTION_MODE | "[" [ABSORPTION_MODE ("," ABSORPTION_MODE)*] "]"
 absorption_wildcard: WILDCARD
 ABSORPTION_MODE: "FO"i | "ZO"i | "SEQ-ZO-FO"i | "INST"i
+
 _elimination_option: elimination_modes | elimination_wildcard
 elimination_modes: ELIMINATION_MODE | "[" [ELIMINATION_MODE ("," ELIMINATION_MODE)*] "]"
 elimination_wildcard: WILDCARD
 ELIMINATION_MODE: "FO"i | "ZO"i | "MM"i | "MIX-FO-MM"i
+
 _depot_option: depot_modes | depot_wildcard
 depot_modes: DEPOT_MODE | "[" [DEPOT_MODE ("," DEPOT_MODE)*] "]"
 DEPOT_MODE: "DEPOT"i |"NODEPOT"i
 depot_wildcard: WILDCARD
+
 _peripheral_comp: peripheral_modes | peripheral_wildcard
 peripheral_modes: PERIPHERAL_MODE | "[" [PERIPHERAL_MODE ("," PERIPHERAL_MODE)*] "]"
 PERIPHERAL_MODE: "DRUG"i | "MET"i
 peripheral_wildcard: WILDCARD
+
 _lagtime_option: lagtime_modes | lagtime_wildcard
 lagtime_modes: LAGTIME_MODE | "[" [LAGTIME_MODE ("," LAGTIME_MODE)*] "]"
 lagtime_wildcard: WILDCARD
 LAGTIME_MODE: "ON"i | "OFF"i
+
 parameter_option: values | ref | parameter_wildcard
 covariate_option: values | ref | covariate_wildcard
 fp_option: values | fp_wildcard
 !op_option: "+" | "*"
+optional_cov: OPTIONAL
+
 ref: "@" VARIABLE_NAME
 parameter_wildcard: WILDCARD
 covariate_wildcard: WILDCARD
 fp_wildcard: WILDCARD
 
 WILDCARD: "*"
+OPTIONAL: "?"
 
 VARIABLE_NAME: /[a-zA-Z_]+/
 

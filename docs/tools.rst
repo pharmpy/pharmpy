@@ -249,7 +249,10 @@ MFL support the following model features:
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | LAGTIME       | :code:`OFF, ON`                | Absorption lagtime                                                 |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| COVARIATE     | `parameter`, `covariate`,      | Covariate effects                                                  |
+| COVARIATE     | `parameter`, `covariate`,      | Structural covariate effects (will be tested)                     |
+|               | `effect`                       |                                                                    |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| COVARIATE?    | `parameter`, `covariate`,      | Exploratory covariate effects (will always be added)                |
 |               | `effect`                       |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | DIRECTEFFECT  | `model`                        | Direct effect PD models.                                           |
@@ -431,31 +434,70 @@ not be able to be selected as best models.
 The strictness argument in the AMD tools consists of a string of logically arranged criteria.
 Implemented strictness criteria are:
 
-+-----------------------------+-------------+-------------------------------------+
-| Strictness criterion        | Type        | Description                         |
-+=============================+=============+=====================================+
-| ``minimization_successful`` | Boolean     | True if minimization was successful |
-+-----------------------------+-------------+-------------------------------------+
-| ``rounding_errors``         | Boolean     | True if minimization terminated due | 
-|                             |             | rounding errors                     |
-+-----------------------------+-------------+-------------------------------------+
-| ``sigdigs``                 | Numeric     | Number of significant digits        |
-+-----------------------------+-------------+-------------------------------------+
-| ``maxevals_exceeded``       | Boolean     | True if minimization terminated due |
-|                             |             | maximum evaluations exceeded.       |
-+-----------------------------+-------------+-------------------------------------+
-| ``rse``                     | Numeric     | Relative standard errors of the     |
-|                             |             | parameters.                         |
-+-----------------------------+-------------+-------------------------------------+
-| ``condition_number``        | Numeric     | Condition number of the covariance  |
-|                             |             | matrix                              |
-+-----------------------------+-------------+-------------------------------------+
-| ``final_zero_gradient``     | Boolean     | True if at least one parameter has  |
-|                             |             | a final zero gradient               |
-+-----------------------------+-------------+-------------------------------------+
-| ``estimate_near_boundary``  | Boolean     | True if at least one parameter      |
-|                             |             | estimate is near its boundary       |
-+-----------------------------+-------------+-------------------------------------+
++----------------------------------+-------------+--------------------------------------------------+
+| Strictness criterion             | Type        | Description                                      |
++==================================+=============+==================================================+
+| ``minimization_successful``      | Boolean     | True if minimization was successful              |
++----------------------------------+-------------+--------------------------------------------------+
+| ``rounding_errors``              | Boolean     | True if minimization terminated due              | 
+|                                  |             | rounding errors                                  |
++----------------------------------+-------------+--------------------------------------------------+
+| ``sigdigs``                      | Numeric     | Number of significant digits                     |
++----------------------------------+-------------+--------------------------------------------------+
+| ``maxevals_exceeded``            | Boolean     | True if minimization terminated due              |
+|                                  |             | maximum evaluations exceeded.                    |
++----------------------------------+-------------+--------------------------------------------------+
+| ``rse``                          | Numeric     | Relative standard errors of the                  |
+|                                  |             | parameters.                                      |
++----------------------------------+-------------+--------------------------------------------------+
+| ``rse_theta``                    | Numeric     | Relative standard errors of the                  |
+|                                  |             | theta parameters.                                |
++----------------------------------+-------------+--------------------------------------------------+
+| ``rse_omega``                    | Numeric     | Relative standard errors of the                  |
+|                                  |             | omega parameters.                                |
++----------------------------------+-------------+--------------------------------------------------+
+| ``rse_sigma``                    | Numeric     | Relative standard errors of the                  |
+|                                  |             | sigma parameters.                                |
++----------------------------------+-------------+--------------------------------------------------+
+| ``condition_number``             | Numeric     | Condition number of the covariance               |
+|                                  |             | matrix                                           |
++----------------------------------+-------------+--------------------------------------------------+
+| ``final_zero_gradient``          | Boolean     | True if at least one parameter has               |
+|                                  |             | a final zero gradient or if final                |
+|                                  |             | gradient is nan                                  |
++----------------------------------+-------------+--------------------------------------------------+
+| ``final_zero_gradient_theta``    | Boolean     | True if at least one theta parameter has         |
+|                                  |             | a final zero gradient or if final                |
+|                                  |             | gradient is nan                                  |
++----------------------------------+-------------+--------------------------------------------------+
+| ``final_zero_gradient_omega``    | Boolean     | True if at least one omega parameter has         |
+|                                  |             | a final zero gradient or if final                |
+|                                  |             | gradient is nan                                  |
++----------------------------------+-------------+--------------------------------------------------+
+| ``final_zero_gradient_sigma``    | Boolean     | True if at least one sigma parameter has         |
+|                                  |             | a final zero gradient or if gradient             |
+|                                  |             | gradient is nan                                  |
++----------------------------------+-------------+--------------------------------------------------+
+| ``estimate_near_boundary``       | Boolean     | True if at least one parameter                   |
+|                                  |             | estimate is near its boundary                    |
+|                                  |             | (maximum distance to 0 = 0.001, maximum distance |
+|                                  |             | to non-zero bound = 2 significant digits         |
++----------------------------------+-------------+--------------------------------------------------+
+| ``estimate_near_boundary_theta`` | Boolean     | True if at least one theta parameter             |
+|                                  |             | estimate is near its boundary                    |
+|                                  |             | (maximum distance to 0 = 0.001, maximum distance |
+|                                  |             | to non-zero bound = 2 significant digits         |
++----------------------------------+-------------+--------------------------------------------------+
+| ``estimate_near_boundary_omega`` | Boolean     | True if at least one omega parameter             |
+|                                  |             | estimate is near its boundary                    |
+|                                  |             | (maximum distance to 0 = 0.001, maximum distance |
+|                                  |             | to non-zero bound = 2 significant digits         |
++----------------------------------+-------------+--------------------------------------------------+
+| ``estimate_near_boundary_sigma`` | Boolean     | True if at least one sigma parameter             |
+|                                  |             | estimate is near its boundary                    |
+|                                  |             | (maximum distance to 0 = 0.001, maximum distance |
+|                                  |             | to non-zero bound = 2 significant digits         |
++----------------------------------+-------------+--------------------------------------------------+
 
 The strictness criteria can be arranged logically, e.g.:
 

@@ -16,3 +16,8 @@ class Name(Symbol, Generic[T]):
 @dataclass(frozen=True)
 class Wildcard(Symbol):
     pass
+
+
+@dataclass(frozen=True)
+class Option(Symbol):
+    option: bool

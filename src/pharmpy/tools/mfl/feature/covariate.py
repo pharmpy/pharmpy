@@ -58,12 +58,12 @@ all_covariate_effects = all_continuous_covariate_effects + all_categorical_covar
 def features(model: Model, statements: Iterable[Statement], remove=False) -> Iterable[Feature]:
     # Add remove_covariate_effect if optional argument
     for args in parse_spec(spec(model, statements)):
-        if remove:
-            yield ('COVARIATE', *args), partial(
+        if remove or args[-1]:
+            yield ('COVARIATE',) + args[:-1] + ('REMOVE',), partial(
                 remove_covariate_effect, parameter=args[0], covariate=args[1]
             )
-        else:
-            yield ('COVARIATE', *args), partial(
+        if not remove and (args[-1] or not args[-1]):
+            yield ('COVARIATE',) + args[:-1] + ('ADD',), partial(
                 add_covariate_effect,
                 parameter=args[0],
                 covariate=args[1],
@@ -92,7 +92,7 @@ def spec(model: Model, statements: Iterable[Statement]) -> Iterable[Spec]:
 
     for effect in effects:
         t = _effect_to_tuple(model, definitions, effect)
-        if all(t):  # NOTE: We do not yield empty products
+        if all([e != tuple() for e in t]):  # NOTE: We do not yield empty products
             yield t
 
 
@@ -109,12 +109,13 @@ def _ensure_tuple_or_list(x):
 
 
 def parse_spec(spec: Iterable[Spec]) -> Iterable[EffectLiteral]:
-    for parameters, covariates, fps, operations in spec:
+    for parameters, covariates, fps, operations, optional in spec:
         parameters = _ensure_tuple_or_list(parameters)
         covariates = _ensure_tuple_or_list(covariates)
         fps = _ensure_tuple_or_list(fps)
         operations = _ensure_tuple_or_list(operations)
-        yield from product(parameters, covariates, fps, operations)
+        optional = _ensure_tuple_or_list(optional)
+        yield from product(parameters, covariates, fps, operations, optional)
 
 
 def _effect_to_tuple(model: Model, definitions: Definitions, effect: Covariate) -> Spec:
@@ -126,7 +127,8 @@ def _effect_to_tuple(model: Model, definitions: Definitions, effect: Covariate) 
     covariates = _effect_to_covariates(model, definitions, effect)
     fps = all_continuous_covariate_effects if effect.fp is EffectFunctionWildcard else effect.fp
     ops = effect.op
-    return (parameters, covariates, tuple(fp.lower() for fp in fps), ops)
+    optional = effect.optional.option
+    return (parameters, covariates, tuple(fp.lower() for fp in fps), ops, optional)
 
 
 def _effect_to_covariates(

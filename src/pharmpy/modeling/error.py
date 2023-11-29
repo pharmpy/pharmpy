@@ -172,7 +172,11 @@ def set_additive_error_model(
 
 
 def _get_prop_init(model):
-    dv_min = get_observations(model).min()
+    if model.dataset is not None and 'idv' in model.datainfo.types and 'dv' in model.datainfo.types:
+        dv_min = get_observations(model).min()
+    else:
+        dv_min = 0
+
     if dv_min == 0:
         return 0.01
     else:

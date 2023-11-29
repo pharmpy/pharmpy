@@ -10,7 +10,7 @@ from pharmpy.workflows import Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
 MINIMAL_VALID_MFL_STRING = 'LET(x, 0)'
-LARGE_VALID_MFL_STRING = 'COVARIATE(@IIV, @CONTINUOUS, *);COVARIATE(@IIV, @CATEGORICAL, CAT)'
+LARGE_VALID_MFL_STRING = 'COVARIATE?(@IIV, @CONTINUOUS, *);COVARIATE?(@IIV, @CATEGORICAL, CAT)'
 
 
 def test_create_workflow():
@@ -150,14 +150,16 @@ def test_validate_input_raises(
 
 
 def test_covariate_filtering(load_model_for_test, testdata):
+    effects = 'COVARIATE(@IIV, @CONTINUOUS, lin);COVARIATE?(@IIV, @CATEGORICAL, CAT)'
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     orig_cov = get_covariates(model)
     assert len(orig_cov) == 3
 
-    eff, filtered_model = filter_search_space_and_model(LARGE_VALID_MFL_STRING, model)
+    eff, filtered_model = filter_search_space_and_model(effects, model)
     assert len(eff) == 2
-    assert len(eff[0].parameter) == 2
-    assert len(get_covariates(filtered_model)) == 0
+    expected_cov_eff = set((('CL', 'APGR', 'cat', '*'), ('V', 'APGR', 'cat', '*')))
+    assert set(eff.keys()) == expected_cov_eff
+    assert len(get_covariates(filtered_model)) == 2
 
     for cov_effect in get_covariates(model):
         model = remove_covariate_effect(model, cov_effect[0], cov_effect[1].name)
@@ -166,6 +168,5 @@ def test_covariate_filtering(load_model_for_test, testdata):
     assert len(get_covariates(model)) == 1
     effects = 'COVARIATE([CL, V],WGT,pow,*)'
     eff, filtered_model = filter_search_space_and_model(effects, model)
-    assert len(get_covariates(filtered_model)) == 1
-    assert len(eff) == 1
-    assert len(eff[0].parameter) == 1
+    assert len(get_covariates(filtered_model)) == 2
+    assert len(eff) == 0

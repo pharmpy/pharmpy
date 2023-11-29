@@ -201,7 +201,7 @@ def get_model_code(model: Model):
     return model.model_code
 
 
-def print_model_code(model: Model):
+def print_model_code(model: Model) -> None:
     """Print the model code of the underlying model language
 
     Parameters
@@ -448,7 +448,7 @@ def get_model_covariates(model: Model, strings: bool = False):
     return covs
 
 
-def print_model_symbols(model: Model):
+def print_model_symbols(model: Model) -> None:
     """Print all symbols defined in a model
 
     Symbols will be in one of the categories thetas, etas, omegas, epsilons, sigmas,
