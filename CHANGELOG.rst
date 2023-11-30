@@ -5,6 +5,7 @@ New features
 ============
 
 * Add modeling.bin_observations
+* Add modeling.plot_dv_vs_pred
 
 0.104.0 (2023-11-06)
 --------------------

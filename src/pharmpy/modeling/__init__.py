@@ -212,6 +212,7 @@ from .pd import add_effect_compartment, add_indirect_effect, set_baseline_effect
 from .plots import (
     plot_cwres_vs_idv,
     plot_dv_vs_ipred,
+    plot_dv_vs_pred,
     plot_individual_predictions,
     plot_iofv_vs_iofv,
     plot_transformed_eta_distributions,
@@ -366,6 +367,7 @@ __all__ = [
     'omit_data',
     'plot_cwres_vs_idv',
     'plot_dv_vs_ipred',
+    'plot_dv_vs_pred',
     'plot_individual_predictions',
     'plot_iofv_vs_iofv',
     'plot_transformed_eta_distributions',

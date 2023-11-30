@@ -1,6 +1,7 @@
 from pharmpy.modeling import (
     plot_cwres_vs_idv,
     plot_dv_vs_ipred,
+    plot_dv_vs_pred,
     plot_individual_predictions,
     plot_iofv_vs_iofv,
     plot_transformed_eta_distributions,
@@ -36,6 +37,13 @@ def test_plot_dv_vs_ipred(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
     plot = plot_dv_vs_ipred(model, res.predictions)
+    assert plot
+
+
+def test_plot_dv_vs_pred(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    plot = plot_dv_vs_pred(model, res.predictions)
     assert plot
 
 

@@ -186,6 +186,29 @@ def plot_transformed_eta_distributions(
     return facet
 
 
+def plot_dv_vs_pred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
+    """Plot DV vs PRED
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    predictions : pd.DataFrame
+        DataFrame containing the predictions
+
+    Returns
+    -------
+    alt.Chart
+        Plot
+    """
+    if 'PRED' in predictions.columns:
+        pred = 'PRED'
+    else:
+        raise ValueError("Cannot find population predictions")
+    pred_name = "Population prediction"
+    return _dv_vs_anypred(model, predictions, pred, pred_name)
+
+
 def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
     """Plot DV vs IPRED
 
@@ -201,15 +224,18 @@ def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
     alt.Chart
         Plot
     """
-
-    obs = get_observations(model)
-
     if 'CIPREDI' in predictions.columns:
         ipred = 'CIPREDI'
     elif 'IPRED' in predictions.columns:
         ipred = 'IPRED'
     else:
         raise ValueError("Cannot find individual predictions")
+    ipred_name = "Individual prediction"
+    return _dv_vs_anypred(model, predictions, ipred, ipred_name)
+
+
+def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr):
+    obs = get_observations(model)
     di = model.datainfo
     idv = di.idv_column.name
     dvcol = di.dv_column
@@ -217,7 +243,7 @@ def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
     dv_unit = dvcol.unit
     idname = di.id_column.name
 
-    predictions = predictions[[ipred]]
+    predictions = predictions[[predcol_name]]
     df = predictions.join(obs, how='inner').reset_index()
 
     if dv_unit == 1:
@@ -229,26 +255,31 @@ def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
         alt.Chart(df)
         .mark_line(point=True, opacity=0.7)
         .encode(
-            x=alt.X(ipred).title(f"Individual prediction{unit}"),
+            x=alt.X(predcol_name).title(f"{predcol_descr}{unit}"),
             y=alt.Y(dv).title(f"Observation{unit}"),
             detail=f"{idname}:N",
-            tooltip=[ipred, dv, idname, idv],
+            tooltip=[predcol_name, dv, idname, idv],
         )
-        .properties(title="Observations vs. Individual predictions", width=600, height=300)
+        .properties(title=f"Observations vs. {predcol_descr}s", width=600, height=300)
         .interactive()
     )
 
     line = (
         alt.Chart(
             pd.DataFrame(
-                {'var1': [df[ipred].min(), df[ipred].max()], 'var2': [df[dv].min(), df[dv].max()]}
+                {
+                    'var1': [df[predcol_name].min(), df[predcol_name].max()],
+                    'var2': [df[dv].min(), df[dv].max()],
+                }
             )
         )
         .mark_line()
         .encode(x=alt.X('var1'), y=alt.Y('var2'), color=alt.value("#000000"))
     )
 
-    loess_smooth = chart.transform_loess(ipred, dv).mark_line().encode(color=alt.value("#FF0000"))
+    loess_smooth = (
+        chart.transform_loess(predcol_name, dv).mark_line().encode(color=alt.value("#FF0000"))
+    )
 
     layer = chart + loess_smooth + line
     layer = layer.configure_point(size=60)
