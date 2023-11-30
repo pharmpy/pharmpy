@@ -5,7 +5,12 @@ from typing import Callable, List, Optional, Tuple, Union
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Model
-from pharmpy.modeling import has_mixed_mm_fo_elimination, plot_cwres_vs_idv, plot_dv_vs_ipred
+from pharmpy.modeling import (
+    has_mixed_mm_fo_elimination,
+    plot_cwres_vs_idv,
+    plot_dv_vs_ipred,
+    plot_dv_vs_pred,
+)
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
@@ -450,8 +455,10 @@ def run_amd(
     summary_errors = summarize_errors(final_results)
     if final_results.predictions is not None:
         dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions)
+        dv_vs_pred_plot = plot_dv_vs_pred(model, final_results.predictions)
     else:
         dv_vs_ipred_plot = None
+        dv_vs_pred_plot = None
     if final_results.residuals is not None:
         cwres_vs_idv_plot = plot_cwres_vs_idv(model, final_results.residuals)
     else:
@@ -466,6 +473,7 @@ def run_amd(
             model, final_results.parameter_estimates_sdcorr, final_results.standard_errors_sdcorr
         ),
         final_model_dv_vs_ipred_plot=dv_vs_ipred_plot,
+        final_model_dv_vs_pred_plot=dv_vs_pred_plot,
         final_model_cwres_vs_idv_plot=cwres_vs_idv_plot,
     )
     # Since we are outside of the regular tools machinery the following is needed

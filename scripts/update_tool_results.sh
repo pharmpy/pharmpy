@@ -31,7 +31,7 @@ activate () {
 }
 activate
 pip install .
-pip install --index-url https://google-coral.github.io/py-repo/ tflite_runtime
+pip install https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp310-cp310-linux_x86_64.whl
 
 cp_results () {
   # This converts MacOS-style temp paths to Linux-style ones

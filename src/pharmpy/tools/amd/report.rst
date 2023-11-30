@@ -37,4 +37,10 @@ Final model
 .. jupyter-execute::
    :hide-code:
 
+   res.final_model_dv_vs_pred_plot
+
+  
+.. jupyter-execute::
+   :hide-code:
+
    res.final_model_dv_vs_ipred_plot
