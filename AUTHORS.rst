@@ -8,8 +8,19 @@ Development
 
 The following have contributed by writing and/or designing the code base of Pharmpy.
 
+Current team
+------------
+
 * Rikard Nordgren, rikard.nordgren@farmaci.uu.se (maintainer)
 * Stella Belin, stella.belin@farmaci.uu.se (maintainer)
+* Johan Borg
+* Antonia Hufnagl
+
+All developers past and present
+-------------------------------
+
+* Rikard Nordgren
+* Stella Belin
 * Kajsa Harling
 * Zhe Huang
 * Aurelien Ooms
