@@ -19,6 +19,7 @@ from pharmpy.tools.mfl.feature.covariate import EffectLiteral, InputSpec, all_co
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.parse import parse as mfl_parse
+from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.symbols import Wildcard
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
@@ -781,7 +782,7 @@ def validate_input(
             )
 
         for s in statements:
-            if isinstance(s.fp, Wildcard) and not s.optional.option:
+            if isinstance(s, Covariate) and isinstance(s.fp, Wildcard) and not s.optional.option:
                 raise ValueError(
                     f'Invalid `effects` due to non-optional covariate'
                     f' defined with WILDCARD as effect in {s}'
