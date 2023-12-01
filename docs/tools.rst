@@ -36,6 +36,7 @@ Tools in Pharmpy
    RUVsearch - search for best residual error model <ruvsearch>
    allometry - add allometric scaling <allometry>
    estmethod - compare estimation methods and/or solvers <estmethod>
+   Retries - Rerun a model with tweaked initial estimates <retries>
 
 
 ~~~~~~~~~~~~~~
@@ -249,10 +250,10 @@ MFL support the following model features:
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | LAGTIME       | :code:`OFF, ON`                | Absorption lagtime                                                 |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| COVARIATE     | `parameter`, `covariate`,      | Structural covariate effects (will be tested)                     |
+| COVARIATE     | `parameter`, `covariate`,      | Structural covariate effects (will be tested)                      |
 |               | `effect`                       |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| COVARIATE?    | `parameter`, `covariate`,      | Exploratory covariate effects (will always be added)                |
+| COVARIATE?    | `parameter`, `covariate`,      | Exploratory covariate effects (will always be added)               |
 |               | `effect`                       |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | DIRECTEFFECT  | `model`                        | Direct effect PD models.                                           |
