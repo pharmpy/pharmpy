@@ -75,13 +75,16 @@ def calculate_ucp_scale(model: Model):
 
 def _scale_matrix(A):
     chol = np.linalg.cholesky(A)
-    M1 = np.triu(chol)
+    M1 = np.tril(chol)
     v1 = np.diag(M1)
     v2 = v1 / np.exp(0.1)
     M2 = np.diag(v1)
     M3 = np.diag(v2)
     m_scale = np.abs(10 * (M1 - M2)) + M3
-    return m_scale.T
+    # Convert lower triangle to symmetric
+    irows, icols = np.triu_indices(len(m_scale), 1)
+    m_scale[irows, icols] = m_scale[icols, irows]
+    return m_scale
 
 
 def calculate_parameters_from_ucp(
