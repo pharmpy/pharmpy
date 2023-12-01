@@ -31,7 +31,7 @@ ipywidgets==8.1.1
 jedi==0.19.1
 Jinja2==3.1.2
 jsonschema==4.20.0
-jsonschema-specifications==2023.11.1
+jsonschema-specifications==2023.11.2
 jupyter-client==8.6.0
 jupyter-core==5.5.0
 jupyter-sphinx==0.4.0
