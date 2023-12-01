@@ -195,6 +195,7 @@ class ModelFeatures:
                     else let[cov.covariate.name],
                     fp=cov.fp,
                     op=cov.op,
+                    optional=cov.optional,
                 )
 
             covariate = tuple([_let_subs(cov, let) for cov in covariate])
