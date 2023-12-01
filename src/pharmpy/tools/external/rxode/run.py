@@ -210,6 +210,8 @@ def verification(
         nonmem_model, rxode_model, error=error, force_pred=True, ignore_print=ignore_print
     )
 
+    combined_result.to_csv(db.path / "comparison.csv", index=False)
+
     if not ignore_print:
         print_step("DONE")
     if return_comp is True:
