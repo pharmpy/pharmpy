@@ -246,42 +246,24 @@ def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr):
     predictions = predictions[[predcol_name]]
     df = predictions.join(obs, how='inner').reset_index()
 
-    if dv_unit == 1:
-        unit = ""
-    else:
-        unit = f" ({unit_string(dv_unit)})"
-
-    chart = (
-        alt.Chart(df)
-        .mark_line(point=True, opacity=0.7)
-        .encode(
-            x=alt.X(predcol_name).title(f"{predcol_descr}{unit}"),
-            y=alt.Y(dv).title(f"Observation{unit}"),
-            detail=f"{idname}:N",
-            tooltip=[predcol_name, dv, idname, idv],
-        )
-        .properties(title=f"Observations vs. {predcol_descr}s", width=600, height=300)
-        .interactive()
+    chart = _grouped_scatter(
+        df,
+        x=predcol_name,
+        y=dv,
+        group=idname,
+        title=f"Observations vs. {predcol_descr}s",
+        xtitle=predcol_descr,
+        ytitle="Observation",
+        xunit=dv_unit,
+        yunit=dv_unit,
+        tooltip=(idv,),
     )
 
-    line = (
-        alt.Chart(
-            pd.DataFrame(
-                {
-                    'var1': [df[predcol_name].min(), df[predcol_name].max()],
-                    'var2': [df[dv].min(), df[dv].max()],
-                }
-            )
-        )
-        .mark_line()
-        .encode(x=alt.X('var1'), y=alt.Y('var2'), color=alt.value("#000000"))
+    line = _identity_line(
+        df[predcol_name].min(), df[predcol_name].max(), df[dv].min(), df[dv].max()
     )
 
-    loess_smooth = (
-        chart.transform_loess(predcol_name, dv).mark_line().encode(color=alt.value("#FF0000"))
-    )
-
-    layer = chart + loess_smooth + line
+    layer = chart + _smooth(chart, predcol_name, dv) + line
     layer = layer.configure_point(size=60)
 
     return layer
@@ -313,35 +295,70 @@ def plot_cwres_vs_idv(model: Model, residuals: pd.DataFrame) -> alt.Chart:
 
     df = residuals[['CWRES']].reset_index()
 
-    if dv_unit == 1:
-        cwres_unit_string = ""
-    else:
-        cwres_unit_string = f" ({unit_string(dv_unit)})"
-
-    if idv_unit == 1:
-        time_unit_string = ""
-    else:
-        time_unit_string = f" ({unit_string(idv_unit)})"
-
-    chart = (
-        alt.Chart(df)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X(idv).title(f"Time{time_unit_string}"),
-            y=alt.Y('CWRES').title(f"CWRES{cwres_unit_string}"),
-            detail='ID:N',
-            tooltip=['CWRES', idv, idname],
-        )
-        .properties(title="Conditional weighted residuals vs. time", width=600, height=300)
-        .interactive()
+    chart = _grouped_scatter(
+        df,
+        x=idv,
+        y='CWRES',
+        group=idname,
+        title="Conditional weighted residuals vs. time",
+        xtitle="Time",
+        ytitle="CWRES",
+        xunit=idv_unit,
+        yunit=dv_unit,
+        tooltip=(),
     )
 
-    zero_line = alt.Chart().mark_rule().encode(y=alt.datum(0), color=alt.value("#000000"))
-    loess_smooth = (
-        chart.transform_loess(idv, 'CWRES').mark_line().encode(color=alt.value("#FF0000"))
-    )
-
-    layer = chart + loess_smooth + zero_line
+    layer = chart + _smooth(chart, idv, 'CWRES') + _zero_line()
     layer = layer.configure_point(size=60)
 
     return layer
+
+
+def _smooth(chart, x, y):
+    loess_smooth = chart.transform_loess(x, y).mark_line().encode(color=alt.value("#FF0000"))
+    return loess_smooth
+
+
+def _identity_line(xmin, xmax, ymin, ymax):
+    line = (
+        alt.Chart(
+            pd.DataFrame(
+                {
+                    'var1': [xmin, xmax],
+                    'var2': [ymin, ymax],
+                }
+            )
+        )
+        .mark_line()
+        .encode(x=alt.X('var1'), y=alt.Y('var2'), color=alt.value("#000000"))
+    )
+    return line
+
+
+def _zero_line():
+    zero_line = alt.Chart().mark_rule().encode(y=alt.datum(0), color=alt.value("#000000"))
+    return zero_line
+
+
+def _title_with_unit(title, unit):
+    if unit == 1:
+        s = ""
+    else:
+        s = f" ({unit_string(unit)})"
+    return title + s
+
+
+def _grouped_scatter(df, x, y, group, title, xtitle, ytitle, xunit, yunit, tooltip=()):
+    chart = (
+        alt.Chart(df)
+        .mark_line(point=True, opacity=0.7)
+        .encode(
+            x=alt.X(x).title(_title_with_unit(xtitle, xunit)),
+            y=alt.Y(y).title(_title_with_unit(ytitle, yunit)),
+            detail=f"{group}:N",
+            tooltip=[x, y, group] + list(tooltip),
+        )
+        .properties(title=title, width=600, height=300)
+        .interactive()
+    )
+    return chart
