@@ -1,6 +1,6 @@
 import warnings
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, List, Literal, Optional, Tuple, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -66,6 +66,7 @@ def run_amd(
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     dv_types: Optional[dict] = None,
     mechanistic_covariates: Optional[List[str]] = None,
+    retries_strategy: Literal["final", "all_final", "skip"] = "final",
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -118,6 +119,9 @@ def run_amd(
     mechanistic_covariates : list
         List of covariates to run in a separate proioritized covsearch run. The effects are extracted
         from the search space for covsearch
+    retries_strategy: str
+        Weither or not to run retries tool. Valid options are 'skip', 'all_final' or 'final'.
+        Default is 'final'.
 
     Returns
     -------
@@ -138,6 +142,7 @@ def run_amd(
     run_tool
 
     """
+
     from pharmpy.model.external import nonmem  # FIXME: We should not depend on NONMEM
 
     if administration not in ['iv', 'oral', 'ivoral']:
@@ -364,6 +369,13 @@ def run_amd(
             raise ValueError(
                 f"Unrecognized section {section} in order. Must be one of {default_order}"
             )
+        if retries_strategy == 'all_final':
+            func = _subfunc_retires(tool=section, strictness=strictness, path=db.path)
+            run_subfuncs[f'{section}_retries'] = func
+
+    if retries_strategy == 'final':
+        func = _subfunc_retires(tool="", strictness=strictness, path=db.path)
+        run_subfuncs['retries'] = func
 
     # Filter data to only contain dvid=1
     if modeltype == "drug_metabolite":
@@ -529,6 +541,23 @@ SubFunc = Callable[[Model], Optional[Results]]
 
 def noop_subfunc(_: Model):
     return None
+
+
+def _subfunc_retires(tool, strictness, path):
+    def _run_retries(model):
+        res = run_tool(
+            'retries',
+            model=model,
+            results=model.modelfit_results,
+            strictness=strictness,
+            scale='UCP',
+            prefix_name=tool,
+            path=path / f'{tool}_retries',
+        )
+        assert isinstance(res, Results)
+        return res
+
+    return _run_retries
 
 
 def _subfunc_modelsearch(search_space: Tuple[Statement, ...], strictness, path) -> SubFunc:

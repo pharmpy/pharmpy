@@ -23,6 +23,7 @@ def test_invalid_search_space_raises(tmp_path, testdata):
                 model,
                 results=model.modelfit_results,
                 search_space='XYZ',
+                retries_strategy="skip",
                 path=db.path,
                 resume=True,
             )
@@ -40,6 +41,7 @@ def test_skip_most(tmp_path, testdata):
                 administration='oral',
                 order=['iovsearch', 'allometry', 'covariates'],
                 occasion=None,
+                retries_strategy="skip",
                 path=db.path,
                 resume=True,
             )
@@ -78,6 +80,7 @@ def test_raise_allometry(tmp_path, testdata):
                 administration='oral',
                 order=['allometry'],
                 allometric_variable='SJDLKSDJ',
+                retries_strategy="skip",
                 path=db.path,
                 resume=True,
             )
@@ -98,6 +101,7 @@ def test_raise_covsearch(tmp_path, testdata):
                 modeltype='basic_pk',
                 administration='oral',
                 order=['covariates'],
+                retries_strategy="skip",
                 path=db.path,
                 resume=True,
             )
@@ -115,6 +119,7 @@ def test_skip_covsearch(tmp_path, testdata):
                 modeltype='basic_pk',
                 administration='oral',
                 order=['covariates'],
+                retries_strategy="skip",
                 path=db.path,
                 resume=True,
             )
@@ -146,6 +151,7 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
                 administration='oral',
                 order=['iovsearch'],
                 occasion='XAT2',
+                retries_strategy="skip",
                 path=db.path,
                 resume=True,
             )
@@ -180,6 +186,7 @@ def test_skip_iovsearch_missing_occasion_raises(tmp_path, testdata):
                 administration='oral',
                 order=['iovsearch'],
                 occasion='XYZ',
+                retries_strategy="skip",
                 path=db.path,
                 resume=True,
             )

@@ -261,6 +261,17 @@ def run_amd(args):
     )
 
 
+def run_retries(args):
+    from pharmpy.tools import run_tool
+
+    run_tool(
+        'retries',
+        model=args.model,
+        results=args.model.modelfit_results,  # This feels wierd to do
+        number_of_candidates=args.number_of_candidates,
+    )
+
+
 def data_write(args):
     """Subcommand to write a dataset."""
     try:
