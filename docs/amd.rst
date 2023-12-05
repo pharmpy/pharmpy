@@ -84,7 +84,8 @@ Arguments
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 |``mechanistic_covariates``                         | List of covariates to run in a separate prioritezed covsearch run.                                              |
 |                                                   | The effects are extracted from the given search space                                                           |
-|                                                   |                                                                                                                 |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+| ``retries_strategy``                               | Decide how to use the retries tool. Valid options are 'skip', 'all_final' or 'final'. Default is 'final'       |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 .. _input_amd:
@@ -453,6 +454,26 @@ For an entire AMD run, it is possible to get a maximum of three covsearch runs, 
 +---------------------+-----------------------------------------------------------------------------------------+
 | Exploratory         | The remaining covariates are tested after all mechanistic covariates have been tested.  |
 +---------------------+-----------------------------------------------------------------------------------------+
+
+Retries
+~~~~~~~~~~
+
+If ``retries_strategy`` is set to 'all_final', the retries tool will be run on the final model from each subtool.
+With the argument set to 'final', the retries tool will only be run on the final model from the last subtool.
+Finally, if the argument is set to 'skip', no retries will be performed. See :ref:`retries` for more details about the 
+tool. When running the tool from AMD, the settings below will be used
+
++----------------------+----------------------------------------------------------------------------------------------------+
+| Argument             | Setting                                                                                            |
++======================+====================================================================================================+
+| number_of_candidates | ``5``                                                                                              |
++----------------------+----------------------------------------------------------------------------------------------------+
+| degree               | ``0.1``                                                                                            |
++----------------------+----------------------------------------------------------------------------------------------------+
+| scale                | ``UCP``                                                                                            |
++----------------------+----------------------------------------------------------------------------------------------------+
+| prefix_name          | The name of the previously run tool                                                                |
++----------------------+----------------------------------------------------------------------------------------------------+
 
 ~~~~~~~
 Results

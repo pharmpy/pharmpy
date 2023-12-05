@@ -32,6 +32,7 @@ def test_amd(tmp_path, testdata):
             search_space='PERIPHERALS(1)',
             occasion='VISI',
             strictness='minimization_successful or rounding_errors',
+            retries_strategy='skip',
         )
 
         rundir = tmp_path / 'amd_dir1'
@@ -70,6 +71,7 @@ def test_structure_mechanistic_exploratory(tmp_path, testdata):
             mechanistic_covariates=["AGE"],
             occasion='VISI',
             strictness='minimization_successful or rounding_errors',
+            retries_strategy='skip',
         )
 
         rundir = tmp_path / 'amd_dir1'
