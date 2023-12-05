@@ -234,6 +234,61 @@ def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
     return _dv_vs_anypred(model, predictions, ipred, ipred_name)
 
 
+def plot_abs_cwres_vs_ipred(
+    model: Model, predictions: pd.DataFrame, residuals: pd.DataFrame
+) -> alt.Chart:
+    """Plot |CWRES| vs IPRED
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    predictions : pd.DataFrame
+        DataFrame containing the predictions
+    residuals : pd.DataFrame
+        DataFrame containing the residuals
+
+    Returns
+    -------
+    alt.Chart
+        Plot
+    """
+    if 'CIPREDI' in predictions.columns:
+        ipred = 'CIPREDI'
+    elif 'IPRED' in predictions.columns:
+        ipred = 'IPRED'
+    else:
+        raise ValueError("Cannot find individual predictions")
+    if 'CWRES' not in residuals.columns:
+        raise ValueError("CWRES not available in residuals")
+
+    predictions = predictions[[ipred]].reset_index()
+    observations = get_observations(model, keep_index=True)
+    residuals = abs(residuals[['CWRES']]).set_index(observations.index)
+    df = predictions.join(residuals, how='inner').reset_index(drop=True)
+
+    idv = model.datainfo.idv_column.name
+    idname = model.datainfo.id_column.name
+    dv_unit = model.datainfo.dv_column.unit
+
+    chart = _scatter(
+        df,
+        x=ipred,
+        y='CWRES',
+        title="Conditional weighted resuals vs Individual predictions",
+        xtitle="Individual predictions",
+        ytitle="|Conditional weighted residuals|",
+        xunit=dv_unit,
+        yunit=dv_unit,
+        tooltip=(idname, idv),
+    )
+
+    layer = chart + _smooth(chart, ipred, 'CWRES')
+    layer = layer.configure_point(size=60)
+
+    return layer
+
+
 def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr):
     obs = get_observations(model)
     di = model.datainfo
@@ -357,6 +412,21 @@ def _grouped_scatter(df, x, y, group, title, xtitle, ytitle, xunit, yunit, toolt
             y=alt.Y(y).title(_title_with_unit(ytitle, yunit)),
             detail=f"{group}:N",
             tooltip=[x, y, group] + list(tooltip),
+        )
+        .properties(title=title, width=600, height=300)
+        .interactive()
+    )
+    return chart
+
+
+def _scatter(df, x, y, title, xtitle, ytitle, xunit, yunit, tooltip=()):
+    chart = (
+        alt.Chart(df)
+        .mark_point(opacity=0.7)
+        .encode(
+            x=alt.X(x).title(_title_with_unit(xtitle, xunit)),
+            y=alt.Y(y).title(_title_with_unit(ytitle, yunit)),
+            tooltip=[x, y] + list(tooltip),
         )
         .properties(title=title, width=600, height=300)
         .interactive()

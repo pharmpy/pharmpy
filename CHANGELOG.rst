@@ -6,6 +6,7 @@ New features
 
 * Add modeling.bin_observations
 * Add modeling.plot_dv_vs_pred
+* Add modeling.plot_abs_cwres_vs_ipred
 
 0.104.0 (2023-11-06)
 --------------------

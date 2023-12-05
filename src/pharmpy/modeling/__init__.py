@@ -210,6 +210,7 @@ from .parameters import (
 )
 from .pd import add_effect_compartment, add_indirect_effect, set_baseline_effect, set_direct_effect
 from .plots import (
+    plot_abs_cwres_vs_ipred,
     plot_cwres_vs_idv,
     plot_dv_vs_ipred,
     plot_dv_vs_pred,
@@ -365,6 +366,7 @@ __all__ = [
     'make_declarative',
     'mu_reference_model',
     'omit_data',
+    'plot_abs_cwres_vs_ipred',
     'plot_cwres_vs_idv',
     'plot_dv_vs_ipred',
     'plot_dv_vs_pred',
