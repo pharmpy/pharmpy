@@ -516,6 +516,12 @@ Some plots and tables on the final model can be found both in the amd report and
 .. pharmpy-execute::
    :hide-code:
 
+   res.final_model_dv_vs_pred_plot
+
+
+.. pharmpy-execute::
+   :hide-code:
+
    res.final_model_dv_vs_ipred_plot
 
 
