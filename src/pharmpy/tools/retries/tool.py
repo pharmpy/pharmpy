@@ -158,7 +158,7 @@ def create_random_init_model(context, index, scale, degree, prefix_name, modelen
         ucp_scale = calculate_ucp_scale(new_candidate_model)
         subs_dict = {}
         for p in new_candidate_model.parameters:
-            subs_dict[p.name] = 0.1 - (0.1 * degree) + random.random() * 2 * degree
+            subs_dict[p.name] = 0.1 - (0.1 * degree) + random.random() * 2 * degree * 0.1
         new_parameters = calculate_parameters_from_ucp(new_candidate_model, ucp_scale, subs_dict)
 
         new_candidate_model = update_inits(new_candidate_model, new_parameters)
