@@ -65,8 +65,35 @@ Implemented target mediated drug disposition (TMDD) models are:
 Full model:
 ~~~~~~~~~~~
 
-.. image:: images/full_model.png
-   :scale: 40%
+.. graphviz::
+
+    digraph G {
+
+          subgraph cluster {
+            peripheries=0;
+            concentrate=true
+            central [shape=rec]
+            plus [label="+", shape=none, height=0, width=0]
+            target [shape=rec]
+            complex [shape=rec]
+            central -> plus [color=none, minlen=0]
+            plus -> target [color=none, minlen=0]
+            complex -> target [headlabel="\n    koff", constraint=false, minlen=3]
+            target -> complex [headlabel="kon    \n\n"]
+            
+            {rank=same;central;plus;target;complex}
+          }
+
+          kel [shape=none]
+          ksyn [shape=none]
+          kint [shape=none]
+          kdeg [shape=none]
+
+          central -> kel
+          ksyn -> target
+          target -> kdeg
+          complex -> kint
+    }
 
 
 .. math:: \frac {dA_{\text{central}}}{dt} = k_{\text{off}} \cdot A_{\text{complex}}(t) \
@@ -84,8 +111,34 @@ Full model:
 IB model:
 ~~~~~~~~~
 
-.. image:: images/ib_model.png
-   :scale: 40%
+.. graphviz::
+
+    digraph G {
+
+          subgraph cluster {
+            peripheries=0
+            central [shape=rec]
+            plus [label="+", shape=none, height=0, width=0]
+            target [shape=rec]
+            complex [shape=rec]
+            central -> plus [color=none, minlen=0]
+            plus -> target [color=none, minlen=0]
+            target -> complex [label="kon", minlen=2]
+            
+            {rank=same;central;plus;target;complex}
+          }
+
+          kel [shape=none]
+          ksyn [shape=none]
+          kint [shape=none]
+          kdeg [shape=none]
+
+          central -> kel
+          ksyn -> target
+          target -> kdeg
+          complex -> kint
+    }
+
 
 .. math:: \frac {dA_{\text{central}}}{dt} = \biggl(- \frac{\text{Cl}}{\text{V}} \
             - \frac{k_{\text{on}} \cdot A_{\text{target}}(t)}{\text{V}} \biggl) \cdot A_{\text{central}}(t)
@@ -101,8 +154,34 @@ IB model:
 CR model:
 ~~~~~~~~~
 
-.. image:: images/full_model.png
-   :scale: 40%
+.. graphviz::
+
+    digraph G {
+
+          subgraph cluster {
+            peripheries=0
+            central [shape=rec]
+            plus [label="+", shape=none, height=0, width=0]
+            target [shape=rec]
+            complex [shape=rec]
+            central -> plus [color=none, minlen=0]
+            plus -> target [color=none, minlen=0]
+            complex -> target [headlabel="\n    koff", constraint=false, minlen=3]
+            target -> complex [headlabel="kon    \n\n"]
+            
+            {rank=same;central;plus;target;complex}
+          }
+
+          kel [shape=none]
+          ksyn [shape=none]
+          kint [shape=none]
+          kdeg [shape=none]
+
+          central -> kel
+          ksyn -> target
+          target -> kdeg
+          complex -> kint
+    }
 
 .. math:: \frac {dA_{\text{central}}}{dt} = k_{\text{off}} \cdot A_{\text{complex}}(t) \ 
             + \biggl( - \frac{\text{Cl}}{\text{V}} - k_{\text{on}} \cdot R_0 \
@@ -115,8 +194,33 @@ CR model:
 CR + IB model:
 ~~~~~~~~~~~~~~
 
-.. image:: images/ib_model.png
-   :scale: 40%
+.. graphviz::
+
+    digraph G {
+
+          subgraph cluster {
+            peripheries=0
+            central [shape=rec]
+            plus [label="+", shape=none, height=0, width=0]
+            target [shape=rec]
+            complex [shape=rec]
+            central -> plus [color=none, minlen=0]
+            plus -> target [color=none, minlen=0]
+            target -> complex [label="kon", minlen=2]
+            
+            {rank=same;central;plus;target;complex}
+          }
+
+          kel [shape=none]
+          ksyn [shape=none]
+          kint [shape=none]
+          kdeg [shape=none]
+
+          central -> kel
+          ksyn -> target
+          target -> kdeg
+          complex -> kint
+    }
 
 .. math:: \frac {dA_{\text{central}}}{dt} =  \biggl(- \frac{\text{Cl}}{\text{V}} - k_{\text{on}} \cdot R_0 \
             - \frac{k_{\text{on}} \cdot A_{\text{complex}}(t)}{\text{V}} \biggl) \cdot A_{\text{central}}(t)
@@ -128,8 +232,33 @@ CR + IB model:
 QSS model:
 ~~~~~~~~~~
 
-.. image:: images/qss_model.png
-   :scale: 40%
+.. graphviz::
+
+    digraph G {
+
+          subgraph cluster {
+            peripheries=0
+            central [shape=rec]
+            plus [label="+", shape=none, height=0, width=0]
+            target [shape=rec]
+            complex [shape=rec]
+            central -> plus [color=none, minlen=0]
+            plus -> target [color=none, minlen=0]
+            target -> complex [label="kD", minlen=2, dir=both]
+            
+            {rank=same;central;plus;target;complex}
+          }
+
+          kel [shape=none]
+          ksyn [shape=none]
+          kint [shape=none]
+          kdeg [shape=none]
+
+          central -> kel
+          ksyn -> target
+          target -> kdeg
+          complex -> kint
+    }
 
 .. math:: \frac {dA_{\text{central}}}{dt} =  - \frac{Cl \cdot \text{LAFREE} \cdot A_{\text{central}}(t)}{V} \
             - \frac{Cl \cdot \text{LAFREE}}{V} - \frac{k_{\text{int}} \cdot \
@@ -143,8 +272,33 @@ QSS model:
 Wagner model:
 ~~~~~~~~~~~~~
 
-.. image:: images/qss_model.png
-   :scale: 40%
+.. graphviz::
+
+    digraph G {
+
+          subgraph cluster {
+            peripheries=0
+            central [shape=rec]
+            plus [label="+", shape=none, height=0, width=0]
+            target [shape=rec]
+            complex [shape=rec]
+            central -> plus [color=none, minlen=0]
+            plus -> target [color=none, minlen=0]
+            target -> complex [label="kD", minlen=2, dir=both]
+            
+            {rank=same;central;plus;target;complex}
+          }
+
+          kel [shape=none]
+          ksyn [shape=none]
+          kint [shape=none]
+          kdeg [shape=none]
+
+          central -> kel
+          ksyn -> target
+          target -> kdeg
+          complex -> kint
+    }
 
 .. math:: \frac {dA_{\text{central}}}{dt} =  - \frac{Cl \cdot \text{LAFREE}}{V} \
             + k_{\text{int}} \cdot \text{LAFREE} - k_{\text{int}} \cdot A_{\text{central}}(t)
@@ -153,8 +307,31 @@ Wagner model:
 MMAPP model:
 ~~~~~~~~~~~~
 
-.. image:: images/mmapp_model.png
-   :scale: 40%
+.. graphviz::
+
+    digraph G {
+
+          subgraph cluster {
+            peripheries=0
+            central [shape=rec]
+            plus [label="+", shape=none, height=0, width=0]
+            target [shape=rec]
+            central -> plus [color=none, minlen=0]
+            plus -> target [color=none, minlen=0]
+            out [label="", shape=none]
+            target -> out [label="(kdeg-kint) · A/V \n  ――――――― \n kMC + (A/V)"]
+            
+            {rank=same;central;plus;target;out}
+          }
+
+          kel [shape=none]
+          ksyn [shape=none]
+          kdeg [shape=none]
+
+          central -> kel
+          ksyn -> target
+          target -> kdeg
+    }
 
 .. math:: \frac {dA_{\text{central}}}{dt} = \Biggl( - \frac{Cl}{V} - \frac{k_{\text{int}} \cdot \
             A_{\text{target}}(t)}{k_{\text{MC}} + \frac{A_{\text{central}}(t)}{V}} \Biggl) \cdot A_{\text{entral}}(t)
