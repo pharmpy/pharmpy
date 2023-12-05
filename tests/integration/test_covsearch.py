@@ -10,8 +10,8 @@ def test_default_str(tmp_path, model_count, start_model):
         run_tool(
             'covsearch',
             'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
-            'COVARIATE([CL, MAT, VC], @CONTINUOUS, exp, *)\n'
-            'COVARIATE([CL, MAT, VC], @CATEGORICAL, cat, *)',
+            'COVARIATE?([CL, MAT, VC], @CONTINUOUS, exp, *)\n'
+            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, cat, *)',
             results=start_model.modelfit_results,
             model=start_model,
         )
