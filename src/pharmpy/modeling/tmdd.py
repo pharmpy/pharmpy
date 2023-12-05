@@ -20,9 +20,16 @@ from .parameter_variability import add_iiv
 def set_tmdd(model: Model, type: str, dv_types: dict = None):
     """Sets target mediated drug disposition
 
-    Sets target mediated drug disposition to a PK model.
+    Implemented target mediated drug disposition (TMDD) models are:
 
-    Supported models are full, ib, cr, crib, qss, wagner and mmapp.
+    - Full model
+    - Irreversible binding approximation (IB)
+    - Constant total receptor approximation (CR)
+    - Irreversible binding and constant total receptor approximation (CR+IB)
+    - Quasi steady-state approximation (QSS)
+    - Wagner
+    - Michaelis-Menten approximation (MMAPP)
+
 
     Parameters
     ----------
