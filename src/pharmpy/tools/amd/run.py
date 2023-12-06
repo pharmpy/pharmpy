@@ -7,6 +7,7 @@ from pharmpy.deps import sympy
 from pharmpy.model import Model
 from pharmpy.modeling import (
     has_mixed_mm_fo_elimination,
+    plot_abs_cwres_vs_ipred,
     plot_cwres_vs_idv,
     plot_dv_vs_ipred,
     plot_dv_vs_pred,
@@ -475,6 +476,12 @@ def run_amd(
         cwres_vs_idv_plot = plot_cwres_vs_idv(model, final_results.residuals)
     else:
         cwres_vs_idv_plot = None
+    if final_results.predictions is not None and final_results.residuals is not None:
+        abs_cwres_vs_ipred_plot = plot_abs_cwres_vs_ipred(
+            model, predictions=final_results.predictions, residuals=final_results.residuals
+        )
+    else:
+        abs_cwres_vs_ipred_plot = None
     res = AMDResults(
         final_model=final_model.name,
         summary_tool=summary_tool,
@@ -487,6 +494,7 @@ def run_amd(
         final_model_dv_vs_ipred_plot=dv_vs_ipred_plot,
         final_model_dv_vs_pred_plot=dv_vs_pred_plot,
         final_model_cwres_vs_idv_plot=cwres_vs_idv_plot,
+        final_model_abs_cwres_vs_ipred_plot=abs_cwres_vs_ipred_plot,
     )
     # Since we are outside of the regular tools machinery the following is needed
     results_path = db.path / 'results.json'

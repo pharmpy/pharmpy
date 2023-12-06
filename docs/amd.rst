@@ -549,4 +549,10 @@ Some plots and tables on the final model can be found both in the amd report and
 .. pharmpy-execute::
    :hide-code:
 
+   res.final_model_abs_cwres_vs_ipred_plot
+
+
+.. pharmpy-execute::
+   :hide-code:
+
    res.final_model_cwres_vs_idv_plot
