@@ -799,7 +799,9 @@ def rank_models(
         if np.isnan(rank_value):
             continue
 
-        if rank_type == 'lrt':
+        if rank_type == 'lrt' and model.name == base_model.name:
+            pass
+        elif rank_type == 'lrt':
             parent = model_dict[model.parent_model]
             if cutoff is None:
                 co = 0.05 if lrt_df(parent, model) >= 0 else 0.01
