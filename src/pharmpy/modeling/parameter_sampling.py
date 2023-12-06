@@ -1,6 +1,6 @@
 import warnings
 from functools import partial
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, List, Literal, Optional, Union
 
 from pharmpy.internals.math import is_posdef, nearest_postive_semidefinite
 from pharmpy.model import Model
@@ -129,6 +129,7 @@ def sample_parameters_uniformly(
     force_posdef_samples: Optional[int] = None,
     n: int = 1,
     seed: Optional[Union[np.random.Generator, int]] = None,
+    scale: Literal['UCP', 'normal'] = 'normal',
 ):
     """Sample parameter vectors using uniform sampling
 
@@ -150,6 +151,8 @@ def sample_parameters_uniformly(
         Number of samples
     seed : int or rng
         Random number generator or seed
+    scale : str
+        Scale to perform sampling on. Valid options are 'normal' and 'UCP'
 
     Returns
     -------
@@ -181,8 +184,12 @@ def sample_parameters_uniformly(
     def fn(pe, lower, upper, n, rng):
         samples = np.empty((n, len(lower)))
         for i, (x, a, b) in enumerate(zip(pe, lower, upper)):
-            lower = max(a, x - x * fraction)
-            upper = min(b, x + x * fraction)
+            if scale == 'normal':
+                lower = max(a, x - x * fraction)
+                upper = min(b, x + x * fraction)
+            elif scale == 'UCP':
+                lower = 0.1 - 0.1 * fraction
+                upper = 0.1 + 0.1 * fraction
             samples[:, i] = rng.uniform(lower, upper, n)
         return samples
 
