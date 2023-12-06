@@ -85,6 +85,9 @@ def _sample_from_function(
     """
     rng = create_rng(seed)
 
+    parameter_estimates = parameter_estimates[
+        parameter_estimates.index.isin(model.parameters.nonfixed.names)
+    ]
     pe = parameter_estimates.to_numpy()
 
     parameter_summary = model.parameters.to_dataframe().loc[parameter_estimates.keys()]
