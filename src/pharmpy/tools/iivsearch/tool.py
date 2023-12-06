@@ -26,7 +26,7 @@ from pharmpy.workflows.results import ModelfitResults
 IIV_STRATEGIES = frozenset(
     ('no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock')
 )
-IIV_ALGORITHMS = frozenset(('brute_force',) + tuple(dir(algorithms)))
+IIV_ALGORITHMS = frozenset(('brute_force', 'brute_force_no_of_etas', 'brute_force_block_structure'))
 
 
 def create_workflow(
