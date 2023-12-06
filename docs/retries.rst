@@ -46,7 +46,7 @@ The arguments of the retries tool are listed below.
 +-------------------------------------------------+---------------------------------------------------------------------+
 | number_of_candidates                            | Number of retry-models to run. 5 is used as default                 |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| degree                                          | Determine the allowed increase/decrease for the randomly generated  |
+| fraction                                          | Determine the allowed increase/decrease for the randomly generated|
 |                                                 | new initial estimates. Default is 0.1 (10%).                        |
 +-------------------------------------------------+---------------------------------------------------------------------+
 | :ref:`scale<scales_retries>`                    | Scale to use when randomizing the initial estimates. Currently      |
@@ -54,6 +54,8 @@ The arguments of the retries tool are listed below.
 +-------------------------------------------------+---------------------------------------------------------------------+
 | prefix_name                                     | String determining prefix of model names such that models are named |
 |                                                 | {prefix_name}_retries_run2 for instance.                            |
++-------------------------------------------------+---------------------------------------------------------------------+
+| seed                                            | A random number generator or seed to use for random sampling.       |
 +-------------------------------------------------+---------------------------------------------------------------------+
 
 .. _scales_retries:
@@ -119,7 +121,7 @@ An example of an entire retries run can be seen below
     res = run_structsearch(model = start_model,
                             results = start_model_results,
                             number_of_candidate = 5,
-                            degree = 0.1,
+                            fraction = 0.1,
                             scale = "UCP")
 
 The ``summary_tool`` table contains information of the model results and final ranking. It also contains information
