@@ -23,7 +23,7 @@ def test_sample_parameters_uniformly(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
     rng = create_rng(23)
-    df = sample_parameters_uniformly(model, res.parameter_estimates, n=3, rng=rng)
+    df = sample_parameters_uniformly(model, res.parameter_estimates, n=3, seed=rng)
     assert df['PTVCL'][0] == 0.004877674495376137
 
 
@@ -38,7 +38,7 @@ def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
         pe,
         cm,
         n=3,
-        rng=rng,
+        seed=rng,
     )
     correct = pd.DataFrame(
         {
@@ -70,14 +70,14 @@ def test_sample_individual_estimates(load_model_for_test, testdata):
     rng = np.random.default_rng(86)
     ie = res.individual_estimates
     iec = res.individual_estimates_covariance
-    samples = sample_individual_estimates(model, ie, iec, rng=rng)
+    samples = sample_individual_estimates(model, ie, iec, seed=rng)
     assert len(samples) == 59 * 100
     assert list(samples.columns) == ['ETA_1', 'ETA_2']
     assert pytest.approx(samples.iloc[0]['ETA_1'], 1e-5) == 0.21179186940672637
     assert pytest.approx(samples.iloc[0]['ETA_2'], 1e-5) == -0.05771736555248238
 
     restricted = sample_individual_estimates(
-        model, ie, iec, parameters=['ETA_2'], samples_per_id=1, rng=rng
+        model, ie, iec, parameters=['ETA_2'], samples_per_id=1, seed=rng
     )
     assert len(restricted) == 59
     assert restricted.columns == ['ETA_2']

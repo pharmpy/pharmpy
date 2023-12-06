@@ -401,7 +401,7 @@ def calculate_results(
     method=None,
     intermediate_models=None,
     intermediate_models_res=None,
-    rng=None,
+    seed=None,
     **kwargs,
 ):
     """Calculate FREM results
@@ -415,16 +415,16 @@ def calculate_results(
     if method is None or method == 'cov_sampling':
         try:
             res = calculate_results_using_cov_sampling(
-                frem_model, frem_model_results, continuous, categorical, rng=rng, **kwargs
+                frem_model, frem_model_results, continuous, categorical, seed=seed, **kwargs
             )
         except AttributeError:
             # Fallback to bipp
             res = calculate_results_using_bipp(
-                frem_model, frem_model_results, continuous, categorical, rng=rng
+                frem_model, frem_model_results, continuous, categorical, seed=seed
             )
     elif method == 'bipp':
         res = calculate_results_using_bipp(
-            frem_model, frem_model_results, continuous, categorical, rng=rng
+            frem_model, frem_model_results, continuous, categorical, seed=seed
         )
     else:
         raise ValueError(f'Unknown frem postprocessing method {method}')
@@ -520,7 +520,7 @@ def calculate_results_using_cov_sampling(
     force_posdef_covmatrix=False,
     samples=1000,
     rescale=True,
-    rng=None,
+    seed=None,
 ):
     """Calculate the FREM results using covariance matrix for uncertainty
 
@@ -555,7 +555,7 @@ def calculate_results_using_cov_sampling(
         force_posdef_samples=force_posdef_samples,
         force_posdef_covmatrix=force_posdef_covmatrix,
         n=samples,
-        rng=rng,
+        seed=seed,
     )
     res = calculate_results_from_samples(
         frem_model, frem_model_results, continuous, categorical, parvecs, rescale=rescale
@@ -903,7 +903,7 @@ def _calculate_covariate_baselines(model, res, covariates):
 
 
 def calculate_results_using_bipp(
-    frem_model, frem_model_results, continuous, categorical, rescale=True, samples=2000, rng=None
+    frem_model, frem_model_results, continuous, categorical, rescale=True, samples=2000, seed=None
 ):
     """Estimate a covariance matrix for the frem model using the BIPP method
 
@@ -912,7 +912,7 @@ def calculate_results_using_bipp(
     are needed.
 
     """
-    rng = create_rng(rng)
+    rng = create_rng(seed)
     assert rng is not None
     dist = frem_model.random_variables.iiv[-1]
     etas = list(dist.names)
@@ -921,7 +921,7 @@ def calculate_results_using_bipp(
         frem_model_results.individual_estimates,
         frem_model_results.individual_estimates_covariance,
         parameters=etas,
-        rng=rng,
+        seed=rng,
     ).droplevel('sample')
     ninds = len(pool.index.unique())
     ishr = calculate_individual_shrinkage(

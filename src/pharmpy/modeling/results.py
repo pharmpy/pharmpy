@@ -219,7 +219,7 @@ def calculate_individual_parameter_statistics(
     ],
     parameter_estimates: pd.Series,
     covariance_matrix: Optional[pd.DataFrame] = None,
-    rng: Optional[Union[np.random.Generator, int]] = None,
+    seed: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Calculate statistics for individual parameters
 
@@ -245,7 +245,7 @@ def calculate_individual_parameter_statistics(
         sympy expression or iterable of str or sympy expressions
         Expressions or equations for parameters of interest. If equations are used
         the names of the left hand sides will be used as the names of the parameters.
-    rng : Generator or int
+    seed : Generator or int
         Random number generator or int seed
 
     Returns
@@ -263,14 +263,14 @@ def calculate_individual_parameter_statistics(
     >>> rng = create_rng(23)
     >>> pe = results.parameter_estimates
     >>> cov = results.covariance_matrix
-    >>> calculate_individual_parameter_statistics(model, "K=CL/V", pe, cov, rng=rng)
+    >>> calculate_individual_parameter_statistics(model, "K=CL/V", pe, cov, seed=rng)
                               mean  variance    stderr
     parameter covariates
     K         p5          0.004234  0.000001  0.001138
               median      0.004907  0.000001  0.001247
               p95         0.004907  0.000001  0.001247
     """
-    rng = create_rng(rng)
+    rng = create_rng(seed)
 
     split_exprs = map(
         _split_equation,
@@ -349,7 +349,7 @@ def calculate_individual_parameter_statistics(
             covariance_matrix,
             n=nbatches,
             force_posdef_covmatrix=True,
-            rng=rng,
+            seed=rng,
         )
 
         for _, row in parameters_samples.iterrows():
@@ -403,7 +403,7 @@ def calculate_pk_parameters_statistics(
     model: Model,
     parameter_estimates: pd.Series,
     covariance_matrix: Optional[pd.DataFrame] = None,
-    rng: Optional[Union[np.random.Generator, int]] = None,
+    seed: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Calculate statistics for common pharmacokinetic parameters
 
@@ -419,7 +419,7 @@ def calculate_pk_parameters_statistics(
         Parameter estimates
     covariance_matrix : pd.DataFrame
         Parameter uncertainty covariance matrix
-    rng : Generator or int
+    seed : Generator or int
         Random number generator or seed
 
     Returns
@@ -437,7 +437,7 @@ def calculate_pk_parameters_statistics(
     >>> rng = create_rng(23)
     >>> pe = results.parameter_estimates
     >>> cov = results.covariance_matrix
-    >>> calculate_pk_parameters_statistics(model, pe, cov, rng=rng)
+    >>> calculate_pk_parameters_statistics(model, pe, cov, seed=rng)
                                   mean     variance     stderr
     parameter   covariates
     t_half_elim p5          173.337164  1769.493756  42.843398
@@ -522,7 +522,7 @@ def calculate_pk_parameters_statistics(
         expressions.append(sympy.Eq(sympy.Symbol('k_e'), elimination_rate))
 
     df = calculate_individual_parameter_statistics(
-        model, expressions, parameter_estimates, covariance_matrix, rng=rng
+        model, expressions, parameter_estimates, covariance_matrix, seed=seed
     )
     return df
 

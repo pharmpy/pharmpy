@@ -72,7 +72,7 @@ def _sample_from_function(
     samplingfn,
     force_posdef_samples=None,
     n=1,
-    rng=None,
+    seed=None,
 ):
     """Sample parameter vectors using a general function
 
@@ -83,7 +83,7 @@ def _sample_from_function(
     - upper - upper bounds of parameters
     - n - number of samples
     """
-    rng = create_rng(rng)
+    rng = create_rng(seed)
 
     pe = parameter_estimates.to_numpy()
 
@@ -125,7 +125,7 @@ def sample_parameters_uniformly(
     fraction: float = 0.1,
     force_posdef_samples: Optional[int] = None,
     n: int = 1,
-    rng: Optional[Union[np.random.Generator, int]] = None,
+    seed: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Sample parameter vectors using uniform sampling
 
@@ -145,7 +145,7 @@ def sample_parameters_uniformly(
         positive definite covariance matrices.
     n : int
         Number of samples
-    rng : int or rng
+    seed : int or rng
         Random number generator or seed
 
     Returns
@@ -161,7 +161,7 @@ def sample_parameters_uniformly(
     >>> results = load_example_modelfit_results("pheno")
     >>> rng = create_rng(23)
     >>> pe = results.parameter_estimates
-    >>> sample_parameters_uniformly(model, pe, n=3, rng=rng)
+    >>> sample_parameters_uniformly(model, pe, n=3, seed=rng)
           PTVCL      PTVV   THETA_3      IVCL       IVV  SIGMA_1_1
     0  0.004878  0.908216  0.149441  0.029179  0.025472   0.012947
     1  0.004828  1.014444  0.149958  0.028853  0.027653   0.013348
@@ -184,7 +184,7 @@ def sample_parameters_uniformly(
         return samples
 
     samples = _sample_from_function(
-        model, parameter_estimates, fn, force_posdef_samples=force_posdef_samples, n=n, rng=rng
+        model, parameter_estimates, fn, force_posdef_samples=force_posdef_samples, n=n, seed=seed
     )
     return samples
 
@@ -196,7 +196,7 @@ def sample_parameters_from_covariance_matrix(
     force_posdef_samples: Optional[int] = None,
     force_posdef_covmatrix: bool = False,
     n: int = 1,
-    rng: Optional[Union[np.random.Generator, int]] = None,
+    seed: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Sample parameter vectors using the covariance matrix
 
@@ -217,7 +217,7 @@ def sample_parameters_from_covariance_matrix(
         Set to True to force the input covariance matrix to be positive definite
     n : int
         Number of samples
-    rng : Generator
+    seed : Generator
         Random number generator
 
     Returns
@@ -234,7 +234,7 @@ def sample_parameters_from_covariance_matrix(
     >>> rng = create_rng(23)
     >>> cov = results.covariance_matrix
     >>> pe = results.parameter_estimates
-    >>> sample_parameters_from_covariance_matrix(model, pe, cov, n=3, rng=rng)
+    >>> sample_parameters_from_covariance_matrix(model, pe, cov, n=3, seed=rng)
           PTVCL      PTVV   THETA_3      IVCL       IVV  SIGMA_1_1
     0  0.005069  0.974989  0.204629  0.024756  0.012088   0.012943
     1  0.004690  0.958431  0.233231  0.038866  0.029000   0.012516
@@ -263,7 +263,7 @@ def sample_parameters_from_covariance_matrix(
 
     fn = partial(_sample_truncated_joint_normal, sigma)
     samples = _sample_from_function(
-        model, parameter_estimates, fn, force_posdef_samples=force_posdef_samples, n=n, rng=rng
+        model, parameter_estimates, fn, force_posdef_samples=force_posdef_samples, n=n, seed=seed
     )
     return samples
 
@@ -274,7 +274,7 @@ def sample_individual_estimates(
     individual_estimates_covariance: pd.DataFrame,
     parameters: Optional[List[str]] = None,
     samples_per_id: int = 100,
-    rng: Optional[Union[np.random.Generator, int]] = None,
+    seed: Optional[Union[np.random.Generator, int]] = None,
 ):
     """Sample individual estimates given their covariance.
 
@@ -290,7 +290,7 @@ def sample_individual_estimates(
         A list of a subset of individual parameters to sample. Default is None, which means all.
     samples_per_id : int
         Number of samples per individual
-    rng : rng or int
+    seed : rng or int
         Random number generator or seed
 
     Returns
@@ -307,7 +307,7 @@ def sample_individual_estimates(
     >>> rng = create_rng(23)
     >>> ie = results.individual_estimates
     >>> iec = results.individual_estimates_covariance
-    >>> sample_individual_estimates(model, ie, iec, samples_per_id=2, rng=rng)
+    >>> sample_individual_estimates(model, ie, iec, samples_per_id=2, seed=rng)
                   ETA_1     ETA_2
     ID sample
     1  0      -0.127941  0.037273
@@ -331,7 +331,7 @@ def sample_individual_estimates(
     sample_parameters_uniformly : Sample parameter vectors using uniform distribution
 
     """
-    rng = create_rng(rng)
+    rng = create_rng(seed)
     assert rng is not None
     ests = individual_estimates
     covs = individual_estimates_covariance
