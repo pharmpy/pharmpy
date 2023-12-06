@@ -53,9 +53,9 @@ def is_within_degree(start_model, candidate_model, scale, degree):
         for p in start_model.parameters:
             lower[p.name] = 0.1 - (0.1 * degree)
             upper[p.name] = 0.1 + (0.1 * degree)
-            new_lower_parameters = calculate_parameters_from_ucp(start_model, ucp_scale, lower)
-            new_upper_parameters = calculate_parameters_from_ucp(start_model, ucp_scale, upper)
+        new_lower_parameters = calculate_parameters_from_ucp(start_model, ucp_scale, lower)
+        new_upper_parameters = calculate_parameters_from_ucp(start_model, ucp_scale, upper)
         for p in start_model.parameters:
-            allowed_dict[p.name] = (new_lower_parameters.init, new_upper_parameters.init)
+            allowed_dict[p.name] = (new_lower_parameters[p.name], new_upper_parameters[p.name])
     for parameter in candidate_model.parameters:
         assert allowed_dict[parameter.name][0] < parameter.init < allowed_dict[parameter.name][1]
