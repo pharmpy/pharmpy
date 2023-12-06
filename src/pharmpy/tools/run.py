@@ -798,8 +798,7 @@ def rank_models(
         rank_value = _get_rankval(model, strictness, rank_type, bic_type, **kwargs)
         if np.isnan(rank_value):
             continue
-
-        if rank_type == 'lrt' and model.name == base_model.name:
+        if model.name == base_model.name:
             pass
         elif rank_type == 'lrt':
             parent = model_dict[model.parent_model]

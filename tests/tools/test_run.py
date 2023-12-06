@@ -303,7 +303,7 @@ def test_rank_models():
     # Test with a cutoff of dOFV=1
     df = rank_models(base, models, rank_type='ofv', cutoff=1)
     ranked_models = df.dropna().index.values
-    assert len(ranked_models) == 2
+    assert len(ranked_models) == 3
 
     # Test with LRT
     df = rank_models(base, models, rank_type='lrt', cutoff=0.05)
