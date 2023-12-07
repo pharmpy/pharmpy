@@ -75,7 +75,7 @@ def test_bipp_covariance(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     res = calculate_results_using_bipp(
-        model, res, continuous=['APGR', 'WGT'], categorical=[], rng=9532
+        model, res, continuous=['APGR', 'WGT'], categorical=[], seed=9532
     )
     assert res
 
@@ -85,7 +85,7 @@ def test_frem_results_pheno(load_model_for_test, testdata):
     res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     rng = np.random.default_rng(39)
     res = calculate_results(
-        model, res, continuous=['APGR', 'WGT'], categorical=[], samples=10, rng=rng
+        model, res, continuous=['APGR', 'WGT'], categorical=[], samples=10, seed=rng
     )
 
     correct = """parameter,covariate,condition,p5,mean,p95
@@ -262,7 +262,7 @@ def test_frem_results_pheno_categorical(load_model_for_test, testdata):
     res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
     rng = np.random.default_rng(8978)
     res = calculate_results(
-        model, res, continuous=['WGT'], categorical=['APGRX'], samples=10, rng=rng
+        model, res, continuous=['WGT'], categorical=['APGRX'], samples=10, seed=rng
     )
 
     correct = """parameter,covariate,condition,p5,mean,p95

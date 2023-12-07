@@ -53,7 +53,7 @@ def test_calculate_individual_parameter_statistics(load_model_for_test, testdata
         'CL/V',
         res.parameter_estimates,
         res.covariance_matrix,
-        rng=rng,
+        seed=rng,
     )
 
     assert stats['mean'].iloc[0] == pytest.approx(0.004700589484324183)
@@ -68,7 +68,7 @@ def test_calculate_individual_parameter_statistics(load_model_for_test, testdata
         'CL/V',
         res.parameter_estimates,
         res.covariance_matrix,
-        rng=rng,
+        seed=rng,
     )
     assert stats['mean'].iloc[0] == pytest.approx(0.0049100899539843)
     assert stats['variance'].iloc[0] == pytest.approx(7.391076132098555e-07)
@@ -82,7 +82,7 @@ def test_calculate_individual_parameter_statistics(load_model_for_test, testdata
         'K = CL/V',
         res.parameter_estimates,
         res.covariance_matrix,
-        rng=rng,
+        seed=rng,
     )
     assert stats['mean']['K', 'median'] == pytest.approx(0.004526899290470633)
     assert stats['variance']['K', 'median'] == pytest.approx(2.95125370813005e-06)
@@ -103,7 +103,7 @@ def test_calculate_pk_parameters_statistics(load_model_for_test, testdata):
         model,
         res.parameter_estimates,
         res.covariance_matrix,
-        rng=rng,
+        seed=rng,
     )
     assert df['mean'].loc['t_max', 'median'] == pytest.approx(1.5999856886869577)
     assert df['variance'].loc['t_max', 'median'] == pytest.approx(0.29728565293669557)
@@ -123,7 +123,7 @@ def test_calc_pk_two_comp_bolus(load_model_for_test, testdata):
         model,
         res.parameter_estimates,
         res.covariance_matrix,
-        rng=rng,
+        seed=rng,
     )
     # FIXME: Why doesn't random state handle this difference in stderr?
     df.drop('stderr', inplace=True, axis=1)

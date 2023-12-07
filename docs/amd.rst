@@ -85,7 +85,9 @@ Arguments
 |``mechanistic_covariates``                         | List of covariates to run in a separate prioritezed covsearch run.                                              |
 |                                                   | The effects are extracted from the given search space                                                           |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``retries_strategy``                               | Decide how to use the retries tool. Valid options are 'skip', 'all_final' or 'final'. Default is 'final'       |
+| ``retries_strategy``                              | Decide how to use the retries tool. Valid options are 'skip', 'all_final' or 'final'. Default is 'final'        |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+| ``seed``                                          | A random number generator or seed to use for steps with random sampling.                                        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 .. _input_amd:
@@ -461,14 +463,17 @@ Retries
 If ``retries_strategy`` is set to 'all_final', the retries tool will be run on the final model from each subtool.
 With the argument set to 'final', the retries tool will only be run on the final model from the last subtool.
 Finally, if the argument is set to 'skip', no retries will be performed. See :ref:`retries` for more details about the 
-tool. When running the tool from AMD, the settings below will be used
+tool. When running the tool from AMD, the settings below will be used.
+
+If argument ``seed`` is set, the chosen seed or random number generator will be used for the random sampling within the
+tool.
 
 +----------------------+----------------------------------------------------------------------------------------------------+
 | Argument             | Setting                                                                                            |
 +======================+====================================================================================================+
 | number_of_candidates | ``5``                                                                                              |
 +----------------------+----------------------------------------------------------------------------------------------------+
-| degree               | ``0.1``                                                                                            |
+| fraction             | ``0.1``                                                                                            |
 +----------------------+----------------------------------------------------------------------------------------------------+
 | scale                | ``UCP``                                                                                            |
 +----------------------+----------------------------------------------------------------------------------------------------+
