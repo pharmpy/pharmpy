@@ -326,6 +326,7 @@ def validate_input(
     type,
     strictness,
     model,
+    dv_types,
 ):
     if type not in TYPES:
         raise ValueError(f'Invalid `type`: got `{type}`, must be one of {sorted(TYPES)}.')
@@ -335,6 +336,13 @@ def validate_input(
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
             )
+
+    if dv_types is not None:
+        for key in dv_types.keys():
+            if key not in ['drug', 'target', 'complex']:
+                raise ValueError(
+                    f'Invalid dv_types key "{key}". Allowed keys are: "drug", "target" and "complex".'
+                )
 
 
 @dataclass(frozen=True)
