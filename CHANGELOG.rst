@@ -1,5 +1,5 @@
-Next version
-------------
+0.105.0 (2023-12-07)
+--------------------
 
 New features
 ============
@@ -7,6 +7,16 @@ New features
 * Add modeling.bin_observations
 * Add modeling.plot_dv_vs_pred
 * Add modeling.plot_abs_cwres_vs_ipred
+* Support strictness for thetas, omegas and sigmas separately
+* Support stagewise addition of covariates in amd
+* Support multiple DVs for TMDD models
+* Add retries tool
+* Use retries in the amd
+
+Changes
+=======
+
+* Always keep an iiv eta on clearence in amd
 
 0.104.0 (2023-11-06)
 --------------------
