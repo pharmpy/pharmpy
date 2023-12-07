@@ -179,4 +179,7 @@ def _match(typing, value):
             )
         )
 
+    if origin is dict:
+        return True
+
     raise NotImplementedError(origin)
