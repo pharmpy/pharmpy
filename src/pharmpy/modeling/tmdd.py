@@ -1,6 +1,8 @@
 """
 :meta private:
 """
+from typing import Optional
+
 from pharmpy.deps import sympy
 from pharmpy.model import (
     Assignment,
@@ -17,7 +19,7 @@ from .odes import add_individual_parameter, set_first_order_elimination, set_ini
 from .parameter_variability import add_iiv
 
 
-def set_tmdd(model: Model, type: str, dv_types: dict = None):
+def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None):
     """Sets target mediated drug disposition
 
     Implemented target mediated drug disposition (TMDD) models are:

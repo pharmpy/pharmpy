@@ -66,7 +66,7 @@ def run_amd(
     path: Optional[Union[str, Path]] = None,
     resume: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    dv_types: Optional[dict] = None,
+    dv_types: Optional[dict[str, int]] = None,
     mechanistic_covariates: Optional[List[str]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "final",
     seed: Optional[Union[np.random.Generator, int]] = None,
