@@ -8,14 +8,14 @@ from pharmpy.modeling import remove_parameter_uncertainty_step, transform_blq
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
 from pharmpy.tools.ruvsearch.tool import _create_dataset, create_workflow, validate_input
-from pharmpy.workflows import Workflow
+from pharmpy.workflows import ModelEntry, Workflow
 
 
 def test_filter_dataset(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem/pheno_pd.mod')
     res = read_modelfit_results(testdata / 'nonmem/pheno_pd.mod')
-    model = model.replace(modelfit_results=res)
-    cwres = _create_dataset(model, dv=2)
+    model_entry = ModelEntry.create(model, modelfit_results=res)
+    cwres = _create_dataset(model_entry, dv=2)
     expected_cwres = [-1.15490, 0.95703, -0.85365, 0.42327]
     assert cwres['DV'].tolist() == expected_cwres
 
@@ -67,17 +67,15 @@ def test_validate_input():
 def test_validate_input_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    model = model.replace(modelfit_results=res)
     model = remove_parameter_uncertainty_step(model)
-    validate_input(model=model)
+    validate_input(model=model, results=res)
 
 
 def test_create_dataset(load_model_for_test, testdata, tmp_path):
     model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    model = model.replace(modelfit_results=res)
-
-    df = _create_dataset(model, dv=None)
+    model_entry = ModelEntry.create(model, modelfit_results=res)
+    df = _create_dataset(model_entry, dv=None)
 
     assert len(df) == 1006
     assert (df['DV'] != 0).all()
@@ -98,11 +96,10 @@ def test_create_dataset(load_model_for_test, testdata, tmp_path):
         model = load_model_for_test('mox3.mod')
         res = read_modelfit_results('mox3.mod')
 
-        model = model.replace(modelfit_results=res)
-
         model = transform_blq(model, method='m3', lloq=0.05)
+        model_entry = ModelEntry.create(model, modelfit_results=res)
 
-        df = _create_dataset(model, dv=None)
+        df = _create_dataset(model_entry, dv=None)
 
         assert len(df) == 1005
         assert (df['DV'] != 0).all()
@@ -185,10 +182,9 @@ def test_validate_input_raises(
 
 def test_validate_input_raises_modelfit_results(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    model = model.replace(modelfit_results=None)
 
-    with pytest.raises(ValueError, match="missing modelfit results"):
-        validate_input(model=model)
+    with pytest.raises(ValueError, match="modelfit results must be provided"):
+        validate_input(model=model, results=None)
 
 
 def test_validate_input_raises_cwres(load_model_for_test, testdata):
@@ -196,10 +192,9 @@ def test_validate_input_raises_cwres(load_model_for_test, testdata):
     res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     model = remove_parameter_uncertainty_step(model)
     modelfit_results = replace(res, residuals=res.residuals.drop(columns=['CWRES']))
-    model = model.replace(modelfit_results=modelfit_results)
 
     with pytest.raises(ValueError, match="CWRES"):
-        validate_input(model=model)
+        validate_input(model=model, results=modelfit_results)
 
 
 def test_validate_input_raises_cipredi(load_model_for_test, testdata):
@@ -207,10 +202,9 @@ def test_validate_input_raises_cipredi(load_model_for_test, testdata):
     res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
     model = remove_parameter_uncertainty_step(model)
     modelfit_results = replace(res, predictions=res.predictions.drop(columns=['CIPREDI']))
-    model = model.replace(modelfit_results=modelfit_results)
 
     with pytest.raises(ValueError, match="IPRED"):
-        validate_input(model=model)
+        validate_input(model=model, results=modelfit_results)
 
 
 def test_validate_input_raises_ipred(load_model_for_test, testdata):
@@ -218,7 +212,6 @@ def test_validate_input_raises_ipred(load_model_for_test, testdata):
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
     model = remove_parameter_uncertainty_step(model)
     modelfit_results = replace(res, predictions=res.predictions.drop(columns=['IPRED']))
-    model = model.replace(modelfit_results=modelfit_results)
 
     with pytest.raises(ValueError, match="IPRED"):
-        validate_input(model=model)
+        validate_input(model=model, results=modelfit_results)

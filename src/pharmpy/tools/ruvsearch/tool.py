@@ -37,9 +37,9 @@ from pharmpy.tools import (
     summarize_individuals_count_table,
     summarize_modelfit_results,
 )
-from pharmpy.tools.common import summarize_tool, update_initial_estimates
+from pharmpy.tools.common import _model_entry_to_model, summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
 from .results import RUVSearchResults, calculate_results
@@ -95,7 +95,7 @@ def create_workflow(
 
     wb = WorkflowBuilder(name="ruvsearch")
     start_task = Task(
-        'start_ruvsearch', start, model, groups, p_value, skip, max_iter, dv, strictness
+        'start_ruvsearch', start, model, results, groups, p_value, skip, max_iter, dv, strictness
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -103,10 +103,10 @@ def create_workflow(
     return Workflow(wb)
 
 
-def create_iteration_workflow(model, groups, cutoff, skip, current_iteration, dv):
+def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, dv):
     wb = WorkflowBuilder()
 
-    start_task = Task('start_iteration', _start_iteration, model)
+    start_task = Task('start_iteration', _start_iteration, model_entry)
     wb.add_task(start_task)
 
     task_base_model = Task(
@@ -159,65 +159,59 @@ def create_iteration_workflow(model, groups, cutoff, skip, current_iteration, dv
     return Workflow(wb)
 
 
-def proportional_error_workflow(model):
+def proportional_error_workflow(model_entry):
     wb = WorkflowBuilder()
 
-    prop_start = Task('Check_proportional', _start_iteration, model)
+    prop_start = Task('Check_proportional', _start_iteration, model_entry)
     wb.add_task(prop_start)
 
-    if not has_proportional_error_model(model):
-        change_name_task = Task("Change_proportional_description", _change_proportional_name)
-        wb.add_task(change_name_task, predecessors=prop_start)
-
-        convert_to_prop_task = Task("Convert_to_proportional", set_proportional_error_model)
-        wb.add_task(convert_to_prop_task, predecessors=change_name_task)
+    if not has_proportional_error_model(model_entry.model):
+        convert_to_prop_task = Task("convert_to_proportional", _change_proportional_model)
+        wb.add_task(convert_to_prop_task, predecessors=prop_start)
 
         fit_wf = create_fit_workflow(n=1)
         wb.insert_workflow(fit_wf, predecessors=convert_to_prop_task)
     return Workflow(wb)
 
 
-def _change_proportional_name(model):
+def _change_proportional_model(model_entry):
+    model = model_entry.model
     model = model.replace(
         name='prop_error',
         description='Input model with proportional error model',
     )
-    return model
+    model = set_proportional_error_model(model)
+    return ModelEntry.create(model, modelfit_results=None)
 
 
-def start(context, model, groups, p_value, skip, max_iter, dv, strictness):
+def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, strictness):
     cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
 
-    input_model = model
+    input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
     # Check if model has a proportional error
-    proportional_workflow = proportional_error_workflow(input_model)
-    model = call_workflow(proportional_workflow, 'Convert_error_model', context)
+    proportional_workflow = proportional_error_workflow(input_model_entry)
+    model_entry = call_workflow(proportional_workflow, 'Convert_error_model', context)
 
-    model_results = []
-    if model == input_model:
-        selected_models = [model]
+    if model_entry.model == input_model_entry.model:
+        selected_model_entries = [model_entry]
     else:
-        selected_models = [input_model, model]
+        selected_model_entries = [input_model_entry, model_entry]
     cwres_models = []
     tool_database = None
     for current_iteration in range(1, max_iter + 1):
-        wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration, dv=dv)
-        res, best_model, selected_model_name = call_workflow(
+        wf = create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, dv=dv)
+        res, best_model_entry, selected_model_name = call_workflow(
             wf, f'results{current_iteration}', context
         )
-        if current_iteration == 1:
-            model_results.append(model.modelfit_results)
-        model_results.append(best_model.modelfit_results)
-
         cwres_models.append(res.cwres_models)
         tool_database = res.tool_database
 
         if not selected_model_name.startswith('base'):
-            selected_models.append(best_model)
+            selected_model_entries.append(best_model_entry)
 
-        model = best_model
+        model_entry = best_model_entry
 
         if selected_model_name.startswith('base'):
             break
@@ -227,23 +221,27 @@ def start(context, model, groups, p_value, skip, max_iter, dv, strictness):
             skip.append(selected_model_name)
 
     # Check that there actually occured an improvement from the initial model.
-    delta_ofv = input_model.modelfit_results.ofv - model.modelfit_results.ofv
+    delta_ofv = input_model_entry.modelfit_results.ofv - model_entry.modelfit_results.ofv
     if delta_ofv < cutoff:
-        model = input_model
+        model_entry = input_model_entry
+
+    # FIXME: Remove once modelfit_results have been removed from Model object
+    selected_models = [_model_entry_to_model(model_entry) for model_entry in selected_model_entries]
+    model_results = [model_entry.modelfit_results for model_entry in selected_model_entries]
 
     sumind = summarize_individuals(selected_models)
     sumcount = summarize_individuals_count_table(df=sumind)
     sum_models = summarize_modelfit_results(model_results)
     sum_models['step'] = list(range(len(sum_models)))
     summf = sum_models.reset_index().set_index(['step', 'model'])
-    summary_tool = _create_summary_tool(selected_models, cutoff, strictness)
-    summary_errors = summarize_errors(m.modelfit_results for m in selected_models)
+    summary_tool = _create_summary_tool(selected_model_entries, cutoff, strictness)
+    summary_errors = summarize_errors(m.modelfit_results for m in selected_model_entries)
 
     res = RUVSearchResults(
         cwres_models=pd.concat(cwres_models),
         summary_individuals=sumind,
         summary_individuals_count=sumcount,
-        final_model=model,
+        final_model=model_entry.model,
         summary_models=summf,
         summary_tool=summary_tool,
         summary_errors=summary_errors,
@@ -252,55 +250,63 @@ def start(context, model, groups, p_value, skip, max_iter, dv, strictness):
     return res
 
 
-def _create_summary_tool(selected_models, cutoff, strictness):
+def _create_summary_tool(selected_model_entries, cutoff, strictness):
+    selected_models = [model_entry.model for model_entry in selected_model_entries]
     model_names = [model.name for model in selected_models]
     iteration_map = {model.name: model_names.index(model.name) for model in selected_models}
 
-    base_model = selected_models[0]
-    ruvsearch_models = selected_models[1:]
+    base_model_entry = selected_model_entries[0]
+    ruvsearch_model_entries = selected_model_entries[1:]
 
-    sum_tool = summarize_tool(ruvsearch_models, base_model, 'ofv', cutoff, strictness).reset_index()
+    sum_tool = summarize_tool(
+        ruvsearch_model_entries, base_model_entry, 'ofv', cutoff, strictness
+    ).reset_index()
     sum_tool['step'] = sum_tool['model'].map(iteration_map)
     sum_tool_by_iter = sum_tool.set_index(['step', 'model']).sort_index()
 
     # FIXME: Workaround since rank_models will exclude ranking of base model since dofv will be 0
-    sum_tool_by_iter.loc[(0, base_model.name), 'ofv'] = base_model.modelfit_results.ofv
-    sum_tool_by_iter.loc[(0, base_model.name), 'dofv'] = 0
+    sum_tool_by_iter.loc[
+        (0, base_model_entry.model.name), 'ofv'
+    ] = base_model_entry.modelfit_results.ofv
+    sum_tool_by_iter.loc[(0, base_model_entry.model.name), 'dofv'] = 0
 
     return sum_tool_by_iter.drop(columns=['rank'])
 
 
-def _start_iteration(model):
-    return model
+def _start_iteration(model_or_model_entry):
+    return model_or_model_entry
 
 
 def _results(res):
     return res
 
 
-def post_process(context, start_model, *models, cutoff, current_iteration, dv):
-    res = calculate_results(models)
+def post_process(context, start_model_entry, *model_entries, cutoff, current_iteration, dv):
+    res = calculate_results(model_entries)
     best_model_unfitted, selected_model_name = _create_best_model(
-        start_model, res, current_iteration, cutoff=cutoff, dv=dv
+        start_model_entry, res, current_iteration, cutoff=cutoff, dv=dv
     )
     if best_model_unfitted is not None:
         fit_wf = create_fit_workflow(models=[best_model_unfitted])
-        best_model = call_workflow(fit_wf, f'fit{current_iteration}', context)
-        if best_model.modelfit_results is not None:
+        best_model_entry = call_workflow(fit_wf, f'fit{current_iteration}', context)
+        if best_model_entry.modelfit_results is not None:
             best_model_check = [
-                best_model.modelfit_results.ofv,
-                best_model.modelfit_results.residuals,
-                best_model.modelfit_results.predictions,
+                best_model_entry.modelfit_results.ofv,
+                best_model_entry.modelfit_results.residuals,
+                best_model_entry.modelfit_results.predictions,
             ]
             if all(check is not None for check in best_model_check):
-                delta_ofv = start_model.modelfit_results.ofv - best_model.modelfit_results.ofv
+                delta_ofv = (
+                    start_model_entry.modelfit_results.ofv - best_model_entry.modelfit_results.ofv
+                )
                 if delta_ofv > cutoff:
-                    return (res, best_model, selected_model_name)
+                    return (res, best_model_entry, selected_model_name)
 
-    return (res, start_model, f"base_{current_iteration}")
+    return (res, start_model_entry, f"base_{current_iteration}")
 
 
-def _create_base_model(input_model, current_iteration, dv):
+def _create_base_model(input_model_entry, current_iteration, dv):
+    input_model = input_model_entry.model
     theta = Parameter('theta', 0.1)
     omega = Parameter('omega', 0.01, lower=0)
     sigma = Parameter('sigma', 1, lower=0)
@@ -330,36 +336,40 @@ def _create_base_model(input_model, current_iteration, dv):
         estimation_steps=EstimationSteps.create([est]),
         dependent_variables={y.symbol: 1},
     )
-    base_model = base_model.replace(dataset=_create_dataset(input_model, dv))
-    return base_model
+    base_model = base_model.replace(dataset=_create_dataset(input_model_entry, dv))
+    return ModelEntry.create(base_model, modelfit_results=None, parent=input_model)
 
 
-def _create_iiv_on_ruv_model(input_model, current_iteration, dv):
+def _create_iiv_on_ruv_model(input_model_entry, current_iteration, dv):
+    input_model = input_model_entry.model
     model = set_iiv_on_ruv(input_model, dv)
     name = f'IIV_on_RUV_{current_iteration}'
     model = model.replace(name=name, description=name)
-    return model
+    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
 
 
-def _create_power_model(input_model, current_iteration, dv):
+def _create_power_model(input_model_entry, current_iteration, dv):
+    input_model = input_model_entry.model
     model = set_power_on_ruv(
         input_model, ipred='IPRED', lower_limit=None, zero_protection=True, dv=dv
     )
     name = f'power_{current_iteration}'
     model = model.replace(name=name, description=name)
-    return model
+    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
 
 
-def _create_time_varying_model(input_model, groups, i, current_iteration, dv):
+def _create_time_varying_model(input_model_entry, groups, i, current_iteration, dv):
+    input_model = input_model_entry.model
     quantile = i / groups
     cutoff = input_model.dataset['TAD'].quantile(q=quantile)
     model = set_time_varying_error_model(input_model, cutoff=cutoff, idv='TAD', dv=dv)
     name = f"time_varying{i}_{current_iteration}"
     model = model.replace(name=name, description=name)
-    return model
+    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
 
 
-def _create_combined_model(input_model, current_iteration):
+def _create_combined_model(input_model_entry, current_iteration):
+    input_model = input_model_entry.model
     model = remove_error_model(input_model)
     sset = model.statements
     ruv_prop = create_symbol(model, 'epsilon_p')
@@ -390,12 +400,12 @@ def _create_combined_model(input_model, current_iteration):
         name=name,
         description=name,
     )
-    return model
+    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
 
 
-def _create_dataset(input_model: Model, dv):
+def _create_dataset(input_model_entry: ModelEntry, dv):
     # Non-observations have already been filtered
-    results = input_model.modelfit_results
+    input_model, results = input_model_entry.model, input_model_entry.modelfit_results
     assert results is not None
     residuals = results.residuals
     assert residuals is not None
@@ -442,9 +452,9 @@ def _time_after_dose(model):
     return model
 
 
-def _create_best_model(model, res, current_iteration, dv, groups=4, cutoff=3.84):
+def _create_best_model(model_entry, res, current_iteration, dv, groups=4, cutoff=3.84):
     if not res.cwres_models.empty and any(res.cwres_models['dofv'] > cutoff):
-        model = update_initial_estimates(model)
+        model = update_initial_estimates(model_entry.model, model_entry.modelfit_results)
         selected_model_name = f'base_{current_iteration}'
         idx = res.cwres_models['dofv'].idxmax()
         name = idx[0]
@@ -482,7 +492,7 @@ def _create_best_model(model, res, current_iteration, dv, groups=4, cutoff=3.84)
             model = _time_after_dose(model)
             i = int(name[-1])
             quantile = i / groups
-            df = _create_dataset(model, dv=dv)
+            df = _create_dataset(model_entry, dv=dv)
             tad = df['TAD']
             cutoff_tvar = tad.quantile(q=quantile)
             model = set_time_varying_error_model(model, cutoff=cutoff_tvar, idv='TAD', dv=dv)
@@ -508,16 +518,18 @@ def _create_best_model(model, res, current_iteration, dv, groups=4, cutoff=3.84)
                 },
             )
 
+        best_model_entry = ModelEntry.create(model, modelfit_results=None, parent=model_entry.model)
         selected_model_name = name
     else:
-        model = None
+        best_model_entry = None
         selected_model_name = None
-    return model, selected_model_name
+
+    return best_model_entry, selected_model_name
 
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(model, groups, p_value, skip, max_iter, dv, strictness):
+def validate_input(model, results, groups, p_value, skip, max_iter, dv, strictness):
     if groups <= 0:
         raise ValueError(f'Invalid `groups`: got `{groups}`, must be >= 1.')
 
@@ -531,20 +543,20 @@ def validate_input(model, groups, p_value, skip, max_iter, dv, strictness):
         raise ValueError(f'Invalid `max_iter`: got `{max_iter}`, must be int in range [1, 3].')
 
     if model is not None:
-        if model.modelfit_results is None:
-            raise ValueError(f'Invalid `model`: {model} is missing modelfit results.')
+        if results is None:
+            raise ValueError('Invalid `results`: modelfit results must be provided.')
 
-        residuals = model.modelfit_results.residuals
+        residuals = results.residuals
         if residuals is None or 'CWRES' not in residuals:
             raise ValueError(
-                f'Invalid `model`: please check {model.name}.mod file to'
+                f'Invalid `results`: please check {model.name}.mod file to'
                 f' make sure ID, TIME, CWRES are in $TABLE.'
             )
 
-        predictions = model.modelfit_results.predictions
+        predictions = results.predictions
         if predictions is None or ('CIPREDI' not in predictions and 'IPRED' not in predictions):
             raise ValueError(
-                f'Invalid `model`: please check {model.name}.mod file to'
+                f'Invalid `results`: please check {model.name}.mod file to'
                 f' make sure ID, TIME, CIPREDI (or IPRED) are in $TABLE.'
             )
 

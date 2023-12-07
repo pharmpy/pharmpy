@@ -715,6 +715,7 @@ def _subfunc_ruvsearch(dv, strictness, path) -> SubFunc:
         res = run_tool(
             'ruvsearch',
             model,
+            results=model.modelfit_results,
             skip=skip,
             max_iter=max_iter,
             dv=dv,
