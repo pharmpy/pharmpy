@@ -266,6 +266,11 @@ def run_amd(
 
         covsearch_features = def_cov_search_feature + covsearch_features
 
+    if modeltype == "tmdd":
+        orig_dataset = model.dataset
+        if dv_types is not None:
+            model = filter_dataset(model, 'DVID < 2')
+
     db = default_tool_database(toolname='amd', path=path, exist_ok=resume)
     run_subfuncs = {}
     # Always add?
@@ -294,6 +299,8 @@ def run_amd(
                     search_space=modelsearch_features,
                     type=modeltype,
                     strictness=strictness,
+                    dv_types=dv_types,
+                    orig_dataset=orig_dataset,
                     path=db.path,
                 )
                 run_subfuncs['structsearch'] = func
@@ -601,16 +608,15 @@ def _subfunc_structsearch(path, **kwargs) -> SubFunc:
     return _run_structsearch
 
 
-def _subfunc_structsearch_tmdd(search_space, type, strictness, path) -> SubFunc:
+def _subfunc_structsearch_tmdd(
+    search_space, type, strictness, dv_types, orig_dataset, path
+) -> SubFunc:
     def _run_structsearch_tmdd(model):
-        # Filter dataset to only contain 1 DV for modelsearch
-        model_with_one_dv = filter_dataset(model, "DVID == 1")
-
         res = run_tool(
             'modelsearch',
             search_space=mfl_stringify(search_space),
             algorithm='reduced_stepwise',
-            model=model_with_one_dv,
+            model=model,
             strictness=strictness,
             results=model.modelfit_results,
             path=path / 'modelsearch',
@@ -653,11 +659,13 @@ def _subfunc_structsearch_tmdd(search_space, type, strictness, path) -> SubFunc:
                 rank_filtered = rank_filtered.sort_values(by=['rank'])
                 highest_ranked = rank_filtered.index[0]
                 extra_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
-                extra_model = extra_model.replace(dataset=model.dataset)
+                if dv_types is not None:
+                    extra_model = extra_model.replace(dataset=orig_dataset)
                 extra_model_results = extra_model.modelfit_results
 
-        # Replace original dataset
-        final_model = final_model.replace(dataset=model.dataset)
+        # Replace original dataset if multiple DVs
+        if dv_types is not None:
+            final_model = final_model.replace(dataset=orig_dataset)
 
         res = run_tool(
             'structsearch',
