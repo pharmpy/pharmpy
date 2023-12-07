@@ -24,9 +24,16 @@ jobs:
           path: pharmpy.github.io
           token: ${{secrets.DOC_TOKEN}}
 
-      - uses: ./pharmpy/.github/actions/setup-tox
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install tox
+        shell: bash
+        working-directory: ./pharmpy
+        run: pip install -r pretest-requirements.txt
 
       - name: Install graphviz
         run: sudo apt install graphviz
