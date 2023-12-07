@@ -680,6 +680,7 @@ def _subfunc_structsearch_tmdd(
             extra_model=extra_model,
             extra_model_results=extra_model_results,
             strictness=strictness,
+            dv_types=dv_types,
             path=path / 'structsearch',
         )
         assert isinstance(res, Results)
