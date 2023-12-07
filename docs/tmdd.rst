@@ -24,6 +24,22 @@ The code to initiate structsearch for a TMDD model in Python/R is stated below:
                             results=start_model_results)
 
 
+Run TMDD for multiple DVs:
+
+.. pharmpy-code::
+
+    from pharmpy.modeling import read_model
+    from pharmpy.tools read_modelfit_results, run_structsearch
+
+    start_model = read_model('path/to/model')
+    start_model_results = read_modelfit_results('path/to/model')
+    res = run_structsearch(type='tmdd',
+                            model=start_model,
+                            results=start_model_results,
+                            dv_types = {'drug': 1, 'target':2, 'complex':3})
+
+Note: "drug" can be omitted in ``dv_types``. In this case it will be set to 1.
+
 
 Arguments
 ~~~~~~~~~
@@ -45,6 +61,10 @@ The arguments of the structsearch tool for TMDD models are listed below.
 | ``extra_model``                                 | Extra model for TMDD structsearch                                   |
 +-------------------------------------------------+---------------------------------------------------------------------+
 | ``extra_model_results``                         | ModelfitResults object for the extra model for TMDD structsearch    |
++-------------------------------------------------+---------------------------------------------------------------------+
+| ``dv_types``                                    | Dictionary of DV types for multiple DVs                             |
+|                                                 | (e.g. dv_types = {'target': 2}). Default is None.                   |
+|                                                 | Allowed keys are: 'drug', 'target' and 'complex'.                   |
 +-------------------------------------------------+---------------------------------------------------------------------+
 
 ~~~~~~

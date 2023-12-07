@@ -52,6 +52,9 @@ def set_tmdd(model: Model, type: str, dv_types: dict = None):
     >>> model = set_tmdd(model, "full")
 
     """
+    if dv_types is not None:
+        _validate_dv_types(dv_types)
+
     type = type.upper()
 
     model = _replace_trivial_redefinitions(model)
@@ -422,3 +425,11 @@ def _create_ksyn():
     ksyn = sympy.Symbol('KSYN')
     ksyn_ass = Assignment(ksyn, sympy.Symbol("R_0") * sympy.Symbol("KDEG"))
     return ksyn, ksyn_ass
+
+
+def _validate_dv_types(dv_types):
+    for key in dv_types.keys():
+        if key not in ['drug', 'target', 'complex']:
+            raise ValueError(
+                f'Invalid dv_types key "{key}". Allowed keys are: "drug", "target" and "complex".'
+            )

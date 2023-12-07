@@ -81,6 +81,8 @@ Arguments
 | :ref:`strictness<strictness>`                     | Strictness criteria for model selection.                                                                        |
 |                                                   | Default is "minimization_successful or                                                                          |
 |                                                   | (rounding_errors and sigdigs>= 0.1)"                                                                            |
+|                                                   | If ``strictness`` is set to ``None`` no strictness                                                              |
+|                                                   | criteria are applied                                                                                            |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 |``mechanistic_covariates``                         | List of covariates to run in a separate prioritezed covsearch run.                                              |
 |                                                   | The effects are extracted from the given search space                                                           |
@@ -88,6 +90,9 @@ Arguments
 | ``retries_strategy``                              | Decide how to use the retries tool. Valid options are 'skip', 'all_final' or 'final'. Default is 'final'        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``seed``                                          | A random number generator or seed to use for steps with random sampling.                                        |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+| ``dv_types``                                      | Dictionary of DV types for multiple DVs (e.g. dv_types = {'target': 2}). Default is None.                       |
+|                                                   | Allowed keys are: 'drug', 'target' and 'complex'. (For TMDD models only)                                        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 .. _input_amd:
