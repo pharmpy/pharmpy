@@ -1,10 +1,10 @@
 .. figure:: Pharmpy_logo.svg
-   :class: only-light
+   :class: only-light no-scaled-link
    :width: 400
    :align: center
 
 .. figure:: Pharmpy_logo_dark.svg
-   :class: only-dark
+   :class: only-dark no-scaled-link
    :width: 400
    :align: center
 
