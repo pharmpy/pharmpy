@@ -9,7 +9,7 @@ candidate models according to the tool selected, estimate those, and make some s
 possible, Pharmpy will parallelize the runs. All tools are independent of the estimation software chosen, the only part
 of the tool that is software specific is the estimation.
 
-.. image:: images/tools.png
+.. figure:: images/tools.svg
 
 The tools can be split into two sections: Pharmpy tools and tools connected to PsN. Pharmpy tools
 are implemented in Pharmpy, while the tools connected to PsN allows for parsing and presenting

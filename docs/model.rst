@@ -4,6 +4,9 @@
 The Pharmpy model
 =================
 
+.. figure:: images/model.svg
+    :align: right
+
 At the heart of Pharmpy lies its non-linear mixed effects model abstraction. A model needs to follow the interface of
 the base model class :py:class:`pharmpy.model.Model`. This means that any model format can in theory be supported by
 Pharmpy via subclasses that implement the same base interface. This makes any operation performed on a model be the
