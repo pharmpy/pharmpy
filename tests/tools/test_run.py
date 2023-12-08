@@ -65,7 +65,7 @@ def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
         assert metadata['tool_options']['model']['__class__'] == 'Model'
         assert metadata['tool_options']['model']['arg_name'] == 'pheno_real'
         assert metadata['tool_options']['model']['db_name'] == 'input_model'
-        assert metadata['tool_options']['rank_type'] == 'bic'
+        assert metadata['tool_options']['rank_type'] == 'mbic'
         assert metadata['tool_options']['algorithm'] == 'exhaustive'
 
 

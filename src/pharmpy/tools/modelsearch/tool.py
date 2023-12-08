@@ -20,7 +20,7 @@ def create_workflow(
     search_space: Union[str, ModelFeatures],
     algorithm: str,
     iiv_strategy: str = 'absorption_delay',
-    rank_type: str = 'bic',
+    rank_type: str = 'mbic',
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,

@@ -32,7 +32,7 @@ IIV_ALGORITHMS = frozenset(('brute_force', 'brute_force_no_of_etas', 'brute_forc
 def create_workflow(
     algorithm: str,
     iiv_strategy: str = 'no_add',
-    rank_type: str = 'bic',
+    rank_type: str = 'mbic',
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,

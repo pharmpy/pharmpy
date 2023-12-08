@@ -32,7 +32,7 @@ T = TypeVar('T')
 def create_workflow(
     column: str = 'OCC',
     list_of_parameters: Optional[List[str]] = None,
-    rank_type: str = 'bic',
+    rank_type: str = 'mbic',
     cutoff: Optional[Union[float, int]] = None,
     distribution: str = 'same-as-iiv',
     results: Optional[ModelfitResults] = None,
