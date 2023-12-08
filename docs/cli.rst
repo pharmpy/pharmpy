@@ -1,6 +1,6 @@
-==================================
-The Pharmpy command line interface
-==================================
+======================
+Command line interface
+======================
 
 Pharmpy has a command line interface for some of its functionality. The command line tool is an integrated part of the Pharmpy python package.
 
