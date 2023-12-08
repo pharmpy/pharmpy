@@ -27,7 +27,7 @@ It is also possible to specify which estimation tool:
 
 .. note::
 
-    In order to esimate using any of the supported softwares (NONMEM, nlmixr, rxODE) you need to have a configuration
+    In order to esimate using any of the supported softwares (NONMEM, nlmixr2, rxode2) you need to have a configuration
     file set up with a path to NONMEM, instructions can be found :ref:`here <config_page>`.
 
 ~~~~~~~~~~~~~~~~

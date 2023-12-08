@@ -21,11 +21,11 @@ pharmr package or via its built-in command line interface. Current features incl
 * Extraction of model estimation results
 * Manipulation of datasets
 * Various calculations and evaluations
-* Plugin system to support different model formats (NONMEM, nlmixr2, rxODE2)
-* Running models (NONMEM, nlmixr2, rxODE2)
+* Plugin system to support different model formats (NONMEM, nlmixr2, rxode2)
+* Running models (NONMEM, nlmixr2, rxode2)
 * Running higher level workflows or tools (NONMEM)
 * Parsing and updating NONMEM models
-* Model conversion to NONMEM, nlmixr2, and rxODE2
+* Model conversion to NONMEM, nlmixr2, and rxode2
 
 We encourage your contribution to the Pharmpy project! You can report issues and post suggestions of features via
 GitHub issues (to `Pharmpy <https://github.com/pharmpy/pharmpy/issues>`_ or to

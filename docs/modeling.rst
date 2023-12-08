@@ -68,7 +68,7 @@ Pharmpy has example models with example datasets that can be accessed using
 Converting models
 ~~~~~~~~~~~~~~~~~
 
-Pharmpy supports the estimation software NONMEM, nlmixr2 and rxODE2, and a Pharmpy model can be converted into those
+Pharmpy supports the estimation software NONMEM, nlmixr2 and rxode2, and a Pharmpy model can be converted into those
 formats using :py:func:`pharmpy.modeling.convert_model`:
 
 .. pharmpy-execute::
