@@ -342,7 +342,7 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
         elif type == 'QSS':
             if 'target' in dv_types.keys():
                 y_target = sympy.Symbol("Y_TARGET")
-                ytarget = Assignment(y_target, (target_comp.amount - central.amount - lafreef) / vc)
+                ytarget = Assignment(y_target, (target_comp.amount - central.amount + lafreef) / vc)
                 dvs = model.dependent_variables.replace(y_target, dv_types['target'])
                 model = model.replace(
                     statements=model.statements + ytarget, dependent_variables=dvs
