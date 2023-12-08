@@ -17,57 +17,49 @@ class RUVSearchResults(ToolResults):
     cwres_models: Optional[Any] = None
 
 
-def calculate_results(models):
-    names = [model.name for model in models]
+def calculate_results(model_entries):
+    names = [model_entry.model.name for model_entry in model_entries]
     iterations = [int(name.split('_')[-1]) for name in names]
     iter_dfs = []
     for iteration in range(min(iterations), max(iterations) + 1):
         base_index = names.index(f'base_{iteration}')
-        base_model = models[base_index]
-        if base_model.modelfit_results is not None and base_model.modelfit_results.ofv is not None:
-            base_ofv = base_model.modelfit_results.ofv
+        base_model_entry = model_entries[base_index]
+        if (
+            base_model_entry.modelfit_results is not None
+            and base_model_entry.modelfit_results.ofv is not None
+        ):
+            base_ofv = base_model_entry.modelfit_results.ofv
         else:
             warnings.warn(f'base CWRES model of iteration {iteration} failed.')
             res = RUVSearchResults()
             return res
 
-        iteration_models = [
-            model
-            for model in models
-            if model.name.endswith(f'_{iteration}')
-            and not model.name.startswith('best_ruvsearch')
-            and not model.name.startswith('base')
+        iteration_model_entries = [
+            model_entry
+            for model_entry in model_entries
+            if model_entry.model.name.endswith(f'_{iteration}')
+            and not model_entry.model.name.startswith('best_ruvsearch')
+            and not model_entry.model.name.startswith('base')
         ]
 
         model_name = []
         model_dofv = []
         model_params = []
-        for model in iteration_models:
-            name = model.name
-            if model.modelfit_results is not None and model.modelfit_results.ofv is not None:
-                dofv = base_ofv - model.modelfit_results.ofv
+        for model_entry in iteration_model_entries:
+            name = model_entry.model.name
+            model_res = model_entry.modelfit_results
+            if model_res is not None and model_res.ofv is not None:
+                dofv = base_ofv - model_res.ofv
                 if name.startswith('IIV_on_RUV'):
-                    param = {
-                        'omega': round(model.modelfit_results.parameter_estimates["IIV_RUV1"], 6)
-                    }
+                    param = {'omega': round(model_res.parameter_estimates["IIV_RUV1"], 6)}
                 elif name.startswith('power'):
-                    param = {
-                        'theta': round(model.modelfit_results.parameter_estimates["power1"], 6)
-                    }
+                    param = {'theta': round(model_res.parameter_estimates["power1"], 6)}
                 elif name.startswith('time_varying'):
-                    param = {
-                        'theta': round(
-                            model.modelfit_results.parameter_estimates["time_varying"], 6
-                        )
-                    }
+                    param = {'theta': round(model_res.parameter_estimates["time_varying"], 6)}
                 else:
                     param = {
-                        'sigma_add': round(
-                            model.modelfit_results.parameter_estimates["sigma_add"], 6
-                        ),
-                        'sigma_prop': round(
-                            model.modelfit_results.parameter_estimates["sigma_prop"], 6
-                        ),
+                        'sigma_add': round(model_res.parameter_estimates["sigma_add"], 6),
+                        'sigma_prop': round(model_res.parameter_estimates["sigma_prop"], 6),
                     }
                 a = name.split('_')
                 name = '_'.join(a[0:-1])
@@ -116,7 +108,6 @@ def psn_resmod_results(path):
         d = {}
         for i in range(4, len(row)):
             if row[i] is not None and row[i] is not np.nan:
-                print(row[i])
                 a = row[i].split('=')
                 d[a[0]] = float(a[1])
         parameters[rowind] = d
