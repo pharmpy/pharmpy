@@ -245,7 +245,7 @@ def create_base_model(ss, model_or_model_entry):
 
 
 def post_process(rank_type, cutoff, strictness, *model_entries):
-    res_models = []
+    res_model_entries = []
     input_model_entry = None
     base_model_entry = None
     for model_entry in model_entries:
@@ -256,7 +256,7 @@ def post_process(rank_type, cutoff, strictness, *model_entries):
         elif not model.name.startswith('modelsearch_run') and model.name != "BASE":
             user_input_model_entry = model_entry
         else:
-            res_models.append(model_entry)
+            res_model_entries.append(model_entry)
     if not base_model_entry:
         input_model_entry = user_input_model_entry
         base_model_entry = user_input_model_entry
@@ -268,8 +268,8 @@ def post_process(rank_type, cutoff, strictness, *model_entries):
     if user_input_model_entry != base_model_entry:
         results_to_summarize.append(base_model_entry.modelfit_results)
 
-    if res_models:
-        results_to_summarize.extend(model.modelfit_results for model in res_models)
+    if res_model_entries:
+        results_to_summarize.extend(model.modelfit_results for model in res_model_entries)
 
     summary_models = summarize_modelfit_results(results_to_summarize)
     summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
@@ -279,7 +279,7 @@ def post_process(rank_type, cutoff, strictness, *model_entries):
         ModelSearchResults,
         input_model_entry,
         base_model_entry,
-        res_models,
+        res_model_entries,
         rank_type,
         cutoff,
         summary_models=summary_models,
