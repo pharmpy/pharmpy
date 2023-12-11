@@ -511,7 +511,7 @@ def evaluate_weighted_residuals(
         Gi = np.float64(G.loc[[i]])
         Hi = np.float64(H.loc[[i]])
         Fi = F.loc[i:i]
-        DVi = np.float64(df['DV'][df[model.datainfo.id_column.name] == i])
+        DVi = (df['DV'][df[model.datainfo.id_column.name] == i]).astype(np.float64).values
         Ci = Gi @ omega @ Gi.T + np.diag(np.diag(Hi @ sigma @ Hi.T))
         WRESi = linalg.sqrtm(linalg.inv(Ci)) @ (DVi - Fi)
         WRES = np.concatenate((WRES, WRESi))
