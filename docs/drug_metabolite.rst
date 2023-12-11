@@ -63,7 +63,7 @@ instead.
 
 Regarding DVID, DVID=1 is connected to the parent drug while DVID=2 is representing the metabolite.
 
-.. _the search space:
+.. _drug metabolite search space:
 
 ~~~~~~~~~~~~~~~~
 The search space

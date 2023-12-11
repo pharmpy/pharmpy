@@ -17,6 +17,7 @@ The code to initiate structsearch for a PKPD model in Python/R is stated below:
 
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
+
     res = run_structsearch(type='pkpd',
                             search_space="DIRECTEFFECT(*)",
                             model=start_model,
@@ -33,29 +34,33 @@ Arguments
 ~~~~~~~~~
 The arguments of the structsearch tool for PKPD models are listed below.
 
-+-------------------------------------------------+---------------------------------------------------------------------+
-| Argument                                        | Description                                                         |
-+=================================================+=====================================================================+
-| :ref:`type<the model types>`                    | Type of model. Can be either pkpd or drug_metabolite                |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| :ref:`search_space<the search space pkpd>`      | Search space of models to test                                      |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| b_init (optional, default is 0.1)               | Initial estimate for baseline effect (only for PKPD models)         |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| emax_init (optional, default is 0.1)            | Initial estimate for E :sub:`max` parameter (only for PKPD models)  |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| ec50_init (optional, default is 0.1)            | Initial estimate for EC :sub:`50` parameter (only for PKPD models)  |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| met_init (optional, default is 0.1)             | Initial estimate for mean equilibration time  (only for PKPD models)|
-+-------------------------------------------------+---------------------------------------------------------------------+
-| ``model``                                       | PK start model                                                      |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| ``results``                                     | ModelfitResults of the start model                                  |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| :ref:`strictness<strictness>`                   | Strictness criteria for model selection.                            |
-|                                                 | Default is "minimization_successful or                              |
-|                                                 | (rounding_errors and sigdigs>= 0.1)"                                |
-+-------------------------------------------------+---------------------------------------------------------------------+
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| Argument                                        | Description                                                                             |
++=================================================+=========================================================================================+
+| ``type``                                        | Type of model. In this case "pkpd".                                                     |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``search_space``                                | :ref:`Search space<_the search space pkpd>` of models to test. Optional.                |
+|                                                 | If ``None`` all implemented models are used.                                            |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``b_init``                                      | Initial estimate for baseline effect. Optional. Default is 0.1                          |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``emax_init``                                   | Initial estimate for E :sub:`max` parameter.                                            |
+|                                                 | Default is 0.1                                                                          |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``ec50_init``                                   | Initial estimate for EC :sub:`50` parameter.                                            |
+|                                                 | Default is 0.1                                                                          |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``met_init``                                    | Initial estimate for mean equilibration time.                                           |
+|                                                 | Default is 0.1                                                                          |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``model``                                       | PK start model                                                                          |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``results``                                     | ModelfitResults of the start model                                                      |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``strictness``                                  | :ref:`Strictness<strictness>` criteria for model selection.                             |
+|                                                 | Default is "minimization_successful or                                                  |
+|                                                 | (rounding_errors and sigdigs>= 0.1)".                                                   |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
 
 .. _models:
 
@@ -140,6 +145,12 @@ Search space for testing linear and emax models for direct effect and effect com
     DIRECTEFFECT([linear, emax])
     EFFECTCOMP([linear, emax])
 
+Search space for testing linear indirect effect degradation models:
+
+.. code-block::
+
+    INDIRECTEFFECT(linear,DEGRADATION)
+
 ~~~~~~~
 Results
 ~~~~~~~
@@ -166,37 +177,52 @@ start model (in this case comparing BIC), and final ranking:
     res = read_results('tests/testdata/results/structsearch_results_pkpd.json')
     res.summary_tool
 
-To see information about the actual model runs, such as minimization status, estimation time, and parameter estimates,
-you can look at the ``summary_models`` table. The table is generated with
-:py:func:`pharmpy.tools.summarize_modelfit_results`.
+~~~~~~~~
+Examples
+~~~~~~~~
 
-.. pharmpy-execute::
-    :hide-code:
+Minimum required arguments to run structsearch for PKPD models:
 
-    res.summary_models
+.. pharmpy-code::
 
-A summary table of predicted influential individuals and outliers can be seen in ``summary_individuals_count``.
-See :py:func:`pharmpy.tools.summarize_individuals_count_table` for information on the content of this table.
+    from pharmpy.modeling import read_model
+    from pharmpy.tools read_modelfit_results, run_structsearch
 
-.. pharmpy-execute::
-    :hide-code:
+    start_model = read_model('path/to/model')
+    start_model_results = read_modelfit_results('path/to/model')
 
-    res.summary_individuals_count
+    res = run_structsearch(type='pkpd',
+                            model=start_model,
+                            results=start_model_results)
 
-You can see different individual statistics in ``summary_individuals``.
-See :py:func:`pharmpy.tools.summarize_individuals` for information on the content of this table.
+Specifying initial parameters:
 
-.. pharmpy-execute::
-    :hide-code:
+.. pharmpy-code::
 
-    res.summary_individuals
+    from pharmpy.modeling import read_model
+    from pharmpy.tools read_modelfit_results, run_structsearch
 
-Finally, you can see a summary of different errors and warnings in ``summary_errors``.
-See :py:func:`pharmpy.tools.summarize_errors` for information on the content of this table.
+    start_model = read_model('path/to/model')
+    start_model_results = read_modelfit_results('path/to/model')
 
-.. pharmpy-execute::
-    :hide-code:
+    res = run_structsearch(type='pkpd',
+                            model=start_model,
+                            results=start_model_results,
+                            b_init = 0.09, e_max_init = 3, ec50_init = 1.5)
 
-    import pandas as pd
-    pd.set_option('display.max_colwidth', None)
-    res.summary_errors
+
+Run structsearch with initial estimates for all direct effect models and all indirect effect models with production:
+
+.. pharmpy-code::
+
+    from pharmpy.modeling import read_model
+    from pharmpy.tools read_modelfit_results, run_structsearch
+
+    start_model = read_model('path/to/model')
+    start_model_results = read_modelfit_results('path/to/model')
+
+    res = run_structsearch(type='pkpd',
+                            model=start_model,
+                            results=start_model_results,
+                            b_init = 0.09, e_max_init = 3, ec50_init = 1.5,
+                            search_space = "DIRECTEFFECT(*);INDIRECTEFFECT(*,PRODUCTION)")

@@ -19,26 +19,10 @@ The code to initiate structsearch for a TMDD model in Python/R is stated below:
 
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
+
     res = run_structsearch(type='tmdd',
                             model=start_model,
                             results=start_model_results)
-
-
-Run TMDD for multiple DVs:
-
-.. pharmpy-code::
-
-    from pharmpy.modeling import read_model
-    from pharmpy.tools read_modelfit_results, run_structsearch
-
-    start_model = read_model('path/to/model')
-    start_model_results = read_modelfit_results('path/to/model')
-    res = run_structsearch(type='tmdd',
-                            model=start_model,
-                            results=start_model_results,
-                            dv_types = {'drug': 1, 'target':2, 'complex':3})
-
-Note: "drug" can be omitted in ``dv_types``. In this case it will be set to 1.
 
 
 Arguments
@@ -48,23 +32,24 @@ The arguments of the structsearch tool for TMDD models are listed below.
 +-------------------------------------------------+---------------------------------------------------------------------+
 | Argument                                        | Description                                                         |
 +=================================================+=====================================================================+
-| :ref:`type<the model types>`                    | Type of model. Can be either pkpd or drug_metabolite                |
+| ``type``                                        | Type of model. In this case "tmdd".                                 |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| ``model``                                       | PK start model                                                      |
+| ``model``                                       | PK start model.                                                     |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| ``results``                                     | ModelfitResults of the start model                                  |
+| ``results``                                     | ModelfitResults of the start model.                                 |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| :ref:`strictness<strictness>`                   | Strictness criteria for model selection.                            |
+| ``strictness``                                  | :ref:`Strictness<strictness>` criteria for model selection.         |
 |                                                 | Default is "minimization_successful or                              |
-|                                                 | (rounding_errors and sigdigs>= 0.1)"                                |
+|                                                 | (rounding_errors and sigdigs>= 0.1)". Optional.                     |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| ``extra_model``                                 | Extra model for TMDD structsearch                                   |
+| ``extra_model``                                 | Extra model for TMDD structsearch. Optional.                        |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| ``extra_model_results``                         | ModelfitResults object for the extra model for TMDD structsearch    |
+| ``extra_model_results``                         | ModelfitResults object for the extra model for TMDD structsearch.   |
+|                                                 | Optional.                                                           |
 +-------------------------------------------------+---------------------------------------------------------------------+
 | ``dv_types``                                    | Dictionary of DV types for multiple DVs                             |
 |                                                 | (e.g. dv_types = {'target': 2}). Default is None.                   |
-|                                                 | Allowed keys are: 'drug', 'target' and 'complex'.                   |
+|                                                 | Allowed keys are: 'drug', 'target' and 'complex'. Optional.         |
 +-------------------------------------------------+---------------------------------------------------------------------+
 
 ~~~~~~
@@ -354,7 +339,8 @@ MMAPP model:
     }
 
 .. math:: \frac {dA_{\text{central}}}{dt} = \Biggl( - \frac{Cl}{V} - \frac{k_{\text{int}} \cdot \
-            A_{\text{target}}(t)}{k_{\text{MC}} + \frac{A_{\text{central}}(t)}{V}} \Biggl) \cdot A_{\text{entral}}(t)
+            A_{\text{target}}(t)}{ V \cdot \Bigl( k_{\text{MC}} + \frac{A_{\text{central}}(t)}{V} \Bigl) } \Biggl) \
+            \cdot A_{\text{entral}}(t)
 
 .. math:: \frac {dA_{\text{target}}}{dt} = -k_{\text{deg}} \cdot A_{\text{target}}(t) + k_{\text{syn}} \
             - \frac{(k_{\text{kint}} - k_{\text{deg}}) \cdot A_{\text{central}}(t) \cdot A_{\text{target}}(t)}{V \
@@ -441,37 +427,23 @@ start model (in this case comparing BIC), and final ranking:
     res = read_results('tests/testdata/results/structsearch_results_tmdd.json')
     res.summary_tool
 
-To see information about the actual model runs, such as minimization status, estimation time, and parameter estimates,
-you can look at the ``summary_models`` table. The table is generated with
-:py:func:`pharmpy.tools.summarize_modelfit_results`.
+~~~~~~~~
+Examples
+~~~~~~~~
 
-.. pharmpy-execute::
-    :hide-code:
+Run TMDD for multiple DVs:
 
-    res.summary_models
+.. pharmpy-code::
 
-A summary table of predicted influential individuals and outliers can be seen in ``summary_individuals_count``.
-See :py:func:`pharmpy.tools.summarize_individuals_count_table` for information on the content of this table.
+    from pharmpy.modeling import read_model
+    from pharmpy.tools read_modelfit_results, run_structsearch
 
-.. pharmpy-execute::
-    :hide-code:
+    start_model = read_model('path/to/model')
+    start_model_results = read_modelfit_results('path/to/model')
 
-    res.summary_individuals_count
+    res = run_structsearch(type='tmdd',
+                            model=start_model,
+                            results=start_model_results,
+                            dv_types = {'drug': 1, 'target':2, 'complex':3})
 
-You can see different individual statistics in ``summary_individuals``.
-See :py:func:`pharmpy.tools.summarize_individuals` for information on the content of this table.
-
-.. pharmpy-execute::
-    :hide-code:
-
-    res.summary_individuals
-
-Finally, you can see a summary of different errors and warnings in ``summary_errors``.
-See :py:func:`pharmpy.tools.summarize_errors` for information on the content of this table.
-
-.. pharmpy-execute::
-    :hide-code:
-
-    import pandas as pd
-    pd.set_option('display.max_colwidth', None)
-    res.summary_errors
+Note: "drug" can be omitted in ``dv_types``. In this case it will be set to 1.
