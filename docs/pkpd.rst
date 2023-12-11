@@ -38,7 +38,7 @@ The arguments of the structsearch tool for PKPD models are listed below.
 +=================================================+=====================================================================+
 | :ref:`type<the model types>`                    | Type of model. Can be either pkpd or drug_metabolite                |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| :ref:`search_space<the search space>`           | Search space of models to test                                      |
+| :ref:`search_space<the search space pkpd>`      | Search space of models to test                                      |
 +-------------------------------------------------+---------------------------------------------------------------------+
 | b_init (optional, default is 0.1)               | Initial estimate for baseline effect (only for PKPD models)         |
 +-------------------------------------------------+---------------------------------------------------------------------+
@@ -103,7 +103,7 @@ Note : The figure above is only showing a subset of all candidate models created
 
 Regarding DVID, DVID=1 is representing PK observations while DVID=2 is connected to PD observations.
 
-.. _the search space:
+.. _the search space pkpd:
 
 ~~~~~~~~~~~~
 Search space
