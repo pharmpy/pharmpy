@@ -398,6 +398,8 @@ def set_zero_order_elimination(model: Model):
             init = obs.min() / 100  # 1% of smallest observation
         else:
             init = 0.01
+        if init < 0:
+            init = 0.01
         model = fix_parameters_to(model, {'POP_KM': init})
     return model
 
@@ -1735,11 +1737,16 @@ def _get_absorption_init(model, param_name) -> float:
         time_min = time[time > 0].min()
 
     if param_name == 'MDT':
-        return float(time_min) / 2
+        init = float(time_min) / 2
     elif param_name == 'MAT':
-        return float(time_min) * 2
+        init = float(time_min) * 2
+    else:
+        raise NotImplementedError('param_name must be MDT or MAT')
 
-    raise NotImplementedError('param_name must be MDT or MAT')
+    if init < 0:
+        init = 0.1
+
+    return init
 
 
 def set_peripheral_compartments(model: Model, n: int, name: str = None):
