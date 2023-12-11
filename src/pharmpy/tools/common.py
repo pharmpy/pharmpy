@@ -144,8 +144,12 @@ def summarize_tool(
 
     if rank_type == 'mbic':
         rank_type = 'bic'
-        multiple_testing = True
-        n_expected_models = len(models)
+        if len(models) > 0:
+            multiple_testing = True
+            n_expected_models = len(models)
+        else:  # This can happen if the search space of e.g. modelsearch only includes the base model
+            multiple_testing = False
+            n_expected_models = None
     else:
         multiple_testing = False
         n_expected_models = None
