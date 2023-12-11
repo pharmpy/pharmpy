@@ -4,7 +4,7 @@ from typing import Set, Union
 import pharmpy.model
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.code_generator import CodeGenerator
-from pharmpy.model import Assignment
+from pharmpy.model import Assignment, Infusion
 from pharmpy.modeling import get_bioavailability, get_lag_times
 
 from .error_model import res_error_term
@@ -342,6 +342,15 @@ def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
             cg.add(f'{lhs} = {rhs}')
         else:
             cg.add(f'{printer.doprint(eq.lhs)} = {printer.doprint(eq.rhs)}')
+
+    for comp in model.statements.ode_system.dosing_compartments:
+        # FIXME : Handle multiple doses with different dur/rate
+        dose = comp.doses[0]
+        if isinstance(dose, Infusion):
+            if dur := dose.duration:
+                cg.add(f'dur({comp.amount.name}) = {dur}')
+            if rate := dose.rate:
+                cg.add(f'rate({comp.amount.name}) = {rate}')
 
 
 def remove_piecewise(expr: str) -> str:
