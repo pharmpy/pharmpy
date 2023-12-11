@@ -237,7 +237,7 @@ def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
 def plot_abs_cwres_vs_ipred(
     model: Model, predictions: pd.DataFrame, residuals: pd.DataFrame
 ) -> alt.Chart:
-    """Plot \|CWRES\| vs IPRED
+    r"""Plot \|CWRES\| vs IPRED
 
     Parameters
     ----------
