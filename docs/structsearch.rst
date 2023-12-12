@@ -44,34 +44,37 @@ Arguments
 ~~~~~~~~~
 The arguments of the structsearch tool are listed below.
 
-+-------------------------------------------------+---------------------------------------------------------------------+
-| Argument                                        | Description                                                         |
-+=================================================+=====================================================================+
-| :ref:`type<the model types>`                    | Type of model. Can be either pkpd or drug_metabolite                |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| :ref:`search_space<the search space>`           | Search space of models to test                                      |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| b_init (optional, default is 0.1)               | Initial estimate for baseline effect (only for PKPD models)         |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| emax_init (optional, default is 0.1)            | Initial estimate for E :sub:`max` parameter (only for PKPD models)  |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| ec50_init (optional, default is 0.1)            | Initial estimate for EC :sub:`50` parameter (only for PKPD models)  |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| met_init (optional, default is 0.1)             | Initial estimate for mean equilibration time  (only for PKPD models)|
-+-------------------------------------------------+---------------------------------------------------------------------+
-| ``model``                                       | PK start model                                                      |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| ``results``                                     | ModelfitResults of the start model                                  |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| :ref:`strictness<strictness>`                   | Strictness criteria for model selection.                            |
-|                                                 | Default is "minimization_successful or                              |
-|                                                 | (rounding_errors and sigdigs>= 0.1)"                                |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| ``extra_model``                                 | Extra model for TMDD structsearch (only for TMDD)                   |
-+-------------------------------------------------+---------------------------------------------------------------------+
-| ``extra_model_results``                         | ModelfitResults object for the extra model for TMDD structsearch    |
-|                                                 | (TMDD only)                                                         |
-+-------------------------------------------------+---------------------------------------------------------------------+
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| Argument                                        | Description                                                                             |
++=================================================+=========================================================================================+
+| ``type``                                        | Type of model. Can be either pkpd, drug_metabolite or tmdd (:ref:`the model type`).     |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``search_space``                                | :ref:`Search space<structsearch search space>` of models to test.                       |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``b_init``                                      | Initial estimate for baseline effect (only for PKPD models). Default is 0.1.            |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``emax_init``                                   | Initial estimate for E :sub:`max` parameter (only for PKPD models).                     |
+|                                                 | Default is 0.1.                                                                         |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``ec50_init``                                   | Initial estimate for EC :sub:`50` parameter (only for PKPD models).                     |
+|                                                 | Default is 0.1.                                                                         |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``met_init``                                    | Initial estimate for mean equilibration time  (only for PKPD models).                   |
+|                                                 | Default is 0.1.                                                                         |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``model``                                       | PK start model.                                                                         |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``results``                                     | ModelfitResults of the start model.                                                     |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``strictness``                                  | :ref:`Strictness<strictness>` criteria for model selection. Optional.                   |
+|                                                 | Default is "minimization_successful or                                                  |
+|                                                 | (rounding_errors and sigdigs>= 0.1)".                                                   |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``extra_model``                                 | Extra model for TMDD structsearch (only for TMDD). Optional.                            |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``extra_model_results``                         | ModelfitResults object for the extra model for TMDD structsearch                        |
+|                                                 | (TMDD only). Optional.                                                                  |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
 
 .. _the model types:
 
@@ -79,40 +82,32 @@ The arguments of the structsearch tool are listed below.
 The model types
 ~~~~~~~~~~~~~~~
 
-Structsearch is currently available for PKPD and drug metabolite models.
-For mode detailed information about the model types see the references.
+Structsearch is currently available for PKPD, drug metabolite and TMDD models.
+For more detailed information about the model types see the references.
 
-+--------------------------+--------------------------------------------+
-| type                     | Description                                |
-+==========================+============================================+
-| :code:`pkpd`             | PKPD models (see :ref:`pkpd`)              |
-+--------------------------+--------------------------------------------+
-| :code:`drug_metabolite`  | Drug metabolite models                     |
-+--------------------------+--------------------------------------------+
-| :code:`TMDD`             | TMDD models (see :ref:`tmdd`)              |
-+--------------------------+--------------------------------------------+
++--------------------------+---------------------------------------------------------+
+| type                     | Description                                             |
++==========================+=========================================================+
+| :code:`pkpd`             | :ref:`PKPD models<pkpd>`                                |
++--------------------------+---------------------------------------------------------+
+| :code:`drug_metabolite`  | :ref:`Drug metabolite models<drug_metabolite>`          |
++--------------------------+---------------------------------------------------------+
+| :code:`TMDD`             | :ref:`TMDD models<tmdd>`                                |
++--------------------------+---------------------------------------------------------+
 
-
-When creating candidate models for the specified model type, some candidate models will be derived from the base model 
-and others from another candidate model. When computing the results, each candidate models' 
-results is compared to that of its parent. The candidate models should not be compared to the base model due to them  being 
-of different model types. For this reason, the least complex candidate model is chosen as the default model for this tool. 
-This model replaces the parent of all candidate models which have the base model as its parent. In the graphs below, this model
-is represented by a rectangel. This ensures correct comparison of model results as well as establishing that a model of the 
-speciefied type will always be returned.
-
-
-.. _the search space:
+.. _structsearch search space:
 
 ~~~~~~~~~~~~~~~~
 The search space
 ~~~~~~~~~~~~~~~~
 
-The model feature search space is a set of possible combinations of model features that will be applied and tested on
-the input model. The supported features cover absorption, absorption delay, elimination, and distribution. The search
-space is given as a string with a specific grammar, according to the `Model Feature Language` (MFL) (see :ref:`detailed description<mfl>`).
+The search space is a set of possible model types that are allowed for the final model (e.g. only direct effect models 
+for PKPD models). 
+The search space is given as a string with a specific grammar, according to the `Model Feature Language` (MFL) 
+(see :ref:`detailed description<mfl>`).
 
-For detailed information about the search space for the different model types please see the respective page.
+For detailed information about the search space for the different model types in structsearch please see
+the respective page.
 
 
 ~~~~~~~
