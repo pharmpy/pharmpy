@@ -39,6 +39,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     number_of_candidates: int = 5,
     fraction: float = 0.1,
+    use_initial_estimates: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     scale: Optional[str] = "UCP",
     prefix_name: Optional[str] = "",  # FIXME : Remove once new database has been implemented
@@ -57,6 +58,8 @@ def create_workflow(
         Number of retry candidates to run. The default is 5.
     fraction: float
         Determines allowed increase/decrease from initial parameter estimate. Default is 0.1 (10%)
+    use_initial_estimates : bool
+        Use initial parameter estimates instead of final estimates of input model when creating candidate models.
     strictness : Optional[str], optional
         Strictness criteria. The default is "minimization_successful or (rounding_errors and sigdigs >= 0.1)".
     scale : Optional[str]
@@ -79,7 +82,7 @@ def create_workflow(
         start_task = Task('Start_retries', _start, results, model)
     else:
         # Remove?
-        start_task = Task('Start_retries', _start, None)
+        start_task = Task('Start_retries', _start)
 
     wb.add_task(start_task)
 
@@ -92,6 +95,7 @@ def create_workflow(
             i,
             scale,
             fraction,
+            use_initial_estimates,
             prefix_name,
             seed,
         )
@@ -108,16 +112,18 @@ def create_workflow(
 
 def _start(results, model):
     # Convert to modelentry
-    if results is None:
-        # fit the model
-        pass
-    else:
-        return ModelEntry.create(model=model, modelfit_results=results)
+    return ModelEntry.create(model=model, modelfit_results=results)
 
 
-def create_random_init_model(context, index, scale, fraction, prefix_name, seed, modelentry):
+def create_random_init_model(
+    context, index, scale, fraction, use_initial_estimates, prefix_name, seed, modelentry
+):
     original_model = modelentry.model
-    # Update inits once before running?
+    # Update inits once before running
+    if not use_initial_estimates and modelentry.modelfit_results:
+        original_model = update_inits(
+            original_model, modelentry.modelfit_results.parameter_estimates
+        )
 
     # Add any description?
     if prefix_name:
