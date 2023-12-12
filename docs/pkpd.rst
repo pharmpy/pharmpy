@@ -39,7 +39,7 @@ The arguments of the structsearch tool for PKPD models are listed below.
 +=================================================+=========================================================================================+
 | ``type``                                        | Type of model. In this case "pkpd".                                                     |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| ``search_space``                                | :ref:`Search space<_the search space pkpd>` of models to test. Optional.                |
+| ``search_space``                                | :ref:`Search space<the search space pkpd>` of models to test. Optional.                 |
 |                                                 | If ``None`` all implemented models are used.                                            |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``b_init``                                      | Initial estimate for baseline effect. Optional. Default is 0.1                          |
