@@ -2682,7 +2682,7 @@ def solve_ode_system(model: Model):
     return model
 
 
-def get_central_volume_and_clearance(model):
+def get_central_volume_and_clearance(model: Model):
     """Get the volume and clearance parameters
 
     Parameters
