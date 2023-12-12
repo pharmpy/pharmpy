@@ -52,7 +52,7 @@ nbconvert==7.12.0
 nbformat==5.9.2
 nest-asyncio==1.5.8
 networkx==3.2.1
-numexpr==2.8.7
+numexpr==2.8.8
 numpy==1.26.2
 packaging==23.2
 pandas==2.1.4
