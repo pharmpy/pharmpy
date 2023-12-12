@@ -79,6 +79,19 @@ def plot_individual_predictions(
     alt.Chart
         Plot
 
+
+    Examples
+    --------
+
+    .. pharmpy-execute::
+
+        from pharmpy.modeling import load_example_model, plot_individual_predictions
+        from pharmpy.tools import load_example_modelfit_results
+
+        model = load_example_model("pheno")
+        res = load_example_modelfit_results("pheno")
+        plot_individual_predictions(model, res.predictions, individuals=[1, 2, 3, 4, 5])
+
     """
     obs = get_observations(model)
     indexcols = predictions.index.names
