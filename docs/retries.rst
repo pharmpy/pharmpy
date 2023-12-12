@@ -46,8 +46,11 @@ The arguments of the retries tool are listed below.
 +-------------------------------------------------+---------------------------------------------------------------------+
 | number_of_candidates                            | Number of retry-models to run. 5 is used as default                 |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| fraction                                          | Determine the allowed increase/decrease for the randomly generated|
+| fraction                                        | Determine the allowed increase/decrease for the randomly generated  |
 |                                                 | new initial estimates. Default is 0.1 (10%).                        |
++-------------------------------------------------+---------------------------------------------------------------------+
+| use_initial_estimates                           | Use initial parameter estimates when creating candidate models      |
+|                                                 | instead of the final parameter estimates of the input model.        |
 +-------------------------------------------------+---------------------------------------------------------------------+
 | :ref:`scale<scales_retries>`                    | Scale to use when randomizing the initial estimates. Currently      |
 |                                                 | supported scales are ``normal`` and ``UCP``                         |
