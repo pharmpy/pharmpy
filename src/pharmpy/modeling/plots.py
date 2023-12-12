@@ -43,6 +43,18 @@ def plot_iofv_vs_iofv(iofv1: pd.Series, iofv2: pd.Series, name1: str, name2: str
     alt.Chart
         Scatterplot
 
+    Examples
+    --------
+
+    .. pharmpy-execute::
+
+        from pharmpy.modeling import plot_iofv_vs_iofv
+        from pharmpy.tools import load_example_modelfit_results
+
+        res1 = load_example_modelfit_results("pheno")
+        res2 = load_example_modelfit_results("pheno_linear")
+        plot_iofv_vs_iofv(res1.individual_ofv, res2.individual_ofv, "nonlin", "linear")
+
     """
     x_label = f'{name1} iOFV'
     y_label = f'{name2} iOFV'
