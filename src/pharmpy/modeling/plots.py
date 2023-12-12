@@ -200,6 +200,19 @@ def plot_dv_vs_pred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
     -------
     alt.Chart
         Plot
+
+    Examples
+    --------
+
+    .. pharmpy-execute::
+
+        from pharmpy.modeling import load_example_model, plot_dv_vs_pred
+        from pharmpy.tools import load_example_modelfit_results
+
+        model = load_example_model("pheno")
+        res = load_example_modelfit_results("pheno")
+        plot_dv_vs_pred(model, res.predictions)
+
     """
     if 'PRED' in predictions.columns:
         pred = 'PRED'
@@ -223,6 +236,19 @@ def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
     -------
     alt.Chart
         Plot
+
+    Examples
+    --------
+
+    .. pharmpy-execute::
+
+        from pharmpy.modeling import load_example_model, plot_dv_vs_ipred
+        from pharmpy.tools import load_example_modelfit_results
+
+        model = load_example_model("pheno")
+        res = load_example_modelfit_results("pheno")
+        plot_dv_vs_ipred(model, res.predictions)
+
     """
     if 'CIPREDI' in predictions.columns:
         ipred = 'CIPREDI'
@@ -252,6 +278,19 @@ def plot_abs_cwres_vs_ipred(
     -------
     alt.Chart
         Plot
+
+    Examples
+    --------
+
+    .. pharmpy-execute::
+
+        from pharmpy.modeling import load_example_model, plot_abs_cwres_vs_ipred
+        from pharmpy.tools import load_example_modelfit_results
+
+        model = load_example_model("pheno")
+        res = load_example_modelfit_results("pheno")
+        plot_abs_cwres_vs_ipred(model, res.predictions, res.residuals)
+
     """
     if 'CIPREDI' in predictions.columns:
         ipred = 'CIPREDI'
@@ -338,6 +377,19 @@ def plot_cwres_vs_idv(model: Model, residuals: pd.DataFrame) -> alt.Chart:
     -------
     alt.Chart
         Plot
+
+    Examples
+    --------
+
+    .. pharmpy-execute::
+
+        from pharmpy.modeling import load_example_model, plot_cwres_vs_idv
+        from pharmpy.tools import load_example_modelfit_results
+
+        model = load_example_model("pheno")
+        res = load_example_modelfit_results("pheno")
+        plot_cwres_vs_idv(model, res.residuals)
+
     """
 
     if 'CWRES' not in residuals.columns:
