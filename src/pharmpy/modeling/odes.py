@@ -2680,3 +2680,61 @@ def solve_ode_system(model: Model):
             new.append(s)
     model = model.replace(statements=Statements(new)).update_source()
     return model
+
+
+def get_central_volume_and_clearance(model):
+    """Get the volume and clearance parameters
+
+    Parameters
+    ----------
+    model: Model
+        Pharmpy model
+
+
+    Returns
+    -------
+    Sympy.Symbol
+        Volume symbol
+    Sympy.Symbol
+        Clearance symbol
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> get_central_volume_and_clearance(model)
+    (V, CL)
+
+    """
+    vcs = set()
+    cls = set()
+    sset = model.statements
+    odes = sset.ode_system
+    if odes is None:
+        raise ValueError(f'Model {model.name} has no ODE system')
+    t = odes.t
+    odes = model.statements.ode_system
+    central_comp = odes.central_compartment
+    rate = odes.get_flow(central_comp, output)
+    if has_mixed_mm_fo_elimination(model):
+        rate = rate.args[0]
+    if isinstance(rate, sympy.Symbol):
+        assignment = sset.find_assignment(rate)
+        assert assignment is not None
+        rate = assignment.expression
+    rate = sympy.cancel(rate)
+    a, b = map(lambda x: x.free_symbols, rate.as_numer_denom())
+    if b:
+        # Get volume parameter
+        volume_symbols = b - a - {t}
+        for volume in volume_symbols:
+            volume = _find_real_symbol(sset, volume)
+            vcs.add(volume)
+        # Get clearance parameter
+        clearance_symbols = a - b - {t}
+        for clearance in clearance_symbols:
+            clearance = _find_real_symbol(sset, clearance)
+            cls.add(clearance)
+    else:
+        raise ValueError('Model is not suitable')
+    return list(vcs)[0], list(cls)[0]

@@ -12,6 +12,7 @@ from pharmpy.modeling import (
     add_peripheral_compartment,
     find_clearance_parameters,
     find_volume_parameters,
+    get_central_volume_and_clearance,
     get_initial_conditions,
     get_lag_times,
     get_zero_order_inputs,
@@ -2690,3 +2691,31 @@ def test_multi_dose_change_absorption(load_model_for_test, testdata):
 
     assert len(central.doses) == 2
     assert central.doses[0] == Infusion(sympy.Symbol('AMT'), admid=1, duration=sympy.Symbol("D1"))
+
+
+def test_get_central_volume_and_clearance(
+    testdata, load_example_model_for_test, load_model_for_test
+):
+    model = load_example_model_for_test("pheno")
+    assert get_central_volume_and_clearance(model) == (sympy.Symbol("V"), sympy.Symbol("CL"))
+
+    model = set_michaelis_menten_elimination(model)
+    assert get_central_volume_and_clearance(model) == (sympy.Symbol("V"), sympy.Symbol("CLMM"))
+
+    model = set_mixed_mm_fo_elimination(model)
+    assert get_central_volume_and_clearance(model) == (sympy.Symbol("V"), sympy.Symbol("CL"))
+
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    assert get_central_volume_and_clearance(model) == (sympy.Symbol("V"), sympy.Symbol("CL"))
+
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    assert get_central_volume_and_clearance(model) == (sympy.Symbol("V"), sympy.Symbol("CL"))
+
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    assert get_central_volume_and_clearance(model) == (sympy.Symbol("VC"), sympy.Symbol("CL"))
+
+    model = set_michaelis_menten_elimination(model)
+    assert get_central_volume_and_clearance(model) == (sympy.Symbol("VC"), sympy.Symbol("CLMM"))
+
+    model = add_peripheral_compartment(model)
+    assert get_central_volume_and_clearance(model) == (sympy.Symbol("VC"), sympy.Symbol("CLMM"))

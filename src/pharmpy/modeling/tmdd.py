@@ -12,6 +12,7 @@ from pharmpy.model import (
     Model,
     output,
 )
+from pharmpy.modeling import get_central_volume_and_clearance
 
 from .error import set_proportional_error_model
 from .expressions import _replace_trivial_redefinitions
@@ -66,7 +67,7 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
     central = odes.central_compartment
     cb = CompartmentalSystemBuilder(odes)
 
-    vc, cl = _get_central_volume_and_cl(model)
+    vc, cl = get_central_volume_and_clearance(model)
     r_0 = sympy.Symbol('R_0')
     model = add_individual_parameter(model, r_0.name)
     model = add_iiv(model, [r_0], 'exp')
@@ -407,20 +408,6 @@ def _create_compartments(cb, names):
         return comps[0]
     else:
         return comps
-
-
-def _get_central_volume_and_cl(model):
-    odes = model.statements.ode_system
-    central_comp = odes.central_compartment
-    elimination_rate = odes.get_flow(central_comp, output)
-    numer, denom = elimination_rate.as_numer_denom()
-    if denom != 1:
-        vc = denom
-        cl = numer
-    else:
-        vc = sympy.Symbol('VC')  # FIXME: What do do here?
-        cl = sympy.Integer(1)
-    return vc, cl
 
 
 def _create_ksyn():

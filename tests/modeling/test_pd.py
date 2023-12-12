@@ -13,6 +13,7 @@ from pharmpy.modeling import (
     add_indirect_effect,
     set_baseline_effect,
     set_direct_effect,
+    set_michaelis_menten_elimination,
 )
 
 
@@ -26,7 +27,7 @@ def S(x):
 )
 def test_set_direct_effect(load_model_for_test, pd_model, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    conc = model.statements.ode_system.central_compartment.amount / S("V")
+    conc = model.statements.ode_system.central_compartment.amount / S("VC")
     _test_effect_models(set_direct_effect(model, pd_model), pd_model, conc)
 
 
@@ -39,14 +40,14 @@ def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
     conc_e = sympy.Function("A_EFFECT")('t')
     ke0 = S("KE0")
     central_amount = sympy.Function("A_CENTRAL")(S('t'))
-    comp_e = Compartment.create("EFFECT", input=ke0 * central_amount / S("V"))
+    comp_e = Compartment.create("EFFECT", input=ke0 * central_amount / S("VC"))
 
     model1 = add_effect_compartment(model, "linear")
     compartments = CompartmentalSystemBuilder(model1.statements.ode_system)
     odes = model1.statements.ode_system
     assert odes.find_compartment("EFFECT") == comp_e
     assert odes.zero_order_inputs[0] == 0
-    assert odes.zero_order_inputs[1] == ke0 * central_amount / S("V")
+    assert odes.zero_order_inputs[1] == ke0 * central_amount / S("VC")
     assert odes.get_compartment_outflows("EFFECT")[0][0] == output
     assert odes.get_compartment_outflows("EFFECT")[0][1] == ke0
     assert CompartmentalSystem(compartments).compartment_names == ['CENTRAL', 'EFFECT']
@@ -134,3 +135,16 @@ def test_set_baseline_effect(load_model_for_test, testdata):
     assert baseline.statements[0] == Assignment(e0, S("POP_B"))
     assert baseline.statements.after_odes[-2] == Assignment(e, e0)
     assert baseline.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
+
+
+def test_pd_michaelis_menten(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
+    pkpd = set_direct_effect(model, 'linear')
+    michaelis_menten = set_michaelis_menten_elimination(model)
+    pkpd_mm = set_direct_effect(michaelis_menten, 'linear')
+    assert pkpd.statements.find_assignment('E') == pkpd_mm.statements.find_assignment('E')
+
+    pkpd = add_effect_compartment(model, 'linear')
+    michaelis_menten = set_michaelis_menten_elimination(model)
+    pkpd_mm = add_effect_compartment(michaelis_menten, 'linear')
+    assert pkpd.statements.find_assignment('E') == pkpd_mm.statements.find_assignment('E')
