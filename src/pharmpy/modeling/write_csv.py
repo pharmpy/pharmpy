@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional, Union
 
-from pharmpy.internals.fs.path import path_absolute
+from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.model import Model
 
 
@@ -44,6 +44,9 @@ def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool
 
     """
     from pharmpy.model import data
+
+    if path is not None:
+        path = normalize_user_given_path(path)
 
     path = create_dataset_path(model, path)
     if not force and path.exists():
