@@ -136,13 +136,7 @@ def create_basic_pk_model(
     )
 
     model = set_proportional_error_model(model)
-    model = create_joint_distribution(
-        model,
-        [eta_cl_name, eta_vc_name],
-        individual_estimates=model.modelfit_results.individual_estimates
-        if model.modelfit_results is not None
-        else None,
-    )
+    model = create_joint_distribution(model, [eta_cl_name, eta_vc_name])
 
     if administration == 'oral' or administration == 'ivoral':
         model = set_first_order_absorption(model)
