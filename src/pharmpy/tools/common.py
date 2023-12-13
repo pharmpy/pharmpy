@@ -22,11 +22,7 @@ DataFrame = Any  # NOTE: Should be pd.DataFrame but we want lazy loading
 RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic', 'mbic'))
 
 
-def update_initial_estimates(model, modelfit_results=None):
-    # FIXME: Remove once modelfit_results have been removed from Model object
-    if modelfit_results is None:
-        modelfit_results = model.modelfit_results
-
+def update_initial_estimates(model, modelfit_results):
     if modelfit_results is None:
         return model
     if not modelfit_results.minimization_successful:
