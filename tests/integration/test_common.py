@@ -2,9 +2,9 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.tools import read_results, run_modelsearch
 
 
-def test_serialization(tmp_path, model_count, start_model):
+def test_serialization(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
-        res = run_modelsearch('ABSORPTION(ZO)', 'exhaustive', model=start_model)
+        res = run_modelsearch('ABSORPTION(ZO)', 'exhaustive', model=start_modelres[0])
 
         rundir = tmp_path / 'modelsearch_dir1'
 

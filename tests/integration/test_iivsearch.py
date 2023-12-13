@@ -10,12 +10,12 @@ from pharmpy.tools import fit, retrieve_models, run_iivsearch
 #  return model entries or we have a separate function for this
 
 
-def test_no_of_etas_keep(tmp_path, model_count, start_model):
+def test_no_of_etas_keep(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res_keep1 = run_iivsearch(
             'brute_force_no_of_etas',
-            results=start_model.modelfit_results,
-            model=start_model,
+            results=start_modelres[1],
+            model=start_modelres[0],
             keep=["CL"],
         )
         no_of_models = 8
@@ -23,10 +23,10 @@ def test_no_of_etas_keep(tmp_path, model_count, start_model):
         assert res_keep1.summary_individuals.iloc[-1]['description'] == '[CL]'
 
 
-def test_block_structure(tmp_path, model_count, start_model):
+def test_block_structure(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_iivsearch(
-            'brute_force_block_structure', results=start_model.modelfit_results, model=start_model
+            'brute_force_block_structure', results=start_modelres[1], model=start_modelres[0]
         )
 
         no_of_candidate_models = 4
@@ -40,6 +40,7 @@ def test_block_structure(tmp_path, model_count, start_model):
         #     model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
         #     for model in res.models
         # )
+        start_model = start_modelres[0]
         assert all(model.random_variables != start_model.random_variables for model in res_models)
 
         assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
@@ -60,10 +61,10 @@ def test_block_structure(tmp_path, model_count, start_model):
         assert (rundir / 'metadata.json').exists()
 
 
-def test_no_of_etas(tmp_path, model_count, start_model):
+def test_no_of_etas(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_iivsearch(
-            'brute_force_no_of_etas', results=start_model.modelfit_results, model=start_model
+            'brute_force_no_of_etas', results=start_modelres[1], model=start_modelres[0]
         )
 
         no_of_candidate_models = 7
@@ -76,7 +77,7 @@ def test_no_of_etas(tmp_path, model_count, start_model):
         # assert res.models[-1].modelfit_results
 
         assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
-        assert start_model.random_variables.iiv.names == ['ETA_1', 'ETA_2', 'ETA_3']
+        assert start_modelres[0].random_variables.iiv.names == ['ETA_1', 'ETA_2', 'ETA_3']
 
         assert res.summary_tool.iloc[-1]['description'] == '[]'
         assert res_models[0].random_variables.iiv.names == ['ETA_2', 'ETA_3']
@@ -93,9 +94,9 @@ def test_no_of_etas(tmp_path, model_count, start_model):
         assert (rundir / 'metadata.json').exists()
 
 
-def test_brute_force(tmp_path, model_count, start_model):
+def test_brute_force(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
-        res = run_iivsearch('brute_force', results=start_model.modelfit_results, model=start_model)
+        res = run_iivsearch('brute_force', results=start_modelres[1], model=start_modelres[0])
 
         no_of_candidate_models = 8
         assert len(res.summary_tool) == no_of_candidate_models + 2
@@ -110,7 +111,9 @@ def test_brute_force(tmp_path, model_count, start_model):
         #     model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
         #     for model in res.models
         # )
-        assert all(model.random_variables != start_model.random_variables for model in res_models)
+        assert all(
+            model.random_variables != start_modelres[0].random_variables for model in res_models
+        )
 
         summary_tool_sorted_by_dbic_step1 = res.summary_tool.loc[1].sort_values(
             by=['dbic'], ascending=False
@@ -147,17 +150,16 @@ def test_brute_force(tmp_path, model_count, start_model):
     'iiv_strategy',
     ['add_diagonal', 'fullblock'],
 )
-def test_no_of_etas_iiv_strategies(tmp_path, model_count, start_model, iiv_strategy):
+def test_no_of_etas_iiv_strategies(tmp_path, model_count, start_modelres, iiv_strategy):
     with chdir(tmp_path):
-        start_model = start_model.replace(name='moxo2_copy', modelfit_results=None)
+        start_model = start_modelres[0].replace(name='moxo2_copy')
         start_model = set_seq_zo_fo_absorption(start_model)
         start_res = fit(start_model)
-        start_model = start_model.replace(modelfit_results=start_res)
 
         res = run_iivsearch(
             'brute_force_no_of_etas',
             iiv_strategy=iiv_strategy,
-            results=start_model.modelfit_results,
+            results=start_res,
             model=start_model,
         )
 

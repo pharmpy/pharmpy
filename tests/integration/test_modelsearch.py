@@ -10,13 +10,13 @@ from pharmpy.tools import fit, run_modelsearch
 from pharmpy.workflows import ModelDatabase
 
 
-def test_exhaustive(tmp_path, model_count, start_model):
+def test_exhaustive(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_modelsearch(
             'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
             'exhaustive',
-            results=start_model.modelfit_results,
-            model=start_model,
+            results=start_modelres[1],
+            model=start_modelres[0],
         )
 
         assert len(res.summary_tool) == 4
@@ -54,7 +54,7 @@ def test_exhaustive(tmp_path, model_count, start_model):
 def test_exhaustive_stepwise_basic(
     tmp_path,
     model_count,
-    start_model,
+    start_modelres,
     search_space,
     no_of_models,
     last_model_parent_name,
@@ -65,8 +65,8 @@ def test_exhaustive_stepwise_basic(
         res = run_modelsearch(
             search_space,
             'exhaustive_stepwise',
-            results=start_model.modelfit_results,
-            model=start_model,
+            results=start_modelres[1],
+            model=start_modelres[0],
         )
 
         assert len(res.summary_tool) == no_of_models + 1
@@ -116,7 +116,7 @@ def test_exhaustive_stepwise_basic(
 def test_exhaustive_stepwise_iiv_strategies(
     tmp_path,
     model_count,
-    start_model,
+    start_modelres,
     search_space,
     iiv_strategy,
     no_of_models,
@@ -127,8 +127,8 @@ def test_exhaustive_stepwise_iiv_strategies(
             search_space,
             'exhaustive_stepwise',
             iiv_strategy=iiv_strategy,
-            results=start_model.modelfit_results,
-            model=start_model,
+            results=start_modelres[1],
+            model=start_modelres[0],
         )
 
         assert len(res.summary_tool) == no_of_models + 1
@@ -137,7 +137,7 @@ def test_exhaustive_stepwise_iiv_strategies(
         model_last = res.models[no_of_models - 1]
         assert (
             len(model_last.random_variables.etas.names)
-            - len(start_model.random_variables.etas.names)
+            - len(start_modelres[0].random_variables.etas.names)
             == no_of_added_etas
         )
         assert model_last.modelfit_results
@@ -174,13 +174,13 @@ def test_exhaustive_stepwise_iiv_strategies(
 #        assert model_count(rundir) == 4
 
 
-def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_model):
+def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_modelres):
     with chdir(tmp_path):
         res = run_modelsearch(
             'PERIPHERALS([0,1])',
             'exhaustive_stepwise',
-            results=start_model.modelfit_results,
-            model=start_model,
+            results=start_modelres[1],
+            model=start_modelres[0],
         )
 
         assert ',999999) ; POP_QP1' in res.models[-1].model_code

@@ -16,7 +16,7 @@ from pharmpy.tools import retrieve_models, run_estmethod
 )
 def test_estmethod(
     tmp_path,
-    start_model,
+    start_modelres,
     model_count,
     testdata,
     algorithm,
@@ -30,8 +30,8 @@ def test_estmethod(
             algorithm,
             methods=methods,
             parameter_uncertainty_methods=parameter_uncertainty_methods,
-            model=start_model,
-            results=start_model.modelfit_results,  # FIXME: Use ModelEntry once implemented in conftest
+            model=start_modelres[0],
+            results=start_modelres[1],
         )
 
         assert len(res.summary_tool) == no_of_candidates + 1

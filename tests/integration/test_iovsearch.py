@@ -6,26 +6,26 @@ from pharmpy.modeling import fix_parameters
 from pharmpy.tools import fit, run_iovsearch
 
 
-def test_default_mox2(tmp_path, model_count, start_model):
+def test_default_mox2(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
-        res = run_iovsearch('VISI', results=start_model.modelfit_results, model=start_model)
+        res = run_iovsearch('VISI', results=start_modelres[1], model=start_modelres[0])
         rundir = tmp_path / 'iovsearch_dir1'
         assert model_count(rundir) == 8
 
         assert res.final_model.name == 'iovsearch_run7'
 
 
-def test_ignore_fixed_iiv(tmp_path, model_count, start_model):
+def test_ignore_fixed_iiv(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
-        start_model = fix_parameters(start_model, 'IIV_CL')
-        res = run_iovsearch('VISI', results=start_model.modelfit_results, model=start_model)
+        start_model = fix_parameters(start_modelres[0], 'IIV_CL')
+        res = run_iovsearch('VISI', results=start_modelres[1], model=start_model)
         assert len(res.summary_models) == 5
 
 
-def test_rank_type_ofv_mox2(tmp_path, model_count, start_model):
+def test_rank_type_ofv_mox2(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_iovsearch(
-            'VISI', results=start_model.modelfit_results, model=start_model, rank_type='ofv'
+            'VISI', results=start_modelres[1], model=start_modelres[0], rank_type='ofv'
         )
         rundir = tmp_path / 'iovsearch_dir1'
         assert model_count(rundir) == 8
@@ -39,7 +39,6 @@ def test_default_mox1(tmp_path, model_count, testdata):
     with chdir(tmp_path):
         start_model = Model.parse_model('mox1.mod')
         start_res = fit(start_model)
-        start_model = start_model.replace(modelfit_results=start_res)
         res = run_iovsearch('VISI', results=start_res, model=start_model)
         rundir = tmp_path / 'iovsearch_dir1'
         assert model_count(rundir) == 7
