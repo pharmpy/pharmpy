@@ -7,7 +7,7 @@ from typing import TypeVar
 from pharmpy.model import Model
 
 from .context import insert_context
-from .results import Results
+from .results import ModelfitResults, Results
 from .workflow import Workflow, WorkflowBuilder
 
 T = TypeVar('T')
@@ -73,7 +73,7 @@ def execute_workflow(
 
     res: T = dispatcher.run(workflow)
 
-    if isinstance(res, Results):
+    if isinstance(res, Results) and not isinstance(res, ModelfitResults):
         if hasattr(res, 'tool_database'):
             res = replace(res, tool_database=database)
         database.store_results(res)

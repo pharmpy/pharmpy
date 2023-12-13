@@ -14,27 +14,14 @@ from pharmpy.model.external.rxode import convert_model
 from pharmpy.modeling import get_omegas, get_sigmas, update_inits, write_csv
 from pharmpy.tools import fit
 from pharmpy.tools.external.nlmixr.run import compare_models, print_step
-from pharmpy.workflows import default_tool_database
+from pharmpy.workflows import ModelEntry, default_tool_database
 from pharmpy.workflows.results import ModelfitResults
 
 
-def execute_model(model: pharmpy.model.Model, db) -> pharmpy.model.Model:
-    """
-    Executes a model using rxode2.
+def execute_model(model_entry, db):
+    assert isinstance(model_entry, ModelEntry)
+    model = model_entry.model
 
-    Parameters
-    ----------
-    model : pharmpy.model.Model
-        An pharmpy model object.
-    db : database for storing model results
-        Name of folder in home directory to store resulting files in.
-
-    Returns
-    -------
-    model : pharmpy.model.Model
-        Model with accompanied results.
-
-    """
     database = db.model_database
     model = convert_model(model)
     path = Path.cwd() / f'rxode_run_{model.name}-{uuid.uuid1()}'
@@ -132,8 +119,10 @@ def execute_model(model: pharmpy.model.Model, db) -> pharmpy.model.Model:
         txn.store_modelfit_results()
 
     res = parse_modelfit_results(model, path)
-    model = model.replace(modelfit_results=res)
-    return model
+    log = res.log if res else None
+    model_entry = model_entry.attach_results(modelfit_results=res, log=log)
+
+    return model_entry
 
 
 def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None, ModelfitResults]:
