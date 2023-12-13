@@ -49,37 +49,29 @@ tflite_condition = (
 def test_tflite_not_installed(pheno_path, monkeypatch):
     model = read_model(pheno_path)
     results = read_modelfit_results(pheno_path)
-    # FIXME
-    model = model.replace(modelfit_results=results)
 
-    df = summarize_individuals([model])
+    df = summarize_individuals([model], [results])
     assert not df['predicted_dofv'].isnull().any().any()
 
     with pytest.warns(UserWarning, match='tflite is not installed'):
         monkeypatch.setitem(sys.modules, 'tflite_runtime', None)
-        df = summarize_individuals([model])
+        df = summarize_individuals([model], [results])
         assert df['predicted_dofv'].isnull().all().all()
 
 
 def test_dofv_parent_model_is_none(pheno_path):
-    candidate_model = read_model(pheno_path)
-    res = dofv(None, candidate_model)
+    res = read_modelfit_results(pheno_path)
+    res = dofv(None, res)
     assert np.isnan(res)
 
 
 def test_dofv_modelfit_results_is_none(pheno_path):
-    parent_model = read_model(pheno_path)
-    res = read_modelfit_results(pheno_path)
-    parent_model = parent_model.replace(modelfit_results=res)
-    candidate_model = parent_model.replace(modelfit_results=None)
-    res = dofv(parent_model, candidate_model)
+    parent_res = read_modelfit_results(pheno_path)
+    res = dofv(parent_res, None)
     assert res.isna().all()
 
 
 def test_dofv_individual_ofv_is_none(pheno_path):
-    parent_model = read_model(pheno_path)
-    res = read_modelfit_results(pheno_path)
-    parent_model = parent_model.replace(modelfit_results=res)
-    candidate_model = parent_model.replace(modelfit_results=ModelfitResults())
-    res = dofv(parent_model, candidate_model)
+    parent_res = read_modelfit_results(pheno_path)
+    res = dofv(parent_res, ModelfitResults())
     assert res.isna().all()

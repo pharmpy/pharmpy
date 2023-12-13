@@ -79,6 +79,7 @@ def create_results(
         delta_name = f'd{rank_type}'
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
         [base_model] + res_models,
+        [base_model.modelfit_results] + [model.modelfit_results for model in res_models],
         summary_tool['description'],
         summary_tool[delta_name],
     )
@@ -195,8 +196,8 @@ def summarize_tool(
     return df_sorted
 
 
-def summarize_tool_individuals(models, description_col, rank_type_col):
-    summary_individuals = summarize_individuals(models)
+def summarize_tool_individuals(models, models_res, description_col, rank_type_col):
+    summary_individuals = summarize_individuals(models, models_res)
     summary_individuals = summary_individuals.join(description_col, how='inner')
     col_to_move = summary_individuals.pop('description')
     summary_individuals.insert(0, 'description', col_to_move)

@@ -229,7 +229,7 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     selected_models = [_model_entry_to_model(model_entry) for model_entry in selected_model_entries]
     model_results = [model_entry.modelfit_results for model_entry in selected_model_entries]
 
-    sumind = summarize_individuals(selected_models)
+    sumind = summarize_individuals(selected_models, model_results)
     sumcount = summarize_individuals_count_table(df=sumind)
     sum_models = summarize_modelfit_results(model_results)
     sum_models['step'] = list(range(len(sum_models)))
