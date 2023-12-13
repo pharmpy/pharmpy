@@ -142,6 +142,9 @@ def summarize_tool(
         start_model = _model_entry_to_model(start_model)
         models = [_model_entry_to_model(model_entry) for model_entry in models]
 
+    start_model_res = start_model.modelfit_results
+    models_res = [model.modelfit_results for model in models]
+
     if rank_type == 'mbic':
         rank_type = 'bic'
         if len(models) > 0:
@@ -158,7 +161,9 @@ def summarize_tool(
 
     df_rank = rank_models(
         start_model,
+        start_model_res,
         models,
+        models_res,
         strictness=strictness,
         rank_type=rank_type,
         cutoff=cutoff,
