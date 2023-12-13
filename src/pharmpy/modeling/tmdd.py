@@ -40,7 +40,9 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
     type : str
         Type of TMDD model
     dv_types: dict
-        Dictionary of DV types for TMDD models with multiple DVs (e.g. dv_types = {'drug' : 1, 'target': 2})
+        Dictionary of DV types for TMDD models with multiple DVs (e.g. dv_types = {'drug' : 1, 'target': 2}).
+        For dv = 1 the only allowed keys are 'drug' and 'drug_tot'. If no DV for drug is specified then (free) drug
+        will have dv = 1.
 
     Return
     ------
@@ -72,6 +74,8 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
     model = add_iiv(model, [r_0], 'exp')
     kint = sympy.Symbol('KINT')
     model = add_individual_parameter(model, kint.name)
+
+    y_symbol = _get_y_symbol(model)
 
     if type == "FULL":
         model, kon, koff, kdeg = _create_parameters(model, ['KON', 'KOFF', 'KDEG'])
@@ -165,7 +169,7 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
             before = model.statements.before_odes + (ksyn_ass, kd_ass, lafree_ass)
             after = lafree_final + model.statements.after_odes
             ipred = lafreef / vc
-            after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
+            after = after.reassign(y_symbol, ipred)
         elif num_peripheral_comp > 0 and num_peripheral_comp <= 2:
             peripheral1 = _create_compartments(cb, ['PERIPHERAL1'])
             flow_central_peripheral1 = odes.get_flow(central, peripheral1)
@@ -226,7 +230,7 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
             before = model.statements.before_odes + (ksyn_ass, kd_ass, lafree_ass)
             after = lafree_final + model.statements.after_odes
             ipred = lafreef / vc
-            after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
+            after = after.reassign(y_symbol, ipred)
         else:
             raise ValueError('More than 2 peripheral compartments are not supported.')
     elif type == 'WAGNER':
@@ -295,7 +299,7 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
         before = model.statements.before_odes + lafree_ass + kd_ass + rinit_ass
         after = lafree_final + model.statements.after_odes
         ipred = lafreef / vc
-        after = after.reassign(sympy.Symbol('IPRED'), ipred)  # FIXME: Assumes an IPRED
+        after = after.reassign(y_symbol, ipred)
     elif type == 'MMAPP':
         model, km, kdeg = _create_parameters(model, ['KM', 'KDEG'])
         target_comp = _create_compartments(cb, ['TARGET'])
@@ -321,10 +325,16 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
     if type == 'MMAPP':
         model = set_initial_condition(model, "TARGET", r_0)
 
+    # Multiple DVs:
     if dv_types is not None:
-        # Make sure that values are unique
-        assert len(dv_types.values()) == len(set(dv_types.values()))
         if type in ['FULL', 'IB']:
+            if 'drug_tot' in dv_types.keys():
+                new_y = (central.amount + complex_comp.amount) / vc
+                after = model.statements.after_odes
+                after = after.reassign(y_symbol, new_y)
+                model = model.replace(
+                    statements=model.statements.before_odes + model.statements.ode_system + after
+                )
             if 'target' in dv_types.keys():
                 y_target = sympy.Symbol("Y_TARGET")
                 ytarget = Assignment(y_target, target_comp.amount / vc)
@@ -339,7 +349,23 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
                 model = model.replace(
                     statements=model.statements + ycomplex, dependent_variables=dvs
                 )
+            if 'target_tot' in dv_types.keys():
+                y_target_tot = sympy.Symbol("Y_TOTTARGET")
+                ytargettot = Assignment(
+                    y_target_tot, (target_comp.amount + complex_comp.amount) / vc
+                )
+                dvs = model.dependent_variables.replace(y_target_tot, dv_types['target_tot'])
+                model = model.replace(
+                    statements=model.statements + ytargettot, dependent_variables=dvs
+                )
         elif type == 'QSS':
+            if 'drug_tot' in dv_types.keys():
+                new_y = central.amount / vc
+                after = model.statements.after_odes
+                after = after.reassign(y_symbol, new_y)
+                model = model.replace(
+                    statements=model.statements.before_odes + model.statements.ode_system + after
+                )
             if 'target' in dv_types.keys():
                 y_target = sympy.Symbol("Y_TARGET")
                 ytarget = Assignment(y_target, (target_comp.amount - central.amount + lafreef) / vc)
@@ -354,6 +380,13 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
                 model = model.replace(
                     statements=model.statements + ycomplex, dependent_variables=dvs
                 )
+            if 'target_tot' in dv_types.keys():
+                y_target_tot = sympy.Symbol("Y_TOTTARGET")
+                ytargettot = Assignment(y_target_tot, target_comp.amount / vc)
+                dvs = model.dependent_variables.replace(y_target_tot, dv_types['target_tot'])
+                model = model.replace(
+                    statements=model.statements + ytargettot, dependent_variables=dvs
+                )
         elif type == 'MMAPP':
             if 'target' in dv_types.keys():
                 y_target = sympy.Symbol("Y_TARGET")
@@ -362,7 +395,21 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
                 model = model.replace(
                     statements=model.statements + ytarget, dependent_variables=dvs
                 )
+            if 'target_tot' in dv_types.keys():
+                y_target_tot = sympy.Symbol("Y_TOTTARGET")
+                ytargettot = Assignment(y_target_tot, target_comp.amount / vc)
+                dvs = model.dependent_variables.replace(y_target_tot, dv_types['target_tot'])
+                model = model.replace(
+                    statements=model.statements + ytargettot, dependent_variables=dvs
+                )
         elif type in ['CR', 'CRIB']:
+            if 'drug_tot' in dv_types.keys():
+                new_y = (central.amount + complex_comp.amount) / vc
+                after = model.statements.after_odes
+                after = after.reassign(y_symbol, new_y)
+                model = model.replace(
+                    statements=model.statements.before_odes + model.statements.ode_system + after
+                )
             if 'complex' in dv_types.keys():
                 y_complex = sympy.Symbol("Y_COMPLEX")
                 ycomplex = Assignment(y_complex, complex_comp.amount / vc)
@@ -371,6 +418,13 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
                     statements=model.statements + ycomplex, dependent_variables=dvs
                 )
         elif type == 'WAGNER':
+            if 'drug_tot' in dv_types.keys():
+                new_y = central.amount / vc
+                after = model.statements.after_odes
+                after = after.reassign(y_symbol, new_y)
+                model = model.replace(
+                    statements=model.statements.before_odes + model.statements.ode_system + after
+                )
             if 'complex' in dv_types.keys():
                 y_complex = sympy.Symbol("Y_COMPLEX")
                 ycomplex = Assignment(y_complex, (central.amount - lafreef) / vc)
@@ -384,6 +438,10 @@ def set_tmdd(model: Model, type: str, dv_types: Optional[dict[str, int]] = None)
             model = set_proportional_error_model(model, dv=dv_types['target'])
         if sympy.Symbol('Y_COMPLEX') in list(model.dependent_variables):
             model = set_proportional_error_model(model, dv=dv_types['complex'])
+        if sympy.Symbol('Y') in list(model.dependent_variables) and 'drug_tot' in dv_types.keys():
+            model = set_proportional_error_model(model, dv=dv_types['drug_tot'])
+        if sympy.Symbol('Y_TOTTARGET') in list(model.dependent_variables):
+            model = set_proportional_error_model(model, dv=dv_types['target_tot'])
 
     return model.update_source()
 
@@ -430,8 +488,26 @@ def _create_ksyn():
 
 
 def _validate_dv_types(dv_types):
-    for key in dv_types.keys():
-        if key not in ['drug', 'target', 'complex']:
+    # Make sure that values are unique
+    assert len(dv_types.values()) == len(set(dv_types.values()))
+    # Validate keys
+    for key, value in dv_types.items():
+        if key not in ['drug', 'target', 'complex', 'drug_tot', 'target_tot']:
             raise ValueError(
-                f'Invalid dv_types key "{key}". Allowed keys are: "drug", "target" and "complex".'
+                f'Invalid dv_types key "{key}". Allowed keys are:'
+                f'"drug", "target", "complex", "drug_tot" and "target_tot".'
             )
+        if key not in ['drug', 'drug_tot'] and value == 1:
+            raise ValueError('Only drug can have DVID = 1. Please choose another DVID.')
+
+
+def _get_y_symbol(model):
+    t = sympy.Symbol("t")
+    y_statement = model.statements.find_assignment("Y")
+    if t in y_statement.free_symbols:
+        return y_statement.symbol
+    else:
+        sset = model.statements.direct_dependencies(y_statement)
+        for s in sset:
+            if sympy.Symbol("t") in s.free_symbols:
+                return s.symbol

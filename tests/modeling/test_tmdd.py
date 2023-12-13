@@ -1,7 +1,17 @@
 import pytest
 import sympy
 
-from pharmpy.modeling import add_peripheral_compartment, set_mixed_mm_fo_elimination, set_tmdd
+from pharmpy.model import Assignment
+from pharmpy.modeling import (
+    add_peripheral_compartment,
+    create_basic_pk_model,
+    set_mixed_mm_fo_elimination,
+    set_tmdd,
+)
+
+
+def S(x):
+    return sympy.Symbol(x)
 
 
 def test_full(pheno_path, load_model_for_test):
@@ -156,3 +166,66 @@ def test_full_multiple_dvs(pheno_path, load_model_for_test, model_name, dv_types
     model = set_tmdd(model, model_name, dv_types)
     assert model.dependent_variables == expected
     assert len(model.random_variables.epsilons) > 1
+
+
+def test_multiple_dvs(load_model_for_test, pheno_path):
+    central_amount = sympy.Function("A_CENTRAL")(S('t'))
+    complex_amount = sympy.Function("A_COMPLEX")(S('t'))
+
+    model = load_model_for_test(pheno_path)
+    model1 = set_tmdd(model, 'qss', {'complex': 2, 'target_tot': 3})
+    ass1 = Assignment(S("F"), S("LAFREEF") / S("V"))
+    assert model1.statements.find_assignment("F") == ass1
+    assert S("Y_COMPLEX") in model1.statements.free_symbols
+    assert S("Y_TOTTARGET") in model1.statements.free_symbols
+
+    model2 = set_tmdd(model, 'qss', {'drug_tot': 1, 'complex': 2, 'target_tot': 3})
+    ass2 = Assignment(S("F"), central_amount / S("V"))
+    assert model2.statements.find_assignment("F") == ass2
+    assert S("Y_COMPLEX") in model2.statements.free_symbols
+    assert S("Y_TOTTARGET") in model2.statements.free_symbols
+
+    model1 = set_tmdd(model, 'full', {'complex': 2, 'target_tot': 3})
+    ass1 = Assignment(S("F"), central_amount / S("V"))
+    assert model1.statements.find_assignment("F") == ass1
+    assert S("Y_COMPLEX") in model1.statements.free_symbols
+    assert S("Y_TOTTARGET") in model1.statements.free_symbols
+
+    model2 = set_tmdd(model, 'full', {'drug_tot': 1, 'complex': 2, 'target_tot': 3})
+    ass2 = Assignment(S("F"), (central_amount + complex_amount) / S("V"))
+    assert model2.statements.find_assignment("F") == ass2
+    assert S("Y_COMPLEX") in model2.statements.free_symbols
+    assert S("Y_TOTTARGET") in model2.statements.free_symbols
+
+    model1 = set_tmdd(model, 'cr', {'complex': 2})
+    ass1 = Assignment(S("F"), central_amount / S("V"))
+    assert model1.statements.find_assignment("F") == ass1
+    assert S("Y_COMPLEX") in model1.statements.free_symbols
+
+    model2 = set_tmdd(model, 'cr', {'drug_tot': 1, 'complex': 2})
+    ass2 = Assignment(S("F"), (central_amount + complex_amount) / S("V"))
+    assert model2.statements.find_assignment("F") == ass2
+    assert S("Y_COMPLEX") in model2.statements.free_symbols
+
+    model1 = set_tmdd(model, 'wagner', {'drug_tot': 1, 'complex': 2})
+    ass1 = Assignment(S("F"), central_amount / S("V"))
+    assert model1.statements.find_assignment("F") == ass1
+    assert S("Y_COMPLEX") in model1.statements.free_symbols
+
+    model1 = set_tmdd(model, 'mmapp', {'drug': 1, 'target_tot': 3})
+    ass1 = Assignment(S("F"), central_amount / S("V"))
+    assert model1.statements.find_assignment("F") == ass1
+    assert S("Y_TOTTARGET") in model1.statements.free_symbols
+
+    model = create_basic_pk_model('iv')
+    model1 = set_tmdd(model, 'qss', {'complex': 2, 'target_tot': 3})
+    ass1 = Assignment(S("IPRED"), S("LAFREEF") / S("VC"))
+    assert model1.statements.find_assignment("IPRED") == ass1
+    assert S("Y_COMPLEX") in model1.statements.free_symbols
+    assert S("Y_TOTTARGET") in model1.statements.free_symbols
+
+    model2 = set_tmdd(model, 'qss', {'drug_tot': 1, 'complex': 2, 'target_tot': 3})
+    ass2 = Assignment(S("IPRED"), central_amount / S("VC"))
+    assert model2.statements.find_assignment("IPRED") == ass2
+    assert S("Y_COMPLEX") in model2.statements.free_symbols
+    assert S("Y_TOTTARGET") in model2.statements.free_symbols
