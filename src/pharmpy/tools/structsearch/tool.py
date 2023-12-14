@@ -353,29 +353,29 @@ def validate_input(
 
     if type.lower() == 'tmdd':
         if search_space is not None:
-            raise ValueError('Search space is not defined for TMDD models.')
+            raise ValueError('Invalid argument "search_space" for TMDD models.')
         if any([b_init, emax_init, ec50_init, met_init]):
             raise ValueError(
-                'b_init, emax_init, ec50_init and met_init are not defined for TMDD models.'
+                'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for TMDD models.'
             )
     elif type.lower() == 'pkpd':
         if extra_model is not None:
-            raise ValueError('Extra model is not defined for PKPD models.')
+            raise ValueError('Invalid argument "extra_model" for PKPD models.')
         if extra_model_results is not None:
-            raise ValueError('Extra model results is not defined for PKPD models.')
+            raise ValueError('Invalid argument "extra_model_results" for PKPD models.')
         if dv_types is not None:
-            raise ValueError('dv_types is not defined for PKPD models.')
+            raise ValueError('Invalid argument "dv_types" for PKPD models.')
     elif type.lower() == 'drug_metabolite':
         if any([b_init, emax_init, ec50_init, met_init]):
             raise ValueError(
-                'b_init, emax_init, ec50_init and met_init are not defined for drug metabolite models.'
+                'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for drug metabolite models.'
             )
         if extra_model is not None:
-            raise ValueError('Extra model is not defined for drug metabolite models.')
+            raise ValueError('Invalid argument "extra_model" for drug metabolite models.')
         if extra_model_results is not None:
-            raise ValueError('Extra model results is not defined for drug metabolite models.')
+            raise ValueError('Invalid argument "extra_model_results" for drug metabolite models.')
         if dv_types is not None:
-            raise ValueError('dv_types is not defined for drug metabolite models.')
+            raise ValueError('Invalid argument "dv_types" for drug metabolite models.')
 
 
 @dataclass(frozen=True)

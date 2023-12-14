@@ -170,27 +170,27 @@ def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
         (
             dict(type='tmdd', emax_init=0.2),
             ValueError,
-            'b_init, emax_init, ec50_init and met_init are not defined for TMDD models.',
+            'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for TMDD models.',
         ),
         (
             dict(type='tmdd', search_space='ABSORPTION'),
             ValueError,
-            'Search space is not defined for TMDD models.',
+            'Invalid argument "search_space" for TMDD models.',
         ),
         (
             dict(type='pkpd', dv_types={'drug': 1}),
             ValueError,
-            'dv_types is not defined for PKPD models.',
+            'Invalid argument "dv_types" for PKPD models.',
         ),
         (
             dict(type='drug_metabolite', dv_types={'drug': 1}),
             ValueError,
-            'dv_types is not defined for drug metabolite models.',
+            'Invalid argument "dv_types" for drug metabolite models.',
         ),
         (
             dict(type='drug_metabolite', met_init=1),
             ValueError,
-            'b_init, emax_init, ec50_init and met_init are not defined for drug metabolite models.',
+            'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for drug metabolite models.',
         ),
     ],
 )
@@ -202,13 +202,15 @@ def test_validation(tmp_path, load_model_for_test, testdata, arguments, exceptio
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
 
-    with pytest.raises(exception, match='Extra model is not defined for PKPD models.'):
+    with pytest.raises(exception, match='Invalid argument "extra_model" for PKPD models.'):
         validate_input(type='pkpd', extra_model=model)
-    with pytest.raises(exception, match='Extra model results is not defined for PKPD models.'):
+    with pytest.raises(exception, match='Invalid argument "extra_model_results" for PKPD models.'):
         validate_input(type='pkpd', extra_model_results=res)
-    with pytest.raises(exception, match='Extra model is not defined for drug metabolite models.'):
+    with pytest.raises(
+        exception, match='Invalid argument "extra_model" for drug metabolite models.'
+    ):
         validate_input(type='drug_metabolite', extra_model=model)
     with pytest.raises(
-        exception, match='Extra model results is not defined for drug metabolite models.'
+        exception, match='Invalid argument "extra_model_results" for drug metabolite models.'
     ):
         validate_input(type='drug_metabolite', extra_model_results=res)
