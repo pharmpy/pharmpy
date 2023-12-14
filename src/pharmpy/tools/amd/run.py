@@ -632,8 +632,10 @@ def _subfunc_structsearch_tmdd(
         if not has_mixed_mm_fo_elimination(final_model):
             # Only select models that have mixed MM FO elimination
             # If no model with mixed MM FO then final model from modelsearch will be used
+            model_db = res.tool_database.model_database
+            all_models = [model_db.retrieve_model(model) for model in model_db.list_models()]
             models_mixed_mm_fo_el = [
-                model.name for model in res.models if has_mixed_mm_fo_elimination(model)
+                model.name for model in all_models if has_mixed_mm_fo_elimination(model)
             ]
             if len(models_mixed_mm_fo_el) > 0:
                 rank_all = res.summary_tool.dropna(subset='bic')[['rank']]
@@ -652,7 +654,7 @@ def _subfunc_structsearch_tmdd(
         # Loop through all models and find one with same features
         models = [
             model.name
-            for model in res.models
+            for model in all_models
             if ModelFeatures.create_from_mfl_string(get_model_features(model))
             == modelfeatures_minus
         ]
