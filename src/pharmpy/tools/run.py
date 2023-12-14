@@ -94,9 +94,9 @@ def fit(
             kept.append(model)
 
     if kept:
-        models = run_tool('modelfit', kept, tool=tool, path=path)
+        modelfit_results = run_tool('modelfit', kept, tool=tool, path=path)
 
-    return mfr(models[0]) if single else list(map(mfr, models))
+    return modelfit_results if single else list(modelfit_results)
 
 
 def create_results(path: Union[str, Path], **kwargs) -> Results:

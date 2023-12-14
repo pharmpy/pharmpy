@@ -21,32 +21,15 @@ from pharmpy.modeling import (
     write_csv,
 )
 from pharmpy.tools import fit
-from pharmpy.workflows import default_tool_database
+from pharmpy.workflows import ModelEntry, default_tool_database
 from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults
 
 
-def execute_model(model: pharmpy.model.Model, db, evaluate=False, path=None) -> pharmpy.model.Model:
-    """
-    Executes a model using nlmixr2 estimation.
+def execute_model(model_entry, db, evaluate=False, path=None):
+    assert isinstance(model_entry, ModelEntry)
+    model = model_entry.model
 
-    Parameters
-    ----------
-    model : pharmpy.model.Model
-        An pharmpy model object.
-    db : database for storing model results
-        Name of folder in home directory to store resulting files in.
-    evaluate : bool
-        Set to True to evaluate model instead of estimating
-    path : str
-        Set path of model files
-
-    Returns
-    -------
-    model : pharmpy.model.Model
-        Model with accompanied results.
-
-    """
     if evaluate:
         if [s.evaluation for s in model.estimation_steps._steps][0] is False:
             model = set_evaluation_step(model)
@@ -154,8 +137,10 @@ def execute_model(model: pharmpy.model.Model, db, evaluate=False, path=None) -> 
         txn.store_modelfit_results()
 
     res = parse_modelfit_results(model, path)
-    model = model.replace(modelfit_results=res)
-    return model
+    log = res.log if res else None
+    model_entry = model_entry.attach_results(modelfit_results=res, log=log)
+
+    return model_entry
 
 
 def verification(

@@ -9,7 +9,7 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.tools import fit
 from pharmpy.tools.external.nonmem import conf
-from pharmpy.tools.external.nonmem.run import execute_model
+from pharmpy.tools.external.nonmem.run import execute_model as nonmem_execute_model
 from pharmpy.workflows import LocalDirectoryToolDatabase, ModelEntry
 
 
@@ -109,17 +109,6 @@ def test_execute_model_nonmem(tmp_path, testdata):
         model = Model.parse_model('pheno_real.mod')
         model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
 
-        db = LocalDirectoryToolDatabase('db_model')
-
-        model = execute_model(model, db)
-
-        assert isinstance(model, Model)
-        assert model.modelfit_results
-        assert (db.path / 'models' / 'pheno_real').is_dir()
-
-        model = Model.parse_model('pheno_real.mod')
-        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
-
         model_entry = ModelEntry.create(
             model=model,
             modelfit_results=None,
@@ -129,7 +118,7 @@ def test_execute_model_nonmem(tmp_path, testdata):
 
         db = LocalDirectoryToolDatabase('db_model')
 
-        model_entry = execute_model(model_entry, db)
+        model_entry = nonmem_execute_model(model_entry, db)
 
         assert isinstance(model_entry, ModelEntry)
         assert model_entry.modelfit_results
