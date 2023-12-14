@@ -137,14 +137,7 @@ def create_random_init_model(
         maximum_tests = 20  # TODO : Convert to argument
 
         for try_number in range(1, maximum_tests + 1):
-            new_parameters = sample_parameters_uniformly(
-                new_candidate_model,
-                pd.Series(new_candidate_model.parameters.inits),
-                fraction=fraction,
-                scale=scale,
-                seed=seed,
-            )
-            new_parameters = {p: new_parameters[p][0] for p in new_parameters}
+            new_parameters = create_new_parameter_inits(new_candidate_model, fraction, scale, seed)
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     "error",
@@ -161,19 +154,7 @@ def create_random_init_model(
                             f" to be positive semi-definite."
                         )
     elif scale == "UCP":
-        ucp_scale = calculate_ucp_scale(new_candidate_model)
-        new_parameters = sample_parameters_uniformly(
-            new_candidate_model,
-            pd.Series(new_candidate_model.parameters.inits),
-            fraction=fraction,
-            scale=scale,
-            seed=seed,
-        )
-        new_parameters = {p: new_parameters[p][0] for p in new_parameters}
-        new_parameters = calculate_parameters_from_ucp(
-            new_candidate_model, ucp_scale, new_parameters
-        )
-
+        new_parameters = create_new_parameter_inits(new_candidate_model, fraction, scale, seed)
         new_candidate_model = update_inits(new_candidate_model, new_parameters)
     else:
         # Should be caught in validate_input()
@@ -192,6 +173,32 @@ def create_random_init_model(
         modelentry=new_modelentry,
         number_of_retries=try_number,
     )
+
+
+def create_new_parameter_inits(model, fraction, scale, seed):
+    if scale == "normal":
+        new_parameters = sample_parameters_uniformly(
+            model,
+            pd.Series(model.parameters.inits),
+            fraction=fraction,
+            scale=scale,
+            seed=seed,
+        )
+        new_parameters = {p: new_parameters[p][0] for p in new_parameters}
+    elif scale == "UCP":
+        ucp_scale = calculate_ucp_scale(model)
+        new_parameters = sample_parameters_uniformly(
+            model,
+            pd.Series(model.parameters.inits),
+            fraction=fraction,
+            scale=scale,
+            seed=seed,
+        )
+        new_parameters = {p: new_parameters[p][0] for p in new_parameters}
+        new_parameters = calculate_parameters_from_ucp(model, ucp_scale, new_parameters)
+    else:
+        raise ValueError(f'{scale} is not supported')
+    return new_parameters
 
 
 def task_results(strictness, retries):
