@@ -55,52 +55,59 @@ T = TypeVar('T', bound=ToolResults)
 
 def create_results(
     res_class: Type[T],
-    input_model,
-    base_model,
-    res_models,
+    input_model_entry,
+    base_model_entry,
+    cand_model_entries,
     rank_type,
     cutoff,
     bic_type='mixed',
     strictness="minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     **rest,
 ) -> T:
-    # FIXME: Remove once modelfit_results have been removed from Model object
-    if isinstance(input_model, ModelEntry):
-        input_model = _model_entry_to_model(input_model)
-        base_model = _model_entry_to_model(base_model)
-        res_models = [_model_entry_to_model(model_entry) for model_entry in res_models]
-
-    summary_tool = summarize_tool(res_models, base_model, rank_type, cutoff, bic_type, strictness)
+    summary_tool = summarize_tool(
+        cand_model_entries, base_model_entry, rank_type, cutoff, bic_type, strictness
+    )
     if rank_type == 'lrt':
         delta_name = 'dofv'
     elif rank_type == 'mbic':
         delta_name = 'dbic'
     else:
         delta_name = f'd{rank_type}'
+
+    base_model = base_model_entry.model
+    # FIXME: Temporary until parent_model attribute has been removed, e.g. summarize_individuals fails otherwise
+    base_model = base_model.replace(parent_model=base_model.name)
+    base_res = base_model_entry.modelfit_results
+
+    # FIXME: Temporary until parent_model attribute has been removed, e.g. summarize_individuals fails otherwise
+    cand_models = [
+        model_entry.model.replace(parent_model=model_entry.parent.name)
+        for model_entry in cand_model_entries
+    ]
+    cand_res = [model_entry.modelfit_results for model_entry in cand_model_entries]
+
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
-        [base_model] + res_models,
-        [base_model.modelfit_results] + [model.modelfit_results for model in res_models],
+        [base_model] + cand_models,
+        [base_res] + cand_res,
         summary_tool['description'],
         summary_tool[delta_name],
     )
-    summary_errors = summarize_errors(
-        [base_model.modelfit_results] + [m.modelfit_results for m in res_models]
-    )
+    summary_errors = summarize_errors([base_res] + cand_res)
 
     if summary_tool['rank'].isnull().all():
         best_model = None
     else:
         best_model_name = summary_tool['rank'].idxmin()
         best_model = next(
-            filter(lambda model: model.name == best_model_name, res_models), base_model
+            filter(lambda model: model.name == best_model_name, cand_models), base_model
         )
 
-    if base_model.name != input_model.name:
-        models = [base_model] + res_models
+    if base_model.name != input_model_entry.model.name:
+        models = [base_model] + cand_models
     else:
         # Check if any resulting models exist
-        if res_models:
-            models = [base_model] + res_models
+        if cand_models:
+            models = [base_model] + cand_models
         else:
             models = None
 

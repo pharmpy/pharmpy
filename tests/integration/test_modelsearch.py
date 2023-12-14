@@ -1,6 +1,5 @@
 import shutil
 
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -22,8 +21,7 @@ def test_exhaustive(tmp_path, model_count, start_modelres):
         assert len(res.summary_tool) == 4
         assert len(res.summary_models) == 4
         assert len(res.models) == 4
-        assert all(model.modelfit_results for model in res.models)
-        assert not all(np.isnan(model.modelfit_results.ofv) for model in res.models)
+
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
         assert model_count(rundir) == 3
@@ -72,7 +70,6 @@ def test_exhaustive_stepwise_basic(
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models + 1
-        assert res.models[-1].modelfit_results
 
         assert res.models[0].parent_model == 'mox2'
         assert res.models[-1].parent_model == last_model_parent_name
@@ -140,7 +137,6 @@ def test_exhaustive_stepwise_iiv_strategies(
             - len(start_modelres[0].random_variables.etas.names)
             == no_of_added_etas
         )
-        assert model_last.modelfit_results
 
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()

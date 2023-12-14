@@ -74,8 +74,6 @@ def test_no_of_etas(tmp_path, model_count, start_modelres):
         res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
         assert len(res_models) == no_of_candidate_models
 
-        # assert res.models[-1].modelfit_results
-
         assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
         assert start_modelres[0].random_variables.iiv.names == ['ETA_1', 'ETA_2', 'ETA_3']
 
@@ -169,7 +167,6 @@ def test_no_of_etas_iiv_strategies(tmp_path, model_count, start_modelres, iiv_st
 
         res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
         assert len(res_models) == no_of_candidate_models + 1
-        # assert res.models[-1].modelfit_results
 
         if iiv_strategy == 'fullblock':
             base_model = [model for model in res_models if model.name == 'base_model'].pop()
