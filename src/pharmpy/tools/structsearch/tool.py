@@ -327,6 +327,13 @@ def validate_input(
     strictness,
     model,
     dv_types,
+    search_space,
+    b_init,
+    emax_init,
+    ec50_init,
+    met_init,
+    extra_model,
+    extra_model_results,
 ):
     if type not in TYPES:
         raise ValueError(f'Invalid `type`: got `{type}`, must be one of {sorted(TYPES)}.')
@@ -343,6 +350,32 @@ def validate_input(
                 raise ValueError(
                     f'Invalid dv_types key "{key}". Allowed keys are: "drug", "target" and "complex".'
                 )
+
+    if type.lower() == 'tmdd':
+        if search_space is not None:
+            raise ValueError('Search space is not defined for TMDD models.')
+        if any([b_init, emax_init, ec50_init, met_init]):
+            raise ValueError(
+                'b_init, emax_init, ec50_init and met_init are not defined for TMDD models.'
+            )
+    elif type.lower() == 'pkpd':
+        if extra_model is not None:
+            raise ValueError('Extra model is not defined for PKPD models.')
+        if extra_model_results is not None:
+            raise ValueError('Extra model results is not defined for PKPD models.')
+        if dv_types is not None:
+            raise ValueError('dv_types is not defined for PKPD models.')
+    elif type.lower() == 'drug_metabolite':
+        if any([b_init, emax_init, ec50_init, met_init]):
+            raise ValueError(
+                'b_init, emax_init, ec50_init and met_init are not defined for drug metabolite models.'
+            )
+        if extra_model is not None:
+            raise ValueError('Extra model is not defined for drug metabolite models.')
+        if extra_model_results is not None:
+            raise ValueError('Extra model results is not defined for drug metabolite models.')
+        if dv_types is not None:
+            raise ValueError('dv_types is not defined for drug metabolite models.')
 
 
 @dataclass(frozen=True)

@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 import sympy
 
 from pharmpy.tools import read_modelfit_results
@@ -14,7 +15,7 @@ from pharmpy.tools.structsearch.tmdd import (
     create_remaining_models,
     create_wagner_model,
 )
-from pharmpy.tools.structsearch.tool import create_workflow
+from pharmpy.tools.structsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
 
 ests = pd.Series(
@@ -161,3 +162,53 @@ def test_create_workflow_tmdd(load_model_for_test, testdata):
 def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
     assert isinstance(create_workflow('drug_metabolite', model=model), Workflow)
+
+
+@pytest.mark.parametrize(
+    ('arguments', 'exception', 'match'),
+    [
+        (
+            dict(type='tmdd', emax_init=0.2),
+            ValueError,
+            'b_init, emax_init, ec50_init and met_init are not defined for TMDD models.',
+        ),
+        (
+            dict(type='tmdd', search_space='ABSORPTION'),
+            ValueError,
+            'Search space is not defined for TMDD models.',
+        ),
+        (
+            dict(type='pkpd', dv_types={'drug': 1}),
+            ValueError,
+            'dv_types is not defined for PKPD models.',
+        ),
+        (
+            dict(type='drug_metabolite', dv_types={'drug': 1}),
+            ValueError,
+            'dv_types is not defined for drug metabolite models.',
+        ),
+        (
+            dict(type='drug_metabolite', met_init=1),
+            ValueError,
+            'b_init, emax_init, ec50_init and met_init are not defined for drug metabolite models.',
+        ),
+    ],
+)
+def test_validation(tmp_path, load_model_for_test, testdata, arguments, exception, match):
+    model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
+    res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
+
+    kwargs = {**arguments}
+    with pytest.raises(exception, match=match):
+        validate_input(**kwargs)
+
+    with pytest.raises(exception, match='Extra model is not defined for PKPD models.'):
+        validate_input(type='pkpd', extra_model=model)
+    with pytest.raises(exception, match='Extra model results is not defined for PKPD models.'):
+        validate_input(type='pkpd', extra_model_results=res)
+    with pytest.raises(exception, match='Extra model is not defined for drug metabolite models.'):
+        validate_input(type='drug_metabolite', extra_model=model)
+    with pytest.raises(
+        exception, match='Extra model results is not defined for drug metabolite models.'
+    ):
+        validate_input(type='drug_metabolite', extra_model_results=res)
