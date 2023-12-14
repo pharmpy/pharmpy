@@ -11,7 +11,7 @@ from pharmpy.model import (
     Statements,
     output,
 )
-from pharmpy.modeling import set_initial_condition
+from pharmpy.modeling import get_central_volume_and_clearance, set_initial_condition
 
 from .error import set_proportional_error_model
 from .odes import add_individual_parameter, set_initial_estimates
@@ -66,7 +66,7 @@ def add_effect_compartment(model: Model, expr: str):
     >>> model.statements.ode_system.find_compartment("EFFECT")
     Compartment(EFFECT, amount=A_EFFECT(t), input=KE0*A_CENTRAL(t)/V)
     """
-    vc, cl = _get_central_volume_and_cl(model)
+    vc, cl = get_central_volume_and_clearance(model)
 
     odes = model.statements.ode_system
     central = odes.central_compartment
@@ -145,25 +145,12 @@ def set_direct_effect(model: Model, expr: str):
         B⋅⎜────────────────── + 1⎟
     E =   ⎝        V             ⎠
     """
-    vc, cl = _get_central_volume_and_cl(model)
+    vc, cl = get_central_volume_and_clearance(model)
     conc = model.statements.ode_system.central_compartment.amount / vc
 
     model = _add_effect(model, expr, conc)
 
     return model
-
-
-def _get_central_volume_and_cl(model):
-    odes = model.statements.ode_system
-    central_comp = odes.central_compartment
-    elimination_rate = odes.get_flow(central_comp, output)
-    numer, denom = elimination_rate.as_numer_denom()
-    if denom != 1:
-        vc = denom
-        cl = numer
-    else:
-        raise ValueError('Model is not suitable')
-    return vc, cl
 
 
 def _add_effect(model: Model, expr: str, conc):
@@ -270,7 +257,7 @@ def add_indirect_effect(
     >>> model = add_indirect_effect(model, expr='linear', prod=True)
 
     """
-    vc, cl = _get_central_volume_and_cl(model)
+    vc, cl = get_central_volume_and_clearance(model)
     odes = model.statements.ode_system
     central = odes.central_compartment
     conc_c = central.amount / vc
