@@ -31,11 +31,11 @@ class OrderedSet(Generic[T], MutableSet, AbstractSet[T]):
     def __len__(self):
         return len(self._dict)
 
-    def add(self, key: T):
-        self._dict[key] = NIL
+    def add(self, value: T):
+        self._dict[value] = NIL
 
-    def discard(self, key: T):
-        self._dict.pop(key, NIL)
+    def discard(self, value: T):
+        self._dict.pop(value, NIL)
 
     # NOTE: The following are required by the ordered nature of OrderedSet
 
@@ -47,8 +47,8 @@ class OrderedSet(Generic[T], MutableSet, AbstractSet[T]):
 
     # NOTE: The following are only required if performance matters
 
-    def remove(self, key: T):
-        del self._dict[key]
+    def remove(self, value: T):
+        del self._dict[value]
 
     def clear(self):
         self._dict.clear()

@@ -242,7 +242,7 @@ class ColumnInfo(Immutable):
         new = ColumnInfo.create(**d)
         return new
 
-    def __eq__(self, other: DataInfo):
+    def __eq__(self, other: Any):
         return (
             isinstance(other, ColumnInfo)
             and self._name == other._name
@@ -629,7 +629,7 @@ class DataInfo(Sequence, Immutable):
                 columns=tuple(other) + self._columns, path=self.path, separator=self.separator
             )
 
-    def __eq__(self, other: DataInfo):
+    def __eq__(self, other: Any):
         if not isinstance(other, DataInfo):
             return False
         if len(self) != len(other):
@@ -657,24 +657,26 @@ class DataInfo(Sequence, Immutable):
             raise TypeError(f"Cannot index DataInfo by {type(i)}")
 
     @overload
-    def __getitem__(self, i: Union[list, slice]) -> DataInfo:
+    def __getitem__(self, index: Union[list, slice]) -> DataInfo:
         ...
 
     @overload
-    def __getitem__(self, i: Union[int, str]) -> ColumnInfo:
+    def __getitem__(self, index: Union[int, str]) -> ColumnInfo:
         ...
 
-    def __getitem__(self, i: Union[list, slice, int, str]) -> Union[DataInfo, ColumnInfo]:
-        if isinstance(i, list):
+    def __getitem__(  # pyright: ignore [reportIncompatibleMethodOverride]
+        self, index: Union[list, slice, int, str]
+    ) -> Union[DataInfo, ColumnInfo]:
+        if isinstance(index, list):
             cols = []
-            for ind in i:
-                index = self._getindex(ind)
-                cols.append(self._columns[index])
+            for ind in index:
+                i = self._getindex(ind)
+                cols.append(self._columns[i])
             return DataInfo.create(columns=cols)
-        if isinstance(i, slice):
-            return DataInfo.create(self._columns[i], path=self._path, separator=self._separator)
+        if isinstance(index, slice):
+            return DataInfo.create(self._columns[index], path=self._path, separator=self._separator)
 
-        return self._columns[self._getindex(i)]
+        return self._columns[self._getindex(index)]
 
     @property
     def path(self) -> Union[Path, None]:

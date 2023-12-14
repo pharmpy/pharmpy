@@ -21,7 +21,7 @@ class ConstantDistribution(NumericDistribution):
     def __init__(self, value: Union[int, float]):
         self._value = float(value)
 
-    def sample(self, _, size: int) -> np.ndarray:
+    def sample(self, rng, size: int) -> np.ndarray:
         return np.full(size, self._value)
 
 

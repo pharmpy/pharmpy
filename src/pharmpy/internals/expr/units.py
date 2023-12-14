@@ -51,7 +51,7 @@ class UnitPrinter(sympy_printing.str.StrPrinter):
         all_strings = sorted(plain_strings) + sorted(pow_strings)
         return '⋅'.join(all_strings)
 
-    def _print_Pow(self, expr):
+    def _print_Pow(self, expr, rational=False):
         base = expr.args[0]
         exp = expr.args[1]
         if exp.is_Integer:
