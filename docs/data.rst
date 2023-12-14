@@ -1,8 +1,8 @@
 .. _dataset:
 
-===================
-Datasets in Pharmpy
-===================
+=======
+Dataset
+=======
 
 Datasets in Pharmpy are represented using the :py:class:`pd.DataFrame` class and a separate
 :py:class:`pharmpy.model.DataInfo` class that provides additional information about the dataset. This could contain
