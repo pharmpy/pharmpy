@@ -201,11 +201,9 @@ def _init_search_state(context, effects: str, modelentry: ModelEntry) -> SearchS
     model = modelentry.model
     effect_funcs, filtered_model = filter_search_space_and_model(effects, model)
     if filtered_model != model:
-        filtered_fit_wf = create_fit_workflow(models=[filtered_model])
-        filtered_model = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
-        filtered_modelentry = ModelEntry.create(
-            model=filtered_model, parent=None, modelfit_results=filtered_model.modelfit_results
-        )
+        filtered_modelentry = ModelEntry.create(model=filtered_model)
+        filtered_fit_wf = create_fit_workflow(models=[filtered_modelentry])
+        filtered_modelentry = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
     else:
         filtered_modelentry = modelentry
     candidate = Candidate(filtered_modelentry, ())
@@ -422,7 +420,7 @@ def _greedy_search(
             map(lambda candidate: candidate.modelentry, new_candidates)
         )
 
-        parent = best_candidate_so_far.modelentry
+        parent_modelentry = best_candidate_so_far.modelentry
         ofvs = [
             np.nan
             if modelentry.modelfit_results is None
@@ -432,13 +430,17 @@ def _greedy_search(
             else modelentry.modelfit_results.ofv
             for modelentry in new_candidate_modelentries
         ]
-        # NOTE: We assume parent.modelfit_results is not None
-        assert parent.modelfit_results is not None
+        # NOTE: We assume parent_modelentry.modelfit_results is not None
+        assert parent_modelentry.modelfit_results is not None
         best_model_so_far = lrt_best_of_many(
-            parent, new_candidate_modelentries, parent.modelfit_results.ofv, ofvs, alpha
+            parent_modelentry,
+            new_candidate_modelentries,
+            parent_modelentry.modelfit_results.ofv,
+            ofvs,
+            alpha,
         )
 
-        if best_model_so_far is parent:
+        if best_model_so_far is parent_modelentry:
             break
 
         best_candidate_so_far = next(
@@ -629,10 +631,9 @@ def _summarize_models(modelentries, steps):
 
 
 def _make_df_steps(best_modelentry: ModelEntry, candidates: List[Candidate]):
-    best_model = _model_entry_to_model(best_modelentry)
-    models_dict = {
-        candidate.modelentry.model.name: _model_entry_to_model(candidate.modelentry)
-        for candidate in candidates
+    best_model = best_modelentry.model
+    modelentries_dict = {
+        candidate.modelentry.model.name: candidate.modelentry for candidate in candidates
     }
     children_count = Counter(
         candidate.modelentry.parent.name for candidate in candidates if candidate.modelentry.parent
@@ -657,7 +658,7 @@ def _make_df_steps(best_modelentry: ModelEntry, candidates: List[Candidate]):
 
     data = (
         _make_df_steps_row(
-            models_dict, children_count, best_model, candidate, index_offset=index_offset
+            modelentries_dict, children_count, best_model, candidate, index_offset=index_offset
         )
         for candidate in candidates
     )
@@ -669,14 +670,16 @@ def _make_df_steps(best_modelentry: ModelEntry, candidates: List[Candidate]):
 
 
 def _make_df_steps_row(
-    models_dict: dict,
+    modelentries_dict: dict,
     children_count: Counter,
     best_model: Model,
     candidate: Candidate,
     index_offset=0,
 ):
-    model = _model_entry_to_model(candidate.modelentry)
-    parent_model = models_dict[model.parent_model]
+    modelentry = candidate.modelentry
+    model = modelentry.model
+    parent_modelentry = modelentries_dict[candidate.modelentry.parent.name]
+    parent_model = parent_modelentry.model
     if candidate.steps:
         last_step = candidate.steps[-1]
         last_effect = last_step.effect
@@ -684,8 +687,8 @@ def _make_df_steps_row(
         extended_state = f'{last_effect.operation} {last_effect.fp}'
         is_backward = isinstance(last_step, BackwardStep)
         if not is_backward:
-            reduced_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
-            extended_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
+            reduced_ofv = np.nan if (mfr := parent_modelentry.modelfit_results) is None else mfr.ofv
+            extended_ofv = np.nan if (mfr := modelentry.modelfit_results) is None else mfr.ofv
             alpha = last_step.alpha
             extended_significant = lrt_test(
                 parent_model,
@@ -695,8 +698,10 @@ def _make_df_steps_row(
                 alpha,
             )
         else:
-            extended_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
-            reduced_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
+            extended_ofv = (
+                np.nan if (mfr := parent_modelentry.modelfit_results) is None else mfr.ofv
+            )
+            reduced_ofv = np.nan if (mfr := modelentry.modelfit_results) is None else mfr.ofv
             alpha = last_step.alpha
             extended_significant = lrt_test(
                 model,
@@ -709,8 +714,8 @@ def _make_df_steps_row(
     else:
         parameter, covariate, extended_state = '', '', ''
         is_backward = False
-        reduced_ofv = np.nan if (mfr := parent_model.modelfit_results) is None else mfr.ofv
-        extended_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
+        reduced_ofv = np.nan if (mfr := parent_modelentry.modelfit_results) is None else mfr.ofv
+        extended_ofv = np.nan if (mfr := modelentry.modelfit_results) is None else mfr.ofv
         ofv_drop = reduced_ofv - extended_ofv
         alpha, extended_significant = np.nan, np.nan
 
