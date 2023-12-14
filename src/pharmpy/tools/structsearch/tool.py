@@ -341,7 +341,8 @@ def validate_input(
         for key in dv_types.keys():
             if key not in ['drug', 'target', 'complex']:
                 raise ValueError(
-                    f'Invalid dv_types key "{key}". Allowed keys are: "drug", "target" and "complex".'
+                    f'Invalid dv_types key "{key}". Allowed keys are:'
+                    f'"drug", "target", "complex", "drug_tot" and "target_tot".'
                 )
 
 
