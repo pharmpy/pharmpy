@@ -327,6 +327,13 @@ def validate_input(
     strictness,
     model,
     dv_types,
+    search_space,
+    b_init,
+    emax_init,
+    ec50_init,
+    met_init,
+    extra_model,
+    extra_model_results,
 ):
     if type not in TYPES:
         raise ValueError(f'Invalid `type`: got `{type}`, must be one of {sorted(TYPES)}.')
@@ -344,6 +351,32 @@ def validate_input(
                     f'Invalid dv_types key "{key}". Allowed keys are:'
                     f'"drug", "target", "complex", "drug_tot" and "target_tot".'
                 )
+
+    if type.lower() == 'tmdd':
+        if search_space is not None:
+            raise ValueError('Invalid argument "search_space" for TMDD models.')
+        if any([b_init, emax_init, ec50_init, met_init]):
+            raise ValueError(
+                'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for TMDD models.'
+            )
+    elif type.lower() == 'pkpd':
+        if extra_model is not None:
+            raise ValueError('Invalid argument "extra_model" for PKPD models.')
+        if extra_model_results is not None:
+            raise ValueError('Invalid argument "extra_model_results" for PKPD models.')
+        if dv_types is not None:
+            raise ValueError('Invalid argument "dv_types" for PKPD models.')
+    elif type.lower() == 'drug_metabolite':
+        if any([b_init, emax_init, ec50_init, met_init]):
+            raise ValueError(
+                'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for drug metabolite models.'
+            )
+        if extra_model is not None:
+            raise ValueError('Invalid argument "extra_model" for drug metabolite models.')
+        if extra_model_results is not None:
+            raise ValueError('Invalid argument "extra_model_results" for drug metabolite models.')
+        if dv_types is not None:
+            raise ValueError('Invalid argument "dv_types" for drug metabolite models.')
 
 
 @dataclass(frozen=True)
