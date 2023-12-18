@@ -156,7 +156,7 @@ def task_brute_force_search(
     model_with_iov = model_with_iov.replace(description=_create_description(model_with_iov))
     # NOTE: Fit the new model.
     model_with_iov_entry = ModelEntry.create(model_with_iov, parent=input_model)
-    wf = create_fit_workflow(models=[model_with_iov_entry])
+    wf = create_fit_workflow(modelentries=[model_with_iov_entry])
     model_with_iov_entry = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs', context)
 
     # NOTE: Remove IOVs. Test all subsets (~2^n).

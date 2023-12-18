@@ -202,7 +202,7 @@ def _init_search_state(context, effects: str, modelentry: ModelEntry) -> SearchS
     effect_funcs, filtered_model = filter_search_space_and_model(effects, model)
     if filtered_model != model:
         filtered_modelentry = ModelEntry.create(model=filtered_model)
-        filtered_fit_wf = create_fit_workflow(models=[filtered_modelentry])
+        filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
         filtered_modelentry = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
     else:
         filtered_modelentry = modelentry

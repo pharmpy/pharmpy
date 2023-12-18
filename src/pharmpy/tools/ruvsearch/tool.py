@@ -287,7 +287,7 @@ def post_process(context, start_model_entry, *model_entries, cutoff, current_ite
         start_model_entry, res, current_iteration, cutoff=cutoff, dv=dv
     )
     if best_model_unfitted is not None:
-        fit_wf = create_fit_workflow(models=[best_model_unfitted])
+        fit_wf = create_fit_workflow(modelentries=[best_model_unfitted])
         best_model_entry = call_workflow(fit_wf, f'fit{current_iteration}', context)
         if best_model_entry.modelfit_results is not None:
             best_model_check = [

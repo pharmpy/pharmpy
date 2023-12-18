@@ -160,7 +160,7 @@ def create_random_init_model(
         # Should be caught in validate_input()
         raise ValueError(f'Scale ({scale}) is not supported')
 
-    new_candidate_model_fit_wf = create_fit_workflow(models=[new_candidate_model])
+    new_candidate_model_fit_wf = create_fit_workflow(modelentries=[new_candidate_model])
     new_candidate_model = call_workflow(
         new_candidate_model_fit_wf, f'fit_candidate_run{index}', context
     )
