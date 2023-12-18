@@ -678,7 +678,8 @@ def _make_df_steps_row(
 ):
     modelentry = candidate.modelentry
     model = modelentry.model
-    parent_modelentry = modelentries_dict[candidate.modelentry.parent.name]
+    parent_name = modelentry.parent.name if modelentry.parent else model.name
+    parent_modelentry = modelentries_dict[parent_name]
     parent_model = parent_modelentry.model
     if candidate.steps:
         last_step = candidate.steps[-1]
