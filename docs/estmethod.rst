@@ -43,11 +43,14 @@ For a more detailed description of each argument, see their respective chapter o
 +-------------------------------------------------+------------------------------------------------------------------+
 | Argument                                        | Description                                                      |
 +=================================================+==================================================================+
-| :ref:`algorithm<algorithms_estmethod>`          | Algorithm to use (e.g. ``'reduced'``                             |
+| ``algorithm``                                   | :ref:`Algorithm<algorithms_estmethod>` to use                    |
+|                                                 | (e.g. ``'reduced'``)                                             |
 +-------------------------------------------------+------------------------------------------------------------------+
-| :ref:`methods<methods_estmethod>`               | Which estimation methods to test (e.g. ``['IMP']``)              |
+| ``methods``                                     | Which :ref:`estimation methods<methods_estmethod>` to test       | 
+|                                                 | (e.g. ``['IMP']``)                                               |
 +-------------------------------------------------+------------------------------------------------------------------+
-| :ref:`solvers<solvers_estmethod>`               | Which solvers to test (e.g. ``['LSODA']``)                       |
+| ``solvers``                                     | Which :ref:`solver<solvers_estmethod>` to test                   | 
+|                                                 | (e.g. ``['LSODA']``)                                             |
 +-------------------------------------------------+------------------------------------------------------------------+
 | ``model``                                       | Start model                                                      |
 +-------------------------------------------------+------------------------------------------------------------------+

@@ -40,25 +40,25 @@ The arguments of the retries tool are listed below.
 +-------------------------------------------------+---------------------------------------------------------------------+
 | ``results``                                     | ModelfitResults of the start model                                  |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| :ref:`strictness<strictness>`                   | Strictness criteria for model selection.                            |
+| ``strictness``                                  | :ref:`Strictness<strictness>` criteria for model selection.         |
 |                                                 | Default is "minimization_successful or                              |
 |                                                 | (rounding_errors and sigdigs>= 0.1)"                                |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| number_of_candidates                            | Number of retry-models to run. 5 is used as default                 |
+| ``number_of_candidates``                        | Number of retry-models to run. 5 is used as default                 |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| fraction                                        | Determine the allowed increase/decrease for the randomly generated  |
+| ``fraction``                                    | Determine the allowed increase/decrease for the randomly generated  |
 |                                                 | new initial estimates. Default is 0.1 (10%).                        |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| use_initial_estimates                           | Use initial parameter estimates when creating candidate models      |
+| ``use_initial_estimates``                       | Use initial parameter estimates when creating candidate models      |
 |                                                 | instead of the final parameter estimates of the input model.        |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| :ref:`scale<scales_retries>`                    | Scale to use when randomizing the initial estimates. Currently      |
-|                                                 | supported scales are ``normal`` and ``UCP``                         |
+| ``scale``                                       | :ref:`Scale<scales_retries>` to use when randomizing the initial    |
+|                                                 | estimates. Currently supported scales are ``normal`` and ``UCP``.   |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| prefix_name                                     | String determining prefix of model names such that models are named |
+| ``prefix_name``                                 | String determining prefix of model names such that models are named |
 |                                                 | {prefix_name}_retries_run2 for instance.                            |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| seed                                            | A random number generator or seed to use for random sampling.       |
+| ``seed``                                        | A random number generator or seed to use for random sampling.       |
 +-------------------------------------------------+---------------------------------------------------------------------+
 
 .. _scales_retries:
@@ -73,7 +73,7 @@ of parameters are randomly generated. The available scales can be seen in the ta
 +---------------------------+----------------------------------------------------------------------------------------+
 | scales                    | Description                                                                            |
 +===========================+========================================================================================+
-| ``'normal``               | Will iteratively try out new, randomly generated initial estimates. If the covariance  |
+| ``'normal'``              | Will iteratively try out new, randomly generated initial estimates. If the covariance  |
 |                           | matrix for OMEGA(s) and SIGMA(s) is determined to not be positive semi-definite, new   |
 |                           | random initial estimates is generated (maximum of 20 times)                            |
 +---------------------------+----------------------------------------------------------------------------------------+

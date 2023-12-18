@@ -46,21 +46,23 @@ Arguments
 +-----------------------------------------------+--------------------------------------------------------------------+
 | Argument                                      | Description                                                        |
 +===============================================+====================================================================+
-| :ref:`algorithm<algorithms_iivsearch>`        | Algorithm to use (e.g. ``'brute_force'``)                          |
+| ``algorithm``                                 | :ref:`Algorithm<algorithms_iivsearch>` to use                      | 
+|                                               | (e.g. ``'brute_force'``)                                           |
 +-----------------------------------------------+--------------------------------------------------------------------+
-| :ref:`iiv_strategy<iiv_strategies_iivsearch>` | If/how IIV should be added to start model (default is to not add)  |
+| ``iiv_strategy``                              | If/how IIV should be added to start model (default is to not add). |
+|                                               | See :ref:`iiv_strategies_iivsearch`                                |
 +-----------------------------------------------+--------------------------------------------------------------------+
-| :ref:`rank_type<ranking_iivsearch>`           | Which selection criteria to rank models on, e.g. OFV (default is   |
-|                                               | BIC)                                                               |
+| ``rank_type``                                 | Which :ref:`selection criteria<ranking_iivsearch>` to rank models  | 
+|                                               | on, e.g. OFV (default is BIC)                                      |
 +-----------------------------------------------+--------------------------------------------------------------------+
-| :ref:`cutoff<ranking_iivsearch>`              | Cutoff for the ranking function, exclude models that are below     |
-|                                               | cutoff (default is none)                                           |
+| ``cutoff``                                    | :ref:`Cutoff<ranking_iivsearch>` for the ranking function, exclude |
+|                                               | models that are below cutoff (default is none)                     |
 +-----------------------------------------------+--------------------------------------------------------------------+
 | ``model``                                     | Input model                                                        |
 +-----------------------------------------------+--------------------------------------------------------------------+
 | ``results``                                   | ModelfitResults of input model                                     |
 +-----------------------------------------------+--------------------------------------------------------------------+
-| :ref:`strictness<strictness>`                 | Strictness criteria for model selection.                           |
+| ``strictness``                                | :ref:`strictness<strictness>` criteria for model selection.        |
 |                                               | Default is "minimization_successful or                             |
 |                                               | (rounding_errors and sigdigs>= 0.1)"                               |
 +-----------------------------------------------+--------------------------------------------------------------------+

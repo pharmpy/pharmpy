@@ -49,24 +49,26 @@ For a more detailed description of each argument, see their respective chapter o
 +-------------------------------------------------+------------------------------------------------------------------+
 | Argument                                        | Description                                                      |
 +=================================================+==================================================================+
-| :ref:`search_space<the search space>`           | Search space to test                                             |
+| ``search_space``                                | :ref:`Search space<the search space>` to test                    |
 +-------------------------------------------------+------------------------------------------------------------------+
-| :ref:`algorithm<algorithms_modelsearch>`        | Algorithm to use (e.g. ``'reduced_stepwise'``)                   |
+| ``algorithm``                                   | :ref:`Algorithm<algorithms_modelsearch>`                         |
+|                                                 | to use (e.g. ``'reduced_stepwise'``)                             |
 +-------------------------------------------------+------------------------------------------------------------------+
-| :ref:`rank_type<ranking_modelsearch>`           | Which selection criteria to rank models on, e.g. OFV (default is |
-|                                                 | BIC)                                                             |
+| ``rank_type``                                   | Which :ref:`selection criteria<ranking_modelsearch>` to rank     |
+|                                                 | models on, e.g. OFV (default is BIC)                             |
 +-------------------------------------------------+------------------------------------------------------------------+
-| :ref:`cutoff<ranking_modelsearch>`              | Cutoff for the ranking function, exclude models that are below   |
-|                                                 | cutoff (default is None/NULL)                                    |
+| ``cutoff``                                      | :ref:`Cutoff<ranking_modelsearch>` for the ranking function,     | 
+|                                                 | exclude models that are below cutoff (default is None/NULL)      |                           
 +-------------------------------------------------+------------------------------------------------------------------+
-| :ref:`iiv_strategy<iiv_strategies_modelsearch>` | If/how IIV should be added to candidate models (default is to    |
-|                                                 | add to absorption delay parameters)                              |
+| ``iiv_strategy``                                | If/how IIV should be added to candidate models (default is to    |
+|                                                 | add to absorption delay parameters).                             |
+|                                                 | See :ref:`iiv_strategies_modelsearch`                            |
 +-------------------------------------------------+------------------------------------------------------------------+
 | ``model``                                       | Start model                                                      |
 +-------------------------------------------------+------------------------------------------------------------------+
 | ``results``                                     | ModelfitResults of the start model                               |
 +-------------------------------------------------+------------------------------------------------------------------+
-| :ref:`strictness<strictness>`                   | Strictness criteria for model selection.                         |
+| ``strictness``                                  | :ref:`Strictness<strictness>` criteria for model selection.      |
 |                                                 | Default is "minimization_successful or                           |
 |                                                 | (rounding_errors and sigdigs>= 0.1)"                             |
 +-------------------------------------------------+------------------------------------------------------------------+
