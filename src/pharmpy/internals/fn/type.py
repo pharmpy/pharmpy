@@ -13,6 +13,8 @@ from typing import (
     get_type_hints,
 )
 
+from ..unicode import itemize_strings
+
 
 def with_runtime_arguments_type_check(fn):
     sig = signature(fn)
@@ -183,3 +185,11 @@ def _match(typing, value):
         return True
 
     raise NotImplementedError(origin)
+
+
+def check_list(name, value, valid_values):
+    """Check if value is in valid_values else raise"""
+    if value not in valid_values:
+        raise ValueError(
+            f"Invalid `{name}`: got '{value}', must be{itemize_strings(sorted(valid_values))}"
+        )
