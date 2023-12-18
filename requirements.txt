@@ -16,7 +16,7 @@ dask==2023.12.0
 debugpy==1.8.0
 decorator==5.1.1
 defusedxml==0.7.1
-distributed==2023.12.0
+distributed==2023.12.1
 docutils==0.20.1
 executing==2.0.1
 exceptiongroup==1.2.0
