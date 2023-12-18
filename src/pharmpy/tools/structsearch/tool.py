@@ -345,12 +345,16 @@ def validate_input(
             )
 
     if dv_types is not None:
-        for key in dv_types.keys():
+        if not len(dv_types.values()) == len(set(dv_types.values())):
+            raise ValueError('Values must be unique.')
+        for key, value in dv_types.items():
             if key not in ['drug', 'target', 'complex', 'drug_tot', 'target_tot']:
                 raise ValueError(
                     f'Invalid dv_types key "{key}". Allowed keys are:'
-                    f'"drug", "target", "complex", "drug_tot" and "target_tot".'
+                    f' "drug", "target", "complex", "drug_tot" and "target_tot".'
                 )
+            if key not in ['drug', 'drug_tot'] and value == 1:
+                raise ValueError('Only drug can have DVID = 1. Please choose another DVID.')
 
     if type.lower() == 'tmdd':
         if search_space is not None:
