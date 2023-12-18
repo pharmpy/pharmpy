@@ -37,7 +37,7 @@ from pharmpy.tools import (
     summarize_individuals_count_table,
     summarize_modelfit_results,
 )
-from pharmpy.tools.common import _model_entry_to_model, summarize_tool, update_initial_estimates
+from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
@@ -225,8 +225,7 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     if delta_ofv < cutoff:
         model_entry = input_model_entry
 
-    # FIXME: Remove once modelfit_results have been removed from Model object
-    selected_models = [_model_entry_to_model(model_entry) for model_entry in selected_model_entries]
+    selected_models = [model_entry.model for model_entry in selected_model_entries]
     model_results = [model_entry.modelfit_results for model_entry in selected_model_entries]
 
     sumind = summarize_individuals(selected_models, model_results)

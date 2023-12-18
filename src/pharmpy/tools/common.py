@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeVar
 from pharmpy.model import Model
 from pharmpy.modeling import update_inits
 from pharmpy.tools import rank_models, summarize_errors
-from pharmpy.workflows import ModelEntry, Results, ToolDatabase
+from pharmpy.workflows import Results, ToolDatabase
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 
@@ -133,27 +133,21 @@ def _model_entry_to_model(model_entry):
 
 
 def summarize_tool(
-    models,
-    start_model,
+    model_entries,
+    start_model_entry,
     rank_type,
     cutoff,
     bic_type='mixed',
     strictness=None,
 ) -> DataFrame:
-    # FIXME: Remove once modelfit_results have been removed from Model object
-    # NOTE: This is needed since IOVSearch uses this standalone
-    if isinstance(start_model, ModelEntry):
-        start_model = _model_entry_to_model(start_model)
-        models = [_model_entry_to_model(model_entry) for model_entry in models]
-
-    start_model_res = start_model.modelfit_results
-    models_res = [model.modelfit_results for model in models]
+    start_model_res = start_model_entry.modelfit_results
+    models_res = [model_entry.modelfit_results for model_entry in model_entries]
 
     if rank_type == 'mbic':
         rank_type = 'bic'
-        if len(models) > 0:
+        if len(model_entries) > 0:
             multiple_testing = True
-            n_expected_models = len(models)
+            n_expected_models = len(model_entries)
         else:  # This can happen if the search space of e.g. modelsearch only includes the base model
             multiple_testing = False
             n_expected_models = None
@@ -161,7 +155,8 @@ def summarize_tool(
         multiple_testing = False
         n_expected_models = None
 
-    models_all = [start_model] + models
+    start_model = start_model_entry.model
+    models = [model_entry.model for model_entry in model_entries]
 
     df_rank = rank_models(
         start_model,
@@ -178,17 +173,18 @@ def summarize_tool(
     if rank_type != "lrt" and df_rank.dropna(subset=rank_type).shape[0] == 0:
         raise ValueError("All models fail the strictness criteria!")
 
-    model_dict = {model.name: model for model in models_all}
     rows = {}
 
-    for model in models_all:
-        description, parent_model = model.description, model.parent_model
+    for model_entry in [start_model_entry] + model_entries:
+        model = model_entry.model
+        parent_model = model_entry.parent if model_entry.parent is not None else model
+        description = model.description
         n_params = len(model.parameters.nonfixed)
         if model.name == start_model.name:
             d_params = 0
         else:
-            d_params = n_params - len(model_dict[parent_model].parameters.nonfixed)
-        rows[model.name] = (description, n_params, d_params, parent_model)
+            d_params = n_params - len(parent_model.parameters.nonfixed)
+        rows[model.name] = (description, n_params, d_params, parent_model.name)
 
     colnames = ['description', 'n_params', 'd_params', 'parent_model']
     index = pd.Index(rows.keys(), name='model')
