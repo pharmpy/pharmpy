@@ -63,19 +63,20 @@ Arguments
 | ``list_of_parameters``                      | List of parameters to test IOV on, if none all parameters with IIV   |
 |                                             | will be tested (default)                                             |
 +---------------------------------------------+----------------------------------------------------------------------+
-| :ref:`distribution<distribution_iovsearch>` | Which distribution added IOVs should have (default is same as IIVs)  |
+| ``distribution``                            | Which :ref:`distribution<distribution_iovsearch>` added IOVs         |
+|                                             | should have (default is same as IIVs)                                |
 +---------------------------------------------+----------------------------------------------------------------------+
-| :ref:`rank_type<ranking_iovsearch>`         | Which selection criteria to rank models on, e.g. OFV (default is     |
-|                                             | BIC)                                                                 |
+| ``rank_type``                               | Which :ref:`selection criteria<ranking_iovsearch>` to rank models    |
+|                                             | on, e.g. OFV (default is BIC).                                       |
 +---------------------------------------------+----------------------------------------------------------------------+
-| :ref:`cutoff<ranking_iovsearch>`            | Cutoff for the ranking function, exclude models that are below       |
-|                                             | cutoff (default is none)                                             |
+| ``cutoff``                                  | :ref:`cutoff<ranking_iovsearch>` for the ranking function, exclude   |
+|                                             | models that are below cutoff (default is none).                      |
 +---------------------------------------------+----------------------------------------------------------------------+
 | ``model``                                   | Start model                                                          |
 +---------------------------------------------+----------------------------------------------------------------------+
 | ``results``                                 | ModelfitResults of start model                                       |
 +---------------------------------------------+----------------------------------------------------------------------+
-| :ref:`strictness<strictness>`               | Strictness criteria for model selection.                             |
+| ``strictness``                              | :ref:`strictness<strictness>` criteria for model selection.          |
 |                                             | Default is "minimization_successful or                               |
 |                                             | (rounding_errors and sigdigs>= 0.1)"                                 |
 +---------------------------------------------+----------------------------------------------------------------------+

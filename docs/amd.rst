@@ -44,11 +44,11 @@ Arguments
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | Argument                                          | Description                                                                                                     |
 +===================================================+=================================================================================================================+
-| :ref:`input<input_amd>`                           | Path to a dataset or start model object                                                                         |
+| ``input``                                         | Path to a dataset or start model object. See :ref:`input_amd`                                                   |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``results``                                       | ModelfitResults if input is a model                                                                             |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``modeltype``                                     | Type of model to build. Currently 'basic_pk', 'pkpd' or 'drug_metabolite'                                       |
+| ``modeltype``                                     | Type of model to build (e.g. 'basic_pk', 'pkpd', 'drug_metabolite' or 'tmdd')                                   |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``administration``                                | Route of administration. One of 'iv', 'oral' or 'ivoral'                                                        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -66,25 +66,27 @@ Arguments
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``met_init``                                      | Initial estimate for the mean equilibration time (only for pkpd models, default is 0.1)                         |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| :ref:`search_space<search_space_amd>`             | MFL for search space of structural and covariate models (default depends on ``modeltype``)                      |
+| ``search_space``                                  | MFL for :ref:`search space<search_space_amd>` of structural and covariate models                                |
+|                                                   | (default depends on ``modeltype``)                                                                              |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``lloq_limit``                                    | Lower limit of quantification.                                                                                  |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``lloq_method``                                   | Method to use for handling lower limit of quantification. See :py:func:`pharmpy.modeling.transform_blq`.        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| :ref:`order<order_amd>`                           | Run order of tools (default is ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']) |
+| ``order``                                         | Run :ref:`order<order_amd>` of tools (default is ['structural', 'iivsearch', 'residual', 'iovsearch',           |
+|                                                   | 'allometry', 'covariates'])                                                                                     |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``allometric_variable``                           | Variable to use for allometry (default is name of column described as body weight)                              |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``occasion``                                      | Name of occasion column                                                                                         |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| :ref:`strictness<strictness>`                     | Strictness criteria for model selection.                                                                        |
+| ``strictness``                                    | :ref:`Strictness<strictness>` criteria for model selection.                                                     |
 |                                                   | Default is "minimization_successful or                                                                          |
 |                                                   | (rounding_errors and sigdigs>= 0.1)"                                                                            |
 |                                                   | If ``strictness`` is set to ``None`` no strictness                                                              |
 |                                                   | criteria are applied                                                                                            |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-|``mechanistic_covariates``                         | List of covariates to run in a separate prioritezed covsearch run.                                              |
+| ``mechanistic_covariates``                        | List of covariates to run in a separate prioritezed covsearch run.                                              |
 |                                                   | The effects are extracted from the given search space                                                           |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``retries_strategy``                              | Decide how to use the retries tool. Valid options are 'skip', 'all_final' or 'final'. Default is 'final'        |
