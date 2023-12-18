@@ -73,7 +73,7 @@ of parameters are randomly generated. The available scales can be seen in the ta
 +---------------------------+----------------------------------------------------------------------------------------+
 | scales                    | Description                                                                            |
 +===========================+========================================================================================+
-| ``'normal'``               | Will iteratively try out new, randomly generated initial estimates. If the covariance  |
+| ``'normal'``              | Will iteratively try out new, randomly generated initial estimates. If the covariance  |
 |                           | matrix for OMEGA(s) and SIGMA(s) is determined to not be positive semi-definite, new   |
 |                           | random initial estimates is generated (maximum of 20 times)                            |
 +---------------------------+----------------------------------------------------------------------------------------+
