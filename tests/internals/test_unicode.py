@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.internals.unicode import int_to_superscript
+from pharmpy.internals.unicode import int_to_superscript, itemize_strings
 
 
 @pytest.mark.parametrize(
@@ -13,3 +13,15 @@ from pharmpy.internals.unicode import int_to_superscript
 )
 def test_int_to_superscript(x, expected):
     assert int_to_superscript(x) == expected
+
+
+@pytest.mark.parametrize(
+    "x,expected",
+    [
+        (("cobolt",), "'cobolt'"),
+        (("aa", "bb"), " one of 'aa' or 'bb'"),
+        (("rock", "paper", "scissors"), " one of 'rock', 'paper' or 'scissors'"),
+    ],
+)
+def test_itemize_strings(x, expected):
+    assert itemize_strings(x) == expected

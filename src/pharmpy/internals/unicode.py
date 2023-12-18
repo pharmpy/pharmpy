@@ -261,3 +261,13 @@ def _character_to_superscript(ch: str) -> str:
 
 def int_to_superscript(x: int) -> str:
     return ''.join(_character_to_superscript(d) for d in str(x))
+
+
+def itemize_strings(a):
+    # Create an itemization string of a list of strings like:
+    # ['a', 'b', 'c'] giving " one of 'a', 'b' or 'c'"
+    if len(a) == 1:
+        return repr(a[0])
+    else:
+        quoted = [repr(e) for e in a]
+        return f" one of {', '.join(quoted[:-1])} or {quoted[-1]}"
