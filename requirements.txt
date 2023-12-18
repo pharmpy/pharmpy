@@ -74,7 +74,7 @@ PyYAML==6.0.1
 referencing==0.32.0
 requests==2.31.0
 rich==13.7.0
-rpds-py==0.13.2
+rpds-py==0.15.2
 scipy==1.11.4
 six==1.16.0
 snowballstemmer==2.2.0
