@@ -3,7 +3,7 @@ from typing import Optional, Union
 
 import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.internals.fn.signature import with_same_arguments_as
-from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import update_inits
 from pharmpy.tools import get_model_features, summarize_modelfit_results
@@ -300,21 +300,9 @@ def validate_input(
     model,
     strictness,
 ):
-    if not hasattr(algorithms, algorithm):
-        raise ValueError(
-            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(dir(algorithms))}.'
-        )
-
-    if rank_type not in RANK_TYPES:
-        raise ValueError(
-            f'Invalid `rank_type`: got `{rank_type}`, must be one of {sorted(RANK_TYPES)}.'
-        )
-
-    if iiv_strategy not in algorithms.IIV_STRATEGIES:
-        raise ValueError(
-            f'Invalid `iiv_strategy`: got `{iiv_strategy}`,'
-            f' must be one of {sorted(algorithms.IIV_STRATEGIES)}.'
-        )
+    check_list("algorithm", algorithm, algorithms.ALGORITHMS)
+    check_list("rank_type", rank_type, RANK_TYPES)
+    check_list("iiv_strategy", iiv_strategy, algorithms.IIV_STRATEGIES)
 
     try:
         statements = mfl_parse(search_space)

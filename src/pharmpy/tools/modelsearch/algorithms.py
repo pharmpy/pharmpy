@@ -7,6 +7,7 @@ from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
 from ..mfl.helpers import all_combinations, get_funcs_same_type, key_to_str
 
+ALGORITHMS = frozenset(('exhaustive', 'exhaustive_stepwise', 'reduced_stepwise'))
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock', 'absorption_delay'))
 
 
