@@ -2453,6 +2453,31 @@ def test_mm_then_periph(pheno):
     assert odes.get_flow(newperiph, central) == sympy.Symbol('QP2') / sympy.Symbol('VP2')
 
 
+def test_mixed_mm_fo_then_periph(pheno, load_model_for_test, testdata):
+    model = set_mixed_mm_fo_elimination(pheno)
+    model = add_peripheral_compartment(model)
+    odes = model.statements.ode_system
+    central = odes.central_compartment
+    periph = odes.find_peripheral_compartments()[0]
+    assert odes.get_flow(central, periph) == sympy.Symbol('QP1') / sympy.Symbol('V')
+    assert odes.get_flow(periph, central) == sympy.Symbol('QP1') / sympy.Symbol('VP1')
+    model = add_peripheral_compartment(model)
+    odes = model.statements.ode_system
+    newperiph = odes.find_peripheral_compartments()[1]
+    central = odes.central_compartment
+    assert odes.get_flow(central, newperiph) == sympy.Symbol('QP2') / sympy.Symbol('V')
+    assert odes.get_flow(newperiph, central) == sympy.Symbol('QP2') / sympy.Symbol('VP2')
+
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = set_mixed_mm_fo_elimination(pheno)
+    model = add_peripheral_compartment(model)
+    odes = model.statements.ode_system
+    central = odes.central_compartment
+    periph = odes.find_peripheral_compartments()[0]
+    assert odes.get_flow(central, periph) == sympy.Symbol('QP1') / sympy.Symbol('V')
+    assert odes.get_flow(periph, central) == sympy.Symbol('QP1') / sympy.Symbol('VP1')
+
+
 def test_set_ode_solver(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     assert model.estimation_steps[0].solver is None
@@ -2604,6 +2629,16 @@ def test_find_volume_parameters(pheno):
     model = add_peripheral_compartment(model)
     v_p2 = find_volume_parameters(model)
     assert v_p2 == _symbols(['V1', 'VP1', 'VP2'])
+
+
+def test_find_volume_and_clearance_parameters_mm_and_mixed_mm(pheno):
+    mm = set_michaelis_menten_elimination(pheno)
+    assert find_volume_parameters(mm) == _symbols(['V'])
+    assert find_clearance_parameters(mm) == _symbols(['CLMM'])
+
+    mixed_mm = set_mixed_mm_fo_elimination(pheno)
+    assert find_volume_parameters(mixed_mm) == _symbols(['V'])
+    assert find_clearance_parameters(mixed_mm) == _symbols(['CL', 'CLMM'])
 
 
 def test_find_volume_parameters_github_issues_1053_and_1062(load_example_model_for_test):

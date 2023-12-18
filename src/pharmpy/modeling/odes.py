@@ -1889,6 +1889,8 @@ def add_peripheral_compartment(model: Model, name: str = None):
 
     elimination_rate = odes.get_flow(central, output)
     assert elimination_rate is not None
+    if has_mixed_mm_fo_elimination(model):
+        elimination_rate = sympy.expand(elimination_rate).args[0]
     cl, vc = elimination_rate.as_numer_denom()
     if cl.is_Symbol and vc == 1:
         # If K = CL / V
@@ -2172,7 +2174,7 @@ def find_clearance_parameters(model: Model):
     sset = model.statements
     odes = get_and_check_odes(model)
     t = odes.t
-    rate_list = _find_rate(sset)
+    rate_list = _find_rate(model, sset)
     for rate in rate_list:
         if isinstance(rate, sympy.Symbol):
             assignment = sset.find_assignment(rate)
@@ -2214,7 +2216,7 @@ def find_volume_parameters(model: Model):
     if odes is None:
         raise ValueError(f'Model {model.name} has no ODE system')
     t = odes.t
-    rate_list = _find_rate(sset)
+    rate_list = _find_rate(model, sset)
     for rate in rate_list:
         if isinstance(rate, sympy.Symbol):
             assignment = sset.find_assignment(rate)
@@ -2229,7 +2231,7 @@ def find_volume_parameters(model: Model):
     return sorted(vcs, key=str)
 
 
-def _find_rate(sset: Statements):
+def _find_rate(model: Model, sset: Statements):
     rate_list = []
     odes = sset.ode_system
     assert isinstance(odes, CompartmentalSystem)
@@ -2245,6 +2247,10 @@ def _find_rate(sset: Statements):
     else:
         elimination_rate = odes.get_flow(central, output)
         rate_list.append(elimination_rate)
+        if has_mixed_mm_fo_elimination(model):
+            elimination_rate = sympy.expand(elimination_rate)
+            rate_list.append(elimination_rate.args[0])
+            rate_list.append(elimination_rate.args[1])
 
     comp_peripherals = {}
     comp_peripherals[central] = odes.find_peripheral_compartments()
@@ -2716,6 +2722,7 @@ def get_central_volume_and_clearance(model: Model):
     odes = model.statements.ode_system
     central_comp = odes.central_compartment
     rate = odes.get_flow(central_comp, output)
+    rate = sympy.expand(rate)
     if has_mixed_mm_fo_elimination(model):
         rate = rate.args[0]
     if isinstance(rate, sympy.Symbol):
