@@ -125,13 +125,6 @@ def create_results(
     return res
 
 
-def _model_entry_to_model(model_entry):
-    parent_name = model_entry.parent.name if model_entry.parent else model_entry.model.name
-    return model_entry.model.replace(
-        modelfit_results=model_entry.modelfit_results, parent_model=parent_name
-    )
-
-
 def summarize_tool(
     model_entries,
     start_model_entry,
