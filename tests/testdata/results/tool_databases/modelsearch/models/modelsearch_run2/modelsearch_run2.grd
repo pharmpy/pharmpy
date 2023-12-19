@@ -1,0 +1,4 @@
+TABLE NO.     1: First Order: Problem=1 Subproblem=0 Superproblem1=0 Iteration1=0 Superproblem2=0 Iteration2=0
+ ITERATION    GRD(1)       GRD(2)       GRD(3)       GRD(4)       GRD(5)       GRD(6)       GRD(7)       GRD(8)       GRD(9)       GRD(10)      GRD(11)
+            0 -5.54838E+01  1.11637E+02 -6.31818E+00 -1.06325E+01  6.54495E-01  5.74580E+00  3.65838E-02 -2.73573E+01 -1.40246E+00  4.71014E-01 -2.05013E+01
+           34  2.00903E-03 -1.99263E-03 -2.49243E-03 -4.41573E-03  1.01630E-03 -2.66380E-03  9.56596E-04  2.04256E-03  4.28240E-04  0.00000E+00  4.71950E-03

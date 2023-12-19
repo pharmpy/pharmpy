@@ -2,11 +2,13 @@
   "commands": [
     {
       "args": [
-        "/opt/nm744/run/nmfe74",
+        "/home/antonia/nonmem/run/nmfe75",
         "modelsearch_run4.mod",
         "results.lst"
       ],
-      "returncode": 0
+      "returncode": 0,
+      "stdout": "stdout",
+      "stderr": "stderr"
     }
   ]
 }
