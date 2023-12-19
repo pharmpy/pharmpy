@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeVar
 from pharmpy.model import Model
 from pharmpy.modeling import update_inits
 from pharmpy.tools import rank_models, summarize_errors
-from pharmpy.workflows import Results, ToolDatabase
+from pharmpy.workflows import ModelEntry, ModelfitResults, Results, ToolDatabase
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 
@@ -22,7 +22,7 @@ DataFrame = Any  # NOTE: Should be pd.DataFrame but we want lazy loading
 RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic', 'mbic'))
 
 
-def update_initial_estimates(model, modelfit_results):
+def update_initial_estimates(model: Model, modelfit_results: Optional[ModelfitResults]):
     if modelfit_results is None:
         return model
     if not modelfit_results.minimization_successful:
@@ -55,13 +55,13 @@ T = TypeVar('T', bound=ToolResults)
 
 def create_results(
     res_class: Type[T],
-    input_model_entry,
-    base_model_entry,
-    cand_model_entries,
-    rank_type,
-    cutoff,
-    bic_type='mixed',
-    strictness="minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+    input_model_entry: ModelEntry,
+    base_model_entry: ModelEntry,
+    cand_model_entries: Sequence[ModelEntry],
+    rank_type: str,
+    cutoff: Optional[float],
+    bic_type: str = 'mixed',
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     **rest,
 ) -> T:
     summary_tool = summarize_tool(
@@ -126,12 +126,12 @@ def create_results(
 
 
 def summarize_tool(
-    model_entries,
-    start_model_entry,
-    rank_type,
-    cutoff,
-    bic_type='mixed',
-    strictness=None,
+    model_entries: Sequence[ModelEntry],
+    start_model_entry: ModelEntry,
+    rank_type: str,
+    cutoff: Optional[float],
+    bic_type: str = 'mixed',
+    strictness: Optional[str] = None,
 ) -> DataFrame:
     start_model_res = start_model_entry.modelfit_results
     models_res = [model_entry.modelfit_results for model_entry in model_entries]
@@ -192,7 +192,12 @@ def summarize_tool(
     return df_sorted
 
 
-def summarize_tool_individuals(models, models_res, description_col, rank_type_col):
+def summarize_tool_individuals(
+    models: Sequence[Model],
+    models_res: Sequence[ModelfitResults],
+    description_col: pd.Series,
+    rank_type_col: pd.Series,
+):
     summary_individuals = summarize_individuals(models, models_res)
     summary_individuals = summary_individuals.join(description_col, how='inner')
     col_to_move = summary_individuals.pop('description')
