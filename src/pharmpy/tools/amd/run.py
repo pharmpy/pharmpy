@@ -344,22 +344,11 @@ def run_amd(
                 )
                 run_subfuncs['ruvsearch_metabolite'] = func
             elif modeltype == 'tmdd' and dv_types is not None:
-                # Run for DV = 1
-                func = _subfunc_ruvsearch(
-                    dv=1, strictness=strictness, path=db.path / 'ruvsearch_drug'
-                )
-                run_subfuncs['ruvsearch_drug'] = func
-                # Run for second dv which is the first key in dv_types that is not 'drug'
-                if list(dv_types.keys())[0] == 'drug':
-                    second_dv_type = list(dv_types.keys())[1]
-                else:
-                    second_dv_type = list(dv_types.keys())[0]
-                func = _subfunc_ruvsearch(
-                    dv=dv_types[second_dv_type],
-                    strictness=strictness,
-                    path=db.path / f"ruvsearch_{second_dv_type}",
-                )
-                run_subfuncs[f'ruvsearch_{second_dv_type}'] = func
+                for key, value in dv_types.items():
+                    func = _subfunc_ruvsearch(
+                        dv=value, strictness=strictness, path=db.path / f'ruvsearch_{key}'
+                    )
+                    run_subfuncs[f'ruvsearch_{key}'] = func
             else:
                 func = _subfunc_ruvsearch(dv=dv, strictness=strictness, path=db.path)
                 run_subfuncs['ruvsearch'] = func
