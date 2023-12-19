@@ -226,12 +226,12 @@ def _update_results(base):
 def create_base_model(ss, model_or_model_entry):
     if isinstance(model_or_model_entry, ModelEntry):
         model = model_or_model_entry.model
-        if res := model_or_model_entry.modelfit_results:
-            base = update_inits(model, res.parameter_estimates)
+        res = model_or_model_entry.modelfit_results
     else:
         model = model_or_model_entry
-        if res := model.modelfit_results:
-            base = update_inits(model, res.parameter_estimates)
+        res = None
+
+    base = update_inits(model, res.parameter_estimates) if res else model
 
     model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
