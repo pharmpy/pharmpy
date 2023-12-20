@@ -25,7 +25,7 @@ else:
 
 class Distribution(Sized, Hashable, Immutable):
     @abstractmethod
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> Distribution:
         pass
 
     @property
@@ -78,7 +78,7 @@ class Distribution(Sized, Hashable, Immutable):
         return tuple(sorted(map(str, params)))
 
     @abstractmethod
-    def subs(self, d: Dict[sympy.Expr, sympy.Expr]) -> Distribution:
+    def subs(self, d: Mapping[Union[str, sympy.Expr], sympy.Expr]) -> Distribution:
         pass
 
     @abstractmethod
@@ -131,7 +131,7 @@ class NormalDistribution(Distribution):
             raise ValueError("Variance of normal distribution must be non-negative")
         return cls(name, level, mean, variance)
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> NormalDistribution:
         """Replace properties and create a new NormalDistribution"""
         name = kwargs.get('name', self._name)
         level = kwargs.get('level', self._level)
@@ -161,7 +161,7 @@ class NormalDistribution(Distribution):
         """Free symbols including random variable itself"""
         fs = self._mean.free_symbols.union(self._variance.free_symbols)
         fs.add(sympy.Symbol(self._name))
-        return fs
+        return fs  # pyright: ignore [reportGeneralTypeIssues]
 
     def subs(self, d: Mapping[Union[str, sympy.Expr], sympy.Expr]) -> NormalDistribution:
         """Substitute expressions
@@ -187,7 +187,7 @@ class NormalDistribution(Distribution):
         name = _subs_name(self._name, d)
         return NormalDistribution(name, self._level, mean, variance)
 
-    def evalf(self, parameters: Dict[sympy.Expr, float]):
+    def evalf(self, parameters: Dict[sympy.Symbol, float]) -> NumericDistribution:
         # mu = float(symengine.sympify(rv._mean[0]).xreplace(parameters))
         # sigma = float(symengine.sympify(sympy.sqrt(rv._variance[0,0])).xreplace(parameters))
         mean = self.mean
@@ -195,7 +195,12 @@ class NormalDistribution(Distribution):
         variance = self.variance
         assert isinstance(variance, sympy.Symbol)
         try:
-            mu = 0 if mean == 0 else float(parameters[mean])
+            if mean == 0:
+                mu = 0
+            elif isinstance(mean, sympy.Symbol):
+                mu = float(parameters[mean])
+            else:
+                raise NotImplementedError("Non-supported mean for NormalDistribution")
             sigma = 0 if variance == 0 else sqrt(float(parameters[variance]))
             return NumericNormalDistribution(mu, sigma)
         except KeyError as e:
@@ -380,7 +385,7 @@ class JointNormalDistribution(Distribution):
             self._variance.free_symbols, (sympy.Symbol(name) for name in self._names)
         )
 
-    def subs(self, d: Mapping[Union[str, sympy.Expr], sympy.Expr]):
+    def subs(self, d: Mapping[Union[str, sympy.Expr], sympy.Expr]) -> JointNormalDistribution:
         """Substitute expressions
 
         Parameters
@@ -408,7 +413,7 @@ class JointNormalDistribution(Distribution):
         new_names = tuple(_subs_name(name, d) for name in self._names)
         return JointNormalDistribution(new_names, self._level, mean, variance)
 
-    def evalf(self, parameters: Dict[sympy.Symbol, float]):
+    def evalf(self, parameters: Dict[sympy.Symbol, float]) -> NumericDistribution:
         try:
             mu = np.array(symengine.sympify(self.mean).xreplace(parameters)).astype(np.float64)[
                 :, 0
