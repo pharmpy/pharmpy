@@ -8,6 +8,7 @@ from pharmpy.modeling import (
     set_mixed_mm_fo_elimination,
     set_tmdd,
 )
+from pharmpy.modeling.tmdd import _validate_dv_types
 
 
 def S(x):
@@ -229,3 +230,22 @@ def test_multiple_dvs(load_model_for_test, pheno_path):
     assert model2.statements.find_assignment("IPRED") == ass2
     assert S("Y_COMPLEX") in model2.statements.free_symbols
     assert S("Y_TOTTARGET") in model2.statements.free_symbols
+
+
+def test_validation(load_model_for_test, testdata):
+    _validate_dv_types(dv_types={'drug_tot': 1, 'target_tot': 2, 'complex': 3})
+    _validate_dv_types(dv_types={'drug': 1, 'target_tot': 2, 'complex': 3})
+    _validate_dv_types(dv_types={'drug': 1, 'target': 2, 'complex': 3})
+
+    with pytest.raises(AssertionError):
+        _validate_dv_types(dv_types={'drug': 1, 'target': 1, 'complex': 2})
+    with pytest.raises(
+        ValueError, match='Only drug can have DVID = 1. Please choose another DVID.'
+    ):
+        _validate_dv_types(dv_types={'target': 1, 'complex': 2})
+    with pytest.raises(
+        ValueError,
+        match='Invalid dv_types key "taget". Allowed keys are: "drug", "target", "complex", '
+        '"drug_tot" and "target_tot".',
+    ):
+        _validate_dv_types(dv_types={'taget': 1})

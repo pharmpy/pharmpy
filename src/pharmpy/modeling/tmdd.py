@@ -482,7 +482,7 @@ def _validate_dv_types(dv_types):
         if key not in ['drug', 'target', 'complex', 'drug_tot', 'target_tot']:
             raise ValueError(
                 f'Invalid dv_types key "{key}". Allowed keys are:'
-                f'"drug", "target", "complex", "drug_tot" and "target_tot".'
+                f' "drug", "target", "complex", "drug_tot" and "target_tot".'
             )
         if key not in ['drug', 'drug_tot'] and value == 1:
             raise ValueError('Only drug can have DVID = 1. Please choose another DVID.')

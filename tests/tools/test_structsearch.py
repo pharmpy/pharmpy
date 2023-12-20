@@ -173,6 +173,11 @@ def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
             'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for TMDD models.',
         ),
         (
+            dict(type='tmdd', dv_types={'dru': 1}),
+            ValueError,
+            'Invalid dv_types key "dru". Allowed keys are: "drug", "target", "complex", "drug_tot" and "target_tot".',
+        ),
+        (
             dict(type='tmdd', search_space='ABSORPTION'),
             ValueError,
             'Invalid argument "search_space" for TMDD models.',
@@ -214,3 +219,12 @@ def test_validation(tmp_path, load_model_for_test, testdata, arguments, exceptio
         exception, match='Invalid argument "extra_model_results" for drug metabolite models.'
     ):
         validate_input(type='drug_metabolite', extra_model_results=res)
+
+    validate_input(type='tmdd', dv_types={'drug_tot': 1, 'target_tot': 2, 'complex': 3})
+    validate_input(type='tmdd', dv_types={'drug': 1, 'target_tot': 2, 'complex': 3})
+    validate_input(type='tmdd', dv_types={'drug': 1, 'target': 2, 'complex': 3})
+
+    with pytest.raises(exception, match='Values must be unique.'):
+        validate_input(type='tmdd', dv_types={'drug': 1, 'target': 1, 'complex': 2})
+    with pytest.raises(exception, match='Only drug can have DVID = 1. Please choose another DVID.'):
+        validate_input(type='tmdd', dv_types={'target': 1, 'complex': 2})
