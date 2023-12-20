@@ -2,6 +2,7 @@ from collections.abc import Collection, Container, Iterable, Iterator, Sequence,
 from inspect import signature
 from typing import (
     Any,
+    Dict,
     List,
     Literal,
     Optional,
@@ -181,8 +182,14 @@ def _match(typing, value):
             )
         )
 
-    if origin is dict:
-        return True
+    if origin is dict or origin is Dict:
+        args = get_args(typing)
+        if value is not None:
+            return _match_sequence_items((args[0],), value.keys()) & _match_sequence_items(
+                (args[1],), value.values()
+            )
+        else:
+            return True
 
     raise NotImplementedError(origin)
 
