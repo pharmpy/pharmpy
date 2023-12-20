@@ -47,9 +47,10 @@ The arguments of the structsearch tool for TMDD models are listed below.
 | ``extra_model_results``                         | ModelfitResults object for the extra model for TMDD structsearch.   |
 |                                                 | Optional.                                                           |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| ``dv_types``                                    | Dictionary of DV types for multiple DVs                             |
+| ``dv_types``                                    | Dictionary of :ref:`DV types<dv_types>` for multiple DVs            |
 |                                                 | (e.g. dv_types = {'target': 2}). Default is None.                   |
-|                                                 | Allowed keys are: 'drug', 'target' and 'complex'. Optional.         |
+|                                                 | Allowed keys are: 'drug', 'target', 'complex', 'drug_tot' and       |
+|                                                 | 'target_tot'. Optional.                                             |
 +-------------------------------------------------+---------------------------------------------------------------------+
 
 ~~~~~~
@@ -346,6 +347,42 @@ MMAPP model:
             - \frac{(k_{\text{kint}} - k_{\text{deg}}) \cdot A_{\text{central}}(t) \cdot A_{\text{target}}(t)}{V \
             \cdot \biggl( k_{\text{MC}} + \frac{A_{\text{central}}(t)}{V} \biggl)}
 
+
+.. _dv_types:
+
+~~~~~~~~
+DV types
+~~~~~~~~
+
+The ``dv_types`` argument is a dictionary specifiying the DVs. If not ``dv_types`` is not specified then all
+observations are counted as drug observations.
+There are five types implemented: 'drug' (free drug), 'target', 'complex', 'drug_tot' (total drug) and 'target_tot'
+(total target).
+Only 'drug' and 'drug_tot' can have dv=1.
+
+Example 1:
+
+.. code::
+
+    dv_types = {'drug':1, 'target':2, 'complex':3}
+
+In this case the drug has dv=1, the target has dv=2 and complex has dv=3:
+
+Example 2:
+
+.. code::
+
+    dv_types = {'target':2, 'complex':3}
+
+This is equivalent to the previous example. Per default drug has dv=1.
+
+Example 3:
+
+.. code::
+
+    dv_types = {'target_tot':3, 'complex':2}
+
+The dv types can be arranged in any possible order.
 
 ~~~~~~~~~~~~~~~~~~~~~
 Structsearch workflow
