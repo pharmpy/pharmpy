@@ -5,7 +5,7 @@ import sys
 import uuid
 import warnings
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
@@ -155,6 +155,7 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
 
 def verification(
     model: pharmpy.model.Model,
+    modelfit_results: Optional[ModelfitResults] = None,
     error: float = 10**-3,
     return_comp: bool = False,
     ignore_print=False,
@@ -162,17 +163,19 @@ def verification(
     nonmem_model = model
 
     # Save results from the nonmem model
-    if nonmem_model.modelfit_results is None:
+    if modelfit_results is None:
         if not ignore_print:
             print_step("Calculating NONMEM predictions... (this might take a while)")
-        nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
+        nonmem_res = fit(nonmem_model)
     else:
-        if nonmem_model.modelfit_results.predictions is None:
+        if modelfit_results.predictions is None:
             if not ignore_print:
                 print_step("Calculating NONMEM predictions... (this might take a while)")
-            nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
+            nonmem_res = fit(nonmem_model)
+        else:
+            nonmem_res = modelfit_results
 
-    param_estimates = nonmem_model.modelfit_results.parameter_estimates
+    param_estimates = nonmem_res.parameter_estimates
 
     omega_names = get_omegas(nonmem_model).names
     for name in omega_names:
@@ -193,10 +196,17 @@ def verification(
     if not ignore_print:
         print_step("Executing RxODE model... (this might take a while)")
 
-    rxode_model = execute_model(rxode_model, db)
+    rxode_model_entry = ModelEntry(rxode_model, modelfit_results=None)
+    rxode_model_entry = execute_model(rxode_model_entry, db)
 
     combined_result = compare_models(
-        nonmem_model, rxode_model, error=error, force_pred=True, ignore_print=ignore_print
+        nonmem_model,
+        nonmem_res,
+        rxode_model,
+        rxode_model_entry.modelfit_results,
+        error=error,
+        force_pred=True,
+        ignore_print=ignore_print,
     )
 
     combined_result.to_csv(db.path / "comparison.csv", index=False)

@@ -5,7 +5,7 @@ import sys
 import uuid
 import warnings
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
@@ -145,6 +145,7 @@ def execute_model(model_entry, db, evaluate=False, path=None):
 
 def verification(
     model: pharmpy.model.Model,
+    modelfit_results: Optional[ModelfitResults] = None,
     error: float = 10**-3,
     return_comp: bool = False,
     return_stat: bool = False,
@@ -166,8 +167,8 @@ def verification(
     ----------
     model : pharmpy.model.Model
         pharmpy Model object in NONMEM format.
-    db_name : str
-        a string with given name of database folder for created files.
+    modelfit_results : ModelfitResults
+        pharmpy ModelfitResults of input model.
     error : float, optional
         Allowed error margins for predictions. The default is 10**-3.
     return_comp : bool, optional
@@ -191,15 +192,17 @@ def verification(
 
     try:
         # Save results from the NONMEM model
-        if nonmem_model.modelfit_results is None:
+        if modelfit_results is None:
             if not ignore_print:
                 print_step("Calculating NONMEM predictions... (this might take a while)")
-            nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
+            nonmem_res = fit(nonmem_model)
         else:
-            if nonmem_model.modelfit_results.predictions is None:
+            if modelfit_results.predictions is None:
                 if not ignore_print:
                     print_step("Calculating NONMEM predictions... (this might take a while)")
-                nonmem_model = nonmem_model.replace(modelfit_results=fit(nonmem_model))
+                nonmem_res = fit(nonmem_model)
+            else:
+                nonmem_res = modelfit_results
     except Exception:
         raise Exception("Nonmem model could not be fitted")
 
@@ -216,9 +219,7 @@ def verification(
     if not ignore_print:
         print_step("Converting NONMEM model to nlmixr2...")
     try:
-        nlmixr_model = convert_model(
-            update_inits(nonmem_model, nonmem_model.modelfit_results.parameter_estimates)
-        )
+        nlmixr_model = convert_model(update_inits(nonmem_model, nonmem_res.parameter_estimates))
     except Exception:
         raise Exception("Could not convert model to nlmixr2")
 
@@ -229,10 +230,11 @@ def verification(
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
-    write_fix_eta(nonmem_model, path=path)
+    write_fix_eta(nonmem_res, path=path)
     try:
         # FIXME : use fit() instead and incorporate write_fix_eta
-        nlmixr_model = execute_model(nlmixr_model, db, path=path)
+        nlmixr_model_entry = ModelEntry.create(nlmixr_model, modelfit_results=None)
+        nlmixr_model_entry = execute_model(nlmixr_model_entry, db, path=path)
     except Exception:
         raise Exception("nlmixr2 model could not be fitted")
 
@@ -241,7 +243,9 @@ def verification(
         print_step("Creating result comparison table...")
     combined_result = compare_models(
         nonmem_model,
+        nonmem_res,
         nlmixr_model,
+        nlmixr_model_entry.modelfit_results,
         error=error,
         force_ipred=force_ipred,
         force_pred=force_pred,
@@ -264,15 +268,17 @@ def verification(
 
 def compare_models(
     model_1,
+    model_1_res,
     model_2,
+    model_2_res,
     error=10**-3,
     force_ipred=False,
     force_pred=False,
     ignore_print=False,
     return_stat=False,
 ):
-    assert model_1.modelfit_results.predictions is not None
-    assert model_2.modelfit_results.predictions is not None
+    assert model_1_res.predictions is not None
+    assert model_2_res.predictions is not None
 
     mod1 = model_1
     mod1_type = str(type(mod1)).split(".")[3]
@@ -296,12 +302,13 @@ def compare_models(
 
     if nm_to_r:
         if mod1_type == "nonmem":
-            predictions = mod1.modelfit_results.predictions.reset_index()
+            predictions = model_1_res.predictions.reset_index()
             predictions = predictions.drop(
                 mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list()
             )
             predictions = predictions.set_index(["ID", "TIME"])
-            mod1 = mod1.replace(modelfit_results=ModelfitResults(predictions=predictions))
+            mod1_res_pred = ModelfitResults(predictions=predictions)
+            mod2_res_pred = model_2_res
 
             dataset = mod1.dataset
             dv_var = "DV"
@@ -309,12 +316,14 @@ def compare_models(
                 dv_var
             ]
         if mod2_type == "nonmem":
-            predictions = mod2.modelfit_results.predictions.reset_index()
+            predictions = model_2_res.predictions.reset_index()
             predictions = predictions.drop(
                 mod2.dataset[~mod2.dataset["EVID"].isin([0, 2])].index.to_list()
             )
             predictions = predictions.set_index(["ID", "TIME"])
-            mod2 = mod2.replace(modelfit_results=ModelfitResults(predictions=predictions))
+
+            mod1_res_pred = model_1_res
+            mod2_res_pred = ModelfitResults(predictions=predictions)
 
             dataset = mod2.dataset
             dv_var = "DV"
@@ -328,9 +337,9 @@ def compare_models(
 
     dv = dv.reset_index(drop=True)
 
-    mod1_results = mod1.modelfit_results.predictions.copy()
+    mod1_results = mod1_res_pred.predictions.copy()
 
-    mod2_results = mod2.modelfit_results.predictions.copy()
+    mod2_results = mod2_res_pred.predictions.copy()
 
     pred = False
     ipred = False
@@ -478,7 +487,7 @@ def fixate_eta(model: pharmpy.model.Model) -> pharmpy.model.Model:
     return model
 
 
-def write_fix_eta(model: pharmpy.model.Model, path=None, force=True) -> str:
+def write_fix_eta(modelfit_results: ModelfitResults, path=None, force=True) -> str:
     """
     Writes ETAs to be fixated during verification to a csv file to be read by
     nlmixr2
@@ -512,16 +521,16 @@ def write_fix_eta(model: pharmpy.model.Model, path=None, force=True) -> str:
         raise FileExistsError(f'File at {path} already exists.')
 
     path = path_absolute(path)
-    model.modelfit_results.individual_estimates.to_csv(path, na_rep=data.conf.na_rep, index=False)
+    modelfit_results.individual_estimates.to_csv(path, na_rep=data.conf.na_rep, index=False)
     return path
 
 
-def verify_param(model1, model2, est=False):
+def verify_param(model1, res1, model2, res2, est=False):
     tol = 0.01
 
     if est:
-        param1 = model1.modelfit_results.parameter_estimates
-        param2 = model2.modelfit_results.parameter_estimates
+        param1 = res1.parameter_estimates
+        param2 = res2.parameter_estimates
 
         passed = []
         failed = []

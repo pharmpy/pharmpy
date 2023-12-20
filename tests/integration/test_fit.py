@@ -8,8 +8,10 @@ from pharmpy.config import site_config_path, user_config_path
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.tools import fit
+from pharmpy.tools.external.nlmixr import verification as nlmixr_verification
 from pharmpy.tools.external.nonmem import conf
 from pharmpy.tools.external.nonmem.run import execute_model as nonmem_execute_model
+from pharmpy.tools.external.rxode import verification as rxode_verification
 from pharmpy.workflows import LocalDirectoryToolDatabase, ModelEntry
 
 
@@ -98,6 +100,32 @@ def test_fit_nlmixr(tmp_path, testdata):
         res = fit(model, tool='nlmixr')
         assert res.ofv == pytest.approx(732.58813)
         assert res.parameter_estimates['TVCL'] == pytest.approx(0.0058686, abs=1e-6)
+
+
+def test_verification_nlmixr(tmp_path, testdata):
+    from pharmpy.tools.external.nlmixr import conf
+
+    if str(conf.rpath) == '.':
+        pytest.skip("No R selected in conf. Skipping nlmixr tests")
+    with chdir(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_real.ctl')
+        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
+        model = Model.parse_model('pheno_real.ctl')
+        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
+        assert nlmixr_verification(model)
+
+
+def test_verification_rxode(tmp_path, testdata):
+    from pharmpy.tools.external.nlmixr import conf
+
+    if str(conf.rpath) == '.':
+        pytest.skip("No R selected in conf. Skipping rxode tests")
+    with chdir(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_real.ctl')
+        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
+        model = Model.parse_model('pheno_real.ctl')
+        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
+        assert rxode_verification(model)
 
 
 def test_execute_model_nonmem(tmp_path, testdata):
