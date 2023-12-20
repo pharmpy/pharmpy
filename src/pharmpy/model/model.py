@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Union
 
 import pharmpy
 from pharmpy.internals.df import hash_df_runtime
@@ -299,7 +299,7 @@ class Model(Immutable):
                 raise TypeError("model.estimation_steps must be of EstimationSteps type")
             return steps
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> Model:
         name = kwargs.get('name', self.name)
         Model._canonicalize_name(name)
 
@@ -465,6 +465,7 @@ class Model(Immutable):
 
     @cache_method
     def __hash__(self):
+        dataset_hash = hash_df_runtime(self._dataset) if self._dataset is not None else None
         return hash(
             (
                 self._parameters,
@@ -475,12 +476,12 @@ class Model(Immutable):
                 self._estimation_steps,
                 self._initial_individual_estimates,
                 self._datainfo,
-                hash_df_runtime(self._dataset),
+                dataset_hash,
                 self._value_type,
             )
         )
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         if self._initial_individual_estimates is not None:
             ie = self._initial_individual_estimates.to_dict()
         else:
@@ -503,7 +504,7 @@ class Model(Immutable):
         }
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict[str, Any]) -> Model:
         ie_dict = d['initial_individual_estimates']
         if ie_dict is None:
             ie = None
@@ -535,22 +536,22 @@ class Model(Immutable):
         return f'<hr>{stat}<hr>${rvs}$<hr>{self.parameters._repr_html_()}<hr>'
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Name of the model"""
         return self._name
 
     @property
-    def filename_extension(self):
+    def filename_extension(self) -> str:
         """Filename extension of model file"""
         return self._filename_extension
 
     @property
-    def dependent_variables(self):
+    def dependent_variables(self) -> frozenmapping[sympy.Symbol, int]:
         """The dependent variables of the model mapped to the corresponding DVIDs"""
         return self._dependent_variables
 
     @property
-    def value_type(self):
+    def value_type(self) -> str:
         """The type of the model value (dependent variables)
 
         By default this is set to 'PREDICTION' to mean that the model outputs a prediction.
@@ -562,12 +563,12 @@ class Model(Immutable):
         return self._value_type
 
     @property
-    def observation_transformation(self):
+    def observation_transformation(self) -> frozenmapping[sympy.Symbol, sympy.Expr]:
         """Transformation to be applied to the observation data"""
         return self._observation_transformation
 
     @property
-    def parameters(self):
+    def parameters(self) -> Parameters:
         """Definitions of population parameters
 
         See :class:`pharmpy.Parameters`
@@ -575,7 +576,7 @@ class Model(Immutable):
         return self._parameters
 
     @property
-    def random_variables(self):
+    def random_variables(self) -> RandomVariables:
         """Definitions of random variables
 
         See :class:`pharmpy.RandomVariables`
@@ -583,7 +584,7 @@ class Model(Immutable):
         return self._random_variables
 
     @property
-    def statements(self):
+    def statements(self) -> Statements:
         """Definitions of model statements
 
         See :class:`pharmpy.Statements`
@@ -591,7 +592,7 @@ class Model(Immutable):
         return self._statements
 
     @property
-    def estimation_steps(self):
+    def estimation_steps(self) -> EstimationSteps:
         """Definitions of estimation steps
 
         See :class:`pharmpy.EstimationSteps`
@@ -599,7 +600,7 @@ class Model(Immutable):
         return self._estimation_steps
 
     @property
-    def datainfo(self):
+    def datainfo(self) -> DataInfo:
         """Definitions of model statements
 
         See :class:`pharmpy.Statements`
@@ -607,12 +608,12 @@ class Model(Immutable):
         return self._datainfo
 
     @property
-    def dataset(self):
+    def dataset(self) -> Optional[pd.DataFrame]:
         """Dataset connected to model"""
         return self._dataset
 
     @property
-    def initial_individual_estimates(self):
+    def initial_individual_estimates(self) -> Optional[pd.DataFrame]:
         """Initial estimates for individual parameters"""
         return self._initial_individual_estimates
 
@@ -627,7 +628,7 @@ class Model(Immutable):
         return self._modelfit_results
 
     @property
-    def model_code(self):
+    def model_code(self) -> str:
         """Model type specific code"""
         d = self.to_dict()
         d['__magic__'] = "Pharmpy Model"
@@ -635,11 +636,11 @@ class Model(Immutable):
         return json.dumps(d)
 
     @property
-    def parent_model(self):
+    def parent_model(self) -> Optional[str]:
         """Name of parent model"""
         return self._parent_model
 
-    def has_same_dataset_as(self, other):
+    def has_same_dataset_as(self, other: Model) -> bool:
         """Check if this model has the same dataset as another model
 
         Parameters
@@ -665,12 +666,12 @@ class Model(Immutable):
         return self.dataset.equals(other.dataset)
 
     @property
-    def description(self):
+    def description(self) -> str:
         """A free text description of the model"""
         return self._description
 
     @staticmethod
-    def parse_model(path):
+    def parse_model(path: Union[Path, str]):
         """Create a model object by parsing a model file of any supported type
 
         Parameters
@@ -692,7 +693,7 @@ class Model(Immutable):
         return model
 
     @staticmethod
-    def parse_model_from_string(code):
+    def parse_model_from_string(code: str) -> Model:
         """Create a model object by parsing a string with model code of any supported type
 
         Parameters
@@ -709,12 +710,12 @@ class Model(Immutable):
         model = model_module.parse_model(code, None)
         return model
 
-    def update_source(self):
+    def update_source(self) -> Model:
         """Update source code of the model. If any paths need to be changed or added (e.g. for a
         NONMEM model with an updated dataset) they will be replaced with DUMMYPATH"""
         return self
 
-    def write_files(self, path=None, force=False):
+    def write_files(self, path: Optional[Union[Path, str]] = None, force: bool = False) -> Model:
         """Write all extra files needed for a specific external format."""
         return self
 
