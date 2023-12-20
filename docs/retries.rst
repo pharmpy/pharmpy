@@ -146,22 +146,6 @@ you can look at the ``summary_models`` table. The table is generated with
 
     res.summary_models
 
-A summary table of predicted influential individuals and outliers can be seen in ``summary_individuals_count``.
-See :py:func:`pharmpy.tools.summarize_individuals_count_table` for information on the content of this table.
-
-.. pharmpy-execute::
-    :hide-code:
-
-    res.summary_individuals_count
-
-You can see different individual statistics in ``summary_individuals``.
-See :py:func:`pharmpy.tools.summarize_individuals` for information on the content of this table.
-
-.. pharmpy-execute::
-    :hide-code:
-
-    res.summary_individuals
-
 Finally, you can see a summary of different errors and warnings in ``summary_errors``.
 See :py:func:`pharmpy.tools.summarize_errors` for information on the content of this table.
 
