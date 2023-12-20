@@ -5,6 +5,7 @@ import warnings
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from pharmpy.model import Model, ModelfitResultsError
+from pharmpy.workflows import ModelfitResults
 
 if TYPE_CHECKING:
     import numpy as np
@@ -16,7 +17,7 @@ else:
 from .ml import predict_influential_individuals, predict_outliers
 
 
-def summarize_individuals(models: List[Model]) -> pd.DataFrame:
+def summarize_individuals(models: List[Model], models_res: List[ModelfitResults]) -> pd.DataFrame:
     """Creates a summary dataframe keyed by model-individual pairs for an input
     list of models.
 
@@ -40,6 +41,8 @@ def summarize_individuals(models: List[Model]) -> pd.DataFrame:
     ----------
     models : List[Model]
         Input models
+    models_res : List[ModelfitResults]
+        Input results
 
     Return
     ------
@@ -63,8 +66,10 @@ def summarize_individuals(models: List[Model]) -> pd.DataFrame:
     >>> summarize_individuals([results.start_model, *results.models]) # doctest: +SKIP
 
     """  # noqa: E501
+    if len(models) != len(models_res):
+        raise ValueError('Different length of `models` and `models_res`')
 
-    modelsDict = {model.name: model for model in models}
+    resDict = {model.name: res for model, res in zip(models, models_res)}
 
     spec = importlib.util.find_spec('tflite_runtime')
     if spec is None:
@@ -72,7 +77,7 @@ def summarize_individuals(models: List[Model]) -> pd.DataFrame:
 
     df = pd.concat(
         map(
-            lambda model: groupedByIDAddColumnsOneModel(modelsDict, model),
+            lambda model: groupedByIDAddColumnsOneModel(resDict, model, resDict[model.name]),
             models,
         ),
         keys=[model.name for model in models],
@@ -101,8 +106,7 @@ def outlier_count_func(df: pd.DataFrame) -> float:
     return float((abs(df) > 5).sum())
 
 
-def outlier_count(model: Model) -> Union[pd.Series, float]:
-    res = model.modelfit_results
+def outlier_count(res: ModelfitResults) -> Union[pd.Series, float]:
     if res is None:
         return np.nan
     residuals = res.residuals
@@ -113,9 +117,9 @@ def outlier_count(model: Model) -> Union[pd.Series, float]:
         return groupedByID['CWRES'].agg(outlier_count_func)
 
 
-def _predicted(predict, model: Model, column: str) -> Union[pd.Series, float]:
+def _predicted(predict, model: Model, res: ModelfitResults, column: str) -> Union[pd.Series, float]:
     try:
-        predicted = predict(model, model.modelfit_results)
+        predicted = predict(model, res)
     except ModelfitResultsError:
         return np.nan
     except ImportError:
@@ -125,36 +129,39 @@ def _predicted(predict, model: Model, column: str) -> Union[pd.Series, float]:
     return predicted[column]
 
 
-def predicted_residual(model: Model) -> Union[pd.Series, float]:
-    return _predicted(predict_outliers, model, 'residual')
+def predicted_residual(model: Model, res: ModelfitResults) -> Union[pd.Series, float]:
+    return _predicted(predict_outliers, model, res, 'residual')
 
 
-def predicted_dofv(model: Model) -> Union[pd.Series, float]:
-    return _predicted(predict_influential_individuals, model, 'dofv')
+def predicted_dofv(model: Model, res: ModelfitResults) -> Union[pd.Series, float]:
+    return _predicted(predict_influential_individuals, model, res, 'dofv')
 
 
-def ofv(model: Model) -> Union[pd.Series, float]:
-    res = model.modelfit_results
+def ofv(res: ModelfitResults) -> Union[pd.Series, float]:
     return np.nan if res is None or res.individual_ofv is None else res.individual_ofv
 
 
-def dofv(parent_model: Union[Model, None], candidate_model: Model) -> Union[pd.Series, float]:
-    return np.nan if parent_model is None else ofv(parent_model) - ofv(candidate_model)
+def dofv(
+    parent_model_res: Optional[ModelfitResults], candidate_model_res: Optional[ModelfitResults]
+) -> Union[pd.Series, float]:
+    return np.nan if parent_model_res is None else ofv(parent_model_res) - ofv(candidate_model_res)
 
 
-def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) -> pd.DataFrame:
+def groupedByIDAddColumnsOneModel(
+    resDict: Dict[str, ModelfitResults], model: Model, model_res: ModelfitResults
+) -> pd.DataFrame:
     id_column_name = model.datainfo.id_column.name
     index = pd.Index(data=model.dataset[id_column_name].unique(), name=id_column_name)
     parent_model_name = model.parent_model
-    parent_model = None if parent_model_name is None else modelsDict.get(parent_model_name)
+    parent_model_res = None if parent_model_name is None else resDict.get(parent_model_name)
     df = pd.DataFrame(
         {
             'parent_model': parent_model_name,
-            'outlier_count': outlier_count(model),
-            'ofv': ofv(model),
-            'dofv_vs_parent': dofv(parent_model, model),
-            'predicted_dofv': predicted_dofv(model),
-            'predicted_residual': predicted_residual(model),
+            'outlier_count': outlier_count(model_res),
+            'ofv': ofv(model_res),
+            'dofv_vs_parent': dofv(parent_model_res, model_res),
+            'predicted_dofv': predicted_dofv(model, model_res),
+            'predicted_residual': predicted_residual(model, model_res),
         },
         index=index,
     )
@@ -162,7 +169,9 @@ def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) ->
 
 
 def summarize_individuals_count_table(
-    models: Optional[List[Model]] = None, df: pd.DataFrame = None
+    models: Optional[List[Model]] = None,
+    models_res: Optional[List[ModelfitResults]] = None,
+    df: pd.DataFrame = None,
 ):
     r"""Create a count table for individual data
 
@@ -188,6 +197,8 @@ def summarize_individuals_count_table(
     ----------
     models : list of models
         List of models to summarize.
+    models_res : List[ModelfitResults]
+        Input results
     df : pd.DataFrame
         Output from a previous call to summarize_individuals.
 
@@ -201,8 +212,10 @@ def summarize_individuals_count_table(
     summarize_individuals : Get raw individual data
 
     """  # noqa: E501
-    if models:
-        df = summarize_individuals(models)
+    if models and models_res:
+        if len(models) != len(models_res):
+            raise ValueError('Different length of `models` and `models_res`')
+        df = summarize_individuals(models, models_res)
     if df is None:
         return None
 

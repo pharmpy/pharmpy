@@ -742,7 +742,10 @@ def summarize_errors(results: Union[ModelfitResults, List[ModelfitResults]]) -> 
 
 def rank_models(
     base_model: Model,
+    base_model_res: ModelfitResults,
     models: List[Model],
+    models_res: List[ModelfitResults],
+    parent_dict: Optional[Union[dict[str, str], dict[Model, Model]]] = None,
     strictness: Optional[str] = "minimization_successful",
     rank_type: str = 'ofv',
     cutoff: Optional[float] = None,
@@ -757,8 +760,14 @@ def rank_models(
     ----------
     base_model : Model
         Base model to compare to
+    base_model_res : ModelfitResults
+        Results of base model
     models : list
         List of models
+    models_res : list
+        List of modelfit results
+    parent_dict : dict
+        Dict where key is child and value is parent. Only relevant for LRT, if None base will be set as parent
     strictness : str or None
         Strictness criteria that are allowed for ranking. Default is "minimization_successful".
     rank_type : str
@@ -784,34 +793,42 @@ def rank_models(
     >>> rank_models(model_1, [model_2],
     ...             rank_type='lrt') # doctest: +SKIP
     """
+    if len(models) != len(models_res):
+        raise ValueError('Different length of `models` and `models_res`')
+    if rank_type == 'lrt' and not parent_dict:
+        parent_dict = {model.name: base_model.name for model in models}
+    if parent_dict and not isinstance(list(parent_dict.keys())[0], str):
+        parent_dict = {child.name: parent.name for child, parent in parent_dict.items()}
+
     models_all = [base_model] + models
+    res_all = [base_model_res] + models_res
 
     rank_values, delta_values = {}, {}
     models_to_rank = []
 
-    ref_value = _get_rankval(base_model, strictness, rank_type, bic_type, **kwargs)
-    model_dict = {model.name: model for model in models_all}
+    ref_value = _get_rankval(base_model, base_model_res, strictness, rank_type, bic_type, **kwargs)
+    model_dict = {model.name: (model, res) for model, res in zip(models_all, res_all)}
 
     # Filter on strictness
-    for model in models_all:
+    for model, res in zip(models_all, res_all):
         # Exclude OFV etc. if model was not successful
-        rank_value = _get_rankval(model, strictness, rank_type, bic_type, **kwargs)
+        rank_value = _get_rankval(model, res, strictness, rank_type, bic_type, **kwargs)
         if np.isnan(rank_value):
             continue
         if model.name == base_model.name:
             pass
         elif rank_type == 'lrt':
-            parent = model_dict[model.parent_model]
+            parent_model, parent_res = model_dict[parent_dict[model.name]]
             if cutoff is None:
-                co = 0.05 if lrt_df(parent, model) >= 0 else 0.01
+                co = 0.05 if lrt_df(parent_model, model) >= 0 else 0.01
             elif isinstance(cutoff, tuple):
-                co = cutoff[0] if lrt_df(parent, model) >= 0 else cutoff[1]
+                co = cutoff[0] if lrt_df(parent_model, model) >= 0 else cutoff[1]
             else:
                 assert isinstance(cutoff, (float, int))
                 co = cutoff
-            parent_ofv = np.nan if (mfr := parent.modelfit_results) is None else mfr.ofv
-            model_ofv = np.nan if (mfr := model.modelfit_results) is None else mfr.ofv
-            if not lrt_test(parent, model, parent_ofv, model_ofv, co):
+            parent_ofv = np.nan if (mfr := parent_res) is None else mfr.ofv
+            model_ofv = np.nan if (mfr := res) is None else mfr.ofv
+            if not lrt_test(parent_model, model, parent_ofv, model_ofv, co):
                 continue
         elif cutoff is not None:
             if ref_value - rank_value <= cutoff:
@@ -1025,15 +1042,15 @@ def is_strictness_fulfilled(
         return True
 
 
-def _get_rankval(model, strictness, rank_type, bic_type, **kwargs):
-    if not is_strictness_fulfilled(model.modelfit_results, model, strictness):
+def _get_rankval(model, res, strictness, rank_type, bic_type, **kwargs):
+    if not is_strictness_fulfilled(res, model, strictness):
         return np.nan
     if rank_type in ['ofv', 'lrt']:
-        return model.modelfit_results.ofv
+        return res.ofv
     elif rank_type == 'aic':
-        return calculate_aic(model, model.modelfit_results.ofv)
+        return calculate_aic(model, res.ofv)
     elif rank_type == 'bic':
-        return calculate_bic(model, model.modelfit_results.ofv, bic_type, **kwargs)
+        return calculate_bic(model, res.ofv, bic_type, **kwargs)
     else:
         raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
 

@@ -14,7 +14,7 @@ from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import is_strictness_fulfilled, summarize_modelfit_results
-from pharmpy.tools.common import _model_entry_to_model, create_results, update_initial_estimates
+from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import EffectLiteral, InputSpec, all_covariate_effects
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
@@ -501,7 +501,9 @@ def task_add_covariate_effect(
     name = f'covsearch_run{effect_index}'
     description = _create_description(effect[0], candidate.steps)
     model_with_added_effect = model.replace(name=name, description=description)
-    model_with_added_effect = update_initial_estimates(model_with_added_effect)
+    model_with_added_effect = update_initial_estimates(
+        model_with_added_effect, modelentry.modelfit_results
+    )
     func = effect[1]
     model_with_added_effect = func(model_with_added_effect, allow_nested=True)
     return ModelEntry.create(
@@ -650,8 +652,7 @@ def _make_df_steps(best_modelentry: ModelEntry, candidates: List[Candidate]):
     ]
     index_offset = 0
     if not any(
-        children_count[c.modelentry.model.name] >= 1
-        or _model_entry_to_model(c.modelentry) is best_model
+        children_count[c.modelentry.model.name] >= 1 or c.modelentry.model is best_model
         for c in largest_forward_candidates
     ):
         index_offset = 1

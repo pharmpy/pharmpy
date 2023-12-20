@@ -184,7 +184,7 @@ def results(start_model_entry, allometry_model_entry):
     summod = summarize_modelfit_results([start_res, allometry_res])
     summod['step'] = [0, 1]
     summods = summod.reset_index().set_index(['step', 'model'])
-    suminds = summarize_individuals([start_model, allometry_model])
+    suminds = summarize_individuals([start_model, allometry_model], [start_res, allometry_res])
     sumcount = summarize_individuals_count_table(df=suminds)
     sumerrs = summarize_errors([start_res, allometry_res])
 
