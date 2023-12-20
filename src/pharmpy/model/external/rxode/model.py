@@ -1,4 +1,4 @@
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -8,6 +8,7 @@ from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model.external.nlmixr.error_model import convert_eps_to_sigma
 from pharmpy.model.external.nlmixr.model import add_evid
 from pharmpy.model.external.nlmixr.model_block import add_bio_lag, add_ode, convert_eq
+from pharmpy.model.model import ModelInternals
 from pharmpy.modeling import (
     drop_columns,
     get_bioavailability,
@@ -17,8 +18,8 @@ from pharmpy.modeling import (
 )
 
 
-@dataclass
-class RxODEModelInternals:
+@dataclass(frozen=True)
+class RxODEModelInternals(ModelInternals):
     src: Optional[str] = None
     path: Optional[Path] = None
 
@@ -44,10 +45,9 @@ class Model(pharmpy.model.Model):
         create_sigma(cg, self)
         cg.empty_line()
         create_fit(cg, self)
-        self.internals.src = str(cg).replace("AMT", "amt").replace("TIME", "time")
-        self.internals.path = None
-        code = str(cg)
-        internals = replace(self.internals, src=code)
+        code = str(cg).replace("AMT", "amt").replace("TIME", "time")
+        path = None
+        internals = self.internals.replace(src=code, path=path)
         model = self.replace(internals=internals)
         return model
 

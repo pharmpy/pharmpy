@@ -1,9 +1,10 @@
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 import pharmpy.model
 from pharmpy.internals.code_generator import CodeGenerator
+from pharmpy.model.model import ModelInternals
 from pharmpy.modeling import drop_columns, get_evid, translate_nmtran_time, update_inits
 
 from .error_model import res_error_term
@@ -263,8 +264,8 @@ def add_evid(model: pharmpy.model.Model) -> pharmpy.model.Model:
     return temp_model
 
 
-@dataclass
-class NLMIXRModelInternals:
+@dataclass(frozen=True)
+class NLMIXRModelInternals(ModelInternals):
     src: Optional[str] = None
     path: Optional[Path] = None
 
@@ -287,10 +288,9 @@ class Model(pharmpy.model.Model):
         create_fit(cg, self)
         # Create lowercase id, time and amount symbols for nlmixr to be able
         # to run
-        self.internals.src = str(cg).replace("AMT", "amt").replace("TIME", "time")
-        self.internals.path = None
         code = str(cg).replace("AMT", "amt").replace("TIME", "time")
-        internals = replace(self.internals, src=code)
+        path = None
+        internals = self.internals.replace(src=code, path=path)
         model = self.replace(internals=internals)
         return model
 

@@ -25,7 +25,7 @@ def execute_model(model_entry, db):
     database = db.model_database
     model = convert_model(model)
     path = Path.cwd() / f'rxode_run_{model.name}-{uuid.uuid1()}'
-    model.internals.path = path
+    model = model.replace(internals=model.internals.replace(path=path))
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     if model.datainfo.path is not None:

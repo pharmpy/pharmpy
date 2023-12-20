@@ -12,8 +12,10 @@ Definitions
 """
 from __future__ import annotations
 
+import dataclasses
 import json
 import warnings
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Union
 
@@ -56,6 +58,15 @@ class ModelfitResultsError(ModelError):
     pass
 
 
+@dataclass(frozen=True)
+class ModelInternals:
+    def __init__(self):
+        pass
+
+    def replace(self, **kwargs):
+        return dataclasses.replace(self, **kwargs)
+
+
 class Model(Immutable):
     """The Pharmpy model class"""
 
@@ -78,7 +89,7 @@ class Model(Immutable):
         filename_extension: str = '',
         value_type: str = 'PREDICTION',
         description: str = '',
-        internals: None = None,
+        internals: Optional[ModelInternals] = None,
     ):
         self._name = name
         self._datainfo = datainfo
@@ -119,7 +130,7 @@ class Model(Immutable):
         filename_extension: str = '',
         value_type: str = 'PREDICTION',
         description: str = '',
-        internals: None = None,
+        internals: Optional[ModelInternals] = None,
     ):
         Model._canonicalize_name(name)
         dvs = Model._canonicalize_dependent_variables(dependent_variables)
@@ -618,7 +629,7 @@ class Model(Immutable):
         return self._initial_individual_estimates
 
     @property
-    def internals(self):
+    def internals(self) -> Optional[ModelInternals]:
         """Internal data for tool specific part of model"""
         return self._internals
 
