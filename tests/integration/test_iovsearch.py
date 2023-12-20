@@ -8,7 +8,9 @@ from pharmpy.tools import fit, run_iovsearch
 
 def test_default_mox2(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
-        res = run_iovsearch('VISI', results=start_modelres[1], model=start_modelres[0])
+        res = run_iovsearch(
+            'VISI', rank_type='bic', results=start_modelres[1], model=start_modelres[0]
+        )
         rundir = tmp_path / 'iovsearch_dir1'
         assert model_count(rundir) == 8
 
