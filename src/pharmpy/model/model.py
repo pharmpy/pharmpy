@@ -15,11 +15,11 @@ from __future__ import annotations
 import json
 import warnings
 from pathlib import Path
+from typing import TYPE_CHECKING, Mapping, Optional, Union
 
 import pharmpy
-from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.internals.df import hash_df_runtime
+from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.immutable import Immutable, cache_method, frozenmapping
 from pharmpy.model.external import detect_model
 
@@ -28,6 +28,13 @@ from .estimation import EstimationSteps
 from .parameters import Parameters
 from .random_variables import RandomVariables
 from .statements import CompartmentalSystem, Statements
+
+if TYPE_CHECKING:
+    import pandas as pd
+    import sympy
+else:
+    from pharmpy.deps import pandas as pd
+    from pharmpy.deps import sympy
 
 
 class ModelError(Exception):
@@ -54,22 +61,24 @@ class Model(Immutable):
 
     def __init__(
         self,
-        name='',
-        parameters=Parameters(),
-        random_variables=RandomVariables.create(()),
-        statements=Statements(),
-        dataset=None,
-        datainfo=DataInfo(),
-        dependent_variables=frozenmapping({sympy.Symbol('y'): 1}),
-        observation_transformation=None,
-        estimation_steps=EstimationSteps(),
+        name: str = '',
+        parameters: Parameters = Parameters(),
+        random_variables: RandomVariables = RandomVariables.create(()),
+        statements: Statements = Statements(),
+        dataset: Optional[pd.DataFrame] = None,
+        datainfo: DataInfo = DataInfo(),
+        dependent_variables: frozenmapping[sympy.Symbol, int] = frozenmapping(
+            {sympy.Symbol('y'): 1}
+        ),
+        observation_transformation: Optional[frozenmapping[sympy.Symbol, sympy.Expr]] = None,
+        estimation_steps: EstimationSteps = EstimationSteps(),
         modelfit_results=None,
-        parent_model=None,
-        initial_individual_estimates=None,
-        filename_extension='',
-        value_type='PREDICTION',
-        description='',
-        internals=None,
+        parent_model: Optional[str] = None,
+        initial_individual_estimates: Optional[pd.DataFrame] = None,
+        filename_extension: str = '',
+        value_type: str = 'PREDICTION',
+        description: str = '',
+        internals: None = None,
     ):
         self._name = name
         self._datainfo = datainfo
@@ -95,27 +104,27 @@ class Model(Immutable):
     @classmethod
     def create(
         cls,
-        name,
-        parameters=None,
-        random_variables=None,
-        statements=None,
-        dataset=None,
-        datainfo=DataInfo(),
-        dependent_variables=None,
-        observation_transformation=None,
-        estimation_steps=None,
+        name: str,
+        parameters: Optional[Parameters] = None,
+        random_variables: Optional[RandomVariables] = None,
+        statements: Optional[Statements] = None,
+        dataset: Optional[pd.DataFrame] = None,
+        datainfo: DataInfo = DataInfo(),
+        dependent_variables: Optional[Mapping[Union[str, sympy.Symbol], int]] = None,
+        observation_transformation: Optional[Mapping[Union[str, sympy.Symbol], sympy.Expr]] = None,
+        estimation_steps: Optional[EstimationSteps] = None,
         modelfit_results=None,
-        parent_model=None,
-        initial_individual_estimates=None,
-        filename_extension='',
-        value_type='PREDICTION',
-        description='',
-        internals=None,
+        parent_model: Optional[str] = None,
+        initial_individual_estimates: Optional[pd.DataFrame] = None,
+        filename_extension: str = '',
+        value_type: str = 'PREDICTION',
+        description: str = '',
+        internals: None = None,
     ):
         Model._canonicalize_name(name)
-        dependent_variables = Model._canonicalize_dependent_variables(dependent_variables)
-        observation_transformation = Model._canonicalize_observation_transformation(
-            observation_transformation, dependent_variables
+        dvs = Model._canonicalize_dependent_variables(dependent_variables)
+        obs_transformation = Model._canonicalize_observation_transformation(
+            observation_transformation, dvs
         )
         parameters = Model._canonicalize_parameters(parameters)
         random_variables = Model._canonicalize_random_variables(random_variables)
@@ -133,8 +142,8 @@ class Model(Immutable):
         )
         return cls(
             name=name,
-            dependent_variables=dependent_variables,
-            observation_transformation=observation_transformation,
+            dependent_variables=dvs,
+            observation_transformation=obs_transformation,
             parameters=parameters,
             random_variables=random_variables,
             estimation_steps=estimation_steps,
@@ -143,6 +152,7 @@ class Model(Immutable):
             description=description,
             parent_model=parent_model,
             filename_extension=filename_extension,
+            value_type=value_type,
             internals=internals,
             initial_individual_estimates=initial_individual_estimates,
             dataset=dataset,
@@ -150,7 +160,7 @@ class Model(Immutable):
         )
 
     @staticmethod
-    def _canonicalize_value_type(value):
+    def _canonicalize_value_type(value: str) -> str:
         allowed_strings = ('PREDICTION', 'LIKELIHOOD', '-2LL')
         if isinstance(value, str):
             if value.upper() not in allowed_strings:
@@ -164,7 +174,7 @@ class Model(Immutable):
         return value
 
     @staticmethod
-    def _canonicalize_parameter_estimates(params, rvs):
+    def _canonicalize_parameter_estimates(params, rvs) -> Parameters:
         inits = params.inits
         if not rvs.validate_parameters(inits):
             nearest = rvs.nearest_valid_parameters(inits)
@@ -178,7 +188,7 @@ class Model(Immutable):
         return params
 
     @staticmethod
-    def _canonicalize_random_variables(rvs):
+    def _canonicalize_random_variables(rvs: Optional[RandomVariables]) -> RandomVariables:
         if not isinstance(rvs, RandomVariables):
             raise TypeError("model.random_variables must be of RandomVariables type")
         if rvs is None:
@@ -187,7 +197,12 @@ class Model(Immutable):
             return rvs
 
     @staticmethod
-    def _canonicalize_statements(statements, params, rvs, datainfo):
+    def _canonicalize_statements(
+        statements: Optional[Statements],
+        params: Parameters,
+        rvs: RandomVariables,
+        datainfo: DataInfo,
+    ) -> Statements:
         if statements is None:
             return Statements()
         if not isinstance(statements, Statements):
@@ -227,24 +242,47 @@ class Model(Immutable):
         return statements
 
     @staticmethod
-    def _canonicalize_name(name):
+    def _canonicalize_name(name: str) -> None:
         if not isinstance(name, str):
             raise TypeError("Name of a model has to be of string type")
 
     @staticmethod
-    def _canonicalize_dependent_variables(dvs):
+    def _canonicalize_dependent_variables(
+        dvs: Optional[Mapping[Union[str, sympy.Symbol], int]]
+    ) -> frozenmapping[sympy.Symbol, int]:
         if dvs is None:
             dvs = {sympy.Symbol('y'): 1}
+        for key, value in dvs.items():
+            if isinstance(key, str):
+                key = sympy.Symbol(key)
+            if not isinstance(key, sympy.Symbol):
+                raise TypeError("Dependent variable keys must be of string or sympy.Symbol type")
+            if not isinstance(value, int):
+                raise TypeError("Dependent variable values must be of int type")
         return frozenmapping(dvs)
 
     @staticmethod
-    def _canonicalize_observation_transformation(obs, dvs):
+    def _canonicalize_observation_transformation(
+        obs: Optional[Mapping[Union[str, sympy.Symbol], Union[str, sympy.Expr]]],
+        dvs: frozenmapping[sympy.Symbol, int],
+    ) -> frozenmapping[sympy.Symbol, sympy.Expr]:
         if obs is None:
             obs = {dv: dv for dv in dvs.keys()}
+        for key, value in obs.items():
+            if isinstance(key, str):
+                key = sympy.Symbol(key)
+            if isinstance(value, str):
+                value = parse_expr(value)
+            if not isinstance(key, sympy.Symbol):
+                raise TypeError(
+                    "Observation transformation keys must be of string or sympy.Symbol type"
+                )
+            if not isinstance(value, sympy.Expr):
+                raise TypeError("Observation transformation keys values must be of sympy.Expr type")
         return frozenmapping(obs)
 
     @staticmethod
-    def _canonicalize_parameters(params):
+    def _canonicalize_parameters(params: Optional[Parameters]) -> Parameters:
         if params is None:
             return Parameters()
         else:
@@ -253,7 +291,7 @@ class Model(Immutable):
             return params
 
     @staticmethod
-    def _canonicalize_estimation_steps(steps):
+    def _canonicalize_estimation_steps(steps: Optional[EstimationSteps]) -> EstimationSteps:
         if steps is None:
             return EstimationSteps()
         else:
@@ -692,7 +730,7 @@ def compare_before_after_params(old, new):
     return before, after
 
 
-def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame):
+def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame) -> DataInfo:
     colnames = dataset.columns
     columns = []
     for colname in colnames:
