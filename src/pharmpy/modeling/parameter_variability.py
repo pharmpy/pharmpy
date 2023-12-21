@@ -1084,8 +1084,8 @@ def create_joint_distribution(
         param_new = Parameter(cov_name, covariance_init)
         pset_new += param_new
     model = model.replace(parameters=Parameters.create(pset_new), random_variables=all_rvs)
-
-    return model.update_source()
+    model = remove_unused_parameters_and_rvs(model)
+    return model
 
 
 def split_joint_distribution(model: Model, rvs: Optional[Union[List[str], str]] = None):

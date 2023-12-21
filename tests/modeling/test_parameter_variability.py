@@ -1467,6 +1467,10 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, a
 
     assert rec_omega == omega_ref
 
+    cov_params = {p.symbol for p in model.parameters if p.symbol.name.startswith('IIV')}
+    assert all(p in model.random_variables.free_symbols for p in cov_params)
+    assert not re.search(r'\$THETA\s+0\.\d+\s+;\s+IIV_', model.model_code)
+
 
 @pytest.mark.parametrize(
     'etas, abbr_ref, omega_ref',
