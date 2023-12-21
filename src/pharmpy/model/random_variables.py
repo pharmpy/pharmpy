@@ -6,6 +6,7 @@ from itertools import chain, product
 from typing import (
     TYPE_CHECKING,
     Any,
+    Collection,
     Container,
     Dict,
     Iterable,
@@ -38,7 +39,7 @@ else:
     from pharmpy.deps import symengine, sympy, sympy_stats
 
 
-def _create_rng(seed=None) -> np.random.Generator:
+def _create_rng(seed: Optional[Union[int, np.random.Generator]] = None) -> np.random.Generator:
     """Create a new random number generator"""
     if isinstance(seed, np.random.Generator):
         return seed
@@ -68,7 +69,7 @@ class VariabilityLevel(Immutable):
     def create(cls, name: str, reference: bool = False, group: Optional[str] = None):
         return VariabilityLevel(name, bool(reference), group)
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> VariabilityLevel:
         name = kwargs.get('name', self._name)
         reference = kwargs.get('reference', self._reference)
         group = kwargs.get('group', self._group)
@@ -89,7 +90,7 @@ class VariabilityLevel(Immutable):
         return {'name': self._name, 'reference': self._reference, 'group': self._group}
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
+    def from_dict(cls, d: Dict[str, Any]) -> VariabilityLevel:
         return cls(**d)
 
     @property
@@ -140,7 +141,7 @@ class VariabilityHierarchy(Immutable):
             levels = tuple(levels)
         return VariabilityHierarchy(levels)
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> VariabilityHierarchy:
         """Replace properties and create a new VariabilityHierarchy object"""
         levels = kwargs.get('levels', self._levels)
         new = VariabilityHierarchy.create(levels)
@@ -166,7 +167,7 @@ class VariabilityHierarchy(Immutable):
         return {'levels': levels}
 
     @classmethod
-    def from_dict(cls, d: Mapping[str, Any]):
+    def from_dict(cls, d: Mapping[str, Any]) -> VariabilityHierarchy:
         levels = tuple(VariabilityLevel.from_dict(vl) for vl in d['levels'])
         return cls(levels=levels)
 
@@ -205,7 +206,7 @@ class VariabilityHierarchy(Immutable):
         new = [self._lookup(level) for level in levels]
         return VariabilityHierarchy.create(new)
 
-    def __add__(self, other: VariabilityLevel):
+    def __add__(self, other: VariabilityLevel) -> VariabilityHierarchy:
         if isinstance(other, VariabilityLevel):
             levels = (other,)
         else:
@@ -213,7 +214,7 @@ class VariabilityHierarchy(Immutable):
         new = VariabilityHierarchy.create(self._levels + levels)
         return new
 
-    def __radd__(self, other: VariabilityLevel):
+    def __radd__(self, other: VariabilityLevel) -> VariabilityHierarchy:
         if isinstance(other, VariabilityLevel):
             return VariabilityHierarchy.create((other,) + self._levels)
         else:
@@ -329,7 +330,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         return cls(dists, eta_levels, epsilon_levels)
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> RandomVariables:
         dists = kwargs.get('dists', self._dists)
         eta_levels = kwargs.get('eta_levels', self._eta_levels)
         epsilon_levels = kwargs.get('epsilon_levels', self._epsilon_levels)
@@ -345,7 +346,9 @@ class RandomVariables(CollectionsSequence, Immutable):
         """VariabilityHierarchy for all epsilons"""
         return self._epsilon_levels
 
-    def __add__(self, other: Union[Distribution, RandomVariables, Sequence[Distribution]]):
+    def __add__(
+        self, other: Union[Distribution, RandomVariables, Sequence[Distribution]]
+    ) -> RandomVariables:
         if isinstance(other, Distribution):
             if other.level not in self._eta_levels and other.level not in self._epsilon_levels:
                 raise ValueError(
@@ -369,7 +372,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             else:
                 return RandomVariables(self._dists + dists, self._eta_levels, self._epsilon_levels)
 
-    def __radd__(self, other: Union[Distribution, Sequence[Distribution]]):
+    def __radd__(self, other: Union[Distribution, Sequence[Distribution]]) -> RandomVariables:
         if isinstance(other, Distribution):
             if other.level not in self._eta_levels and other.level not in self._epsilon_levels:
                 raise ValueError(
@@ -417,7 +420,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         }
 
     @classmethod
-    def from_dict(cls, d: Mapping[str, Any]):
+    def from_dict(cls, d: Mapping[str, Any]) -> RandomVariables:
         eta_levels = VariabilityHierarchy.from_dict(d['eta_levels'])
         epsilon_levels = VariabilityHierarchy.from_dict(d['epsilon_levels'])
         dists = []
@@ -550,16 +553,20 @@ class RandomVariables(CollectionsSequence, Immutable):
                         parameters.append(p)
         return [p.name for p in parameters]
 
-    def get_covariance(self, rv1, rv2):
+    def get_covariance(
+        self, rv1: Union[sympy.Symbol, str], rv2: Union[sympy.Symbol, str]
+    ) -> sympy.Expr:
         """Get covariance between two random variables"""
         _, dist1 = self._lookup_rv(rv1)
         _, dist2 = self._lookup_rv(rv2)
         if dist1 is not dist2:
             return sympy.Integer(0)
         else:
-            return dist1.get_covariance(rv1, rv2)
+            name1 = rv1.name if not isinstance(rv1, str) else rv1
+            name2 = rv2.name if not isinstance(rv2, str) else rv2
+            return dist1.get_covariance(name1, name2)
 
-    def subs(self, d):
+    def subs(self, d: Mapping[Union[str, sympy.Expr], sympy.Expr]) -> RandomVariables:
         """Substitute expressions
 
         Parameters
@@ -581,7 +588,9 @@ class RandomVariables(CollectionsSequence, Immutable):
         new_dists = tuple(dist.subs(d) for dist in self._dists)
         return self.replace(dists=new_dists)
 
-    def unjoin(self, inds):
+    def unjoin(
+        self, inds: Union[str, sympy.Symbol, Iterable[Union[str, sympy.Symbol]]]
+    ) -> RandomVariables:
         """Remove all covariances the random variables have with other random variables
 
         Parameters
@@ -606,7 +615,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         --------
         join
         """
-        if not isinstance(inds, list):
+        if isinstance(inds, str) or isinstance(inds, sympy.Symbol):
             inds = [inds]
         inds = [ind.name if not isinstance(ind, str) else ind for ind in inds]
 
@@ -656,7 +665,13 @@ class RandomVariables(CollectionsSequence, Immutable):
         new_rvs = RandomVariables(tuple(newdists), self._eta_levels, self._epsilon_levels)
         return new_rvs
 
-    def join(self, inds, fill=0, name_template=None, param_names=None):
+    def join(
+        self,
+        inds: Collection[Union[str, sympy.Symbol]],
+        fill: Union[int, float, sympy.Expr] = 0,
+        name_template: Optional[str] = None,
+        param_names: Optional[list[str]] = None,
+    ) -> Tuple[RandomVariables, Dict[str, Tuple[str, str]]]:
         """Join random variables together into one joint distribution
 
         Set new covariances (and previous 0 covs) to 'fill'.
@@ -739,14 +754,14 @@ class RandomVariables(CollectionsSequence, Immutable):
         new_rvs = RandomVariables(tuple(newdists), self._eta_levels, self._epsilon_levels)
         return new_rvs, cov_to_params
 
-    def nearest_valid_parameters(self, parameter_values):
+    def nearest_valid_parameters(self, parameter_values: Mapping[str, float]) -> dict[str, float]:
         """Force parameter values into being valid
 
         As small changes as possible
 
         returns a dict with the valid parameter values
         """
-        nearest = parameter_values.copy()
+        nearest = dict(parameter_values)  # copy
         for dist in self._dists:
             if isinstance(dist, JointNormalDistribution):
                 symb_sigma = dist.variance
@@ -761,7 +776,7 @@ class RandomVariables(CollectionsSequence, Immutable):
                             nearest[elt.name] = B[row, col]
         return nearest
 
-    def validate_parameters(self, parameter_values):
+    def validate_parameters(self, parameter_values: Mapping[str, float]) -> bool:
         """Validate a dict or Series of parameter values
 
         Currently checks that all covariance matrices are positive semidefinite
@@ -782,7 +797,13 @@ class RandomVariables(CollectionsSequence, Immutable):
                     raise TypeError("Cannot validate parameters since all are not numeric")
         return True
 
-    def sample(self, expr, parameters=None, samples=1, rng=None):
+    def sample(
+        self,
+        expr,
+        parameters: Optional[Mapping[str, float]] = None,
+        samples: int = 1,
+        rng: Optional[np.random.Generator] = None,
+    ) -> np.ndarray:
         """Sample from the distribution of expr
 
         parameters in the distributions will first be replaced"""
@@ -843,7 +864,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         lines = (dist.latex_string(aligned=True) for dist in self._dists)
         return '\\begin{align*}\n' + r' \\ '.join(lines) + '\\end{align*}'
 
-    def parameters_sdcorr(self, values: Mapping[str, float]):
+    def parameters_sdcorr(self, values: Mapping[str, float]) -> dict[str, float]:
         """Convert parameter values to sd/corr form
 
         All parameter values will be converted to sd/corr assuming
@@ -921,19 +942,22 @@ class RandomVariables(CollectionsSequence, Immutable):
         sympy.Expr
             Expression with replaced RVs
         """
-        rvs_in_expr = {self[rv] for rv in expr.free_symbols.intersection(self.free_symbols)}
+        rvs_in_expr = {
+            self[rv]  # pyright: ignore [reportGeneralTypeIssues]
+            for rv in expr.free_symbols.intersection(self.symbols)
+        }
         subs_dict = {}
         for i, rv in enumerate(rvs_in_expr):
             if isinstance(rv, JointNormalDistribution):
                 # sympy.stats.MultivariateNormal uses variance, sympy.stats.Normal takes std
                 dist = sympy_stats.MultivariateNormal(f'__rv{i}', rv.mean, rv.variance)
                 for j in range(0, len(rv.names)):
-                    subs_dict[rv.names[j]] = dist[j]
+                    subs_dict[rv.names[j]] = dist[j]  # pyright: ignore [reportGeneralTypeIssues]
             else:
                 subs_dict[rv.names[0]] = sympy_stats.Normal(
                     f'__rv{i}', rv.mean, sympy.sqrt(rv.variance)
                 )
-        return expr.subs(subs_dict)
+        return expr.subs(subs_dict)  # pyright: ignore [reportGeneralTypeIssues]
 
 
 def _sample_from_distributions(distributions, expr, parameters, nsamples, rng):
