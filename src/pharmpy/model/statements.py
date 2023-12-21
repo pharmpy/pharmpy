@@ -78,7 +78,7 @@ class Assignment(Statement):
     def create(
         cls,
         symbol: Union[sympy.Symbol, sympy.Function, sympy.Derivative, str],
-        expression: Union[sympy.Basic, int, float, str],
+        expression: Union[sympy.Expr, int, float, str],
     ) -> Assignment:
         if isinstance(symbol, str):
             symbol = sympy.Symbol(symbol)
@@ -86,15 +86,16 @@ class Assignment(Statement):
             raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
         if isinstance(expression, str):
             expression = parse_expr(expression)
-        # Needed for expression.free_symbols to work
-        if isinstance(expression, float):
+        elif isinstance(expression, float):
             expression = sympy.Float(expression)
-        if isinstance(expression, int):
+        elif isinstance(expression, int):
             expression = sympy.Integer(expression)
         if expression.is_Piecewise:
             # To avoid nested piecewises
-            expression = sympy.piecewise_fold(expression)
-        return cls(symbol, expression)
+            expression = sympy.piecewise_fold(
+                expression
+            )  # pyright: ignore [reportGeneralTypeIssues]
+        return cls(symbol, expression)  # pyright: ignore [reportGeneralTypeIssues]
 
     def replace(self, **kwargs):
         symbol = kwargs.get('symbol', self._symbol)
@@ -163,7 +164,7 @@ class Assignment(Statement):
         """
         symbols = {self.symbol}
         symbols |= self.expression.free_symbols
-        return symbols
+        return symbols  # pyright: ignore [reportGeneralTypeIssues]
 
     @property
     def rhs_symbols(self) -> set[sympy.Expr]:
@@ -308,7 +309,7 @@ class CompartmentalSystemBuilder:
         self._g.remove_node(compartment)
 
     def add_flow(
-        self, source: Compartment, destination: Compartment, rate: Union[sympy.Basic, str]
+        self, source: Compartment, destination: CompartmentBase, rate: Union[sympy.Basic, str]
     ) -> None:
         """Add flow between two compartments
 
@@ -822,7 +823,7 @@ class CompartmentalSystem(Statement):
 
         return cls(cb, t=sympy.parse_expr(d['t']))
 
-    def get_flow(self, source: Compartment, destination: Compartment) -> sympy.Expr:
+    def get_flow(self, source: CompartmentBase, destination: CompartmentBase) -> sympy.Expr:
         """Get the rate of flow between two compartments
 
         Parameters
@@ -859,8 +860,8 @@ class CompartmentalSystem(Statement):
         return rate
 
     def get_compartment_outflows(
-        self, compartment: Union[str, Compartment]
-    ) -> list[tuple[Compartment, sympy.Expr]]:
+        self, compartment: Union[str, CompartmentBase]
+    ) -> list[tuple[CompartmentBase, sympy.Expr]]:
         """Get list of all flows going out from a compartment
 
         Parameters
@@ -880,8 +881,7 @@ class CompartmentalSystem(Statement):
         >>> model.statements.ode_system.get_compartment_outflows("CENTRAL")
         [(Output(), CL/V)]
         """
-        if isinstance(compartment, str):
-            compartment = self.find_compartment(compartment)
+        compartment = self.find_compartment_or_raise(compartment)
         flows = []
         for node in self._g.successors(compartment):
             flow = self.get_flow(compartment, node)
@@ -889,8 +889,8 @@ class CompartmentalSystem(Statement):
         return flows
 
     def get_compartment_inflows(
-        self, compartment: Union[Compartment, str]
-    ) -> list[tuple[Compartment, sympy.Basic]]:
+        self, compartment: Union[CompartmentBase, str]
+    ) -> list[tuple[Compartment, sympy.Expr]]:
         """Get list of all flows going in to a compartment
 
         Parameters
@@ -922,7 +922,7 @@ class CompartmentalSystem(Statement):
             flows.append((node, flow))
         return flows
 
-    def get_bidirectionals(self, compartment: Union[Compartment, str]) -> list[Compartment]:
+    def get_bidirectionals(self, compartment: Union[CompartmentBase, str]) -> list[Compartment]:
         """Get list of all compartments with bidirectional flow from/to a compartment
 
         Parameters
@@ -977,8 +977,8 @@ class CompartmentalSystem(Statement):
         else:
             return None
 
-    def find_compartment_or_raise(self, comp: Union[str, Compartment]) -> Compartment:
-        if isinstance(comp, Compartment):
+    def find_compartment_or_raise(self, comp: Union[str, CompartmentBase]) -> Compartment:
+        if isinstance(comp, CompartmentBase):
             return comp
         found_comp = self.find_compartment(comp)
         if found_comp is None:
@@ -1766,11 +1766,11 @@ class Compartment(CompartmentBase):
     def create(
         cls,
         name: str,
-        amount: Optional[Union[sympy.Basic, str]] = None,
+        amount: Optional[Union[sympy.Expr, str]] = None,
         doses: Tuple[Dose, ...] = tuple(),
-        input: Union[sympy.Basic, str] = sympy.Integer(0),
-        lag_time: Union[sympy.Basic, str] = sympy.Integer(0),
-        bioavailability: Union[sympy.Basic, str] = sympy.Integer(1),
+        input: Union[sympy.Expr, str] = sympy.Integer(0),
+        lag_time: Union[sympy.Expr, str] = sympy.Integer(0),
+        bioavailability: Union[sympy.Expr, str] = sympy.Integer(1),
     ):
         if not isinstance(name, str):
             raise TypeError("Name of a Compartment must be of string type")
