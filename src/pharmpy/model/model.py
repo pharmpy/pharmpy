@@ -12,14 +12,16 @@ Definitions
 """
 from __future__ import annotations
 
+import dataclasses
 import json
 import warnings
+from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Union
 
 import pharmpy
-from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.internals.df import hash_df_runtime
+from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.immutable import Immutable, cache_method, frozenmapping
 from pharmpy.model.external import detect_model
 
@@ -28,6 +30,13 @@ from .estimation import EstimationSteps
 from .parameters import Parameters
 from .random_variables import RandomVariables
 from .statements import CompartmentalSystem, Statements
+
+if TYPE_CHECKING:
+    import pandas as pd
+    import sympy
+else:
+    from pharmpy.deps import pandas as pd
+    from pharmpy.deps import sympy
 
 
 class ModelError(Exception):
@@ -49,27 +58,38 @@ class ModelfitResultsError(ModelError):
     pass
 
 
+@dataclass(frozen=True)
+class ModelInternals:
+    def __init__(self):
+        pass
+
+    def replace(self, **kwargs):
+        return dataclasses.replace(self, **kwargs)
+
+
 class Model(Immutable):
     """The Pharmpy model class"""
 
     def __init__(
         self,
-        name='',
-        parameters=Parameters(),
-        random_variables=RandomVariables.create(()),
-        statements=Statements(),
-        dataset=None,
-        datainfo=DataInfo(),
-        dependent_variables=frozenmapping({sympy.Symbol('y'): 1}),
-        observation_transformation=None,
-        estimation_steps=EstimationSteps(),
+        name: str = '',
+        parameters: Parameters = Parameters(),
+        random_variables: RandomVariables = RandomVariables.create(()),
+        statements: Statements = Statements(),
+        dataset: Optional[pd.DataFrame] = None,
+        datainfo: DataInfo = DataInfo(),
+        dependent_variables: frozenmapping[sympy.Symbol, int] = frozenmapping(
+            {sympy.Symbol('y'): 1}
+        ),
+        observation_transformation: Optional[frozenmapping[sympy.Symbol, sympy.Expr]] = None,
+        estimation_steps: EstimationSteps = EstimationSteps(),
         modelfit_results=None,
-        parent_model=None,
-        initial_individual_estimates=None,
-        filename_extension='',
-        value_type='PREDICTION',
-        description='',
-        internals=None,
+        parent_model: Optional[str] = None,
+        initial_individual_estimates: Optional[pd.DataFrame] = None,
+        filename_extension: str = '',
+        value_type: str = 'PREDICTION',
+        description: str = '',
+        internals: Optional[ModelInternals] = None,
     ):
         self._name = name
         self._datainfo = datainfo
@@ -95,27 +115,27 @@ class Model(Immutable):
     @classmethod
     def create(
         cls,
-        name,
-        parameters=None,
-        random_variables=None,
-        statements=None,
-        dataset=None,
-        datainfo=DataInfo(),
-        dependent_variables=None,
-        observation_transformation=None,
-        estimation_steps=None,
+        name: str,
+        parameters: Optional[Parameters] = None,
+        random_variables: Optional[RandomVariables] = None,
+        statements: Optional[Statements] = None,
+        dataset: Optional[pd.DataFrame] = None,
+        datainfo: DataInfo = DataInfo(),
+        dependent_variables: Optional[Mapping[Union[str, sympy.Symbol], int]] = None,
+        observation_transformation: Optional[Mapping[Union[str, sympy.Symbol], sympy.Expr]] = None,
+        estimation_steps: Optional[EstimationSteps] = None,
         modelfit_results=None,
-        parent_model=None,
-        initial_individual_estimates=None,
-        filename_extension='',
-        value_type='PREDICTION',
-        description='',
-        internals=None,
+        parent_model: Optional[str] = None,
+        initial_individual_estimates: Optional[pd.DataFrame] = None,
+        filename_extension: str = '',
+        value_type: str = 'PREDICTION',
+        description: str = '',
+        internals: Optional[ModelInternals] = None,
     ):
         Model._canonicalize_name(name)
-        dependent_variables = Model._canonicalize_dependent_variables(dependent_variables)
-        observation_transformation = Model._canonicalize_observation_transformation(
-            observation_transformation, dependent_variables
+        dvs = Model._canonicalize_dependent_variables(dependent_variables)
+        obs_transformation = Model._canonicalize_observation_transformation(
+            observation_transformation, dvs
         )
         parameters = Model._canonicalize_parameters(parameters)
         random_variables = Model._canonicalize_random_variables(random_variables)
@@ -133,8 +153,8 @@ class Model(Immutable):
         )
         return cls(
             name=name,
-            dependent_variables=dependent_variables,
-            observation_transformation=observation_transformation,
+            dependent_variables=dvs,
+            observation_transformation=obs_transformation,
             parameters=parameters,
             random_variables=random_variables,
             estimation_steps=estimation_steps,
@@ -143,6 +163,7 @@ class Model(Immutable):
             description=description,
             parent_model=parent_model,
             filename_extension=filename_extension,
+            value_type=value_type,
             internals=internals,
             initial_individual_estimates=initial_individual_estimates,
             dataset=dataset,
@@ -150,7 +171,7 @@ class Model(Immutable):
         )
 
     @staticmethod
-    def _canonicalize_value_type(value):
+    def _canonicalize_value_type(value: str) -> str:
         allowed_strings = ('PREDICTION', 'LIKELIHOOD', '-2LL')
         if isinstance(value, str):
             if value.upper() not in allowed_strings:
@@ -164,7 +185,7 @@ class Model(Immutable):
         return value
 
     @staticmethod
-    def _canonicalize_parameter_estimates(params, rvs):
+    def _canonicalize_parameter_estimates(params, rvs) -> Parameters:
         inits = params.inits
         if not rvs.validate_parameters(inits):
             nearest = rvs.nearest_valid_parameters(inits)
@@ -178,7 +199,7 @@ class Model(Immutable):
         return params
 
     @staticmethod
-    def _canonicalize_random_variables(rvs):
+    def _canonicalize_random_variables(rvs: Optional[RandomVariables]) -> RandomVariables:
         if not isinstance(rvs, RandomVariables):
             raise TypeError("model.random_variables must be of RandomVariables type")
         if rvs is None:
@@ -187,7 +208,12 @@ class Model(Immutable):
             return rvs
 
     @staticmethod
-    def _canonicalize_statements(statements, params, rvs, datainfo):
+    def _canonicalize_statements(
+        statements: Optional[Statements],
+        params: Parameters,
+        rvs: RandomVariables,
+        datainfo: DataInfo,
+    ) -> Statements:
         if statements is None:
             return Statements()
         if not isinstance(statements, Statements):
@@ -227,24 +253,47 @@ class Model(Immutable):
         return statements
 
     @staticmethod
-    def _canonicalize_name(name):
+    def _canonicalize_name(name: str) -> None:
         if not isinstance(name, str):
             raise TypeError("Name of a model has to be of string type")
 
     @staticmethod
-    def _canonicalize_dependent_variables(dvs):
+    def _canonicalize_dependent_variables(
+        dvs: Optional[Mapping[Union[str, sympy.Symbol], int]]
+    ) -> frozenmapping[sympy.Symbol, int]:
         if dvs is None:
             dvs = {sympy.Symbol('y'): 1}
+        for key, value in dvs.items():
+            if isinstance(key, str):
+                key = sympy.Symbol(key)
+            if not isinstance(key, sympy.Symbol):
+                raise TypeError("Dependent variable keys must be of string or sympy.Symbol type")
+            if not isinstance(value, int):
+                raise TypeError("Dependent variable values must be of int type")
         return frozenmapping(dvs)
 
     @staticmethod
-    def _canonicalize_observation_transformation(obs, dvs):
+    def _canonicalize_observation_transformation(
+        obs: Optional[Mapping[Union[str, sympy.Symbol], Union[str, sympy.Expr]]],
+        dvs: frozenmapping[sympy.Symbol, int],
+    ) -> frozenmapping[sympy.Symbol, sympy.Expr]:
         if obs is None:
             obs = {dv: dv for dv in dvs.keys()}
+        for key, value in obs.items():
+            if isinstance(key, str):
+                key = sympy.Symbol(key)
+            if isinstance(value, str):
+                value = parse_expr(value)
+            if not isinstance(key, sympy.Symbol):
+                raise TypeError(
+                    "Observation transformation keys must be of string or sympy.Symbol type"
+                )
+            if not isinstance(value, sympy.Expr):
+                raise TypeError("Observation transformation keys values must be of sympy.Expr type")
         return frozenmapping(obs)
 
     @staticmethod
-    def _canonicalize_parameters(params):
+    def _canonicalize_parameters(params: Optional[Parameters]) -> Parameters:
         if params is None:
             return Parameters()
         else:
@@ -253,7 +302,7 @@ class Model(Immutable):
             return params
 
     @staticmethod
-    def _canonicalize_estimation_steps(steps):
+    def _canonicalize_estimation_steps(steps: Optional[EstimationSteps]) -> EstimationSteps:
         if steps is None:
             return EstimationSteps()
         else:
@@ -261,7 +310,7 @@ class Model(Immutable):
                 raise TypeError("model.estimation_steps must be of EstimationSteps type")
             return steps
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> Model:
         name = kwargs.get('name', self.name)
         Model._canonicalize_name(name)
 
@@ -427,6 +476,7 @@ class Model(Immutable):
 
     @cache_method
     def __hash__(self):
+        dataset_hash = hash_df_runtime(self._dataset) if self._dataset is not None else None
         return hash(
             (
                 self._parameters,
@@ -437,12 +487,12 @@ class Model(Immutable):
                 self._estimation_steps,
                 self._initial_individual_estimates,
                 self._datainfo,
-                hash_df_runtime(self._dataset),
+                dataset_hash,
                 self._value_type,
             )
         )
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         if self._initial_individual_estimates is not None:
             ie = self._initial_individual_estimates.to_dict()
         else:
@@ -465,7 +515,7 @@ class Model(Immutable):
         }
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict[str, Any]) -> Model:
         ie_dict = d['initial_individual_estimates']
         if ie_dict is None:
             ie = None
@@ -497,22 +547,22 @@ class Model(Immutable):
         return f'<hr>{stat}<hr>${rvs}$<hr>{self.parameters._repr_html_()}<hr>'
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Name of the model"""
         return self._name
 
     @property
-    def filename_extension(self):
+    def filename_extension(self) -> str:
         """Filename extension of model file"""
         return self._filename_extension
 
     @property
-    def dependent_variables(self):
+    def dependent_variables(self) -> frozenmapping[sympy.Symbol, int]:
         """The dependent variables of the model mapped to the corresponding DVIDs"""
         return self._dependent_variables
 
     @property
-    def value_type(self):
+    def value_type(self) -> str:
         """The type of the model value (dependent variables)
 
         By default this is set to 'PREDICTION' to mean that the model outputs a prediction.
@@ -524,12 +574,12 @@ class Model(Immutable):
         return self._value_type
 
     @property
-    def observation_transformation(self):
+    def observation_transformation(self) -> frozenmapping[sympy.Symbol, sympy.Expr]:
         """Transformation to be applied to the observation data"""
         return self._observation_transformation
 
     @property
-    def parameters(self):
+    def parameters(self) -> Parameters:
         """Definitions of population parameters
 
         See :class:`pharmpy.Parameters`
@@ -537,7 +587,7 @@ class Model(Immutable):
         return self._parameters
 
     @property
-    def random_variables(self):
+    def random_variables(self) -> RandomVariables:
         """Definitions of random variables
 
         See :class:`pharmpy.RandomVariables`
@@ -545,7 +595,7 @@ class Model(Immutable):
         return self._random_variables
 
     @property
-    def statements(self):
+    def statements(self) -> Statements:
         """Definitions of model statements
 
         See :class:`pharmpy.Statements`
@@ -553,7 +603,7 @@ class Model(Immutable):
         return self._statements
 
     @property
-    def estimation_steps(self):
+    def estimation_steps(self) -> EstimationSteps:
         """Definitions of estimation steps
 
         See :class:`pharmpy.EstimationSteps`
@@ -561,7 +611,7 @@ class Model(Immutable):
         return self._estimation_steps
 
     @property
-    def datainfo(self):
+    def datainfo(self) -> DataInfo:
         """Definitions of model statements
 
         See :class:`pharmpy.Statements`
@@ -569,17 +619,17 @@ class Model(Immutable):
         return self._datainfo
 
     @property
-    def dataset(self):
+    def dataset(self) -> Optional[pd.DataFrame]:
         """Dataset connected to model"""
         return self._dataset
 
     @property
-    def initial_individual_estimates(self):
+    def initial_individual_estimates(self) -> Optional[pd.DataFrame]:
         """Initial estimates for individual parameters"""
         return self._initial_individual_estimates
 
     @property
-    def internals(self):
+    def internals(self) -> Optional[ModelInternals]:
         """Internal data for tool specific part of model"""
         return self._internals
 
@@ -589,7 +639,7 @@ class Model(Immutable):
         return self._modelfit_results
 
     @property
-    def model_code(self):
+    def model_code(self) -> str:
         """Model type specific code"""
         d = self.to_dict()
         d['__magic__'] = "Pharmpy Model"
@@ -597,11 +647,11 @@ class Model(Immutable):
         return json.dumps(d)
 
     @property
-    def parent_model(self):
+    def parent_model(self) -> Optional[str]:
         """Name of parent model"""
         return self._parent_model
 
-    def has_same_dataset_as(self, other):
+    def has_same_dataset_as(self, other: Model) -> bool:
         """Check if this model has the same dataset as another model
 
         Parameters
@@ -627,12 +677,12 @@ class Model(Immutable):
         return self.dataset.equals(other.dataset)
 
     @property
-    def description(self):
+    def description(self) -> str:
         """A free text description of the model"""
         return self._description
 
     @staticmethod
-    def parse_model(path):
+    def parse_model(path: Union[Path, str]):
         """Create a model object by parsing a model file of any supported type
 
         Parameters
@@ -654,7 +704,7 @@ class Model(Immutable):
         return model
 
     @staticmethod
-    def parse_model_from_string(code):
+    def parse_model_from_string(code: str) -> Model:
         """Create a model object by parsing a string with model code of any supported type
 
         Parameters
@@ -671,12 +721,12 @@ class Model(Immutable):
         model = model_module.parse_model(code, None)
         return model
 
-    def update_source(self):
+    def update_source(self) -> Model:
         """Update source code of the model. If any paths need to be changed or added (e.g. for a
         NONMEM model with an updated dataset) they will be replaced with DUMMYPATH"""
         return self
 
-    def write_files(self, path=None, force=False):
+    def write_files(self, path: Optional[Union[Path, str]] = None, force: bool = False) -> Model:
         """Write all extra files needed for a specific external format."""
         return self
 
@@ -692,7 +742,7 @@ def compare_before_after_params(old, new):
     return before, after
 
 
-def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame):
+def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame) -> DataInfo:
     colnames = dataset.columns
     columns = []
     for colname in colnames:

@@ -38,7 +38,7 @@ def execute_model(model_entry, db, evaluate=False, path=None):
     model = convert_model(model)
     if path is None:
         path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
-    model.internals.path = path
+    model = model.replace(internals=model.internals.replace(path=path))
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     if model.datainfo.path is not None:

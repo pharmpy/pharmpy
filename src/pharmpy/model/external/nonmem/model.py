@@ -1,7 +1,6 @@
 # The NONMEM Model class
 from __future__ import annotations
 
-import dataclasses
 import re
 import warnings
 from dataclasses import dataclass
@@ -15,7 +14,7 @@ from pharmpy.internals.immutable import frozenmapping
 from pharmpy.model import Assignment, DataInfo, EstimationSteps
 from pharmpy.model import Model as BaseModel
 from pharmpy.model import NormalDistribution, Parameter, Parameters, RandomVariables, Statements
-from pharmpy.model.model import compare_before_after_params, update_datainfo
+from pharmpy.model.model import ModelInternals, compare_before_after_params, update_datainfo
 from pharmpy.modeling.write_csv import write_csv
 
 from .nmtran_parser import NMTranControlStream, NMTranParser
@@ -47,7 +46,7 @@ from .update import (
 
 
 @dataclass(frozen=True)
-class NONMEMModelInternals:
+class NONMEMModelInternals(ModelInternals):
     control_stream: NMTranControlStream
     old_name: str
     old_description: str
@@ -61,9 +60,6 @@ class NONMEMModelInternals:
     old_dependent_variables: dict
     compartment_map: Optional[Dict[str, int]]
     name_map: Dict[str, str]
-
-    def replace(self, **kwargs):
-        return dataclasses.replace(self, **kwargs)
 
 
 def convert_model(model):
