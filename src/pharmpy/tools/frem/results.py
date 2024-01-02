@@ -1092,6 +1092,6 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         rescale=rescale,
         intermediate_models=intmods,
         intermediate_models_res=intmodres,
-        rng=np.random.default_rng(9843),
+        seed=np.random.default_rng(9843),
     )
     return res
