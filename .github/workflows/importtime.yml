@@ -14,7 +14,7 @@ jobs:
       matrix:
         code: ['from pharmpy.modeling import *', 'from pharmpy.tools import *']
         platform: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.10']
         include:
           - code: 'from pharmpy.modeling import *'
             threshold: 250000

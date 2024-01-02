@@ -13,8 +13,7 @@ from tempfile import mkdtemp
 # https://github.com/python/cpython/blob/b494f5935c92951e75597bfe1c8b1f3112fec270/Lib/tempfile.py#L778-L848
 #
 # The whole thing can be replaced by `from tempfile import TemporaryDirectory`
-# once Python fixes their implementation AND once we drop support for Python
-# Python 3.9.
+# once Python fixes their implementation
 class TemporaryDirectory:
     """Create and return a temporary directory.  This has the same
     behavior as mkdtemp but can be used as a context manager.  For
