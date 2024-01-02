@@ -1,10 +1,11 @@
 """
 :meta private:
 """
-from typing import Optional
+from typing import Literal, Optional
 
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.funcs import PHI
+from pharmpy.internals.fn.type import check_list
 from pharmpy.model import Assignment, EstimationSteps, JointNormalDistribution, Model
 
 from .data import remove_loq_data, set_lloq_data
@@ -13,7 +14,11 @@ from .expressions import _simplify_expression_from_parameters, create_symbol
 SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4', 'm5', 'm6', 'm7'])
 
 
-def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None):
+def transform_blq(
+    model: Model,
+    method: Literal['m1', 'm3', 'm4', 'm5', 'm6', 'm7'] = 'm4',
+    lloq: Optional[float] = None,
+):
     """Transform for BLQ data
 
     Transform a given model, methods available are m1, m3, m4, m5, m6 and m7 [1]_.
@@ -120,10 +125,7 @@ def transform_blq(model: Model, method: str = 'm4', lloq: Optional[float] = None
 
     """
     method = method.lower()
-    if method not in SUPPORTED_METHODS:
-        raise ValueError(
-            f'Invalid `method`: got `{method}`,' f' must be one of {sorted(SUPPORTED_METHODS)}.'
-        )
+    check_list("method", method, SUPPORTED_METHODS)
 
     blq_col, lloq_col = _get_blq_and_lloq_columns(model)
     indicator, indicator_type, level, level_type = _which_indicator_and_level(
