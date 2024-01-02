@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
-from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, create_results, update_initial_estimates
@@ -19,6 +19,7 @@ from .pkpd import create_baseline_pd_model, create_pkpd_models
 from .tmdd import create_qss_models, create_remaining_models
 
 TYPES = frozenset(('pkpd', 'drug_metabolite', 'tmdd'))
+DV_TYPES = Literal['drug', 'target', 'complex', 'drug_tot', 'target_tot']
 
 
 def create_workflow(
@@ -33,7 +34,7 @@ def create_workflow(
     extra_model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     extra_model_results: Optional[ModelfitResults] = None,
-    dv_types: Optional[dict[str, int]] = None,
+    dv_types: Optional[dict[DV_TYPES, int]] = None,
 ):
     """Run the structsearch tool. For more details, see :ref:`structsearch`.
 
@@ -335,8 +336,7 @@ def validate_input(
     extra_model,
     extra_model_results,
 ):
-    if type not in TYPES:
-        raise ValueError(f'Invalid `type`: got `{type}`, must be one of {sorted(TYPES)}.')
+    check_list("type", type, TYPES)
 
     if strictness is not None and "rse" in strictness.lower():
         if model.estimation_steps[-1].parameter_uncertainty_method is None:
@@ -348,11 +348,6 @@ def validate_input(
         if not len(dv_types.values()) == len(set(dv_types.values())):
             raise ValueError('Values must be unique.')
         for key, value in dv_types.items():
-            if key not in ['drug', 'target', 'complex', 'drug_tot', 'target_tot']:
-                raise ValueError(
-                    f'Invalid dv_types key "{key}". Allowed keys are:'
-                    f' "drug", "target", "complex", "drug_tot" and "target_tot".'
-                )
             if key not in ['drug', 'drug_tot'] and value == 1:
                 raise ValueError('Only drug can have DVID = 1. Please choose another DVID.')
 

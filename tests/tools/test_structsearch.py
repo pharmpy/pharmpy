@@ -173,11 +173,6 @@ def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
             'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for TMDD models.',
         ),
         (
-            dict(type='tmdd', dv_types={'dru': 1}),
-            ValueError,
-            'Invalid dv_types key "dru". Allowed keys are: "drug", "target", "complex", "drug_tot" and "target_tot".',
-        ),
-        (
             dict(type='tmdd', search_space='ABSORPTION'),
             ValueError,
             'Invalid argument "search_space" for TMDD models.',
@@ -196,6 +191,11 @@ def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
             dict(type='drug_metabolite', met_init=1),
             ValueError,
             'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for drug metabolite models.',
+        ),
+        (
+            dict(type='a'),
+            ValueError,
+            "Invalid `type`: got 'a', must be one of 'drug_metabolite', 'pkpd' or 'tmdd'",
         ),
     ],
 )
