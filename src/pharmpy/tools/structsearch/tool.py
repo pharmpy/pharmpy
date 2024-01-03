@@ -316,10 +316,6 @@ def bundle_results(*args):
     return args
 
 
-def _results(model):
-    return model.modelfit_results
-
-
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
