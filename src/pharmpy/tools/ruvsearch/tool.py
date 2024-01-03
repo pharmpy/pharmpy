@@ -1,5 +1,5 @@
 from functools import partial
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -52,7 +52,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     groups: int = 4,
     p_value: float = 0.001,
-    skip: Optional[List[str]] = None,
+    skip: Optional[List[Literal[tuple(SKIP)]]] = None,
     max_iter: int = 3,
     dv: Optional[int] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
@@ -69,7 +69,7 @@ def create_workflow(
         The number of bins to use for the time varying models
     p_value : float
         The p-value to use for the likelihood ratio test
-    skip : list
+    skip : list of {'IIV_on_RUV', 'power', 'combined', 'time_varying'}
         A list of models to not attempt.
     max_iter :  int
         Number of iterations to run (1, 2, or 3). For models with BLQ only one iteration is supported.
@@ -534,9 +534,6 @@ def validate_input(model, results, groups, p_value, skip, max_iter, dv, strictne
 
     if not 0 < p_value <= 1:
         raise ValueError(f'Invalid `p_value`: got `{p_value}`, must be a float in range (0, 1].')
-
-    if skip is not None and not set(skip).issubset(SKIP):
-        raise ValueError(f'Invalid `skip`: got `{skip}`, must be None/NULL or a subset of {SKIP}.')
 
     if max_iter < 1 or max_iter > 3:
         raise ValueError(f'Invalid `max_iter`: got `{max_iter}`, must be int in range [1, 3].')

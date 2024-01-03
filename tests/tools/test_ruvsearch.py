@@ -153,7 +153,7 @@ def test_create_dataset(load_model_for_test, testdata, tmp_path):
         (
             None,
             dict(skip=['IIV_on_RUV', 'power', 'time']),
-            ValueError,
+            TypeError,
             'Invalid `skip`',
         ),
         (
@@ -178,6 +178,8 @@ def test_validate_input_raises(
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
+
+    validate_input(None, skip=['IIV_on_RUV', 'power'])
 
 
 def test_validate_input_raises_modelfit_results(load_model_for_test, testdata):

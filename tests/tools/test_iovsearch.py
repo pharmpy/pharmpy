@@ -70,10 +70,10 @@ def test_validate_input_with_model_and_list_of_parameters(load_model_for_test, t
     [
         (None, dict(column=1), TypeError, 'Invalid `column`'),
         (None, dict(list_of_parameters='CL'), TypeError, 'Invalid `list_of_parameters`'),
-        (None, dict(rank_type=1), TypeError, 'Invalid `rank_type`'),
+        (None, dict(rank_type=1), ValueError, 'Invalid `rank_type`'),
         (None, dict(rank_type='bi'), ValueError, 'Invalid `rank_type`'),
         (None, dict(cutoff='1'), TypeError, 'Invalid `cutoff`'),
-        (None, dict(distribution=['same-as-iiv']), TypeError, 'Invalid `distribution`'),
+        (None, dict(distribution=['same-as-iiv']), ValueError, 'Invalid `distribution`'),
         (None, dict(distribution='same'), ValueError, 'Invalid `distribution`'),
         (
             ('nonmem', 'pheno.mod'),

@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.internals.fn.signature import with_same_arguments_as
-from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
+from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import update_inits
 from pharmpy.tools import get_model_features, summarize_modelfit_results
@@ -19,9 +19,9 @@ from ..mfl.parse import parse as mfl_parse
 
 def create_workflow(
     search_space: Union[str, ModelFeatures],
-    algorithm: str,
-    iiv_strategy: str = 'absorption_delay',
-    rank_type: str = 'mbic',
+    algorithm: Literal[tuple(algorithms.ALGORITHMS)],
+    iiv_strategy: Literal[tuple(algorithms.IIV_STRATEGIES)] = 'absorption_delay',
+    rank_type: Literal[tuple(RANK_TYPES)] = 'mbic',
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
@@ -33,13 +33,12 @@ def create_workflow(
     ----------
     search_space : str, ModelFeatures
         Search space to test. Either as a string or a ModelFeatures object.
-    algorithm : str
-        Algorithm to use (e.g. exhaustive)
-    iiv_strategy : str
-        If/how IIV should be added to candidate models. Possible strategies are 'no_add',
-        'add_diagonal', 'fullblock', or 'absorption_delay'. Default is 'absorption_delay'
-    rank_type : str
-        Which ranking type should be used (OFV, AIC, BIC, mBIC). Default is BIC
+    algorithm : {'exhaustive', 'exhaustive_stepwise', 'reduced_stepwise'}
+        Algorithm to use.
+    iiv_strategy : {'no_add', 'add_diagonal', 'fullblock', 'absorption_delay'}
+        If/how IIV should be added to candidate models. Default is 'absorption_delay'.
+    rank_type : {'ofv', 'lrt', 'aic', 'bic', 'mbic'}
+        Which ranking type should be used. Default is mBIC.
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
@@ -300,10 +299,6 @@ def validate_input(
     model,
     strictness,
 ):
-    check_list("algorithm", algorithm, algorithms.ALGORITHMS)
-    check_list("rank_type", rank_type, RANK_TYPES)
-    check_list("iiv_strategy", iiv_strategy, algorithms.IIV_STRATEGIES)
-
     try:
         statements = mfl_parse(search_space)
     except:  # noqa E722

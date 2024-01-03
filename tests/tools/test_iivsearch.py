@@ -222,11 +222,11 @@ def test_validate_input_with_model(load_model_for_test, testdata):
 @pytest.mark.parametrize(
     ('model_path', 'arguments', 'exception', 'match'),
     [
-        (None, dict(algorithm=1), TypeError, 'Invalid `algorithm`'),
+        (None, dict(algorithm=1), ValueError, 'Invalid `algorithm`'),
         (None, dict(algorithm='brute_force_no_of_eta'), ValueError, 'Invalid `algorithm`'),
-        (None, dict(rank_type=1), TypeError, 'Invalid `rank_type`'),
+        (None, dict(rank_type=1), ValueError, 'Invalid `rank_type`'),
         (None, dict(rank_type='bi'), ValueError, 'Invalid `rank_type`'),
-        (None, dict(iiv_strategy=['no_add']), TypeError, 'Invalid `iiv_strategy`'),
+        (None, dict(iiv_strategy=['no_add']), ValueError, 'Invalid `iiv_strategy`'),
         (None, dict(iiv_strategy='diagonal'), ValueError, 'Invalid `iiv_strategy`'),
         (None, dict(cutoff='1'), TypeError, 'Invalid `cutoff`'),
         (

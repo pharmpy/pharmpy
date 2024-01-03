@@ -1,6 +1,8 @@
 """
 :meta private:
 """
+from typing import Literal
+
 from pharmpy.deps import sympy
 from pharmpy.model import (
     Assignment,
@@ -16,8 +18,10 @@ from pharmpy.modeling import get_central_volume_and_clearance, set_initial_condi
 from .error import set_proportional_error_model
 from .odes import add_individual_parameter, set_initial_estimates
 
+PD_TYPES = ('linear', 'emax', 'sigmoid', 'step', 'loglin')
 
-def add_effect_compartment(model: Model, expr: str):
+
+def add_effect_compartment(model: Model, expr: Literal[PD_TYPES]):
     r"""Add an effect compartment.
 
     Implemented PD models are:
@@ -50,8 +54,8 @@ def add_effect_compartment(model: Model, expr: str):
     ----------
     model : Model
         Pharmpy model
-    expr : str
-        Name of the PD effect function. Valid names are: linear, emax, sigmoid, step and loglin
+    expr : {'linear', 'emax', 'sigmoid', 'step', 'loglin'}
+        Name of the PD effect function.
 
     Return
     ------
@@ -94,7 +98,7 @@ def add_effect_compartment(model: Model, expr: str):
     return model
 
 
-def set_direct_effect(model: Model, expr: str):
+def set_direct_effect(model: Model, expr: Literal[PD_TYPES]):
     r"""Add an effect to a model.
 
     Implemented PD models are:
@@ -127,8 +131,8 @@ def set_direct_effect(model: Model, expr: str):
     ----------
     model : Model
         Pharmpy model
-    expr : str
-        Name of PD effect function. Valid names are: linear, emax, sigmoid, step and loglin
+    expr : {'linear', 'emax', 'sigmoid', 'step', 'loglin'}
+        Name of PD effect function.
 
     Return
     ------
@@ -203,7 +207,7 @@ def _add_effect(model: Model, expr: str, conc):
 
 def add_indirect_effect(
     model: Model,
-    expr: str,
+    expr: Literal['linear', 'emax', 'sigmoid', 'step'],
     prod: bool = True,
 ):
     r"""Add indirect (turnover) effect
@@ -242,8 +246,8 @@ def add_indirect_effect(
         Pharmpy model
     prod : bool
         Production (True) (default) or degradation (False)
-    expr : str
-        Name of PD effect function. Valid names are: linear, emax, sigmoid and step
+    expr : {'linear', 'emax', 'sigmoid', 'step'}
+        Name of PD effect function.
 
     Return
     ------

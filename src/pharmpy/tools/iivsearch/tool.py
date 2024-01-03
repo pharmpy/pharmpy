@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass, replace
-from typing import List, Optional, Union
+from typing import List, Literal, Optional, Union
 
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
@@ -30,9 +30,9 @@ IIV_ALGORITHMS = frozenset(('brute_force', 'brute_force_no_of_etas', 'brute_forc
 
 
 def create_workflow(
-    algorithm: str,
-    iiv_strategy: str = 'no_add',
-    rank_type: str = 'mbic',
+    algorithm: Literal[tuple(IIV_ALGORITHMS)],
+    iiv_strategy: Literal[tuple(IIV_STRATEGIES)] = 'no_add',
+    rank_type: Literal[tuple(RANK_TYPES)] = 'mbic',
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
@@ -43,13 +43,12 @@ def create_workflow(
 
     Parameters
     ----------
-    algorithm : str
-        Which algorithm to run (brute_force, brute_force_no_of_etas, brute_force_block_structure)
-    iiv_strategy : str
-        If/how IIV should be added to start model. Possible strategies are 'no_add', 'add_diagonal',
-        or 'fullblock'. Default is 'no_add'
-    rank_type : str
-        Which ranking type should be used (OFV, AIC, BIC, mBIC). Default is BIC
+    algorithm : {'brute_force', 'brute_force_no_of_etas', 'brute_force_block_structure'}
+        Which algorithm to run.
+    iiv_strategy : {'no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock'}
+        If/how IIV should be added to start model. Default is 'no_add'.
+    rank_type : {'ofv', 'lrt', 'aic', 'bic', 'mbic'}
+        Which ranking type should be used. Default is mBIC.
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
@@ -326,22 +325,6 @@ def validate_input(
     keep,
     strictness,
 ):
-    if algorithm not in IIV_ALGORITHMS:
-        raise ValueError(
-            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(IIV_ALGORITHMS)}.'
-        )
-
-    if rank_type not in RANK_TYPES:
-        raise ValueError(
-            f'Invalid `rank_type`: got `{rank_type}`, must be one of {sorted(RANK_TYPES)}.'
-        )
-
-    if iiv_strategy not in IIV_STRATEGIES:
-        raise ValueError(
-            f'Invalid `iiv_strategy`: got `{iiv_strategy}`,'
-            f' must be one of {sorted(IIV_STRATEGIES)}.'
-        )
-
     if keep:
         for parameter in keep:
             try:

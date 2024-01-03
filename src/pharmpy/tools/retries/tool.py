@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 if TYPE_CHECKING:
     import numpy as np
@@ -41,7 +41,7 @@ def create_workflow(
     fraction: float = 0.1,
     use_initial_estimates: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
-    scale: Optional[str] = "UCP",
+    scale: Optional[Literal[tuple(SCALES)]] = "UCP",
     prefix_name: Optional[str] = "",  # FIXME : Remove once new database has been implemented
     seed: Optional[Union[np.random.Generator, int]] = None,
 ):
@@ -62,7 +62,7 @@ def create_workflow(
         Use initial parameter estimates instead of final estimates of input model when creating candidate models.
     strictness : Optional[str], optional
         Strictness criteria. The default is "minimization_successful or (rounding_errors and sigdigs >= 0.1)".
-    scale : Optional[str]
+    scale : {'normal', 'UCP'}
         Which scale to update the initial values on. Either normal scale or UCP scale.
     prefix_name: Optional[str]
         Prefix the candidate model names with given string.

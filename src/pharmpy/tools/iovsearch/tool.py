@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
+from typing import Callable, Iterable, List, Literal, Optional, Tuple, TypeVar, Union
 
 import pharmpy.tools.iivsearch.algorithms
 from pharmpy.deps import pandas as pd
@@ -32,9 +32,9 @@ T = TypeVar('T')
 def create_workflow(
     column: str = 'OCC',
     list_of_parameters: Optional[List[str]] = None,
-    rank_type: str = 'mbic',
+    rank_type: Literal[tuple(RANK_TYPES)] = 'mbic',
     cutoff: Optional[Union[float, int]] = None,
-    distribution: str = 'same-as-iiv',
+    distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'same-as-iiv',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
@@ -47,12 +47,12 @@ def create_workflow(
         Name of column in dataset to use as occasion column (default is 'OCC')
     list_of_parameters : None or list
         List of parameters to test IOV on, if none all parameters with IIV will be tested (default)
-    rank_type : str
-        Which ranking type should be used (OFV, AIC, BIC). Default is BIC
+    rank_type : {'ofv', 'lrt', 'aic', 'bic', 'mbic'}
+        Which ranking type should be used. Default is mBIC.
     cutoff : None or float
         Cutoff for which value of the ranking type that is considered significant. Default
         is None (all models will be ranked)
-    distribution : str
+    distribution : {'disjoint', 'joint', 'explicit', 'same-as-iiv'}
         Which distribution added IOVs should have (default is same-as-iiv)
     results : ModelfitResults
         Results for model
@@ -347,17 +347,6 @@ def validate_input(
     distribution,
     strictness,
 ):
-    if rank_type not in RANK_TYPES:
-        raise ValueError(
-            f'Invalid `rank_type`: got `{rank_type}`, must be one of {sorted(RANK_TYPES)}.'
-        )
-
-    if distribution not in ADD_IOV_DISTRIBUTION:
-        raise ValueError(
-            f'Invalid `distribution`: got `{distribution}`,'
-            f' must be one of {sorted(ADD_IOV_DISTRIBUTION)}.'
-        )
-
     if model is not None:
         if column not in model.datainfo.names:
             raise ValueError(

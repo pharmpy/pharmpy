@@ -17,6 +17,7 @@ from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.parameter_variability import get_occasion_levels
+from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.reporting import generate_report
 from pharmpy.tools import retrieve_models, summarize_errors, write_results
 from pharmpy.tools.allometry.tool import validate_allometric_variable
@@ -66,7 +67,7 @@ def run_amd(
     path: Optional[Union[str, Path]] = None,
     resume: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    dv_types: Optional[dict[str, int]] = None,
+    dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
     mechanistic_covariates: Optional[List[str]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "final",
     seed: Optional[Union[np.random.Generator, int]] = None,

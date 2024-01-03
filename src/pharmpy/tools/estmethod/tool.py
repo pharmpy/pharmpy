@@ -1,7 +1,7 @@
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 
 import pharmpy.tools.estmethod.algorithms as algorithms
 from pharmpy.deps import numpy as np
@@ -24,10 +24,12 @@ ALGORITHMS = frozenset(['exhaustive', 'exhaustive_with_update', 'exhaustive_only
 
 
 def create_workflow(
-    algorithm: str,
-    methods: Optional[Union[List[str], str]] = None,
-    solvers: Optional[Union[List[str], str]] = None,
-    parameter_uncertainty_methods: Optional[Union[List[str], str]] = None,
+    algorithm: Literal[tuple(ALGORITHMS)],
+    methods: Optional[Union[List[Literal[METHODS]], Literal['all']]] = None,
+    solvers: Optional[Union[List[Literal[SOLVERS]], Literal[SOLVERS]]] = None,
+    parameter_uncertainty_methods: Optional[
+        Union[List[Literal[PARAMETER_UNCERTAINTY_METHODS]], Literal[PARAMETER_UNCERTAINTY_METHODS]]
+    ] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):
@@ -37,13 +39,13 @@ def create_workflow(
     ----------
     algorithm : str
          The algorithm to use (can be 'exhaustive', 'exhaustive_with_update' or 'exhaustive_only_eval')
-    methods : list or None
+    methods : list of {'FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES'}, None or 'all'
          List of estimation methods to test.
          Can be specified as 'all', a list of estimation methods, or None (to not test any estimation method)
-    solvers : list, str or None
+    solvers : str or list of {'CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'} or None
          List of solver to test. Can be specified as 'all', a list of solvers, or None (to
          not test any solver)
-    parameter_uncertainty_methods : list, str or None
+    parameter_uncertainty_methods : str or list of {'SANDWICH', 'CPG', 'OFIM'} or None
          List of parameter uncertainty methods to test.
          Can be specified as 'all', a list of uncertainty methods, or None (to not evaluate any uncertainty)
     results : ModelfitResults
@@ -62,7 +64,7 @@ def create_workflow(
     >>> from pharmpy.tools import run_estmethod, load_example_modelfit_results
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
-    >>> methods = ['imp', 'saem']
+    >>> methods = ['IMP', 'SAEM']
     >>> parameter_uncertainty_methods = None
     >>> run_estmethod( # doctest: +SKIP
     >>>     'reduced', methods=methods, solvers='all', # doctest: +SKIP
@@ -190,11 +192,6 @@ def validate_input(algorithm, methods, solvers, parameter_uncertainty_methods, m
     if solvers is not None and has_linear_odes(model):
         raise ValueError(
             'Invalid input `model`: testing non-linear solvers on linear system is not supported'
-        )
-
-    if algorithm not in ALGORITHMS:
-        raise ValueError(
-            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'
         )
 
     if methods is None and solvers is None and parameter_uncertainty_methods is None:

@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass, replace
 from itertools import count
-from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Iterable, List, Literal, Optional, Sequence, Tuple, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -95,7 +95,7 @@ class SearchState:
     all_candidates_so_far: List[Candidate]
 
 
-ALGORITHMS = frozenset(['scm-forward', 'scm-forward-then-backward'])
+ALGORITHMS = ('scm-forward', 'scm-forward-then-backward')
 
 
 def create_workflow(
@@ -103,7 +103,7 @@ def create_workflow(
     p_forward: float = 0.01,
     p_backward: float = 0.001,
     max_steps: int = -1,
-    algorithm: str = 'scm-forward-then-backward',
+    algorithm: Literal[ALGORITHMS] = 'scm-forward-then-backward',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
@@ -121,7 +121,7 @@ def create_workflow(
         The p-value to use in the likelihood ratio test for backward steps
     max_steps : int
         The maximum number of search steps to make
-    algorithm : str
+    algorithm : {'scm-forward', 'scm-forward-then-backward'}
         The search algorithm to use. Currently, 'scm-forward' and
         'scm-forward-then-backward' are supported.
     results : ModelfitResults
@@ -755,11 +755,6 @@ def _make_df_steps_row(
 def validate_input(
     effects, p_forward, p_backward, algorithm, model, strictness, naming_index_offset
 ):
-    if algorithm not in ALGORITHMS:
-        raise ValueError(
-            f'Invalid `algorithm`: got `{algorithm}`, must be one of {sorted(ALGORITHMS)}.'
-        )
-
     if not 0 < p_forward <= 1:
         raise ValueError(
             f'Invalid `p_forward`: got `{p_forward}`, must be a float in range (0, 1].'

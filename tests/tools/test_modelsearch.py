@@ -311,7 +311,7 @@ def test_validate_input_with_model(load_model_for_test, testdata):
         (
             None,
             dict(algorithm=1),
-            TypeError,
+            ValueError,
             'Invalid `algorithm`',
         ),
         (
@@ -323,7 +323,7 @@ def test_validate_input_with_model(load_model_for_test, testdata):
         (
             None,
             dict(iiv_strategy=1),
-            TypeError,
+            ValueError,
             'Invalid `iiv_strategy`',
         ),
         (
@@ -335,7 +335,7 @@ def test_validate_input_with_model(load_model_for_test, testdata):
         (
             None,
             dict(rank_type=1),
-            TypeError,
+            ValueError,
             'Invalid `rank_type`',
         ),
         (
