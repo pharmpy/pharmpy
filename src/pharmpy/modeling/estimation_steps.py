@@ -16,7 +16,7 @@ def set_estimation_step(model: Model, method: ESTIMATION_METHODS, idx: int = 0, 
     ----------
     model : Model
         Pharmpy model
-    method : str
+    method : {'FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'}
         estimation method to change to
     idx : int
         index of estimation step, default is 0 (first estimation step)
@@ -74,7 +74,7 @@ def add_estimation_step(
     ----------
     model : Model
         Pharmpy model
-    method : str
+    method : {'FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'}
         estimation method to change to
     idx : int
         index of estimation step (starting from 0), default is None (adds step at the end)
