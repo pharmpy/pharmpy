@@ -3,10 +3,10 @@ from typing import Any, Dict, Literal, Optional
 from pharmpy.model import EstimationStep, EstimationSteps, Model, SimulationStep
 from pharmpy.modeling.help_functions import _as_integer
 
-ESTIMATION_METHODS = Literal['FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES']
+ESTIMATION_METHODS = ('FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES')
 
 
-def set_estimation_step(model: Model, method: ESTIMATION_METHODS, idx: int = 0, **kwargs):
+def set_estimation_step(model: Model, method: Literal[ESTIMATION_METHODS], idx: int = 0, **kwargs):
     """Set estimation step
 
     Sets estimation step for a model. Methods currently supported are:
@@ -63,7 +63,7 @@ def set_estimation_step(model: Model, method: ESTIMATION_METHODS, idx: int = 0, 
 
 
 def add_estimation_step(
-    model: Model, method: ESTIMATION_METHODS, idx: Optional[int] = None, **kwargs
+    model: Model, method: Literal[ESTIMATION_METHODS], idx: Optional[int] = None, **kwargs
 ):
     """Add estimation step
 
