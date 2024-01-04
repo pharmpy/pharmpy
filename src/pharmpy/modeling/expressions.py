@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
     Sequence,
     Set,
@@ -742,7 +743,9 @@ def greekify_model(model: Model, named_subscripts: bool = False):
 
 
 def get_individual_parameters(
-    model: Model, level: str = 'all', dv: Union[sympy.Symbol, str, int, None] = None
+    model: Model,
+    level: Literal['iiv', 'iov', 'random', 'all'] = 'all',
+    dv: Union[sympy.Symbol, str, int, None] = None,
 ) -> List[str]:
     """Retrieves all individual parameters in a :class:`pharmpy.model`.
 
@@ -755,7 +758,7 @@ def get_individual_parameters(
     ----------
     model : Model
         Pharmpy model to retrieve the individuals parameters from
-    level : str
+    level : {'iiv', 'iov', 'random', 'all'}
         The variability level to look for: 'iiv', 'iov', 'random' or 'all' (default)
     dv : Union[sympy.Symbol, str, int, None]
         Name or DVID of dependent variable. None for all (default)
@@ -1089,7 +1092,9 @@ def _depends_on_any_of(
     return not reachable_from({symbol}, lambda x: dependency_graph.get(x, [])).isdisjoint(symbols)
 
 
-def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
+def has_random_effect(
+    model: Model, parameter: str, level: Literal['iiv', 'iov', 'all'] = 'all'
+) -> bool:
     """Decides whether the given parameter of a :class:`pharmpy.model` has a
     random effect.
 
@@ -1099,7 +1104,7 @@ def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
         Input Pharmpy model
     parameter: str
         Input parameter
-    level : str
+    level : {'iiv', 'iov', 'all'}
         The variability level to look for: 'iiv', 'iov', or 'all' (default)
 
     Return
@@ -1169,7 +1174,9 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     return sorted(map(str, _filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)})))
 
 
-def get_parameter_rv(model: Model, parameter: str, var_type: str = 'iiv') -> List[str]:
+def get_parameter_rv(
+    model: Model, parameter: str, var_type: Literal['iiv', 'iov'] = 'iiv'
+) -> List[str]:
     """Retrieves name of random variable in :class:`pharmpy.model.Model` given a parameter.
 
     Parameters
@@ -1178,7 +1185,7 @@ def get_parameter_rv(model: Model, parameter: str, var_type: str = 'iiv') -> Lis
         Pharmpy model to retrieve parameters from
     parameter : str
         Name of parameter to retrieve random variable from
-    var_type: str
+    var_type: {'iiv', 'iov'}
         Variability type: iiv (default) or iov
 
     Return
@@ -1468,14 +1475,16 @@ def _remove_covariate_effect_from_statements_recursive(
     )
 
 
-def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
+def get_pk_parameters(
+    model: Model, kind: Literal['absorption', 'distribution', 'elimination', 'all'] = 'all'
+) -> List[str]:
     """Retrieves PK parameters in :class:`pharmpy.model.Model`.
 
     Parameters
     ----------
     model : Model
         Pharmpy model to retrieve the PK parameters from
-    kind : str
+    kind : {'absorption', 'distribution', 'elimination', 'all'}
         The type of parameter to retrieve: 'absorption', 'distribution',
         'elimination', or 'all' (default).
 

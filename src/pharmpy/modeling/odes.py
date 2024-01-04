@@ -1,7 +1,7 @@
 """
 :meta private:
 """
-from typing import Mapping, Set, Union
+from typing import Literal, Mapping, Set, Union
 
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
@@ -2101,7 +2101,9 @@ def remove_peripheral_compartment(model: Model, name: str = None):
     return model
 
 
-def set_ode_solver(model: Model, solver: str):
+def set_ode_solver(
+    model: Model, solver: Literal['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI']
+):
     """Sets ODE solver to use for model
 
     Recognized solvers and their corresponding NONMEM advans:
@@ -2126,7 +2128,7 @@ def set_ode_solver(model: Model, solver: str):
     ----------
     model : Model
         Pharmpy model
-    solver : str
+    solver : {'CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'}
         Solver to use or None for no preference
 
     Return
