@@ -137,6 +137,23 @@ All zero individuals
 
 Individuals with no observations will have zeroes in all columns except the SUBJECT_ID and the ID columns
 
+PHI/PHC
+~~~~~~~
+
+For EM-algorithms the phi file will have PHI insead of ETA and PHC instead of ETC. PHI and PHC can be used to calculate ETA and ETC.
+
+:math:`\phi_1 = \mu_1 + \eta_1`
+
+PHI(1) = MU_1 + ETA(1)
+
+In case of no mu-referencing MU_i is implicitly 0.
+
+PHC and ETC are equivalent if MU_i is non-random.
+
+PHC(i,i) = :math:`\operatorname{Var}(\phi_i) = \operatorname{Var}(\mu_i + \eta_i) = \operatorname{Var}(\eta_i)` = ETC(i,i)
+
+PHC(i,j) = :math:`\operatorname{Cov}(\phi_i, \phi_j) = \operatorname{Cov}(\mu_i + \eta_i, \mu_j + \eta_j) = \operatorname{Cov}(\eta_i, \eta_j)` = ETC(i,j)
+
 
 control stream
 --------------
