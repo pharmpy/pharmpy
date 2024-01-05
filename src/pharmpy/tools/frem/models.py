@@ -1,7 +1,7 @@
 import itertools
 
 from pharmpy.deps import numpy as np
-from pharmpy.internals.math import corr2cov, nearest_postive_semidefinite
+from pharmpy.internals.math import corr2cov, nearest_positive_semidefinite
 from pharmpy.modeling import fix_or_unfix_parameters, set_initial_estimates
 
 
@@ -24,7 +24,7 @@ def calculate_parcov_inits(model, ie, ncovs):
 
     cov = corr2cov(eta_corr.to_numpy(), sd)
     cov[cov == 0] = 0.0001
-    cov = nearest_postive_semidefinite(cov)
+    cov = nearest_positive_semidefinite(cov)
 
     parcov_inits = cov[npars:, :npars]
     parcov_symb = sigma[npars:, :npars]

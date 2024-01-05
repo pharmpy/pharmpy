@@ -15,7 +15,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
-from pharmpy.internals.math import corr2cov, nearest_postive_semidefinite
+from pharmpy.internals.math import corr2cov, nearest_positive_semidefinite
 from pharmpy.model import (
     Assignment,
     JointNormalDistribution,
@@ -1170,7 +1170,7 @@ def _choose_cov_param_init(model, individual_estimates, rvs, parent1, parent2):
             return init_default
         cov = corr2cov(eta_corr.to_numpy(), sd)
         cov[cov == 0] = 0.0001
-        cov = nearest_postive_semidefinite(cov)
+        cov = nearest_positive_semidefinite(cov)
         init_cov = cov[1][0]
         return round(init_cov, 7)
     else:

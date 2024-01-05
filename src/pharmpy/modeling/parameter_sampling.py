@@ -2,7 +2,7 @@ import warnings
 from functools import partial
 from typing import TYPE_CHECKING, List, Literal, Optional, Union
 
-from pharmpy.internals.math import is_posdef, nearest_postive_semidefinite
+from pharmpy.internals.math import is_posdef, nearest_positive_semidefinite
 from pharmpy.model import Model
 
 if TYPE_CHECKING:
@@ -260,7 +260,7 @@ def sample_parameters_from_covariance_matrix(
     if not is_posdef(sigma):
         if force_posdef_covmatrix:
             old_sigma = sigma
-            sigma = nearest_postive_semidefinite(sigma)
+            sigma = nearest_positive_semidefinite(sigma)
             delta_frobenius = np.linalg.norm(old_sigma) - np.linalg.norm(sigma)
             delta_max = np.abs(old_sigma).max() - np.abs(sigma).max()
             warnings.warn(
@@ -351,7 +351,7 @@ def sample_individual_estimates(
     samples = pd.DataFrame()
     for (idx, mu), sigma in zip(ests.iterrows(), covs):
         sigma = sigma.loc[parameters, parameters]
-        sigma = nearest_postive_semidefinite(sigma)
+        sigma = nearest_positive_semidefinite(sigma)
         id_samples = rng.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
         id_df['ID'] = idx

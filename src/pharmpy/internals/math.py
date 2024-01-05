@@ -110,7 +110,7 @@ def is_posdef(A):
         return False
 
 
-def nearest_postive_semidefinite(A):
+def nearest_positive_semidefinite(A):
     """Return the nearest positive semidefinite matrix in the Frobenius norm to a matrix
 
     A Python/Numpy port of John D'Errico's `nearestSPD` MATLAB code [1], which

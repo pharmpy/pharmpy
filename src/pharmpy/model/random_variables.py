@@ -24,7 +24,7 @@ from pharmpy.internals.expr.eval import eval_expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
 from pharmpy.internals.immutable import Immutable
-from pharmpy.internals.math import cov2corr, is_positive_semidefinite, nearest_postive_semidefinite
+from pharmpy.internals.math import cov2corr, is_positive_semidefinite, nearest_positive_semidefinite
 
 from .distributions.numeric import NumericDistribution
 from .distributions.symbolic import Distribution, JointNormalDistribution, NormalDistribution
@@ -767,7 +767,7 @@ class RandomVariables(CollectionsSequence, Immutable):
                 symb_sigma = dist.variance
                 sigma = symb_sigma.subs(dict(parameter_values))
                 A = np.array(sigma).astype(np.float64)
-                B = nearest_postive_semidefinite(A)
+                B = nearest_positive_semidefinite(A)
                 if B is not A:
                     for row in range(len(A)):
                         for col in range(row + 1):

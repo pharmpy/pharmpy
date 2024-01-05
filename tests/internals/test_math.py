@@ -19,7 +19,7 @@ from pharmpy.internals.math import (
     flattened_to_symmetric,
     is_posdef,
     is_positive_semidefinite,
-    nearest_postive_semidefinite,
+    nearest_positive_semidefinite,
     round_and_keep_sum,
     round_to_n_sigdig,
     se_delta_method,
@@ -121,7 +121,7 @@ def test_nearest_posdef():
     for _ in range(5):
         for j in range(2, 20):
             A = np.random.randn(j, j)
-            B = nearest_postive_semidefinite(A)
+            B = nearest_positive_semidefinite(A)
             assert is_positive_semidefinite(B)
 
 
