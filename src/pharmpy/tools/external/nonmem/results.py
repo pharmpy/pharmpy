@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
 import pharmpy.modeling as modeling
+from pharmpy.internals.math import nearest_positive_semidefinite
 from pharmpy.model import EstimationSteps, Model, Parameters, RandomVariables
 from pharmpy.model.external.nonmem.nmtran_parser import NMTranControlStream
 from pharmpy.model.external.nonmem.parsing import parse_table_columns
@@ -130,6 +131,8 @@ def _parse_modelfit_results(
         cov, cor, coi = None, None, None
 
     cov, cor, coi, ses = calculate_cov_cor_coi_ses(cov, cor, coi, ses)
+    if cov is not None:
+        cov = nearest_positive_semidefinite(cov)
 
     evaluation = _parse_evaluation(estimation_steps)
 
