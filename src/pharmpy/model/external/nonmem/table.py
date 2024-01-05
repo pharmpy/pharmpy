@@ -240,13 +240,15 @@ class PhiTable(NONMEMTable):
         return etcs
 
     def etc_data(self):
+        # Note that PHC == ETC
         df = self._df
         df = df.loc[df.iloc[:, 2:].any(axis=1)]
-        eta_col_names = [col for col in df if col.startswith('ETA')]
-        etc_col_names = [col for col in df if col.startswith('ETC')]
+        eta_col_names = [col for col in df if col.startswith('ETA') or col.startswith('PHI')]
+        etc_col_names = [col for col in df if col.startswith('ETC') or col.startswith('PHC')]
         vals = df[etc_col_names].values
         matrix_array = [flattened_to_symmetric(x) for x in vals]
-        return df['ID'], eta_col_names, matrix_array
+        colnames = [f'ETA{name[3:]}' for name in eta_col_names]
+        return df['ID'], colnames, matrix_array
 
 
 class ExtTable(NONMEMTable):

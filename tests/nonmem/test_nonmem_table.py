@@ -50,6 +50,20 @@ def test_phi_table(pheno_phi):
     assert phi_table.goal_function is None
 
 
+def test_phi_table_phi(testdata):
+    phi_table_file = NONMEMTableFile(testdata / "nonmem" / "models" / "pheno_mu_2probs.phi")
+    phi_table = phi_table_file.table_no(2)
+    assert isinstance(phi_table, PhiTable)
+    assert phi_table.problem == 2
+    etcs = phi_table.etcs
+    id3 = etcs.loc[3]
+    assert id3.iloc[0, 0] == 0.078347
+    assert id3.iloc[1, 0] == id3.iloc[0, 1] == -0.0154369
+    assert id3.iloc[1, 1] == 0.0115108
+    assert list(id3.columns) == ['ETA(1)', 'ETA(2)']
+    assert list(id3.index) == ['ETA(1)', 'ETA(2)']
+
+
 def test_cov_table(pheno_cov):
     cov_table_file = NONMEMTableFile(pheno_cov)
     cov_table = cov_table_file.table
