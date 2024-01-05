@@ -398,18 +398,15 @@ def _parse_phi(
     try:
         individual_ofv = table.iofv
         prefix, individual_estimates = _parse_individual_estimates(model, pe, table, rv_names)
-        if prefix != "PHI":
-            ids, eta_col_names, matrix_array = table.etc_data()
-            index = {name_map[x]: i for i, x in enumerate(eta_col_names)}
-            indices = tuple(map(index.__getitem__, rv_names))
-            selector = np.ix_(indices, indices)
-            etc_frames = [
-                pd.DataFrame(matrix[selector], columns=rv_names, index=rv_names)
-                for matrix in matrix_array
-            ]
-            covs = pd.Series(etc_frames, index=ids, dtype='object')
-        else:
-            covs = None
+        ids, eta_col_names, matrix_array = table.etc_data()
+        index = {name_map[x]: i for i, x in enumerate(eta_col_names)}
+        indices = tuple(map(index.__getitem__, rv_names))
+        selector = np.ix_(indices, indices)
+        etc_frames = [
+            pd.DataFrame(matrix[selector], columns=rv_names, index=rv_names)
+            for matrix in matrix_array
+        ]
+        covs = pd.Series(etc_frames, index=ids, dtype='object')
         return individual_ofv, individual_estimates, covs
     except KeyError:
         return None, None, None
