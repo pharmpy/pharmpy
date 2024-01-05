@@ -112,7 +112,9 @@ def _sample_from_function(
             selected = df[df.apply(model.random_variables.validate_parameters, axis=1)]
         else:
             rvs = model.random_variables
-            selected = df.transform(lambda row: rvs.nearest_valid_parameters(row), axis=1)
+            selected = df.transform(
+                lambda row: pd.Series(rvs.nearest_valid_parameters(row)), axis=1
+            )
         kept_samples = pd.concat((kept_samples, selected))
         remaining = n - len(kept_samples)
         i += 1
