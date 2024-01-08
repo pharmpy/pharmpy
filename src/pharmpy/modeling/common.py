@@ -6,7 +6,7 @@ import importlib
 import re
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Literal, Optional, Union
 
 import pharmpy.config as config
 from pharmpy.deps import pandas
@@ -145,7 +145,7 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
     return model
 
 
-def convert_model(model: Model, to_format: str):
+def convert_model(model: Model, to_format: Literal['generic', 'nlmixr', 'nonmem', 'rxode']):
     """Convert model to other format
 
     Note that the operation is not done inplace.
@@ -154,7 +154,7 @@ def convert_model(model: Model, to_format: str):
     ----------
     model : Model
         Model to convert
-    to_format : str
+    to_format : {'generic', 'nlmixr', 'nonmem', 'rxode'}
         Name of format to convert into. Currently supported 'generic', 'nlmixr', 'nonmem', and 'rxode'
 
     Returns

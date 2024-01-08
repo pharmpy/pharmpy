@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from itertools import chain
-from typing import TYPE_CHECKING, Iterable, Optional, Union
+from typing import TYPE_CHECKING, Iterable, Literal, Optional, Union
 
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
@@ -581,7 +581,7 @@ def _random_etas(model):
 def calculate_bic(
     model: Model,
     likelihood: float,
-    type: str = 'mixed',
+    type: Literal['mixed', 'fixed', 'random', 'iiv'] = 'mixed',
     multiple_testing: bool = False,
     mult_test_p: int = 1,
     mult_test_e: int = 1,
@@ -610,7 +610,7 @@ def calculate_bic(
         Pharmpy model object
     likelihood : float
         -2LL to use
-    type : str
+    type : {'mixed', 'fixed', 'random', 'iiv'}
         Type of BIC to calculate. Default is the mixed effects.
     multiple_testing : bool
         Whether to use penalty for multiple testing (default is False)

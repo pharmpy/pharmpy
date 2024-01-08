@@ -1,10 +1,12 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
 from pharmpy.model import EstimationStep, EstimationSteps, Model, SimulationStep
 from pharmpy.modeling.help_functions import _as_integer
 
+ESTIMATION_METHODS = ('FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES')
 
-def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
+
+def set_estimation_step(model: Model, method: Literal[ESTIMATION_METHODS], idx: int = 0, **kwargs):
     """Set estimation step
 
     Sets estimation step for a model. Methods currently supported are:
@@ -14,7 +16,7 @@ def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
     ----------
     model : Model
         Pharmpy model
-    method : str
+    method : {'FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'}
         estimation method to change to
     idx : int
         index of estimation step, default is 0 (first estimation step)
@@ -60,7 +62,9 @@ def set_estimation_step(model: Model, method: str, idx: int = 0, **kwargs):
     return model.update_source()
 
 
-def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **kwargs):
+def add_estimation_step(
+    model: Model, method: Literal[ESTIMATION_METHODS], idx: Optional[int] = None, **kwargs
+):
     """Add estimation step
 
     Adds estimation step for a model in a given index. Methods currently supported are:
@@ -70,7 +74,7 @@ def add_estimation_step(model: Model, method: str, idx: Optional[int] = None, **
     ----------
     model : Model
         Pharmpy model
-    method : str
+    method : {'FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'}
         estimation method to change to
     idx : int
         index of estimation step (starting from 0), default is None (adds step at the end)
@@ -264,7 +268,9 @@ def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], i
     return model.update_source()
 
 
-def add_parameter_uncertainty_step(model: Model, parameter_uncertainty_method: str):
+def add_parameter_uncertainty_step(
+    model: Model, parameter_uncertainty_method: Literal['SANDWICH', 'CPG', 'OFIM', 'EFIM']
+):
     """Adds parameter uncertainty step to the final estimation step
 
     Parameters
