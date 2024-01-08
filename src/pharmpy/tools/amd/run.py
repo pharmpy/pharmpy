@@ -246,6 +246,8 @@ def run_amd(
                 Transits((0, 1, 3, 10), Wildcard()),
                 Peripherals((0, 1, 2)),
             )
+        elif modeltype == 'tmdd':
+            modelsearch_features = (Elimination((Name('MM'), Name('MIX-FO-MM'))),)
         else:
             modelsearch_features = (
                 Elimination((Name('FO'),)),
