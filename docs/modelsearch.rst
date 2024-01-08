@@ -46,6 +46,9 @@ Arguments
 ~~~~~~~~~
 For a more detailed description of each argument, see their respective chapter on this page.
 
+Mandatory
+---------
+
 +-------------------------------------------------+------------------------------------------------------------------+
 | Argument                                        | Description                                                      |
 +=================================================+==================================================================+
@@ -54,6 +57,17 @@ For a more detailed description of each argument, see their respective chapter o
 | ``algorithm``                                   | :ref:`Algorithm<algorithms_modelsearch>`                         |
 |                                                 | to use (e.g. ``'reduced_stepwise'``)                             |
 +-------------------------------------------------+------------------------------------------------------------------+
+| ``model``                                       | Start model                                                      |
++-------------------------------------------------+------------------------------------------------------------------+
+| ``results``                                     | ModelfitResults of the start model                               |
++-------------------------------------------------+------------------------------------------------------------------+
+
+Optional
+--------
+
++-------------------------------------------------+------------------------------------------------------------------+
+| Argument                                        | Description                                                      |
++=================================================+==================================================================+
 | ``rank_type``                                   | Which :ref:`selection criteria<ranking_modelsearch>` to rank     |
 |                                                 | models on, e.g. OFV (default is BIC)                             |
 +-------------------------------------------------+------------------------------------------------------------------+
@@ -63,10 +77,6 @@ For a more detailed description of each argument, see their respective chapter o
 | ``iiv_strategy``                                | If/how IIV should be added to candidate models (default is to    |
 |                                                 | add to absorption delay parameters).                             |
 |                                                 | See :ref:`iiv_strategies_modelsearch`                            |
-+-------------------------------------------------+------------------------------------------------------------------+
-| ``model``                                       | Start model                                                      |
-+-------------------------------------------------+------------------------------------------------------------------+
-| ``results``                                     | ModelfitResults of the start model                               |
 +-------------------------------------------------+------------------------------------------------------------------+
 | ``strictness``                                  | :ref:`Strictness<strictness>` criteria for model selection.      |
 |                                                 | Default is "minimization_successful or                           |

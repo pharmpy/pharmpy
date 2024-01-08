@@ -43,6 +43,7 @@ This will take an input model ``model`` with a ``search_space`` that includes al
 Arguments
 ~~~~~~~~~
 The arguments of the structsearch tool are listed below.
+Which arguments are mandatory or optional depends on the type of model. More information can be found on the respective page.
 
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | Argument                                        | Description                                                                             |
