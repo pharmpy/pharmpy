@@ -88,7 +88,7 @@ Arguments
 | ``mechanistic_covariates``                        | List of covariates to run in a separate prioritezed covsearch run.                                              |
 |                                                   | The effects are extracted from the given search space                                                           |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``retries_strategy``                              | Decide how to use the retries tool. Valid options are 'skip', 'all_final' or 'final'. Default is 'final'        |
+| ``retries_strategy``                              | Decide how to use the retries tool. Valid options are 'skip', 'all_final' or 'final'. Default is 'all_final'        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``seed``                                          | A random number generator or seed to use for steps with random sampling.                                        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
