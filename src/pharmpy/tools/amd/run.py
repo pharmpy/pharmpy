@@ -8,6 +8,7 @@ from pharmpy.deps import sympy
 from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import (
+    add_parameter_uncertainty_step,
     has_mixed_mm_fo_elimination,
     plot_abs_cwres_vs_ipred,
     plot_cwres_vs_idv,
@@ -78,6 +79,7 @@ def run_amd(
     mechanistic_covariates: Optional[List[str]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     seed: Optional[Union[np.random.Generator, int]] = None,
+    parameter_uncertainty_method: Optional[Union[Literal['SANDWICH', 'CPG', 'OFIM'], None]] = None,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -135,6 +137,8 @@ def run_amd(
         Default is 'final'.
     seed : int or rng
         Random number generator or seed to be used.
+    parameter_uncertainty_method: {'SANDWICH', 'CPG', 'OFIM'} or None
+        Parameter uncertainty method.
 
     Returns
     -------
@@ -226,6 +230,9 @@ def run_amd(
         resume,
         strictness,
     )
+
+    if parameter_uncertainty_method is not None:
+        model = add_parameter_uncertainty_step(model, parameter_uncertainty_method)
 
     if lloq_method is not None:
         model = transform_blq(
