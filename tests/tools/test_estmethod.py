@@ -117,7 +117,7 @@ def test_create_candidate_model(
     ),
     [
         (
-            dict(algorithm='x'),
+            dict(algorithm='x', methods='all'),
             ValueError,
             'Invalid `algorithm`',
         ),
@@ -127,7 +127,7 @@ def test_create_candidate_model(
             'Invalid search space options',
         ),
         (
-            dict(algorithm='exhaustive', solvers=['lsoda']),
+            dict(algorithm='exhaustive', solvers=['LSODA']),
             ValueError,
             'Invalid input `model`',
         ),
@@ -136,5 +136,5 @@ def test_create_candidate_model(
 def test_validate_input(load_model_for_test, pheno_path, args, exception, match):
     model = load_model_for_test(pheno_path)
     kwargs = {**args, 'model': model}
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(exception, match=match):
         validate_input(**kwargs)

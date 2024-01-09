@@ -72,7 +72,7 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
             TypeError,
             'Invalid `max_steps`',
         ),
-        (None, dict(algorithm=()), TypeError, 'Invalid `algorithm`'),
+        (None, dict(algorithm=()), ValueError, 'Invalid `algorithm`'),
         (
             None,
             dict(algorithm='scm-backward'),

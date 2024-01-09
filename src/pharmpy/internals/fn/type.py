@@ -41,14 +41,21 @@ def with_runtime_arguments_type_check(fn):
             # See https://peps.python.org/pep-0563/#introducing-a-new-dictionary-for-the-string-literal-form-instead
             expected_types = _annotation_to_types(type_hints[name])
             if not any(map(lambda expected_type: _match(expected_type, value), expected_types)):
-                raise TypeError(
-                    f'Invalid `{parameter.name}`: got `{value}` of type {_value_type(value)},'
-                    + (
-                        f' expected {expected_types[0]}'
-                        if len(expected_types) == 1
-                        else f' expected one of {expected_types}.'
+                if len(expected_types) == 1 and get_origin(expected_types[0]) == Literal:
+                    allowed_values = list(get_args(expected_types[0]))
+                    raise ValueError(
+                        f"Invalid `{parameter.name}`: got '{value}', must be"
+                        + f"{itemize_strings(sorted(allowed_values))}"
                     )
-                )
+                else:
+                    raise TypeError(
+                        f'Invalid `{parameter.name}`: got `{value}` of type {_value_type(value)},'
+                        + (
+                            f' expected {expected_types[0]}'
+                            if len(expected_types) == 1
+                            else f' expected one of {expected_types}.'
+                        )
+                    )
 
         return fn(*args, **kwargs)
 

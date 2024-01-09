@@ -173,9 +173,9 @@ def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
             'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for TMDD models.',
         ),
         (
-            dict(type='tmdd', dv_types={'dru': 1}),
+            dict(type='a'),
             ValueError,
-            'Invalid dv_types key "dru". Allowed keys are: "drug", "target", "complex", "drug_tot" and "target_tot".',
+            'Invalid `type`',
         ),
         (
             dict(type='tmdd', search_space='ABSORPTION'),

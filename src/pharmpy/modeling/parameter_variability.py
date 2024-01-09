@@ -8,7 +8,7 @@ from collections import Counter, defaultdict
 from functools import reduce
 from itertools import chain, combinations
 from operator import add, mul
-from typing import List, Optional, Union
+from typing import List, Literal, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -168,7 +168,7 @@ def add_iov(
     occ: str,
     list_of_parameters: Optional[Union[List[str], str]] = None,
     eta_names: Optional[Union[List[str], str]] = None,
-    distribution: str = 'disjoint',
+    distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'disjoint',
 ):
     """Adds IOVs to :class:`pharmpy.model`.
 
@@ -186,7 +186,7 @@ def add_iov(
     eta_names : str, list
         Custom names of new etas. Must be equal to the number of input etas times the number of
         categories for occasion.
-    distribution : str
+    distribution : {'disjoint', 'joint', 'explicit', 'same-as-iiv'}
         The distribution that should be used for the new etas. Options are
         'disjoint' for disjoint normal distributions, 'joint' for joint normal
         distribution, 'explicit' for an explicit mix of joint and disjoint
