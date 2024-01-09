@@ -246,8 +246,22 @@ def run_amd(
                 Transits((0, 1, 3, 10), Wildcard()),
                 Peripherals((0, 1, 2)),
             )
-        elif modeltype == 'tmdd':
-            modelsearch_features = (Elimination((Name('MM'), Name('MIX-FO-MM'))),)
+        elif modeltype == 'tmdd' and administration == 'oral':
+            modelsearch_features = (
+                Absorption((Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'))),
+                Elimination((Name('MIX'), Name('MIX-FO-MM'))),
+                LagTime((Name('OFF'), Name('ON'))),
+                Transits((0, 1, 3, 10), Wildcard()),
+                Peripherals((0, 1)),
+            )
+        elif modeltype == 'tmdd' and administration == 'ivoral':
+            modelsearch_features = (
+                Absorption((Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'))),
+                Elimination((Name('MM'), Name('MIX-FO-MM'))),
+                LagTime((Name('OFF'), Name('ON'))),
+                Transits((0, 1, 3, 10), Wildcard()),
+                Peripherals((0, 1, 2)),
+            )
         else:
             modelsearch_features = (
                 Elimination((Name('FO'),)),
