@@ -48,7 +48,7 @@ Which arguments are mandatory or optional depends on the type of model. More inf
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | Argument                                        | Description                                                                             |
 +=================================================+=========================================================================================+
-| ``type``                                        | Type of model. Can be either pkpd, drug_metabolite or tmdd (:ref:`the model type`).     |
+| ``type``                                        | Type of model. Can be either pkpd, drug_metabolite or tmdd (:ref:`the model types`).    |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``search_space``                                | :ref:`Search space<structsearch search space>` of models to test.                       |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
