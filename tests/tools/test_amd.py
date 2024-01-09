@@ -8,6 +8,7 @@ import pytest
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.tools import run_amd
+from pharmpy.tools.amd.run import validate_input
 from pharmpy.workflows import default_tool_database
 
 
@@ -29,42 +30,30 @@ def test_invalid_search_space_raises(tmp_path, testdata):
             )
 
 
+@pytest.mark.filterwarnings(
+    'ignore::UserWarning',
+)
 def test_skip_most(tmp_path, testdata):
     with chdir(tmp_path):
         db, model = _load_model(testdata)
 
-        with _record_warnings() as record:
-            res = run_amd(
-                model,
-                results=model.modelfit_results,
-                modeltype='basic_pk',
-                administration='oral',
-                order=['iovsearch', 'allometry', 'covariates'],
-                occasion=None,
-                retries_strategy="skip",
-                path=db.path,
-                resume=True,
-            )
-
-        _validate_record(
-            record,
-            [
-                'IOVsearch will be skipped because occasion is None',
-                'Allometry will most likely be skipped',
-                'COVsearch will most likely be skipped',
-                'Skipping Allometry',
-                'Skipping COVsearch',
-                'AMDResults.summary_models is None',
-                'AMDResults.summary_individuals_count is None',
-            ],
+        to_be_skipped = validate_input(
+            model,
+            results=model.modelfit_results,
+            modeltype='basic_pk',
+            administration='oral',
+            occasion=None,
+            retries_strategy="skip",
+            path=db.path,
+            resume=True,
         )
 
-        assert len(res.summary_tool) == 1
-        assert res.summary_models is None
-        assert res.summary_individuals_count is None
-        assert res.final_model == 'start'
+    assert len(to_be_skipped) == 3
 
 
+@pytest.mark.filterwarnings(
+    'ignore::UserWarning',
+)
 def test_raise_allometry(tmp_path, testdata):
     with chdir(tmp_path):
         db, model = _load_model(testdata, with_datainfo=True)
@@ -78,7 +67,6 @@ def test_raise_allometry(tmp_path, testdata):
                 results=model.modelfit_results,
                 modeltype='basic_pk',
                 administration='oral',
-                order=['allometry'],
                 allometric_variable='SJDLKSDJ',
                 retries_strategy="skip",
                 path=db.path,
@@ -86,6 +74,9 @@ def test_raise_allometry(tmp_path, testdata):
             )
 
 
+@pytest.mark.filterwarnings(
+    'ignore::UserWarning',
+)
 def test_raise_covsearch(tmp_path, testdata):
     with chdir(tmp_path):
         db, model = _load_model(testdata, with_datainfo=True)
@@ -100,77 +91,57 @@ def test_raise_covsearch(tmp_path, testdata):
                 search_space='LET(CONTINUOUS, [AGE, SJDLKSDJ]); LET(CATEGORICAL, [SEX])',
                 modeltype='basic_pk',
                 administration='oral',
-                order=['covariates'],
                 retries_strategy="skip",
                 path=db.path,
                 resume=True,
             )
 
 
+@pytest.mark.filterwarnings(
+    'ignore::UserWarning',
+)
 def test_skip_covsearch(tmp_path, testdata):
+    with chdir(tmp_path):
+        db, model = _load_model(testdata)
+        to_be_skipped = validate_input(
+            model,
+            results=model.modelfit_results,
+            search_space='LET(CONTINUOUS, []); LET(CATEGORICAL, [])',
+            modeltype='basic_pk',
+            administration='oral',
+            occasion='VISI',
+            allometric_variable='WT',
+            retries_strategy="skip",
+            path=db.path,
+            resume=True,
+        )
+    assert len(to_be_skipped) == 1
+
+
+@pytest.mark.filterwarnings(
+    'ignore::UserWarning',
+)
+def test_skip_iovsearch_one_occasion(tmp_path, testdata):
     with chdir(tmp_path):
         db, model = _load_model(testdata, with_datainfo=True)
 
-        with _record_warnings() as record:
-            res = run_amd(
-                model,
-                results=model.modelfit_results,
-                search_space='LET(CONTINUOUS, []); LET(CATEGORICAL, [])',
-                modeltype='basic_pk',
-                administration='oral',
-                order=['covariates'],
-                retries_strategy="skip",
-                path=db.path,
-                resume=True,
-            )
-        _validate_record(
-            record,
-            [
-                'COVsearch will most likely be skipped',
-                'Skipping COVsearch',
-                'AMDResults.summary_models is None',
-                'AMDResults.summary_individuals_count is None',
-            ],
+        to_be_skipped = validate_input(
+            model,
+            results=model.modelfit_results,
+            modeltype='basic_pk',
+            administration='oral',
+            retries_strategy="skip",
+            occasion='XAT2',
+            path=db.path,
+            resume=True,
         )
 
-        assert len(res.summary_tool) == 1
-        assert res.summary_models is None
-        assert res.summary_individuals_count is None
-        assert res.final_model == 'start'
+    assert len(to_be_skipped) == 1
 
 
-def test_skip_iovsearch_one_occasion(tmp_path, testdata):
-    with chdir(tmp_path):
-        db, model = _load_model(testdata)
-
-        with _record_warnings() as record:
-            res = run_amd(
-                model,
-                results=model.modelfit_results,
-                modeltype='basic_pk',
-                administration='oral',
-                order=['iovsearch'],
-                occasion='XAT2',
-                retries_strategy="skip",
-                path=db.path,
-                resume=True,
-            )
-
-        _validate_record(
-            record,
-            [
-                'Skipping IOVsearch because there are less than two occasion categories',
-                'AMDResults.summary_models is None',
-                'AMDResults.summary_individuals_count is None',
-            ],
-        )
-
-        assert len(res.summary_tool) == 1
-        assert res.summary_models is None
-        assert res.summary_individuals_count is None
-        assert res.final_model == 'start'
-
-
+@pytest.mark.filterwarnings(
+    'ignore::UserWarning',
+)
 def test_skip_iovsearch_missing_occasion_raises(tmp_path, testdata):
     with chdir(tmp_path):
         db, model = _load_model(testdata)
@@ -184,7 +155,6 @@ def test_skip_iovsearch_missing_occasion_raises(tmp_path, testdata):
                 results=model.modelfit_results,
                 modeltype='basic_pk',
                 administration='oral',
-                order=['iovsearch'],
                 occasion='XYZ',
                 retries_strategy="skip",
                 path=db.path,
