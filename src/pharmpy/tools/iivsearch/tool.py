@@ -187,7 +187,10 @@ def start(
         sum_inds_count.append(res.summary_individuals_count)
         sum_errs.append(res.summary_errors)
 
-        final_model_entry = context.model_database.retrieve_model_entry(res.final_model.name)
+        if res.final_model.name != input_model_entry.model.name:
+            final_model_entry = context.model_database.retrieve_model_entry(res.final_model.name)
+        else:
+            final_model_entry = input_model_entry
         base_model_entry = final_model_entry
         iiv_strategy = 'no_add'
         last_res = res
