@@ -79,7 +79,7 @@ def run_amd(
     mechanistic_covariates: Optional[List[str]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     seed: Optional[Union[np.random.Generator, int]] = None,
-    parameter_uncertainty_method: Optional[Union[Literal['SANDWICH', 'CPG', 'OFIM'], None]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'CPG', 'OFIM']] = None,
 ):
     """Run Automatic Model Development (AMD) tool
 
