@@ -48,7 +48,7 @@ from pharmpy.workflows.results import ModelfitResults
 from ..run import run_tool
 from .results import AMDResults
 
-ALLOWED_STRATEGY = ["SIRIAC", "SIRIACIR"]
+ALLOWED_STRATEGY = ["all", "retries", "SIR", "SRI", "RSI"]
 ALLOWED_ADMINISTRATION = ["iv", "oral", "ivoral"]
 ALLOWED_MODELTYPE = ['basic_pk', 'pkpd', 'drug_metabolite', 'tmdd']
 RETRIES_STRATEGIES = ["final", "all_final", "skip"]
@@ -59,7 +59,7 @@ def run_amd(
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
-    strategy: str = "SIRIAC",
+    strategy: str = "all",
     cl_init: float = 0.01,
     vc_init: float = 1.0,
     mat_init: float = 0.1,
@@ -96,7 +96,7 @@ def run_amd(
     administration : str
         Route of administration. Either 'iv', 'oral' or 'ivoral'
     strategy : str
-        Run algorithm for AMD procedure. Valid options are 'SIRIAC', 'SIRIACIR'. Default is SIRIAC
+        Run algorithm for AMD procedure. Valid options are 'all', 'retries'. Default is all
     cl_init : float
         Initial estimate for the population clearance
     vc_init : float
@@ -241,9 +241,9 @@ def run_amd(
             lloq=lloq_limit,
         )
 
-    if strategy == "SIRIAC":
+    if strategy == "all":
         order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
-    elif strategy == "SIRIACIR":
+    elif strategy == "retries":
         order = [
             'structural',
             'iivsearch',
@@ -254,6 +254,12 @@ def run_amd(
             'iivsearch',
             'residual',
         ]
+    elif strategy == 'SIR':
+        order = ['structural', 'iivsearch', 'residual']
+    elif strategy == 'SRI':
+        order = ['structural', 'residual', 'iivsearch']
+    elif strategy == 'RSI':
+        order = ['residual', 'structural', 'iivsearch']
 
     if modeltype == 'pkpd':
         warnings.warn('Skipping allometry since modeltype is "pkpd"')
@@ -343,15 +349,15 @@ def run_amd(
 
     db = default_tool_database(toolname='amd', path=path, exist_ok=resume)
     run_subfuncs = {}
-    # Always add?
-    run_subfuncs['structural_covariates'] = _subfunc_structural_covariates(
-        amd_start_model=model,
-        search_space=covsearch_features,
-        strictness=strictness,
-        path=db.path,
-    )
+
     for section in order:
         if section == 'structural':
+            run_subfuncs['structural_covariates'] = _subfunc_structural_covariates(
+                amd_start_model=model,
+                search_space=covsearch_features,
+                strictness=strictness,
+                path=db.path,
+            )
             if modeltype == 'pkpd':
                 func = _subfunc_structsearch(
                     type=modeltype,
@@ -1038,7 +1044,7 @@ def validate_input(
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
-    strategy: Optional[str] = "SIRIAC",
+    strategy: str = "all",
     cl_init: float = 0.01,
     vc_init: float = 1.0,
     mat_init: float = 0.1,
