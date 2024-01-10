@@ -294,7 +294,7 @@ class EstimationStep(Step):
 
     @property
     def parameter_uncertainty_method(self) -> Union[str, None]:
-        """Method to use when estimating parameter uncertainty
+        """Method to use when estimating parameter uncertainty.
         Supported methods and their corresponding NMTRAN code:
 
         +----------------------------+-----------------------+
@@ -309,7 +309,7 @@ class EstimationStep(Step):
         | Expected FIM               | $DESIGN               |
         +----------------------------+-----------------------+
 
-        by default the following options are appended:
+        By default the following options are appended:
         UNCONDITIONAL: The uncertainty step is implemented regardless of how the estimation step terminates.
         PRINT=E: Print the eigenvalues of the correlation matrix.
         PRECOND=1: Perform up to 1 preconditioning cycle on the R matrix.

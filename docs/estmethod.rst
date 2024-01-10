@@ -205,8 +205,9 @@ Supported solvers are: CVODES, DGEAR, DVERK, IDA, LSODA and LSODI.
 Parameter uncertainty methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Method to use when estimating parameter uncertainty.
 For a list of supported parameter uncertainty methods, see 
-:py:func:`pharmpy.model.EstimationStep.supported_parameter_uncertainty_methods`.
+:py:func:`here<pharmpy.model.EstimationStep.parameter_uncertainty_method>`.
 
 ~~~~~~~~~~~~~~~~~~~~~
 The Estmethod results
