@@ -54,7 +54,6 @@ ALLOWED_MODELTYPE = ['basic_pk', 'pkpd', 'drug_metabolite', 'tmdd']
 RETRIES_STRATEGIES = ["final", "all_final", "skip"]
 
 
-@with_runtime_arguments_type_check
 def run_amd(
     input: Union[Model, Path, str],
     results: Optional[ModelfitResults] = None,
@@ -1023,8 +1022,9 @@ def _subfunc_iov(amd_start_model, occasion, strictness, path) -> SubFunc:
     return _run_iov
 
 
+@with_runtime_arguments_type_check
 def validate_input(
-    model: Model,
+    input: Model,
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
