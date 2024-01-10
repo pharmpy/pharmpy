@@ -88,12 +88,16 @@ Arguments
 | ``mechanistic_covariates``                        | List of covariates to run in a separate prioritezed covsearch run.                                              |
 |                                                   | The effects are extracted from the given search space                                                           |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``retries_strategy``                              | Decide how to use the retries tool. Valid options are 'skip', 'all_final' or 'final'. Default is 'all_final'        |
+| ``retries_strategy``                              | Decide how to use the retries tool. Valid options are 'skip', 'all_final' or 'final'. Default is 'all_final'    |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``seed``                                          | A random number generator or seed to use for steps with random sampling.                                        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``dv_types``                                      | Dictionary of DV types for multiple DVs (e.g. dv_types = {'target': 2}). Default is None.                       |
 |                                                   | Allowed keys are: 'drug', 'target' and 'complex'. (For TMDD models only)                                        |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+| ``parameter_uncertainty_method``                  | Parameter uncertainty method to use. Currently implemented methods are: 'SANDWICH', 'CPG' and 'OFIM'.           |
+|                                                   | For more information about these methods see                                                                    |
+|                                                   | :py:func:`here<pharmpy.model.EstimationStep.parameter_uncertainty_method>`.                                     |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 .. _input_amd:
