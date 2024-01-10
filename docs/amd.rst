@@ -99,6 +99,11 @@ Arguments
 |                                                   | For more information about these methods see                                                                    |
 |                                                   | :py:func:`here<pharmpy.model.EstimationStep.parameter_uncertainty_method>`.                                     |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+| ``ignore_datainfo_fallback``                      | Decide wether or not to use connected datainfo object to infer information about the model. If True, all        |
+|                                                   | information regarding the model must be given explicitly by the user, such as the allometric varible. If False, |
+|                                                   | such information is extracted using the datainfo, in the absence of arguments given by the user. Default        |
+|                                                   | is False.                                                                                                       |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 .. _input_amd:
 
@@ -446,7 +451,8 @@ IOVsearch
 ~~~~~~~~~
 
 This subtool selects the IOV structure and tries to remove corresponding IIVs if possible, see :ref:`iovsearch` for
-more details about the tool. The settings that the AMD tool uses for this subtool can be seen in the table below.
+more details about the tool. The settings that the AMD tool uses for this subtool can be seen in the table below. If no
+argument for ``occasion`` is given, this tool will not be run.
 
 +---------------------+----------------------------------------------------------------------------------------------+
 | Argument            | Setting                                                                                      |
@@ -484,7 +490,8 @@ Allometry
 ~~~~~~~~~
 
 This subtool tries to apply allometry, see :ref:`allometry` for more details about the tool. The settings
-that the AMD tool uses for this subtool can be seen in the table below. 
+that the AMD tool uses for this subtool can be seen in the table below. Please note that if ``ignore_datainfo_fallback`` is
+set to ``True`` and no allometric variable is given, this tool will not be run. 
 
 +----------------------+---------------------------------------------------------------------------------------------+
 | Argument             | Setting                                                                                     |
@@ -511,7 +518,8 @@ Covariates
 ~~~~~~~~~~
 
 This subtool selects which covariate effects to apply, see :ref:`covsearch` for more details about the tool. The
-settings that the AMD tool uses for this subtool can be seen in the table below.
+settings that the AMD tool uses for this subtool can be seen in the table below. Please note that if ``ignore_datainfo_fallback``
+is set to ``True`` and no covariates are given, this tool will not be run.
 
 +---------------+----------------------------------------------------------------------------------------------------+
 | Argument      | Setting                                                                                            |
