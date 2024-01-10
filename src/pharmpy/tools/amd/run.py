@@ -80,6 +80,7 @@ def run_amd(
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     seed: Optional[Union[np.random.Generator, int]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'CPG', 'OFIM']] = None,
+    ignore_datainfo_fallback: bool = False,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -139,6 +140,8 @@ def run_amd(
         Random number generator or seed to be used.
     parameter_uncertainty_method: {'SANDWICH', 'CPG', 'OFIM'} or None
         Parameter uncertainty method.
+    ignore_datainfo_fallback : bool
+        Ignore using datainfo to get information not given by the user. Default is False
 
     Returns
     -------
@@ -1061,6 +1064,7 @@ def validate_input(
     resume: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     retries_strategy: Literal["final", "all_final", "skip"] = "final",
+    ignore_datainfo_fallback: bool = False,
 ):
     to_be_skipped = []
 
@@ -1098,12 +1102,19 @@ def validate_input(
 
     # ALLOMETRY
     if allometric_variable is None:
-        try:
-            model.datainfo.descriptorix["body weight"]
-        except IndexError:
+        if not ignore_datainfo_fallback:
+            try:
+                model.datainfo.descriptorix["body weight"]
+            except IndexError:
+                warnings.warn(
+                    'Allometry will be skipped because allometric_variable is None and could'
+                    ' not be inferred through .datainfo via "body weight" descriptor.'
+                )
+                to_be_skipped.append("allometry")
+        else:
             warnings.warn(
-                'Allometry will be skipped because allometric_variable is None and could'
-                ' not be inferred through .datainfo via "body weight" descriptor.'
+                'Allometry will be skipped because allometric_variable is None and'
+                ' ignore_datainfo_fallback is True'
             )
             to_be_skipped.append("allometry")
     else:
@@ -1141,7 +1152,13 @@ def validate_input(
                 )
                 to_be_skipped.append("covariates")
         else:
-            if not any(column.type == 'covariate' for column in model.datainfo):
+            if ignore_datainfo_fallback:
+                warnings.warn(
+                    'COVsearch will be skipped because no covariates were given'
+                    ' and ignore_datainfo_fallback is True.'
+                )
+                to_be_skipped.append("covariates")
+            elif not any(column.type == 'covariate' for column in model.datainfo):
                 warnings.warn(
                     'COVsearch will be skipped because no covariates were given'
                     ' or could be extracted.'
@@ -1150,7 +1167,13 @@ def validate_input(
                 )
                 to_be_skipped.append("covariates")
     else:
-        if not any(column.type == 'covariate' for column in model.datainfo):
+        if ignore_datainfo_fallback:
+            warnings.warn(
+                'COVsearch will be skipped because no covariates were given'
+                ' and ignore_datainfo_fallback is True.'
+            )
+            to_be_skipped.append("covariates")
+        elif not any(column.type == 'covariate' for column in model.datainfo):
             warnings.warn(
                 'COVsearch will be skipped because no covariates were given'
                 ' or could be extracted.'

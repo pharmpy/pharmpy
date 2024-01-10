@@ -162,6 +162,27 @@ def test_skip_iovsearch_missing_occasion_raises(tmp_path, testdata):
             )
 
 
+@pytest.mark.filterwarnings(
+    'ignore::UserWarning',
+)
+def test_ignore_datainfo_fallback(tmp_path, testdata):
+    with chdir(tmp_path):
+        db, model = _load_model(testdata, with_datainfo=True)
+
+        to_be_skipped = validate_input(
+            model,
+            results=model.modelfit_results,
+            modeltype='basic_pk',
+            administration='oral',
+            retries_strategy="skip",
+            ignore_datainfo_fallback=True,
+            path=db.path,
+            resume=True,
+        )
+
+    assert len(to_be_skipped) == 3
+
+
 def _load_model(testdata: Path, with_datainfo: bool = False):
     models = testdata / 'nonmem' / 'models'
 
