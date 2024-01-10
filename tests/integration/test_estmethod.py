@@ -7,11 +7,11 @@ from pharmpy.tools import retrieve_models, run_estmethod
 @pytest.mark.parametrize(
     'algorithm, methods, parameter_uncertainty_methods, no_of_candidates, advan_ref',
     [
-        ('exhaustive', ['foce', 'imp'], None, 2, 'ADVAN2'),
-        ('exhaustive_only_eval', ['foce', 'imp'], None, 2, 'ADVAN2'),
-        ('exhaustive', ['foce'], ['sandwich', 'cpg'], 2, 'ADVAN2'),
-        ('exhaustive_with_update', ['foce'], ['sandwich', 'cpg'], 4, 'ADVAN2'),
-        ('exhaustive_with_update', ['imp'], ['sandwich', 'cpg'], 5, 'ADVAN2'),
+        ('exhaustive', ['FOCE', 'IMP'], None, 2, 'ADVAN2'),
+        ('exhaustive_only_eval', ['FOCE', 'IMP'], None, 2, 'ADVAN2'),
+        ('exhaustive', ['FOCE'], ['SANDWICH', 'CPG'], 2, 'ADVAN2'),
+        ('exhaustive_with_update', ['FOCE'], ['SANDWICH', 'CPG'], 4, 'ADVAN2'),
+        ('exhaustive_with_update', ['IMP'], ['SANDWICH', 'CPG'], 5, 'ADVAN2'),
     ],
 )
 def test_estmethod(
