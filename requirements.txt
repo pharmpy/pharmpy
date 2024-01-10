@@ -1,4 +1,4 @@
-alabaster==0.7.15
+alabaster==0.7.16
 altair==5.2.0
 appdirs==1.4.4
 asttokens==2.4.1
