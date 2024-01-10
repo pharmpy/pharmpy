@@ -54,6 +54,7 @@ ALLOWED_MODELTYPE = ['basic_pk', 'pkpd', 'drug_metabolite', 'tmdd']
 RETRIES_STRATEGIES = ["final", "all_final", "skip"]
 
 
+@with_runtime_arguments_type_check
 def run_amd(
     input: Union[Model, Path, str],
     results: Optional[ModelfitResults] = None,
@@ -162,6 +163,7 @@ def run_amd(
     run_tool
 
     """
+    args = locals()
 
     from pharmpy.model.external import nonmem  # FIXME: We should not depend on NONMEM
 
@@ -211,28 +213,8 @@ def run_amd(
 
     # FIXME : Handle validation differently?
     # AMD start model (dataset) is required before validation
-    to_be_skipped = validate_input(
-        model,
-        results,
-        modeltype,
-        administration,
-        strategy,
-        cl_init,
-        vc_init,
-        mat_init,
-        b_init,
-        emax_init,
-        ec50_init,
-        met_init,
-        search_space,
-        lloq_method,
-        lloq_limit,
-        allometric_variable,
-        occasion,
-        path,
-        resume,
-        strictness,
-    )
+    args['input'] = model
+    to_be_skipped = validate_input(**args)
 
     if parameter_uncertainty_method is not None:
         model = add_parameter_uncertainty_step(model, parameter_uncertainty_method)
@@ -1041,7 +1023,6 @@ def _subfunc_iov(amd_start_model, occasion, strictness, path) -> SubFunc:
     return _run_iov
 
 
-@with_runtime_arguments_type_check
 def validate_input(
     model: Model,
     results: Optional[ModelfitResults] = None,
@@ -1063,9 +1044,14 @@ def validate_input(
     path: Optional[Union[str, Path]] = None,
     resume: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    retries_strategy: Literal["final", "all_final", "skip"] = "final",
+    dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
+    mechanistic_covariates: Optional[List[str]] = None,
+    retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
+    seed: Optional[Union[np.random.Generator, int]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'CPG', 'OFIM']] = None,
     ignore_datainfo_fallback: bool = False,
 ):
+    model = input
     to_be_skipped = []
 
     check_list("modeltype", modeltype, ALLOWED_MODELTYPE)
