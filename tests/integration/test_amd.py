@@ -20,7 +20,7 @@ def _model_count(rundir: Path):
     'strategy, subrundir',
     [
         (
-            'SIRIAC',
+            'all',
             [
                 'modelfit',
                 'modelsearch',
@@ -32,7 +32,7 @@ def _model_count(rundir: Path):
             ],
         ),
         (
-            'SIRIACIR',
+            'retries',
             [
                 'modelfit',
                 'modelsearch',
