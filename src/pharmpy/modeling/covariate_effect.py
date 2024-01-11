@@ -130,9 +130,14 @@ def get_covariate_effect(model: Model, symbol, covariate):
 
 
 def _assert_cov_effect_match(symbols, match, model, covariate, effect):
+    # TODO : Restructure covaroiate effect template matching
+    print(symbols)
     if effect == "pow":
-        if isinstance(match[sympy.Wild("cov")], sympy.Number) and isinstance(
-            match[sympy.Wild("median")], sympy.Pow
+        if (
+            sympy.Wild("cov") in match.keys()
+            and isinstance(match[sympy.Wild("cov")], sympy.Number)
+            and sympy.Wild("median") in match.keys()
+            and isinstance(match[sympy.Wild("median")], sympy.Pow)
         ):
             temp = match[sympy.Wild("cov")]
             match[sympy.Wild("cov")] = match[sympy.Wild("median")]
@@ -141,15 +146,18 @@ def _assert_cov_effect_match(symbols, match, model, covariate, effect):
     for key, values in symbols.items():
         if key == "theta":
             thetas = get_thetas(model).symbols
-            if any(match[value] not in thetas for value in values):
-                return False
+            if all(value in match.keys() for value in values):
+                if any(match[value] not in thetas for value in values):
+                    return False
         if key == "cov":
             covariate = sympy.Symbol(covariate)
-            if all(match[value] not in [covariate, 1 / covariate] for value in values):
-                return False
+            if all(value in match.keys() for value in values):
+                if all(match[value] not in [covariate, 1 / covariate] for value in values):
+                    return False
         if key == "median":
-            if not all(isinstance(match[value], sympy.Number) for value in values):
-                return False
+            if all(value in match.keys() for value in values):
+                if not all(isinstance(match[value], sympy.Number) for value in values):
+                    return False
     return True
 
 
