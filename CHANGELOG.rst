@@ -1,3 +1,28 @@
+0.106.0 (2024-01-11)
+--------------------
+
+New features
+============
+
+* Change to mBIC as default ranking function in modelsearch, iivsearch and iovsearch
+* Add modeling.get_central_volume_and_clearance
+* New option parameter_uncertainty_method to amd
+* New option ignore_datainfo_fallback to amd
+* Handle conversion to ETA/ETC for PHI/PHC in NONMEM phi files
+
+Changes
+=======
+
+* Remove the order option in amd and instead add strategy with "fixed" orders and options to subtools
+
+Bugfixes
+========
+
+* Allow ~ in paths in write_csv
+* Have non-linear elimination models in default search space for amd TMDD models
+* Fix issue causing removed off-diagonal omegas being transformed into thetas
+* Fix issues in frem postprocessing when using mu-referencing
+
 0.105.0 (2023-12-07)
 --------------------
 
