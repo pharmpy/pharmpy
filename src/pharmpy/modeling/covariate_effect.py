@@ -131,7 +131,6 @@ def get_covariate_effect(model: Model, symbol, covariate):
 
 def _assert_cov_effect_match(symbols, match, model, covariate, effect):
     # TODO : Restructure covaroiate effect template matching
-    print(symbols)
     if effect == "pow":
         if (
             sympy.Wild("cov") in match.keys()
