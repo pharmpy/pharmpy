@@ -37,7 +37,7 @@ jupyter-core==5.7.1
 jupyter-sphinx==0.5.3
 jupyterlab-pygments==0.3.0
 jupyterlab-widgets==3.0.9
-lark==1.1.8
+lark==1.1.9
 locket==1.0.0
 lxml==5.1.0
 markdown-it-py==3.0.0
