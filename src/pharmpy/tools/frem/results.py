@@ -879,20 +879,11 @@ def _calculate_covariate_baselines(model, res, covariates):
     ]
     exprs = [
         subs(
-            subs(expr, dict(res.parameter_estimates), simultaneous=True),
+            subs(model.statements.before_odes.full_expression(expr), res.parameter_estimates),
             model.parameters.inits,
-            simultaneous=True,
         )
         for expr in exprs
     ]
-    new = []
-    for expr in exprs:
-        for symb in expr.free_symbols:
-            stat = model.statements.find_assignment(symb.name)
-            if stat is not None:
-                expr = subs(expr, {symb: stat.expression}, simultaneous=True)
-        new.append(expr)
-    exprs = new
 
     def fn(row):
         return [np.float64(subs(expr, dict(row))) for expr in exprs]
