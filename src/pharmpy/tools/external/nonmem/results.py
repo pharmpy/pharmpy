@@ -425,7 +425,7 @@ def _parse_individual_estimates(model, pe, table, rv_names):
             mu = sympy.Symbol(f"MU_{i}")
             expr = model.statements.before_odes.full_expression(mu)
             if expr != mu:  # MU is defined in model code
-                value = expr.subs(dict(pe))
+                value = expr.subs(dict(pe)).subs(model.parameters.inits)
                 try:
                     value = float(value)
                 except TypeError:
