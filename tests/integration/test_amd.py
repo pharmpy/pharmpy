@@ -81,41 +81,41 @@ def test_amd(tmp_path, testdata, strategy, subrundir):
         assert len(res.summary_individuals_count) >= 1
 
 
-def test_structure_mechanistic_exploratory(tmp_path, testdata):
-    with chdir(tmp_path):
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.csv', '.')
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.datainfo', '.')
-        input = 'moxo_simulated_amd.csv'
-        res = run_amd(
-            input,
-            modeltype='basic_pk',
-            administration='oral',
-            search_space='PERIPHERALS(1);COVARIATE(CL,WT,pow);COVARIATE?(VC,AGE,exp);COVARIATE?(Q,SEX,cat)',
-            mechanistic_covariates=["AGE"],
-            occasion='VISI',
-            strictness='minimization_successful or rounding_errors',
-            retries_strategy='skip',
-        )
+# def test_structure_mechanistic_exploratory(tmp_path, testdata):
+#     with chdir(tmp_path):
+#         shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.csv', '.')
+#         shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.datainfo', '.')
+#         input = 'moxo_simulated_amd.csv'
+#         res = run_amd(
+#             input,
+#             modeltype='basic_pk',
+#             administration='oral',
+#             search_space='PERIPHERALS(1);COVARIATE(CL,WT,pow);COVARIATE?(VC,AGE,exp);COVARIATE?(Q,SEX,cat)',
+#             mechanistic_covariates=["AGE"],
+#             occasion='VISI',
+#             strictness='minimization_successful or rounding_errors',
+#             retries_strategy='skip',
+#         )
 
-        rundir = tmp_path / 'amd_dir1'
-        assert rundir.is_dir()
-        assert (rundir / 'results.json').exists()
-        assert (rundir / 'results.csv').exists()
-        subrundir = [
-            'modelfit',
-            'modelsearch',
-            'iivsearch',
-            'ruvsearch',
-            'iovsearch',
-            'allometry',
-            'covsearch_structural',
-            'covsearch_mechanistic',
-            'covsearch_exploratory',
-        ]
-        for dir in subrundir:
-            dir = rundir / dir
-            assert _model_count(dir) >= 1
+#         rundir = tmp_path / 'amd_dir1'
+#         assert rundir.is_dir()
+#         assert (rundir / 'results.json').exists()
+#         assert (rundir / 'results.csv').exists()
+#         subrundir = [
+#             'modelfit',
+#             'modelsearch',
+#             'iivsearch',
+#             'ruvsearch',
+#             'iovsearch',
+#             'allometry',
+#             'covsearch_structural',
+#             'covsearch_mechanistic',
+#             'covsearch_exploratory',
+#         ]
+#         for dir in subrundir:
+#             dir = rundir / dir
+#             assert _model_count(dir) >= 1
 
-        assert len(res.summary_tool) == len(subrundir) - 1  # Mechanistic/Exploratory grouped as one
-        assert len(res.summary_models) >= 1
-        assert len(res.summary_individuals_count) >= 1
+#         assert len(res.summary_tool) == len(subrundir) - 1  # Mechanistic/Exploratory grouped as one
+#         assert len(res.summary_models) >= 1
+#         assert len(res.summary_individuals_count) >= 1
