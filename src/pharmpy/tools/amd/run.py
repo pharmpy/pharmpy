@@ -42,7 +42,7 @@ from pharmpy.tools.mfl.statement.feature.symbols import Name, Option, Wildcard
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.mfl.statement.statement import Statement
 from pharmpy.tools.mfl.stringify import stringify as mfl_stringify
-from pharmpy.workflows import Results, default_tool_database
+from pharmpy.workflows import ModelEntry, Results, default_tool_database
 from pharmpy.workflows.results import ModelfitResults
 
 from ..run import run_tool
@@ -467,14 +467,15 @@ def run_amd(
 
     if results is None:
         results = run_tool('modelfit', model, path=db.path / 'modelfit', resume=resume)
-    model = model.replace(modelfit_results=results)
-    next_model = model
+    model_entry = ModelEntry.create(model=model, modelfit_results=results)
+    next_model_entry = model_entry
     sum_subtools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
-    sum_subtools.append(_create_sum_subtool('start', model))
+    sum_subtools.append(_create_sum_subtool('start', model_entry))
     for tool_name, func in run_subfuncs.items():
+        next_model, next_res = next_model_entry.model, next_model_entry.modelfit_results
         if modeltype == 'drug_metabolite' and tool_name == "structsearch":
             next_model = next_model.replace(dataset=orig_dataset)
-        subresults = func(next_model)
+        subresults = func(next_model, next_res)
 
         if subresults is None:
             sum_models.append(None)
@@ -503,8 +504,8 @@ def run_amd(
                 results = subresults.tool_database.model_database.retrieve_modelfit_results(
                     subresults.final_model.name
                 )
-                next_model = next_model.replace(modelfit_results=results)
-            sum_subtools.append(_create_sum_subtool(tool_name, next_model))
+                next_model_entry = ModelEntry.create(model=next_model, modelfit_results=results)
+            sum_subtools.append(_create_sum_subtool(tool_name, next_model_entry))
             sum_models.append(subresults.summary_models.reset_index())
             sum_inds_counts.append(subresults.summary_individuals_count.reset_index())
 
@@ -543,8 +544,8 @@ def run_amd(
             'a summary.'
         )
 
-    final_model = next_model
-    final_results = next_model.modelfit_results
+    final_model = next_model_entry.model
+    final_results = next_model_entry.modelfit_results
     summary_errors = summarize_errors(final_results)
     if final_results.predictions is not None:
         dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions)
@@ -595,13 +596,14 @@ def _table_final_parameter_estimates(model: Model, parameter_estimates, ses):
     return df
 
 
-def _create_sum_subtool(tool_name, selected_model):
+def _create_sum_subtool(tool_name, selected_model_entry):
+    model, res = selected_model_entry.model, selected_model_entry.modelfit_results
     return {
         'tool': tool_name,
-        'selected_model': selected_model.name,
-        'description': selected_model.description,
-        'n_params': len(selected_model.parameters.nonfixed),
-        'ofv': selected_model.modelfit_results.ofv,
+        'selected_model': model.name,
+        'description': model.description,
+        'n_params': len(model.parameters.nonfixed),
+        'ofv': res.ofv,
     }
 
 
@@ -632,11 +634,11 @@ def noop_subfunc(_: Model):
 
 
 def _subfunc_retires(tool, strictness, seed, path):
-    def _run_retries(model):
+    def _run_retries(model, modelfit_results):
         res = run_tool(
             'retries',
             model=model,
-            results=model.modelfit_results,
+            results=modelfit_results,
             strictness=strictness,
             scale='UCP',
             prefix_name=tool,
@@ -650,14 +652,14 @@ def _subfunc_retires(tool, strictness, seed, path):
 
 
 def _subfunc_modelsearch(search_space: Tuple[Statement, ...], strictness, path) -> SubFunc:
-    def _run_modelsearch(model):
+    def _run_modelsearch(model, modelfit_results):
         res = run_tool(
             'modelsearch',
             search_space=mfl_stringify(search_space),
             algorithm='reduced_stepwise',
             model=model,
             strictness=strictness,
-            results=model.modelfit_results,
+            results=modelfit_results,
             path=path / 'modelsearch',
         )
         assert isinstance(res, Results)
@@ -668,11 +670,11 @@ def _subfunc_modelsearch(search_space: Tuple[Statement, ...], strictness, path) 
 
 
 def _subfunc_structsearch(path, **kwargs) -> SubFunc:
-    def _run_structsearch(model):
+    def _run_structsearch(model, modelfit_results):
         res = run_tool(
             'structsearch',
             model=model,
-            results=model.modelfit_results,
+            results=modelfit_results,
             **kwargs,
             path=path / 'structsearch',
         )
@@ -685,23 +687,23 @@ def _subfunc_structsearch(path, **kwargs) -> SubFunc:
 def _subfunc_structsearch_tmdd(
     search_space, type, strictness, dv_types, orig_dataset, path
 ) -> SubFunc:
-    def _run_structsearch_tmdd(model):
+    def _run_structsearch_tmdd(model, modelfit_results):
         res = run_tool(
             'modelsearch',
             search_space=mfl_stringify(search_space),
             algorithm='reduced_stepwise',
             model=model,
             strictness=strictness,
-            results=model.modelfit_results,
+            results=modelfit_results,
             path=path / 'modelsearch',
         )
 
         final_model = res.final_model
+        model_db = res.tool_database.model_database
 
         if not has_mixed_mm_fo_elimination(final_model):
             # Only select models that have mixed MM FO elimination
             # If no model with mixed MM FO then final model from modelsearch will be used
-            model_db = res.tool_database.model_database
             all_models = [model_db.retrieve_model(model) for model in model_db.list_models()]
             models_mixed_mm_fo_el = [
                 model.name for model in all_models if has_mixed_mm_fo_elimination(model)
@@ -713,6 +715,8 @@ def _subfunc_structsearch_tmdd(
                     rank_filtered = rank_filtered.sort_values(by=['rank'])
                     highest_ranked = rank_filtered.index[0]
                     final_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
+
+        final_res = model_db.model_database.retrieve_modelfit_results(final_model.name)
 
         extra_model = None
         extra_model_results = None
@@ -737,7 +741,7 @@ def _subfunc_structsearch_tmdd(
                 extra_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
                 if dv_types is not None:
                     extra_model = extra_model.replace(dataset=orig_dataset)
-                extra_model_results = extra_model.modelfit_results
+                extra_model_results = model_db.retrieve_modelfit_results(extra_model.name)
 
         # Replace original dataset if multiple DVs
         if dv_types is not None:
@@ -747,7 +751,7 @@ def _subfunc_structsearch_tmdd(
             'structsearch',
             type=type,
             model=final_model,
-            results=final_model.modelfit_results,
+            results=final_res,
             extra_model=extra_model,
             extra_model_results=extra_model_results,
             strictness=strictness,
@@ -761,13 +765,13 @@ def _subfunc_structsearch_tmdd(
 
 
 def _subfunc_iiv(iiv_strategy, strictness, path, dir_name) -> SubFunc:
-    def _run_iiv(model):
+    def _run_iiv(model, modelfit_results):
         res = run_tool(
             'iivsearch',
             'brute_force',
             iiv_strategy=iiv_strategy,
             model=model,
-            results=model.modelfit_results,
+            results=modelfit_results,
             strictness=strictness,
             keep=['CL'],
             path=path / dir_name,
@@ -779,7 +783,7 @@ def _subfunc_iiv(iiv_strategy, strictness, path, dir_name) -> SubFunc:
 
 
 def _subfunc_ruvsearch(dv, strictness, path, dir_name) -> SubFunc:
-    def _run_ruvsearch(model):
+    def _run_ruvsearch(model, modelfit_results):
         if has_blq_transformation(model):
             skip, max_iter = ['IIV_on_RUV', 'time_varying'], 1
         else:
@@ -787,7 +791,7 @@ def _subfunc_ruvsearch(dv, strictness, path, dir_name) -> SubFunc:
         res = run_tool(
             'ruvsearch',
             model,
-            results=model.modelfit_results,
+            results=modelfit_results,
             skip=skip,
             max_iter=max_iter,
             dv=dv,
@@ -806,7 +810,7 @@ def _subfunc_structural_covariates(
     strictness,
     path,
 ) -> SubFunc:
-    def _run_structural_covariates(model):
+    def _run_structural_covariates(model, modelfit_results):
         from pharmpy.modeling import get_pk_parameters
 
         allowed_parameters = allowed_parameters = set(get_pk_parameters(model)).union(
@@ -854,7 +858,7 @@ def _subfunc_structural_covariates(
             mfl_stringify(structural_searchspace),
             model=model,
             strictness=strictness,
-            results=model.modelfit_results,
+            results=modelfit_results,
             path=path / 'covsearch_structural',
         )
         assert isinstance(res, Results)
@@ -887,7 +891,7 @@ def _subfunc_mechanistic_exploratory_covariates(
             ' and .datainfo usage of "covariate" type and "continuous" flag.'
         )
 
-    def _run_mechanistic_exploratory_covariates(model):
+    def _run_mechanistic_exploratory_covariates(model, modelfit_results):
         index_offset = 0  # For naming runs
 
         effects = list(covariate_spec(model, search_space))
@@ -952,7 +956,7 @@ def _subfunc_mechanistic_exploratory_covariates(
                     mfl_stringify(mechanistic_searchspace),
                     model=model,
                     strictness=strictness,
-                    results=model.modelfit_results,
+                    results=modelfit_results,
                     path=path / 'covsearch_mechanistic',
                 )
                 index_offset = int(
@@ -960,10 +964,9 @@ def _subfunc_mechanistic_exploratory_covariates(
                 )  # Get largest number of run
                 if res.final_model.name != model.name:
                     model = res.final_model
-                    model_results = res.tool_database.model_database.retrieve_modelfit_results(
+                    modelfit_results = res.tool_database.model_database.retrieve_modelfit_results(
                         res.final_model.name
                     )
-                    model = model.replace(modelfit_results=model_results)
                     added_covs = ModelFeatures.create_from_mfl_string(
                         get_model_features(model)
                     ).covariate
@@ -978,7 +981,7 @@ def _subfunc_mechanistic_exploratory_covariates(
             mfl_stringify(filtered_searchspace),
             model=model,
             strictness=strictness,
-            results=model.modelfit_results,
+            results=modelfit_results,
             path=path / 'covsearch_exploratory',
             naming_index_offset=index_offset,
         )
@@ -992,11 +995,11 @@ def _subfunc_allometry(amd_start_model: Model, allometric_variable, path) -> Sub
     if allometric_variable is None:  # Somewhat redundant with validation function
         allometric_variable = amd_start_model.datainfo.descriptorix["body weight"][0].name
 
-    def _run_allometry(model):
+    def _run_allometry(model, modelfit_results):
         res = run_tool(
             'allometry',
             model,
-            results=model.modelfit_results,
+            results=modelfit_results,
             allometric_variable=allometric_variable,
             path=path / 'allometry',
         )
@@ -1007,11 +1010,11 @@ def _subfunc_allometry(amd_start_model: Model, allometric_variable, path) -> Sub
 
 
 def _subfunc_iov(amd_start_model, occasion, strictness, path) -> SubFunc:
-    def _run_iov(model):
+    def _run_iov(model, modelfit_results):
         res = run_tool(
             'iovsearch',
             model=model,
-            results=model.modelfit_results,
+            results=modelfit_results,
             column=occasion,
             strictness=strictness,
             path=path / 'iovsearch',
