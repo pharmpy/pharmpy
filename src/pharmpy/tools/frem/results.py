@@ -515,7 +515,7 @@ def calculate_results_using_cov_sampling(
     frem_model_results,
     continuous,
     categorical,
-    cov_model=None,
+    cov_model_results=None,
     force_posdef_samples=500,
     force_posdef_covmatrix=False,
     samples=1000,
@@ -524,7 +524,7 @@ def calculate_results_using_cov_sampling(
 ):
     """Calculate the FREM results using covariance matrix for uncertainty
 
-    :param cov_model: Take the parameter uncertainty covariance matrix from this model
+    :param cov_model_results: Take the parameter uncertainty covariance matrix from this model
                       instead of the frem model.
     :param force_posdef_samples: The number of sampling tries before stopping to use
                                  rejection sampling and instead starting to shift values so
@@ -535,8 +535,8 @@ def calculate_results_using_cov_sampling(
                                    in this case.
     :param samples: The number of parameter vector samples to use.
     """
-    if cov_model is not None:
-        uncertainty_results = cov_model.modelfit_results
+    if cov_model_results is not None:
+        uncertainty_results = cov_model_results
     else:
         uncertainty_results = frem_model_results
 
@@ -1005,18 +1005,18 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         warnings.filterwarnings("ignore", message="Adjusting initial estimates")
         if model_4_results is None:
             raise ValueError('Model 4 has no results')
-    cov_model = None
+    cov_model_results = None
     if method == 'cov_sampling':
         try:
             model_4_results.covariance_matrix
         except Exception:
             model_4b_path = path / 'final_models' / 'model_4b.mod'
             try:
-                model_4b = Model.parse_model(model_4b_path)
+                model_4b_results = read_modelfit_results(model_4b_path)
             except FileNotFoundError:
                 pass
             else:
-                cov_model = model_4b
+                cov_model_results = model_4b_results
 
     with open(path / 'covariates_summary.csv') as covsum:
         covsum.readline()
@@ -1079,7 +1079,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         method=method,
         force_posdef_covmatrix=force_posdef_covmatrix,
         force_posdef_samples=force_posdef_samples,
-        cov_model=cov_model,
+        cov_model_results=cov_model_results,
         rescale=rescale,
         intermediate_models=intmods,
         intermediate_models_res=intmodres,
