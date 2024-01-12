@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass, replace
 from itertools import count
-from typing import Any, Callable, Iterable, List, Literal, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Iterable, List, Literal, Optional, Tuple, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -15,7 +15,7 @@ from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import is_strictness_fulfilled, summarize_modelfit_results
 from pharmpy.tools.common import create_results, update_initial_estimates
-from pharmpy.tools.mfl.feature.covariate import EffectLiteral, InputSpec, all_covariate_effects
+from pharmpy.tools.mfl.feature.covariate import EffectLiteral, all_covariate_effects
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.parse import parse as mfl_parse
@@ -99,7 +99,7 @@ ALGORITHMS = ('scm-forward', 'scm-forward-then-backward')
 
 
 def create_workflow(
-    effects: Union[str, Sequence[InputSpec]],
+    search_space: Union[str, ModelFeatures],
     p_forward: float = 0.01,
     p_backward: float = 0.001,
     max_steps: int = -1,
@@ -113,7 +113,7 @@ def create_workflow(
 
     Parameters
     ----------
-    effects : str
+    search_space : str
         MFL of covariate effects to try
     p_forward : float
         The p-value to use in the likelihood ratio test for forward steps
@@ -144,15 +144,15 @@ def create_workflow(
     >>> from pharmpy.tools import run_covsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
-    >>> effects = 'COVARIATE([CL, V], [AGE, WT], EXP)'
-    >>> res = run_covsearch(effects, model=model, results=results)      # doctest: +SKIP
+    >>> search_space = 'COVARIATE([CL, V], [AGE, WT], EXP)'
+    >>> res = run_covsearch(search_space, model=model, results=results)      # doctest: +SKIP
     """
 
     wb = WorkflowBuilder(name=NAME_WF)
 
     # FIXME : Handle when model is None
     start_task = Task("create_modelentry", _start, model, results)
-    init_task = Task("init", _init_search_state, effects)
+    init_task = Task("init", _init_search_state, search_space)
     wb.add_task(init_task, predecessors=start_task)
 
     forward_search_task = Task(
@@ -197,9 +197,9 @@ def _start(model, results):
     return ModelEntry.create(model=model, parent=None, modelfit_results=results)
 
 
-def _init_search_state(context, effects: str, modelentry: ModelEntry) -> SearchState:
+def _init_search_state(context, search_space: str, modelentry: ModelEntry) -> SearchState:
     model = modelentry.model
-    effect_funcs, filtered_model = filter_search_space_and_model(effects, model)
+    effect_funcs, filtered_model = filter_search_space_and_model(search_space, model)
     if filtered_model != model:
         filtered_modelentry = ModelEntry.create(model=filtered_model)
         filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
@@ -210,11 +210,11 @@ def _init_search_state(context, effects: str, modelentry: ModelEntry) -> SearchS
     return (effect_funcs, SearchState(modelentry, filtered_modelentry, candidate, [candidate]))
 
 
-def filter_search_space_and_model(effects, model):
+def filter_search_space_and_model(search_space, model):
     filtered_model = model.replace(name="filtered_input_model", parent_model="filtered_input_model")
-    ss_mfl = ModelFeatures.create_from_mfl_string(effects).expand(
-        filtered_model
-    )  # Expand to remove LET/REF
+    if isinstance(search_space, str):
+        search_space = ModelFeatures.create_from_mfl_string(search_space)
+    ss_mfl = search_space.expand(filtered_model)  # Expand to remove LET/REF
     model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
 
     # Remove all covariates not part of the search space
@@ -755,7 +755,7 @@ def _make_df_steps_row(
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
-    effects, p_forward, p_backward, algorithm, model, strictness, naming_index_offset
+    search_space, p_forward, p_backward, algorithm, model, strictness, naming_index_offset
 ):
     if not 0 < p_forward <= 1:
         raise ValueError(
@@ -768,10 +768,17 @@ def validate_input(
         )
 
     if model is not None:
-        try:
-            statements = mfl_parse(effects)
-        except:  # noqa E722
-            raise ValueError(f'Invalid `effects`, could not be parsed: `{effects}`')
+        if isinstance(search_space, str):
+            try:
+                statements = mfl_parse(search_space)
+            except:  # noqa E722
+                raise ValueError(f'Invalid `search_space`, could not be parsed: `{search_space}`')
+        else:
+            if not search_space.covariate:
+                raise ValueError(
+                    f'Invalid `search_space`, no covariate effect could be found in: `{search_space}`'
+                )
+            statements = search_space.covariate
 
         bad_statements = list(
             filter(
@@ -779,16 +786,15 @@ def validate_input(
                 statements,
             )
         )
-
         if bad_statements:
             raise ValueError(
-                f'Invalid `effects`: found unknown statement of type {type(bad_statements[0]).__name__}.'
+                f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
             )
 
         for s in statements:
             if isinstance(s, Covariate) and isinstance(s.fp, Wildcard) and not s.optional.option:
                 raise ValueError(
-                    f'Invalid `effects` due to non-optional covariate'
+                    f'Invalid `search_space` due to non-optional covariate'
                     f' defined with WILDCARD as effect in {s}'
                     f' Only single effect allowed for mandatory covariates'
                 )
@@ -809,26 +815,26 @@ def validate_input(
         for effect in candidate_effects:
             if effect.covariate not in allowed_covariates:
                 raise ValueError(
-                    f'Invalid `effects` because of invalid covariate found in'
-                    f' effects: got `{effect.covariate}`,'
+                    f'Invalid `search_space` because of invalid covariate found in'
+                    f' search_space: got `{effect.covariate}`,'
                     f' must be in {sorted(allowed_covariates)}.'
                 )
             if effect.parameter not in allowed_parameters:
                 raise ValueError(
-                    f'Invalid `effects` because of invalid parameter found in'
-                    f' effects: got `{effect.parameter}`,'
+                    f'Invalid `search_space` because of invalid parameter found in'
+                    f' search_space: got `{effect.parameter}`,'
                     f' must be in {sorted(allowed_parameters)}.'
                 )
             if effect.fp not in allowed_covariate_effects:
                 raise ValueError(
-                    f'Invalid `effects` because of invalid effect function found in'
-                    f' effects: got `{effect.fp}`,'
+                    f'Invalid `search_space` because of invalid effect function found in'
+                    f' search_space: got `{effect.fp}`,'
                     f' must be in {sorted(allowed_covariate_effects)}.'
                 )
             if effect.operation not in allowed_ops:
                 raise ValueError(
-                    f'Invalid `effects` because of invalid effect operation found in'
-                    f' effects: got `{effect.operation}`,'
+                    f'Invalid `search_space` because of invalid effect operation found in'
+                    f' search_space: got `{effect.operation}`,'
                     f' must be in {sorted(allowed_ops)}.'
                 )
     if strictness is not None and "rse" in strictness.lower():
