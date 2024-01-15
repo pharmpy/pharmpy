@@ -12,6 +12,26 @@ class IndirectEffect(ModelFeature):
     modes: Union[Tuple[Name[Literal['LINEAR', 'EMAX', 'SIGMOID']], ...], Wildcard]
     production: Union[Tuple[Name[Literal['DEGRADATION', 'PRODUCTION']], ...], Wildcard]
 
+    @property
+    def eval(self):
+        if isinstance(self.modes, Wildcard):
+            modes = self._wildcard("modes")
+        else:
+            modes = self.modes
+
+        if isinstance(self.production, Wildcard):
+            production = self._wildcard("production")
+        else:
+            production = self.production
+
+        return IndirectEffect(modes, production)
+
+    def _wildcard(self, attr):
+        if attr == "modes":
+            return tuple([Name(x) for x in ['LINEAR', 'EMAX', 'SIGMOID']])
+        elif attr == "production":
+            return tuple([Name(x) for x in ['DEGRADATION', 'PRODUCTION']])
+
 
 class IndirectEffectInterpreter(Interpreter):
     def interpret(self, tree):

@@ -11,6 +11,46 @@ from .symbols import Name, Wildcard
 class Metabolite(ModelFeature):
     modes: Union[Tuple[Name[Literal['PSC', 'BASIC']], ...], Wildcard]
 
+    def __add__(self, other):
+        if isinstance(self.modes, Wildcard) or isinstance(other.modes, Wildcard):
+            return Metabolite(Wildcard())
+        else:
+            return Metabolite(
+                tuple(set(self.modes + tuple([a for a in other.modes if a not in self.modes])))
+            )
+
+    def __sub__(self, other):
+        if isinstance(other.modes, Wildcard):
+            return None
+        elif isinstance(self.modes, Wildcard):
+            default = self._wildcard
+            all_modes = tuple([a for a in default if a not in other.modes])
+        else:
+            # NOTE : WILDCARD should not be used here to future proof the method
+            all_modes = tuple(set([a for a in self.modes if a not in other.modes]))
+
+        if len(all_modes) == 0:
+            all_modes = None
+
+        return Metabolite(all_modes)
+
+    def __eq__(self, other):
+        if isinstance(other, Metabolite):
+            return set(self.modes) == set(other.modes)
+        else:
+            return False
+
+    @property
+    def eval(self):
+        if isinstance(self.modes, Wildcard):
+            return Metabolite(self._wildcard)
+        else:
+            return self
+
+    @property
+    def _wildcard(self):
+        return tuple([Name(x) for x in ['PSC', 'BASIC']])
+
 
 class MetaboliteInterpreter(Interpreter):
     def interpret(self, tree):
