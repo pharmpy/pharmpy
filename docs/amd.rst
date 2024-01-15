@@ -85,8 +85,9 @@ Arguments
 |                                                   | If ``strictness`` is set to ``None`` no strictness                                                              |
 |                                                   | criteria are applied                                                                                            |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``mechanistic_covariates``                        | List of covariates to run in a separate prioritezed covsearch run.                                              |
-|                                                   | The effects are extracted from the given search space                                                           |
+| ``mechanistic_covariates``                        | List of covariates or covariate/parameter combinations to run in a separate prioritized covsearch run. Allowed  |
+|                                                   | elements in the list are strings of covariates or tuples with one covariate and parameter each, e.g ["AGE",     |
+|                                                   | ("WGT", "CL")]. The associated effects are extracted from the given search space.                               |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``retries_strategy``                              | Decide how to use the retries tool. Valid options are 'skip', 'all_final' or 'final'. Default is 'all_final'    |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -546,7 +547,7 @@ For an entire AMD run, it is possible to get a maximum of three covsearch runs, 
 |                     | be tested once more at the start of the next covsearch run.                             |
 +---------------------+-----------------------------------------------------------------------------------------+
 | Mechanistic         | If any mechanistic covariates have been given as input to the AMD tool, the specified   |
-|                     | covariate effects for these covariates is run in a separate initial covsearch run When  |
+|                     | covariate effects for these covariates is run in a separate initial covsearch run when  |
 |                     | adding covariates.                                                                      |
 +---------------------+-----------------------------------------------------------------------------------------+
 | Exploratory         | The remaining covariates are tested after all mechanistic covariates have been tested.  |
