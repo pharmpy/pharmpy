@@ -6,6 +6,8 @@ from lark.visitors import Interpreter
 from .feature import ModelFeature, feature
 from .symbols import Name, Wildcard
 
+ELIMINATION_WILDCARD = tuple([Name(x) for x in ('FO', 'ZO', 'MM', 'MIX-FO-MM')])
+
 
 @dataclass(frozen=True)
 class Elimination(ModelFeature):
@@ -21,7 +23,7 @@ class Elimination(ModelFeature):
         if isinstance(other.modes, Wildcard):
             return Elimination((Name('INST')))
         elif isinstance(self.modes, Wildcard):
-            default = self._wildcard
+            default = ELIMINATION_WILDCARD
             all_modes = tuple([a for a in default if a not in other.modes])
         else:
             # NOTE : WILDCARD should not be used here to future proof the method
@@ -41,13 +43,9 @@ class Elimination(ModelFeature):
     @property
     def eval(self):
         if isinstance(self.modes, Wildcard):
-            return Elimination(self._wildcard)
+            return Elimination(ELIMINATION_WILDCARD)
         else:
             return self
-
-    @property
-    def _wildcard(self):
-        return tuple([Name(x) for x in ['FO', 'ZO', 'MM', 'MIX-FO-MM']])
 
 
 class EliminationInterpreter(Interpreter):

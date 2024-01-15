@@ -365,8 +365,8 @@ from pharmpy.tools.mfl.stringify import stringify
             (
                 ('METABOLITE', 'BASIC'),
                 ('METABOLITE', 'PSC'),
-                ('PERIPHERALS', 1),
-                ('PERIPHERALS', 2),
+                ('PERIPHERALS', 1, 'METABOLITE'),
+                ('PERIPHERALS', 2, 'METABOLITE'),
             ),
         ),
         (

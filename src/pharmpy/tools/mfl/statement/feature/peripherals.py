@@ -5,6 +5,8 @@ from .count_interpreter import CountInterpreter
 from .feature import ModelFeature, feature
 from .symbols import Name, Wildcard
 
+PERIPHERALS_MODES_WILDCARD = tuple([Name(x) for x in ('DRUG', 'MET')])
+
 
 @dataclass(frozen=True)
 class Peripherals(ModelFeature):
@@ -32,6 +34,13 @@ class Peripherals(ModelFeature):
             return set(self.counts) == set(other.counts) and set(self.modes) == set(other.modes)
         else:
             return False
+
+    @property
+    def eval(self):
+        if isinstance(self.modes, Wildcard):
+            return Peripherals(self.counts, PERIPHERALS_MODES_WILDCARD)
+        else:
+            return self
 
 
 class PeripheralsInterpreter(CountInterpreter):

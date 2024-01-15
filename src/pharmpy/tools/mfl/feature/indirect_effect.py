@@ -5,8 +5,12 @@ from typing import Iterable
 from pharmpy.model import Model
 from pharmpy.modeling import add_indirect_effect
 
-from ..statement.feature.indirect_effect import IndirectEffect
-from ..statement.feature.symbols import Name, Wildcard
+from ..statement.feature.indirect_effect import (
+    INDIRECT_EFFECT_MODES_WILDCARD,
+    INDIRECT_EFFECT_PRODUCTION_WILDCARD,
+    IndirectEffect,
+)
+from ..statement.feature.symbols import Wildcard
 from ..statement.statement import Statement
 from .feature import Feature
 
@@ -15,12 +19,12 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
     for statement in statements:
         if isinstance(statement, IndirectEffect):
             modes = (
-                [Name('LINEAR'), Name('EMAX'), Name('SIGMOID')]
+                INDIRECT_EFFECT_MODES_WILDCARD
                 if isinstance(statement.modes, Wildcard)
                 else statement.modes
             )
             production = (
-                [Name('PRODUCTION'), Name('DEGRADATION')]
+                INDIRECT_EFFECT_PRODUCTION_WILDCARD
                 if isinstance(statement.production, Wildcard)
                 else statement.production
             )

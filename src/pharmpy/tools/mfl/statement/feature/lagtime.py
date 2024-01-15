@@ -6,6 +6,8 @@ from lark.visitors import Interpreter
 from .feature import ModelFeature, feature
 from .symbols import Name, Wildcard
 
+LAGTIME_WILDCARD = tuple([Name(x) for x in ('ON', 'OFF')])
+
 
 @dataclass(frozen=True)
 class LagTime(ModelFeature):
@@ -23,7 +25,7 @@ class LagTime(ModelFeature):
         if isinstance(other.modes, Wildcard):
             return LagTime((Name('OFF')))
         elif isinstance(self.modes, Wildcard):
-            default = self._wildcard
+            default = LAGTIME_WILDCARD
             all_modes = tuple([a for a in default if a not in other.modes])
         else:
             all_modes = tuple([a for a in self.modes if a not in other.modes])
@@ -42,13 +44,9 @@ class LagTime(ModelFeature):
     @property
     def eval(self):
         if isinstance(self.modes, Wildcard):
-            return LagTime(self._wildcard)
+            return LagTime(LAGTIME_WILDCARD)
         else:
             return self
-
-    @property
-    def _wildcard(self):
-        return tuple([Name(x) for x in ['ON', 'OFF']])
 
 
 class LagTimeInterpreter(Interpreter):

@@ -5,6 +5,8 @@ from .count_interpreter import CountInterpreter
 from .feature import ModelFeature, feature
 from .symbols import Name, Wildcard
 
+TRANSITS_DEPOT_WILDCARD = tuple([Name(x) for x in ('DEPOT', 'NODEPOT')])
+
 
 @dataclass(frozen=True)
 class Transits(ModelFeature):
@@ -27,7 +29,7 @@ class Transits(ModelFeature):
         if isinstance(other.depot, Wildcard):
             all_depot = (Name('DEPOT'),)
         elif isinstance(self.depot, Wildcard):
-            default = self._wildcard
+            default = TRANSITS_DEPOT_WILDCARD
             all_depot = tuple([a for a in default if a not in other.depot])
         else:
             all_depot = tuple([a for a in self.depot if a not in other.depot])
@@ -61,13 +63,9 @@ class Transits(ModelFeature):
     @property
     def eval(self):
         if isinstance(self.depot, Wildcard):
-            return Transits(self.counts, self._wildcard)
+            return Transits(self.counts, TRANSITS_DEPOT_WILDCARD)
         else:
             return self
-
-    @property
-    def _wildcard(self):
-        return tuple([Name(x) for x in ['DEPOT', 'NODEPOT']])
 
 
 class TransitsInterpreter(CountInterpreter):
