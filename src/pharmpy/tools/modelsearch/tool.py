@@ -271,7 +271,9 @@ def post_process(rank_type, cutoff, strictness, *model_entries):
         results_to_summarize.append(base_model_entry.modelfit_results)
 
     if res_model_entries:
-        results_to_summarize.extend(model.modelfit_results for model in res_model_entries)
+        results_to_summarize.extend(
+            model_entry.modelfit_results for model_entry in res_model_entries
+        )
 
     summary_models = summarize_modelfit_results(results_to_summarize)
     summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
