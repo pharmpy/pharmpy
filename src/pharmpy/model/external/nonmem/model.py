@@ -277,14 +277,20 @@ class Model(BaseModel):
             newdata = data_record.set_filename(filename)
             newcs = model.internals.control_stream.replace_records([data_record], [newdata])
             replace_dict['internals'] = model.internals.replace(control_stream=newcs)
+            model = model.replace(**replace_dict)
+
+            if model.estimation_steps[-1].parameter_uncertainty_method == "EFIM":
+                data_record = model.internals.control_stream.get_records('DATA', 1)[0]
+                if data_record.filename == 'DUMMYPATH' or force:
+                    newdata = data_record.set_filename(filename)
+                    newcs = model.internals.control_stream.replace_records([data_record], [newdata])
+                    replace_dict['internals'] = model.internals.replace(control_stream=newcs)
+                    model = model.replace(**replace_dict)
 
         if model.observation_transformation != model.internals.old_observation_transformation:
             update_ccontra(model, path, force)
 
-        if replace_dict:
-            return model.replace(**replace_dict)
-        else:
-            return model
+        return model
 
     @property
     def model_code(self):
