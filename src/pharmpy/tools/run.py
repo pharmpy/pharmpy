@@ -75,26 +75,7 @@ def fit(
         else (False, model_or_models)
     )
 
-    kept = []
-    # Do not fit model if already fit
-    for model in models:
-        try:
-            # FIXME: model.database should be removed
-            db_model = retrieve_models(model.database, model.name)[0]
-        except (KeyError, AttributeError):
-            db_model = None
-        if (
-            db_model
-            and db_model.modelfit_results is not None
-            and db_model == model
-            and model.has_same_dataset_as(db_model)
-        ):
-            model = model.replace(modelfit_results=db_model.modelfit_results)
-        else:
-            kept.append(model)
-
-    if kept:
-        modelfit_results = run_tool('modelfit', kept, tool=tool, path=path)
+    modelfit_results = run_tool('modelfit', models, tool=tool, path=path)
 
     return modelfit_results if single else list(modelfit_results)
 
