@@ -34,7 +34,7 @@ from .grammar import grammar
 from .helpers import all_funcs, funcs, modelsearch_features
 from .interpreter import MFLInterpreter
 from .statement.feature.covariate import Ref
-from .statement.feature.symbols import Wildcard
+from .statement.feature.symbols import Option, Wildcard
 from .statement.statement import Statement
 from .stringify import stringify as mfl_stringify
 
@@ -482,35 +482,31 @@ class ModelFeatures:
 
     def _lnt_covariates(self, other, lnt, model):
         lhs = self._extract_covariates()
+        lhs = [c for c in lhs if not c[4].option]  # Check only FORCED
         rhs = other._extract_covariates()
+        rhs = [c for c in rhs if not c[4].option]  # Check only FORCED
 
-        remove_cov_dict = dict(covariate_features(model, self.covariate, remove=True))
-        if not any(key in rhs.keys() for key in lhs.keys()):
-            # Remove all covariates
+        def convert_to_covariate(combinations):
+            cov_list = []
+            for param, cov, fp, op, opt in combinations:
+                cov_list.append(Covariate((param,), (cov,), (fp,), op, opt))
+            return cov_list
+
+        # Remove all unqiue to LHS
+        lhs_unique = [c for c in lhs if c not in rhs]
+        if lhs_unique:
+            cov_list = convert_to_covariate(lhs_unique)
+            lhs_mfl = ModelFeatures.create_from_mfl_statement_list(cov_list)
+            remove_cov_dict = dict(covariate_features(model, lhs_mfl.covariate, remove=True))
             lnt.update(remove_cov_dict)
-            if len(rhs) != 0:
-                # No effect/operator combination matching
-                func_dict = other.convert_to_funcs(["covariate"])
-                key = list(func_dict.keys())[0]
-                lnt[key] = func_dict[key]
-        else:
-            # One (or more) effect/operator are overlapping
-            for key in lhs.keys():
-                if key in rhs.keys():
-                    if not any(p in rhs[key] for p in lhs[key]):
-                        # take the first value with this key.
-                        func_dict = other.convert_to_funcs(["covariate"], model)
-                        func_dict = {
-                            k: v
-                            for k, v in func_dict.items()
-                            if (k[3] == key[0] and k[4] == key[1])
-                        }
-                        key = list(func_dict.keys())[0]
-                        lnt[key] = func_dict[key]
-                    for p in [p for p in lhs[key] if p not in rhs[key]]:
-                        lnt[(p[0], p[1], key[0], key[1])] = remove_cov_dict[
-                            (p[0], p[1], key[0], key[1])
-                        ]
+
+        # Add all unique to RHS
+        rhs_unique = [c for c in rhs if c not in lhs]
+        if rhs_unique:
+            cov_list = convert_to_covariate(lhs_unique)
+            lhs_mfl = ModelFeatures.create_from_mfl_statement_list(cov_list)
+            add_cov_dict = dict(covariate_features(model, lhs_mfl.covariate, remove=False))
+            lnt.update(add_cov_dict)
 
         return lnt
 
@@ -599,13 +595,24 @@ class ModelFeatures:
         res = []
         if len(rhs) != 0 and len(lhs) != 0:
             # Find the unique products in both lists with matching expression/operator
-            combined = lhs
-            for effop, prod in rhs.items():
-                if add:
-                    combined[effop].update(prod)
-                else:
-                    combined[effop].difference_update(prod)
-            combined = {k: v for k, v in combined.items() if v != set()}
+            combined = lhs.copy()
+            if add:
+                combined.update(rhs)
+                for i in combined.copy():
+                    if i[4].option:
+                        opposite = list(i)
+                        opposite[4] = Option(False)
+                        opposite = tuple(opposite)
+                        combined.discard(opposite)
+            else:
+                combined.difference_update(rhs)
+                for i in rhs:
+                    opposite = list(i)
+                    opposite[4] = Option(False if i[4].option else True)
+                    opposite = tuple(opposite)
+                    if opposite in combined:
+                        combined.discard(opposite)
+                        combined.discard(i)  # Unnecessary ?
             res = combined
         elif len(rhs) != 0 and len(lhs) == 0 and add:
             res = rhs
@@ -614,24 +621,32 @@ class ModelFeatures:
         else:
             return tuple()
 
-        # Clean and combine all effect/operators with the same set of parameter and covariates
-        clean_res = defaultdict(list)
-        for effop, prod in res.items():
-            prod_key = tuple(sorted(prod))
-            if existing_effop := clean_res[prod_key]:
-                if effop[0] not in existing_effop[0]:
-                    existing_effop[0].append(effop[0])
-                if effop[1] not in existing_effop[1]:
-                    existing_effop[1].append(effop[1])
-                clean_res[prod_key] = existing_effop
-            else:
-                clean_res[prod_key] = [[effop[0]], [effop[1]]]
+        def _reduce(s, n):
+            clean_s = []
+            checked_keys = []
+            for i in s:
+                key = i[:n] + i[n + 1 :]
+                if key in checked_keys:
+                    pass
+                else:
+                    checked_keys.append(key)
+                    attr_set = set()
+                    for e in s:
+                        if key == e[:n] + e[n + 1 :]:
+                            attr_set.update(e[n])
+                    clean_s.append(i[:n] + (attr_set,) + i[n + 1 :])
+            return clean_s
 
+        # Convert all elements to SETS before using reduce
+        res = [tuple({x} for x in e) for e in res]
+        res = _reduce(res, 2)
+        res = _reduce(res, 1)
+        res = _reduce(res, 0)
         cov_res = []
-        for prod, effop in clean_res.items():
-            parameter = tuple(set([p[0] for p in prod]))
-            covariate = tuple(set([p[1] for p in prod]))
-            cov_res.append(Covariate(parameter, covariate, tuple(effop[0]), tuple(effop[1])))
+        for param, cov, fp, op, opt in res:
+            cov_res.append(
+                Covariate(tuple(param), tuple(cov), tuple(fp), list(op)[0], list(opt)[0])
+            )
 
         if all(len(c.parameter) == 0 for c in cov_res):
             return tuple()
@@ -669,25 +684,24 @@ class ModelFeatures:
     def _eq_covariate(self, other):
         lhs = self._extract_covariates()
         rhs = other._extract_covariates()
-
-        if all(key in rhs.keys() for key in lhs.keys()):
-            for key in lhs.keys():
-                if lhs[key] != rhs[key]:
-                    return False
-            return True
-        return False
+        # Should OPTIONAL be ignored?
+        return all(c in rhs for c in lhs)
 
     def _extract_covariates(self):
-        lhs = defaultdict(set)
+        lhs = set()
         lhs_ref = []
         for cov in self.covariate:
             if isinstance(cov.parameter, Ref) or isinstance(cov.covariate, Ref):
                 lhs_ref.append(cov)
                 continue
-            for effect in cov.eval().fp:
-                for op in cov.op:
-                    # TODO : Ignore using PROD and simply use tuple with one value each
-                    lhs[(effect.lower(), op)].update(set(product(cov.parameter, cov.covariate)))
+            else:
+                lhs.update(
+                    set(
+                        product(
+                            cov.parameter, cov.covariate, cov.eval().fp, (cov.op,), (cov.optional,)
+                        )
+                    )
+                )
 
         if len(lhs_ref) != 0:
             raise ValueError(
