@@ -586,12 +586,12 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                             cb.add_flow(from_comp, to_comp, new_flow)
 
                         for i, neweq in enumerate(neweqs):
-                            rhs = neweq.rhs
-                            assert isinstance(rhs, sympy.Expr)
+                            xrhs = neweq.rhs
+                            assert isinstance(xrhs, sympy.Expr)
                             if neweq.lhs.args[0].name == eq.lhs.args[0].name:
-                                neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(rhs - term))
+                                neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(xrhs - term))
                             elif neweq.lhs.args[0].name == comp_func.name:
-                                neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(rhs + term))
+                                neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(xrhs + term))
     for eq in neweqs:
         if eq.rhs != 0:
             i = sympy.Integer(0)

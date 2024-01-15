@@ -80,6 +80,6 @@ def test_des_mm(load_example_model_for_test, create_model_for_test):
     model = model.replace(dataset=dataset)
     cs = model.statements.ode_system
     central = cs.central_compartment
-    assert cs.get_flow(central, output) == sympy.simplify(
-        parse_expr('CLMM*KM/(V1*(KM + A_CENTRAL(t)/V1))')
-    )
+    flow = cs.get_flow(central, output)
+    correct_flow = sympy.simplify(parse_expr('CLMM*KM/(V1*(KM + A_CENTRAL(t)/V1))'))
+    assert flow == correct_flow
