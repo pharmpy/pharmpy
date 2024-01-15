@@ -10,6 +10,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.model import Model
 from pharmpy.tools import read_modelfit_results
+from pharmpy.workflows import ModelEntry
 from pharmpy.workflows.results import Results, read_results
 
 
@@ -29,13 +30,13 @@ class QAResults(Results):
 
 
 def calculate_results(
-    original_model,
-    base_model,
-    fullblock_model=None,
-    boxcox_model=None,
-    tdist_model=None,
-    add_etas_model=None,
-    iov_model=None,
+    original_model_entry,
+    base_model_entry,
+    fullblock_model_entry=None,
+    boxcox_model_entry=None,
+    tdist_model_entry=None,
+    add_etas_model_entry=None,
+    iov_model_entry=None,
     etas_added_to=None,
     frem_results=None,
     cdd_results=None,
@@ -44,14 +45,18 @@ def calculate_results(
     resmod_idv_results=None,
     **kwargs,
 ):
-    fullblock_table, fullblock_dofv = calc_fullblock(original_model, fullblock_model)
+    fullblock_table, fullblock_dofv = calc_fullblock(original_model_entry, fullblock_model_entry)
     boxcox_table, boxcox_dofv = calc_transformed_etas(
-        original_model, boxcox_model, 'boxcox', 'lambda'
+        original_model_entry, boxcox_model_entry, 'boxcox', 'lambda'
     )
-    tdist_table, tdist_dofv = calc_transformed_etas(original_model, tdist_model, 'tdist', 'df')
-    addetas_table, addetas_dofv = calc_add_etas(original_model, add_etas_model, etas_added_to)
-    iov_table, iov_dofv = calc_iov(original_model, iov_model)
-    frem_dofv = calc_frem_dofv(base_model, fullblock_model, frem_results)
+    tdist_table, tdist_dofv = calc_transformed_etas(
+        original_model_entry, tdist_model_entry, 'tdist', 'df'
+    )
+    addetas_table, addetas_dofv = calc_add_etas(
+        original_model_entry, add_etas_model_entry, etas_added_to
+    )
+    iov_table, iov_dofv = calc_iov(original_model_entry, iov_model_entry)
+    frem_dofv = calc_frem_dofv(base_model_entry, fullblock_model_entry, frem_results)
     univariate_sum, scm_table, scm_dofv = calc_scm_dofv(scm_results)
     infinds, cdd_dofv = influential_individuals(cdd_results)
     _, simeval_dofv = outliers(simeval_results, cdd_results)
@@ -210,7 +215,7 @@ def resmod(res):
     return df, dofv_tab
 
 
-def calc_iov(original_model, iov_model):
+def calc_iov(original_model_entry, iov_model_entry):
     dofv_tab = pd.DataFrame(
         {
             'section': ['parameter_variability'],
@@ -220,21 +225,23 @@ def calc_iov(original_model, iov_model):
             'df': [np.nan],
         }
     )
-    if iov_model is None:
+    if iov_model_entry is None:
         return None, dofv_tab
-    iov_res = iov_model.modelfit_results
+    iov_res = iov_model_entry.modelfit_results
     if iov_res is None:
         return None, dofv_tab
-    origres = original_model.modelfit_results
-    iov_params = iov_model.random_variables.iov.variance_parameters
+    origres = original_model_entry.modelfit_results
+    iov_params = iov_model_entry.model.random_variables.iov.variance_parameters
     iov_sds = [iov_res.parameter_estimates_sdcorr[param] for param in iov_params]
-    iiv_params = iov_model.random_variables.iiv.variance_parameters
-    iiv_params = [param for param in iiv_params if not original_model.parameters[param].fix]
+    iiv_params = iov_model_entry.model.random_variables.iiv.variance_parameters
+    iiv_params = [
+        param for param in iiv_params if not original_model_entry.model.parameters[param].fix
+    ]
     new_iiv_sds = [iov_res.parameter_estimates_sdcorr[param] for param in iiv_params]
     old_iiv_sds = [origres.parameter_estimates_sdcorr[param] for param in iiv_params]
 
     etas = []
-    for dist in original_model.random_variables.iiv:
+    for dist in original_model_entry.model.random_variables.iiv:
         if not set(iiv_params).isdisjoint({s.name for s in dist.free_symbols}):
             etas.extend(dist.names)
 
@@ -255,7 +262,7 @@ def calc_iov(original_model, iov_model):
     return table, dofv_tab
 
 
-def calc_add_etas(original_model, add_etas_model, etas_added_to):
+def calc_add_etas(original_model_entry, add_etas_model_entry, etas_added_to):
     dofv_tab = pd.DataFrame(
         {
             'section': ['parameter_variability'],
@@ -265,18 +272,18 @@ def calc_add_etas(original_model, add_etas_model, etas_added_to):
             'df': [np.nan],
         }
     )
-    if add_etas_model is None:
+    if add_etas_model_entry is None:
         return None, dofv_tab
-    add_etas_res = add_etas_model.modelfit_results
+    add_etas_res = add_etas_model_entry.modelfit_results
     if add_etas_res is None:
         return None, dofv_tab
-    origres = original_model.modelfit_results
-    original_etas = original_model.random_variables.etas.names
+    origres = original_model_entry.modelfit_results
+    original_etas = original_model_entry.model.random_variables.etas.names
     all_etas = original_etas + etas_added_to
     added = [True] * len(original_etas) + [False] * len(etas_added_to)
-    params = add_etas_model.random_variables.etas.variance_parameters
+    params = add_etas_model_entry.model.random_variables.etas.variance_parameters
     params = [sympy.Symbol(p) for p in params]
-    orig_params = original_model.random_variables.etas.variance_parameters
+    orig_params = original_model_entry.model.random_variables.etas.variance_parameters
     orig_params = [sympy.Symbol(p) for p in orig_params]
     add_etas_sds = [add_etas_res.parameter_estimates_sdcorr[p.name] for p in params]
     orig_sds = [origres.parameter_estimates_sdcorr[p.name] for p in orig_params]
@@ -330,7 +337,7 @@ def calc_scm_dofv(scm_results):
     return univariate_sum, table, dofv_tab
 
 
-def calc_frem_dofv(base_model, fullblock_model, frem_results):
+def calc_frem_dofv(base_model_entry, fullblock_model_entry, frem_results):
     """Calculate the dOFV for the frem model"""
     dofv_tab = pd.DataFrame(
         {
@@ -341,15 +348,15 @@ def calc_frem_dofv(base_model, fullblock_model, frem_results):
             'df': [np.nan],
         }
     )
-    if base_model is None or frem_results is None:
+    if base_model_entry is None or frem_results is None:
         return dofv_tab
-    baseres = base_model.modelfit_results
+    baseres = base_model_entry.modelfit_results
     if baseres is not None:
         base_ofv = baseres.ofv
     else:
         return dofv_tab
-    if fullblock_model is not None:
-        fullres = fullblock_model.modelfit_results
+    if fullblock_model_entry is not None:
+        fullres = fullblock_model_entry.modelfit_results
         if fullres is not None:
             full_ofv = fullres.ofv
         else:
@@ -375,7 +382,7 @@ def calc_frem_dofv(base_model, fullblock_model, frem_results):
     return dofv_tab
 
 
-def calc_transformed_etas(original_model, new_model, transform_name, parameter_name):
+def calc_transformed_etas(original_model_entry, new_model_entry, transform_name, parameter_name):
     """Retrieve new and old parameters of boxcox"""
     dofv_tab = pd.DataFrame(
         {
@@ -386,18 +393,18 @@ def calc_transformed_etas(original_model, new_model, transform_name, parameter_n
             'df': [np.nan],
         }
     )
-    if new_model is None:
+    if new_model_entry is None:
         return None, dofv_tab
-    origres = original_model.modelfit_results
-    newres = new_model.modelfit_results
+    origres = original_model_entry.modelfit_results
+    newres = new_model_entry.modelfit_results
     if newres is None:
         return None, dofv_tab
-    params = new_model.random_variables.etas.variance_parameters
+    params = new_model_entry.model.random_variables.etas.variance_parameters
     params = [sympy.Symbol(p) for p in params]
     boxcox_sds = [newres.parameter_estimates_sdcorr[p.name] for p in params]
     orig_sds = [origres.parameter_estimates_sdcorr[p.name] for p in params]
     thetas = newres.parameter_estimates_sdcorr[0 : len(params)]
-    eta_names = new_model.random_variables.etas.names
+    eta_names = new_model_entry.model.random_variables.etas.names
 
     table = pd.DataFrame(
         {parameter_name: thetas.values, 'new_sd': boxcox_sds, 'old_sd': orig_sds}, index=eta_names
@@ -415,7 +422,7 @@ def calc_transformed_etas(original_model, new_model, transform_name, parameter_n
     return table, dofv_tab
 
 
-def calc_fullblock(original_model, fullblock_model):
+def calc_fullblock(original_model_entry, fullblock_model_entry):
     """Retrieve new and old parameters of full block"""
     dofv_tab = pd.DataFrame(
         {
@@ -426,13 +433,13 @@ def calc_fullblock(original_model, fullblock_model):
             'df': [np.nan],
         }
     )
-    if fullblock_model is None:
+    if fullblock_model_entry is None:
         return None, dofv_tab
-    origres = original_model.modelfit_results
-    fullres = fullblock_model.modelfit_results
+    origres = original_model_entry.modelfit_results
+    fullres = fullblock_model_entry.modelfit_results
     if fullres is None:
         return None, dofv_tab
-    dist = fullblock_model.random_variables.iiv[0]
+    dist = fullblock_model_entry.model.random_variables.iiv[0]
     fullblock_parameters = [str(symb) for symb in dist.variance.free_symbols]
     new_params = (
         fullres.parameter_estimates_sdcorr[fullblock_parameters]
@@ -499,52 +506,52 @@ def psn_qa_results(path):
 
     original_model = Model.parse_model(path / 'linearize_run' / 'scm_dir1' / 'derivatives.mod')
     orig_res = read_modelfit_results(path / 'linearize_run' / 'scm_dir1' / 'derivatives.mod')
-    original_model = original_model.replace(modelfit_results=orig_res)
+    original_model_entry = ModelEntry.create(model=original_model, modelfit_results=orig_res)
 
     base_path = list(path.glob('*_linbase.mod'))[0]
     base_model = Model.parse_model(base_path)
-    base_res = Model.parse_model(base_path)
-    base_model = base_model.replace(modelfit_results=base_res)
+    base_res = read_modelfit_results(base_path)
+    base_model_entry = ModelEntry.create(model=base_model, modelfit_results=base_res)
 
     fullblock_path = path / 'modelfit_run' / 'fullblock.mod'
     if fullblock_path.is_file():
         fullblock_model = Model.parse_model(fullblock_path)
         fb_res = read_modelfit_results(fullblock_path)
-        fullblock_model = fullblock_model.replace(modelfit_results=fb_res)
+        fullblock_model_entry = ModelEntry.create(model=fullblock_model, modelfit_results=fb_res)
     else:
-        fullblock_model = None
+        fullblock_model_entry = None
 
     boxcox_path = path / 'modelfit_run' / 'boxcox.mod'
     if boxcox_path.is_file():
         boxcox_model = Model.parse_model(boxcox_path)
         bc_res = read_modelfit_results(boxcox_path)
-        boxcox_model = boxcox_model.replace(modelfit_results=bc_res)
+        boxcox_model_entry = ModelEntry.create(model=boxcox_model, modelfit_results=bc_res)
     else:
-        boxcox_model = None
+        boxcox_model_entry = None
 
     tdist_path = path / 'modelfit_run' / 'tdist.mod'
     if tdist_path.is_file():
         tdist_model = Model.parse_model(tdist_path)
         td_res = read_modelfit_results(tdist_path)
-        tdist_model = tdist_model.replace(modelfit_results=td_res)
+        tdist_model_entry = ModelEntry.create(model=tdist_model, modelfit_results=td_res)
     else:
-        tdist_model = None
+        tdist_model_entry = None
 
     addetas_path = path / 'add_etas_run' / 'add_etas_linbase.mod'
     if addetas_path.is_file():
         addetas_model = Model.parse_model(addetas_path)
         ae_res = read_modelfit_results(addetas_path)
-        addetas_model = addetas_model.replace(modelfit_results=ae_res)
+        addetas_model_entry = ModelEntry.create(model=addetas_model, modelfit_results=ae_res)
     else:
-        addetas_model = None
+        addetas_model_entry = None
 
     iov_path = path / 'modelfit_run' / 'iov.mod'
     if iov_path.is_file():
         iov_model = Model.parse_model(iov_path)
         iov_res = read_modelfit_results(iov_path)
-        iov_model = iov_model.replace(modelfit_results=iov_res)
+        iov_model_entry = ModelEntry.create(model=iov_model, modelfit_results=iov_res)
     else:
-        iov_model = None
+        iov_model_entry = None
 
     frem_path = path / 'frem_run' / 'results.json'
     if frem_path.is_file():
@@ -586,13 +593,13 @@ def psn_qa_results(path):
     bias = read_results_summary(path)
 
     return calculate_results(
-        original_model,
-        base_model,
-        fullblock_model=fullblock_model,
-        boxcox_model=boxcox_model,
-        tdist_model=tdist_model,
-        add_etas_model=addetas_model,
-        iov_model=iov_model,
+        original_model_entry,
+        base_model_entry,
+        fullblock_model_entry=fullblock_model_entry,
+        boxcox_model_entry=boxcox_model_entry,
+        tdist_model_entry=tdist_model_entry,
+        add_etas_model_entry=addetas_model_entry,
+        iov_model_entry=iov_model_entry,
         etas_added_to=etas_added_to,
         frem_results=frem_res,
         cdd_results=cdd_res,
