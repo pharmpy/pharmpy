@@ -47,7 +47,6 @@ def get_covariates(model: Model) -> dict[list]:
     """
     parameters = get_individual_parameters(model)
     covariates = get_model_covariates(model)
-    covariates = [c for c in covariates if model.datainfo[str(c)].type == "covariate"]
 
     param_w_cov = defaultdict(list)
 
