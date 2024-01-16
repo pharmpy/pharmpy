@@ -18,8 +18,8 @@ decorator==5.1.1
 defusedxml==0.7.1
 distributed==2024.1.0
 docutils==0.20.1
-executing==2.0.1
 exceptiongroup==1.2.0
+executing==2.0.1
 fastjsonschema==2.19.1
 fsspec==2023.12.2
 idna==3.6
@@ -71,6 +71,7 @@ python-dateutil==2.8.2
 pytz==2023.3.post1
 pywin32>=302,!=304; sys_platform == 'win32' and platform_python_implementation != 'PyPy'
 PyYAML==6.0.1
+pyzmq==25.1.2
 referencing==0.32.1
 requests==2.31.0
 rich==13.7.0
