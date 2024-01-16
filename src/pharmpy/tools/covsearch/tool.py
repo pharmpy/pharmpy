@@ -573,7 +573,9 @@ def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_inde
     func = effect[1]
     model_with_removed_effect = func(model_with_removed_effect)
 
-    model_with_removed_effect = update_initial_estimates(model_with_removed_effect)
+    model_with_removed_effect = update_initial_estimates(
+        model_with_removed_effect, candidate.modelentry.modelfit_results
+    )
     return ModelEntry.create(
         model=model_with_removed_effect, parent=candidate.modelentry.model, modelfit_results=None
     )
