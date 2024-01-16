@@ -50,7 +50,7 @@ msgpack==1.0.7
 nbclient==0.9.0
 nbconvert==7.14.1
 nbformat==5.9.2
-nest-asyncio==1.5.8
+nest-asyncio==1.5.9
 networkx==3.2.1
 numexpr==2.8.8
 numpy==1.26.3
