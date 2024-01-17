@@ -33,6 +33,17 @@ class Peripherals(ModelFeature):
         else:
             return False
 
+    @property
+    def eval(self):
+        if isinstance(self.modes, Wildcard):
+            return Peripherals(self.counts, self._wildcard)
+        else:
+            return self
+
+    @property
+    def _wildcard(self):
+        return tuple([Name(x) for x in ['DRUG', 'MET']])
+
 
 class PeripheralsInterpreter(CountInterpreter):
     def interpret(self, tree):

@@ -24,14 +24,24 @@ from pharmpy.tools.mfl.feature.covariate import features as covariate_features
 from pharmpy.tools.mfl.statement.definition import Let
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
+from pharmpy.tools.mfl.statement.feature.direct_effect import DirectEffect
+from pharmpy.tools.mfl.statement.feature.effect_comp import EffectComp
 from pharmpy.tools.mfl.statement.feature.elimination import Elimination
+from pharmpy.tools.mfl.statement.feature.indirect_effect import IndirectEffect
 from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
+from pharmpy.tools.mfl.statement.feature.metabolite import Metabolite
 from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
 from pharmpy.tools.mfl.statement.feature.symbols import Name
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 
 from .grammar import grammar
-from .helpers import all_funcs, funcs, modelsearch_features
+from .helpers import (
+    all_funcs,
+    funcs,
+    modelsearch_features,
+    structsearch_metabolite_features,
+    structsearch_pd_features,
+)
 from .interpreter import MFLInterpreter
 from .statement.feature.covariate import Ref
 from .statement.feature.symbols import Option, Wildcard
@@ -97,12 +107,16 @@ def validate_mfl_list(mfl_statement_list):
 class ModelFeatures:
     def __init__(
         self,
-        absorption=Absorption((Name('INST'),)),
-        elimination=Elimination((Name('FO'),)),
-        transits=(Transits((0,), (Name('DEPOT'),)),),  # NOTE : This is a tuple
-        peripherals=Peripherals((0,)),
-        lagtime=LagTime((Name('OFF'),)),
+        absorption=None,
+        elimination=None,
+        transits=tuple(),  # NOTE : This is a tuple
+        peripherals=tuple(),
+        lagtime=None,
         covariate=tuple(),  # Note : Should always be tuple (empty meaning no covariates)
+        direct_effect=None,
+        effect_comp=None,
+        indirect_effect=tuple(),
+        metabolite=None,
     ):
         self._absorption = absorption
         self._elimination = elimination
@@ -110,22 +124,30 @@ class ModelFeatures:
         self._peripherals = peripherals
         self._lagtime = lagtime
         self._covariate = covariate
+        self._direct_effect = direct_effect
+        self._effect_comp = effect_comp
+        self._indirect_effect = indirect_effect
+        self._metabolite = metabolite
 
     @classmethod
     def create(
         cls,
-        absorption=Absorption((Name('INST'),)),
-        elimination=Elimination((Name('FO'),)),
-        transits=(Transits((0,), (Name('DEPOT'),)),),
-        peripherals=Peripherals((0,)),
-        lagtime=LagTime((Name('OFF'),)),
+        absorption=None,
+        elimination=None,
+        transits=tuple(),
+        peripherals=tuple(),
+        lagtime=None,
         covariate=tuple(),
+        direct_effect=None,
+        effect_comp=None,
+        indirect_effect=tuple(),
+        metabolite=None,
     ):
         # TODO : Check if allowed input value
-        if not isinstance(absorption, Absorption):
+        if absorption is not None and not isinstance(absorption, Absorption):
             raise ValueError(f"Absorption : {absorption} is not suppoerted")
 
-        if not isinstance(elimination, Elimination):
+        if elimination is not None and not isinstance(elimination, Elimination):
             raise ValueError(f"Elimination : {elimination} is not supported")
 
         if not isinstance(transits, tuple):
@@ -133,17 +155,45 @@ class ModelFeatures:
         if not all(isinstance(t, Transits) for t in transits):
             raise ValueError("All given elements of transits must be of type Transits")
 
-        if not isinstance(peripherals, Peripherals):
+        if not isinstance(peripherals, tuple):
+            raise ValueError("Peripherals need to be given within a tuple")
+        if not all(isinstance(p, Peripherals) for p in peripherals):
             raise ValueError(f"Peripherals : {peripherals} is not supported")
 
-        if not isinstance(lagtime, LagTime):
+        if lagtime is not None and not isinstance(lagtime, LagTime):
             raise ValueError(f"Lagtime : {lagtime} is not supported")
 
-        if not covariate == tuple():
-            if not isinstance(covariate, tuple):
-                raise ValueError("Covariates need to be given within a tuple")
-            if not all(isinstance(c, Covariate) for c in covariate):
-                raise ValueError(f"Covariate : {covariate} is not supported")
+        if not isinstance(covariate, tuple):
+            raise ValueError("Covariates need to be given within a tuple")
+        if not all(isinstance(c, Covariate) for c in covariate):
+            raise ValueError(f"Covariate : {covariate} is not supported")
+
+        if direct_effect is not None and not isinstance(direct_effect, DirectEffect):
+            raise ValueError(f"DirectEffect : {direct_effect} is not supported")
+
+        if effect_comp is not None and not isinstance(effect_comp, EffectComp):
+            raise ValueError(f"EffectComp : {effect_comp} is not supported")
+
+        if not isinstance(indirect_effect, tuple):
+            raise ValueError("IndirectEffect(s) need to be given within a tuple")
+        if not all(isinstance(i, IndirectEffect) for i in indirect_effect):
+            raise ValueError("All given elements of indirect_effect must be of type IndirectEffect")
+
+        if metabolite is not None and not isinstance(metabolite, Metabolite):
+            raise ValueError(f"Metabolite : {metabolite} is not supported")
+
+        # Indicate that we have a PK model, need default features
+        if any(x for x in [absorption, elimination, transits, peripherals, lagtime, metabolite]):
+            if absorption is None:
+                absorption = Absorption((Name('INST'),))
+            if elimination is None:
+                elimination = Elimination((Name('FO'),))
+            if transits == tuple():
+                transits = (Transits((0,), (Name('DEPOT'),)),)
+            if peripherals == tuple():
+                peripherals += (Peripherals((0,)),)
+            if lagtime is None:
+                lagtime = LagTime((Name('OFF'),))
 
         return cls(
             absorption=absorption,
@@ -152,33 +202,49 @@ class ModelFeatures:
             peripherals=peripherals,
             lagtime=lagtime,
             covariate=covariate,
+            direct_effect=direct_effect,
+            effect_comp=effect_comp,
+            indirect_effect=indirect_effect,
+            metabolite=metabolite,
         )
 
     @classmethod
     def create_from_mfl_statement_list(cls, mfl_list):
-        m = ModelFeatures()
-        absorption = m._default_values()['absorption']
-        elimination = m._default_values()['elimination']
-        transits = m._default_values()['transits']
-        peripherals = m._default_values()['peripherals']
-        lagtime = m._default_values()['lagtime']
-        covariate = m._default_values()['covariate']
+        absorption = None
+        elimination = None
+        transits = tuple()
+        peripherals = tuple()
+        lagtime = None
+        covariate = tuple()
+        direct_effect = None
+        effect_comp = None
+        indirect_effect = tuple()
+        metabolite = None
         let = {}
+
         for statement in mfl_list:
             if isinstance(statement, Absorption):
-                absorption = statement
+                absorption = absorption + statement if absorption else statement
             elif isinstance(statement, Elimination):
-                elimination = statement
+                elimination = elimination + statement if elimination else statement
             elif isinstance(statement, Transits):
-                transits = (statement,)
+                transits += (statement,)
             elif isinstance(statement, Peripherals):
-                peripherals = statement
+                peripherals += (statement,)
             elif isinstance(statement, LagTime):
-                lagtime = statement
+                lagtime = lagtime + statement if lagtime else statement
             elif isinstance(statement, Covariate):
                 covariate += (statement,)
             elif isinstance(statement, Let):
                 let[statement.name] = statement.value
+            elif isinstance(statement, DirectEffect):
+                direct_effect = direct_effect + statement if direct_effect else statement
+            elif isinstance(statement, EffectComp):
+                effect_comp = effect_comp + statement if effect_comp else statement
+            elif isinstance(statement, IndirectEffect):
+                indirect_effect += (statement,)
+            elif isinstance(statement, Metabolite):
+                metabolite = metabolite + statement if metabolite else statement
             else:
                 raise ValueError(f'Unknown ({type(statement)} statement ({statement}) given.')
 
@@ -207,6 +273,10 @@ class ModelFeatures:
             peripherals=peripherals,
             lagtime=lagtime,
             covariate=covariate,
+            direct_effect=direct_effect,
+            effect_comp=effect_comp,
+            indirect_effect=indirect_effect,
+            metabolite=metabolite,
         )
         return mfl
 
@@ -221,6 +291,10 @@ class ModelFeatures:
         peripherals = kwargs.get("peripherals", self._peripherals)
         lagtime = kwargs.get("lagtime", self._lagtime)
         covariate = kwargs.get("covariate", self._covariate)
+        direct_effect = kwargs.get("direct_effect", self._direct_effect)
+        effect_comp = kwargs.get("effect_comp", self._effect_comp)
+        indirect_effect = kwargs.get("indirect_effect", self._indirect_effect)
+        metabolite = kwargs.get("metabolite", self._metabolite)
         return ModelFeatures.create(
             absorption=absorption,
             elimination=elimination,
@@ -228,17 +302,11 @@ class ModelFeatures:
             peripherals=peripherals,
             lagtime=lagtime,
             covariate=covariate,
+            direct_effect=direct_effect,
+            effect_comp=effect_comp,
+            indirect_effect=indirect_effect,
+            metabolite=metabolite,
         )
-
-    def _default_values(self):
-        return {
-            'absorption': Absorption((Name('INST'),)),
-            'elimination': Elimination((Name('FO'),)),
-            'transits': (Transits((0,), (Name('DEPOT'),)),),
-            'peripherals': Peripherals((0,)),
-            'lagtime': LagTime((Name('OFF'),)),
-            'covariate': tuple(),
-        }
 
     @property
     def absorption(self):
@@ -263,6 +331,22 @@ class ModelFeatures:
     @property
     def covariate(self):
         return self._covariate
+
+    @property
+    def direct_effect(self):
+        return self._direct_effect
+
+    @property
+    def effect_comp(self):
+        return self._effect_comp
+
+    @property
+    def indirect_effect(self):
+        return self._indirect_effect
+
+    @property
+    def metabolite(self):
+        return self._metabolite
 
     def expand(self, model):
         explicit_covariates = set(
@@ -289,12 +373,16 @@ class ModelFeatures:
             )
 
         return ModelFeatures.create(
-            absorption=self.absorption.eval,
-            elimination=self.elimination.eval,
+            absorption=self.absorption.eval if self.absorption else None,
+            elimination=self.elimination.eval if self.elimination else None,
             transits=tuple([t.eval for t in self.transits]),
-            peripherals=self.peripherals,
-            lagtime=self.lagtime.eval,
+            peripherals=tuple([p.eval for p in self.peripherals]),
+            lagtime=self.lagtime.eval if self.lagtime else None,
             covariate=covariate,
+            direct_effect=self.direct_effect.eval if self.direct_effect else None,
+            effect_comp=self.effect_comp.eval if self.effect_comp else None,
+            indirect_effect=tuple([i.eval for i in self.indirect_effect]),
+            metabolite=self.metabolite.eval if self.metabolite else None,
         )
 
     def mfl_statement_list(self, attribute_type: Optional[List[str]] = []):
@@ -310,6 +398,10 @@ class ModelFeatures:
                 "peripherals",
                 "lagtime",
                 "covariate",
+                "direct_effect",
+                "effect_comp",
+                "indirect_effect",
+                "metabolite",
             ]
         mfl_list = []
         if "absorption" in attribute_type:
@@ -320,42 +412,104 @@ class ModelFeatures:
             for t in self.transits:
                 mfl_list.append(t)
         if "peripherals" in attribute_type:
-            mfl_list.append(self.peripherals)
+            for p in self.peripherals:
+                mfl_list.append(p)
         if "lagtime" in attribute_type:
             mfl_list.append(self.lagtime)
         if "covariate" in attribute_type:
             for c in self.covariate:
                 mfl_list.append(c)
+        if "direct_effect" in attribute_type:
+            mfl_list.append(self.direct_effect)
+        if "effect_comp" in attribute_type:
+            mfl_list.append(self.effect_comp)
+        if "indirect_effect" in attribute_type:
+            for i in self.indirect_effect:
+                mfl_list.append(i)
+        if "metabolite" in attribute_type:
+            mfl_list.append(self.metabolite)
 
         return [m for m in mfl_list if m]
 
-    def convert_to_funcs(
-        self, attribute_type: Optional[List[str]] = None, model: Optional[Model] = None
-    ):
-        # The model argument is used for when extacting covariates.
-        if not model:
-            model = Model()
-        # TODO : implement argument if we wish to use subset instead of all functions.
-        if self.covariate != tuple():
-            return all_funcs(model, self.mfl_statement_list(attribute_type))
+    def filtration(self, subset):
+        if subset == "pk":
+            peripherals = self._extract_peripherals()
+            if peripherals["DRUG"]:
+                peripherals = (Peripherals(tuple(peripherals["DRUG"]), (Name("DRUG"),)),)
+            else:
+                peripherals = tuple()
+            return ModelFeatures.create(
+                absorption=self.absorption,
+                elimination=self.elimination,
+                transits=self.transits,
+                peripherals=peripherals,
+                lagtime=self.lagtime,
+            )
+        elif subset == "pd":
+            return ModelFeatures.create(
+                direct_effect=self.direct_effect,
+                effect_comp=self.effect_comp,
+                indirect_effect=self.indirect_effect,
+            )
+        elif subset == "metabolite":
+            peripherals = self._extract_peripherals()
+            if peripherals["MET"]:
+                peripherals = (Peripherals(tuple(peripherals["MET"]), (Name("MET"),)),)
+            else:
+                peripherals = tuple()
+            return ModelFeatures.create(peripherals=peripherals, metabolite=self.metabolite)
         else:
-            return funcs(model, self.mfl_statement_list(attribute_type), modelsearch_features)
+            raise ValueError(f"Unknown subset {subset}")
+
+    def convert_to_funcs(
+        self,
+        attribute_type: Optional[List[str]] = None,
+        model: Optional[Model] = None,
+        subset_features=None,
+    ):
+        if subset_features == "pk":
+            filtered_mfl = self.filtration(subset_features)
+            return funcs(
+                model, filtered_mfl.mfl_statement_list(attribute_type), modelsearch_features
+            )
+        elif subset_features == "pd":
+            filtered_mfl = self.filtration(subset_features)
+            return funcs(
+                model, filtered_mfl.mfl_statement_list(attribute_type), structsearch_pd_features
+            )
+        elif subset_features == "metabolite":
+            filtered_mfl = self.filtration(subset_features)
+            return funcs(
+                model,
+                filtered_mfl.mfl_statement_list(attribute_type),
+                structsearch_metabolite_features,
+            )
+        else:
+            # The model argument is used for when extacting covariates.
+            if not model:
+                model = Model()
+            return all_funcs(model, self.mfl_statement_list(attribute_type))
 
     def contain_subset(self, mfl, model: Optional[Model] = None, tool: Optional[str] = None):
         """See if class contain specified subset"""
         transits = self._subset_transits(mfl)
+        peripheral_lhs = self._extract_peripherals()
+        peripheral_rhs = mfl._extract_peripherals()
 
-        # FIXME : Add support for wildcard
         if (
             all([s in self.absorption.eval.modes for s in mfl.absorption.eval.modes])
             and all([s in self.elimination.eval.modes for s in mfl.elimination.eval.modes])
             and transits
-            and all([s in self.peripherals.counts for s in mfl.peripherals.counts])
             and all([s in self.lagtime.eval.modes for s in mfl.lagtime.eval.modes])
         ):
             if tool is None or tool in ["modelsearch"]:
-                return True
+                return peripheral_lhs["DRUG"] == peripheral_rhs["DRUG"]
             else:
+                if not (
+                    peripheral_lhs["DRUG"] == peripheral_rhs["DRUG"]
+                    and peripheral_lhs["MET"] == peripheral_rhs["MET"]
+                ):
+                    return False
                 if self.covariate != tuple() or mfl.covariate != tuple():
                     if model is None:
                         warnings.warn("Need argument 'model' in order to compare covariates")
@@ -404,26 +558,31 @@ class ModelFeatures:
         self, other, model: Optional[Model] = None, tool: Optional[str] = None
     ):
         """The smallest set of transformations to become part of other"""
+
+        def _lnt_helper(lhs, rhs, mfl, name, lnt):
+            if lhs is None and rhs is not None or lhs is not None and rhs is None:
+                raise ValueError(
+                    f"{name} : is only part of one of the MFLs" " and therefore cannot be compared"
+                )
+            if lhs is None and rhs is None:
+                return lnt
+            if not any(x in rhs.eval.modes for x in lhs.eval.modes):
+                name, func = list(mfl.convert_to_funcs([name]).items())[0]
+                lnt[name] = func
+            return lnt
+
         # Add more tools than "modelsearch" if support is needed
         lnt = {}
         if tool is None or tool in ["modelsearch"]:
-            if not any(a in other.absorption.eval.modes for a in self.absorption.eval.modes):
-                name, func = list(other.convert_to_funcs(["absorption"]).items())[0]
-                lnt[name] = func
+            lnt = _lnt_helper(self.absorption, other.absorption, other, "absorption", lnt)
 
-            if not any(e in other.elimination.eval.modes for e in self.elimination.eval.modes):
-                name, func = list(other.convert_to_funcs(["elimination"]).items())[0]
-                lnt[name] = func
+            lnt = _lnt_helper(self.elimination, other.elimination, other, "elimination", lnt)
 
             lnt = self._lnt_transits(other, lnt)
 
-            if not any(p in other.peripherals.counts for p in self.peripherals.counts):
-                name, func = list(other.convert_to_funcs(["peripherals"]).items())[0]
-                lnt[name] = func
+            lnt = self._lnt_peripherals(other, lnt, "pk")
 
-            if not any(lt in other.lagtime.eval.modes for lt in self.lagtime.eval.modes):
-                name, func = list(other.convert_to_funcs(["lagtime"]).items())[0]
-                lnt[name] = func
+            lnt = _lnt_helper(self.lagtime, other.lagtime, other, "lagtime", lnt)
 
         # TODO : Use in covsearch instead of taking diff
         if tool is None:
@@ -433,47 +592,80 @@ class ModelFeatures:
                 if self.covariate != tuple() or other.covariate != tuple():
                     warnings.warn("Need argument 'model' in order to compare covariates")
 
+            lnt = self._lnt_peripherals(other, lnt, "metabolite")
+
+            lnt = _lnt_helper(self.direct_effect, other.direct_effect, other, "direct_effect", lnt)
+
+            lnt = _lnt_helper(self.effect_comp, other.effect_comp, other, "effect_comp", lnt)
+
+            lnt = self._lnt_indirect_effect(other, lnt)
+
+            lnt = _lnt_helper(self.metabolite, other.metabolite, other, "metabolite", lnt)
+
+        return lnt
+
+    def _lnt_indirect_effect(self, other, lnt):
+        lhs, rhs, combine = _add_helper(
+            self.indirect_effect, other.indirect_effect, "modes", "production"
+        )
+        if not combine and rhs:
+            # No shared attribute
+            func_dict = other.convert_to_funcs(["indirect_effect"])
+            for key in lhs.keys():
+                if key in rhs.keys():
+                    lnt[('INDIRECT', rhs[key][0], key.name)] = func_dict[
+                        ('INDIRECT', rhs[key][0], key.name)
+                    ]
+                    return lnt
+            # No key is matching
+            key = next(iter(rhs))
+            lnt[('INDIRECT', rhs[key][0], key.name)] = func_dict[
+                ('INDIRECT', rhs[key][0], key.name)
+            ]
+            return lnt
         return lnt
 
     def _lnt_transits(self, other, lnt):
-        lhs_depot = [d for t in self.transits for d in t.eval.depot]
-        rhs_depot = [d for t in other.transits for d in t.eval.depot]
-
-        if not any(td in rhs_depot for td in lhs_depot):
-            # DEPOT does not match -> Take first function regardless of counts
-            name, func = list(other.convert_to_funcs(["transits"]).items())[0]
-            lnt[name] = func
-        else:
-            # DEPOT does match -> Need to check counts for corresponding depot
-            # First check counts of all matching depots
-            for depot in lhs_depot:
-                if depot in rhs_depot:
-                    depot_counts = [
-                        c for t in self.transits for c in t.counts if depot in t.eval.depot
-                    ]
-                    rhs_depot_counts = [
-                        c for t in other.transits for c in t.counts if depot in t.eval.depot
-                    ]
-                    diff = [c for c in rhs_depot_counts if c not in depot_counts]
-                    match = [c for c in rhs_depot_counts if c in depot_counts]
-
-                    if len(match) != 0:
-                        return lnt
-                    # There is a difference in set of counts for the same depot argument
-                    if len(diff) != 0:
-                        func_dict = other.convert_to_funcs(["transits"])
-                        lnt[('TRANSITS', diff[0], depot.name)] = func_dict[
-                            ('TRANSITS', diff[0], depot.name)
-                        ]
-
-                        return lnt
-
-            # else take first count value of non matching depot
-            depot = next(d for d in rhs_depot if d not in lhs_depot)
-            count = next(c for t in other.transits for c in t.counts if depot in t.eval.depot)
+        lhs, rhs, combine = _add_helper(self.transits, other.transits, "counts", "depot")
+        if not combine and rhs:
+            # No shared attribute
             func_dict = other.convert_to_funcs(["transits"])
-            lnt[('TRANSITS', count, depot.name)] = func_dict[('TRANSITS', diff[0], depot.name)]
+            for key in lhs.keys():
+                if key in rhs.keys():
+                    lnt[('TRANSITS', rhs[key][0], key.name)] = func_dict[
+                        ('TRANSITS', rhs[key][0], key.name)
+                    ]
+                    return lnt
+            # No key is matching
+            key = next(iter(rhs))
+            lnt[('TRANSITS', rhs[key][0], key.name)] = func_dict[
+                ('TRANSITS', rhs[key][0], key.name)
+            ]
+            return lnt
+        return lnt
 
+    def _lnt_peripherals(self, other, lnt, subset):
+        if subset == "pk":
+            keys = ["DRUG"]
+        if subset == "metabolite":
+            keys = ["MET"]
+        else:
+            keys = ["DRUG", "MET"]
+        lhs = self._extract_peripherals()
+        rhs = other._extract_peripherals()
+        func_dict = other.convert_to_funcs(["peripherals"])
+        for key in keys:
+            if not any(c in rhs[key] for c in lhs[key]):
+                if key == "DRUG":
+                    if rhs[key]:
+                        lnt[("PERIPHERALS", min(rhs[key]))] = func_dict[
+                            ("PERIPHERALS", min(rhs[key]))
+                        ]
+                elif key == "MET":
+                    if rhs[key]:
+                        lnt[("PERIPHERALS", min(rhs[key]), "METABOLITE")] = func_dict[
+                            ("PERIPHERALS", min(rhs[key]), "METABOLITE")
+                        ]
         return lnt
 
     def _lnt_covariates(self, other, lnt, model):
@@ -511,78 +703,137 @@ class ModelFeatures:
         return mfl_stringify(self.mfl_statement_list())
 
     def __sub__(self, other):
+        def sub(lhs, rhs):
+            if lhs:
+                if rhs:
+                    if lhs == rhs:
+                        return None
+                    else:
+                        return lhs - rhs
+                else:
+                    return lhs
+            else:
+                return lhs
+
         transits = self._add_sub_transits(other, add=False)
+        peripherals = self._add_sub_peripherals(other, add=False)
         covariates = self._add_sub_covariates(other, add=False)
+        indirect_effect = self._add_sub_indirect_effect(other, add=False)
 
         return ModelFeatures.create(
-            absorption=self.absorption - other.absorption,
-            elimination=self.elimination - other.elimination,
+            absorption=sub(self.absorption, other.absorption),
+            elimination=sub(self.elimination, other.elimination),
             transits=transits,
-            peripherals=self.peripherals - other.peripherals,
-            lagtime=self.lagtime - other.lagtime,
+            peripherals=peripherals,
+            lagtime=sub(self.lagtime, other.lagtime),
             covariate=covariates,
+            direct_effect=sub(self.direct_effect, other.direct_effect),
+            effect_comp=sub(self.effect_comp, other.effect_comp),
+            indirect_effect=indirect_effect,
+            metabolite=sub(self.metabolite, other.metabolite),
         )
 
     def __add__(self, other):
+        def add(lhs, rhs):
+            if lhs:
+                if rhs:
+                    return lhs + rhs
+                else:
+                    return lhs
+            elif rhs:
+                return rhs
+            else:
+                return lhs
+
         transits = self._add_sub_transits(other, add=True)
+        peripherals = self._add_sub_peripherals(other, add=True)
         covariates = self._add_sub_covariates(other, add=True)
+        indirect_effect = self._add_sub_indirect_effect(other, add=True)
 
         return ModelFeatures.create(
-            absorption=self.absorption + other.absorption,
-            elimination=self.elimination + other.elimination,
+            absorption=add(self.absorption, other.absorption),
+            elimination=add(self.elimination, other.elimination),
             transits=transits,
-            peripherals=self.peripherals + other.peripherals,
-            lagtime=self.lagtime + other.lagtime,
+            peripherals=peripherals,
+            lagtime=add(self.lagtime, other.lagtime),
             covariate=covariates,
+            direct_effect=add(self.direct_effect, other.direct_effect),
+            effect_comp=add(self.effect_comp, other.effect_comp),
+            indirect_effect=indirect_effect,
+            metabolite=add(self.metabolite, other.metabolite),
         )
+
+    def _add_sub_peripherals(self, other, add=True):
+        lhs = self._extract_peripherals()
+        rhs = other._extract_peripherals()
+
+        combined = {"MET": tuple(), "DRUG": tuple()}
+
+        for key in combined.keys():
+            if add:
+                combined[key] = tuple(lhs[key].union(rhs[key]))
+            else:
+                combined[key] = tuple(lhs[key].difference(rhs[key]))
+
+        peripherals = []
+        for k, v in combined.items():
+            if v:  # Not an empty tuple
+                peripherals.append(Peripherals(v, (Name(k),)))
+        if peripherals:
+            return tuple(peripherals)
+        else:
+            return tuple()
+
+    def _add_sub_indirect_effect(self, other, add=True):
+        """Apply logic for adding/subtracting mfl IndirectEffect(s).
+        Use add = False for subtraction"""
+        # TODO : combine with _add_sub_transits()
+        lhs, rhs, combined = _add_helper(
+            self.indirect_effect, other.indirect_effect, "modes", "production"
+        )
+
+        def convert_to_indirect_effect(d):
+            indirect_effects = []
+            for k, v in d.items():
+                indirect_effects.append(IndirectEffect(v, (k,)))
+            return indirect_effects
+
+        lhs_indirect_effects = convert_to_indirect_effect(lhs)
+        rhs_indirect_effects = convert_to_indirect_effect(rhs)
+        combined_indirect_effects = convert_to_indirect_effect(combined)
+
+        # TODO : Cleanup and combine all possible statements
+        if add:
+            return tuple(lhs_indirect_effects + rhs_indirect_effects + combined_indirect_effects)
+        else:
+            if lhs_indirect_effects:
+                return tuple(lhs_indirect_effects)
+            else:
+                return tuple()
 
     def _add_sub_transits(self, other, add=True):
         """Apply logic for adding/subtracting mfl transits.
         Use add = False for subtraction"""
+        lhs, rhs, combined = _add_helper(self.transits, other.transits, "counts", "depot")
 
-        # Need multiple Transit objects due to presence of both depot / nodepot
-        # and different sets of counts
-        lhs_counts_depot = [
-            c for t in self.transits if Name("DEPOT") in t.eval.depot for c in t.counts
-        ]
-        lhs_counts_nodepot = [
-            c for t in self.transits if Name("NODEPOT") in t.eval.depot for c in t.counts
-        ]
-        rhs_counts_depot = [
-            c for t in other.transits if Name("DEPOT") in t.eval.depot for c in t.counts
-        ]
-        rhs_counts_nodepot = [
-            c for t in other.transits if Name("NODEPOT") in t.eval.depot for c in t.counts
-        ]
-
-        if add:
-            depot_counts = list(set(lhs_counts_depot + rhs_counts_depot))
-            nodepot_counts = list(set(lhs_counts_nodepot + rhs_counts_nodepot))
-        else:
-            depot_counts = [c for c in lhs_counts_depot if c not in rhs_counts_depot]
-            nodepot_counts = [c for c in lhs_counts_nodepot if c not in rhs_counts_nodepot]
-
-        if len(depot_counts) == len(nodepot_counts) == 0:
-            transits = (
-                Transits(
-                    (0,),
-                    (Name("DEPOT"),),
-                ),
-            )
-        else:
-            both_depot = [d for d in depot_counts if d in nodepot_counts]
-            nodepot_diff = [d for d in nodepot_counts if d not in depot_counts]
-            depot_diff = [d for d in depot_counts if d not in nodepot_counts]
-
+        def convert_to_transits(d):
             transits = []
-            if len(both_depot) != 0:
-                transits.append(Transits(tuple(both_depot), (Name("DEPOT"), Name("NODEPOT"))))
-            if len(depot_diff) != 0:
-                transits.append(Transits(tuple(depot_diff), (Name("DEPOT"),)))
-            if len(nodepot_diff) != 0:
-                transits.append(Transits(tuple(nodepot_diff), (Name("NODEPOT"),)))
+            for k, v in d.items():
+                transits.append(Transits(v, (k,)))
+            return transits
 
-        return tuple(transits)
+        lhs_transits = convert_to_transits(lhs)
+        rhs_transits = convert_to_transits(rhs)
+        combined_transits = convert_to_transits(combined)
+
+        # TODO : Cleanup and combine all possible statements
+        if add:
+            return tuple(lhs_transits + rhs_transits + combined_transits)
+        else:
+            if lhs_transits:
+                return tuple(lhs_transits)
+            else:
+                return tuple()
 
     def _add_sub_covariates(self, other, add=True):
         lhs = self._extract_covariates()
@@ -661,6 +912,8 @@ class ModelFeatures:
         )
 
     def _eq_transits(self, other):
+        # TODO : Use add helper and check all in "combined"
+
         lhs_counts_depot = [
             c for t in self.transits if Name("DEPOT") in t.eval.depot for c in t.counts
         ]
@@ -682,6 +935,14 @@ class ModelFeatures:
         rhs = other._extract_covariates()
         # Should OPTIONAL be ignored?
         return all(c in rhs for c in lhs)
+
+    def _extract_peripherals(self):
+        peripheral_dict = {"MET": set(), "DRUG": set()}
+        for p in self.peripherals:
+            for m in p.modes:
+                peripheral_dict[m.name] = peripheral_dict[m.name].union(set(p.counts))
+
+        return peripheral_dict
 
     def _extract_covariates(self):
         lhs = set()
@@ -705,6 +966,42 @@ class ModelFeatures:
             )
 
         return lhs
+
+
+def _add_helper(s1, s2, value_name, join_name):
+    s1_join_name_dict = defaultdict(list)
+    for s in s1:
+        s = s.eval
+        attribute_names = getattr(s, join_name)
+        attribute_values = getattr(s, value_name)
+        for a in attribute_names:
+            s1_join_name_dict[a].extend(attribute_values)
+    s2_join_name_dict = defaultdict(list)
+    for s in s2:
+        s = s.eval
+        attribute_names = getattr(s, join_name)
+        attribute_values = getattr(s, value_name)
+        for a in attribute_names:
+            s2_join_name_dict[a].extend(attribute_values)
+    s1_unique = {
+        k: tuple(set(s1_join_name_dict[k]) - set(s2_join_name_dict[k]))
+        for k in s1_join_name_dict.keys()
+    }
+    s2_unique = {
+        k: tuple(set(s2_join_name_dict[k]) - set(s1_join_name_dict[k]))
+        for k in s2_join_name_dict.keys()
+    }
+    s2_unique = {k: v for k, v in s2_unique.items() if v}
+    s12_joined = {
+        k: tuple(set(s1_join_name_dict[k]).intersection(set(s2_join_name_dict[k])))
+        for k in s1_join_name_dict.keys()
+    }
+    s12_joined = {k: v for k, v in s12_joined.items() if v}
+
+    def remove_empty(d):
+        return {k: v for k, v in d.items() if v}
+
+    return (remove_empty(s1_unique), remove_empty(s2_unique), remove_empty(s12_joined))
 
 
 def get_model_features(model: Model, supress_warnings: bool = False) -> str:
@@ -804,7 +1101,7 @@ def get_model_features(model: Model, supress_warnings: bool = False) -> str:
     else:
         covariates = None
 
-    # TODO : Implement IIV
+    # TODO : Implement IIV, PKPD, METABOLITE, TMDD(?)
     return ";".join(
         [
             e
