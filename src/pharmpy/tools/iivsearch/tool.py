@@ -21,6 +21,7 @@ from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results, update
 from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows.model_database.local_directory import get_modelfit_results
 from pharmpy.workflows.results import ModelfitResults
 
 IIV_STRATEGIES = frozenset(
@@ -187,10 +188,20 @@ def start(
         sum_inds_count.append(res.summary_individuals_count)
         sum_errs.append(res.summary_errors)
 
-        if res.final_model.name != input_model_entry.model.name:
-            final_model_entry = context.model_database.retrieve_model_entry(res.final_model.name)
+        final_model = res.final_model
+        if final_model.name != input_model_entry.model.name:
+            # FIXME: Temporary workaround until context system is in place. We need to avoid reparsing the model
+            #  since not all models can be read.
+            model_db = context.model_database
+            res_path = (
+                model_db.path / final_model.name / (final_model.name + model_db.file_extension)
+            )
+            final_res = get_modelfit_results(res.final_model, res_path)
         else:
-            final_model_entry = input_model_entry
+            final_res = input_model_entry.modelfit_results
+        final_model_entry = ModelEntry.create(model=final_model, modelfit_results=final_res)
+
+        # FIXME: Add parent model
         base_model_entry = final_model_entry
         iiv_strategy = 'no_add'
         last_res = res
