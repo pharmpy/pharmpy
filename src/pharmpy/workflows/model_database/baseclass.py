@@ -317,23 +317,25 @@ class DummyTransaction(ModelTransaction):
     def __init__(self, database: ModelDatabase, model_or_model_entry: Union[Model, ModelEntry]):
         self.db = database
         if isinstance(model_or_model_entry, ModelEntry):
-            self.model = model_or_model_entry.model
             self.model_entry = model_or_model_entry
+        elif isinstance(model_or_model_entry, Model):
+            self.model_entry = ModelEntry.create(model_or_model_entry)
         else:
-            self.model = model_or_model_entry
-            self.model_entry = None
+            raise ValueError(
+                f'Invalid type `model_or_model_entry`: got {type(model_or_model_entry)}, expected Model or ModelEntry'
+            )
 
     def store_model(self) -> None:
-        return self.db.store_model(self.model)
+        return self.db.store_model(self.model_entry.model)
 
     def store_local_file(self, path: Path, new_filename: Union[str, None] = None) -> None:
-        return self.db.store_local_file(self.model, path, new_filename)
+        return self.db.store_local_file(self.model_entry.model, path, new_filename)
 
     def store_metadata(self, metadata: dict) -> None:
-        return self.db.store_metadata(self.model, metadata)
+        return self.db.store_metadata(self.model_entry.model, metadata)
 
     def store_modelfit_results(self) -> None:
-        return self.db.store_modelfit_results(self.model)
+        return self.db.store_modelfit_results(self.model_entry.model)
 
     def store_model_entry(self) -> None:
         return self.db.store_model_entry(self.model_entry)

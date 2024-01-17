@@ -43,6 +43,7 @@ from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.mfl.statement.statement import Statement
 from pharmpy.tools.mfl.stringify import stringify as mfl_stringify
 from pharmpy.workflows import ModelEntry, Results, default_tool_database
+from pharmpy.workflows.model_database.local_directory import get_modelfit_results
 from pharmpy.workflows.results import ModelfitResults
 
 from ..run import run_tool
@@ -501,9 +502,13 @@ def run_amd(
                         )
                         run_subfuncs['covsearch'] = func
                 next_model = subresults.final_model
-                results = subresults.tool_database.model_database.retrieve_modelfit_results(
-                    subresults.final_model.name
+                # FIXME: Temporary workaround until context system is in place. We need to avoid reparsing the model
+                #  since not all models can be read.
+                model_db = subresults.tool_database.model_database
+                res_path = (
+                    model_db.path / next_model.name / (next_model.name + model_db.file_extension)
                 )
+                results = get_modelfit_results(next_model, res_path)
                 next_model_entry = ModelEntry.create(model=next_model, modelfit_results=results)
             sum_subtools.append(_create_sum_subtool(tool_name, next_model_entry))
             sum_models.append(subresults.summary_models.reset_index())
