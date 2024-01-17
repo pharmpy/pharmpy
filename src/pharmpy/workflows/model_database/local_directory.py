@@ -46,8 +46,7 @@ def get_modelfit_results(model, path):
         assert isinstance(model, nlmixr_model.Model)
         res = nlmixr.parse_modelfit_results(model, path)
 
-    model = model.replace(modelfit_results=res)
-    return model
+    return res
 
 
 def create_model_entry(model, modelfit_results):
@@ -123,11 +122,11 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
             model = Model.parse_model(path)
         except FileNotFoundError:
             raise KeyError('Model cannot be found in database')
-        model = get_modelfit_results(model, self.path)
         return model
 
     def retrieve_modelfit_results(self, name):
-        return self.retrieve_model(name).modelfit_results
+        model = self.retrieve_model(name)
+        return get_modelfit_results(model, self.path)
 
     def retrieve_model_entry(self, name):
         model = self.retrieve_model(name)
@@ -231,16 +230,18 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
     ):
         self.db = database
         if isinstance(model_or_model_entry, ModelEntry):
-            self.model = model_or_model_entry.model
             self.model_entry = model_or_model_entry
+        elif isinstance(model_or_model_entry, Model):
+            self.model_entry = ModelEntry.create(model_or_model_entry)
         else:
-            self.model = model_or_model_entry
-            self.model_entry = None
+            raise ValueError(
+                f'Invalid type `model_or_model_entry`: got {type(model_or_model_entry)}, expected Model or ModelEntry'
+            )
 
     def store_model(self):
         from pharmpy.modeling import read_dataset_from_datainfo, write_csv, write_model
 
-        model = self.model
+        model = self.model_entry.model
         datasets_path = self.db.path / DIRECTORY_DATASETS
 
         # NOTE: Get the hash of the dataset and list filenames with contents
@@ -287,26 +288,23 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
 
     def store_local_file(self, path, new_filename=None):
         if Path(path).is_file():
-            destination = self.db.path / self.model.name
+            destination = self.db.path / self.model_entry.model.name
             destination.mkdir(parents=True, exist_ok=True)
             if new_filename:
                 destination = destination / new_filename
             shutil.copy2(path, destination)
 
     def store_metadata(self, metadata):
-        destination = self.db.path / self.model.name / DIRECTORY_PHARMPY_METADATA
+        destination = self.db.path / self.model_entry.model.name / DIRECTORY_PHARMPY_METADATA
         destination.mkdir(parents=True, exist_ok=True)
         with open(destination / FILE_METADATA, 'w') as f:
             json.dump(metadata, f, indent=2)
 
     def store_modelfit_results(self):
-        destination = self.db.path / self.model.name / DIRECTORY_PHARMPY_METADATA
+        destination = self.db.path / self.model_entry.model.name / DIRECTORY_PHARMPY_METADATA
         destination.mkdir(parents=True, exist_ok=True)
 
-        if self.model_entry is not None:
-            modelfit_results = self.model_entry.modelfit_results
-        else:
-            modelfit_results = self.model.modelfit_results
+        modelfit_results = self.model_entry.modelfit_results
 
         if modelfit_results is not None:
             modelfit_results.to_json(destination / FILE_MODELFIT_RESULTS)
@@ -342,32 +340,39 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
             raise FileNotFoundError(f"Cannot retrieve {filename} for {self.name}")
 
     def retrieve_model(self):
-        extensions = ['.mod', '.ctl']
         from pharmpy.model import Model
 
-        errors = []
+        path = self._find_full_model_path()
+
+        # NOTE: This will guess the model type
+        model = Model.parse_model(path)
+
+        return model
+
+    def _find_full_model_path(self):
+        extensions = ['.mod', '.ctl']
         root = self.db.path / self.name
+        errors = []
+
         for extension in extensions:
             filename = self.name + extension
             path = root / filename
-            try:
-                # NOTE: This will guess the model type
-                model = Model.parse_model(path)
-                break
-            except FileNotFoundError as e:
-                errors.append(e)
-                pass
+
+            if path.is_file():
+                return path
+            else:
+                errors.append(path)
         else:
             raise KeyError(
                 f'Could not find {self.name} in {self.db}.'
-                f' Looked up {", ".join(map(lambda e: f"`{e.filename}`", errors))}.'
+                f' Looked up {", ".join(map(lambda p: f"`{p}`", errors))}.'
             )
 
-        model = get_modelfit_results(model, path)
-        return model
-
     def retrieve_modelfit_results(self):
-        res = self.retrieve_model().modelfit_results
+        model = self.retrieve_model()
+        path = self._find_full_model_path()
+        res = get_modelfit_results(model, path)
+
         if res is not None:
             return res
 
