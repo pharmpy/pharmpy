@@ -279,7 +279,10 @@ class Model(BaseModel):
             replace_dict['internals'] = model.internals.replace(control_stream=newcs)
             model = model.replace(**replace_dict)
 
-            if model.estimation_steps[-1].parameter_uncertainty_method == "EFIM":
+            if (
+                len(model.estimation_steps) > 0
+                and model.estimation_steps[-1].parameter_uncertainty_method == "EFIM"
+            ):
                 data_record = model.internals.control_stream.get_records('DATA', 1)[0]
                 if data_record.filename == 'DUMMYPATH' or force:
                     newdata = data_record.set_filename(filename)
