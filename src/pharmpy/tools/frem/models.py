@@ -52,5 +52,6 @@ def create_model3b(model1b, model3, model3_res, ncovs):
     )
     model3b = fix_or_unfix_parameters(model3b, model1b.parameters.fix)
 
-    model3b = model3b.replace(initial_individual_estimates=ie)
+    if model3.initial_individual_estimates is not None:
+        model3b = model3b.replace(initial_individual_estimates=ie)
     return model3b
