@@ -176,15 +176,6 @@ def import_tool(name: str):
 def run_tool_with_name(
     name: str, tool, args: Sequence, kwargs: Mapping[str, Any]
 ) -> Union[Model, List[Model], Tuple[Model], Results]:
-    # FIXME: Workaround until ModelfitResults is disentangled with
-    #  Model object
-    if 'model' in kwargs and 'results' in kwargs:
-        model = kwargs['model']
-        res = kwargs['results']
-        if isinstance(model, Model) and isinstance(res, ModelfitResults):
-            model = model.replace(modelfit_results=res)
-            kwargs['model'] = model
-
     common_options, tool_options = split_common_options(kwargs)
 
     create_workflow = tool.create_workflow
