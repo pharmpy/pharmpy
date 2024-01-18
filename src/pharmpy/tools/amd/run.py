@@ -933,10 +933,15 @@ def _subfunc_mechanistic_exploratory_covariates(
                     results=modelfit_results,
                     path=path / 'covsearch_mechanistic',
                 )
-                index_offset = int(
-                    res.summary_tool.iloc[-1].name[-1][13:]
-                )  # Get largest number of run
-                # FIXME : CHECK IF NAME IS CORRECT AS WELL
+                model_db = res.tool_database.model_database
+                all_models = [model_db.retrieve_model(model) for model in model_db.list_models()]
+                covsearch_model_number = [
+                    int(model.name[13:])
+                    for model in all_models
+                    if model.name.startswith('covsearch')
+                ]
+                if covsearch_model_number:
+                    index_offset = max(covsearch_model_number)  # Get largest number of run
                 if res.final_model.name != model.name:
                     model = res.final_model
                     modelfit_results = res.tool_database.model_database.retrieve_modelfit_results(
