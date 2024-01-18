@@ -81,6 +81,7 @@ def _parse_modelfit_results(
         pe_iterations,
         ses,
         ses_sdcorr,
+        cov_abort,
     ) = _parse_ext(control_stream, name_map, ext_tables, subproblem, parameters)
 
     table_df = _parse_tables(
@@ -121,7 +122,7 @@ def _parse_modelfit_results(
     termcause_iters = pd.Series(termination_cause, index=eststeps, name='termination_cause')
     sigdigs_iters = pd.Series(significant_digits, index=eststeps, name='significant_digits')
 
-    if covstatus and ses is not None:
+    if covstatus and ses is not None and not cov_abort:
         cov = _parse_matrix(path.with_suffix(".cov"), control_stream, name_map, table_numbers)
         cor = _parse_matrix(path.with_suffix(".cor"), control_stream, name_map, table_numbers)
         if cor is not None:
@@ -579,7 +580,7 @@ def _parse_ext(
     final_pe, sdcorr, pe_iterations = _parse_parameter_estimates(
         control_stream, name_map, ext_tables, subproblem, parameters
     )
-    ses, ses_sdcorr = _parse_standard_errors(
+    ses, ses_sdcorr, cov_abort = _parse_standard_errors(
         control_stream, name_map, ext_tables, parameters, final_pe
     )
     return (
@@ -591,6 +592,7 @@ def _parse_ext(
         pe_iterations,
         ses,
         ses_sdcorr,
+        cov_abort,
     )
 
 
@@ -716,6 +718,7 @@ def _parse_standard_errors(
     parameters: Parameters,
     pe: pd.Series,
 ):
+    cov_abort = False
     table = ext_tables.tables[-1]
     assert isinstance(table, ExtTable)
     try:
@@ -723,17 +726,24 @@ def _parse_standard_errors(
     except KeyError:
         ses = pd.Series(np.nan, index=pe.index, name="SE")
         sdcorr_ses = pd.Series(np.nan, index=pe.index, name="SE_sdcorr")
-        return ses, sdcorr_ses
+        return ses, sdcorr_ses, cov_abort
 
     fix = _get_fixed_parameters(table, parameters, name_map)
     ses = ses[~fix]
-    sdcorr = table.omega_sigma_se_stdcorr[~fix]
-    ses = ses.rename(index=name_map)
-    sdcorr = sdcorr.rename(index=name_map)
-    sdcorr_ses = ses.copy()
-    sdcorr_ses.update(sdcorr)
-    sdcorr_ses = sdcorr_ses.rename(index=name_map)
-    return ses, sdcorr_ses
+    try:  # if line -1000000001 and -1000000005 exist in .ext file
+        sdcorr = table.omega_sigma_se_stdcorr[~fix]
+    except KeyError:  # if only line -1000000001 exists but not -1000000005
+        ses = pd.Series(np.nan, index=pe.index, name="SE")
+        sdcorr_ses = pd.Series(np.nan, index=pe.index, name="SE_sdcorr")
+        cov_abort = True
+        return ses, sdcorr_ses, cov_abort
+    else:
+        ses = ses.rename(index=name_map)
+        sdcorr = sdcorr.rename(index=name_map)
+        sdcorr_ses = ses.copy()
+        sdcorr_ses.update(sdcorr)
+        sdcorr_ses = sdcorr_ses.rename(index=name_map)
+    return ses, sdcorr_ses, cov_abort
 
 
 def _parse_evaluation(estimation_steps: EstimationSteps):

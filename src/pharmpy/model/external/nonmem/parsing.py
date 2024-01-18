@@ -367,6 +367,7 @@ def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
     steps = []
     records = control_stream.get_records('ESTIMATION')
     covrec = control_stream.get_records('COVARIANCE')
+    design = control_stream.get_records('DESIGN', 1)
     solver, tol, atol = parse_solver(control_stream)
 
     # Read eta and epsilon derivatives
@@ -414,6 +415,8 @@ def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
             evaluation = True
         if covrec:
             parameter_uncertainty_method = 'SANDWICH'
+        elif design:
+            parameter_uncertainty_method = 'EFIM'
         if record.has_option('LAPLACIAN') or record.has_option('LAPLACE'):
             laplace = True
         if record.has_option('ISAMPLE'):
@@ -444,6 +447,7 @@ def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
             'NITER',
             'AUTO',
             'PRINT',
+            'MSFO',
         ]
 
         tool_options = {

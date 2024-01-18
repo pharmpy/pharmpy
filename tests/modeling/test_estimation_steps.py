@@ -143,6 +143,19 @@ def test_remove_parameter_uncertainty_step(testdata, load_model_for_test):
     )
 
 
+def test_parse_parameter_uncertainty_step(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_design.mod')
+    assert (
+        "$ESTIMATION METHOD=1 INTERACTION MSFO=pheno_design.msf\n"
+        "$PROBLEM DESIGN\n"
+        "$DATA pheno.dta IGNORE=@ REWIND\n"
+        "$INPUT ID TIME AMT WGT APGR DV\n"
+        "$MSFI pheno_design.msf\n"
+        "$DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1\n" in model.model_code
+    )
+    assert model.estimation_steps[-1].tool_options == {}
+
+
 def test_append_estimation_step_options(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1

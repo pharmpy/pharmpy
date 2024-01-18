@@ -80,7 +80,7 @@ def run_amd(
     mechanistic_covariates: Optional[List[str]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     seed: Optional[Union[np.random.Generator, int]] = None,
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'CPG', 'OFIM']] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'CPG', 'OFIM', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
 ):
     """Run Automatic Model Development (AMD) tool
@@ -1056,7 +1056,7 @@ def validate_input(
     mechanistic_covariates: Optional[List[str]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     seed: Optional[Union[np.random.Generator, int]] = None,
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'CPG', 'OFIM']] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'CPG', 'OFIM', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
 ):
     model = input

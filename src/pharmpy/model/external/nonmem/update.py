@@ -1752,6 +1752,7 @@ def update_estimation(control_stream, model):
         s += f'{" ".join(cols)} FILE=mytab NOAPPEND NOPRINT'
         if any(id_val > 99999 for id_val in get_ids(model)):
             s += ' FORMAT=s1PE16.8'
+        s += '\n'
         tabrec = create_record(s)
         control_stream = control_stream.insert_record(tabrec)
     return control_stream
