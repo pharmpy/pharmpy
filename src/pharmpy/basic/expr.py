@@ -11,11 +11,19 @@ class Expr:
             self._expr = symengine.sympify(source)
 
     @property
-    def name(self):
+    def name(self) -> str:
         if isinstance(self._expr, symengine.Symbol):
             return self._expr.name
         else:
             raise ValueError("Expression has no name")
+
+    @property
+    def args(self):
+        args = [Expr(a) for a in self._expr.args]
+        return tuple(args)
+
+    def subs(self, d):
+        return Expr(self._expr.subs(d))
 
     def __add__(self, other):
         return Expr(self._expr + other)
@@ -53,14 +61,20 @@ class Expr:
     def __pos__(self):
         return Expr(self._expr)
 
-    def _sympy_(self):
-        return sympy.sympify(self._expr)
-
     def __eq__(self, other):
         return self._expr == other
 
     def __hash__(self):
         return hash(self._expr)
+
+    def __float__(self):
+        return float(self._expr)
+
+    def __int__(self):
+        return int(self._expr)
+
+    def _sympy_(self):
+        return sympy.sympify(self._expr)
 
     @classmethod
     def symbol(cls, name):
