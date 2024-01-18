@@ -1,3 +1,6 @@
+import pytest
+
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import (
     plot_abs_cwres_vs_ipred,
     plot_cwres_vs_idv,
@@ -39,6 +42,19 @@ def test_plot_dv_vs_ipred(load_model_for_test, testdata):
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
     plot = plot_dv_vs_ipred(model, res.predictions)
     assert plot
+
+
+def test_plot_dv_vs_ipred_stratify(tmp_path, load_model_for_test, testdata):
+    with chdir(tmp_path):
+        model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+        res = read_modelfit_results(testdata / 'nonmem' / 'pheno_pd.mod')
+        plot = plot_dv_vs_ipred(model, res.predictions, strat='DVID')
+        plot.save('chart.json')
+        assert plot
+        with pytest.raises(ValueError, match='DVoID column does not exist in dataset.'):
+            plot = plot_dv_vs_ipred(model, res.predictions, strat='DVoID')
+        with pytest.raises(ValueError, match='bins must be 8 or less.'):
+            plot = plot_dv_vs_ipred(model, res.predictions, strat='ID', bins=9)
 
 
 def test_plot_dv_vs_pred(load_model_for_test, testdata):
