@@ -314,8 +314,6 @@ def _parse_tool_options_from_json_metadata(
         try:
             model = db.retrieve_model(db_name)
             model = model.replace(name=model_name)
-            res = db.retrieve_modelfit_results(db_name)
-            model = model.replace(modelfit_results=res)
         except KeyError:
             raise ValueError(
                 f'Cannot resume run because model argument "{model_key}" ({model_name}) cannot be restored.'
