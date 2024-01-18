@@ -116,18 +116,21 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 def run_bootstrap(args):
     from pharmpy.tools import run_bootstrap
 
-    run_bootstrap(args.model, args.model.modelfit_results, resamples=args.samples)
+    model, res = args.model
+    run_bootstrap(model, res, resamples=args.samples)
 
 
 def run_execute(args):
     from pharmpy.tools import fit
 
-    fit(args.models)
+    models = [model for model, _ in args.models]
+    fit(models)
 
 
 def run_modelsearch(args):
     from pharmpy.tools import run_tool
 
+    model, res = args.model
     run_tool(
         'modelsearch',
         args.mfl,
@@ -135,8 +138,8 @@ def run_modelsearch(args):
         rank_type=args.rank_type,
         cutoff=args.cutoff,
         iiv_strategy=args.iiv_strategy,
-        results=args.model.modelfit_results,
-        model=args.model,
+        results=res,
+        model=model,
         path=args.path,
     )
 
@@ -144,14 +147,15 @@ def run_modelsearch(args):
 def run_iivsearch(args):
     from pharmpy.tools import run_tool
 
+    model, res = args.model
     run_tool(
         'iivsearch',
         args.algorithm,
         iiv_strategy=args.iiv_strategy,
         rank_type=args.rank_type,
         cutoff=args.cutoff,
-        model=args.model,
-        results=args.model.modelfit_results,
+        results=res,
+        model=model,
         path=args.path,
     )
 
@@ -159,6 +163,7 @@ def run_iivsearch(args):
 def run_iovsearch(args):
     from pharmpy.tools import run_tool
 
+    model, res = args.model
     run_tool(
         'iovsearch',
         column=args.column,
@@ -166,8 +171,8 @@ def run_iovsearch(args):
         rank_type=args.rank_type,
         cutoff=args.cutoff,
         distribution=args.distribution,
-        model=args.model,
-        results=args.model.modelfit_results,
+        results=res,
+        model=model,
         path=args.path,
     )
 
@@ -175,14 +180,15 @@ def run_iovsearch(args):
 def run_covsearch(args):
     from pharmpy.tools import run_tool
 
+    model, res = args.model
     run_tool(
         'covsearch',
         effects=args.effects,
         p_forward=args.p_forward,
         max_steps=args.max_steps,
         algorithm=args.algorithm,
-        results=args.model.modelfit_results,
-        model=args.model,
+        results=res,
+        model=model,
         path=args.path,
     )
 
@@ -190,9 +196,11 @@ def run_covsearch(args):
 def run_ruvsearch(args):
     from pharmpy.tools import run_tool
 
+    model, res = args.model
     run_tool(
         'ruvsearch',
-        model=args.model,
+        results=res,
+        model=model,
         groups=args.groups,
         p_value=args.p_value,
         skip=args.skip,
@@ -203,10 +211,11 @@ def run_ruvsearch(args):
 def run_allometry(args):
     from pharmpy.tools import run_tool
 
+    model, res = args.model
     run_tool(
         'allometry',
-        model=args.model,
-        results=args.model.modelfit_results,
+        results=res,
+        model=model,
         allometric_variable=args.allometric_variable,
         reference_value=args.reference_value,
         parameters=args.parameters,
@@ -221,6 +230,7 @@ def run_allometry(args):
 def run_estmethod(args):
     from pharmpy.tools import run_tool
 
+    model, res = args.model
     try:
         methods = args.methods.split(" ")
     except AttributeError:
@@ -235,7 +245,8 @@ def run_estmethod(args):
         args.algorithm,
         methods=methods,
         solvers=solvers,
-        model=args.model,
+        results=res,
+        model=model,
         path=args.path,
     )
 
@@ -264,10 +275,11 @@ def run_amd(args):
 def run_retries(args):
     from pharmpy.tools import run_tool
 
+    model, res = args.model
     run_tool(
         'retries',
-        model=args.model,
-        results=args.model.modelfit_results,  # This feels wierd to do
+        results=res,
+        model=model,
         number_of_candidates=args.number_of_candidates,
     )
 
@@ -278,7 +290,7 @@ def data_write(args):
         from pharmpy.modeling import write_csv
 
         # If no output_file supplied will use name of df
-        path = write_csv(args.model, path=args.output_file, force=args.force)
+        path = write_csv(args.model[0], path=args.output_file, force=args.force)
         print(f'Dataset written to {path}')
     except OSError as e:
         error(e)
@@ -416,7 +428,7 @@ def data_reference(args):
     from pharmpy.modeling import set_reference_values
 
     d = key_vals(args.colrefs)
-    model = args.model
+    model, _ = args.model
     model = set_reference_values(model, d)
     write_model_or_dataset(model, model.dataset, args.output_file, args.force)
 
@@ -440,7 +452,7 @@ def info(args):
 def model_print(args):
     """Subcommand for formatting/printing model components."""
     lines = []
-    for i, model in enumerate(args.models):
+    for i, (model, _) in enumerate(args.models):
         lines += ['[%d/%d] %r' % (i + 1, len(args.models), model.name)]
         dict_ = {}
         try:
@@ -462,13 +474,13 @@ def model_print(args):
 
 
 def model_sample(args):
-    model = args.model
+    model, res = args.model
     from pharmpy.modeling import sample_parameters_from_covariance_matrix
 
     samples = sample_parameters_from_covariance_matrix(
         model,
-        model.modelfit_results.parameter_estimates,
-        model.modelfit_results.covariance_matrix,
+        res.parameter_estimates,
+        res.covariance_matrix,
         n=args.samples,
     )
     for row, params in samples.iterrows():
@@ -483,8 +495,8 @@ def update_inits(args):
     """Subcommand to update initial estimates from previous output."""
     from pharmpy.modeling import update_inits
 
-    model = args.model
-    update_inits(model, model.modelfit_results.parameter_estimates)
+    model, res = args.model
+    update_inits(model, res.parameter_estimates)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -576,9 +588,9 @@ def results_simeval(args):
 def results_ofv(args):
     """Subcommand to extract final ofv from multiple results"""
     ofvs = []
-    for model in args.models:
+    for _, res in args.models:
         try:
-            ofv = str(model.modelfit_results.ofv)
+            ofv = str(res.ofv)
         except AttributeError:
             ofv = 'NA'
         ofvs.append(ofv)
@@ -624,9 +636,9 @@ def results_report(args):
 
 def results_summary(args):
     """Subcommand to output summary of modelfit"""
-    for model in args.models:
+    for model, res in args.models:
         print(model.name)
-        print(model.modelfit_results.parameter_summary())
+        print(res.parameter_summary())
         print()
 
 
@@ -665,9 +677,8 @@ def input_model(path):
 
     model = Model.parse_model(path)
     res = read_modelfit_results(path)
-    # FIXME: Should use tuple or something else instead
-    model = model.replace(modelfit_results=res)
-    return model
+
+    return model, res
 
 
 def input_model_or_dataset(path):
