@@ -382,7 +382,7 @@ def load_example_model(name: str):
     available = ('moxo', 'pheno', 'pheno_linear')
     if name not in available:
         raise ValueError(f'Unknown example model {name}. Available examples: {available}')
-    path = Path(__file__).resolve().parent / 'example_models' / (name + '.mod')
+    path = Path(__file__).resolve().parent.parent / 'internals' / 'example_models' / (name + '.mod')
     model = read_model(path)
     return model
 

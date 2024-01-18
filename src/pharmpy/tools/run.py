@@ -1055,11 +1055,13 @@ def summarize_modelfit_results(
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model
-    >>> from pharmpy.tools import summarize_modelfit_results
-    >>> model = load_example_model("pheno")
-    >>> summarize_modelfit_results(model.modelfit_results) # doctest: +SKIP
-                     description  minimization_successful ...        ofv  ... runtime_total  ...
-    pheno PHENOBARB SIMPLE MODEL                     True ... 586.276056  ...           4.0  ...
+    >>> from pharmpy.tools import load_example_modelfit_results, summarize_modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
+    >>> df = summarize_modelfit_results(results)
+    >>> df  # doctest: +SKIP
+                      description  minimization_successful ...        ofv  ... runtime_total  ...
+    model
+    pheno  PHENOBARB SIMPLE MODEL                     True ... 586.276056  ...           4.0  ...
     """
     if isinstance(results, ModelfitResults):
         results = [results]
@@ -1240,9 +1242,9 @@ def load_example_modelfit_results(name: str):
     Name: estimates, dtype: float64
 
     """
-    available = ('moxo', 'pheno', 'pheno_linear')
+    available = ('pheno', 'pheno_linear')
     if name not in available:
         raise ValueError(f'Unknown example model {name}. Available examples: {available}')
-    path = Path(__file__).resolve().parent.parent / 'modeling' / 'example_models' / (name + '.mod')
+    path = Path(__file__).resolve().parent.parent / 'internals' / 'example_models' / (name + '.mod')
     res = read_modelfit_results(path)
     return res
