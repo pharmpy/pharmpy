@@ -36,10 +36,6 @@ def test_block_structure(tmp_path, model_count, start_modelres):
         res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
         assert len(res_models) == no_of_candidate_models
 
-        # assert all(
-        #     model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
-        #     for model in res.models
-        # )
         start_model = start_modelres[0]
         assert all(model.random_variables != start_model.random_variables for model in res_models)
 
@@ -105,10 +101,6 @@ def test_brute_force(tmp_path, model_count, start_modelres):
 
         assert 'iivsearch_run3' in res.summary_errors.index.get_level_values('model')
 
-        # assert all(
-        #     model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
-        #     for model in res.models
-        # )
         assert all(
             model.random_variables != start_modelres[0].random_variables for model in res_models
         )

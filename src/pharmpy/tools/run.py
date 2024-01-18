@@ -176,15 +176,6 @@ def import_tool(name: str):
 def run_tool_with_name(
     name: str, tool, args: Sequence, kwargs: Mapping[str, Any]
 ) -> Union[Model, List[Model], Tuple[Model], Results]:
-    # FIXME: Workaround until ModelfitResults is disentangled with
-    #  Model object
-    if 'model' in kwargs and 'results' in kwargs:
-        model = kwargs['model']
-        res = kwargs['results']
-        if isinstance(model, Model) and isinstance(res, ModelfitResults):
-            model = model.replace(modelfit_results=res)
-            kwargs['model'] = model
-
     common_options, tool_options = split_common_options(kwargs)
 
     create_workflow = tool.create_workflow
@@ -323,8 +314,6 @@ def _parse_tool_options_from_json_metadata(
         try:
             model = db.retrieve_model(db_name)
             model = model.replace(name=model_name)
-            res = db.retrieve_modelfit_results(db_name)
-            model = model.replace(modelfit_results=res)
         except KeyError:
             raise ValueError(
                 f'Cannot resume run because model argument "{model_key}" ({model_name}) cannot be restored.'
@@ -592,13 +581,15 @@ def retrieve_final_model(res: Results) -> Model:
     return retrieve_models(res, names=[final_model.name])[0]
 
 
-def print_fit_summary(model: Model):
+def print_fit_summary(model: Model, modelfit_results: ModelfitResults):
     """Print a summary of the model fit
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
+    modelfit_results : ModelfitResults
+        Pharmpy ModelfitResults object
     """
 
     def bool_ok_error(x):
@@ -616,7 +607,7 @@ def print_fit_summary(model: Model):
     def print_fmt(text, result):
         print(f"{text:33} {result}")
 
-    res = mfr(model)
+    res = mfr(modelfit_results)
 
     print_header("Parameter estimation status", first=True)
     print_fmt("Minimization successful", bool_ok_error(res.minimization_successful))

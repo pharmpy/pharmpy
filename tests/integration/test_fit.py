@@ -150,5 +150,4 @@ def test_execute_model_nonmem(tmp_path, testdata):
 
         assert isinstance(model_entry, ModelEntry)
         assert model_entry.modelfit_results
-        assert not model_entry.model.modelfit_results
         assert (db.path / 'models' / 'pheno_real').is_dir()

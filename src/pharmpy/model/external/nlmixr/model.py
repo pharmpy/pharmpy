@@ -5,7 +5,7 @@ from typing import Optional
 import pharmpy.model
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model.model import ModelInternals
-from pharmpy.modeling import drop_columns, get_evid, translate_nmtran_time, update_inits
+from pharmpy.modeling import drop_columns, get_evid, translate_nmtran_time
 
 from .error_model import res_error_term
 from .ini import add_eta, add_sigma, add_theta
@@ -16,7 +16,6 @@ from .sanity_checks import check_model
 def convert_model(
     model: pharmpy.model.Model,
     skip_check: bool = False,
-    updated_estimates: bool = False,
 ) -> pharmpy.model.Model:
     """
     Convert a NONMEM model into an nlmixr model
@@ -37,9 +36,6 @@ def convert_model(
 
     if isinstance(model, Model):
         return model
-
-    if updated_estimates:
-        model = update_inits(model, model.modelfit_results.parameter_estimates)
 
     nlmixr_model = Model(
         internals=NLMIXRModelInternals(),
