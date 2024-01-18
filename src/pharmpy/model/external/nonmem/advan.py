@@ -71,7 +71,7 @@ def _compartmental_model(
         cb.add_compartment(depot)
         cb.add_compartment(central)
         cb.add_flow(central, output, _advan1and2_trans(trans))
-        cb.add_flow(depot, central, sympy.Symbol('KA'))
+        cb.add_flow(depot, central, Expr.symbol('KA'))
         ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN3':
@@ -199,8 +199,8 @@ def _compartmental_model(
             bioavailability=_get_bioavailability(control_stream, 1),
         )
         cb.add_compartment(central)
-        vm = sympy.Symbol('VM')
-        km = sympy.Symbol('KM')
+        vm = Expr.symbol('VM')
+        km = Expr.symbol('KM')
         t = sympy.Symbol('t')
         cb.add_flow(central, output, vm / (km + sympy.Function(central.amount.name)(t)))
         ass = _f_link_assignment(control_stream, central, 1)
@@ -367,7 +367,7 @@ def _f_link_assignment(control_stream: NMTranControlStream, compartment: Compart
     pkrec = control_stream.get_records('PK')[0]
     scaling = f'S{compno}'
     if pkrec.statements.find_assignment(scaling):
-        fexpr = fexpr / sympy.Symbol(scaling)
+        fexpr = fexpr / Expr.symbol(scaling)
     ass = Assignment(f, fexpr)
     return ass
 
@@ -417,7 +417,7 @@ def _find_rates(control_stream: NMTranControlStream, ncomps: int):
                 if to_n == 0:
                     to_n = ncomps
 
-                yield from_n, to_n, sympy.Symbol(name)
+                yield from_n, to_n, Expr.symbol(name)
 
 
 def _advan1and2_trans(trans: str):
@@ -654,21 +654,22 @@ def dosing(di: DataInfo, dataset, dose_comp: int):
 
 
 def _dosing(di, dataset, dose_comp):
+    amt = Expr.symbol('AMT')
     if 'RATE' not in di.names or di['RATE'].drop:
-        return Bolus(sympy.Symbol('AMT'))
+        return Bolus(amt)
 
     df = dataset
 
     if df is None:
-        return Bolus(sympy.Symbol('AMT'))
+        return Bolus(amt)
     elif (df['RATE'] == 0).all():
-        return Bolus(sympy.Symbol('AMT'))
+        return Bolus(amt)
     elif (df['RATE'] == -1).any():
-        return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol(f'R{dose_comp}'))
+        return Infusion(amt, rate=Expr.symbol(f'R{dose_comp}'))
     elif (df['RATE'] == -2).any():
-        return Infusion(sympy.Symbol('AMT'), duration=sympy.Symbol(f'D{dose_comp}'))
+        return Infusion(amt, duration=Expr.symbol(f'D{dose_comp}'))
     else:
-        return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol('RATE'))
+        return Infusion(amt, rate=Expr.symbol('RATE'))
 
 
 def find_dose(doses, comp_number, admid=1):
@@ -687,9 +688,9 @@ def _get_alag(control_stream: NMTranControlStream, n: int):
     alag = f'ALAG{n}'
     pkrec = control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment(alag):
-        return sympy.Symbol(alag)
+        return Expr.symbol(alag)
     else:
-        return sympy.Integer(0)
+        return Expr.integer(0)
 
 
 def _get_bioavailability(control_stream: NMTranControlStream, n: int):
@@ -697,6 +698,6 @@ def _get_bioavailability(control_stream: NMTranControlStream, n: int):
     fn = f'F{n}'
     pkrec = control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment(fn):
-        return sympy.Symbol(fn)
+        return Expr.symbol(fn)
     else:
-        return sympy.Integer(1)
+        return Expr.integer(1)
