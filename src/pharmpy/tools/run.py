@@ -1240,9 +1240,9 @@ def load_example_modelfit_results(name: str):
     Name: estimates, dtype: float64
 
     """
-    available = ('moxo', 'pheno', 'pheno_linear')
+    available = ('pheno', 'pheno_linear')
     if name not in available:
         raise ValueError(f'Unknown example model {name}. Available examples: {available}')
-    path = Path(__file__).resolve().parent.parent / 'modeling' / 'example_models' / (name + '.mod')
+    path = Path(__file__).resolve().parent.parent / 'internals' / 'example_models' / (name + '.mod')
     res = read_modelfit_results(path)
     return res
