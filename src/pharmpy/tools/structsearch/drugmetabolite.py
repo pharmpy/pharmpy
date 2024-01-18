@@ -1,26 +1,29 @@
-from typing import List
+from typing import List, Union
 
 from pharmpy.model import Model
-from pharmpy.tools.mfl.helpers import funcs, structsearch_metabolite_features
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.modelsearch.algorithms import exhaustive_stepwise
 from pharmpy.workflows import ModelEntry, Task, WorkflowBuilder
 
+from ..mfl.parse import ModelFeatures
 from ..mfl.parse import parse as mfl_parse
-from ..mfl.statement.feature.metabolite import Metabolite
-from ..mfl.statement.feature.peripherals import Peripherals
 
 
 def create_drug_metabolite_models(
-    model: Model, results, search_space: str
+    model: Model, results, search_space: Union[str, ModelFeatures]
 ) -> tuple[List[Model], Model]:
     # FIXME : Implement ModelFeatures when we can extract METABOLITE information
 
-    mfl_statements = mfl_parse(search_space)
-    metabolite_mfl_statements = [s for s in mfl_statements if isinstance(s, Metabolite)]
-    metabolite_functions = funcs(model, metabolite_mfl_statements, structsearch_metabolite_features)
-    peripheral_mfl_statements = [s for s in mfl_statements if isinstance(s, Peripherals)]
-    peripheral_functions = funcs(model, peripheral_mfl_statements, structsearch_metabolite_features)
+    if isinstance(search_space, str):
+        mfl_statements = mfl_parse(search_space, True)
+    metabolite_functions = mfl_statements.convert_to_funcs(
+        attribute_type=["metabolite"], subset_features="metabolite"
+    )
+    peripheral_functions = mfl_statements.convert_to_funcs(
+        attribute_type=["peripherals"], subset_features="metabolite"
+    )
+    # Filter away DRUG compartment peripherals (if any)
+    peripheral_functions = {k: v for k, v in peripheral_functions.items() if len(k) == 3}
 
     # TODO: Update method for finding metabolite name
     if (
@@ -43,9 +46,7 @@ def create_drug_metabolite_models(
     if model.statements.ode_system.find_compartment('METABOLITE'):
         base_description = model.description
     else:
-        base_description = determine_base_description(
-            metabolite_mfl_statements, peripheral_mfl_statements
-        )
+        base_description = determine_base_description(metabolite_functions, peripheral_functions)
 
     wb = WorkflowBuilder(name="drug_metabolite")
 
@@ -63,7 +64,7 @@ def create_drug_metabolite_models(
         candidate_met_task = Task(str(eff), apply_transformation, eff, func)
         wb.add_task(candidate_met_task, predecessors=start_task)
 
-    if len(peripheral_mfl_statements) == 0:
+    if len(peripheral_functions) == 0:
         candidate_model_tasks = []
         model_index = 1
         for out_task in wb.output_tasks:
@@ -94,12 +95,12 @@ def change_name(index, modelentry):
     )
 
 
-def determine_base_description(met_mfl, per_mfl):
+def determine_base_description(met_mfl_func, per_mfl_func):
     description = []
-    if "BASIC" in [t.name for m in met_mfl for t in m.modes]:
+    if "BASIC" in [k[1] for k in met_mfl_func.keys()]:
         description.append("METABOLITE_BASIC")
     else:
         description.append("METABOLITE_PSC")
-    if per_mfl:
-        description.append(f"PERIPHERALS({min([c for p in per_mfl for c in p.counts])})")
+    if per_mfl_func:
+        description.append(f"PERIPHERALS({min([k[1] for k in per_mfl_func.keys()])})")
     return ";".join(description)

@@ -183,48 +183,74 @@ def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
             'Invalid argument "search_space" for TMDD models.',
         ),
         (
-            dict(type='pkpd', dv_types={'drug': 1}),
+            dict(type='pkpd', search_space='DIRECTEFFECT(LINEAR)', dv_types={'drug': 1}),
             ValueError,
             'Invalid argument "dv_types" for PKPD models.',
         ),
         (
-            dict(type='drug_metabolite', dv_types={'drug': 1}),
+            dict(type='drug_metabolite', search_space='METABOLITE(BASIC)', dv_types={'drug': 1}),
             ValueError,
             'Invalid argument "dv_types" for drug metabolite models.',
         ),
         (
-            dict(type='drug_metabolite', met_init=1),
+            dict(type='drug_metabolite', search_space='METABOLITE(BASIC)', met_init=1),
             ValueError,
             'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for drug metabolite models.',
+        ),
+        (
+            dict(type="pkpd"),
+            ValueError,
+            'Argument search_space need to be specified.',
+        ),
+        (
+            dict(type='pkpd', search_space='DIRECTEFFECT(LINEAR)', extra_model="TEMP"),
+            ValueError,
+            'Invalid argument "extra_model" for PKPD models.',
+        ),
+        (
+            dict(type='pkpd', search_space='DIRECTEFFECT(LINEAR)', extra_model_results="TEMP"),
+            ValueError,
+            'Invalid argument "extra_model_results" for PKPD models.',
+        ),
+        (dict(type="drug_metabolite"), ValueError, 'Argument search_space need to be specified.'),
+        (
+            dict(type="drug_metabolite", search_space="METABOLITE(BASIC)", extra_model="TEMP"),
+            ValueError,
+            'Invalid argument "extra_model" for drug metabolite models.',
+        ),
+        (
+            dict(
+                type="drug_metabolite", search_space="METABOLITE(BASIC)", extra_model_results="TEMP"
+            ),
+            ValueError,
+            'Invalid argument "extra_model_results" for drug metabolite models.',
+        ),
+        (dict(type="tmdd", dv_types={'drug_tot': 1, 'target_tot': 2, 'complex': 3}), None, ""),
+        (dict(type='tmdd', dv_types={'drug': 1, 'target_tot': 2, 'complex': 3}), None, ""),
+        (dict(type='tmdd', dv_types={'drug': 1, 'target': 2, 'complex': 3}), None, ""),
+        (
+            dict(type='tmdd', dv_types={'drug': 1, 'target': 1, 'complex': 2}),
+            ValueError,
+            'Values must be unique.',
+        ),
+        (
+            dict(type='tmdd', dv_types={'target': 1, 'complex': 2}),
+            ValueError,
+            'Only drug can have DVID = 1. Please choose another DVID.',
         ),
     ],
 )
 def test_validation(tmp_path, load_model_for_test, testdata, arguments, exception, match):
-    model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
-    res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
-
     kwargs = {**arguments}
-    with pytest.raises(exception, match=match):
+    if "extra_model" in kwargs.keys():
+        model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
+        kwargs["extra_model"] = model
+    if "extra_model_results" in kwargs.keys():
+        res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
+        kwargs["extra_model_results"] = res
+
+    if exception is not None:
+        with pytest.raises(exception, match=match):
+            validate_input(**kwargs)
+    else:
         validate_input(**kwargs)
-
-    with pytest.raises(exception, match='Invalid argument "extra_model" for PKPD models.'):
-        validate_input(type='pkpd', extra_model=model)
-    with pytest.raises(exception, match='Invalid argument "extra_model_results" for PKPD models.'):
-        validate_input(type='pkpd', extra_model_results=res)
-    with pytest.raises(
-        exception, match='Invalid argument "extra_model" for drug metabolite models.'
-    ):
-        validate_input(type='drug_metabolite', extra_model=model)
-    with pytest.raises(
-        exception, match='Invalid argument "extra_model_results" for drug metabolite models.'
-    ):
-        validate_input(type='drug_metabolite', extra_model_results=res)
-
-    validate_input(type='tmdd', dv_types={'drug_tot': 1, 'target_tot': 2, 'complex': 3})
-    validate_input(type='tmdd', dv_types={'drug': 1, 'target_tot': 2, 'complex': 3})
-    validate_input(type='tmdd', dv_types={'drug': 1, 'target': 2, 'complex': 3})
-
-    with pytest.raises(exception, match='Values must be unique.'):
-        validate_input(type='tmdd', dv_types={'drug': 1, 'target': 1, 'complex': 2})
-    with pytest.raises(exception, match='Only drug can have DVID = 1. Please choose another DVID.'):
-        validate_input(type='tmdd', dv_types={'target': 1, 'complex': 2})
