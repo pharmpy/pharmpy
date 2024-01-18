@@ -247,7 +247,9 @@ def plot_dv_vs_pred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
     return _dv_vs_anypred(model, predictions, pred, pred_name)
 
 
-def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
+def plot_dv_vs_ipred(
+    model: Model, predictions: pd.DataFrame, strat: str = None, bins: int = 8
+) -> alt.Chart:
     """Plot DV vs IPRED
 
     Parameters
@@ -256,6 +258,10 @@ def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
         Pharmpy model
     predictions : pd.DataFrame
         DataFrame containing the predictions
+    strat : str
+        Name of parameter for stratification
+    bins : int
+        Number of bins for stratification
 
     Returns
     -------
@@ -274,6 +280,17 @@ def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
         res = load_example_modelfit_results("pheno")
         plot_dv_vs_ipred(model, res.predictions)
 
+    .. pharmpy-execute::
+
+        from pharmpy.modeling import load_example_model, plot_dv_vs_ipred
+        from pharmpy.tools import load_example_modelfit_results
+
+        model = load_example_model("pheno")
+        res = load_example_modelfit_results("pheno")
+        plot_dv_vs_ipred(model, res.predictions)
+
+        plot_dv_vs_ipred(model, res.predictions, 'WGT')
+
     """
     if 'CIPREDI' in predictions.columns:
         ipred = 'CIPREDI'
@@ -282,7 +299,11 @@ def plot_dv_vs_ipred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
     else:
         raise ValueError("Cannot find individual predictions")
     ipred_name = "Individual prediction"
-    return _dv_vs_anypred(model, predictions, ipred, ipred_name)
+
+    if strat is not None:
+        return _dv_vs_anypred_stratify(model, predictions, ipred, ipred_name, strat, bins)
+    else:
+        return _dv_vs_anypred(model, predictions, ipred, ipred_name)
 
 
 def plot_abs_cwres_vs_ipred(
@@ -384,6 +405,72 @@ def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr):
 
     layer = chart + _smooth(chart, predcol_name, dv) + line
     layer = layer.configure_point(size=60)
+
+    return layer
+
+
+def _dv_vs_anypred_stratify(model, predictions, predcol_name, predcol_descr, strat=None, bins=8):
+    obs = get_observations(model)
+    di = model.datainfo
+    idv = di.idv_column.name
+    dvcol = di.dv_column
+    dv = dvcol.name
+    dv_unit = dvcol.unit
+    idname = di.id_column.name
+
+    if f'{strat}' not in model.dataset.columns:
+        raise ValueError(f'{strat} column does not exist in dataset.')
+    if bins > 8:
+        raise ValueError('bins must be 8 or less.')
+
+    if f'{strat}' not in predictions.columns and f'{strat}' not in predictions.index.names:
+        newcol = model.dataset[['ID', 'TIME', f'{strat}']].set_index(['ID', 'TIME'])
+        predictions = predictions.join(newcol, how='inner')
+        predictions = predictions[[predcol_name, f'{strat}']]
+    else:
+        predictions = predictions[[predcol_name]]
+    df = predictions.join(obs, how='inner').reset_index()
+
+    df = df.sort_values(by=[f'{strat}'])
+    # bin data if more than bins values
+    if len(list(df[strat].unique())) > bins:
+        bins = np.linspace(df[strat].min(), df[strat].max(), bins + 1)
+        unit = di[f'{strat}'].unit
+        labels = [_title_with_unit(f'{bins[i]} - {bins[i+1]}', unit) for i in range(len(bins) - 1)]
+        df[f'{strat}'] = pd.cut(df[f'{strat}'], bins=bins, labels=labels, include_lowest=True)
+
+    layers = []
+    for j in list(df[strat].unique()):
+        df_filtered = df.query(f'{strat} == @j')
+        chart = _grouped_scatter(
+            df_filtered,
+            x=predcol_name,
+            y=dv,
+            group=idname,
+            title=f"{strat} = {j}",
+            xtitle=predcol_descr,
+            ytitle="Observation",
+            xunit=dv_unit,
+            yunit=dv_unit,
+            tooltip=(idv,),
+        )
+
+        line = _identity_line(
+            df_filtered[predcol_name].min(),
+            df_filtered[predcol_name].max(),
+            df_filtered[dv].min(),
+            df_filtered[dv].max(),
+        )
+
+        layer = chart + _smooth(chart, predcol_name, dv) + line
+        layers.append(layer)
+
+    layer = _concat(layers)
+    layer = (
+        layer.properties(title=f"Observations vs. {predcol_descr}s")
+        .configure_point(size=60)
+        .configure_title(anchor='middle')
+    )
 
     return layer
 
@@ -508,4 +595,32 @@ def _scatter(df, x, y, title, xtitle, ytitle, xunit, yunit, tooltip=()):
         .properties(title=title, width=600, height=300)
         .interactive()
     )
+    return chart
+
+
+def _concat(charts):
+    # Concatenate charts up to 2x4
+    n = len(charts)
+    if n == 1:
+        return charts[0]
+    elif n > 1:
+        chart = alt.hconcat(charts[0], charts[1])
+    if n == 3:
+        chart = alt.vconcat(chart, charts[2])
+    if n > 3:
+        chart_tmp = alt.hconcat(charts[2], charts[3])
+        chart = alt.vconcat(chart, chart_tmp)
+    if n == 5:
+        chart = alt.vconcat(chart, charts[4])
+    if n > 5:
+        chart_tmp = alt.hconcat(charts[4], charts[5])
+        chart = alt.vconcat(chart, chart_tmp)
+    if n == 7:
+        chart = alt.vconcat(chart, charts[6])
+    if n == 8:
+        chart_tmp = alt.hconcat(charts[6], charts[7])
+        chart = alt.vconcat(chart, chart_tmp)
+    if n > 8:
+        raise ValueError('No more than 8 subplots allowed.')
+        return None
     return chart
