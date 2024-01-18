@@ -85,3 +85,8 @@ class Expr:
     def integer(cls, value):
         n = symengine.Integer(value)
         return cls(n)
+
+    @classmethod
+    def derivative(cls, f, x):
+        dfdx = symengine.Derivative(f, x)
+        return cls(dfdx)
