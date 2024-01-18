@@ -7,14 +7,14 @@ import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
-from pharmpy.tools import run_amd
+from pharmpy.tools import read_modelfit_results, run_amd
 from pharmpy.tools.amd.run import validate_input
 from pharmpy.workflows import default_tool_database
 
 
 def test_invalid_search_space_raises(tmp_path, testdata):
     with chdir(tmp_path):
-        db, model = _load_model(testdata)
+        db, model, res = _load_model(testdata)
 
         with pytest.raises(
             ValueError,
@@ -22,7 +22,7 @@ def test_invalid_search_space_raises(tmp_path, testdata):
         ):
             run_amd(
                 model,
-                results=model.modelfit_results,
+                results=res,
                 search_space='XYZ',
                 retries_strategy="skip",
                 path=db.path,
@@ -35,11 +35,11 @@ def test_invalid_search_space_raises(tmp_path, testdata):
 )
 def test_skip_most(tmp_path, testdata):
     with chdir(tmp_path):
-        db, model = _load_model(testdata)
+        db, model, res = _load_model(testdata)
 
         to_be_skipped = validate_input(
             model,
-            results=model.modelfit_results,
+            results=res,
             modeltype='basic_pk',
             administration='oral',
             occasion=None,
@@ -56,7 +56,7 @@ def test_skip_most(tmp_path, testdata):
 )
 def test_raise_allometry(tmp_path, testdata):
     with chdir(tmp_path):
-        db, model = _load_model(testdata, with_datainfo=True)
+        db, model, res = _load_model(testdata, with_datainfo=True)
 
         with pytest.raises(
             ValueError,
@@ -64,7 +64,7 @@ def test_raise_allometry(tmp_path, testdata):
         ):
             run_amd(
                 model,
-                results=model.modelfit_results,
+                results=res,
                 modeltype='basic_pk',
                 administration='oral',
                 allometric_variable='SJDLKSDJ',
@@ -79,7 +79,7 @@ def test_raise_allometry(tmp_path, testdata):
 )
 def test_raise_covsearch(tmp_path, testdata):
     with chdir(tmp_path):
-        db, model = _load_model(testdata, with_datainfo=True)
+        db, model, res = _load_model(testdata, with_datainfo=True)
 
         with pytest.raises(
             ValueError,
@@ -87,7 +87,7 @@ def test_raise_covsearch(tmp_path, testdata):
         ):
             run_amd(
                 model,
-                results=model.modelfit_results,
+                results=res,
                 search_space='LET(CONTINUOUS, [AGE, SJDLKSDJ]); LET(CATEGORICAL, [SEX])',
                 modeltype='basic_pk',
                 administration='oral',
@@ -102,10 +102,10 @@ def test_raise_covsearch(tmp_path, testdata):
 )
 def test_skip_covsearch(tmp_path, testdata):
     with chdir(tmp_path):
-        db, model = _load_model(testdata)
+        db, model, res = _load_model(testdata)
         to_be_skipped = validate_input(
             model,
-            results=model.modelfit_results,
+            results=res,
             search_space='LET(CONTINUOUS, []); LET(CATEGORICAL, [])',
             modeltype='basic_pk',
             administration='oral',
@@ -123,11 +123,11 @@ def test_skip_covsearch(tmp_path, testdata):
 )
 def test_skip_iovsearch_one_occasion(tmp_path, testdata):
     with chdir(tmp_path):
-        db, model = _load_model(testdata, with_datainfo=True)
+        db, model, res = _load_model(testdata, with_datainfo=True)
 
         to_be_skipped = validate_input(
             model,
-            results=model.modelfit_results,
+            results=res,
             modeltype='basic_pk',
             administration='oral',
             retries_strategy="skip",
@@ -144,7 +144,7 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
 )
 def test_skip_iovsearch_missing_occasion_raises(tmp_path, testdata):
     with chdir(tmp_path):
-        db, model = _load_model(testdata)
+        db, model, res = _load_model(testdata)
 
         with pytest.raises(
             ValueError,
@@ -152,7 +152,7 @@ def test_skip_iovsearch_missing_occasion_raises(tmp_path, testdata):
         ):
             run_amd(
                 model,
-                results=model.modelfit_results,
+                results=res,
                 modeltype='basic_pk',
                 administration='oral',
                 occasion='XYZ',
@@ -167,11 +167,11 @@ def test_skip_iovsearch_missing_occasion_raises(tmp_path, testdata):
 )
 def test_ignore_datainfo_fallback(tmp_path, testdata):
     with chdir(tmp_path):
-        db, model = _load_model(testdata, with_datainfo=True)
+        db, model, res = _load_model(testdata, with_datainfo=True)
 
         to_be_skipped = validate_input(
             model,
-            results=model.modelfit_results,
+            results=res,
             modeltype='basic_pk',
             administration='oral',
             retries_strategy="skip",
@@ -200,6 +200,7 @@ def _load_model(testdata: Path, with_datainfo: bool = False):
 
     model = Model.parse_model('mox2.mod')
     model = model.replace(name='start')
+    res = read_modelfit_results('mox2.mod')
 
     # NOTE: Load results directly in DB to skip fitting
     db_tool = default_tool_database(toolname='amd', path='amd_dir1')
@@ -214,7 +215,7 @@ def _load_model(testdata: Path, with_datainfo: bool = False):
         txn.store_local_file(models / 'mox2.lst', 'start.lst')
         txn.store_local_file(models / 'mox2.phi', 'start.phi')
 
-    return db_tool, model
+    return db_tool, model, res
 
 
 @contextmanager

@@ -1697,13 +1697,7 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 '''
     )
-    model = create_joint_distribution(
-        model,
-        model.random_variables.names,
-        individual_estimates=model.modelfit_results.individual_estimates
-        if model.modelfit_results is not None
-        else None,
-    )
+    model = create_joint_distribution(model, model.random_variables.names)
     assert 'IIV_CL_V_IIV_S1' in model.parameters.names
 
 
