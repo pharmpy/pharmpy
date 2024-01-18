@@ -49,8 +49,6 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
             datainfo=model_start.datainfo.replace(path=tmp_path / 'mox_simulated_normal.csv')
         )
         start_res = fit(model_start)
-        # FIXME: Remove
-        model_start = model_start.replace(modelfit_results=start_res)
 
         path = 'x'
         for i, resume in enumerate([False, False, True]):
@@ -78,8 +76,6 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
                     model for model in retrieve_models(res) if model.name != 'input_model'
                 ]
                 assert len(res_models) == no_of_candidate_models
-
-                # assert res_models[-1].modelfit_results
 
                 rundir = tmp_path / path
                 assert rundir.is_dir()
@@ -118,7 +114,7 @@ def test_run_tool_modelsearch_resume_flag(
                     search_space,
                     'exhaustive_stepwise',
                     model=model_start,
-                    results=model_start.modelfit_results,
+                    results=start_res,
                     path=path,
                     resume=resume,
                 )
@@ -132,7 +128,6 @@ def test_run_tool_modelsearch_resume_flag(
                 assert len(res.summary_tool) == no_of_models + 1
                 assert len(res.summary_models) == no_of_models + 1
                 assert len(res.models) == no_of_models + 1
-                assert res.models[-1].modelfit_results
 
                 assert res.models[1].parent_model == 'mox2'
                 assert res.models[-1].parent_model == last_model_parent_name
