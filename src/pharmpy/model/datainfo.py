@@ -687,7 +687,7 @@ class DataInfo(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> str(model.datainfo.path).replace('\\', '/')     # doctest: +ELLIPSIS
-        '.../pharmpy/modeling/example_models/pheno.dta'
+        '.../pharmpy/internals/example_models/pheno.dta'
         """
         return self._path
 

@@ -128,8 +128,9 @@ def predict_outliers(model: Model, results: ModelfitResults, cutoff: float = 3.0
     Examples
     --------
     >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import *
     >>> model = load_example_model("pheno")
-    >>> results = model.modelfit_results
+    >>> results = load_example_modelfit_results("pheno")
     >>> predict_outliers(model, results)     # doctest: +SKIP
         residual  outlier
     ID
