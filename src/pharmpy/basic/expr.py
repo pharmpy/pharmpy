@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from pharmpy.deps import symengine, sympy
 
 
 class Expr:
     """A real valued symbolic expression with real symbols"""
 
-    def __init__(self, source):
+    def __init__(self, source: TExpr):
         if isinstance(source, Expr):
             self._expr = source._expr
         else:
@@ -90,3 +92,7 @@ class Expr:
     def derivative(cls, f, x):
         dfdx = symengine.Derivative(f, x)
         return cls(dfdx)
+
+
+# Type hint for public functions taking an expression as input
+TExpr = int | float | str | sympy.Expr | symengine.Basic | Expr
