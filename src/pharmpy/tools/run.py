@@ -592,13 +592,15 @@ def retrieve_final_model(res: Results) -> Model:
     return retrieve_models(res, names=[final_model.name])[0]
 
 
-def print_fit_summary(model: Model):
+def print_fit_summary(model: Model, modelfit_results: ModelfitResults):
     """Print a summary of the model fit
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
+    modelfit_results : ModelfitResults
+        Pharmpy ModelfitResults object
     """
 
     def bool_ok_error(x):
@@ -616,7 +618,7 @@ def print_fit_summary(model: Model):
     def print_fmt(text, result):
         print(f"{text:33} {result}")
 
-    res = mfr(model)
+    res = mfr(modelfit_results)
 
     print_header("Parameter estimation status", first=True)
     print_fmt("Minimization successful", bool_ok_error(res.minimization_successful))

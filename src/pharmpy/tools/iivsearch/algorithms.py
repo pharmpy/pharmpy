@@ -13,7 +13,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import mfr
 
 
@@ -83,7 +83,9 @@ def create_no_of_etas_candidate_entry(name, to_remove, model_entry):
 
 def create_block_structure_candidate_entry(name, block_structure, model_entry):
     candidate_model = update_initial_estimates(model_entry.model, model_entry.modelfit_results)
-    candidate_model = create_eta_blocks(block_structure, candidate_model)
+    candidate_model = create_eta_blocks(
+        block_structure, candidate_model, model_entry.modelfit_results
+    )
     candidate_model = candidate_model.replace(
         name=name, description=create_description(candidate_model)
     )
@@ -153,13 +155,13 @@ def create_description(model: Model, iov: bool = False) -> str:
     return '+'.join(blocks)
 
 
-def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model):
+def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model, res: ModelfitResults):
     for part in partition:
         if len(part) == 1:
             model = split_joint_distribution(model, part)
         else:
             model = create_joint_distribution(
-                model, list(part), individual_estimates=mfr(model).individual_estimates
+                model, list(part), individual_estimates=mfr(res).individual_estimates
             )
     return model
 

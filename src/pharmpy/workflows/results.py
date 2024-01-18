@@ -25,8 +25,7 @@ else:
     from pharmpy.deps import pandas as pd
 
 
-def mfr(model: Model) -> ModelfitResults:
-    res = model.modelfit_results
+def mfr(res: ModelfitResults) -> ModelfitResults:
     assert isinstance(res, ModelfitResults)
     return res
 
