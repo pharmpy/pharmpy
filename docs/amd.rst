@@ -353,7 +353,7 @@ for each subtool, see the respective subheading.
 |                  | elimination (part of 'structural' AMD step)                                             | ``tmdd``                           |
 +------------------+-----------------------------------------------------------------------------------------+------------------------------------+
 | structsearch     | Search for best structural model. Includes PKPD, TMDD and drug metabolite models        | ``pkpd``, ``drug_metabolite``,     |
-|                  | (part of 'structural' AMD step)  ´                                                       | ``tmdd``                           |
+|                  | (part of 'structural' AMD step)  ´                                                      | ``tmdd``                           |
 +------------------+-----------------------------------------------------------------------------------------+------------------------------------+
 | iivsearch        | Search for best IIV structure, both in terms of number of IIVs to keep as well as       | All model types                    |
 |                  | covariance structure                                                                    |                                    |

@@ -147,7 +147,7 @@ More automatic symbols are available. They are described in the :ref:`MFL
 symbols section<mfl_symbols>`.
 
 Wildcards
-~~~~~~~~~
+---------
 
 In addition to symbols, using a wildcard `\*` can help refer to computed list
 of values. For instance the MFL sentence `COVARIATE?(*, *, *)` represents "All

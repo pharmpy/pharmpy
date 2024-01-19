@@ -106,7 +106,7 @@ available algorithms can be seen in the table below.
 +-----------------------------------+--------------------------------------------------------------------------------+
 
 Brute force search for number of IIVs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------
 
 The ``brute_force_no_of_etas`` algorithm will create candidate models for all combinations of removed IIVs. It will
 also create a naive pooled model meaning all the etas are fixed to 0. This can be useful in identifying local minima,
@@ -138,7 +138,7 @@ inter-individual variability).
         }
 
 Brute force search for covariance structure
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------
 
 The ``brute_force_block_structure`` algorithm will create candidates with all possible IIV variance and covariance
 structures from the IIVs in the base model.
@@ -162,7 +162,7 @@ structures from the IIVs in the base model.
         }
 
 Full brute force search
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 The full ``brute_force`` search combines the brute force algorithm for choosing number of etas with the brute force
 algorithm for the block structure, by first choosing the number of etas then the block structure.
