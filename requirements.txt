@@ -56,7 +56,7 @@ numexpr==2.8.8
 numpy==1.26.3
 packaging==23.2
 pandas==2.1.4
-pandocfilters==1.5.0
+pandocfilters==1.5.1
 parso==0.8.3
 partd==1.4.1
 pexpect==4.9.0
