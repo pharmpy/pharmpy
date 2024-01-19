@@ -553,19 +553,44 @@ def run_amd(
     final_results = next_model_entry.modelfit_results
     summary_errors = summarize_errors(final_results)
     if final_results.predictions is not None:
-        dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions)
-        dv_vs_pred_plot = plot_dv_vs_pred(model, final_results.predictions)
+        if 'dvid' in model.datainfo.types or 'DVID' in model.dataset.columns:
+            dvid_name = model.datainfo.typeix['dvid'] if 'dvid' in model.datainfo.types else 'DVID'
+            dv_vs_ipred_plot = plot_dv_vs_ipred(
+                model, final_results.predictions, dvid_name, uniform_scale=False
+            )
+            dv_vs_pred_plot = plot_dv_vs_pred(
+                model, final_results.predictions, dvid_name, uniform_scale=False
+            )
+        else:
+            dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions)
+            dv_vs_pred_plot = plot_dv_vs_pred(model, final_results.predictions)
     else:
         dv_vs_ipred_plot = None
         dv_vs_pred_plot = None
     if final_results.residuals is not None:
-        cwres_vs_idv_plot = plot_cwres_vs_idv(model, final_results.residuals)
+        if 'dvid' in model.datainfo.types or 'DVID' in model.dataset.columns:
+            dvid_name = model.datainfo.typeix['dvid'] if 'dvid' in model.datainfo.types else 'DVID'
+            cwres_vs_idv_plot = plot_cwres_vs_idv(
+                model, final_results.residuals, dvid_name, uniform_scale=False
+            )
+        else:
+            cwres_vs_idv_plot = plot_cwres_vs_idv(model, final_results.residuals)
     else:
         cwres_vs_idv_plot = None
     if final_results.predictions is not None and final_results.residuals is not None:
-        abs_cwres_vs_ipred_plot = plot_abs_cwres_vs_ipred(
-            model, predictions=final_results.predictions, residuals=final_results.residuals
-        )
+        if 'dvid' in model.datainfo.types or 'DVID' in model.dataset.columns:
+            dvid_name = model.datainfo.typeix['dvid'] if 'dvid' in model.datainfo.types else 'DVID'
+            abs_cwres_vs_ipred_plot = plot_abs_cwres_vs_ipred(
+                model,
+                predictions=final_results.predictions,
+                residuals=final_results.residuals,
+                strat=dvid_name,
+                uniform_scale=False,
+            )
+        else:
+            abs_cwres_vs_ipred_plot = plot_abs_cwres_vs_ipred(
+                model, predictions=final_results.predictions, residuals=final_results.residuals
+            )
     else:
         abs_cwres_vs_ipred_plot = None
     res = AMDResults(

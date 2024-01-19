@@ -53,8 +53,6 @@ def test_plot_dv_vs_ipred_stratify(tmp_path, load_model_for_test, testdata):
         assert plot
         with pytest.raises(ValueError, match='DVoID column does not exist in dataset.'):
             plot = plot_dv_vs_ipred(model, res.predictions, strat='DVoID')
-        with pytest.raises(ValueError, match='bins must be 8 or less.'):
-            plot = plot_dv_vs_ipred(model, res.predictions, strat='ID', bins=9)
 
 
 def test_plot_dv_vs_pred(load_model_for_test, testdata):
@@ -67,12 +65,16 @@ def test_plot_dv_vs_pred(load_model_for_test, testdata):
 def test_plot_cwres_vs_idv(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
-    plot = plot_cwres_vs_idv(model, res.residuals)
+    plot = plot_cwres_vs_idv(model, res.residuals, 'WGT', bins=4)
     assert plot
+    with pytest.raises(ValueError, match='DVoID column does not exist in dataset.'):
+        plot = plot_cwres_vs_idv(model, res.residuals, strat='DVoID')
 
 
 def test_plot_abs_cwres_vs_ipred(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
-    plot = plot_abs_cwres_vs_ipred(model, res.predictions, res.residuals)
+    plot = plot_abs_cwres_vs_ipred(model, res.predictions, res.residuals, 'WGT', bins=4)
     assert plot
+    with pytest.raises(ValueError, match='DVoID column does not exist in dataset.'):
+        plot = plot_abs_cwres_vs_ipred(model, res.predictions, res.residuals, strat='DVoID')
