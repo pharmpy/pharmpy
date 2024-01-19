@@ -83,7 +83,6 @@ class Model(Immutable):
         ),
         observation_transformation: Optional[frozenmapping[sympy.Symbol, sympy.Expr]] = None,
         estimation_steps: EstimationSteps = EstimationSteps(),
-        modelfit_results=None,
         parent_model: Optional[str] = None,
         initial_individual_estimates: Optional[pd.DataFrame] = None,
         filename_extension: str = '',
@@ -104,7 +103,6 @@ class Model(Immutable):
             )
         self._observation_transformation = observation_transformation
         self._estimation_steps = estimation_steps
-        self._modelfit_results = modelfit_results
         self._parent_model = parent_model
         self._initial_individual_estimates = initial_individual_estimates
         self._filename_extension = filename_extension
@@ -124,7 +122,6 @@ class Model(Immutable):
         dependent_variables: Optional[Mapping[Union[str, sympy.Symbol], int]] = None,
         observation_transformation: Optional[Mapping[Union[str, sympy.Symbol], sympy.Expr]] = None,
         estimation_steps: Optional[EstimationSteps] = None,
-        modelfit_results=None,
         parent_model: Optional[str] = None,
         initial_individual_estimates: Optional[pd.DataFrame] = None,
         filename_extension: str = '',
@@ -159,7 +156,6 @@ class Model(Immutable):
             random_variables=random_variables,
             estimation_steps=estimation_steps,
             statements=statements,
-            modelfit_results=modelfit_results,
             description=description,
             parent_model=parent_model,
             filename_extension=filename_extension,
@@ -374,7 +370,6 @@ class Model(Immutable):
         else:
             estimation_steps = self.estimation_steps
 
-        modelfit_results = kwargs.get('modelfit_results', self.modelfit_results)
         parent_model = kwargs.get('parent_model', self.parent_model)
         initial_individual_estimates = kwargs.get(
             'initial_individual_estimates', self.initial_individual_estimates
@@ -397,7 +392,6 @@ class Model(Immutable):
             dataset=dataset,
             datainfo=datainfo,
             estimation_steps=estimation_steps,
-            modelfit_results=modelfit_results,
             parent_model=parent_model,
             initial_individual_estimates=initial_individual_estimates,
             filename_extension=filename_extension,
@@ -632,11 +626,6 @@ class Model(Immutable):
     def internals(self) -> Optional[ModelInternals]:
         """Internal data for tool specific part of model"""
         return self._internals
-
-    @property
-    def modelfit_results(self):
-        """Modelfit results for this model"""
-        return self._modelfit_results
 
     @property
     def model_code(self) -> str:

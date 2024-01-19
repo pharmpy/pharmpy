@@ -165,10 +165,9 @@ def test_summary_individuals(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         m = read_model('pheno_real.mod')
         start_res = fit(m)
-        m = m.replace(modelfit_results=start_res)
         res = run_modelsearch(
             model=m,
-            results=m.modelfit_results,
+            results=start_res,
             search_space='ABSORPTION(ZO);PERIPHERALS([1, 2])',
             algorithm='reduced_stepwise',
         )
