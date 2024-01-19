@@ -242,18 +242,21 @@ def filter_search_space_and_model(search_space, model):
                 description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
         filtered_model = filtered_model.replace(description=';'.join(description))
 
-    ss_funcs = ss_mfl.convert_to_funcs(["covariate"])
+    all_forced_cov = tuple([c for c in ss_mfl.covariate if not c.optional.option])
+    all_forced = ModelFeatures.create(covariate=all_forced_cov)
+    added_comb = set(k[1:3] for k in all_forced.convert_to_funcs().keys())
 
-    remove_funcs = {k: v for k, v in ss_funcs.items() if k[-1] == "REMOVE"}
-    optional_funcs = {}
-    for key in remove_funcs.keys():
-        add_key = key[:-1] + ("ADD",)
-        optional_funcs[add_key] = ss_funcs[add_key]
-    mandatory_funcs = {
-        k: v
-        for k, v in ss_funcs.items()
-        if k[-1] != "REMOVE" and k[:-1] + ("REMOVE",) not in ss_funcs.keys()
-    }
+    ss_cov = ss_mfl - model_mfl
+    forced_add_cov = tuple([c for c in ss_cov.covariate if not c.optional.option])
+    to_be_added = ModelFeatures.create(covariate=forced_add_cov)
+    mandatory_funcs = to_be_added.convert_to_funcs()
+
+    optional_cov_list = tuple(c for c in ss_cov.covariate if c.optional.option)
+    optional_cov = ModelFeatures.create(covariate=optional_cov_list)
+    optional_funcs = optional_cov.convert_to_funcs()
+    optional_funcs = {k: v for k, v in optional_funcs.items() if not k[1:3] in added_comb}
+    optional_remove = {k: v for k, v in optional_funcs.items() if k[-1] == "REMOVE"}
+    optional_add = {k: v for k, v in optional_funcs.items() if k[-1] == "ADD"}
 
     def func_description(effect_funcs, model=None, add=True):
         d = []
@@ -270,9 +273,9 @@ def filter_search_space_and_model(search_space, model):
         return d
 
     # Remove all optional covariates
-    if len(remove_funcs) != 0:
-        potential_extension = func_description(remove_funcs, filtered_model, add=True)
-        for _, optional_func in remove_funcs.items():
+    if len(optional_remove) != 0:
+        potential_extension = func_description(optional_remove, filtered_model, add=True)
+        for _, optional_func in optional_remove.items():
             filtered_model = optional_func(filtered_model)
         if len(potential_extension) != 0:
             if not description:
@@ -291,13 +294,13 @@ def filter_search_space_and_model(search_space, model):
                 filtered_model = mandatory_func(filtered_model)
 
     # Filter unneccessary keys from fuctions
-    optional_funcs = {k[1:-1]: v for k, v in optional_funcs.items()}
+    optional_add = {k[1:-1]: v for k, v in optional_add.items()}
 
     if len(description) > 1:
         filtered_model = filtered_model.replace(description=';'.join(description))
-        return (optional_funcs, filtered_model)
+        return (optional_add, filtered_model)
     else:
-        return (optional_funcs, model)
+        return (optional_add, model)
 
 
 def task_greedy_forward_search(

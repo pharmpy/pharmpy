@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.modeling import add_covariate_effect, get_covariates, remove_covariate_effect
+from pharmpy.modeling import add_covariate_effect, get_covariate_effects, remove_covariate_effect
 from pharmpy.tools.covsearch.tool import (
     create_workflow,
     filter_search_space_and_model,
@@ -147,21 +147,21 @@ def test_validate_input_raises(
 def test_covariate_filtering(load_model_for_test, testdata):
     search_space = 'COVARIATE(@IIV, @CONTINUOUS, lin);COVARIATE?(@IIV, @CATEGORICAL, CAT)'
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    orig_cov = get_covariates(model)
+    orig_cov = get_covariate_effects(model)
     assert len(orig_cov) == 3
 
     eff, filtered_model = filter_search_space_and_model(search_space, model)
     assert len(eff) == 2
     expected_cov_eff = set((('CL', 'APGR', 'cat', '*'), ('V', 'APGR', 'cat', '*')))
     assert set(eff.keys()) == expected_cov_eff
-    assert len(get_covariates(filtered_model)) == 2
+    assert len(get_covariate_effects(filtered_model)) == 2
 
-    for cov_effect in get_covariates(model):
+    for cov_effect in get_covariate_effects(model):
         model = remove_covariate_effect(model, cov_effect[0], cov_effect[1].name)
 
     model = add_covariate_effect(model, 'CL', 'WGT', 'pow', '*')
-    assert len(get_covariates(model)) == 1
+    assert len(get_covariate_effects(model)) == 1
     search_space = 'COVARIATE([CL, V],WGT,pow,*)'
     eff, filtered_model = filter_search_space_and_model(search_space, model)
-    assert len(get_covariates(filtered_model)) == 2
+    assert len(get_covariate_effects(filtered_model)) == 2
     assert len(eff) == 0

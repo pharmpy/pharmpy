@@ -6,7 +6,7 @@ from typing import List, Optional
 from lark import Lark
 
 from pharmpy.model import Model
-from pharmpy.modeling.covariate_effect import get_covariates
+from pharmpy.modeling.covariate_effect import get_covariate_effects
 from pharmpy.modeling.odes import (
     get_number_of_peripheral_compartments,
     get_number_of_transit_compartments,
@@ -98,11 +98,6 @@ def validate_mfl_list(mfl_statement_list):
                             f" multiple statements. Please force only once"
                         )
                     mandatory_cov.update(product(s.parameter, s.covariate))
-    if error := [op for op in optional_cov if op in mandatory_cov]:
-        raise ValueError(
-            f"The covariate effect(s) {error} : are defined as both mandatory and optional"
-        )
-
 
 class ModelFeatures:
     def __init__(
@@ -371,6 +366,30 @@ class ModelFeatures:
                 f"Covariate effect(s) {error} is forced by multiple reference statements."
                 f" Please redefine the search space."
             )
+
+        # Overwrite optional covariates if forced
+        if covariate:
+            covariate_combinations = set()
+            for cov in covariate:
+                covariate_combinations.update(
+                    set(
+                        product(
+                            cov.parameter, cov.covariate, cov.eval().fp, (cov.op,), (cov.optional,)
+                        )
+                    )
+                )
+            for combination in covariate_combinations.copy():
+                if not combination[4].option:
+                    opposite = combination[:-1] + (Option(True),)
+                    covariate_combinations.discard(opposite)
+
+            covariate_combinations = [tuple({x} for x in e) for e in covariate_combinations]
+            covariate_combinations = _reduce_covariate(covariate_combinations)
+            covariate = tuple()
+            for param, cov, fp, op, opt in covariate_combinations:
+                covariate += (
+                    Covariate(tuple(param), tuple(cov), tuple(fp), list(op)[0], list(opt)[0]),
+                )
 
         return ModelFeatures.create(
             absorption=self.absorption.eval if self.absorption else None,
@@ -868,27 +887,9 @@ class ModelFeatures:
         else:
             return tuple()
 
-        def _reduce(s, n):
-            clean_s = []
-            checked_keys = []
-            for i in s:
-                key = i[:n] + i[n + 1 :]
-                if key in checked_keys:
-                    pass
-                else:
-                    checked_keys.append(key)
-                    attr_set = set()
-                    for e in s:
-                        if key == e[:n] + e[n + 1 :]:
-                            attr_set.update(e[n])
-                    clean_s.append(i[:n] + (attr_set,) + i[n + 1 :])
-            return clean_s
-
         # Convert all elements to SETS before using reduce
         res = [tuple({x} for x in e) for e in res]
-        res = _reduce(res, 2)
-        res = _reduce(res, 1)
-        res = _reduce(res, 0)
+        res = _reduce_covariate(res)
         cov_res = []
         for param, cov, fp, op, opt in res:
             cov_res.append(
@@ -1004,6 +1005,31 @@ def _add_helper(s1, s2, value_name, join_name):
     return (remove_empty(s1_unique), remove_empty(s2_unique), remove_empty(s12_joined))
 
 
+def _reduce_covariate(c):
+    c = _reduce(c, 2)
+    c = _reduce(c, 1)
+    c = _reduce(c, 0)
+    return c
+
+
+def _reduce(s, n):
+    """Reduce list of tuples of sets based on the n:th element in each tuple"""
+    clean_s = []
+    checked_keys = []
+    for i in s:
+        key = i[:n] + i[n + 1 :]
+        if key in checked_keys:
+            pass
+        else:
+            checked_keys.append(key)
+            attr_set = set()
+            for e in s:
+                if key == e[:n] + e[n + 1 :]:
+                    attr_set.update(e[n])
+            clean_s.append(i[:n] + (attr_set,) + i[n + 1 :])
+    return clean_s
+
+
 def get_model_features(model: Model, supress_warnings: bool = False) -> str:
     """Create an MFL representation of an input model
 
@@ -1073,7 +1099,7 @@ def get_model_features(model: Model, supress_warnings: bool = False) -> str:
     peripherals = get_number_of_peripheral_compartments(model)
 
     # COVARIATES
-    covariates = get_covariates(model)
+    covariates = get_covariate_effects(model)
 
     if absorption:
         absorption = f'ABSORPTION({absorption})'
