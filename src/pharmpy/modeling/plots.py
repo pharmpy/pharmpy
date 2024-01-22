@@ -474,7 +474,8 @@ def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr):
     )
 
     line = _identity_line(
-        df[predcol_name].min() / 10, df[predcol_name].max() * 2, df[dv].min() / 10, df[dv].max() * 2
+        abs(min([df[predcol_name].min(), df[dv].min()])) / 10,
+        abs(max([df[predcol_name].max(), df[dv].max()])) * 10,
     )
     layer = chart + _smooth(chart, predcol_name, dv) + line
     layer = layer.configure_point(size=60)
@@ -520,7 +521,8 @@ def _dv_vs_anypred_stratify(
     scale = 'shared' if uniform_scale else 'independent'
     chart = chart.properties(height=300, width=300)
     line = _identity_line(
-        df[predcol_name].min() / 10, df[predcol_name].max() * 2, df[dv].min() / 10, df[dv].max() * 2
+        (min_value := min([df[predcol_name].min(), df[dv].min()])) - abs(min_value) * 10,
+        abs(max([df[predcol_name].max(), df[dv].max()])) * 10,
     )
     layer = (
         alt.layer(chart, _smooth(chart, predcol_name, dv), line, data=df)
@@ -639,9 +641,9 @@ def _vertical_line():
     return line
 
 
-def _identity_line(xmin, xmax, ymin, ymax):
-    x1, x2 = alt.param(value=xmin), alt.param(value=xmax)
-    y1, y2 = alt.param(value=ymin), alt.param(value=ymax)
+def _identity_line(min_value, max_value):
+    x1, x2 = alt.param(value=min_value), alt.param(value=max_value)
+    y1, y2 = alt.param(value=min_value), alt.param(value=max_value)
     line = (
         alt.Chart()
         .mark_rule()
