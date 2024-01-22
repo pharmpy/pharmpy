@@ -716,12 +716,12 @@ $ESTIMATION METHOD=1 SADDLE_RESET=1
         ),
         (
             '$EST METH=COND INTER',
-            {'parameter_uncertainty_method': 'cpg'},
+            {'parameter_uncertainty_method': 'SMAT'},
             '$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1',
         ),
         (
             '$EST METH=COND INTER',
-            {'parameter_uncertainty_method': 'ofim'},
+            {'parameter_uncertainty_method': 'RMAT'},
             '$COVARIANCE MATRIX=R UNCONDITIONAL PRINT=E PRECOND=1',
         ),
         (

@@ -80,7 +80,7 @@ def run_amd(
     mechanistic_covariates: Optional[List[str]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     seed: Optional[Union[np.random.Generator, int]] = None,
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'CPG', 'OFIM', 'EFIM']] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
 ):
     """Run Automatic Model Development (AMD) tool
@@ -139,7 +139,7 @@ def run_amd(
         Default is 'final'.
     seed : int or rng
         Random number generator or seed to be used.
-    parameter_uncertainty_method: {'SANDWICH', 'CPG', 'OFIM'} or None
+    parameter_uncertainty_method: {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
         Parameter uncertainty method.
     ignore_datainfo_fallback : bool
         Ignore using datainfo to get information not given by the user. Default is False
@@ -1056,7 +1056,7 @@ def validate_input(
     mechanistic_covariates: Optional[List[str]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     seed: Optional[Union[np.random.Generator, int]] = None,
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'CPG', 'OFIM', 'EFIM']] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
 ):
     model = input

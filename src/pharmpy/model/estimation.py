@@ -133,7 +133,7 @@ class EstimationStep(Step):
     """Supported estimation methods
     """
     supported_methods = frozenset(('FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'))
-    supported_parameter_uncertainty_methods = frozenset(('SANDWICH', 'CPG', 'OFIM', 'EFIM'))
+    supported_parameter_uncertainty_methods = frozenset(('SANDWICH', 'SMAT', 'RMAT', 'EFIM'))
 
     def __init__(
         self,
@@ -297,17 +297,17 @@ class EstimationStep(Step):
         """Method to use when estimating parameter uncertainty.
         Supported methods and their corresponding NMTRAN code:
 
-        +----------------------------+-----------------------+
-        | Method                     | NMTRAN                |
-        +============================+=======================+
-        | Sandwich                   | $COVARIANCE           |
-        +----------------------------+-----------------------+
-        | Cross-product gradient     | $COVARIANCE MATRIX=S  |
-        +----------------------------+-----------------------+
-        | Observed FIM               | $COVARIANCE MATRIX=R  |
-        +----------------------------+-----------------------+
-        | Expected FIM               | $DESIGN               |
-        +----------------------------+-----------------------+
+        +-------------------------------+-----------------------+
+        | Method                        | NMTRAN                |
+        +===============================+=======================+
+        | Sandwich                      | $COVARIANCE           |
+        +-------------------------------+-----------------------+
+        | Cross-product gradient (SMAT) | $COVARIANCE MATRIX=S  |
+        +-------------------------------+-----------------------+
+        | Observed FIM (RMAT)           | $COVARIANCE MATRIX=R  |
+        +-------------------------------+-----------------------+
+        | Expected FIM (EFIM)           | $DESIGN               |
+        +-------------------------------+-----------------------+
 
         By default the following options are appended:
         UNCONDITIONAL: The uncertainty step is implemented regardless of how the estimation step terminates.

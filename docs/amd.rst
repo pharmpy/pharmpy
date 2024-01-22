@@ -95,7 +95,7 @@ Arguments
 | ``dv_types``                                      | Dictionary of DV types for multiple DVs (e.g. dv_types = {'target': 2}). Default is None.                       |
 |                                                   | Allowed keys are: 'drug', 'target' and 'complex'. (For TMDD models only)                                        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``parameter_uncertainty_method``                  | Parameter uncertainty method to use. Currently implemented methods are: 'SANDWICH', 'CPG' and 'OFIM'.           |
+| ``parameter_uncertainty_method``                  | Parameter uncertainty method to use. Currently implemented methods are: 'SANDWICH', 'SMAT', 'RMAT' and 'EFIM'.  |
 |                                                   | For more information about these methods see                                                                    |
 |                                                   | :py:func:`here<pharmpy.model.EstimationStep.parameter_uncertainty_method>`.                                     |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
