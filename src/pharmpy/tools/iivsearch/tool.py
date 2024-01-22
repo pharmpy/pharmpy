@@ -155,7 +155,18 @@ def start(
 
     sum_models = [summarize_modelfit_results(input_res)]
 
+    applied_algorithms = []
     for algorithm_cur in list_of_algorithms:
+        if (
+            algorithm_cur == 'brute_force_block_structure'
+            and len(
+                set(base_model_entry.model.random_variables.iiv.names).difference(
+                    _get_fixed_etas(base_model_entry.model)
+                )
+            )
+            <= 1
+        ):
+            continue
         algorithm_func = getattr(algorithms, algorithm_cur)
         if algorithm_cur == "brute_force_no_of_etas":
             # NOTE: This does not need to be a model entry since it is only used as a start point for the
@@ -208,15 +219,8 @@ def start(
         no_of_models = len(res.summary_tool) - 1
 
         assert base_model_entry is not None
-        if (
-            len(
-                set(base_model_entry.model.random_variables.iiv.names).difference(
-                    _get_fixed_etas(base_model_entry.model)
-                )
-            )
-            <= 1
-        ):
-            break
+
+        applied_algorithms.append(algorithm_cur)
 
     assert last_res is not None
     assert final_model_entry is not None
@@ -237,7 +241,7 @@ def start(
             )
             final_final_model = input_model
 
-    keys = list(range(1, len(list_of_algorithms) + 1))
+    keys = list(range(1, len(applied_algorithms) + 1))
 
     return IIVSearchResults(
         summary_tool=_concat_summaries(sum_tools, keys),
