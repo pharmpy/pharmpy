@@ -96,7 +96,7 @@ def test_add_parameter_uncertainty_step(testdata, load_model_for_test):
     assert len(model.estimation_steps) == 1
     assert model.model_code.split('\n')[-2] == '$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1'
     model = remove_parameter_uncertainty_step(model)
-    model = add_parameter_uncertainty_step(model, 'CPG')
+    model = add_parameter_uncertainty_step(model, 'SMAT')
     assert len(model.estimation_steps) == 1
     assert (
         model.model_code.split('\n')[-2] == '$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1'

@@ -269,7 +269,7 @@ def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], i
 
 
 def add_parameter_uncertainty_step(
-    model: Model, parameter_uncertainty_method: Literal['SANDWICH', 'CPG', 'OFIM', 'EFIM']
+    model: Model, parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']
 ):
     """Adds parameter uncertainty step to the final estimation step
 

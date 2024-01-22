@@ -1571,8 +1571,8 @@ def add_efim_records(control_stream, idx_cov, last_est_rec):
 def add_covariance_record(control_stream, idx_cov, method):
     method_to_cov = {
         "SANDWICH": "$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1",
-        "CPG": "$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1",
-        "OFIM": "$COVARIANCE MATRIX=R UNCONDITIONAL PRINT=E PRECOND=1",
+        "SMAT": "$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1",
+        "RMAT": "$COVARIANCE MATRIX=R UNCONDITIONAL PRINT=E PRECOND=1",
     }
 
     try:

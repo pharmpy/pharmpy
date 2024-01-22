@@ -18,7 +18,7 @@ from pharmpy.workflows.results import ModelfitResults
 
 METHODS = ('FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES')
 SOLVERS = ('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI')
-PARAMETER_UNCERTAINTY_METHODS = ('SANDWICH', 'CPG', 'OFIM')
+PARAMETER_UNCERTAINTY_METHODS = ('SANDWICH', 'SMAT', 'RMAT')
 
 ALGORITHMS = frozenset(['exhaustive', 'exhaustive_with_update', 'exhaustive_only_eval'])
 
@@ -45,7 +45,7 @@ def create_workflow(
     solvers : str or list of {'CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'} or None
          List of solver to test. Can be specified as 'all', a list of solvers, or None (to
          not test any solver)
-    parameter_uncertainty_methods : str or list of {'SANDWICH', 'CPG', 'OFIM'} or None
+    parameter_uncertainty_methods : str or list of {'SANDWICH', 'SMAT', 'RMAT'} or None
          List of parameter uncertainty methods to test.
          Can be specified as 'all', a list of uncertainty methods, or None (to not evaluate any uncertainty)
     results : ModelfitResults
