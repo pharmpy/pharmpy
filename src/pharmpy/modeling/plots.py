@@ -474,7 +474,7 @@ def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr):
     )
 
     line = _identity_line(
-        df[predcol_name].min(), df[predcol_name].max(), df[dv].min(), df[dv].max()
+        df[predcol_name].min() / 10, df[predcol_name].max() * 2, df[dv].min() / 10, df[dv].max() * 2
     )
     layer = chart + _smooth(chart, predcol_name, dv) + line
     layer = layer.configure_point(size=60)
@@ -520,7 +520,7 @@ def _dv_vs_anypred_stratify(
     scale = 'shared' if uniform_scale else 'independent'
     chart = chart.properties(height=300, width=300)
     line = _identity_line(
-        df[predcol_name].min(), df[predcol_name].max(), df[dv].min(), df[dv].max()
+        df[predcol_name].min() / 10, df[predcol_name].max() * 2, df[dv].min() / 10, df[dv].max() * 2
     )
     layer = (
         alt.layer(chart, _smooth(chart, predcol_name, dv), line, data=df)
