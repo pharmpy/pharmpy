@@ -474,7 +474,7 @@ def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr):
     )
 
     line = _identity_line(
-        abs(min([df[predcol_name].min(), df[dv].min()])) / 10,
+        (min_value := min([df[predcol_name].min(), df[dv].min()])) - abs(min_value) * 10,
         abs(max([df[predcol_name].max(), df[dv].max()])) * 10,
     )
     layer = chart + _smooth(chart, predcol_name, dv) + line
