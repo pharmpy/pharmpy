@@ -99,6 +99,7 @@ def validate_mfl_list(mfl_statement_list):
                         )
                     mandatory_cov.update(product(s.parameter, s.covariate))
 
+
 class ModelFeatures:
     def __init__(
         self,
@@ -112,6 +113,7 @@ class ModelFeatures:
         effect_comp=None,
         indirect_effect=tuple(),
         metabolite=None,
+        _let={},
     ):
         self._absorption = absorption
         self._elimination = elimination
@@ -123,6 +125,7 @@ class ModelFeatures:
         self._effect_comp = effect_comp
         self._indirect_effect = indirect_effect
         self._metabolite = metabolite
+        self._let = _let
 
     @classmethod
     def create(
@@ -137,6 +140,7 @@ class ModelFeatures:
         effect_comp=None,
         indirect_effect=tuple(),
         metabolite=None,
+        _let={},
     ):
         # TODO : Check if allowed input value
         if absorption is not None and not isinstance(absorption, Absorption):
@@ -162,6 +166,8 @@ class ModelFeatures:
             raise ValueError("Covariates need to be given within a tuple")
         if not all(isinstance(c, Covariate) for c in covariate):
             raise ValueError(f"Covariate : {covariate} is not supported")
+        if not isinstance(_let, dict):
+            raise ValueError("_let statements need to be given in a dict")
 
         if direct_effect is not None and not isinstance(direct_effect, DirectEffect):
             raise ValueError(f"DirectEffect : {direct_effect} is not supported")
@@ -190,6 +196,24 @@ class ModelFeatures:
             if lagtime is None:
                 lagtime = LagTime((Name('OFF'),))
 
+        # Substitute all Let statements (if any)
+        if len(_let) != 0:
+            # FIXME : Multiple let statements for the same reference value ?
+            def _let_subs(cov, _let):
+                return Covariate(
+                    parameter=cov.parameter
+                    if not (isinstance(cov.parameter, Ref) and cov.parameter.name in _let)
+                    else _let[cov.parameter.name],
+                    covariate=cov.covariate
+                    if not (isinstance(cov.covariate, Ref) and cov.covariate.name in _let)
+                    else _let[cov.covariate.name],
+                    fp=cov.fp,
+                    op=cov.op,
+                    optional=cov.optional,
+                )
+
+            covariate = tuple([_let_subs(cov, _let) for cov in covariate])
+
         return cls(
             absorption=absorption,
             elimination=elimination,
@@ -201,6 +225,7 @@ class ModelFeatures:
             effect_comp=effect_comp,
             indirect_effect=indirect_effect,
             metabolite=metabolite,
+            _let=_let,
         )
 
     @classmethod
@@ -243,24 +268,6 @@ class ModelFeatures:
             else:
                 raise ValueError(f'Unknown ({type(statement)} statement ({statement}) given.')
 
-        # Substitute all Let statements (if any)
-        if len(let) != 0:
-            # FIXME : Multiple let statements for the same reference value ?
-            def _let_subs(cov, let):
-                return Covariate(
-                    parameter=cov.parameter
-                    if not (isinstance(cov.parameter, Ref) and cov.parameter.name in let)
-                    else let[cov.parameter.name],
-                    covariate=cov.covariate
-                    if not (isinstance(cov.covariate, Ref) and cov.covariate.name in let)
-                    else let[cov.covariate.name],
-                    fp=cov.fp,
-                    op=cov.op,
-                    optional=cov.optional,
-                )
-
-            covariate = tuple([_let_subs(cov, let) for cov in covariate])
-
         mfl = cls.create(
             absorption=absorption,
             elimination=elimination,
@@ -272,6 +279,7 @@ class ModelFeatures:
             effect_comp=effect_comp,
             indirect_effect=indirect_effect,
             metabolite=metabolite,
+            _let=let,
         )
         return mfl
 
@@ -290,6 +298,7 @@ class ModelFeatures:
         effect_comp = kwargs.get("effect_comp", self._effect_comp)
         indirect_effect = kwargs.get("indirect_effect", self._indirect_effect)
         metabolite = kwargs.get("metabolite", self._metabolite)
+        _let = kwargs.get("_let", self._let)
         return ModelFeatures.create(
             absorption=absorption,
             elimination=elimination,
@@ -301,6 +310,7 @@ class ModelFeatures:
             effect_comp=effect_comp,
             indirect_effect=indirect_effect,
             metabolite=metabolite,
+            _let=_let,
         )
 
     @property
@@ -402,6 +412,7 @@ class ModelFeatures:
             effect_comp=self.effect_comp.eval if self.effect_comp else None,
             indirect_effect=tuple([i.eval for i in self.indirect_effect]),
             metabolite=self.metabolite.eval if self.metabolite else None,
+            _let=self._let,
         )
 
     def mfl_statement_list(self, attribute_type: Optional[List[str]] = []):

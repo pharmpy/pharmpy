@@ -25,24 +25,11 @@ from pharmpy.reporting import generate_report
 from pharmpy.tools import retrieve_models, summarize_errors, write_results
 from pharmpy.tools.allometry.tool import validate_allometric_variable
 from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
-from pharmpy.tools.mfl.feature.covariate import spec as covariate_spec
-from pharmpy.tools.mfl.filter import (
-    COVSEARCH_STATEMENT_TYPES,
-    STRUCTSEARCH_STATEMENT_TYPES,
-    mfl_filtering,
-)
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.mfl.parse import parse as mfl_parse
-from pharmpy.tools.mfl.statement.definition import Let
-from pharmpy.tools.mfl.statement.feature.absorption import Absorption
-from pharmpy.tools.mfl.statement.feature.covariate import Covariate, Ref
-from pharmpy.tools.mfl.statement.feature.elimination import Elimination
-from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
+from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
-from pharmpy.tools.mfl.statement.feature.symbols import Name, Option, Wildcard
-from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.mfl.statement.statement import Statement
-from pharmpy.tools.mfl.stringify import stringify as mfl_stringify
 from pharmpy.workflows import ModelEntry, Results, default_tool_database
 from pharmpy.workflows.model_database.local_directory import get_modelfit_results
 from pharmpy.workflows.results import ModelfitResults
@@ -169,25 +156,15 @@ def run_amd(
 
     from pharmpy.model.external import nonmem  # FIXME: We should not depend on NONMEM
 
-    if modeltype == 'pkpd':
-        dv = 2
-        iiv_strategy = 'pd_fullblock'
-        # FIXME : DO THIS ONLY ONCE (DUPLICATED FURTHER DOWN)
+    if search_space is not None:
         try:
-            input_search_space_features = [] if search_space is None else mfl_parse(search_space)
+            ss_mfl = mfl_parse(search_space, True)
         except:  # noqa E722
             raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
 
-        structsearch_features = tuple(
-            filter(
-                lambda statement: isinstance(statement, STRUCTSEARCH_STATEMENT_TYPES),
-                input_search_space_features,
-            )
-        )
-        if not structsearch_features:
-            structsearch_features = "DIRECTEFFECT(*);EFFECTCOMP(*);INDIRECTEFFECT(*,*)"
-        else:
-            structsearch_features = mfl_stringify(structsearch_features)
+    if modeltype == 'pkpd':
+        dv = 2
+        iiv_strategy = 'pd_fullblock'
     else:
         dv = None
         iiv_strategy = 'fullblock'
@@ -255,79 +232,76 @@ def run_amd(
     if to_be_skipped:
         order = [tool for tool in order if tool not in to_be_skipped]
 
-    try:
-        input_search_space_features = [] if search_space is None else mfl_parse(search_space)
-    except:  # noqa E722
-        raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
-
-    modelsearch_features = mfl_filtering(input_search_space_features, "modelsearch")
     if modeltype in ['pkpd', 'drug_metabolite']:
-        structsearch_features = mfl_filtering(input_search_space_features, "structsearch")
-        if search_space is None:
+        if modeltype == 'pkpd':
+            structsearch_features = ss_mfl.filtration("pd")
+        else:
+            structsearch_features = ss_mfl.filtration("metabolite")
+        if len(structsearch_features.mfl_statement_list()) == 0:
             if modeltype == 'pkpd':
-                structsearch_features = "DIRECTEFFECT(*);EFFECTCOMP(*);INDIRECTEFFECT(*,*)"
+                structsearch_features = mfl_parse(
+                    "DIRECTEFFECT(*);EFFECTCOMP(*);INDIRECTEFFECT(*,*)", True
+                )
             else:
                 if administration in ['oral', 'ivoral']:
-                    structsearch_features = "METABOLITE([PSC, BASIC]);PERIPHERALS([0,1], MET)"
+                    structsearch_features = mfl_parse(
+                        "METABOLITE([PSC, BASIC]);PERIPHERALS([0,1], MET)", True
+                    )
                 else:
-                    structsearch_features = "METABOLITE([BASIC]);PERIPHERALS([0,1], MET)"
+                    structsearch_features = mfl_parse(
+                        "METABOLITE([BASIC]);PERIPHERALS([0,1], MET)", True
+                    )
 
-    if not modelsearch_features:
+    modelsearch_features = ss_mfl.filtration("pk")
+    if len(modelsearch_features.mfl_statement_list()) == 0:
         if modeltype in ('basic_pk', 'drug_metabolite') and administration == 'oral':
-            modelsearch_features = (
-                Absorption((Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'))),
-                Elimination((Name('FO'),)),
-                LagTime((Name('OFF'), Name('ON'))),
-                Transits((0, 1, 3, 10), Wildcard()),
-                Peripherals((0, 1)),
+            modelsearch_features = mfl_parse(
+                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
+                "ELIMINATION(FO);"
+                "LAGTIME([OFF,ON]);"
+                "TRANSITS([0,1,3,10],*);"
+                "PERIPHERALS(0..1)",
+                True,
             )
         elif modeltype in ('basic_pk', 'drug_metabolite') and administration == 'ivoral':
-            modelsearch_features = (
-                Absorption((Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'))),
-                Elimination((Name('FO'),)),
-                LagTime((Name('OFF'), Name('ON'))),
-                Transits((0, 1, 3, 10), Wildcard()),
-                Peripherals((0, 1, 2)),
+            modelsearch_features = mfl_parse(
+                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
+                "ELIMINATION(FO);"
+                "LAGTIME([OFF,ON]);"
+                "TRANSITS([0,1,3,10],*);"
+                "PERIPHERALS(0..2)",
+                True,
             )
         elif modeltype == 'tmdd' and administration == 'oral':
-            modelsearch_features = (
-                Absorption((Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'))),
-                Elimination((Name('MM'), Name('MIX-FO-MM'))),
-                LagTime((Name('OFF'), Name('ON'))),
-                Transits((0, 1, 3, 10), Wildcard()),
-                Peripherals((0, 1)),
+            modelsearch_features = mfl_parse(
+                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
+                "ELIMINATION([MM, MIX-FO-MM]);"
+                "LAGTIME([OFF,ON]);"
+                "TRANSITS([0,1,3,10],*);"
+                "PERIPHERALS(0..1)",
+                True,
             )
         elif modeltype == 'tmdd' and administration == 'ivoral':
-            modelsearch_features = (
-                Absorption((Name('FO'), Name('ZO'), Name('SEQ-ZO-FO'))),
-                Elimination((Name('MM'), Name('MIX-FO-MM'))),
-                LagTime((Name('OFF'), Name('ON'))),
-                Transits((0, 1, 3, 10), Wildcard()),
-                Peripherals((0, 1, 2)),
+            modelsearch_features = mfl_parse(
+                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
+                "ELIMINATION([MM, MIX-FO-MM]);"
+                "LAGTIME([OFF,ON]);"
+                "TRANSITS([0,1,3,10],*);"
+                "PERIPHERALS(0..2)",
+                True,
             )
         else:
-            modelsearch_features = (
-                Elimination((Name('FO'),)),
-                Peripherals((0, 1, 2)),
-            )
+            modelsearch_features = mfl_parse("ELIMINATION(FO);" "PERIPHERALS(0..2)", True)
 
-    covsearch_features = tuple(
-        filter(
-            lambda statement: isinstance(statement, COVSEARCH_STATEMENT_TYPES),
-            input_search_space_features,
+    # Note that LET() statements are transferred even in the absence of covariates
+    covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate, _let=ss_mfl._let)
+    if not covsearch_features.covariate:
+        cov_ss = mfl_parse(
+            "COVARIATE?(@IIV, @CONTINUOUS, EXP);" "COVARIATE?(@IIV,@CATEGORICAL, CAT)", True
         )
-    )
-    if not any(map(lambda statement: isinstance(statement, Covariate), covsearch_features)):
-        def_cov_search_feature = (
-            Covariate(Ref('IIV'), Ref('CONTINUOUS'), ('exp',), '*', Option(True)),
-            Covariate(Ref('IIV'), Ref('CATEGORICAL'), ('cat',), '*', Option(True)),
-        )
+        covsearch_features = covsearch_features.replace(covariate=cov_ss.covariate)
         if modeltype == 'basic_pk' and administration == 'ivoral':
-            def_cov_search_feature = def_cov_search_feature + (
-                Covariate(('RUV',), ('ADMID',), ('cat',), '*', Option(True)),
-            )
-
-        covsearch_features = def_cov_search_feature + covsearch_features
+            covsearch_features += mfl_parse("COVARIATE?(RUV, ADMID, CAT)", True)
 
     if modeltype == "tmdd":
         orig_dataset = model.dataset
@@ -492,8 +466,9 @@ def run_amd(
                     cov_after = ModelFeatures.create_from_mfl_string(
                         get_model_features(subresults.final_model)
                     )
-                    cov_differences = (cov_after - cov_before).covariate
+                    cov_differences = cov_after - cov_before
                     if cov_differences:
+                        covsearch_features = covsearch_features.expand(subresults.final_model)
                         covsearch_features += cov_differences
                         func = _subfunc_mechanistic_exploratory_covariates(
                             amd_start_model=model,
@@ -662,7 +637,7 @@ def _subfunc_modelsearch(search_space: Tuple[Statement, ...], strictness, path) 
     def _run_modelsearch(model, modelfit_results):
         res = run_tool(
             'modelsearch',
-            search_space=mfl_stringify(search_space),
+            search_space=search_space,
             algorithm='reduced_stepwise',
             model=model,
             strictness=strictness,
@@ -697,7 +672,7 @@ def _subfunc_structsearch_tmdd(
     def _run_structsearch_tmdd(model, modelfit_results):
         res = run_tool(
             'modelsearch',
-            search_space=mfl_stringify(search_space),
+            search_space=search_space,
             algorithm='reduced_stepwise',
             model=model,
             strictness=strictness,
@@ -813,7 +788,7 @@ def _subfunc_ruvsearch(dv, strictness, path, dir_name) -> SubFunc:
 
 def _subfunc_structural_covariates(
     amd_start_model: Model,
-    search_space: Tuple[Statement, ...],
+    search_space: ModelFeatures,
     strictness,
     path,
 ) -> SubFunc:
@@ -822,7 +797,7 @@ def _subfunc_structural_covariates(
             str(statement.symbol) for statement in model.statements.before_odes
         )
         # Extract all forced
-        mfl = ModelFeatures.create_from_mfl_statement_list(search_space)
+        mfl = search_space
         mfl_covariates = mfl.expand(model).covariate
         structural_searchspace = []
         skipped_parameters = set()
@@ -860,7 +835,7 @@ def _subfunc_structural_covariates(
 
         res = run_tool(
             'covsearch',
-            mfl_stringify(structural_searchspace),
+            mfl.create_from_mfl_statement_list(structural_searchspace),
             model=model,
             strictness=strictness,
             results=modelfit_results,
@@ -874,12 +849,12 @@ def _subfunc_structural_covariates(
 
 def _subfunc_mechanistic_exploratory_covariates(
     amd_start_model: Model,
-    search_space: Tuple[Statement, ...],
+    search_space: ModelFeatures,
     mechanistic_covariates,
     strictness,
     path,
 ) -> SubFunc:
-    covariates = set(extract_covariates(amd_start_model, search_space))
+    covariates = set(extract_covariates(amd_start_model, search_space.mfl_statement_list()))
     if covariates:
         allowed_covariates = get_covariates_allowed_in_covariate_effect(amd_start_model)
         for covariate in sorted(covariates):
@@ -899,7 +874,7 @@ def _subfunc_mechanistic_exploratory_covariates(
     def _run_mechanistic_exploratory_covariates(model, modelfit_results):
         index_offset = 0  # For naming runs
 
-        effects = list(covariate_spec(model, search_space))
+        effects = search_space.convert_to_funcs()
 
         if not effects:
             warnings.warn(
@@ -921,10 +896,6 @@ def _subfunc_mechanistic_exploratory_covariates(
                     ' Skipping mechanistic COVsearch.'
                 )
             else:
-                mechanistic_searchspace = ModelFeatures.create_from_mfl_statement_list(
-                    mechanistic_searchspace
-                )
-
                 res = run_tool(
                     'covsearch',
                     mechanistic_searchspace,
@@ -954,7 +925,7 @@ def _subfunc_mechanistic_exploratory_covariates(
                         added_covs
                     )  # Avoid removing added cov in exploratory
         else:
-            filtered_searchspace = mfl_parse(search_space)
+            filtered_searchspace = search_space
 
         res = run_tool(
             'covsearch',
@@ -974,7 +945,7 @@ def _subfunc_mechanistic_exploratory_covariates(
 def _mechanistic_cov_extraction(search_space, model, mechanistic_covariates):
     mechanistic_covariates = [c if isinstance(c, str) else set(c) for c in mechanistic_covariates]
     # Extract them and all forced
-    mfl = ModelFeatures.create_from_mfl_statement_list(search_space)
+    mfl = search_space
     mfl_covariates = mfl.expand(model).covariate
     mechanistic_searchspace = []
     for cov_statement in mfl_covariates:
@@ -1086,7 +1057,7 @@ def validate_input(
 
     if search_space is not None:
         try:
-            input_search_space_features = [] if search_space is None else mfl_parse(search_space)
+            ss_mfl = mfl_parse(search_space, True)
         except:  # noqa E722
             raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
 
@@ -1177,19 +1148,13 @@ def validate_input(
             # Typechecking performed elsewhere?
 
     if search_space is not None:
-        covsearch_features = tuple(
-            filter(
-                lambda statement: isinstance(statement, COVSEARCH_STATEMENT_TYPES),
-                input_search_space_features,
-            )
-        )
-        if covsearch_features:  # Check LET() and COVARIATE()
-            covariates = set(extract_covariates(model, input_search_space_features))
-            let_features = [
-                statement for statement in covsearch_features if isinstance(statement, Let)
-            ]
-            for statement in let_features:
-                covariates = covariates.union(set(statement.value))
+        covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate, _let=ss_mfl._let)
+        covsearch_features = covsearch_features.expand(model)
+        covariates = []
+        if cov_attr := covsearch_features.covariate:  # Check COVARIATE()
+            covariates.extend([x for cov in cov_attr for x in cov.covariate])
+        if let_attr := covsearch_features._let:  # Check LET()
+            covariates.extend([x for cov in let_attr.values() for x in cov])
             if covariates:
                 allowed_covariates = get_covariates_allowed_in_covariate_effect(model)
                 for covariate in sorted(covariates):
@@ -1199,14 +1164,7 @@ def validate_input(
                             f' search_space: got `{covariate}`,'
                             f' must be in {sorted(allowed_covariates)}.'
                         )
-            else:
-                warnings.warn(
-                    'COVsearch will be skipped because no covariates could be found'
-                    ' in the given search space.'
-                    ' Check search_space definition'
-                )
-                to_be_skipped.append("covariates")
-        else:
+        if not covariates:
             if ignore_datainfo_fallback:
                 warnings.warn(
                     'COVsearch will be skipped because no covariates were given'

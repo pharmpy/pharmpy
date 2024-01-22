@@ -301,10 +301,13 @@ def validate_input(
     model,
     strictness,
 ):
-    try:
-        statements = mfl_parse(search_space)
-    except:  # noqa E722
-        raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
+    if isinstance(search_space, str):
+        try:
+            statements = mfl_parse(search_space)
+        except:  # noqa E722
+            raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
+    else:
+        statements = search_space.filtration("pk").mfl_statement_list()
 
     modelsearch_statements = mfl_filtering(statements, 'modelsearch')
     bad_statements = list(

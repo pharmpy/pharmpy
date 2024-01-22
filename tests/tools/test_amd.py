@@ -230,7 +230,7 @@ def test_ignore_datainfo_fallback(tmp_path, testdata):
 )
 def test_mechanistic_covariate_option(tmp_path, testdata, mechanistic_covariates, error):
     with chdir(tmp_path):
-        db, model = _load_model(testdata, with_datainfo=True)
+        db, model, res = _load_model(testdata, with_datainfo=True)
 
         if error != "PASS":
             with pytest.raises(
@@ -239,7 +239,7 @@ def test_mechanistic_covariate_option(tmp_path, testdata, mechanistic_covariates
             ):
                 validate_input(
                     model,
-                    results=model.modelfit_results,
+                    results=res,
                     modeltype='basic_pk',
                     administration='oral',
                     retries_strategy="skip",
@@ -251,7 +251,7 @@ def test_mechanistic_covariate_option(tmp_path, testdata, mechanistic_covariates
             # Should not raise any errors
             validate_input(
                 model,
-                results=model.modelfit_results,
+                results=res,
                 modeltype='basic_pk',
                 administration='oral',
                 retries_strategy="skip",
@@ -282,9 +282,9 @@ def test_mechanistic_covariate_extraction(
     tmp_path, testdata, mechanistic_covariates, expected_mechanistic_ss, expected_filtered_ss
 ):
     with chdir(tmp_path):
-        db, model = _load_model(testdata, with_datainfo=True)
+        db, model, res = _load_model(testdata, with_datainfo=True)
 
-        search_space = mfl_parse('COVARIATE?(CL, [WT,CLCR], POW)')
+        search_space = mfl_parse('COVARIATE?(CL, [WT,CLCR], POW)', True)
         mechanistic_ss, filtered_ss = _mechanistic_cov_extraction(
             search_space, model, mechanistic_covariates
         )

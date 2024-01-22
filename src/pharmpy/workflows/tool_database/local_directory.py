@@ -5,6 +5,7 @@ from pathlib import Path
 
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import Model
+from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.workflows.results import ModelfitResults
 
 from ..model_database import LocalModelDirectoryDatabase
@@ -85,6 +86,8 @@ class MetadataJSONEncoder(json.JSONEncoder):
             return obj.name
         if isinstance(obj, ModelfitResults):
             return obj.to_json()
+        if isinstance(obj, ModelFeatures):
+            return obj.__repr__()
         return super().default(obj)
 
 
