@@ -616,7 +616,9 @@ def plot_cwres_vs_idv(
     )
 
     if strat is None:
-        layer = chart + _smooth(chart, idv, 'CWRES') + _vertical_line()
+        layer = (
+            chart + _smooth(chart, idv, 'CWRES') + _vertical_line().transform_calculate(offset="0")
+        )
     else:
         scale = 'shared' if uniform_scale else 'independent'
         chart = chart.properties(height=300, width=300)
