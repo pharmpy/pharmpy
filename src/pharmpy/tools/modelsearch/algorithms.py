@@ -251,7 +251,7 @@ def _is_allowed(feat_current, func_current, feat_previous, mfl_funcs):
             (
                 'TRANSITS',
                 1,
-                'DEPOT',
+                'NODEPOT',
             ),
         ),
         (('ABSORPTION', 'ZO'), ('TRANSITS',)),
