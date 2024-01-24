@@ -20,7 +20,7 @@ def _model_count(rundir: Path):
     'strategy, subrundir',
     [
         (
-            'all',
+            'default',
             [
                 'modelfit',
                 'modelsearch',
@@ -32,7 +32,7 @@ def _model_count(rundir: Path):
             ],
         ),
         (
-            'retries',
+            'reevaluation',
             [
                 'modelfit',
                 'modelsearch',
@@ -131,7 +131,7 @@ def test_amd_dollar_design(tmp_path, testdata):
             modeltype='basic_pk',
             administration='oral',
             search_space='PERIPHERALS(1)',
-            strategy='all',
+            strategy='default',
             occasion='VISI',
             strictness='minimization_successful or rounding_errors',
             retries_strategy='skip',
