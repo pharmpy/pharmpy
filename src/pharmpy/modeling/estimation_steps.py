@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pharmpy.model import EstimationStep, EstimationSteps, Model, SimulationStep
 from pharmpy.modeling.help_functions import _as_integer
@@ -398,5 +398,110 @@ def set_evaluation_step(model: Model, idx: int = -1):
         newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
     else:
         newsteps = steps[0:-1] + newstep
+    model = model.replace(estimation_steps=newsteps)
+    return model.update_source()
+
+
+def add_predictions_residuals(model: Model, pred: List[str] = [], res: List[str] = []):
+    """Add predictions and/or residuals
+
+    Adds predictions and/or residuals to estimation step.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    pred : list
+        List of predictions (e.g. ['IPRED', 'PRED'])
+    res : list
+        List of residuals (e.g. ['CWRES'])
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model.estimation_steps[-1].predictions
+    ('IPRED', 'PRED')
+    >>> model = add_predictions_residuals(model, pred=['CIPREDI'])
+    >>> model.estimation_steps[-1].predictions
+    ('CIPREDI', 'IPRED', 'PRED')
+
+    See also
+    --------
+    remove_predictions_residuals
+    set_estimation_step
+    add_estimation_step
+    remove_estimation_step
+    append_estimation_step_options
+    add_parameter_uncertainty_step
+    remove_parameter_uncertainty_step
+    """
+    steps = model.estimation_steps
+    old_predictions = steps[-1].predictions
+    new_predictions = tuple(sorted(set(old_predictions) | set(pred)))
+
+    old_residuals = steps[-1].residuals
+    new_residuals = tuple(sorted(set(old_residuals) | set(res)))
+    newstep = steps[-1].replace(predictions=new_predictions, residuals=new_residuals)
+
+    newsteps = steps[0:-1] + newstep
+    model = model.replace(estimation_steps=newsteps)
+    return model.update_source()
+
+
+def remove_predictions_residuals(model: Model, type: Literal['all', 'pred', 'res'] = 'all'):
+    """Remove predictions and/or residuals
+
+    Remove all predictions and/or residuals from estimation step.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    type : {'all', 'pred', 'res'}
+        Specifies what to remove. Default is 'all' and will remove all predictions and residuals
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = remove_predictions_residuals(model)
+    >>> model.estimation_steps[-1].predictions
+    ()
+
+    See also
+    --------
+    add_predictions_residuals
+    set_estimation_step
+    add_estimation_step
+    remove_estimation_step
+    append_estimation_step_options
+    add_parameter_uncertainty_step
+    remove_parameter_uncertainty_step
+    """
+    steps = model.estimation_steps
+    predictions = steps[-1].predictions
+    residuals = steps[-1].residuals
+    if type == 'all':
+        predictions, residuals = (), ()
+        newstep = steps[-1].replace(predictions=predictions, residuals=residuals)
+    if type == 'pred':
+        predictions = ()
+        newstep = steps[-1].replace(predictions=predictions)
+    elif type == 'res':
+        residuals = ()
+        newstep = steps[-1].replace(residuals=residuals)
+
+    newsteps = steps[0:-1] + newstep
     model = model.replace(estimation_steps=newsteps)
     return model.update_source()

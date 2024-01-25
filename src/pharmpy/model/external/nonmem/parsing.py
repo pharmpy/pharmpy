@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import warnings
 from pathlib import Path
 from typing import Callable, Dict, Optional, Tuple
@@ -373,7 +374,31 @@ def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
     etaderiv_names = None
     epsilonderivs_names = None
     table_records = control_stream.get_records('TABLE')
+    predictions = ()
+    residuals = ()
+    all_predictions = ['PRED', 'CPRED', 'CPREDI', 'CIPRED', 'CIPREDI', 'IPRED']
+    all_residuals = [
+        'RES',
+        'WRES',
+        'CRES',
+        'CWRES',
+        'CRESI',
+        'CWRESI',
+        'CIRES',
+        'CIWRES',
+        'CIRESI',
+        'CIWRESI',
+    ]
+    options_match = (
+        r"\S+=\S+\s*|\S*(?:PRINT|APPEND|ONLY|HEADER"
+        r"|FORWARD|CONDITIONAL|TITLE|LABEL|OMITTED|WRESCHOL)\S*\s*"
+    )
     for table in table_records:
+        parameters = re.sub(options_match, '', str(table))
+        parameters = parameters.rstrip().split(' ')
+        predictions = [param for param in parameters if param in all_predictions]
+        residuals = [param for param in parameters if param in all_residuals]
+
         etaderivs = table.eta_derivatives
         if etaderivs:
             etas = random_variables.etas
@@ -475,6 +500,8 @@ def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
                 solver_atol=atol,
                 eta_derivatives=etaderiv_names,
                 epsilon_derivatives=epsilonderivs_names,
+                predictions=predictions,
+                residuals=residuals,
             )
         except ValueError:
             raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')

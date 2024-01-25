@@ -1587,7 +1587,13 @@ def update_estimation(control_stream, model):
     old = model.internals.old_estimation_steps
     new = model.estimation_steps
     if old == new:
-        return control_stream
+        if (
+            len(old) > 0
+            and len(new) > 0
+            and old[-1].predictions == new[-1].predictions
+            and old[-1].residuals == new[-1].residuals
+        ):
+            return control_stream
 
     old_ests = [step for step in old if isinstance(step, EstimationStep)]
     new_ests = [step for step in new if isinstance(step, EstimationStep)]
@@ -1738,11 +1744,16 @@ def update_estimation(control_stream, model):
             )
 
     # Update $TABLE
-    # Currently only adds if did not exist before
-    cols = set()
+    new_pred, old_pred = set(), set()
+    new_res, old_res = set(), set()
     for estep in new_ests:
-        cols.update(estep.predictions)
-        cols.update(estep.residuals)
+        new_pred.update(estep.predictions)
+        new_res.update(estep.residuals)
+    for old_estep in old_ests:
+        old_pred.update(old_estep.predictions)
+        old_res.update(old_estep.residuals)
+    cols = new_pred | new_res
+    remove = bool((not new_res and old_res) or (not new_pred and old_pred))
     tables = control_stream.get_records('TABLE')
     if model.dataset is not None and not tables and cols:
         s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
@@ -1753,7 +1764,37 @@ def update_estimation(control_stream, model):
         s += '\n'
         tabrec = create_record(s)
         control_stream = control_stream.insert_record(tabrec)
+    elif model.dataset is not None and tables and not remove:
+        params, ops = _parse_params_from_table(str(tables[0]))
+        new_params = [col for col in cols if col not in params.rstrip().split(' ')]
+        news = params + " ".join(new_params) + " " + ops
+        new_record = create_record(news)
+        control_stream = control_stream.replace_records([tables[0]], [new_record])
+    elif model.dataset is not None and tables and remove:
+        params, ops = _parse_params_from_table(str(tables[0]))
+        if not new_pred and not new_res:
+            new_params = [
+                col for col in params.rstrip().split(' ') if col not in old_pred | old_res
+            ]
+        elif not new_pred:
+            new_params = [col for col in params.rstrip().split(' ') if col not in old_pred]
+        elif not new_res:
+            new_params = [col for col in params.rstrip().split(' ') if col not in old_res]
+        news = " ".join(new_params) + " " + ops
+        new_record = create_record(news)
+        control_stream = control_stream.replace_records([tables[0]], [new_record])
+
     return control_stream
+
+
+def _parse_params_from_table(record):
+    options_match = (
+        r"\S+=\S+\s*|\S*(?:PRINT|APPEND|ONLY|HEADER"
+        r"|FORWARD|CONDITIONAL|TITLE|LABEL|OMITTED|WRESCHOL)\S*\s*"
+    )
+    parameters = re.sub(options_match, '', record)
+    options = "".join(re.findall(options_match, record))
+    return parameters, options
 
 
 def solver_to_advan(solver):
