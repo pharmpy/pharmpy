@@ -93,7 +93,7 @@ symengine==0.11.0
 sympy==1.12
 tblib==3.0.0
 tinycss2==1.2.1
-toolz==0.12.0
+toolz==0.12.1
 tornado==6.4
 traitlets==5.14.1
 typing-extensions==4.9.0
