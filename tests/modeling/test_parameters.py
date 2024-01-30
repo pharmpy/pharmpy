@@ -200,3 +200,22 @@ def test_update_inits_no_res(load_model_for_test, testdata, tmp_path):
 
         with pytest.raises(ValueError):
             update_inits(model, modelfit_results.parameter_estimates)
+
+
+def test_update_inits_subset_parameters_w_correlation(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    res = read_modelfit_results(pheno_path)
+
+    model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
+    model = add_iiv(model, 'S1', 'add')
+
+    param_est = {}
+    param_est['IIV_CL_IIV_V'] = 0.0285  # Correlation > 0.99
+    param_est['IIV_S1'] = 0.5
+
+    updated_model = update_inits(model, param_est, move_est_close_to_bounds=True)
+
+    assert model.parameters['IVCL'].init == updated_model.parameters['IVCL'].init
+    assert model.parameters['IIV_S1'].init == 0.09
+    assert updated_model.parameters['IIV_S1'].init == 0.5
+    assert updated_model.parameters['IIV_CL_IIV_V'].init == 0.0285
